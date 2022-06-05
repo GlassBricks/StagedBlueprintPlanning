@@ -1,6 +1,6 @@
 /** @noSelfInFile */
 
-import * as util from "util";
+import * as util from "util"
 
 // Down is positive y, right is positive x
 
@@ -16,7 +16,7 @@ function Pos(x: number, y: number): PositionClass {
 }
 
 namespace Pos {
-  import sqrt = math.sqrt;
+  import sqrt = math.sqrt
   export function from(position: Position): PositionClass {
     return setmetatable({ x: position.x, y: position.y }, meta)
   }
@@ -24,7 +24,7 @@ namespace Pos {
     return setmetatable(position, meta)
   }
   export function normalize(pos: MapPosition): PositionClass
-  export function normalize(p: any): PositionClass {
+  export function normalize(p: Any): PositionClass {
     return Pos(p.x || p[1], p.y || p[2])
   }
 

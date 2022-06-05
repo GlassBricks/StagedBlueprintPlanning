@@ -33,8 +33,8 @@ interface RClass {
 
 interface ClassInstance extends WithOnLoad {
   constructor: RClass
-  ____constructor(...args: any): void
   [RClassInfo]: ClassName
+  ____constructor(...args: any): void
 }
 
 declare const global: {

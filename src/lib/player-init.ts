@@ -25,7 +25,7 @@ Events.on_init(() => {
 })
 onPlayerInit((player) => {
   ;(global.players as Mutable<GlobalPlayerData>)[player.index] = {} as PlayerData
-};)
+})
 
 const playerRemovedHandlers: Array<(playerIndex: PlayerIndex) => void> = []
 export function onPlayerRemoved(action: (playerIndex: PlayerIndex) => void): void {
@@ -37,5 +37,5 @@ Events.on_player_removed((e) => {
   for (const handler of playerRemovedHandlers) {
     handler(index)
   }
-  delete global.players[index]
+  delete (global.players as Mutable<GlobalPlayerData>)[index]
 })
