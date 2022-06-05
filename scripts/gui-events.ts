@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 export interface ButtonEvents {
   on_gui_click: true
   on_gui_opened: true

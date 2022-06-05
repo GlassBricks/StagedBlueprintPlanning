@@ -1,5 +1,4 @@
-import Events from "./Events"
-import { addSetupHook } from "./setup"
+import { Events } from "./Events"
 
 export type VersionString = string & {
   _versionStringBrand: void
@@ -13,70 +12,19 @@ export function formatVersion(version: string): VersionString {
   return parts.join(".") as VersionString
 }
 
-declare const global: {
-  oldVersion: string | undefined
-}
-
 export namespace Migrations {
-  let preLoadMigrations: Record<VersionString, (() => void)[]> = {}
-  let postLoadMigrations: Record<VersionString, (() => void)[]> = {}
-
-  let preLoadFuncs: (() => void)[] | undefined
-  let loadFuncs: (() => void)[] = []
-  // postLoadFuncs not stored
-
-  function init() {
-    preLoadMigrations = {}
-    postLoadMigrations = {}
-    loadFuncs = []
-    preLoadFuncs = undefined
-    Events.on_configuration_changed(() => {
-      const oldVersion = global.oldVersion
-      if (preparePreLoadMigrations(oldVersion)) {
-        for (const func of preLoadFuncs!) func()
-      }
-      preLoadFuncs = undefined
-      for (const func of loadFuncs) func()
-      loadFuncs = []
-      for (const func of getMigrationsToRun(oldVersion, postLoadMigrations)) func()
-
-      global.oldVersion = script.active_mods[script.mod_name]
-    })
-
-    Events.on_init(() => {
-      global.oldVersion = script.active_mods[script.mod_name]
-    })
-  }
-  init()
-  addSetupHook(init)
+  let migrations: Record<VersionString, (() => void)[]> = {}
 
   export function from(version: string, func: () => void): void {
-    ;(postLoadMigrations[formatVersion(version)] ||= []).push(func)
+    ;(migrations[formatVersion(version)] ||= []).push(func)
   }
 
-  export function since(version: string, func: () => void): void {
-    Events.on_init(func)
-    from(version, func)
+  export function _prepareMock() {
+    assert(game && script.active_mods.testorio, "should not mock until game loaded")
+    migrations = {}
   }
 
-  export function onLoadOrMigrate(func: () => void): void {
-    Events.on_load(() => {
-      if (!preparePreLoadMigrations(global.oldVersion)) {
-        func()
-      } else {
-        loadFuncs.push(func)
-      }
-    })
-  }
-
-  export function fromBeforeLoad(version: string, func: () => void): void {
-    ;(preLoadMigrations[formatVersion(version)] ||= []).push(func)
-  }
-
-  function getMigrationsToRun(
-    oldVersion: string | undefined,
-    migrations: Record<VersionString, (() => void)[]>,
-  ): (() => void)[] {
+  function getMigrationsToRun(oldVersion: string | undefined): (() => void)[] {
     const formattedOldVersion = oldVersion && formatVersion(oldVersion)
     let versions = Object.keys(migrations) as VersionString[]
     if (formattedOldVersion) {
@@ -85,9 +33,15 @@ export namespace Migrations {
     table.sort(versions)
     return versions.flatMap((v) => migrations[v])
   }
-
-  function preparePreLoadMigrations(oldVersion: string | undefined): boolean {
-    preLoadFuncs ??= getMigrationsToRun(oldVersion, preLoadMigrations)
-    return preLoadFuncs.length > 0
+  export function _doMigrations(oldVersion: string) {
+    const migrations = getMigrationsToRun(oldVersion)
+    for (const fn of migrations) fn()
   }
+
+  Events.on_configuration_changed((data) => {
+    const thisChange = data.mod_changes[script.mod_name]
+    if (!thisChange) return
+    const oldVersion = thisChange.old_version
+    if (oldVersion) _doMigrations(oldVersion)
+  })
 }

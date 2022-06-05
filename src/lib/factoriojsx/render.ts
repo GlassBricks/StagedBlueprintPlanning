@@ -1,6 +1,6 @@
-import Events from "../Events"
+import { Events } from "../Events"
 import { MutableState, SingleObserver, State, Unsubscribe } from "../observable"
-import { PlayerData } from "../player-data"
+import { onPlayerInit, onPlayerRemoved } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { bind, Callback, Classes, Func, funcRef, Functions, isCallable, SelflessFun } from "../references"
 import { isEmpty, shallowCopy } from "../util"
@@ -92,7 +92,18 @@ function isLuaGuiElement(element: unknown): element is LuaGuiElement {
   return typeof element === "object" && (element as LuaGuiElement).object_name === "LuaGuiElement"
 }
 
-const Elements = PlayerData<Record<GuiElementIndex, ElementInstance>>("gui:Elements", () => ({}))
+declare const global: {
+  guiElements: PRecord<PlayerIndex, PRecord<GuiElementIndex, ElementInstance>>
+}
+Events.on_init(() => {
+  global.guiElements = {}
+})
+onPlayerInit((player) => {
+  global.guiElements[player.index] = {}
+})
+onPlayerRemoved((playerIndex) => {
+  delete global.guiElements[playerIndex]
+})
 
 const type = _G.type
 
@@ -253,7 +264,7 @@ function renderElement(
   }
 
   if (!isEmpty(subscriptions) || !isEmpty(events)) {
-    Elements[element.player_index][element.index] = {
+    global.guiElements[element.player_index]![element.index] = {
       element,
       events,
       subscriptions,
@@ -312,7 +323,7 @@ export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | und
 
 function getInstance(element: BaseGuiElement): ElementInstance | undefined {
   if (!element.valid) return undefined
-  return Elements[element.player_index][element.index]
+  return global.guiElements[element.player_index]![element.index]
 }
 
 export function destroy(element: BaseGuiElement | undefined, destroyElement = true): void {
@@ -342,7 +353,7 @@ export function destroy(element: BaseGuiElement | undefined, destroyElement = tr
   if (destroyElement && element.valid) {
     element.destroy()
   }
-  Elements[playerIndex][index] = undefined!
+  global.guiElements[playerIndex]![index] = undefined!
 }
 
 export function destroyChildren(element: BaseGuiElement): void {
@@ -384,7 +395,7 @@ for (const [name] of pairs(guiEventNames)) {
 
 export function cleanGuiInstances(): number {
   let count = 0
-  for (const [, byPlayer] of Elements) {
+  for (const [, byPlayer] of pairs(global.guiElements)) {
     for (const [, instance] of pairs(byPlayer)) {
       const element = instance.element
       if (!element.valid) {

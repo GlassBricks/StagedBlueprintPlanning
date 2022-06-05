@@ -1,5 +1,3 @@
-import { addSetupHook, checkIsBeforeLoad } from "./setup"
-
 export function getCallerFile(): string {
   const source = debug.getinfo(3, "S")!.source!
   return string.match(source, "^.-/(.+)%.lua")[0]
@@ -18,26 +16,12 @@ export class Registry<T, N extends string> {
     protected getDefaultName: (item: T) => string,
     protected getDebugDescription: (item: T) => string,
     protected onRegister: (item: T, name: N) => void,
-  ) {
-    addSetupHook({
-      reset: () => {
-        const store = {
-          nameToItem: this.nameToItem,
-          itemToName: this.itemToName,
-        }
-        this.nameToItem = {} as Record<N, T>
-        this.itemToName = new LuaTable<T, N>()
-        return store
-      },
-      restore: (store) => {
-        this.nameToItem = store.nameToItem
-        this.itemToName = store.itemToName
-      },
-    })
-  }
+  ) {}
 
   registerRaw(name: N, item: T): void {
-    checkIsBeforeLoad()
+    if (game) {
+      error("This operation must only be done during script load.")
+    }
     const existing: T = this.nameToItem[name]
     if (existing) {
       error(

@@ -1,9 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
-import Events from "./Events"
-import { Migrations } from "./migration"
+import { Events } from "./Events"
 import { Registry } from "./registry"
-import { isInSetupMock } from "./setup"
 
 // --- Classes ---
 export const OnLoad: unique symbol = Symbol("OnLoad")
@@ -49,8 +47,7 @@ Events.on_init(() => {
   global.__classes = setmetatable({}, { __mode: "k" })
 })
 
-Migrations.onLoadOrMigrate(() => {
-  if (isInSetupMock() && !global.__classes) return
+Events.on_load(() => {
   setmetatable(global.__classes, { __mode: "k" })
   for (const [table, className] of pairs(global.__classes)) {
     const type = Classes.getOrNil(className)

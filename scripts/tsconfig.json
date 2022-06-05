@@ -9,5 +9,4 @@
     "sourceMap": true
   },
   "include": ["."],
-  "exclude": ["gui.d.ts"]
 }

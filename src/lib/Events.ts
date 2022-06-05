@@ -1,6 +1,5 @@
 /** @noSelfInFile */
 
-import { addSetupHook } from "./setup"
 import { PRecord } from "./util-types"
 
 export interface ScriptEvents {
@@ -38,7 +37,7 @@ export interface EventsObj extends ShorthandRegister {
   on<E extends EventId<any, any> | string>(event: E | E[], f: (data: EventDataOf<E>) => void): void
   /**
    * Registers multiple event handlers by name. Only game and script events can be registered here. For custom
-   * events/input events, use `register` instead.
+   * events/input events, use `on` instead.
    *
    * @param handlers A table of event name -> event handler function
    */
@@ -62,11 +61,7 @@ type AnyHandler = (data?: any) => void
 // number -- event id
 // string -- custom input handler
 // symbol -- script event
-let registeredHandlers: PRecord<keyof any, AnyHandler[]> = {}
-
-addSetupHook(() => {
-  registeredHandlers = {}
-})
+const registeredHandlers: PRecord<keyof any, AnyHandler[]> = {}
 
 function registerInternal(id: keyof any, handler: AnyHandler) {
   let handlers = registeredHandlers[id]
@@ -154,4 +149,4 @@ setmetatable(Events, {
   },
 })
 
-export default Events
+export { Events }

@@ -51,7 +51,7 @@ export function protectedAction<T, A extends any[]>(
 function getErrorWithStacktrace(error: unknown): UserError | UnexpectedError {
   if (isUserError(error)) return error as UserError
   const errorToString = tostring(error)
-  return [errorToString, debug.traceback(errorToString)]
+  return [errorToString, debug.traceback(errorToString, 2)]
 }
 
 function reportUnexpectedError(error: UnexpectedError, player: LuaPlayer): void {
