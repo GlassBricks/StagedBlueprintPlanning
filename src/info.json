@@ -1,0 +1,17 @@
+{
+  "name": "bbpp3",
+  "version": "0.1.0",
+  "title": "Big BluePrint Planning v3",
+  "description": "Third time's the charm, right?",
+  "author": "GlassBricks",
+  "factorio_version": "1.1",
+  "package": {
+    "scripts": {
+      "prepackage": "yarn prepare-package"
+    },
+    "git_publish_branch": "main",
+    "ignore": ["readme.md", "**/*\\-test.lua", "**/*\\-mock.lua", "**/*.xcf", "**/*.ts", "**/*.tsx"],
+    "no_git_tag": true,
+    "removeZipAfterPackage": true
+  }
+}

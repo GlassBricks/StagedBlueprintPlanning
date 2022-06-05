@@ -1,0 +1,78 @@
+{
+  "root": true,
+  "plugins": ["@typescript-eslint"],
+  "parser": "@typescript-eslint/parser",
+  "settings": {
+    "import/resolver": "typescript"
+  },
+  "parserOptions": {
+    "project": ["tsconfig.json", "scripts/tsconfig.json"]
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:eslint-comments/recommended",
+    "plugin:prettier/recommended",
+    "esnext",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    // fixes
+    "no-useless-constructor": "off",
+    "@typescript-eslint/no-useless-constructor": "error",
+    // off
+    "no-inner-declarations": "off",
+    "no-use-before-define": "off",
+    "class-methods-use-this": "off",
+    "no-invalid-this": "off",
+    "no-loop-func": "off",
+    "no-throw-literal": "off",
+    "@typescript-eslint/no-extra-semi": "off",
+    "no-undef": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "import/prefer-default-export": "off",
+    "import/no-namespace": "off",
+    "import/no-unresolved": "off",
+    "import/export": "off",
+    // modifications/weakening
+    "@typescript-eslint/no-inferrable-types": [
+      "warn", {
+        "ignoreProperties": true,
+        "ignoreParameters": true
+      }
+    ],
+    "prettier/prettier": "warn",
+    "@typescript-eslint/ban-types": [
+      "error", {
+        "extendDefaults": true,
+        "types": {
+          "object": false
+        }
+      }
+    ],
+    // on
+    "no-template-curly-in-string": "error",
+    "eslint-comments/no-unused-disable": "error",
+    "eslint-comments/disable-enable-pair": [
+      "error", {
+        "allowWholeFile": true
+      }
+    ],
+    "@typescript-eslint/explicit-module-boundary-types": "error",
+    "import/no-nodejs-modules": [
+      "error", {
+        "allow": ["util"]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["scripts/**/*.ts"],
+      "rules": {
+        "import/no-nodejs-modules": "off"
+      }
+    }
+  ]
+}

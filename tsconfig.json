@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "moduleResolution": "node",
+    "types": ["luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio"],
+    "plugins": [
+      {
+        "name": "typescript-tstl-plugin"
+      }
+    ],
+    "lib": ["esnext"],
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "experimentalDecorators": true,
+    "rootDir": "src",
+    "outDir": "src",
+    "resolveJsonModule": true,
+    "jsx": "react",
+    "jsxFactory": "FactorioJsx.createElement",
+    "jsxFragmentFactory": "FactorioJsx.Fragment",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitThis": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "tstl": {
+    "luaTarget": "5.2",
+    "noResolvePaths": ["__testorio__/init", "__debugadapter__/debugadapter.lua"],
+    "noImplicitSelf": true,
+    "sourceMapTraceback": true,
+    "luaPlugins": [
+      {
+        "name": "./tstlPlugin/plugin.js"
+      }
+    ]
+  },
+  "include": ["src"],
+  "exclude": []
+}
