@@ -1,4 +1,4 @@
-import { Pos } from "./position";
+import { Pos } from "./position"
 
 test("create", () => {
   const position = Pos(1, 2)
@@ -20,17 +20,17 @@ test("normalize", () => {
   assert.equal(2, position2.y)
 })
 
-test("add", () => {
+test("plus", () => {
   const position = Pos(1, 2)
   const position2 = Pos(3, 4)
-  const position3 = position.add(position2)
+  const position3 = position.plus(position2)
   assert.same({ x: 4, y: 6 }, position3)
 })
 
-test("sub", () => {
+test("minus", () => {
   const position = Pos(1, 2)
   const position2 = Pos(3, 4)
-  const position3 = position.sub(position2)
+  const position3 = position.minus(position2)
   assert.same({ x: -2, y: -2 }, position3)
 })
 
