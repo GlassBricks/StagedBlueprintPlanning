@@ -162,7 +162,7 @@ describe("ObservableSet", () => {
     set.add("a")
     set.add("b")
     const values: string[] = []
-    for (const [value] of set) {
+    for (const value of set) {
       values.push(value)
     }
     assert.same(["a", "b"], values)

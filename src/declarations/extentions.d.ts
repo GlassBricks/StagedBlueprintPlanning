@@ -4,7 +4,9 @@ declare type LuaTableAddMethod<TKey extends AnyNotNil> = ((key: TKey) => void) &
 declare type LuaTableFirstMethod<TKey extends AnyNotNil> = (() => TKey | undefined) &
   LuaExtension<"__luaTableFirstMethodBrand">
 
-declare interface LuaSet<T extends AnyNotNil> extends LuaPairsIterable<T, true> {
+declare type LuaSetIterable<T extends AnyNotNil> = Iterable<T> & LuaExtension<"__luaSetIterableBrand">
+
+declare interface LuaSet<T extends AnyNotNil> extends LuaSetIterable<T> {
   readonly size: LuaLengthMethod<number>
   readonly has: LuaTableHasMethod<T> & LuaTableHasMethod<AnyNotNil>
   readonly first: LuaTableFirstMethod<T>

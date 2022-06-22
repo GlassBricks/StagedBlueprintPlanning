@@ -10,7 +10,7 @@ export interface ObservableSetChange<T> {
   added?: true
 }
 
-export interface ObservableSet<T> extends Observable<ObservableSetChange<T>>, LuaPairsIterable<T, true> {
+export interface ObservableSet<T> extends Observable<ObservableSetChange<T>>, LuaSetIterable<T> {
   size(): number
   has(value: T): boolean
   value(): LuaSet<T>
@@ -26,7 +26,7 @@ export function observableSet<T>(): MutableObservableSet<T> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface ObservableSetImpl<T> extends LuaPairsIterable<T, true> {}
+interface ObservableSetImpl<T> extends LuaSetIterable<T> {}
 
 @Classes.register()
 class ObservableSetImpl<T> extends SingleSubscribable<ObservableSetChange<T>> implements MutableObservableSet<T> {

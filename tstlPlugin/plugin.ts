@@ -3,8 +3,10 @@ import * as path from "path"
 import * as ts from "typescript"
 import {
   createAssignmentStatement,
+  createBlock,
   createBooleanLiteral,
   createCallExpression,
+  createForInStatement,
   createIdentifier,
   createNilLiteral,
   createStringLiteral,
@@ -20,6 +22,7 @@ import {
 import { unsupportedBuiltinOptionalCall } from "typescript-to-lua/dist/transformation/utils/diagnostics"
 import { getFunctionTypeForCall } from "typescript-to-lua/dist/transformation/utils/typescript"
 import { transformExpressionList } from "typescript-to-lua/dist/transformation/visitors/expression-list"
+import { transformForInitializer, transformLoopBody } from "typescript-to-lua/dist/transformation/visitors/loops/utils"
 import {
   getOptionalContinuationData,
   OptionalContinuation,
@@ -133,6 +136,20 @@ const plugin: Plugin = {
         return transformLuaSetNewCall(context, node)
       }
       return context.superTransformExpression(node)
+    },
+    [ts.SyntaxKind.ForOfStatement]: (node: ts.ForOfStatement, context: TransformationContext) => {
+      const expression = node.expression
+      const exprType = context.checker.getTypeAtLocation(expression)
+      // __luaSetIterableBrand
+      if (exprType?.getProperty("__luaSetIterableBrand")) {
+        const body = createBlock(transformLoopBody(context, node))
+        const valueVariable = transformForInitializer(context, node.initializer, body)
+        const pairsCall = createCallExpression(createIdentifier("pairs"), [
+          context.transformExpression(node.expression),
+        ])
+        return createForInStatement(body, [valueVariable], [pairsCall], node)
+      }
+      return context.superTransformStatements(node)
     },
   },
 }
