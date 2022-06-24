@@ -1,4 +1,4 @@
-import { Classes } from "../references"
+import { RegisterClass } from "../references"
 import { FactorioJsx, FCSpec, FlowElementSpec, SpecChildren } from "./index"
 import { Component, Spec } from "./spec"
 
@@ -126,7 +126,7 @@ test("Function component with undefined children", () => {
   assert.same({ type: Foo, props: {} }, el)
 })
 
-@Classes.register()
+@RegisterClass("Test component: jsx Foo")
 class FooClass extends Component<TestProps> {
   render(props: TestProps): Spec {
     return <flow caption={props.me}>{props.children}</flow>

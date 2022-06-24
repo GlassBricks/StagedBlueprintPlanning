@@ -2,7 +2,7 @@ import { Events } from "../Events"
 import { MutableState, SingleObserver, State, Unsubscribe } from "../observable"
 import { onPlayerInit, onPlayerRemoved } from "../player-init"
 import { protectedAction } from "../protected-action"
-import { bind, Callback, Classes, Func, funcRef, Functions, isCallable, SelflessFun } from "../references"
+import { bind, Callback, Classes, Func, funcRef, isCallable, registerFunctions, SelflessFun } from "../references"
 import { isEmpty, shallowCopy } from "../util"
 import { PRecord } from "../util-types"
 import * as propTypes from "./propTypes.json"
@@ -67,7 +67,7 @@ function callComponentOnDestroy(this: Component<any>) {
   this.onDestroy?.()
 }
 
-Functions.registerAll({ setValueObserver, callSetterObserver, setStateFunc, callComponentOnDestroy })
+registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc, callComponentOnDestroy })
 
 function newTracker(index?: number): TrackerInternal {
   const subscriptions = {} as TrackerInternal["subscriptions"]

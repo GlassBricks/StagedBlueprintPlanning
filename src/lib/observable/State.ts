@@ -1,4 +1,4 @@
-import { bind, Callback, Classes, Func, funcRef, Registered } from "../references"
+import { bind, Callback, Func, funcRef, RegisterClass, Registered } from "../references"
 import { Subscribable, Unsubscribe } from "./Observable"
 import { Observers } from "./Observers"
 
@@ -62,7 +62,7 @@ export interface MutableState<T> extends State<T> {
   forceUpdate(): void
 }
 
-@Classes.register("State")
+@RegisterClass("State")
 class MutableStateImpl<T> extends State<T> implements MutableState<T> {
   public value: T
   public constructor(value: T) {
@@ -105,7 +105,7 @@ export function state<T>(value: T): MutableState<T> {
   return new MutableStateImpl(value)
 }
 
-@Classes.register()
+@RegisterClass("MappedState")
 class MappedState<T, U> extends State<U> {
   public constructor(private readonly source: State<T>, private readonly mapper: Mapper<T, U>) {
     super()

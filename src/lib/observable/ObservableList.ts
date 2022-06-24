@@ -1,4 +1,4 @@
-import { bind, Callback, Classes, Functions, Registered } from "../references"
+import { bind, Callback, RegisterClass, Registered, registerFunctions } from "../references"
 import { Observable } from "./Observable"
 import { SingleSubscribable } from "./Observers"
 
@@ -50,7 +50,7 @@ export interface MutableObservableList<T extends AnyNotNil> extends ObservableLi
   swap(indexA: number, indexB: number): void
 }
 
-@Classes.register()
+@RegisterClass("ObservableList")
 class ObservableListImpl<T extends AnyNotNil>
   extends SingleSubscribable<ObservableListChange<T>>
   implements MutableObservableList<T>
@@ -195,4 +195,4 @@ function observeEachListener<T extends object>(
     this(newValueB, indexB, "swap")
   }
 }
-Functions.registerAll({ observeEachListener })
+registerFunctions("ObservableList", { observeEachListener })

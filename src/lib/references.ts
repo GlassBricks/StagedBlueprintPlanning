@@ -2,6 +2,7 @@
 
 import { Events } from "./Events"
 import { Registry } from "./registry"
+import { PRRecord } from "./util-types"
 
 // --- Classes ---
 export const OnLoad: unique symbol = Symbol("OnLoad")
@@ -12,35 +13,32 @@ export interface WithOnLoad {
 
 // on a class it marks if the class was processed
 // on an instance (prototype) it returns the class name
-const RClassInfo: unique symbol = Symbol("ClassInfo")
+const ClassInfo: unique symbol = Symbol("ClassInfo")
 
 export interface Class<T> {
   name: string
   prototype: T
 }
 
-export type ClassName = string & { _classNameBrand: any }
-
-interface RClass {
+interface RegisteredClass {
   name: string
   prototype: ClassInstance & LuaMetatable<ClassInstance>
-  ____super?: RClass
-  [RClassInfo]?: {
+  ____super?: RegisteredClass
+  [ClassInfo]?: {
     processed?: true
     boundFuncKeys?: (keyof any)[]
   }
 }
 
 interface ClassInstance extends WithOnLoad {
-  constructor: RClass
-  [RClassInfo]: ClassName
+  constructor: RegisteredClass
+  [ClassInfo]: string
   ____constructor(...args: any): void
 }
 
+export const Classes = new Registry<Class<any>>("class", (item) => serpent.block(item))
 declare const global: {
-  __classes: LuaTable<ClassInstance, ClassName>
-  // __instances: Record<object, ClassInstance>
-  // __nextInstanceId: InstanceId
+  __classes: MutableLuaMap<ClassInstance, string>
 }
 
 Events.on_init(() => {
@@ -49,24 +47,23 @@ Events.on_init(() => {
 
 Events.on_load(() => {
   setmetatable(global.__classes, { __mode: "k" })
-  for (const [table, className] of pairs(global.__classes)) {
-    const type = Classes.getOrNil(className)
-    if (!type) {
+  for (const [table, className] of global.__classes) {
+    const _class = Classes.getOrNil(className)
+    if (!_class) {
       error(
         `Could not find a class with the name "${className}". Check that the class was registered properly, and/or migrations are correct.`,
       )
-      // continue
     }
-    setmetatable(table, type.prototype as LuaMetatable<object>)
+    setmetatable(table, type.prototype)
   }
-  for (const [table] of pairs(global.__classes)) {
+  for (const [table] of global.__classes) {
     table[OnLoad]?.()
   }
 })
 
-function processRegisteredClass(item: RClass, name: ClassName) {
+function onClassRegistered(name: string, item: RegisteredClass) {
   const prototype = item.prototype
-  prototype[RClassInfo] = name
+  prototype[ClassInfo] = name
   // make sure __call meta-method works for subclasses
   rawset(prototype, "__call", prototype.__call)
 
@@ -82,31 +79,31 @@ function processRegisteredClass(item: RClass, name: ClassName) {
   function registerInstanceInConstructor(prototype: ClassInstance & LuaMetatable<ClassInstance>) {
     const originalConstructor = prototype.____constructor
     prototype.____constructor = function (this: ClassInstance, ...args: any[]) {
-      global.__classes.set(this, this[RClassInfo])
+      global.__classes.set(this, this[ClassInfo])
       originalConstructor.call(this, ...args)
     }
   }
 
-  function processConstructors(currentClass: RClass, info: RClass[typeof RClassInfo] & object) {
+  function processConstructors(currentClass: RegisteredClass, info: RegisteredClass[typeof ClassInfo] & object) {
     const thisPrototype = currentClass.prototype
     if (info.boundFuncKeys) bindFuncsInConstructor(thisPrototype, info.boundFuncKeys)
     if (currentClass.____super === undefined) registerInstanceInConstructor(thisPrototype)
   }
 
-  function registerStaticFunctions(currentClass: RClass) {
+  function registerStaticFunctions(currentClass: RegisteredClass) {
     for (const [key, value] of pairs(currentClass)) {
       // noinspection SuspiciousTypeOfGuard
       if (typeof value === "function" && typeof key === "string") {
-        Functions.registerRaw((name + "." + key) as FuncName, value)
+        Functions.registerRaw((name + "." + key) as string, value)
       }
     }
   }
 
-  let currentClass: RClass | undefined = item
+  let currentClass: RegisteredClass | undefined = item
   while (currentClass !== undefined) {
     registerStaticFunctions(currentClass)
     // process constructors
-    const info: RClass[typeof RClassInfo] = rawget(currentClass, RClassInfo) ?? (currentClass[RClassInfo] = {})
+    const info: RegisteredClass[typeof ClassInfo] = rawget(currentClass, ClassInfo) ?? (currentClass[ClassInfo] = {})
     if (!info.processed) {
       info.processed = true
       processConstructors(currentClass, info)
@@ -115,18 +112,18 @@ function processRegisteredClass(item: RClass, name: ClassName) {
   }
 }
 
-export const Classes = new Registry<Class<any>, ClassName>(
-  "class",
-  (item) => item.name ?? "Cannot register anonymous class without explicitly given name",
-  (item) => serpent.block(item),
-  processRegisteredClass,
-)
+export function RegisterClass(name: string): (this: unknown, _class: Class<any>) => void {
+  return (_class: Class<any>) => {
+    Classes.registerRaw(name, _class)
+    onClassRegistered(name, _class)
+  }
+}
 
 /** Intended to be used with migrations. */
 export function getAllInstances<T>(type: Class<T>): T[] {
   const typeName = Classes.nameOf(type)
   const result: T[] = []
-  for (const [instance, name] of pairs(global.__classes)) {
+  for (const [instance, name] of global.__classes) {
     if (name === typeName) result.push(instance as any)
   }
   return result
@@ -134,7 +131,7 @@ export function getAllInstances<T>(type: Class<T>): T[] {
 
 export function rebindFuncs<T>(type: Class<T>): T[] {
   const instances = getAllInstances(type)
-  const classInfo = assert(rawget(type as unknown as RClass, RClassInfo))
+  const classInfo = assert(rawget(type as unknown as RegisteredClass, ClassInfo))
   const boundFuncKeys = classInfo.boundFuncKeys
   if (boundFuncKeys) {
     for (const instance of instances as any[]) {
@@ -159,18 +156,26 @@ export type Func<F extends ContextualFun> = (F extends (this: any, ...args: infe
   : ContextualFun) &
   Registered
 
-export type FuncName = string & { _funcNameBrand: any }
+export type Callback = ((this: unknown) => void) & Registered
 
-export const Functions = new Registry<AnyFunction, FuncName>(
-  "function",
-  () => {
-    error("name must be explicitly given to register functions")
-  },
-  (func: AnyFunction) => serpent.block(type(func) === "function" ? debug.getinfo(func) : func, { nocode: true }),
-  () => {
-    // do nothing
-  },
+export const Functions = new Registry<AnyFunction>("function", (func: AnyFunction) =>
+  serpent.block(type(func) === "function" ? debug.getinfo(func) : func, { nocode: true }),
 )
+
+export type Functions = PRRecord<string, AnyFunction>
+export function registerFunctions(prefix: string, functions: Functions): void {
+  prefix += ":"
+  for (const [name, func] of pairs(functions)) {
+    Functions.registerRaw(prefix + name, func)
+  }
+}
+export function getCallerFile(): string {
+  const source = debug.getinfo(3, "S")!.source!
+  return string.match(source, "^.-/(.+)%.lua")[0]
+}
+export function registerFunctionsByFile(functions: Functions): void {
+  registerFunctions(getCallerFile(), functions)
+}
 
 export function isCallable(obj: unknown): boolean {
   const objType = type(obj)
@@ -184,12 +189,10 @@ export function isCallable(obj: unknown): boolean {
   return false
 }
 
-export type Callback = ((this: unknown) => void) & Registered
-
 // func classes
 interface FuncClassTemplate {
   func: SelflessFun
-  funcName?: FuncName
+  funcName?: string
   [key: string]: unknown
 }
 function funcRefBasedClass<C extends unknown[], A extends unknown[], R>(
@@ -199,12 +202,12 @@ function funcRefBasedClass<C extends unknown[], A extends unknown[], R>(
 ): {
   new (func: AnyFunction, ...args: C): Func<(...args: A) => R>
   func: SelflessFun
-  funcName?: FuncName
+  funcName?: string
 } {
-  const fullName = `funcRef: ${name}` as ClassName
+  const fullName = `funcRef: ${name}`
   const resultPrototype: any = {
     __call,
-    [RClassInfo]: fullName,
+    [ClassInfo]: fullName,
   }
   resultPrototype.__index = resultPrototype
   resultPrototype.constructor = {
@@ -215,7 +218,7 @@ function funcRefBasedClass<C extends unknown[], A extends unknown[], R>(
   const initialPrototype: any = {
     __call(this: FuncClassTemplate, ...args: any[]) {
       if (this.funcName) {
-        this.func = Functions.get(this.funcName)
+        this.func = Functions.get(this.funcName) as SelflessFun
       }
       setmetatable(this, resultPrototype)
       return (this as unknown as SelflessFun)(...args)
@@ -223,7 +226,7 @@ function funcRefBasedClass<C extends unknown[], A extends unknown[], R>(
     ____constructor(this: FuncClassTemplate, func: SelflessFun, ...args: C) {
       this.func = func
       if (typeof func === "function") {
-        this.funcName = Functions.nameOf(func)
+        this.funcName = Functions.nameOf(func) as string
       } else {
         const meta = getmetatable(func)
         assert(meta && meta.__call, "func must be callable")
@@ -235,7 +238,7 @@ function funcRefBasedClass<C extends unknown[], A extends unknown[], R>(
       init.call(this, ...args)
       setmetatable(this, resultPrototype)
     },
-    [RClassInfo]: fullName,
+    [ClassInfo]: fullName,
     [OnLoad](this: FuncClassTemplate) {
       if (this.funcName) Functions.get(this.funcName)
       // check existence, but do not change value yet
@@ -261,7 +264,7 @@ const FuncRef = funcRefBasedClass(
   function (this: FuncClassTemplate, _thisArg: unknown, ...args: unknown[]) {
     return this.func(...args)
   },
-  "FuncRef",
+  "ref",
 )
 
 /** Requires function to be registered. Resulting func takes "this" parameter. */
@@ -278,7 +281,7 @@ const Bound0 = funcRefBasedClass(
   function (this: FuncClassTemplate, thisArg: unknown, ...args: unknown[]) {
     return this.func(this.thisArg, ...args)
   },
-  "BoundThis",
+  "Bound0",
 )
 
 const Bound1 = funcRefBasedClass(
@@ -382,20 +385,20 @@ export const bindN: <T, AX, R>(
   ...args: AX[]
 ) => Func<(...args: AX[]) => R> = bind as any
 
-@Classes.register()
-class KeyFunc {
-  constructor(private readonly instance: Record<keyof any, ContextualFun>, private readonly key: keyof any) {}
+// @RegisterClass("KeyFunc")
+// class KeyFunc {
+//   constructor(private readonly instance: Record<keyof any, ContextualFun>, private readonly key: keyof any) {}
+//
+//   __call(thisArg: unknown, ...args: unknown[]) {
+//     return this.instance[this.key](...args)
+//   }
+// }
+//
+// export function funcOn<T extends Record<K, ContextualFun>, K extends keyof T>(obj: T, key: K): Func<T[K]> {
+//   return new KeyFunc(obj, key) as any
+// }
 
-  __call(thisArg: unknown, ...args: unknown[]) {
-    return this.instance[this.key](...args)
-  }
-}
-
-export function funcOn<T extends Record<K, ContextualFun>, K extends keyof T>(obj: T, key: K): Func<T[K]> {
-  return new KeyFunc(obj, key) as any
-}
-
-@Classes.register()
+@RegisterClass("BoundPrototypeFunc")
 class BoundPrototypeFunc {
   constructor(private readonly instance: Record<keyof any, ContextualFun>, private readonly key: keyof any) {}
 
@@ -414,7 +417,7 @@ export function bound(this: unknown, target: unknown, name: keyof any): void {
   const prototype = target as ClassInstance
   const constructor = prototype.constructor
 
-  const classInfo = rawget(constructor, RClassInfo) ?? (constructor[RClassInfo] = {})
+  const classInfo = rawget(constructor, ClassInfo) ?? (constructor[ClassInfo] = {})
   const boundFuncKeys = classInfo.boundFuncKeys ?? (classInfo.boundFuncKeys = [])
   boundFuncKeys.push(name)
 }
@@ -424,20 +427,20 @@ export function bound(this: unknown, target: unknown, name: keyof any): void {
  */
 export function reg<F extends ContextualFun>(func: F): Func<F> {
   if (typeof func === "function") error("tried to pass raw function where registered function is needed")
-  if (!func[RClassInfo]) error("This func class is not registered")
+  if (!func[ClassInfo]) error("This func class is not registered")
 
   return func
 }
 
-@Classes.register()
-class ReturnsValue {
-  constructor(private readonly value: unknown) {}
-
-  __call() {
-    return this.value
-  }
-}
-
-export function returns<T>(value: T): Func<(this: unknown) => T> {
-  return new ReturnsValue(value) as any
-}
+// @RegisterClass()
+// class ReturnsValue {
+//   constructor(private readonly value: unknown) {}
+//
+//   __call() {
+//     return this.value
+//   }
+// }
+//
+// export function returns<T>(value: T): Func<(this: unknown) => T> {
+//   return new ReturnsValue(value) as any
+// }

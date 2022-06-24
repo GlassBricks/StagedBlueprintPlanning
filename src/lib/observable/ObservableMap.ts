@@ -1,6 +1,6 @@
 // noinspection JSUnusedLocalSymbols
 
-import { Classes } from "../references"
+import { RegisterClass } from "../references"
 import { Observable } from "./Observable"
 import { SingleSubscribable } from "./Observers"
 
@@ -27,7 +27,7 @@ export interface MutableObservableMap<K extends AnyNotNil, V> extends Observable
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface ObservableMapImpl<K extends AnyNotNil, V> extends LuaPairsIterable<K, V> {}
-@Classes.register()
+@RegisterClass("ObservableMap")
 class ObservableMapImpl<K extends AnyNotNil, V>
   extends SingleSubscribable<ObservableMapChange<K, V>>
   implements MutableObservableMap<K, V>

@@ -1,6 +1,6 @@
-import { AnyFunction, Classes, Func, SelflessFun } from "../references"
+import { AnyFunction, Func, RegisterClass, SelflessFun } from "../references"
 
-@Classes.register()
+@RegisterClass("Test: AsFunc")
 class AsFunc<F extends AnyFunction> {
   private readonly func: SelflessFun
   constructor(func: F) {

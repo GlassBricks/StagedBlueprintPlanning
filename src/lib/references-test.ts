@@ -1,5 +1,15 @@
-import { bind, bindN, bound, Classes, ContextualFun, Func, funcOn, funcRef, Functions, reg } from "./references"
-import { getCurrentFile } from "./registry"
+import {
+  bind,
+  bindN,
+  bound,
+  Classes,
+  ContextualFun,
+  Func,
+  funcRef,
+  reg,
+  RegisterClass,
+  registerFunctions,
+} from "./references"
 
 declare const global: {
   __tbl: object
@@ -9,7 +19,7 @@ declare const global: {
 }
 
 describe("classes", () => {
-  @Classes.register("Foo")
+  @RegisterClass("Test Class")
   class TestClass {
     constructor(private readonly value: string) {}
 
@@ -20,20 +30,12 @@ describe("classes", () => {
   }
 
   test("Name registered correctly", () => {
-    for (const [key, value] of pairs(TestClass.prototype)) {
-      if (type(key) === "table") {
-        // Class name symbol
-        const fileName = getCurrentFile()
-        assert.equal(fileName + "::Foo", value)
-        return
-      }
-    }
-    error("Class name symbol not")
+    assert.same("Test Class", Classes.nameOf(TestClass))
   })
 
   test("Error when registering after load", () => {
     assert.error(() => {
-      @Classes.register()
+      @RegisterClass("Test Class 2")
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestClass2 {}
     })
@@ -64,9 +66,7 @@ describe("functions", () => {
   function funcN(this: unknown, ...args: unknown[]) {
     return args
   }
-  Functions.register("test func 1")(func)
-  Functions.register("test func 2")(func2)
-  Functions.register("test func 3: N")(funcN)
+  registerFunctions("test func", { func, func2, funcN })
 
   test("funcRef", () => {
     const ref = funcRef(func)
@@ -74,17 +74,7 @@ describe("functions", () => {
     assert.same(["hi"], ref("hi"))
   })
 
-  test("funcOn", () => {
-    const obj = {
-      func() {
-        return "func called"
-      },
-    }
-    const ref = funcOn(obj, "func")
-    assert.equal("func called", ref())
-  })
-
-  describe.each(["func", "funcRef", "funcOn", "custom"], "bound func ref with type %s", (type) => {
+  describe.each(["func", "funcRef", "custom"], "bound func ref with type %s", (type) => {
     test.each([0, 1, 2, 3, 4, 5, 10], "%d args", (n) => {
       const args = Array.from({ length: n }, (_, i) => i)
       const fun =
@@ -92,8 +82,6 @@ describe("functions", () => {
           ? funcN
           : type === "funcRef"
           ? funcRef(func)
-          : type === "funcOn"
-          ? funcOn({ funcN }, "funcN")
           : setmetatable({} as any, {
               __call: (thisArg: unknown, ...args: unknown[]) => args,
             })

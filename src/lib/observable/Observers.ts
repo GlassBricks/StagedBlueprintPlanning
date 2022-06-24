@@ -1,9 +1,9 @@
-import { bind, Callback, Classes } from "../references"
+import { bind, Callback, RegisterClass } from "../references"
 import { Observable, SingleObserver, Unsubscribe } from "./Observable"
 
 type ObserverKey = symbol & { _observerKeyBrand?: any }
 
-@Classes.register()
+@RegisterClass("Observers")
 export class Observers<L extends (this: unknown, ...args: any[]) => void | Unsubscribe> {
   addSubscription(observer: L): Callback {
     const key: ObserverKey = {} as any
@@ -24,7 +24,7 @@ export class Observers<L extends (this: unknown, ...args: any[]) => void | Unsub
   }
 }
 
-@Classes.register()
+@RegisterClass("SingleSubscribable")
 export class SingleSubscribable<T> implements Observable<T> {
   private _observers = new Observers<SingleObserver<T>>()
   public subscribe(observer: SingleObserver<T>): Callback {

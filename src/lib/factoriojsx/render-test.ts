@@ -1,7 +1,7 @@
 // noinspection UnnecessaryLocalVariableJS
 
 import { State, state } from "../observable"
-import { Callback, Classes } from "../references"
+import { Callback, RegisterClass } from "../references"
 import { asFunc } from "../test-util/func"
 import { testRender } from "../test-util/gui"
 import { destroy } from "./render"
@@ -344,7 +344,7 @@ describe("Class component", () => {
     cb: (element: BaseGuiElement) => void
   }
 
-  @Classes.register()
+  @RegisterClass("Test component: Foo")
   class Foo extends Component<Props> {
     constructor() {
       super()
@@ -370,7 +370,7 @@ describe("Class component", () => {
     }
   }
 
-  @Classes.register()
+  @RegisterClass("Test component: Foo2")
   class Foo2 extends Component<Props> {
     constructor() {
       super()

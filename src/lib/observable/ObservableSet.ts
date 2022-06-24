@@ -1,6 +1,6 @@
 // noinspection JSUnusedLocalSymbols
 
-import { Classes } from "../references"
+import { RegisterClass } from "../references"
 import { Observable } from "./Observable"
 import { SingleSubscribable } from "./Observers"
 
@@ -28,7 +28,7 @@ export function observableSet<T>(): MutableObservableSet<T> {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface ObservableSetImpl<T> extends LuaSetIterable<T> {}
 
-@Classes.register()
+@RegisterClass("ObservableSet")
 class ObservableSetImpl<T> extends SingleSubscribable<ObservableSetChange<T>> implements MutableObservableSet<T> {
   private set = new LuaSet<T>()
   private _size = 0

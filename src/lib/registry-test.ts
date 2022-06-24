@@ -1,7 +1,12 @@
-import { FuncName, Functions } from "./references"
+import { Registry } from "./registry"
 
-describe("registring", () => {
+let registry: Registry<string>
+before_each(() => {
+  registry = new Registry("string", (x) => x)
+})
+describe("registering", () => {
   let oldGame: LuaGameScript
+
   before_each(() => {
     oldGame = game
     ;(_G as any).game = undefined!
@@ -11,28 +16,31 @@ describe("registring", () => {
   })
 
   test("Can register function", () => {
-    const testFuncName = " -- test -- func --" as FuncName
-    const func = () => 0
-    Functions.registerRaw(testFuncName, func)
-    assert.same(func, Functions.get(testFuncName))
-    assert.same(testFuncName, Functions.nameOf(func))
+    const testFuncName = "foo"
+    registry.registerRaw(testFuncName, "foo")
+    assert.same("foo", registry.get(testFuncName))
+    assert.same(testFuncName, registry.nameOf("foo"))
   })
 
   test("error on duplicate name", () => {
     assert.error(() => {
-      Functions.registerRaw("foo" as FuncName, () => 0)
-      Functions.registerRaw("foo" as FuncName, () => 0)
+      registry.registerRaw("foo", "bar")
+      registry.registerRaw("foo", "baz")
     })
   })
 
   test("error on nonexistent func", () => {
     assert.error(() => {
-      Functions.get("foo22" as FuncName)
+      registry.get("foo22")
+    })
+    assert.error(() => {
+      registry.nameOf("foo22")
     })
   })
 })
 test("Error when registering after load", () => {
   assert.error(() => {
-    Functions.registerRaw("foo3" as FuncName, () => 0)
+    const registry = new Registry<string>("string", (x) => x)
+    registry.registerRaw("foo", "bar")
   })
 })

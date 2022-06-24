@@ -1,7 +1,7 @@
-import { Classes } from "../references"
+import { RegisterClass } from "../references"
 import { SingleSubscribable } from "./Observers"
 
-@Classes.register()
+@RegisterClass("Event")
 export class Event<T> extends SingleSubscribable<T> {
   public raise(value: T): void {
     this.fire(value)
