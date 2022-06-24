@@ -19,7 +19,7 @@ export namespace Migrations {
     ;(migrations[formatVersion(version)] ||= []).push(func)
   }
 
-  export function _prepareMock() {
+  export function _prepareMock(): void {
     assert(game && script.active_mods.testorio, "should not mock until game loaded")
     migrations = {}
   }
@@ -33,7 +33,7 @@ export namespace Migrations {
     table.sort(versions)
     return versions.flatMap((v) => migrations[v])
   }
-  export function _doMigrations(oldVersion: string) {
+  export function _doMigrations(oldVersion: string): void {
     const migrations = getMigrationsToRun(oldVersion)
     for (const fn of migrations) fn()
   }
