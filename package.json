@@ -41,9 +41,7 @@
     "build": "yarn build:scripts && tstl",
     "watch": "tstl --watch",
     "watch:locale": "npm-watch",
-    "clean": "del-cli \"**/*.lua\" \"!**/*.def.lua\" \"!**/node_modules/**\"",
-    "remove-empty-dirs": "find ./mod -type d -empty -delete",
-    "deep-clean": "yarn clean && yarn remove-empty-dirs"
+    "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\""
   },
   "watch": {
     "build:locale": "mod/locale/en/en.cfg"

@@ -118,6 +118,8 @@ dist
 
 ### Other
 
+*.map
+
 .idea
 *.iml
 .vscode/
