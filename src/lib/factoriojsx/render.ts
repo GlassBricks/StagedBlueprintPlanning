@@ -1,54 +1,34 @@
 import { Events } from "../Events"
-import { MutableState, SingleObserver, State, Unsubscribe } from "../observable"
+import { MutableState, State, ValueListener } from "../observable"
+import { Subscription } from "../observable/Subscription"
 import { onPlayerInit, onPlayerRemoved } from "../player-init"
 import { protectedAction } from "../protected-action"
-import { bind, Callback, Classes, Func, funcRef, isCallable, registerFunctions, SelflessFun } from "../references"
-import { isEmpty, shallowCopy } from "../util"
+import { bind, Classes, Func, funcRef, isCallable, registerFunctions, SelflessFun } from "../references"
+import { isEmpty } from "../util"
 import { PRecord } from "../util-types"
 import * as propTypes from "./propTypes.json"
-import {
-  ClassComponentSpec,
-  Component,
-  ElementSpec,
-  FCSpec,
-  FragmentSpec,
-  GuiEvent,
-  GuiEventHandler,
-  Spec,
-  Tracker,
-} from "./spec"
+import { ClassComponentSpec, ElementSpec, FCSpec, FragmentSpec, GuiEvent, GuiEventHandler, Spec, Tracker } from "./spec"
 
 type GuiEventName = Extract<keyof typeof defines.events, `on_gui_${string}`>
 
 interface ElementInstance {
-  readonly element: GuiElementMembers
-  readonly playerIndex: PlayerIndex
-  readonly index: GuiElementIndex
-  readonly subscriptions: MutableLuaMap<string, Callback>
-
+  readonly element: BaseGuiElement
+  readonly subscription: Subscription | undefined
   readonly events: PRecord<GuiEventName, Func<any>>
 }
 
-interface TrackerInternal extends Tracker {
-  firstIndex: number | undefined
-  subscriptions: Callback[] & MutableLuaMap<string, Callback>
-  onMountCallbacks: ((this: unknown, element: LuaGuiElement) => void)[][]
-  groupedElements?: LuaGuiElement[]
-  shiftOnMountCallbacks(): void
-}
-
-function setValueObserver(this: LuaGuiElement | LuaStyle, element: LuaGuiElement, key: string, value: any) {
+function setValueObserver(this: LuaGuiElement | LuaStyle, key: string, subscription: Subscription, value: any) {
   if (!this.valid) {
-    destroy(element)
-    return Unsubscribe
+    if (this.object_name === "LuaGuiElement") destroy(this)
+    return subscription.close()
   }
   ;(this as any)[key] = value
 }
 
-function callSetterObserver(this: LuaGuiElement, key: string, value: any) {
+function callSetterObserver(this: LuaGuiElement, key: string, subscription: Subscription, value: any) {
   if (!this.valid) {
     destroy(this)
-    return Unsubscribe
+    return subscription.close()
   }
   if (key === "slider_minimum") {
     ;(this as SliderGuiElement).set_slider_minimum_maximum(value, (this as SliderGuiElement).get_slider_maximum())
@@ -63,29 +43,36 @@ function setStateFunc(this: MutableState<unknown>, key: string, event: GuiEvent)
   this.set((event as any)[key] || event.element![key])
 }
 
-function callComponentOnDestroy(this: Component<any>) {
-  this.onDestroy?.()
+registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc })
+
+interface TrackerInternal extends Tracker {
+  parent: TrackerInternal | undefined
+  firstIndex: number | undefined
+
+  subscriptionContext?: Subscription
+  onMountCallbacks: ((this: unknown, element: LuaGuiElement) => void)[]
 }
 
-registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc, callComponentOnDestroy })
-
-function newTracker(index?: number): TrackerInternal {
-  const subscriptions = {} as TrackerInternal["subscriptions"]
-  const onMountCallbacks: TrackerInternal["onMountCallbacks"] = [[]]
+function newTracker(parent: TrackerInternal | undefined, firstIndex?: number): TrackerInternal {
   return {
-    firstIndex: index,
-    subscriptions,
-    onMountCallbacks,
+    firstIndex,
+    parent,
+    onMountCallbacks: [],
+    subscriptionContext: parent && parent.subscriptionContext,
     onMount(callback: (this: unknown, firstElement: LuaGuiElement) => void) {
-      onMountCallbacks[onMountCallbacks.length - 1].push(callback)
+      this.onMountCallbacks.push(callback)
     },
-    shiftOnMountCallbacks() {
-      onMountCallbacks.push([])
-    },
-    onDestroy(callback: Callback) {
-      subscriptions.push(callback)
+    getSubscription(): Subscription {
+      const { subscriptionContext } = this
+      if (subscriptionContext) return subscriptionContext
+      return (this.subscriptionContext = parent?.getSubscription() ?? new Subscription())
     },
   }
+}
+
+function callOnMount(tracker: TrackerInternal, element: LuaGuiElement): void {
+  for (const callback of tracker.onMountCallbacks) callback(element)
+  if (tracker.parent) return callOnMount(tracker.parent, element)
 }
 
 function isLuaGuiElement(element: unknown): element is LuaGuiElement {
@@ -137,7 +124,7 @@ function renderFragment(
   for (const child of children) {
     const childResult = renderInternal(parent, child, usedTracker)
     if (!childResult || isEmpty(childResult)) continue
-    usedTracker = newTracker()
+    usedTracker = newTracker(undefined)
     if (isLuaGuiElement(childResult)) {
       elements.push(childResult)
     } else {
@@ -145,9 +132,7 @@ function renderFragment(
     }
   }
   if (elements.length === 0) {
-    for (const [, cb] of pairs(shallowCopy(tracker.subscriptions as unknown as Record<any, Callback>))) {
-      cb()
-    }
+    tracker.subscriptionContext?.close()
     return
   }
   return elements
@@ -204,20 +189,19 @@ function renderElement(
   }
 
   const element = parent.add(guiSpec as GuiSpec)
-  const subscriptions = tracker.subscriptions
 
   for (const [key, value] of pairs(elemProps)) {
     if (value instanceof State) {
-      let observer: SingleObserver<unknown>
+      let observer: ValueListener<unknown>
       let name: string
       if (typeof key !== "object") {
-        observer = bind(setValueObserver, element, element, key)
+        observer = bind(setValueObserver, element, key)
         name = key
       } else {
         name = key[0]
         observer = bind(callSetterObserver, element, name)
       }
-      subscriptions.set(name, value.subscribeAndFire(observer))
+      value.subscribeAndFire(tracker.getSubscription(), observer)
     } else if (typeof key !== "object") {
       // simple value
       ;(element as any)[key] = value
@@ -232,7 +216,7 @@ function renderElement(
     const style = element.style
     for (const [key, value] of pairs(styleMod)) {
       if (value instanceof State) {
-        subscriptions.set(key, value.subscribeAndFire(bind(setValueObserver, style, element, key)))
+        value.subscribeAndFire(tracker.getSubscription(), bind(setValueObserver, style, key))
       } else {
         ;(style as any)[key] = value
       }
@@ -242,7 +226,7 @@ function renderElement(
   const children = spec.children
   if (children) {
     for (const child of children as Spec[]) {
-      renderInternal(element, child, newTracker())
+      renderInternal(element, child, newTracker(undefined))
     }
   }
 
@@ -258,21 +242,16 @@ function renderElement(
   }
 
   spec.onCreate?.(element as any)
-  for (const i of $range(tracker.onMountCallbacks.length, 1, -1)) {
-    const callbacks = tracker.onMountCallbacks[i - 1]
-    for (const callback of callbacks) callback(element as any)
-  }
+  callOnMount(tracker, element)
 
-  if (!isEmpty(subscriptions) || !isEmpty(events)) {
+  const subscription = tracker.subscriptionContext
+  if ((subscription && subscription.hasActions()) || !isEmpty(events)) {
     global.guiElements[element.player_index]![element.index] = {
       element,
       events,
-      subscriptions,
-      playerIndex: element.player_index,
-      index: element.index,
+      subscription,
     }
   }
-
   return element
 }
 
@@ -281,16 +260,14 @@ function renderFunctionComponent<T>(parent: BaseGuiElement, spec: FCSpec<T>, tra
 }
 
 function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponentSpec<T>, tracker: TrackerInternal) {
+  const childTracker = newTracker(tracker, tracker.firstIndex)
+
   const Component = spec.type
   Classes.nameOf(Component) // assert registered
   const instance = new Component()
 
-  const resultSpec = instance.render(spec.props, tracker)
-  if (instance.onMount) tracker.onMount((element) => instance.onMount!.call(instance, element, tracker))
-  if (instance.onDestroy) tracker.onDestroy(bind(callComponentOnDestroy, instance))
-
-  tracker.shiftOnMountCallbacks()
-  return renderInternal(parent, resultSpec, tracker)
+  const resultSpec = instance.render(spec.props, childTracker)
+  return renderInternal(parent, resultSpec, childTracker)
 }
 
 export function render<T extends GuiElementType>(
@@ -300,7 +277,7 @@ export function render<T extends GuiElementType>(
 ): Extract<LuaGuiElement, { type: T }>
 export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | undefined
 export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | undefined {
-  const result = renderInternal(parent, element, newTracker(index))
+  const result = renderInternal(parent, element, newTracker(undefined, index))
   if (!result || isLuaGuiElement(result)) return result
   if (result.length > 1) {
     error("cannot render multiple elements at root. Try wrapping them in another element.")
@@ -309,7 +286,7 @@ export function render(parent: BaseGuiElement, element: Spec, index?: number): L
 }
 
 export function renderMultiple(parent: BaseGuiElement, elements: Spec): LuaGuiElement[] | undefined {
-  const result = renderInternal(parent, elements, newTracker())
+  const result = renderInternal(parent, elements, newTracker(undefined))
   return !result || isLuaGuiElement(result) ? [result as LuaGuiElement] : result
 }
 
@@ -322,16 +299,14 @@ export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | und
 }
 
 function getInstance(element: BaseGuiElement): ElementInstance | undefined {
-  if (!element.valid) return undefined
-  return global.guiElements[element.player_index]![element.index]
+  return !element.valid ? undefined : global.guiElements[element.player_index]![element.index]
 }
 
 export function destroy(element: BaseGuiElement | undefined, destroyElement = true): void {
-  if (!element) return
+  if (!element || !element.valid) return
   // is lua gui element
-  const instance = getInstance(element)
+  const instance = global.guiElements[element.player_index]![element.index]
   if (!instance) {
-    if (!element.valid) return
     for (const child of element.children) {
       destroy(child, false)
     }
@@ -341,19 +316,16 @@ export function destroy(element: BaseGuiElement | undefined, destroyElement = tr
     return
   }
 
-  const { subscriptions, playerIndex, index } = instance
+  const { subscription } = instance
+  const { player_index, index } = element
   if (element.valid) {
     for (const child of element.children) {
       destroy(child, false)
     }
   }
-  for (const [, subscription] of shallowCopy(subscriptions)) {
-    subscription()
-  }
-  if (destroyElement && element.valid) {
-    element.destroy()
-  }
-  global.guiElements[playerIndex]![index] = undefined!
+  subscription?.close()
+  if (destroyElement && element.valid) element.destroy()
+  global.guiElements[player_index]![index] = undefined!
 }
 
 export function destroyChildren(element: BaseGuiElement): void {

@@ -1,6 +1,5 @@
 export * from "./Observable"
 export * from "./State"
-export * from "./Event"
 export * from "./ObservableList"
 export * from "./ObservableMap"
 export * from "./ObservableSet"

@@ -1,22 +1,39 @@
-import { bind, Callback, Func, funcRef, RegisterClass, Registered } from "../references"
-import { Subscribable, Unsubscribe } from "./Observable"
-import { Observers } from "./Observers"
+import { bind, bound, Callback, Func, funcRef, reg, RegisterClass, Registered } from "../references"
+import { isEmpty } from "../util"
+import { ObserverList, Subscribable } from "./Observable"
+import { Subscription } from "./Subscription"
 
-declare const ObservableBrand: unique symbol
+export interface ChangeListener<T> extends Registered {
+  (this: unknown, subscription: Subscription, value: T, oldValue: T): void
+}
+
+export interface PartialChangeListener<T> extends Registered {
+  (this: unknown, subscription: Subscription, value: T, oldValue: T | undefined): void
+}
 
 export abstract class State<T> implements Subscribable<ChangeListener<T>> {
-  declare [ObservableBrand]: true
   abstract get(): T
 
-  protected listeners = new Observers<ChangeListener<T>>()
-  subscribe(observer: ChangeListener<T>): Callback {
-    return this.listeners.addSubscription(observer)
+  protected event = new ObserverList<ChangeListener<T>>()
+  subscribeIndependently(observer: ChangeListener<T>): Subscription {
+    return this.event.subscribeIndependently(observer)
   }
 
-  subscribeAndFire(observer: PartialChangeListener<T>): Callback {
-    const callback = this.subscribe(observer)
-    observer(this.get(), undefined)
-    return callback
+  subscribe(context: Subscription, observer: ChangeListener<T>): Subscription {
+    const subscription = this.subscribeIndependently(observer)
+    context.add(subscription)
+    return subscription
+  }
+
+  subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
+    const subscription = this.event.subscribe(context, observer)
+    observer(subscription, this.get(), undefined)
+    return subscription
+  }
+  subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {
+    const subscription = this.subscribeIndependently(observer)
+    observer(subscription, this.get(), undefined)
+    return subscription
   }
 
   map<V>(mapper: Mapper<T, V>): State<V> {
@@ -37,16 +54,8 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   }
 
   static _numObservers(state: State<any>): number {
-    return table_size(state.listeners)
+    return table_size(state.event)
   }
-}
-
-export interface ChangeListener<T> extends Registered {
-  (this: unknown, value: T, oldValue: T): void | typeof Unsubscribe
-}
-
-export interface PartialChangeListener<T> extends Registered {
-  (this: unknown, value: T, oldValue: T | undefined): void | typeof Unsubscribe
 }
 
 export type Mapper<T, U> = Func<(value: T) => U>
@@ -62,12 +71,10 @@ export interface MutableState<T> extends State<T> {
   forceUpdate(): void
 }
 
-@RegisterClass("State")
+@RegisterClass("MutableState")
 class MutableStateImpl<T> extends State<T> implements MutableState<T> {
-  public value: T
-  public constructor(value: T) {
+  public constructor(public value: T) {
     super()
-    this.value = value
   }
 
   get(): T {
@@ -78,14 +85,14 @@ class MutableStateImpl<T> extends State<T> implements MutableState<T> {
     const oldValue = this.value
     this.value = value
     if (oldValue !== value) {
-      this.listeners.fire(value, oldValue)
+      this.event.raise(value, oldValue)
     }
   }
 
   public forceUpdate(value: T = this.value): void {
     const oldValue = this.value
     this.value = value
-    this.listeners.fire(value, oldValue)
+    this.event.raise(value, oldValue)
   }
 
   private static setValueFn(this: MutableStateImpl<any>, value: unknown) {
@@ -107,39 +114,45 @@ export function state<T>(value: T): MutableState<T> {
 
 @RegisterClass("MappedState")
 class MappedState<T, U> extends State<U> {
+  private sourceSubscription: Subscription | undefined
+  private curValue: U | undefined
+
   public constructor(private readonly source: State<T>, private readonly mapper: Mapper<T, U>) {
     super()
   }
 
   get(): U {
+    if (this.sourceSubscription) return this.curValue!
     return this.mapper(this.source.get())
   }
 
-  private static mappedObserver(
-    this: ChangeListener<any>,
-    mapper: Mapper<any, any>,
-    state: {
-      oldValueSet: boolean
-      oldValue?: unknown
-    },
-    value: unknown,
-    oldValue: unknown,
-  ) {
-    let oldMappedValue: unknown
-    if (!state.oldValueSet) {
-      oldMappedValue = state.oldValue = mapper(oldValue)
-      state.oldValueSet = true
-    } else {
-      oldMappedValue = state.oldValue
-    }
-    const newMappedValue = mapper(value)
-    if (oldMappedValue !== newMappedValue) {
-      state.oldValue = newMappedValue
-      return this(newMappedValue, oldMappedValue)
-    }
+  private subscribeToSource() {
+    const { source, sourceListener, mapper } = this
+    this.sourceSubscription?.close()
+    this.sourceSubscription = source.subscribeIndependently(reg(sourceListener))
+    this.curValue = mapper(source.get())
   }
-  override subscribe(observer: ChangeListener<U>): Callback {
-    return this.source.subscribe(bind(MappedState.mappedObserver, observer, this.mapper, { oldValueSet: false }))
+
+  private unsubscribeFromSource() {
+    this.sourceSubscription?.close()
+    this.sourceSubscription = undefined
+    this.curValue = undefined
+  }
+
+  @bound
+  private sourceListener(_: Subscription, sourceNewValue: T) {
+    if (isEmpty(this.event)) return this.unsubscribeFromSource()
+
+    const { curValue: oldValue, mapper } = this
+    const mappedNewValue = mapper(sourceNewValue)
+    if (oldValue === mappedNewValue) return
+    this.curValue = mappedNewValue
+    this.event.raise(mappedNewValue, oldValue!)
+  }
+
+  override subscribeIndependently(observer: ChangeListener<U>): Subscription {
+    if (!this.sourceSubscription) this.subscribeToSource()
+    return super.subscribeIndependently(observer)
   }
 }
 

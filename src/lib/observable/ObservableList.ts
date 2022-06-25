@@ -1,6 +1,6 @@
-import { bind, Callback, RegisterClass, Registered, registerFunctions } from "../references"
-import { Observable } from "./Observable"
-import { SingleSubscribable } from "./Observers"
+import { RegisterClass } from "../references"
+import { Event, ValueListener, ValueSubscribable } from "./Observable"
+import { Subscription } from "./Subscription"
 
 export type ObservableListAdd<T> = {
   list: ObservableList<T>
@@ -35,7 +35,9 @@ export type ObservableListChange<T> =
   | ObservableListSwap<T>
   | ObservableListSet<T>
 
-export interface ObservableList<T extends AnyNotNil> extends Observable<ObservableListChange<T>> {
+export type ListObserver<T> = ValueListener<ObservableListChange<T>>
+
+export interface ObservableList<T extends AnyNotNil> extends ValueSubscribable<ObservableListChange<T>> {
   length(): number
   value(): readonly T[]
   get(index: number): T
@@ -51,11 +53,17 @@ export interface MutableObservableList<T extends AnyNotNil> extends ObservableLi
 }
 
 @RegisterClass("ObservableList")
-class ObservableListImpl<T extends AnyNotNil>
-  extends SingleSubscribable<ObservableListChange<T>>
-  implements MutableObservableList<T>
-{
+class ObservableListImpl<T extends AnyNotNil> implements MutableObservableList<T> {
+  private event = new Event<ObservableListChange<T>>()
   private array: T[] = []
+
+  public subscribe(context: Subscription, observer: ListObserver<T>): Subscription {
+    return this.event.subscribe(context, observer)
+  }
+
+  public subscribeIndependently(observer: ListObserver<T>): Subscription {
+    return this.event.subscribeIndependently(observer)
+  }
 
   public length(): number {
     return this.array.length
@@ -74,7 +82,7 @@ class ObservableListImpl<T extends AnyNotNil>
     const oldValue = array[index]
     if (oldValue !== value) {
       array[index] = value
-      this.fire({
+      this.event.raise({
         list: this,
         type: "set",
         index,
@@ -87,7 +95,7 @@ class ObservableListImpl<T extends AnyNotNil>
   public insert(index: number, value: T): void {
     const { array } = this
     table.insert(array, index + 1, value)
-    this.fire({
+    this.event.raise({
       list: this,
       type: "add",
       index,
@@ -99,7 +107,7 @@ class ObservableListImpl<T extends AnyNotNil>
     const { array } = this
     const oldValue = array[index]
     table.remove(array, index + 1)
-    this.fire({
+    this.event.raise({
       list: this,
       type: "remove",
       index,
@@ -122,7 +130,7 @@ class ObservableListImpl<T extends AnyNotNil>
     const oldValueB = array[indexB]
     array[indexA] = oldValueB
     array[indexB] = oldValueA
-    this.fire({
+    this.event.raise({
       list: this,
       type: "swap",
       indexA,
@@ -136,63 +144,3 @@ class ObservableListImpl<T extends AnyNotNil>
 export function observableList<T extends AnyNotNil>(): MutableObservableList<T> {
   return new ObservableListImpl<T>()
 }
-
-export interface ObserveEachFn<T extends object> extends Registered {
-  (this: unknown, value: T, index: number, type: "add"): Callback[] | undefined
-  (this: unknown, value: T, index: number, type: "swap"): void
-  (this: unknown, value: T, index: number, type: "remove"): void
-}
-export function observeEachUnique<T extends object>(
-  list: ObservableList<T>,
-  fn: ObserveEachFn<T>,
-  fireNow?: boolean,
-): Callback {
-  const listener = bind(observeEachListener, fn, new LuaMap<T, Callback[] | undefined>())
-  const cb = list.subscribe(listener)
-  if (fireNow) {
-    for (const [index, value] of ipairs(list.value())) {
-      listener({
-        list,
-        type: "add",
-        value,
-        index: index - 1,
-      })
-    }
-  }
-  return cb
-}
-function observeEachListener<T extends object>(
-  this: ObserveEachFn<T>,
-  callbacks: MutableLuaMap<T, Callback[] | undefined>,
-  change: ObservableListChange<T>,
-): void {
-  const { type } = change
-  if (type === "add") {
-    const { index, value } = change
-    const callback = this(value, index, type)
-    callbacks.set(value, callback)
-  } else if (type === "remove") {
-    const { value } = change
-    const callback = callbacks.get(value)
-    if (callback) {
-      callbacks.set(value, undefined)
-      for (const cb of callback) cb()
-    }
-    this(value, change.index, type)
-  } else if (type === "set") {
-    const { value, oldValue, index } = change
-    const oldCallback = callbacks.get(oldValue)
-    if (oldCallback) {
-      callbacks.set(oldValue, undefined)
-      for (const cb of oldCallback) cb()
-    }
-    this(oldValue, index, "remove")
-    const callback = this(value, index, "add")
-    callbacks.set(value, callback)
-  } else if (type === "swap") {
-    const { indexA, indexB, newValueA, newValueB } = change
-    this(newValueA, indexA, "swap")
-    this(newValueB, indexB, "swap")
-  }
-}
-registerFunctions("ObservableList", { observeEachListener })

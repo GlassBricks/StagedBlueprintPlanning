@@ -1,8 +1,8 @@
 // noinspection JSUnusedLocalSymbols
 
 import { RegisterClass } from "../references"
-import { Observable } from "./Observable"
-import { SingleSubscribable } from "./Observers"
+import { Event, ValueListener, ValueSubscribable } from "./Observable"
+import { Subscription } from "./Subscription"
 
 export interface ObservableSetChange<T> {
   set: ObservableSet<T>
@@ -10,7 +10,9 @@ export interface ObservableSetChange<T> {
   added?: true
 }
 
-export interface ObservableSet<T> extends Observable<ObservableSetChange<T>>, LuaSetIterable<T> {
+export type SetObserver<T> = ValueListener<ObservableSetChange<T>>
+
+export interface ObservableSet<T> extends ValueSubscribable<ObservableSetChange<T>>, LuaSetIterable<T> {
   size(): number
   has(value: T): boolean
   value(): LuaSet<T>
@@ -29,9 +31,17 @@ export function observableSet<T>(): MutableObservableSet<T> {
 interface ObservableSetImpl<T> extends LuaSetIterable<T> {}
 
 @RegisterClass("ObservableSet")
-class ObservableSetImpl<T> extends SingleSubscribable<ObservableSetChange<T>> implements MutableObservableSet<T> {
+class ObservableSetImpl<T> implements MutableObservableSet<T> {
+  private event = new Event<ObservableSetChange<T>>()
   private set = new LuaSet<T>()
   private _size = 0
+
+  public subscribe(context: Subscription, observer: SetObserver<T>): Subscription {
+    return this.event.subscribe(context, observer)
+  }
+  subscribeIndependently(observer: SetObserver<T>): Subscription {
+    return this.event.subscribeIndependently(observer)
+  }
 
   public has(value: T): boolean {
     return this.value().has(value)
@@ -50,7 +60,7 @@ class ObservableSetImpl<T> extends SingleSubscribable<ObservableSetChange<T>> im
     if (!set.has(value)) {
       set.add(value)
       this._size++
-      this.fire({ set: this, value, added: true })
+      this.event.raise({ set: this, value, added: true })
     }
   }
 
@@ -59,7 +69,7 @@ class ObservableSetImpl<T> extends SingleSubscribable<ObservableSetChange<T>> im
     if (set.has(value)) {
       set.delete(value)
       this._size--
-      this.fire({ set: this, value })
+      this.event.raise({ set: this, value })
     }
   }
 

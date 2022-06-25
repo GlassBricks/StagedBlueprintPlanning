@@ -1,20 +1,21 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { Callback, Func } from "../references"
+import { Subscription } from "../observable/Subscription"
+import { Func } from "../references"
 import { ElementSpec } from "./element-specs"
 
 export * from "./element-specs"
 
-/** @noSelf */
 export interface Tracker {
   /**
    * This does not have to be a registered func.
    */
   onMount(callback: (this: unknown, firstElement: LuaGuiElement) => void): void
+
   /**
-   * As this function will be stored, only registered funcs can be added.
+   * This is closed when the element is destroyed.
    */
-  onDestroy(callback: Callback): void
+  getSubscription(): Subscription
 }
 
 export type FunctionComponent<T> = (props: T, tracker: Tracker) => Spec
@@ -22,9 +23,6 @@ export type FunctionComponent<T> = (props: T, tracker: Tracker) => Spec
 export abstract class Component<P> {
   abstract render(props: P, tracker: Tracker): Spec
   declare _props: P
-
-  onMount?(firstElement: LuaGuiElement, tracker: Tracker): void
-  onDestroy?(): void
 }
 
 export type EmptyProps = Record<any, never>

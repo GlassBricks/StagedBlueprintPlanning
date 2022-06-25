@@ -321,7 +321,7 @@ test("tracker onDestroy", () => {
   const fn = spy<Callback>()
   const spec: FCSpec<any> = {
     type(props, tracker) {
-      tracker.onDestroy(fn)
+      tracker.getSubscription().add(fn)
 
       return { type: "flow" }
     },
@@ -352,21 +352,16 @@ describe("Class component", () => {
     }
 
     render(props: Props, tracker: Tracker): Spec {
-      tracker.onMount(() => results.push("trackerOnMount"))
+      tracker.onMount((element) => {
+        assert.equal("flow", element.type)
+        results.push("onMount")
+      })
+      tracker.getSubscription().add(asFunc(() => results.push("destroyed")))
       results.push("render")
       return {
         type: "flow",
         onCreate: props.cb,
       }
-    }
-
-    override onMount(element: BaseGuiElement) {
-      results.push("mount")
-      results.push(element?.type ?? error("no element in onMount"))
-    }
-
-    override onDestroy() {
-      results.push("destroyed")
     }
   }
 
@@ -378,21 +373,16 @@ describe("Class component", () => {
     }
 
     render(props: Props, tracker: Tracker): Spec {
-      tracker.onMount(() => results.push("trackerOnMount2"))
+      tracker.onMount((element) => {
+        assert.equal("flow", element.type)
+        results.push("onMount2")
+      })
+      tracker.getSubscription().add(asFunc(() => results.push("destroyed2")))
       results.push("render2")
       return {
         type: Foo,
         props: { cb: props.cb },
       }
-    }
-
-    override onMount(element: BaseGuiElement) {
-      results.push("mount2")
-      results.push((element?.type ?? error("no element in onMount")) + "2")
-    }
-
-    override onDestroy() {
-      results.push("destroyed2")
     }
   }
 
@@ -408,7 +398,7 @@ describe("Class component", () => {
     const element = testRender(spec).native
 
     assert.equal("flow", element.type)
-    assert.same(["constructed", "render", "cb flow", "trackerOnMount", "mount", "flow"], results)
+    assert.same(["constructed", "render", "cb flow", "onMount"], results)
     results.length = 0
     destroy(element)
     assert.same(["destroyed"], results)
@@ -422,22 +412,7 @@ describe("Class component", () => {
     const element = testRender(spec).native
 
     assert.equal("flow", element.type)
-    assert.same(
-      [
-        "constructed2",
-        "render2",
-        "constructed",
-        "render",
-        "cb flow",
-        "trackerOnMount",
-        "mount",
-        "flow",
-        "trackerOnMount2",
-        "mount2",
-        "flow2",
-      ],
-      results,
-    )
+    assert.same(["constructed2", "render2", "constructed", "render", "cb flow", "onMount", "onMount2"], results)
     results.length = 0
     destroy(element)
     assert.same(["destroyed2", "destroyed"], results)
@@ -467,7 +442,7 @@ describe("function component", () => {
     results.push("render")
     tracker.onMount(() => results.push("mountA"))
     tracker.onMount(() => results.push("mountB"))
-    tracker.onDestroy(asFunc(() => results.push("destroyed")))
+    tracker.getSubscription().add(asFunc(() => results.push("destroyed")))
     return {
       type: "flow",
       onCreate: props.cb,
@@ -478,7 +453,7 @@ describe("function component", () => {
     results.push("render2")
     tracker.onMount(() => results.push("mount2A"))
     tracker.onMount(() => results.push("mount2B"))
-    tracker.onDestroy(asFunc(() => results.push("destroyed2")))
+    tracker.getSubscription().add(asFunc(() => results.push("destroyed2")))
     return {
       type: Component,
       props: { cb: props.cb },

@@ -1,8 +1,8 @@
 // noinspection JSUnusedLocalSymbols
 
 import { RegisterClass } from "../references"
-import { Observable } from "./Observable"
-import { SingleSubscribable } from "./Observers"
+import { Event, ValueListener, ValueSubscribable } from "./Observable"
+import { Subscription } from "./Subscription"
 
 export interface ObservableMapChange<K extends AnyNotNil, V> {
   map: ObservableMap<K, V>
@@ -11,8 +11,10 @@ export interface ObservableMapChange<K extends AnyNotNil, V> {
   value: V | undefined
 }
 
+export type MapObserver<K extends AnyNotNil, V> = ValueListener<ObservableMapChange<K, V>>
+
 export interface ObservableMap<K extends AnyNotNil, V>
-  extends Observable<ObservableMapChange<K, V>>,
+  extends ValueSubscribable<ObservableMapChange<K, V>>,
     LuaPairsIterable<K, V> {
   size(): number
   get(key: K): V | undefined
@@ -28,12 +30,18 @@ export interface MutableObservableMap<K extends AnyNotNil, V> extends Observable
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface ObservableMapImpl<K extends AnyNotNil, V> extends LuaPairsIterable<K, V> {}
 @RegisterClass("ObservableMap")
-class ObservableMapImpl<K extends AnyNotNil, V>
-  extends SingleSubscribable<ObservableMapChange<K, V>>
-  implements MutableObservableMap<K, V>
-{
+class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<K, V> {
+  private event = new Event<ObservableMapChange<K, V>>()
   private _map = new LuaMap<K, V | undefined>()
   private _size = 0
+
+  public subscribe(context: Subscription, observer: MapObserver<K, V>): Subscription {
+    return this.event.subscribe(context, observer)
+  }
+
+  public subscribeIndependently(observer: MapObserver<K, V>): Subscription {
+    return this.event.subscribeIndependently(observer)
+  }
 
   public size(): number {
     return this._size
@@ -60,7 +68,7 @@ class ObservableMapImpl<K extends AnyNotNil, V>
         this._size--
       }
       _map.set(key, value)
-      this.fire({ map: this, key, oldValue, value })
+      this.event.raise({ map: this, key, oldValue, value })
     }
   }
 
