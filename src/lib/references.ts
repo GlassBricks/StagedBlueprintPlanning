@@ -54,7 +54,7 @@ Events.on_load(() => {
         `Could not find a class with the name "${className}". Check that the class was registered properly, and/or migrations are correct.`,
       )
     }
-    setmetatable(table, type.prototype)
+    setmetatable(table, _class.prototype)
   }
   for (const [table] of global.__classes) {
     table[OnLoad]?.()
@@ -252,7 +252,7 @@ function funcRefBasedClass<C extends unknown[], A extends unknown[], R>(
   }
   initialPrototype.constructor = initialClass
 
-  Classes.registerRaw(fullName, initialClass)
+  RegisterClass(fullName)(initialClass)
 
   return initialClass as any
 }
@@ -385,18 +385,18 @@ export const bindN: <T, AX, R>(
   ...args: AX[]
 ) => Func<(...args: AX[]) => R> = bind as any
 
-// @RegisterClass("KeyFunc")
-// class KeyFunc {
-//   constructor(private readonly instance: Record<keyof any, ContextualFun>, private readonly key: keyof any) {}
-//
-//   __call(thisArg: unknown, ...args: unknown[]) {
-//     return this.instance[this.key](...args)
-//   }
-// }
-//
-// export function funcOn<T extends Record<K, ContextualFun>, K extends keyof T>(obj: T, key: K): Func<T[K]> {
-//   return new KeyFunc(obj, key) as any
-// }
+@RegisterClass("KeyFunc")
+class KeyFunc {
+  constructor(private readonly instance: Record<keyof any, ContextualFun>, private readonly key: keyof any) {}
+
+  __call(thisArg: unknown, ...args: unknown[]) {
+    return this.instance[this.key](...args)
+  }
+}
+
+export function funcOn<T extends Record<K, ContextualFun>, K extends keyof T>(obj: T, key: K): Func<T[K]> {
+  return new KeyFunc(obj, key) as any
+}
 
 @RegisterClass("BoundPrototypeFunc")
 class BoundPrototypeFunc {
