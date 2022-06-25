@@ -8,14 +8,22 @@ export class Registry<T> {
     if (game) {
       error("This operation must only be done during script load.")
     }
-    const existing: T = this.nameToItem[name]
-    if (existing) {
+    const existingItem: T = this.nameToItem[name]
+    if (existingItem) {
       error(
-        `${this.itemName} with the name ${name} is already registered, existing is: ${this.getDebugDescription(
-          existing,
+        `${this.itemName} with the name "${name}" is already registered, existing is: ${this.getDebugDescription(
+          existingItem,
         )}`,
       )
     }
+
+    const existingName = this.itemToName.get(item)
+    if (existingName) {
+      error(
+        `${this.itemName} registered with different names, existing is: ${existingName}, tried to register again as ${name}`,
+      )
+    }
+
     this.nameToItem[name] = item
     this.itemToName.set(item, name)
   }

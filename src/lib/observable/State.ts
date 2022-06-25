@@ -11,6 +11,7 @@ export interface PartialChangeListener<T> extends Registered {
   (this: unknown, subscription: Subscription, value: T, oldValue: T | undefined): void
 }
 
+@RegisterClass("State")
 export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   abstract get(): T
 

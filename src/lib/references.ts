@@ -20,14 +20,15 @@ export interface Class<T> {
   prototype: T
 }
 
+interface ClassInfo {
+  processed?: true
+  boundFuncKeys?: (keyof any)[]
+}
 interface RegisteredClass {
   name: string
   prototype: ClassInstance & LuaMetatable<ClassInstance>
   ____super?: RegisteredClass
-  [ClassInfo]?: {
-    processed?: true
-    boundFuncKeys?: (keyof any)[]
-  }
+  [ClassInfo]?: ClassInfo
 }
 
 interface ClassInstance extends WithOnLoad {
@@ -62,21 +63,38 @@ Events.on_load(() => {
 })
 
 function onClassRegistered(name: string, item: RegisteredClass) {
+  const info: ClassInfo = rawget(item, ClassInfo) ?? (item[ClassInfo] = {})
   const prototype = item.prototype
   prototype[ClassInfo] = name
+
   // make sure __call meta-method works for subclasses
   rawset(prototype, "__call", prototype.__call)
 
-  function bindFuncsInConstructor(prototype: ClassInstance & LuaMetatable<ClassInstance>, keys: (keyof any)[]) {
+  // register static functions
+  for (const [key, value] of pairs(item)) {
+    // noinspection SuspiciousTypeOfGuard
+    if (typeof value === "function" && typeof key === "string") {
+      Functions.registerRaw((name + "." + key) as string, value)
+    }
+  }
+
+  // bind funcs in constructor
+  const { boundFuncKeys } = info
+  if (boundFuncKeys) {
     const originalConstructor = prototype.____constructor
     prototype.____constructor = function (this: Record<keyof any, ContextualFun>, ...args: any[]) {
-      for (const funcKey of keys) {
+      for (const funcKey of boundFuncKeys) {
         this[funcKey] = boundPrototypeFunc(this, funcKey)
       }
       originalConstructor.call(this, ...args)
     }
   }
-  function registerInstanceInConstructor(prototype: ClassInstance & LuaMetatable<ClassInstance>) {
+
+  const superClass = item.____super
+  if (superClass) {
+    if (!classIsProcessed(superClass)) error(`The superclass of ${name} (${superClass.name}) was not processed.`)
+  } else {
+    // register this instance in constructor
     const originalConstructor = prototype.____constructor
     prototype.____constructor = function (this: ClassInstance, ...args: any[]) {
       global.__classes.set(this, this[ClassInfo])
@@ -84,31 +102,11 @@ function onClassRegistered(name: string, item: RegisteredClass) {
     }
   }
 
-  function processConstructors(currentClass: RegisteredClass, info: RegisteredClass[typeof ClassInfo] & object) {
-    const thisPrototype = currentClass.prototype
-    if (info.boundFuncKeys) bindFuncsInConstructor(thisPrototype, info.boundFuncKeys)
-    if (currentClass.____super === undefined) registerInstanceInConstructor(thisPrototype)
-  }
+  info.processed = true
 
-  function registerStaticFunctions(currentClass: RegisteredClass) {
-    for (const [key, value] of pairs(currentClass)) {
-      // noinspection SuspiciousTypeOfGuard
-      if (typeof value === "function" && typeof key === "string") {
-        Functions.registerRaw((name + "." + key) as string, value)
-      }
-    }
-  }
-
-  let currentClass: RegisteredClass | undefined = item
-  while (currentClass !== undefined) {
-    registerStaticFunctions(currentClass)
-    // process constructors
-    const info: RegisteredClass[typeof ClassInfo] = rawget(currentClass, ClassInfo) ?? (currentClass[ClassInfo] = {})
-    if (!info.processed) {
-      info.processed = true
-      processConstructors(currentClass, info)
-    }
-    currentClass = currentClass.____super
+  function classIsProcessed(_class: RegisteredClass) {
+    const info = rawget(_class, ClassInfo)
+    return info && info.processed
   }
 }
 

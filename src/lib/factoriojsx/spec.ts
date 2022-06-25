@@ -1,7 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 import { Subscription } from "../observable/Subscription"
-import { Func } from "../references"
+import { Func, RegisterClass } from "../references"
 import { ElementSpec } from "./element-specs"
 
 export * from "./element-specs"
@@ -20,6 +20,7 @@ export interface Tracker {
 
 export type FunctionComponent<T> = (props: T, tracker: Tracker) => Spec
 
+@RegisterClass("FactorioJsxComponent")
 export abstract class Component<P> {
   abstract render(props: P, tracker: Tracker): Spec
   declare _props: P

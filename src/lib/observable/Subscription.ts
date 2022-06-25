@@ -1,4 +1,4 @@
-import { Func, isCallable } from "../references"
+import { Func, isCallable, RegisterClass } from "../references"
 
 export interface Unsubscribable {
   close(): void
@@ -13,6 +13,7 @@ export class UnsubscriptionError extends Error {
 
 export type Unsubscription = Unsubscribable | Func<() => void>
 
+@RegisterClass("Subscription")
 export class Subscription implements Unsubscribable {
   // if undefined, is closed
   _children: MutableLuaSet<Unsubscription> | undefined = new LuaSet()
