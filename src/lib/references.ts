@@ -148,13 +148,13 @@ export type AnyFunction = Function
 export type ContextualFun = (this: any, ...args: any) => any
 export type SelflessFun = (this: void, ...args: any) => any
 
-export type Registered = { _registeredBrand: true }
+export type RegisterdFunc = { _registeredBrand: true }
 export type Func<F extends ContextualFun> = (F extends (this: any, ...args: infer A) => infer R
   ? (this: unknown, ...args: A) => R
   : ContextualFun) &
-  Registered
+  RegisterdFunc
 
-export type Callback = ((this: unknown) => void) & Registered
+export type Callback = ((this: unknown) => void) & RegisterdFunc
 
 export const Functions = new Registry<AnyFunction>("function", (func: AnyFunction) =>
   serpent.block(type(func) === "function" ? debug.getinfo(func) : func, { nocode: true }),
