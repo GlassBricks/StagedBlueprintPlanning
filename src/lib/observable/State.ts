@@ -11,6 +11,9 @@ export interface PartialChangeListener<T> extends RegisterdFunc {
   (this: unknown, subscription: Subscription, value: T, oldValue: T | undefined): void
 }
 
+export type MaybeState<T> = State<T> | T
+export type MaybeMutableState<T> = MutableState<T> | T
+
 @RegisterClass("State")
 export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   abstract get(): T
@@ -39,6 +42,10 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
 
   map<V>(mapper: Mapper<T, V>): State<V> {
     return new MappedState(this, mapper)
+  }
+
+  flatMap<V>(mapper: Mapper<T, MaybeState<V>>): State<V> {
+    return new FlatMappedState(this, mapper)
   }
 
   switch<V>(whenTruthy: V, whenFalsy: V): State<V> {
@@ -157,5 +164,75 @@ class MappedState<T, U> extends State<U> {
   }
 }
 
-export type MaybeState<T> = State<T> | T
-export type MaybeMutableState<T> = MutableState<T> | T
+@RegisterClass("FlatMappedState")
+class FlatMappedState<T, U> extends State<U> {
+  private sourceSubscription: Subscription | undefined
+  private nestedSubscription: Subscription | undefined
+  private curValue: U | undefined
+
+  public constructor(private readonly source: State<T>, private readonly mapper: Mapper<T, MaybeState<U>>) {
+    super()
+  }
+
+  get(): U {
+    if (this.sourceSubscription) return this.curValue!
+
+    const mappedValue = this.mapper(this.source.get())
+    return mappedValue instanceof State ? mappedValue.get() : mappedValue
+  }
+
+  private subscribeToSource() {
+    const { source, sourceListener, mapper } = this
+    this.sourceSubscription?.close()
+    this.sourceSubscription = source.subscribeIndependently(reg(sourceListener))
+    this.receiveNewMappedValue(mapper(source.get()))
+  }
+
+  private receiveNewMappedValue(newValue: MaybeState<U>) {
+    this.nestedSubscription?.close()
+    if (newValue instanceof State) {
+      this.nestedSubscription = newValue.subscribeIndependently(reg(this.nestedListener))
+      this.curValue = newValue.get()
+    } else {
+      this.nestedSubscription = undefined
+      this.curValue = newValue
+    }
+  }
+
+  @bound
+  private sourceListener(_: Subscription, sourceNewValue: T) {
+    if (isEmpty(this.event)) return this.unsubscribeFromSource()
+
+    const { curValue: oldValue, mapper } = this
+    const newMappedValue = mapper(sourceNewValue)
+    this.receiveNewMappedValue(newMappedValue)
+    const newValue = this.curValue
+    if (oldValue !== newValue) this.event.raise(newValue!, oldValue!)
+  }
+
+  @bound
+  private nestedListener(_: Subscription, nestedNewValue: U) {
+    if (isEmpty(this.event)) return this.unsubscribeFromSource()
+    const oldValue = this.curValue
+    this.curValue = nestedNewValue
+    if (oldValue !== nestedNewValue) this.event.raise(nestedNewValue, oldValue!)
+  }
+
+  private unsubscribeFromSource() {
+    const { sourceSubscription, nestedSubscription } = this
+    if (nestedSubscription) {
+      nestedSubscription.close()
+      this.nestedSubscription = undefined
+    }
+    if (sourceSubscription) {
+      sourceSubscription.close()
+      this.sourceSubscription = undefined
+    }
+    this.curValue = undefined
+  }
+
+  override subscribeIndependently(observer: ChangeListener<U>): Subscription {
+    if (!this.sourceSubscription) this.subscribeToSource()
+    return super.subscribeIndependently(observer)
+  }
+}
