@@ -6,6 +6,8 @@ declare let global: unknown
 
 if (script.active_mods.testorio) {
   function reinit() {
+    const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
+    if (inventories) inventories.forEach((x) => x.destroy())
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     global = {}
     Events.raiseFakeEventNamed("on_init", undefined)
@@ -31,7 +33,7 @@ if (script.active_mods.testorio) {
   require("__testorio__/init")(__getTestFiles(), {
     tag_blacklist: tagBlacklist,
     before_test_run() {
-      // reinit()
+      reinit()
       const force = game.forces.player
       force.enable_all_recipes()
     },

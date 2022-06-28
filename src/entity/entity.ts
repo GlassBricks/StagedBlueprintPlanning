@@ -6,7 +6,7 @@ export interface Entity {
 
   readonly position: Position
 
-  readonly direction: defines.direction | undefined
+  readonly direction?: defines.direction
 }
 
 export interface AddEntity extends Entity {

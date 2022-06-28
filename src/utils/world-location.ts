@@ -9,3 +9,10 @@ export interface WorldArea {
   readonly surface: LuaSurface
   readonly bbox: BBox
 }
+
+export function leftTop(area: WorldArea): WorldPosition {
+  return {
+    surface: area.surface,
+    position: area.bbox.left_top,
+  }
+}
