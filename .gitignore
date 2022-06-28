@@ -130,4 +130,4 @@ dist
 tstlPlugin/*.js
 tstlPlugin/*.js.map
 
-factorioConfig/
+factorio/

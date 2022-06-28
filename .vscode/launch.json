@@ -1,0 +1,70 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "factoriomod",
+      "request": "launch",
+      "name": "Test run",
+      "adjustMods": {
+        "bbpp3": true,
+        "WiderNoticeTextBoxes": true,
+        "testorio": true
+      },
+      "disableExtraMods": true,
+      "factorioArgs": [
+        "--load-scenario",
+        "BBPP2Test",
+        "--window-size",
+        "1440,1200",
+        "--cache-sprite-atlas",
+        "true",
+        "--graphics-quality",
+        "low",
+        "-c",
+        "${workspaceRoot}/factorio/config.ini",
+        "-mod-directory",
+        "${workspaceRoot}/factorio"
+      ],
+      "checkGlobals": false,
+      "hookControl": false
+    },
+    {
+      "type": "factoriomod",
+      "request": "launch",
+      "name": "Test debug",
+      "adjustMods": {
+        "bbpp3": true,
+        "WiderNoticeTextBoxes": true,
+        "testorio": true
+      },
+      "disableExtraMods": true,
+      "factorioArgs": [
+        "--load-scenario",
+        "BBPP2Test",
+        "--window-size",
+        "1440,1200",
+        "--cache-sprite-atlas",
+        "true",
+        "--graphics-quality",
+        "low",
+        "-c",
+        "${workspaceRoot}/factorio/config.ini",
+        "-mod-directory",
+        "${workspaceRoot}/factorio"
+      ],
+      "checkGlobals": false,
+      "hookControl": true
+    },
+    {
+      "type": "factoriomod",
+      "request": "launch",
+      "name": "debug only",
+      "factorioArgs": ["--cache-sprite-atlas", "true", "--graphics-qualtPity", "low"],
+      "checkGlobals": false,
+      "hookControl": true
+    }
+  ]
+}
