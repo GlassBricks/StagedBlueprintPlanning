@@ -11,6 +11,8 @@ const _ceil = math.ceil
 export type Position = MapPositionTable
 export type PositionClass = WithMetatable<Position, typeof Pos>
 
+export type Vec2 = Position
+
 function Pos(x: number, y: number): PositionClass {
   return setmetatable({ x, y }, meta)
 }
