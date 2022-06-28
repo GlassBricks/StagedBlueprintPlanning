@@ -44,6 +44,6 @@
     "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\""
   },
   "watch": {
-    "build:locale": "mod/locale/en/en.cfg"
+    "build:locale": "src/locale/en/en.cfg"
   }
 }
