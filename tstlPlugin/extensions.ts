@@ -94,7 +94,7 @@ function transformLuaTableFirstMethod(
 
 const plugin: Plugin = {
   visitors: {
-    [ts.SyntaxKind.DeleteExpression]: (node: ts.DeleteExpression, context: TransformationContext) => {
+    [ts.SyntaxKind.DeleteExpression](node: ts.DeleteExpression, context: TransformationContext) {
       const deleteCall = context.superTransformExpression(node)
       if (isCallExpression(deleteCall)) {
         // replace with set property to nil
@@ -107,7 +107,7 @@ const plugin: Plugin = {
       }
       return deleteCall
     },
-    [ts.SyntaxKind.CallExpression]: (node: ts.CallExpression, context: TransformationContext) => {
+    [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       // handle special case when call = __getTestFiles(), replace with list of files
       if (ts.isIdentifier(node.expression) && node.expression.text === "__getTestFiles") {
         return getTestFiles(context)
@@ -130,14 +130,14 @@ const plugin: Plugin = {
       }
       return context.superTransformExpression(node)
     },
-    [ts.SyntaxKind.NewExpression]: (node: ts.NewExpression, context: TransformationContext) => {
+    [ts.SyntaxKind.NewExpression](node: ts.NewExpression, context: TransformationContext) {
       const type = context.checker.getTypeAtLocation(node.expression)
       if (type?.getProperty("__luaSetNewBrand")) {
         return transformLuaSetNewCall(context, node)
       }
       return context.superTransformExpression(node)
     },
-    [ts.SyntaxKind.ForOfStatement]: (node: ts.ForOfStatement, context: TransformationContext) => {
+    [ts.SyntaxKind.ForOfStatement](node: ts.ForOfStatement, context: TransformationContext) {
       const expression = node.expression
       const exprType = context.checker.getTypeAtLocation(expression)
       // __luaSetIterableBrand
@@ -150,6 +150,22 @@ const plugin: Plugin = {
         return createForInStatement(body, [valueVariable], [pairsCall], node)
       }
       return context.superTransformStatements(node)
+    },
+    [ts.SyntaxKind.Identifier](node: ts.Identifier, context: TransformationContext) {
+      if (node.text === "nil") {
+        const declaration = context.checker.getSymbolAtLocation(node)?.valueDeclaration
+        // check if declaration matches `declare const nil: undefined`
+        if (
+          declaration &&
+          ts.isVariableDeclaration(declaration) &&
+          declaration.initializer === undefined &&
+          declaration.type !== undefined &&
+          context.checker.getTypeFromTypeNode(declaration.type).getFlags() === ts.TypeFlags.Undefined
+        ) {
+          return createNilLiteral(node)
+        }
+      }
+      return context.superTransformExpression(node)
     },
   },
 }
