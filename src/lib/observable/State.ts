@@ -1,13 +1,13 @@
-import { bind, bound, Callback, Func, funcRef, reg, RegisterClass, RegisterdFunc } from "../references"
+import { bind, bound, Callback, Func, funcRef, reg, RegisterClass, RegisteredFunc } from "../references"
 import { isEmpty } from "../util"
 import { ObserverList, Subscribable } from "./Observable"
 import { Subscription } from "./Subscription"
 
-export interface ChangeListener<T> extends RegisterdFunc {
+export interface ChangeListener<T> extends RegisteredFunc {
   (this: unknown, subscription: Subscription, value: T, oldValue: T): void
 }
 
-export interface PartialChangeListener<T> extends RegisterdFunc {
+export interface PartialChangeListener<T> extends RegisteredFunc {
   (this: unknown, subscription: Subscription, value: T, oldValue: T | nil): void
 }
 
