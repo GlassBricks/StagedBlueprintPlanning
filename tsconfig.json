@@ -3,11 +3,6 @@
     "target": "esnext",
     "moduleResolution": "node",
     "types": ["luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio"],
-    "plugins": [
-      {
-        "name": "typescript-tstl-plugin"
-      }
-    ],
     "lib": ["esnext"],
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,

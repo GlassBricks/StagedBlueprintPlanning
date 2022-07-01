@@ -34,27 +34,27 @@ export function deepCompare<T>(a: T, b: T): boolean {
     if (!deepCompare(v, b[k])) return false
   }
   for (const [k] of pairs(b)) {
-    if (a[k] === undefined) return false
+    if (a[k] === nil) return false
   }
   return true
 }
 
-export function shallowCompareRecords(a: Record<any, any> | undefined, b: Record<any, any> | undefined): boolean {
+export function shallowCompareRecords(a: Record<any, any> | nil, b: Record<any, any> | nil): boolean {
   if (a === b) return true
-  if (a === undefined || b === undefined) return false
+  if (a === nil || b === nil) return false
   for (const [k, v] of pairs(a)) {
     if (b[k] !== v) return false
   }
   for (const [k] of pairs(b)) {
-    if (a[k] === undefined) return false
+    if (a[k] === nil) return false
   }
   return true
 }
 
 export function isEmpty(obj: object): boolean {
-  return next(obj)[0] === undefined
+  return next(obj)[0] === nil
 }
-export function nilIfEmpty<T extends object>(obj: T): T | undefined {
+export function nilIfEmpty<T extends object>(obj: T): T | nil {
   return next(obj)[0] && obj
 }
 

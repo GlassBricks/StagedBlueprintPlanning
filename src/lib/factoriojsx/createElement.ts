@@ -2,16 +2,14 @@ import { BaseElementSpec, ComponentClass, ElementSpec, FunctionComponent, Spec }
 
 const _select = select
 
-function flattenChildren(
-  ...children: Array<false | undefined | Spec> | [Array<false | undefined | Spec>]
-): Spec[] | undefined {
+function flattenChildren(...children: Array<false | nil | Spec> | [Array<false | nil | Spec>]): Spec[] | nil {
   let childrenLen = _select("#", ...children)
-  if (childrenLen === 0) return undefined
-  let childArray: (false | Spec | undefined)[]
+  if (childrenLen === 0) return nil
+  let childArray: (false | Spec | nil)[]
   if (childrenLen === 1) {
     // optimize for the common case
     const [child] = children
-    if (!child) return undefined
+    if (!child) return nil
     if (!Array.isArray(child)) {
       if (child.type === "fragment") return child.children
       return [child]
@@ -39,9 +37,9 @@ function flattenChildren(
   return result
 }
 
-function flattenChildrenToProp(...children: Array<false | undefined | Spec>): unknown {
+function flattenChildrenToProp(...children: Array<false | nil | Spec>): unknown {
   const childrenLen = _select("#", ...children)
-  if (childrenLen === 0) return undefined
+  if (childrenLen === 0) return nil
   if (childrenLen === 1) {
     const [child] = children
     if (child && child.type === "fragment") return child.children ?? []

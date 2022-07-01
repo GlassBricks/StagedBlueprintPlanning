@@ -3,8 +3,8 @@
 import { PRecord } from "./util-types"
 
 export interface ScriptEvents {
-  on_init: undefined
-  on_load: undefined
+  on_init: nil
+  on_load: nil
   on_configuration_changed: ConfigurationChangedData
 }
 
@@ -98,11 +98,11 @@ function raiseFakeEvent(id: keyof any, data: any) {
 }
 
 function clear(id: keyof any) {
-  registeredHandlers[id] = undefined
+  registeredHandlers[id] = nil
   if (type(id) === "table") {
-    script[(id as symbol).description as keyof ScriptEvents](undefined)
+    script[(id as symbol).description as keyof ScriptEvents](nil)
   } else {
-    script.on_event(id as any, undefined)
+    script.on_event(id as any, nil)
   }
 }
 
@@ -141,7 +141,7 @@ const Events = {
 setmetatable(Events, {
   __index(this: EventsObj, key: keyof any) {
     const id = scriptEventIds[key as keyof ScriptEvents] ?? defines.events[key as keyof typeof defines.events]
-    if (id !== undefined) {
+    if (id !== nil) {
       return (handler: AnyHandler) => {
         registerInternal(id, handler)
       }

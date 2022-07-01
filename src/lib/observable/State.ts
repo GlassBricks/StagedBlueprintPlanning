@@ -8,7 +8,7 @@ export interface ChangeListener<T> extends RegisterdFunc {
 }
 
 export interface PartialChangeListener<T> extends RegisterdFunc {
-  (this: unknown, subscription: Subscription, value: T, oldValue: T | undefined): void
+  (this: unknown, subscription: Subscription, value: T, oldValue: T | nil): void
 }
 
 export type MaybeState<T> = State<T> | T
@@ -31,12 +31,12 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
 
   subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
     const subscription = this.event.subscribe(context, observer)
-    observer(subscription, this.get(), undefined)
+    observer(subscription, this.get(), nil)
     return subscription
   }
   subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {
     const subscription = this.subscribeIndependently(observer)
-    observer(subscription, this.get(), undefined)
+    observer(subscription, this.get(), nil)
     return subscription
   }
 
@@ -49,7 +49,7 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   }
 
   switch<V>(whenTruthy: V, whenFalsy: V): State<V> {
-    return this.map(bind(State.switchFn, undefined, whenTruthy, whenFalsy))
+    return this.map(bind(State.switchFn, nil, whenTruthy, whenFalsy))
   }
   static switchFn<V>(whenTrue: V, whenFalse: V, value: unknown): V {
     return value ? whenTrue : whenFalse
@@ -122,8 +122,8 @@ export function state<T>(value: T): MutableState<T> {
 
 @RegisterClass("MappedState")
 class MappedState<T, U> extends State<U> {
-  private sourceSubscription: Subscription | undefined
-  private curValue: U | undefined
+  private sourceSubscription: Subscription | nil
+  private curValue: U | nil
 
   public constructor(private readonly source: State<T>, private readonly mapper: Mapper<T, U>) {
     super()
@@ -143,8 +143,8 @@ class MappedState<T, U> extends State<U> {
 
   private unsubscribeFromSource() {
     this.sourceSubscription?.close()
-    this.sourceSubscription = undefined
-    this.curValue = undefined
+    this.sourceSubscription = nil
+    this.curValue = nil
   }
 
   @bound
@@ -166,9 +166,9 @@ class MappedState<T, U> extends State<U> {
 
 @RegisterClass("FlatMappedState")
 class FlatMappedState<T, U> extends State<U> {
-  private sourceSubscription: Subscription | undefined
-  private nestedSubscription: Subscription | undefined
-  private curValue: U | undefined
+  private sourceSubscription: Subscription | nil
+  private nestedSubscription: Subscription | nil
+  private curValue: U | nil
 
   public constructor(private readonly source: State<T>, private readonly mapper: Mapper<T, MaybeState<U>>) {
     super()
@@ -194,7 +194,7 @@ class FlatMappedState<T, U> extends State<U> {
       this.nestedSubscription = newValue.subscribeIndependently(reg(this.nestedListener))
       this.curValue = newValue.get()
     } else {
-      this.nestedSubscription = undefined
+      this.nestedSubscription = nil
       this.curValue = newValue
     }
   }
@@ -222,13 +222,13 @@ class FlatMappedState<T, U> extends State<U> {
     const { sourceSubscription, nestedSubscription } = this
     if (nestedSubscription) {
       nestedSubscription.close()
-      this.nestedSubscription = undefined
+      this.nestedSubscription = nil
     }
     if (sourceSubscription) {
       sourceSubscription.close()
-      this.sourceSubscription = undefined
+      this.sourceSubscription = nil
     }
-    this.curValue = undefined
+    this.curValue = nil
   }
 
   override subscribeIndependently(observer: ChangeListener<U>): Subscription {

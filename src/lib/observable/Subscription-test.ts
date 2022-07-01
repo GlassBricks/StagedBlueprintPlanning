@@ -43,7 +43,7 @@ test("calls func subscriptions immediately if already closed", () => {
   assert.spy(sp).called()
 })
 
-test("sets fields to undefined when closed", () => {
+test("sets fields to nil when closed", () => {
   a.add({ close: sp })
   a.close()
   assert.nil(a._children)

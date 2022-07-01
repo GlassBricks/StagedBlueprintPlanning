@@ -182,7 +182,7 @@ export function isCallable(obj: unknown): boolean {
   }
   if (objType === "table") {
     const metatable = getmetatable(obj)
-    return metatable !== undefined && metatable.__call !== undefined
+    return metatable !== nil && metatable.__call !== nil
   }
   return false
 }

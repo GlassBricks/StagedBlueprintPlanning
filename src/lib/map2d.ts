@@ -3,9 +3,9 @@ import { PRecord, PRRecord } from "./util-types"
 export type Map2D<T> = PRRecord<number, PRRecord<number, LuaSet<T>>>
 export type MutableMap2D<T> = PRecord<number, PRecord<number, MutableLuaSet<T>>>
 
-export function map2dGet<T>(map: MutableMap2D<T>, x: number, y: number): LuaSet<T> | undefined
-export function map2dGet<T>(map: Map2D<T>, x: number, y: number): LuaSet<T> | undefined
-export function map2dGet<T>(map: Map2D<T>, x: number, y: number): LuaSet<T> | undefined {
+export function map2dGet<T>(map: MutableMap2D<T>, x: number, y: number): LuaSet<T> | nil
+export function map2dGet<T>(map: Map2D<T>, x: number, y: number): LuaSet<T> | nil
+export function map2dGet<T>(map: Map2D<T>, x: number, y: number): LuaSet<T> | nil {
   const byX = map[x]
   return byX && byX[y]
 }
@@ -18,13 +18,13 @@ export function map2dAdd<T>(map: MutableMap2D<T>, x: number, y: number, value: T
 
 export function map2dRemove<T>(map: MutableMap2D<T>, x: number, y: number, value: T): void {
   const byX = map[x]
-  if (byX === undefined) return
+  if (byX === nil) return
   const byY = byX[y]
-  if (byY === undefined) return
+  if (byY === nil) return
   byY.delete(value)
-  if (byY.first() === undefined) {
+  if (byY.first() === nil) {
     delete byX[y]
-    if (next(byX)[0] === undefined) {
+    if (next(byX)[0] === nil) {
       delete map[x]
     }
   }

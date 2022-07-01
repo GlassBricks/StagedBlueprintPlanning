@@ -3,7 +3,7 @@ import { WorldPosition } from "../../utils/world-location"
 import { Entity } from "../entity"
 import { BlueprintDiffHandler } from "./BlueprintDiffHandler"
 
-export function saveEntity(entity: LuaEntity, layerPosition: Position): Entity | undefined {
+export function saveEntity(entity: LuaEntity, layerPosition: Position): Entity | nil {
   return BlueprintDiffHandler.save(entity, layerPosition)
 }
 

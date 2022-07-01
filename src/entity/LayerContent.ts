@@ -5,7 +5,7 @@ import { Entity, LayerEntity, MutableLayerEntity } from "./entity"
 export interface LayerContent {
   readonly entities: Map2D<LayerEntity>
 
-  findCompatible(entity: Entity): Entity | undefined
+  findCompatible(entity: Entity): Entity | nil
 }
 
 export interface MutableLayerContent extends LayerContent {
@@ -16,7 +16,7 @@ export interface MutableLayerContent extends LayerContent {
 class LayerContentImpl implements MutableLayerContent {
   readonly entities: MutableMap2D<MutableLayerEntity> = {}
 
-  findCompatible(entity: Entity): Entity | undefined {
+  findCompatible(entity: Entity): Entity | nil {
     const { x, y } = entity.position
     const atPos = map2dGet(this.entities, x, y)
     if (!atPos) return

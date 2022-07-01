@@ -7,21 +7,21 @@ export function getPlayer(): LuaPlayer {
 }
 
 declare global {
-  let __TS__sourcemap: Record<string, Record<string, number | Source> | undefined> | undefined
+  let __TS__sourcemap: Record<string, Record<string, number | Source> | nil> | nil
 }
 export interface Source {
   readonly file?: string
   readonly line?: number
 }
 
-function tryUseSourcemap(rawFile: string | undefined, line: number | undefined): Source | undefined {
-  if (!rawFile || !line || !__TS__sourcemap) return undefined
+function tryUseSourcemap(rawFile: string | nil, line: number | nil): Source | nil {
+  if (!rawFile || !line || !__TS__sourcemap) return nil
   const [fileName] = string.match(rawFile, "@?(%S+)%.lua")
-  if (!fileName) return undefined
+  if (!fileName) return nil
   const fileSourceMap = __TS__sourcemap[fileName + ".lua"]
-  if (!fileSourceMap) return undefined
+  if (!fileSourceMap) return nil
   const data = fileSourceMap[tostring(line)]
-  if (!data) return undefined
+  if (!data) return nil
   return typeof data === "number" ? { file: fileName + ".ts", line: data } : data
 }
 

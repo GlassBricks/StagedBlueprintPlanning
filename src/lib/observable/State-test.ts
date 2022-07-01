@@ -24,7 +24,7 @@ describe("state", () => {
     const fn = spy()
     s.subscribeIndependentlyAndFire(fn)
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, "begin", undefined)
+    assert.spy(fn).called_with(match._, match._, "begin", nil)
   })
 
   it("notifies subscribers of value when value changed", () => {
@@ -50,7 +50,7 @@ describe("map", () => {
     mapped.subscribeIndependentlyAndFire(fn)
 
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, 6, undefined)
+    assert.spy(fn).called_with(match._, match._, 6, nil)
 
     val.set(4)
 
@@ -71,7 +71,7 @@ describe("map", () => {
     const fn = spy()
     choice.subscribeIndependentlyAndFire(fn)
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, "no", undefined)
+    assert.spy(fn).called_with(match._, match._, "no", nil)
     val.set(true)
     assert.spy(fn).called(2)
     assert.spy(fn).called_with(match._, match._, "yes", "no")
@@ -86,7 +86,7 @@ describe("flatMap", () => {
     mapped.subscribeIndependentlyAndFire(fn)
 
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, 6, undefined)
+    assert.spy(fn).called_with(match._, match._, 6, nil)
 
     val.set(4)
 
@@ -101,7 +101,7 @@ describe("flatMap", () => {
     mapped.subscribeIndependentlyAndFire(fn)
 
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, 6, undefined)
+    assert.spy(fn).called_with(match._, match._, 6, nil)
 
     val.set(4)
 
@@ -118,7 +118,7 @@ describe("flatMap", () => {
     mapped.subscribeIndependentlyAndFire(fn)
 
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, 4, undefined)
+    assert.spy(fn).called_with(match._, match._, 4, nil)
 
     innerVal.set(5)
     assert.spy(fn).called(2)
