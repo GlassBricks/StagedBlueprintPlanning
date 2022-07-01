@@ -31,7 +31,7 @@
     "sourceMapTraceback": true,
     "luaPlugins": [
       {
-        "name": "./tstlPlugin/plugin.js"
+        "name": "./tstlPlugin/extensions.js"
       }
     ]
   },
