@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "esnext",
     "moduleResolution": "node",
-    "types": ["luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio"],
+    "types": [
+      "luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio"
+    ],
     "lib": ["esnext"],
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
@@ -26,10 +28,10 @@
     "sourceMapTraceback": true,
     "luaPlugins": [
       {
-        "name": "./tstlPlugin/extensions.js"
+        "name": "./tstlPlugin/extensions-plugin.ts"
       }
     ]
   },
-  "include": ["src"],
+  "include": ["src", "tstlPlugin/*.d.ts"],
   "exclude": []
 }
