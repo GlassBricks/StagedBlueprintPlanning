@@ -15,12 +15,12 @@ export type Unsubscription = Unsubscribable | Func<() => void>
 
 @RegisterClass("Subscription")
 export class Subscription implements Unsubscribable {
-  // if undefined, is closed
-  _children: MutableLuaSet<Unsubscription> | undefined = new LuaSet()
-  _parents: MutableLuaSet<Subscription> | undefined = new LuaSet()
+  // if nil, is closed
+  _children: MutableLuaSet<Unsubscription> | nil = new LuaSet()
+  _parents: MutableLuaSet<Subscription> | nil = new LuaSet()
 
   isClosed(): boolean {
-    return this._children === undefined
+    return this._children === nil
   }
 
   add(subscription: Unsubscription): void {
@@ -38,7 +38,7 @@ export class Subscription implements Unsubscribable {
   }
 
   hasActions(): boolean {
-    return this._children !== undefined && this._children.first() !== undefined
+    return this._children !== nil && this._children.first() !== nil
   }
 
   private removeChild(subscription: Unsubscribable): void {
@@ -61,11 +61,11 @@ export class Subscription implements Unsubscribable {
     for (const parent of this._parents!) {
       parent.removeChild(this)
     }
-    this._children = undefined
-    this._parents = undefined
+    this._children = nil
+    this._parents = nil
 
     // close children
-    let errors: any[] | undefined = undefined
+    let errors: any[] | nil = nil
     for (const subscription of _children) {
       const [success, result] = pcall(this.callUnsubscription, this, subscription)
       if (!success) {

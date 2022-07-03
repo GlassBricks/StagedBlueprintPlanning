@@ -31,7 +31,7 @@ export class Registry<T> {
   get(name: string): T {
     return this.nameToItem[name] || error(`could not find ${this.itemName} with name ${name}`)
   }
-  getOrNil(name: string): T | undefined {
+  getOrNil(name: string): T | nil {
     return this.nameToItem[name]
   }
 

@@ -29,7 +29,7 @@ export function makeWrapper(): FlowGuiElement {
 
 export function getDescription(element: LuaGuiElement): string {
   const path = []
-  let current: GuiElementMembers | undefined = element
+  let current: GuiElementMembers | nil = element
   while (current && !isRoot(current)) {
     const name = current.name
     path.push(name === "" ? `[${current.get_index_in_parent()}, ${current.type}]` : name)
@@ -42,7 +42,7 @@ export function getDescription(element: LuaGuiElement): string {
 export function findElementSatisfying(
   element: LuaGuiElement,
   predicate: (element: LuaGuiElement) => boolean,
-): LuaGuiElement | undefined {
+): LuaGuiElement | nil {
   if (predicate(element)) return element
   for (const child of element.children) {
     const found = findElementSatisfying(child, predicate)

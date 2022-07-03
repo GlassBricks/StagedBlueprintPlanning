@@ -7,8 +7,8 @@ import { Subscription } from "./Subscription"
 export interface ObservableMapChange<K extends AnyNotNil, V> {
   map: ObservableMap<K, V>
   key: K
-  oldValue: V | undefined
-  value: V | undefined
+  oldValue: V | nil
+  value: V | nil
 }
 
 export type MapObserver<K extends AnyNotNil, V> = ValueListener<ObservableMapChange<K, V>>
@@ -17,9 +17,9 @@ export interface ObservableMap<K extends AnyNotNil, V>
   extends ValueSubscribable<ObservableMapChange<K, V>>,
     LuaPairsIterable<K, V> {
   size(): number
-  get(key: K): V | undefined
+  get(key: K): V | nil
   has(key: K): boolean
-  value(): LuaMap<K, V | undefined>
+  value(): LuaMap<K, V | nil>
 }
 
 export interface MutableObservableMap<K extends AnyNotNil, V> extends ObservableMap<K, V> {
@@ -32,7 +32,7 @@ interface ObservableMapImpl<K extends AnyNotNil, V> extends LuaPairsIterable<K, 
 @RegisterClass("ObservableMap")
 class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<K, V> {
   private event = new Event<ObservableMapChange<K, V>>()
-  private _map = new LuaMap<K, V | undefined>()
+  private _map = new LuaMap<K, V | nil>()
   private _size = 0
 
   public subscribe(context: Subscription, observer: MapObserver<K, V>): Subscription {
@@ -46,7 +46,7 @@ class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<
   public size(): number {
     return this._size
   }
-  public get(key: K): V | undefined {
+  public get(key: K): V | nil {
     return this._map.get(key)
   }
 
@@ -54,17 +54,17 @@ class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<
     return this._map.has(key)
   }
 
-  public value(): LuaMap<K, V | undefined> {
+  public value(): LuaMap<K, V | nil> {
     return this._map
   }
 
-  public set(key: K, value: V | undefined): void {
+  public set(key: K, value: V | nil): void {
     const { _map } = this
     const oldValue = _map.get(key)
     if (oldValue !== value) {
-      if (oldValue === undefined) {
+      if (oldValue === nil) {
         this._size++
-      } else if (value === undefined) {
+      } else if (value === nil) {
         this._size--
       }
       _map.set(key, value)
@@ -73,7 +73,7 @@ class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<
   }
 
   public delete(key: K): void {
-    this.set(key, undefined!)
+    this.set(key, nil!)
   }
 
   // noinspection JSUnusedGlobalSymbols

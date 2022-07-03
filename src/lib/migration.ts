@@ -24,7 +24,7 @@ export namespace Migrations {
     migrations = {}
   }
 
-  function getMigrationsToRun(oldVersion: string | undefined): (() => void)[] {
+  function getMigrationsToRun(oldVersion: string | nil): (() => void)[] {
     const formattedOldVersion = oldVersion && formatVersion(oldVersion)
     let versions = Object.keys(migrations) as VersionString[]
     if (formattedOldVersion) {

@@ -48,8 +48,8 @@ test("basic element with multiple children", () => {
   )
 })
 
-test("basic element with undefined children", () => {
-  const el = <flow>{undefined}</flow>
+test("basic element with nil children", () => {
+  const el = <flow>{nil}</flow>
   assert.same({ type: "flow" }, el)
 })
 
@@ -121,8 +121,8 @@ test("Function component with multiple children", () => {
   )
 })
 
-test("Function component with undefined children", () => {
-  const el = <Foo>{undefined}</Foo>
+test("Function component with nil children", () => {
+  const el = <Foo>{nil}</Foo>
   assert.same({ type: Foo, props: {} }, el)
 })
 
@@ -181,8 +181,8 @@ test("Class component with multiple children", () => {
   )
 })
 
-test("Class component with undefined children", () => {
-  const el = <FooClass>{undefined}</FooClass>
+test("Class component with nil children", () => {
+  const el = <FooClass>{nil}</FooClass>
   assert.same({ type: FooClass, props: {} }, el)
 })
 
@@ -206,9 +206,9 @@ describe("fragment", () => {
     )
   })
 
-  test("basic fragment with undefined children", () => {
-    const el = <>{undefined}</>
-    assert.same({ type: "fragment", children: undefined }, el)
+  test("basic fragment with nil children", () => {
+    const el = <>{nil}</>
+    assert.same({ type: "fragment", children: nil }, el)
   })
 
   test("basic fragment with array children", () => {

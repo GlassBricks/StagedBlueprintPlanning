@@ -9,7 +9,7 @@ describe("registering", () => {
 
   before_each(() => {
     oldGame = game
-    ;(_G as any).game = undefined!
+    ;(_G as any).game = nil!
   })
   after_each(() => {
     ;(_G as any).game = oldGame

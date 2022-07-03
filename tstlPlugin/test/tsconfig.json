@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
+    "experimentalDecorators": true,
     "target": "esnext",
     "module": "CommonJS",
     "moduleResolution": "node",
     "lib": ["esnext"],
+    "types": ["node", "jest"],
     "strict": true,
     "sourceMap": true
   },
-  "include": ["./*.ts"]
+  "include": [".", "../func-register.d.ts"]
 }

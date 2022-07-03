@@ -88,8 +88,8 @@ namespace BBox {
     const { left_top, right_bottom } = box
     return Pos((left_top.x + right_bottom.x) / 2, (left_top.y + right_bottom.y) / 2)
   }
-  export function rotateAboutOrigin(box: BBox, direction: defines.direction | undefined): BBoxClass {
-    if (direction === undefined || direction === defines.direction.north) return BBox.from(box)
+  export function rotateAboutOrigin(box: BBox, direction: defines.direction | nil): BBoxClass {
+    if (direction === nil || direction === defines.direction.north) return BBox.from(box)
     const { left_top, right_bottom } = box
     const { x: lx, y: ly } = left_top
     const { x: rx, y: ry } = right_bottom

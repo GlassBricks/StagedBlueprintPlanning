@@ -4,4 +4,4 @@ interface DebugAdapter {
   breakpoint(): void
 }
 
-declare const __DebugAdapter: DebugAdapter | undefined
+declare const __DebugAdapter: DebugAdapter | nil

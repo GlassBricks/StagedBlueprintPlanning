@@ -57,7 +57,7 @@ describe("ObservableMap", () => {
     const change: ObservableMapChange<string, number> = {
       map,
       key: "a",
-      oldValue: undefined,
+      oldValue: nil,
       value: 1,
     }
     assert.spy(fn).called(1)
@@ -96,7 +96,7 @@ describe("ObservableMap", () => {
       map,
       key: "a",
       oldValue: 1,
-      value: undefined,
+      value: nil,
     }
     assert.spy(fn).called(1)
     assert.spy(fn).called_with(match._, change)

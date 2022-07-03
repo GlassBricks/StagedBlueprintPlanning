@@ -14,12 +14,15 @@ import {
   createTableFieldExpression,
   createTableIndexExpression,
   Expression,
+  File,
   getSourceDir,
   isCallExpression,
+  LuaLibFeature,
   Plugin,
   TransformationContext,
 } from "typescript-to-lua"
 import { unsupportedBuiltinOptionalCall } from "typescript-to-lua/dist/transformation/utils/diagnostics"
+import { getUsedLuaLibFeatures } from "typescript-to-lua/dist/transformation/utils/lualib"
 import { getFunctionTypeForCall } from "typescript-to-lua/dist/transformation/utils/typescript"
 import { transformExpressionList } from "typescript-to-lua/dist/transformation/visitors/expression-list"
 import { transformForInitializer, transformLoopBody } from "typescript-to-lua/dist/transformation/visitors/loops/utils"
@@ -37,11 +40,10 @@ function getTestFiles(context: TransformationContext) {
     .getSourceFiles()
     .filter((f) => testPattern.test(f.fileName))
     .map((f) => {
-      const value = path
-        .relative(rootDir, f.fileName)
-        .replace(/\\/g, "/")
-        .substring(0, f.fileName.length - 3)
-      return createTableFieldExpression(createStringLiteral(value))
+      let filePath = path.relative(rootDir, f.fileName).replace(/\\/g, "/")
+      // remove extension
+      filePath = filePath.substring(0, filePath.lastIndexOf("."))
+      return createTableFieldExpression(createStringLiteral(filePath))
     })
   return createTableExpression(fields)
 }
@@ -94,20 +96,23 @@ function transformLuaTableFirstMethod(
 
 const plugin: Plugin = {
   visitors: {
-    [ts.SyntaxKind.DeleteExpression]: (node: ts.DeleteExpression, context: TransformationContext) => {
+    [ts.SyntaxKind.DeleteExpression](node: ts.DeleteExpression, context: TransformationContext) {
       const deleteCall = context.superTransformExpression(node)
-      if (isCallExpression(deleteCall)) {
-        // replace with set property to nil
-        const table = deleteCall.params[0]
-        const key = deleteCall.params[1]
-        context.addPrecedingStatements(
-          createAssignmentStatement(createTableIndexExpression(table, key), createNilLiteral(), node),
-        )
-        return createBooleanLiteral(true)
-      }
-      return deleteCall
+      assert(isCallExpression(deleteCall))
+      // replace with set property to nil
+      const table = deleteCall.params[0]
+      const key = deleteCall.params[1]
+      context.addPrecedingStatements(
+        createAssignmentStatement(createTableIndexExpression(table, key), createNilLiteral(), node),
+      )
+      return createBooleanLiteral(true)
     },
-    [ts.SyntaxKind.CallExpression]: (node: ts.CallExpression, context: TransformationContext) => {
+    [ts.SyntaxKind.SourceFile](node, context) {
+      const [result] = context.superTransformNode(node) as [File]
+      getUsedLuaLibFeatures(context).delete(LuaLibFeature.Delete) // replaced by above
+      return result
+    },
+    [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       // handle special case when call = __getTestFiles(), replace with list of files
       if (ts.isIdentifier(node.expression) && node.expression.text === "__getTestFiles") {
         return getTestFiles(context)
@@ -130,14 +135,14 @@ const plugin: Plugin = {
       }
       return context.superTransformExpression(node)
     },
-    [ts.SyntaxKind.NewExpression]: (node: ts.NewExpression, context: TransformationContext) => {
+    [ts.SyntaxKind.NewExpression](node: ts.NewExpression, context: TransformationContext) {
       const type = context.checker.getTypeAtLocation(node.expression)
       if (type?.getProperty("__luaSetNewBrand")) {
         return transformLuaSetNewCall(context, node)
       }
       return context.superTransformExpression(node)
     },
-    [ts.SyntaxKind.ForOfStatement]: (node: ts.ForOfStatement, context: TransformationContext) => {
+    [ts.SyntaxKind.ForOfStatement](node: ts.ForOfStatement, context: TransformationContext) {
       const expression = node.expression
       const exprType = context.checker.getTypeAtLocation(expression)
       // __luaSetIterableBrand
@@ -150,6 +155,22 @@ const plugin: Plugin = {
         return createForInStatement(body, [valueVariable], [pairsCall], node)
       }
       return context.superTransformStatements(node)
+    },
+    [ts.SyntaxKind.Identifier](node: ts.Identifier, context: TransformationContext) {
+      if (node.text === "nil") {
+        const declaration = context.checker.getSymbolAtLocation(node)?.valueDeclaration
+        // check if declaration matches `declare const nil: undefined`
+        if (
+          declaration &&
+          ts.isVariableDeclaration(declaration) &&
+          declaration.initializer === undefined &&
+          declaration.type !== undefined &&
+          context.checker.getTypeFromTypeNode(declaration.type).getFlags() === ts.TypeFlags.Undefined
+        ) {
+          return createNilLiteral(node)
+        }
+      }
+      return context.superTransformExpression(node)
     },
   },
 }

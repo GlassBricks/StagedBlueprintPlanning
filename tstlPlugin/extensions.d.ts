@@ -1,7 +1,9 @@
+/** These features rely on ./tstlPlugin/extensions.js to function */
+
 declare type LuaTableAddMethod<TKey extends AnyNotNil> = ((key: TKey) => void) &
   LuaExtension<"__luaTableAddMethodBrand">
 
-declare type LuaTableFirstMethod<TKey extends AnyNotNil> = (() => TKey | undefined) &
+declare type LuaTableFirstMethod<TKey extends AnyNotNil> = (() => TKey | nil) &
   LuaExtension<"__luaTableFirstMethodBrand">
 
 declare type LuaSetIterable<T extends AnyNotNil> = Iterable<T> & LuaExtension<"__luaSetIterableBrand">
@@ -39,3 +41,7 @@ declare const LuaMap: (new <TKey extends AnyNotNil, TValue>() => MutableLuaMap<T
 declare type WithMetatable<T, M> = T & {
   [P in keyof M]: M[P] extends (self: T, ...args: infer A) => infer R ? (this: T, ...args: A) => R : M[P]
 }
+
+/** Translated directly to nil in lua */
+declare const nil: nil
+declare type nil = undefined

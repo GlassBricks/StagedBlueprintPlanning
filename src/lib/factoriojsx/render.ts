@@ -13,7 +13,7 @@ type GuiEventName = Extract<keyof typeof defines.events, `on_gui_${string}`>
 
 interface ElementInstance {
   readonly element: BaseGuiElement
-  readonly subscription: Subscription | undefined
+  readonly subscription: Subscription | nil
   readonly events: PRecord<GuiEventName, Func<any>>
 }
 
@@ -46,14 +46,14 @@ function setStateFunc(this: MutableState<unknown>, key: string, event: GuiEvent)
 registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc })
 
 interface TrackerInternal extends Tracker {
-  parent: TrackerInternal | undefined
-  firstIndex: number | undefined
+  parent: TrackerInternal | nil
+  firstIndex: number | nil
 
   subscriptionContext?: Subscription
   onMountCallbacks: ((this: unknown, element: LuaGuiElement) => void)[]
 }
 
-function newTracker(parent: TrackerInternal | undefined, firstIndex?: number): TrackerInternal {
+function newTracker(parent: TrackerInternal | nil, firstIndex?: number): TrackerInternal {
   return {
     firstIndex,
     parent,
@@ -98,7 +98,7 @@ function renderInternal(
   parent: BaseGuiElement,
   element: Spec,
   tracker: TrackerInternal,
-): LuaGuiElement | LuaGuiElement[] | undefined {
+): LuaGuiElement | LuaGuiElement[] | nil {
   const elemType = element.type
   const elemTypeType = type(elemType)
   if (elemTypeType === "string") {
@@ -113,18 +113,14 @@ function renderInternal(
   error("Unknown spec type: " + serpent.block(element))
 }
 
-function renderFragment(
-  parent: BaseGuiElement,
-  spec: FragmentSpec,
-  tracker: TrackerInternal,
-): LuaGuiElement[] | undefined {
+function renderFragment(parent: BaseGuiElement, spec: FragmentSpec, tracker: TrackerInternal): LuaGuiElement[] | nil {
   const children = spec.children || []
   let usedTracker: TrackerInternal = tracker
   const elements: LuaGuiElement[] = []
   for (const child of children) {
     const childResult = renderInternal(parent, child, usedTracker)
     if (!childResult || isEmpty(childResult)) continue
-    usedTracker = newTracker(undefined)
+    usedTracker = newTracker(nil)
     if (isLuaGuiElement(childResult)) {
       elements.push(childResult)
     } else {
@@ -142,7 +138,7 @@ function renderElement(
   parent: BaseGuiElement,
   spec: ElementSpec | FragmentSpec,
   tracker: TrackerInternal,
-): LuaGuiElement | LuaGuiElement[] | undefined {
+): LuaGuiElement | LuaGuiElement[] | nil {
   if (spec.type === "fragment") {
     return renderFragment(parent, spec, tracker)
   }
@@ -226,7 +222,7 @@ function renderElement(
   const children = spec.children
   if (children) {
     for (const child of children as Spec[]) {
-      renderInternal(element, child, newTracker(undefined))
+      renderInternal(element, child, newTracker(nil))
     }
   }
 
@@ -275,9 +271,9 @@ export function render<T extends GuiElementType>(
   spec: ElementSpec & { type: T },
   index?: number,
 ): Extract<LuaGuiElement, { type: T }>
-export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | undefined
-export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | undefined {
-  const result = renderInternal(parent, element, newTracker(undefined, index))
+export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | nil
+export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | nil {
+  const result = renderInternal(parent, element, newTracker(nil, index))
   if (!result || isLuaGuiElement(result)) return result
   if (result.length > 1) {
     error("cannot render multiple elements at root. Try wrapping them in another element.")
@@ -285,12 +281,12 @@ export function render(parent: BaseGuiElement, element: Spec, index?: number): L
   return result[0]
 }
 
-export function renderMultiple(parent: BaseGuiElement, elements: Spec): LuaGuiElement[] | undefined {
-  const result = renderInternal(parent, elements, newTracker(undefined))
+export function renderMultiple(parent: BaseGuiElement, elements: Spec): LuaGuiElement[] | nil {
+  const result = renderInternal(parent, elements, newTracker(nil))
   return !result || isLuaGuiElement(result) ? [result as LuaGuiElement] : result
 }
 
-export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | undefined {
+export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | nil {
   const element = render(player.gui.screen, spec)
   if (element) {
     player.opened = element
@@ -298,11 +294,11 @@ export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | und
   return element
 }
 
-function getInstance(element: BaseGuiElement): ElementInstance | undefined {
-  return !element.valid ? undefined : global.guiElements[element.player_index]![element.index]
+function getInstance(element: BaseGuiElement): ElementInstance | nil {
+  return !element.valid ? nil : global.guiElements[element.player_index]![element.index]
 }
 
-export function destroy(element: BaseGuiElement | undefined, destroyElement = true): void {
+export function destroy(element: BaseGuiElement | nil, destroyElement = true): void {
   if (!element || !element.valid) return
   // is lua gui element
   const instance = global.guiElements[element.player_index]![element.index]
@@ -325,7 +321,7 @@ export function destroy(element: BaseGuiElement | undefined, destroyElement = tr
   }
   subscription?.close()
   if (destroyElement && element.valid) element.destroy()
-  global.guiElements[player_index]![index] = undefined!
+  global.guiElements[player_index]![index] = nil!
 }
 
 export function destroyChildren(element: BaseGuiElement): void {
@@ -360,7 +356,7 @@ for (const [name] of pairs(guiEventNames)) {
     if (!instance) return
     const event = instance.events[name]
     if (event) {
-      protectedAction(e.player_index, event, undefined, e)
+      protectedAction(e.player_index, event, nil, e)
     }
   })
 }

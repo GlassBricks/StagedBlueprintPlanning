@@ -17,17 +17,17 @@ export function protectedAction<R, T, A extends any[]>(
   action: (this: T, ...args: A) => R,
   thisArg: T,
   ...args: A
-): R | undefined
+): R | nil
 export function protectedAction<R, A extends any[]>(
   player: PlayerIdentification,
   action: (this: void, ...args: A) => R,
   ...args: A
-): R | undefined
+): R | nil
 export function protectedAction<T, A extends any[]>(
   player: PlayerIdentification,
   action: (...args: A) => T,
   ...args: A
-): T | undefined {
+): T | nil {
   const [success, result] = xpcall(action, getErrorWithStacktrace, ...args)
   if (success) return result as T
 

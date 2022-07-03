@@ -18,18 +18,18 @@ function getTempItemStack(): BlueprintItemStack {
   return stack
 }
 
-function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | undefined {
+function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | nil {
   for (const [index, mEntity] of pairs(mapping)) {
     if (entity === mEntity) return index
   }
 }
 
-function reviveGhost(ghost: GhostEntity): LuaEntity | undefined {
+function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   if (!ghost.valid) return
   const [, entity, requestProxy] = ghost.silent_revive({
     return_item_request_proxy: true,
   })
-  if (entity === undefined) return
+  if (entity === nil) return
 
   if (!requestProxy) return entity
 
@@ -50,7 +50,7 @@ function reviveGhost(ghost: GhostEntity): LuaEntity | undefined {
 }
 
 export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
-  save(entity: LuaEntity, layerPosition: Position): BlueprintEntityRead | undefined {
+  save(entity: LuaEntity, layerPosition: Position): BlueprintEntityRead | nil {
     const { surface, position } = entity
     const stack = getTempItemStack()
 

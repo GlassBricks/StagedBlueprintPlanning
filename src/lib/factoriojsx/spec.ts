@@ -49,7 +49,7 @@ export interface FragmentSpec {
 }
 
 export type Spec = ElementSpec | FragmentSpec | FCSpec<any> | ClassComponentSpec<any>
-export type SpecChildren = Spec | false | undefined | Array<Spec | false | undefined>
+export type SpecChildren = Spec | false | nil | Array<Spec | false | nil>
 
 export type GuiEvent =
   | OnGuiCheckedStateChangedEvent

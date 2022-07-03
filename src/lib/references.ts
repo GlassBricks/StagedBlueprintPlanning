@@ -148,13 +148,13 @@ export type AnyFunction = Function
 export type ContextualFun = (this: any, ...args: any) => any
 export type SelflessFun = (this: void, ...args: any) => any
 
-export type RegisterdFunc = { _registeredBrand: true }
+export type RegisteredFunc = { _registeredBrand: true }
 export type Func<F extends ContextualFun> = (F extends (this: any, ...args: infer A) => infer R
   ? (this: unknown, ...args: A) => R
   : ContextualFun) &
-  RegisterdFunc
+  RegisteredFunc
 
-export type Callback = ((this: unknown) => void) & RegisterdFunc
+export type Callback = ((this: unknown) => void) & RegisteredFunc
 
 export const Functions = new Registry<AnyFunction>("function", (func: AnyFunction) =>
   serpent.block(type(func) === "function" ? debug.getinfo(func) : func, { nocode: true }),
@@ -182,7 +182,7 @@ export function isCallable(obj: unknown): boolean {
   }
   if (objType === "table") {
     const metatable = getmetatable(obj)
-    return metatable !== undefined && metatable.__call !== undefined
+    return metatable !== nil && metatable.__call !== nil
   }
   return false
 }

@@ -10,7 +10,7 @@ if (script.active_mods.testorio) {
     if (inventories) inventories.forEach((x) => x.destroy())
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     global = {}
-    Events.raiseFakeEventNamed("on_init", undefined)
+    Events.raiseFakeEventNamed("on_init", nil)
   }
 
   commands.add_command("reinit", "", reinit)
