@@ -1,5 +1,5 @@
 import { Pos, Position } from "../../lib/geometry"
-import { clearTestArea } from "../../test/area"
+import { clearTestArea } from "../../test-util/area"
 import { leftTop, WorldArea } from "../../utils/world-location"
 import { createEntity, saveEntity } from "./index"
 import plus = Pos.plus

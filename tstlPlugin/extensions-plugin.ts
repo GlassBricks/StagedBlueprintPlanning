@@ -32,7 +32,7 @@ import {
   transformOptionalChain,
 } from "typescript-to-lua/dist/transformation/visitors/optional-chaining"
 
-const testPattern = /-test\.tsx?$/
+const testPattern = /\.test\.tsx?$/
 
 function getTestFiles(context: TransformationContext) {
   const rootDir = getSourceDir(context.program)
@@ -43,6 +43,8 @@ function getTestFiles(context: TransformationContext) {
       let filePath = path.relative(rootDir, f.fileName).replace(/\\/g, "/")
       // remove extension
       filePath = filePath.substring(0, filePath.lastIndexOf("."))
+      // replace remaining . with -
+      filePath = filePath.replace(/\./g, "-")
       return createTableFieldExpression(createStringLiteral(filePath))
     })
   return createTableExpression(fields)
@@ -172,6 +174,16 @@ const plugin: Plugin = {
       }
       return context.superTransformExpression(node)
     },
+  },
+  beforeEmit(_, __, ___, files) {
+    for (const file of files) {
+      const outPath = file.outputPath
+      if (!outPath.endsWith(".lua")) continue
+      const fileName = path.basename(outPath, ".lua")
+      // replace . with - in file name
+      const newFileName = fileName.replace(/\./g, "-")
+      file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
+    }
   },
 }
 // noinspection JSUnusedGlobalSymbols
