@@ -1,3 +1,5 @@
+/// <reference types="typescript-to-lua/language-extensions" />
+
 /** These features rely on ./tstlPlugin/extensions.js to function */
 
 declare type LuaTableAddMethod<TKey extends AnyNotNil> = ((key: TKey) => void) &

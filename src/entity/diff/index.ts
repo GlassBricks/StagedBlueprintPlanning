@@ -1,6 +1,6 @@
 import { Position } from "../../lib/geometry"
 import { WorldPosition } from "../../utils/world-location"
-import { Entity } from "../entity"
+import { Entity } from "../AssemblyEntity"
 import { BlueprintDiffHandler } from "./BlueprintDiffHandler"
 
 export function saveEntity(entity: LuaEntity, layerPosition: Position): Entity | nil {
