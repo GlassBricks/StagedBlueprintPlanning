@@ -3,5 +3,11 @@
 
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
-  UnexpectedError = "bbpp.interaction.unexpected-error",
+  UnexpectedError = "bp3.interaction.unexpected-error",
+}
+export declare const enum L_Assembly {
+  /** Unnamed assembly __1__ */
+  UnnamedAssembly = "bp3.assembly.unnamed-assembly",
+  /** Unnamed layer __1__ */
+  UnnamedLayer = "bp3.assembly.unnamed-layer",
 }

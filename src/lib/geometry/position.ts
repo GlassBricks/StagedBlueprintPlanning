@@ -54,6 +54,9 @@ namespace Pos {
   export function ceil(pos1: Position): PositionClass {
     return Pos(_ceil(pos1.x), _ceil(pos1.y))
   }
+  export function floorToNearest(pos1: Position, base: number): PositionClass {
+    return Pos(_floor(pos1.x / base) * base, _floor(pos1.y / base) * base)
+  }
   export function length(pos1: Position): number {
     return sqrt(pos1.x * pos1.x + pos1.y * pos1.y)
   }
