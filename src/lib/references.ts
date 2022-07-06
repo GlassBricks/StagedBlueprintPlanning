@@ -43,11 +43,13 @@ declare const global: {
 }
 
 Events.on_init(() => {
-  global.__classes = setmetatable({}, { __mode: "k" })
+  global.__classes = new LuaMap()
+  if (!__DebugAdapter) setmetatable(global.__classes, { __mode: "k" })
+  setmetatable(global.__classes, { __mode: "k" })
 })
 
 Events.on_load(() => {
-  setmetatable(global.__classes, { __mode: "k" })
+  if (!__DebugAdapter) setmetatable(global.__classes, { __mode: "k" })
   for (const [table, className] of global.__classes) {
     const _class = Classes.getOrNil(className)
     if (!_class) {

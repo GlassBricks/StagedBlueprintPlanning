@@ -33,5 +33,5 @@
     ]
   },
   "include": ["src", "tstlPlugin/*.d.ts"],
-  "exclude": ["src/debug.ts"]
+  "exclude": ["src/_debug.ts"]
 }
