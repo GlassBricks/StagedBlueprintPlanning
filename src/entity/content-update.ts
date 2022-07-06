@@ -1,6 +1,6 @@
 import { Pos } from "../lib/geometry"
 import { WorldPosition } from "../utils/world-location"
-import { MutableAssemblyContent } from "./AssemblyContent"
+import { isCompatibleEntity, MutableAssemblyContent } from "./AssemblyContent"
 import { AssemblyEntity } from "./AssemblyEntity"
 
 // export interface UpdateContext {
@@ -39,5 +39,28 @@ export function createEntityInWorld(entity: AssemblyEntity, context: UpdateConte
     name,
     position: Pos.plus(position, context.position),
     direction,
+    force: "player",
   })
+}
+
+export function deleteEntityInWorld(entity: AssemblyEntity, context: UpdateContext): void {
+  const { name, position, direction } = entity
+  const worldPosition = Pos.plus(position, context.position)
+  // find entity that matches
+  const candidates = context.surface.find_entities_filtered({
+    position: worldPosition,
+    name,
+    direction: direction ?? 0,
+    to_be_deconstructed: false,
+  })
+  for (const candidate of candidates) {
+    if (
+      isAssemblyEntity(candidate) &&
+      Pos.equals(candidate.position, worldPosition) &&
+      isCompatibleEntity(candidate, entity)
+    ) {
+      candidate.destroy()
+      return
+    }
+  }
 }

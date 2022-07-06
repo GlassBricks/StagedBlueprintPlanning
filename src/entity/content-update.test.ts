@@ -3,7 +3,7 @@ import { clearTestArea } from "../test-util/area"
 import { getLeftTop, WorldArea, WorldPosition } from "../utils/world-location"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
 import { AssemblyEntity } from "./AssemblyEntity"
-import { createEntityInWorld, entityAdded, entityDeleted } from "./content-update"
+import { createEntityInWorld, deleteEntityInWorld, entityAdded, entityDeleted } from "./content-update"
 
 let content: MutableAssemblyContent
 let area: WorldArea
@@ -69,5 +69,15 @@ describe("simple entity", () => {
     const created = createEntityInWorld(entity, leftTop)!
     assert.not_nil(created)
     assert.same(created.position, Pos.plus(entity.position, leftTop.position))
+  })
+
+  test("delete in world", () => {
+    const entity: AssemblyEntity = {
+      name: "iron-chest",
+      position: Pos(10.5, 10.5),
+    }
+    const created = createEntityInWorld(entity, leftTop)!
+    deleteEntityInWorld(entity, leftTop)
+    assert.false(created.valid)
   })
 })
