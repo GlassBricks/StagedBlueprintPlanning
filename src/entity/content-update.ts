@@ -1,6 +1,6 @@
 import { Pos } from "../lib/geometry"
 import { WorldPosition } from "../utils/world-location"
-import { isCompatibleEntity, MutableAssemblyContent } from "./AssemblyContent"
+import { AssemblyContent, isCompatibleEntity, MutableAssemblyContent } from "./AssemblyContent"
 import { AssemblyEntity } from "./AssemblyEntity"
 
 // export interface UpdateContext {
@@ -63,4 +63,16 @@ export function deleteEntityInWorld(entity: AssemblyEntity, context: UpdateConte
       return
     }
   }
+}
+
+export function placeAssemblyInWorld(content: AssemblyContent, context: UpdateContext): LuaEntity[] {
+  const result: LuaEntity[] = []
+  for (const [, byX] of pairs(content.entities)) {
+    for (const [, entities] of pairs(byX))
+      for (const entity of entities) {
+        const luaEntity = createEntityInWorld(entity, context)
+        if (luaEntity) result.push(luaEntity)
+      }
+  }
+  return result
 }
