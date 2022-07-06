@@ -27,7 +27,7 @@ describe("findCompatible", () => {
     }
     const lookup2 = {
       ...entity,
-      direction: defines.direction.north,
+      direction: defines.direction.south,
     }
     assert.nil(content.findCompatible(lookup1))
     assert.nil(content.findCompatible(lookup2))

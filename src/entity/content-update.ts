@@ -1,0 +1,32 @@
+import { Pos, Position } from "../lib/geometry"
+import { MutableAssemblyContent } from "./AssemblyContent"
+
+// export interface UpdateContext {
+//   topLeft: Position
+// }
+export type UpdateContext = Position
+
+export function isAssemblyEntity(entity: LuaEntity): boolean {
+  return entity.type !== "entity-ghost" && entity.force.name === "player" && "player-creation" in entity.prototype.flags
+}
+
+export function entityAdded(content: MutableAssemblyContent, entity: LuaEntity, context: UpdateContext): void {
+  if (!isAssemblyEntity(entity)) return
+  const position = Pos.minus(entity.position, context)
+  assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
+  content.add({
+    name: entity.name,
+    position,
+    direction: entity.supports_direction ? entity.direction : nil,
+  })
+}
+
+export function entityDeleted(content: MutableAssemblyContent, entity: LuaEntity, context: UpdateContext): void {
+  if (!isAssemblyEntity(entity)) return
+  const position = Pos.minus(entity.position, context)
+  assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
+  const compatible = content.findCompatible(entity, position)
+  if (compatible) {
+    content.remove(compatible)
+  }
+}
