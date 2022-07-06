@@ -26,9 +26,6 @@ if (script.active_mods.testorio) {
   })
 
   const tagBlacklist: string[] = []
-  if (__DebugAdapter) {
-    tagBlacklist.push("after_mod_reload")
-  }
 
   require("__testorio__/init")(__getTestFiles(), {
     tag_blacklist: tagBlacklist,
@@ -45,4 +42,7 @@ if (script.active_mods.testorio) {
     },
     log_passed_tests: false,
   } as Testorio.Config)
+  if (__DebugAdapter) {
+    tagBlacklist.push("after_mod_reload")
+  }
 }
