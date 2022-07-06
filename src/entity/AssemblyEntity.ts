@@ -1,4 +1,4 @@
-import { PRecord, PRRecord, shallowCopy } from "../lib"
+import { Mutable, PRecord, PRRecord, shallowCopy } from "../lib"
 import { Position } from "../lib/geometry"
 import { getNilPlaceholder, WithNilPlaceholder } from "./NilPlaceholder"
 
@@ -14,7 +14,7 @@ export type AssemblyEntity<E extends Entity = Entity> = E & {
   readonly layerChanges?: PRRecord<number, Readonly<LayerChange<E>>>
 }
 
-export type MutableAssemblyEntity<E extends Entity = Entity> = E & {
+export type MutableAssemblyEntity<E extends Entity = Entity> = Mutable<E> & {
   layerChanges?: PRecord<number, LayerChange<E>>
 }
 

@@ -1,19 +1,20 @@
 import { Pos, PositionClass } from "../lib/geometry"
 import { clearTestArea } from "../test-util/area"
-import { WorldArea } from "../utils/world-location"
+import { getLeftTop, WorldArea, WorldPosition } from "../utils/world-location"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
-import { entityAdded, entityDeleted } from "./content-update"
+import { AssemblyEntity } from "./AssemblyEntity"
+import { createEntityInWorld, entityAdded, entityDeleted } from "./content-update"
 
 let content: MutableAssemblyContent
 let area: WorldArea
-let leftTop: MapPositionTable
+let leftTop: WorldPosition
 before_each(() => {
   content = newAssemblyContent()
   area = clearTestArea()
-  leftTop = area.bbox.left_top
+  leftTop = getLeftTop(area)
 })
 
-describe("simple add, delete", () => {
+describe("simple entity", () => {
   let pos: PositionClass
   before_all(() => {
     pos = Pos(10.5, 10.5)
@@ -21,7 +22,7 @@ describe("simple add, delete", () => {
   function doAdd(params: Partial<SurfaceCreateEntity> = {}) {
     const params1 = {
       name: "iron-chest",
-      position: Pos.plus(pos, leftTop),
+      position: Pos.plus(pos, leftTop.position),
       force: "player",
       ...params,
     }
@@ -58,5 +59,15 @@ describe("simple add, delete", () => {
     const { entity } = doAdd()
     entityDeleted(content, entity, leftTop) // simulated
     assert.same({}, content.entities)
+  })
+
+  test("create in world", () => {
+    const entity: AssemblyEntity = {
+      name: "iron-chest",
+      position: Pos(10.5, 10.5),
+    }
+    const created = createEntityInWorld(entity, leftTop)!
+    assert.not_nil(created)
+    assert.same(created.position, Pos.plus(entity.position, leftTop.position))
   })
 })

@@ -1,6 +1,6 @@
 import { Pos, Position } from "../../lib/geometry"
 import { clearTestArea } from "../../test-util/area"
-import { leftTop, WorldArea } from "../../utils/world-location"
+import { getLeftTop, WorldArea } from "../../utils/world-location"
 import { createEntity, saveEntity } from "./index"
 import plus = Pos.plus
 
@@ -30,7 +30,7 @@ test("save", () => {
 
 test("create", () => {
   const saved = saveEntity(entity, area.bbox.left_top)!
-  createEntity(saved, leftTop(area))
+  createEntity(saved, getLeftTop(area))
   const found = area.surface.find_entity("iron-chest", actualPos)!
   assert(found)
   assert.equal("iron-chest", found.name)

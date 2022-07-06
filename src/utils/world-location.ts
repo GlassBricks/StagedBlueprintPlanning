@@ -10,7 +10,7 @@ export interface WorldArea {
   readonly bbox: BBox
 }
 
-export function leftTop(area: WorldArea): WorldPosition {
+export function getLeftTop(area: WorldArea): WorldPosition {
   return {
     surface: area.surface,
     position: area.bbox.left_top,
