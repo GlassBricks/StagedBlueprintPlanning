@@ -31,6 +31,15 @@ import {
   OptionalContinuation,
   transformOptionalChain,
 } from "typescript-to-lua/dist/transformation/visitors/optional-chaining"
+import { createSerialDiagnosticFactory } from "typescript-to-lua/dist/utils"
+
+const useNilInstead = createSerialDiagnosticFactory((node: ts.Node) => ({
+  file: ts.getOriginalNode(node).getSourceFile(),
+  start: ts.getOriginalNode(node).getStart(),
+  length: ts.getOriginalNode(node).getWidth(),
+  messageText: "Use nil instead of undefined.",
+  category: ts.DiagnosticCategory.Warning,
+}))
 
 const testPattern = /\.test\.tsx?$/
 
@@ -171,6 +180,9 @@ const plugin: Plugin = {
         ) {
           return createNilLiteral(node)
         }
+      }
+      if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+        context.diagnostics.push(useNilInstead(node))
       }
       return context.superTransformExpression(node)
     },
