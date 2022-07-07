@@ -7,7 +7,7 @@ describe("getValueAtLayer", () => {
     foo2?: number | nil
   }
   const sameEntity: AssemblyEntity<FooEntity> = {
-    assemblyLayer: 1,
+    layerNumber: 2,
     name: "foo",
     position: { x: 0, y: 0 },
     foo1: 1,
@@ -18,7 +18,6 @@ describe("getValueAtLayer", () => {
   before_all(() => {
     changingEntity = {
       ...sameEntity,
-      assemblyLayer: 2,
       layerChanges: {
         3: {
           foo1: 3,
@@ -34,16 +33,16 @@ describe("getValueAtLayer", () => {
     }
   })
 
-  test("undefined if lower than layer", () => {
+  test("nil if lower than layer", () => {
     assert.nil(getValueAtLayer(changingEntity, 1))
   })
 
   test("getValueAtLayer returns same entity if no layerChanges", () => {
-    assert.same(sameEntity, getValueAtLayer(sameEntity, 1))
+    assert.same(sameEntity, getValueAtLayer(sameEntity, 2))
   })
 
   test("applies changes from one layer", () => {
-    const result = getValueAtLayer(changingEntity, 1)
+    const result = getValueAtLayer(changingEntity, 3)
     assert.same(
       {
         ...sameEntity,
@@ -55,7 +54,7 @@ describe("getValueAtLayer", () => {
   })
 
   test("applies changes from multiple layers", () => {
-    const result = getValueAtLayer(changingEntity, 3)
+    const result = getValueAtLayer(changingEntity, 5)
     assert.same(
       {
         ...sameEntity,
@@ -67,7 +66,7 @@ describe("getValueAtLayer", () => {
   })
 
   test("replaces nilPlaceholder with nil", () => {
-    const result = getValueAtLayer(changingEntity, 5)
+    const result = getValueAtLayer(changingEntity, 7)
     const expected = {
       ...sameEntity,
       foo1: 5,

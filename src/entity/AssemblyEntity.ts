@@ -13,7 +13,7 @@ export interface Entity {
 export type LayerNumber = number
 
 export type AssemblyEntity<E extends Entity = Entity> = E & {
-  readonly assemblyLayer: LayerNumber
+  readonly layerNumber: LayerNumber
   readonly layerChanges?: PRRecord<LayerNumber, Readonly<LayerChange<E>>>
 }
 
@@ -27,7 +27,7 @@ export type LayerChange<E extends Entity> = {
 
 export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, layer: LayerNumber): E | nil {
   assert(layer >= 1, "layer must be >= 1")
-  if (entity.assemblyLayer < layer) return nil
+  if (entity.layerNumber > layer) return nil
   const { layerChanges } = entity
   if (!layerChanges) return entity
   const firstChangedLayer = next(layerChanges)[0]

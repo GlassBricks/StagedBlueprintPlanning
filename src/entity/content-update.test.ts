@@ -1,6 +1,6 @@
 import { Pos, PositionClass } from "../lib/geometry"
 import { clearTestArea } from "../test-util/area"
-import { getLeftTop, WorldArea, WorldPosition } from "../utils/world-location"
+import { WorldArea } from "../utils/world-location"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
 import { AssemblyEntity } from "./AssemblyEntity"
 import {
@@ -8,16 +8,21 @@ import {
   deleteEntityInWorld,
   entityAdded,
   entityDeleted,
+  LayerContext,
   placeAssemblyInWorld,
 } from "./content-update"
 
 let content: MutableAssemblyContent
 let area: WorldArea
-let leftTop: WorldPosition
+let layerContext: LayerContext
 before_each(() => {
   content = newAssemblyContent()
   area = clearTestArea()
-  leftTop = getLeftTop(area)
+  layerContext = {
+    surface: area.surface,
+    leftTop: area.bbox.left_top,
+    layerNumber: 1,
+  }
 })
 
 describe("simple entity", () => {
@@ -28,12 +33,12 @@ describe("simple entity", () => {
   function doAdd(params: Partial<SurfaceCreateEntity> = {}) {
     const params1 = {
       name: "iron-chest",
-      position: Pos.plus(pos, leftTop.position),
+      position: Pos.plus(pos, layerContext.leftTop),
       force: "player",
       ...params,
     }
     const entity = area.surface.create_entity(params1)!
-    entityAdded(content, assert(entity), leftTop)
+    entityAdded(content, assert(entity), layerContext)
     return {
       entity,
       found: content.findCompatible({
@@ -63,7 +68,7 @@ describe("simple entity", () => {
 
   test("deleted after add", () => {
     const { entity } = doAdd()
-    entityDeleted(content, entity, leftTop) // simulated
+    entityDeleted(content, entity, layerContext) // simulated
     assert.same({}, content.entities)
   })
 
@@ -71,39 +76,63 @@ describe("simple entity", () => {
     const entity: AssemblyEntity = {
       name: "iron-chest",
       position: Pos(10.5, 10.5),
+      layerNumber: 1,
     }
-    const created = createEntityInWorld(entity, leftTop)!
+    const created = createEntityInWorld(entity, layerContext)!
     assert.not_nil(created)
-    assert.same(created.position, Pos.plus(entity.position, leftTop.position))
+    assert.same(created.position, Pos.plus(entity.position, layerContext.leftTop))
+  })
+
+  test("not created if not in layer", () => {
+    const entity: AssemblyEntity = {
+      name: "iron-chest",
+      position: Pos(10.5, 10.5),
+      layerNumber: 2,
+    }
+    const created = createEntityInWorld(entity, layerContext)
+    assert.nil(created)
   })
 
   test("delete in world", () => {
     const entity: AssemblyEntity = {
       name: "iron-chest",
       position: Pos(10.5, 10.5),
+      layerNumber: 1,
     }
-    const created = createEntityInWorld(entity, leftTop)!
-    deleteEntityInWorld(entity, leftTop)
+    const created = createEntityInWorld(entity, layerContext)!
+    deleteEntityInWorld(entity, layerContext)
     assert.false(created.valid)
   })
 
   test("simple place assembly in world", () => {
-    const entities = [
+    const entities: AssemblyEntity[] = [
       {
         name: "iron-chest",
         position: Pos(10.5, 10.5),
+        layerNumber: 1,
       },
       {
         name: "iron-chest",
         position: Pos(10.5, 11.5),
+        layerNumber: 1,
+      },
+      {
+        name: "iron-chest",
+        position: Pos(11.5, 10.5),
+        layerNumber: 2, // should not be placed
       },
     ]
     for (const entity of entities) content.add(entity)
 
-    placeAssemblyInWorld(content, leftTop)
+    placeAssemblyInWorld(content, layerContext)
 
     for (const entity of entities) {
-      assert.not_nil(area.surface.find_entity(entity.name, Pos.plus(entity.position, leftTop.position)))
+      const found = area.surface.find_entity(entity.name, Pos.plus(entity.position, layerContext.leftTop))
+      if (entity.layerNumber === 1) {
+        assert.not_nil(found)
+      } else {
+        assert.nil(found)
+      }
     }
   })
 })

@@ -1,5 +1,5 @@
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
-import { Entity } from "./AssemblyEntity"
+import { AssemblyEntity, Entity } from "./AssemblyEntity"
 
 let content: MutableAssemblyContent
 before_all(() => {
@@ -8,7 +8,7 @@ before_all(() => {
 
 describe("findCompatible", () => {
   test("finds compatible if same name and direction", () => {
-    const entity: Entity = { name: "test", position: { x: 0, y: 0 } }
+    const entity: AssemblyEntity = { name: "test", position: { x: 0, y: 0 }, layerNumber: 1 }
     const lookup = {
       ...entity,
       foo: "bar",
