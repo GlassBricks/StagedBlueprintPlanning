@@ -8,6 +8,7 @@ import {
   deleteEntityInWorld,
   entityAdded,
   entityDeleted,
+  findCompatibleEntityInWorld,
   LayerContext,
   placeAssemblyInWorld,
 } from "./layer-update"
@@ -82,6 +83,17 @@ describe("simple entity", () => {
     assert.same(created.position, Pos.plus(entity.position, layerContext.bbox.left_top))
   })
 
+  test("returns same entity if exists in world", () => {
+    const entity: AssemblyEntity = {
+      name: "iron-chest",
+      position: Pos(10.5, 10.5),
+      layerNumber: 1,
+    }
+    const created = createEntityInWorld(layerContext, entity)
+    const created2 = createEntityInWorld(layerContext, entity)
+    assert.equal(created, created2)
+  })
+
   test("not created if not in layer", () => {
     const entity: AssemblyEntity = {
       name: "iron-chest",
@@ -90,6 +102,17 @@ describe("simple entity", () => {
     }
     const created = createEntityInWorld(layerContext, entity)
     assert.nil(created)
+  })
+
+  test("findCompatibleEntityInWorld", () => {
+    const entity: AssemblyEntity = {
+      name: "iron-chest",
+      position: Pos(10.5, 10.5),
+      layerNumber: 1,
+    }
+    const created = createEntityInWorld(layerContext, entity)!
+    const found = findCompatibleEntityInWorld(layerContext, entity)
+    assert.equal(created, found)
   })
 
   test("delete in world", () => {
