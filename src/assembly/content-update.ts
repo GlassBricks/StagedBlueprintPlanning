@@ -13,7 +13,7 @@ export function isAssemblyEntity(entity: LuaEntity): boolean {
   return entity.type !== "entity-ghost" && entity.force.name === "player" && "player-creation" in entity.prototype.flags
 }
 
-export function entityAdded(content: MutableAssemblyContent, entity: LuaEntity, context: LayerContext): void {
+export function entityAdded(context: LayerContext, content: MutableAssemblyContent, entity: LuaEntity): void {
   if (!isAssemblyEntity(entity)) return
   const position = Pos.minus(entity.position, context.bbox.left_top)
   assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
@@ -25,7 +25,7 @@ export function entityAdded(content: MutableAssemblyContent, entity: LuaEntity, 
   })
 }
 
-export function entityDeleted(content: MutableAssemblyContent, entity: LuaEntity, context: LayerContext): void {
+export function entityDeleted(context: LayerContext, content: MutableAssemblyContent, entity: LuaEntity): void {
   if (!isAssemblyEntity(entity)) return
   const position = Pos.minus(entity.position, context.bbox.left_top)
   assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
@@ -35,7 +35,7 @@ export function entityDeleted(content: MutableAssemblyContent, entity: LuaEntity
   }
 }
 
-export function createEntityInWorld(entity: AssemblyEntity, context: LayerContext): LuaEntity | nil {
+export function createEntityInWorld(context: LayerContext, entity: AssemblyEntity): LuaEntity | nil {
   if (entity.layerNumber > context.layerNumber) return nil
   const { name, position, direction } = entity
   return context.surface.create_entity({
@@ -46,7 +46,7 @@ export function createEntityInWorld(entity: AssemblyEntity, context: LayerContex
   })
 }
 
-export function deleteEntityInWorld(entity: AssemblyEntity, context: LayerContext): void {
+export function deleteEntityInWorld(context: LayerContext, entity: AssemblyEntity): void {
   const { name, position, direction } = entity
   const worldPosition = Pos.plus(position, context.bbox.left_top)
   // find entity that matches
@@ -68,12 +68,12 @@ export function deleteEntityInWorld(entity: AssemblyEntity, context: LayerContex
   }
 }
 
-export function placeAssemblyInWorld(content: AssemblyContent, context: LayerContext): LuaEntity[] {
+export function placeAssemblyInWorld(context: LayerContext, content: AssemblyContent): LuaEntity[] {
   const result: LuaEntity[] = []
   for (const [, byX] of pairs(content.entities)) {
     for (const [, entities] of pairs(byX))
       for (const entity of entities) {
-        const luaEntity = createEntityInWorld(entity, context)
+        const luaEntity = createEntityInWorld(context, entity)
         if (luaEntity) result.push(luaEntity)
       }
   }

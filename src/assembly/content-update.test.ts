@@ -37,7 +37,7 @@ describe("simple entity", () => {
       ...params,
     }
     const entity = area.surface.create_entity(params1)!
-    entityAdded(content, assert(entity), layerContext)
+    entityAdded(layerContext, content, assert(entity))
     return {
       entity,
       found: content.findCompatible({
@@ -67,7 +67,7 @@ describe("simple entity", () => {
 
   test("deleted after add", () => {
     const { entity } = doAdd()
-    entityDeleted(content, entity, layerContext) // simulated
+    entityDeleted(layerContext, content, entity) // simulated
     assert.same({}, content.entities)
   })
 
@@ -77,7 +77,7 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 1,
     }
-    const created = createEntityInWorld(entity, layerContext)!
+    const created = createEntityInWorld(layerContext, entity)!
     assert.not_nil(created)
     assert.same(created.position, Pos.plus(entity.position, layerContext.bbox.left_top))
   })
@@ -88,7 +88,7 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 2,
     }
-    const created = createEntityInWorld(entity, layerContext)
+    const created = createEntityInWorld(layerContext, entity)
     assert.nil(created)
   })
 
@@ -98,8 +98,8 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 1,
     }
-    const created = createEntityInWorld(entity, layerContext)!
-    deleteEntityInWorld(entity, layerContext)
+    const created = createEntityInWorld(layerContext, entity)!
+    deleteEntityInWorld(layerContext, entity)
     assert.false(created.valid)
   })
 
@@ -123,7 +123,7 @@ describe("simple entity", () => {
     ]
     for (const entity of entities) content.add(entity)
 
-    placeAssemblyInWorld(content, layerContext)
+    placeAssemblyInWorld(layerContext, content)
 
     for (const entity of entities) {
       const found = area.surface.find_entity(entity.name, Pos.plus(entity.position, layerContext.bbox.left_top))
