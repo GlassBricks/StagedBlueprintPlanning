@@ -10,20 +10,24 @@ export interface Entity {
   readonly direction?: defines.direction
 }
 
+export type LayerNumber = number
+
 export type AssemblyEntity<E extends Entity = Entity> = E & {
-  readonly layerChanges?: PRRecord<number, Readonly<LayerChange<E>>>
+  readonly assemblyLayer: LayerNumber
+  readonly layerChanges?: PRRecord<LayerNumber, Readonly<LayerChange<E>>>
 }
 
-export type MutableAssemblyEntity<E extends Entity = Entity> = Mutable<E> & {
-  layerChanges?: PRecord<number, LayerChange<E>>
+export type MutableAssemblyEntity<E extends Entity = Entity> = Mutable<AssemblyEntity<E>> & {
+  layerChanges?: PRecord<LayerNumber, LayerChange<E>>
 }
 
 export type LayerChange<E extends Entity> = {
   [P in keyof E]?: WithNilPlaceholder<E[P]>
 }
 
-export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, layer: number): E {
+export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, layer: LayerNumber): E | nil {
   assert(layer >= 1, "layer must be >= 1")
+  if (entity.assemblyLayer < layer) return nil
   const { layerChanges } = entity
   if (!layerChanges) return entity
   const firstChangedLayer = next(layerChanges)[0]
@@ -39,7 +43,7 @@ export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, lay
       if (v === nilPlaceholder) {
         delete result[k]
       } else {
-        result[k] = v as E[typeof k]
+        result[k] = v as any
       }
     }
   }

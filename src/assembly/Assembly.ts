@@ -1,3 +1,4 @@
+import { LayerNumber } from "../entity/AssemblyEntity"
 import { bound, Events, funcRef, PRecord, reg, RegisterClass } from "../lib"
 import { Pos, Position, Vec2 } from "../lib/geometry"
 import { MutableState, state, State } from "../lib/observable"
@@ -28,7 +29,7 @@ export interface Layer {
 
   readonly area: WorldArea
 
-  getLayerNumber(): number
+  getLayerNumber(): LayerNumber
 }
 
 declare const global: {
@@ -84,7 +85,7 @@ class LayerImpl implements Layer {
   }
 
   static create(parent: Assembly, index: number, worldTopLeft: WorldPosition): LayerImpl {
-    return new LayerImpl(parent.id, this.getWorldArea(worldTopLeft, parent.chunkSize), index)
+    return new LayerImpl(parent.id, LayerImpl.getWorldArea(worldTopLeft, parent.chunkSize), index)
   }
 
   private static getWorldArea(worldTopLeft: WorldPosition, chunkSize: Position): WorldArea {
@@ -94,7 +95,7 @@ class LayerImpl implements Layer {
     return { surface, bbox: { left_top: actualLeftTop, right_bottom: rightBottom } }
   }
 
-  getLayerNumber(): number {
+  getLayerNumber(): LayerNumber {
     return this.index.get()
   }
 

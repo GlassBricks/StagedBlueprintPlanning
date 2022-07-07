@@ -6,41 +6,47 @@ describe("getValueAtLayer", () => {
     foo1: number
     foo2?: number | nil
   }
-  const fooEntity: FooEntity = {
+  const sameEntity: AssemblyEntity<FooEntity> = {
+    assemblyLayer: 1,
     name: "foo",
     position: { x: 0, y: 0 },
     foo1: 1,
     foo2: 2,
   }
 
-  let assemblyEntity: AssemblyEntity<FooEntity>
+  let changingEntity: AssemblyEntity<FooEntity>
   before_all(() => {
-    assemblyEntity = {
-      ...fooEntity,
+    changingEntity = {
+      ...sameEntity,
+      assemblyLayer: 2,
       layerChanges: {
-        1: {
+        3: {
           foo1: 3,
           foo2: 4,
         },
-        3: {
+        5: {
           foo1: 5,
         },
-        5: {
+        7: {
           foo2: getNilPlaceholder(),
         },
       },
     }
   })
 
+  test("undefined if lower than layer", () => {
+    assert.nil(getValueAtLayer(changingEntity, 1))
+  })
+
   test("getValueAtLayer returns same entity if no layerChanges", () => {
-    assert.same(fooEntity, getValueAtLayer(fooEntity, 1))
+    assert.same(sameEntity, getValueAtLayer(sameEntity, 1))
   })
 
   test("applies changes from one layer", () => {
-    const result = getValueAtLayer(assemblyEntity, 1)
+    const result = getValueAtLayer(changingEntity, 1)
     assert.same(
       {
-        ...fooEntity,
+        ...sameEntity,
         foo1: 3,
         foo2: 4,
       },
@@ -49,10 +55,10 @@ describe("getValueAtLayer", () => {
   })
 
   test("applies changes from multiple layers", () => {
-    const result = getValueAtLayer(assemblyEntity, 3)
+    const result = getValueAtLayer(changingEntity, 3)
     assert.same(
       {
-        ...fooEntity,
+        ...sameEntity,
         foo1: 5,
         foo2: 4,
       },
@@ -61,9 +67,9 @@ describe("getValueAtLayer", () => {
   })
 
   test("replaces nilPlaceholder with nil", () => {
-    const result = getValueAtLayer(assemblyEntity, 5)
+    const result = getValueAtLayer(changingEntity, 5)
     const expected = {
-      ...fooEntity,
+      ...sameEntity,
       foo1: 5,
     }
     delete expected.foo2

@@ -6,11 +6,13 @@ import { AssemblyEntity, Entity, MutableAssemblyEntity } from "./AssemblyEntity"
 export interface AssemblyContent {
   readonly entities: Map2D<AssemblyEntity>
 
-  findCompatible<T extends Entity>(entity: T, position?: Position): MutableAssemblyEntity<T> | nil
+  findCompatible<T extends Entity>(entity: T, position?: Position): AssemblyEntity<T> | nil
 }
 
 export interface MutableAssemblyContent extends AssemblyContent {
   readonly entities: MutableMap2D<MutableAssemblyEntity>
+
+  findCompatible<T extends Entity>(entity: T, position?: Position): MutableAssemblyEntity<T> | nil
 
   add(entity: MutableAssemblyEntity): void
   remove(existingEntity: MutableAssemblyEntity): void
