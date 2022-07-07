@@ -4,8 +4,4 @@
 require("__debugadapter__/debugadapter.lua")
 
 declare const __DebugAdapter: DebugAdapter
-export function _breakpoint(): void {
-  __DebugAdapter.breakpoint()
-}
-
-__DebugAdapter.stepIgnore(_breakpoint)
+export const _breakpoint = __DebugAdapter.breakpoint
