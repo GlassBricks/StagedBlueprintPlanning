@@ -10,7 +10,7 @@ import {
   entityDeleted,
   LayerContext,
   placeAssemblyInWorld,
-} from "./content-update"
+} from "./layer-update"
 
 let content: MutableAssemblyContent
 let area: WorldArea

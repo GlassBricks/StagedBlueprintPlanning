@@ -4,7 +4,7 @@ import { BBox, Pos, Vec2 } from "../lib/geometry"
 import { MutableState, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
-import { LayerContext } from "./content-update"
+import { LayerContext } from "./layer-update"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 
