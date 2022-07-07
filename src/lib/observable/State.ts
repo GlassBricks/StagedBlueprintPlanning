@@ -72,11 +72,10 @@ export interface MutableState<T> extends State<T> {
   readonly value: T
   set(value: T): void
 
+  forceNotify(): void
+
   setValueFn(value: T): Callback
-
   toggleFn(this: MutableState<boolean>): Callback
-
-  forceUpdate(): void
 }
 
 @RegisterClass("MutableState")
@@ -97,7 +96,7 @@ class MutableStateImpl<T> extends State<T> implements MutableState<T> {
     }
   }
 
-  public forceUpdate(value: T = this.value): void {
+  public forceNotify(value: T = this.value): void {
     const oldValue = this.value
     this.value = value
     this.event.raise(value, oldValue)

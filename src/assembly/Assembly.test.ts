@@ -31,17 +31,17 @@ describe("Layer", () => {
   })
   test("layerNumber and id is correct", () => {
     const layer1 = asm.pushLayer(pos)
-    assert.equals(1, layer1.getLayerNumber())
+    assert.equals(1, layer1.layerNumber)
     assert.equals(asm.id, layer1.assemblyId)
 
     const layer2 = asm.pushLayer(pos)
-    assert.equals(2, layer2.getLayerNumber())
+    assert.equals(2, layer2.layerNumber)
     assert.equals(asm.id, layer2.assemblyId)
   })
 
   test("display name is correct", () => {
     const layer = asm.pushLayer(pos)
-    assert.same([L_Assembly.UnnamedLayer, layer.getLayerNumber()], layer.displayName.get())
+    assert.same([L_Assembly.UnnamedLayer, layer.layerNumber], layer.displayName.get())
     layer.name.set("test")
     assert.same("test", layer.displayName.get())
   })

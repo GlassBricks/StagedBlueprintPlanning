@@ -1,8 +1,8 @@
+import { AssemblyEntity } from "../entity/AssemblyEntity"
 import { Pos, PositionClass } from "../lib/geometry"
 import { clearTestArea } from "../test-util/area"
 import { WorldArea } from "../utils/world-location"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
-import { AssemblyEntity } from "./AssemblyEntity"
 import {
   createEntityInWorld,
   deleteEntityInWorld,
@@ -19,8 +19,7 @@ before_each(() => {
   content = newAssemblyContent()
   area = clearTestArea()
   layerContext = {
-    surface: area.surface,
-    leftTop: area.bbox.left_top,
+    ...area,
     layerNumber: 1,
   }
 })
@@ -33,7 +32,7 @@ describe("simple entity", () => {
   function doAdd(params: Partial<SurfaceCreateEntity> = {}) {
     const params1 = {
       name: "iron-chest",
-      position: Pos.plus(pos, layerContext.leftTop),
+      position: Pos.plus(pos, layerContext.bbox.left_top),
       force: "player",
       ...params,
     }
@@ -80,7 +79,7 @@ describe("simple entity", () => {
     }
     const created = createEntityInWorld(entity, layerContext)!
     assert.not_nil(created)
-    assert.same(created.position, Pos.plus(entity.position, layerContext.leftTop))
+    assert.same(created.position, Pos.plus(entity.position, layerContext.bbox.left_top))
   })
 
   test("not created if not in layer", () => {
@@ -127,7 +126,7 @@ describe("simple entity", () => {
     placeAssemblyInWorld(content, layerContext)
 
     for (const entity of entities) {
-      const found = area.surface.find_entity(entity.name, Pos.plus(entity.position, layerContext.leftTop))
+      const found = area.surface.find_entity(entity.name, Pos.plus(entity.position, layerContext.bbox.left_top))
       if (entity.layerNumber === 1) {
         assert.not_nil(found)
       } else {

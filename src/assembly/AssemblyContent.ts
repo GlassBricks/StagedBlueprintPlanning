@@ -1,8 +1,8 @@
+import { AssemblyEntity, Entity, isCompatibleEntity, MutableAssemblyEntity } from "../entity/AssemblyEntity"
 import { RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { Map2D, map2dAdd, map2dGet, map2dRemove, MutableMap2D } from "../lib/map2d"
 import { Event } from "../lib/observable"
-import { AssemblyEntity, Entity, MutableAssemblyEntity } from "./AssemblyEntity"
 
 export interface AssemblyContent {
   readonly entities: Map2D<AssemblyEntity>
@@ -35,11 +35,6 @@ export interface MutableAssemblyContent extends AssemblyContent {
   remove(existingEntity: MutableAssemblyEntity): void
 }
 
-/** Does not check position */
-export function isCompatibleEntity(a: Entity, b: Entity): boolean {
-  return a.name === b.name && (a.direction ?? 0) === (b.direction ?? 0)
-}
-
 @RegisterClass("AssemblyContent")
 class AssemblyContentImpl implements MutableAssemblyContent {
   readonly entities: MutableMap2D<MutableAssemblyEntity> = {}
@@ -50,9 +45,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     const atPos = map2dGet(this.entities, x, y)
     if (!atPos) return
     for (const candidate of atPos) {
-      if (candidate.name === entity.name && (candidate.direction ?? 0) === (entity.direction ?? 0)) {
-        return candidate
-      }
+      if (isCompatibleEntity(candidate, entity)) return candidate
     }
   }
 

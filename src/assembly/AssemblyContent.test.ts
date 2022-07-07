@@ -1,5 +1,5 @@
+import { AssemblyEntity, Entity } from "../entity/AssemblyEntity"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
-import { AssemblyEntity, Entity } from "./AssemblyEntity"
 
 let content: MutableAssemblyContent
 before_all(() => {

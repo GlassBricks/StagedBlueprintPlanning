@@ -49,3 +49,8 @@ export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, lay
   }
   return result
 }
+
+/** Does not check position */
+export function isCompatibleEntity(a: Entity, b: Entity): boolean {
+  return a.name === b.name && (a.direction ?? 0) === (b.direction ?? 0)
+}

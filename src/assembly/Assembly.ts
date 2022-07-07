@@ -1,9 +1,10 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { bound, Events, funcRef, PRecord, reg, RegisterClass } from "../lib"
-import { Pos, Position, Vec2 } from "../lib/geometry"
+import { bound, Events, PRecord, reg, RegisterClass } from "../lib"
+import { BBox, Pos, Vec2 } from "../lib/geometry"
 import { MutableState, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
-import { WorldArea, WorldPosition } from "../utils/world-location"
+import { WorldPosition } from "../utils/world-location"
+import { LayerContext } from "./content-update"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 
@@ -21,15 +22,11 @@ export interface Assembly {
   pushLayer(leftTop: WorldPosition): Layer
 }
 
-export interface Layer {
+export interface Layer extends LayerContext {
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
 
   readonly assemblyId: AssemblyId
-
-  readonly area: WorldArea
-
-  getLayerNumber(): LayerNumber
 }
 
 declare const global: {
@@ -77,34 +74,30 @@ export function newAssembly(chunkSize: Vec2): Assembly {
 @RegisterClass("Layer")
 class LayerImpl implements Layer {
   name = state("")
-  displayName: State<LocalisedString> = this.name.flatMap(reg(this.getDisplayName))
-  public index: MutableState<number>
+  displayName: State<LocalisedString> = this.name.map(reg(this.getDisplayName))
 
-  constructor(readonly assemblyId: AssemblyId, public area: WorldArea, index: number) {
-    this.index = state(index)
-  }
+  constructor(
+    readonly assemblyId: AssemblyId,
+    readonly surface: LuaSurface,
+    readonly bbox: BBox,
+    public layerNumber: LayerNumber,
+  ) {}
 
-  static create(parent: Assembly, index: number, worldTopLeft: WorldPosition): LayerImpl {
-    return new LayerImpl(parent.id, LayerImpl.getWorldArea(worldTopLeft, parent.chunkSize), index)
-  }
-
-  private static getWorldArea(worldTopLeft: WorldPosition, chunkSize: Position): WorldArea {
+  static create(parent: Assembly, layerNumber: LayerNumber, worldTopLeft: WorldPosition): LayerImpl {
+    const { chunkSize } = parent
     const { surface, position: leftTop } = worldTopLeft
     const actualLeftTop = Pos.floorToNearest(leftTop, 32)
     const rightBottom = Pos.plus(actualLeftTop, Pos.times(chunkSize, 32))
-    return { surface, bbox: { left_top: actualLeftTop, right_bottom: rightBottom } }
+    return new LayerImpl(parent.id, surface, { left_top: actualLeftTop, right_bottom: rightBottom }, layerNumber)
   }
 
-  getLayerNumber(): LayerNumber {
-    return this.index.get()
+  _setLayerNumber(layerNumber: LayerNumber) {
+    this.layerNumber = layerNumber
+    if (this.name.value === "") this.name.forceNotify()
   }
 
   @bound
-  private getDisplayName(name: string) {
-    return name !== "" ? name : this.index.map(funcRef(LayerImpl.getDefaultName))
-  }
-
-  private static getDefaultName(this: void, index: number): LocalisedString {
-    return [L_Assembly.UnnamedLayer, index]
+  private getDisplayName(name: string): LocalisedString {
+    return name !== "" ? name : [L_Assembly.UnnamedLayer, this.layerNumber]
   }
 }
