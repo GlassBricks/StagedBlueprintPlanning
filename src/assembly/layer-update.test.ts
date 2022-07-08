@@ -2,6 +2,7 @@ import { AssemblyEntity } from "../entity/AssemblyEntity"
 import { Pos, PositionClass } from "../lib/geometry"
 import { clearTestArea } from "../test-util/area"
 import { WorldArea } from "../utils/world-location"
+import { Layer } from "./Assembly"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
 import {
   createEntityInWorld,
@@ -9,13 +10,12 @@ import {
   entityAdded,
   entityDeleted,
   findCompatibleEntityInWorld,
-  LayerContext,
   placeAssemblyInWorld,
 } from "./layer-update"
 
 let content: MutableAssemblyContent
 let area: WorldArea
-let layerContext: LayerContext
+let layerContext: Layer
 before_each(() => {
   content = newAssemblyContent()
   area = clearTestArea()

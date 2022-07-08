@@ -1,19 +1,13 @@
-import { AssemblyEntity, Entity, LayerNumber } from "../entity/AssemblyEntity"
-import { BBox, Pos } from "../lib/geometry"
-import { WorldArea } from "../utils/world-location"
+import { AssemblyEntity, Entity } from "../entity/AssemblyEntity"
+import { Pos } from "../lib/geometry"
+import { Layer } from "./Assembly"
 import { AssemblyContent, MutableAssemblyContent } from "./AssemblyContent"
-
-export interface LayerContext extends WorldArea {
-  readonly surface: LuaSurface
-  readonly bbox: BBox
-  readonly layerNumber: LayerNumber
-}
 
 export function isAssemblyEntity(entity: LuaEntity): boolean {
   return entity.type !== "entity-ghost" && entity.force.name === "player" && "player-creation" in entity.prototype.flags
 }
 
-export function entityAdded(context: LayerContext, content: MutableAssemblyContent, entity: LuaEntity): void {
+export function entityAdded(context: Layer, content: MutableAssemblyContent, entity: LuaEntity): void {
   if (!isAssemblyEntity(entity)) return
   const position = Pos.minus(entity.position, context.bbox.left_top)
   assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
@@ -25,7 +19,7 @@ export function entityAdded(context: LayerContext, content: MutableAssemblyConte
   })
 }
 
-export function entityDeleted(context: LayerContext, content: MutableAssemblyContent, entity: LuaEntity): void {
+export function entityDeleted(context: Layer, content: MutableAssemblyContent, entity: LuaEntity): void {
   if (!isAssemblyEntity(entity)) return
   const position = Pos.minus(entity.position, context.bbox.left_top)
   assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
@@ -35,7 +29,7 @@ export function entityDeleted(context: LayerContext, content: MutableAssemblyCon
   }
 }
 
-export function findCompatibleEntityInWorld(context: LayerContext, entity: Entity): LuaEntity | nil {
+export function findCompatibleEntityInWorld(context: Layer, entity: Entity): LuaEntity | nil {
   const worldPos = Pos.plus(entity.position, context.bbox.left_top)
   const candidates = context.surface.find_entities_filtered({
     position: worldPos,
@@ -54,7 +48,7 @@ export function findCompatibleEntityInWorld(context: LayerContext, entity: Entit
  * If an existing compatible entity is found, it is updated to match the given entity's properties, and that entity is
  * returned.
  */
-export function createEntityInWorld(context: LayerContext, entity: AssemblyEntity): LuaEntity | nil {
+export function createEntityInWorld(context: Layer, entity: AssemblyEntity): LuaEntity | nil {
   if (entity.layerNumber > context.layerNumber) return nil
   const { name, position, direction } = entity
   const existing = findCompatibleEntityInWorld(context, entity)
@@ -77,11 +71,11 @@ function matchExistingToEntity(existing: LuaEntity, entity: AssemblyEntity): voi
   if (existing.supports_direction) assert(existing.direction === entity.direction)
 }
 
-export function deleteEntityInWorld(context: LayerContext, entity: AssemblyEntity): void {
+export function deleteEntityInWorld(context: Layer, entity: AssemblyEntity): void {
   findCompatibleEntityInWorld(context, entity)?.destroy()
 }
 
-export function placeAssemblyInWorld(context: LayerContext, content: AssemblyContent): LuaEntity[] {
+export function placeAssemblyInWorld(context: Layer, content: AssemblyContent): LuaEntity[] {
   const result: LuaEntity[] = []
   for (const [, byX] of pairs(content.entities)) {
     for (const [, entities] of pairs(byX))

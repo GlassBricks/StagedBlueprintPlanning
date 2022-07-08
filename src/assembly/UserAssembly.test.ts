@@ -1,7 +1,7 @@
 import { Pos } from "../lib/geometry"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
-import { Assembly, newAssembly } from "./Assembly"
+import { newAssembly, UserAssembly } from "./UserAssembly"
 
 describe("Assembly", () => {
   test("assigns unique id", () => {
@@ -23,7 +23,7 @@ describe("Assembly", () => {
 })
 
 describe("Layer", () => {
-  let asm: Assembly
+  let asm: UserAssembly
   let pos: WorldPosition
   before_each(() => {
     asm = newAssembly(Pos(1, 1))

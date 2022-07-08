@@ -7,7 +7,7 @@ import { Event } from "../lib/observable"
 export interface AssemblyContent {
   readonly entities: Map2D<AssemblyEntity>
 
-  findCompatible<T extends Entity>(entity: T, position?: Position): AssemblyEntity<T> | nil
+  findCompatible(entity: Entity, position?: Position): AssemblyEntity | nil
 
   readonly onChanged: Event<AssemblyContentChanged>
 }
@@ -29,10 +29,10 @@ export type AssemblyContentChanged = AssemblyEntityAdded | AssemblyEntityRemoved
 export interface MutableAssemblyContent extends AssemblyContent {
   readonly entities: MutableMap2D<MutableAssemblyEntity>
 
-  findCompatible<T extends Entity>(entity: T, position?: Position): MutableAssemblyEntity<T> | nil
+  findCompatible(entity: Entity, position?: Position): MutableAssemblyEntity | nil
 
   add(entity: MutableAssemblyEntity): void
-  remove(existingEntity: MutableAssemblyEntity): void
+  remove(entity: MutableAssemblyEntity): void
 }
 
 @RegisterClass("AssemblyContent")
