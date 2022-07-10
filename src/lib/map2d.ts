@@ -29,3 +29,15 @@ export function map2dRemove<T>(map: MutableMap2D<T>, x: number, y: number, value
     }
   }
 }
+
+export function map2dSize<T>(map: MutableMap2D<T>): number
+export function map2dSize<T>(map: Map2D<T>): number
+export function map2dSize<T>(map: Map2D<T>): number {
+  let size = 0
+  for (const [, byX] of pairs(map)) {
+    for (const [, byY] of pairs(byX)) {
+      size += table_size(byY)
+    }
+  }
+  return size
+}

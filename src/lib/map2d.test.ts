@@ -1,4 +1,4 @@
-import { map2dAdd, map2dGet, map2dRemove, MutableMap2D } from "./map2d"
+import { map2dAdd, map2dGet, map2dRemove, map2dSize, MutableMap2D } from "./map2d"
 
 let map2d: MutableMap2D<string>
 
@@ -35,4 +35,16 @@ test("removes empty entries", () => {
   map2dAdd(map2d, 1, 1, "a")
   map2dRemove(map2d, 1, 1, "a")
   assert.same({}, map2d)
+})
+
+test("size", () => {
+  assert.same(0, map2dSize(map2d))
+  map2dAdd(map2d, 1, 1, "a")
+  assert.same(1, map2dSize(map2d))
+  map2dAdd(map2d, 1, 2, "b")
+  assert.same(2, map2dSize(map2d))
+  map2dAdd(map2d, 1, 2, "c")
+  assert.same(3, map2dSize(map2d))
+  map2dAdd(map2d, 1, 2, "b")
+  assert.same(3, map2dSize(map2d))
 })
