@@ -1,14 +1,16 @@
 import { Events } from "./lib"
+import lastCompileTime = require("./last-compile-time")
 
 declare function __getTestFiles(): string[]
 
-declare let global: unknown
+declare let global: {
+  lastCompileTimestamp?: string
+}
 
 if (script.active_mods.testorio) {
   function reinit() {
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories) inventories.forEach((x) => x.destroy())
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     global = {}
     Events.raiseFakeEventNamed("on_init", nil)
   }
@@ -31,14 +33,12 @@ if (script.active_mods.testorio) {
     tag_blacklist: tagBlacklist,
     before_test_run() {
       reinit()
+      global.lastCompileTimestamp = lastCompileTime
       const force = game.forces.player
       force.enable_all_recipes()
     },
     after_test_run() {
-      // const results = remote.call("testorio", "getResults")
-      // if (results.status === "passed" && results.skipped === 0) {
-      // }
-      game.players[1]?.gui.screen["testorio:test-config"]?.bring_to_front()
+      game.print("Last run: " + lastCompileTime)
     },
     log_passed_tests: false,
   } as Testorio.Config)
@@ -46,3 +46,26 @@ if (script.active_mods.testorio) {
     tagBlacklist.push("after_mod_reload")
   }
 }
+
+function isTestsRunning() {
+  if (remote.interfaces.testorio?.isRunning) {
+    return remote.call("testorio", "isRunning") || remote.call("testorio", "getTestStage") === "NotRun"
+  }
+  return true
+}
+
+Events.on_tick(() => {
+  const mod = game.ticks_played % 120
+  if (mod === 0) {
+    // tests not running or not ready
+    if (!isTestsRunning()) {
+      global.lastCompileTimestamp = lastCompileTime
+      game.reload_mods()
+    }
+  } else if (mod === 1) {
+    if (!isTestsRunning() && global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
+      game.print("Rerunning")
+      remote.call("testorio", "runTests")
+    }
+  }
+})

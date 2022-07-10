@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "moduleResolution": "node",
+    "module": "CommonJS",
     "types": [
       "luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio"
     ],
@@ -19,7 +20,8 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitThis": true,
     "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "noEmitOnError": true
   },
   "tstl": {
     "luaTarget": "5.2",

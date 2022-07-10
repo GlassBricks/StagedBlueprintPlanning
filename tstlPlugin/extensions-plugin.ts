@@ -15,6 +15,7 @@ import {
   createTableIndexExpression,
   Expression,
   File,
+  getEmitOutDir,
   getSourceDir,
   isCallExpression,
   LuaLibFeature,
@@ -187,7 +188,8 @@ const plugin: Plugin = {
       return context.superTransformExpression(node)
     },
   },
-  beforeEmit(_, __, ___, files) {
+  beforeEmit(program, __, ___, files) {
+    if (files.length === 0) return // also if there are errors and noEmitOnError
     for (const file of files) {
       const outPath = file.outputPath
       if (!outPath.endsWith(".lua")) continue
@@ -196,6 +198,13 @@ const plugin: Plugin = {
       const newFileName = fileName.replace(/\./g, "-")
       file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
     }
+
+    const currentTimestampString = new Date().toLocaleString()
+    const outDir = getEmitOutDir(program)
+    files.push({
+      outputPath: path.join(outDir, "last-compile-time.lua"),
+      code: `return ${JSON.stringify(currentTimestampString)}`,
+    })
   },
 }
 // noinspection JSUnusedGlobalSymbols
