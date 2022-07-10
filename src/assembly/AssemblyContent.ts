@@ -2,43 +2,25 @@ import { AssemblyEntity, Entity, isCompatibleEntity, MutableAssemblyEntity } fro
 import { RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { Map2D, map2dAdd, map2dGet, map2dRemove, MutableMap2D } from "../lib/map2d"
-import { Event } from "../lib/observable"
 
 export interface AssemblyContent {
   readonly entities: Map2D<AssemblyEntity>
 
   findCompatible(entity: Entity, position?: Position): AssemblyEntity | nil
-
-  readonly onChanged: Event<AssemblyContentChanged>
 }
-
-export interface AssemblyEntityAdded {
-  readonly type: "add"
-  readonly entity: AssemblyEntity
-}
-
-export interface AssemblyEntityRemoved {
-  readonly type: "remove"
-  readonly entity: AssemblyEntity
-}
-
-// todo: more events
-
-export type AssemblyContentChanged = AssemblyEntityAdded | AssemblyEntityRemoved
 
 export interface MutableAssemblyContent extends AssemblyContent {
   readonly entities: MutableMap2D<MutableAssemblyEntity>
 
   findCompatible(entity: Entity, position?: Position): MutableAssemblyEntity | nil
 
-  add(entity: MutableAssemblyEntity): void
-  remove(entity: MutableAssemblyEntity): void
+  add(entity: MutableAssemblyEntity): MutableAssemblyEntity
+  remove(entity: MutableAssemblyEntity): MutableAssemblyEntity
 }
 
 @RegisterClass("AssemblyContent")
 class AssemblyContentImpl implements MutableAssemblyContent {
   readonly entities: MutableMap2D<MutableAssemblyEntity> = {}
-  readonly onChanged = new Event<AssemblyContentChanged>()
 
   findCompatible(entity: Entity, position?: Position): AssemblyEntity<any> | nil {
     const { x, y } = position ?? entity.position
@@ -49,14 +31,16 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     }
   }
 
-  add(entity: MutableAssemblyEntity): void {
+  add(entity: MutableAssemblyEntity): MutableAssemblyEntity {
     const { x, y } = entity.position
     map2dAdd(this.entities, x, y, entity)
+    return entity
   }
 
-  remove(entity: MutableAssemblyEntity): void {
+  remove(entity: MutableAssemblyEntity): MutableAssemblyEntity {
     const { x, y } = entity.position
     map2dRemove(this.entities, x, y, entity)
+    return entity
   }
 }
 

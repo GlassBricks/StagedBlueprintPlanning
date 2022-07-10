@@ -1,74 +1,78 @@
-import { AssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { Pos, PositionClass } from "../lib/geometry"
 import { clearTestArea } from "../test-util/area"
 import { WorldArea } from "../utils/world-location"
 import { Layer } from "./Assembly"
-import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
 import {
+  AssemblyUpdateHandler,
+  AssemblyUpdateType,
   createEntityInWorld,
   deleteEntityInWorld,
-  entityAdded,
   entityDeleted,
   findCompatibleEntityInWorld,
+  onEntityAdded,
   placeAssemblyInWorld,
-} from "./layer-update"
+} from "./assembly-update"
+import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
 
 let content: MutableAssemblyContent
 let area: WorldArea
-let layerContext: Layer
+let layer: Layer
+let events: Array<{ type: AssemblyUpdateType; entity: AssemblyEntity; layer: LayerNumber }>
+let updateHandler: AssemblyUpdateHandler
+let pos: PositionClass
 before_each(() => {
   content = newAssemblyContent()
   area = clearTestArea()
-  layerContext = {
+  layer = {
     ...area,
     layerNumber: 1,
+  }
+  events = []
+})
+before_all(() => {
+  pos = Pos(10.5, 10.5)
+  updateHandler = (type, entity, layer) => {
+    events.push({ type, entity, layer })
   }
 })
 
 describe("simple entity", () => {
-  let pos: PositionClass
-  before_all(() => {
-    pos = Pos(10.5, 10.5)
-  })
-  function doAdd(params: Partial<SurfaceCreateEntity> = {}) {
-    const params1 = {
+  function doAdd() {
+    const entity = area.surface.create_entity({
       name: "iron-chest",
-      position: Pos.plus(pos, layerContext.bbox.left_top),
+      position: Pos.plus(pos, layer.bbox.left_top),
       force: "player",
-      ...params,
-    }
-    const entity = area.surface.create_entity(params1)!
-    entityAdded(layerContext, content, assert(entity))
-    return {
-      entity,
-      found: content.findCompatible({
-        name: params1.name,
-        position: pos,
-        direction: (params1 as any).direction,
-      }),
-    }
+    })!
+    onEntityAdded(assert(entity), layer, content, updateHandler)
+    return entity
   }
 
   test("simple entity add", () => {
-    const found = doAdd().found!
+    doAdd()
+    const found = content.findCompatible({
+      name: "iron-chest",
+      position: pos,
+    })!
     assert.not_nil(found)
     assert.equal("iron-chest", found.name)
     assert.same(pos, found.position)
     assert.nil(found.direction)
+
+    assert.equal(events.length, 1)
+    assert.same(
+      {
+        type: "created",
+        entity: found,
+        layer: layer.layerNumber,
+      },
+      events[0],
+    )
   })
 
-  test.each(
-    [{ name: "entity-ghost", inner_name: "iron-chest" }, { force: "enemy" }, { name: "tree-01" }],
-    "not added if %s",
-    (params) => {
-      doAdd(params)
-      assert.same({}, content.entities)
-    },
-  )
-
   test("deleted after add", () => {
-    const { entity } = doAdd()
-    entityDeleted(layerContext, content, entity) // simulated
+    const entity = doAdd()
+    entityDeleted(layer, content, entity) // simulated
     assert.same({}, content.entities)
   })
 
@@ -78,9 +82,9 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 1,
     }
-    const created = createEntityInWorld(layerContext, entity)!
+    const created = createEntityInWorld(layer, entity)!
     assert.not_nil(created)
-    assert.same(created.position, Pos.plus(entity.position, layerContext.bbox.left_top))
+    assert.same(created.position, Pos.plus(entity.position, layer.bbox.left_top))
   })
 
   test("returns same entity if exists in world", () => {
@@ -89,8 +93,8 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 1,
     }
-    const created = createEntityInWorld(layerContext, entity)
-    const created2 = createEntityInWorld(layerContext, entity)
+    const created = createEntityInWorld(layer, entity)
+    const created2 = createEntityInWorld(layer, entity)
     assert.equal(created, created2)
   })
 
@@ -100,7 +104,7 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 2,
     }
-    const created = createEntityInWorld(layerContext, entity)
+    const created = createEntityInWorld(layer, entity)
     assert.nil(created)
   })
 
@@ -110,8 +114,8 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 1,
     }
-    const created = createEntityInWorld(layerContext, entity)!
-    const found = findCompatibleEntityInWorld(layerContext, entity)
+    const created = createEntityInWorld(layer, entity)!
+    const found = findCompatibleEntityInWorld(layer, entity)
     assert.equal(created, found)
   })
 
@@ -121,8 +125,8 @@ describe("simple entity", () => {
       position: Pos(10.5, 10.5),
       layerNumber: 1,
     }
-    const created = createEntityInWorld(layerContext, entity)!
-    deleteEntityInWorld(layerContext, entity)
+    const created = createEntityInWorld(layer, entity)!
+    deleteEntityInWorld(layer, entity)
     assert.false(created.valid)
   })
 
@@ -146,10 +150,10 @@ describe("simple entity", () => {
     ]
     for (const entity of entities) content.add(entity)
 
-    placeAssemblyInWorld(layerContext, content)
+    placeAssemblyInWorld(layer, content)
 
     for (const entity of entities) {
-      const found = area.surface.find_entity(entity.name, Pos.plus(entity.position, layerContext.bbox.left_top))
+      const found = area.surface.find_entity(entity.name, Pos.plus(entity.position, layer.bbox.left_top))
       if (entity.layerNumber === 1) {
         assert.not_nil(found)
       } else {
