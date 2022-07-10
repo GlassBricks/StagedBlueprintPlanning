@@ -34,9 +34,17 @@ export function onEntityAdded(
   layer: Layer,
   content: MutableAssemblyContent,
   updateHandler: AssemblyUpdateHandler,
-): void {
+): AssemblyEntity {
   const position = Pos.minus(entity.position, layer.bbox.left_top)
   assert(BBox.contains(layer.bbox, position), "entity outside of layer")
+
+  // search for existing entity
+  const existing = content.findCompatible(entity, position)
+  if (existing) {
+    updateHandler("refreshed", existing, layer.layerNumber)
+    return existing
+  }
+
   const layerNumber = layer.layerNumber
   const added = content.add({
     name: entity.name,
@@ -45,6 +53,7 @@ export function onEntityAdded(
     layerNumber,
   })
   updateHandler("created", added, layerNumber)
+  return added
 }
 
 export function entityDeleted(layer: Layer, content: MutableAssemblyContent, entity: LuaEntity): void {
