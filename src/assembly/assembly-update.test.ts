@@ -5,16 +5,7 @@ import { map2dSize } from "../lib/map2d"
 import { clearTestArea } from "../test-util/area"
 import { WorldArea } from "../utils/world-location"
 import { Layer } from "./Assembly"
-import {
-  AssemblyUpdateHandler,
-  AssemblyUpdateType,
-  createEntityInWorld,
-  deleteEntityInWorld,
-  entityDeleted,
-  findCompatibleEntityInWorld,
-  onEntityAdded,
-  placeAssemblyInWorld,
-} from "./assembly-update"
+import { AssemblyUpdateHandler, AssemblyUpdateType, entityDeleted, onEntityAdded } from "./assembly-update"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
 
 let content: MutableAssemblyContent
@@ -141,90 +132,4 @@ describe("add", () => {
   })
 
   test.todo("delete entity with updates")
-
-  test("create in world", () => {
-    const entity: AssemblyEntity = {
-      name: "iron-chest",
-      position: Pos(10.5, 10.5),
-      layerNumber: 1,
-    }
-    const created = createEntityInWorld(layer, entity)!
-    assert.not_nil(created)
-    assert.same(created.position, Pos.plus(entity.position, layer.bbox.left_top))
-  })
-
-  test("returns same entity if exists in world", () => {
-    const entity: AssemblyEntity = {
-      name: "iron-chest",
-      position: Pos(10.5, 10.5),
-      layerNumber: 1,
-    }
-    const created = createEntityInWorld(layer, entity)
-    const created2 = createEntityInWorld(layer, entity)
-    assert.equal(created, created2)
-  })
-
-  test("not created if not in layer", () => {
-    const entity: AssemblyEntity = {
-      name: "iron-chest",
-      position: Pos(10.5, 10.5),
-      layerNumber: 2,
-    }
-    const created = createEntityInWorld(layer, entity)
-    assert.nil(created)
-  })
-
-  test("findCompatibleEntityInWorld", () => {
-    const entity: AssemblyEntity = {
-      name: "iron-chest",
-      position: Pos(10.5, 10.5),
-      layerNumber: 1,
-    }
-    const created = createEntityInWorld(layer, entity)!
-    const found = findCompatibleEntityInWorld(layer, entity)
-    assert.equal(created, found)
-  })
-
-  test("delete in world", () => {
-    const entity: AssemblyEntity = {
-      name: "iron-chest",
-      position: Pos(10.5, 10.5),
-      layerNumber: 1,
-    }
-    const created = createEntityInWorld(layer, entity)!
-    deleteEntityInWorld(layer, entity)
-    assert.false(created.valid)
-  })
-
-  test("simple place assembly in world", () => {
-    const entities: AssemblyEntity[] = [
-      {
-        name: "iron-chest",
-        position: Pos(10.5, 10.5),
-        layerNumber: 1,
-      },
-      {
-        name: "iron-chest",
-        position: Pos(10.5, 11.5),
-        layerNumber: 1,
-      },
-      {
-        name: "iron-chest",
-        position: Pos(11.5, 10.5),
-        layerNumber: 2, // should not be placed
-      },
-    ]
-    for (const entity of entities) content.add(entity)
-
-    placeAssemblyInWorld(layer, content)
-
-    for (const entity of entities) {
-      const found = area.surface.find_entity(entity.name, Pos.plus(entity.position, layer.bbox.left_top))
-      if (entity.layerNumber === 1) {
-        assert.not_nil(found)
-      } else {
-        assert.nil(found)
-      }
-    }
-  })
 })

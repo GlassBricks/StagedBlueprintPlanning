@@ -1,7 +1,7 @@
-import { AssemblyEntity, Entity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { BBox, Pos } from "../lib/geometry"
 import { Layer } from "./Assembly"
-import { AssemblyContent, MutableAssemblyContent } from "./AssemblyContent"
+import { MutableAssemblyContent } from "./AssemblyContent"
 
 export type AssemblyUpdateType =
   | "created"
@@ -72,62 +72,4 @@ export function entityDeleted(
   }
   content.remove(compatible)
   updateHandler("deleted", compatible, layer.layerNumber)
-}
-
-export function findCompatibleEntityInWorld(layer: Layer, entity: Entity): LuaEntity | nil {
-  const worldPos = Pos.plus(entity.position, layer.bbox.left_top)
-  const candidates = layer.surface.find_entities_filtered({
-    position: worldPos,
-    radius: 0,
-    force: "player",
-    name: entity.name,
-    direction: entity.direction ?? 0,
-    limit: 1,
-  })
-  return candidates[0]
-}
-
-/**
- * Creates the entity in the world.
- *
- * If an existing compatible entity is found, it is updated to match the given entity's properties, and that entity is
- * returned.
- */
-export function createEntityInWorld(layer: Layer, entity: AssemblyEntity): LuaEntity | nil {
-  if (entity.layerNumber > layer.layerNumber) return nil
-  const { name, position, direction } = entity
-  const existing = findCompatibleEntityInWorld(layer, entity)
-  if (existing) {
-    matchExistingToEntity(existing, entity)
-    return existing
-  }
-  return layer.surface.create_entity({
-    name,
-    position: Pos.plus(position, layer.bbox.left_top),
-    direction,
-    force: "player",
-  })
-}
-
-function matchExistingToEntity(existing: LuaEntity, entity: AssemblyEntity): void {
-  // right now, compatible entities must have same properties, so no updates are needed
-  // in the future when more properties are supported, this will need to be updated
-  assert(existing.name === entity.name)
-  if (existing.supports_direction) assert(existing.direction === entity.direction)
-}
-
-export function deleteEntityInWorld(layer: Layer, entity: AssemblyEntity): void {
-  findCompatibleEntityInWorld(layer, entity)?.destroy()
-}
-
-export function placeAssemblyInWorld(layer: Layer, content: AssemblyContent): LuaEntity[] {
-  const result: LuaEntity[] = []
-  for (const [, byX] of pairs(content.entities)) {
-    for (const [, entities] of pairs(byX))
-      for (const entity of entities) {
-        const luaEntity = createEntityInWorld(layer, entity)
-        if (luaEntity) result.push(luaEntity)
-      }
-  }
-  return result
 }
