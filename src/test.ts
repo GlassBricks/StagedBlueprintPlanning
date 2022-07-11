@@ -41,6 +41,7 @@ if (script.active_mods.testorio) {
       game.print("Last run: " + lastCompileTime)
     },
     log_passed_tests: false,
+    sound_effects: true,
   } as Testorio.Config)
   if (__DebugAdapter) {
     tagBlacklist.push("after_mod_reload")

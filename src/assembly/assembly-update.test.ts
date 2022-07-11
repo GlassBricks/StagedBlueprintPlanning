@@ -40,13 +40,18 @@ before_all(() => {
 })
 
 describe("add", () => {
-  function doAdd() {
+  function createEntity() {
     const entity = area.surface.create_entity({
       name: "iron-chest",
       position: Pos.plus(pos, layer.bbox.left_top),
       force: "player",
-    })!
-    const added = onEntityAdded(assert(entity), layer, content, updateHandler)
+    })
+    return assert(entity)
+  }
+
+  function doAdd() {
+    const entity = createEntity()
+    const added = onEntityAdded(entity, layer, content, updateHandler)
     return { luaEntity: entity, added }
   }
 
@@ -95,11 +100,47 @@ describe("add", () => {
 
   test.todo("added at previous layer")
 
-  test("deleted after add", () => {
-    const { luaEntity: added } = doAdd()
-    entityDeleted(layer, content, added) // simulated
-    assert.same({}, content.entities)
+  test("delete non-existent", () => {
+    const entity = createEntity()
+    entityDeleted(entity, layer, content, updateHandler)
+    assert.same([], events)
   })
+
+  test.each([1, 3], "delete existing at different layer: %d", (origLayer) => {
+    layer.layerNumber = origLayer
+    const { luaEntity, added } = doAdd()
+    layer.layerNumber = 2
+    events = []
+    entityDeleted(luaEntity, layer, content, updateHandler)
+    assert.equal(1, map2dSize(content.entities))
+    assert.equal(1, events.length)
+    assert.same(
+      {
+        type: "deletion-forbidden",
+        entity: added,
+        layer: layer.layerNumber,
+      },
+      events[0],
+    )
+  })
+
+  test("delete existing in same layer", () => {
+    const { luaEntity, added } = doAdd()
+    events = []
+    entityDeleted(luaEntity, layer, content, updateHandler) // simulated
+    assert.same({}, content.entities)
+    assert.equal(1, events.length)
+    assert.same(
+      {
+        type: "deleted",
+        entity: added,
+        layer: layer.layerNumber,
+      },
+      events[0],
+    )
+  })
+
+  test.todo("delete entity with updates")
 
   test("create in world", () => {
     const entity: AssemblyEntity = {

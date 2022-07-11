@@ -56,14 +56,22 @@ export function onEntityAdded(
   return added
 }
 
-export function entityDeleted(layer: Layer, content: MutableAssemblyContent, entity: LuaEntity): void {
-  if (!isAssemblyEntity(entity)) return
+export function entityDeleted(
+  entity: LuaEntity,
+  layer: Layer,
+  content: MutableAssemblyContent,
+  updateHandler: AssemblyUpdateHandler,
+): void {
   const position = Pos.minus(entity.position, layer.bbox.left_top)
   assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
   const compatible = content.findCompatible(entity, position)
-  if (compatible) {
-    content.remove(compatible)
+  if (!compatible) return
+  if (compatible.layerNumber !== layer.layerNumber) {
+    updateHandler("deletion-forbidden", compatible, layer.layerNumber)
+    return
   }
+  content.remove(compatible)
+  updateHandler("deleted", compatible, layer.layerNumber)
 }
 
 export function findCompatibleEntityInWorld(layer: Layer, entity: Entity): LuaEntity | nil {
