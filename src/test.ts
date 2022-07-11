@@ -39,6 +39,7 @@ if (script.active_mods.testorio) {
     },
     after_test_run() {
       game.print("Last run: " + lastCompileTime)
+      game.speed = 1 / 6
     },
     log_passed_tests: false,
     sound_effects: true,
@@ -56,7 +57,7 @@ function isTestsRunning() {
 }
 
 Events.on_tick(() => {
-  const mod = game.ticks_played % 120
+  const mod = game.ticks_played % 30
   if (mod === 0) {
     // tests not running or not ready
     if (!isTestsRunning()) {
