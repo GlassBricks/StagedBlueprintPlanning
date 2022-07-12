@@ -21,7 +21,9 @@ export type MutableAssemblyEntity<E extends Entity = Entity> = Mutable<AssemblyE
   layerChanges?: PRecord<LayerNumber, LayerChange<E>>
 }
 
-export type LayerChange<E extends Entity> = {
+export type LayerChanges = PRecord<LayerNumber, LayerChange>
+
+export type LayerChange<E extends Entity = Entity> = {
   [P in keyof E]?: WithNilPlaceholder<E[P]>
 }
 

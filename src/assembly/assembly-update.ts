@@ -1,5 +1,6 @@
-import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { BBox, Pos } from "../lib/geometry"
+import { AssemblyEntity, Entity, LayerChanges, LayerNumber, MutableAssemblyEntity } from "../entity/AssemblyEntity"
+import { getEntityDiff, getLayerPosition, saveEntity } from "../entity/diff"
+import { Pos } from "../lib/geometry"
 import { Layer } from "./Assembly"
 import { MutableAssemblyContent } from "./AssemblyContent"
 
@@ -17,7 +18,7 @@ export type AssemblyUpdateHandler = (
   this: void,
   type: AssemblyUpdateType,
   entity: AssemblyEntity,
-  layer: LayerNumber,
+  layer?: LayerNumber,
 ) => void
 
 /** If a lua entity is considered to be an assembly entity. */
@@ -29,31 +30,55 @@ export function isAssemblyEntity(entity: LuaEntity): boolean {
  * When an entity is added from the world.
  * Does not check isAssemblyEntity.
  */
+export function onEntityAdded<E extends Entity = Entity>(
+  entity: LuaEntity,
+  layer: Layer,
+  content: MutableAssemblyContent,
+  updateHandler: AssemblyUpdateHandler,
+): AssemblyEntity<E> | nil
 export function onEntityAdded(
   entity: LuaEntity,
   layer: Layer,
   content: MutableAssemblyContent,
   updateHandler: AssemblyUpdateHandler,
-): AssemblyEntity {
-  const position = Pos.minus(entity.position, layer.bbox.left_top)
-  assert(BBox.contains(layer.bbox, position), "entity outside of layer")
+): AssemblyEntity | nil {
+  const position = getLayerPosition(entity, layer)
 
   // search for existing entity
   const existing = content.findCompatible(entity, position)
-  if (existing) {
+  if (existing && existing.layerNumber <= layer.layerNumber) {
     updateHandler("refreshed", existing, layer.layerNumber)
     return existing
   }
 
-  const layerNumber = layer.layerNumber
-  const added = content.add({
-    name: entity.name,
-    position,
-    direction: entity.supports_direction ? entity.direction : nil,
-    layerNumber,
-  })
-  updateHandler("created", added, layerNumber)
+  const added = saveEntity(entity, layer, position)
+  if (existing) {
+    return entityAddedBelow(added!, existing, content, updateHandler)
+  }
+
+  if (!added) return
+  content.add(added)
+  updateHandler("created", added)
   return added
+}
+
+function entityAddedBelow(
+  below: MutableAssemblyEntity,
+  existing: AssemblyEntity,
+  content: MutableAssemblyContent,
+  updateHandler: AssemblyUpdateHandler,
+): AssemblyEntity {
+  assert(below.layerNumber < existing.layerNumber)
+  const diff = getEntityDiff(below, existing)
+  if (diff) {
+    const layerChanges: LayerChanges = (below.layerChanges = existing.layerChanges ?? {})
+    assert(layerChanges[existing.layerNumber] === nil)
+    layerChanges[existing.layerNumber] = diff
+  }
+  content.remove(existing)
+  content.add(below)
+  updateHandler("created-below", below, existing.layerNumber)
+  return below
 }
 
 export function entityDeleted(

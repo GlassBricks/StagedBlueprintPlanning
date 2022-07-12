@@ -1,8 +1,7 @@
 import { Events, Mutable } from "../../lib"
-import { BBox, Pos, Position } from "../../lib/geometry"
+import { BBox } from "../../lib/geometry"
 import { WorldPosition } from "../../utils/world-location"
 import { DiffHandler } from "./DiffHandler"
-import minus = Pos.minus
 
 declare const global: {
   tempBPInventory: LuaInventory
@@ -50,7 +49,7 @@ function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
 }
 
 export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
-  save(entity: LuaEntity, layerPosition: Position): BlueprintEntityRead | nil {
+  save(entity: LuaEntity): BlueprintEntityRead | nil {
     const { surface, position } = entity
     const stack = getTempItemStack()
 
@@ -63,9 +62,8 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
     if (!matchingIndex) return
 
     const bpEntity = stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntityRead>
-
     assert(bpEntity.entity_number === matchingIndex)
-    bpEntity.position = minus(position, layerPosition)
+    bpEntity.entity_number = nil!
     return bpEntity
   },
 

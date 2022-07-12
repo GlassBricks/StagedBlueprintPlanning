@@ -14,8 +14,8 @@ export interface MutableAssemblyContent extends AssemblyContent {
 
   findCompatible(entity: Entity, position?: Position): MutableAssemblyEntity | nil
 
-  add(entity: MutableAssemblyEntity): MutableAssemblyEntity
-  remove(entity: MutableAssemblyEntity): MutableAssemblyEntity
+  add(entity: MutableAssemblyEntity): void
+  remove(entity: MutableAssemblyEntity): void
 }
 
 @RegisterClass("AssemblyContent")
@@ -31,16 +31,14 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     }
   }
 
-  add(entity: MutableAssemblyEntity): MutableAssemblyEntity {
+  add(entity: MutableAssemblyEntity): void {
     const { x, y } = entity.position
     map2dAdd(this.entities, x, y, entity)
-    return entity
   }
 
-  remove(entity: MutableAssemblyEntity): MutableAssemblyEntity {
+  remove(entity: MutableAssemblyEntity): void {
     const { x, y } = entity.position
     map2dRemove(this.entities, x, y, entity)
-    return entity
   }
 }
 
