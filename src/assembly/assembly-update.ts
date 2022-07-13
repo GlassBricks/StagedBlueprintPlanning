@@ -1,15 +1,26 @@
-import { AssemblyEntity, Entity, LayerChanges, LayerNumber, MutableAssemblyEntity } from "../entity/AssemblyEntity"
+import {
+  AssemblyEntity,
+  Entity,
+  getValueAtLayer,
+  LayerChange,
+  LayerChanges,
+  LayerNumber,
+  MutableAssemblyEntity,
+} from "../entity/AssemblyEntity"
 import { getEntityDiff, getLayerPosition, saveEntity } from "../entity/diff"
+import { nilIfEmpty } from "../lib"
 import { Pos } from "../lib/geometry"
 import { Layer } from "./Assembly"
 import { MutableAssemblyContent } from "./AssemblyContent"
 
 export type AssemblyUpdateType =
   | "created"
-  | "refreshed"
   | "created-below"
+  | "refreshed"
+  | "revived"
+  | "revived-below"
   | "deleted"
-  | "deleted-with-references"
+  | "deleted-with-updates"
   | "deletion-forbidden"
 // | "updated"
 // | "updated-above"
@@ -43,11 +54,15 @@ export function onEntityAdded(
   updateHandler: AssemblyUpdateHandler,
 ): AssemblyEntity | nil {
   const position = getLayerPosition(entity, layer)
+  const { layerNumber } = layer
 
   // search for existing entity
   const existing = content.findCompatible(entity, position)
-  if (existing && existing.layerNumber <= layer.layerNumber) {
-    updateHandler("refreshed", existing, layer.layerNumber)
+  if (existing && existing.layerNumber <= layerNumber) {
+    if (existing.isLostReference) {
+      return reviveLostReference(existing, layerNumber, content, updateHandler)
+    }
+    updateHandler("refreshed", existing, layerNumber)
     return existing
   }
 
@@ -62,6 +77,33 @@ export function onEntityAdded(
   return added
 }
 
+function reviveLostReference(
+  existing: MutableAssemblyEntity,
+  layerNumber: LayerNumber,
+  content: MutableAssemblyContent,
+  updateHandler: AssemblyUpdateHandler,
+): AssemblyEntity {
+  assert(layerNumber >= existing.layerNumber)
+  assert(existing.isLostReference)
+  const { layerChanges } = existing
+  const newValue = assert(getValueAtLayer(existing, layerNumber)) as MutableAssemblyEntity
+  newValue.isLostReference = nil
+  newValue.layerNumber = layerNumber
+  newValue.layerChanges = layerChanges && getWithDeletedLayerChanges(layerChanges, layerNumber)
+  content.remove(existing)
+  content.add(newValue)
+  updateHandler("revived", newValue)
+  return newValue
+}
+
+function getWithDeletedLayerChanges(layerChanges: LayerChanges, layerNumber: LayerNumber): LayerChange | nil {
+  for (const [layer] of pairs(layerChanges)) {
+    if (layer > layerNumber) break
+    delete layerChanges[layer]
+  }
+  return nilIfEmpty(layerChanges)
+}
+
 function entityAddedBelow(
   below: MutableAssemblyEntity,
   existing: AssemblyEntity,
@@ -70,14 +112,15 @@ function entityAddedBelow(
 ): AssemblyEntity {
   assert(below.layerNumber < existing.layerNumber)
   const diff = getEntityDiff(below, existing)
+  below.layerChanges = existing.layerChanges
   if (diff) {
-    const layerChanges: LayerChanges = (below.layerChanges = existing.layerChanges ?? {})
+    const layerChanges: LayerChanges = (below.layerChanges ??= {})
     assert(layerChanges[existing.layerNumber] === nil)
     layerChanges[existing.layerNumber] = diff
   }
   content.remove(existing)
   content.add(below)
-  updateHandler("created-below", below, existing.layerNumber)
+  updateHandler(existing.isLostReference ? "revived-below" : "created-below", below, existing.layerNumber)
   return below
 }
 
@@ -98,6 +141,12 @@ export function entityDeleted(
     // else: is bug, ignore.
     return
   }
+  if (compatible.layerChanges) {
+    compatible.isLostReference = true
+    updateHandler("deleted-with-updates", compatible)
+    return
+  }
+
   content.remove(compatible)
-  updateHandler("deleted", compatible, layer.layerNumber)
+  updateHandler("deleted", compatible)
 }

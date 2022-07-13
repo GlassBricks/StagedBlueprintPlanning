@@ -15,6 +15,7 @@ export type LayerNumber = number
 export type AssemblyEntity<E extends Entity = Entity> = E & {
   readonly layerNumber: LayerNumber
   readonly layerChanges?: PRRecord<LayerNumber, Readonly<LayerChange<E>>>
+  readonly isLostReference?: true
 }
 
 export type MutableAssemblyEntity<E extends Entity = Entity> = Mutable<AssemblyEntity<E>> & {

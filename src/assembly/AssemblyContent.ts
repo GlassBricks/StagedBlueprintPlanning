@@ -14,8 +14,8 @@ export interface MutableAssemblyContent extends AssemblyContent {
 
   findCompatible(entity: Entity, position?: Position): MutableAssemblyEntity | nil
 
-  add(entity: MutableAssemblyEntity): void
-  remove(entity: MutableAssemblyEntity): void
+  add<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void
+  remove<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void
 }
 
 @RegisterClass("AssemblyContent")

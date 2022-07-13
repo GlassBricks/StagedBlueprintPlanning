@@ -22,7 +22,7 @@ export function saveEntity(
   return result
 }
 
-const ignoredProps = new LuaSet("position", "direction", "layerNumber", "layerChanges")
+const ignoredProps = new LuaSet("position", "direction", "layerNumber", "layerChanges", "isLostReference")
 
 export function getEntityDiff(below: Entity, above: Entity): LayerChange | nil {
   const nilPlaceholder: NilPlaceholder = getNilPlaceholder()

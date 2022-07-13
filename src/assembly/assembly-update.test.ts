@@ -1,4 +1,4 @@
-import { AssemblyEntity, Entity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, Entity, LayerNumber, MutableAssemblyEntity } from "../entity/AssemblyEntity"
 import { Mutable } from "../lib"
 import { Pos } from "../lib/geometry"
 import { map2dSize } from "../lib/map2d"
@@ -47,16 +47,13 @@ describe("add", () => {
 
   function doAdd() {
     const entity = createEntity()
-    const added = onEntityAdded<ChestEntity>(entity, layer, content, updateHandler)
+    const added = onEntityAdded(entity, layer, content, updateHandler) as MutableAssemblyEntity<ChestEntity>
     return { luaEntity: entity, added }
   }
 
   test("new", () => {
     const { added } = doAdd()
-    const found = content.findCompatible({
-      name: "iron-chest",
-      position: pos,
-    })!
+    const found = content.findCompatible({ name: "iron-chest", position: pos })!
     assert.equal(added, found)
     assert.not_nil(found)
     assert.equal("iron-chest", found.name)
@@ -73,10 +70,16 @@ describe("add", () => {
     )
   })
 
-  test.each([1, 2], "existing at layer 1, added at layer %d", (layerNumber) => {
-    const { luaEntity, added } = doAdd()
-    layer.layerNumber = layerNumber
+  function doVirtualAdd(addedNum: LayerNumber = layer.layerNumber, setNum = layer.layerNumber) {
+    layer.layerNumber = addedNum
+    const ret = doAdd()
+    layer.layerNumber = setNum
     events = []
+    return ret
+  }
+
+  test.each([1, 2], "existing at layer 1, added at layer %d", (layerNumber) => {
+    const { luaEntity, added } = doVirtualAdd(1, layerNumber)
     const added2 = onEntityAdded(luaEntity, layer, content, updateHandler) // again
 
     assert.equal(added, added2)
@@ -94,10 +97,7 @@ describe("add", () => {
   })
 
   test.each([false, true], "existing at layer 2, added at layer 1, with layer changes: %s", (withChanges) => {
-    layer.layerNumber = 2
-    const { luaEntity, added: oldAdded } = doAdd()
-    events = []
-    layer.layerNumber = 1
+    const { luaEntity, added: oldAdded } = doVirtualAdd(2, 1)
 
     if (withChanges) {
       luaEntity.get_inventory(defines.inventory.chest)!.set_bar(4) // actually sets to 3 available slots (bar _starts_ at 4)
@@ -141,19 +141,14 @@ describe("add", () => {
   })
 
   test("delete existing at higher layer (bug)", () => {
-    layer.layerNumber = 2
-    const { luaEntity } = doAdd()
-    layer.layerNumber = 1
-    events = []
+    const { luaEntity } = doVirtualAdd(2, 1)
     entityDeleted(luaEntity, layer, content, updateHandler)
     assert.same([], events)
     assert.equal(1, map2dSize(content.entities))
   })
 
   test("delete existing at lower layer", () => {
-    const { luaEntity, added } = doAdd()
-    layer.layerNumber = 2
-    events = []
+    const { luaEntity, added } = doVirtualAdd(1, 2)
     entityDeleted(luaEntity, layer, content, updateHandler)
     assert.equal(1, map2dSize(content.entities))
     assert.equal(1, events.length)
@@ -168,8 +163,7 @@ describe("add", () => {
   })
 
   test("delete existing at same layer", () => {
-    const { luaEntity, added } = doAdd()
-    events = []
+    const { luaEntity, added } = doVirtualAdd()
     entityDeleted(luaEntity, layer, content, updateHandler) // simulated
     assert.same({}, content.entities)
     assert.equal(1, events.length)
@@ -177,11 +171,86 @@ describe("add", () => {
       {
         type: "deleted",
         entity: added,
-        layer: layer.layerNumber,
       },
       events[0],
     )
   })
 
-  test.todo("delete entity with updates")
+  test("delete entity with updates", () => {
+    const { luaEntity, added } = doVirtualAdd()
+    added.layerChanges = { 2: { bar: 3 } }
+    entityDeleted(luaEntity, layer, content, updateHandler)
+    assert.same(1, map2dSize(content.entities))
+    assert.true(added.isLostReference)
+    assert.equal(1, events.length)
+    assert.same(
+      {
+        type: "deleted-with-updates",
+        entity: added,
+      },
+      events[0],
+    )
+  })
+
+  test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (reviveLayer) => {
+    const { luaEntity, added } = doVirtualAdd(1, reviveLayer)
+    added.layerChanges = { 3: { bar: 3 }, 5: { bar: 4 } }
+    added.isLostReference = true
+
+    const revived = onEntityAdded<ChestEntity>(luaEntity, layer, content, updateHandler)!
+    assert.falsy(revived.isLostReference)
+    assert.equal(revived.layerNumber, reviveLayer)
+
+    if (reviveLayer >= 5) {
+      assert.nil(revived.layerChanges)
+      assert.equal(4, revived.bar)
+    } else if (reviveLayer >= 3) {
+      assert.same({ 5: { bar: 4 } }, revived.layerChanges)
+      assert.equal(3, revived.bar)
+    } else {
+      assert.same({ 3: { bar: 3 }, 5: { bar: 4 } }, revived.layerChanges)
+      assert.equal(2, revived.bar)
+    }
+
+    assert.equal(1, map2dSize(content.entities))
+    assert.equal(1, events.length)
+    assert.same(
+      {
+        type: "revived",
+        entity: revived,
+      },
+      events[0],
+    )
+  })
+
+  test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
+    const { luaEntity, added } = doVirtualAdd(2, 1)
+    added.layerChanges = { 3: { bar: 3 } }
+    added.isLostReference = true
+
+    if (withChanges) luaEntity.get_inventory(defines.inventory.chest)!.set_bar(2) // actually = 1
+
+    const revived = onEntityAdded<ChestEntity>(luaEntity, layer, content, updateHandler)!
+    assert.falsy(revived.isLostReference)
+    assert.equal(revived.layerNumber, 1)
+
+    if (!withChanges) {
+      assert.equal(2, revived.bar)
+      assert.same({ 3: { bar: 3 } }, revived.layerChanges)
+    } else {
+      assert.equal(1, revived.bar)
+      assert.same({ 2: { bar: 2 }, 3: { bar: 3 } }, revived.layerChanges)
+    }
+
+    assert.equal(1, map2dSize(content.entities))
+    assert.equal(1, events.length)
+    assert.same(
+      {
+        type: "revived-below",
+        entity: revived,
+        layer: 2,
+      },
+      events[0],
+    )
+  })
 })
