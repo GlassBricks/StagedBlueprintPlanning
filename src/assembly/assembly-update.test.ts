@@ -137,10 +137,20 @@ describe("add", () => {
     const entity = createEntity()
     entityDeleted(entity, layer, content, updateHandler)
     assert.same([], events)
+    assert.same({}, content.entities)
   })
 
-  test.each([1, 3], "delete existing at different layer: %d", (origLayer) => {
-    layer.layerNumber = origLayer
+  test("delete existing at higher layer (bug)", () => {
+    layer.layerNumber = 2
+    const { luaEntity } = doAdd()
+    layer.layerNumber = 1
+    events = []
+    entityDeleted(luaEntity, layer, content, updateHandler)
+    assert.same([], events)
+    assert.equal(1, map2dSize(content.entities))
+  })
+
+  test("delete existing at lower layer", () => {
     const { luaEntity, added } = doAdd()
     layer.layerNumber = 2
     events = []
@@ -157,7 +167,7 @@ describe("add", () => {
     )
   })
 
-  test("delete existing in same layer", () => {
+  test("delete existing at same layer", () => {
     const { luaEntity, added } = doAdd()
     events = []
     entityDeleted(luaEntity, layer, content, updateHandler) // simulated

@@ -92,7 +92,10 @@ export function entityDeleted(
   const compatible = content.findCompatible(entity, position)
   if (!compatible) return
   if (compatible.layerNumber !== layer.layerNumber) {
-    updateHandler("deletion-forbidden", compatible, layer.layerNumber)
+    if (compatible.layerNumber < layer.layerNumber) {
+      updateHandler("deletion-forbidden", compatible, layer.layerNumber)
+    }
+    // else: is bug, ignore.
     return
   }
   content.remove(compatible)
