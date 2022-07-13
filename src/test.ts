@@ -1,7 +1,7 @@
 import { Events } from "./lib"
-import lastCompileTime = require("./last-compile-time")
 
 declare function __getTestFiles(): string[]
+import lastCompileTime = require("last-compile-time")
 
 declare let global: {
   lastCompileTimestamp?: string
@@ -34,11 +34,9 @@ if (script.active_mods.testorio) {
     before_test_run() {
       reinit()
       global.lastCompileTimestamp = lastCompileTime
-      const force = game.forces.player
-      force.enable_all_recipes()
+      game.forces.player.enable_all_recipes()
     },
     after_test_run() {
-      game.print("Last run: " + lastCompileTime)
       game.speed = 1 / 6
     },
     log_passed_tests: false,
@@ -66,7 +64,7 @@ Events.on_tick(() => {
     }
   } else if (mod === 1) {
     if (!isTestsRunning() && global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
-      game.print("Rerunning")
+      game.print("Rerunning: " + lastCompileTime)
       remote.call("testorio", "runTests")
     }
   }

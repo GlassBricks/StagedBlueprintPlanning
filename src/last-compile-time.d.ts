@@ -1,2 +1,5 @@
-declare const lastCompileTime: string
-export = lastCompileTime
+/** @noResolution */
+declare module "last-compile-time" {
+  const lastCompileTime: string
+  export = lastCompileTime
+}
