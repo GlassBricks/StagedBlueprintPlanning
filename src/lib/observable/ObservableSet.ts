@@ -12,10 +12,10 @@ export interface ObservableSetChange<T> {
 
 export type SetObserver<T> = ValueListener<ObservableSetChange<T>>
 
-export interface ObservableSet<T> extends ValueSubscribable<ObservableSetChange<T>>, LuaSetIterable<T> {
+export interface ObservableSet<T> extends ValueSubscribable<ObservableSetChange<T>>, LuaPairsKeyIterable<T> {
   size(): number
   has(value: T): boolean
-  value(): LuaSet<T>
+  value(): LuaReadonlySet<T>
 }
 
 export interface MutableObservableSet<T> extends ObservableSet<T> {
@@ -28,7 +28,7 @@ export function observableSet<T>(): MutableObservableSet<T> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface ObservableSetImpl<T> extends LuaSetIterable<T> {}
+interface ObservableSetImpl<T> extends LuaPairsKeyIterable<T> {}
 
 @RegisterClass("ObservableSet")
 class ObservableSetImpl<T> implements MutableObservableSet<T> {
@@ -47,7 +47,7 @@ class ObservableSetImpl<T> implements MutableObservableSet<T> {
     return this.value().has(value)
   }
 
-  public value(): LuaSet<T> {
+  public value(): LuaReadonlySet<T> {
     return this.set
   }
 

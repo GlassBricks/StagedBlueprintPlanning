@@ -16,8 +16,8 @@ export type Unsubscription = Unsubscribable | Func<() => void>
 @RegisterClass("Subscription")
 export class Subscription implements Unsubscribable {
   // if nil, is closed
-  _children: MutableLuaSet<Unsubscription> | nil = new LuaSet()
-  _parents: MutableLuaSet<Subscription> | nil = new LuaSet()
+  _children: LuaSet<Unsubscription> | nil = new LuaSet()
+  _parents: LuaSet<Subscription> | nil = new LuaSet()
 
   isClosed(): boolean {
     return this._children === nil
@@ -38,7 +38,7 @@ export class Subscription implements Unsubscribable {
   }
 
   hasActions(): boolean {
-    return this._children !== nil && this._children.first() !== nil
+    return this._children !== nil && next(this._children)[0] !== nil
   }
 
   private removeChild(subscription: Unsubscribable): void {

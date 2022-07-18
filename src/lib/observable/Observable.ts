@@ -22,7 +22,7 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
   implements Subscribable<L>
 {
   subscribeIndependently(observer: L): Subscription {
-    const thisAsMap = this as unknown as MutableLuaMap<ObserverSubscription, L>
+    const thisAsMap = this as unknown as LuaMap<ObserverSubscription, L>
     const subscription = new ObserverSubscription(thisAsMap)
     thisAsMap.set(subscription, observer)
     return subscription
@@ -36,7 +36,7 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
 
   raise(...args: AdditionalArgs<L>): void
   raise(...args: any[]): void {
-    for (const [subscription, observer] of this as unknown as MutableLuaMap<ObserverSubscription, L>) {
+    for (const [subscription, observer] of this as unknown as LuaMap<ObserverSubscription, L>) {
       observer(subscription, ...args)
     }
   }
@@ -44,7 +44,7 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
 
 @RegisterClass("ObserverSubscription")
 class ObserverSubscription extends Subscription {
-  constructor(private readonly observers: MutableLuaMap<ObserverSubscription, any>) {
+  constructor(private readonly observers: LuaMap<ObserverSubscription, any>) {
     super()
   }
   override close() {

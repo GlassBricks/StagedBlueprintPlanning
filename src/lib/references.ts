@@ -39,7 +39,7 @@ interface ClassInstance extends WithOnLoad {
 
 export const Classes = new Registry<Class<any>>("class", (item) => serpent.block(item))
 declare const global: {
-  __classes: MutableLuaMap<ClassInstance, string>
+  __classes: LuaMap<ClassInstance, string>
 }
 
 Events.on_init(() => {

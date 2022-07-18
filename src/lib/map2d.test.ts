@@ -8,27 +8,27 @@ before_each(() => {
 
 test("add and get", () => {
   map2dAdd(map2d, 1, 1, "a")
-  assert.same(new LuaSet("a"), map2dGet(map2d, 1, 1))
+  assert.same(newLuaSet("a"), map2dGet(map2d, 1, 1))
 })
 
 test("add and get multiple", () => {
   map2dAdd(map2d, 1, 1, "a")
   map2dAdd(map2d, 1, 1, "b")
-  assert.same(new LuaSet("a", "b"), map2dGet(map2d, 1, 1))
+  assert.same(newLuaSet("a", "b"), map2dGet(map2d, 1, 1))
 })
 
 test("add in multiple coords", () => {
   map2dAdd(map2d, 1, 1, "a")
   map2dAdd(map2d, 2, 2, "b")
-  assert.same(new LuaSet("a"), map2dGet(map2d, 1, 1))
-  assert.same(new LuaSet("b"), map2dGet(map2d, 2, 2))
+  assert.same(newLuaSet("a"), map2dGet(map2d, 1, 1))
+  assert.same(newLuaSet("b"), map2dGet(map2d, 2, 2))
 })
 
 test("remove and get", () => {
   map2dAdd(map2d, 1, 1, "a")
   map2dAdd(map2d, 1, 1, "b")
   map2dRemove(map2d, 1, 1, "a")
-  assert.same(new LuaSet("b"), map2dGet(map2d, 1, 1))
+  assert.same(newLuaSet("b"), map2dGet(map2d, 1, 1))
 })
 
 test("removes empty entries", () => {

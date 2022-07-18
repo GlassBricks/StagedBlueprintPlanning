@@ -30,7 +30,7 @@ it("keeps track of added items", () => {
 it("allows to inspect value", () => {
   set.add("a")
   set.add("b")
-  assert.same(new LuaSet("a", "b"), set.value())
+  assert.same(newLuaSet("a", "b"), set.value())
 })
 
 it("can be iterated", () => {

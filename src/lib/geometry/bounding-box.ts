@@ -1,5 +1,6 @@
 /** @noSelfInFile */
 
+import { WithMetatable } from "../util-types"
 import { Pos, Position, PositionClass } from "./position"
 
 // Down is positive y, right is positive x

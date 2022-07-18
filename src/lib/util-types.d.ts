@@ -17,3 +17,7 @@ export type Mutable<T> = {
 export type Building<T> = {
   -readonly [P in keyof T]?: T[keyof T]
 }
+
+export type WithMetatable<T, M> = T & {
+  [P in keyof M]: M[P] extends (self: T, ...args: infer A) => infer R ? (this: T, ...args: A) => R : M[P]
+}

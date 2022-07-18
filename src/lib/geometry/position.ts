@@ -1,6 +1,7 @@
 /** @noSelfInFile */
 
 import * as util from "util"
+import { WithMetatable } from "../util-types"
 
 // Down is positive y, right is positive x
 
