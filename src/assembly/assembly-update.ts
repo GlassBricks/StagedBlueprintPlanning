@@ -14,14 +14,14 @@ import { Layer } from "./Assembly"
 import { MutableAssemblyContent } from "./AssemblyContent"
 
 export type AssemblyUpdateType =
-  | "created"
-  | "created-below"
+  | "added"
+  | "addedBelow"
   | "refreshed"
   | "revived"
-  | "revived-below"
+  | "revivedBelow"
   | "deleted"
-  | "deleted-with-updates"
-  | "deletion-forbidden"
+  | "deletedMadeLostReference"
+  | "deletionForbidden"
 // | "updated"
 // | "updated-above"
 
@@ -73,7 +73,7 @@ export function onEntityAdded(
 
   if (!added) return
   content.add(added)
-  updateHandler("created", added)
+  updateHandler("added", added)
   return added
 }
 
@@ -120,7 +120,7 @@ function entityAddedBelow(
   }
   content.remove(existing)
   content.add(below)
-  updateHandler(existing.isLostReference ? "revived-below" : "created-below", below, existing.layerNumber)
+  updateHandler(existing.isLostReference ? "revivedBelow" : "addedBelow", below, existing.layerNumber)
   return below
 }
 
@@ -136,14 +136,14 @@ export function entityDeleted(
   if (!compatible) return
   if (compatible.layerNumber !== layer.layerNumber) {
     if (compatible.layerNumber < layer.layerNumber) {
-      updateHandler("deletion-forbidden", compatible, layer.layerNumber)
+      updateHandler("deletionForbidden", compatible, layer.layerNumber)
     }
     // else: is bug, ignore.
     return
   }
   if (compatible.layerChanges) {
     compatible.isLostReference = true
-    updateHandler("deleted-with-updates", compatible)
+    updateHandler("deletedMadeLostReference", compatible)
     return
   }
 

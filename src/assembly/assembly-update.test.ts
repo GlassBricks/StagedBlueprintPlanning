@@ -61,13 +61,7 @@ describe("add", () => {
     assert.nil(found.direction)
 
     assert.equal(events.length, 1)
-    assert.same(
-      {
-        type: "created",
-        entity: found,
-      },
-      events[0],
-    )
+    assert.same({ type: "added", entity: added }, events[0])
   })
 
   function doVirtualAdd(addedNum: LayerNumber = layer.layerNumber, setNum = layer.layerNumber) {
@@ -86,38 +80,31 @@ describe("add", () => {
 
     assert.equal(1, map2dSize(content.entities))
     assert.equal(events.length, 1)
-    assert.same(
-      {
-        type: "refreshed",
-        entity: added,
-        layer: layer.layerNumber,
-      },
-      events[0],
-    )
+    assert.same({ type: "refreshed", entity: added, layer: layer.layerNumber }, events[0])
   })
 
   test.each([false, true], "existing at layer 2, added at layer 1, with layer changes: %s", (withChanges) => {
     const { luaEntity, added: oldAdded } = doVirtualAdd(2, 1)
 
     if (withChanges) {
-      luaEntity.get_inventory(defines.inventory.chest)!.set_bar(4) // actually sets to 3 available slots (bar _starts_ at 4)
+      luaEntity.get_inventory(defines.inventory.chest)!.set_bar(4) // actually sets to 3 (bar _starts_ at 4)
     }
-    const added2 = onEntityAdded<ChestEntity>(luaEntity, layer, content, updateHandler)! // again
-    assert.not_equal(oldAdded, added2)
+    const added = onEntityAdded<ChestEntity>(luaEntity, layer, content, updateHandler)! // again
+    assert.not_equal(oldAdded, added)
 
-    assert.same(1, added2.layerNumber)
+    assert.same(1, added.layerNumber)
     if (!withChanges) {
-      assert.equal(2, added2.bar)
-      assert.nil(added2.layerChanges)
+      assert.equal(2, added.bar)
+      assert.nil(added.layerChanges)
     } else {
-      assert.equal(3, added2.bar)
+      assert.equal(3, added.bar)
       assert.same(
         {
           2: {
             bar: 2,
           },
         },
-        added2.layerChanges,
+        added.layerChanges,
       )
     }
 
@@ -125,8 +112,8 @@ describe("add", () => {
     assert.equal(events.length, 1)
     assert.same(
       {
-        type: "created-below",
-        entity: added2,
+        type: "addedBelow",
+        entity: added,
         layer: 2,
       },
       events[0],
@@ -154,7 +141,7 @@ describe("add", () => {
     assert.equal(1, events.length)
     assert.same(
       {
-        type: "deletion-forbidden",
+        type: "deletionForbidden",
         entity: added,
         layer: layer.layerNumber,
       },
@@ -185,7 +172,7 @@ describe("add", () => {
     assert.equal(1, events.length)
     assert.same(
       {
-        type: "deleted-with-updates",
+        type: "deletedMadeLostReference",
         entity: added,
       },
       events[0],
@@ -246,7 +233,7 @@ describe("add", () => {
     assert.equal(1, events.length)
     assert.same(
       {
-        type: "revived-below",
+        type: "revivedBelow",
         entity: revived,
         layer: 2,
       },
