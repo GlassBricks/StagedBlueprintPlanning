@@ -53,10 +53,10 @@ describe("add", () => {
 
   test("new", () => {
     const { added } = doAdd()
-    const found = content.findCompatible({ name: "iron-chest", position: pos })!
+    const found = content.findCompatible({ name: "iron-chest" }, pos, nil)!
     assert.equal(added, found)
     assert.not_nil(found)
-    assert.equal("iron-chest", found.name)
+    assert.equal("iron-chest", found.baseEntity.name)
     assert.same(pos, found.position)
     assert.nil(found.direction)
 
@@ -90,14 +90,14 @@ describe("add", () => {
       luaEntity.get_inventory(defines.inventory.chest)!.set_bar(4) // actually sets to 3 (bar _starts_ at 4)
     }
     const added = onEntityAdded<ChestEntity>(luaEntity, layer, content, updateHandler)! // again
-    assert.not_equal(oldAdded, added)
+    assert.equal(oldAdded, added)
 
     assert.same(1, added.layerNumber)
     if (!withChanges) {
-      assert.equal(2, added.bar)
+      assert.equal(2, added.baseEntity.bar)
       assert.nil(added.layerChanges)
     } else {
-      assert.equal(3, added.bar)
+      assert.equal(3, added.baseEntity.bar)
       assert.same(
         {
           2: {
@@ -114,7 +114,6 @@ describe("add", () => {
       {
         type: "addedBelow",
         entity: added,
-        layer: 2,
       },
       events[0],
     )
@@ -190,13 +189,13 @@ describe("add", () => {
 
     if (reviveLayer >= 5) {
       assert.nil(revived.layerChanges)
-      assert.equal(4, revived.bar)
+      assert.equal(4, revived.baseEntity.bar)
     } else if (reviveLayer >= 3) {
       assert.same({ 5: { bar: 4 } }, revived.layerChanges)
-      assert.equal(3, revived.bar)
+      assert.equal(3, revived.baseEntity.bar)
     } else {
       assert.same({ 3: { bar: 3 }, 5: { bar: 4 } }, revived.layerChanges)
-      assert.equal(2, revived.bar)
+      assert.equal(2, revived.baseEntity.bar)
     }
 
     assert.equal(1, map2dSize(content.entities))
@@ -222,10 +221,10 @@ describe("add", () => {
     assert.equal(revived.layerNumber, 1)
 
     if (!withChanges) {
-      assert.equal(2, revived.bar)
+      assert.equal(2, revived.baseEntity.bar)
       assert.same({ 3: { bar: 3 } }, revived.layerChanges)
     } else {
-      assert.equal(1, revived.bar)
+      assert.equal(1, revived.baseEntity.bar)
       assert.same({ 2: { bar: 2 }, 3: { bar: 3 } }, revived.layerChanges)
     }
 
@@ -235,7 +234,6 @@ describe("add", () => {
       {
         type: "revivedBelow",
         entity: revived,
-        layer: 2,
       },
       events[0],
     )

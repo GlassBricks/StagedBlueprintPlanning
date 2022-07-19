@@ -1,5 +1,6 @@
 import {
   AssemblyEntity,
+  createAssemblyEntity,
   Entity,
   getValueAtLayer,
   LayerChange,
@@ -57,46 +58,46 @@ export function onEntityAdded(
   const { layerNumber } = layer
 
   // search for existing entity
-  const existing = content.findCompatible(entity, position)
-  if (existing && existing.layerNumber <= layerNumber) {
+  const existing = content.findCompatible(entity, position, entity.direction)
+  if (existing && layerNumber >= existing.layerNumber) {
     if (existing.isLostReference) {
-      return reviveLostReference(existing, layerNumber, content, updateHandler)
+      return reviveLostReference(existing, layerNumber, updateHandler)
     }
     updateHandler("refreshed", existing, layerNumber)
     return existing
   }
 
-  const added = saveEntity(entity, layer, position)
+  const saved = saveEntity(entity)
   if (existing) {
-    return entityAddedBelow(added!, existing, content, updateHandler)
+    entityAddedBelow(saved!, layerNumber, existing, updateHandler)
+    return existing
   }
 
-  if (!added) return
-  content.add(added)
-  updateHandler("added", added)
-  return added
+  if (!saved) return
+  const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
+  content.add(assemblyEntity)
+  updateHandler("added", assemblyEntity)
+  return assemblyEntity
 }
 
 function reviveLostReference(
   existing: MutableAssemblyEntity,
   layerNumber: LayerNumber,
-  content: MutableAssemblyContent,
   updateHandler: AssemblyUpdateHandler,
 ): AssemblyEntity {
   assert(layerNumber >= existing.layerNumber)
   assert(existing.isLostReference)
+  existing.baseEntity = getValueAtLayer(existing, layerNumber)!
+  existing.isLostReference = nil
+  existing.layerNumber = layerNumber
   const { layerChanges } = existing
-  const newValue = assert(getValueAtLayer(existing, layerNumber)) as MutableAssemblyEntity
-  newValue.isLostReference = nil
-  newValue.layerNumber = layerNumber
-  newValue.layerChanges = layerChanges && getWithDeletedLayerChanges(layerChanges, layerNumber)
-  content.remove(existing)
-  content.add(newValue)
-  updateHandler("revived", newValue)
-  return newValue
+  existing.layerChanges = layerChanges && getWithDeletedLayerChanges(existing.layerChanges, layerNumber)
+  updateHandler("revived", existing)
+  return existing
 }
 
-function getWithDeletedLayerChanges(layerChanges: LayerChanges, layerNumber: LayerNumber): LayerChange | nil {
+function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerChange | nil {
+  if (!layerChanges) return nil
   for (const [layer] of pairs(layerChanges)) {
     if (layer > layerNumber) break
     delete layerChanges[layer]
@@ -105,23 +106,26 @@ function getWithDeletedLayerChanges(layerChanges: LayerChanges, layerNumber: Lay
 }
 
 function entityAddedBelow(
-  below: MutableAssemblyEntity,
-  existing: AssemblyEntity,
-  content: MutableAssemblyContent,
+  added: Entity,
+  layerNumber: LayerNumber,
+  existing: MutableAssemblyEntity,
   updateHandler: AssemblyUpdateHandler,
-): AssemblyEntity {
-  assert(below.layerNumber < existing.layerNumber)
-  const diff = getEntityDiff(below, existing)
-  below.layerChanges = existing.layerChanges
+): void {
+  assert(layerNumber < existing.layerNumber)
+  const diff = getEntityDiff(added, existing.baseEntity)
   if (diff) {
-    const layerChanges: LayerChanges = (below.layerChanges ??= {})
+    const layerChanges: LayerChanges = (existing.layerChanges ??= {})
     assert(layerChanges[existing.layerNumber] === nil)
     layerChanges[existing.layerNumber] = diff
   }
-  content.remove(existing)
-  content.add(below)
-  updateHandler(existing.isLostReference ? "revivedBelow" : "addedBelow", below, existing.layerNumber)
-  return below
+  existing.layerNumber = layerNumber
+  existing.baseEntity = added
+  if (existing.isLostReference) {
+    existing.isLostReference = nil
+    updateHandler("revivedBelow", existing)
+  } else {
+    updateHandler("addedBelow", existing)
+  }
 }
 
 export function entityDeleted(
@@ -132,7 +136,7 @@ export function entityDeleted(
 ): void {
   const position = Pos.minus(entity.position, layer.bbox.left_top)
   assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
-  const compatible = content.findCompatible(entity, position)
+  const compatible = content.findCompatible(entity, position, entity.direction)
   if (!compatible) return
   if (compatible.layerNumber !== layer.layerNumber) {
     if (compatible.layerNumber < layer.layerNumber) {

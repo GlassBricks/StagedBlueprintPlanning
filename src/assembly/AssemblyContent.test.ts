@@ -1,4 +1,4 @@
-import { AssemblyEntity, Entity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity } from "../entity/AssemblyEntity"
 import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
 
 let content: MutableAssemblyContent
@@ -8,28 +8,15 @@ before_all(() => {
 
 describe("findCompatible", () => {
   test("finds compatible if same name and direction", () => {
-    const entity: AssemblyEntity = { name: "test", position: { x: 0, y: 0 }, layerNumber: 1 }
-    const lookup = {
-      ...entity,
-      foo: "bar",
-    }
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     content.add(entity)
 
-    assert.equal(entity, content.findCompatible(lookup))
+    assert.equal(entity, content.findCompatible({ name: "foo" }, { x: 0, y: 0 }, nil))
   })
 
   test("not compatible", () => {
-    const entity: Entity = { name: "test", position: { x: 0, y: 0 } }
-
-    const lookup1 = {
-      ...entity,
-      name: "test2",
-    }
-    const lookup2 = {
-      ...entity,
-      direction: defines.direction.south,
-    }
-    assert.nil(content.findCompatible(lookup1))
-    assert.nil(content.findCompatible(lookup2))
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+    assert.nil(content.findCompatible({ name: "test2" }, entity.position, nil))
+    assert.nil(content.findCompatible({ name: "foo" }, entity.position, defines.direction.south))
   })
 })

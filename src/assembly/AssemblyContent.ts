@@ -1,4 +1,10 @@
-import { AssemblyEntity, Entity, isCompatibleEntity, MutableAssemblyEntity } from "../entity/AssemblyEntity"
+import {
+  AssemblyEntity,
+  Entity,
+  getCategoryName,
+  isCompatibleEntity,
+  MutableAssemblyEntity,
+} from "../entity/AssemblyEntity"
 import { RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { Map2D, map2dAdd, map2dGet, map2dRemove, MutableMap2D } from "../lib/map2d"
@@ -6,13 +12,13 @@ import { Map2D, map2dAdd, map2dGet, map2dRemove, MutableMap2D } from "../lib/map
 export interface AssemblyContent {
   readonly entities: Map2D<AssemblyEntity>
 
-  findCompatible(entity: Entity, position?: Position): AssemblyEntity | nil
+  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
 }
 
 export interface MutableAssemblyContent extends AssemblyContent {
   readonly entities: MutableMap2D<MutableAssemblyEntity>
 
-  findCompatible(entity: Entity, position?: Position): MutableAssemblyEntity | nil
+  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): MutableAssemblyEntity | nil
 
   add<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void
   remove<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void
@@ -22,12 +28,14 @@ export interface MutableAssemblyContent extends AssemblyContent {
 class AssemblyContentImpl implements MutableAssemblyContent {
   readonly entities: MutableMap2D<MutableAssemblyEntity> = {}
 
-  findCompatible(entity: Entity, position?: Position): AssemblyEntity<any> | nil {
-    const { x, y } = position ?? entity.position
+  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil {
+    const { x, y } = position
     const atPos = map2dGet(this.entities, x, y)
     if (!atPos) return
+    const categoryName = getCategoryName(entity)
+    if (direction === 0) direction = nil
     for (const candidate of atPos) {
-      if (isCompatibleEntity(candidate, entity)) return candidate
+      if (isCompatibleEntity(candidate, categoryName, direction)) return candidate
     }
   }
 

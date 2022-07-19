@@ -8,16 +8,10 @@ test("save basic entity", () => {
     name: "iron-chest",
     position: { x: 12.5, y: 12.5 },
     force: "player",
+    bar: 3,
   })!
-  const saved = saveEntity(entity, { ...area, layerNumber: 1 })
-  assert.same(
-    {
-      name: "iron-chest",
-      layerNumber: 1,
-      position: { x: 10.5, y: 10.5 },
-    },
-    saved,
-  )
+  const saved = saveEntity(entity)
+  assert.same({ name: "iron-chest", bar: 3 }, saved)
 })
 
 test("getEntityDiff", () => {

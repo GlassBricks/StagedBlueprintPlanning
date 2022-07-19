@@ -64,6 +64,8 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
     const bpEntity = stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntityRead>
     assert(bpEntity.entity_number === matchingIndex)
     bpEntity.entity_number = nil!
+    bpEntity.position = nil!
+    bpEntity.direction = nil
     return bpEntity
   },
 

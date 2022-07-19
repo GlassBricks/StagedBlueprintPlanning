@@ -1,43 +1,71 @@
-import { Mutable, PRecord, PRRecord, shallowCopy } from "../lib"
+import { mutableShallowCopy, PRecord, PRRecord } from "../lib"
 import { Position } from "../lib/geometry"
 import { getNilPlaceholder, WithNilPlaceholder } from "./NilPlaceholder"
 
 export interface Entity {
   readonly name: string
-
-  readonly position: Position
-
-  readonly direction?: defines.direction
 }
 
 export type LayerNumber = number
 
-export type AssemblyEntity<E extends Entity = Entity> = E & {
+export interface AssemblyEntity<out E extends Entity = Entity> {
+  // the below 3 defines the entity and never change
+  readonly position: Position
+  readonly categoryName: string
+  readonly direction: defines.direction | nil
+
+  /** First layer this entity appears in */
   readonly layerNumber: LayerNumber
-  readonly layerChanges?: PRRecord<LayerNumber, Readonly<LayerChange<E>>>
+  /** Value at the first layer */
+  readonly baseEntity: E
+  /** Changes to properties at successive layers. */
+  readonly layerChanges?: PRRecord<LayerNumber, LayerChange<E>>
+  /** If this entity is a lost reference */
   readonly isLostReference?: true
 }
 
-export type MutableAssemblyEntity<E extends Entity = Entity> = Mutable<AssemblyEntity<E>> & {
+export interface MutableAssemblyEntity<E extends Entity = Entity> extends AssemblyEntity<E> {
+  layerNumber: LayerNumber
+  baseEntity: E
   layerChanges?: PRecord<LayerNumber, LayerChange<E>>
+  isLostReference?: true
 }
 
 export type LayerChanges = PRecord<LayerNumber, LayerChange>
 
 export type LayerChange<E extends Entity = Entity> = {
-  [P in keyof E]?: WithNilPlaceholder<E[P]>
+  readonly [P in keyof E]?: WithNilPlaceholder<E[P]>
+}
+
+export function createAssemblyEntity<E extends Entity>(
+  entity: E,
+  position: Position,
+  direction: defines.direction | nil,
+  layerNumber: LayerNumber,
+): AssemblyEntity<E> {
+  return {
+    categoryName: getCategoryName(entity),
+    position,
+    direction: direction === 0 ? nil : direction,
+    layerNumber,
+    baseEntity: entity,
+  }
+}
+
+export function getCategoryName(entity: Entity): string {
+  // todo: group into categories
+  return entity.name
 }
 
 export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, layer: LayerNumber): E | nil {
   assert(layer >= 1, "layer must be >= 1")
   if (entity.layerNumber > layer) return nil
-  const { layerChanges } = entity
-  if (!layerChanges) return entity
+  const { layerChanges, baseEntity } = entity
+  if (!layerChanges) return baseEntity
   const firstChangedLayer = next(layerChanges)[0]
-  if (!firstChangedLayer || firstChangedLayer > layer) return entity
+  if (!firstChangedLayer || firstChangedLayer > layer) return baseEntity
 
-  const result: MutableAssemblyEntity<E> = shallowCopy(entity)
-  result.layerChanges = nil
+  const result = mutableShallowCopy(baseEntity)
   const nilPlaceholder = getNilPlaceholder()
   for (const [changeLayer, changed] of pairs(layerChanges)) {
     // iterates in ascending order
@@ -54,6 +82,10 @@ export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, lay
 }
 
 /** Does not check position */
-export function isCompatibleEntity(a: Entity, b: Entity): boolean {
-  return a.name === b.name && (a.direction ?? 0) === (b.direction ?? 0)
+export function isCompatibleEntity(
+  a: AssemblyEntity,
+  categoryName: string,
+  direction: defines.direction | nil,
+): boolean {
+  return a.categoryName === categoryName && a.direction === direction
 }
