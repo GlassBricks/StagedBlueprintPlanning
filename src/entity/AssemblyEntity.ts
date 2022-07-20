@@ -19,7 +19,7 @@ export interface AssemblyEntity<out E extends Entity = Entity> {
   /** Value at the first layer */
   readonly baseEntity: E
   /** Changes to properties at successive layers. */
-  readonly layerChanges?: PRRecord<LayerNumber, LayerChange<E>>
+  readonly layerChanges?: PRRecord<LayerNumber, LayerDiff<E>>
   /** If this entity is a lost reference */
   readonly isLostReference?: true
 }
@@ -27,13 +27,13 @@ export interface AssemblyEntity<out E extends Entity = Entity> {
 export interface MutableAssemblyEntity<E extends Entity = Entity> extends AssemblyEntity<E> {
   layerNumber: LayerNumber
   baseEntity: E
-  layerChanges?: PRecord<LayerNumber, LayerChange<E>>
+  layerChanges?: PRecord<LayerNumber, LayerDiff<E>>
   isLostReference?: true
 }
 
-export type LayerChanges = PRecord<LayerNumber, LayerChange>
+export type LayerChanges = PRecord<LayerNumber, LayerDiff>
 
-export type LayerChange<E extends Entity = Entity> = {
+export type LayerDiff<E extends Entity = Entity> = {
   readonly [P in keyof E]?: WithNilPlaceholder<E[P]>
 }
 
@@ -68,7 +68,7 @@ export function isCompatibleEntity(
 
 const ignoredProps = newLuaSet<keyof any>("position", "direction")
 
-export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): LayerChange | nil {
+export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): LayerDiff | nil {
   const nilPlaceholder: NilPlaceholder = getNilPlaceholder()
   const changes: any = {}
   for (const [key, value] of pairs(above)) {
@@ -82,10 +82,7 @@ export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): La
   return nilIfEmpty(changes)
 }
 
-export function applyDiffToDiff<E extends Entity = Entity>(
-  existing: Mutable<LayerChange<E>>,
-  diff: LayerChange<E>,
-): void {
+export function applyDiffToDiff<E extends Entity = Entity>(existing: Mutable<LayerDiff<E>>, diff: LayerDiff<E>): void {
   for (const [key, value] of pairs(diff)) {
     existing[key] = value as any
   }
@@ -104,7 +101,7 @@ export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, lay
   for (const [changeLayer, changed] of pairs(layerChanges)) {
     // iterates in ascending order
     if (changeLayer > layer) break
-    for (const [k, v] of pairs(changed as LayerChange<E>)) {
+    for (const [k, v] of pairs(changed as LayerDiff<E>)) {
       if (v === nilPlaceholder) {
         delete result[k]
       } else {

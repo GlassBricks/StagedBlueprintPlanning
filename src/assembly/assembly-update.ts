@@ -5,7 +5,7 @@ import {
   Entity,
   getEntityDiff,
   getValueAtLayer,
-  LayerChange,
+  LayerDiff,
   LayerChanges,
   LayerNumber,
   MutableAssemblyEntity,
@@ -97,7 +97,7 @@ function reviveLostReference(
   return existing
 }
 
-function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerChange | nil {
+function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerDiff | nil {
   if (!layerChanges) return nil
   for (const [layer] of pairs(layerChanges)) {
     if (layer > layerNumber) break
