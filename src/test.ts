@@ -34,7 +34,9 @@ if (script.active_mods.testorio) {
     before_test_run() {
       reinit()
       global.lastCompileTimestamp = lastCompileTime
-      game.forces.player.enable_all_recipes()
+      const force = game.forces.player
+      force.research_all_technologies()
+      force.enable_all_recipes()
     },
     after_test_run() {
       game.speed = 1 / 6
@@ -55,7 +57,8 @@ function isTestsRunning() {
 }
 
 Events.on_tick(() => {
-  const mod = game.ticks_played % 30
+  const ticks = math.ceil(60 * 3 * game.speed)
+  const mod = game.ticks_played % ticks
   if (mod === 0) {
     // tests not running or not ready
     if (!isTestsRunning()) {

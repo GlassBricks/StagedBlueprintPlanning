@@ -1,16 +1,17 @@
 import {
+  applyDiffToDiff,
   AssemblyEntity,
   createAssemblyEntity,
   Entity,
+  getEntityDiff,
   getValueAtLayer,
   LayerChange,
   LayerChanges,
   LayerNumber,
   MutableAssemblyEntity,
 } from "../entity/AssemblyEntity"
-import { getEntityDiff, getLayerPosition, saveEntity } from "../entity/diff"
+import { getLayerPosition, saveEntity } from "../entity/diff"
 import { nilIfEmpty } from "../lib"
-import { Pos } from "../lib/geometry"
 import { Layer } from "./Assembly"
 import { MutableAssemblyContent } from "./AssemblyContent"
 
@@ -23,14 +24,14 @@ export type AssemblyUpdateType =
   | "deleted"
   | "deletedMadeLostReference"
   | "deletionForbidden"
-// | "updated"
-// | "updated-above"
+  | "updated"
 
 export type AssemblyUpdateHandler = (
   this: void,
   type: AssemblyUpdateType,
   entity: AssemblyEntity,
   layer?: LayerNumber,
+  data?: any,
 ) => void
 
 /** If a lua entity is considered to be an assembly entity. */
@@ -134,7 +135,7 @@ export function entityDeleted(
   content: MutableAssemblyContent,
   updateHandler: AssemblyUpdateHandler,
 ): void {
-  const position = Pos.minus(entity.position, layer.bbox.left_top)
+  const position = getLayerPosition(entity, layer)
   assert(position.x >= 0 && position.y >= 0, "entity position must be >= 0")
   const compatible = content.findCompatible(entity, position, entity.direction)
   if (!compatible) return
@@ -153,4 +154,39 @@ export function entityDeleted(
 
   content.remove(compatible)
   updateHandler("deleted", compatible)
+}
+
+export function entityPotentiallyUpdated(
+  entity: LuaEntity,
+  layer: Layer,
+  content: MutableAssemblyContent,
+  updateHandler: AssemblyUpdateHandler,
+): void {
+  const position = getLayerPosition(entity, layer)
+  const { layerNumber } = layer
+  const existing = content.findCompatible(entity, position, entity.direction)
+  if (!existing || layerNumber < existing.layerNumber) {
+    // possibly bug, treat as update
+    onEntityAdded(entity, layer, content, updateHandler)
+    return
+  }
+  const newValue = saveEntity(entity)
+  if (!newValue) return // bug?
+  const valueAtLayer = getValueAtLayer(existing, layerNumber)!
+  const diff = getEntityDiff(valueAtLayer, newValue)
+  if (!diff) return
+  if (layerNumber === existing.layerNumber) {
+    // same layer
+    existing.baseEntity = newValue
+  } else {
+    // above layer
+    const layerChanges: LayerChanges = (existing.layerChanges ??= {})
+    const existingDiff = layerChanges[layerNumber]
+    if (existingDiff) {
+      applyDiffToDiff(existingDiff, diff)
+    } else {
+      layerChanges[layerNumber] = diff
+    }
+  }
+  updateHandler("updated", existing, layerNumber, diff)
 }

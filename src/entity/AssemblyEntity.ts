@@ -1,6 +1,6 @@
-import { mutableShallowCopy, PRecord, PRRecord } from "../lib"
+import { deepCompare, Mutable, mutableShallowCopy, nilIfEmpty, PRecord, PRRecord } from "../lib"
 import { Position } from "../lib/geometry"
-import { getNilPlaceholder, WithNilPlaceholder } from "./NilPlaceholder"
+import { getNilPlaceholder, NilPlaceholder, WithNilPlaceholder } from "./NilPlaceholder"
 
 export interface Entity {
   readonly name: string
@@ -57,6 +57,40 @@ export function getCategoryName(entity: Entity): string {
   return entity.name
 }
 
+/** Does not check position */
+export function isCompatibleEntity(
+  a: AssemblyEntity,
+  categoryName: string,
+  direction: defines.direction | nil,
+): boolean {
+  return a.categoryName === categoryName && a.direction === direction
+}
+
+const ignoredProps = newLuaSet<keyof any>("position", "direction")
+
+export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): LayerChange | nil {
+  const nilPlaceholder: NilPlaceholder = getNilPlaceholder()
+  const changes: any = {}
+  for (const [key, value] of pairs(above)) {
+    if (!ignoredProps.has(key) && !deepCompare(value, below[key])) {
+      changes[key] = value
+    }
+  }
+  for (const [key] of pairs(below)) {
+    if (!ignoredProps.has(key) && above[key] === nil) changes[key] = nilPlaceholder
+  }
+  return nilIfEmpty(changes)
+}
+
+export function applyDiffToDiff<E extends Entity = Entity>(
+  existing: Mutable<LayerChange<E>>,
+  diff: LayerChange<E>,
+): void {
+  for (const [key, value] of pairs(diff)) {
+    existing[key] = value as any
+  }
+}
+
 export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, layer: LayerNumber): E | nil {
   assert(layer >= 1, "layer must be >= 1")
   if (entity.layerNumber > layer) return nil
@@ -79,13 +113,4 @@ export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, lay
     }
   }
   return result
-}
-
-/** Does not check position */
-export function isCompatibleEntity(
-  a: AssemblyEntity,
-  categoryName: string,
-  direction: defines.direction | nil,
-): boolean {
-  return a.categoryName === categoryName && a.direction === direction
 }

@@ -1,5 +1,34 @@
-import { AssemblyEntity, Entity, getValueAtLayer } from "./AssemblyEntity"
+import { AssemblyEntity, Entity, getEntityDiff, getValueAtLayer } from "./AssemblyEntity"
 import { getNilPlaceholder } from "./NilPlaceholder"
+
+test("getEntityDiff", () => {
+  const entity1 = {
+    name: "1",
+    direction: 0,
+    position: { x: 0, y: 0 },
+    changedProp: { x: 1, y: 2 },
+    simpleUnchanged: "unchanged",
+    unchanged: { x: 1, y: 2 },
+    setToNil: "setToNil",
+  }
+  const entity2 = {
+    name: "2",
+    direction: 1,
+    position: { x: 1, y: 1 },
+    changedProp: { x: 2, y: 2 },
+    simpleUnchanged: "unchanged",
+    unchanged: { x: 1, y: 2 },
+  }
+  const diff = getEntityDiff(entity1, entity2)
+  assert.same(
+    {
+      name: "2",
+      changedProp: { x: 2, y: 2 },
+      setToNil: getNilPlaceholder(),
+    },
+    diff,
+  )
+})
 
 describe("getValueAtLayer", () => {
   interface FooEntity extends Entity {
