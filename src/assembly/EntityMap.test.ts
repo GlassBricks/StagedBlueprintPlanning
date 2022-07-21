@@ -1,9 +1,9 @@
 import { AssemblyEntity, createAssemblyEntity } from "../entity/AssemblyEntity"
-import { MutableAssemblyContent, newAssemblyContent } from "./AssemblyContent"
+import { MutableEntityMap, newEntityMap } from "./EntityMap"
 
-let content: MutableAssemblyContent
+let content: MutableEntityMap
 before_all(() => {
-  content = newAssemblyContent()
+  content = newEntityMap()
 })
 
 describe("findCompatible", () => {

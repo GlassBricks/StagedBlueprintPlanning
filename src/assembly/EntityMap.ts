@@ -9,13 +9,13 @@ import { RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { Map2D, map2dAdd, map2dGet, map2dRemove, MutableMap2D } from "../lib/map2d"
 
-export interface AssemblyContent {
+export interface EntityMap {
   readonly entities: Map2D<AssemblyEntity>
 
   findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
 }
 
-export interface MutableAssemblyContent extends AssemblyContent {
+export interface MutableEntityMap extends EntityMap {
   readonly entities: MutableMap2D<MutableAssemblyEntity>
 
   findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): MutableAssemblyEntity | nil
@@ -24,8 +24,8 @@ export interface MutableAssemblyContent extends AssemblyContent {
   remove<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void
 }
 
-@RegisterClass("AssemblyContent")
-class AssemblyContentImpl implements MutableAssemblyContent {
+@RegisterClass("EntityMap")
+class EntityMapImpl implements MutableEntityMap {
   readonly entities: MutableMap2D<MutableAssemblyEntity> = {}
 
   findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil {
@@ -39,17 +39,17 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     }
   }
 
-  add(entity: MutableAssemblyEntity): void {
+  add<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void {
     const { x, y } = entity.position
     map2dAdd(this.entities, x, y, entity)
   }
 
-  remove(entity: MutableAssemblyEntity): void {
+  remove<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void {
     const { x, y } = entity.position
     map2dRemove(this.entities, x, y, entity)
   }
 }
 
-export function newAssemblyContent(): MutableAssemblyContent {
-  return new AssemblyContentImpl()
+export function newEntityMap(): MutableEntityMap {
+  return new EntityMapImpl()
 }
