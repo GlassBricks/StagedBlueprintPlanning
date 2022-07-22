@@ -43,6 +43,8 @@ export interface EventsObj extends ShorthandRegister {
    */
   onAll(handlers: EventHandlers): void
 
+  onInitOrLoad(f: () => void): void
+
   clearHandlers<E extends EventId<any, any> | string>(event: E): void
 
   raiseFakeEvent<E extends EventId<any, any>>(event: E, data: E["_eventData"]): void
@@ -124,6 +126,10 @@ const Events = {
         error(`"${event}" is not an event name. Use "register" to register a handler for a custom input event.`)
       registerInternal(id, handler)
     }
+  },
+  onInitOrLoad(f: () => void): void {
+    registerInternal(scriptEventIds.on_init, f)
+    registerInternal(scriptEventIds.on_load, f)
   },
   clearHandlers: clear,
   raiseFakeEvent(event: keyof any, data: any): void {

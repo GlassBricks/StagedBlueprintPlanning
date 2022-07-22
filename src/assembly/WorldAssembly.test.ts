@@ -38,8 +38,7 @@ before_each(() => {
     layerNumber: 1,
   }
   events = []
-  assembly = new WorldAssembly()
-  assembly.worldUpdater = worldUpdater
+  assembly = new WorldAssembly(worldUpdater)
 })
 
 interface InserterEntity extends Entity {
@@ -115,7 +114,7 @@ function assertAdded(): MutableAssemblyEntity {
   return found
 }
 
-test("new", () => {
+test("add", () => {
   const { added } = doAdd()
   const found = assertAdded()
   assert.equal(added, found)
@@ -128,7 +127,7 @@ test.each([1, 2], "existing at layer 1, added at layer %d", (layerNumber) => {
   assert.equal(added, added2)
 
   assertOneEntity()
-  assertSingleEvent({ type: "refresh", entity: added, layer: layerNumber })
+  assertSingleEvent({ type: "refresh", entity: added, layer: layerNumber, data: luaEntity })
 })
 
 test.each([false, true], "existing at layer 2, added at layer 1, with layer changes: %s", (withChanges) => {
@@ -150,7 +149,7 @@ test.each([false, true], "existing at layer 2, added at layer 1, with layer chan
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: added })
+  assertSingleEvent({ type: "add", entity: added, layer: 2 })
 })
 
 test("delete non-existent", () => {
@@ -256,7 +255,7 @@ test("update in previous layer", () => {
   assembly.onEntityPotentiallyUpdated(luaEntity, layer)
   // same as addBelow
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: added })
+  assertSingleEvent({ type: "add", entity: added, layer: 2 })
 })
 
 test("update in same layer", () => {
@@ -266,7 +265,7 @@ test("update in same layer", () => {
   assert.equal(3, added.baseEntity.override_stack_size)
 
   assertOneEntity()
-  assertSingleEvent({ type: "update", entity: added, layer: layer.layerNumber, data: { override_stack_size: 3 } })
+  assertSingleEvent({ type: "update", entity: added, layer: layer.layerNumber })
 })
 
 test.each([false, true], "update in next layer, with existing changes: %s", (withExistingChanges) => {
@@ -286,5 +285,5 @@ test.each([false, true], "update in next layer, with existing changes: %s", (wit
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "update", entity: added, layer: layer.layerNumber, data: { override_stack_size: 3 } })
+  assertSingleEvent({ type: "update", entity: added, layer: layer.layerNumber })
 })

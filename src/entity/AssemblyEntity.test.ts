@@ -1,4 +1,4 @@
-import { AssemblyEntity, Entity, getEntityDiff, getValueAtLayer } from "./AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, Entity, getEntityDiff, getValueAtLayer } from "./AssemblyEntity"
 import { getNilPlaceholder } from "./NilPlaceholder"
 
 test("getEntityDiff", () => {
@@ -35,17 +35,16 @@ describe("getValueAtLayer", () => {
     foo1: number
     foo2?: number | nil
   }
-  const entity: AssemblyEntity<FooEntity> = {
-    categoryName: "foo",
-    position: { x: 0, y: 0 },
-    layerNumber: 2,
-    direction: nil,
-    baseEntity: {
+
+  const entity: AssemblyEntity<FooEntity> = createAssemblyEntity<FooEntity>(
+    {
       name: "foo",
       foo1: 1,
-      foo2: 2,
     },
-  }
+    { x: 0, y: 0 },
+    nil,
+    2,
+  )
 
   let changingEntity: AssemblyEntity<FooEntity>
   before_all(() => {

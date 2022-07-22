@@ -4,11 +4,11 @@ import { BBox, Pos, Vec2 } from "../lib/geometry"
 import { MutableState, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
-import { Assembly, Layer } from "./Assembly"
+import { AssemblyPositions, Layer } from "./Assembly"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 
-export interface UserAssembly extends Assembly {
+export interface UserAssembly extends AssemblyPositions {
   readonly id: AssemblyId
 
   readonly name: MutableState<string>

@@ -39,7 +39,7 @@ if (script.active_mods.testorio) {
       force.enable_all_recipes()
     },
     after_test_run() {
-      game.speed = 1 / 6
+      game.speed = __DebugAdapter ? 1 : 1 / 6
     },
     log_passed_tests: false,
     sound_effects: true,
@@ -57,7 +57,7 @@ function isTestsRunning() {
 }
 
 Events.on_tick(() => {
-  const ticks = math.ceil(60 * 3 * game.speed)
+  const ticks = math.ceil((__DebugAdapter ? 15 : 3) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod === 0) {
     // tests not running or not ready

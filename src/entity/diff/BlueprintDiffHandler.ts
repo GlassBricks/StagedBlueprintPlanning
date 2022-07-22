@@ -1,6 +1,5 @@
 import { Events, Mutable } from "../../lib"
-import { BBox } from "../../lib/geometry"
-import { WorldPosition } from "../../utils/world-location"
+import { BBox, Pos, Position } from "../../lib/geometry"
 import { DiffHandler } from "./DiffHandler"
 
 declare const global: {
@@ -48,6 +47,34 @@ function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   return entity
 }
 
+function pasteEntity(
+  surface: LuaSurface,
+  position: MapPositionTable,
+  direction: defines.direction | undefined,
+  entity: BlueprintEntityRead,
+): LuaEntity | nil {
+  const stack = getTempItemStack()
+  const tilePosition = Pos.floor(position)
+  const offsetPosition = Pos.minus(position, tilePosition)
+  stack.set_blueprint_entities([
+    {
+      ...entity,
+      position: offsetPosition,
+      direction,
+      entity_number: 1,
+    },
+  ])
+  stack.blueprint_snap_to_grid = [1, 1]
+  stack.blueprint_absolute_snapping = true
+
+  const ghosts = stack.build_blueprint({
+    surface,
+    force: "player",
+    position: tilePosition,
+  })
+  return ghosts[0]
+}
+
 export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
   save(entity: LuaEntity): BlueprintEntityRead | nil {
     const { surface, position } = entity
@@ -69,19 +96,19 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
     return bpEntity
   },
 
-  create(saved: BlueprintEntityRead, { surface, position }: WorldPosition): void {
-    const stack = getTempItemStack()
-    stack.set_blueprint_entities([saved])
-    stack.blueprint_absolute_snapping = true
-    stack.blueprint_snap_to_grid = [1, 1]
+  create(
+    surface: LuaSurface,
+    position: Position,
+    direction: defines.direction | nil,
+    entity: BlueprintEntityRead,
+  ): LuaEntity | nil {
+    const ghost = pasteEntity(surface, position, direction, entity)
+    return ghost && reviveGhost(ghost)
+  },
 
-    const ghosts = stack.build_blueprint({
-      surface,
-      force: "player",
-      position,
-      skip_fog_of_war: false,
-      // raise_built: true,
-    })
-    for (const ghost of ghosts) reviveGhost(ghost)
+  match(luaEntity: LuaEntity, value: BlueprintEntityRead): void {
+    assert(luaEntity.force.name === "player")
+    const ghost = pasteEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, value)
+    if (ghost) ghost.destroy() // should not happen?
   },
 }

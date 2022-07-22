@@ -14,12 +14,13 @@ import { getLayerPosition, saveEntity } from "../entity/diff"
 import { nilIfEmpty, RegisterClass } from "../lib"
 import { Layer } from "./Assembly"
 import { MutableEntityMap, newEntityMap } from "./EntityMap"
-import { defaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
+import { WorldUpdater } from "./WorldUpdater"
 
 @RegisterClass("WorldAssembly")
 export class WorldAssembly {
-  declare worldUpdater: WorldUpdater
   readonly content: MutableEntityMap = newEntityMap()
+
+  constructor(private worldUpdater: WorldUpdater) {}
 
   onEntityAdded<E extends Entity = Entity>(entity: LuaEntity, layer: Layer): AssemblyEntity<E> | nil
   onEntityAdded(entity: LuaEntity, layer: Layer): AssemblyEntity | nil {
@@ -29,7 +30,7 @@ export class WorldAssembly {
 
     const existing = content.findCompatible(entity, position, entity.direction)
     if (existing && existing.layerNumber <= layerNumber) {
-      this.entityAddedAbove(existing, layerNumber)
+      this.entityAddedAbove(existing, layerNumber, entity)
       return existing
     }
 
@@ -44,15 +45,15 @@ export class WorldAssembly {
 
     const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
     content.add(assemblyEntity)
-    this.worldUpdater.add(assemblyEntity)
+    this.worldUpdater.add(assemblyEntity, nil)
     return assemblyEntity
   }
 
-  private entityAddedAbove(existing: MutableAssemblyEntity, layerNumber: number): void {
+  private entityAddedAbove(existing: MutableAssemblyEntity, layerNumber: LayerNumber, entity: LuaEntity): void {
     if (existing.isLostReference) {
       this.reviveLostReference(existing, layerNumber)
     } else {
-      this.worldUpdater.refresh(existing, layerNumber)
+      this.worldUpdater.refresh(existing, layerNumber, entity)
     }
   }
 
@@ -79,10 +80,11 @@ export class WorldAssembly {
   private entityAddedBelow(existing: MutableAssemblyEntity, layerNumber: LayerNumber, added: Entity): void {
     // assert(layerNumber < existing.layerNumber)
     const diff = getEntityDiff(added, existing.baseEntity)
+    const oldLayerNumber = existing.layerNumber
     if (diff) {
       const layerChanges: LayerChanges = (existing.layerChanges ??= {})
-      assert(layerChanges[existing.layerNumber] === nil)
-      layerChanges[existing.layerNumber] = diff
+      assert(layerChanges[oldLayerNumber] === nil)
+      layerChanges[oldLayerNumber] = diff
     }
     existing.layerNumber = layerNumber
     existing.baseEntity = added
@@ -90,7 +92,7 @@ export class WorldAssembly {
       existing.isLostReference = nil
       this.worldUpdater.revive(existing)
     } else {
-      this.worldUpdater.add(existing)
+      this.worldUpdater.add(existing, oldLayerNumber)
     }
   }
 
@@ -147,7 +149,6 @@ export class WorldAssembly {
         layerChanges[layerNumber] = diff
       }
     }
-    this.worldUpdater.update(existing, layerNumber, diff)
+    this.worldUpdater.update(existing, layerNumber)
   }
 }
-WorldAssembly.prototype.worldUpdater = defaultWorldUpdater

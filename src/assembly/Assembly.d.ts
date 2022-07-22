@@ -1,7 +1,7 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { WorldArea } from "../utils/world-location"
 
-export interface Assembly {
+export interface AssemblyPositions {
   readonly layers: readonly Layer[]
 }
 
