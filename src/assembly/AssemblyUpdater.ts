@@ -22,7 +22,7 @@ export interface AssemblyUpdaterParams extends WorldUpdaterParams {
 
 /** @noSelf */
 export interface AssemblyUpdater {
-  onEntityAdded<E extends Entity = Entity>(
+  onEntityCreated<E extends Entity = Entity>(
     assembly: AssemblyUpdaterParams,
     entity: LuaEntity,
     layer: LayerPosition,
@@ -183,7 +183,7 @@ function onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: Lua
 }
 
 export const AssemblyUpdater: AssemblyUpdater = {
-  onEntityAdded,
+  onEntityCreated: onEntityAdded,
   onEntityDeleted,
   onEntityPotentiallyUpdated,
 }

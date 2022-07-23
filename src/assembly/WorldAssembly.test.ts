@@ -27,7 +27,7 @@ let assembly: AssemblyUpdaterParams
 
 before_each(() => {
   area = clearTestArea()
-  layer = { surface: area.surface, ...area.bbox, layerNumber: 1 }
+  layer = { surface: area.surface, ...area.bbox, layerNumber: 1, assembly: nil! }
   events = []
   content = newEntityMap()
   assembly = { content } as AssemblyUpdaterParams
@@ -93,7 +93,7 @@ function createEntity() {
 
 function doAdd() {
   const entity = createEntity()
-  const added = AssemblyUpdater.onEntityAdded(assembly, entity, layer) as MutableAssemblyEntity<InserterEntity>
+  const added = AssemblyUpdater.onEntityCreated(assembly, entity, layer) as MutableAssemblyEntity<InserterEntity>
   return { luaEntity: entity, added }
 }
 
@@ -125,7 +125,7 @@ test("add", () => {
 
 test.each([1, 2], "existing at layer 1, added at layer %d", (layerNumber) => {
   const { luaEntity, added } = doVirtualAdd(1, layerNumber)
-  const added2 = AssemblyUpdater.onEntityAdded(assembly, luaEntity, layer) // again
+  const added2 = AssemblyUpdater.onEntityCreated(assembly, luaEntity, layer) // again
 
   assert.equal(added, added2)
 
@@ -139,7 +139,7 @@ test.each([false, true], "existing at layer 2, added at layer 1, with layer chan
   if (withChanges) {
     luaEntity.inserter_stack_size_override = 3
   }
-  const added = AssemblyUpdater.onEntityAdded<InserterEntity>(assembly, luaEntity, layer)! // again
+  const added = AssemblyUpdater.onEntityCreated<InserterEntity>(assembly, luaEntity, layer)! // again
   assert.equal(oldAdded, added)
 
   assert.same(1, added.layerNumber)
@@ -197,7 +197,7 @@ test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (rev
   added.layerChanges = { 3: { override_stack_size: 3 }, 5: { override_stack_size: 4 } }
   added.isLostReference = true
 
-  const revived = AssemblyUpdater.onEntityAdded<InserterEntity>(assembly, luaEntity, layer)!
+  const revived = AssemblyUpdater.onEntityCreated<InserterEntity>(assembly, luaEntity, layer)!
   assert.falsy(revived.isLostReference)
   assert.equal(revived.layerNumber, reviveLayer)
 
@@ -223,7 +223,7 @@ test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: 
 
   if (withChanges) luaEntity.inserter_stack_size_override = 1
 
-  const revived = AssemblyUpdater.onEntityAdded<InserterEntity>(assembly, luaEntity, layer)!
+  const revived = AssemblyUpdater.onEntityCreated<InserterEntity>(assembly, luaEntity, layer)!
   assert.falsy(revived.isLostReference)
   assert.equal(revived.layerNumber, 1)
 

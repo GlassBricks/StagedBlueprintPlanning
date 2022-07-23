@@ -10,6 +10,10 @@ export function testArea(index: number): WorldArea {
 
 export function clearTestArea(index: number = 0): WorldArea {
   const area = testArea(index)
-  area.surface.find_entities_filtered({ area: area.bbox }).forEach((e) => e.destroy())
+  clearArea(area)
   return area
+}
+
+export function clearArea(worldArea: WorldArea): void {
+  worldArea.surface.find_entities_filtered({ area: worldArea.bbox }).forEach((e) => e.destroy())
 }

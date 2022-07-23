@@ -63,6 +63,10 @@ export function getCategoryName(entity: Entity): string {
   return entity.name
 }
 
+export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
+  return luaEntity.has_flag("player-creation")
+}
+
 /** Does not check position */
 export function isCompatibleEntity(
   a: AssemblyEntity,

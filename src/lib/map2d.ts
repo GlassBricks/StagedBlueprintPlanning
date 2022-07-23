@@ -11,8 +11,8 @@ export function map2dGet<T>(map: Map2D<T>, x: number, y: number): LuaReadonlySet
 }
 
 export function map2dAdd<T>(map: MutableMap2D<T>, x: number, y: number, value: T): void {
-  const byX = map[x] || (map[x] = {})
-  const byY = byX[y] || (byX[y] = new LuaSet())
+  const byX = (map[x] ??= {})
+  const byY = (byX[y] ??= new LuaSet())
   byY.add(value)
 }
 

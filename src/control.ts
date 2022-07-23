@@ -1,1 +1,2 @@
+import "./assembly"
 import "./test"
