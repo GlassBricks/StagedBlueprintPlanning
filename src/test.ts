@@ -82,7 +82,7 @@ function isTestsRunning() {
 }
 
 Events.on_tick(() => {
-  const ticks = math.ceil((__DebugAdapter ? 15 : 3) * 60 * game.speed)
+  const ticks = math.ceil((__DebugAdapter ? 10 : 3) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod === 0) {
     // tests not running or not ready

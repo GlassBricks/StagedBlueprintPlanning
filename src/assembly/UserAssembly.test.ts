@@ -1,7 +1,8 @@
 import { Pos } from "../lib/geometry"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
-import { newAssembly, UserAssembly } from "./UserAssembly"
+import { Assembly } from "./Assembly"
+import { newAssembly } from "./UserAssembly"
 
 describe("Assembly", () => {
   test("assigns unique id", () => {
@@ -23,7 +24,7 @@ describe("Assembly", () => {
 })
 
 describe("Layer", () => {
-  let asm: UserAssembly
+  let asm: Assembly
   let pos: WorldPosition
   before_each(() => {
     asm = newAssembly(Pos(1, 1))
@@ -32,11 +33,11 @@ describe("Layer", () => {
   test("layerNumber and id is correct", () => {
     const layer1 = asm.pushLayer(pos)
     assert.equals(1, layer1.layerNumber)
-    assert.equals(asm.id, layer1.assemblyId)
+    assert.equals(asm, layer1.assembly)
 
     const layer2 = asm.pushLayer(pos)
     assert.equals(2, layer2.layerNumber)
-    assert.equals(asm.id, layer2.assemblyId)
+    assert.equals(asm, layer2.assembly)
   })
 
   test("display name is correct", () => {

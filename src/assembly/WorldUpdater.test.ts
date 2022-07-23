@@ -8,24 +8,23 @@ import {
 import { createEntity } from "../entity/diff"
 import { Pos, Position } from "../lib/geometry"
 import { clearTestArea, testArea } from "../test-util/area"
-import { Layer } from "./Assembly"
-import { newWorldUpdater, WorldUpdater } from "./WorldUpdater"
+import { LayerPosition } from "./Assembly"
+import { WorldUpdater, WorldUpdaterParams } from "./WorldUpdater"
 
-let layers: Layer[]
-
-let worldUpdater: WorldUpdater
+let assembly: WorldUpdaterParams
 const pos = Pos(10.5, 10.5)
 let entity: MutableAssemblyEntity<InserterEntity>
 before_each(() => {
-  layers = []
+  const layers: LayerPosition[] = []
   for (const i of $range(1, 3)) {
     const area = clearTestArea(i - 1)
     layers.push({
-      ...area,
+      ...area.bbox,
+      surface: area.surface,
       layerNumber: i,
     })
   }
-  worldUpdater = newWorldUpdater({ layers })
+  assembly = { layers }
   entity = createAssemblyEntity(
     {
       name: "filter-inserter",
@@ -77,7 +76,7 @@ function assertEntityPresent(i: LayerNumber): void {
 
 function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
   entity.layerNumber = layerNumber
-  worldUpdater.add(entity, stopLayer)
+  WorldUpdater.add(assembly, entity, stopLayer)
   return entity.worldEntities[layerNumber]
 }
 
@@ -118,9 +117,10 @@ test.each(
 test("refresh", () => {
   addAt(1)
   entity.worldEntities[2]!.destroy()
-  const replaced = createEntity(layers[2 - 1], entity, { name: "filter-inserter" })!
+  const replaced = createEntity(assembly.layers[2], entity, { name: "filter-inserter" })!
+  assert.not_nil(replaced)
   // refresh at layer 2
-  worldUpdater.refresh(entity, 2, replaced)
+  WorldUpdater.refresh(assembly, entity, 2, replaced)
   assertEntityPresent(2)
   assert.equal(replaced, entity.worldEntities[2])
 })
@@ -129,13 +129,13 @@ test.each([false, true], "revive at same layer, with changes: %s", (withChanges)
   addAt(1)
   if (withChanges) makeEntityWithChanges()
   for (let i = 1; i <= 3; i++) entity.worldEntities[i]!.destroy()
-  worldUpdater.revive(entity)
+  WorldUpdater.revive(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityPresent(i)
 })
 
 test("delete", () => {
   addAt(1)
-  worldUpdater.delete(entity)
+  WorldUpdater.delete(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
 })
 
@@ -143,6 +143,6 @@ test("deletion forbidden", () => {
   addAt(1)
   const layer2Entity = entity.worldEntities[2]
   layer2Entity!.destroy()
-  worldUpdater.deletionForbidden(entity, 2)
+  WorldUpdater.deletionForbidden(assembly, entity, 2)
   assertEntityPresent(2)
 })
