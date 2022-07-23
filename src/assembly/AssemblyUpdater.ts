@@ -13,14 +13,18 @@ import {
 import { getLayerPosition, saveEntity } from "../entity/diff"
 import { nilIfEmpty, RegisterClass } from "../lib"
 import { Layer } from "./Assembly"
-import { MutableEntityMap, newEntityMap } from "./EntityMap"
+import { MutableEntityMap } from "./EntityMap"
 import { WorldUpdater } from "./WorldUpdater"
 
-@RegisterClass("WorldAssembly")
-export class WorldAssembly {
-  readonly content: MutableEntityMap = newEntityMap()
+export interface AssemblyUpdater {
+  onEntityAdded<E extends Entity = Entity>(entity: LuaEntity, layer: Layer): AssemblyEntity<E> | nil
+  onEntityDeleted(entity: LuaEntity, layer: Layer): void
+  onEntityPotentiallyUpdated(entity: LuaEntity, layer: Layer): void
+}
 
-  constructor(private worldUpdater: WorldUpdater) {}
+@RegisterClass("AssemblyUpdater")
+class AssemblyUpdaterImpl implements AssemblyUpdater {
+  constructor(private content: MutableEntityMap, private worldUpdater: WorldUpdater) {}
 
   onEntityAdded<E extends Entity = Entity>(entity: LuaEntity, layer: Layer): AssemblyEntity<E> | nil
   onEntityAdded(entity: LuaEntity, layer: Layer): AssemblyEntity | nil {
@@ -151,4 +155,8 @@ export class WorldAssembly {
     }
     this.worldUpdater.update(existing, layerNumber)
   }
+}
+
+export function newAssemblyUpdater(content: MutableEntityMap, worldUpdater: WorldUpdater): AssemblyUpdater {
+  return new AssemblyUpdaterImpl(content, worldUpdater)
 }

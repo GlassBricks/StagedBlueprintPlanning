@@ -5,7 +5,8 @@ import { map2dSize } from "../lib/map2d"
 import { clearTestArea } from "../test-util/area"
 import { WorldArea } from "../utils/world-location"
 import { Layer } from "./Assembly"
-import { WorldAssembly } from "./WorldAssembly"
+import { AssemblyUpdater, newAssemblyUpdater } from "./AssemblyUpdater"
+import { MutableEntityMap, newEntityMap } from "./EntityMap"
 import { WorldUpdater } from "./WorldUpdater"
 
 interface WorldUpdateEvent {
@@ -17,6 +18,7 @@ interface WorldUpdateEvent {
 let area: WorldArea
 let layer: Mutable<Layer>
 let events: WorldUpdateEvent[]
+let content: MutableEntityMap
 const worldUpdater: WorldUpdater = setmetatable<any, any>(
   {},
   {
@@ -28,7 +30,7 @@ const worldUpdater: WorldUpdater = setmetatable<any, any>(
   },
 )
 
-let assembly: WorldAssembly
+let assembly: AssemblyUpdater
 const pos = Pos(10.5, 10.5)
 
 before_each(() => {
@@ -37,8 +39,9 @@ before_each(() => {
     ...area,
     layerNumber: 1,
   }
+  content = newEntityMap()
   events = []
-  assembly = new WorldAssembly(worldUpdater)
+  assembly = newAssemblyUpdater(content, worldUpdater)
 })
 
 interface InserterEntity extends Entity {
@@ -69,12 +72,12 @@ function assertSingleEvent(event: WorldUpdateEvent) {
 }
 
 function assertOneEntity() {
-  assert.equal(1, map2dSize(assembly.content.entities))
+  assert.equal(1, map2dSize(content.entities))
   entitiesAsserted = true
 }
 
 function assertNoEntities() {
-  assert.same({}, assembly.content.entities)
+  assert.same({}, content.entities)
   entitiesAsserted = true
 }
 
@@ -103,7 +106,7 @@ function doVirtualAdd(addedNum: LayerNumber = layer.layerNumber, setNum = layer.
 }
 
 function assertAdded(): MutableAssemblyEntity {
-  const found = assembly.content.findCompatible({ name: "filter-inserter" }, pos, nil)!
+  const found = content.findCompatible({ name: "filter-inserter" }, pos, nil)!
   assert.not_nil(found)
   assert.equal("filter-inserter", found.baseEntity.name)
   assert.same(pos, found.position)
