@@ -1,5 +1,5 @@
 import { RegisterClass } from "../references"
-import { Event, ValueListener, ValueSubscribable } from "./Observable"
+import { Event, Observable, ValueListener } from "./Observable"
 import { Subscription } from "./Subscription"
 
 export type ObservableListAdd<T> = {
@@ -37,7 +37,7 @@ export type ObservableListChange<T> =
 
 export type ListObserver<T> = ValueListener<ObservableListChange<T>>
 
-export interface ObservableList<T extends AnyNotNil> extends ValueSubscribable<ObservableListChange<T>> {
+export interface ObservableList<T extends AnyNotNil> extends Observable<ObservableListChange<T>> {
   length(): number
   value(): readonly T[]
   get(index: number): T

@@ -40,6 +40,13 @@ describe("Layer", () => {
     assert.equals(asm, layer2.assembly)
   })
 
+  test("fires event on push", () => {
+    const sp = spy()
+    asm.events.subscribeIndependently(sp)
+    const layer = asm.pushLayer(pos)
+    assert.spy(sp).called_with(match._, match._, { type: "layer-pushed", layer })
+  })
+
   test("display name is correct", () => {
     const layer = asm.pushLayer(pos)
     assert.same([L_Assembly.UnnamedLayer, layer.layerNumber], layer.displayName.get())

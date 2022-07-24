@@ -1,7 +1,7 @@
 // noinspection JSUnusedLocalSymbols
 
 import { RegisterClass } from "../references"
-import { Event, ValueListener, ValueSubscribable } from "./Observable"
+import { Event, Observable, ValueListener } from "./Observable"
 import { Subscription } from "./Subscription"
 
 export interface ObservableMapChange<K extends AnyNotNil, V> {
@@ -14,7 +14,7 @@ export interface ObservableMapChange<K extends AnyNotNil, V> {
 export type MapObserver<K extends AnyNotNil, V> = ValueListener<ObservableMapChange<K, V>>
 
 export interface ObservableMap<K extends AnyNotNil, V>
-  extends ValueSubscribable<ObservableMapChange<K, V>>,
+  extends Observable<ObservableMapChange<K, V>>,
     LuaPairsIterable<K, V> {
   size(): number
   get(key: K): V | nil

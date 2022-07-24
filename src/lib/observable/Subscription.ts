@@ -13,8 +13,14 @@ export class UnsubscriptionError extends Error {
 
 export type Unsubscription = Unsubscribable | Func<() => void>
 
+export interface ObserveOnlySubscription {
+  isClosed(): boolean
+  add(subscription: Unsubscription): void
+  hasActions(): boolean
+}
+
 @RegisterClass("Subscription")
-export class Subscription implements Unsubscribable {
+export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   // if nil, is closed
   _children: LuaSet<Unsubscription> | nil = new LuaSet()
   _parents: LuaSet<Subscription> | nil = new LuaSet()

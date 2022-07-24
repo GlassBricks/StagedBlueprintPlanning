@@ -57,7 +57,7 @@ describe("add", () => {
     const position = getLayerCenter(1)
     player.cursor_stack!.set_stack("iron-chest")
     player.build_from_cursor({ position })
-    player.clear_cursor()
+    player.cursor_stack!.clear()
     const entity = surface.find_entities_filtered({
       position,
       radius: 1,

@@ -7,7 +7,7 @@ export interface Subscribable<L extends Func<ContextualFun>> {
 }
 
 export type ValueListener<T> = Func<(subscription: Subscription, value: T) => void>
-export type ValueSubscribable<T> = Subscribable<ValueListener<T>>
+export type Observable<T> = Subscribable<ValueListener<T>>
 
 type AdditionalArgs<L extends (this: any, arg1: any, ...args: any) => void> = L extends (
   this: any,
@@ -17,7 +17,7 @@ type AdditionalArgs<L extends (this: any, arg1: any, ...args: any) => void> = L 
   ? A
   : never
 
-@RegisterClass("Observable")
+@RegisterClass("ObserverList")
 export class ObserverList<L extends Func<(subscription: Subscription, ...args: any) => void>>
   implements Subscribable<L>
 {
@@ -40,11 +40,17 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
       observer(subscription, ...args)
     }
   }
+
+  closeAll(): void {
+    for (const [subscription] of this as unknown as LuaMap<ObserverSubscription, L>) {
+      subscription.close()
+    }
+  }
 }
 
 @RegisterClass("ObserverSubscription")
 class ObserverSubscription extends Subscription {
-  constructor(private readonly observers: LuaMap<ObserverSubscription, any>) {
+  constructor(private readonly observers: LuaMap<ObserverSubscription>) {
     super()
   }
   override close() {

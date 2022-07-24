@@ -1,10 +1,10 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { bind, Events, PRecord, RegisterClass, registerFunctions } from "../lib"
 import { Pos, Vec2 } from "../lib/geometry"
-import { state, State } from "../lib/observable"
+import { Event, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
-import { Assembly, AssemblyId, Layer } from "./Assembly"
+import { Assembly, AssemblyChangeEvent, AssemblyId, Layer } from "./Assembly"
 import { newEntityMap } from "./EntityMap"
 
 declare const global: {
@@ -24,6 +24,8 @@ class AssemblyImpl implements Assembly {
 
   content = newEntityMap()
 
+  events: Event<AssemblyChangeEvent> = new Event()
+
   private constructor(readonly id: AssemblyId, readonly chunkSize: Vec2) {
     this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedAssembly, id))
   }
@@ -40,9 +42,12 @@ class AssemblyImpl implements Assembly {
 
   pushLayer(leftTop: WorldPosition): Layer {
     const nextIndex = this.layers.length + 1
-    return (this.layers[nextIndex - 1] = createLayer(this, nextIndex, leftTop))
+    const layer = (this.layers[nextIndex - 1] = createLayer(this, nextIndex, leftTop))
+    this.events.raise({ type: "layer-pushed", layer })
+    return layer
   }
 }
+
 export function newAssembly(chunkSize: Vec2): AssemblyImpl {
   return AssemblyImpl.create(chunkSize)
 }

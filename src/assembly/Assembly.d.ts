@@ -1,5 +1,5 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { MutableState, State } from "../lib/observable"
+import { MutableState, Observable, State } from "../lib/observable"
 import { WorldPosition } from "../utils/world-location"
 import { AssemblyUpdaterParams } from "./AssemblyUpdater"
 import { MutableEntityMap } from "./EntityMap"
@@ -27,6 +27,8 @@ export interface Assembly extends AssemblyUpdaterParams, WorldUpdaterParams {
   pushLayer(leftTop: WorldPosition): Layer
 
   readonly content: MutableEntityMap
+
+  readonly events: Observable<AssemblyChangeEvent>
 }
 
 export interface Layer extends LayerPosition {
@@ -35,3 +37,10 @@ export interface Layer extends LayerPosition {
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
 }
+
+// events
+export interface LayerPushedEvent {
+  readonly type: "layer-pushed"
+  readonly layer: Layer
+}
+export type AssemblyChangeEvent = LayerPushedEvent

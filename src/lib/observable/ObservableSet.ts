@@ -1,7 +1,7 @@
 // noinspection JSUnusedLocalSymbols
 
 import { RegisterClass } from "../references"
-import { Event, ValueListener, ValueSubscribable } from "./Observable"
+import { Event, Observable, ValueListener } from "./Observable"
 import { Subscription } from "./Subscription"
 
 export interface ObservableSetChange<T> {
@@ -12,7 +12,7 @@ export interface ObservableSetChange<T> {
 
 export type SetObserver<T> = ValueListener<ObservableSetChange<T>>
 
-export interface ObservableSet<T> extends ValueSubscribable<ObservableSetChange<T>>, LuaPairsKeyIterable<T> {
+export interface ObservableSet<T> extends Observable<ObservableSetChange<T>>, LuaPairsKeyIterable<T> {
   size(): number
   has(value: T): boolean
   value(): LuaReadonlySet<T>
