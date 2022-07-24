@@ -2,7 +2,11 @@ import { Pos } from "../lib/geometry"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
 import { Assembly } from "./Assembly"
-import { _mockAssembly, newAssembly } from "./UserAssembly"
+import { _deleteAllAssemblies, _mockAssembly, newAssembly } from "./UserAssembly"
+
+after_each(() => {
+  _deleteAllAssemblies()
+})
 
 describe("Assembly", () => {
   test("basic", () => {

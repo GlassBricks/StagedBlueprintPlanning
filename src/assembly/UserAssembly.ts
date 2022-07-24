@@ -1,5 +1,5 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { bind, Events, Mutable, PRecord, RegisterClass, registerFunctions } from "../lib"
+import { bind, Events, Mutable, RegisterClass, registerFunctions } from "../lib"
 import { Pos, Vec2 } from "../lib/geometry"
 import { Event, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
@@ -10,11 +10,11 @@ import { registerAssembly } from "./world-register"
 
 declare const global: {
   nextAssemblyId: AssemblyId
-  assemblies: PRecord<AssemblyId, AssemblyImpl>
+  assemblies: LuaMap<AssemblyId, AssemblyImpl>
 }
 Events.on_init(() => {
   global.nextAssemblyId = 1 as AssemblyId
-  global.assemblies = {}
+  global.assemblies = new LuaMap()
 })
 
 type AssemblyLayer = Mutable<Layer>
@@ -41,7 +41,7 @@ class AssemblyImpl implements Assembly {
     const actualSize = Pos.ceil(chunkSize)
 
     const assembly = new AssemblyImpl(id, actualSize)
-    global.assemblies[id] = assembly
+    global.assemblies.set(id, assembly)
 
     registerAssembly(assembly)
 
@@ -52,13 +52,9 @@ class AssemblyImpl implements Assembly {
     return new AssemblyImpl(0 as AssemblyId, chunkSize)
   }
 
-  static get(id: AssemblyId): AssemblyImpl | nil {
-    return global.assemblies[id]
-  }
-
   delete() {
     if (!this.valid) return
-    delete global.assemblies[this.id]
+    global.assemblies.delete(this.id)
     this.valid = false
     for (const layer of this.layers) {
       layer.valid = false
@@ -75,11 +71,18 @@ class AssemblyImpl implements Assembly {
   }
 }
 
-export function newAssembly(chunkSize: Vec2): AssemblyImpl {
+export function newAssembly(chunkSize: Vec2): Assembly {
   return AssemblyImpl.create(chunkSize)
 }
-export function _mockAssembly(chunkSize: Vec2): AssemblyImpl {
+export function _mockAssembly(chunkSize: Vec2): Assembly {
   return AssemblyImpl._mock(chunkSize)
+}
+
+export function _deleteAllAssemblies(): void {
+  for (const [, assembly] of global.assemblies) {
+    assembly.delete()
+  }
+  global.nextAssemblyId = 1 as AssemblyId
 }
 
 function getDisplayName(locale: string, id: number, name: string): LocalisedString {

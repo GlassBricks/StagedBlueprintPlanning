@@ -1,4 +1,5 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
+import { Position } from "../lib/geometry"
 import { MutableState, Observable, State } from "../lib/observable"
 import { WorldPosition } from "../utils/world-location"
 import { AssemblyUpdaterParams } from "./AssemblyUpdater"
@@ -26,6 +27,8 @@ export interface Assembly extends AssemblyUpdaterParams, WorldUpdaterParams, Ass
 
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
+
+  readonly chunkSize: Position
 
   readonly layers: readonly Layer[]
   pushLayer(leftTop: WorldPosition): Layer
