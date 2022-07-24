@@ -52,7 +52,7 @@ describe("ObservableMap", () => {
 
   it("notifies subscribers of added items", () => {
     const fn = spy()
-    map.subscribeIndependently(fn)
+    map.subscribeIndependently({ invoke: fn })
     map.set("a", 1)
     const change: ObservableMapChange<string, number> = {
       map,
@@ -67,7 +67,7 @@ describe("ObservableMap", () => {
   it("does not notify subscribers of unchanged items", () => {
     map.set("a", 1)
     const fn = spy()
-    map.subscribeIndependently(fn)
+    map.subscribeIndependently({ invoke: fn })
     map.set("a", 1)
     assert.spy(fn).not_called()
   })
@@ -75,7 +75,7 @@ describe("ObservableMap", () => {
   it("notifies subscribers of changed items", () => {
     map.set("a", 1)
     const fn = spy()
-    map.subscribeIndependently(fn)
+    map.subscribeIndependently({ invoke: fn })
     map.set("a", 2)
     const change: ObservableMapChange<string, number> = {
       map,
@@ -90,7 +90,7 @@ describe("ObservableMap", () => {
   it("notifies subscribers of deleted items", () => {
     map.set("a", 1)
     const fn = spy()
-    map.subscribeIndependently(fn)
+    map.subscribeIndependently({ invoke: fn })
     map.delete("a")
     const change: ObservableMapChange<string, number> = {
       map,
@@ -104,7 +104,7 @@ describe("ObservableMap", () => {
 
   it("does not notify subscribers of deleting not present items", () => {
     const fn = spy()
-    map.subscribeIndependently(fn)
+    map.subscribeIndependently({ invoke: fn })
     map.delete("a")
     assert.spy(fn).not_called()
   })

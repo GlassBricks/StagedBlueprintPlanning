@@ -1,8 +1,7 @@
 // noinspection UnnecessaryLocalVariableJS
 
 import { State, state } from "../observable"
-import { Callback, RegisterClass } from "../references"
-import { asFunc } from "../test-util/func"
+import { RegisterClass } from "../references"
 import { testRender } from "../test-util/gui"
 import { destroy } from "./render"
 import {
@@ -229,11 +228,11 @@ describe("destroy", () => {
 })
 
 test("events", () => {
-  const func = spy<GuiEventHandler>()
+  const func = spy<GuiEventHandler["invoke"]>()
   const spec: ButtonElementSpec = {
     type: "button",
-    on_gui_click: func,
-    on_gui_opened: func,
+    on_gui_click: { invoke: func },
+    on_gui_opened: { invoke: func },
   }
   const element = testRender(spec).native
 
@@ -304,7 +303,7 @@ test("onCreate", () => {
 })
 
 test("tracker onMount", () => {
-  const fn = spy<Callback>()
+  const fn = spy<(this: unknown) => void>()
   const spec: FCSpec<any> = {
     type(props, tracker) {
       tracker.onMount(fn)
@@ -318,10 +317,10 @@ test("tracker onMount", () => {
 })
 
 test("tracker onDestroy", () => {
-  const fn = spy<Callback>()
+  const fn = spy()
   const spec: FCSpec<any> = {
     type(props, tracker) {
-      tracker.getSubscription().add(fn)
+      tracker.getSubscription().add({ invoke: fn })
 
       return { type: "flow" }
     },
@@ -356,7 +355,7 @@ describe("Class component", () => {
         assert.equal("flow", element.type)
         results.push("onMount")
       })
-      tracker.getSubscription().add(asFunc(() => results.push("destroyed")))
+      tracker.getSubscription().add({ invoke: () => results.push("destroyed") })
       results.push("render")
       return {
         type: "flow",
@@ -377,7 +376,7 @@ describe("Class component", () => {
         assert.equal("flow", element.type)
         results.push("onMount2")
       })
-      tracker.getSubscription().add(asFunc(() => results.push("destroyed2")))
+      tracker.getSubscription().add({ invoke: () => results.push("destroyed2") })
       results.push("render2")
       return {
         type: Foo,
@@ -442,7 +441,7 @@ describe("function component", () => {
     results.push("render")
     tracker.onMount(() => results.push("mountA"))
     tracker.onMount(() => results.push("mountB"))
-    tracker.getSubscription().add(asFunc(() => results.push("destroyed")))
+    tracker.getSubscription().add({ invoke: () => results.push("destroyed") })
     return {
       type: "flow",
       onCreate: props.cb,
@@ -453,7 +452,7 @@ describe("function component", () => {
     results.push("render2")
     tracker.onMount(() => results.push("mount2A"))
     tracker.onMount(() => results.push("mount2B"))
-    tracker.getSubscription().add(asFunc(() => results.push("destroyed2")))
+    tracker.getSubscription().add({ invoke: () => results.push("destroyed2") })
     return {
       type: Component,
       props: { cb: props.cb },

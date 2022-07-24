@@ -41,9 +41,9 @@ describe("Assembly", () => {
     })
     test("fires event", () => {
       const sp = spy()
-      asm.events.subscribeIndependently(sp)
+      asm.events.subscribeIndependently({ invoke: sp })
       asm.delete()
-      assert.same(sp.calls[1].refs[3], {
+      assert.same(sp.calls[0].refs[2], {
         type: "assembly-deleted",
         assembly: asm,
       })
@@ -70,7 +70,7 @@ describe("Layers", () => {
 
   test("fires event on push", () => {
     const sp = spy()
-    asm.events.subscribeIndependently(sp)
+    asm.events.subscribeIndependently({ invoke: sp })
     const layer = asm.pushLayer(pos)
     assert.spy(sp).called_with(match._, match._, { type: "layer-pushed", layer, assembly: asm })
   })

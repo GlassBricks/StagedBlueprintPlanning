@@ -1,11 +1,11 @@
 import { PRecord, PRRecord } from "./util-types"
 
-export type Map2D<T> = PRRecord<number, PRRecord<number, LuaReadonlySet<T>>>
+export type Map2D<T> = PRRecord<number, PRRecord<number, ReadonlyLuaSet<T>>>
 export type MutableMap2D<T> = PRecord<number, PRecord<number, LuaSet<T>>>
 
-export function map2dGet<T>(map: MutableMap2D<T>, x: number, y: number): LuaReadonlySet<T> | nil
-export function map2dGet<T>(map: Map2D<T>, x: number, y: number): LuaReadonlySet<T> | nil
-export function map2dGet<T>(map: Map2D<T>, x: number, y: number): LuaReadonlySet<T> | nil {
+export function map2dGet<T>(map: MutableMap2D<T>, x: number, y: number): ReadonlyLuaSet<T> | nil
+export function map2dGet<T>(map: Map2D<T>, x: number, y: number): ReadonlyLuaSet<T> | nil
+export function map2dGet<T>(map: Map2D<T>, x: number, y: number): ReadonlyLuaSet<T> | nil {
   const byX = map[x]
   return byX && byX[y]
 }

@@ -45,7 +45,7 @@ it("can be iterated", () => {
 
 it("notifies subscribers of added items", () => {
   const fn = spy()
-  set.subscribeIndependently(fn)
+  set.subscribeIndependently({ invoke: fn })
   set.add("a")
   const change: ObservableSetChange<string> = {
     set,
@@ -59,7 +59,7 @@ it("notifies subscribers of added items", () => {
 it("does not notify subscribers of already present items", () => {
   set.add("a")
   const fn = spy()
-  set.subscribeIndependently(fn)
+  set.subscribeIndependently({ invoke: fn })
   set.add("a")
   assert.spy(fn).not_called()
 })
@@ -67,7 +67,7 @@ it("does not notify subscribers of already present items", () => {
 it("notifies subscribers of deleted items", () => {
   set.add("a")
   const fn = spy()
-  set.subscribeIndependently(fn)
+  set.subscribeIndependently({ invoke: fn })
   set.delete("a")
   const change: ObservableSetChange<string> = {
     set,
@@ -79,7 +79,7 @@ it("notifies subscribers of deleted items", () => {
 
 it("does not notify subscribers of deleting not present items", () => {
   const fn = spy()
-  set.subscribeIndependently(fn)
+  set.subscribeIndependently({ invoke: fn })
   set.delete("a")
   assert.spy(fn).not_called()
 })

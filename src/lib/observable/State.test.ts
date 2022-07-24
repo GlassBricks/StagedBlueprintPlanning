@@ -1,8 +1,7 @@
-import { asFunc } from "../test-util/func"
 import { MutableState, State, state } from "./State"
 
 function spy() {
-  return globalThis.spy<any>()
+  return globalThis.spy<(this: any) => void>()
 }
 
 describe("state", () => {
@@ -22,22 +21,22 @@ describe("state", () => {
 
   test("subscribeAndFire", () => {
     const fn = spy()
-    s.subscribeIndependentlyAndFire(fn)
+    s.subscribeIndependentlyAndFire({ invoke: fn })
     assert.spy(fn).called(1)
     assert.spy(fn).called_with(match._, match._, "begin", nil)
   })
 
   it("notifies subscribers of value when value changed", () => {
     const fn = spy()
-    s.subscribeIndependently(fn)
+    s.subscribeIndependently({ invoke: fn })
     s.set("end")
-    assert.spy(fn).called_with(match._, match._, "end", "begin")
+    assert.spy(fn).called_with(match.not_userdata(), match.not_userdata(), "end", "begin")
   })
 
   test("setValueFn", () => {
     const fn = s.setValueFn("end")
     assert.equal(s.get(), "begin")
-    fn()
+    fn.invoke()
     assert.equal(s.get(), "end")
   })
 })
@@ -45,9 +44,9 @@ describe("state", () => {
 describe("map", () => {
   test("maps correct values to observers", () => {
     const val = state(3)
-    const mapped = val.map(asFunc((x) => x * 2))
+    const mapped = val.map({ invoke: (x) => x * 2 })
     const fn = spy()
-    mapped.subscribeIndependentlyAndFire(fn)
+    mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     assert.spy(fn).called(1)
     assert.spy(fn).called_with(match._, match._, 6, nil)
@@ -60,7 +59,7 @@ describe("map", () => {
 
   test("gives correct value for get()", () => {
     const val = state(3)
-    const mapped = val.map(asFunc((x) => x * 2))
+    const mapped = val.map({ invoke: (x) => x * 2 })
     assert.same(6, mapped.get())
   })
 
@@ -69,7 +68,7 @@ describe("map", () => {
     const choice = val.switch("yes", "no")
 
     const fn = spy()
-    choice.subscribeIndependentlyAndFire(fn)
+    choice.subscribeIndependentlyAndFire({ invoke: fn })
     assert.spy(fn).called(1)
     assert.spy(fn).called_with(match._, match._, "no", nil)
     val.set(true)
@@ -81,9 +80,9 @@ describe("map", () => {
 describe("flatMap", () => {
   test("maps non-state values", () => {
     const val = state(3)
-    const mapped = val.flatMap(asFunc((x) => x * 2))
+    const mapped = val.flatMap({ invoke: (x) => x * 2 })
     const fn = spy()
-    mapped.subscribeIndependentlyAndFire(fn)
+    mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     assert.spy(fn).called(1)
     assert.spy(fn).called_with(match._, match._, 6, nil)
@@ -96,9 +95,9 @@ describe("flatMap", () => {
 
   test("maps state values", () => {
     const val = state(3)
-    const mapped = val.flatMap(asFunc((x) => state(x * 2)))
+    const mapped = val.flatMap({ invoke: (x) => state(x * 2) })
     const fn = spy()
-    mapped.subscribeIndependentlyAndFire(fn)
+    mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     assert.spy(fn).called(1)
     assert.spy(fn).called_with(match._, match._, 6, nil)
@@ -112,10 +111,10 @@ describe("flatMap", () => {
   test("listens to inner state and unsubscribes", () => {
     const val = state(1)
     const innerVal = state(4)
-    const mapped = val.flatMap(asFunc((x) => (x === 1 ? innerVal : x)))
+    const mapped = val.flatMap({ invoke: (x) => (x === 1 ? innerVal : x) })
 
     const fn = spy()
-    mapped.subscribeIndependentlyAndFire(fn)
+    mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     assert.spy(fn).called(1)
     assert.spy(fn).called_with(match._, match._, 4, nil)
@@ -138,7 +137,7 @@ describe("flatMap", () => {
 
   test("gives correct value for get()", () => {
     const val = state(3)
-    const mapped = val.flatMap(asFunc((x) => state(x * 2)))
+    const mapped = val.flatMap({ invoke: (x) => state(x * 2) })
     assert.same(6, mapped.get())
 
     val.set(4)

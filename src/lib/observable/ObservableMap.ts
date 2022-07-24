@@ -19,7 +19,7 @@ export interface ObservableMap<K extends AnyNotNil, V>
   size(): number
   get(key: K): V | nil
   has(key: K): boolean
-  value(): LuaReadonlyMap<K, V | nil>
+  value(): ReadonlyLuaMap<K, V | nil>
 }
 
 export interface MutableObservableMap<K extends AnyNotNil, V> extends ObservableMap<K, V> {
@@ -54,7 +54,7 @@ class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<
     return this._map.has(key)
   }
 
-  public value(): LuaReadonlyMap<K, V | nil> {
+  public value(): ReadonlyLuaMap<K, V | nil> {
     return this._map
   }
 

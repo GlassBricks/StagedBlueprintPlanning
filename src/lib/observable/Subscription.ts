@@ -1,4 +1,4 @@
-import { Func, isCallable, RegisterClass } from "../references"
+import { Func, RegisterClass } from "../references"
 
 export interface Unsubscribable {
   close(): void
@@ -52,10 +52,10 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   }
 
   private callUnsubscription(subscription: Unsubscription): void {
-    if (isCallable(subscription)) {
-      ;(subscription as Func<() => void>)()
-    } else {
+    if ((subscription as Unsubscribable).close) {
       ;(subscription as Unsubscribable).close()
+    } else {
+      ;(subscription as Func).invoke()
     }
   }
 

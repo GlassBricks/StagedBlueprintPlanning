@@ -82,8 +82,8 @@ export function _mockAssembly(chunkSize: Vec2): AssemblyImpl {
   return AssemblyImpl._mock(chunkSize)
 }
 
-function getDisplayName(this: string, id: number, name: string): LocalisedString {
-  return name !== "" ? name : [this, id]
+function getDisplayName(locale: string, id: number, name: string): LocalisedString {
+  return name !== "" ? name : [locale, id]
 }
 registerFunctions("AssemblyName", { getDisplayName })
 

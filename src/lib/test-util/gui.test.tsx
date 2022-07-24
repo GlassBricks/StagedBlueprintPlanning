@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { FactorioJsx, GuiEventHandler } from "../factoriojsx"
 import { getDescription, isRoot, makeWrapper, testRender } from "./gui"
 import { getPlayer } from "./misc"
@@ -66,8 +67,8 @@ describe("findSatisfying", () => {
 })
 
 test("simulateEvent", () => {
-  const fn = spy<GuiEventHandler>()
-  const button = testRender(<button on_gui_click={fn} />)
+  const fn = spy<GuiEventHandler["invoke"]>()
+  const button = testRender(<button on_gui_click={{ invoke: fn }} />)
   assert.spy(fn).not_called()
   button.simulateClick()
   assert.spy(fn).called(1)

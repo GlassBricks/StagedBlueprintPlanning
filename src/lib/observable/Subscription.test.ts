@@ -3,7 +3,7 @@ import { Subscription, UnsubscriptionError } from "./Subscription"
 let a: Subscription
 let b: Subscription
 
-let sp: spy.Spy<any>
+let sp: spy.Spy<() => void>
 
 before_each(() => {
   a = new Subscription()
@@ -31,7 +31,7 @@ test("calls subscription immediately if already closed", () => {
 })
 
 test("calls func subscriptions when closed", () => {
-  a.add(sp)
+  a.add({ invoke: sp })
   assert.spy(sp).not_called()
   a.close()
   assert.spy(sp).called()
@@ -39,7 +39,7 @@ test("calls func subscriptions when closed", () => {
 
 test("calls func subscriptions immediately if already closed", () => {
   a.close()
-  a.add(sp)
+  a.add({ invoke: sp })
   assert.spy(sp).called()
 })
 

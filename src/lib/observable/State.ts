@@ -1,14 +1,14 @@
-import { bind, bound, Callback, Func, funcRef, reg, RegisterClass, RegisteredFunc } from "../references"
+import { bind, bound, Callback, cfuncRef, Func, funcRef, reg, RegisterClass } from "../references"
 import { isEmpty } from "../util"
 import { ObserverList, Subscribable } from "./Observable"
 import { Subscription } from "./Subscription"
 
-export interface ChangeListener<T> extends RegisteredFunc {
-  (this: unknown, subscription: Subscription, value: T, oldValue: T): void
+export interface ChangeListener<T> {
+  invoke(subscription: Subscription, value: T, oldValue: T): void
 }
 
-export interface PartialChangeListener<T> extends RegisteredFunc {
-  (this: unknown, subscription: Subscription, value: T, oldValue: T | nil): void
+export interface PartialChangeListener<T> {
+  invoke(subscription: Subscription, value: T, oldValue: T | nil): void
 }
 
 export type MaybeState<T> = State<T> | T
@@ -31,12 +31,12 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
 
   subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
     const subscription = this.event.subscribe(context, observer)
-    observer(subscription, this.get(), nil)
+    observer.invoke(subscription, this.get(), nil)
     return subscription
   }
   subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {
     const subscription = this.subscribeIndependently(observer)
-    observer(subscription, this.get(), nil)
+    observer.invoke(subscription, this.get(), nil)
     return subscription
   }
 
@@ -49,9 +49,10 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   }
 
   switch<V>(whenTruthy: V, whenFalsy: V): State<V> {
-    return this.map(bind(State.switchFn, nil, whenTruthy, whenFalsy))
+    return this.map(bind(State.switchFn, whenTruthy, whenFalsy)) as State<V>
   }
-  static switchFn<V>(whenTrue: V, whenFalse: V, value: unknown): V {
+
+  static switchFn<V>(this: void, whenTrue: V, whenFalse: V, value: unknown): V {
     return value ? whenTrue : whenFalse
   }
   truthy(): State<boolean> {
@@ -106,7 +107,7 @@ class MutableStateImpl<T> extends State<T> implements MutableState<T> {
     this.set(value)
   }
   setValueFn(value: T): Callback {
-    return bind(MutableStateImpl.setValueFn, this, value)
+    return bind(cfuncRef(MutableStateImpl.setValueFn), this, value)
   }
   private static toggleFn(this: MutableState<boolean>) {
     this.set(!this.value)
@@ -130,14 +131,14 @@ class MappedState<T, U> extends State<U> {
 
   get(): U {
     if (this.sourceSubscription) return this.curValue!
-    return this.mapper(this.source.get())
+    return this.mapper.invoke(this.source.get())
   }
 
   private subscribeToSource() {
     const { source, sourceListener, mapper } = this
     this.sourceSubscription?.close()
     this.sourceSubscription = source.subscribeIndependently(reg(sourceListener))
-    this.curValue = mapper(source.get())
+    this.curValue = mapper.invoke(source.get())
   }
 
   private unsubscribeFromSource() {
@@ -151,7 +152,7 @@ class MappedState<T, U> extends State<U> {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
-    const mappedNewValue = mapper(sourceNewValue)
+    const mappedNewValue = mapper.invoke(sourceNewValue)
     if (oldValue === mappedNewValue) return
     this.curValue = mappedNewValue
     this.event.raise(mappedNewValue, oldValue!)
@@ -176,7 +177,7 @@ class FlatMappedState<T, U> extends State<U> {
   get(): U {
     if (this.sourceSubscription) return this.curValue!
 
-    const mappedValue = this.mapper(this.source.get())
+    const mappedValue = this.mapper.invoke(this.source.get())
     return mappedValue instanceof State ? mappedValue.get() : mappedValue
   }
 
@@ -184,7 +185,7 @@ class FlatMappedState<T, U> extends State<U> {
     const { source, sourceListener, mapper } = this
     this.sourceSubscription?.close()
     this.sourceSubscription = source.subscribeIndependently(reg(sourceListener))
-    this.receiveNewMappedValue(mapper(source.get()))
+    this.receiveNewMappedValue(mapper.invoke(source.get()))
   }
 
   private receiveNewMappedValue(newValue: MaybeState<U>) {
@@ -203,7 +204,7 @@ class FlatMappedState<T, U> extends State<U> {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
-    const newMappedValue = mapper(sourceNewValue)
+    const newMappedValue = mapper.invoke(sourceNewValue)
     this.receiveNewMappedValue(newMappedValue)
     const newValue = this.curValue
     if (oldValue !== newValue) this.event.raise(newValue!, oldValue!)

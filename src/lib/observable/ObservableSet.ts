@@ -15,7 +15,7 @@ export type SetObserver<T> = ValueListener<ObservableSetChange<T>>
 export interface ObservableSet<T> extends Observable<ObservableSetChange<T>>, LuaPairsKeyIterable<T> {
   size(): number
   has(value: T): boolean
-  value(): LuaReadonlySet<T>
+  value(): ReadonlyLuaSet<T>
 }
 
 export interface MutableObservableSet<T> extends ObservableSet<T> {
@@ -47,7 +47,7 @@ class ObservableSetImpl<T> implements MutableObservableSet<T> {
     return this.value().has(value)
   }
 
-  public value(): LuaReadonlySet<T> {
+  public value(): ReadonlyLuaSet<T> {
     return this.set
   }
 

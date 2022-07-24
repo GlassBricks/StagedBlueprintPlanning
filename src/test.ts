@@ -30,7 +30,6 @@ declare let global: {
 }
 
 if (script.active_mods.testorio) {
-  // _breakpoint()
   function reinit() {
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories) inventories.forEach((x) => x.destroy())

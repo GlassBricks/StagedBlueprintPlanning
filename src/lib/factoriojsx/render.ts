@@ -1,9 +1,8 @@
 import { Events } from "../Events"
-import { MutableState, State, ValueListener } from "../observable"
-import { Subscription } from "../observable/Subscription"
+import { MutableState, State, Subscription, ValueListener } from "../observable"
 import { onPlayerInit, onPlayerRemoved } from "../player-init"
 import { protectedAction } from "../protected-action"
-import { bind, Classes, Func, funcRef, isCallable, registerFunctions, SelflessFun } from "../references"
+import { bind, Classes, Func, funcRef, registerFunctions, SelflessFun } from "../references"
 import { isEmpty } from "../util"
 import { PRecord } from "../util-types"
 import * as propTypes from "./propTypes.json"
@@ -17,30 +16,30 @@ interface ElementInstance {
   readonly events: PRecord<GuiEventName, Func<any>>
 }
 
-function setValueObserver(this: LuaGuiElement | LuaStyle, key: string, subscription: Subscription, value: any) {
-  if (!this.valid) {
-    if (this.object_name === "LuaGuiElement") destroy(this)
+function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, subscription: Subscription, value: any) {
+  if (!elem.valid) {
+    if (elem.object_name === "LuaGuiElement") destroy(elem)
     return subscription.close()
   }
-  ;(this as any)[key] = value
+  ;(elem as any)[key] = value
 }
 
-function callSetterObserver(this: LuaGuiElement, key: string, subscription: Subscription, value: any) {
-  if (!this.valid) {
-    destroy(this)
+function callSetterObserver(elem: LuaGuiElement, key: string, subscription: Subscription, value: any) {
+  if (!elem.valid) {
+    destroy(elem)
     return subscription.close()
   }
   if (key === "slider_minimum") {
-    ;(this as SliderGuiElement).set_slider_minimum_maximum(value, (this as SliderGuiElement).get_slider_maximum())
+    ;(elem as SliderGuiElement).set_slider_minimum_maximum(value, (elem as SliderGuiElement).get_slider_maximum())
   } else if (key === "slider_maximum") {
-    ;(this as SliderGuiElement).set_slider_minimum_maximum((this as SliderGuiElement).get_slider_minimum(), value)
+    ;(elem as SliderGuiElement).set_slider_minimum_maximum((elem as SliderGuiElement).get_slider_minimum(), value)
   } else {
-    ;(this as any as Record<any, SelflessFun>)[key](value)
+    ;(elem as any as Record<any, SelflessFun>)[key](value)
   }
 }
 
-function setStateFunc(this: MutableState<unknown>, key: string, event: GuiEvent) {
-  this.set((event as any)[key] || event.element![key])
+function setStateFunc(state: MutableState<unknown>, key: string, event: GuiEvent) {
+  state.set((event as any)[key] || event.element![key])
 }
 
 registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc })
@@ -153,8 +152,8 @@ function renderElement(
     if (!propProperties) continue
     if (typeof value === "function") value = funcRef(value as any)
     if (propProperties === "event") {
-      if (!isCallable(value)) error("Gui event handlers must be a function")
-      events[key as GuiEventName] = value as unknown as GuiEventHandler
+      assert((value as Func).invoke, "Gui event handler must be a function")
+      events[key as GuiEventName] = value as GuiEventHandler
       continue
     }
     const isSpecProp = propProperties[0]
@@ -356,7 +355,7 @@ for (const [name] of pairs(guiEventNames)) {
     if (!instance) return
     const event = instance.events[name]
     if (event) {
-      protectedAction(e.player_index, event, nil, e)
+      protectedAction(e.player_index, event.invoke, event, e)
     }
   })
 }

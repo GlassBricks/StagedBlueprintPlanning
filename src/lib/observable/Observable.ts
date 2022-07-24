@@ -1,21 +1,18 @@
-import { ContextualFun, Func, RegisterClass } from "../references"
+import { Func, RegisterClass } from "../references"
 import { Subscription } from "./Subscription"
 
-export interface Subscribable<L extends Func<ContextualFun>> {
+export interface Subscribable<L extends Func> {
   subscribe(context: Subscription, observer: L): Subscription
   subscribeIndependently(observer: L): Subscription
 }
 
-export type ValueListener<T> = Func<(subscription: Subscription, value: T) => void>
+export interface ValueListener<T> {
+  invoke(subscription: Subscription, value: T): void
+}
+
 export type Observable<T> = Subscribable<ValueListener<T>>
 
-type AdditionalArgs<L extends (this: any, arg1: any, ...args: any) => void> = L extends (
-  this: any,
-  arg1: any,
-  ...args: infer A
-) => void
-  ? A
-  : never
+type AdditionalArgs<L extends Func> = L["invoke"] extends (this: any, arg1: any, ...args: infer A) => void ? A : never
 
 @RegisterClass("ObserverList")
 export class ObserverList<L extends Func<(subscription: Subscription, ...args: any) => void>>
@@ -37,7 +34,7 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
   raise(...args: AdditionalArgs<L>): void
   raise(...args: any[]): void {
     for (const [subscription, observer] of this as unknown as LuaMap<ObserverSubscription, L>) {
-      observer(subscription, ...args)
+      observer.invoke(subscription, ...args)
     }
   }
 

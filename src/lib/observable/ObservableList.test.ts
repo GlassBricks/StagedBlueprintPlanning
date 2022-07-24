@@ -5,10 +5,6 @@ before_each(() => {
   list = observableList()
 })
 
-function spy() {
-  return globalThis.spy<any>()
-}
-
 it("can be constructed", () => {
   assert.equal(list.length(), 0)
 })
@@ -30,7 +26,7 @@ it("allows to inspect value", () => {
 
 test("notifies subscribers of pushed items", () => {
   const fn = spy()
-  list.subscribeIndependently(fn)
+  list.subscribeIndependently({ invoke: fn })
   list.push("a")
   assert.same(["a"], list.value())
   const change: ObservableListChange<string> = {
@@ -46,7 +42,7 @@ test("notifies subscribers of pushed items", () => {
 it("notifies subscribers of inserted items", () => {
   list.push("a")
   const fn = spy()
-  list.subscribeIndependently(fn)
+  list.subscribeIndependently({ invoke: fn })
   list.insert(0, "b")
   assert.same(["b", "a"], list.value())
   const change: ObservableListChange<string> = {
@@ -62,7 +58,7 @@ it("notifies subscribers of inserted items", () => {
 it("notifies subscribers of popped items", () => {
   list.push("a")
   const fn = spy()
-  list.subscribeIndependently(fn)
+  list.subscribeIndependently({ invoke: fn })
   list.pop()
   assert.same([], list.value())
   const change: ObservableListChange<string> = {
@@ -79,7 +75,7 @@ it("notifies subscribers of removed items", () => {
   list.push("a")
   list.push("b")
   const fn = spy()
-  list.subscribeIndependently(fn)
+  list.subscribeIndependently({ invoke: fn })
   list.remove(0)
   assert.same(["b"], list.value())
   const change: ObservableListChange<string> = {
@@ -96,7 +92,7 @@ it("notifies subscribers of changed items", () => {
   list.push("a")
   list.push("b")
   const fn = spy()
-  list.subscribeIndependently(fn)
+  list.subscribeIndependently({ invoke: fn })
   list.set(0, "c")
   assert.same(["c", "b"], list.value())
   const change: ObservableListChange<string> = {
@@ -114,7 +110,7 @@ it("does not notify subscribers of changed items when value is not changed", () 
   list.push("a")
   list.push("b")
   const fn = spy()
-  list.subscribeIndependently(fn)
+  list.subscribeIndependently({ invoke: fn })
   list.set(0, "a")
   assert.same(["a", "b"], list.value())
   assert.spy(fn).not_called()
@@ -124,7 +120,7 @@ test("it notifies subscribers of swapped items", () => {
   list.push("a")
   list.push("b")
   const fn = spy()
-  list.subscribeIndependently(fn)
+  list.subscribeIndependently({ invoke: fn })
   list.swap(0, 1)
   assert.same(["b", "a"], list.value())
   const change: ObservableListChange<string> = {
