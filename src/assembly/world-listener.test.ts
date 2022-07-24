@@ -1,37 +1,30 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { Mutable } from "../lib"
 import { BBox, Pos, PositionClass } from "../lib/geometry"
-import { AssemblyPosition, LayerPosition } from "./Assembly"
+import { Assembly, Layer } from "./Assembly"
 import { AssemblyUpdater } from "./AssemblyUpdater"
+import { _mockAssembly } from "./UserAssembly"
 import { deleteAssembly, registerAssembly } from "./world-register"
 
 let updater: mock.Stubbed<AssemblyUpdater>
-let layers: Record<number, LayerPosition>
-let assembly: AssemblyPosition
+let assembly: Assembly
+let layers: Record<number, Layer>
 let surface: LuaSurface
 let player: LuaPlayer
 before_all(() => {
-  updater = mock(AssemblyUpdater, true)
-
-  const theLayers = Array.from({ length: 5 }, (_, i) => {
-    const leftTop = Pos(i * 32, 0)
-    return {
-      surface: game.surfaces[1],
-      left_top: leftTop,
-      right_bottom: leftTop.plus(Pos(32, 32)),
-      layerNumber: i + 1,
-      assembly: nil!,
-    }
-  })
-  assembly = { layers: theLayers }
-  layers = theLayers
-  for (const layer of theLayers) {
-    ;(layer as Mutable<LayerPosition>).assembly = assembly
-  }
-  registerAssembly(assembly)
-
   surface = game.surfaces[1]
   player = game.players[1]
+
+  updater = mock(AssemblyUpdater, true)
+
+  assembly = _mockAssembly(Pos(1, 1))
+  for (let i = 0; i < 2; i++) {
+    assembly.pushLayer({
+      surface,
+      position: Pos(i * 32, 0),
+    })
+  }
+  layers = assembly.layers
+  registerAssembly(assembly)
 })
 
 before_each(() => {

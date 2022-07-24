@@ -6,6 +6,7 @@ import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
 import { Assembly, AssemblyChangeEvent, AssemblyId, Layer } from "./Assembly"
 import { newEntityMap } from "./EntityMap"
+import { registerAssembly } from "./world-register"
 
 declare const global: {
   nextAssemblyId: AssemblyId
@@ -34,8 +35,19 @@ class AssemblyImpl implements Assembly {
     const id = global.nextAssemblyId++ as AssemblyId
     assert(chunkSize.x > 0 && chunkSize.y > 0, "size must be positive")
     const actualSize = Pos.ceil(chunkSize)
-    return (global.assemblies[id] = new AssemblyImpl(id, actualSize))
+
+    const assembly = new AssemblyImpl(id, actualSize)
+    global.assemblies[id] = assembly
+
+    registerAssembly(assembly)
+
+    return assembly
   }
+  static _mock(chunkSize: Vec2): AssemblyImpl {
+    // does not hook to anything.
+    return new AssemblyImpl(0 as AssemblyId, chunkSize)
+  }
+
   static get(id: AssemblyId): AssemblyImpl | nil {
     return global.assemblies[id]
   }
@@ -50,6 +62,9 @@ class AssemblyImpl implements Assembly {
 
 export function newAssembly(chunkSize: Vec2): AssemblyImpl {
   return AssemblyImpl.create(chunkSize)
+}
+export function _mockAssembly(chunkSize: Vec2): AssemblyImpl {
+  return AssemblyImpl._mock(chunkSize)
 }
 
 function getDisplayName(this: string, id: number, name: string): LocalisedString {

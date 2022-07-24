@@ -1,6 +1,6 @@
-import { Events } from "../lib"
+import { Events, funcRef, registerFunctions } from "../lib"
 import { Pos, Position } from "../lib/geometry"
-import { AssemblyPosition, LayerPosition } from "./Assembly"
+import { Assembly, AssemblyChangeEvent, LayerPosition } from "./Assembly"
 import floor = math.floor
 
 type LayersByChunk = Record<number, Record<number, LayerPosition | nil>>
@@ -51,14 +51,22 @@ function removeLayer(layer: LayerPosition): void {
   }
 }
 
-export function registerAssembly(assembly: AssemblyPosition): void {
+export function registerAssembly(assembly: Assembly): void {
   // todo: listen to layer updates
   for (const layer of assembly.layers) {
     addLayer(layer)
   }
+  assembly.events.subscribeIndependently(funcRef(onAssemblyChanged))
 }
 
-export function deleteAssembly(assembly: AssemblyPosition): void {
+function onAssemblyChanged(_: unknown, event: AssemblyChangeEvent) {
+  if (event.type === "layer-pushed") {
+    addLayer(event.layer)
+  }
+}
+registerFunctions("WorldRegister", { onAssemblyChanged })
+
+export function deleteAssembly(assembly: Assembly): void {
   for (const layer of assembly.layers) {
     removeLayer(layer)
   }
