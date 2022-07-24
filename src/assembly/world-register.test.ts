@@ -31,7 +31,7 @@ test("registers in world correctly", () => {
     position: Pos(5 * 32, 0),
   })
   assertLayersCorrect()
-  deleteAssembly(mockAssembly)
+  mockAssembly.delete()
   for (const layer of mockAssembly.layers) {
     const center = BBox.center(layer)
     assert.nil(getLayerAtPosition(layer.surface, center))

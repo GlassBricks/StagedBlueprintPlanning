@@ -23,6 +23,7 @@ before_each(() => {
       surface: area.surface,
       layerNumber: i,
       assembly: nil!,
+      valid: true,
     })
   }
   assembly = { layers }

@@ -1,9 +1,9 @@
 import { Events, funcRef, registerFunctions } from "../lib"
 import { Pos, Position } from "../lib/geometry"
-import { Assembly, AssemblyChangeEvent, LayerPosition } from "./Assembly"
+import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
 import floor = math.floor
 
-type LayersByChunk = Record<number, Record<number, LayerPosition | nil>>
+type LayersByChunk = Record<number, Record<number, Layer | nil>>
 declare const global: {
   inWorldLayers: Record<SurfaceIndex, LayersByChunk>
 }
@@ -21,7 +21,7 @@ Events.on_pre_surface_deleted((e) => {
   delete global.inWorldLayers[e.surface_index]
 })
 
-function addLayer(layer: LayerPosition): void {
+function addLayer(layer: Layer): void {
   const surface = layer.surface
   if (!surface.valid) return
   const layersByChunk = global.inWorldLayers[surface.index]
@@ -35,7 +35,7 @@ function addLayer(layer: LayerPosition): void {
   }
 }
 
-function removeLayer(layer: LayerPosition): void {
+function removeLayer(layer: Layer): void {
   const surface = layer.surface
   if (!surface.valid) return
   const layersByChunk = global.inWorldLayers[surface.index]
@@ -62,6 +62,8 @@ export function registerAssembly(assembly: Assembly): void {
 function onAssemblyChanged(_: unknown, event: AssemblyChangeEvent) {
   if (event.type === "layer-pushed") {
     addLayer(event.layer)
+  } else if (event.type === "assembly-deleted") {
+    deleteAssembly(event.assembly)
   }
 }
 registerFunctions("WorldRegister", { onAssemblyChanged })
@@ -72,7 +74,7 @@ export function deleteAssembly(assembly: Assembly): void {
   }
 }
 
-export function getLayerAtPosition(surface: LuaSurface, position: Position): LayerPosition | nil {
+export function getLayerAtPosition(surface: LuaSurface, position: Position): Layer | nil {
   const bySurface = global.inWorldLayers[surface.index]
   if (!bySurface) return nil
   const byX = bySurface[floor(position.x / 32)]

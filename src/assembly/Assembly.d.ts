@@ -7,17 +7,21 @@ import { WorldUpdaterParams } from "./WorldUpdater"
 
 export interface AssemblyPosition {
   readonly layers: readonly LayerPosition[]
+
+  readonly valid: boolean
 }
 
 export interface LayerPosition extends BoundingBoxRead {
   readonly layerNumber: LayerNumber
   readonly surface: LuaSurface
   readonly assembly: AssemblyPosition
+
+  readonly valid: boolean
 }
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 
-export interface Assembly extends AssemblyUpdaterParams, WorldUpdaterParams {
+export interface Assembly extends AssemblyUpdaterParams, WorldUpdaterParams, AssemblyPosition {
   readonly id: AssemblyId
 
   readonly name: MutableState<string>
@@ -29,6 +33,8 @@ export interface Assembly extends AssemblyUpdaterParams, WorldUpdaterParams {
   readonly content: MutableEntityMap
 
   readonly events: Observable<AssemblyChangeEvent>
+
+  delete(): void
 }
 
 export interface Layer extends LayerPosition {
@@ -41,6 +47,12 @@ export interface Layer extends LayerPosition {
 // events
 export interface LayerPushedEvent {
   readonly type: "layer-pushed"
+  readonly assembly: Assembly
   readonly layer: Layer
 }
-export type AssemblyChangeEvent = LayerPushedEvent
+
+export interface AssemblyDeletedEvent {
+  readonly type: "assembly-deleted"
+  readonly assembly: Assembly
+}
+export type AssemblyChangeEvent = LayerPushedEvent | AssemblyDeletedEvent

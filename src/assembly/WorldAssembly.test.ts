@@ -27,7 +27,7 @@ let assembly: AssemblyUpdaterParams
 
 before_each(() => {
   area = clearTestArea()
-  layer = { surface: area.surface, ...area.bbox, layerNumber: 1, assembly: nil! }
+  layer = { surface: area.surface, ...area.bbox, layerNumber: 1, assembly: nil!, valid: true }
   events = []
   content = newEntityMap()
   assembly = { content } as AssemblyUpdaterParams

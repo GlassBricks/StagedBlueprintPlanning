@@ -2,11 +2,13 @@ import { Pos } from "../lib/geometry"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
 import { Assembly } from "./Assembly"
-import { newAssembly } from "./UserAssembly"
+import { _mockAssembly, newAssembly } from "./UserAssembly"
 
 describe("Assembly", () => {
-  test("assigns unique id", () => {
+  test("basic", () => {
     const asm1 = newAssembly(Pos(1, 1))
+    assert.true(asm1.valid)
+
     const asm2 = newAssembly(Pos(1, 1))
     assert.not_same(asm1.id, asm2.id)
   })
@@ -16,18 +18,44 @@ describe("Assembly", () => {
   })
 
   test("Display name is correct", () => {
-    const asm = newAssembly(Pos(1, 1))
+    const asm = _mockAssembly(Pos(1, 1))
     assert.same([L_Assembly.UnnamedAssembly, asm.id], asm.displayName.get())
     asm.name.set("test")
     assert.same("test", asm.displayName.get())
   })
+
+  describe("deletion", () => {
+    let asm: Assembly
+    before_each(() => {
+      asm = _mockAssembly(Pos(1, 1))
+    })
+    test("sets to invalid", () => {
+      asm.delete()
+      assert.false(asm.valid)
+    })
+    test("sets layers to invalid", () => {
+      const layer = asm.pushLayer({ surface: game.surfaces[1], position: Pos(0, 0) })
+      assert.true(layer.valid)
+      asm.delete()
+      assert.false(layer.valid)
+    })
+    test("fires event", () => {
+      const sp = spy()
+      asm.events.subscribeIndependently(sp)
+      asm.delete()
+      assert.same(sp.calls[1].refs[3], {
+        type: "assembly-deleted",
+        assembly: asm,
+      })
+    })
+  })
 })
 
-describe("Layer", () => {
+describe("Layers", () => {
   let asm: Assembly
   let pos: WorldPosition
   before_each(() => {
-    asm = newAssembly(Pos(1, 1))
+    asm = _mockAssembly(Pos(1, 1))
     pos = { surface: game.surfaces[1], position: Pos(0, 0) }
   })
   test("layerNumber and id is correct", () => {
@@ -44,7 +72,7 @@ describe("Layer", () => {
     const sp = spy()
     asm.events.subscribeIndependently(sp)
     const layer = asm.pushLayer(pos)
-    assert.spy(sp).called_with(match._, match._, { type: "layer-pushed", layer })
+    assert.spy(sp).called_with(match._, match._, { type: "layer-pushed", layer, assembly: asm })
   })
 
   test("display name is correct", () => {

@@ -1,5 +1,5 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { bind, Events, PRecord, RegisterClass, registerFunctions } from "../lib"
+import { bind, Events, Mutable, PRecord, RegisterClass, registerFunctions } from "../lib"
 import { Pos, Vec2 } from "../lib/geometry"
 import { Event, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
@@ -17,15 +17,19 @@ Events.on_init(() => {
   global.assemblies = {}
 })
 
+type AssemblyLayer = Mutable<Layer>
+
 @RegisterClass("Assembly")
 class AssemblyImpl implements Assembly {
   name = state("")
   displayName: State<LocalisedString>
-  layers: Layer[] = []
+  layers: AssemblyLayer[] = []
 
   content = newEntityMap()
 
   events: Event<AssemblyChangeEvent> = new Event()
+
+  valid = true
 
   private constructor(readonly id: AssemblyId, readonly chunkSize: Vec2) {
     this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedAssembly, id))
@@ -52,10 +56,21 @@ class AssemblyImpl implements Assembly {
     return global.assemblies[id]
   }
 
+  delete() {
+    if (!this.valid) return
+    delete global.assemblies[this.id]
+    this.valid = false
+    for (const layer of this.layers) {
+      layer.valid = false
+    }
+    this.events.raise({ type: "assembly-deleted", assembly: this })
+    this.events.closeAll()
+  }
+
   pushLayer(leftTop: WorldPosition): Layer {
     const nextIndex = this.layers.length + 1
     const layer = (this.layers[nextIndex - 1] = createLayer(this, nextIndex, leftTop))
-    this.events.raise({ type: "layer-pushed", layer })
+    this.events.raise({ type: "layer-pushed", layer, assembly: this })
     return layer
   }
 }
@@ -86,5 +101,6 @@ function createLayer(parent: AssemblyImpl, layerNumber: LayerNumber, worldTopLef
     name,
     displayName: name.map(bind(getDisplayName, L_Assembly.UnnamedLayer, layerNumber)),
     assembly: parent,
+    valid: true,
   }
 }
