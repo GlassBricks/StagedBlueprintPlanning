@@ -12,6 +12,9 @@
 - [x] Settings paste
 - [x] Rotate
 - [ ] Fast replace
+  - [ ] Upgrade
+  - [ ] Rotate
+  - [ ] Replace (undergrounds)
 - [ ] Upgrade planner
   - [ ] Handle robot built
 - [ ] Wire connection
