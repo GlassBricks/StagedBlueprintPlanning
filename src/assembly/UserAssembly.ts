@@ -5,6 +5,7 @@ import { Event, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
 import { Assembly, AssemblyChangeEvent, AssemblyId, Layer } from "./Assembly"
+import { setupAssemblyDisplay } from "./AssemblyDisplay"
 import { newEntityMap } from "./EntityMap"
 import { registerAssembly } from "./world-register"
 
@@ -44,6 +45,7 @@ class AssemblyImpl implements Assembly {
     global.assemblies.set(id, assembly)
 
     registerAssembly(assembly)
+    setupAssemblyDisplay(assembly)
 
     return assembly
   }

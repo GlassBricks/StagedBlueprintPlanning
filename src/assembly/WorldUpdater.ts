@@ -91,6 +91,8 @@ function deletionForbidden(
 ): void {
   const value = assert(getValueAtLayer(entity, layerNumber))
   const layer = assembly.layers[layerNumber]
+  const { worldEntities } = entity
+  worldEntities[layerNumber]?.destroy()
   entity.worldEntities[layerNumber] = createEntity(layer, entity, value)
 }
 function update(assembly: WorldUpdaterParams, entity: AssemblyEntity, layerNumber: LayerNumber): void {

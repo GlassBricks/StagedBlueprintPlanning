@@ -1,4 +1,6 @@
+import { newAssembly } from "./assembly/UserAssembly"
 import { Events } from "./lib"
+import { Pos } from "./lib/geometry"
 
 // better source map traceback
 declare const ____lualib: {
@@ -61,7 +63,14 @@ if (script.active_mods.testorio) {
       force.enable_all_recipes()
     },
     after_test_run() {
-      game.speed = __DebugAdapter ? 1 : 1 / 6
+      // game.speed = __DebugAdapter ? 1 : 1 / 6
+      const assembly = newAssembly(Pos(1, 1))
+      for (let i = 0; i < 3; i++) {
+        assembly.pushLayer({
+          surface: game.surfaces[1],
+          position: Pos(i * 32, 0),
+        })
+      }
     },
     log_passed_tests: false,
     sound_effects: true,
