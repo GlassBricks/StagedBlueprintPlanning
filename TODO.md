@@ -17,7 +17,6 @@
 - [ ] Blueprint _paste_
 - [ ] Mod interactions?
 - [ ] Decide what to do about ghosts/marked for deconstruction
-
 - [ ] Detailed description on what to do when updated in various situations
   - [ ] Fill this list
   - [ ] Convention over configuration?
