@@ -11,26 +11,38 @@
 
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { Events } from "../lib"
+import { Layer } from "./Assembly"
 import { AssemblyUpdater } from "./AssemblyUpdater"
 import { getLayerAtPosition } from "./world-register"
 
-function onEntityCreated(entity: LuaEntity): void {
+function updateEntity(entity: LuaEntity, method: keyof AssemblyUpdater): Layer | nil {
   if (!isWorldEntityAssemblyEntity(entity)) return
   const layer = getLayerAtPosition(entity.surface, entity.position)
-  if (!layer || !layer.valid) return
-  AssemblyUpdater.onEntityCreated(layer.assembly, entity, layer)
+  if (layer && layer.valid) {
+    AssemblyUpdater[method](layer.assembly, entity, layer)
+  }
+}
+
+function onEntityCreated(entity: LuaEntity): void {
+  updateEntity(entity, "onEntityCreated")
 }
 Events.on_built_entity((e) => onEntityCreated(e.created_entity))
 Events.script_raised_built((e) => onEntityCreated(e.entity))
 // todo: handle ghosts and deconstruction and stuff
 
 function onEntityDeleted(entity: LuaEntity): void {
-  if (!isWorldEntityAssemblyEntity(entity)) return
-  const layer = getLayerAtPosition(entity.surface, entity.position)
-  if (!layer || !layer.valid) return
-  AssemblyUpdater.onEntityDeleted(layer.assembly, entity, layer)
+  updateEntity(entity, "onEntityDeleted")
 }
-
 Events.on_player_mined_entity((e) => onEntityDeleted(e.entity))
 Events.on_entity_died((e) => onEntityDeleted(e.entity))
 Events.script_raised_destroy((e) => onEntityDeleted(e.entity))
+
+function onEntityPotentiallyUpdated(entity: LuaEntity): void {
+  updateEntity(entity, "onEntityPotentiallyUpdated")
+}
+
+Events.on_entity_settings_pasted((e) => onEntityPotentiallyUpdated(e.destination))
+Events.on_gui_closed((e) => {
+  if (e.entity) onEntityPotentiallyUpdated(e.entity)
+})
+// Events.on_marked_for_upgrade((e) => onEntityPotentiallyUpdated(e.entity))

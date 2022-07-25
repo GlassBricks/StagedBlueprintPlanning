@@ -10,6 +10,7 @@
  */
 
 import { LayerNumber } from "../entity/AssemblyEntity"
+import { Events } from "../lib"
 import { BBox, Pos, PositionClass } from "../lib/geometry"
 import { Assembly, Layer } from "./Assembly"
 import { AssemblyUpdater } from "./AssemblyUpdater"
@@ -103,5 +104,31 @@ describe("delete", () => {
   test("die", () => {
     entity.die()
     assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
+  })
+})
+describe("update", () => {
+  let entity: LuaEntity
+  before_each(() => {
+    const position = getLayerCenter(1)
+    entity = surface.create_entity({
+      name: "iron-chest",
+      position,
+      raise_built: true,
+    })!
+  })
+  test("gui", () => {
+    player.opened = entity
+    player.opened = nil
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1])
+  })
+  test("settings copy paste", () => {
+    Events.raiseFakeEventNamed("on_entity_settings_pasted", {
+      source: entity,
+      destination: entity,
+      player_index: 1 as PlayerIndex,
+      name: defines.events.on_entity_settings_pasted,
+      tick: game.tick,
+    })
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1])
   })
 })

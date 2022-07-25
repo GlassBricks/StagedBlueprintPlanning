@@ -8,11 +8,12 @@
 ### Handle all world/user interactions
 
 - [x] Build, mine
-- [ ] Recipe/configuration change
-- [ ] Settings paste
+- [x] Recipe/configuration change
+- [x] Settings paste
 - [ ] Rotate
 - [ ] Fast replace
 - [ ] Upgrade planner
+  - [ ] Handle robot built
 - [ ] Wire connection
 - [ ] Blueprint _paste_
 - [ ] Mod interactions?
