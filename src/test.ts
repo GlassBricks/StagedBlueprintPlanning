@@ -116,3 +116,18 @@ Events.on_tick(() => {
     }
   }
 })
+//
+// const eventBlacklist = newLuaSet<keyof typeof defines.events>(
+//   "on_tick",
+//   "on_player_changed_position",
+//   "on_selected_entity_changed",
+//   "on_chunk_charted",
+//   "on_chunk_generated",
+//   "on_player_main_inventory_changed",
+// )
+// for (const [name, key] of pairs(defines.events)) {
+//   if (eventBlacklist.has(name)) continue
+//   Events.on(key, () => {
+//     game.print(name)
+//   })
+// }
