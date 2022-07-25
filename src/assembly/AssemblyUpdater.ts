@@ -61,7 +61,7 @@ function onEntityAdded(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer
   const saved = saveEntity(entity)
   if (existing) {
     // layerNumber < existing.layerNumber
-    entityAddedBelow(assembly, existing, layerNumber, saved!)
+    entityAddedBelow(assembly, existing, layerNumber, saved!, entity)
     return existing
   }
 
@@ -69,7 +69,7 @@ function onEntityAdded(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer
 
   const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
   content.add(assemblyEntity)
-  WorldUpdater.add(assembly, assemblyEntity, nil)
+  WorldUpdater.add(assembly, assemblyEntity, nil, entity)
   return assemblyEntity
 }
 
@@ -80,7 +80,7 @@ function entityAddedAbove(
   entity: LuaEntity,
 ): void {
   if (existing.isLostReference) {
-    reviveLostReference(assembly, existing, layerNumber)
+    reviveLostReference(assembly, existing, layerNumber, entity)
   } else {
     WorldUpdater.refresh(assembly, existing, layerNumber, entity)
   }
@@ -90,6 +90,7 @@ function reviveLostReference(
   assembly: AssemblyUpdaterParams,
   existing: MutableAssemblyEntity,
   layerNumber: LayerNumber,
+  entity: LuaEntity,
 ): void {
   // assert(layerNumber >= existing.layerNumber)
   // assert(existing.isLostReference)
@@ -98,7 +99,7 @@ function reviveLostReference(
   existing.layerNumber = layerNumber
   const { layerChanges } = existing
   existing.layerChanges = layerChanges && getWithDeletedLayerChanges(existing.layerChanges, layerNumber)
-  WorldUpdater.revive(assembly, existing)
+  WorldUpdater.revive(assembly, existing, entity)
 }
 
 function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerDiff | nil {
@@ -115,6 +116,7 @@ function entityAddedBelow(
   existing: MutableAssemblyEntity,
   layerNumber: LayerNumber,
   added: Entity,
+  luaEntity: LuaEntity,
 ): void {
   // assert(layerNumber < existing.layerNumber)
   const diff = getEntityDiff(added, existing.baseEntity)
@@ -128,9 +130,9 @@ function entityAddedBelow(
   existing.baseEntity = added
   if (existing.isLostReference) {
     existing.isLostReference = nil
-    WorldUpdater.revive(assembly, existing)
+    WorldUpdater.revive(assembly, existing, luaEntity)
   } else {
-    WorldUpdater.add(assembly, existing, oldLayerNumber)
+    WorldUpdater.add(assembly, existing, oldLayerNumber, luaEntity)
   }
 }
 

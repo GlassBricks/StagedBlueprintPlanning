@@ -36,6 +36,8 @@ interface WorldUpdateEvent {
 let content: MutableEntityMap
 let assembly: AssemblyUpdaterParams
 
+let luaEntity: LuaEntity
+
 before_each(() => {
   area = clearTestArea()
   layer = { surface: area.surface, ...area.bbox, layerNumber: 1, assembly: nil!, valid: true }
@@ -93,13 +95,13 @@ function assertNoEntities() {
 }
 
 function createEntity() {
-  const entity = area.surface.create_entity({
+  luaEntity = area.surface.create_entity({
     name: "filter-inserter",
     position: pos.plus(layer.left_top),
     force: "player",
   })!
-  entity.inserter_stack_size_override = 2
-  return assert(entity)
+  luaEntity.inserter_stack_size_override = 2
+  return luaEntity
 }
 
 function doAdd() {
@@ -124,7 +126,7 @@ function assertAdded(): MutableAssemblyEntity {
   assert.nil(found.direction)
 
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: found })
+  assertSingleEvent({ type: "add", entity: found, data: luaEntity })
   return found
 }
 
@@ -163,7 +165,7 @@ test.each([false, true], "existing at layer 2, added at layer 1, with layer chan
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: added, layer: 2 })
+  assertSingleEvent({ type: "add", entity: added, layer: 2, data: luaEntity })
 })
 
 test("delete non-existent", () => {
@@ -224,7 +226,7 @@ test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (rev
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "revive", entity: revived })
+  assertSingleEvent({ type: "revive", entity: revived, layer: luaEntity as any })
 })
 
 test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
@@ -247,7 +249,7 @@ test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: 
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "revive", entity: revived })
+  assertSingleEvent({ type: "revive", entity: revived, layer: luaEntity as any })
 })
 
 test("update non-existent", () => {
@@ -269,7 +271,7 @@ test("update in previous layer", () => {
   AssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
   // same as addBelow
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: added, layer: 2 })
+  assertSingleEvent({ type: "add", entity: added, layer: 2, data: luaEntity })
 })
 
 test("update in same layer", () => {

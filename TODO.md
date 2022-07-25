@@ -96,8 +96,9 @@
 
 ### Misc
 
-- [ ] Don't re-paste entity on just created entity
 - [ ] Button to reset
+
+### Queue (one-off implementation details)
 
 ## Future
 

@@ -89,7 +89,7 @@ function assertEntityPresent(i: LayerNumber): void {
 
 function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
   entity.layerNumber = layerNumber
-  WorldUpdater.add(assembly, entity, stopLayer)
+  WorldUpdater.add(assembly, entity, stopLayer, nil)
   return entity.worldEntities[layerNumber]
 }
 
@@ -142,7 +142,7 @@ test.each([false, true], "revive at same layer, with changes: %s", (withChanges)
   addAt(1)
   if (withChanges) makeEntityWithChanges()
   for (let i = 1; i <= 3; i++) entity.worldEntities[i]!.destroy()
-  WorldUpdater.revive(assembly, entity)
+  WorldUpdater.revive(assembly, entity, nil)
   for (let i = 1; i <= 3; i++) assertEntityPresent(i)
 })
 

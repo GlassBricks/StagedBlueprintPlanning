@@ -27,7 +27,12 @@ export interface WorldUpdaterParams {
 /** @noSelf */
 export interface WorldUpdater {
   /** Either new, in which [stopAt] is nil, or added below, in which [stopAt] is the old layer number */
-  add(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, stopAt: LayerNumber | nil): void
+  add(
+    assembly: WorldUpdaterParams,
+    entity: MutableAssemblyEntity,
+    stopAt: LayerNumber | nil,
+    addedEntity: LuaEntity | nil,
+  ): void
   /** Must already exist in assembly */
   refresh(
     assembly: WorldUpdaterParams,
@@ -36,7 +41,7 @@ export interface WorldUpdater {
     luaEntity: LuaEntity,
   ): void
   /** Tries to add the all entities to all layers, with their given values */
-  revive(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void
+  revive(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, addedEntity: LuaEntity | nil): void
   /** Must be at base layer */
   // todo: add "up to", for only deleting from lower layers
   delete(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void
@@ -46,10 +51,19 @@ export interface WorldUpdater {
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
-function add(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, stopAt: LayerNumber | nil): void {
+function add(
+  assembly: WorldUpdaterParams,
+  entity: MutableAssemblyEntity,
+  stopAt: LayerNumber | nil,
+  addedEntity: LuaEntity | nil,
+): void {
   const { baseEntity, layerNumber, worldEntities } = entity
   const { layers } = assembly
-  for (const curLayer of $range(layerNumber, stopAt ? stopAt - 1 : luaLength(layers))) {
+
+  if (addedEntity) worldEntities[layerNumber] = addedEntity
+  const startLayer = addedEntity ? layerNumber + 1 : layerNumber
+
+  for (const curLayer of $range(startLayer, stopAt ? stopAt - 1 : luaLength(layers))) {
     if (curLayer === stopAt) break
     const layer = layers[curLayer]
     worldEntities[curLayer] = createEntity(layer, entity, baseEntity)
@@ -67,20 +81,22 @@ function refresh(
   entity.worldEntities[layer] = luaEntity
 }
 
-function revive(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void {
+function revive(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, addedEntity: LuaEntity | nil): void {
   const { layerChanges } = entity
   if (!layerChanges) {
-    return add(assembly, entity, nil)
+    return add(assembly, entity, nil, addedEntity)
   }
 
   const { baseEntity, layerNumber, worldEntities } = entity
   const { layers } = assembly
+
+  if (addedEntity) worldEntities[layerNumber] = addedEntity
+  const startLayer = addedEntity ? layerNumber + 1 : layerNumber
+
   const curValue = mutableShallowCopy(baseEntity)
-  for (const curLayer of $range(layerNumber, luaLength(layers))) {
-    if (curLayer !== layerNumber) {
-      const changes = layerChanges[curLayer]
-      if (changes) applyDiffToEntity(curValue, changes)
-    }
+  for (const curLayer of $range(startLayer, luaLength(layers))) {
+    const changes = layerChanges[curLayer]
+    if (changes) applyDiffToEntity(curValue, changes)
 
     const layer = layers[curLayer]
     worldEntities[curLayer] = createEntity(layer, entity, curValue)
