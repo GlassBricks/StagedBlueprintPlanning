@@ -47,6 +47,9 @@ export interface WorldUpdater {
   delete(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void
   deletionForbidden(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void
   update(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void
+
+  rotate(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void
+  rotationForbidden(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void
 }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
@@ -138,6 +141,21 @@ function update(assembly: WorldUpdaterParams, entity: AssemblyEntity, layerNumbe
   }
 }
 
+function rotate(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void {
+  const { worldEntities } = entity
+  const newDirection = entity.direction ?? 0
+  for (const [, luaEntity] of pairs(worldEntities)) {
+    if (luaEntity.valid) luaEntity.direction = newDirection
+  }
+}
+
+function rotationForbidden(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void {
+  const luaEntity = entity.worldEntities[layer]
+  if (luaEntity && luaEntity.valid) {
+    luaEntity.direction = entity.direction ?? 0
+  }
+}
+
 export const WorldUpdater: WorldUpdater = {
   add,
   refresh,
@@ -145,4 +163,6 @@ export const WorldUpdater: WorldUpdater = {
   delete: _delete,
   deletionForbidden,
   update,
+  rotate,
+  rotationForbidden,
 }

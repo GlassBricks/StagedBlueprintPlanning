@@ -78,13 +78,13 @@ function assertEntityNotPresent(i: number): void {
 }
 
 function assertEntityPresent(i: LayerNumber): void {
-  const LuaEntity = findEntity(i)!
+  const luaEntity = findEntity(i)!
   const valueAtLayer = getValueAtLayer(entity, i)!
   assert.not_nil(entity, `not found at layer ${i}`)
-  assert.equal("filter-inserter", LuaEntity.name)
-  assert.equal(valueAtLayer.override_stack_size, LuaEntity.inserter_stack_size_override)
-  assert.equal(defines.direction.east, entity.direction)
-  assert.equal(LuaEntity, entity.worldEntities[i])
+  assert.equal("filter-inserter", luaEntity.name)
+  assert.equal(valueAtLayer.override_stack_size, luaEntity.inserter_stack_size_override)
+  assert.equal(entity.direction, luaEntity.direction)
+  assert.equal(luaEntity, entity.worldEntities[i])
 }
 
 function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
@@ -158,4 +158,18 @@ test("deletion forbidden", () => {
   layer2Entity!.destroy()
   WorldUpdater.deletionForbidden(assembly, entity, 2)
   assertEntityPresent(2)
+})
+
+test("rotate", () => {
+  const luaEntity = addAt(1)!
+  luaEntity.direction = entity.direction = defines.direction.west
+  WorldUpdater.rotate(assembly, entity)
+  for (let i = 1; i <= 3; i++) assertEntityPresent(i)
+})
+
+test("rotation forbidden", () => {
+  addAt(1)
+  findEntity(2)!.direction = defines.direction.west
+  WorldUpdater.rotationForbidden(assembly, entity, 2)
+  for (let i = 1; i <= 3; i++) assertEntityPresent(i)
 })

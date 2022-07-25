@@ -40,14 +40,25 @@ export interface AssemblyUpdater {
   ): AssemblyEntity<E> | nil
   onEntityDeleted(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): void
   onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): void
+
+  onEntityRotated(
+    assembly: AssemblyUpdaterParams,
+    entity: LuaEntity,
+    layer: LayerPosition,
+    previousDirection: defines.direction,
+  ): void
 }
 
-function onEntityAdded<E extends Entity = Entity>(
+function onEntityCreated<E extends Entity = Entity>(
   assembly: AssemblyUpdaterParams,
   entity: LuaEntity,
   layer: LayerPosition,
 ): AssemblyEntity<E> | nil
-function onEntityAdded(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
+function onEntityCreated(
+  assembly: AssemblyUpdaterParams,
+  entity: LuaEntity,
+  layer: LayerPosition,
+): AssemblyEntity | nil {
   const position = getLayerPosition(entity, layer)
   const { layerNumber } = layer
   const { content } = assembly
@@ -168,7 +179,7 @@ function onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: Lua
   const existing = content.findCompatible(entity, position, entity.direction)
   if (!existing || layerNumber < existing.layerNumber) {
     // bug, treat as add
-    onEntityAdded(assembly, entity, layer)
+    onEntityCreated(assembly, entity, layer)
     return
   }
 
@@ -195,8 +206,29 @@ function onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: Lua
   WorldUpdater.update(assembly, existing, layerNumber)
 }
 
+function onEntityRotated(
+  assembly: AssemblyUpdaterParams,
+  entity: LuaEntity,
+  layer: LayerPosition,
+  previousDirection: defines.direction,
+): void {
+  const position = getLayerPosition(entity, layer)
+  const { content } = assembly
+
+  const existing = content.findCompatible(entity, position, previousDirection)
+  if (!existing) return
+
+  if (existing.layerNumber !== layer.layerNumber) {
+    WorldUpdater.rotationForbidden(assembly, existing, layer.layerNumber)
+  } else {
+    existing.direction = entity.direction !== 0 ? entity.direction : nil
+    WorldUpdater.rotate(assembly, existing)
+  }
+}
+
 export const AssemblyUpdater: AssemblyUpdater = {
-  onEntityCreated: onEntityAdded,
+  onEntityCreated,
   onEntityDeleted,
   onEntityPotentiallyUpdated,
+  onEntityRotated,
 }

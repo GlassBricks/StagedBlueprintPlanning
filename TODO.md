@@ -10,7 +10,7 @@
 - [x] Build, mine
 - [x] Recipe/configuration change
 - [x] Settings paste
-- [ ] Rotate
+- [x] Rotate
 - [ ] Fast replace
 - [ ] Upgrade planner
   - [ ] Handle robot built

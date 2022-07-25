@@ -111,7 +111,7 @@ describe("update", () => {
   before_each(() => {
     const position = getLayerCenter(1)
     entity = surface.create_entity({
-      name: "iron-chest",
+      name: "inserter",
       position,
       raise_built: true,
     })!
@@ -130,5 +130,11 @@ describe("update", () => {
       tick: game.tick,
     })
     assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1])
+  })
+
+  test("rotate", () => {
+    const oldDirection = entity.direction
+    entity.rotate({ by_player: 1 as PlayerIndex })
+    assert.spy(updater.onEntityRotated).called_with(assembly, entity, layers[1], oldDirection)
   })
 })

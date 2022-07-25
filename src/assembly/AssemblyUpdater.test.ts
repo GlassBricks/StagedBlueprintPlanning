@@ -19,6 +19,7 @@ import { LayerPosition } from "./Assembly"
 import { AssemblyUpdater, AssemblyUpdaterParams } from "./AssemblyUpdater"
 import { MutableEntityMap, newEntityMap } from "./EntityMap"
 import { WorldUpdater, WorldUpdaterParams } from "./WorldUpdater"
+import direction = defines.direction
 
 const pos = Pos(10.5, 10.5)
 
@@ -302,4 +303,24 @@ test.each([false, true], "update in next layer, with existing changes: %s", (wit
 
   assertOneEntity()
   assertSingleEvent({ type: "update", entity: added, layer: layer.layerNumber })
+})
+
+test("rotate in base layer", () => {
+  const { luaEntity, added } = doVirtualAdd()
+  const oldDirection = luaEntity.direction
+  luaEntity.direction = direction.west
+  AssemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
+  assert.equal(direction.west, added.direction)
+  assertOneEntity()
+  assertSingleEvent({ type: "rotate", entity: added })
+})
+
+test("rotate in higher layer", () => {
+  const { luaEntity, added } = doVirtualAdd(1, 2)
+  const oldDirection = luaEntity.direction
+  luaEntity.direction = direction.west
+  AssemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
+  assert.equal(oldDirection, added.direction ?? 0)
+  assertOneEntity()
+  assertSingleEvent({ type: "rotationForbidden", entity: added, layer: layer.layerNumber })
 })

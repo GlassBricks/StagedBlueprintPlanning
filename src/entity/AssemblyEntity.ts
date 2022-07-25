@@ -39,6 +39,7 @@ export interface AssemblyEntity<out E extends Entity = Entity> extends EntityPos
 }
 
 export interface MutableAssemblyEntity<E extends Entity = Entity> extends AssemblyEntity<E> {
+  direction: defines.direction | nil
   layerNumber: LayerNumber
   baseEntity: E
   layerChanges?: PRecord<LayerNumber, LayerDiff<E>>
