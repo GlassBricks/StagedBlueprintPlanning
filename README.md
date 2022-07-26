@@ -1,6 +1,6 @@
 # Blueprinting 3
 
-A maybe actually good factorio mod for designing staged blueprints for 100%.
+A maybe actually great factorio mod for designing staged blueprints for 100% speedrunning.
 
 This is currently in development, and right now exists mostly in tests.
 
