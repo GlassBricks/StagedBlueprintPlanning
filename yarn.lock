@@ -4940,10 +4940,10 @@ type-fest@^1.0.1, type-fest@^1.2.1, type-fest@^1.2.2:
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-1.4.0.tgz#e9fb813fe3bf1744ec359d55d1affefa76f14be1"
   integrity sha512-yGSza74xk0UG8k+pLh5oeoYirvIiWo5t0/o3zHHAO2tRDiZcxWP7fywNlXhqb6/r6sWvwi+RsyQMWhVLe4BVuA==
 
-typed-factorio@^1.5.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/typed-factorio/-/typed-factorio-1.5.0.tgz#c7fe3f9e93191a0e975df9e3cff143e030e41f94"
-  integrity sha512-jlfLAVxPeor9mJAicqcJuqN4ViJ0LxTNlv0bjx38CuIvvgy1CN/9pTt+lc28YQsnrB9raxdI38sy3KufpkRC5g==
+typed-factorio@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/typed-factorio/-/typed-factorio-1.5.1.tgz#9275be8671e00b2e2f87c6acf35d8c2f1bd21051"
+  integrity sha512-7hP1+MHfjkWfa+QeaYSr67J6BOlsDsqC9Aczbfz8jTUEwIe5eu8heZeu28V1u3rZ7cp5wHCoh9QRM/2+LncZOQ==
 
 typedarray-to-buffer@^3.1.5:
   version "3.1.5"
