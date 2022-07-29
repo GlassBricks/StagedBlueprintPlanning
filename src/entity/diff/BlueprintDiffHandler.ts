@@ -60,9 +60,9 @@ function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
 
 function pasteEntity(
   surface: LuaSurface,
-  position: MapPositionTable,
+  position: MapPosition,
   direction: defines.direction | undefined,
-  entity: BlueprintEntityRead,
+  entity: BlueprintEntity,
 ): LuaEntity | nil {
   const stack = getTempItemStack()
   const tilePosition = Pos.floor(position)
@@ -86,8 +86,8 @@ function pasteEntity(
   return ghosts[0]
 }
 
-export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
-  save(entity: LuaEntity): BlueprintEntityRead | nil {
+export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
+  save(entity: LuaEntity): BlueprintEntity | nil {
     const { surface, position } = entity
     const stack = getTempItemStack()
 
@@ -99,7 +99,7 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (!matchingIndex) return
 
-    const bpEntity = stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntityRead>
+    const bpEntity = stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
     assert(bpEntity.entity_number === matchingIndex)
     bpEntity.entity_number = nil!
     bpEntity.position = nil!
@@ -111,13 +111,13 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntityRead> = {
     surface: LuaSurface,
     position: Position,
     direction: defines.direction | nil,
-    entity: BlueprintEntityRead,
+    entity: BlueprintEntity,
   ): LuaEntity | nil {
     const ghost = pasteEntity(surface, position, direction, entity)
     return ghost && reviveGhost(ghost)
   },
 
-  match(luaEntity: LuaEntity, value: BlueprintEntityRead): void {
+  match(luaEntity: LuaEntity, value: BlueprintEntity): void {
     assert(luaEntity.force.name === "player")
     const ghost = pasteEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, value)
     if (ghost) ghost.destroy() // should not happen?

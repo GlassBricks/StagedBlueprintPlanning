@@ -23,7 +23,7 @@ export interface AssemblyPosition {
   readonly valid: boolean
 }
 
-export interface LayerPosition extends BoundingBoxRead {
+export interface LayerPosition extends BoundingBox {
   readonly layerNumber: LayerNumber
   readonly surface: LuaSurface
   readonly assembly: AssemblyPosition

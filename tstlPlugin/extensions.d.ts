@@ -16,5 +16,5 @@ declare const newLuaSet: (<T>(...values: T[]) => LuaSet<T>) & {
 }
 
 /** Translated directly to nil in lua */
-declare const nil: nil
-declare type nil = undefined
+declare const nil: undefined
+// declare type nil = undefined

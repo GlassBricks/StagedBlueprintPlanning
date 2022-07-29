@@ -36,10 +36,10 @@ export function createEntity(
     layer.surface,
     getWorldPosition(position, layer),
     direction,
-    entity as BlueprintEntityRead,
+    entity as BlueprintEntity,
   )
 }
 
 export function matchEntity(luaEntity: LuaEntity, value: Entity): void {
-  return BlueprintDiffHandler.match(luaEntity, value as BlueprintEntityRead)
+  return BlueprintDiffHandler.match(luaEntity, value as BlueprintEntity)
 }

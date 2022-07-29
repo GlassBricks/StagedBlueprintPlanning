@@ -20,7 +20,7 @@ const floor = math.floor
 const ceil = math.ceil
 const setmetatable = globalThis.setmetatable
 
-type BBox = BoundingBoxRead
+type BBox = BoundingBox
 export type BBoxClass = WithMetatable<BBox, typeof BBox>
 
 function BBox(left_top: Position, right_bottom: Position): BBoxClass {
@@ -51,8 +51,9 @@ namespace BBox {
     return BBox({ x: point.x - radius, y: point.y - radius }, { x: point.x + radius, y: point.y + radius })
   }
 
-  export function normalize(box: BoundingBox): BBoxClass
-  export function normalize(box: Any): BBoxClass {
+  export function normalize(box: BoundingBoxWrite | BoundingBoxArray): BBoxClass
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  export function normalize(box: any): BBoxClass {
     return BBox(Pos.normalize(box.left_top || box[1]), Pos.normalize(box.right_bottom || box[2]))
   }
 
@@ -74,7 +75,7 @@ namespace BBox {
     const { left_top, right_bottom } = box
     return BBox({ x: 0, y: 0 }, { x: right_bottom.x - left_top.x, y: right_bottom.y - left_top.y })
   }
-  export function translateTo(box: BBox, leftTop: MapPositionTable): BBoxClass {
+  export function translateTo(box: BBox, leftTop: MapPosition): BBoxClass {
     const { left_top, right_bottom } = box
     return BBox(leftTop, { x: right_bottom.x - left_top.x + leftTop.x, y: right_bottom.y - left_top.y + leftTop.y })
   }

@@ -20,7 +20,7 @@ const setmetatable = globalThis.setmetatable
 const _floor = math.floor
 const _ceil = math.ceil
 
-export type Position = MapPositionTable
+export type Position = MapPosition
 export type PositionClass = WithMetatable<Position, typeof Pos>
 
 export type Vec2 = Position
@@ -37,8 +37,9 @@ namespace Pos {
   export function load(position: Position): PositionClass {
     return setmetatable(position, meta)
   }
-  export function normalize(pos: MapPosition): PositionClass
-  export function normalize(p: Any): PositionClass {
+  export function normalize(pos: MapPosition | MapPositionArray): PositionClass
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  export function normalize(p: any): PositionClass {
     return Pos(p.x || p[1], p.y || p[2])
   }
 
