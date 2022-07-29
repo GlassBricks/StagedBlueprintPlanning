@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { bind, bound, Callback, cfuncRef, Func, funcRef, reg, RegisterClass } from "../references"
+import { bind, Callback, cfuncRef, Func, funcOn, funcRef, RegisterClass } from "../references"
 import { isEmpty } from "../util"
 import { ObserverList, Subscribable } from "./Observable"
 import { Subscription } from "./Subscription"
@@ -146,9 +146,9 @@ class MappedState<T, U> extends State<U> {
   }
 
   private subscribeToSource() {
-    const { source, sourceListener, mapper } = this
+    const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(reg(sourceListener))
+    this.sourceSubscription = source.subscribeIndependently(funcOn(this, "sourceListener"))
     this.curValue = mapper.invoke(source.get())
   }
 
@@ -158,8 +158,7 @@ class MappedState<T, U> extends State<U> {
     this.curValue = nil
   }
 
-  @bound
-  private sourceListener(_: Subscription, sourceNewValue: T) {
+  sourceListener(_: Subscription, sourceNewValue: T) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
@@ -193,16 +192,16 @@ class FlatMappedState<T, U> extends State<U> {
   }
 
   private subscribeToSource() {
-    const { source, sourceListener, mapper } = this
+    const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(reg(sourceListener))
+    this.sourceSubscription = source.subscribeIndependently(funcOn(this, "sourceListener"))
     this.receiveNewMappedValue(mapper.invoke(source.get()))
   }
 
   private receiveNewMappedValue(newValue: MaybeState<U>) {
     this.nestedSubscription?.close()
     if (newValue instanceof State) {
-      this.nestedSubscription = newValue.subscribeIndependently(reg(this.nestedListener))
+      this.nestedSubscription = newValue.subscribeIndependently(funcOn(this, "nestedListener"))
       this.curValue = newValue.get()
     } else {
       this.nestedSubscription = nil
@@ -210,8 +209,7 @@ class FlatMappedState<T, U> extends State<U> {
     }
   }
 
-  @bound
-  private sourceListener(_: Subscription, sourceNewValue: T) {
+  sourceListener(_: Subscription, sourceNewValue: T) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
@@ -221,8 +219,7 @@ class FlatMappedState<T, U> extends State<U> {
     if (oldValue !== newValue) this.event.raise(newValue!, oldValue!)
   }
 
-  @bound
-  private nestedListener(_: Subscription, nestedNewValue: U) {
+  nestedListener(_: Subscription, nestedNewValue: U) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
     const oldValue = this.curValue
     this.curValue = nestedNewValue

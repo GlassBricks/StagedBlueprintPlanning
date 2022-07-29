@@ -9,26 +9,15 @@
  * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  bind,
-  bound,
-  Classes,
-  ContextualFun,
-  Func,
-  funcRef,
-  Functions,
-  reg,
-  RegisterClass,
-  registerFunctions,
-} from "./references"
+import { bind, Func, funcOn, funcRef, Functions, RegisterClass, registerFunctions } from "./references"
 
 declare const global: {
   __tbl1: object
   __tbl2: object
   __tbl3: object
-  __ref1: Func<ContextualFun>
-  __ref2: Func<ContextualFun>
-  __ref3: Func<ContextualFun>
+  __ref1: Func
+  __ref2: Func
+  __ref3: Func
 }
 
 describe("classes", () => {
@@ -36,7 +25,6 @@ describe("classes", () => {
   class TestClass {
     constructor(protected readonly value: string) {}
 
-    @bound
     foo() {
       return this.value + "2"
     }
@@ -67,10 +55,6 @@ describe("classes", () => {
       // noop
     }
   }
-
-  test("Name registered correctly", () => {
-    assert.same("Test Class", Classes.nameOf(TestClass))
-  })
 
   test("Static function registered correctly", () => {
     assert.same("Test Class.foo2", Functions.nameOf(TestClass.foo2))
@@ -108,9 +92,9 @@ describe("classes", () => {
     const subclass2Instance = new TestSubclass2("3")
     global.__tbl3 = subclass2Instance
 
-    global.__ref1 = reg(instance.foo)
-    global.__ref2 = reg(subclassInstance.foo)
-    global.__ref3 = reg(subclass2Instance.foo)
+    global.__ref1 = funcOn(instance, "foo")
+    global.__ref2 = funcOn(subclassInstance, "foo")
+    global.__ref3 = funcOn(subclass2Instance, "foo")
     assertRefsCorrect()
   }).after_mod_reload(() => {
     assertRefsCorrect()

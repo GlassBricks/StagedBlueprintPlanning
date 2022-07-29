@@ -13,5 +13,8 @@
     "ignore": ["readme.md", "**/*\\-test.lua", "**/*\\-mock.lua", "**/*.xcf", "**/*.ts", "**/*.tsx"],
     "no_git_tag": true,
     "removeZipAfterPackage": true
-  }
+  },
+  "dependencies": [
+    "base >= 1.1.62"
+  ]
 }

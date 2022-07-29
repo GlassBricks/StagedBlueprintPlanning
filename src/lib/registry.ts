@@ -46,6 +46,10 @@ export class Registry<T> {
     return this.nameToItem[name]
   }
 
+  _nameToItem(): Record<string, T> {
+    return this.nameToItem
+  }
+
   nameOf(item: T): string {
     return (
       this.itemToName.get(item) ??

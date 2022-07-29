@@ -11,75 +11,27 @@
 
 // noinspection JSUnusedGlobalSymbols
 
-import { Events } from "./Events"
 import { Registry } from "./registry"
 import { PRRecord } from "./util-types"
 
 // --- Classes ---
-export const OnLoad: unique symbol = Symbol("OnLoad")
-
-export interface WithOnLoad {
-  [OnLoad]?(): void
-}
 
 // on a class it marks if the class was processed
 // on an instance (prototype) it returns the class name
-const ClassInfo: unique symbol = Symbol("ClassInfo")
-
 export interface Class<T> {
   name: string
   prototype: T
 }
 
-interface ClassInfo {
-  processed?: true
-  boundFuncKeys?: LuaMap<string, string> // original name, internal name
-}
-interface RegisteredClass {
-  name: string
-  prototype: ClassInstance & LuaMetatable<ClassInstance> & { [key: string]: unknown }
-  ____super?: RegisteredClass
-  [ClassInfo]?: ClassInfo
-}
-
-interface ClassInstance extends WithOnLoad {
-  constructor: RegisteredClass
-  [ClassInfo]: string
-  ____constructor(...args: any): void
-}
-
-export const Classes = new Registry<Class<any>>("class", (item) => serpent.block(item))
-declare const global: {
-  __classes: LuaMap<ClassInstance, string>
-}
-
-Events.on_init(() => {
-  global.__classes = new LuaMap()
-  if (!__DebugAdapter) setmetatable(global.__classes, { __mode: "k" })
-  setmetatable(global.__classes, { __mode: "k" })
-})
-
-Events.on_load(() => {
-  if (!__DebugAdapter) setmetatable(global.__classes, { __mode: "k" })
-  for (const [table, className] of global.__classes) {
-    const _class = Classes.getOrNil(className)
-    if (!_class) {
-      error(
-        `Could not find a class with the name "${className}". Check that the class was registered properly, and/or migrations are correct.`,
-      )
-    }
-    setmetatable(table, _class.prototype)
+const registeredClasses = new LuaSet<Class<any>>()
+function registerClass(name: string, item: Class<any>) {
+  script.register_metatable(name, item.prototype)
+  if (registeredClasses.has(item)) {
+    error(`Class ${name} is already registered`)
   }
-  for (const [table] of global.__classes) {
-    table[OnLoad]?.()
-  }
-})
+  registeredClasses.add(item)
 
-function onClassRegistered(name: string, item: RegisteredClass) {
-  const info: ClassInfo = rawget(item, ClassInfo) ?? (item[ClassInfo] = {})
   const prototype = item.prototype
-  prototype[ClassInfo] = name
-
   // make sure __call meta-method works for subclasses
   rawset(prototype, "__call", prototype.__call)
 
@@ -90,85 +42,16 @@ function onClassRegistered(name: string, item: RegisteredClass) {
       Functions.registerRaw((name + "." + key) as string, value)
     }
   }
-
-  // bind funcs in constructor
-  const { boundFuncKeys } = info
-  if (boundFuncKeys) {
-    const originalConstructor = prototype.____constructor
-    prototype.____constructor = function (this: Record<keyof any, ContextualFun>, ...args: any[]) {
-      for (const [key, internalKey] of boundFuncKeys) {
-        this[key] = funcOn(this, internalKey)
-      }
-      originalConstructor.call(this, ...args)
-    }
-  }
-
-  const superClass = item.____super
-  if (superClass) {
-    if (!classIsProcessed(superClass)) error(`The superclass of ${name} (${superClass.name}) was not processed.`)
-  } else {
-    // register this instance in constructor
-    const originalConstructor = prototype.____constructor
-    prototype.____constructor = function (this: ClassInstance, ...args: any[]) {
-      global.__classes.set(this, this[ClassInfo])
-      originalConstructor.call(this, ...args)
-    }
-  }
-
-  let currentClass: RegisteredClass | nil = item
-  while (currentClass) {
-    const info = rawget(currentClass, ClassInfo)!
-    const { boundFuncKeys } = info
-    if (boundFuncKeys) {
-      for (const [key, internalKey] of boundFuncKeys) {
-        const override = rawget(prototype, key)
-        if (override) prototype[internalKey] = override
-      }
-    }
-    currentClass = currentClass.____super
-  }
-
-  info.processed = true
-
-  function classIsProcessed(_class: RegisteredClass) {
-    const info = rawget(_class, ClassInfo)
-    return info && info.processed
-  }
 }
 
 export function RegisterClass(name: string): (this: unknown, _class: Class<any>) => void {
-  return (_class: Class<any>) => {
-    Classes.registerRaw(name, _class)
-    onClassRegistered(name, _class)
-  }
+  return (_class: Class<any>) => registerClass(name, _class)
 }
 
-/** Intended to be used with migrations. */
-export function getAllInstances<T>(type: Class<T>): T[] {
-  const typeName = Classes.nameOf(type)
-  const result: T[] = []
-  for (const [instance, name] of global.__classes) {
-    if (name === typeName) result.push(instance as any)
+export function assertIsRegisteredClass(item: Class<any>): void {
+  if (!registeredClasses.has(item as Class<any>)) {
+    error(`Class ${item.name} is not registered: ` + serpent.block(item))
   }
-  return result
-}
-
-export function rebindFuncs<T>(type: Class<T>): T[] {
-  const instances = getAllInstances(type) as any[]
-  let currentClass: RegisteredClass | nil = type as unknown as RegisteredClass
-  while (currentClass) {
-    const classInfo = assert(rawget(currentClass, ClassInfo))
-    const boundFuncKeys = classInfo.boundFuncKeys
-    if (boundFuncKeys) {
-      for (const instance of instances) {
-        for (const [key, internalKey] of boundFuncKeys) {
-          instance[key] = funcOn(instance, internalKey)
-        }
-      }
-    }
-    currentClass = currentClass.____super
-  }
-  return instances
 }
 
 // -- functions --
@@ -204,7 +87,7 @@ export function registerFunctionsByFile(functions: Functions): void {
   registerFunctions(getCallerFile(), functions)
 }
 
-// func classes
+const _nameToItem = Functions._nameToItem()
 @RegisterClass("FuncRef")
 class FuncRef implements Func {
   funcName: string
@@ -214,15 +97,7 @@ class FuncRef implements Func {
   }
 
   invoke(...args: any[]): any {
-    if (!this.func) {
-      this.func = Functions.get(this.funcName) as SelflessFun
-    }
-    return this.func(...args)
-  }
-
-  [OnLoad]() {
-    // assert func name exists, but do not set it yet
-    Functions.get(this.funcName)
+    return (_nameToItem[this.funcName] as SelflessFun)(...args)
   }
 }
 
@@ -355,57 +230,8 @@ class KeyFunc implements Func {
   invoke(...args: unknown[]) {
     return this.instance[this.key](...args)
   }
-
-  __call(thisArg: unknown, ...args: unknown[]) {
-    return this.instance[this.key](...args)
-  }
 }
 
-export function funcOn<T extends Record<K, ContextualFun>, K extends keyof T>(
-  obj: T,
-  key: K,
-): Func<T[K]> & OmitThisParameter<T[K]> {
+export function funcOn<T extends Record<K, ContextualFun>, K extends keyof T>(obj: T, key: K): Func<T[K]> {
   return new KeyFunc(obj, key) as any
 }
-
-const boundFuncPrefix = "$original "
-export function bound(this: unknown, target: { constructor: AnyFunction }, name: string): void {
-  const prototype = target as ClassInstance & { [key: string]: ContextualFun }
-  const constructor = prototype.constructor
-  const value = prototype[name]
-  if (typeof value !== "function") {
-    const className = constructor.name ?? "<anonymous>"
-    error(`Not a function: ${className}.${name}`)
-  }
-
-  const internalName = boundFuncPrefix + name
-  assert(!prototype[internalName])
-  prototype[internalName] = value
-
-  const classInfo = rawget(constructor, ClassInfo) ?? (constructor[ClassInfo] = {})
-  const boundFuncKeys = classInfo.boundFuncKeys ?? (classInfo.boundFuncKeys = new LuaMap())
-  boundFuncKeys.set(name, internalName)
-}
-
-/**
- * Asserts that the given function is registered. Returns the function.
- */
-export function reg<F extends ContextualFun>(func: F): Func<F> {
-  if (typeof func === "function") error("tried to pass raw function where registered function is needed")
-  if (!func[ClassInfo]) error("This func class is not registered")
-
-  return func
-}
-
-// @RegisterClass()
-// class ReturnsValue {
-//   constructor(private readonly value: unknown) {}
-//
-//   __call() {
-//     return this.value
-//   }
-// }
-//
-// export function returns<T>(value: T): Func<(this: unknown) => T> {
-//   return new ReturnsValue(value) as any
-// }

@@ -13,7 +13,7 @@ import { Events } from "../Events"
 import { MutableState, State, Subscription, ValueListener } from "../observable"
 import { onPlayerInit, onPlayerRemoved } from "../player-init"
 import { protectedAction } from "../protected-action"
-import { bind, Classes, Func, funcRef, registerFunctions, SelflessFun } from "../references"
+import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
 import { isEmpty } from "../util"
 import { PRecord } from "../util-types"
 import * as propTypes from "./propTypes.json"
@@ -269,7 +269,7 @@ function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponentSpe
   const childTracker = newTracker(tracker, tracker.firstIndex)
 
   const Component = spec.type
-  Classes.nameOf(Component) // assert registered
+  assertIsRegisteredClass(Component)
   const instance = new Component()
 
   const resultSpec = instance.render(spec.props, childTracker)
