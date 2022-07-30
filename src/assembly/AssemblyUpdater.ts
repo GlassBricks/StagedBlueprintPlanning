@@ -20,8 +20,9 @@ import {
   LayerDiff,
   LayerNumber,
   MutableAssemblyEntity,
+  replaceWorldEntity,
 } from "../entity/AssemblyEntity"
-import { getLayerPosition, saveEntity } from "../entity/diff"
+import { getLayerPosition, saveEntity } from "../entity/world-entity"
 import { nilIfEmpty } from "../lib"
 import { LayerPosition } from "./Assembly"
 import { MutableEntityMap } from "./EntityMap"
@@ -80,7 +81,8 @@ function onEntityCreated(
 
   const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
   content.add(assemblyEntity)
-  WorldUpdater.add(assembly, assemblyEntity, nil, entity)
+  replaceWorldEntity(assemblyEntity, entity, layerNumber)
+  WorldUpdater.createLaterEntities(assembly, assemblyEntity, nil)
   return assemblyEntity
 }
 
@@ -93,7 +95,7 @@ function entityAddedAbove(
   if (existing.isLostReference) {
     reviveLostReference(assembly, existing, layerNumber, entity)
   } else {
-    WorldUpdater.refresh(assembly, existing, layerNumber, entity)
+    WorldUpdater.refreshEntity(assembly, existing, layerNumber, entity)
   }
 }
 
@@ -110,7 +112,7 @@ function reviveLostReference(
   existing.layerNumber = layerNumber
   const { layerChanges } = existing
   existing.layerChanges = layerChanges && getWithDeletedLayerChanges(existing.layerChanges, layerNumber)
-  WorldUpdater.revive(assembly, existing, entity)
+  WorldUpdater.reviveEntities(assembly, existing, entity)
 }
 
 function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerDiff | nil {
@@ -141,9 +143,9 @@ function entityAddedBelow(
   existing.baseEntity = added
   if (existing.isLostReference) {
     existing.isLostReference = nil
-    WorldUpdater.revive(assembly, existing, luaEntity)
+    WorldUpdater.reviveEntities(assembly, existing, luaEntity)
   } else {
-    WorldUpdater.add(assembly, existing, oldLayerNumber, luaEntity)
+    WorldUpdater.createLaterEntities(assembly, existing, oldLayerNumber)
   }
 }
 
@@ -157,7 +159,7 @@ function onEntityDeleted(assembly: AssemblyUpdaterParams, entity: LuaEntity, lay
 
   if (compatible.layerNumber !== layerNumber) {
     if (compatible.layerNumber < layerNumber) {
-      WorldUpdater.deletionForbidden(assembly, compatible, layerNumber)
+      WorldUpdater.forbidDeletion(assembly, compatible, layerNumber)
     }
     // else: layerNumber > compatible.layerNumber; is bug, ignore
     return
@@ -168,7 +170,7 @@ function onEntityDeleted(assembly: AssemblyUpdaterParams, entity: LuaEntity, lay
   } else {
     content.remove(compatible)
   }
-  WorldUpdater.delete(assembly, compatible)
+  WorldUpdater.deleteAllEntities(assembly, compatible)
 }
 
 function onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): void {
@@ -203,7 +205,7 @@ function onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: Lua
       layerChanges[layerNumber] = diff
     }
   }
-  WorldUpdater.update(assembly, existing, layerNumber)
+  WorldUpdater.updateEntities(assembly, existing, layerNumber)
 }
 
 function onEntityRotated(
@@ -222,7 +224,7 @@ function onEntityRotated(
     WorldUpdater.rotationForbidden(assembly, existing, layer.layerNumber)
   } else {
     existing.direction = entity.direction !== 0 ? entity.direction : nil
-    WorldUpdater.rotate(assembly, existing)
+    WorldUpdater.rotateEntities(assembly, existing)
   }
 }
 

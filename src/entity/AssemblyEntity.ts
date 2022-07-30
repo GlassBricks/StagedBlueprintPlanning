@@ -11,7 +11,6 @@
 
 import { deepCompare, Events, Mutable, mutableShallowCopy, nilIfEmpty, PRecord, PRRecord } from "../lib"
 import { Position } from "../lib/geometry"
-import { getNilPlaceholder, NilPlaceholder, WithNilPlaceholder } from "./NilPlaceholder"
 
 export interface Entity {
   readonly name: string
@@ -24,6 +23,9 @@ export interface EntityPose {
   readonly direction: defines.direction | nil
 }
 
+/**
+ * Not a class because performance!
+ */
 export interface AssemblyEntity<out E extends Entity = Entity> extends EntityPose {
   readonly categoryName: string
   /** First layer this entity appears in */
@@ -35,7 +37,7 @@ export interface AssemblyEntity<out E extends Entity = Entity> extends EntityPos
   /** If this entity is a lost reference */
   readonly isLostReference?: true
 
-  readonly worldEntities: PRRecord<LayerNumber, LuaEntity>
+  readonly _worldEntities: PRecord<LayerNumber, LuaEntity>
 }
 
 export interface MutableAssemblyEntity<E extends Entity = Entity> extends AssemblyEntity<E> {
@@ -44,8 +46,6 @@ export interface MutableAssemblyEntity<E extends Entity = Entity> extends Assemb
   baseEntity: E
   layerChanges?: PRecord<LayerNumber, LayerDiff<E>>
   isLostReference?: true
-
-  readonly worldEntities: PRecord<LayerNumber, LuaEntity>
 }
 
 export type LayerChanges = PRecord<LayerNumber, LayerDiff>
@@ -59,14 +59,14 @@ export function createAssemblyEntity<E extends Entity>(
   position: Position,
   direction: defines.direction | nil,
   layerNumber: LayerNumber,
-): AssemblyEntity<E> {
+): MutableAssemblyEntity<E> {
   return {
     categoryName: getCategoryName(entity),
     position,
     direction: direction === 0 ? nil : direction,
     layerNumber,
     baseEntity: entity,
-    worldEntities: {},
+    _worldEntities: {},
   }
 }
 
@@ -76,7 +76,7 @@ export function getCategoryName(entity: Entity): string {
 }
 
 export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
-  return luaEntity.has_flag("player-creation")
+  return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation")
 }
 
 /** Does not check position */
@@ -88,13 +88,25 @@ export function isCompatibleEntity(
   return a.categoryName === categoryName && a.direction === direction
 }
 
-const ignoredProps = newLuaSet<keyof any>("position", "direction")
+declare const NilPlaceholder: unique symbol
+export type NilPlaceholder = typeof NilPlaceholder
+export type WithNilPlaceholder<T> = T extends nil ? NilPlaceholder : T
 
+declare const global: {
+  nilPlaceholder: NilPlaceholder
+}
 let nilPlaceholder: NilPlaceholder
-Events.onInitOrLoad(() => {
-  nilPlaceholder = getNilPlaceholder()
+Events.on_init(() => {
+  nilPlaceholder = global.nilPlaceholder = {} as any
 })
+Events.on_load(() => {
+  nilPlaceholder = global.nilPlaceholder
+})
+export function getNilPlaceholder(): NilPlaceholder {
+  return assert(nilPlaceholder)
+}
 
+const ignoredProps = newLuaSet<keyof any>("position", "direction")
 export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): LayerDiff | nil {
   const changes: any = {}
   for (const [key, value] of pairs(above)) {
@@ -127,16 +139,70 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
 export function getValueAtLayer<E extends Entity>(entity: AssemblyEntity<E>, layer: LayerNumber): E | nil {
   assert(layer >= 1, "layer must be >= 1")
   if (entity.layerNumber > layer) return nil
-  const { layerChanges, baseEntity } = entity
-  if (!layerChanges) return baseEntity
+  const value = mutableShallowCopy(entity.baseEntity)
+  const { layerChanges } = entity
+  if (!layerChanges) return value
   const firstChangedLayer = next(layerChanges)[0]
-  if (!firstChangedLayer || firstChangedLayer > layer) return baseEntity
+  if (!firstChangedLayer || firstChangedLayer > layer) return value
 
-  const result = mutableShallowCopy(baseEntity)
   for (const [changeLayer, changed] of pairs(layerChanges)) {
     // iterates in ascending order
     if (changeLayer > layer) break
-    applyDiffToEntity(result, changed)
+    applyDiffToEntity(value, changed)
   }
-  return result
+  return value
+}
+
+export function getWorldEntity(entity: AssemblyEntity, layerNumber: LayerNumber): LuaEntity | nil {
+  const { _worldEntities } = entity
+  const worldEntity = _worldEntities[layerNumber]
+  if (!worldEntity || !worldEntity.valid) {
+    delete _worldEntities[layerNumber]
+    return
+  }
+  return worldEntity
+}
+
+export function destroyWorldEntity(entity: AssemblyEntity, layerNumber: LayerNumber): void {
+  const { _worldEntities } = entity
+  const worldEntity = _worldEntities[layerNumber]
+  if (worldEntity && worldEntity.valid) worldEntity.destroy()
+  delete _worldEntities[layerNumber]
+}
+
+export function replaceOrDestroyWorldEntity(
+  assemblyEntity: MutableAssemblyEntity,
+  luaEntity: LuaEntity | nil,
+  layerNumber: LayerNumber,
+): void {
+  const { _worldEntities } = assemblyEntity
+  const existing = _worldEntities[layerNumber]
+  if (existing && existing.valid && existing !== luaEntity) existing.destroy()
+  _worldEntities[layerNumber] = luaEntity
+}
+
+export const replaceWorldEntity: (
+  assemblyEntity: MutableAssemblyEntity,
+  luaEntity: LuaEntity,
+  layerNumber: LayerNumber,
+) => void = replaceOrDestroyWorldEntity
+
+export function destroyAllWorldEntities(entity: MutableAssemblyEntity): void {
+  for (const [, worldEntity] of pairs(entity._worldEntities)) {
+    if (worldEntity.valid) worldEntity.destroy()
+  }
+}
+
+export function iterateWorldEntities(entity: AssemblyEntity): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>> {
+  const { _worldEntities } = entity
+  let curKey = next(_worldEntities)[0]
+  return function () {
+    while (true) {
+      const key = curKey
+      if (!key) return nil
+      curKey = next(_worldEntities, key)[0]
+      const entity = _worldEntities[key]!
+      if (entity.valid) return $multi(key, entity)
+    }
+  } as any
 }

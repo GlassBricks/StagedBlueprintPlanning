@@ -127,7 +127,7 @@ function assertAdded(): MutableAssemblyEntity {
   assert.nil(found.direction)
 
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: found, data: luaEntity })
+  assertSingleEvent({ type: "createLaterEntities", entity: found })
   return found
 }
 
@@ -144,7 +144,7 @@ test.each([1, 2], "existing at layer 1, added at layer %d", (layerNumber) => {
   assert.equal(added, added2)
 
   assertOneEntity()
-  assertSingleEvent({ type: "refresh", entity: added, layer: layerNumber, data: luaEntity })
+  assertSingleEvent({ type: "refreshEntity", entity: added, layer: layerNumber, data: luaEntity })
 })
 
 test.each([false, true], "existing at layer 2, added at layer 1, with layer changes: %s", (withChanges) => {
@@ -166,7 +166,7 @@ test.each([false, true], "existing at layer 2, added at layer 1, with layer chan
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: added, layer: 2, data: luaEntity })
+  assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
 })
 
 test("delete non-existent", () => {
@@ -187,14 +187,14 @@ test("delete existing at lower layer", () => {
   const { luaEntity, added } = doVirtualAdd(1, 2)
   AssemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
-  assertSingleEvent({ type: "deletionForbidden", entity: added, layer: layer.layerNumber })
+  assertSingleEvent({ type: "forbidDeletion", entity: added, layer: layer.layerNumber })
 })
 
 test("delete existing at same layer", () => {
   const { luaEntity, added } = doVirtualAdd()
   AssemblyUpdater.onEntityDeleted(assembly, luaEntity, layer) // simulated
   assertNoEntities()
-  assertSingleEvent({ type: "delete", entity: added })
+  assertSingleEvent({ type: "deleteAllEntities", entity: added })
 })
 
 test("delete entity with updates", () => {
@@ -203,7 +203,7 @@ test("delete entity with updates", () => {
   AssemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
   assert.true(added.isLostReference)
-  assertSingleEvent({ type: "delete", entity: added })
+  assertSingleEvent({ type: "deleteAllEntities", entity: added })
 })
 
 test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (reviveLayer) => {
@@ -227,7 +227,7 @@ test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (rev
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "revive", entity: revived, layer: luaEntity as any })
+  assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
 })
 
 test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
@@ -250,7 +250,7 @@ test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: 
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "revive", entity: revived, layer: luaEntity as any })
+  assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
 })
 
 test("update non-existent", () => {
@@ -272,7 +272,7 @@ test("update in previous layer", () => {
   AssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
   // same as addBelow
   assertOneEntity()
-  assertSingleEvent({ type: "add", entity: added, layer: 2, data: luaEntity })
+  assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
 })
 
 test("update in same layer", () => {
@@ -282,7 +282,7 @@ test("update in same layer", () => {
   assert.equal(3, added.baseEntity.override_stack_size)
 
   assertOneEntity()
-  assertSingleEvent({ type: "update", entity: added, layer: layer.layerNumber })
+  assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
 })
 
 test.each([false, true], "update in next layer, with existing changes: %s", (withExistingChanges) => {
@@ -302,7 +302,7 @@ test.each([false, true], "update in next layer, with existing changes: %s", (wit
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "update", entity: added, layer: layer.layerNumber })
+  assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
 })
 
 test("rotate in base layer", () => {
@@ -312,7 +312,7 @@ test("rotate in base layer", () => {
   AssemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(direction.west, added.direction)
   assertOneEntity()
-  assertSingleEvent({ type: "rotate", entity: added })
+  assertSingleEvent({ type: "rotateEntities", entity: added })
 })
 
 test("rotate in higher layer", () => {

@@ -9,20 +9,17 @@
  * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Events } from "../lib"
+import { clearTestArea } from "../test-util/area"
+import { saveEntity } from "./world-entity"
 
-declare const NilPlaceholder: unique symbol
-export type NilPlaceholder = typeof NilPlaceholder
-
-declare const global: {
-  nilPlaceholder: NilPlaceholder
-}
-Events.on_init(() => {
-  global.nilPlaceholder = {} as any
+test("save basic entity", () => {
+  const area = clearTestArea()
+  const entity = area.surface.create_entity({
+    name: "iron-chest",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    bar: 3,
+  })!
+  const saved = saveEntity(entity)
+  assert.same({ name: "iron-chest", bar: 3 }, saved)
 })
-
-export function getNilPlaceholder(): NilPlaceholder {
-  return global.nilPlaceholder
-}
-
-export type WithNilPlaceholder<T> = T extends nil ? NilPlaceholder : T

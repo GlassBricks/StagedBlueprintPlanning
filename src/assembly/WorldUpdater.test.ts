@@ -11,12 +11,15 @@
 
 import {
   createAssemblyEntity,
+  destroyWorldEntity,
   Entity,
   getValueAtLayer,
+  getWorldEntity,
   LayerNumber,
   MutableAssemblyEntity,
+  replaceWorldEntity,
 } from "../entity/AssemblyEntity"
-import { createEntity } from "../entity/diff"
+import { createEntity } from "../entity/world-entity"
 import { Pos, Position } from "../lib/geometry"
 import { clearTestArea, testArea } from "../test-util/area"
 import { LayerPosition } from "./Assembly"
@@ -71,10 +74,10 @@ function findEntity(
   })[0]
 }
 
-function assertEntityNotPresent(i: number): void {
+function assertEntityNotPresent(i: LayerNumber): void {
   const luaEntity = findEntity(i)
   assert.nil(luaEntity)
-  assert.is_nil(entity.worldEntities[i])
+  assert.is_nil(getWorldEntity(entity, i))
 }
 
 function assertEntityPresent(i: LayerNumber): void {
@@ -84,13 +87,15 @@ function assertEntityPresent(i: LayerNumber): void {
   assert.equal("filter-inserter", luaEntity.name)
   assert.equal(valueAtLayer.override_stack_size, luaEntity.inserter_stack_size_override)
   assert.equal(entity.direction, luaEntity.direction)
-  assert.equal(luaEntity, entity.worldEntities[i])
+  assert.equal(luaEntity, getWorldEntity(entity, i) ?? "nil")
 }
 
 function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
   entity.layerNumber = layerNumber
-  WorldUpdater.add(assembly, entity, stopLayer, nil)
-  return entity.worldEntities[layerNumber]
+  const created = createEntity(assembly.layers[layerNumber], entity, entity.baseEntity)
+  if (created) replaceWorldEntity(entity, created, layerNumber)
+  WorldUpdater.createLaterEntities(assembly, entity, stopLayer)
+  return getWorldEntity(entity, layerNumber)
 }
 
 test.each([1, 2, 3], "add to layer %d", (layer) => {
@@ -120,50 +125,50 @@ test.each(
       if (!(i === 3 && oldDeleted)) assertEntityPresent(i)
     }
     if (!oldDeleted) {
-      assert.equal(oldEntity, entity.worldEntities[3], "entity replaced")
+      assert.equal(oldEntity, getWorldEntity(entity, 3), "entity replaced")
     } else {
-      assert.false(entity.worldEntities[3]?.valid, "entity replaced")
+      assert.nil(getWorldEntity(entity, 3), "entity replaced")
     }
   },
 )
 
 test("refresh", () => {
   addAt(1)
-  entity.worldEntities[2]!.destroy()
+  getWorldEntity(entity, 2)!.destroy()
   const replaced = createEntity(assembly.layers[2], entity, { name: "filter-inserter" })!
   assert.not_nil(replaced)
   // refresh at layer 2
-  WorldUpdater.refresh(assembly, entity, 2, replaced)
+  WorldUpdater.refreshEntity(assembly, entity, 2, replaced)
   assertEntityPresent(2)
-  assert.equal(replaced, entity.worldEntities[2])
+  assert.equal(replaced, getWorldEntity(entity, 2))
 })
 
 test.each([false, true], "revive at same layer, with changes: %s", (withChanges) => {
   addAt(1)
   if (withChanges) makeEntityWithChanges()
-  for (let i = 1; i <= 3; i++) entity.worldEntities[i]!.destroy()
-  WorldUpdater.revive(assembly, entity, nil)
+  for (let i = 1; i <= 3; i++) destroyWorldEntity(entity, i)
+  WorldUpdater.reviveEntities(assembly, entity, nil)
   for (let i = 1; i <= 3; i++) assertEntityPresent(i)
 })
 
 test("delete", () => {
   addAt(1)
-  WorldUpdater.delete(assembly, entity)
+  WorldUpdater.deleteAllEntities(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
 })
 
 test("deletion forbidden", () => {
   addAt(1)
-  const layer2Entity = entity.worldEntities[2]
+  const layer2Entity = getWorldEntity(entity, 2)
   layer2Entity!.destroy()
-  WorldUpdater.deletionForbidden(assembly, entity, 2)
+  WorldUpdater.forbidDeletion(assembly, entity, 2)
   assertEntityPresent(2)
 })
 
 test("rotate", () => {
   const luaEntity = addAt(1)!
   luaEntity.direction = entity.direction = defines.direction.west
-  WorldUpdater.rotate(assembly, entity)
+  WorldUpdater.rotateEntities(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityPresent(i)
 })
 
