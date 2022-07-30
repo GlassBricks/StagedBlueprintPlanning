@@ -322,5 +322,5 @@ test("rotate in higher layer", () => {
   AssemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(oldDirection, added.direction ?? 0)
   assertOneEntity()
-  assertSingleEvent({ type: "rotationForbidden", entity: added, layer: layer.layerNumber })
+  assertSingleEvent({ type: "forbidRotation", entity: added, layer: layer.layerNumber })
 })

@@ -221,7 +221,7 @@ function onEntityRotated(
   if (!existing) return
 
   if (existing.layerNumber !== layer.layerNumber) {
-    WorldUpdater.rotationForbidden(assembly, existing, layer.layerNumber)
+    WorldUpdater.forbidRotation(assembly, existing, layer.layerNumber)
   } else {
     existing.direction = entity.direction !== 0 ? entity.direction : nil
     WorldUpdater.rotateEntities(assembly, existing)

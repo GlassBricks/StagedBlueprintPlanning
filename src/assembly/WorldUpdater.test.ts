@@ -201,7 +201,7 @@ test("rotate", () => {
 test("rotation forbidden", () => {
   addAt(1)
   findEntity(2)!.direction = defines.direction.west
-  WorldUpdater.rotationForbidden(assembly, entity, 2)
+  WorldUpdater.forbidRotation(assembly, entity, 2)
   for (let i = 1; i <= 3; i++) assertEntityPresent(i)
 })
 

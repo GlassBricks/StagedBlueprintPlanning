@@ -193,12 +193,6 @@ export const replaceWorldEntity: (
   layerNumber: LayerNumber,
 ) => void = replaceOrDestroyWorldEntity
 
-export function destroyAllWorldEntities(entity: MutableAssemblyEntity): void {
-  for (const [, worldEntity] of pairs(entity._worldEntities)) {
-    if (worldEntity.valid) worldEntity.destroy()
-  }
-}
-
 export function iterateWorldEntities(entity: AssemblyEntity): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>> {
   const { _worldEntities } = entity
   let curKey = next(_worldEntities)[0]

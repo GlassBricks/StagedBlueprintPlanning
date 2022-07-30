@@ -12,7 +12,6 @@
 import {
   applyDiffToEntity,
   AssemblyEntity,
-  destroyAllWorldEntities,
   destroyWorldEntity,
   Entity,
   getValueAtLayer,
@@ -55,7 +54,7 @@ export interface WorldUpdater {
   /** Rotates all entities to match the assembly entity state */
   rotateEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void
   /** Un-rotates a lua entity at layer */
-  rotationForbidden(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void
+  forbidRotation(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void
 }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
@@ -123,7 +122,10 @@ function reviveEntities(
 }
 
 function deleteAllEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void {
-  destroyAllWorldEntities(entity)
+  // destroyAllWorldEntities(entity)
+  for (const [, worldEntity] of iterateWorldEntities(entity)) {
+    worldEntity.destroy()
+  }
   destroyAllErrorHighlights(entity)
 }
 
@@ -156,7 +158,7 @@ function rotateEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEnt
   }
 }
 
-function rotationForbidden(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void {
+function forbidRotation(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void {
   const luaEntity = getWorldEntity(entity, layer)
   if (luaEntity) luaEntity.direction = entity.direction ?? 0
 }
@@ -169,5 +171,5 @@ export const WorldUpdater: WorldUpdater = {
   forbidDeletion,
   updateEntities,
   rotateEntities,
-  rotationForbidden,
+  forbidRotation,
 }
