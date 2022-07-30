@@ -54,3 +54,5 @@ Events.on_player_rotated_entity((e) => {
   const layer = getLayer(e.entity)
   if (layer) AssemblyUpdater.onEntityRotated(layer.assembly, e.entity, layer, e.previous_direction)
 })
+
+// todo: upgrades, fast replace, blueprinting, bot stuff, circuit wires, go through the list of events

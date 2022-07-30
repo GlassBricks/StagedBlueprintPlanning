@@ -17,7 +17,7 @@ import {
   getWorldEntity,
   LayerNumber,
   MutableAssemblyEntity,
-  replaceWorldEntity,
+  replaceOrDestroyWorldEntity,
 } from "../entity/AssemblyEntity"
 import { createEntity } from "../entity/world-entity"
 import { Pos, Position } from "../lib/geometry"
@@ -90,10 +90,36 @@ function assertEntityPresent(i: LayerNumber): void {
   assert.equal(luaEntity, getWorldEntity(entity, i) ?? "nil")
 }
 
+function findHighlight(layerNumber: LayerNumber, position: Position = entity.position): HighlightBoxEntity | nil {
+  const { surface, bbox } = testArea(layerNumber - 1)
+  const actualPos = Pos.plus(bbox.left_top, position)
+  return surface.find_entities_filtered({
+    name: "highlight-box",
+    position: actualPos,
+    radius: 0,
+    limit: 1,
+  })[0]
+}
+
+function assertHighlightPresent(i: LayerNumber): void {
+  const highlight = findHighlight(i)!
+  assert.not_nil(highlight)
+  assert.equal("not-allowed", highlight.highlight_box_type)
+}
+
+function assertHighlightNotPresent(i: LayerNumber): void {
+  const highlight = findHighlight(i)
+  assert.nil(highlight)
+}
+
+function createAt(layerNumber: LayerNumber): LuaEntity | nil {
+  return createEntity(assembly.layers[layerNumber], entity, entity.baseEntity)
+}
+
 function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
   entity.layerNumber = layerNumber
-  const created = createEntity(assembly.layers[layerNumber], entity, entity.baseEntity)
-  if (created) replaceWorldEntity(entity, created, layerNumber)
+  const created = createAt(layerNumber)
+  replaceOrDestroyWorldEntity(entity, created, layerNumber)
   WorldUpdater.createLaterEntities(assembly, entity, stopLayer)
   return getWorldEntity(entity, layerNumber)
 }
@@ -177,4 +203,21 @@ test("rotation forbidden", () => {
   findEntity(2)!.direction = defines.direction.west
   WorldUpdater.rotationForbidden(assembly, entity, 2)
   for (let i = 1; i <= 3; i++) assertEntityPresent(i)
+})
+
+describe("error highlight", () => {
+  test("creates error highlight if entity cannot be created", () => {
+    createAt(3)
+    addAt(2)
+    assertHighlightPresent(3)
+  })
+
+  test("removes error highlight after entity removed", () => {
+    createAt(3)
+    addAt(2)
+    WorldUpdater.deleteAllEntities(assembly, entity)
+    for (let i = 1; i <= 3; i++) {
+      assertHighlightNotPresent(i)
+    }
+  })
 })

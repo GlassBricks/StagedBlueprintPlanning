@@ -38,6 +38,7 @@ export interface AssemblyEntity<out E extends Entity = Entity> extends EntityPos
   readonly isLostReference?: true
 
   readonly _worldEntities: PRecord<LayerNumber, LuaEntity>
+  readonly _highlights: PRecord<LayerNumber, EntityHighlights>
 }
 
 export interface MutableAssemblyEntity<E extends Entity = Entity> extends AssemblyEntity<E> {
@@ -54,6 +55,10 @@ export type LayerDiff<E extends Entity = Entity> = {
   readonly [P in keyof E]?: WithNilPlaceholder<E[P]>
 }
 
+export interface EntityHighlights {
+  error?: HighlightBoxEntity
+}
+
 export function createAssemblyEntity<E extends Entity>(
   entity: E,
   position: Position,
@@ -67,6 +72,7 @@ export function createAssemblyEntity<E extends Entity>(
     layerNumber,
     baseEntity: entity,
     _worldEntities: {},
+    _highlights: {},
   }
 }
 

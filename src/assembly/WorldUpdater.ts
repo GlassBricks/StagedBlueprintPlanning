@@ -23,6 +23,7 @@ import {
   replaceOrDestroyWorldEntity,
   replaceWorldEntity,
 } from "../entity/AssemblyEntity"
+import { destroyAllErrorHighlights, setErrorHighlight } from "../entity/highlights"
 import { createEntity, matchEntity } from "../entity/world-entity"
 import { mutableShallowCopy } from "../lib"
 import { LayerPosition } from "./Assembly"
@@ -60,14 +61,15 @@ export interface WorldUpdater {
 declare const luaLength: LuaLength<Record<number, any>, number>
 
 function createWorldEntity(
-  assemblyEntity: MutableAssemblyEntity,
+  entity: MutableAssemblyEntity,
   value: Entity,
   layerNumber: LayerNumber,
   layerPosition: LayerPosition,
 ): void {
-  destroyWorldEntity(assemblyEntity, layerNumber)
-  const worldEntity = createEntity(layerPosition, assemblyEntity, value)
-  replaceOrDestroyWorldEntity(assemblyEntity, worldEntity, layerNumber)
+  destroyWorldEntity(entity, layerNumber)
+  const worldEntity = createEntity(layerPosition, entity, value)
+  replaceOrDestroyWorldEntity(entity, worldEntity, layerNumber)
+  setErrorHighlight(entity, layerPosition, worldEntity === nil)
 }
 
 function createLaterEntities(
@@ -122,6 +124,7 @@ function reviveEntities(
 
 function deleteAllEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void {
   destroyAllWorldEntities(entity)
+  destroyAllErrorHighlights(entity)
 }
 
 function forbidDeletion(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layerNumber: LayerNumber): void {
