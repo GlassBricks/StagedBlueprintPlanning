@@ -13,7 +13,6 @@ import { LayerNumber, MutableAssemblyEntity } from "../entity/AssemblyEntity"
 import { createMockEntitySaver } from "../entity/EntityHandler-mock"
 import { AnyFunction, ContextualFun, Mutable } from "../lib"
 import { BBox, Pos } from "../lib/geometry"
-import { map2dSize } from "../lib/map2d"
 import { entityMock } from "../test-util/simple-mock"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 import { AssemblyUpdater, createAssemblyUpdater } from "./AssemblyUpdater"
@@ -93,7 +92,7 @@ function assertSingleCall<K extends keyof WorldUpdater>(key: K, ...args: RemoveP
 }
 
 function assertOneEntity() {
-  assert.equal(1, map2dSize(content.entities))
+  assert.equal(1, content.entities.getSize())
   entitiesAsserted = true
 }
 

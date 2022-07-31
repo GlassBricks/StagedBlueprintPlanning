@@ -12,7 +12,7 @@
 import { LayerPosition } from "../assembly/Assembly"
 import { shallowCopy } from "../lib"
 import { Position } from "../lib/geometry"
-import { map2dAdd, map2dGet, MutableMap2D } from "../lib/map2d"
+import { MutableMap2D, newMap2D } from "../lib/map2d"
 import { entityMock, isMock } from "../test-util/simple-mock"
 import { Entity, EntityPose, LayerNumber } from "./AssemblyEntity"
 import { EntityCreator, EntitySaver } from "./EntityHandler"
@@ -35,7 +35,7 @@ export function createMockEntityCreator(): MockEntityCreator {
     const layerValues = values[layer]
     if (layerValues === nil) return nil
     if (position === nil) {
-      for (const [, byX] of pairs(layerValues)) {
+      for (const [, byX] of layerValues) {
         for (const [, byY] of pairs(byX)) {
           for (const entry of byY) {
             if (entry.luaEntity.valid) return entry
@@ -44,7 +44,7 @@ export function createMockEntityCreator(): MockEntityCreator {
       }
       return nil
     }
-    const atPos = map2dGet(layerValues, position.x, position.y)
+    const atPos = layerValues.get(position.x, position.y)
     if (!atPos) return nil
     for (const entry of atPos) {
       if (entry.luaEntity.valid) return entry
@@ -55,7 +55,7 @@ export function createMockEntityCreator(): MockEntityCreator {
     createEntity(layerPos: LayerPosition, { position, direction }: EntityPose, value: Entity): LuaEntity | nil {
       const layer = layerPos.layerNumber
       if (getAt(layer, position) !== nil) return nil // overlapping entity
-      const byLayer = values[layer] ?? (values[layer] = {})
+      const byLayer = values[layer] ?? (values[layer] = newMap2D())
 
       const luaEntity = entityMock({
         ...value,
@@ -67,7 +67,7 @@ export function createMockEntityCreator(): MockEntityCreator {
         value: shallowCopy(value),
         luaEntity,
       }
-      map2dAdd(byLayer, position.x, position.y, entry)
+      byLayer.add(position.x, position.y, entry)
       luaEntityToEntry.set(luaEntity, entry)
       return luaEntity
     },

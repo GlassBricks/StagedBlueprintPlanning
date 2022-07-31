@@ -9,46 +9,65 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { RegisterClass } from "./references"
 import { PRecord, PRRecord } from "./util-types"
 
-export type Map2D<T> = PRRecord<number, PRRecord<number, ReadonlyLuaSet<T>>>
-export type MutableMap2D<T> = PRecord<number, PRecord<number, LuaSet<T>>>
-
-export function map2dGet<T>(map: MutableMap2D<T>, x: number, y: number): ReadonlyLuaSet<T> | nil
-export function map2dGet<T>(map: Map2D<T>, x: number, y: number): ReadonlyLuaSet<T> | nil
-export function map2dGet<T>(map: Map2D<T>, x: number, y: number): ReadonlyLuaSet<T> | nil {
-  const byX = map[x]
-  return byX && byX[y]
+export interface Map2D<T> {
+  readonly [x: number]: PRRecord<number, ReadonlyLuaSet<T>>
+  get(x: number, y: number): ReadonlyLuaSet<T> | nil
+  getSize(): number
+  asIterable(): LuaPairsIterable<number, PRRecord<number, ReadonlyLuaSet<T>>>
 }
 
-export function map2dAdd<T>(map: MutableMap2D<T>, x: number, y: number, value: T): void {
-  const byX = (map[x] ??= {})
-  const byY = (byX[y] ??= new LuaSet())
-  byY.add(value)
+export interface MutableMap2D<T> extends Map2D<T>, LuaPairsIterable<number, PRecord<number, LuaSet<T>>> {
+  [x: number]: PRecord<number, LuaSet<T>>
+  add(x: number, y: number, value: T): void
+  remove(x: number, y: number, value: T): void
 }
 
-export function map2dRemove<T>(map: MutableMap2D<T>, x: number, y: number, value: T): void {
-  const byX = map[x]
-  if (byX === nil) return
-  const byY = byX[y]
-  if (byY === nil) return
-  byY.delete(value)
-  if (next(byY)[0] === nil) {
-    delete byX[y]
-    if (next(byX)[0] === nil) {
-      delete map[x]
+// noinspection JSUnusedLocalSymbols
+interface Map2DImpl<T> extends LuaPairsIterable<number, PRecord<number, LuaSet<T>>> {
+  _: never
+}
+@RegisterClass("Map2D")
+class Map2DImpl<T> implements MutableMap2D<T> {
+  [x: number]: PRecord<number, LuaSet<T>>
+  get(x: number, y: number): ReadonlyLuaSet<T> | nil {
+    const byX = this[x]
+    return byX && byX[y]
+  }
+  add(x: number, y: number, value: T): void {
+    const byX = this[x] ?? (this[x] = {})
+    const byY = byX[y] ?? (byX[y] = new LuaSet<T>())
+    byY.add(value)
+  }
+  remove(x: number, y: number, value: T): void {
+    const byX = this[x]
+    if (byX === nil) return
+    const byY = byX[y]
+    if (byY === nil) return
+    byY.delete(value)
+    if (next(byY)[0] === nil) {
+      delete byX[y]
+      if (next(byX)[0] === nil) {
+        delete this[x]
+      }
     }
+  }
+  getSize(): number {
+    let size = 0
+    for (const [, byX] of this) {
+      for (const [, byY] of pairs(byX)) {
+        size += table_size(byY)
+      }
+    }
+    return size
+  }
+  public asIterable(): LuaPairsIterable<number, PRRecord<number, ReadonlyLuaSet<T>>> {
+    return this as any
   }
 }
 
-export function map2dSize<T>(map: MutableMap2D<T>): number
-export function map2dSize<T>(map: Map2D<T>): number
-export function map2dSize<T>(map: Map2D<T>): number {
-  let size = 0
-  for (const [, byX] of pairs(map)) {
-    for (const [, byY] of pairs(byX)) {
-      size += table_size(byY)
-    }
-  }
-  return size
+export function newMap2D<T>(): MutableMap2D<T> {
+  return new Map2DImpl<T>()
 }
