@@ -29,9 +29,7 @@ export interface AssemblyContent {
   readonly content: MutableEntityMap
 }
 
-interface LayerContent extends LayerPosition {
-  readonly assembly: AssemblyContent
-}
+interface LayerContent extends LayerPosition {}
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 

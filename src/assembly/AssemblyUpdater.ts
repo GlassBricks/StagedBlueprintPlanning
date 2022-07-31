@@ -24,26 +24,21 @@ import {
 } from "../entity/AssemblyEntity"
 import { getLayerPosition, saveEntity } from "../entity/world-entity"
 import { nilIfEmpty } from "../lib"
-import { LayerPosition } from "./Assembly"
-import { MutableEntityMap } from "./EntityMap"
-import { WorldUpdater, WorldUpdaterParams } from "./WorldUpdater"
-
-export interface AssemblyUpdaterParams extends WorldUpdaterParams {
-  readonly content: MutableEntityMap
-}
+import { AssemblyContent, LayerPosition } from "./Assembly"
+import { WorldUpdater } from "./WorldUpdater"
 
 /** @noSelf */
 export interface AssemblyUpdater {
   onEntityCreated<E extends Entity = Entity>(
-    assembly: AssemblyUpdaterParams,
+    assembly: AssemblyContent,
     entity: LuaEntity,
     layer: LayerPosition,
   ): AssemblyEntity<E> | nil
-  onEntityDeleted(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): void
-  onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): void
+  onEntityDeleted(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+  onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 
   onEntityRotated(
-    assembly: AssemblyUpdaterParams,
+    assembly: AssemblyContent,
     entity: LuaEntity,
     layer: LayerPosition,
     previousDirection: defines.direction,
@@ -51,15 +46,11 @@ export interface AssemblyUpdater {
 }
 
 function onEntityCreated<E extends Entity = Entity>(
-  assembly: AssemblyUpdaterParams,
+  assembly: AssemblyContent,
   entity: LuaEntity,
   layer: LayerPosition,
 ): AssemblyEntity<E> | nil
-function onEntityCreated(
-  assembly: AssemblyUpdaterParams,
-  entity: LuaEntity,
-  layer: LayerPosition,
-): AssemblyEntity | nil {
+function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
   const position = getLayerPosition(entity, layer)
   const { layerNumber } = layer
   const { content } = assembly
@@ -87,7 +78,7 @@ function onEntityCreated(
 }
 
 function entityAddedAbove(
-  assembly: AssemblyUpdaterParams,
+  assembly: AssemblyContent,
   existing: MutableAssemblyEntity,
   layerNumber: LayerNumber,
   entity: LuaEntity,
@@ -100,7 +91,7 @@ function entityAddedAbove(
 }
 
 function reviveLostReference(
-  assembly: AssemblyUpdaterParams,
+  assembly: AssemblyContent,
   existing: MutableAssemblyEntity,
   layerNumber: LayerNumber,
   entity: LuaEntity,
@@ -125,7 +116,7 @@ function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumbe
 }
 
 function entityAddedBelow(
-  assembly: AssemblyUpdaterParams,
+  assembly: AssemblyContent,
   existing: MutableAssemblyEntity,
   layerNumber: LayerNumber,
   added: Entity,
@@ -149,7 +140,7 @@ function entityAddedBelow(
   }
 }
 
-function onEntityDeleted(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): void {
+function onEntityDeleted(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
   const position = getLayerPosition(entity, layer)
   const { content } = assembly
 
@@ -173,7 +164,7 @@ function onEntityDeleted(assembly: AssemblyUpdaterParams, entity: LuaEntity, lay
   WorldUpdater.deleteAllEntities(assembly, compatible)
 }
 
-function onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: LuaEntity, layer: LayerPosition): void {
+function onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
   const position = getLayerPosition(entity, layer)
   const { content } = assembly
   const { layerNumber } = layer
@@ -209,7 +200,7 @@ function onEntityPotentiallyUpdated(assembly: AssemblyUpdaterParams, entity: Lua
 }
 
 function onEntityRotated(
-  assembly: AssemblyUpdaterParams,
+  assembly: AssemblyContent,
   entity: LuaEntity,
   layer: LayerPosition,
   previousDirection: defines.direction,

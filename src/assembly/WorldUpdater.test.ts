@@ -22,10 +22,10 @@ import {
 import { createEntity } from "../entity/world-entity"
 import { Pos, Position } from "../lib/geometry"
 import { clearTestArea, testArea } from "../test-util/area"
-import { LayerPosition } from "./Assembly"
-import { WorldUpdater, WorldUpdaterParams } from "./WorldUpdater"
+import { AssemblyPosition, LayerPosition } from "./Assembly"
+import { WorldUpdater } from "./WorldUpdater"
 
-let assembly: WorldUpdaterParams
+let assembly: AssemblyPosition
 const pos = Pos(10.5, 10.5)
 let entity: MutableAssemblyEntity<InserterEntity>
 before_each(() => {

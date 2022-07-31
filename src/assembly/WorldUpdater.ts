@@ -24,37 +24,33 @@ import {
 } from "../entity/AssemblyEntity"
 import { createEntity, matchEntity } from "../entity/world-entity"
 import { mutableShallowCopy } from "../lib"
-import { LayerPosition } from "./Assembly"
+import { AssemblyPosition, LayerPosition } from "./Assembly"
 import { destroyAllErrorHighlights, setErrorHighlight } from "./highlights"
-
-export interface WorldUpdaterParams {
-  readonly layers: Record<LayerNumber, LayerPosition>
-}
 
 /** @noSelf */
 export interface WorldUpdater {
   /** After a new entity is added, creates in-world entities of it at higher layers. */
-  createLaterEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, stopAt: LayerNumber | nil): void
+  createLaterEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity, stopAt: LayerNumber | nil): void
   /** Sets the given lua entity to match the assembly entity state at the given layer. */
   refreshEntity(
-    assembly: WorldUpdaterParams,
+    assembly: AssemblyPosition,
     assemblyEntity: MutableAssemblyEntity,
     layer: LayerNumber,
     luaEntity: LuaEntity,
   ): void
   /** Matches or creates the entity at the base layer. Creates entities at higher layers. Uses layerChanges if present. */
-  reviveEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, baseAddedEntity: LuaEntity | nil): void
+  reviveEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity, baseAddedEntity: LuaEntity | nil): void
   /** Deletes all lua entities. */
-  deleteAllEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void
+  deleteAllEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void
   /** Un-deletes a lua entity at layer. */
-  forbidDeletion(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void
+  forbidDeletion(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layer: LayerNumber): void
   /** Updates all entities at and above the give layer to match the assembly entity state. */
-  updateEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, startLayer: LayerNumber): void
+  updateEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity, startLayer: LayerNumber): void
 
   /** Rotates all entities to match the assembly entity state */
-  rotateEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void
+  rotateEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void
   /** Un-rotates a lua entity at layer */
-  forbidRotation(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void
+  forbidRotation(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layer: LayerNumber): void
 }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
@@ -72,7 +68,7 @@ function createWorldEntity(
 }
 
 function createLaterEntities(
-  assembly: WorldUpdaterParams,
+  assembly: AssemblyPosition,
   entity: MutableAssemblyEntity,
   stopAt: LayerNumber | nil,
 ): void {
@@ -89,7 +85,7 @@ function createLaterEntities(
 }
 
 function refreshEntity(
-  assembly: WorldUpdaterParams,
+  assembly: AssemblyPosition,
   entity: MutableAssemblyEntity,
   layer: LayerNumber,
   luaEntity: LuaEntity,
@@ -99,11 +95,7 @@ function refreshEntity(
   matchEntity(luaEntity, value)
 }
 
-function reviveEntities(
-  assembly: WorldUpdaterParams,
-  entity: MutableAssemblyEntity,
-  addedEntity: LuaEntity | nil,
-): void {
+function reviveEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity, addedEntity: LuaEntity | nil): void {
   const layerChanges = entity.layerChanges ?? {}
   const { baseEntity, layerNumber } = entity
   const { layers } = assembly
@@ -121,7 +113,7 @@ function reviveEntities(
   }
 }
 
-function deleteAllEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void {
+function deleteAllEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void {
   // destroyAllWorldEntities(entity)
   for (const [, worldEntity] of iterateWorldEntities(entity)) {
     worldEntity.destroy()
@@ -129,7 +121,7 @@ function deleteAllEntities(assembly: WorldUpdaterParams, entity: MutableAssembly
   destroyAllErrorHighlights(entity)
 }
 
-function forbidDeletion(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layerNumber: LayerNumber): void {
+function forbidDeletion(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layerNumber: LayerNumber): void {
   const value = assert(getValueAtLayer(entity, layerNumber))
   const layer = assembly.layers[layerNumber]
   destroyWorldEntity(entity, layerNumber)
@@ -137,7 +129,7 @@ function forbidDeletion(assembly: WorldUpdaterParams, entity: MutableAssemblyEnt
   replaceOrDestroyWorldEntity(entity, newEntity, layerNumber)
 }
 
-function updateEntities(assembly: WorldUpdaterParams, entity: AssemblyEntity, layerNumber: LayerNumber): void {
+function updateEntities(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber): void {
   const { layerChanges } = entity
   const { layers } = assembly
   const curValue = getValueAtLayer(entity, layerNumber)!
@@ -151,14 +143,14 @@ function updateEntities(assembly: WorldUpdaterParams, entity: AssemblyEntity, la
   }
 }
 
-function rotateEntities(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity): void {
+function rotateEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void {
   const newDirection = entity.direction ?? 0
   for (const [, luaEntity] of iterateWorldEntities(entity)) {
     luaEntity.direction = newDirection
   }
 }
 
-function forbidRotation(assembly: WorldUpdaterParams, entity: MutableAssemblyEntity, layer: LayerNumber): void {
+function forbidRotation(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layer: LayerNumber): void {
   const luaEntity = getWorldEntity(entity, layer)
   if (luaEntity) luaEntity.direction = entity.direction ?? 0
 }

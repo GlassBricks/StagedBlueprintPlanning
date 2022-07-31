@@ -15,10 +15,10 @@ import { Pos } from "../lib/geometry"
 import { map2dSize } from "../lib/map2d"
 import { clearTestArea } from "../test-util/area"
 import { WorldArea } from "../utils/world-location"
-import { LayerPosition } from "./Assembly"
-import { AssemblyUpdater, AssemblyUpdaterParams } from "./AssemblyUpdater"
+import { AssemblyContent, AssemblyPosition, LayerPosition } from "./Assembly"
+import { AssemblyUpdater } from "./AssemblyUpdater"
 import { MutableEntityMap, newEntityMap } from "./EntityMap"
-import { WorldUpdater, WorldUpdaterParams } from "./WorldUpdater"
+import { WorldUpdater } from "./WorldUpdater"
 import direction = defines.direction
 
 const pos = Pos(10.5, 10.5)
@@ -35,7 +35,7 @@ interface WorldUpdateEvent {
 }
 
 let content: MutableEntityMap
-let assembly: AssemblyUpdaterParams
+let assembly: AssemblyContent
 
 let luaEntity: LuaEntity
 
@@ -44,12 +44,12 @@ before_each(() => {
   layer = { surface: area.surface, ...area.bbox, layerNumber: 1 }
   events = []
   content = newEntityMap()
-  assembly = { content } as AssemblyUpdaterParams
+  assembly = { content, layers: [] }
 })
 before_all(() => {
   const mockedWorldUpdater = mock(WorldUpdater, true)
   for (const [key, mock] of pairs(mockedWorldUpdater)) {
-    mock.invokes((_: WorldUpdaterParams, entity: MutableAssemblyEntity, layer?: LayerNumber, data?: unknown) => {
+    mock.invokes((_: AssemblyPosition, entity: MutableAssemblyEntity, layer?: LayerNumber, data?: unknown) => {
       events.push({ type: key, entity, layer, data })
     })
   }
