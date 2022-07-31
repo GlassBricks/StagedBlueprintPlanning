@@ -6,7 +6,7 @@
  *
  * BBPP3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import { Func, RegisterClass } from "../references"
@@ -21,6 +21,7 @@ export interface ValueListener<T> {
   invoke(subscription: Subscription, value: T): void
 }
 
+export type Observer<T> = ValueListener<T>
 export type Observable<T> = Subscribable<ValueListener<T>>
 
 type AdditionalArgs<L extends Func> = L["invoke"] extends (this: any, arg1: any, ...args: infer A) => void ? A : never

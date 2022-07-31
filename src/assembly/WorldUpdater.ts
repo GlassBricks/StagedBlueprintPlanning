@@ -6,7 +6,7 @@
  *
  * BBPP3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import {
@@ -22,10 +22,10 @@ import {
   replaceOrDestroyWorldEntity,
   replaceWorldEntity,
 } from "../entity/AssemblyEntity"
-import { destroyAllErrorHighlights, setErrorHighlight } from "../entity/highlights"
 import { createEntity, matchEntity } from "../entity/world-entity"
 import { mutableShallowCopy } from "../lib"
 import { LayerPosition } from "./Assembly"
+import { destroyAllErrorHighlights, setErrorHighlight } from "./highlights"
 
 export interface WorldUpdaterParams {
   readonly layers: Record<LayerNumber, LayerPosition>

@@ -6,20 +6,20 @@
  *
  * BBPP3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import { assertNever, bind, RegisterClass } from "../lib"
-import { Subscription } from "../lib/observable"
+import { Observer, Subscription } from "../lib/observable"
 import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
 
 /**
  * Manages in-world outlines and labels.
  */
 @RegisterClass("AssemblyDisplay")
-class AssemblyDisplay {
+class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
   private highlights: [number, number][] = []
-  private subscription: Subscription | undefined = new Subscription()
+  private subscription: Subscription | undefined
 
   public invoke(_: Subscription, event: AssemblyChangeEvent) {
     if (event.type === "layer-pushed") {
@@ -55,7 +55,7 @@ class AssemblyDisplay {
     })
     this.highlights.push([boxId, textId])
 
-    layer.displayName.subscribe(this.subscription!, bind(AssemblyDisplay.onLayerNameChange, textId))
+    this.subscription = layer.displayName.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, textId))
   }
 
   private static onLayerNameChange(this: void, id: number, _: unknown, name: LocalisedString): void {

@@ -6,12 +6,12 @@
  *
  * BBPP3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerPosition } from "../assembly/Assembly"
+import { MutableAssemblyEntity } from "../entity/AssemblyEntity"
 import { BBox, Pos } from "../lib/geometry"
-import { MutableAssemblyEntity } from "./AssemblyEntity"
+import { LayerPosition } from "./Assembly"
 
 export function setErrorHighlight(entity: MutableAssemblyEntity, layer: LayerPosition, hasHighlight: boolean): void {
   const { _highlights } = entity

@@ -6,34 +6,36 @@
  *
  * BBPP3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { Position } from "../lib/geometry"
 import { MutableState, Observable, State } from "../lib/observable"
 import { WorldPosition } from "../utils/world-location"
-import { AssemblyUpdaterParams } from "./AssemblyUpdater"
 import { MutableEntityMap } from "./EntityMap"
-import { WorldUpdaterParams } from "./WorldUpdater"
 
 export interface AssemblyPosition {
   readonly layers: readonly LayerPosition[]
-
-  readonly valid: boolean
 }
 
 export interface LayerPosition extends BoundingBox {
   readonly layerNumber: LayerNumber
   readonly surface: LuaSurface
-  readonly assembly: AssemblyPosition
+}
 
-  readonly valid: boolean
+export interface AssemblyContent {
+  readonly layers: readonly LayerContent[]
+  readonly content: MutableEntityMap
+}
+
+interface LayerContent extends LayerPosition {
+  readonly assembly: AssemblyContent
 }
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 
-export interface Assembly extends AssemblyUpdaterParams, WorldUpdaterParams, AssemblyPosition {
+export interface Assembly extends AssemblyContent {
   readonly id: AssemblyId
 
   readonly name: MutableState<string>
@@ -48,6 +50,8 @@ export interface Assembly extends AssemblyUpdaterParams, WorldUpdaterParams, Ass
 
   readonly events: Observable<AssemblyChangeEvent>
 
+  readonly valid: boolean
+
   delete(): void
 }
 
@@ -56,6 +60,8 @@ export interface Layer extends LayerPosition {
 
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
+
+  readonly valid: boolean
 }
 
 // events
