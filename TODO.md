@@ -45,14 +45,16 @@
   - [ ] Revive lost references
     - [x] Revive at same layer
     - [ ] Decide behavior if revived at different layer
+- [ ] Make entities from previous layers indestructible
 
 ### Detect and display conflicts
 
 - [ ] Diagnostics system
 - [ ] Overlapping entities
-  - [ ] Detect overlapping entities
-  - [ ] Show highlight
-  - [ ] Automatically attempt to revive when entities change
+  - [x] Detect overlapping entities
+  - [x] Show highlight
+  - ~~[ ] Automatically attempt to revive when entities change~~
+  - [ ] Manual revive
 - [ ] Incompatible properties due to upgraded entity
   - [ ] Automatically attempt to fix when entities change
 - [ ] Max connections exceeded

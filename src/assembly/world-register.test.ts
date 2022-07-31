@@ -10,7 +10,7 @@
  */
 
 import { BBox, Pos } from "../lib/geometry"
-import { Assembly } from "./Assembly"
+import { Assembly, Layer } from "./Assembly"
 import { _mockAssembly } from "./UserAssembly"
 import { deleteAssembly, getLayerAtPosition, registerAssembly } from "./world-register"
 
@@ -30,7 +30,7 @@ test("registers in world correctly", () => {
   registerAssembly(mockAssembly)
   after_test(() => deleteAssembly(mockAssembly))
   function assertLayersCorrect(): void {
-    for (const layer of mockAssembly.layers) {
+    for (const layer of mockAssembly.layers as Layer[]) {
       const center = BBox.center(layer)
       assert.equal(layer, getLayerAtPosition(layer.surface, center))
       assert.not_equal(layer, getLayerAtPosition(layer.surface, center.plus(Pos(33, 33))))
@@ -43,7 +43,7 @@ test("registers in world correctly", () => {
   })
   assertLayersCorrect()
   mockAssembly.delete()
-  for (const layer of mockAssembly.layers) {
+  for (const layer of mockAssembly.layers as Layer[]) {
     const center = BBox.center(layer)
     assert.nil(getLayerAtPosition(layer.surface, center))
   }

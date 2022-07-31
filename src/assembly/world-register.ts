@@ -63,8 +63,7 @@ function removeLayer(layer: Layer): void {
 }
 
 export function registerAssembly(assembly: Assembly): void {
-  // todo: listen to layer updates
-  for (const layer of assembly.layers) {
+  for (const [, layer] of pairs(assembly.layers)) {
     addLayer(layer)
   }
   assembly.events.subscribeIndependently(funcRef(onAssemblyChanged))
@@ -80,7 +79,7 @@ function onAssemblyChanged(_: unknown, event: AssemblyChangeEvent) {
 registerFunctions("WorldRegister", { onAssemblyChanged })
 
 export function deleteAssembly(assembly: Assembly): void {
-  for (const layer of assembly.layers) {
+  for (const [, layer] of pairs(assembly.layers)) {
     removeLayer(layer)
   }
 }

@@ -23,23 +23,32 @@ export function getWorldPosition(layerPosition: Position, layer: LayerPosition):
   return plus(layerPosition, layer.left_top)
 }
 
-export function saveEntity(luaEntity: LuaEntity): Entity | nil {
-  return BlueprintDiffHandler.save(luaEntity)
+/** @noSelf */
+export interface EntityCreator {
+  createEntity(layer: LayerPosition, pos: EntityPose, entity: Entity): LuaEntity | nil
+  updateEntity(luaEntity: LuaEntity, value: Entity): void
 }
 
-export function createEntity(
-  layer: LayerPosition,
-  { position, direction }: EntityPose,
-  entity: Entity,
-): LuaEntity | nil {
-  return BlueprintDiffHandler.create(
-    layer.surface,
-    getWorldPosition(position, layer),
-    direction,
-    entity as BlueprintEntity,
-  )
+export interface EntitySaver {
+  saveEntity(entity: LuaEntity): Entity | nil
 }
 
-export function matchEntity(luaEntity: LuaEntity, value: Entity): void {
-  return BlueprintDiffHandler.match(luaEntity, value as BlueprintEntity)
+export interface EntityHandler extends EntityCreator, EntitySaver {}
+
+export const DefaultEntityHandler: EntityHandler = {
+  saveEntity(luaEntity: LuaEntity): Entity | nil {
+    return BlueprintDiffHandler.save(luaEntity)
+  },
+
+  createEntity(layer: LayerPosition, { position, direction }: EntityPose, entity: Entity): LuaEntity | nil {
+    return BlueprintDiffHandler.create(
+      layer.surface,
+      getWorldPosition(position, layer),
+      direction,
+      entity as BlueprintEntity,
+    )
+  },
+  updateEntity(luaEntity: LuaEntity, value: Entity): void {
+    return BlueprintDiffHandler.match(luaEntity, value as BlueprintEntity)
+  },
 }

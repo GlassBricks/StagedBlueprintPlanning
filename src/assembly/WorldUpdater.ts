@@ -22,7 +22,7 @@ import {
   replaceOrDestroyWorldEntity,
   replaceWorldEntity,
 } from "../entity/AssemblyEntity"
-import { createEntity, matchEntity } from "../entity/world-entity"
+import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { mutableShallowCopy } from "../lib"
 import { AssemblyPosition, LayerPosition } from "./Assembly"
 import { destroyAllErrorHighlights, setErrorHighlight } from "./highlights"
@@ -55,113 +55,126 @@ export interface WorldUpdater {
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
-function createWorldEntity(
-  entity: MutableAssemblyEntity,
-  value: Entity,
-  layerNumber: LayerNumber,
-  layerPosition: LayerPosition,
-): void {
-  destroyWorldEntity(entity, layerNumber)
-  const worldEntity = createEntity(layerPosition, entity, value)
-  replaceOrDestroyWorldEntity(entity, worldEntity, layerNumber)
-  setErrorHighlight(entity, layerPosition, worldEntity === nil)
-}
-
-function createLaterEntities(
-  assembly: AssemblyPosition,
-  entity: MutableAssemblyEntity,
-  stopAt: LayerNumber | nil,
-): void {
-  const { baseEntity, layerNumber } = entity
-  const { layers } = assembly
-
-  const startLayer = layerNumber + 1
-  const stopLayer = stopAt ? stopAt - 1 : luaLength(layers)
-
-  for (const curLayer of $range(startLayer, stopLayer)) {
-    const layer = layers[curLayer]
-    createWorldEntity(entity, baseEntity, curLayer, layer)
+export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
+  interface AssemblyPosition {
+    readonly layers: Record<LayerNumber, LayerPosition>
   }
-}
+  const { createEntity, updateEntity } = entityCreator
 
-function refreshEntity(
-  assembly: AssemblyPosition,
-  entity: MutableAssemblyEntity,
-  layer: LayerNumber,
-  luaEntity: LuaEntity,
-): void {
-  const value = assert(getValueAtLayer(entity, layer))
-  replaceWorldEntity(entity, luaEntity, layer) // in case different entity was created
-  matchEntity(luaEntity, value)
-}
-
-function reviveEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity, addedEntity: LuaEntity | nil): void {
-  const layerChanges = entity.layerChanges ?? {}
-  const { baseEntity, layerNumber } = entity
-  const { layers } = assembly
-
-  if (addedEntity) replaceWorldEntity(entity, addedEntity, layerNumber)
-  const startLayer = addedEntity ? layerNumber + 1 : layerNumber
-
-  const curValue = mutableShallowCopy(baseEntity)
-  for (const curLayer of $range(startLayer, luaLength(layers))) {
-    const layer = layers[curLayer]
-    const changes = layerChanges[curLayer]
-    if (changes) applyDiffToEntity(curValue, changes)
-
-    createWorldEntity(entity, curValue, curLayer, layer)
+  function createWorldEntity(
+    entity: MutableAssemblyEntity,
+    value: Entity,
+    layerNumber: LayerNumber,
+    layerPosition: LayerPosition,
+  ): void {
+    destroyWorldEntity(entity, layerNumber)
+    const worldEntity = createEntity(layerPosition, entity, value)
+    replaceOrDestroyWorldEntity(entity, worldEntity, layerNumber)
+    setErrorHighlight(entity, layerPosition, worldEntity === nil)
   }
-}
 
-function deleteAllEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void {
-  // destroyAllWorldEntities(entity)
-  for (const [, worldEntity] of iterateWorldEntities(entity)) {
-    worldEntity.destroy()
+  function createLaterEntities(
+    assembly: AssemblyPosition,
+    entity: MutableAssemblyEntity,
+    stopAt: LayerNumber | nil,
+  ): void {
+    const { baseEntity, layerNumber } = entity
+    const { layers } = assembly
+
+    const startLayer = layerNumber + 1
+    const stopLayer = stopAt ? stopAt - 1 : luaLength(layers)
+
+    for (const curLayer of $range(startLayer, stopLayer)) {
+      const layer = layers[curLayer]
+      createWorldEntity(entity, baseEntity, curLayer, layer)
+    }
   }
-  destroyAllErrorHighlights(entity)
-}
 
-function forbidDeletion(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layerNumber: LayerNumber): void {
-  const value = assert(getValueAtLayer(entity, layerNumber))
-  const layer = assembly.layers[layerNumber]
-  destroyWorldEntity(entity, layerNumber)
-  const newEntity = createEntity(layer, entity, value)
-  replaceOrDestroyWorldEntity(entity, newEntity, layerNumber)
-}
+  function refreshEntity(
+    assembly: AssemblyPosition,
+    entity: MutableAssemblyEntity,
+    layer: LayerNumber,
+    luaEntity: LuaEntity,
+  ): void {
+    const value = assert(getValueAtLayer(entity, layer))
+    replaceWorldEntity(entity, luaEntity, layer) // in case different entity was created
+    updateEntity(luaEntity, value)
+  }
 
-function updateEntities(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber): void {
-  const { layerChanges } = entity
-  const { layers } = assembly
-  const curValue = getValueAtLayer(entity, layerNumber)!
-  for (const curLayer of $range(layerNumber, luaLength(layers))) {
-    if (curLayer !== layerNumber && layerChanges) {
+  function reviveEntities(
+    assembly: AssemblyPosition,
+    entity: MutableAssemblyEntity,
+    addedEntity: LuaEntity | nil,
+  ): void {
+    const layerChanges = entity.layerChanges ?? {}
+    const { baseEntity, layerNumber } = entity
+    const { layers } = assembly
+
+    if (addedEntity) replaceWorldEntity(entity, addedEntity, layerNumber)
+    const startLayer = addedEntity ? layerNumber + 1 : layerNumber
+
+    const curValue = mutableShallowCopy(baseEntity)
+    for (const curLayer of $range(startLayer, luaLength(layers))) {
+      const layer = layers[curLayer]
       const changes = layerChanges[curLayer]
       if (changes) applyDiffToEntity(curValue, changes)
+
+      createWorldEntity(entity, curValue, curLayer, layer)
     }
-    const worldEntity = getWorldEntity(entity, curLayer)
-    if (worldEntity) matchEntity(worldEntity, curValue)
+  }
+
+  function deleteAllEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void {
+    // destroyAllWorldEntities(entity)
+    for (const [, worldEntity] of iterateWorldEntities(entity)) {
+      worldEntity.destroy()
+    }
+    destroyAllErrorHighlights(entity)
+  }
+
+  function forbidDeletion(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layerNumber: LayerNumber): void {
+    const value = assert(getValueAtLayer(entity, layerNumber))
+    const layer = assembly.layers[layerNumber]
+    destroyWorldEntity(entity, layerNumber)
+    const newEntity = createEntity(layer, entity, value)
+    replaceOrDestroyWorldEntity(entity, newEntity, layerNumber)
+  }
+
+  function updateEntities(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber): void {
+    const { layerChanges } = entity
+    const { layers } = assembly
+    const curValue = getValueAtLayer(entity, layerNumber)!
+    for (const curLayer of $range(layerNumber, luaLength(layers))) {
+      if (curLayer !== layerNumber && layerChanges) {
+        const changes = layerChanges[curLayer]
+        if (changes) applyDiffToEntity(curValue, changes)
+      }
+      const worldEntity = getWorldEntity(entity, curLayer)
+      if (worldEntity) updateEntity(worldEntity, curValue)
+    }
+  }
+
+  function rotateEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void {
+    const newDirection = entity.direction ?? 0
+    for (const [, luaEntity] of iterateWorldEntities(entity)) {
+      luaEntity.direction = newDirection
+    }
+  }
+
+  function forbidRotation(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layer: LayerNumber): void {
+    const luaEntity = getWorldEntity(entity, layer)
+    if (luaEntity) luaEntity.direction = entity.direction ?? 0
+  }
+
+  return {
+    createLaterEntities,
+    refreshEntity,
+    reviveEntities,
+    deleteAllEntities,
+    forbidDeletion,
+    updateEntities,
+    rotateEntities,
+    forbidRotation,
   }
 }
 
-function rotateEntities(assembly: AssemblyPosition, entity: MutableAssemblyEntity): void {
-  const newDirection = entity.direction ?? 0
-  for (const [, luaEntity] of iterateWorldEntities(entity)) {
-    luaEntity.direction = newDirection
-  }
-}
-
-function forbidRotation(assembly: AssemblyPosition, entity: MutableAssemblyEntity, layer: LayerNumber): void {
-  const luaEntity = getWorldEntity(entity, layer)
-  if (luaEntity) luaEntity.direction = entity.direction ?? 0
-}
-
-export const WorldUpdater: WorldUpdater = {
-  createLaterEntities,
-  refreshEntity,
-  reviveEntities,
-  deleteAllEntities,
-  forbidDeletion,
-  updateEntities,
-  rotateEntities,
-  forbidRotation,
-}
+export const DefaultWorldUpdater = createWorldUpdater(DefaultEntityHandler)

@@ -10,7 +10,7 @@
  */
 
 import { clearTestArea } from "../test-util/area"
-import { saveEntity } from "./world-entity"
+import { DefaultEntityHandler } from "./EntityHandler"
 
 test("save basic entity", () => {
   const area = clearTestArea()
@@ -20,6 +20,6 @@ test("save basic entity", () => {
     force: "player",
     bar: 3,
   })!
-  const saved = saveEntity(entity)
+  const saved = DefaultEntityHandler.saveEntity(entity)
   assert.same({ name: "iron-chest", bar: 3 }, saved)
 })

@@ -9,58 +9,55 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, Entity, LayerNumber, MutableAssemblyEntity } from "../entity/AssemblyEntity"
-import { Mutable } from "../lib"
-import { Pos } from "../lib/geometry"
+import { LayerNumber, MutableAssemblyEntity } from "../entity/AssemblyEntity"
+import { createMockEntitySaver } from "../entity/EntityHandler-mock"
+import { AnyFunction, ContextualFun, Mutable } from "../lib"
+import { BBox, Pos } from "../lib/geometry"
 import { map2dSize } from "../lib/map2d"
-import { clearTestArea } from "../test-util/area"
-import { WorldArea } from "../utils/world-location"
-import { AssemblyContent, AssemblyPosition, LayerPosition } from "./Assembly"
-import { AssemblyUpdater } from "./AssemblyUpdater"
+import { entityMock } from "../test-util/simple-mock"
+import { AssemblyContent, LayerPosition } from "./Assembly"
+import { AssemblyUpdater, createAssemblyUpdater } from "./AssemblyUpdater"
 import { MutableEntityMap, newEntityMap } from "./EntityMap"
 import { WorldUpdater } from "./WorldUpdater"
 import direction = defines.direction
 
 const pos = Pos(10.5, 10.5)
 
-let area: WorldArea
 let layer: Mutable<LayerPosition>
-
-let events: WorldUpdateEvent[]
-interface WorldUpdateEvent {
-  type: keyof WorldUpdater
-  entity: AssemblyEntity
-  layer?: LayerNumber
-  data?: unknown
-}
-
 let content: MutableEntityMap
 let assembly: AssemblyContent
 
-let luaEntity: LuaEntity
+let assemblyUpdater: AssemblyUpdater
+let worldUpdater: WorldUpdater
+let totalCalls: number
 
 before_each(() => {
-  area = clearTestArea()
-  layer = { surface: area.surface, ...area.bbox, layerNumber: 1 }
-  events = []
+  layer = { surface: nil!, ...BBox.coords(0, 0, 32, 32), layerNumber: 1 }
   content = newEntityMap()
   assembly = { content, layers: [] }
-})
-before_all(() => {
-  const mockedWorldUpdater = mock(WorldUpdater, true)
-  for (const [key, mock] of pairs(mockedWorldUpdater)) {
-    mock.invokes((_: AssemblyPosition, entity: MutableAssemblyEntity, layer?: LayerNumber, data?: unknown) => {
-      events.push({ type: key, entity, layer, data })
-    })
+  totalCalls = 0
+  function spyFn<F extends ContextualFun>(): F {
+    return stub<F>().invokes((() => {
+      totalCalls++
+    }) as F)
   }
-})
-after_all(() => {
-  mock.revert(WorldUpdater)
+  worldUpdater = {
+    createLaterEntities: spyFn(),
+    refreshEntity: spyFn(),
+    deleteAllEntities: spyFn(),
+    reviveEntities: spyFn(),
+    forbidDeletion: spyFn(),
+    updateEntities: spyFn(),
+    rotateEntities: spyFn(),
+    forbidRotation: spyFn(),
+  }
+  assemblyUpdater = createAssemblyUpdater(worldUpdater, createMockEntitySaver())
 })
 
-interface InserterEntity extends Entity {
-  readonly override_stack_size?: number
-  readonly filter_mode?: "whitelist" | "blacklist"
+interface TestEntity {
+  readonly name: "test"
+  prop1?: number
+  prop2?: string
 }
 
 let eventsAsserted = false
@@ -74,14 +71,24 @@ after_each(() => {
   assert(entitiesAsserted, "entities not asserted")
 })
 
-function assertNoEvents() {
-  assert.same([], events)
+function assertNoCalls() {
+  // assert.equal(0, totalCalls)
+  if (totalCalls !== 0) {
+    for (const [key, spy] of pairs(worldUpdater)) {
+      assert
+        .message(`${key} called`)
+        .spy(spy as any)
+        .not_called()
+    }
+  }
   eventsAsserted = true
 }
 
-function assertSingleEvent(event: WorldUpdateEvent) {
-  assert.equal(1, events.length)
-  assert.same(event, events[0])
+type RemoveParameters<F extends AnyFunction> = F extends (_: any, ...args: infer A) => any ? A : never
+
+function assertSingleCall<K extends keyof WorldUpdater>(key: K, ...args: RemoveParameters<WorldUpdater[K]>) {
+  assert.equal(1, totalCalls)
+  assert.spy(worldUpdater[key] as any).called_with(match.not_nil(), ...args)
   eventsAsserted = true
 }
 
@@ -95,19 +102,21 @@ function assertNoEntities() {
   entitiesAsserted = true
 }
 
-function createEntity() {
-  luaEntity = area.surface.create_entity({
-    name: "filter-inserter",
-    position: pos.plus(layer.left_top),
-    force: "player",
-  })!
-  luaEntity.inserter_stack_size_override = 2
+let luaEntity: LuaEntity & TestEntity
+
+function createEntity(): LuaEntity & TestEntity {
+  luaEntity = entityMock<LuaEntity & TestEntity>({
+    name: "test",
+    position: pos,
+    prop1: 2,
+    prop2: "val1",
+  })
   return luaEntity
 }
 
 function doAdd() {
   const entity = createEntity()
-  const added = AssemblyUpdater.onEntityCreated(assembly, entity, layer) as MutableAssemblyEntity<InserterEntity>
+  const added = assemblyUpdater.onEntityCreated(assembly, entity, layer) as MutableAssemblyEntity<TestEntity>
   return { luaEntity: entity, added }
 }
 
@@ -115,19 +124,20 @@ function doVirtualAdd(addedNum: LayerNumber = layer.layerNumber, setNum = layer.
   layer.layerNumber = addedNum
   const ret = doAdd()
   layer.layerNumber = setNum
-  events = []
+  mock.clear(worldUpdater)
+  totalCalls = 0
   return ret
 }
 
 function assertAdded(): MutableAssemblyEntity {
-  const found = content.findCompatible({ name: "filter-inserter" }, pos, nil)!
+  const found = content.findCompatible({ name: "test" }, pos, nil)!
   assert.not_nil(found)
-  assert.equal("filter-inserter", found.baseEntity.name)
+  assert.equal("test", found.baseEntity.name)
   assert.same(pos, found.position)
   assert.nil(found.direction)
 
   assertOneEntity()
-  assertSingleEvent({ type: "createLaterEntities", entity: found })
+  assertSingleCall("createLaterEntities", found, nil)
   return found
 }
 
@@ -139,188 +149,199 @@ test("add", () => {
 
 test.each([1, 2], "existing at layer 1, added at layer %d", (layerNumber) => {
   const { luaEntity, added } = doVirtualAdd(1, layerNumber)
-  const added2 = AssemblyUpdater.onEntityCreated(assembly, luaEntity, layer) // again
+  const added2 = assemblyUpdater.onEntityCreated(assembly, luaEntity, layer) // again
 
   assert.equal(added, added2)
 
   assertOneEntity()
-  assertSingleEvent({ type: "refreshEntity", entity: added, layer: layerNumber, data: luaEntity })
+  assertSingleCall("refreshEntity", added, layerNumber, luaEntity)
 })
 
 test.each([false, true], "existing at layer 2, added at layer 1, with layer changes: %s", (withChanges) => {
   const { luaEntity, added: oldAdded } = doVirtualAdd(2, 1)
 
   if (withChanges) {
-    luaEntity.inserter_stack_size_override = 3
+    luaEntity.prop1 = 3
   }
-  const added = AssemblyUpdater.onEntityCreated<InserterEntity>(assembly, luaEntity, layer)! // again
+  const added = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)! // again
   assert.equal(oldAdded, added)
 
   assert.same(1, added.layerNumber)
   if (!withChanges) {
-    assert.equal(2, added.baseEntity.override_stack_size)
+    assert.equal(2, added.baseEntity.prop1)
     assert.nil(added.layerChanges)
   } else {
-    assert.equal(3, added.baseEntity.override_stack_size)
-    assert.same({ 2: { override_stack_size: 2 } }, added.layerChanges)
+    assert.equal(3, added.baseEntity.prop1)
+    assert.same({ 2: { prop1: 2 } }, added.layerChanges)
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
+  // assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
+  assertSingleCall("createLaterEntities", added, 2)
 })
 
 test("delete non-existent", () => {
   const entity = createEntity()
-  AssemblyUpdater.onEntityDeleted(assembly, entity, layer)
+  assemblyUpdater.onEntityDeleted(assembly, entity, layer)
   assertNoEntities()
-  assertNoEvents()
+  assertNoCalls()
 })
 
 test("delete existing at higher layer (bug)", () => {
   const { luaEntity } = doVirtualAdd(2, 1)
-  AssemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+  assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
-  assertNoEvents()
+  assertNoCalls()
 })
 
 test("delete existing at lower layer", () => {
   const { luaEntity, added } = doVirtualAdd(1, 2)
-  AssemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+  assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
-  assertSingleEvent({ type: "forbidDeletion", entity: added, layer: layer.layerNumber })
+  // assertSingleEvent({ type: "forbidDeletion", entity: added, layer: layer.layerNumber })
+  assertSingleCall("forbidDeletion", added, layer.layerNumber)
 })
 
 test("delete existing at same layer", () => {
   const { luaEntity, added } = doVirtualAdd()
-  AssemblyUpdater.onEntityDeleted(assembly, luaEntity, layer) // simulated
+  assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer) // simulated
   assertNoEntities()
-  assertSingleEvent({ type: "deleteAllEntities", entity: added })
+  // assertSingleEvent({ type: "deleteAllEntities", entity: added })
+  assertSingleCall("deleteAllEntities", added)
 })
 
 test("delete entity with updates", () => {
   const { luaEntity, added } = doVirtualAdd()
-  added.layerChanges = { 2: { override_stack_size: 3 } }
-  AssemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+  added.layerChanges = { 2: { prop1: 3 } }
+  assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
   assert.true(added.isLostReference)
-  assertSingleEvent({ type: "deleteAllEntities", entity: added })
+  // assertSingleEvent({ type: "deleteAllEntities", entity: added })
+  assertSingleCall("deleteAllEntities", added)
 })
 
 test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (reviveLayer) => {
   const { luaEntity, added } = doVirtualAdd(1, reviveLayer)
-  added.layerChanges = { 3: { override_stack_size: 3 }, 5: { override_stack_size: 4 } }
+  added.layerChanges = { 3: { prop1: 3 }, 5: { prop1: 4 } }
   added.isLostReference = true
 
-  const revived = AssemblyUpdater.onEntityCreated<InserterEntity>(assembly, luaEntity, layer)!
+  const revived = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)!
   assert.falsy(revived.isLostReference)
   assert.equal(revived.layerNumber, reviveLayer)
 
   if (reviveLayer >= 5) {
     assert.nil(revived.layerChanges)
-    assert.equal(4, revived.baseEntity.override_stack_size)
+    assert.equal(4, revived.baseEntity.prop1)
   } else if (reviveLayer >= 3) {
-    assert.same({ 5: { override_stack_size: 4 } }, revived.layerChanges)
-    assert.equal(3, revived.baseEntity.override_stack_size)
+    assert.same({ 5: { prop1: 4 } }, revived.layerChanges)
+    assert.equal(3, revived.baseEntity.prop1)
   } else {
-    assert.same({ 3: { override_stack_size: 3 }, 5: { override_stack_size: 4 } }, revived.layerChanges)
-    assert.equal(2, revived.baseEntity.override_stack_size)
+    assert.same({ 3: { prop1: 3 }, 5: { prop1: 4 } }, revived.layerChanges)
+    assert.equal(2, revived.baseEntity.prop1)
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
+  // assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
+  assertSingleCall("reviveEntities", revived, luaEntity as any)
 })
 
 test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
   const { luaEntity, added } = doVirtualAdd(2, 1)
-  added.layerChanges = { 3: { override_stack_size: 3 } }
+  added.layerChanges = { 3: { prop1: 3 } }
   added.isLostReference = true
 
-  if (withChanges) luaEntity.inserter_stack_size_override = 1
+  if (withChanges) luaEntity.prop1 = 1
 
-  const revived = AssemblyUpdater.onEntityCreated<InserterEntity>(assembly, luaEntity, layer)!
+  const revived = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)!
   assert.falsy(revived.isLostReference)
   assert.equal(revived.layerNumber, 1)
 
   if (!withChanges) {
-    assert.equal(2, revived.baseEntity.override_stack_size)
-    assert.same({ 3: { override_stack_size: 3 } }, revived.layerChanges)
+    assert.equal(2, revived.baseEntity.prop1)
+    assert.same({ 3: { prop1: 3 } }, revived.layerChanges)
   } else {
-    assert.equal(1, revived.baseEntity.override_stack_size)
-    assert.same({ 2: { override_stack_size: 2 }, 3: { override_stack_size: 3 } }, revived.layerChanges)
+    assert.equal(1, revived.baseEntity.prop1)
+    assert.same({ 2: { prop1: 2 }, 3: { prop1: 3 } }, revived.layerChanges)
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
+  // assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
+  assertSingleCall("reviveEntities", revived, luaEntity as any)
 })
 
 test("update non-existent", () => {
   const entity = createEntity()
-  AssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer)
+  assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer)
   // same as add
   assertAdded()
 })
 
 test("update with no changes", () => {
   const { luaEntity } = doVirtualAdd()
-  AssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+  assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
   assertOneEntity()
-  assertNoEvents()
+  assertNoCalls()
 })
 
 test("update in previous layer", () => {
   const { luaEntity, added } = doVirtualAdd(2, 1)
-  AssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+  assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
   // same as addBelow
   assertOneEntity()
-  assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
+  // assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
+  assertSingleCall("createLaterEntities", added, 2)
 })
 
 test("update in same layer", () => {
   const { luaEntity, added } = doVirtualAdd()
-  luaEntity.inserter_stack_size_override = 3
-  AssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
-  assert.equal(3, added.baseEntity.override_stack_size)
+  luaEntity.prop1 = 3
+  assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+  assert.equal(3, added.baseEntity.prop1)
 
   assertOneEntity()
-  assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
+  // assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
+  assertSingleCall("updateEntities", added, layer.layerNumber)
 })
 
 test.each([false, true], "update in next layer, with existing changes: %s", (withExistingChanges) => {
   const { luaEntity, added } = doVirtualAdd(1, 2)
   if (withExistingChanges) {
-    added.layerChanges = { 2: { override_stack_size: 5, filter_mode: "blacklist" } }
-    luaEntity.inserter_filter_mode = "blacklist" // not changed
+    added.layerChanges = { 2: { prop1: 5, prop2: "val2" } }
+    luaEntity.prop2 = "val2" // not changed
   }
 
-  luaEntity.inserter_stack_size_override = 3 // changed
-  AssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
-  assert.equal(2, added.baseEntity.override_stack_size)
+  luaEntity.prop1 = 3 // changed
+  assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+  assert.equal(2, added.baseEntity.prop1)
   if (withExistingChanges) {
-    assert.same({ 2: { override_stack_size: 3, filter_mode: "blacklist" } }, added.layerChanges)
+    assert.same({ 2: { prop1: 3, prop2: "val2" } }, added.layerChanges)
   } else {
-    assert.same({ 2: { override_stack_size: 3 } }, added.layerChanges)
+    assert.same({ 2: { prop1: 3 } }, added.layerChanges)
   }
 
   assertOneEntity()
-  assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
+  // assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
+  assertSingleCall("updateEntities", added, layer.layerNumber)
 })
 
 test("rotate in base layer", () => {
   const { luaEntity, added } = doVirtualAdd()
   const oldDirection = luaEntity.direction
   luaEntity.direction = direction.west
-  AssemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
+  assemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(direction.west, added.direction)
   assertOneEntity()
-  assertSingleEvent({ type: "rotateEntities", entity: added })
+  // assertSingleEvent({ type: "rotateEntities", entity: added })
+  assertSingleCall("rotateEntities", added)
 })
 
 test("rotate in higher layer", () => {
   const { luaEntity, added } = doVirtualAdd(1, 2)
   const oldDirection = luaEntity.direction
   luaEntity.direction = direction.west
-  AssemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
+  assemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(oldDirection, added.direction ?? 0)
   assertOneEntity()
-  assertSingleEvent({ type: "forbidRotation", entity: added, layer: layer.layerNumber })
+  // assertSingleEvent({ type: "forbidRotation", entity: added, layer: layer.layerNumber })
+  assertSingleCall("forbidRotation", added, layer.layerNumber)
 })

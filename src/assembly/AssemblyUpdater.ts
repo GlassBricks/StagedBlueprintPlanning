@@ -22,10 +22,10 @@ import {
   MutableAssemblyEntity,
   replaceWorldEntity,
 } from "../entity/AssemblyEntity"
-import { getLayerPosition, saveEntity } from "../entity/world-entity"
+import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { nilIfEmpty } from "../lib"
 import { AssemblyContent, LayerPosition } from "./Assembly"
-import { WorldUpdater } from "./WorldUpdater"
+import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /** @noSelf */
 export interface AssemblyUpdater {
@@ -45,183 +45,199 @@ export interface AssemblyUpdater {
   ): void
 }
 
-function onEntityCreated<E extends Entity = Entity>(
-  assembly: AssemblyContent,
-  entity: LuaEntity,
-  layer: LayerPosition,
-): AssemblyEntity<E> | nil
-function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
-  const position = getLayerPosition(entity, layer)
-  const { layerNumber } = layer
-  const { content } = assembly
+export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: EntitySaver): AssemblyUpdater {
+  const {
+    createLaterEntities,
+    deleteAllEntities,
+    forbidDeletion,
+    forbidRotation,
+    refreshEntity,
+    reviveEntities,
+    rotateEntities,
+    updateEntities,
+  } = worldUpdater
 
-  const existing = content.findCompatible(entity, position, entity.direction)
-  if (existing && existing.layerNumber <= layerNumber) {
-    entityAddedAbove(assembly, existing, layerNumber, entity)
-    return existing
-  }
+  const { saveEntity } = entitySaver
 
-  const saved = saveEntity(entity)
-  if (existing) {
-    // layerNumber < existing.layerNumber
-    entityAddedBelow(assembly, existing, layerNumber, saved!, entity)
-    return existing
-  }
+  function onEntityCreated<E extends Entity = Entity>(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    layer: LayerPosition,
+  ): AssemblyEntity<E> | nil
+  function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
+    const position = getLayerPosition(entity, layer)
+    const { layerNumber } = layer
+    const { content } = assembly
 
-  if (!saved) return
-
-  const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
-  content.add(assemblyEntity)
-  replaceWorldEntity(assemblyEntity, entity, layerNumber)
-  WorldUpdater.createLaterEntities(assembly, assemblyEntity, nil)
-  return assemblyEntity
-}
-
-function entityAddedAbove(
-  assembly: AssemblyContent,
-  existing: MutableAssemblyEntity,
-  layerNumber: LayerNumber,
-  entity: LuaEntity,
-): void {
-  if (existing.isLostReference) {
-    reviveLostReference(assembly, existing, layerNumber, entity)
-  } else {
-    WorldUpdater.refreshEntity(assembly, existing, layerNumber, entity)
-  }
-}
-
-function reviveLostReference(
-  assembly: AssemblyContent,
-  existing: MutableAssemblyEntity,
-  layerNumber: LayerNumber,
-  entity: LuaEntity,
-): void {
-  // assert(layerNumber >= existing.layerNumber)
-  // assert(existing.isLostReference)
-  existing.baseEntity = getValueAtLayer(existing, layerNumber)!
-  existing.isLostReference = nil
-  existing.layerNumber = layerNumber
-  const { layerChanges } = existing
-  existing.layerChanges = layerChanges && getWithDeletedLayerChanges(existing.layerChanges, layerNumber)
-  WorldUpdater.reviveEntities(assembly, existing, entity)
-}
-
-function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerDiff | nil {
-  if (!layerChanges) return nil
-  for (const [layer] of pairs(layerChanges)) {
-    if (layer > layerNumber) break
-    delete layerChanges[layer]
-  }
-  return nilIfEmpty(layerChanges)
-}
-
-function entityAddedBelow(
-  assembly: AssemblyContent,
-  existing: MutableAssemblyEntity,
-  layerNumber: LayerNumber,
-  added: Entity,
-  luaEntity: LuaEntity,
-): void {
-  // assert(layerNumber < existing.layerNumber)
-  const diff = getEntityDiff(added, existing.baseEntity)
-  const oldLayerNumber = existing.layerNumber
-  if (diff) {
-    const layerChanges: LayerChanges = (existing.layerChanges ??= {})
-    assert(layerChanges[oldLayerNumber] === nil)
-    layerChanges[oldLayerNumber] = diff
-  }
-  existing.layerNumber = layerNumber
-  existing.baseEntity = added
-  if (existing.isLostReference) {
-    existing.isLostReference = nil
-    WorldUpdater.reviveEntities(assembly, existing, luaEntity)
-  } else {
-    WorldUpdater.createLaterEntities(assembly, existing, oldLayerNumber)
-  }
-}
-
-function onEntityDeleted(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
-  const position = getLayerPosition(entity, layer)
-  const { content } = assembly
-
-  const compatible = content.findCompatible(entity, position, entity.direction)
-  if (!compatible) return
-  const { layerNumber } = layer
-
-  if (compatible.layerNumber !== layerNumber) {
-    if (compatible.layerNumber < layerNumber) {
-      WorldUpdater.forbidDeletion(assembly, compatible, layerNumber)
+    const existing = content.findCompatible(entity, position, entity.direction)
+    if (existing && existing.layerNumber <= layerNumber) {
+      entityAddedAbove(assembly, existing, layerNumber, entity)
+      return existing
     }
-    // else: layerNumber > compatible.layerNumber; is bug, ignore
-    return
+
+    const saved = saveEntity(entity)
+    if (existing) {
+      // layerNumber < existing.layerNumber
+      entityAddedBelow(assembly, existing, layerNumber, saved!, entity)
+      return existing
+    }
+
+    if (!saved) return
+
+    const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
+    content.add(assemblyEntity)
+    replaceWorldEntity(assemblyEntity, entity, layerNumber)
+    createLaterEntities(assembly, assemblyEntity, nil)
+    return assemblyEntity
   }
 
-  if (compatible.layerChanges) {
-    compatible.isLostReference = true
-  } else {
-    content.remove(compatible)
-  }
-  WorldUpdater.deleteAllEntities(assembly, compatible)
-}
-
-function onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
-  const position = getLayerPosition(entity, layer)
-  const { content } = assembly
-  const { layerNumber } = layer
-
-  const existing = content.findCompatible(entity, position, entity.direction)
-  if (!existing || layerNumber < existing.layerNumber) {
-    // bug, treat as add
-    onEntityCreated(assembly, entity, layer)
-    return
-  }
-
-  // get diff
-  const newValue = saveEntity(entity)
-  if (!newValue) return // bug?
-  const valueAtLayer = getValueAtLayer(existing, layerNumber)!
-  const diff = getEntityDiff(valueAtLayer, newValue)
-  if (!diff) return // no change
-
-  // apply update
-  if (layerNumber === existing.layerNumber) {
-    existing.baseEntity = newValue
-  } else {
-    // layerNumber > existing.layerNumber
-    const layerChanges: LayerChanges = (existing.layerChanges ??= {})
-    const existingDiff = layerChanges[layerNumber]
-    if (existingDiff) {
-      applyDiffToDiff(existingDiff, diff)
+  function entityAddedAbove(
+    assembly: AssemblyContent,
+    existing: MutableAssemblyEntity,
+    layerNumber: LayerNumber,
+    entity: LuaEntity,
+  ): void {
+    if (existing.isLostReference) {
+      reviveLostReference(assembly, existing, layerNumber, entity)
     } else {
-      layerChanges[layerNumber] = diff
+      refreshEntity(assembly, existing, layerNumber, entity)
     }
   }
-  WorldUpdater.updateEntities(assembly, existing, layerNumber)
-}
 
-function onEntityRotated(
-  assembly: AssemblyContent,
-  entity: LuaEntity,
-  layer: LayerPosition,
-  previousDirection: defines.direction,
-): void {
-  const position = getLayerPosition(entity, layer)
-  const { content } = assembly
+  function reviveLostReference(
+    assembly: AssemblyContent,
+    existing: MutableAssemblyEntity,
+    layerNumber: LayerNumber,
+    entity: LuaEntity,
+  ): void {
+    // assert(layerNumber >= existing.layerNumber)
+    // assert(existing.isLostReference)
+    existing.baseEntity = getValueAtLayer(existing, layerNumber)!
+    existing.isLostReference = nil
+    existing.layerNumber = layerNumber
+    const { layerChanges } = existing
+    existing.layerChanges = layerChanges && getWithDeletedLayerChanges(existing.layerChanges, layerNumber)
+    reviveEntities(assembly, existing, entity)
+  }
 
-  const existing = content.findCompatible(entity, position, previousDirection)
-  if (!existing) return
+  function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerDiff | nil {
+    if (!layerChanges) return nil
+    for (const [layer] of pairs(layerChanges)) {
+      if (layer > layerNumber) break
+      delete layerChanges[layer]
+    }
+    return nilIfEmpty(layerChanges)
+  }
 
-  if (existing.layerNumber !== layer.layerNumber) {
-    WorldUpdater.forbidRotation(assembly, existing, layer.layerNumber)
-  } else {
-    existing.direction = entity.direction !== 0 ? entity.direction : nil
-    WorldUpdater.rotateEntities(assembly, existing)
+  function entityAddedBelow(
+    assembly: AssemblyContent,
+    existing: MutableAssemblyEntity,
+    layerNumber: LayerNumber,
+    added: Entity,
+    luaEntity: LuaEntity,
+  ): void {
+    // assert(layerNumber < existing.layerNumber)
+    const diff = getEntityDiff(added, existing.baseEntity)
+    const oldLayerNumber = existing.layerNumber
+    if (diff) {
+      const layerChanges: LayerChanges = (existing.layerChanges ??= {})
+      assert(layerChanges[oldLayerNumber] === nil)
+      layerChanges[oldLayerNumber] = diff
+    }
+    existing.layerNumber = layerNumber
+    existing.baseEntity = added
+    if (existing.isLostReference) {
+      existing.isLostReference = nil
+      reviveEntities(assembly, existing, luaEntity)
+    } else {
+      createLaterEntities(assembly, existing, oldLayerNumber)
+    }
+  }
+
+  function onEntityDeleted(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
+    const position = getLayerPosition(entity, layer)
+    const { content } = assembly
+
+    const compatible = content.findCompatible(entity, position, entity.direction)
+    if (!compatible) return
+    const { layerNumber } = layer
+
+    if (compatible.layerNumber !== layerNumber) {
+      if (compatible.layerNumber < layerNumber) {
+        forbidDeletion(assembly, compatible, layerNumber)
+      }
+      // else: layerNumber > compatible.layerNumber; is bug, ignore
+      return
+    }
+
+    if (compatible.layerChanges) {
+      compatible.isLostReference = true
+    } else {
+      content.remove(compatible)
+    }
+    deleteAllEntities(assembly, compatible)
+  }
+
+  function onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
+    const position = getLayerPosition(entity, layer)
+    const { content } = assembly
+    const { layerNumber } = layer
+
+    const existing = content.findCompatible(entity, position, entity.direction)
+    if (!existing || layerNumber < existing.layerNumber) {
+      // bug, treat as add
+      onEntityCreated(assembly, entity, layer)
+      return
+    }
+
+    // get diff
+    const newValue = saveEntity(entity)
+    if (!newValue) return // bug?
+    const valueAtLayer = getValueAtLayer(existing, layerNumber)!
+    const diff = getEntityDiff(valueAtLayer, newValue)
+    if (!diff) return // no change
+
+    // apply update
+    if (layerNumber === existing.layerNumber) {
+      existing.baseEntity = newValue
+    } else {
+      // layerNumber > existing.layerNumber
+      const layerChanges: LayerChanges = (existing.layerChanges ??= {})
+      const existingDiff = layerChanges[layerNumber]
+      if (existingDiff) {
+        applyDiffToDiff(existingDiff, diff)
+      } else {
+        layerChanges[layerNumber] = diff
+      }
+    }
+    updateEntities(assembly, existing, layerNumber)
+  }
+
+  function onEntityRotated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    layer: LayerPosition,
+    previousDirection: defines.direction,
+  ): void {
+    const position = getLayerPosition(entity, layer)
+    const { content } = assembly
+
+    const existing = content.findCompatible(entity, position, previousDirection)
+    if (!existing) return
+
+    if (existing.layerNumber !== layer.layerNumber) {
+      forbidRotation(assembly, existing, layer.layerNumber)
+    } else {
+      existing.direction = entity.direction !== 0 ? entity.direction : nil
+      rotateEntities(assembly, existing)
+    }
+  }
+  return {
+    onEntityCreated,
+    onEntityDeleted,
+    onEntityPotentiallyUpdated,
+    onEntityRotated,
   }
 }
 
-export const AssemblyUpdater: AssemblyUpdater = {
-  onEntityCreated,
-  onEntityDeleted,
-  onEntityPotentiallyUpdated,
-  onEntityRotated,
-}
+export const DefaultAssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(DefaultWorldUpdater, DefaultEntityHandler)

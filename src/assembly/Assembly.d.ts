@@ -16,7 +16,7 @@ import { WorldPosition } from "../utils/world-location"
 import { MutableEntityMap } from "./EntityMap"
 
 export interface AssemblyPosition {
-  readonly layers: readonly LayerPosition[]
+  readonly layers: Record<LayerNumber, LayerPosition>
 }
 
 export interface LayerPosition extends BoundingBox {
@@ -25,7 +25,7 @@ export interface LayerPosition extends BoundingBox {
 }
 
 export interface AssemblyContent {
-  readonly layers: readonly LayerContent[]
+  readonly layers: Record<LayerNumber, LayerContent>
   readonly content: MutableEntityMap
 }
 
@@ -41,7 +41,7 @@ export interface Assembly extends AssemblyContent {
 
   readonly chunkSize: Position
 
-  readonly layers: readonly Layer[]
+  readonly layers: Record<LayerNumber, Layer>
   pushLayer(leftTop: WorldPosition): Layer
 
   readonly content: MutableEntityMap

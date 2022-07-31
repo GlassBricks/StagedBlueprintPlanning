@@ -164,7 +164,7 @@ export function getWorldEntity(entity: AssemblyEntity, layerNumber: LayerNumber)
   const worldEntity = _worldEntities[layerNumber]
   if (!worldEntity || !worldEntity.valid) {
     delete _worldEntities[layerNumber]
-    return
+    return nil
   }
   return worldEntity
 }

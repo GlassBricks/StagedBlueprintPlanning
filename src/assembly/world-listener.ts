@@ -12,7 +12,7 @@
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { Events } from "../lib"
 import { Layer } from "./Assembly"
-import { AssemblyUpdater } from "./AssemblyUpdater"
+import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { getLayerAtPosition } from "./world-register"
 
 function getLayer(entity: LuaEntity): Layer | nil {
@@ -25,7 +25,7 @@ function getLayer(entity: LuaEntity): Layer | nil {
 
 function onEntityCreated(entity: LuaEntity): void {
   const layer = getLayer(entity)
-  if (layer) AssemblyUpdater.onEntityCreated(layer.assembly, entity, layer)
+  if (layer) DefaultAssemblyUpdater.onEntityCreated(layer.assembly, entity, layer)
 }
 Events.on_built_entity((e) => onEntityCreated(e.created_entity))
 Events.script_raised_built((e) => onEntityCreated(e.entity))
@@ -33,7 +33,7 @@ Events.script_raised_built((e) => onEntityCreated(e.entity))
 
 function onEntityDeleted(entity: LuaEntity): void {
   const layer = getLayer(entity)
-  if (layer) AssemblyUpdater.onEntityDeleted(layer.assembly, entity, layer)
+  if (layer) DefaultAssemblyUpdater.onEntityDeleted(layer.assembly, entity, layer)
 }
 Events.on_player_mined_entity((e) => onEntityDeleted(e.entity))
 Events.on_entity_died((e) => onEntityDeleted(e.entity))
@@ -41,7 +41,7 @@ Events.script_raised_destroy((e) => onEntityDeleted(e.entity))
 
 function onEntityPotentiallyUpdated(entity: LuaEntity): void {
   const layer = getLayer(entity)
-  if (layer) AssemblyUpdater.onEntityPotentiallyUpdated(layer.assembly, entity, layer)
+  if (layer) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(layer.assembly, entity, layer)
 }
 
 Events.on_entity_settings_pasted((e) => onEntityPotentiallyUpdated(e.destination))
@@ -52,7 +52,7 @@ Events.on_gui_closed((e) => {
 
 Events.on_player_rotated_entity((e) => {
   const layer = getLayer(e.entity)
-  if (layer) AssemblyUpdater.onEntityRotated(layer.assembly, e.entity, layer, e.previous_direction)
+  if (layer) DefaultAssemblyUpdater.onEntityRotated(layer.assembly, e.entity, layer, e.previous_direction)
 })
 
 // todo: upgrades, fast replace, blueprinting, bot stuff, circuit wires, go through the list of events

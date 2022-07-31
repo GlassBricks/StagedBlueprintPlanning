@@ -13,7 +13,7 @@ import { LayerNumber } from "../entity/AssemblyEntity"
 import { Events } from "../lib"
 import { BBox, Pos, PositionClass } from "../lib/geometry"
 import { Assembly, Layer } from "./Assembly"
-import { AssemblyUpdater } from "./AssemblyUpdater"
+import { AssemblyUpdater, DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { _mockAssembly } from "./UserAssembly"
 import { deleteAssembly, registerAssembly } from "./world-register"
 
@@ -26,7 +26,7 @@ before_all(() => {
   surface = game.surfaces[1]
   player = game.players[1]
 
-  updater = mock(AssemblyUpdater, true)
+  updater = mock(DefaultAssemblyUpdater, true)
 
   assembly = _mockAssembly(Pos(1, 1))
   for (let i = 0; i < 2; i++) {
