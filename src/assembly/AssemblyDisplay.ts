@@ -31,7 +31,6 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
     }
   }
   private createHighlightsForNewLayer(layer: Layer): void {
-    if (!this.subscription) return
     const { surface, left_top, right_bottom } = layer
     const boxId = rendering.draw_rectangle({
       color: [1, 1, 1, 0.5],
