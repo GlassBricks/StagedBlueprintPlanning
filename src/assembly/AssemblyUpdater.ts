@@ -9,19 +9,9 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  applyDiffToDiff,
-  AssemblyEntity,
-  createAssemblyEntity,
-  Entity,
-  getEntityDiff,
-  getValueAtLayer,
-  LayerChanges,
-  LayerDiff,
-  LayerNumber,
-  MutableAssemblyEntity,
-  replaceWorldEntity,
-} from "../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, LayerChanges, LayerNumber } from "../entity/AssemblyEntity"
+import { applyDiffToDiff, getEntityDiff, LayerDiff } from "../entity/diff"
+import { Entity } from "../entity/Entity"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { nilIfEmpty } from "../lib"
 import { AssemblyContent, LayerPosition } from "./Assembly"
@@ -86,14 +76,14 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
 
     const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
     content.add(assemblyEntity)
-    replaceWorldEntity(assemblyEntity, entity, layerNumber)
+    assemblyEntity.replaceOrDestroyWorldEntity(layerNumber, entity)
     createLaterEntities(assembly, assemblyEntity, nil)
     return assemblyEntity
   }
 
   function entityAddedAbove(
     assembly: AssemblyContent,
-    existing: MutableAssemblyEntity,
+    existing: AssemblyEntity,
     layerNumber: LayerNumber,
     entity: LuaEntity,
   ): void {
@@ -106,13 +96,13 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
 
   function reviveLostReference(
     assembly: AssemblyContent,
-    existing: MutableAssemblyEntity,
+    existing: AssemblyEntity,
     layerNumber: LayerNumber,
     entity: LuaEntity,
   ): void {
     // assert(layerNumber >= existing.layerNumber)
     // assert(existing.isLostReference)
-    existing.baseEntity = getValueAtLayer(existing, layerNumber)!
+    existing.baseEntity = existing.getValueAtLayer(layerNumber)!
     existing.isLostReference = nil
     existing.layerNumber = layerNumber
     const { layerChanges } = existing
@@ -131,7 +121,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
 
   function entityAddedBelow(
     assembly: AssemblyContent,
-    existing: MutableAssemblyEntity,
+    existing: AssemblyEntity,
     layerNumber: LayerNumber,
     added: Entity,
     luaEntity: LuaEntity,
@@ -193,7 +183,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     // get diff
     const newValue = saveEntity(entity)
     if (!newValue) return // bug?
-    const valueAtLayer = getValueAtLayer(existing, layerNumber)!
+    const valueAtLayer = existing.getValueAtLayer(layerNumber)!
     const diff = getEntityDiff(valueAtLayer, newValue)
     if (!diff) return // no change
 

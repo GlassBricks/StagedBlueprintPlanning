@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerNumber, MutableAssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { createMockEntitySaver } from "../entity/EntityHandler-mock"
 import { AnyFunction, ContextualFun, Mutable } from "../lib"
 import { BBox, Pos } from "../lib/geometry"
@@ -115,7 +115,7 @@ function createEntity(): LuaEntity & TestEntity {
 
 function doAdd() {
   const entity = createEntity()
-  const added = assemblyUpdater.onEntityCreated(assembly, entity, layer) as MutableAssemblyEntity<TestEntity>
+  const added = assemblyUpdater.onEntityCreated(assembly, entity, layer) as AssemblyEntity<TestEntity>
   return { luaEntity: entity, added }
 }
 
@@ -128,7 +128,7 @@ function doVirtualAdd(addedNum: LayerNumber = layer.layerNumber, setNum = layer.
   return ret
 }
 
-function assertAdded(): MutableAssemblyEntity {
+function assertAdded(): AssemblyEntity {
   const found = content.findCompatible({ name: "test" }, pos, nil)!
   assert.not_nil(found)
   assert.equal("test", found.baseEntity.name)

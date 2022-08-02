@@ -9,16 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  createAssemblyEntity,
-  destroyWorldEntity,
-  Entity,
-  getValueAtLayer,
-  getWorldEntity,
-  LayerNumber,
-  MutableAssemblyEntity,
-  replaceOrDestroyWorldEntity,
-} from "../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { Entity } from "../entity/Entity"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
 import { Pos, Position } from "../lib/geometry"
 import { testArea } from "../test-util/area"
@@ -31,7 +23,7 @@ interface TestEntity extends Entity {
   prop2?: string
 }
 let assembly: AssemblyPosition
-let entity: MutableAssemblyEntity<TestEntity>
+let entity: AssemblyEntity<TestEntity>
 
 let mockEntityCreator: MockEntityCreator
 let worldUpdater: WorldUpdater
@@ -54,14 +46,14 @@ before_each(() => {
 
 function assertEntityNotPresent(i: LayerNumber): void {
   assert.falsy(mockEntityCreator.getAt(i) ?? nil)
-  assert.is_nil(getWorldEntity(entity, i))
+  assert.is_nil(entity.getWorldEntity(i))
 }
 
 function assertEntityPresent(i: LayerNumber): void {
   const entry = mockEntityCreator.getAt(i)!
   assert.not_nil(entry)
-  assert.equal(entry.luaEntity, getWorldEntity(entity, i) ?? "nil")
-  const valueAtLayer = getValueAtLayer(entity, i)
+  assert.equal(entry.luaEntity, entity.getWorldEntity(i) ?? "nil")
+  const valueAtLayer = entity.getValueAtLayer(i)
   assert.same(valueAtLayer, entry.value, `value not equal at layer ${i}`)
 }
 
@@ -94,7 +86,7 @@ function createAt(layerNumber: LayerNumber): LuaEntity | nil {
 function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
   entity.layerNumber = layerNumber
   const created = createAt(layerNumber)
-  replaceOrDestroyWorldEntity(entity, created, layerNumber)
+  entity.replaceOrDestroyWorldEntity(layerNumber, created)
   worldUpdater.createLaterEntities(assembly, entity, stopLayer)
   return created
 }
@@ -109,6 +101,7 @@ function makeEntityWithChanges(): void {
   entity.baseEntity.prop1 = 2
   entity.layerChanges = { 3: { prop1: 1 } }
 }
+
 test.each(
   [
     [false, false],
@@ -126,16 +119,16 @@ test.each(
       if (!(i === 3 && oldDeleted)) assertEntityPresent(i)
     }
     if (oldDeleted) {
-      assert.nil(getWorldEntity(entity, 3), "entity replaced")
+      assert.nil(entity.getWorldEntity(3), "entity replaced")
     } else {
-      assert.equal(oldEntity, getWorldEntity(entity, 3), "entity replaced")
+      assert.equal(oldEntity, entity.getWorldEntity(3), "entity replaced")
     }
   },
 )
 
 test("refresh", () => {
   addAt(1)
-  getWorldEntity(entity, 2)!.destroy()
+  entity.getWorldEntity(2)!.destroy()
   const replaced = mockEntityCreator.createEntity(assembly.layers[2], entity, {
     name: "test",
     prop1: 10,
@@ -143,14 +136,14 @@ test("refresh", () => {
   assert.not_nil(replaced)
   // refresh at layer 2
   worldUpdater.refreshEntity(assembly, entity, 2, replaced)
-  assert.equal(replaced, getWorldEntity(entity, 2))
+  assert.equal(replaced, entity.getWorldEntity(2))
   assertEntityPresent(2)
 })
 
 test.each([false, true], "revive at same layer, with changes: %s", (withChanges) => {
   addAt(1)
   if (withChanges) makeEntityWithChanges()
-  for (let i = 1; i <= 3; i++) destroyWorldEntity(entity, i)
+  for (let i = 1; i <= 3; i++) entity.destroyWorldEntity(i)
   worldUpdater.reviveEntities(assembly, entity, nil)
   for (let i = 1; i <= 3; i++) assertEntityPresent(i)
 })
@@ -163,7 +156,7 @@ test("delete", () => {
 
 test("deletion forbidden", () => {
   addAt(1)
-  const layer2Entity = getWorldEntity(entity, 2)
+  const layer2Entity = entity.getWorldEntity(2)
   layer2Entity!.destroy()
   worldUpdater.forbidDeletion(assembly, entity, 2)
   assertEntityPresent(2)

@@ -8,12 +8,12 @@
  *
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
+import { Position } from "../lib/geometry"
 
-import { Position } from "../../lib/geometry"
-import { Entity } from "../Entity"
-
-export interface DiffHandler<E extends Entity> {
-  save(luaEntity: LuaEntity): E | nil
-  create(surface: LuaSurface, position: Position, direction: defines.direction | nil, entity: E): LuaEntity | nil
-  match(luaEntity: LuaEntity, value: E): void
+export interface EntityPose {
+  readonly position: Position
+  readonly direction: defines.direction | nil
+}
+export interface Entity {
+  readonly name: string
 }

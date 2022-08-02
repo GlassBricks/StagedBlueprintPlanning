@@ -12,33 +12,9 @@
 import { Pos } from "../lib/geometry"
 import { clearTestArea } from "../test-util/area"
 import { WorldArea } from "../utils/world-location"
-import {
-  applyDiffToEntity,
-  AssemblyEntity,
-  createAssemblyEntity,
-  destroyWorldEntity,
-  Entity,
-  getEntityDiff,
-  getNilPlaceholder,
-  getValueAtLayer,
-  getWorldEntity,
-  replaceOrDestroyWorldEntity,
-  replaceWorldEntity,
-} from "./AssemblyEntity"
-
-const entity1 = {
-  name: "1",
-  changedProp: { x: 1, y: 2 },
-  simpleUnchanged: "unchanged",
-  unchanged: { x: 1, y: 2 },
-  setToNil: "setToNil",
-}
-const entity2 = {
-  name: "2",
-  changedProp: { x: 2, y: 2 },
-  simpleUnchanged: "unchanged",
-  unchanged: { x: 1, y: 2 },
-}
+import { AssemblyEntity, createAssemblyEntity } from "./AssemblyEntity"
+import { getNilPlaceholder } from "./diff"
+import { Entity } from "./Entity"
 
 describe("Get/set world entities", () => {
   let area: WorldArea
@@ -52,133 +28,106 @@ describe("Get/set world entities", () => {
   })
 
   test("get after replace returns the correct entity", () => {
-    assert.nil(getWorldEntity(assemblyEntity, 1))
-    assert.nil(getWorldEntity(assemblyEntity, 2))
-    replaceWorldEntity(assemblyEntity, entity, 1)
-    assert.same(entity, getWorldEntity(assemblyEntity, 1))
-    assert.nil(getWorldEntity(assemblyEntity, 2))
-    replaceWorldEntity(assemblyEntity, entity, 2)
-    assert.same(entity, getWorldEntity(assemblyEntity, 1))
-    assert.same(entity, getWorldEntity(assemblyEntity, 2))
+    assert.nil(assemblyEntity.getWorldEntity(1))
+    assert.nil(assemblyEntity.getWorldEntity(2))
+    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assert.same(entity, assemblyEntity.getWorldEntity(1))
+    assert.nil(assemblyEntity.getWorldEntity(2))
+    assemblyEntity.replaceOrDestroyWorldEntity(2, entity)
+    assert.same(entity, assemblyEntity.getWorldEntity(1))
+    assert.same(entity, assemblyEntity.getWorldEntity(2))
   })
 
   test("destroy world entity removes the entity", () => {
-    replaceWorldEntity(assemblyEntity, entity, 1)
-    destroyWorldEntity(assemblyEntity, 1)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assemblyEntity.destroyWorldEntity(1)
     assert.false(entity.valid)
-    assert.nil(getWorldEntity(assemblyEntity, 1))
+    assert.nil(assemblyEntity.getWorldEntity(1))
   })
 
   test("replaceOrDestroy with nil destroys the entity", () => {
-    replaceWorldEntity(assemblyEntity, entity, 1)
-    replaceOrDestroyWorldEntity(assemblyEntity, nil, 1)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, nil)
     assert.false(entity.valid)
-    assert.nil(getWorldEntity(assemblyEntity, 1))
+    assert.nil(assemblyEntity.getWorldEntity(1))
   })
 
   test("replace world entity deletes old entity", () => {
-    replaceWorldEntity(assemblyEntity, entity, 1)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
     const newEntity = area.surface.create_entity({
       name: "iron-chest",
       position: Pos.plus(area.bbox.left_top, { x: 1, y: 1 }),
     })!
-    replaceWorldEntity(assemblyEntity, newEntity, 1)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, newEntity)
     assert.false(entity.valid)
-    assert.same(newEntity, getWorldEntity(assemblyEntity, 1))
+    assert.same(newEntity, assemblyEntity.getWorldEntity(1))
   })
 
   test("replace world entity does not delete if same entity", () => {
-    replaceWorldEntity(assemblyEntity, entity, 1)
-    replaceWorldEntity(assemblyEntity, entity, 1)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
     assert.true(entity.valid)
-    assert.same(entity, getWorldEntity(assemblyEntity, 1))
+    assert.same(entity, assemblyEntity.getWorldEntity(1))
   })
 
   test("get world entity returns nil if entity becomes invalid", () => {
-    replaceWorldEntity(assemblyEntity, entity, 1)
+    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
     entity.destroy()
-    assert.nil(getWorldEntity(assemblyEntity, 1))
+    assert.nil(assemblyEntity.getWorldEntity(1))
   })
 })
 
-describe("entityDiff", () => {
-  test("getEntityDiff", () => {
-    const diff = getEntityDiff(entity1, entity2)
-    assert.same(
-      {
-        name: "2",
-        changedProp: { x: 2, y: 2 },
-        setToNil: getNilPlaceholder(),
-      },
-      diff,
-    )
-  })
-  test("applyDiffToEntity", () => {
-    const diff = getEntityDiff(entity1, entity2)!
-    const entity = { ...entity1 }
-    applyDiffToEntity(entity, diff)
-    assert.same(entity2, entity)
-  })
+describe("getValueAtLayer", () => {
+  interface FooEntity extends Entity {
+    foo1: number
+    foo2?: number | nil
+  }
 
-  describe("getValueAtLayer", () => {
-    interface FooEntity extends Entity {
-      foo1: number
-      foo2?: number | nil
+  const entity: FooEntity = {
+    name: "foo",
+    foo1: 1,
+  }
+
+  let assemblyEntity: AssemblyEntity<FooEntity>
+  before_all(() => {
+    assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+    assemblyEntity.layerChanges = {
+      3: {
+        foo1: 3,
+        foo2: 4,
+      },
+      5: {
+        foo1: 5,
+      },
+      7: {
+        foo2: getNilPlaceholder(),
+      },
     }
+  })
 
-    const entity: AssemblyEntity<FooEntity> = createAssemblyEntity<FooEntity>(
-      {
-        name: "foo",
-        foo1: 1,
-      },
-      { x: 0, y: 0 },
-      nil,
-      2,
-    )
+  test("nil if lower than layer", () => {
+    assert.nil(assemblyEntity.getValueAtLayer(1))
+  })
 
-    let changingEntity: AssemblyEntity<FooEntity>
-    before_all(() => {
-      changingEntity = {
-        ...entity,
-        layerChanges: {
-          3: {
-            foo1: 3,
-            foo2: 4,
-          },
-          5: {
-            foo1: 5,
-          },
-          7: {
-            foo2: getNilPlaceholder(),
-          },
-        },
-      }
-    })
+  test("getValueAtLayer returns same entity if no layerChanges", () => {
+    assert.same(entity, assemblyEntity.getValueAtLayer(2))
+  })
 
-    test("nil if lower than layer", () => {
-      assert.nil(getValueAtLayer(changingEntity, 1))
-    })
+  test("applies changes from one layer", () => {
+    const result = assemblyEntity.getValueAtLayer(3)
+    assert.same({ ...entity, foo1: 3, foo2: 4 }, result)
+  })
 
-    test("getValueAtLayer returns same entity if no layerChanges", () => {
-      assert.same(entity.baseEntity, getValueAtLayer(entity, 2))
-    })
+  test("applies changes from multiple layers", () => {
+    const result = assemblyEntity.getValueAtLayer(5)
+    assert.same({ ...entity, foo1: 5, foo2: 4 }, result)
+  })
 
-    test("applies changes from one layer", () => {
-      const result = getValueAtLayer(changingEntity, 3)
-      assert.same({ ...entity.baseEntity, foo1: 3, foo2: 4 }, result)
-    })
+  test("replaces nilPlaceholder with nil", () => {
+    const result = assemblyEntity.getValueAtLayer(7)
+    const expected = { ...entity, foo1: 5 }
+    delete expected.foo2
 
-    test("applies changes from multiple layers", () => {
-      const result = getValueAtLayer(changingEntity, 5)
-      assert.same({ ...entity.baseEntity, foo1: 5, foo2: 4 }, result)
-    })
-
-    test("replaces nilPlaceholder with nil", () => {
-      const result = getValueAtLayer(changingEntity, 7)
-      const expected = { ...entity.baseEntity, foo1: 5 }
-      delete expected.foo2
-
-      assert.same(expected, result)
-    })
+    assert.same(expected, result)
   })
 })

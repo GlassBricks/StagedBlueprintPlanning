@@ -14,7 +14,8 @@ import { shallowCopy } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableMap2D, newMap2D } from "../lib/map2d"
 import { entityMock, isMock } from "../test-util/simple-mock"
-import { Entity, EntityPose, LayerNumber } from "./AssemblyEntity"
+import { LayerNumber } from "./AssemblyEntity"
+import { Entity, EntityPose } from "./Entity"
 import { EntityCreator, EntitySaver } from "./EntityHandler"
 
 /** @noSelf */

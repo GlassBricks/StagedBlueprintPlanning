@@ -9,13 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  AssemblyEntity,
-  Entity,
-  getCategoryName,
-  isCompatibleEntity,
-  MutableAssemblyEntity,
-} from "../entity/AssemblyEntity"
+import { AssemblyEntity, getCategoryName, isCompatibleEntity } from "../entity/AssemblyEntity"
+import { Entity } from "../entity/Entity"
 import { RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { Map2D, MutableMap2D, newMap2D } from "../lib/map2d"
@@ -27,17 +22,17 @@ export interface EntityMap {
 }
 
 export interface MutableEntityMap extends EntityMap {
-  readonly entities: MutableMap2D<MutableAssemblyEntity>
+  readonly entities: MutableMap2D<AssemblyEntity>
 
-  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): MutableAssemblyEntity | nil
+  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
 
-  add<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void
-  remove<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void
+  add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
+  remove<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
 }
 
 @RegisterClass("EntityMap")
 class EntityMapImpl implements MutableEntityMap {
-  readonly entities: MutableMap2D<MutableAssemblyEntity> = newMap2D()
+  readonly entities: MutableMap2D<AssemblyEntity> = newMap2D()
 
   findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil {
     const { x, y } = position
@@ -50,12 +45,12 @@ class EntityMapImpl implements MutableEntityMap {
     }
   }
 
-  add<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void {
+  add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {
     const { x, y } = entity.position
     this.entities.add(x, y, entity)
   }
 
-  remove<E extends Entity = Entity>(entity: MutableAssemblyEntity<E>): void {
+  remove<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {
     const { x, y } = entity.position
     this.entities.remove(x, y, entity)
   }

@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MutableAssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity } from "../entity/AssemblyEntity"
 import { BBox, Pos } from "../lib/geometry"
 import { LayerPosition } from "./Assembly"
 
-export function setErrorHighlight(entity: MutableAssemblyEntity, layer: LayerPosition, hasHighlight: boolean): void {
+export function setErrorHighlight(entity: AssemblyEntity, layer: LayerPosition, hasHighlight: boolean): void {
   const { _highlights } = entity
   const { layerNumber } = layer
   if (hasHighlight) {
@@ -30,7 +30,7 @@ export function setErrorHighlight(entity: MutableAssemblyEntity, layer: LayerPos
   }
 }
 
-function createErrorHighlight(entity: MutableAssemblyEntity, layer: LayerPosition): HighlightBoxEntity {
+function createErrorHighlight(entity: AssemblyEntity, layer: LayerPosition): HighlightBoxEntity {
   const prototypeName = entity.baseEntity.name
   // bbox.translate ( layer.left_top + entity.position )
   const position = entity.position
@@ -48,7 +48,7 @@ function createErrorHighlight(entity: MutableAssemblyEntity, layer: LayerPositio
   return result!
 }
 
-export function destroyAllErrorHighlights(entity: MutableAssemblyEntity): void {
+export function destroyAllErrorHighlights(entity: AssemblyEntity): void {
   const { _highlights } = entity
   for (const [, layer] of pairs(_highlights)) {
     const error = layer.error
