@@ -12,8 +12,6 @@
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
-import { Pos, Position } from "../lib/geometry"
-import { testArea } from "../test-util/area"
 import { AssemblyPosition } from "./Assembly"
 import { createMockAssembly } from "./Assembly-mock"
 import { createWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -49,146 +47,79 @@ function assertEntityNotPresent(i: LayerNumber): void {
   assert.is_nil(entity.getWorldEntity(i))
 }
 
-function assertEntityPresent(i: LayerNumber): void {
+function assertEntityCorrect(i: LayerNumber): LuaEntity {
   const entry = mockEntityCreator.getAt(i)!
   assert.not_nil(entry)
   assert.equal(entry.luaEntity, entity.getWorldEntity(i) ?? "nil")
   const valueAtLayer = entity.getValueAtLayer(i)
   assert.same(valueAtLayer, entry.value, `value not equal at layer ${i}`)
+  return entry.luaEntity
 }
-
-function findHighlight(layerNumber: LayerNumber, position: Position = entity.position): HighlightBoxEntity | nil {
-  const { surface, bbox } = testArea(layerNumber - 1)
-  const actualPos = Pos.plus(bbox.left_top, position)
-  return surface.find_entities_filtered({
-    name: "highlight-box",
-    position: actualPos,
-    radius: 0,
-    limit: 1,
-  })[0]
-}
-
-function assertHighlightPresent(i: LayerNumber): void {
-  const highlight = findHighlight(i)!
-  assert.not_nil(highlight)
-  assert.equal("not-allowed", highlight.highlight_box_type)
-}
-
-function assertHighlightNotPresent(i: LayerNumber): void {
-  const highlight = findHighlight(i)
-  assert.nil(highlight)
-}
-
-function createAt(layerNumber: LayerNumber): LuaEntity | nil {
-  return mockEntityCreator.createEntity(assembly.layers[layerNumber], entity, entity.getBaseValue())
-}
-
-function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
-  entity.moveEntityTo(layerNumber)
-  const created = createAt(layerNumber)
-  entity.replaceOrDestroyWorldEntity(layerNumber, created)
-  worldUpdater.createLaterEntities(assembly, entity, stopLayer)
-  return created
-}
-
-test.each([1, 2, 3], "add to layer %d", (layer) => {
-  addAt(layer)
-  for (let i = 1; i < layer; i++) assertEntityNotPresent(i)
-  for (let i = layer; i <= 3; i++) assertEntityPresent(i)
-})
-
-function makeEntityWithChanges(): void {
-  entity.applyDiffAtLayer(entity.getBaseLayer(), { prop1: 2 })
-  entity.applyDiffAtLayer(3, { prop1: 1 })
-}
-
-test.each(
-  [
-    [false, false],
-    [false, true],
-    [true, false],
-    [true, true],
-  ],
-  "add below, with deleted %s, with changes %s",
-  (oldDeleted, withChanges) => {
-    const oldEntity = addAt(3)!
-    if (oldDeleted) oldEntity.destroy()
-    if (withChanges) makeEntityWithChanges()
-    addAt(1, 3)
-    for (let i = 1; i <= 3; i++) {
-      if (!(i === 3 && oldDeleted)) assertEntityPresent(i)
+describe("updateWorldEntities", () => {
+  describe.each([false, true], "with entity changes", (withChanges) => {
+    if (withChanges) {
+      before_each(() => {
+        entity.applyDiffAtLayer(entity.getBaseLayer(), { prop1: 2 })
+        entity.applyDiffAtLayer(3, { prop1: 1 })
+      })
     }
-    if (oldDeleted) {
-      assert.nil(entity.getWorldEntity(3), "entity replaced")
-    } else {
-      assert.equal(oldEntity, entity.getWorldEntity(3), "entity replaced")
-    }
-  },
-)
+    test.each([1, 2, 3], "can create one entity %d", (layer) => {
+      worldUpdater.updateWorldEntities(assembly, entity, layer, layer)
+      for (let i = 1; i <= 3; i++) {
+        if (i === layer) assertEntityCorrect(i)
+        else assertEntityNotPresent(i)
+      }
+    })
+    test("can create all entities", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+      for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+    })
 
-test("refresh", () => {
-  addAt(1)
-  entity.getWorldEntity(2)!.destroy()
-  const replaced = mockEntityCreator.createEntity(assembly.layers[2], entity, {
-    name: "test",
-    prop1: 10,
-  } as TestEntity)!
-  assert.not_nil(replaced)
-  // refresh at layer 2
-  worldUpdater.refreshEntity(assembly, entity, 2, replaced)
-  assert.equal(replaced, entity.getWorldEntity(2))
-  assertEntityPresent(2)
+    test("can refresh a single entity", () => {
+      const replaced = mockEntityCreator.createEntity(assembly.layers[2], entity, {
+        name: "test",
+        prop1: 10,
+      } as TestEntity)!
+      entity.replaceWorldEntity(2, replaced)
+      worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
+      const val = assertEntityCorrect(2)
+      assert.equal(val, replaced)
+    })
+
+    test("when replace is true, deletes old entities", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
+      const value = assertEntityCorrect(2)
+      worldUpdater.updateWorldEntities(assembly, entity, 2, 2, true)
+      assert.false(value.valid)
+      assertEntityCorrect(2)
+    })
+
+    test("replaces deleted entity", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 3, 3)
+      entity.getWorldEntity(3)!.destroy()
+      assertEntityNotPresent(3)
+      worldUpdater.updateWorldEntities(assembly, entity, 3, 3)
+      assertEntityCorrect(3)
+    })
+
+    test("can rotate entities", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+      entity.direction = defines.direction.west
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+      for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+    })
+
+    test("can un-rotate entities", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+      entity.getWorldEntity(2)!.direction = defines.direction.west
+      worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
+      for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+    })
+  })
 })
 
-test.each([false, true], "revive at same layer, with changes: %s", (withChanges) => {
-  addAt(1)
-  if (withChanges) makeEntityWithChanges()
-  for (let i = 1; i <= 3; i++) entity.destroyWorldEntity(i)
-  worldUpdater.reviveEntities(assembly, entity, nil)
-  for (let i = 1; i <= 3; i++) assertEntityPresent(i)
-})
-
-test("delete", () => {
-  addAt(1)
-  worldUpdater.deleteAllEntities(assembly, entity)
+test("deleteAllEntities", () => {
+  worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+  worldUpdater.deleteAllWorldEntities(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
-})
-
-test("deletion forbidden", () => {
-  addAt(1)
-  const layer2Entity = entity.getWorldEntity(2)
-  layer2Entity!.destroy()
-  worldUpdater.forbidDeletion(assembly, entity, 2)
-  assertEntityPresent(2)
-})
-
-test("rotate", () => {
-  const luaEntity = addAt(1)!
-  luaEntity.direction = entity.direction = defines.direction.west
-  worldUpdater.rotateEntities(assembly, entity)
-  for (let i = 1; i <= 3; i++) assertEntityPresent(i)
-})
-
-test("rotation forbidden", () => {
-  addAt(1)
-  mockEntityCreator.getAt(2)!.luaEntity.direction = defines.direction.west
-  worldUpdater.forbidRotation(assembly, entity, 2)
-  for (let i = 1; i <= 3; i++) assertEntityPresent(i)
-})
-
-describe.skip("error highlight", () => {
-  test("creates error highlight if entity cannot be values", () => {
-    createAt(3)
-    addAt(2)
-    assertHighlightPresent(3)
-  })
-
-  test("removes error highlight after entity removed", () => {
-    createAt(3)
-    addAt(2)
-    worldUpdater.deleteAllEntities(assembly, entity)
-    for (let i = 1; i <= 3; i++) {
-      assertHighlightNotPresent(i)
-    }
-  })
 })

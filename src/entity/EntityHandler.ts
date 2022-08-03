@@ -29,6 +29,7 @@ export interface EntityCreator {
   updateEntity(luaEntity: LuaEntity, value: Entity): void
 }
 
+/** @noSelf */
 export interface EntitySaver {
   saveEntity(entity: LuaEntity): Entity | nil
 }

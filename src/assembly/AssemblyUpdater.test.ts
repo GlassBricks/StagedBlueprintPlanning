@@ -11,7 +11,7 @@
 
 import { AssemblyEntity, LayerChanges, LayerNumber } from "../entity/AssemblyEntity"
 import { createMockEntitySaver } from "../entity/EntityHandler-mock"
-import { AnyFunction, ContextualFun, Mutable } from "../lib"
+import { ContextualFun, Mutable } from "../lib"
 import { BBox, Pos } from "../lib/geometry"
 import { entityMock } from "../test-util/simple-mock"
 import { AssemblyContent, LayerPosition } from "./Assembly"
@@ -41,14 +41,8 @@ before_each(() => {
     }) as F)
   }
   worldUpdater = {
-    createLaterEntities: spyFn(),
-    refreshEntity: spyFn(),
-    deleteAllEntities: spyFn(),
-    reviveEntities: spyFn(),
-    forbidDeletion: spyFn(),
-    updateEntities: spyFn(),
-    rotateEntities: spyFn(),
-    forbidRotation: spyFn(),
+    updateWorldEntities: spyFn(),
+    deleteAllWorldEntities: spyFn(),
   }
   assemblyUpdater = createAssemblyUpdater(worldUpdater, createMockEntitySaver())
 })
@@ -71,7 +65,6 @@ after_each(() => {
 })
 
 function assertNoCalls() {
-  // assert.equal(0, totalCalls)
   if (totalCalls !== 0) {
     for (const [key, spy] of pairs(worldUpdater)) {
       assert
@@ -83,12 +76,29 @@ function assertNoCalls() {
   eventsAsserted = true
 }
 
-type RemoveParameters<F extends AnyFunction> = F extends (_: any, ...args: infer A) => any ? A : never
-
-function assertSingleCall<K extends keyof WorldUpdater>(key: K, ...args: RemoveParameters<WorldUpdater[K]>) {
-  assert.equal(1, totalCalls)
-  assert.spy(worldUpdater[key] as any).called_with(match.not_nil(), ...args)
+function assertUpdateCalled(
+  entity: AssemblyEntity<TestEntity>,
+  startLayer: LayerNumber,
+  endLayer: LayerNumber | nil,
+  replace: boolean,
+) {
   eventsAsserted = true
+  assert.equal(1, totalCalls)
+  const spy = worldUpdater.updateWorldEntities as spy.Spy<WorldUpdater["updateWorldEntities"]>
+  assert.spy(spy).called(1)
+  const refs = spy.calls[0].refs as any[]
+  const [cAssembly, cEntity, cStartLayer, cEndLayer, cReplace] = table.unpack(refs, 1, 5)
+  assert.equal(assembly, cAssembly)
+  assert.equal(entity, cEntity)
+  assert.equal(startLayer, cStartLayer, "start layer")
+  assert.equal(endLayer, cEndLayer, "end layer")
+  if (replace) assert.true(cReplace, "replace")
+  else assert.falsy(cReplace, "replace")
+}
+function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
+  eventsAsserted = true
+  assert.equal(1, totalCalls)
+  assert.spy(worldUpdater.deleteAllWorldEntities as any).called_with(match.not_nil(), entity)
 }
 
 function assertOneEntity() {
@@ -113,228 +123,227 @@ function createEntity(): LuaEntity & TestEntity {
   return luaEntity
 }
 
-function doAdd() {
+function addEntity() {
   const entity = createEntity()
-  const added = assemblyUpdater.onEntityCreated(assembly, entity, layer) as AssemblyEntity<TestEntity>
-  return { luaEntity: entity, added }
+  assemblyUpdater.onEntityCreated(assembly, entity, layer)
+  const found = content.findCompatible({ name: "test" }, pos, nil) as AssemblyEntity<TestEntity> | nil
+  assert(found)
+  return { luaEntity: entity, added: found! }
 }
 
-function doVirtualAdd(addedNum: LayerNumber = layer.layerNumber, setNum = layer.layerNumber) {
+function addAndReset(addedNum: LayerNumber = layer.layerNumber, setNum = layer.layerNumber) {
   layer.layerNumber = addedNum
-  const ret = doAdd()
+  const ret = addEntity()
   layer.layerNumber = setNum
   mock.clear(worldUpdater)
   totalCalls = 0
   return ret
 }
 
-function assertAdded(): AssemblyEntity {
-  const found = content.findCompatible({ name: "test" }, pos, nil)!
-  assert.not_nil(found)
-  assert.equal("test", found.getBaseValue().name)
-  assert.same(pos, found.position)
-  assert.nil(found.direction)
-
-  assertOneEntity()
-  assertSingleCall("createLaterEntities", found, nil)
-  return found
-}
-
 function assertLayerChanges(entity: AssemblyEntity, changes: LayerChanges<TestEntity>) {
   assert.same(changes, entity._getLayerChanges())
 }
 
-test("add", () => {
-  const { added } = doAdd()
-  const found = assertAdded()
-  assert.equal(added, found)
-})
-
-test.each([1, 2], "existing at layer 1, added at layer %d", (layerNumber) => {
-  const { luaEntity, added } = doVirtualAdd(1, layerNumber)
-  const added2 = assemblyUpdater.onEntityCreated(assembly, luaEntity, layer) // again
-
-  assert.equal(added, added2)
+function assertAdded(added: AssemblyEntity<TestEntity>): void {
+  assert.not_nil(added)
+  assert.equal("test", added.getBaseValue().name)
+  assert.same(pos, added.position)
+  assert.nil(added.direction)
 
   assertOneEntity()
-  assertSingleCall("refreshEntity", added, layerNumber, luaEntity)
+  assertUpdateCalled(added, layer.layerNumber + 1, nil, false)
+}
+test("add new: adds to assembly and updates later layers", () => {
+  const { added } = addEntity()
+  assertAdded(added)
 })
 
-test.each([false, true], "existing at layer 2, added at layer 1, with layer changes: %s", (withChanges) => {
-  const { luaEntity, added: oldAdded } = doVirtualAdd(2, 1)
-
-  if (withChanges) {
-    luaEntity.prop1 = 3
-  }
-  const added = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)! // again
-  assert.equal(oldAdded, added)
-
-  assert.same(1, added.getBaseLayer())
-  if (!withChanges) {
-    assert.equal(2, added.getBaseValue().prop1)
-    assert.false(added.hasLayerChanges())
-  } else {
-    assert.equal(3, added.getBaseValue().prop1)
-    assertLayerChanges(added, { 2: { prop1: 2 } })
-  }
-
+test.each([1, 2], "add at same or higher layer updates the newly added entity, added layer: %d", (layerNumber) => {
+  const { luaEntity, added } = addAndReset(1, layerNumber)
+  assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
   assertOneEntity()
-  assertSingleCall("createLaterEntities", added, 2)
+  assertUpdateCalled(added, layerNumber, layerNumber, false)
 })
 
-test("delete non-existent", () => {
+test.each(
+  [false, true],
+  "add again at lower layer updates content and all world entities, with layer changes: %s",
+  (withChanges) => {
+    const { luaEntity, added } = addAndReset(3, 1)
+    if (withChanges) luaEntity.prop1 = 3
+    assemblyUpdater.onEntityCreated(assembly, luaEntity, layer) // again
+    assert.same(1, added.getBaseLayer())
+    if (!withChanges) {
+      assert.equal(2, added.getBaseValue().prop1)
+      assert.false(added.hasLayerChanges())
+    } else {
+      assert.equal(3, added.getBaseValue().prop1)
+      assertLayerChanges(added, { 3: { prop1: 2 } })
+    }
+
+    assertOneEntity()
+    assertUpdateCalled(added, 1, 2, true)
+  },
+)
+
+test("deleting entity not in assembly does nothing", () => {
   const entity = createEntity()
   assemblyUpdater.onEntityDeleted(assembly, entity, layer)
   assertNoEntities()
   assertNoCalls()
 })
 
-test("delete existing at higher layer (bug)", () => {
-  const { luaEntity } = doVirtualAdd(2, 1)
+test("deleting entity in layer below base does nothing (bug)", () => {
+  const { luaEntity } = addAndReset(2, 1)
   assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
   assertNoCalls()
 })
 
-test("delete existing at lower layer", () => {
-  const { luaEntity, added } = doVirtualAdd(1, 2)
+test("delete entity in layer above base forbids deletion", () => {
+  const { luaEntity, added } = addAndReset(1, 2)
   assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
-  assertSingleCall("forbidDeletion", added, layer.layerNumber)
+  assertUpdateCalled(added, 2, 2, true)
 })
 
-test("delete existing at same layer", () => {
-  const { luaEntity, added } = doVirtualAdd()
+test("delete entity in base layer deletes entity", () => {
+  const { luaEntity, added } = addAndReset()
   assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer) // simulated
+  assert.falsy(added.isLostReference)
   assertNoEntities()
-  assertSingleCall("deleteAllEntities", added)
+  assertDeleteAllEntitiesCalled(added)
 })
 
-test("delete entity with updates", () => {
-  const { luaEntity, added } = doVirtualAdd()
+test("delete entity in base layer with updates also creates lost reference", () => {
+  const { luaEntity, added } = addAndReset()
   added.applyDiffAtLayer(2, { prop1: 3 })
   assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
   assert.true(added.isLostReference)
-  assertSingleCall("deleteAllEntities", added)
+  assertDeleteAllEntitiesCalled(added)
 })
 
 test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (reviveLayer) => {
-  const { luaEntity, added } = doVirtualAdd(1, reviveLayer)
+  const { luaEntity, added } = addAndReset(1, reviveLayer)
   added.applyDiffAtLayer(3, { prop1: 3 })
   added.applyDiffAtLayer(5, { prop1: 4 })
   added.isLostReference = true
 
-  const revived = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)!
-  assert.falsy(revived.isLostReference)
-  assert.equal(revived.getBaseLayer(), reviveLayer)
+  assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
+  assert.equal(luaEntity, added.getWorldEntity(reviveLayer))
+  assert.falsy(added.isLostReference)
+  assert.equal(added.getBaseLayer(), reviveLayer)
 
   if (reviveLayer >= 5) {
-    assert.equal(4, revived.getBaseValue().prop1)
-    assert.false(revived.hasLayerChanges())
+    assert.equal(4, added.getBaseValue().prop1)
+    assert.false(added.hasLayerChanges())
   } else if (reviveLayer >= 3) {
-    assert.equal(3, revived.getBaseValue().prop1)
-    assertLayerChanges(revived, { 5: { prop1: 4 } })
+    assert.equal(3, added.getBaseValue().prop1)
+    assertLayerChanges(added, { 5: { prop1: 4 } })
   } else {
-    assert.equal(2, revived.getBaseValue().prop1)
-    assertLayerChanges(revived, { 3: { prop1: 3 }, 5: { prop1: 4 } })
+    assert.equal(2, added.getBaseValue().prop1)
+    assertLayerChanges(added, { 3: { prop1: 3 }, 5: { prop1: 4 } })
   }
 
   assertOneEntity()
-  assertSingleCall("reviveEntities", revived, luaEntity as any)
+  assertUpdateCalled(added, reviveLayer, nil, true)
 })
 
 test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
-  const { luaEntity, added } = doVirtualAdd(2, 1)
+  const { luaEntity, added } = addAndReset(2, 1)
   added.applyDiffAtLayer(3, { prop1: 3 })
   added.isLostReference = true
 
   if (withChanges) luaEntity.prop1 = 1
 
-  const revived = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)!
-  assert.falsy(revived.isLostReference)
-  assert.equal(revived.getBaseLayer(), 1)
+  assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
+  assert.falsy(added.isLostReference)
+  assert.equal(added.getBaseLayer(), 1)
 
   if (!withChanges) {
-    assert.equal(2, revived.getBaseValue().prop1)
-    assertLayerChanges(revived, { 3: { prop1: 3 } })
+    assert.equal(2, added.getBaseValue().prop1)
+    assertLayerChanges(added, { 3: { prop1: 3 } })
   } else {
-    assert.equal(1, revived.getBaseValue().prop1)
-    assertLayerChanges(revived, { 2: { prop1: 2 }, 3: { prop1: 3 } })
+    assert.equal(1, added.getBaseValue().prop1)
+    assertLayerChanges(added, { 2: { prop1: 2 }, 3: { prop1: 3 } })
   }
 
   assertOneEntity()
-  assertSingleCall("reviveEntities", revived, luaEntity as any)
+  assertUpdateCalled(added, 1, nil, true)
 })
 
-test("update non-existent", () => {
+test("update non-existent defaults to add behavior (bug)", () => {
   const entity = createEntity()
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer)
-  // same as add
-  assertAdded()
+  const added = content.findCompatible({ name: "test" }, pos, nil) as AssemblyEntity<TestEntity>
+  assertAdded(added)
 })
 
-test("update with no changes", () => {
-  const { luaEntity } = doVirtualAdd()
+test("potentially updated with no changes does nothing", () => {
+  const { luaEntity } = addAndReset()
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
   assertOneEntity()
   assertNoCalls()
 })
 
-test("update in previous layer", () => {
-  const { luaEntity, added } = doVirtualAdd(2, 1)
+test("potentially updated in lower than base layer defaults to add below behavior (bug)", () => {
+  const { luaEntity, added } = addAndReset(3, 1)
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
-  // same as addBelow
   assertOneEntity()
-  assertSingleCall("createLaterEntities", added, 2)
+  assertUpdateCalled(added, 1, 2, true)
 })
 
-test("update in same layer", () => {
-  const { luaEntity, added } = doVirtualAdd()
+test("update in base layer updates all entities", () => {
+  const { luaEntity, added } = addAndReset()
   luaEntity.prop1 = 3
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
   assert.equal(3, added.getBaseValue().prop1)
 
   assertOneEntity()
-  assertSingleCall("updateEntities", added, layer.layerNumber)
+  assertUpdateCalled(added, 1, nil, false)
 })
 
-test.each([false, true], "update in next layer, with existing changes: %s", (withExistingChanges) => {
-  const { luaEntity, added } = doVirtualAdd(1, 2)
-  if (withExistingChanges) {
-    added.applyDiffAtLayer(2, { prop1: 5, prop2: "val2" })
-    luaEntity.prop2 = "val2" // not changed
-  }
+test.each(
+  [false, true],
+  "update in higher layer updates content and entities, with existing changes: %s",
+  (withExistingChanges) => {
+    const { luaEntity, added } = addAndReset(1, 2)
+    if (withExistingChanges) {
+      added.applyDiffAtLayer(2, { prop1: 5, prop2: "val2" })
+      luaEntity.prop2 = "val2" // not changed
+    }
 
-  luaEntity.prop1 = 3 // changed
-  assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
-  assert.equal(2, added.getBaseValue().prop1)
-  if (withExistingChanges) {
-    assertLayerChanges(added, { 2: { prop1: 3, prop2: "val2" } })
-  } else {
-    assertLayerChanges(added, { 2: { prop1: 3 } })
-  }
+    luaEntity.prop1 = 3 // changed
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+    assert.equal(2, added.getBaseValue().prop1)
+    if (withExistingChanges) {
+      assertLayerChanges(added, { 2: { prop1: 3, prop2: "val2" } })
+    } else {
+      assertLayerChanges(added, { 2: { prop1: 3 } })
+    }
 
-  assertOneEntity()
-  assertSingleCall("updateEntities", added, layer.layerNumber)
-})
+    assertOneEntity()
+    assertUpdateCalled(added, 2, nil, false)
+  },
+)
 
-test("rotate in base layer", () => {
-  const { luaEntity, added } = doVirtualAdd()
+test("rotate in base layer rotates all entities", () => {
+  const { luaEntity, added } = addAndReset()
   const oldDirection = luaEntity.direction
   luaEntity.direction = direction.west
   assemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(direction.west, added.direction)
   assertOneEntity()
-  assertSingleCall("rotateEntities", added)
+  assertUpdateCalled(added, 1, nil, false)
 })
 
-test("rotate in higher layer", () => {
-  const { luaEntity, added } = doVirtualAdd(1, 2)
+test("rotate in higher layer forbids rotation", () => {
+  const { luaEntity, added } = addAndReset(1, 2)
   const oldDirection = luaEntity.direction
   luaEntity.direction = direction.west
   assemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(oldDirection, added.direction ?? 0)
   assertOneEntity()
-  assertSingleCall("forbidRotation", added, layer.layerNumber)
+  assertUpdateCalled(added, 2, 2, false)
 })

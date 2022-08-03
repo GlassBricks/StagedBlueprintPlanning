@@ -18,11 +18,7 @@ import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /** @noSelf */
 export interface AssemblyUpdater {
-  onEntityCreated<E extends Entity = Entity>(
-    assembly: AssemblyContent,
-    entity: LuaEntity,
-    layer: LayerPosition,
-  ): AssemblyEntity<E> | nil
+  onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
   onEntityDeleted(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
   onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 
@@ -35,24 +31,10 @@ export interface AssemblyUpdater {
 }
 
 export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: EntitySaver): AssemblyUpdater {
-  const {
-    createLaterEntities,
-    deleteAllEntities,
-    forbidDeletion,
-    forbidRotation,
-    refreshEntity,
-    reviveEntities,
-    rotateEntities,
-    updateEntities,
-  } = worldUpdater
+  const { deleteAllWorldEntities, updateWorldEntities } = worldUpdater
 
   const { saveEntity } = entitySaver
 
-  function onEntityCreated<E extends Entity = Entity>(
-    assembly: AssemblyContent,
-    entity: LuaEntity,
-    layer: LayerPosition,
-  ): AssemblyEntity<E> | nil
   function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
     const position = getLayerPosition(entity, layer)
     const { layerNumber } = layer
@@ -76,10 +58,11 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
 
     if (!saved) return
 
+    // entity added here
     const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
     content.add(assemblyEntity)
-    assemblyEntity.replaceOrDestroyWorldEntity(layerNumber, entity)
-    createLaterEntities(assembly, assemblyEntity, nil)
+    assemblyEntity.replaceWorldEntity(layerNumber, entity)
+    updateWorldEntities(assembly, assemblyEntity, layerNumber + 1)
     return assemblyEntity
   }
 
@@ -92,7 +75,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     if (existing.isLostReference) {
       reviveLostReference(assembly, existing, layerNumber, entity)
     } else {
-      refreshEntity(assembly, existing, layerNumber, entity)
+      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
     }
   }
 
@@ -102,12 +85,10 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     layerNumber: LayerNumber,
     entity: LuaEntity,
   ): void {
-    // assert(layerNumber >= existing.layerNumber)
-    // assert(existing.isLostReference)
     existing.isLostReference = nil
-    // existing.moveEntityUp(layerNumber)
-    existing.moveEntityTo(layerNumber)
-    reviveEntities(assembly, existing, entity)
+    existing.moveToLayer(layerNumber)
+    existing.replaceWorldEntity(layerNumber, entity)
+    updateWorldEntities(assembly, existing, layerNumber, nil, true)
   }
 
   function entityAddedBelow(
@@ -117,12 +98,11 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     added: Entity,
     luaEntity: LuaEntity,
   ): void {
-    const oldLayerNumber = existing.moveEntityDown(layerNumber, added, true)
+    const oldLayerNumber = existing.moveDown(layerNumber, added, true)
     if (existing.isLostReference) {
-      existing.isLostReference = nil
-      reviveEntities(assembly, existing, luaEntity)
+      reviveLostReference(assembly, existing, layerNumber, luaEntity)
     } else {
-      createLaterEntities(assembly, existing, oldLayerNumber)
+      updateWorldEntities(assembly, existing, layerNumber, oldLayerNumber - 1, true)
     }
   }
 
@@ -137,7 +117,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
 
     if (existingLayer !== layerNumber) {
       if (existingLayer < layerNumber) {
-        forbidDeletion(assembly, existing, layerNumber)
+        updateWorldEntities(assembly, existing, layerNumber, layerNumber, true)
       }
       // else: layerNumber > compatible.layerNumber; is bug, ignore
       return
@@ -148,7 +128,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     } else {
       content.remove(existing)
     }
-    deleteAllEntities(assembly, existing)
+    deleteAllWorldEntities(assembly, existing)
   }
 
   function onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
@@ -164,7 +144,6 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
       return
     }
 
-    // get diff
     const newValue = saveEntity(entity)
     if (!newValue) return // bug?
     const valueAtLayer = existing.getValueAtLayer(layerNumber)!
@@ -172,7 +151,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     if (!diff) return // no change
 
     existing.applyDiffAtLayer(layerNumber, diff)
-    updateEntities(assembly, existing, layerNumber)
+    updateWorldEntities(assembly, existing, layerNumber)
   }
 
   function onEntityRotated(
@@ -190,10 +169,10 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     const existingLayer = existing.getBaseLayer()
 
     if (existingLayer !== layerNumber) {
-      forbidRotation(assembly, existing, layerNumber)
+      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
     } else {
       existing.direction = entity.direction !== 0 ? entity.direction : nil
-      rotateEntities(assembly, existing)
+      updateWorldEntities(assembly, existing, layerNumber)
     }
   }
   return {

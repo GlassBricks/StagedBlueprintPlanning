@@ -96,13 +96,13 @@ test("iterateValues", () => {
 
 describe("moveEntityDown", () => {
   test("with no changes", () => {
-    assemblyEntity.moveEntityDown(1)
+    assemblyEntity.moveDown(1)
     assert.same(entity, assemblyEntity.getBaseValue())
     assert.equal(1, assemblyEntity.getBaseLayer())
   })
 
   test("with new value", () => {
-    assemblyEntity.moveEntityDown(1, { ...entity, foo1: 3 })
+    assemblyEntity.moveDown(1, { ...entity, foo1: 3 })
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtLayer(2))
     assert.equal(1, assemblyEntity.getBaseLayer())
@@ -110,13 +110,13 @@ describe("moveEntityDown", () => {
 
   test("with new value and changes", () => {
     assemblyEntity.applyDiffAtLayer(3, { foo1: 3 })
-    assemblyEntity.moveEntityDown(1, { ...entity, foo1: 3 }, true)
+    assemblyEntity.moveDown(1, { ...entity, foo1: 3 }, true)
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
     assert.same({ ...entity }, assemblyEntity.getValueAtLayer(2))
   })
 
   test("error if moving up", () => {
-    assert.error(() => assemblyEntity.moveEntityDown(2))
+    assert.error(() => assemblyEntity.moveDown(2))
   })
 })
 
@@ -134,48 +134,41 @@ describe("Get/set world entities", () => {
   test("get after replace returns the correct entity", () => {
     assert.nil(assemblyEntity.getWorldEntity(1))
     assert.nil(assemblyEntity.getWorldEntity(2))
-    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assemblyEntity.replaceWorldEntity(1, entity)
     assert.same(entity, assemblyEntity.getWorldEntity(1))
     assert.nil(assemblyEntity.getWorldEntity(2))
-    assemblyEntity.replaceOrDestroyWorldEntity(2, entity)
+    assemblyEntity.replaceWorldEntity(2, entity)
     assert.same(entity, assemblyEntity.getWorldEntity(1))
     assert.same(entity, assemblyEntity.getWorldEntity(2))
   })
 
-  test("destroy world entity removes the entity", () => {
-    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
-    assemblyEntity.destroyWorldEntity(1)
-    assert.false(entity.valid)
-    assert.nil(assemblyEntity.getWorldEntity(1))
-  })
-
   test("replaceOrDestroy with nil destroys the entity", () => {
-    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
-    assemblyEntity.replaceOrDestroyWorldEntity(1, nil)
+    assemblyEntity.replaceWorldEntity(1, entity)
+    assemblyEntity.replaceWorldEntity(1, nil)
     assert.false(entity.valid)
     assert.nil(assemblyEntity.getWorldEntity(1))
   })
 
   test("replace world entity deletes old entity", () => {
-    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assemblyEntity.replaceWorldEntity(1, entity)
     const newEntity = area.surface.create_entity({
       name: "iron-chest",
       position: Pos.plus(area.bbox.left_top, { x: 1, y: 1 }),
     })!
-    assemblyEntity.replaceOrDestroyWorldEntity(1, newEntity)
+    assemblyEntity.replaceWorldEntity(1, newEntity)
     assert.false(entity.valid)
     assert.same(newEntity, assemblyEntity.getWorldEntity(1))
   })
 
   test("replace world entity does not delete if same entity", () => {
-    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
-    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assemblyEntity.replaceWorldEntity(1, entity)
+    assemblyEntity.replaceWorldEntity(1, entity)
     assert.true(entity.valid)
     assert.same(entity, assemblyEntity.getWorldEntity(1))
   })
 
   test("get world entity returns nil if entity becomes invalid", () => {
-    assemblyEntity.replaceOrDestroyWorldEntity(1, entity)
+    assemblyEntity.replaceWorldEntity(1, entity)
     entity.destroy()
     assert.nil(assemblyEntity.getWorldEntity(1))
   })

@@ -25,7 +25,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   readonly _highlights: PRecord<LayerNumber, EntityHighlights>
 
   getBaseLayer(): LayerNumber
-  getBaseValue(): T
+  getBaseValue(): Readonly<T>
 
   /** Applies a diff at a given layer. */
   applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void
@@ -33,21 +33,38 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   hasLayerChanges(): boolean
   _getLayerChanges(): LayerChanges<T>
 
-  /** @return the value at a given layer. Nil if below the first layer. */
+  /** @return the value at a given layer. Nil if below the first layer. The result is a new table. */
   getValueAtLayer(layer: LayerNumber): T | nil
-  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, T]>>
+  /**
+   * Iterates the values of layers in the given range. More efficient than repeated calls to getValueAtLayer.
+   * The same instance will be returned for each layer; It should be treated as a temporary read-only view.
+   */
+  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T>]>>
 
-  /** Adjusts layerValues to move the entity to a lower layer. */
-  moveEntityDown(lowerLayer: LayerNumber): LayerNumber
-  moveEntityDown(lowerLayer: LayerNumber, newValue: T, createDiffAtOldLayer?: boolean): LayerNumber
-  /** Move the entity to a *higher* layer. New base value includes all changes between the old and new layer. */
-  moveEntityUp(higherLayer: LayerNumber): void
+  /** Moves the entity to a lower layer. */
+  moveDown(lowerLayer: LayerNumber): LayerNumber
+  /**
+   * Moves an entity to a lower layer.
+   * @param lowerLayer
+   * @param newValue The value to set at the new layer.
+   * @param createDiffAtOldLayer If a diff should be created at the old layer, so that the value at the old layer remains unchanged.
+   * @return The old layer number.
+   */
+  moveDown(lowerLayer: LayerNumber, newValue: T, createDiffAtOldLayer?: boolean): LayerNumber
+  /**
+   * Move the entity to a higher layer
+   * All layer changes from the old layer to the new layer will be applied (and then removed).
+   */
+  moveUp(higherLayer: LayerNumber): LayerNumber
 
-  moveEntityTo(layer: LayerNumber): void
+  moveToLayer(layer: LayerNumber): void
 
+  /** Returns nil if world entity does not exist or is invalid */
   getWorldEntity(layer: LayerNumber): LuaEntity | nil
-  destroyWorldEntity(layer: LayerNumber): void
-  replaceOrDestroyWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void
+  /** Destroys the old world entity, if exists. If `entity` is not nil, sets the new world entity. */
+  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void
+  destroyAllWorldEntities(): void
+  /** Iterates all valid world entities. May skip layers. */
   iterateWorldEntities(): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>>
 }
 
@@ -133,7 +150,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return $multi<any>(next, this.layerChanges, nil)
   }
 
-  moveEntityDown(lowerLayer: LayerNumber, newValue?: T, createDiffAtOldLayer?: boolean): LayerNumber {
+  moveDown(lowerLayer: LayerNumber, newValue?: T, createDiffAtOldLayer?: boolean): LayerNumber {
     const { baseLayer: higherLayer, baseValue: higherValue } = this
     assert(lowerLayer < higherLayer, "new layer number must be greater than old layer number")
     const lowerValue = newValue ?? higherValue
@@ -143,7 +160,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.layerChanges[higherLayer] = newDiff
     return higherLayer
   }
-  moveEntityUp(higherLayer: LayerNumber): void {
+  moveUp(higherLayer: LayerNumber): LayerNumber {
     const { baseLayer: lowerLayer, baseValue } = this
     assert(higherLayer > lowerLayer, "new layer number must be greater than old layer number")
     const { layerChanges } = this
@@ -153,13 +170,14 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       layerChanges[changeLayer] = nil
     }
     this.baseLayer = higherLayer
+    return lowerLayer
   }
-  moveEntityTo(layer: LayerNumber): void {
+  moveToLayer(layer: LayerNumber): void {
     const { baseLayer } = this
     if (layer > baseLayer) {
-      this.moveEntityUp(layer)
+      this.moveUp(layer)
     } else if (layer < baseLayer) {
-      this.moveEntityDown(layer)
+      this.moveDown(layer)
     }
     // else do nothing
   }
@@ -173,17 +191,18 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     return worldEntity
   }
-  destroyWorldEntity(layer: LayerNumber): void {
-    const { worldEntities } = this
-    const worldEntity = worldEntities[layer]
-    if (worldEntity && worldEntity.valid) worldEntity.destroy()
-    delete worldEntities[layer]
-  }
-  replaceOrDestroyWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void {
+  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void {
     const { worldEntities } = this
     const existing = worldEntities[layer]
     if (existing && existing.valid && existing !== entity) existing.destroy()
     worldEntities[layer] = entity
+  }
+  destroyAllWorldEntities(): void {
+    const { worldEntities } = this
+    for (const [layer, entity] of pairs(worldEntities)) {
+      if (entity && entity.valid) entity.destroy()
+      delete worldEntities[layer]
+    }
   }
   iterateWorldEntities(): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>> {
     const { worldEntities } = this
