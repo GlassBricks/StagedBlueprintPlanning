@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Mutable, mutableShallowCopy, PRecord, PRRecord, RegisterClass } from "../lib"
+import { isEmpty, Mutable, mutableShallowCopy, PRecord, PRRecord, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff } from "./diff"
-import { Entity, EntityPose } from "./Entity"
+import { Entity, EntityPose, WorldEntityType } from "./Entity"
 
 export type LayerNumber = number
 
@@ -21,8 +21,6 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   direction: defines.direction | nil
   /** If this entity is a lost reference */
   isLostReference?: true
-
-  readonly _highlights: PRecord<LayerNumber, EntityHighlights>
 
   getBaseLayer(): LayerNumber
   getBaseValue(): Readonly<T>
@@ -60,19 +58,15 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   moveToLayer(layer: LayerNumber): void
 
   /** Returns nil if world entity does not exist or is invalid */
-  getWorldEntity(layer: LayerNumber): LuaEntity | nil
+  getWorldEntity(layer: LayerNumber, type?: WorldEntityType): LuaEntity | nil
   /** Destroys the old world entity, if exists. If `entity` is not nil, sets the new world entity. */
-  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void
-  destroyAllWorldEntities(): void
+  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil, type?: WorldEntityType): void
+  destroyAllWorldEntities(type: WorldEntityType): void
   /** Iterates all valid world entities. May skip layers. */
-  iterateWorldEntities(): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>>
+  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>>
 }
 
 export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, LayerDiff<E>>
-
-export interface EntityHighlights {
-  error?: HighlightBoxEntity
-}
 
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
@@ -86,9 +80,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   private baseValue: T
   private readonly layerChanges: Mutable<LayerChanges<T>> = {}
 
-  private readonly worldEntities: PRecord<LayerNumber, LuaEntity> = {}
-  // todo: make private
-  readonly _highlights: PRecord<LayerNumber, EntityHighlights> = {}
+  private readonly worldEntities: PRecord<WorldEntityType, PRecord<LayerNumber, LuaEntity>> = {}
 
   constructor(baseLayer: LayerNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
     this.categoryName = getCategoryName(baseEntity)
@@ -182,37 +174,43 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     // else do nothing
   }
 
-  getWorldEntity(layer: LayerNumber): LuaEntity | nil {
-    const { worldEntities } = this
-    const worldEntity = worldEntities[layer]
-    if (!worldEntity || !worldEntity.valid) {
-      delete worldEntities[layer]
-      return nil
+  getWorldEntity(layer: LayerNumber, type: WorldEntityType = "main"): LuaEntity | nil {
+    const byType = this.worldEntities[type]
+    if (!byType) return nil
+    const worldEntity = byType[layer]
+    if (worldEntity && worldEntity.valid) {
+      return worldEntity
     }
-    return worldEntity
+    // delete
+    delete byType[layer]
+    if (isEmpty(byType)) delete this.worldEntities[type]
   }
-  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void {
+  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil, type: WorldEntityType = "main"): void {
     const { worldEntities } = this
-    const existing = worldEntities[layer]
+    const byType = worldEntities[type] || (worldEntities[type] = {})
+    const existing = byType[layer]
     if (existing && existing.valid && existing !== entity) existing.destroy()
-    worldEntities[layer] = entity
+    byType[layer] = entity
   }
-  destroyAllWorldEntities(): void {
+  destroyAllWorldEntities(type: WorldEntityType): void {
     const { worldEntities } = this
-    for (const [layer, entity] of pairs(worldEntities)) {
+    const byType = worldEntities[type]
+    if (!byType) return
+    for (const [, entity] of pairs(byType)) {
       if (entity && entity.valid) entity.destroy()
-      delete worldEntities[layer]
     }
+    delete worldEntities[type]
   }
-  iterateWorldEntities(): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>> {
-    const { worldEntities } = this
-    let curKey = next(worldEntities)[0]
+  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>> {
+    const byType = this.worldEntities[type]
+    if (!byType) return (() => nil) as any
+    let curKey = next(byType)[0]
     return function () {
       while (true) {
         const key = curKey
         if (!key) return nil
-        curKey = next(worldEntities, key)[0]
-        const entity = worldEntities[key]!
+        curKey = next(byType, key)[0]
+        const entity = byType[key]!
         if (entity.valid) return $multi(key, entity)
       }
     } as any

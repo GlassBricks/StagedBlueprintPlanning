@@ -17,3 +17,8 @@ export interface EntityPose {
 export interface Entity {
   readonly name: string
 }
+
+export interface WorldEntityTypes {
+  main: "main"
+}
+export type WorldEntityType = keyof WorldEntityTypes

@@ -12,6 +12,7 @@
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
+import { Mutable } from "../lib"
 import { AssemblyPosition } from "./Assembly"
 import { createMockAssembly } from "./Assembly-mock"
 import { createWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -122,4 +123,25 @@ test("deleteAllEntities", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
   worldUpdater.deleteAllWorldEntities(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
+})
+
+describe("error highlight", () => {
+  before_each(() => {
+    ;(entity as Mutable<AssemblyEntity>).categoryName = "stone-furnace"
+  })
+  test("creates error highlight if entity cannot be placed", () => {
+    mockEntityCreator.createEntity(assembly.layers[2], entity, entity.getBaseValue())
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    assert.nil(entity.getWorldEntity(1, "errorHighlight"))
+    assert.not_nil(entity.getWorldEntity(2, "errorHighlight"))
+    assert.nil(entity.getWorldEntity(3, "errorHighlight"))
+  })
+
+  test("removes error highlight after entity removed", () => {
+    mockEntityCreator.createEntity(assembly.layers[1], entity, entity.getBaseValue())
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
+    assert.not_nil(entity.getWorldEntity(1, "errorHighlight"))
+    worldUpdater.deleteAllWorldEntities(assembly, entity)
+    for (let i = 1; i <= 3; i++) assert.nil(entity.getWorldEntity(i, "errorHighlight"))
+  })
 })

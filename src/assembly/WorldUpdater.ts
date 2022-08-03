@@ -12,6 +12,7 @@
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyPosition, LayerPosition } from "./Assembly"
+import { destroyAllErrorHighlights, setErrorHighlight } from "./highlights"
 
 /** @noSelf */
 export interface WorldUpdater {
@@ -69,16 +70,17 @@ export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
         updateEntity(existing, value)
       } else {
         if (existing) existing.destroy()
-        const newEntity = createEntity(layers[layerNum], entity, value)
+        const layer = layers[layerNum]
+        const newEntity = createEntity(layer, entity, value)
         entity.replaceWorldEntity(layerNum, newEntity)
+        setErrorHighlight(entity, layer, newEntity === nil)
       }
     }
   }
 
   function deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
-    for (const [, worldEntity] of entity.iterateWorldEntities()) {
-      worldEntity.destroy()
-    }
+    entity.destroyAllWorldEntities("main")
+    destroyAllErrorHighlights(entity)
   }
 
   return {
