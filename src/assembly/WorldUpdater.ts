@@ -10,10 +10,8 @@
  */
 
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { applyDiffToEntity } from "../entity/diff"
 import { Entity } from "../entity/Entity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
-import { mutableShallowCopy } from "../lib"
 import { AssemblyPosition, LayerPosition } from "./Assembly"
 import { destroyAllErrorHighlights, setErrorHighlight } from "./highlights"
 
@@ -64,15 +62,14 @@ export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
   }
 
   function createLaterEntities(assembly: AssemblyPosition, entity: AssemblyEntity, stopAt: LayerNumber | nil): void {
-    const { baseEntity, layerNumber } = entity
     const { layers } = assembly
 
-    const startLayer = layerNumber + 1
+    const startLayer = entity.getBaseLayer() + 1
     const stopLayer = stopAt ? stopAt - 1 : luaLength(layers)
 
     for (const curLayer of $range(startLayer, stopLayer)) {
       const layer = layers[curLayer]
-      createWorldEntity(entity, baseEntity, curLayer, layer)
+      createWorldEntity(entity, entity.getBaseValue(), curLayer, layer)
     }
   }
 
@@ -88,26 +85,21 @@ export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
   }
 
   function reviveEntities(assembly: AssemblyPosition, entity: AssemblyEntity, addedEntity: LuaEntity | nil): void {
-    const layerChanges = entity.layerChanges ?? {}
-    const { baseEntity, layerNumber } = entity
+    const layerNumber = entity.getBaseLayer()
     const { layers } = assembly
 
     if (addedEntity) entity.replaceOrDestroyWorldEntity(layerNumber, addedEntity)
     const startLayer = addedEntity ? layerNumber + 1 : layerNumber
 
-    const curValue = mutableShallowCopy(baseEntity)
-    for (const curLayer of $range(startLayer, luaLength(layers))) {
+    for (const [curLayer, curValue] of entity.iterateValues(startLayer, luaLength(layers))) {
       const layer = layers[curLayer]
-      const changes = layerChanges[curLayer]
-      if (changes) applyDiffToEntity(curValue, changes)
-
       createWorldEntity(entity, curValue, curLayer, layer)
     }
   }
 
   function deleteAllEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
     // destroyAllWorldEntities(entity)
-    for (const [, worldEntity] of entity.iterateWorldEntities(entity)) {
+    for (const [, worldEntity] of entity.iterateWorldEntities()) {
       worldEntity.destroy()
     }
     destroyAllErrorHighlights(entity)
@@ -122,14 +114,8 @@ export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
   }
 
   function updateEntities(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber): void {
-    const { layerChanges } = entity
     const { layers } = assembly
-    const curValue = entity.getValueAtLayer(layerNumber)!
-    for (const curLayer of $range(layerNumber, luaLength(layers))) {
-      if (curLayer !== layerNumber && layerChanges) {
-        const changes = layerChanges[curLayer]
-        if (changes) applyDiffToEntity(curValue, changes)
-      }
+    for (const [curLayer, curValue] of entity.iterateValues(layerNumber, luaLength(layers))) {
       const worldEntity = entity.getWorldEntity(curLayer)
       if (worldEntity) updateEntity(worldEntity, curValue)
     }
@@ -137,7 +123,7 @@ export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
 
   function rotateEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
     const newDirection = entity.direction ?? 0
-    for (const [, luaEntity] of entity.iterateWorldEntities(entity)) {
+    for (const [, luaEntity] of entity.iterateWorldEntities()) {
       luaEntity.direction = newDirection
     }
   }

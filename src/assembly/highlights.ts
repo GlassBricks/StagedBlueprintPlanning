@@ -31,7 +31,7 @@ export function setErrorHighlight(entity: AssemblyEntity, layer: LayerPosition, 
 }
 
 function createErrorHighlight(entity: AssemblyEntity, layer: LayerPosition): HighlightBoxEntity {
-  const prototypeName = entity.baseEntity.name
+  const prototypeName = entity.categoryName
   // bbox.translate ( layer.left_top + entity.position )
   const position = entity.position
   const selectionBox = BBox.translate(

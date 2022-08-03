@@ -80,11 +80,11 @@ function assertHighlightNotPresent(i: LayerNumber): void {
 }
 
 function createAt(layerNumber: LayerNumber): LuaEntity | nil {
-  return mockEntityCreator.createEntity(assembly.layers[layerNumber], entity, entity.baseEntity)
+  return mockEntityCreator.createEntity(assembly.layers[layerNumber], entity, entity.getBaseValue())
 }
 
 function addAt(layerNumber: LayerNumber, stopLayer?: LayerNumber): LuaEntity | nil {
-  entity.layerNumber = layerNumber
+  entity.moveEntityTo(layerNumber)
   const created = createAt(layerNumber)
   entity.replaceOrDestroyWorldEntity(layerNumber, created)
   worldUpdater.createLaterEntities(assembly, entity, stopLayer)
@@ -98,8 +98,8 @@ test.each([1, 2, 3], "add to layer %d", (layer) => {
 })
 
 function makeEntityWithChanges(): void {
-  entity.baseEntity.prop1 = 2
-  entity.layerChanges = { 3: { prop1: 1 } }
+  entity.applyDiffAtLayer(entity.getBaseLayer(), { prop1: 2 })
+  entity.applyDiffAtLayer(3, { prop1: 1 })
 }
 
 test.each(
@@ -112,8 +112,8 @@ test.each(
   "add below, with deleted %s, with changes %s",
   (oldDeleted, withChanges) => {
     const oldEntity = addAt(3)!
-    if (withChanges) makeEntityWithChanges()
     if (oldDeleted) oldEntity.destroy()
+    if (withChanges) makeEntityWithChanges()
     addAt(1, 3)
     for (let i = 1; i <= 3; i++) {
       if (!(i === 3 && oldDeleted)) assertEntityPresent(i)

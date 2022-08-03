@@ -9,11 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, createAssemblyEntity, LayerChanges, LayerNumber } from "../entity/AssemblyEntity"
-import { applyDiffToDiff, getEntityDiff, LayerDiff } from "../entity/diff"
+import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { getEntityDiff } from "../entity/diff"
 import { Entity } from "../entity/Entity"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
-import { nilIfEmpty } from "../lib"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
@@ -60,9 +59,12 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     const { content } = assembly
 
     const existing = content.findCompatible(entity, position, entity.direction)
-    if (existing && existing.layerNumber <= layerNumber) {
-      entityAddedAbove(assembly, existing, layerNumber, entity)
-      return existing
+    if (existing) {
+      const existingLayer = existing.getBaseLayer()
+      if (existingLayer <= layerNumber) {
+        entityAddedAbove(assembly, existing, layerNumber, entity)
+        return existing
+      }
     }
 
     const saved = saveEntity(entity)
@@ -102,21 +104,10 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
   ): void {
     // assert(layerNumber >= existing.layerNumber)
     // assert(existing.isLostReference)
-    existing.baseEntity = existing.getValueAtLayer(layerNumber)!
     existing.isLostReference = nil
-    existing.layerNumber = layerNumber
-    const { layerChanges } = existing
-    existing.layerChanges = layerChanges && getWithDeletedLayerChanges(existing.layerChanges, layerNumber)
+    // existing.moveEntityUp(layerNumber)
+    existing.moveEntityTo(layerNumber)
     reviveEntities(assembly, existing, entity)
-  }
-
-  function getWithDeletedLayerChanges(layerChanges: LayerChanges | nil, layerNumber: LayerNumber): LayerDiff | nil {
-    if (!layerChanges) return nil
-    for (const [layer] of pairs(layerChanges)) {
-      if (layer > layerNumber) break
-      delete layerChanges[layer]
-    }
-    return nilIfEmpty(layerChanges)
   }
 
   function entityAddedBelow(
@@ -126,16 +117,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     added: Entity,
     luaEntity: LuaEntity,
   ): void {
-    // assert(layerNumber < existing.layerNumber)
-    const diff = getEntityDiff(added, existing.baseEntity)
-    const oldLayerNumber = existing.layerNumber
-    if (diff) {
-      const layerChanges: LayerChanges = (existing.layerChanges ??= {})
-      assert(layerChanges[oldLayerNumber] === nil)
-      layerChanges[oldLayerNumber] = diff
-    }
-    existing.layerNumber = layerNumber
-    existing.baseEntity = added
+    const oldLayerNumber = existing.moveEntityDown(layerNumber, added, true)
     if (existing.isLostReference) {
       existing.isLostReference = nil
       reviveEntities(assembly, existing, luaEntity)
@@ -148,24 +130,25 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     const position = getLayerPosition(entity, layer)
     const { content } = assembly
 
-    const compatible = content.findCompatible(entity, position, entity.direction)
-    if (!compatible) return
+    const existing = content.findCompatible(entity, position, entity.direction)
+    if (!existing) return
     const { layerNumber } = layer
+    const existingLayer = existing.getBaseLayer()
 
-    if (compatible.layerNumber !== layerNumber) {
-      if (compatible.layerNumber < layerNumber) {
-        forbidDeletion(assembly, compatible, layerNumber)
+    if (existingLayer !== layerNumber) {
+      if (existingLayer < layerNumber) {
+        forbidDeletion(assembly, existing, layerNumber)
       }
       // else: layerNumber > compatible.layerNumber; is bug, ignore
       return
     }
 
-    if (compatible.layerChanges) {
-      compatible.isLostReference = true
+    if (existing.hasLayerChanges()) {
+      existing.isLostReference = true
     } else {
-      content.remove(compatible)
+      content.remove(existing)
     }
-    deleteAllEntities(assembly, compatible)
+    deleteAllEntities(assembly, existing)
   }
 
   function onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
@@ -174,7 +157,8 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     const { layerNumber } = layer
 
     const existing = content.findCompatible(entity, position, entity.direction)
-    if (!existing || layerNumber < existing.layerNumber) {
+    const existingLayer = existing && existing.getBaseLayer()
+    if (!existing || layerNumber < existingLayer!) {
       // bug, treat as add
       onEntityCreated(assembly, entity, layer)
       return
@@ -187,19 +171,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     const diff = getEntityDiff(valueAtLayer, newValue)
     if (!diff) return // no change
 
-    // apply update
-    if (layerNumber === existing.layerNumber) {
-      existing.baseEntity = newValue
-    } else {
-      // layerNumber > existing.layerNumber
-      const layerChanges: LayerChanges = (existing.layerChanges ??= {})
-      const existingDiff = layerChanges[layerNumber]
-      if (existingDiff) {
-        applyDiffToDiff(existingDiff, diff)
-      } else {
-        layerChanges[layerNumber] = diff
-      }
-    }
+    existing.applyDiffAtLayer(layerNumber, diff)
     updateEntities(assembly, existing, layerNumber)
   }
 
@@ -211,12 +183,14 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
   ): void {
     const position = getLayerPosition(entity, layer)
     const { content } = assembly
+    const { layerNumber } = layer
 
     const existing = content.findCompatible(entity, position, previousDirection)
     if (!existing) return
+    const existingLayer = existing.getBaseLayer()
 
-    if (existing.layerNumber !== layer.layerNumber) {
-      forbidRotation(assembly, existing, layer.layerNumber)
+    if (existingLayer !== layerNumber) {
+      forbidRotation(assembly, existing, layerNumber)
     } else {
       existing.direction = entity.direction !== 0 ? entity.direction : nil
       rotateEntities(assembly, existing)

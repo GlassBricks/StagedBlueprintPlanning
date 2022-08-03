@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, LayerChanges, LayerNumber } from "../entity/AssemblyEntity"
 import { createMockEntitySaver } from "../entity/EntityHandler-mock"
 import { AnyFunction, ContextualFun, Mutable } from "../lib"
 import { BBox, Pos } from "../lib/geometry"
@@ -131,13 +131,17 @@ function doVirtualAdd(addedNum: LayerNumber = layer.layerNumber, setNum = layer.
 function assertAdded(): AssemblyEntity {
   const found = content.findCompatible({ name: "test" }, pos, nil)!
   assert.not_nil(found)
-  assert.equal("test", found.baseEntity.name)
+  assert.equal("test", found.getBaseValue().name)
   assert.same(pos, found.position)
   assert.nil(found.direction)
 
   assertOneEntity()
   assertSingleCall("createLaterEntities", found, nil)
   return found
+}
+
+function assertLayerChanges(entity: AssemblyEntity, changes: LayerChanges<TestEntity>) {
+  assert.same(changes, entity._getLayerChanges())
 }
 
 test("add", () => {
@@ -165,17 +169,16 @@ test.each([false, true], "existing at layer 2, added at layer 1, with layer chan
   const added = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)! // again
   assert.equal(oldAdded, added)
 
-  assert.same(1, added.layerNumber)
+  assert.same(1, added.getBaseLayer())
   if (!withChanges) {
-    assert.equal(2, added.baseEntity.prop1)
-    assert.nil(added.layerChanges)
+    assert.equal(2, added.getBaseValue().prop1)
+    assert.false(added.hasLayerChanges())
   } else {
-    assert.equal(3, added.baseEntity.prop1)
-    assert.same({ 2: { prop1: 2 } }, added.layerChanges)
+    assert.equal(3, added.getBaseValue().prop1)
+    assertLayerChanges(added, { 2: { prop1: 2 } })
   }
 
   assertOneEntity()
-  // assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
   assertSingleCall("createLaterEntities", added, 2)
 })
 
@@ -197,7 +200,6 @@ test("delete existing at lower layer", () => {
   const { luaEntity, added } = doVirtualAdd(1, 2)
   assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
-  // assertSingleEvent({ type: "forbidDeletion", entity: added, layer: layer.layerNumber })
   assertSingleCall("forbidDeletion", added, layer.layerNumber)
 })
 
@@ -205,66 +207,63 @@ test("delete existing at same layer", () => {
   const { luaEntity, added } = doVirtualAdd()
   assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer) // simulated
   assertNoEntities()
-  // assertSingleEvent({ type: "deleteAllEntities", entity: added })
   assertSingleCall("deleteAllEntities", added)
 })
 
 test("delete entity with updates", () => {
   const { luaEntity, added } = doVirtualAdd()
-  added.layerChanges = { 2: { prop1: 3 } }
+  added.applyDiffAtLayer(2, { prop1: 3 })
   assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
   assertOneEntity()
   assert.true(added.isLostReference)
-  // assertSingleEvent({ type: "deleteAllEntities", entity: added })
   assertSingleCall("deleteAllEntities", added)
 })
 
 test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (reviveLayer) => {
   const { luaEntity, added } = doVirtualAdd(1, reviveLayer)
-  added.layerChanges = { 3: { prop1: 3 }, 5: { prop1: 4 } }
+  added.applyDiffAtLayer(3, { prop1: 3 })
+  added.applyDiffAtLayer(5, { prop1: 4 })
   added.isLostReference = true
 
   const revived = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)!
   assert.falsy(revived.isLostReference)
-  assert.equal(revived.layerNumber, reviveLayer)
+  assert.equal(revived.getBaseLayer(), reviveLayer)
 
   if (reviveLayer >= 5) {
-    assert.nil(revived.layerChanges)
-    assert.equal(4, revived.baseEntity.prop1)
+    assert.equal(4, revived.getBaseValue().prop1)
+    assert.false(revived.hasLayerChanges())
   } else if (reviveLayer >= 3) {
-    assert.same({ 5: { prop1: 4 } }, revived.layerChanges)
-    assert.equal(3, revived.baseEntity.prop1)
+    assert.equal(3, revived.getBaseValue().prop1)
+    assertLayerChanges(revived, { 5: { prop1: 4 } })
   } else {
-    assert.same({ 3: { prop1: 3 }, 5: { prop1: 4 } }, revived.layerChanges)
-    assert.equal(2, revived.baseEntity.prop1)
+    assert.equal(2, revived.getBaseValue().prop1)
+    assertLayerChanges(revived, { 3: { prop1: 3 }, 5: { prop1: 4 } })
   }
 
   assertOneEntity()
-  // assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
   assertSingleCall("reviveEntities", revived, luaEntity as any)
 })
 
 test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
   const { luaEntity, added } = doVirtualAdd(2, 1)
-  added.layerChanges = { 3: { prop1: 3 } }
+  added.applyDiffAtLayer(3, { prop1: 3 })
   added.isLostReference = true
 
   if (withChanges) luaEntity.prop1 = 1
 
   const revived = assemblyUpdater.onEntityCreated<TestEntity>(assembly, luaEntity, layer)!
   assert.falsy(revived.isLostReference)
-  assert.equal(revived.layerNumber, 1)
+  assert.equal(revived.getBaseLayer(), 1)
 
   if (!withChanges) {
-    assert.equal(2, revived.baseEntity.prop1)
-    assert.same({ 3: { prop1: 3 } }, revived.layerChanges)
+    assert.equal(2, revived.getBaseValue().prop1)
+    assertLayerChanges(revived, { 3: { prop1: 3 } })
   } else {
-    assert.equal(1, revived.baseEntity.prop1)
-    assert.same({ 2: { prop1: 2 }, 3: { prop1: 3 } }, revived.layerChanges)
+    assert.equal(1, revived.getBaseValue().prop1)
+    assertLayerChanges(revived, { 2: { prop1: 2 }, 3: { prop1: 3 } })
   }
 
   assertOneEntity()
-  // assertSingleEvent({ type: "reviveEntities", entity: revived, layer: luaEntity as any })
   assertSingleCall("reviveEntities", revived, luaEntity as any)
 })
 
@@ -287,7 +286,6 @@ test("update in previous layer", () => {
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
   // same as addBelow
   assertOneEntity()
-  // assertSingleEvent({ type: "createLaterEntities", entity: added, layer: 2 })
   assertSingleCall("createLaterEntities", added, 2)
 })
 
@@ -295,31 +293,29 @@ test("update in same layer", () => {
   const { luaEntity, added } = doVirtualAdd()
   luaEntity.prop1 = 3
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
-  assert.equal(3, added.baseEntity.prop1)
+  assert.equal(3, added.getBaseValue().prop1)
 
   assertOneEntity()
-  // assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
   assertSingleCall("updateEntities", added, layer.layerNumber)
 })
 
 test.each([false, true], "update in next layer, with existing changes: %s", (withExistingChanges) => {
   const { luaEntity, added } = doVirtualAdd(1, 2)
   if (withExistingChanges) {
-    added.layerChanges = { 2: { prop1: 5, prop2: "val2" } }
+    added.applyDiffAtLayer(2, { prop1: 5, prop2: "val2" })
     luaEntity.prop2 = "val2" // not changed
   }
 
   luaEntity.prop1 = 3 // changed
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
-  assert.equal(2, added.baseEntity.prop1)
+  assert.equal(2, added.getBaseValue().prop1)
   if (withExistingChanges) {
-    assert.same({ 2: { prop1: 3, prop2: "val2" } }, added.layerChanges)
+    assertLayerChanges(added, { 2: { prop1: 3, prop2: "val2" } })
   } else {
-    assert.same({ 2: { prop1: 3 } }, added.layerChanges)
+    assertLayerChanges(added, { 2: { prop1: 3 } })
   }
 
   assertOneEntity()
-  // assertSingleEvent({ type: "updateEntities", entity: added, layer: layer.layerNumber })
   assertSingleCall("updateEntities", added, layer.layerNumber)
 })
 
@@ -330,7 +326,6 @@ test("rotate in base layer", () => {
   assemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(direction.west, added.direction)
   assertOneEntity()
-  // assertSingleEvent({ type: "rotateEntities", entity: added })
   assertSingleCall("rotateEntities", added)
 })
 
@@ -341,6 +336,5 @@ test("rotate in higher layer", () => {
   assemblyUpdater.onEntityRotated(assembly, luaEntity, layer, oldDirection)
   assert.equal(oldDirection, added.direction ?? 0)
   assertOneEntity()
-  // assertSingleEvent({ type: "forbidRotation", entity: added, layer: layer.layerNumber })
   assertSingleCall("forbidRotation", added, layer.layerNumber)
 })
