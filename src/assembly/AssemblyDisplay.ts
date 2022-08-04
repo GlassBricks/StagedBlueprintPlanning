@@ -11,6 +11,7 @@
 
 import { assertNever, bind, RegisterClass } from "../lib"
 import { Observer, Subscription } from "../lib/observable"
+import draw, { RenderObj, RenderType } from "../lib/rendering"
 import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
 
 /**
@@ -18,7 +19,7 @@ import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
  */
 @RegisterClass("AssemblyDisplay")
 class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
-  private highlights: [number, number][] = []
+  private highlights: RenderObj<RenderType>[][] = []
   private subscription: Subscription | undefined
 
   public invoke(_: Subscription, event: AssemblyChangeEvent) {
@@ -32,7 +33,9 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
   }
   private createHighlightsForNewLayer(layer: Layer): void {
     const { surface, left_top, right_bottom } = layer
-    const boxId = rendering.draw_rectangle({
+
+    // const boxId = rendering.draw_rectangle({
+    const box = draw("rectangle", {
       color: [1, 1, 1, 0.5],
       width: 4,
       filled: false,
@@ -42,7 +45,7 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
       draw_on_ground: true,
     })
 
-    const textId = rendering.draw_text({
+    const text = draw("text", {
       text: layer.displayName.get(),
       surface,
       target: left_top,
@@ -52,13 +55,13 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
       alignment: "left",
       scale_with_zoom: true,
     })
-    this.highlights.push([boxId, textId])
+    this.highlights.push([box, text])
 
-    this.subscription = layer.displayName.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, textId))
+    this.subscription = layer.displayName.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, text))
   }
 
-  private static onLayerNameChange(this: void, id: number, _: unknown, name: LocalisedString): void {
-    rendering.set_text(id, name)
+  private static onLayerNameChange(this: void, text: RenderObj<"text">, _: unknown, name: LocalisedString): void {
+    text.text = name
   }
 
   private removeAllHighlights(): void {
@@ -66,8 +69,8 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
     this.subscription.close()
     this.subscription = nil
     for (const [boxId, textId] of this.highlights) {
-      rendering.destroy(boxId)
-      rendering.destroy(textId)
+      boxId.destroy()
+      textId.destroy()
     }
     this.highlights = []
   }

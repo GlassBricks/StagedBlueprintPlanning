@@ -12,6 +12,7 @@
 import { newAssembly } from "./assembly/UserAssembly"
 import { Events } from "./lib"
 import { Pos } from "./lib/geometry"
+import { destroyAllRenders } from "./lib/rendering"
 
 // better source map traceback
 declare const ____lualib: {
@@ -67,6 +68,7 @@ if (script.active_mods.testorio) {
   require("__testorio__/init")(__getTestFiles(), {
     tag_blacklist: tagBlacklist,
     before_test_run() {
+      destroyAllRenders()
       reinit()
       global.lastCompileTimestamp = lastCompileTime
       const force = game.forces.player
