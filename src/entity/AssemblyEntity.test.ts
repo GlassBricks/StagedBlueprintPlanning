@@ -11,8 +11,7 @@
 
 import { shallowCopy } from "../lib"
 import { Pos } from "../lib/geometry"
-import { clearTestArea } from "../test-util/area"
-import { WorldArea } from "../utils/world-location"
+import { entityMock } from "../test-util/simple-mock"
 import { AssemblyEntity, createAssemblyEntity } from "./AssemblyEntity"
 import { getNilPlaceholder } from "./diff"
 import { Entity } from "./Entity"
@@ -121,13 +120,12 @@ describe("moveEntityDown", () => {
 })
 
 describe("Get/set world entities", () => {
-  let area: WorldArea
   let entity: LuaEntity
   let assemblyEntity: AssemblyEntity
   before_each(() => {
-    area = clearTestArea()
-    entity = area.surface.create_entity({ name: "iron-chest", position: area.bbox.left_top })!
-    assemblyEntity = createAssemblyEntity({ name: entity.name }, area.bbox.left_top, nil, 1)
+    // entity = area.surface.create_entity({ name: "iron-chest", position: area.bbox.left_top })!
+    entity = entityMock({ name: "test", position: Pos(0, 0) })
+    assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 1)
     assert(entity)
   })
 
@@ -151,10 +149,7 @@ describe("Get/set world entities", () => {
 
   test("replace world entity deletes old entity", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
-    const newEntity = area.surface.create_entity({
-      name: "iron-chest",
-      position: Pos.plus(area.bbox.left_top, { x: 1, y: 1 }),
-    })!
+    const newEntity = entityMock({ name: "test", position: Pos(0, 0) })
     assemblyEntity.replaceWorldEntity(1, newEntity)
     assert.false(entity.valid)
     assert.same(newEntity, assemblyEntity.getWorldEntity(1))
