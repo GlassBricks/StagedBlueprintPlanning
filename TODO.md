@@ -28,7 +28,7 @@
 ### Handle changes between layers
 
 - [x] New entities
-- [ ] Basic property changes
+- [x] Basic property changes
   - Partially done
 - [ ] "Locked" properties
 - [ ] Upgraded entities
@@ -45,7 +45,7 @@
   - [ ] Revive lost references
     - [x] Revive at same layer
     - [ ] Decide behavior if revived at different layer
-- [ ] Make entities from previous layers indestructible
+- [x] Make entities from previous layers indestructible
 
 ### Detect and display conflicts
 
