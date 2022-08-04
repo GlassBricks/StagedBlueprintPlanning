@@ -15,7 +15,7 @@ import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHand
 import { Mutable } from "../lib"
 import { AssemblyPosition } from "./Assembly"
 import { createMockAssembly } from "./Assembly-mock"
-import { HighlightCreator } from "./HighlightCreator"
+import { EntityHighlighter } from "./EntityHighlighter"
 import { createWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 interface TestEntity extends Entity {
@@ -26,7 +26,7 @@ let assembly: AssemblyPosition
 let entity: AssemblyEntity<TestEntity>
 
 let mockEntityCreator: MockEntityCreator
-let highlighter: mock.Mocked<HighlightCreator>
+let highlighter: mock.Mocked<EntityHighlighter>
 let worldUpdater: WorldUpdater
 
 before_each(() => {
@@ -58,6 +58,7 @@ function assertEntityCorrect(i: LayerNumber): LuaEntity {
   const entry = mockEntityCreator.getAt(i)!
   assert.not_nil(entry)
   assert.equal(entry.luaEntity, entity.getWorldEntity(i) ?? "nil")
+  assert.equal(entity.direction ?? 0, entry.luaEntity.direction)
   const valueAtLayer = entity.getValueAtLayer(i)
   assert.same(valueAtLayer, entry.value, `value not equal at layer ${i}`)
   return entry.luaEntity
@@ -133,6 +134,20 @@ describe("updateWorldEntities", () => {
       entity.getWorldEntity(2)!.direction = defines.direction.west
       worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+    })
+  })
+
+  describe("invalid layers", () => {
+    test("out of range is ignored", () => {
+      assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1, 5))
+      for (let i = -1; i <= 5; i++) {
+        if (i >= 1 && i <= 3) assertEntityCorrect(i)
+        else assertEntityNotPresent(i)
+      }
+    })
+    test("does nothing if range is empty", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 3, 1)
+      for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
     })
   })
 })

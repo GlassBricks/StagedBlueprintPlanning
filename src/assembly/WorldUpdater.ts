@@ -12,7 +12,7 @@
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyPosition, LayerPosition } from "./Assembly"
-import { DefaultHighlightCreator, HighlightCreator } from "./HighlightCreator"
+import { DefaultHighlightCreator, EntityHighlighter } from "./EntityHighlighter"
 
 /**
  * Updates entities in the world in response to changes in the assembly.
@@ -42,7 +42,7 @@ export interface WorldUpdater {
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
-export function createWorldUpdater(entityCreator: EntityCreator, highlighter: HighlightCreator): WorldUpdater {
+export function createWorldUpdater(entityCreator: EntityCreator, highlighter: EntityHighlighter): WorldUpdater {
   interface AssemblyPosition {
     readonly layers: Record<LayerNumber, LayerPosition>
   }
@@ -62,16 +62,13 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: Hi
     endLayer?: LayerNumber,
     replace?: boolean,
   ): void {
-    const baseLayer = entity.getBaseLayer()
     const { layers } = assembly
+    const baseLayer = entity.getBaseLayer()
     const maxLayer = luaLength(layers)
-    assert(startLayer >= baseLayer, "startLayer must be >= baseLayer")
-    if (endLayer) {
-      assert(endLayer >= startLayer, "endLayer must be >= startLayer")
-      assert(endLayer <= maxLayer, "endLayer must be <= maxLayer")
-    } else {
-      endLayer = maxLayer
-    }
+
+    if (startLayer < baseLayer) startLayer = baseLayer
+    if (!endLayer || endLayer > maxLayer) endLayer = maxLayer
+    if (startLayer > endLayer) return
 
     const direction = entity.direction ?? 0
 
@@ -86,7 +83,7 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: Hi
         const newEntity = createEntity(layer, entity, value)
         if (newEntity && layerNum !== baseLayer) makeEntityIndestructible(newEntity)
         entity.replaceWorldEntity(layerNum, newEntity)
-        setErrorHighlightAt(entity, layer, newEntity === nil)
+        setErrorHighlightAt(assembly, entity, layerNum, newEntity === nil)
       }
     }
   }
