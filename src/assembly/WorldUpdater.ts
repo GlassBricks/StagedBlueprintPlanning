@@ -12,9 +12,14 @@
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyPosition, LayerPosition } from "./Assembly"
-import { destroyAllErrorHighlights, setErrorHighlight } from "./highlights"
+import { DefaultHighlightCreator, HighlightCreator } from "./HighlightCreator"
 
-/** @noSelf */
+/**
+ * Updates entities in the world in response to changes in the assembly.
+ *
+ * This includes highlight entities.
+ * @noSelf
+ */
 export interface WorldUpdater {
   /**
    * Re-syncs all layer entities for a given assembly entity
@@ -37,11 +42,12 @@ export interface WorldUpdater {
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
-export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
+export function createWorldUpdater(entityCreator: EntityCreator, highlighter: HighlightCreator): WorldUpdater {
   interface AssemblyPosition {
     readonly layers: Record<LayerNumber, LayerPosition>
   }
   const { createEntity, updateEntity } = entityCreator
+  const { setErrorHighlightAt, deleteAllHighlights } = highlighter
 
   function updateWorldEntities(
     assembly: AssemblyPosition,
@@ -73,14 +79,14 @@ export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
         const layer = layers[layerNum]
         const newEntity = createEntity(layer, entity, value)
         entity.replaceWorldEntity(layerNum, newEntity)
-        setErrorHighlight(entity, layer, newEntity === nil)
+        setErrorHighlightAt(entity, layer, newEntity === nil)
       }
     }
   }
 
   function deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
     entity.destroyAllWorldEntities("main")
-    destroyAllErrorHighlights(entity)
+    deleteAllHighlights(entity)
   }
 
   return {
@@ -89,4 +95,4 @@ export function createWorldUpdater(entityCreator: EntityCreator): WorldUpdater {
   }
 }
 
-export const DefaultWorldUpdater = createWorldUpdater(DefaultEntityHandler)
+export const DefaultWorldUpdater = createWorldUpdater(DefaultEntityHandler, DefaultHighlightCreator)

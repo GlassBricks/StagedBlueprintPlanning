@@ -15,6 +15,7 @@ import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHand
 import { Mutable } from "../lib"
 import { AssemblyPosition } from "./Assembly"
 import { createMockAssembly } from "./Assembly-mock"
+import { HighlightCreator } from "./HighlightCreator"
 import { createWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 interface TestEntity extends Entity {
@@ -25,6 +26,7 @@ let assembly: AssemblyPosition
 let entity: AssemblyEntity<TestEntity>
 
 let mockEntityCreator: MockEntityCreator
+let highlighter: mock.Mocked<HighlightCreator>
 let worldUpdater: WorldUpdater
 
 before_each(() => {
@@ -40,7 +42,11 @@ before_each(() => {
   )
 
   mockEntityCreator = createMockEntityCreator()
-  worldUpdater = createWorldUpdater(mockEntityCreator)
+  highlighter = {
+    setErrorHighlightAt: spy(),
+    deleteAllHighlights: spy(),
+  }
+  worldUpdater = createWorldUpdater(mockEntityCreator, highlighter)
 })
 
 function assertEntityNotPresent(i: LayerNumber): void {
@@ -132,16 +138,15 @@ describe("error highlight", () => {
   test("creates error highlight if entity cannot be placed", () => {
     mockEntityCreator.createEntity(assembly.layers[2], entity, entity.getBaseValue())
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-    assert.nil(entity.getWorldEntity(1, "errorHighlight"))
-    assert.not_nil(entity.getWorldEntity(2, "errorHighlight"))
-    assert.nil(entity.getWorldEntity(3, "errorHighlight"))
+    assert.spy(highlighter.setErrorHighlightAt).called_with(match._, assembly.layers[1], false)
+    assert.spy(highlighter.setErrorHighlightAt).called_with(match._, assembly.layers[2], true)
+    assert.spy(highlighter.setErrorHighlightAt).called_with(match._, assembly.layers[3], false)
   })
 
   test("removes error highlight after entity removed", () => {
     mockEntityCreator.createEntity(assembly.layers[1], entity, entity.getBaseValue())
     worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
-    assert.not_nil(entity.getWorldEntity(1, "errorHighlight"))
     worldUpdater.deleteAllWorldEntities(assembly, entity)
-    for (let i = 1; i <= 3; i++) assert.nil(entity.getWorldEntity(i, "errorHighlight"))
+    assert.spy(highlighter.deleteAllHighlights).called_with(entity)
   })
 })

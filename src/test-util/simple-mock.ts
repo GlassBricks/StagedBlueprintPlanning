@@ -24,7 +24,7 @@ const metatable = {
   },
 }
 
-export function simpleMock<T extends LuaObjectLike>(value?: Partial<T>): T {
+export function simpleMock<T extends LuaObjectLike | LuaObject>(value?: Partial<T>): T {
   const base = {
     valid: true,
     destroy() {
