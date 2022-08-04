@@ -49,6 +49,12 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: Hi
   const { createEntity, updateEntity } = entityCreator
   const { setErrorHighlightAt, deleteAllHighlights } = highlighter
 
+  function makeEntityIndestructible(entity: LuaEntity) {
+    entity.minable = false
+    entity.destructible = false
+    entity.rotatable = false
+  }
+
   function updateWorldEntities(
     assembly: AssemblyPosition,
     entity: AssemblyEntity,
@@ -78,6 +84,7 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: Hi
         if (existing) existing.destroy()
         const layer = layers[layerNum]
         const newEntity = createEntity(layer, entity, value)
+        if (newEntity && layerNum !== baseLayer) makeEntityIndestructible(newEntity)
         entity.replaceWorldEntity(layerNum, newEntity)
         setErrorHighlightAt(entity, layer, newEntity === nil)
       }

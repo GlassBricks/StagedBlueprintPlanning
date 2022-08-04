@@ -46,6 +46,10 @@ export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Parti
     direction: 0,
     ...params,
     object_name: "LuaEntity",
+    destructible: true,
+    minable: true,
+    rotatable: true,
+    operable: true,
   })
 }
 

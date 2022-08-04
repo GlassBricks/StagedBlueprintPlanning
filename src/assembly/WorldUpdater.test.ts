@@ -82,6 +82,18 @@ describe("updateWorldEntities", () => {
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
     })
 
+    test("entities not in base layer are indestructible", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+      function assertDestructible(luaEntity: LuaEntity, value: boolean) {
+        assert.equal(value, luaEntity.destructible)
+        assert.equal(value, luaEntity.minable)
+        assert.equal(value, luaEntity.rotatable)
+      }
+      assertDestructible(assertEntityCorrect(1), true)
+      assertDestructible(assertEntityCorrect(2), false)
+      assertDestructible(assertEntityCorrect(3), false)
+    })
+
     test("can refresh a single entity", () => {
       const replaced = mockEntityCreator.createEntity(assembly.layers[2], entity, {
         name: "test",
