@@ -144,18 +144,20 @@ function assertLayerChanges(entity: AssemblyEntity, changes: LayerChanges<TestEn
   assert.same(changes, entity._getLayerChanges())
 }
 
-function assertAdded(added: AssemblyEntity<TestEntity>): void {
+function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): void {
   assert.not_nil(added)
   assert.equal("test", added.getBaseValue().name)
   assert.same(pos, added.position)
   assert.nil(added.direction)
 
+  assert.equal(luaEntity, added.getWorldEntity(layer.layerNumber))
+
   assertOneEntity()
   assertUpdateCalled(added, layer.layerNumber + 1, nil, false)
 }
 test("add new: adds to assembly and updates later layers", () => {
-  const { added } = addEntity()
-  assertAdded(added)
+  const { added, luaEntity } = addEntity()
+  assertAdded(added, luaEntity)
 })
 
 test.each([1, 2], "add at same or higher layer updates the newly added entity, added layer: %d", (layerNumber) => {
@@ -165,13 +167,14 @@ test.each([1, 2], "add at same or higher layer updates the newly added entity, a
   assertUpdateCalled(added, layerNumber, layerNumber, false)
 })
 
-test.each(
-  [false, true],
+test.each([false, true])(
   "add again at lower layer updates content and all world entities, with layer changes: %s",
   (withChanges) => {
-    const { luaEntity, added } = addAndReset(3, 1)
-    if (withChanges) luaEntity.prop1 = 3
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, layer) // again
+    const { added } = addAndReset(3, 1)
+    const newEntity = createEntity()
+    if (withChanges) newEntity.prop1 = 3
+    assemblyUpdater.onEntityCreated(assembly, newEntity, layer) // again
+    assert.equal(newEntity, added.getWorldEntity(1))
     assert.same(1, added.getBaseLayer())
     if (!withChanges) {
       assert.equal(2, added.getBaseValue().prop1)
@@ -182,7 +185,7 @@ test.each(
     }
 
     assertOneEntity()
-    assertUpdateCalled(added, 1, 2, true)
+    assertUpdateCalled(added, 2, 2, true)
   },
 )
 
@@ -277,7 +280,7 @@ test("update non-existent defaults to add behavior (bug)", () => {
   const entity = createEntity()
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer)
   const added = content.findCompatible({ name: "test" }, pos, nil) as AssemblyEntity<TestEntity>
-  assertAdded(added)
+  assertAdded(added, entity)
 })
 
 test("potentially updated with no changes does nothing", () => {
@@ -290,8 +293,9 @@ test("potentially updated with no changes does nothing", () => {
 test("potentially updated in lower than base layer defaults to add below behavior (bug)", () => {
   const { luaEntity, added } = addAndReset(3, 1)
   assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+  assert.equal(luaEntity, added.getWorldEntity(1))
   assertOneEntity()
-  assertUpdateCalled(added, 1, 2, true)
+  assertUpdateCalled(added, 2, 2, true)
 })
 
 test("update in base layer updates all entities", () => {

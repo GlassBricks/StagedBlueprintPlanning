@@ -167,4 +167,10 @@ describe("Get/set world entities", () => {
     entity.destroy()
     assert.nil(assemblyEntity.getWorldEntity(1))
   })
+
+  test("hasAnyWorldEntity", () => {
+    assert.false(assemblyEntity.hasAnyWorldEntity("main"))
+    assemblyEntity.replaceWorldEntity(1, entity)
+    assert.true(assemblyEntity.hasAnyWorldEntity("main"))
+  })
 })

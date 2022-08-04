@@ -12,7 +12,7 @@
 import { isEmpty, Mutable, mutableShallowCopy, PRecord, PRRecord, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff } from "./diff"
-import { Entity, EntityPose, WorldEntityType } from "./Entity"
+import { AnyWorldEntity, Entity, EntityPose, WorldEntityType, WorldEntityTypes } from "./Entity"
 
 export type LayerNumber = number
 
@@ -58,12 +58,18 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   moveToLayer(layer: LayerNumber): void
 
   /** Returns nil if world entity does not exist or is invalid */
-  getWorldEntity(layer: LayerNumber, type?: WorldEntityType): LuaEntity | nil
+  getWorldEntity(layer: LayerNumber): LuaEntity | nil
+  getWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): WorldEntityTypes[T] | nil
   /** Destroys the old world entity, if exists. If `entity` is not nil, sets the new world entity. */
-  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil, type?: WorldEntityType): void
+  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void
+  replaceWorldEntity<T extends WorldEntityType>(layer: LayerNumber, entity: WorldEntityTypes[T] | nil, type: T): void
+  hasAnyWorldEntity(type: WorldEntityType): boolean
+
   destroyAllWorldEntities(type: WorldEntityType): void
   /** Iterates all valid world entities. May skip layers. */
-  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>>
+  iterateWorldEntities<T extends WorldEntityType>(
+    type: T,
+  ): LuaIterable<LuaMultiReturn<[LayerNumber, WorldEntityTypes[T]]>>
 }
 
 export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, LayerDiff<E>>
@@ -80,7 +86,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   private baseValue: T
   private readonly layerChanges: Mutable<LayerChanges<T>> = {}
 
-  private readonly worldEntities: PRecord<WorldEntityType, PRecord<LayerNumber, LuaEntity>> = {}
+  private readonly worldEntities: PRecord<WorldEntityType, PRecord<LayerNumber, AnyWorldEntity>> = {}
 
   constructor(baseLayer: LayerNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
     this.categoryName = getCategoryName(baseEntity)
@@ -174,23 +180,35 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     // else do nothing
   }
 
-  getWorldEntity(layer: LayerNumber, type: WorldEntityType = "main"): LuaEntity | nil {
+  getWorldEntity(layer: LayerNumber, type: WorldEntityType = "main") {
     const byType = this.worldEntities[type]
     if (!byType) return nil
     const worldEntity = byType[layer]
     if (worldEntity && worldEntity.valid) {
-      return worldEntity
+      return worldEntity as LuaEntity
     }
     // delete
     delete byType[layer]
     if (isEmpty(byType)) delete this.worldEntities[type]
   }
-  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil, type: WorldEntityType = "main"): void {
+  replaceWorldEntity(layer: LayerNumber, entity: AnyWorldEntity | nil, type: WorldEntityType = "main"): void {
     const { worldEntities } = this
     const byType = worldEntities[type] || (worldEntities[type] = {})
     const existing = byType[layer]
     if (existing && existing.valid && existing !== entity) existing.destroy()
     byType[layer] = entity
+    if (isEmpty(byType)) delete worldEntities[type]
+  }
+  hasAnyWorldEntity(type: WorldEntityType): boolean {
+    const { worldEntities } = this
+    const byType = worldEntities[type]
+    if (!byType) return false
+    for (const [key, entity] of pairs(byType)) {
+      if (entity && entity.valid) return true
+      byType[key] = nil
+    }
+    if (isEmpty(byType)) delete worldEntities[type]
+    return false
   }
   destroyAllWorldEntities(type: WorldEntityType): void {
     const { worldEntities } = this
@@ -201,7 +219,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     delete worldEntities[type]
   }
-  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[LayerNumber, LuaEntity]>> {
+  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[LayerNumber, any]>> {
     const byType = this.worldEntities[type]
     if (!byType) return (() => nil) as any
     let curKey = next(byType)[0]

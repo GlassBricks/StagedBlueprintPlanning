@@ -164,6 +164,13 @@ namespace BBox {
     const { left_top: lt2, right_bottom: rb2 } = other
     return left_top.x < rb2.x && right_bottom.x > lt2.x && left_top.y < rb2.y && right_bottom.y > lt2.y
   }
+
+  export function getTopRight(box: BBox): PositionClass {
+    return Pos(box.right_bottom.x, box.left_top.y)
+  }
+  export function getBottomLeft(box: BBox): PositionClass {
+    return Pos(box.left_top.x, box.right_bottom.y)
+  }
 }
 
 const meta: LuaMetatable<BBox, BBoxClass> = {

@@ -19,6 +19,8 @@ export interface Entity {
 }
 
 export interface WorldEntityTypes {
-  main: "main"
+  main: LuaEntity
 }
 export type WorldEntityType = keyof WorldEntityTypes
+
+export type AnyWorldEntity = WorldEntityTypes[WorldEntityType]

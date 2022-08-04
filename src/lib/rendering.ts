@@ -55,6 +55,7 @@ type DrawParams = {
 }
 export type RenderType = keyof DrawParams
 
+/** @noSelf */
 interface BaseRenderObj<T extends RenderType> {
   readonly id: uint64
   readonly valid: boolean
@@ -66,7 +67,7 @@ type AsObj = {
 } & {
   [K in GetAndSetKeys]-?: Getters[K] & Setters[K]
 }
-export type RenderObj<T extends RenderType> = BaseRenderObj<T> &
+export type RenderObj<T extends RenderType = RenderType> = BaseRenderObj<T> &
   Pick<AsObj, keyof DrawParams[T] & keyof AsObj> &
   Pick<OtherSetters, `set_${keyof DrawParams[T] & string}` & keyof OtherSetters>
 
@@ -175,24 +176,24 @@ const getters: {
   -readonly [K in keyof Getters]: LuaRendering[`get_${K}`]
 } & {
   valid: LuaRendering["is_valid"]
+  destroy: (this: void, id: uint64) => () => void
 } = {} as any
 for (const [key] of pairs(getterKeys)) {
   getters[key] = rendering[`get_${key}`] as any
 }
 getters.valid = rendering.is_valid
+getters.destroy = (id) => () => {
+  rendering.destroy(id)
+}
 
 const otherMethods: {
-  [K in keyof OtherSetters | "destroy"]: (this: BaseRenderObj<RenderType>, ...args: any[]) => void
+  [K in keyof OtherSetters]: (this: BaseRenderObj<RenderType>, ...args: any[]) => void
 } = {} as any
 for (const [key] of pairs(otherSetterKeys)) {
   const set = rendering[key] as (id: uint64, ...args: any) => void
   otherMethods[key] = function (this: BaseRenderObj<RenderType>, ...args: any[]) {
     set(this.id, ...args)
   }
-}
-const destroy = rendering.destroy
-otherMethods.destroy = function (this: BaseRenderObj<RenderType>) {
-  destroy(this.id)
 }
 
 const metatable: LuaMetatable<BaseRenderObj<RenderType>, any> = {
