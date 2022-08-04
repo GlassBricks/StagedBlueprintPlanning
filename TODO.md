@@ -55,13 +55,16 @@
   - [x] Show highlight
   - ~~[ ] Automatically attempt to revive when entities change~~
   - [ ] Manual revive
+  - [ ] Go to source
 - [ ] Incompatible properties due to upgraded entity
   - [ ] Automatically attempt to fix when entities change
 - [ ] Max connections exceeded
   - [ ] How to highlight?
   - [ ] Automatically attempt to fix
 - [ ] Lost references
+  - [x] Show highlight
   - [ ] Selectable?
+  - [ ] Manual revive/delete
 
 ### Other utils
 

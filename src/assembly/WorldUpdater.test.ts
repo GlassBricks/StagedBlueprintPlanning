@@ -44,7 +44,8 @@ before_each(() => {
   mockEntityCreator = createMockEntityCreator()
   highlighter = {
     setErrorHighlightAt: spy(),
-    deleteAllHighlights: spy(),
+    deleteErrorHighlights: spy(),
+    updateLostReferenceHighlights: spy(),
   }
   worldUpdater = createWorldUpdater(mockEntityCreator, highlighter)
 })
@@ -64,7 +65,7 @@ function assertEntityCorrect(i: LayerNumber): LuaEntity {
   return entry.luaEntity
 }
 describe("updateWorldEntities", () => {
-  describe.each([false, true], "with entity changes", (withChanges) => {
+  describe.each([false, true], "with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
         entity.applyDiffAtLayer(entity.getBaseLayer(), { prop1: 2 })
@@ -83,13 +84,22 @@ describe("updateWorldEntities", () => {
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
     })
 
-    test("entities not in base layer are indestructible", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      function assertDestructible(luaEntity: LuaEntity, value: boolean) {
-        assert.equal(value, luaEntity.destructible)
-        assert.equal(value, luaEntity.minable)
-        assert.equal(value, luaEntity.rotatable)
+    function assertDestructible(luaEntity: LuaEntity, value: boolean) {
+      assert.equal(value, luaEntity.destructible, `destructible not ${value}`)
+      assert.equal(value, luaEntity.minable, `minable not ${value}`)
+      assert.equal(value, luaEntity.rotatable, `rotatable not ${value}`)
+    }
+
+    test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {
+      if (withExisting) {
+        const luaEntity = mockEntityCreator.createEntity(assembly.layers[2], entity, {
+          name: "test",
+          prop1: 10,
+        } as TestEntity)!
+        entity.replaceWorldEntity(2, luaEntity)
       }
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+
       assertDestructible(assertEntityCorrect(1), true)
       assertDestructible(assertEntityCorrect(2), false)
       assertDestructible(assertEntityCorrect(3), false)
@@ -174,6 +184,17 @@ describe("error highlight", () => {
     mockEntityCreator.createEntity(assembly.layers[1], entity, entity.getBaseValue())
     worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
     worldUpdater.deleteAllWorldEntities(assembly, entity)
-    assert.spy(highlighter.deleteAllHighlights).called_with(entity)
+    assert.spy(highlighter.deleteErrorHighlights).called_with(entity)
+  })
+})
+
+describe("lost reference highlight", () => {
+  test("updateWorldEntities called updateLostReferenceHighlights", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    assert.spy(highlighter.updateLostReferenceHighlights).called(1)
+  })
+  test("deleteAllWorldEntities called deleteLostReferenceHighlights", () => {
+    worldUpdater.deleteAllWorldEntities(assembly, entity)
+    assert.spy(highlighter.updateLostReferenceHighlights).called(1)
   })
 })

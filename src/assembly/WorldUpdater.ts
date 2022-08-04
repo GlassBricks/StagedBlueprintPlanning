@@ -37,6 +37,7 @@ export interface WorldUpdater {
     replace?: boolean,
   ): void
 
+  /** If the entity is a lost reference, creates lost reference highlights. */
   deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void
 }
 
@@ -47,7 +48,7 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
     readonly layers: Record<LayerNumber, LayerPosition>
   }
   const { createEntity, updateEntity } = entityCreator
-  const { setErrorHighlightAt, deleteAllHighlights } = highlighter
+  const { setErrorHighlightAt, deleteErrorHighlights, updateLostReferenceHighlights } = highlighter
 
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
@@ -70,6 +71,9 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
     if (!endLayer || endLayer > maxLayer) endLayer = maxLayer
     if (startLayer > endLayer) return
 
+    assert(!entity.isLostReference)
+    updateLostReferenceHighlights(assembly, entity)
+
     const direction = entity.direction ?? 0
 
     for (const [layerNum, value] of entity.iterateValues(startLayer, endLayer)) {
@@ -77,6 +81,7 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
       if (existing && !replace) {
         existing.direction = direction
         updateEntity(existing, value)
+        if (layerNum !== baseLayer) makeEntityIndestructible(existing)
       } else {
         if (existing) existing.destroy()
         const layer = layers[layerNum]
@@ -90,7 +95,8 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
 
   function deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
     entity.destroyAllWorldEntities("main")
-    deleteAllHighlights(entity)
+    deleteErrorHighlights(entity)
+    updateLostReferenceHighlights(assembly, entity)
   }
 
   return {

@@ -19,6 +19,7 @@ declare module "../entity/Entity" {
   export interface WorldEntityTypes {
     errorHighlight: HighlightBoxEntity
     errorIndicator: RenderObj<"sprite">
+    lostReferenceHighlight: HighlightBoxEntity
   }
 }
 
@@ -31,7 +32,8 @@ export interface EntityHighlighter {
     value: boolean,
   ): void
 
-  deleteAllHighlights(entity: AssemblyEntity): void
+  deleteErrorHighlights(entity: AssemblyEntity): void
+  updateLostReferenceHighlights(assembly: AssemblyPosition, entity: AssemblyEntity): void
 }
 
 /** @noSelf */
@@ -57,17 +59,6 @@ declare const luaLength: LuaLength<table, number>
 export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
   const { createHighlight, createSprite } = entityCreator
 
-  function removeErrorHighlight(entity: AssemblyEntity, layerNumber: number, assembly: AssemblyPosition): void {
-    entity.replaceWorldEntity(layerNumber, nil, "errorHighlight")
-    if (entity.hasAnyWorldEntity("errorHighlight")) {
-      // other layers have highlights, create indicator here
-      createErrorIndicator(assembly, entity, layerNumber)
-    } else {
-      // no more highlights, delete all indicators
-      removeAllErrorIndicators(entity)
-    }
-  }
-
   function createErrorHighlight(entity: AssemblyEntity, layerNumber: number, assembly: AssemblyPosition): void {
     if (layerNumber < entity.getBaseLayer()) return removeErrorHighlight(entity, layerNumber, assembly)
 
@@ -89,11 +80,24 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
   }
 
+  function removeErrorHighlight(entity: AssemblyEntity, layerNumber: number, assembly: AssemblyPosition): void {
+    entity.replaceWorldEntity(layerNumber, nil, "errorHighlight")
+    if (entity.hasAnyWorldEntity("errorHighlight")) {
+      // other layers have highlights, create indicator here
+      createErrorIndicator(assembly, entity, layerNumber)
+    } else {
+      // no more highlights, delete all indicators
+      removeAllErrorIndicators(entity)
+    }
+  }
+
   function createErrorIndicator(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber): void {
     if (layerNumber < entity.getBaseLayer() || entity.getWorldEntity(layerNumber, "errorHighlight")) {
       entity.replaceWorldEntity(layerNumber, nil, "errorIndicator")
       return
     }
+    const existingHighlight = entity.getWorldEntity(layerNumber, "errorIndicator")
+    if (existingHighlight) return
     const layer = assembly.layers[layerNumber]
     const indicator = createErrorIndicatorEntity(entity, layer)
     entity.replaceWorldEntity(layerNumber, indicator, "errorIndicator")
@@ -102,8 +106,8 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function createAllErrorIndicators(assembly: AssemblyPosition, entity: AssemblyEntity): void {
     const minLayer = entity.getBaseLayer()
     const maxLayer = luaLength(assembly.layers)
-    for (const layers of $range(minLayer, maxLayer)) {
-      createErrorIndicator(assembly, entity, layers)
+    for (const layer of $range(minLayer, maxLayer)) {
+      createErrorIndicator(assembly, entity, layer)
     }
   }
 
@@ -161,9 +165,43 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     entity.destroyAllWorldEntities("errorIndicator")
   }
 
+  function updateLostReferenceHighlights(assembly: AssemblyPosition, entity: AssemblyEntity): void {
+    if (entity.isLostReference) createLostReferenceHighlights(assembly, entity)
+    else entity.destroyAllWorldEntities("lostReferenceHighlight")
+  }
+
+  function createLostReferenceHighlights(assembly: AssemblyPosition, entity: AssemblyEntity): void {
+    const minLayer = entity.getBaseLayer()
+    const maxLayer = luaLength(assembly.layers)
+    for (const layer of $range(minLayer, maxLayer)) {
+      createLostReferenceHighlight(assembly, entity, layer)
+    }
+  }
+
+  function createLostReferenceHighlight(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber) {
+    if (layerNumber < entity.getBaseLayer()) {
+      entity.replaceWorldEntity(layerNumber, nil, "lostReferenceHighlight")
+      return
+    }
+    const layer = assembly.layers[layerNumber]
+    const highlight = createLostReferenceHighlightEntity(entity, layer)
+    entity.replaceWorldEntity(layerNumber, highlight, "lostReferenceHighlight")
+  }
+
+  function createLostReferenceHighlightEntity(entity: AssemblyEntity, layer: LayerPosition) {
+    const prototypeName = entity.categoryName
+    const position = entity.position
+    const selectionBox = BBox.translate(
+      game.entity_prototypes[prototypeName].selection_box,
+      getWorldPosition(position, layer),
+    )
+    return createHighlight(layer.surface, position, selectionBox, "pair")!
+  }
+
   return {
     setErrorHighlightAt,
-    deleteAllHighlights,
+    deleteErrorHighlights: deleteAllHighlights,
+    updateLostReferenceHighlights,
   }
 }
 
