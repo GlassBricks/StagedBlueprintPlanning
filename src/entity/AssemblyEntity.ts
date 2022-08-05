@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isEmpty, Mutable, mutableShallowCopy, PRecord, PRRecord, RegisterClass } from "../lib"
+import { isEmpty, Mutable, mutableShallowCopy, PRecord, PRRecord, RegisterClass, shallowCopy } from "../lib"
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff } from "./diff"
 import { AnyWorldEntity, Entity, EntityPose, WorldEntityType, WorldEntityTypes } from "./Entity"
@@ -35,7 +35,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   getValueAtLayer(layer: LayerNumber): T | nil
   /**
    * Iterates the values of layers in the given range. More efficient than repeated calls to getValueAtLayer.
-   * The same instance will be returned for each layer; It should be treated as a temporary read-only view.
+   * The same instance will be returned for each layer; its value is ephemeral.
    */
   iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T>]>>
 
@@ -48,7 +48,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    * @param createDiffAtOldLayer If a diff should be created at the old layer, so that the value at the old layer remains unchanged.
    * @return The old layer number.
    */
-  moveDown(lowerLayer: LayerNumber, newValue: T, createDiffAtOldLayer?: boolean): LayerNumber
+  moveDown(lowerLayer: LayerNumber, newValue: Mutable<T>, createDiffAtOldLayer?: boolean): LayerNumber
   /**
    * Move the entity to a higher layer
    * All layer changes from the old layer to the new layer will be applied (and then removed).
@@ -92,7 +92,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.categoryName = getCategoryName(baseEntity)
     this.position = position
     this.direction = direction === 0 ? nil : direction
-    this.baseValue = baseEntity
+    this.baseValue = shallowCopy(baseEntity)
     this.baseLayer = baseLayer
   }
 
@@ -114,7 +114,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (existingDiff) {
       applyDiffToDiff(existingDiff, diff)
     } else {
-      layerChanges[layer] = diff
+      layerChanges[layer] = shallowCopy(diff)
     }
   }
   hasLayerChanges(): boolean {
@@ -148,7 +148,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return $multi<any>(next, this.layerChanges, nil)
   }
 
-  moveDown(lowerLayer: LayerNumber, newValue?: T, createDiffAtOldLayer?: boolean): LayerNumber {
+  moveDown(lowerLayer: LayerNumber, newValue?: Mutable<T>, createDiffAtOldLayer?: boolean): LayerNumber {
     const { baseLayer: higherLayer, baseValue: higherValue } = this
     assert(lowerLayer < higherLayer, "new layer number must be greater than old layer number")
     const lowerValue = newValue ?? higherValue
