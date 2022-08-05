@@ -25,7 +25,7 @@ export interface BaseElementSpec {
   style?: string
   tags?: Tags
   anchor?: MaybeState<GuiAnchor | nil>
-  location?: MaybeState<GuiLocation | nil>
+  location?: MaybeState<GuiLocation | GuiLocationArray>
   children?: Spec[]
 }
 
@@ -55,7 +55,7 @@ export interface DropDownElementSpec extends BaseElementSpec {
 
 export interface EmptyWidgetElementSpec extends BaseElementSpec {
   type: "empty-widget"
-  drag_target?: MaybeState<LuaGuiElement | nil>
+  drag_target?: MaybeState<FrameGuiElement | nil>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -65,7 +65,7 @@ export interface EmptyWidgetElementSpec extends BaseElementSpec {
 
 export interface EntityPreviewElementSpec extends BaseElementSpec {
   type: "entity-preview"
-  entity?: MaybeState<LuaEntity | nil>
+  entity?: MaybeState<LuaEntity>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -106,7 +106,7 @@ export interface SpriteButtonElementSpec extends BaseElementSpec {
   clicked_sprite?: MaybeState<SpritePath>
   number?: MaybeState<double | nil>
   show_percent_for_small_numbers?: MaybeState<boolean>
-  mouse_button_filter?: MaybeState<MouseButtonFlags>
+  mouse_button_filter?: MaybeState<MouseButtonFlagsWrite>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -141,7 +141,7 @@ export interface TextBoxElementSpec extends BaseElementSpec {
 
 export interface ButtonElementSpec extends BaseElementSpec {
   type: "button"
-  mouse_button_filter?: MaybeState<MouseButtonFlags>
+  mouse_button_filter?: MaybeState<MouseButtonFlagsWrite>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -151,10 +151,10 @@ export interface ButtonElementSpec extends BaseElementSpec {
 
 export interface CameraElementSpec extends BaseElementSpec {
   type: "camera"
-  position: MaybeState<MapPosition>
+  position: MaybeState<MapPosition | MapPositionArray>
   surface_index?: MaybeState<SurfaceIndex>
   zoom?: MaybeState<double>
-  entity?: MaybeState<LuaEntity | nil>
+  entity?: MaybeState<LuaEntity>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -175,7 +175,7 @@ export interface CheckboxElementSpec extends BaseElementSpec {
 export interface FlowElementSpec extends BaseElementSpec {
   type: "flow"
   direction?: "horizontal" | "vertical"
-  drag_target?: MaybeState<LuaGuiElement | nil>
+  drag_target?: MaybeState<FrameGuiElement | nil>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -187,7 +187,7 @@ export interface FrameElementSpec extends BaseElementSpec {
   type: "frame"
   direction?: "horizontal" | "vertical"
   auto_center?: MaybeState<boolean>
-  drag_target?: MaybeState<LuaGuiElement | nil>
+  drag_target?: MaybeState<FrameGuiElement | nil>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_location_changed?: GuiEventHandler<OnGuiLocationChangedEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
@@ -198,7 +198,7 @@ export interface FrameElementSpec extends BaseElementSpec {
 
 export interface LabelElementSpec extends BaseElementSpec {
   type: "label"
-  drag_target?: MaybeState<LuaGuiElement | nil>
+  drag_target?: MaybeState<FrameGuiElement | nil>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -218,13 +218,13 @@ export interface LineElementSpec extends BaseElementSpec {
 
 export interface MinimapElementSpec extends BaseElementSpec {
   type: "minimap"
-  position?: MaybeState<MapPosition>
+  position?: MaybeState<MapPosition | MapPositionArray>
   surface_index?: MaybeState<SurfaceIndex>
   chart_player_index?: uint
-  force?: MaybeState<string | nil>
+  force?: MaybeState<string>
   zoom?: MaybeState<double>
   minimap_player_index?: MaybeState<uint>
-  entity?: MaybeState<LuaEntity | nil>
+  entity?: MaybeState<LuaEntity>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -257,10 +257,9 @@ export interface SliderElementSpec extends BaseElementSpec {
   minimum_value?: MaybeState<double>
   maximum_value?: MaybeState<double>
   value_step?: MaybeState<double>
-  discrete_slider?: MaybeState<double>
-  discrete_values?: boolean
+  discrete_slider?: MaybeState<boolean>
+  discrete_values?: MaybeState<boolean>
   slider_value?: MaybeMutableState<double>
-  discrete_value?: MaybeState<double>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -311,7 +310,7 @@ export interface TableElementSpec extends BaseElementSpec {
   draw_horizontal_lines?: MaybeState<boolean>
   draw_horizontal_line_after_headers?: MaybeState<boolean>
   vertical_centering?: MaybeState<boolean>
-  drag_target?: MaybeState<LuaGuiElement | nil>
+  drag_target?: MaybeState<FrameGuiElement | nil>
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
@@ -380,7 +379,7 @@ export interface BaseStyleMod {
   left_margin?: MaybeState<int>
   horizontal_align?: MaybeState<"left" | "center" | "right">
   vertical_align?: MaybeState<"top" | "center" | "bottom">
-  font_color?: MaybeState<Color>
+  font_color?: MaybeState<Color | ColorArray>
   font?: MaybeState<string>
   horizontally_stretchable?: MaybeState<boolean>
   vertically_stretchable?: MaybeState<boolean>
@@ -415,15 +414,15 @@ export interface TextBoxStyleMod extends BaseStyleMod {
 }
 
 export interface ButtonStyleMod extends BaseStyleMod {
-  hovered_font_color?: MaybeState<Color>
-  clicked_font_color?: MaybeState<Color>
-  disabled_font_color?: MaybeState<Color>
-  pie_progress_color?: MaybeState<Color>
+  hovered_font_color?: MaybeState<Color | ColorArray>
+  clicked_font_color?: MaybeState<Color | ColorArray>
+  disabled_font_color?: MaybeState<Color | ColorArray>
+  pie_progress_color?: MaybeState<Color | ColorArray>
   clicked_vertical_offset?: MaybeState<int>
-  selected_font_color?: MaybeState<Color>
-  selected_hovered_font_color?: MaybeState<Color>
-  selected_clicked_font_color?: MaybeState<Color>
-  strikethrough_color?: MaybeState<Color>
+  selected_font_color?: MaybeState<Color | ColorArray>
+  selected_hovered_font_color?: MaybeState<Color | ColorArray>
+  selected_clicked_font_color?: MaybeState<Color | ColorArray>
+  strikethrough_color?: MaybeState<Color | ColorArray>
 }
 
 export interface FlowStyleMod extends BaseStyleMod {
@@ -442,7 +441,7 @@ export interface LabelStyleMod extends BaseStyleMod {
 
 export interface ProgressBarStyleMod extends BaseStyleMod {
   bar_width?: MaybeState<uint>
-  color?: MaybeState<Color>
+  color?: MaybeState<Color | ColorArray>
 }
 
 export interface SpriteStyleMod extends BaseStyleMod {
@@ -450,12 +449,12 @@ export interface SpriteStyleMod extends BaseStyleMod {
 }
 
 export interface TabStyleMod extends BaseStyleMod {
-  disabled_font_color?: MaybeState<Color>
+  disabled_font_color?: MaybeState<Color | ColorArray>
   badge_font?: MaybeState<string>
   badge_horizontal_spacing?: MaybeState<int>
-  default_badge_font_color?: MaybeState<Color>
-  selected_badge_font_color?: MaybeState<Color>
-  disabled_badge_font_color?: MaybeState<Color>
+  default_badge_font_color?: MaybeState<Color | ColorArray>
+  selected_badge_font_color?: MaybeState<Color | ColorArray>
+  disabled_badge_font_color?: MaybeState<Color | ColorArray>
 }
 
 export interface TableStyleMod extends BaseStyleMod {

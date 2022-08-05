@@ -30,7 +30,8 @@
     "sourceMapTraceback": true,
     "luaPlugins": [
       {
-        "name": "./tstlPlugin/extensions-plugin.ts"
+        "name": "./tstlPlugin/extensions-plugin.ts",
+        "testPattern": "\\.test\\.tsx?$"
       }
     ]
   },

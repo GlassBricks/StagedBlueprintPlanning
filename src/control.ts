@@ -10,4 +10,5 @@
  */
 
 import "./assembly"
-import "./test"
+// import "./test/test-init"
+pcall(require, "test.test-init")

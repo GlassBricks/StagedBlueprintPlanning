@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["**/*.test.{ts,tsx}", "src/test.ts", "src/test-util", "**/*.mock.{ts,tsx}", "src/_debug.ts"],
+  "include": ["src/control.ts", "src/**/*.d.ts", "tstlPlugin/*.d.ts"],
+  "exclude": ["src/**/test/**"],
   "tstl": {
     "luaTarget": "5.2",
     "noResolvePaths": ["__testorio__/init"],
@@ -8,7 +9,7 @@
     "sourceMapTraceback": true,
     "luaPlugins": [
       {
-        "name": "./tstlPlugin/plugin.js"
+        "name": "./tstlPlugin/extensions-plugin.ts"
       }
     ]
   }

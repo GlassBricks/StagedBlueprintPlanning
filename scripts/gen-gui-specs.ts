@@ -91,21 +91,22 @@ function normalizeName(name: string): string {
   return name.replace(/-/g, "").toLowerCase()
 }
 
-const normElemTypeNames: Record<string, GuiElementType | "base"> = {}
+const normElemTypeNames: Record<string, GuiElementType | "base" | "other"> = {}
 for (const type of guiElementTypes) {
   normElemTypeNames[normalizeName(type)] = type
 }
 normElemTypeNames.base = "base"
+normElemTypeNames.other = "other"
 
-interface PropDef {
+interface TypePropDef {
   setter?: string
   type: string
   optional: boolean
 }
 
-type TypeDef = Record<string, PropDef>
+type TypeDef = Record<string, TypePropDef>
 
-interface Prop {
+interface SpecProp {
   name: string
   type: string
   optional: boolean
@@ -113,7 +114,7 @@ interface Prop {
   element?: boolean | string
 }
 
-type SpecDef = Record<string, Prop>
+type SpecDef = Record<string, SpecProp>
 
 const elementSpecs = {} as Record<GuiElementType | "base", SpecDef>
 const styleMods = {} as Record<GuiElementType | "base", SpecDef>
@@ -123,14 +124,18 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
 // read and process types
 {
   // from gui.d.ts
-  function mapDef(def: ts.InterfaceDeclaration, skipReadonly: boolean): TypeDef {
+  function mapDef(def: ts.InterfaceDeclaration, elem: string, skipReadonly: boolean): TypeDef {
     const result: TypeDef = {}
     for (const member of def.members) {
       if (!(ts.isPropertySignature(member) || ts.isSetAccessorDeclaration(member))) continue
       const name = (member.name as ts.Identifier).text
       if (ts.isSetAccessorDeclaration(member) && name === "style") continue
       if (skipReadonly && member.modifiers?.some((x) => x.kind === ts.SyntaxKind.ReadonlyKeyword)) continue
-      const type = (ts.isPropertySignature(member) ? member.type : member.parameters[0].type)!.getText(classesFile)
+      let type = (ts.isPropertySignature(member) ? member.type : member.parameters[0].type)!.getText(classesFile)
+      if (name === "type" && type.includes("|")) {
+        // replace with elem
+        type = `"${elem}"`
+      }
       const optional = member.questionToken !== undefined
       result[name] = {
         type,
@@ -159,9 +164,19 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
       if (matchName === "HorizontalFlow" || matchName === "VerticalFlow") return
       if (matchName === "Image") matchName = "Sprite"
       const elemType = normElemTypeNames[normalizeName(matchName)]
-      if (!elemType) throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
-      if (elemType !== "base") capitalized[elemType] = matchName
-      results[elemType] = mapDef(def, skipReadonly)
+      let elemTypes: (GuiElementType | "base")[]
+      if (elemType === "other") {
+        elemTypes = ["empty-widget", "entity-preview", "tabbed-pane", "label"]
+          .map(normalizeName)
+          .map((x) => normElemTypeNames[x]) as (GuiElementType | "base")[]
+      } else {
+        if (!elemType) throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
+        if (elemType !== "base") capitalized[elemType] = matchName
+        elemTypes = [elemType]
+      }
+      for (const elem of elemTypes) {
+        results[elem] = mapDef(def, elem, skipReadonly)
+      }
     }
     tryMatch(/^(.+?)GuiSpec|^Base(ChooseElemButton)Spec/, specs, false)
     tryMatch(/^(.+?)GuiElement/, elements, true)
@@ -176,27 +191,27 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
   sliderElem.value_step = {
     setter: "set_slider_value_step",
     type: "double",
-    optional: true,
+    optional: false,
   }
   sliderElem.discrete_slider = {
     setter: "set_slider_discrete_slider",
-    type: "double",
-    optional: true,
+    type: "boolean",
+    optional: false,
   }
-  sliderElem.discrete_value = {
-    setter: "set_slider_discrete_value",
-    type: "double",
-    optional: true,
+  sliderElem.discrete_values = {
+    setter: "set_slider_discrete_values",
+    type: "boolean",
+    optional: false,
   }
   sliderElem.minimum_value = {
     setter: "slider_minimum",
     type: "double",
-    optional: true,
+    optional: false,
   }
   sliderElem.maximum_value = {
     setter: "slider_maximum",
     type: "double",
-    optional: true,
+    optional: false,
   }
 
   // gui events
@@ -209,7 +224,8 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
     if (!match) continue
     const matchName = match[1]
     const elemType = normElemTypeNames[normalizeName(matchName)]
-    if (!elemType || elemType === "base") throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
+    if (!elemType || elemType === "base" || elemType === "other")
+      throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
 
     events[elemType] = {}
     stateProps[elemType] = {}
@@ -238,14 +254,15 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
 
     const result: SpecDef = {}
 
-    function merge(name: string, prop: Prop) {
+    function merge(name: string, prop: SpecProp) {
       result[name] = Object.assign(result[name] || {}, prop)
     }
 
     // spec only
     for (const [name, attr] of Object.entries(spec)) {
       merge(name, {
-        ...attr,
+        type: attr.type,
+        optional: attr.optional,
         name,
         add: true,
       })
@@ -253,8 +270,12 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
 
     for (const [name, attr] of Object.entries(element)) {
       const specAttr = spec[name]
+      let attrType = attr.type
+      if (attr.optional) {
+        attrType += " | nil"
+      }
       const typeName =
-        type !== "base" && stateProps[type][name] ? `MaybeMutableState<${attr.type}>` : `MaybeState<${attr.type}>`
+        type !== "base" && stateProps[type][name] ? `MaybeMutableState<${attrType}>` : `MaybeState<${attrType}>`
       merge(name, {
         name,
         type: typeName,

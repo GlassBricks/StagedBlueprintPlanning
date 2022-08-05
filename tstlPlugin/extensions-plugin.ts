@@ -27,6 +27,7 @@ import {
   LuaLibFeature,
   Plugin,
   TransformationContext,
+  Visitors,
 } from "typescript-to-lua"
 import { transformExpressionList } from "typescript-to-lua/dist/transformation/visitors/expression-list"
 import { createSerialDiagnosticFactory } from "typescript-to-lua/dist/utils"
@@ -39,24 +40,6 @@ const useNilInstead = createSerialDiagnosticFactory((node: ts.Node) => ({
   category: ts.DiagnosticCategory.Warning,
 }))
 
-const testPattern = /\.test\.tsx?$/
-
-function getTestFiles(context: TransformationContext) {
-  const rootDir = getSourceDir(context.program)
-  const sourceFiles = context.program.getSourceFiles()
-  const fields = sourceFiles
-    .filter((f) => testPattern.test(f.fileName))
-    .map((f) => {
-      let filePath = path.relative(rootDir, f.fileName).replace(/\\/g, "/")
-      // remove extension
-      filePath = filePath.substring(0, filePath.lastIndexOf("."))
-      // replace remaining . with -
-      filePath = filePath.replace(/\./g, "-")
-      return createTableFieldExpression(createStringLiteral(filePath))
-    })
-  return createTableExpression(fields)
-}
-
 function transformLuaSetNewCall(context: TransformationContext, node: ts.CallExpression) {
   const args = node.arguments?.slice() ?? []
   const expressions = transformExpressionList(context, args)
@@ -65,9 +48,24 @@ function transformLuaSetNewCall(context: TransformationContext, node: ts.CallExp
     node,
   )
 }
-
-const plugin: Plugin = {
-  visitors: {
+function createPlugin(options: { testPattern?: string }): Plugin {
+  const testPattern = options.testPattern ? RegExp(options.testPattern) : undefined
+  function getTestFiles(context: TransformationContext) {
+    const rootDir = getSourceDir(context.program)
+    const sourceFiles = context.program.getSourceFiles()
+    const fields = sourceFiles
+      .filter((f) => testPattern!.test(f.fileName))
+      .map((f) => {
+        let filePath = path.relative(rootDir, f.fileName).replace(/\\/g, "/")
+        // remove extension
+        filePath = filePath.substring(0, filePath.lastIndexOf("."))
+        // replace remaining . with -
+        filePath = filePath.replace(/\./g, "-")
+        return createTableFieldExpression(createStringLiteral(filePath))
+      })
+    return createTableExpression(fields)
+  }
+  const visitors: Visitors = {
     [ts.SyntaxKind.DeleteExpression](node: ts.DeleteExpression, context: TransformationContext) {
       const deleteCall = context.superTransformExpression(node)
       assert(isCallExpression(deleteCall))
@@ -87,7 +85,7 @@ const plugin: Plugin = {
     [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       // handle special case when call = __getTestFiles(), replace with list of files
       if (ts.isIdentifier(node.expression)) {
-        if (node.expression.text === "__getTestFiles") {
+        if (testPattern && node.expression.text === "__getTestFiles") {
           return getTestFiles(context)
         }
         if (node.expression.text === "newLuaSet") {
@@ -118,25 +116,36 @@ const plugin: Plugin = {
       }
       return context.superTransformExpression(node)
     },
-  },
-  beforeEmit(program, __, ___, files) {
-    if (files.length === 0) return // also if there are errors and noEmitOnError
-    for (const file of files) {
-      const outPath = file.outputPath
-      if (!outPath.endsWith(".lua")) continue
-      const fileName = path.basename(outPath, ".lua")
-      // replace . with - in file name
-      const newFileName = fileName.replace(/\./g, "-")
-      file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
-    }
+  }
 
-    const currentTimestampString = new Date().toLocaleString()
-    const outDir = getEmitOutDir(program)
-    files.push({
-      outputPath: path.join(outDir, "last-compile-time.lua"),
-      code: `return ${JSON.stringify(currentTimestampString)}`,
-    })
-  },
+  const plugin: Plugin = {
+    visitors,
+    beforeEmit(program, __, ___, files) {
+      if (files.length === 0) return // also if there are errors and noEmitOnError
+      for (const file of files) {
+        const outPath = file.outputPath
+        if (!outPath.endsWith(".lua")) continue
+        const fileName = path.basename(outPath, ".lua")
+        // replace . with - in file name
+        const newFileName = fileName.replace(/\./g, "-")
+        if (fileName === newFileName) continue
+        file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
+        if (!testPattern) {
+          console.warn(`Replaced ${fileName} with ${newFileName}, but tests are disabled.`)
+        }
+      }
+
+      if (testPattern) {
+        const currentTimestampString = new Date().toLocaleString()
+        const outDir = getEmitOutDir(program)
+        files.push({
+          outputPath: path.join(outDir, "last-compile-time.lua"),
+          code: `return ${JSON.stringify(currentTimestampString)}`,
+        })
+      }
+    },
+  }
+  return plugin
 }
 // noinspection JSUnusedGlobalSymbols
-export default plugin
+export default createPlugin
