@@ -26,7 +26,7 @@ export function getWorldPosition(layerPosition: Position, layer: LayerPosition):
 /** @noSelf */
 export interface EntityCreator {
   createEntity(layer: LayerPosition, pos: EntityPose, entity: Entity): LuaEntity | nil
-  updateEntity(luaEntity: LuaEntity, value: Entity): void
+  updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity
 }
 
 /** @noSelf */
@@ -49,7 +49,7 @@ export const DefaultEntityHandler: EntityHandler = {
       entity as BlueprintEntity,
     )
   },
-  updateEntity(luaEntity: LuaEntity, value: Entity): void {
+  updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity {
     return BlueprintDiffHandler.match(luaEntity, value as BlueprintEntity)
   },
 }

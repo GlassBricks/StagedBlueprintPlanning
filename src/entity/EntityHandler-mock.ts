@@ -72,10 +72,11 @@ export function createMockEntityCreator(): MockEntityCreator {
       luaEntityToEntry.set(luaEntity, entry)
       return luaEntity
     },
-    updateEntity(luaEntity: LuaEntity, value: Entity): void {
+    updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity {
       assert(luaEntity.valid)
       const entry = luaEntityToEntry.get(luaEntity)
       if (entry) entry.value = shallowCopy(value)
+      return luaEntity
     },
     getAt,
   }

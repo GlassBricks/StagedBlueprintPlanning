@@ -86,6 +86,34 @@ function pasteEntity(
   return ghosts[0]
 }
 
+function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
+  const { surface, position, direction } = entity
+  if (
+    !surface.can_fast_replace({
+      name,
+      position,
+      direction,
+      force: "player",
+    })
+  ) {
+    return entity
+  }
+  const newEntity = surface.create_entity({
+    name,
+    position,
+    direction,
+    force: "player",
+    fast_replace: true,
+    spill: false,
+    create_build_effect_smoke: false,
+  })
+  if (!newEntity) return entity
+  if (entity.valid) {
+    game.print("warning: old entity still valid")
+    entity.destroy()
+  }
+  return newEntity
+}
 export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
   save(entity: LuaEntity): BlueprintEntity | nil {
     const { surface, position } = entity
@@ -117,9 +145,14 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
     return ghost && reviveGhost(ghost)
   },
 
-  match(luaEntity: LuaEntity, value: BlueprintEntity): void {
+  match(luaEntity: LuaEntity, value: BlueprintEntity): LuaEntity {
     assert(luaEntity.force.name === "player")
+    if (luaEntity.name !== value.name) {
+      luaEntity = upgradeEntity(luaEntity, value.name)
+    }
+
     const ghost = pasteEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, value)
     if (ghost) ghost.destroy() // should not happen?
+    return luaEntity
   },
 }

@@ -25,6 +25,13 @@ describe("findCompatible", () => {
     assert.equal(entity, content.findCompatible({ name: "foo" }, { x: 0, y: 0 }, nil))
   })
 
+  test("finds compatible if same category", () => {
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, 0, 1)
+    content.add(entity)
+
+    assert.equal(entity, content.findCompatible({ name: "assembling-machine-2" }, { x: 0, y: 0 }, nil))
+  })
+
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     assert.nil(content.findCompatible({ name: "test2" }, entity.position, nil))

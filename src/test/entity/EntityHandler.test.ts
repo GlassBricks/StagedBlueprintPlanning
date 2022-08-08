@@ -9,11 +9,17 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LayerPosition } from "../../assembly/Assembly"
+import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
+import { WorldArea } from "../../utils/world-location"
 import { clearTestArea } from "../area"
 
-test("save basic entity", () => {
-  const area = clearTestArea()
+let area: WorldArea
+before_each(() => {
+  area = clearTestArea()
+})
+test("can save an entity", () => {
   const entity = area.surface.create_entity({
     name: "iron-chest",
     position: { x: 12.5, y: 12.5 },
@@ -22,4 +28,44 @@ test("save basic entity", () => {
   })!
   const saved = DefaultEntityHandler.saveEntity(entity)
   assert.same({ name: "iron-chest", bar: 3 }, saved)
+})
+
+test("can create an entity", () => {
+  const layer: LayerPosition = {
+    surface: area.surface,
+    left_top: { x: 0, y: 0 },
+    right_bottom: { x: 1, y: 1 },
+    layerNumber: 0,
+  }
+  const luaEntity = DefaultEntityHandler.createEntity(layer, { position: { x: 0.5, y: 0.5 }, direction: nil }, {
+    name: "iron-chest",
+    bar: 3,
+  } as Entity)!
+  assert.not_nil(luaEntity, "entity created")
+  assert.equal("iron-chest", luaEntity.name)
+  assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
+  assert.equal(3, luaEntity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
+})
+
+test("can update an entity", () => {
+  const entity = area.surface.create_entity({
+    name: "iron-chest",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    bar: 3,
+  })!
+  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity)
+  assert.equal(entity, newEntity)
+  assert.equal(4, entity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
+})
+
+test("can upgrade an entity", () => {
+  const entity = area.surface.create_entity({
+    name: "iron-chest",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+  })!
+  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity)
+  assert.equal("steel-chest", newEntity.name)
+  assert.false(entity.valid)
 })
