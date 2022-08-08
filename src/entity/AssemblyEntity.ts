@@ -182,7 +182,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   getWorldEntity(layer: LayerNumber, type: WorldEntityType = "main") {
-    const byType = this.worldEntities[type]
+    const { worldEntities } = this
+    const byType = worldEntities[type]
     if (!byType) return nil
     const worldEntity = byType[layer]
     if (worldEntity && worldEntity.valid) {
@@ -190,7 +191,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     // delete
     delete byType[layer]
-    if (isEmpty(byType)) delete this.worldEntities[type]
+    if (isEmpty(byType)) delete worldEntities[type]
   }
   replaceWorldEntity(layer: LayerNumber, entity: AnyWorldEntity | nil, type: WorldEntityType = "main"): void {
     const { worldEntities } = this
