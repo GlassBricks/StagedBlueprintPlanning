@@ -13,6 +13,7 @@ import { isEmpty, Mutable, mutableShallowCopy, PRecord, PRRecord, RegisterClass,
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff } from "./diff"
 import { AnyWorldEntity, Entity, EntityPose, WorldEntityType, WorldEntityTypes } from "./Entity"
+import { getCategoryName } from "./entity-info"
 
 export type LayerNumber = number
 
@@ -89,7 +90,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   private readonly worldEntities: PRecord<WorldEntityType, PRecord<LayerNumber, AnyWorldEntity>> = {}
 
   constructor(baseLayer: LayerNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
-    this.categoryName = getCategoryName(baseEntity)
+    this.categoryName = getCategoryName(baseEntity.name)
     this.position = position
     this.direction = direction === 0 ? nil : direction
     this.baseValue = shallowCopy(baseEntity)
@@ -242,11 +243,6 @@ export function createAssemblyEntity<E extends Entity>(
   layerNumber: LayerNumber,
 ): AssemblyEntity<E> {
   return new AssemblyEntityImpl(layerNumber, entity, position, direction)
-}
-
-export function getCategoryName(entity: Entity): string {
-  // todo: group into categories
-  return entity.name
 }
 
 export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {

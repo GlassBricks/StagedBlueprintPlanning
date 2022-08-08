@@ -10,6 +10,7 @@
  */
 
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { getSelectionBox } from "../entity/entity-info"
 import { getWorldPosition } from "../entity/EntityHandler"
 import { BBox, Position } from "../lib/geometry"
 import draw, { RenderObj } from "../lib/rendering"
@@ -130,19 +131,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function createHighlightEntity(entity: AssemblyEntity, layer: LayerPosition) {
-    const prototypeName = entity.categoryName
-    const position = entity.position
-    const selectionBox = BBox.translate(
-      game.entity_prototypes[prototypeName].selection_box,
-      getWorldPosition(position, layer),
-    )
-    return createHighlight(layer.surface, position, selectionBox, "not-allowed")!
+    const selectionBox = getEntitySelectionBox(entity, layer)
+    return createHighlight(layer.surface, entity.position, selectionBox, "not-allowed")!
   }
 
   function createErrorIndicatorEntity(entity: AssemblyEntity, layer: LayerPosition) {
-    const prototypeName = entity.categoryName
+    const prototypeName = entity.getBaseValue().name
     const position = entity.position
-    const box = BBox.load(game.entity_prototypes[prototypeName].selection_box)
+    const box = getSelectionBox(prototypeName)
     const size = box.size()
     const indicatorPosition = box
       .getTopRight()
@@ -189,13 +185,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function createLostReferenceHighlightEntity(entity: AssemblyEntity, layer: LayerPosition) {
-    const prototypeName = entity.categoryName
+    const selectionBox = getEntitySelectionBox(entity, layer)
+    return createHighlight(layer.surface, entity.position, selectionBox, "pair")!
+  }
+
+  function getEntitySelectionBox(entity: AssemblyEntity, layer: LayerPosition): BBox {
+    const prototypeName = entity.getBaseValue().name
     const position = entity.position
-    const selectionBox = BBox.translate(
-      game.entity_prototypes[prototypeName].selection_box,
-      getWorldPosition(position, layer),
-    )
-    return createHighlight(layer.surface, position, selectionBox, "pair")!
+    return BBox.translate(getSelectionBox(prototypeName), getWorldPosition(position, layer))
   }
 
   return {
