@@ -180,4 +180,25 @@ describe("update", () => {
     assert.false(entity.valid, "entity replaced")
     assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, match._, layers[1], oldDirection)
   })
+
+  test("instant upgrade planner", () => {
+    Events.raiseFakeEventNamed("on_player_mined_entity", {
+      player_index: 1 as PlayerIndex,
+      entity,
+      buffer: nil!,
+    })
+    const { position, direction: oldDirection } = entity
+    entity.destroy()
+    const newEntity = surface.create_entity({
+      name: "fast-inserter",
+      position,
+      force: "player",
+    })!
+    Events.raiseFakeEventNamed("on_built_entity", {
+      player_index: 1 as PlayerIndex,
+      created_entity: newEntity,
+      stack: nil!,
+    })
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, layers[1], oldDirection)
+  })
 })

@@ -131,8 +131,8 @@ interface AnnotatedEntity extends BasicEntityInfo {
 }
 // in global, so no desync in case of bugs
 let state: {
-  preBuildCalled?: true
-  preMineItemCalled?: true
+  currentlyInBuild?: true
+  preMinedItemCalled?: true
   lastDeleted?: AnnotatedEntity
 }
 declare const global: {
@@ -167,18 +167,28 @@ function setLastDeleted(layer: Layer, entity: LuaEntity): void {
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
   if (!player.is_cursor_blueprint()) {
-    state.preBuildCalled = true
+    state.currentlyInBuild = true
     clearLastDeleted()
   }
   // todo: handle blueprints
 })
 
+Events.on_pre_player_mined_item(() => {
+  state.preMinedItemCalled = true
+})
+
 Events.on_player_mined_entity((e) => {
+  const preMinedItemCalled = state.preMinedItemCalled
+  state.preMinedItemCalled = nil
   // todo: without on_pre_player_mined_item
   const { entity } = e
   const layer = getLayer(entity)
   if (!layer) return
-  if (state.preBuildCalled) {
+  if (!preMinedItemCalled) {
+    // this happens when using instant upgrade planner
+    state.currentlyInBuild = true
+  }
+  if (state.currentlyInBuild) {
     setLastDeleted(layer, entity)
   } else {
     DefaultAssemblyUpdater.onEntityDeleted(layer.assembly, entity, layer)
@@ -189,12 +199,12 @@ Events.on_built_entity((e) => {
   const { created_entity: entity } = e
   const layer = getLayer(entity)
   if (!layer) return
-  if (!state.preBuildCalled) {
+  if (!state.currentlyInBuild) {
     DefaultAssemblyUpdater.onEntityCreated(layer.assembly, entity, layer)
     return
   }
 
-  state.preBuildCalled = nil
+  state.currentlyInBuild = nil
   const { lastDeleted } = state
   if (lastDeleted && isUpgradeable(lastDeleted, entity)) {
     state.lastDeleted = nil
@@ -211,4 +221,4 @@ function isUpgradeable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
 
 // todo: upgrades, fast replace, blueprinting, bot stuff, circuit wires, go through the list of events
 
-export const _inValidState = (): boolean => !state.preBuildCalled && state.lastDeleted === nil
+export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil
