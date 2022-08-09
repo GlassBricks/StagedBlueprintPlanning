@@ -11,10 +11,10 @@
 - [x] Recipe/configuration change
 - [x] Settings paste
 - [x] Rotate
-- [ ] Fast replace
-  - [ ] Upgrade
-  - [ ] Rotate
-  - [ ] Replace (undergrounds)
+- [x] Fast replace
+  - [x] Upgrade
+  - [x] Rotate
+  - [x] Replace (undergrounds)
 - [ ] Upgrade planner
   - [ ] Handle robot built
 - [ ] Wire connection
@@ -106,6 +106,8 @@
 ### Misc
 
 - [ ] Button to reset
+- [ ] Fix diagonal rails
+- [ ] Handle trains
 
 ### Queue (one-off implementation details)
 

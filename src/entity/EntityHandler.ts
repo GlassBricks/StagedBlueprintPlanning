@@ -12,11 +12,11 @@
 import { LayerPosition } from "../assembly/Assembly"
 import { Pos, Position, PositionClass } from "../lib/geometry"
 import { BlueprintDiffHandler } from "./diff/BlueprintDiffHandler"
-import { Entity, EntityPose } from "./Entity"
+import { BasicEntityInfo, Entity, EntityPose } from "./Entity"
 import minus = Pos.minus
 import plus = Pos.plus
 
-export function getLayerPosition(luaEntity: LuaEntity, layer: LayerPosition): PositionClass {
+export function getLayerPosition(luaEntity: BasicEntityInfo, layer: LayerPosition): PositionClass {
   return minus(luaEntity.position, layer.left_top)
 }
 export function getWorldPosition(layerPosition: Position, layer: LayerPosition): PositionClass {

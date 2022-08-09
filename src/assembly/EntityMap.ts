@@ -11,7 +11,7 @@
 
 import { AssemblyEntity, isCompatibleEntity } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
-import { getCategoryName } from "../entity/entity-info"
+import { getEntityCategory } from "../entity/entity-info"
 import { RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { Map2D, MutableMap2D, newMap2D } from "../lib/map2d"
@@ -39,7 +39,7 @@ class EntityMapImpl implements MutableEntityMap {
     const { x, y } = position
     const atPos = this.entities.get(x, y)
     if (!atPos) return
-    const categoryName = getCategoryName(entity.name)
+    const categoryName = getEntityCategory(entity.name)
     if (direction === 0) direction = nil
     for (const candidate of atPos) {
       if (isCompatibleEntity(candidate, categoryName, direction)) return candidate

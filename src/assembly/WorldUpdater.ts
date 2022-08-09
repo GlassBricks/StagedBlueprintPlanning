@@ -80,8 +80,9 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
       const existing = entity.getWorldEntity(layerNum)
       if (existing && !replace) {
         existing.direction = direction
-        updateEntity(existing, value)
-        if (layerNum !== baseLayer) makeEntityIndestructible(existing)
+        const newEntity = updateEntity(existing, value)
+        entity.replaceWorldEntity(layerNum, newEntity)
+        if (layerNum !== baseLayer) makeEntityIndestructible(newEntity)
       } else {
         if (existing) existing.destroy()
         const layer = layers[layerNum]

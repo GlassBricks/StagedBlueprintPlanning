@@ -65,6 +65,8 @@ test("can upgrade an entity", () => {
     position: { x: 12.5, y: 12.5 },
     force: "player",
   })!
+  entity.minable = false
+  entity.destructible = false
   const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity)
   assert.equal("steel-chest", newEntity.name)
   assert.false(entity.valid)

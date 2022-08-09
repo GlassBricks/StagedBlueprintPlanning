@@ -48,7 +48,7 @@ if (script.active_mods.testorio) {
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories) inventories.forEach((x) => x.destroy())
     global = {}
-    Events.raiseFakeEventNamed("on_init", nil)
+    Events.raiseFakeEventNamed("on_init", nil!)
   }
 
   commands.add_command("reinit", "", reinit)
@@ -101,8 +101,10 @@ function isTestsRunning() {
   }
   return true
 }
+let shouldTryRerun = true
 
 Events.on_tick(() => {
+  if (!shouldTryRerun) return
   const ticks = math.ceil((__DebugAdapter ? 10 : 3) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod === 0) {
@@ -118,18 +120,36 @@ Events.on_tick(() => {
     }
   }
 })
-//
-// const eventBlacklist = newLuaSet<keyof typeof defines.events>(
-//   "on_tick",
-//   "on_player_changed_position",
-//   "on_selected_entity_changed",
-//   "on_chunk_charted",
-//   "on_chunk_generated",
-//   "on_player_main_inventory_changed",
-// )
-// for (const [name, key] of pairs(defines.events)) {
-//   if (eventBlacklist.has(name)) continue
-//   Events.on(key, () => {
-//     game.print(name)
-//   })
-// }
+commands.add_command("norerun", "", () => {
+  shouldTryRerun = false
+})
+/*{
+  let lastEventTick = 0
+  let count = 0
+  const eventBlacklist = newLuaSet<keyof typeof defines.events>(
+    "on_tick",
+    "on_player_changed_position",
+    "on_selected_entity_changed",
+    "on_chunk_charted",
+    "on_chunk_generated",
+    "on_player_main_inventory_changed",
+    "on_gui_location_changed",
+    "on_gui_click",
+    "on_research_finished",
+    "script_raised_set_tiles",
+  )
+  for (const [name, key] of pairs(defines.events)) {
+    if (eventBlacklist.has(name)) continue
+    Events.on(key, () => {
+      // if (isTestsRunning()) return
+      const currentTick = game.tick
+      if (currentTick !== lastEventTick) {
+        game.print(currentTick)
+      }
+      lastEventTick = currentTick
+      count++
+      game.print(`${count}: ${name}`)
+    })
+  }
+  // shouldTryRerun = false
+}*/

@@ -11,7 +11,7 @@
 
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { getEntityDiff } from "../entity/diff"
-import { Entity } from "../entity/Entity"
+import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -19,20 +19,17 @@ import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 /** @noSelf */
 export interface AssemblyUpdater {
   onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
-  onEntityDeleted(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
-  onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
-
-  onEntityRotated(
+  onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
+  onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
     entity: LuaEntity,
     layer: LayerPosition,
-    previousDirection: defines.direction,
+    previousDirection?: defines.direction,
   ): void
 }
 
 export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: EntitySaver): AssemblyUpdater {
   const { deleteAllWorldEntities, updateWorldEntities } = worldUpdater
-
   const { saveEntity } = entitySaver
 
   function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
@@ -107,7 +104,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     }
   }
 
-  function onEntityDeleted(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
+  function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
     const position = getLayerPosition(entity, layer)
     const { content } = assembly
 
@@ -132,12 +129,17 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     deleteAllWorldEntities(assembly, existing)
   }
 
-  function onEntityPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
+  function onEntityPotentiallyUpdated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    layer: LayerPosition,
+    previousDirection?: defines.direction,
+  ): void {
     const position = getLayerPosition(entity, layer)
     const { content } = assembly
     const { layerNumber } = layer
 
-    const existing = content.findCompatible(entity, position, entity.direction)
+    const existing = content.findCompatible(entity, position, previousDirection ?? entity.direction)
     const existingLayer = existing && existing.getBaseLayer()
     if (!existing || layerNumber < existingLayer!) {
       // bug, treat as add
@@ -145,42 +147,33 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
       return
     }
 
+    existing.replaceWorldEntity(layerNumber, entity)
+
+    // check rotation
+    const hasRotation = previousDirection && previousDirection !== entity.direction
+    const rotateAllowed = hasRotation && existingLayer === layerNumber
+    if (rotateAllowed) {
+      existing.direction = entity.direction !== 0 ? entity.direction : nil
+    }
+
     const newValue = saveEntity(entity)
     if (!newValue) return // bug?
     const valueAtLayer = existing.getValueAtLayer(layerNumber)!
     const diff = getEntityDiff(valueAtLayer, newValue)
-    if (!diff) return // no change
-
-    existing.applyDiffAtLayer(layerNumber, diff)
-    updateWorldEntities(assembly, existing, layerNumber)
-  }
-
-  function onEntityRotated(
-    assembly: AssemblyContent,
-    entity: LuaEntity,
-    layer: LayerPosition,
-    previousDirection: defines.direction,
-  ): void {
-    const position = getLayerPosition(entity, layer)
-    const { content } = assembly
-    const { layerNumber } = layer
-
-    const existing = content.findCompatible(entity, position, previousDirection)
-    if (!existing) return
-    const existingLayer = existing.getBaseLayer()
-
-    if (existingLayer !== layerNumber) {
-      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
-    } else {
-      existing.direction = entity.direction !== 0 ? entity.direction : nil
-      updateWorldEntities(assembly, existing, layerNumber)
+    if (diff) {
+      existing.applyDiffAtLayer(layerNumber, diff)
     }
+    if (diff || rotateAllowed) {
+      updateWorldEntities(assembly, existing, layerNumber)
+    } else if (hasRotation) {
+      updateWorldEntities(assembly, existing, layerNumber, layerNumber) // only this entity
+    } // else, do nothing
   }
+
   return {
     onEntityCreated,
     onEntityDeleted,
     onEntityPotentiallyUpdated,
-    onEntityRotated,
   }
 }
 

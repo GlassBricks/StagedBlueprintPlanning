@@ -17,6 +17,7 @@ export interface EntityPose {
 export interface Entity {
   readonly name: string
 }
+export interface BasicEntityInfo extends Entity, EntityPose {}
 
 export interface WorldEntityTypes {
   main: LuaEntity

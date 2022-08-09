@@ -61,7 +61,7 @@ export interface EventsObj extends ShorthandRegister {
   raiseFakeEvent<E extends EventId<any, any>>(event: E, data: E["_eventData"]): void
   raiseFakeEvent<E extends string>(event: E, data: CustomInputEvent): void
   raiseFakeEvent<E extends EventId<any, any> | string>(event: E, data: EventDataOf<E>): void
-  raiseFakeEventNamed<E extends keyof NamedEventTypes>(event: E, data: NamedEventTypes[E]): void
+  raiseFakeEventNamed<E extends keyof NamedEventTypes>(event: E, data: Omit<NamedEventTypes[E], keyof EventData>): void
 }
 
 export const scriptEventIds: Record<keyof ScriptEvents, symbol> = {
@@ -151,6 +151,11 @@ const Events = {
       scriptEventIds[event as keyof ScriptEvents] ??
       defines.events[event as keyof typeof defines.events] ??
       error(`"${event}" is not an event name.`)
+    if (data)
+      Object.assign(data, {
+        tick: game.tick,
+        name: typeof id !== "object" ? id : nil,
+      })
     raiseFakeEvent(id, data)
   },
 } as EventsObj

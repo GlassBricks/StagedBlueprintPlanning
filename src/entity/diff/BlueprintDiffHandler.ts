@@ -88,6 +88,7 @@ function pasteEntity(
 
 function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
   const { surface, position, direction } = entity
+  entity.minable = true
   if (
     !surface.can_fast_replace({
       name,

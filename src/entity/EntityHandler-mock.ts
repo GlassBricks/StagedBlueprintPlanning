@@ -26,11 +26,12 @@ export interface MockEntityCreator extends EntityCreator {
 export interface MockEntityEntry {
   value: Entity
   luaEntity: LuaEntity
+  layer: LayerNumber
 }
 
 export function createMockEntityCreator(): MockEntityCreator {
   const values: Record<LayerNumber, MutableMap2D<MockEntityEntry>> = {}
-  const luaEntityToEntry = new LuaMap<LuaEntity, { value: Entity; luaEntity: LuaEntity }>()
+  const luaEntityToEntry = new LuaMap<LuaEntity, MockEntityEntry>()
 
   function getAt(layer: LayerNumber, position?: Position): MockEntityEntry | nil {
     const layerValues = values[layer]
@@ -52,30 +53,49 @@ export function createMockEntityCreator(): MockEntityCreator {
     }
   }
 
+  function createEntity(
+    layer: number,
+    value: Entity,
+    direction: defines.direction | undefined,
+    position: MapPosition,
+  ): LuaEntity {
+    const byLayer = values[layer] ?? (values[layer] = newMap2D())
+
+    const luaEntity = entityMock({
+      ...value,
+      direction: direction ?? 0,
+      position,
+    })
+
+    const entry: MockEntityEntry = {
+      value: shallowCopy(value),
+      luaEntity,
+      layer,
+    }
+    byLayer.add(position.x, position.y, entry)
+    luaEntityToEntry.set(luaEntity, entry)
+    return luaEntity
+  }
   return {
     createEntity(layerPos: LayerPosition, { position, direction }: EntityPose, value: Entity): LuaEntity | nil {
       const layer = layerPos.layerNumber
       if (getAt(layer, position) !== nil) return nil // overlapping entity
-      const byLayer = values[layer] ?? (values[layer] = newMap2D())
-
-      const luaEntity = entityMock({
-        ...value,
-        direction: direction ?? 0,
-        position,
-      })
-
-      const entry: MockEntityEntry = {
-        value: shallowCopy(value),
-        luaEntity,
-      }
-      byLayer.add(position.x, position.y, entry)
-      luaEntityToEntry.set(luaEntity, entry)
-      return luaEntity
+      return createEntity(layer, value, direction, position)
     },
     updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity {
       assert(luaEntity.valid)
       const entry = luaEntityToEntry.get(luaEntity)
-      if (entry) entry.value = shallowCopy(value)
+      if (entry) {
+        const { value: oldValue, layer } = entry
+        if (oldValue.name !== value.name) {
+          // simulate fast replace
+          luaEntityToEntry.delete(luaEntity)
+          luaEntity.destroy()
+          values[entry.layer].remove(luaEntity.position.x, luaEntity.position.y, entry)
+          return createEntity(layer, value, luaEntity.direction, luaEntity.position)
+        }
+        entry.value = shallowCopy(value)
+      }
       return luaEntity
     },
     getAt,

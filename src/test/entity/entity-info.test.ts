@@ -9,19 +9,19 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getCategoryName } from "../../entity/entity-info"
+import { getEntityCategory } from "../../entity/entity-info"
 
 describe("getCategoryName", () => {
   test("same type", () => {
-    assert.equal(getCategoryName("inserter"), getCategoryName("inserter"))
+    assert.equal(getEntityCategory("inserter"), getEntityCategory("inserter"))
   })
   test("same category", () => {
-    assert.equal(getCategoryName("inserter"), getCategoryName("fast-inserter"))
+    assert.equal(getEntityCategory("inserter"), getEntityCategory("fast-inserter"))
   })
   test("same type, not same category", () => {
-    assert.not_equal(getCategoryName("inserter"), getCategoryName("long-handed-inserter"))
+    assert.not_equal(getEntityCategory("inserter"), getEntityCategory("long-handed-inserter"))
   })
   test("logistic-container is same as container", () => {
-    assert.equal(getCategoryName("iron-chest"), getCategoryName("logistic-chest-passive-provider"))
+    assert.equal(getEntityCategory("iron-chest"), getEntityCategory("logistic-chest-passive-provider"))
   })
 })

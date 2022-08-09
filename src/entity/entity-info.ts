@@ -28,7 +28,7 @@ function computeCategoryName(entityName: string): CategoryName {
 }
 
 const categoryNames: PRecord<string, CategoryName> = {}
-export function getCategoryName(entityName: string): CategoryName {
+export function getEntityCategory(entityName: string): CategoryName {
   const categoryName = categoryNames[entityName]
   if (categoryName) return categoryName
   return (categoryNames[entityName] = computeCategoryName(entityName))
@@ -40,4 +40,8 @@ export function getSelectionBox(entityName: string): BBoxClass {
   if (selectionBox) return selectionBox
   const prototype = game.entity_prototypes[entityName]
   return (selectionBoxes[entityName] = BBox.load(prototype.selection_box))
+}
+
+export function _overrideEntityCategory(entityName: string, categoryName: string): void {
+  categoryNames[entityName] = categoryName as CategoryName
 }

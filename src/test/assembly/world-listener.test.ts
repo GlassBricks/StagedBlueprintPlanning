@@ -12,6 +12,7 @@
 import { Assembly, Layer } from "../../assembly/Assembly"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _mockAssembly } from "../../assembly/UserAssembly"
+import { _inValidState } from "../../assembly/world-listener"
 import { deleteAssembly, registerAssembly } from "../../assembly/world-register"
 import { LayerNumber } from "../../entity/AssemblyEntity"
 import { Events } from "../../lib"
@@ -51,6 +52,11 @@ before_each(() => {
 after_all(() => {
   mock.revert(updater)
   deleteAssembly(assembly)
+})
+
+after_each(() => {
+  assert.true(_inValidState())
+  player?.cursor_stack?.clear()
 })
 
 function getLayerCenter(layer: LayerNumber): PositionClass {
@@ -106,6 +112,7 @@ describe("delete", () => {
     assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
   })
 })
+
 describe("update", () => {
   let entity: LuaEntity
   before_each(() => {
@@ -114,6 +121,7 @@ describe("update", () => {
       name: "inserter",
       position,
       raise_built: true,
+      force: "player",
     })!
   })
   test("gui", () => {
@@ -126,8 +134,6 @@ describe("update", () => {
       source: entity,
       destination: entity,
       player_index: 1 as PlayerIndex,
-      name: defines.events.on_entity_settings_pasted,
-      tick: game.tick,
     })
     assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1])
   })
@@ -135,6 +141,43 @@ describe("update", () => {
   test("rotate", () => {
     const oldDirection = entity.direction
     entity.rotate({ by_player: 1 as PlayerIndex })
-    assert.spy(updater.onEntityRotated).called_with(assembly, entity, layers[1], oldDirection)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1], oldDirection)
+  })
+
+  test("fast replace", () => {
+    assert(
+      surface.can_fast_replace({
+        name: "fast-inserter",
+        position: entity.position,
+        force: "player",
+      }),
+      "can fast replace",
+    )
+    const { position } = entity
+    player.cursor_stack!.set_stack("fast-inserter")
+    player.build_from_cursor({ position })
+    const newEntity = surface.find_entity("fast-inserter", position)
+    assert.not_nil(newEntity)
+
+    assert.false(entity.valid, "entity replaced")
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, layers[1], match._)
+  })
+
+  test("fast replace to rotate", () => {
+    assert(
+      surface.can_fast_replace({
+        name: "inserter",
+        position: entity.position,
+        direction: defines.direction.east,
+        force: "player",
+      }),
+      "can fast replace",
+    )
+    const { position, direction: oldDirection } = entity
+    player.cursor_stack!.set_stack("inserter")
+    player.build_from_cursor({ position, direction: defines.direction.east })
+
+    assert.false(entity.valid, "entity replaced")
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, match._, layers[1], oldDirection)
   })
 })

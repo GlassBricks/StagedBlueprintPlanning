@@ -58,6 +58,7 @@ function assertEntityNotPresent(i: LayerNumber): void {
 function assertEntityCorrect(i: LayerNumber): LuaEntity {
   const entry = mockEntityCreator.getAt(i)!
   assert.not_nil(entry)
+  assert(entry.luaEntity.valid)
   assert.equal(entry.luaEntity, entity.getWorldEntity(i) ?? "nil")
   assert.equal(entity.direction ?? 0, entry.luaEntity.direction)
   const valueAtLayer = entity.getValueAtLayer(i)
@@ -130,6 +131,15 @@ describe("updateWorldEntities", () => {
       assertEntityNotPresent(3)
       worldUpdater.updateWorldEntities(assembly, entity, 3, 3)
       assertEntityCorrect(3)
+    })
+
+    test("can upgrade entities", () => {
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
+      entity.applyDiffAtLayer(1, { name: "test2" })
+      const oldEntry = mockEntityCreator.getAt(1)!
+      worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
+      assertEntityCorrect(1)
+      assert.false(oldEntry.luaEntity.valid)
     })
 
     test("can rotate entities", () => {
