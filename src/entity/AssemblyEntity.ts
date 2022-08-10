@@ -9,9 +9,18 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isEmpty, Mutable, mutableShallowCopy, PRecord, PRRecord, RegisterClass, shallowCopy } from "../lib"
+import {
+  deepCompare,
+  isEmpty,
+  Mutable,
+  mutableShallowCopy,
+  PRecord,
+  PRRecord,
+  RegisterClass,
+  shallowCopy,
+} from "../lib"
 import { Position } from "../lib/geometry"
-import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff } from "./diff"
+import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
 import { AnyWorldEntity, Entity, EntityPose, WorldEntityType, WorldEntityTypes } from "./Entity"
 import { getEntityCategory } from "./entity-info"
 
@@ -26,14 +35,20 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   getBaseLayer(): LayerNumber
   getBaseValue(): Readonly<T>
 
-  /** Applies a diff at a given layer. */
-  applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void
   /** @return if this entity has any changes after the first layer. */
   hasLayerChanges(): boolean
   _getLayerChanges(): LayerChanges<T>
+  _applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void
 
   /** @return the value at a given layer. Nil if below the first layer. The result is a new table. */
   getValueAtLayer(layer: LayerNumber): T | nil
+
+  /**
+   * Adjusts diff so that the value at the given layer matches the given value.
+   * Trims diff in higher layers if they no longer have any effect.
+   * @return true if the value changed.
+   */
+  adjustValueAtLayer(layer: LayerNumber, value: T): boolean
   /**
    * Iterates the values of layers in the given range. More efficient than repeated calls to getValueAtLayer.
    * The same instance will be returned for each layer; its value is ephemeral.
@@ -104,7 +119,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return this.baseValue
   }
 
-  applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void {
+  hasLayerChanges(): boolean {
+    return next(this.layerChanges)[0] !== nil
+  }
+  _getLayerChanges(): LayerChanges<T> {
+    return this.layerChanges
+  }
+  _applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void {
     const { baseLayer, layerChanges } = this
     assert(layer >= baseLayer, "layer must be >= first layer")
     if (layer === baseLayer) {
@@ -118,15 +139,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       layerChanges[layer] = shallowCopy(diff)
     }
   }
-  hasLayerChanges(): boolean {
-    return next(this.layerChanges)[0] !== nil
-  }
-  _getLayerChanges(): LayerChanges<T> {
-    return this.layerChanges
-  }
 
   getValueAtLayer(layer: LayerNumber): T | nil {
-    assert(layer >= 1, "layer must be >= 1")
+    // assert(layer >= 1, "layer must be >= 1")
     if (layer < this.baseLayer) return nil
     const value = mutableShallowCopy(this.baseValue)
     for (const [changedLayer, diff] of pairs(this.layerChanges)) {
@@ -135,6 +150,66 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     return value
   }
+
+  public adjustValueAtLayer(layer: LayerNumber, value: T): boolean {
+    const { baseLayer, layerChanges } = this
+    assert(layer >= baseLayer, "layer must be >= first layer")
+    const diff = this.setValueAndGetDiff(layer, value)
+    if (!diff) return false
+
+    // add a key at this layer so pairs works properly
+    const thisDiff = layerChanges[layer]
+    if (!thisDiff) layerChanges[layer] = {}
+
+    // trim diffs in higher layers, remove those that are ineffectual
+    for (const [layerNumber, changes] of this.iterateLayerChangesFrom(layer) as LuaIterable<
+      LuaMultiReturn<[LayerNumber, LayerDiff<T>]>,
+      any
+    >) {
+      for (const [k, v] of pairs(diff)) {
+        if (deepCompare(changes[k], v)) {
+          // changed to same value, remove
+          delete changes[k]
+        } else {
+          // changed to different value, no longer need to consider for trimming
+          delete diff[k]
+        }
+      }
+      if (isEmpty(changes)) delete layerChanges[layerNumber]
+      if (isEmpty(diff)) break
+    }
+    if (!thisDiff) delete layerChanges[layer]
+
+    return true
+  }
+
+  private iterateLayerChangesFrom(layer: LayerNumber): any
+  private iterateLayerChangesFrom(layer: LayerNumber) {
+    return $multi(next, this.layerChanges, layer)
+  }
+
+  private setValueAndGetDiff(layer: LayerNumber, value: T): LayerDiff<T> | nil {
+    if (layer === this.baseLayer) {
+      const { baseValue } = this
+      const diff = getEntityDiff(baseValue, value)
+      if (diff) {
+        applyDiffToEntity(baseValue, diff)
+        return diff
+      }
+    } else {
+      const valueAtPreviousLayer = assert(this.getValueAtLayer(layer - 1))
+      const newLayerDiff = getEntityDiff(valueAtPreviousLayer, value)
+
+      const { layerChanges } = this
+      const oldLayerDiff = layerChanges[layer]
+      const diff = mergeDiff(valueAtPreviousLayer, oldLayerDiff, newLayerDiff)
+      if (diff) {
+        layerChanges[layer] = newLayerDiff
+        return diff
+      }
+    }
+  }
+
   iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, T]>>
   iterateValues(start: LayerNumber, end: LayerNumber) {
     const value = this.getValueAtLayer(start)!

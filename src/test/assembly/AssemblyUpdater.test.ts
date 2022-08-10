@@ -228,7 +228,7 @@ describe("delete", () => {
 
   test("in base layer with updates also creates lost reference", () => {
     const { luaEntity, added } = addAndReset()
-    added.applyDiffAtLayer(2, { prop1: 3 })
+    added._applyDiffAtLayer(2, { prop1: 3 })
     assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
     assertOneEntity()
     assert.true(added.isLostReference)
@@ -239,8 +239,8 @@ describe("delete", () => {
 describe("revive", () => {
   test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (reviveLayer) => {
     const { luaEntity, added } = addAndReset(1, reviveLayer)
-    added.applyDiffAtLayer(3, { prop1: 3 })
-    added.applyDiffAtLayer(5, { prop1: 4 })
+    added._applyDiffAtLayer(3, { prop1: 3 })
+    added._applyDiffAtLayer(5, { prop1: 4 })
     added.isLostReference = true
 
     assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
@@ -265,7 +265,7 @@ describe("revive", () => {
 
   test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
     const { luaEntity, added } = addAndReset(2, 1)
-    added.applyDiffAtLayer(3, { prop1: 3 })
+    added._applyDiffAtLayer(3, { prop1: 3 })
     added.isLostReference = true
 
     if (withChanges) luaEntity.prop1 = 1
@@ -326,7 +326,7 @@ describe("update", () => {
     (withExistingChanges) => {
       const { luaEntity, added } = addAndReset(1, 2)
       if (withExistingChanges) {
-        added.applyDiffAtLayer(2, { prop1: 5, prop2: "val2" })
+        added._applyDiffAtLayer(2, { prop1: 5, prop2: "val2" })
         luaEntity.prop2 = "val2" // not changed
       }
 
@@ -343,6 +343,17 @@ describe("update", () => {
       assertUpdateCalled(added, 2, nil, false)
     },
   )
+
+  test("updating match previous layer removes layer changes", () => {
+    const { luaEntity, added } = addAndReset(1, 2)
+    added._applyDiffAtLayer(2, { prop1: 5 })
+    assert.true(added.hasLayerChanges())
+    luaEntity.prop1 = 2
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+
+    assertOneEntity()
+    assertUpdateCalled(added, 2, nil, false)
+  })
 })
 
 describe("rotate", () => {

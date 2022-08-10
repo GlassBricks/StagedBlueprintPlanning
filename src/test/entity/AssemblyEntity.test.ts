@@ -10,7 +10,7 @@
  */
 
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { getNilPlaceholder } from "../../entity/diff"
+import { getEntityDiff, getNilPlaceholder } from "../../entity/diff"
 import { Entity } from "../../entity/Entity"
 import { shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
@@ -28,10 +28,10 @@ before_each(() => {
     name: "foo",
     foo1: 1,
   }
-  assemblyEntity = createAssemblyEntity(shallowCopy(entity), Pos(0, 0), nil, 2)
-  assemblyEntity.applyDiffAtLayer(3, { foo1: 3, foo2: 4 })
-  assemblyEntity.applyDiffAtLayer(5, { foo1: 5 })
-  assemblyEntity.applyDiffAtLayer(7, { foo2: getNilPlaceholder() })
+  assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  assemblyEntity._applyDiffAtLayer(3, { foo1: 3, foo2: 4 })
+  assemblyEntity._applyDiffAtLayer(5, { foo1: 5 })
+  assemblyEntity._applyDiffAtLayer(7, { foo2: getNilPlaceholder() })
 })
 
 test("getters", () => {
@@ -40,13 +40,6 @@ test("getters", () => {
 })
 
 describe("getValueAtLayer", () => {
-  test("applyDiffAtLayer at base layer", () => {
-    const expected = { ...entity, foo1: 2 }
-    assemblyEntity.applyDiffAtLayer(2, { foo1: 2 })
-    const actual = assemblyEntity.getBaseValue()
-    assert.same(expected, actual)
-  })
-
   test("nil if lower than layer", () => {
     assert.nil(assemblyEntity.getValueAtLayer(1))
   })
@@ -75,9 +68,9 @@ describe("getValueAtLayer", () => {
 })
 
 test("hasLayerChanges", () => {
-  const assemblyEntity = createAssemblyEntity(shallowCopy(entity), Pos(0, 0), nil, 2)
+  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
   assert.false(assemblyEntity.hasLayerChanges())
-  assemblyEntity.applyDiffAtLayer(3, { foo1: 3 })
+  assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
   assert.true(assemblyEntity.hasLayerChanges())
 })
 
@@ -108,7 +101,7 @@ describe("moveEntityDown", () => {
   })
 
   test("with new value and changes", () => {
-    assemblyEntity.applyDiffAtLayer(3, { foo1: 3 })
+    assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
     assemblyEntity.moveDown(1, { ...entity, foo1: 3 }, true)
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
     assert.same({ ...entity }, assemblyEntity.getValueAtLayer(2))
@@ -116,6 +109,51 @@ describe("moveEntityDown", () => {
 
   test("error if moving up", () => {
     assert.error(() => assemblyEntity.moveDown(2))
+  })
+})
+
+describe("adjustValueAtLayer", () => {
+  test("can set base value", () => {
+    const newEntity = { ...entity, foo1: 3 }
+    assemblyEntity.adjustValueAtLayer(2, newEntity)
+    assert.same(newEntity, assemblyEntity.getBaseValue())
+  })
+
+  test("removes no longer effectual diffs after set at base value", () => {
+    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
+    assemblyEntity.adjustValueAtLayer(1, { ...entity, foo1: 3 })
+    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
+    assert.false(assemblyEntity.hasLayerChanges())
+  })
+
+  test("creates diff if set at higher layer", () => {
+    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    assemblyEntity.adjustValueAtLayer(2, { ...entity, foo1: 3 })
+    assert.same(entity, assemblyEntity.getBaseValue())
+    assert.true(assemblyEntity.hasLayerChanges())
+    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtLayer(2))
+  })
+
+  test("complex case", () => {
+    const baseValue = { name: "test", a: 1, b: 1, c: 1 }
+    const value2 = { ...baseValue, b: 2, c: 2 }
+    const newValue2 = { ...baseValue, a: 2, b: 1, c: 5 }
+    const value3 = { ...baseValue, a: 2, b: 2, c: 5 }
+    const assemblyEntity = createAssemblyEntity(baseValue, Pos(0, 0), nil, 1)
+    assemblyEntity.adjustValueAtLayer(2, value2)
+    assert.same(baseValue, assemblyEntity.getBaseValue())
+    assert.same(value2, assemblyEntity.getValueAtLayer(2))
+    assemblyEntity.adjustValueAtLayer(3, value3)
+    assert.same(baseValue, assemblyEntity.getBaseValue())
+    assert.same(value2, assemblyEntity.getValueAtLayer(2))
+    assert.same(value3, assemblyEntity.getValueAtLayer(3))
+    assemblyEntity.adjustValueAtLayer(2, newValue2)
+    assert.same(baseValue, assemblyEntity.getBaseValue())
+    assert.same(newValue2, assemblyEntity.getValueAtLayer(2))
+    const newValue3 = { ...value3, b: 1 } // due to change in newValue2
+    assert.same(newValue3, assemblyEntity.getValueAtLayer(3))
+    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity._getLayerChanges()[3], "diff trimmed")
   })
 })
 

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { deepCompare, Events, Mutable, nilIfEmpty } from "../lib"
+import { deepCompare, Events, Mutable, nilIfEmpty, shallowCopy } from "../lib"
 import { Entity } from "./Entity"
 
 declare const NilPlaceholder: unique symbol
@@ -58,4 +58,30 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
       entity[key] = value as any
     }
   }
+}
+
+export function mergeDiff<E extends Entity = Entity>(
+  previousValue: E,
+  oldDiff: LayerDiff<E> | nil,
+  newDiff: LayerDiff<E> | nil,
+): LayerDiff<E> | nil {
+  if (oldDiff === nil) return newDiff && shallowCopy(newDiff)
+  const result: any = {}
+  if (newDiff === nil) {
+    for (const [key] of pairs(oldDiff)) {
+      const value = previousValue[key]
+      result[key] = value !== nil ? value : nilPlaceholder
+    }
+  } else {
+    for (const [key, value] of pairs(newDiff)) {
+      if (!deepCompare(value, oldDiff[key])) result[key] = value
+    }
+    for (const [key] of pairs(oldDiff)) {
+      if (newDiff[key] === nil) {
+        const value = previousValue[key]
+        result[key] = value !== nil ? value : nilPlaceholder
+      }
+    }
+  }
+  return nilIfEmpty(result)
 }

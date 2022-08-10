@@ -69,8 +69,8 @@ describe("updateWorldEntities", () => {
   describe.each([false, true], "with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
-        entity.applyDiffAtLayer(entity.getBaseLayer(), { prop1: 2 })
-        entity.applyDiffAtLayer(3, { prop1: 1 })
+        entity._applyDiffAtLayer(entity.getBaseLayer(), { prop1: 2 })
+        entity._applyDiffAtLayer(3, { prop1: 1 })
       })
     }
     test.each([1, 2, 3], "can create one entity %d", (layer) => {
@@ -135,7 +135,7 @@ describe("updateWorldEntities", () => {
 
     test("can upgrade entities", () => {
       worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
-      entity.applyDiffAtLayer(1, { name: "test2" })
+      entity._applyDiffAtLayer(1, { name: "test2" })
       const oldEntry = mockEntityCreator.getAt(1)!
       worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
       assertEntityCorrect(1)

@@ -10,7 +10,6 @@
  */
 
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { getEntityDiff } from "../entity/diff"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { AssemblyContent, LayerPosition } from "./Assembly"
@@ -158,16 +157,15 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
 
     const newValue = saveEntity(entity)
     if (!newValue) return // bug?
-    const valueAtLayer = existing.getValueAtLayer(layerNumber)!
-    const diff = getEntityDiff(valueAtLayer, newValue)
-    if (diff) {
-      existing.applyDiffAtLayer(layerNumber, diff)
-    }
-    if (diff || rotateAllowed) {
+
+    const hasDiff = existing.adjustValueAtLayer(layerNumber, newValue)
+    if (hasDiff || rotateAllowed) {
+      // if diff, update all entities
       updateWorldEntities(assembly, existing, layerNumber)
     } else if (hasRotation) {
-      updateWorldEntities(assembly, existing, layerNumber, layerNumber) // only this entity
-    } // else, do nothing
+      // else, only this entity (if rotation forbidden)
+      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
+    } // else, no diff, do nothing
   }
 
   return {
