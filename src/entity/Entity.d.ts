@@ -18,10 +18,3 @@ export interface Entity {
   readonly name: string
 }
 export interface BasicEntityInfo extends Entity, EntityPose {}
-
-export interface WorldEntityTypes {
-  main: LuaEntity
-}
-export type WorldEntityType = keyof WorldEntityTypes
-
-export type AnyWorldEntity = WorldEntityTypes[WorldEntityType]

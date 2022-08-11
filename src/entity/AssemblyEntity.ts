@@ -21,7 +21,7 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
-import { AnyWorldEntity, Entity, EntityPose, WorldEntityType, WorldEntityTypes } from "./Entity"
+import { Entity, EntityPose } from "./Entity"
 import { getEntityCategory } from "./entity-info"
 
 export type LayerNumber = number
@@ -75,20 +75,35 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   /** Returns nil if world entity does not exist or is invalid */
   getWorldEntity(layer: LayerNumber): LuaEntity | nil
-  getWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): WorldEntityTypes[T] | nil
+  getWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): WorldEntities[T] | nil
   /** Destroys the old world entity, if exists. If `entity` is not nil, sets the new world entity. */
   replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void
-  replaceWorldEntity<T extends WorldEntityType>(layer: LayerNumber, entity: WorldEntityTypes[T] | nil, type: T): void
+  replaceWorldEntity<T extends WorldEntityType>(layer: LayerNumber, entity: WorldEntities[T] | nil, type: T): void
+  destroyWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): void
   hasAnyWorldEntity(type: WorldEntityType): boolean
 
   destroyAllWorldEntities(type: WorldEntityType): void
   /** Iterates all valid world entities. May skip layers. */
-  iterateWorldEntities<T extends WorldEntityType>(
-    type: T,
-  ): LuaIterable<LuaMultiReturn<[LayerNumber, WorldEntityTypes[T]]>>
+  iterateWorldEntities<T extends WorldEntityType>(type: T): LuaIterable<LuaMultiReturn<[LayerNumber, WorldEntities[T]]>>
+
+  setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void
+  getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil
+  propertySetInAnyLayer(key: keyof LayerProperties): boolean
+  clearProperty<T extends keyof LayerProperties>(key: T): void
 }
 
 export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, LayerDiff<E>>
+
+export interface WorldEntities {
+  mainEntity?: LuaEntity
+}
+export type WorldEntityType = keyof WorldEntities
+type AnyWorldEntity = WorldEntities[keyof WorldEntities]
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface LayerProperties {}
+
+type LayerData = WorldEntities & LayerProperties
 
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
@@ -102,7 +117,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   private baseValue: T
   private readonly layerChanges: Mutable<LayerChanges<T>> = {}
 
-  private readonly worldEntities: PRecord<WorldEntityType, PRecord<LayerNumber, AnyWorldEntity>> = {}
+  private readonly layerProperties: {
+    [P in keyof LayerData]?: PRecord<LayerNumber, LayerData[P]>
+  } = {}
 
   constructor(baseLayer: LayerNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
     this.categoryName = getEntityCategory(baseEntity.name)
@@ -256,9 +273,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     // else do nothing
   }
 
-  getWorldEntity(layer: LayerNumber, type: WorldEntityType = "main") {
-    const { worldEntities } = this
-    const byType = worldEntities[type]
+  getWorldEntity(layer: LayerNumber, type: WorldEntityType = "mainEntity") {
+    const { layerProperties } = this
+    const byType = layerProperties[type]
     if (!byType) return nil
     const worldEntity = byType[layer]
     if (worldEntity && worldEntity.valid) {
@@ -266,38 +283,47 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     // delete
     delete byType[layer]
-    if (isEmpty(byType)) delete worldEntities[type]
+    if (isEmpty(byType)) delete layerProperties[type]
   }
-  replaceWorldEntity(layer: LayerNumber, entity: AnyWorldEntity | nil, type: WorldEntityType = "main"): void {
-    const { worldEntities } = this
-    const byType = worldEntities[type] || (worldEntities[type] = {})
+  replaceWorldEntity(layer: LayerNumber, entity: AnyWorldEntity | nil, type: WorldEntityType = "mainEntity"): void {
+    if (entity === nil) return this.destroyWorldEntity(layer, type)
+    const { layerProperties } = this
+    const byType = layerProperties[type] || (layerProperties[type] = {})
     const existing = byType[layer]
     if (existing && existing.valid && existing !== entity) existing.destroy()
     byType[layer] = entity
-    if (isEmpty(byType)) delete worldEntities[type]
+  }
+  destroyWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): void {
+    const { layerProperties } = this
+    const byType = layerProperties[type]
+    if (!byType) return
+    const entity = byType[layer]
+    if (entity && entity.valid) entity.destroy()
+    delete byType[layer]
+    if (isEmpty(byType)) delete layerProperties[type]
   }
   hasAnyWorldEntity(type: WorldEntityType): boolean {
-    const { worldEntities } = this
-    const byType = worldEntities[type]
+    const { layerProperties } = this
+    const byType = layerProperties[type]
     if (!byType) return false
     for (const [key, entity] of pairs(byType)) {
       if (entity && entity.valid) return true
       byType[key] = nil
     }
-    if (isEmpty(byType)) delete worldEntities[type]
+    if (isEmpty(byType)) delete layerProperties[type]
     return false
   }
   destroyAllWorldEntities(type: WorldEntityType): void {
-    const { worldEntities } = this
-    const byType = worldEntities[type]
+    const { layerProperties } = this
+    const byType = layerProperties[type]
     if (!byType) return
     for (const [, entity] of pairs(byType)) {
       if (entity && entity.valid) entity.destroy()
     }
-    delete worldEntities[type]
+    delete layerProperties[type]
   }
   iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[LayerNumber, any]>> {
-    const byType = this.worldEntities[type]
+    const byType = this.layerProperties[type]
     if (!byType) return (() => nil) as any
     let curKey = next(byType)[0]
     return function () {
@@ -309,6 +335,25 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
         if (entity.valid) return $multi(key, entity)
       }
     } as any
+  }
+
+  setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void {
+    const { layerProperties } = this
+    const byType: PRecord<LayerNumber, LayerProperties[T]> = layerProperties[key] || (layerProperties[key] = {})
+    byType[layer] = value
+    if (isEmpty(byType)) delete layerProperties[key]
+  }
+  getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil {
+    const byType = this.layerProperties[key]
+    return byType && byType[layer]
+  }
+  propertySetInAnyLayer(key: keyof LayerProperties): boolean {
+    const byType = this.layerProperties[key]
+    if (!byType) return false
+    return next(byType)[0] !== nil
+  }
+  clearProperty<T extends keyof LayerProperties>(key: T): void {
+    delete this.layerProperties[key]
   }
 }
 

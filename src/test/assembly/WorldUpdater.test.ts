@@ -43,8 +43,8 @@ before_each(() => {
 
   mockEntityCreator = createMockEntityCreator()
   highlighter = {
-    setErrorHighlightAt: spy(),
-    deleteErrorHighlights: spy(),
+    setHasError: spy(),
+    removeErrorHighlights: spy(),
     updateLostReferenceHighlights: spy(),
   }
   worldUpdater = createWorldUpdater(mockEntityCreator, highlighter)
@@ -185,16 +185,16 @@ describe("error highlight", () => {
   test("creates error highlight if entity cannot be placed", () => {
     mockEntityCreator.createEntity(assembly.layers[2], entity, entity.getBaseValue())
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-    assert.spy(highlighter.setErrorHighlightAt).called_with(match._, match._, 1, false)
-    assert.spy(highlighter.setErrorHighlightAt).called_with(match._, match._, 2, true)
-    assert.spy(highlighter.setErrorHighlightAt).called_with(match._, match._, 3, false)
+    assert.spy(highlighter.setHasError).called_with(match._, match._, 1, false)
+    assert.spy(highlighter.setHasError).called_with(match._, match._, 2, true)
+    assert.spy(highlighter.setHasError).called_with(match._, match._, 3, false)
   })
 
   test("removes error highlight after entity removed", () => {
     mockEntityCreator.createEntity(assembly.layers[1], entity, entity.getBaseValue())
     worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
     worldUpdater.deleteAllWorldEntities(assembly, entity)
-    assert.spy(highlighter.deleteErrorHighlights).called_with(entity)
+    assert.spy(highlighter.removeErrorHighlights).called_with(entity)
   })
 })
 

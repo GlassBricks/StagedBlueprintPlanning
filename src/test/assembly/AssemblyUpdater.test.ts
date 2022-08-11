@@ -191,7 +191,7 @@ describe("add", () => {
       }
 
       assertOneEntity()
-      assertUpdateCalled(added, 2, 2, true)
+      assertUpdateCalled(added, 1, 2, true)
     },
   )
 })
@@ -307,7 +307,7 @@ describe("update", () => {
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
     assert.equal(luaEntity, added.getWorldEntity(1))
     assertOneEntity()
-    assertUpdateCalled(added, 2, 2, true)
+    assertUpdateCalled(added, 1, 2, true)
   })
 
   test("in base layer updates all entities", () => {

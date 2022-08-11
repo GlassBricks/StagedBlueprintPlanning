@@ -48,7 +48,7 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
     readonly layers: Record<LayerNumber, LayerPosition>
   }
   const { createEntity, updateEntity } = entityCreator
-  const { setErrorHighlightAt, deleteErrorHighlights, updateLostReferenceHighlights } = highlighter
+  const { setHasError, removeErrorHighlights, updateLostReferenceHighlights } = highlighter
 
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
@@ -78,25 +78,27 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
 
     for (const [layerNum, value] of entity.iterateValues(startLayer, endLayer)) {
       const existing = entity.getWorldEntity(layerNum)
+      let newEntity: LuaEntity | undefined
       if (existing && !replace) {
         existing.direction = direction
-        const newEntity = updateEntity(existing, value)
+        newEntity = updateEntity(existing, value)
         entity.replaceWorldEntity(layerNum, newEntity)
         if (layerNum !== baseLayer) makeEntityIndestructible(newEntity)
+        setHasError(assembly, entity, layerNum, newEntity === nil)
       } else {
         if (existing) existing.destroy()
         const layer = layers[layerNum]
-        const newEntity = createEntity(layer, entity, value)
+        newEntity = createEntity(layer, entity, value)
         if (newEntity && layerNum !== baseLayer) makeEntityIndestructible(newEntity)
         entity.replaceWorldEntity(layerNum, newEntity)
-        setErrorHighlightAt(assembly, entity, layerNum, newEntity === nil)
       }
+      setHasError(assembly, entity, layerNum, newEntity === nil)
     }
   }
 
   function deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
-    entity.destroyAllWorldEntities("main")
-    deleteErrorHighlights(entity)
+    entity.destroyAllWorldEntities("mainEntity")
+    removeErrorHighlights(entity)
     updateLostReferenceHighlights(assembly, entity)
   }
 

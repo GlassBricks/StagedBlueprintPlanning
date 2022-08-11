@@ -19,8 +19,8 @@ import plus = Pos.plus
 export function getLayerPosition(luaEntity: BasicEntityInfo, layer: LayerPosition): PositionClass {
   return minus(luaEntity.position, layer.left_top)
 }
-export function getWorldPosition(layerPosition: Position, layer: LayerPosition): PositionClass {
-  return plus(layerPosition, layer.left_top)
+export function getWorldPosition(layer: LayerPosition, relativePosition: Position): PositionClass {
+  return plus(relativePosition, layer.left_top)
 }
 
 /** @noSelf */
@@ -44,7 +44,7 @@ export const DefaultEntityHandler: EntityHandler = {
   createEntity(layer: LayerPosition, { position, direction }: EntityPose, entity: Entity): LuaEntity | nil {
     return BlueprintDiffHandler.create(
       layer.surface,
-      getWorldPosition(position, layer),
+      getWorldPosition(layer, position),
       direction,
       entity as BlueprintEntity,
     )

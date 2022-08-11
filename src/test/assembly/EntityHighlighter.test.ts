@@ -13,54 +13,51 @@ import { AssemblyPosition } from "../../assembly/Assembly"
 import { createMockAssembly } from "../../assembly/Assembly-mock"
 import { createHighlightCreator, EntityHighlighter, HighlightCreator } from "../../assembly/EntityHighlighter"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { BBox, Pos } from "../../lib/geometry"
+import { Pos } from "../../lib/geometry"
 import { RenderObj } from "../../lib/rendering"
 import { entityMock, simpleMock } from "../simple-mock"
 
 let entity: AssemblyEntity
 let assembly: AssemblyPosition
-let expectedBBox: BBox
-let entityCreator: mock.Mocked<HighlightCreator>
 let highlightCreator: EntityHighlighter
 
 before_each(() => {
   assembly = createMockAssembly(5)
-  entityCreator = {
-    createHighlight: spy((surface, position, bbox, type) =>
+  const entityCreator: HighlightCreator = {
+    createHighlightBox: (surface, position, bbox, type) =>
       entityMock({
         name: "test-highlight",
         position,
         bounding_box: bbox,
         highlight_box_type: type,
       }),
-    ),
-    createSprite: spy(() => simpleMock<RenderObj<"sprite">>()),
+    createSprite: () => simpleMock<RenderObj<"sprite">>(),
   }
   highlightCreator = createHighlightCreator(entityCreator)
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
-  expectedBBox = BBox.translate(game.entity_prototypes["stone-furnace"].selection_box, Pos(1, 1))
 })
 
 describe("setErrorHighlightAt", () => {
   test("creates highlight when set to true", () => {
-    highlightCreator.setErrorHighlightAt(assembly, entity, 2, true)
-    assert.spy(entityCreator.createHighlight).called_with(match._, Pos(1, 1), expectedBBox, "not-allowed")
-    const val = entityCreator.createHighlight.returnvals[0].vals[0]
-    assert.same(val, entity.getWorldEntity(2, "errorHighlight"))
+    highlightCreator.setHasError(assembly, entity, 2, true)
+    const highlight = entity.getWorldEntity(2, "errorHighlight")!
+    assert.not_nil(highlight)
+    assert.equal("test-highlight", highlight.name)
+    assert.equal("not-allowed", highlight.highlight_box_type)
   })
 
   test("deletes highlight when set to false", () => {
-    highlightCreator.setErrorHighlightAt(assembly, entity, 2, true)
-    const val = entityCreator.createHighlight.returnvals[0].refs[0] as LuaEntity
-    highlightCreator.setErrorHighlightAt(assembly, entity, 2, false)
-    assert.false(val.valid)
-    assert.nil(entity.getWorldEntity(1, "errorHighlight"))
+    highlightCreator.setHasError(assembly, entity, 2, true)
+    const highlight = entity.getWorldEntity(2, "errorHighlight")!
+    highlightCreator.setHasError(assembly, entity, 2, false)
+    assert.false(highlight.valid)
+    assert.nil(entity.getWorldEntity(2, "errorHighlight"))
   })
 
   test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other layers, %s", (layers) => {
     const layerSet = new LuaSet()
     for (const layer of layers) {
-      highlightCreator.setErrorHighlightAt(assembly, entity, layer, true)
+      highlightCreator.setHasError(assembly, entity, layer, true)
       layerSet.add(layer)
     }
 
@@ -74,33 +71,31 @@ describe("setErrorHighlightAt", () => {
   })
 
   test("deletes indicators only when all highlights removed", () => {
-    highlightCreator.setErrorHighlightAt(assembly, entity, 2, true)
-    highlightCreator.setErrorHighlightAt(assembly, entity, 3, true)
+    highlightCreator.setHasError(assembly, entity, 2, true)
+    highlightCreator.setHasError(assembly, entity, 3, true)
     for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorIndicator"), `layer ${i}`)
-    highlightCreator.setErrorHighlightAt(assembly, entity, 3, false)
+    highlightCreator.setHasError(assembly, entity, 3, false)
     for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorIndicator"), `layer ${i}`)
-    highlightCreator.setErrorHighlightAt(assembly, entity, 2, false)
+    highlightCreator.setHasError(assembly, entity, 2, false)
     for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorIndicator"), `layer ${i}`)
   })
 
   test("does nothing if created in lower layer", () => {
-    highlightCreator.setErrorHighlightAt(assembly, entity, 1, true)
-    assert.spy(entityCreator.createHighlight).not_called()
+    highlightCreator.setHasError(assembly, entity, 1, true)
     assert.nil(entity.getWorldEntity(1, "errorHighlight"))
   })
 })
 
 test("deleteErrorHighlights deletes all highlights", () => {
-  highlightCreator.setErrorHighlightAt(assembly, entity, 1, true)
-  highlightCreator.setErrorHighlightAt(assembly, entity, 2, true)
-  highlightCreator.deleteErrorHighlights(entity)
+  highlightCreator.setHasError(assembly, entity, 1, true)
+  highlightCreator.setHasError(assembly, entity, 2, true)
+  highlightCreator.removeErrorHighlights(entity)
   for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorHighlight"), `layer ${i}`)
 })
 
 describe("updateLostReferenceHighlights", () => {
   test("does nothing if not a lost reference", () => {
     highlightCreator.updateLostReferenceHighlights(assembly, entity)
-    assert.spy(entityCreator.createHighlight).not_called()
     for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(2, "lostReferenceHighlight"))
   })
   test("creates lost reference highlights in layers above base if lost reference", () => {

@@ -99,7 +99,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
       reviveLostReference(assembly, existing, layerNumber, luaEntity)
     } else {
       existing.replaceWorldEntity(layerNumber, luaEntity)
-      updateWorldEntities(assembly, existing, layerNumber + 1, oldLayerNumber - 1, true)
+      updateWorldEntities(assembly, existing, layerNumber, oldLayerNumber - 1, true)
     }
   }
 

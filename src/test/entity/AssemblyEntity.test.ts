@@ -178,7 +178,14 @@ describe("Get/set world entities", () => {
     assert.same(entity, assemblyEntity.getWorldEntity(2))
   })
 
-  test("replaceOrDestroy with nil destroys the entity", () => {
+  test("destroyWorldEntity", () => {
+    assemblyEntity.replaceWorldEntity(1, entity)
+    assemblyEntity.destroyWorldEntity(1, "mainEntity")
+    assert.false(entity.valid)
+    assert.nil(assemblyEntity.getWorldEntity(1))
+  })
+
+  test("replace with nil destroys the entity", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
     assemblyEntity.replaceWorldEntity(1, nil)
     assert.false(entity.valid)
@@ -207,8 +214,40 @@ describe("Get/set world entities", () => {
   })
 
   test("hasAnyWorldEntity", () => {
-    assert.false(assemblyEntity.hasAnyWorldEntity("main"))
+    assert.false(assemblyEntity.hasAnyWorldEntity("mainEntity"))
     assemblyEntity.replaceWorldEntity(1, entity)
-    assert.true(assemblyEntity.hasAnyWorldEntity("main"))
+    assert.true(assemblyEntity.hasAnyWorldEntity("mainEntity"))
+  })
+})
+
+declare module "../../entity/AssemblyEntity" {
+  export interface LayerProperties {
+    foo?: string
+  }
+}
+describe("get/set properties", () => {
+  test("get property when not set is nil", () => {
+    assert.nil(assemblyEntity.getProperty(2, "foo"))
+  })
+  test("get and set property", () => {
+    assemblyEntity.setProperty(2, "foo", "bar")
+    assert.equal("bar", assemblyEntity.getProperty(2, "foo"))
+  })
+  test("propertyIsSetAnywhere", () => {
+    assert.false(assemblyEntity.propertySetInAnyLayer("foo"))
+    assemblyEntity.setProperty(2, "foo", "bar")
+    assert.true(assemblyEntity.propertySetInAnyLayer("foo"))
+    assemblyEntity.setProperty(3, "foo", "bar")
+    assemblyEntity.setProperty(2, "foo", nil)
+    assert.true(assemblyEntity.propertySetInAnyLayer("foo"))
+    assemblyEntity.setProperty(3, "foo", nil)
+    assert.false(assemblyEntity.propertySetInAnyLayer("foo"))
+  })
+  test("clear property", () => {
+    assemblyEntity.setProperty(2, "foo", "bar")
+    assemblyEntity.setProperty(3, "foo", "bar")
+    assemblyEntity.clearProperty("foo")
+    assert.nil(assemblyEntity.getProperty(2, "foo"))
+    assert.nil(assemblyEntity.getProperty(3, "foo"))
   })
 })
