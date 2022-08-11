@@ -107,7 +107,7 @@ export function funcRef<F extends SelflessFun>(func: F): Func<F> {
 }
 
 type AddContextParameter<F extends ContextualFun> = F extends (this: infer T, ...args: infer A) => infer R
-  ? (...args: A) => R
+  ? (self: T, ...args: A) => R
   : never
 export function cfuncRef<F extends ContextualFun>(func: F): Func<AddContextParameter<F>> {
   return new FuncRef(func as any) as any
