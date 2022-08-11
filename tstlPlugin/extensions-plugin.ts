@@ -39,9 +39,23 @@ const useNilInstead = createSerialDiagnosticFactory((node: ts.Node) => ({
   messageText: "Use nil instead of undefined.",
   category: ts.DiagnosticCategory.Warning,
 }))
+const spreadNotSupported = createSerialDiagnosticFactory((node: ts.Node) => ({
+  file: ts.getOriginalNode(node).getSourceFile(),
+  start: ts.getOriginalNode(node).getStart(),
+  length: ts.getOriginalNode(node).getWidth(),
+  messageText: "Spread is not supported in newLuaSet.",
+  category: ts.DiagnosticCategory.Error,
+}))
 
 function transformLuaSetNewCall(context: TransformationContext, node: ts.CallExpression) {
-  const args = node.arguments?.slice() ?? []
+  let args = node.arguments ?? []
+  if (args.length === 1 && ts.isSpreadElement(args[0]) && ts.isArrayLiteralExpression(args[0].expression)) {
+    args = args[0].expression.elements
+  }
+  if (args.some(ts.isSpreadElement)) {
+    context.diagnostics.push(spreadNotSupported(node))
+  }
+
   const expressions = transformExpressionList(context, args)
   return createTableExpression(
     expressions.map((e) => createTableFieldExpression(createBooleanLiteral(true), e)),

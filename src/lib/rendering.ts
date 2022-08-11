@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { keys } from "ts-transformer-keys"
+
 type Getters = {
   [K in keyof LuaRendering as K extends `get_${infer P}`
     ? LuaRendering[K] extends (id: uint64) => any
@@ -73,103 +75,14 @@ export type RenderObj<T extends RenderType = RenderType> = BaseRenderObj<T> &
 
 const rendering: LuaRendering = (_G as any).rendering
 
-const setterKeys: Record<keyof Setters, true> = {
-  visible: true,
-  color: true,
-  angle: true,
-  animation: true,
-  animation_offset: true,
-  animation_speed: true,
-  dash_length: true,
-  draw_on_ground: true,
-  filled: true,
-  font: true,
-  forces: true,
-  gap_length: true,
-  intensity: true,
-  max_radius: true,
-  min_radius: true,
-  minimum_darkness: true,
-  only_in_alt_mode: true,
-  orientation: true,
-  oriented: true,
-  oriented_offset: true,
-  players: true,
-  radius: true,
-  render_layer: true,
-  scale: true,
-  scale_with_zoom: true,
-  sprite: true,
-  start_angle: true,
-  text: true,
-  time_to_live: true,
-  width: true,
-  x_scale: true,
-  y_scale: true,
-}
-const getterKeys: Record<keyof Getters, true> = {
-  alignment: true,
-  angle: true,
-  animation: true,
-  animation_offset: true,
-  animation_speed: true,
-  color: true,
-  dash_length: true,
-  draw_on_ground: true,
-  filled: true,
-  font: true,
-  forces: true,
-  from: true,
-  gap_length: true,
-  intensity: true,
-  left_top: true,
-  max_radius: true,
-  min_radius: true,
-  minimum_darkness: true,
-  only_in_alt_mode: true,
-  orientation: true,
-  orientation_target: true,
-  oriented: true,
-  oriented_offset: true,
-  players: true,
-  radius: true,
-  render_layer: true,
-  right_bottom: true,
-  scale: true,
-  scale_with_zoom: true,
-  sprite: true,
-  start_angle: true,
-  surface: true,
-  target: true,
-  text: true,
-  time_to_live: true,
-  to: true,
-  type: true,
-  vertical_alignment: true,
-  vertices: true,
-  visible: true,
-  width: true,
-  x_scale: true,
-  y_scale: true,
-}
-const otherSetterKeys: Record<keyof OtherSetters, true> = {
-  set_corners: true,
-  set_dashes: true,
-  set_alignment: true,
-  set_from: true,
-  set_left_top: true,
-  set_orientation_target: true,
-  set_right_bottom: true,
-  set_target: true,
-  set_to: true,
-  set_vertical_alignment: true,
-  set_vertices: true,
-}
+const setterKeys = newLuaSet(...keys<Setters>())
+const getterKeys = newLuaSet(...keys<Getters>())
+const otherSetterKeys = newLuaSet(...keys<OtherSetters>())
 
 const setters: {
   [K in keyof Setters]: LuaRendering[`set_${K}`]
 } = {} as any
-for (const [key] of pairs(setterKeys)) {
+for (const key of setterKeys) {
   setters[key] = rendering[`set_${key}`] as any
 }
 const getters: {
@@ -178,7 +91,7 @@ const getters: {
   valid: LuaRendering["is_valid"]
   destroy: (this: void, id: uint64) => () => void
 } = {} as any
-for (const [key] of pairs(getterKeys)) {
+for (const key of getterKeys) {
   getters[key] = rendering[`get_${key}`] as any
 }
 getters.valid = rendering.is_valid
@@ -189,7 +102,7 @@ getters.destroy = (id) => () => {
 const otherMethods: {
   [K in keyof OtherSetters]: (this: BaseRenderObj<RenderType>, ...args: any[]) => void
 } = {} as any
-for (const [key] of pairs(otherSetterKeys)) {
+for (const key of otherSetterKeys) {
   const set = rendering[key] as (id: uint64, ...args: any) => void
   otherMethods[key] = function (this: BaseRenderObj<RenderType>, ...args: any[]) {
     set(this.id, ...args)
@@ -205,6 +118,7 @@ const metatable: LuaMetatable<BaseRenderObj<RenderType>, any> = {
   __newindex(this: BaseRenderObj<RenderType>, key: string, value: any) {
     const setter = setters[key as keyof Setters]
     if (setter) setter(this.id, value as never)
+    else error(`${key} not in render object`)
   },
 }
 script.register_metatable("render obj", metatable)
