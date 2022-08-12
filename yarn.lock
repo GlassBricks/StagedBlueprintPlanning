@@ -3619,10 +3619,10 @@ lua-types@^2.12.0:
   resolved "https://registry.yarnpkg.com/lua-types/-/lua-types-2.12.0.tgz#a03bc52b76fdaf88b4a596bf26ef27a670c3a29e"
   integrity sha512-s96z1Zcz3KRXfWyNFM3KP2zpNYTfZwgHo8X/yFXveyS8Dux+cUuyT+zA5tFZbmGh8VViwNs9bFbzNevAR/18uw==
 
-lua-wasm-bindings@^0.2.3-rc.0:
-  version "0.2.3-rc.0"
-  resolved "https://registry.yarnpkg.com/lua-wasm-bindings/-/lua-wasm-bindings-0.2.3-rc.0.tgz#0c05a183a5cb2d2f8d91033c07ee5d51b137ee16"
-  integrity sha512-6AlDZUy3fEi1TWeCCjunCPVGWIQCRaOPTlai6WVCFXAl+2/qk+xMDuOzVJFDvk6TLgW00XF3vVajJldybWEHIA==
+lua-wasm-bindings@^0.2.3-rc.1:
+  version "0.2.3-rc.1"
+  resolved "https://registry.yarnpkg.com/lua-wasm-bindings/-/lua-wasm-bindings-0.2.3-rc.1.tgz#d3b23c46864fd55616c51cb30219646ca58fee46"
+  integrity sha512-k48l9oU4WyJlniizCTsR2ye/a/KZr/XIt/tj4Uzp3VpXhD1djWADVeUkGNWExlbq+nmRvYnuY0spooI08qPyfA==
   dependencies:
     "@types/semver" "^7.3.9"
     semver "^7.3.7"
@@ -4973,10 +4973,10 @@ type-fest@^1.0.1, type-fest@^1.2.1, type-fest@^1.2.2:
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-1.4.0.tgz#e9fb813fe3bf1744ec359d55d1affefa76f14be1"
   integrity sha512-yGSza74xk0UG8k+pLh5oeoYirvIiWo5t0/o3zHHAO2tRDiZcxWP7fywNlXhqb6/r6sWvwi+RsyQMWhVLe4BVuA==
 
-typed-factorio@^1.6.0:
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/typed-factorio/-/typed-factorio-1.6.0.tgz#300b4cc82d71be3ece002cc5ffc2a04e04681aee"
-  integrity sha512-awnNfgXymuFhGkSEYbXPc6opzXUrm0fTQQfJA0l7IdgnkXIF1yptRlUUma+k20zxgfiuZoJ12WdBCpJ4udfWAw==
+typed-factorio@^1.6.1:
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/typed-factorio/-/typed-factorio-1.6.1.tgz#cc71a2130407d1359ee9ee81617a358a349fb026"
+  integrity sha512-ehxUmRUPO4IEhtXIOkwhosDGGEVgRBFVaoNkTOvko/3yLKwese/6IB1/9ItSRNspqOoNh4UBPscjvQWM3SIFBA==
 
 typedarray-to-buffer@^3.1.5:
   version "3.1.5"
@@ -4994,10 +4994,10 @@ typescript-to-lua@^0.36.0:
     source-map "^0.7.3"
     typescript ">=4.0.2"
 
-typescript-to-lua@^1.8.1:
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/typescript-to-lua/-/typescript-to-lua-1.8.1.tgz#618ec8bd4d3f98997f791f8d3b7429cea66b10a3"
-  integrity sha512-xl7pODkCN6kA5mTwZjRAf7YamHYwpnsnh/mRdqIqyG2NkEaAYDLUomcVKRyIgfk0l5ZQzI53Al8nRrWp02pUOA==
+typescript-to-lua@^1.8.2:
+  version "1.8.2"
+  resolved "https://registry.yarnpkg.com/typescript-to-lua/-/typescript-to-lua-1.8.2.tgz#cb8ee432575885ca6a894a340311ad7f2adf8d77"
+  integrity sha512-2ZFJlF9R9HgTryM+Vwk3X3Dexnvpm5vT75Eh66E0rDFZGK+vW70aqkw6s47/ytdJg/9IyN+Oz7ITUzZxXEOxlA==
   dependencies:
     enhanced-resolve "^5.8.2"
     resolve "^1.15.1"
