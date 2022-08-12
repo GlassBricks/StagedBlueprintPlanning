@@ -44,8 +44,9 @@ before_each(() => {
   mockEntityCreator = createMockEntityCreator()
   highlighter = {
     setHasError: spy(),
-    removeErrorHighlights: spy(),
+    updateConfigChangedHighlight: spy(),
     updateLostReferenceHighlights: spy(),
+    removeAllHighlights: spy(),
   }
   worldUpdater = createWorldUpdater(mockEntityCreator, highlighter)
 })
@@ -178,7 +179,7 @@ test("deleteAllEntities", () => {
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
 })
 
-describe("error highlight", () => {
+describe("highlights", () => {
   before_each(() => {
     ;(entity as Mutable<AssemblyEntity>).categoryName = "stone-furnace"
   })
@@ -194,7 +195,14 @@ describe("error highlight", () => {
     mockEntityCreator.createEntity(assembly.layers[1], entity, entity.getBaseValue())
     worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
     worldUpdater.deleteAllWorldEntities(assembly, entity)
-    assert.spy(highlighter.removeErrorHighlights).called_with(entity)
+    assert.spy(highlighter.removeAllHighlights).called_with(entity)
+  })
+
+  test("calls updateConfigChangedHighlight", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    for (let i = 1; i <= 3; i++) {
+      assert.spy(highlighter.updateConfigChangedHighlight).called_with(match._, match._, i)
+    }
   })
 })
 

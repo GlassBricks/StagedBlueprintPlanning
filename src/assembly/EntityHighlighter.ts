@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { keys } from "ts-transformer-keys"
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
 import { getWorldPosition } from "../entity/EntityHandler"
@@ -17,10 +18,16 @@ import { BBox, Pos, Position } from "../lib/geometry"
 import draw, { RenderObj } from "../lib/rendering"
 import { AssemblyPosition, LayerPosition } from "./Assembly"
 
-interface HighlightEntities {
+export interface HighlightEntities {
+  /** Error outline when an entity cannot be placed. */
   errorHighlight?: HighlightBoxEntity
-  errorIndicator?: RenderObj<"sprite">
+  /** Indicator sprite when there is an error highlight in another layer. */
+  errorInOtherLayerIndicator?: RenderObj<"sprite">
+  /** Blue outline when a lost reference entity is left behind. */
   lostReferenceHighlight?: HighlightBoxEntity
+
+  /** Blueprint sprite when an entity's settings have changed. This may be the sprite "blueprint" or "upgrade-planner". */
+  configChangedHighlight?: HighlightBoxEntity
 }
 declare module "../entity/AssemblyEntity" {
   // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -33,9 +40,10 @@ declare module "../entity/AssemblyEntity" {
 /** @noSelf */
 export interface EntityHighlighter {
   setHasError(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber, value: boolean): void
-
-  removeErrorHighlights(entity: AssemblyEntity): void
+  updateConfigChangedHighlight(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber): void
   updateLostReferenceHighlights(assembly: AssemblyPosition, entity: AssemblyEntity): void
+
+  removeAllHighlights(entity: AssemblyEntity): void
 }
 
 /** @noSelf */
@@ -52,35 +60,42 @@ export interface HighlightCreator {
 
 interface HighlightConfig {
   readonly type: "highlight"
-  readonly name: keyof HighlightEntities
   readonly renderType: CursorBoxRenderType
 }
 
 interface SpriteConfig {
   readonly type: "sprite"
-  readonly name: keyof HighlightEntities
   readonly sprite: SpritePath
   readonly offset: Position
   readonly scale: number
 }
 const highlightConfigs: {
-  [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig
+  [P in keyof HighlightEntities]-?: NonNullable<HighlightEntities[P]> extends RenderObj<"sprite">
+    ? SpriteConfig
+    : NonNullable<HighlightEntities[P]> extends HighlightBoxEntity
+    ? HighlightConfig
+    : never
 } = {
   errorHighlight: {
     type: "highlight",
-    name: "errorHighlight",
     renderType: "not-allowed",
   },
-  errorIndicator: {
+  errorInOtherLayerIndicator: {
     type: "sprite",
-    name: "errorIndicator",
     sprite: "utility/danger_icon",
-    offset: { x: 0.8, y: 0.1 },
+    offset: { x: 0.2, y: 0.1 },
     scale: 0.3,
   },
   lostReferenceHighlight: {
     type: "highlight",
-    name: "lostReferenceHighlight",
+    renderType: "train-visualization",
+  },
+  configChangedHighlight: {
+    // type: "sprite",
+    // sprite: "item/blueprint",
+    // offset: { x: 0.8, y: 0.1 },
+    // scale: 0.6,
+    type: "highlight",
     renderType: "pair",
   },
 }
@@ -90,9 +105,13 @@ declare const luaLength: LuaLength<table, number>
 export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
   const { createHighlightBox, createSprite } = entityCreator
 
-  function createHighlight(entity: AssemblyEntity, layer: LayerPosition, type: keyof HighlightEntities): void {
+  function createHighlight<T extends keyof HighlightEntities>(
+    entity: AssemblyEntity,
+    layer: LayerPosition,
+    type: T,
+  ): HighlightEntities[T] {
     const existing = entity.getWorldEntity(layer.layerNumber, type)
-    if (existing) return
+    if (existing) return existing!
 
     const config = highlightConfigs[type]
     const prototypeName = entity.getBaseValue().name
@@ -112,11 +131,12 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
 
     entity.replaceWorldEntity<any>(layer.layerNumber, result, type)
+    return result as HighlightEntities[T]
   }
   function removeHighlight(entity: AssemblyEntity, layerNumber: LayerNumber, type: keyof HighlightEntities): void {
     entity.destroyWorldEntity(layerNumber, type)
   }
-  function removeAllHighlights(entity: AssemblyEntity, type: keyof HighlightEntities): void {
+  function removeHighlightsOfType(entity: AssemblyEntity, type: keyof HighlightEntities): void {
     entity.destroyAllWorldEntities(type)
   }
 
@@ -136,14 +156,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function updateErrorHighlight(entity: AssemblyEntity, layerNumber: LayerNumber, assembly: AssemblyPosition) {
     if (layerNumber < entity.getBaseLayer()) {
       removeHighlight(entity, layerNumber, "errorHighlight")
-      removeHighlight(entity, layerNumber, "errorIndicator")
+      removeHighlight(entity, layerNumber, "errorInOtherLayerIndicator")
       return
     }
     const layer = assembly.layers[layerNumber]
     const hasError = entity.getProperty(layerNumber, "hasError")
     const hasErrorElsewhere = !hasError && entity.propertySetInAnyLayer("hasError")
     setHighlight(entity, layer, "errorHighlight", hasError)
-    setHighlight(entity, layer, "errorIndicator", hasErrorElsewhere)
+    setHighlight(entity, layer, "errorInOtherLayerIndicator", hasErrorElsewhere)
   }
 
   function setHasError(
@@ -164,10 +184,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
   }
 
-  function removeErrorHighlights(entity: AssemblyEntity): void {
-    removeAllHighlights(entity, "errorHighlight")
-    removeAllHighlights(entity, "errorIndicator")
-    entity.clearProperty("hasError")
+  function updateConfigChangedHighlight(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber) {
+    const hasChanged = entity.hasLayerChanges(layerNumber)
+    setHighlight(entity, assembly.layers[layerNumber], "configChangedHighlight", hasChanged)
   }
 
   function updateLostReferenceHighlights(assembly: AssemblyPosition, entity: AssemblyEntity): void {
@@ -176,14 +195,22 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
         createHighlight(entity, assembly.layers[layer], "lostReferenceHighlight")
       }
     } else {
-      removeAllHighlights(entity, "lostReferenceHighlight")
+      removeHighlightsOfType(entity, "lostReferenceHighlight")
+    }
+  }
+
+  function removeAllHighlights(entity: AssemblyEntity): void {
+    entity.clearProperty("hasError")
+    for (const type of keys<HighlightEntities>()) {
+      removeHighlightsOfType(entity, type)
     }
   }
 
   return {
     setHasError,
-    removeErrorHighlights,
+    updateConfigChangedHighlight,
     updateLostReferenceHighlights,
+    removeAllHighlights,
   }
 }
 

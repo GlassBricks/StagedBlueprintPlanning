@@ -35,8 +35,8 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   getBaseLayer(): LayerNumber
   getBaseValue(): Readonly<T>
 
-  /** @return if this entity has any changes after the first layer. */
-  hasLayerChanges(): boolean
+  /** @return if this entity has any changes at the given layer, or any layer if nil */
+  hasLayerChanges(layer?: LayerNumber): boolean
   _getLayerChanges(): LayerChanges<T>
   _applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void
 
@@ -136,7 +136,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return this.baseValue
   }
 
-  hasLayerChanges(): boolean {
+  hasLayerChanges(layer?: LayerNumber): boolean {
+    if (layer) return this.layerChanges[layer] !== nil
     return next(this.layerChanges)[0] !== nil
   }
   _getLayerChanges(): LayerChanges<T> {

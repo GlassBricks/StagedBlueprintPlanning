@@ -11,7 +11,7 @@
 
 import { assertNever, bind, RegisterClass } from "../lib"
 import { Observer, Subscription } from "../lib/observable"
-import draw, { RenderObj, RenderType } from "../lib/rendering"
+import draw, { RenderObj } from "../lib/rendering"
 import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
 
 /**
@@ -19,7 +19,7 @@ import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
  */
 @RegisterClass("AssemblyDisplay")
 class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
-  private highlights: RenderObj<RenderType>[][] = []
+  private highlights: RenderObj[][] = []
   private subscription: Subscription | undefined
 
   public invoke(_: Subscription, event: AssemblyChangeEvent) {

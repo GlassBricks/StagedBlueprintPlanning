@@ -72,6 +72,8 @@ test("hasLayerChanges", () => {
   assert.false(assemblyEntity.hasLayerChanges())
   assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
   assert.true(assemblyEntity.hasLayerChanges())
+  assert.true(assemblyEntity.hasLayerChanges(3))
+  assert.false(assemblyEntity.hasLayerChanges(2))
 })
 
 test("iterateValues", () => {

@@ -48,7 +48,7 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
     readonly layers: Record<LayerNumber, LayerPosition>
   }
   const { createEntity, updateEntity } = entityCreator
-  const { setHasError, removeErrorHighlights, updateLostReferenceHighlights } = highlighter
+  const { setHasError, removeAllHighlights, updateLostReferenceHighlights, updateConfigChangedHighlight } = highlighter
 
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
@@ -93,12 +93,13 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
         entity.replaceWorldEntity(layerNum, newEntity)
       }
       setHasError(assembly, entity, layerNum, newEntity === nil)
+      updateConfigChangedHighlight(assembly, entity, layerNum)
     }
   }
 
   function deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
     entity.destroyAllWorldEntities("mainEntity")
-    removeErrorHighlights(entity)
+    removeAllHighlights(entity)
     updateLostReferenceHighlights(assembly, entity)
   }
 

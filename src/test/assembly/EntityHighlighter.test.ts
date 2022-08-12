@@ -9,15 +9,25 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { keys } from "ts-transformer-keys"
 import { AssemblyPosition } from "../../assembly/Assembly"
 import { createMockAssembly } from "../../assembly/Assembly-mock"
-import { createHighlightCreator, EntityHighlighter, HighlightCreator } from "../../assembly/EntityHighlighter"
+import {
+  createHighlightCreator,
+  EntityHighlighter,
+  HighlightCreator,
+  HighlightEntities,
+} from "../../assembly/EntityHighlighter"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { Entity } from "../../entity/Entity"
 import { Pos } from "../../lib/geometry"
 import { RenderObj } from "../../lib/rendering"
 import { entityMock, simpleMock } from "../simple-mock"
 
-let entity: AssemblyEntity
+interface FooEntity extends Entity {
+  foo?: number
+}
+let entity: AssemblyEntity<FooEntity>
 let assembly: AssemblyPosition
 let highlightCreator: EntityHighlighter
 
@@ -37,7 +47,7 @@ before_each(() => {
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
 
-describe("setErrorHighlightAt", () => {
+describe("setHasError", () => {
   test("creates highlight when set to true", () => {
     highlightCreator.setHasError(assembly, entity, 2, true)
     const highlight = entity.getWorldEntity(2, "errorHighlight")!
@@ -63,9 +73,9 @@ describe("setErrorHighlightAt", () => {
 
     for (let i = 1; i < 5; i++) {
       if (i === 1 || layerSet.has(i)) {
-        assert.nil(entity.getWorldEntity(i, "errorIndicator"), `no indicator in layer ${i}`)
+        assert.nil(entity.getWorldEntity(i, "errorInOtherLayerIndicator"), `no indicator in layer ${i}`)
       } else {
-        assert.not_nil(entity.getWorldEntity(i, "errorIndicator"), `indicator in layer ${i}`)
+        assert.not_nil(entity.getWorldEntity(i, "errorInOtherLayerIndicator"), `indicator in layer ${i}`)
       }
     }
   })
@@ -73,11 +83,11 @@ describe("setErrorHighlightAt", () => {
   test("deletes indicators only when all highlights removed", () => {
     highlightCreator.setHasError(assembly, entity, 2, true)
     highlightCreator.setHasError(assembly, entity, 3, true)
-    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorIndicator"), `layer ${i}`)
+    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorInOtherLayerIndicator"), `layer ${i}`)
     highlightCreator.setHasError(assembly, entity, 3, false)
-    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorIndicator"), `layer ${i}`)
+    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorInOtherLayerIndicator"), `layer ${i}`)
     highlightCreator.setHasError(assembly, entity, 2, false)
-    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorIndicator"), `layer ${i}`)
+    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorInOtherLayerIndicator"), `layer ${i}`)
   })
 
   test("does nothing if created in lower layer", () => {
@@ -86,11 +96,21 @@ describe("setErrorHighlightAt", () => {
   })
 })
 
-test("deleteErrorHighlights deletes all highlights", () => {
-  highlightCreator.setHasError(assembly, entity, 1, true)
-  highlightCreator.setHasError(assembly, entity, 2, true)
-  highlightCreator.removeErrorHighlights(entity)
-  for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorHighlight"), `layer ${i}`)
+describe("updateConfigChangedHighlight", () => {
+  test("creates highlight when there is a config change", () => {
+    entity._applyDiffAtLayer(3, { foo: 2 })
+    highlightCreator.updateConfigChangedHighlight(assembly, entity, 3)
+    const highlight = entity.getWorldEntity(3, "configChangedHighlight")!
+    assert.not_nil(highlight)
+  })
+
+  test("deletes highlight when there is no config change", () => {
+    entity._applyDiffAtLayer(3, { foo: 2 })
+    highlightCreator.updateConfigChangedHighlight(assembly, entity, 3)
+    entity.adjustValueAtLayer(3, entity.getBaseValue())
+    highlightCreator.updateConfigChangedHighlight(assembly, entity, 3)
+    assert.nil(entity.getWorldEntity(3, "configChangedHighlight"))
+  })
 })
 
 describe("updateLostReferenceHighlights", () => {
@@ -111,4 +131,15 @@ describe("updateLostReferenceHighlights", () => {
     highlightCreator.updateLostReferenceHighlights(assembly, entity)
     for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
   })
+})
+
+test("deleteErrorHighlights deletes all highlights", () => {
+  highlightCreator.setHasError(assembly, entity, 1, true)
+  highlightCreator.setHasError(assembly, entity, 2, true)
+  highlightCreator.removeAllHighlights(entity)
+  for (let i = 1; i <= 5; i++) {
+    for (const type of keys<HighlightEntities>()) {
+      assert.nil(entity.getWorldEntity(i, type), `layer ${i}`)
+    }
+  }
 })
