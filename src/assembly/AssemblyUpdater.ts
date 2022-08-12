@@ -11,6 +11,7 @@
 
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
+import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -25,6 +26,7 @@ export interface AssemblyUpdater {
     layer: LayerPosition,
     previousDirection?: defines.direction,
   ): void
+  onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 }
 
 export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: EntitySaver): AssemblyUpdater {
@@ -128,6 +130,34 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     deleteAllWorldEntities(assembly, existing)
   }
 
+  function doUpgrade(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    layerNumber: number,
+    existing: AssemblyEntity,
+    rotateTo: defines.direction | nil,
+    upgradeTo?: string | nil,
+  ): void {
+    const rotateAllowed = rotateTo !== nil && existing.getBaseLayer() === layerNumber
+    if (rotateAllowed) {
+      existing.direction = rotateTo !== 0 ? rotateTo : nil
+    }
+    // else, direction will be reset by updateWorldEntities
+
+    const newValue = saveEntity(entity)
+    if (!newValue) return // bug?
+    if (upgradeTo) newValue.name = upgradeTo
+
+    const hasDiff = existing.adjustValueAtLayer(layerNumber, newValue)
+    if (hasDiff || rotateAllowed) {
+      // if diff, update all entities
+      updateWorldEntities(assembly, existing, layerNumber)
+    } else if (rotateTo) {
+      // else, only this entity (if rotation forbidden)
+      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
+    } // else, no diff, do nothing
+  }
+
   function onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
     entity: LuaEntity,
@@ -139,8 +169,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     const { layerNumber } = layer
 
     const existing = content.findCompatible(entity, position, previousDirection ?? entity.direction)
-    const existingLayer = existing && existing.getBaseLayer()
-    if (!existing || layerNumber < existingLayer!) {
+    if (!existing || layerNumber < existing.getBaseLayer()!) {
       // bug, treat as add
       onEntityCreated(assembly, entity, layer)
       return
@@ -149,29 +178,42 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     existing.replaceWorldEntity(layerNumber, entity)
 
     // check rotation
-    const hasRotation = previousDirection && previousDirection !== entity.direction
-    const rotateAllowed = hasRotation && existingLayer === layerNumber
-    if (rotateAllowed) {
-      existing.direction = entity.direction !== 0 ? entity.direction : nil
+    const rotation = previousDirection && previousDirection !== entity.direction ? entity.direction : nil
+    doUpgrade(assembly, entity, layerNumber, existing, rotation)
+  }
+
+  function onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
+    const position = getLayerPosition(layer, entity)
+    const { content } = assembly
+    const { layerNumber } = layer
+
+    const existing = content.findCompatible(entity, position, entity.direction)
+    if (!existing) return
+
+    const upgradeDirection = entity.get_upgrade_direction()
+    let upgradeType = entity.get_upgrade_target()?.name
+    if (upgradeType) {
+      // assert(getEntityCategory(upgradeType) === existing.categoryName)
+      if (getEntityCategory(upgradeType) !== existing.categoryName) {
+        game.print(
+          `WARNING: incompatible upgrade type to ${upgradeType}: category ${getEntityCategory(
+            upgradeType,
+          )}, existing category: ${existing.categoryName}`,
+        )
+        upgradeType = nil
+      }
     }
-
-    const newValue = saveEntity(entity)
-    if (!newValue) return // bug?
-
-    const hasDiff = existing.adjustValueAtLayer(layerNumber, newValue)
-    if (hasDiff || rotateAllowed) {
-      // if diff, update all entities
-      updateWorldEntities(assembly, existing, layerNumber)
-    } else if (hasRotation) {
-      // else, only this entity (if rotation forbidden)
-      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
-    } // else, no diff, do nothing
+    if (upgradeDirection || upgradeType) {
+      doUpgrade(assembly, entity, layerNumber, existing, upgradeDirection, upgradeType)
+    }
+    if (entity.valid) entity.cancel_upgrade("player")
   }
 
   return {
     onEntityCreated,
     onEntityDeleted,
     onEntityPotentiallyUpdated,
+    onEntityMarkedForUpgrade,
   }
 }
 

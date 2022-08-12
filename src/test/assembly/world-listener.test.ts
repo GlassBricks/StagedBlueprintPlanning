@@ -89,6 +89,7 @@ describe("add", () => {
     assert.spy(updater.onEntityCreated).called_with(assembly, entity, layers[1])
   })
 })
+
 describe("delete", () => {
   let entity: LuaEntity
   before_each(() => {
@@ -143,8 +144,20 @@ describe("update", () => {
     entity.rotate({ by_player: 1 as PlayerIndex })
     assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1], oldDirection)
   })
+})
 
-  test("fast replace", () => {
+describe("fast replace", () => {
+  let entity: LuaEntity
+  before_each(() => {
+    const position = getLayerCenter(1)
+    entity = surface.create_entity({
+      name: "inserter",
+      position,
+      raise_built: true,
+      force: "player",
+    })!
+  })
+  test("to upgrade", () => {
     assert(
       surface.can_fast_replace({
         name: "fast-inserter",
@@ -163,7 +176,7 @@ describe("update", () => {
     assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, layers[1], match._)
   })
 
-  test("fast replace to rotate", () => {
+  test("to rotate", () => {
     assert(
       surface.can_fast_replace({
         name: "inserter",
@@ -179,6 +192,35 @@ describe("update", () => {
 
     assert.false(entity.valid, "entity replaced")
     assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, match._, layers[1], oldDirection)
+  })
+})
+
+describe("upgrade", () => {
+  let entity: LuaEntity
+  before_each(() => {
+    const position = getLayerCenter(1)
+    entity = surface.create_entity({
+      name: "inserter",
+      position,
+      raise_built: true,
+      force: "player",
+    })!
+  })
+
+  test("marked for upgrade", () => {
+    entity.order_upgrade({
+      force: "player",
+      target: "fast-inserter",
+    })
+    assert.spy(updater.onEntityMarkedForUpgrade).called_with(assembly, entity, layers[1])
+  })
+  test("marked to rotate", () => {
+    entity.order_upgrade({
+      force: "player",
+      target: "inserter",
+      direction: defines.direction.east,
+    })
+    assert.spy(updater.onEntityMarkedForUpgrade).called_with(assembly, entity, layers[1])
   })
 
   test("instant upgrade planner", () => {

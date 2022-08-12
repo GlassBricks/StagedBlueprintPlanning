@@ -16,7 +16,6 @@ import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { createMockEntityCreator, MockEntityCreator } from "../../entity/EntityHandler-mock"
-import { Mutable } from "../../lib"
 
 interface TestEntity extends Entity {
   prop1: number
@@ -180,9 +179,6 @@ test("deleteAllEntities", () => {
 })
 
 describe("highlights", () => {
-  before_each(() => {
-    ;(entity as Mutable<AssemblyEntity>).categoryName = "stone-furnace"
-  })
   test("creates error highlight if entity cannot be placed", () => {
     mockEntityCreator.createEntity(assembly.layers[2], entity, entity.getBaseValue())
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)

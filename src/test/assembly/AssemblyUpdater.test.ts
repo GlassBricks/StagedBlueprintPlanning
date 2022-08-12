@@ -18,7 +18,7 @@ import { _overrideEntityCategory } from "../../entity/entity-info"
 import { createMockEntitySaver } from "../../entity/EntityHandler-mock"
 import { ContextualFun, Mutable } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
-import { entityMock } from "../simple-mock"
+import { entityMock, simpleMock } from "../simple-mock"
 import direction = defines.direction
 
 const pos = Pos(10.5, 10.5)
@@ -378,7 +378,7 @@ describe("rotate", () => {
   })
 })
 
-describe("fast-replace", () => {
+describe("fast replace", () => {
   test("fast replace sets world entity and calls update", () => {
     const { luaEntity, added } = addAndReset()
     const newEntity = createEntity({ name: "test2" })
@@ -395,6 +395,29 @@ describe("fast-replace", () => {
     luaEntity.destroy()
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, layer, oldDirection)
     assert.equal(newEntity, added.getWorldEntity(1))
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+})
+
+describe("mark for upgrade", () => {
+  test("upgrade to new value", () => {
+    const { luaEntity, added } = addAndReset()
+    rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
+    rawset(luaEntity, "get_upgrade_direction", () => nil)
+    rawset(luaEntity, "cancel_upgrade", () => true)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, layer)
+    assert.equal("test2", added.getBaseValue().name)
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+  test("upgrade to rotated", () => {
+    const { luaEntity, added } = addAndReset()
+    rawset(luaEntity, "get_upgrade_target", () => nil)
+    rawset(luaEntity, "get_upgrade_direction", () => direction.west)
+    rawset(luaEntity, "cancel_upgrade", () => true)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, layer)
+    assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })

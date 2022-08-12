@@ -92,7 +92,6 @@ Fast replace:
 
 Todo: bot actions
 
-
 Event tree:
 Start:
   on_player_mined_entity -> destroy
@@ -219,6 +218,13 @@ function isUpgradeable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
   return Pos.equals(old.position, next.position) && getEntityCategory(old.name) === getEntityCategory(next.name)
 }
 
-// todo: upgrades, fast replace, blueprinting, bot stuff, circuit wires, go through the list of events
+Events.on_marked_for_upgrade((e) => {
+  const { entity } = e
+  const layer = getLayer(entity)
+  if (!layer) return
+  DefaultAssemblyUpdater.onEntityMarkedForUpgrade(layer.assembly, entity, layer)
+})
+
+// todo: blueprinting, bot stuff, wires, go through the list of events
 
 export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil

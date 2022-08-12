@@ -10,6 +10,7 @@
  */
 
 import { LayerPosition } from "../assembly/Assembly"
+import { Mutable } from "../lib"
 import { Pos, PositionClass } from "../lib/geometry"
 import { BlueprintDiffHandler } from "./diff/BlueprintDiffHandler"
 import { BasicEntityInfo, Entity, EntityPose } from "./Entity"
@@ -31,7 +32,7 @@ export interface EntityCreator {
 
 /** @noSelf */
 export interface EntitySaver {
-  saveEntity(entity: LuaEntity): Entity | nil
+  saveEntity(entity: LuaEntity): Mutable<Entity> | nil
 }
 
 export interface EntityHandler extends EntityCreator, EntitySaver {}

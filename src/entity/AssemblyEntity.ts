@@ -22,12 +22,12 @@ import {
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
 import { Entity, EntityPose } from "./Entity"
-import { getEntityCategory } from "./entity-info"
+import { CategoryName, getEntityCategory } from "./entity-info"
 
 export type LayerNumber = number
 
 export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPose {
-  readonly categoryName: string
+  readonly categoryName: CategoryName
   direction: defines.direction | nil
   /** If this entity is a lost reference */
   isLostReference?: true
@@ -107,7 +107,7 @@ type LayerData = WorldEntities & LayerProperties
 
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
-  public readonly categoryName: string
+  public readonly categoryName: CategoryName
   public readonly position: Position
   public direction: defines.direction | nil
 
