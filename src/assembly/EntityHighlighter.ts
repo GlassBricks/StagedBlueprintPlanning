@@ -126,12 +126,11 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
     let result: LuaEntity | RenderObj | nil
     if (config.type === "highlight") {
-      const position = entity.position
-      const worldSelectionBox = BBox.translate(selectionBox, getWorldPosition(layer, position))
-      result = createHighlightBox(layer.surface, position, worldSelectionBox, config.renderType)
+      const worldSelectionBox = BBox.translate(selectionBox, getWorldPosition(layer, entity))
+      result = createHighlightBox(layer.surface, entity.position, worldSelectionBox, config.renderType)
     } else if (config.type === "sprite") {
       const relativePosition = Pos.plus(selectionBox.left_top, selectionBox.size().emul(config.offset))
-      const worldPosition = relativePosition.plus(getWorldPosition(layer, entity.position))
+      const worldPosition = relativePosition.plus(getWorldPosition(layer, entity))
       result = createSprite(layer.surface, worldPosition, config.scale, config.sprite)
     } else {
       assertNever(config)
@@ -168,9 +167,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
   // this will replace above function
   function updateHighlightSet(
+    assembly: AssemblyPosition,
     entity: AssemblyEntity,
     layerNumber: LayerNumber,
-    assembly: AssemblyPosition,
     { highlight, indicator, property }: HighlightSet,
   ): void {
     if (layerNumber < entity.getBaseLayer()) {
@@ -185,9 +184,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     setHighlight(entity, layer, indicator, hasPropertyInOtherLayer)
   }
 
-  function updateHighlightSetInAllLayers(entity: AssemblyEntity, assembly: AssemblyPosition, set: HighlightSet): void {
+  function updateHighlightSetInAllLayers(assembly: AssemblyPosition, entity: AssemblyEntity, set: HighlightSet): void {
     for (const i of $range(entity.getBaseLayer(), luaLength(assembly.layers))) {
-      updateHighlightSet(entity, i, assembly, set)
+      updateHighlightSet(assembly, entity, i, set)
     }
   }
 
@@ -202,9 +201,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     entity.setProperty(layerNumber, set.property, value || nil)
     const hasAny = entity.propertySetInAnyLayer(set.property)
     if (hadAny !== hasAny) {
-      updateHighlightSetInAllLayers(entity, assembly, set)
+      updateHighlightSetInAllLayers(assembly, entity, set)
     } else {
-      updateHighlightSet(entity, layerNumber, assembly, set)
+      updateHighlightSet(assembly, entity, layerNumber, set)
     }
   }
 

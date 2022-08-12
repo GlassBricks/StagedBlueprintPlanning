@@ -10,17 +10,17 @@
  */
 
 import { LayerPosition } from "../assembly/Assembly"
-import { Pos, Position, PositionClass } from "../lib/geometry"
+import { Pos, PositionClass } from "../lib/geometry"
 import { BlueprintDiffHandler } from "./diff/BlueprintDiffHandler"
 import { BasicEntityInfo, Entity, EntityPose } from "./Entity"
 import minus = Pos.minus
 import plus = Pos.plus
 
-export function getLayerPosition(luaEntity: BasicEntityInfo, layer: LayerPosition): PositionClass {
+export function getLayerPosition(layer: LayerPosition, luaEntity: BasicEntityInfo): PositionClass {
   return minus(luaEntity.position, layer.left_top)
 }
-export function getWorldPosition(layer: LayerPosition, relativePosition: Position): PositionClass {
-  return plus(relativePosition, layer.left_top)
+export function getWorldPosition(layer: LayerPosition, entity: EntityPose): PositionClass {
+  return plus(entity.position, layer.left_top)
 }
 
 /** @noSelf */
@@ -41,11 +41,11 @@ export const DefaultEntityHandler: EntityHandler = {
     return BlueprintDiffHandler.save(luaEntity)
   },
 
-  createEntity(layer: LayerPosition, { position, direction }: EntityPose, entity: Entity): LuaEntity | nil {
+  createEntity(layer: LayerPosition, pose: EntityPose, entity: Entity): LuaEntity | nil {
     return BlueprintDiffHandler.create(
       layer.surface,
-      getWorldPosition(layer, position),
-      direction,
+      getWorldPosition(layer, pose),
+      pose.direction,
       entity as BlueprintEntity,
     )
   },

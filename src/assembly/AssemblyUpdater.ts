@@ -32,7 +32,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
   const { saveEntity } = entitySaver
 
   function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
-    const position = getLayerPosition(entity, layer)
+    const position = getLayerPosition(layer, entity)
     const { layerNumber } = layer
     const { content } = assembly
 
@@ -104,7 +104,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
   }
 
   function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
-    const position = getLayerPosition(entity, layer)
+    const position = getLayerPosition(layer, entity)
     const { content } = assembly
 
     const existing = content.findCompatible(entity, position, entity.direction)
@@ -134,7 +134,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     layer: LayerPosition,
     previousDirection?: defines.direction,
   ): void {
-    const position = getLayerPosition(entity, layer)
+    const position = getLayerPosition(layer, entity)
     const { content } = assembly
     const { layerNumber } = layer
 
