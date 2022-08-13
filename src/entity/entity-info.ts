@@ -15,7 +15,10 @@ import { BBox, BBoxClass } from "../lib/geometry"
 // <type>|<fast_replaceable_group>|<lx>|<ly>|<rx>|<ry> or <none>|<entity_name>
 export type CategoryName = `${string}|${string}|${number}|${number}|${number}|${number}` | `<${string}>|${string}`
 
-const typeRemap: PRecord<string, string> = { "logistic-container": "container" }
+const typeRemap: PRecord<string, string> = {
+  "logistic-container": "container",
+  "rail-chain-signal": "rail-signal",
+}
 function computeCategoryName(entityName: string): CategoryName {
   const prototype = game.entity_prototypes[entityName]
   if (!prototype) return `<unknown>|${entityName}`

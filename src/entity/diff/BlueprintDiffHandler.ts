@@ -33,6 +33,24 @@ function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity):
   }
 }
 
+function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
+  const { surface, position } = entity
+
+  const stack = getTempItemStack()
+  for (const radius of [0.01, 0.5]) {
+    const indexMapping = stack.create_blueprint({
+      surface,
+      force: "player",
+      area: BBox.around(position, radius),
+    })
+    const matchingIndex = findEntityIndex(indexMapping, entity)
+    if (matchingIndex) {
+      return stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
+      // assert(bpEntity.entity_number === matchingIndex)
+    }
+  }
+}
+
 function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   if (!ghost.valid) return
   const [, entity, requestProxy] = ghost.silent_revive({
@@ -89,16 +107,6 @@ function pasteEntity(
 function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
   const { surface, position, direction } = entity
   entity.minable = true
-  if (
-    !surface.can_fast_replace({
-      name,
-      position,
-      direction,
-      force: "player",
-    })
-  ) {
-    return entity
-  }
   const newEntity = surface.create_entity({
     name,
     position,
@@ -146,19 +154,8 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
 
 export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
   save(entity: LuaEntity): BlueprintEntity | nil {
-    const { surface, position } = entity
-    const stack = getTempItemStack()
-
-    const indexMapping = stack.create_blueprint({
-      surface,
-      force: "player",
-      area: BBox.around(position, 0.01),
-    })
-    const matchingIndex = findEntityIndex(indexMapping, entity)
-    if (!matchingIndex) return
-
-    const bpEntity = stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
-    assert(bpEntity.entity_number === matchingIndex)
+    const bpEntity = blueprintEntity(entity)
+    if (!bpEntity) return nil
     bpEntity.entity_number = nil!
     bpEntity.position = nil!
     bpEntity.direction = nil
