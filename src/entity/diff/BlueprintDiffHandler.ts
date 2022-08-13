@@ -115,6 +115,35 @@ function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
   }
   return newEntity
 }
+
+function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
+  const items = value.items
+  const moduleInventory = luaEntity.get_module_inventory()
+  if (!items) {
+    if (moduleInventory) moduleInventory.clear()
+    return
+  }
+  // has items
+  if (!moduleInventory) return
+
+  // clear items that don't match
+  for (const [item, amount] of pairs(moduleInventory.get_contents())) {
+    const expected = items[item] ?? 0
+    if (amount > expected) {
+      moduleInventory.remove({ name: item, count: amount - expected })
+    }
+  }
+  // insert items that are missing
+  for (const [item, amount] of pairs(items)) {
+    const existing = moduleInventory.get_item_count(item)
+    if (amount > existing) {
+      moduleInventory.insert({ name: item, count: amount - existing })
+    }
+  }
+  moduleInventory.sort_and_merge()
+  // todo: report cannot insert items
+}
+
 export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
   save(entity: LuaEntity): BlueprintEntity | nil {
     const { surface, position } = entity
@@ -154,6 +183,8 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
 
     const ghost = pasteEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, value)
     if (ghost) ghost.destroy() // should not happen?
+    matchItems(luaEntity, value)
+
     return luaEntity
   },
 }

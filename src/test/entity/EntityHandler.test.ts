@@ -71,3 +71,22 @@ test("can upgrade an entity", () => {
   assert.equal("steel-chest", newEntity.name)
   assert.false(entity.valid)
 })
+
+test("can handle item changes", () => {
+  const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
+  const newContents = { "productivity-module-2": 2, "speed-module": 1 }
+
+  const entity = area.surface.create_entity({
+    name: "assembling-machine-3",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+  })!
+  for (const [item, count] of pairs(oldContents)) entity.get_module_inventory()!.insert({ name: item, count })
+
+  const newEntity = DefaultEntityHandler.updateEntity(entity, {
+    name: "assembling-machine-3",
+    items: newContents,
+  } as Entity)
+  assert.equal(newEntity, entity)
+  assert.same(newContents, entity.get_module_inventory()!.get_contents())
+})
