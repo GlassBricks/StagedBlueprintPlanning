@@ -15,8 +15,7 @@
   - [x] Upgrade
   - [x] Rotate
   - [x] Replace (undergrounds)
-- [ ] Upgrade planner
-  - [ ] Handle robot built
+- [x] Upgrade planner
 - [ ] Wire connection
 - [ ] Blueprint _paste_
 - [ ] Mod interactions?
@@ -29,11 +28,9 @@
 
 - [x] New entities
 - [x] Basic property changes
-  - Partially done
 - [ ] "Locked" properties
-- [ ] Upgraded entities
-  - [ ] Conflicts due to upgraded entities
-- [ ] Upgraded modules
+- [x] Upgraded entities
+- [x] Upgraded modules
 - [ ] Stop relying on hacky blueprinting
   - [ ] A save/paste algorithm for every building entity in the game
   - [ ] Or maybe it's not so bad to rely on blueprinting
@@ -42,10 +39,9 @@
   - Meant so you don't lost information if accidentally deleted something
   - [x] Create lost references
   - [ ] Decide on a better name for it
-  - [ ] Revive lost references
-    - [x] Revive at same layer
-    - [ ] Decide behavior if revived at different layer
+  - [x] Revive lost references
 - [x] Make entities from previous layers indestructible
+- [ ] Decide how to handle situations that can result in accidental loss of information
 
 ### Detect and display conflicts
 
@@ -57,7 +53,7 @@
   - [ ] Manual revive
   - [ ] Go to source
 - [ ] Incompatible properties due to upgraded entity
-  - [ ] Automatically attempt to fix when entities change
+  - [x] Automatically attempt to fix when entities change
 - [ ] Max connections exceeded
   - [ ] How to highlight?
   - [ ] Automatically attempt to fix
@@ -106,14 +102,11 @@
 ### Misc
 
 - [ ] Button to reset
-- [ ] Fix diagonal rails
 - [ ] Handle trains
-
-### Queue (one-off implementation details)
 
 ## Future
 
 - Automatic blueprint creation
-- Other simple analysis and diagnostic
+- Other simple analysis and diagnostics
 - auto blueprint staging utils?
 - "Select dependencies"?
