@@ -50,9 +50,9 @@ export function deepCompare<T>(a: T, b: T): boolean {
   return true
 }
 
-export function shallowCompareRecords(a: Record<any, any> | nil, b: Record<any, any> | nil): boolean {
+export function shallowCompare<T>(a: T, b: T): boolean {
   if (a === b) return true
-  if (a === nil || b === nil) return false
+  if (typeof a !== "object" || typeof b !== "object") return false
   for (const [k, v] of pairs(a)) {
     if (b[k] !== v) return false
   }

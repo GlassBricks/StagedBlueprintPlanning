@@ -16,5 +16,6 @@ export interface EntityPose {
 }
 export interface Entity {
   readonly name: string
+  readonly items?: Record<string, number>
 }
 export interface BasicEntityInfo extends Entity, EntityPose {}

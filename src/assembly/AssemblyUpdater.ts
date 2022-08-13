@@ -20,12 +20,14 @@ import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 export interface AssemblyUpdater {
   onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
   onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
+  /** Checks ALL properties. */
   onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
     entity: LuaEntity,
     layer: LayerPosition,
     previousDirection?: defines.direction,
   ): void
+  /** Handles upgrade planner. */
   onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 }
 
@@ -130,7 +132,26 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     deleteAllWorldEntities(assembly, existing)
   }
 
-  function doUpgrade(
+  function getCompatibleOrAdd(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    layer: LayerPosition,
+    previousDirection?: defines.direction,
+  ): AssemblyEntity | nil {
+    const position = getLayerPosition(layer, entity)
+    const { content } = assembly
+    const { layerNumber } = layer
+
+    const existing = content.findCompatible(entity, position, previousDirection ?? entity.direction)
+    if (!existing || layerNumber < existing.getBaseLayer()) {
+      onEntityCreated(assembly, entity, layer)
+    } else {
+      existing.replaceWorldEntity(layerNumber, entity) // just in case
+      return existing
+    }
+  }
+
+  function doUpdate(
     assembly: AssemblyContent,
     entity: LuaEntity,
     layerNumber: number,
@@ -164,30 +185,15 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     layer: LayerPosition,
     previousDirection?: defines.direction,
   ): void {
-    const position = getLayerPosition(layer, entity)
-    const { content } = assembly
-    const { layerNumber } = layer
+    const existing = getCompatibleOrAdd(assembly, entity, layer, previousDirection)
+    if (!existing) return
 
-    const existing = content.findCompatible(entity, position, previousDirection ?? entity.direction)
-    if (!existing || layerNumber < existing.getBaseLayer()!) {
-      // bug, treat as add
-      onEntityCreated(assembly, entity, layer)
-      return
-    }
-
-    existing.replaceWorldEntity(layerNumber, entity)
-
-    // check rotation
     const rotation = previousDirection && previousDirection !== entity.direction ? entity.direction : nil
-    doUpgrade(assembly, entity, layerNumber, existing, rotation)
+    doUpdate(assembly, entity, layer.layerNumber, existing, rotation)
   }
 
   function onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
-    const position = getLayerPosition(layer, entity)
-    const { content } = assembly
-    const { layerNumber } = layer
-
-    const existing = content.findCompatible(entity, position, entity.direction)
+    const existing = getCompatibleOrAdd(assembly, entity, layer)
     if (!existing) return
 
     const upgradeDirection = entity.get_upgrade_direction()
@@ -204,7 +210,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
       }
     }
     if (upgradeDirection || upgradeType) {
-      doUpgrade(assembly, entity, layerNumber, existing, upgradeDirection, upgradeType)
+      doUpdate(assembly, entity, layer.layerNumber, existing, upgradeDirection, upgradeType)
     }
     if (entity.valid) entity.cancel_upgrade("player")
   }

@@ -14,6 +14,7 @@ import { AssemblyUpdater, createAssemblyUpdater } from "../../assembly/AssemblyU
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, LayerChanges, LayerNumber } from "../../entity/AssemblyEntity"
+import { Entity } from "../../entity/Entity"
 import { _overrideEntityCategory } from "../../entity/entity-info"
 import { createMockEntitySaver } from "../../entity/EntityHandler-mock"
 import { ContextualFun, Mutable } from "../../lib"
@@ -53,7 +54,7 @@ before_each(() => {
   assemblyUpdater = createAssemblyUpdater(worldUpdater, createMockEntitySaver())
 })
 
-interface TestEntity {
+interface TestEntity extends Entity {
   readonly name: string
   prop1?: number
   prop2?: string

@@ -128,7 +128,7 @@ describe("update", () => {
   test("gui", () => {
     player.opened = entity
     player.opened = nil
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1], match.nil())
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -136,7 +136,7 @@ describe("update", () => {
       destination: entity,
       player_index: 1 as PlayerIndex,
     })
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1], match.nil())
   })
 
   test("rotate", () => {

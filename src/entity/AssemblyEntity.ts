@@ -169,7 +169,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return value
   }
 
-  public adjustValueAtLayer(layer: LayerNumber, value: T): boolean {
+  adjustValueAtLayer(layer: LayerNumber, value: T): boolean {
     const { baseLayer, layerChanges } = this
     assert(layer >= baseLayer, "layer must be >= first layer")
     const diff = this.setValueAndGetDiff(layer, value)

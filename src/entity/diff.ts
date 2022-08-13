@@ -60,6 +60,10 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
   }
 }
 
+export function toDiffValue<T>(value: T): T | NilPlaceholder {
+  return value === nil ? nilPlaceholder : value
+}
+
 export function mergeDiff<E extends Entity = Entity>(
   previousValue: E,
   oldDiff: LayerDiff<E> | nil,

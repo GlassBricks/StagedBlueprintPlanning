@@ -34,9 +34,9 @@ function luaEntityDeleted(entity: LuaEntity): void {
   if (layer) DefaultAssemblyUpdater.onEntityDeleted(layer.assembly, entity, layer)
 }
 
-function luaEntityPotentiallyUpdated(entity: LuaEntity): void {
+function luaEntityPotentiallyUpdated(entity: LuaEntity, previousDirection?: defines.direction): void {
   const layer = getLayer(entity)
-  if (layer) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(layer.assembly, entity, layer)
+  if (layer) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(layer.assembly, entity, layer, previousDirection)
 }
 
 /*
@@ -118,11 +118,8 @@ Events.on_entity_settings_pasted((e) => luaEntityPotentiallyUpdated(e.destinatio
 Events.on_gui_closed((e) => {
   if (e.entity) luaEntityPotentiallyUpdated(e.entity)
 })
-Events.on_player_rotated_entity((e) => {
-  const entity = e.entity
-  const layer = getLayer(entity)
-  if (layer) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(layer.assembly, entity, layer, e.previous_direction)
-})
+Events.on_player_rotated_entity((e) => luaEntityPotentiallyUpdated(e.entity, e.previous_direction))
+Events.on_player_fast_transferred((e) => luaEntityPotentiallyUpdated(e.entity))
 
 interface AnnotatedEntity extends BasicEntityInfo {
   readonly direction: defines.direction
