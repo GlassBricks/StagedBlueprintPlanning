@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { GlobalPlayerData, PlayerData } from "../utils/players"
 import { Events } from "./Events"
 import { Mutable } from "./util-types"
 

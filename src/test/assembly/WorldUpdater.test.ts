@@ -95,7 +95,6 @@ describe("with mock entity", () => {
       })
 
       test("calls wireUpdater", () => {
-        // _breakpoint()
         worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
         for (let i = 1; i <= 3; i++)
           assert

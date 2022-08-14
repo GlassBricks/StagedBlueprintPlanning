@@ -32,7 +32,7 @@ export interface WireSaver {
     entity: AssemblyEntity,
     layerNumber: LayerNumber,
     luaEntity: LuaEntity,
-  ): LuaMultiReturn<[added: AssemblyWireConnection[] | nil, removed: AssemblyWireConnection[] | nil] | [false]>
+  ): LuaMultiReturn<[added: AssemblyWireConnection[], removed: AssemblyWireConnection[]] | [_: false, _?: never]>
 }
 
 /** @noSelf */
@@ -84,7 +84,7 @@ function getWireConnectionDiff(
   entity: AssemblyEntity,
   layerNumber: LayerNumber,
   luaEntity: LuaEntity,
-): LuaMultiReturn<[added: AssemblyWireConnection[] | nil, removed: AssemblyWireConnection[] | nil] | [false]> {
+): LuaMultiReturn<[added: AssemblyWireConnection[], removed: AssemblyWireConnection[]] | [false]> {
   const existingConnections = luaEntity.circuit_connection_definitions
   if (!existingConnections) return $multi(false)
   const assemblyConnections = assembly.content.getWireConnections(entity)
@@ -159,12 +159,14 @@ function analyzeExistingConnections(
 function findingMatchingConnection(
   connections: ReadonlyLuaSet<AssemblyWireConnection>,
   toEntity: AssemblyEntity,
-  { source_circuit_id, target_circuit_id }: CircuitConnectionDefinition,
+  { source_circuit_id, target_circuit_id, wire }: CircuitConnectionDefinition,
 ): AssemblyWireConnection | nil {
   for (const connection of connections) {
-    const [, toId, fromId] = getDirectionalInfo(connection, toEntity)
-    // ^ is backwards!
-    if (fromId === source_circuit_id && toId === target_circuit_id) return connection
+    if (connection.wire === wire) {
+      const [, toId, fromId] = getDirectionalInfo(connection, toEntity)
+      // ^ is backwards!
+      if (fromId === source_circuit_id && toId === target_circuit_id) return connection
+    }
   }
 }
 

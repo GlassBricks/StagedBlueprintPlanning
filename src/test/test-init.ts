@@ -129,7 +129,7 @@ commands.add_command("norerun", "", () => {
   const eventBlacklist = newLuaSet<keyof typeof defines.events>(
     "on_tick",
     "on_player_changed_position",
-    "on_selected_entity_changed",
+    // "on_selected_entity_changed",
     "on_chunk_charted",
     "on_chunk_generated",
     "on_player_main_inventory_changed",
@@ -144,11 +144,12 @@ commands.add_command("norerun", "", () => {
       // if (isTestsRunning()) return
       const currentTick = game.tick
       if (currentTick !== lastEventTick) {
-        game.print(currentTick)
+        // game.print(currentTick)
+        count = 0
       }
       lastEventTick = currentTick
       count++
-      game.print(`${count}: ${name}`)
+      game.print(`(${(game.tick % 1000).toString().padStart(3, " ")}) ${count.toString().padStart(2, "0")}: ${name}`)
     })
   }
   // shouldTryRerun = false

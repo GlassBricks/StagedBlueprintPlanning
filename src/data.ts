@@ -9,7 +9,32 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-interface PlayerData {}
-type GlobalPlayerData = {
-  readonly [P in PlayerIndex]?: PlayerData
+import { Data } from "typed-factorio/data/types"
+import { CustomInputs } from "./constants"
+
+declare const data: Data
+
+interface CustomInput {
+  name: string
+  type: "custom-input"
+
+  key_sequence: string
+  linked_game_control?: string
 }
+
+const buildInput: CustomInput = {
+  name: CustomInputs.Build,
+  type: "custom-input",
+
+  key_sequence: "",
+  linked_game_control: "build",
+}
+const removePoleCablesInput: CustomInput = {
+  name: CustomInputs.RemovePoleCables,
+  type: "custom-input",
+
+  key_sequence: "",
+  linked_game_control: "remove-pole-cables",
+}
+
+data.extend([buildInput, removePoleCablesInput])

@@ -10,7 +10,6 @@
  */
 
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { AssemblyWireConnection } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
@@ -82,32 +81,26 @@ export function createAssemblyUpdater(
     // add new entity
     const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
     content.add(assemblyEntity)
-    handleCircuitWires(assembly, assemblyEntity, layerNumber, entity)
-
     assemblyEntity.replaceWorldEntity(layerNumber, entity)
+
+    updateCircuitWires(assembly, assemblyEntity, layerNumber, entity)
+
     updateWorldEntities(assembly, assemblyEntity, layerNumber + 1)
     return assemblyEntity
   }
 
-  function handleCircuitWires(
+  function updateCircuitWires(
     assembly: AssemblyContent,
     assemblyEntity: AssemblyEntity,
     layerNumber: LayerNumber,
     entity: LuaEntity,
   ): boolean {
     const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, layerNumber, entity)
-    if (added === false || (!added && !removed)) return false
+    if (!added) return false
+    if (added[0] === nil && removed![0] === nil) return false
     const { content } = assembly
-    if (added) {
-      for (const connection of added) {
-        content.addWireConnection(connection)
-      }
-    }
-    if (removed) {
-      for (const connection of removed as AssemblyWireConnection[]) {
-        content.removeWireConnection(connection)
-      }
-    }
+    for (const connection of added) content.addWireConnection(connection)
+    for (const connection of removed!) content.removeWireConnection(connection)
     return true
   }
 
@@ -267,14 +260,10 @@ export function createAssemblyUpdater(
     if (entity.valid) entity.cancel_upgrade("player")
   }
 
-  function onEntityCircuitWiresPotentiallyUpdated(
-    assembly: AssemblyContent,
-    entity: LuaEntity,
-    layer: LayerPosition,
-  ): void {
+  function onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
     const existing = getCompatibleOrAdd(assembly, entity, layer)
     if (!existing) return
-    if (handleCircuitWires(assembly, existing, layer.layerNumber, entity)) {
+    if (updateCircuitWires(assembly, existing, layer.layerNumber, entity)) {
       updateWorldEntities(assembly, existing, existing.getBaseLayer())
     }
   }
@@ -284,7 +273,7 @@ export function createAssemblyUpdater(
     onEntityDeleted,
     onEntityPotentiallyUpdated,
     onEntityMarkedForUpgrade,
-    onCircuitWiresPotentiallyUpdated: onEntityCircuitWiresPotentiallyUpdated,
+    onCircuitWiresPotentiallyUpdated,
   }
 }
 

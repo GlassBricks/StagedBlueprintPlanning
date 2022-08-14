@@ -71,6 +71,24 @@ function getExpectedWire2(): AssemblyWireConnection {
     toId: defines.circuit_connector_id.combinator_input,
   }
 }
+function addWire3(): void {
+  // same as wire 1, but green
+  luaEntity1.connect_neighbour({
+    target_entity: luaEntity2,
+    wire: defines.wire_type.green,
+    source_circuit_id: defines.circuit_connector_id.combinator_input,
+    target_circuit_id: defines.circuit_connector_id.combinator_output,
+  })
+}
+function getExpectedWire3(): AssemblyWireConnection {
+  return {
+    fromEntity: entity1,
+    toEntity: entity2,
+    wire: defines.wire_type.green,
+    fromId: defines.circuit_connector_id.combinator_input,
+    toId: defines.circuit_connector_id.combinator_output,
+  }
+}
 
 describe("update wire connections", () => {
   test("can remove wires", () => {
@@ -114,13 +132,15 @@ describe("getWireConnectionDiff", () => {
     [[1, 2], [1], "remove"],
     [[1], [2], "add and remove"],
     [[1, 2], [], "remove 2"],
+    [[1], [1, 3], "add different"],
+    [[1, 2], [1, 3], "mixed"],
   ])("diff: %s -> %s: %s", (existing, world) => {
     for (const number of existing)
-      assembly.content.addWireConnection([getExpectedWire1, getExpectedWire2][number - 1]())
-    for (const number of world) [addWire1, addWire2][number - 1]()
+      assembly.content.addWireConnection([getExpectedWire1, getExpectedWire2, getExpectedWire3][number - 1]())
+    for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
     const diff = handler.getWireConnectionDiff(assembly, entity1, 1, luaEntity1)
 
-    const wires = [getExpectedWire1(), getExpectedWire2()]
+    const wires = [getExpectedWire1(), getExpectedWire2(), getExpectedWire3()]
     const added = world.filter((n) => !existing.includes(n)).map((n) => wires[n - 1])
     const removed = existing.filter((n) => !world.includes(n)).map((n) => wires[n - 1])
     assert.same(added, diff[0])

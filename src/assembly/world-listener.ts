@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { CustomInputs } from "../constants"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
@@ -131,8 +132,14 @@ let state: {
   preMinedItemCalled?: true
   lastDeleted?: AnnotatedEntity
 }
+declare global {
+  interface PlayerData {
+    lastWireAffectedEntity?: LuaEntity
+  }
+}
 declare const global: {
   worldListenerState: typeof state
+  players: GlobalPlayerData
 }
 Events.on_init(() => {
   state = global.worldListenerState = {}
@@ -222,6 +229,47 @@ Events.on_marked_for_upgrade((e) => {
   DefaultAssemblyUpdater.onEntityMarkedForUpgrade(layer.assembly, entity, layer)
 })
 
-// todo: blueprinting, bot stuff, wires, go through the list of events
+// Circuit wires
+// There is no event for this, so instead we track stuff
+const circuitWirePrototypes = newLuaSet("red-wire", "green-wire")
 
+function markPlayerAffectedWires(player: LuaPlayer): void {
+  const entity = player.selected
+  if (!entity) return
+  const layer = getLayer(entity)
+  if (!layer) return
+
+  const data = global.players[player.index]!
+  const existingEntity = data.lastWireAffectedEntity
+  if (existingEntity && existingEntity !== entity) {
+    const layer = getLayer(entity)
+    if (layer) DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(layer.assembly, entity, layer)
+  }
+  data.lastWireAffectedEntity = entity
+}
+
+function clearPlayerAffectedWires(player: LuaPlayer): void {
+  const data = global.players[player.index]!
+  const entity = data.lastWireAffectedEntity
+  if (entity) {
+    data.lastWireAffectedEntity = nil
+    const layer = getLayer(entity)
+    if (layer) DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(layer.assembly, entity, layer)
+  }
+}
+
+Events.on(CustomInputs.Build, (e) => {
+  const player = game.get_player(e.player_index)!
+  const playerStack = player.cursor_stack
+  if (!playerStack || !playerStack.valid_for_read || !circuitWirePrototypes.has(playerStack.name)) return
+  markPlayerAffectedWires(player)
+})
+Events.on(CustomInputs.RemovePoleCables, (e) => {
+  markPlayerAffectedWires(game.get_player(e.player_index)!)
+})
+Events.on_selected_entity_changed((e) => {
+  clearPlayerAffectedWires(game.get_player(e.player_index)!)
+})
+
+// todo: blueprinting, bot stuff, go through the list of events
 export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil
