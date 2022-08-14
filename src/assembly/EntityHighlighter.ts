@@ -16,7 +16,7 @@ import { getWorldPosition } from "../entity/EntityHandler"
 import { assertNever } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import draw, { RenderObj } from "../lib/rendering"
-import { AssemblyPosition, LayerPosition } from "./Assembly"
+import { AssemblyContent, LayerPosition } from "./Assembly"
 
 export interface HighlightEntities {
   /** Error outline when an entity cannot be placed. */
@@ -44,9 +44,9 @@ declare module "../entity/AssemblyEntity" {
 
 /** @noSelf */
 export interface EntityHighlighter {
-  setHasError(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber, value: boolean): void
-  updateConfigChangedHighlight(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber): void
-  updateLostReferenceHighlights(assembly: AssemblyPosition, entity: AssemblyEntity): void
+  setHasError(assembly: AssemblyContent, entity: AssemblyEntity, layerNumber: LayerNumber, value: boolean): void
+  updateConfigChangedHighlight(assembly: AssemblyContent, entity: AssemblyEntity, layerNumber: LayerNumber): void
+  updateLostReferenceHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void
 
   removeAllHighlights(entity: AssemblyEntity): void
 }
@@ -167,7 +167,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
   // this will replace above function
   function updateHighlightSet(
-    assembly: AssemblyPosition,
+    assembly: AssemblyContent,
     entity: AssemblyEntity,
     layerNumber: LayerNumber,
     { highlight, indicator, property }: HighlightSet,
@@ -184,14 +184,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     setHighlight(entity, layer, indicator, hasPropertyInOtherLayer)
   }
 
-  function updateHighlightSetInAllLayers(assembly: AssemblyPosition, entity: AssemblyEntity, set: HighlightSet): void {
+  function updateHighlightSetInAllLayers(assembly: AssemblyContent, entity: AssemblyEntity, set: HighlightSet): void {
     for (const i of $range(entity.getBaseLayer(), luaLength(assembly.layers))) {
       updateHighlightSet(assembly, entity, i, set)
     }
   }
 
   function updateHighlightSetProperty(
-    assembly: AssemblyPosition,
+    assembly: AssemblyContent,
     entity: AssemblyEntity,
     layerNumber: LayerNumber,
     set: HighlightSet,
@@ -214,7 +214,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function setHasError(
-    assembly: AssemblyPosition,
+    assembly: AssemblyContent,
     entity: AssemblyEntity,
     layerNumber: LayerNumber,
     value: boolean,
@@ -228,7 +228,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     indicator: "configChangedInFutureLayerIndicator",
   }
 
-  function updateConfigChangedHighlight(assembly: AssemblyPosition, entity: AssemblyEntity, layerNumber: LayerNumber) {
+  function updateConfigChangedHighlight(assembly: AssemblyContent, entity: AssemblyEntity, layerNumber: LayerNumber) {
     updateHighlightSetProperty(
       assembly,
       entity,
@@ -238,7 +238,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     )
   }
 
-  function updateLostReferenceHighlights(assembly: AssemblyPosition, entity: AssemblyEntity): void {
+  function updateLostReferenceHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
     if (entity.isLostReference) {
       for (const layer of $range(entity.getBaseLayer(), luaLength(assembly.layers))) {
         createHighlight(entity, assembly.layers[layer], "lostReferenceHighlight")
@@ -263,7 +263,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 }
 
-export const DefaultEntityCreator: HighlightCreator = {
+export const DefaultHighlightCreator: HighlightCreator = {
   createHighlightBox(
     surface: LuaSurface,
     position: Position,
@@ -289,4 +289,4 @@ export const DefaultEntityCreator: HighlightCreator = {
   },
 }
 
-export const DefaultHighlightCreator = createHighlightCreator(DefaultEntityCreator)
+export const DefaultEntityHighlighter = createHighlightCreator(DefaultHighlightCreator)

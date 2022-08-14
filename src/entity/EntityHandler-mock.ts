@@ -9,14 +9,15 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { keys } from "ts-transformer-keys"
 import { LayerPosition } from "../assembly/Assembly"
 import { shallowCopy } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableMap2D, newMap2D } from "../lib/map2d"
-import { entityMock, isMock } from "../test/simple-mock"
+import { BuiltinEntityKeys, entityMock, isMock } from "../test/simple-mock"
 import { LayerNumber } from "./AssemblyEntity"
 import { Entity, EntityPose } from "./Entity"
-import { EntityCreator, EntitySaver } from "./EntityHandler"
+import { DefaultEntityHandler, EntityCreator, EntitySaver } from "./EntityHandler"
 
 /** @noSelf */
 export interface MockEntityCreator extends EntityCreator {
@@ -102,12 +103,13 @@ export function createMockEntityCreator(): MockEntityCreator {
   }
 }
 
+const excludedKeys = newLuaSet("valid", "object_name", "position", "direction")
+for (const key of keys<BuiltinEntityKeys>()) excludedKeys.add(key)
 export function createMockEntitySaver(): EntitySaver {
   return {
     saveEntity(entity: LuaEntity): Entity | nil {
-      assert(isMock(entity))
+      if (!isMock(entity)) return DefaultEntityHandler.saveEntity(entity)
       const result: any = {}
-      const excludedKeys = newLuaSet("valid", "object_name", "position", "direction")
       for (const [key, value] of pairs(entity)) {
         if (typeof value !== "function" && !excludedKeys.has(key)) {
           result[key] = value

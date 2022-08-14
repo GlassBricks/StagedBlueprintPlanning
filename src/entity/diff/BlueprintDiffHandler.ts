@@ -40,7 +40,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   for (const radius of [0.01, 0.5]) {
     const indexMapping = stack.create_blueprint({
       surface,
-      force: "player",
+      force: entity.force,
       area: BBox.around(position, radius),
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)

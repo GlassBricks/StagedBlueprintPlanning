@@ -17,7 +17,7 @@ export function createMockAssembly(numLayers: number): AssemblyContent {
     layerNumber: i + 1,
     surface: game.surfaces[1],
     left_top: { x: 0, y: 0 },
-    right_bottom: { x: 0, y: 0 },
+    right_bottom: { x: 32, y: 32 },
   }))
   return {
     layers,

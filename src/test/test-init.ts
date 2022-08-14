@@ -153,3 +153,16 @@ commands.add_command("norerun", "", () => {
   }
   // shouldTryRerun = false
 }*/
+
+commands.add_command("foo", "", (e) => {
+  const player = game.players[e.player_index!]
+  const entity = player.selected
+  if (!entity) return player.print("No selected entity")
+  const { circuit_connection_definitions } = entity
+  if (!circuit_connection_definitions) return player.print("No circuit_connection_definitions")
+  entity.disconnect_neighbour(defines.wire_type.red)
+  entity.disconnect_neighbour(defines.wire_type.green)
+  for (const circuitConnectionDefinition of circuit_connection_definitions) {
+    entity.connect_neighbour(circuitConnectionDefinition)
+  }
+})

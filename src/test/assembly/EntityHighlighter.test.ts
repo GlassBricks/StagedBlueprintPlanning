@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyPosition } from "../../assembly/Assembly"
+import { AssemblyContent } from "../../assembly/Assembly"
 import { createMockAssembly } from "../../assembly/Assembly-mock"
 import {
   createHighlightCreator,
@@ -28,7 +28,7 @@ interface FooEntity extends Entity {
   foo?: number
 }
 let entity: AssemblyEntity<FooEntity>
-let assembly: AssemblyPosition
+let assembly: AssemblyContent
 let highlightCreator: EntityHighlighter
 
 before_each(() => {

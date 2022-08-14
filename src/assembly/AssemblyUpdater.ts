@@ -10,10 +10,13 @@
  */
 
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyWireConnection } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { AssemblyContent, LayerPosition } from "./Assembly"
+import { EntityMap } from "./EntityMap"
+import { DefaultWireHandler, getWireConnectionDiff, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /** @noSelf */
@@ -31,7 +34,11 @@ export interface AssemblyUpdater {
   onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 }
 
-export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: EntitySaver): AssemblyUpdater {
+export function createAssemblyUpdater(
+  worldUpdater: WorldUpdater,
+  entitySaver: EntitySaver,
+  wireSaver: WireSaver,
+): AssemblyUpdater {
   const { deleteAllWorldEntities, updateWorldEntities } = worldUpdater
   const { saveEntity } = entitySaver
 
@@ -58,12 +65,37 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
 
     if (!saved) return
 
-    // entity added here
+    // add new entity
     const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
     content.add(assemblyEntity)
+    handleCircuitWires(assembly, assemblyEntity, layerNumber, entity)
+
     assemblyEntity.replaceWorldEntity(layerNumber, entity)
     updateWorldEntities(assembly, assemblyEntity, layerNumber + 1)
     return assemblyEntity
+  }
+
+  function handleCircuitWires(
+    assembly: AssemblyContent,
+    assemblyEntity: AssemblyEntity,
+    layerNumber: LayerNumber,
+    entity: LuaEntity,
+  ): void {
+    const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, layerNumber, entity, wireSaver)
+    const { content } = assembly
+    for (const { definition, otherEntity } of added) {
+      const newConnection: AssemblyWireConnection = {
+        fromEntity: assemblyEntity,
+        toEntity: otherEntity,
+        fromId: definition.source_circuit_id,
+        toId: definition.target_circuit_id,
+        wire: definition.wire,
+      }
+      content.addWireConnection(newConnection)
+    }
+    for (const connection of removed) {
+      content.removeWireConnection(connection)
+    }
   }
 
   function entityAddedAbove(
@@ -107,6 +139,17 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     }
   }
 
+  function findCompatible(
+    content: EntityMap,
+    entity: LuaEntity,
+    layer: LayerPosition,
+    previousDirection?: defines.direction,
+  ): AssemblyEntity | nil {
+    const position = getLayerPosition(layer, entity)
+    const existing = content.findCompatible(entity, position, previousDirection ?? entity.direction)
+    if (existing && layer.layerNumber >= existing.getBaseLayer()) return existing
+  }
+
   function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
     const position = getLayerPosition(layer, entity)
     const { content } = assembly
@@ -138,17 +181,13 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     layer: LayerPosition,
     previousDirection?: defines.direction,
   ): AssemblyEntity | nil {
-    const position = getLayerPosition(layer, entity)
-    const { content } = assembly
-    const { layerNumber } = layer
-
-    const existing = content.findCompatible(entity, position, previousDirection ?? entity.direction)
-    if (!existing || layerNumber < existing.getBaseLayer()) {
-      onEntityCreated(assembly, entity, layer)
+    const compatible = findCompatible(assembly.content, entity, layer, previousDirection)
+    if (compatible) {
+      compatible.replaceWorldEntity(layer.layerNumber, entity) // just in case
     } else {
-      existing.replaceWorldEntity(layerNumber, entity) // just in case
-      return existing
+      onEntityCreated(assembly, entity, layer)
     }
+    return compatible
   }
 
   function doUpdate(
@@ -223,4 +262,8 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
   }
 }
 
-export const DefaultAssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(DefaultWorldUpdater, DefaultEntityHandler)
+export const DefaultAssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(
+  DefaultWorldUpdater,
+  DefaultEntityHandler,
+  DefaultWireHandler,
+)

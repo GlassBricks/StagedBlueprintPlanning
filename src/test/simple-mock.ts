@@ -41,6 +41,10 @@ export interface MockCreateEntity {
   readonly direction?: defines.direction
 }
 
+function noop() {
+  //
+}
+
 export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Partial<T>): T {
   return simpleMock<T>({
     direction: 0,
@@ -50,7 +54,21 @@ export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Parti
     minable: true,
     rotatable: true,
     operable: true,
+    circuit_connection_definitions: [],
+    disconnect_neighbour: noop,
   })
+}
+export interface BuiltinEntityKeys {
+  valid: true
+  object_name: true
+
+  direction: true
+  destructible: true
+  minable: true
+  rotatable: true
+  operable: true
+  circuit_connection_definitions: true
+  disconnect_neighbour: true
 }
 
 export function isMock(obj: LuaObjectLike): boolean {

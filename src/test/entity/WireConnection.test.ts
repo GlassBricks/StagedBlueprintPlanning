@@ -9,38 +9,59 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { WireConnection, wireConnectionEquals } from "../../entity/WireConnection"
+import { AssemblyWireConnection, getDirectionalInfo, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
 import { shallowCopy } from "../../lib"
 
 test("wireConnectionEquals", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const wireConnectionA: WireConnection = {
+  const wireConnectionA: AssemblyWireConnection = {
     fromEntity: entityA,
-    fromType: defines.circuit_connector_id.accumulator,
+    fromId: defines.circuit_connector_id.accumulator,
     toEntity: entityB,
-    toType: defines.circuit_connector_id.constant_combinator,
-    wireType: defines.wire_type.red,
+    toId: defines.circuit_connector_id.constant_combinator,
+    wire: defines.wire_type.red,
   }
   const identical = shallowCopy(wireConnectionA)
-  const wireConnectionB: WireConnection = {
+  const wireConnectionB: AssemblyWireConnection = {
     toEntity: entityA,
-    toType: defines.circuit_connector_id.accumulator,
+    toId: defines.circuit_connector_id.accumulator,
     fromEntity: entityB,
-    fromType: defines.circuit_connector_id.constant_combinator,
-    wireType: defines.wire_type.red,
+    fromId: defines.circuit_connector_id.constant_combinator,
+    wire: defines.wire_type.red,
   }
   assert.true(wireConnectionEquals(wireConnectionA, identical))
   assert.true(wireConnectionEquals(wireConnectionA, wireConnectionB))
 
-  const different: WireConnection = {
+  const different: AssemblyWireConnection = {
     toEntity: entityA,
-    toType: defines.circuit_connector_id.constant_combinator,
+    toId: defines.circuit_connector_id.constant_combinator,
     fromEntity: entityA,
-    fromType: defines.circuit_connector_id.accumulator,
-    wireType: defines.wire_type.red,
+    fromId: defines.circuit_connector_id.accumulator,
+    wire: defines.wire_type.red,
   }
   assert.false(wireConnectionEquals(wireConnectionA, different))
   assert.false(wireConnectionEquals(wireConnectionB, different))
+})
+
+test("getDirectionalInfo", () => {
+  const entityA = {} as any
+  const entityB = {} as any
+
+  const wireConnectionA: AssemblyWireConnection = {
+    fromEntity: entityA,
+    fromId: defines.circuit_connector_id.accumulator,
+    toEntity: entityB,
+    toId: defines.circuit_connector_id.constant_combinator,
+    wire: defines.wire_type.red,
+  }
+  assert.same(
+    [entityB, defines.circuit_connector_id.accumulator, defines.circuit_connector_id.constant_combinator],
+    getDirectionalInfo(wireConnectionA, entityA),
+  )
+  assert.same(
+    [entityA, defines.circuit_connector_id.constant_combinator, defines.circuit_connector_id.accumulator],
+    getDirectionalInfo(wireConnectionA, entityB),
+  )
 })

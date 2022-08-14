@@ -15,10 +15,6 @@ import { MutableState, Observable, State } from "../lib/observable"
 import { WorldPosition } from "../utils/world-location"
 import { MutableEntityMap } from "./EntityMap"
 
-export interface AssemblyPosition {
-  readonly layers: Record<LayerNumber, LayerPosition>
-}
-
 export interface LayerPosition extends BoundingBox {
   readonly layerNumber: LayerNumber
   readonly surface: LuaSurface

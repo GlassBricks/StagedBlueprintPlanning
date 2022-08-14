@@ -10,10 +10,10 @@
  */
 
 import { AssemblyEntity, isCompatibleEntity } from "../entity/AssemblyEntity"
+import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
-import { WireConnection, wireConnectionEquals } from "../entity/WireConnection"
-import { RegisterClass } from "../lib"
+import { isEmpty, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableMap2D, newMap2D } from "../lib/map2d"
 
@@ -21,7 +21,7 @@ export interface EntityMap {
   has(entity: AssemblyEntity): boolean
   findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
 
-  getWireConnections(entity: AssemblyEntity): ReadonlyLuaMap<AssemblyEntity, ReadonlyLuaSet<WireConnection>> | nil
+  getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil
 
   countNumEntities(): number
 }
@@ -33,11 +33,12 @@ export interface MutableEntityMap extends EntityMap {
   delete<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
 
   /** Returns if connection was successfully added. */
-  addWireConnection(wireConnection: WireConnection): boolean
-  removeWireConnection(wireConnection: WireConnection): void
+  addWireConnection(wireConnection: AssemblyWireConnection): boolean
+  removeWireConnection(wireConnection: AssemblyWireConnection): void
 }
 
-type EntityData = LuaMap<AssemblyEntity, LuaSet<WireConnection>>
+export type AssemblyEntityConnections = LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>
+type EntityData = LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>
 
 @RegisterClass("EntityMap")
 class EntityMapImpl implements MutableEntityMap {
@@ -84,10 +85,11 @@ class EntityMapImpl implements MutableEntityMap {
     }
   }
 
-  getWireConnections(entity: AssemblyEntity): ReadonlyLuaMap<AssemblyEntity, ReadonlyLuaSet<WireConnection>> | nil {
-    return this.entities.get(entity) as ReadonlyLuaMap<AssemblyEntity, ReadonlyLuaSet<WireConnection>> | nil
+  getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil {
+    const value = this.entities.get(entity)
+    if (value && next(value)[0] !== nil) return value as AssemblyEntityConnections
   }
-  addWireConnection(wireConnection: WireConnection): boolean {
+  addWireConnection(wireConnection: AssemblyWireConnection): boolean {
     const { entities } = this
     const { fromEntity, toEntity } = wireConnection
     const fromData = entities.get(fromEntity),
@@ -115,14 +117,26 @@ class EntityMapImpl implements MutableEntityMap {
     return true
   }
 
-  removeWireConnection(wireConnection: WireConnection): void {
+  removeWireConnection(wireConnection: AssemblyWireConnection): void {
     const { entities } = this
     const { fromEntity, toEntity } = wireConnection
 
     const fromData = entities.get(fromEntity),
       toData = entities.get(toEntity)
-    if (fromData) fromData.get(toEntity)?.delete(wireConnection)
-    if (toData) toData.get(fromEntity)?.delete(wireConnection)
+    if (fromData) {
+      const fromSet = fromData.get(toEntity)
+      if (fromSet) {
+        fromSet.delete(wireConnection)
+        if (isEmpty(fromSet)) fromData.delete(toEntity)
+      }
+    }
+    if (toData) {
+      const toSet = toData.get(fromEntity)
+      if (toSet) {
+        toSet.delete(wireConnection)
+        if (isEmpty(toSet)) toData.delete(fromEntity)
+      }
+    }
   }
 }
 

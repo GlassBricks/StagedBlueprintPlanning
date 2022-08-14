@@ -11,8 +11,9 @@
 
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
-import { AssemblyPosition, LayerPosition } from "./Assembly"
-import { DefaultHighlightCreator, EntityHighlighter } from "./EntityHighlighter"
+import { AssemblyContent } from "./Assembly"
+import { DefaultEntityHighlighter, EntityHighlighter } from "./EntityHighlighter"
+import { DefaultWireHandler, updateWireConnections, WireUpdater } from "./WireHandler"
 
 /**
  * Updates entities in the world in response to changes in the assembly.
@@ -22,7 +23,7 @@ import { DefaultHighlightCreator, EntityHighlighter } from "./EntityHighlighter"
  */
 export interface WorldUpdater {
   /**
-   * Re-syncs all layer entities for a given assembly entity
+   * Re-syncs all layer entities for a given assembly entity.
    * @param assembly the assembly position info
    * @param entity the assembly entity
    * @param startLayer
@@ -30,7 +31,7 @@ export interface WorldUpdater {
    * @param replace if entities should be replaced (deleted and created) instead of updated
    */
   updateWorldEntities(
-    assembly: AssemblyPosition,
+    assembly: AssemblyContent,
     entity: AssemblyEntity,
     startLayer: LayerNumber,
     endLayer?: LayerNumber,
@@ -38,26 +39,21 @@ export interface WorldUpdater {
   ): void
 
   /** If the entity is a lost reference, creates lost reference highlights. */
-  deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void
+  deleteAllWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
-export function createWorldUpdater(entityCreator: EntityCreator, highlighter: EntityHighlighter): WorldUpdater {
-  interface AssemblyPosition {
-    readonly layers: Record<LayerNumber, LayerPosition>
-  }
+export function createWorldUpdater(
+  entityCreator: EntityCreator,
+  wireHandler: WireUpdater,
+  highlighter: EntityHighlighter,
+): WorldUpdater {
   const { createEntity, updateEntity } = entityCreator
   const { setHasError, removeAllHighlights, updateLostReferenceHighlights, updateConfigChangedHighlight } = highlighter
 
-  function makeEntityIndestructible(entity: LuaEntity) {
-    entity.minable = false
-    entity.destructible = false
-    entity.rotatable = false
-  }
-
   function updateWorldEntities(
-    assembly: AssemblyPosition,
+    assembly: AssemblyContent,
     entity: AssemblyEntity,
     startLayer: LayerNumber,
     endLayer?: LayerNumber,
@@ -78,26 +74,35 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
 
     for (const [layerNum, value] of entity.iterateValues(startLayer, endLayer)) {
       const existing = entity.getWorldEntity(layerNum)
-      let newEntity: LuaEntity | undefined
+      let luaEntity: LuaEntity | undefined
       if (existing && !replace) {
         existing.direction = direction
-        newEntity = updateEntity(existing, value)
-        entity.replaceWorldEntity(layerNum, newEntity)
-        if (layerNum !== baseLayer) makeEntityIndestructible(newEntity)
-        setHasError(assembly, entity, layerNum, newEntity === nil)
+        luaEntity = updateEntity(existing, value)
+        entity.replaceWorldEntity(layerNum, luaEntity)
+        setHasError(assembly, entity, layerNum, luaEntity === nil)
       } else {
         if (existing) existing.destroy()
         const layer = layers[layerNum]
-        newEntity = createEntity(layer, entity, value)
-        if (newEntity && layerNum !== baseLayer) makeEntityIndestructible(newEntity)
-        entity.replaceWorldEntity(layerNum, newEntity)
+        luaEntity = createEntity(layer, entity, value)
+        entity.replaceWorldEntity(layerNum, luaEntity)
       }
-      setHasError(assembly, entity, layerNum, newEntity === nil)
+
+      if (luaEntity) {
+        if (layerNum !== baseLayer) makeEntityIndestructible(luaEntity)
+        updateWireConnections(assembly, entity, layerNum, luaEntity, wireHandler)
+      }
+      setHasError(assembly, entity, layerNum, luaEntity === nil)
       updateConfigChangedHighlight(assembly, entity, layerNum)
     }
   }
 
-  function deleteAllWorldEntities(assembly: AssemblyPosition, entity: AssemblyEntity): void {
+  function makeEntityIndestructible(entity: LuaEntity) {
+    entity.minable = false
+    entity.destructible = false
+    entity.rotatable = false
+  }
+
+  function deleteAllWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void {
     entity.destroyAllWorldEntities("mainEntity")
     removeAllHighlights(entity)
     updateLostReferenceHighlights(assembly, entity)
@@ -109,4 +114,8 @@ export function createWorldUpdater(entityCreator: EntityCreator, highlighter: En
   }
 }
 
-export const DefaultWorldUpdater = createWorldUpdater(DefaultEntityHandler, DefaultHighlightCreator)
+export const DefaultWorldUpdater = createWorldUpdater(
+  DefaultEntityHandler,
+  DefaultWireHandler,
+  DefaultEntityHighlighter,
+)

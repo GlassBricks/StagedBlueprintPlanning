@@ -11,7 +11,7 @@
 
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { WireConnection } from "../../entity/WireConnection"
+import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
 
 let content: MutableEntityMap
 before_each(() => {
@@ -71,16 +71,18 @@ describe("wire connections", () => {
     fromEntity: AssemblyEntity,
     toEntity: AssemblyEntity,
     wireType: defines.wire_type = defines.wire_type.red,
-  ): WireConnection {
+  ): AssemblyWireConnection {
     return {
       fromEntity,
       toEntity,
-      wireType,
+      wire: wireType,
+      fromId: 0,
+      toId: 0,
     }
   }
 
   test("getWireConnections initially empty", () => {
-    assert.same({}, content.getWireConnections(entity1))
+    assert.nil(content.getWireConnections(entity1))
   })
   test("addWireConnection shows up in getWireConnections", () => {
     const connection = createWireConnection(entity1, entity2)
@@ -103,6 +105,6 @@ describe("wire connections", () => {
   test("deleting entity removes its connections", () => {
     content.addWireConnection(createWireConnection(entity1, entity2))
     content.delete(entity1)
-    assert.same({}, content.getWireConnections(entity2))
+    assert.same(nil, content.getWireConnections(entity2) ?? nil)
   })
 })
