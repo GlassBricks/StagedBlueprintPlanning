@@ -38,24 +38,12 @@ test("add in multiple coords", () => {
 test("remove and get", () => {
   map2d.add(1, 1, "a")
   map2d.add(1, 1, "b")
-  map2d.remove(1, 1, "a")
+  map2d.delete(1, 1, "a")
   assert.same(newLuaSet("b"), map2d.get(1, 1))
 })
 
 test("removes empty entries", () => {
   map2d.add(1, 1, "a")
-  map2d.remove(1, 1, "a")
+  map2d.delete(1, 1, "a")
   assert.same({}, map2d)
-})
-
-test("size", () => {
-  assert.same(0, map2d.getSize())
-  map2d.add(1, 1, "a")
-  assert.same(1, map2d.getSize())
-  map2d.add(1, 2, "b")
-  assert.same(2, map2d.getSize())
-  map2d.add(1, 2, "c")
-  assert.same(3, map2d.getSize())
-  map2d.add(1, 2, "b")
-  assert.same(3, map2d.getSize())
 })

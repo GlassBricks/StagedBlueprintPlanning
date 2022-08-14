@@ -15,14 +15,13 @@ import { PRecord, PRRecord } from "./util-types"
 export interface Map2D<T> {
   readonly [x: number]: PRRecord<number, ReadonlyLuaSet<T>>
   get(x: number, y: number): ReadonlyLuaSet<T> | nil
-  getSize(): number
   asIterable(): LuaPairsIterable<number, PRRecord<number, ReadonlyLuaSet<T>>>
 }
 
 export interface MutableMap2D<T> extends Map2D<T>, LuaPairsIterable<number, PRecord<number, LuaSet<T>>> {
   [x: number]: PRecord<number, LuaSet<T>>
   add(x: number, y: number, value: T): void
-  remove(x: number, y: number, value: T): void
+  delete(x: number, y: number, value: T): void
 }
 
 // noinspection JSUnusedLocalSymbols
@@ -41,7 +40,7 @@ class Map2DImpl<T> implements MutableMap2D<T> {
     const byY = byX[y] ?? (byX[y] = new LuaSet<T>())
     byY.add(value)
   }
-  remove(x: number, y: number, value: T): void {
+  delete(x: number, y: number, value: T): void {
     const byX = this[x]
     if (byX === nil) return
     const byY = byX[y]
@@ -53,15 +52,6 @@ class Map2DImpl<T> implements MutableMap2D<T> {
         delete this[x]
       }
     }
-  }
-  getSize(): number {
-    let size = 0
-    for (const [, byX] of this) {
-      for (const [, byY] of pairs(byX)) {
-        size += table_size(byY)
-      }
-    }
-    return size
   }
   public asIterable(): LuaPairsIterable<number, PRRecord<number, ReadonlyLuaSet<T>>> {
     return this as any

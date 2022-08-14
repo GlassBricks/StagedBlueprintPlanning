@@ -127,7 +127,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater, entitySaver: E
     if (existing.hasLayerChanges()) {
       existing.isLostReference = true
     } else {
-      content.remove(existing)
+      content.delete(existing)
     }
     deleteAllWorldEntities(assembly, existing)
   }

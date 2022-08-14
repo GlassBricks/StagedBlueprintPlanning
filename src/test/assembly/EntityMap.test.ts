@@ -11,10 +11,29 @@
 
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { WireConnection } from "../../entity/WireConnection"
 
 let content: MutableEntityMap
-before_all(() => {
+before_each(() => {
   content = newEntityMap()
+})
+
+test("has", () => {
+  const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  assert.false(content.has(entity))
+  content.add(entity)
+  assert.true(content.has(entity))
+  content.delete(entity)
+  assert.false(content.has(entity))
+})
+
+test("countNumEntities", () => {
+  const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  assert.equal(0, content.countNumEntities())
+  content.add(entity)
+  assert.equal(1, content.countNumEntities())
+  content.delete(entity)
+  assert.equal(0, content.countNumEntities())
 })
 
 describe("findCompatible", () => {
@@ -36,5 +55,54 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     assert.nil(content.findCompatible({ name: "test2" }, entity.position, nil))
     assert.nil(content.findCompatible({ name: "foo" }, entity.position, defines.direction.south))
+  })
+})
+
+describe("wire connections", () => {
+  let entity1: AssemblyEntity
+  let entity2: AssemblyEntity
+  before_each(() => {
+    entity1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+    entity2 = createAssemblyEntity({ name: "foo" }, { x: 1, y: 0 }, 0, 1)
+    content.add(entity1)
+    content.add(entity2)
+  })
+  function createWireConnection(
+    fromEntity: AssemblyEntity,
+    toEntity: AssemblyEntity,
+    wireType: defines.wire_type = defines.wire_type.red,
+  ): WireConnection {
+    return {
+      fromEntity,
+      toEntity,
+      wireType,
+    }
+  }
+
+  test("getWireConnections initially empty", () => {
+    assert.same({}, content.getWireConnections(entity1))
+  })
+  test("addWireConnection shows up in getWireConnections", () => {
+    const connection = createWireConnection(entity1, entity2)
+    content.addWireConnection(connection)
+    assert.same(newLuaSet(connection), content.getWireConnections(entity1)!.get(entity2))
+    assert.same(newLuaSet(connection), content.getWireConnections(entity2)!.get(entity1))
+    const connection2 = createWireConnection(entity1, entity2, defines.wire_type.green)
+    content.addWireConnection(connection2)
+    assert.same(newLuaSet(connection, connection2), content.getWireConnections(entity1)!.get(entity2))
+    assert.same(newLuaSet(connection, connection2), content.getWireConnections(entity2)!.get(entity1))
+  })
+  test("does not add if identical connection is already present", () => {
+    const connection = createWireConnection(entity1, entity2)
+    const connection2 = createWireConnection(entity2, entity1)
+    content.addWireConnection(connection)
+    content.addWireConnection(connection2)
+    assert.same(newLuaSet(connection), content.getWireConnections(entity1)!.get(entity2))
+    assert.same(newLuaSet(connection), content.getWireConnections(entity2)!.get(entity1))
+  })
+  test("deleting entity removes its connections", () => {
+    content.addWireConnection(createWireConnection(entity1, entity2))
+    content.delete(entity1)
+    assert.same({}, content.getWireConnections(entity2))
   })
 })

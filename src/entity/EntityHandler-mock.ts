@@ -91,7 +91,7 @@ export function createMockEntityCreator(): MockEntityCreator {
           // simulate fast replace
           luaEntityToEntry.delete(luaEntity)
           luaEntity.destroy()
-          values[entry.layer].remove(luaEntity.position.x, luaEntity.position.y, entry)
+          values[entry.layer].delete(luaEntity.position.x, luaEntity.position.y, entry)
           return createEntity(layer, value, luaEntity.direction, luaEntity.position)
         }
         entry.value = shallowCopy(value)

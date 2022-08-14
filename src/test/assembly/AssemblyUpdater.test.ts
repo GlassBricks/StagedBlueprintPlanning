@@ -109,12 +109,12 @@ function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
 }
 
 function assertOneEntity() {
-  assert.equal(1, content.entities.getSize())
+  assert.equal(1, content.countNumEntities())
   entitiesAsserted = true
 }
 
 function assertNoEntities() {
-  assert.same({}, content.entities)
+  assert.same(0, content.countNumEntities())
   entitiesAsserted = true
 }
 
