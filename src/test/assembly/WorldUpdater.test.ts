@@ -95,11 +95,12 @@ describe("with mock entity", () => {
       })
 
       test("calls wireUpdater", () => {
+        // _breakpoint()
         worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
         for (let i = 1; i <= 3; i++)
           assert
             .spy(wireUpdater.updateWireConnections)
-            .was_called_with(nil, i, entity.getWorldEntity(i)!, match.function())
+            .called_with(match.ref(assembly), match.ref(entity), i, entity.getWorldEntity(i)!)
       })
 
       function assertDestructible(luaEntity: LuaEntity, value: boolean) {

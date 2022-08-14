@@ -16,22 +16,35 @@ import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 import { EntityMap } from "./EntityMap"
-import { DefaultWireHandler, getWireConnectionDiff, WireSaver } from "./WireHandler"
+import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /** @noSelf */
 export interface AssemblyUpdater {
+  /** Handles when an entity is created. */
   onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+  /** Handles when an entity is removed. */
   onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
-  /** Checks ALL properties. */
+  /**
+   * Handles when an entity has its properties updated.
+   * Checks ALL properties except wire connections.
+   * Handles rotation (if previousDirection is provided).
+   */
   onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
     entity: LuaEntity,
     layer: LayerPosition,
     previousDirection?: defines.direction,
   ): void
-  /** Handles upgrade planner. */
+  /**
+   * Handles upgrade planner.
+   * Performs the requested upgrade, and cancels upgrade.
+   * Also handles rotation via upgrade.
+   */
   onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+
+  /** Handles possible circuit wires changes of an entity. */
+  onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 }
 
 export function createAssemblyUpdater(
@@ -41,6 +54,7 @@ export function createAssemblyUpdater(
 ): AssemblyUpdater {
   const { deleteAllWorldEntities, updateWorldEntities } = worldUpdater
   const { saveEntity } = entitySaver
+  const { getWireConnectionDiff } = wireSaver
 
   function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
     const position = getLayerPosition(layer, entity)
@@ -80,22 +94,21 @@ export function createAssemblyUpdater(
     assemblyEntity: AssemblyEntity,
     layerNumber: LayerNumber,
     entity: LuaEntity,
-  ): void {
-    const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, layerNumber, entity, wireSaver)
+  ): boolean {
+    const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, layerNumber, entity)
+    if (added === false || (!added && !removed)) return false
     const { content } = assembly
-    for (const { definition, otherEntity } of added) {
-      const newConnection: AssemblyWireConnection = {
-        fromEntity: assemblyEntity,
-        toEntity: otherEntity,
-        fromId: definition.source_circuit_id,
-        toId: definition.target_circuit_id,
-        wire: definition.wire,
+    if (added) {
+      for (const connection of added) {
+        content.addWireConnection(connection)
       }
-      content.addWireConnection(newConnection)
     }
-    for (const connection of removed) {
-      content.removeWireConnection(connection)
+    if (removed) {
+      for (const connection of removed as AssemblyWireConnection[]) {
+        content.removeWireConnection(connection)
+      }
     }
+    return true
   }
 
   function entityAddedAbove(
@@ -254,11 +267,24 @@ export function createAssemblyUpdater(
     if (entity.valid) entity.cancel_upgrade("player")
   }
 
+  function onEntityCircuitWiresPotentiallyUpdated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    layer: LayerPosition,
+  ): void {
+    const existing = getCompatibleOrAdd(assembly, entity, layer)
+    if (!existing) return
+    if (handleCircuitWires(assembly, existing, layer.layerNumber, entity)) {
+      updateWorldEntities(assembly, existing, existing.getBaseLayer())
+    }
+  }
+
   return {
     onEntityCreated,
     onEntityDeleted,
     onEntityPotentiallyUpdated,
     onEntityMarkedForUpgrade,
+    onCircuitWiresPotentiallyUpdated: onEntityCircuitWiresPotentiallyUpdated,
   }
 }
 

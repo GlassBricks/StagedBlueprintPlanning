@@ -13,7 +13,7 @@ import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyContent } from "./Assembly"
 import { DefaultEntityHighlighter, EntityHighlighter } from "./EntityHighlighter"
-import { DefaultWireHandler, updateWireConnections, WireUpdater } from "./WireHandler"
+import { DefaultWireHandler, WireUpdater } from "./WireHandler"
 
 /**
  * Updates entities in the world in response to changes in the assembly.
@@ -51,6 +51,7 @@ export function createWorldUpdater(
 ): WorldUpdater {
   const { createEntity, updateEntity } = entityCreator
   const { setHasError, removeAllHighlights, updateLostReferenceHighlights, updateConfigChangedHighlight } = highlighter
+  const { updateWireConnections } = wireHandler
 
   function updateWorldEntities(
     assembly: AssemblyContent,
@@ -89,7 +90,7 @@ export function createWorldUpdater(
 
       if (luaEntity) {
         if (layerNum !== baseLayer) makeEntityIndestructible(luaEntity)
-        updateWireConnections(assembly, entity, layerNum, luaEntity, wireHandler)
+        updateWireConnections(assembly, entity, layerNum, luaEntity)
       }
       setHasError(assembly, entity, layerNum, luaEntity === nil)
       updateConfigChangedHighlight(assembly, entity, layerNum)

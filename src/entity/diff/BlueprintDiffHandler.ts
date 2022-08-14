@@ -159,6 +159,8 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
     bpEntity.entity_number = nil!
     bpEntity.position = nil!
     bpEntity.direction = nil
+    bpEntity.neighbours = nil
+    bpEntity.connections = nil
     return bpEntity
   },
 

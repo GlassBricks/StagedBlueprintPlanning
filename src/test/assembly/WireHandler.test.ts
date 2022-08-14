@@ -9,18 +9,23 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntityConnections } from "../../assembly/EntityMap"
-import { createWireHandler, WireUpdater } from "../../assembly/WireHandler"
+import { AssemblyContent } from "../../assembly/Assembly"
+import { createMockAssembly } from "../../assembly/Assembly-mock"
+import { DefaultWireHandler, WireHandler } from "../../assembly/WireHandler"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
 import { clearTestArea } from "../area"
 
+let assembly: AssemblyContent
 let luaEntity1: LuaEntity
 let luaEntity2: LuaEntity
 let entity1: AssemblyEntity
 let entity2: AssemblyEntity
-let handler: WireUpdater
+
+const handler: WireHandler = DefaultWireHandler
+
 before_each(() => {
+  assembly = createMockAssembly(3)
   const area = clearTestArea()
   luaEntity1 = area.surface.create_entity({ name: "arithmetic-combinator", position: { x: 5.5, y: 6 } })!
   luaEntity2 = area.surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!
@@ -28,17 +33,28 @@ before_each(() => {
   entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
   entity1.replaceWorldEntity(1, luaEntity1)
   entity2.replaceWorldEntity(1, luaEntity2)
-
-  handler = createWireHandler()
+  assembly.content.add(entity1)
+  assembly.content.add(entity2)
 })
 
-function addExtraWires() {
+function addWire1(): void {
   luaEntity1.connect_neighbour({
     target_entity: luaEntity2,
     wire: defines.wire_type.red,
     source_circuit_id: defines.circuit_connector_id.combinator_input,
     target_circuit_id: defines.circuit_connector_id.combinator_output,
   })
+}
+function getExpectedWire1(): AssemblyWireConnection {
+  return {
+    fromEntity: entity1,
+    toEntity: entity2,
+    wire: defines.wire_type.red,
+    fromId: defines.circuit_connector_id.combinator_input,
+    toId: defines.circuit_connector_id.combinator_output,
+  }
+}
+function addWire2(): void {
   luaEntity2.connect_neighbour({
     target_entity: luaEntity1,
     wire: defines.wire_type.green,
@@ -46,54 +62,68 @@ function addExtraWires() {
     target_circuit_id: defines.circuit_connector_id.combinator_output,
   })
 }
-function getConnections(): AssemblyEntityConnections {
-  const result = new LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>()
-  result.set(
-    entity2,
-    newLuaSet({
-      fromEntity: entity1,
-      toEntity: entity2,
-      wire: defines.wire_type.red,
-      fromId: defines.circuit_connector_id.combinator_input,
-      toId: defines.circuit_connector_id.combinator_output,
-    }),
-  )
-  return result
-}
-function assertWireMatches(): void {
-  assert.same(
-    [
-      {
-        target_entity: luaEntity2,
-        wire: defines.wire_type.red,
-        source_circuit_id: defines.circuit_connector_id.combinator_input,
-        target_circuit_id: defines.circuit_connector_id.combinator_output,
-      } as CircuitConnectionDefinition,
-    ],
-    luaEntity1.circuit_connection_definitions,
-  )
+function getExpectedWire2(): AssemblyWireConnection {
+  return {
+    fromEntity: entity1,
+    toEntity: entity2,
+    wire: defines.wire_type.green,
+    fromId: defines.circuit_connector_id.combinator_output,
+    toId: defines.circuit_connector_id.combinator_input,
+  }
 }
 
-function luaEntityToAssemblyEntity(luaEntity: LuaEntity): AssemblyEntity | nil {
-  if (luaEntity === luaEntity1) return entity1
-  if (luaEntity === luaEntity2) return entity2
-  return nil
-}
-
-describe("update circuit wires", () => {
+describe("update wire connections", () => {
   test("can remove wires", () => {
-    addExtraWires()
-    handler.updateWireConnections(nil, 1, luaEntity1, luaEntityToAssemblyEntity)
+    addWire1()
+    addWire2()
+    handler.updateWireConnections(assembly, entity1, 1, luaEntity1)
     assert.same([], luaEntity1.circuit_connection_definitions ?? [])
     assert.same([], luaEntity2.circuit_connection_definitions ?? [])
   })
+  function assertWire1Matches(): void {
+    assert.same(
+      [
+        {
+          target_entity: luaEntity2,
+          wire: defines.wire_type.red,
+          source_circuit_id: defines.circuit_connector_id.combinator_input,
+          target_circuit_id: defines.circuit_connector_id.combinator_output,
+        } as CircuitConnectionDefinition,
+      ],
+      luaEntity1.circuit_connection_definitions,
+    )
+  }
   test("can add wires", () => {
-    handler.updateWireConnections(getConnections(), 1, luaEntity1, luaEntityToAssemblyEntity)
-    assertWireMatches()
+    assembly.content.addWireConnection(getExpectedWire1())
+    handler.updateWireConnections(assembly, entity1, 1, luaEntity1)
+    assertWire1Matches()
   })
   test("can update wires", () => {
-    addExtraWires()
-    handler.updateWireConnections(getConnections(), 1, luaEntity1, luaEntityToAssemblyEntity)
-    assertWireMatches()
+    addWire1()
+    addWire2()
+    assembly.content.addWireConnection(getExpectedWire1())
+    handler.updateWireConnections(assembly, entity1, 1, luaEntity1)
+    assertWire1Matches()
+  })
+})
+
+describe("getWireConnectionDiff", () => {
+  test.each<[number[], number[], string]>([
+    [[1, 2], [1, 2], "no change"],
+    [[1], [1, 2], "add"],
+    [[1, 2], [1], "remove"],
+    [[1], [2], "add and remove"],
+    [[1, 2], [], "remove 2"],
+  ])("diff: %s -> %s: %s", (existing, world) => {
+    for (const number of existing)
+      assembly.content.addWireConnection([getExpectedWire1, getExpectedWire2][number - 1]())
+    for (const number of world) [addWire1, addWire2][number - 1]()
+    const diff = handler.getWireConnectionDiff(assembly, entity1, 1, luaEntity1)
+
+    const wires = [getExpectedWire1(), getExpectedWire2()]
+    const added = world.filter((n) => !existing.includes(n)).map((n) => wires[n - 1])
+    const removed = existing.filter((n) => !world.includes(n)).map((n) => wires[n - 1])
+    assert.same(added, diff[0])
+    assert.same(removed, diff[1])
   })
 })
