@@ -203,7 +203,8 @@ export function createAssemblyUpdater(
     rotateTo: defines.direction | nil,
     upgradeTo?: string | nil,
   ): void {
-    const rotateAllowed = rotateTo !== nil && existing.getBaseLayer() === layerNumber
+    const isBaseLayer = existing.getBaseLayer() === layerNumber
+    const rotateAllowed = rotateTo !== nil && isBaseLayer
     if (rotateAllowed) {
       existing.direction = rotateTo !== 0 ? rotateTo : nil
     }
@@ -215,12 +216,17 @@ export function createAssemblyUpdater(
 
     const hasDiff = existing.adjustValueAtLayer(layerNumber, newValue)
     if (hasDiff || rotateAllowed) {
-      // if diff, update all entities
-      updateWorldEntities(assembly, existing, layerNumber)
+      // if rotate or upgrade base value, update all layers
+      if (rotateAllowed || (hasDiff && isBaseLayer)) {
+        updateWorldEntities(assembly, existing, 1)
+      } else {
+        updateWorldEntities(assembly, existing, layerNumber)
+      }
     } else if (rotateTo) {
-      // else, only this entity (if rotation forbidden)
+      // only this entity (if rotation forbidden)
       updateWorldEntities(assembly, existing, layerNumber, layerNumber)
-    } // else, no diff, do nothing
+    }
+    // else, no diff, do nothing
   }
 
   function onEntityPotentiallyUpdated(

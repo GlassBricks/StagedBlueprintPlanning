@@ -321,7 +321,7 @@ describe("update", () => {
   })
 
   test("in base layer updates all entities", () => {
-    const { luaEntity, added } = addAndReset()
+    const { luaEntity, added } = addAndReset(2, 2)
     luaEntity.prop1 = 3
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
     assert.equal(3, added.getBaseValue().prop1)
@@ -367,7 +367,7 @@ describe("update", () => {
 
 describe("rotate", () => {
   test("in base layer rotates all entities", () => {
-    const { luaEntity, added } = addAndReset()
+    const { luaEntity, added } = addAndReset(2, 2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer, oldDirection)

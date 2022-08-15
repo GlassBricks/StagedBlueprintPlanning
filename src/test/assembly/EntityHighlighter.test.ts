@@ -42,14 +42,7 @@ before_each(() => {
         bounding_box: bbox,
         highlight_box_type: type,
       }),
-    createSprite: (_, position, orientation, scale, sprite) =>
-      simpleMock<RenderObj<"sprite">>({
-        target: { position },
-        orientation,
-        x_scale: scale,
-        y_scale: scale,
-        sprite,
-      }),
+    createSprite: (params) => simpleMock<RenderObj<"sprite">>(params as any),
     createRectangle(
       surface: LuaSurface,
       box: BBox,

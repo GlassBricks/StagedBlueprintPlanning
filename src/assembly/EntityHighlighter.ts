@@ -10,12 +10,13 @@
  */
 
 import { keys } from "ts-transformer-keys"
+import * as util from "util"
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { getHighlightBox, getSelectionBox } from "../entity/entity-info"
+import { getMapColor, getSelectionBox } from "../entity/entity-info"
 import { getWorldPosition } from "../entity/EntityHandler"
 import { assertNever } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import draw, { RenderObj } from "../lib/rendering"
+import draw, { DrawParams, RenderObj } from "../lib/rendering"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 
 export type HighlightEntity = HighlightBoxEntity | RenderObj<"sprite"> | RenderObj<"rectangle">
@@ -72,14 +73,7 @@ export interface HighlightCreator {
     type: CursorBoxRenderType,
   ): LuaEntity | nil
 
-  createSprite(
-    surface: LuaSurface,
-    position: Position,
-    orientation: RealOrientation,
-    scale: number,
-    sprite: SpritePath,
-    tint: Color | ColorArray | nil,
-  ): RenderObj<"sprite">
+  createSprite(params: DrawParams["sprite"]): RenderObj<"sprite">
   createRectangle(surface: LuaSurface, box: BBox, color: Color | ColorArray, filled: boolean): RenderObj<"rectangle">
 }
 
@@ -92,8 +86,10 @@ interface SpriteConfig {
   readonly type: "sprite"
   readonly sprite: SpritePath
   readonly offset: Position
-  readonly scale: number
   readonly tint?: Color | ColorArray
+  readonly scale: number
+  readonly scaleRelative?: boolean
+  readonly renderLayer: RenderLayer
 }
 interface RectangleConfig {
   readonly type: "rectangle"
@@ -112,8 +108,8 @@ export const enum HighlightValues {
   UpgradedLater = "item/upgrade-planner",
 }
 export const HighlightColors = {
-  previewColor: [0.7, 0.7, 0.7, 0.2],
-  previewIconTint: [1, 1, 1, 0.9],
+  previewColor: [0.4, 0.4, 0.4, 0.1],
+  previewIconTint: [0.4, 0.4, 0.4, 0.6],
 } as const
 const highlightConfigs: {
   [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig | RectangleConfig
@@ -127,8 +123,10 @@ const highlightConfigs: {
     type: "sprite",
     sprite: HighlightValues.DefaultIcon,
     offset: { x: 0.5, y: 0.5 },
-    scale: 0.8,
+    scale: 0.9,
+    scaleRelative: true,
     tint: HighlightColors.previewIconTint,
+    renderLayer: "floor",
   },
   errorHighlight: {
     type: "highlight",
@@ -139,6 +137,7 @@ const highlightConfigs: {
     sprite: HighlightValues.ErrorInOtherLayer,
     offset: { x: 0.2, y: 0.1 },
     scale: 0.3,
+    renderLayer: "entity-info-icon-above",
   },
   lostReferenceHighlight: {
     type: "highlight",
@@ -152,7 +151,8 @@ const highlightConfigs: {
     type: "sprite",
     sprite: HighlightValues.ConfigChangedLater,
     offset: { x: 0.8, y: 0.1 },
-    scale: 0.6,
+    scale: 0.5,
+    renderLayer: "entity-info-icon-above",
   },
 }
 
@@ -171,30 +171,31 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
     const config = highlightConfigs[type]
     const prototypeName = entity.getBaseValue().name
+    const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
     let result: LuaEntity | RenderObj | nil
     if (config.type === "highlight") {
-      const selectionBox = getSelectionBox(prototypeName)
       const worldSelectionBox = BBox.translate(
         selectionBox.rotateAboutOrigin(entity.direction),
         getWorldPosition(layer, entity),
       )
       result = createHighlightBox(layer.surface, entity.position, worldSelectionBox, config.renderType)
     } else if (config.type === "sprite") {
-      const selectionBox = getSelectionBox(prototypeName)
-      const relativePosition = Pos.plus(selectionBox.left_top, selectionBox.size().emul(config.offset))
+      const size = selectionBox.size()
+      const relativePosition = Pos.plus(selectionBox.left_top, size.emul(config.offset))
       const worldPosition = relativePosition.plus(getWorldPosition(layer, entity))
-      result = createSprite(
-        layer.surface,
-        worldPosition,
-        (entity.direction ?? 0) / 8,
-        config.scale,
-        config.sprite,
-        config.tint,
-      )
+      const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
+      result = createSprite({
+        surface: layer.surface,
+        target: worldPosition,
+        x_scale: scale,
+        y_scale: scale,
+        sprite: config.sprite,
+        tint: config.tint,
+        render_layer: config.renderLayer,
+      })
     } else if (config.type === "rectangle") {
-      const collisionBox = getHighlightBox(prototypeName)
       const worldSelectionBox = BBox.translate(
-        collisionBox.rotateAboutOrigin(entity.direction),
+        selectionBox.rotateAboutOrigin(entity.direction),
         getWorldPosition(layer, entity),
       )
       result = createRectangle(layer.surface, worldSelectionBox, config.color, config.filled)
@@ -228,10 +229,16 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     layer: LayerNumber,
     hasPreview: boolean,
   ): void {
-    setHighlight(entity, assembly.layers[layer], "previewHighlight", hasPreview)
+    const entityName = entity.getBaseValue().name
+    const highlight = setHighlight(entity, assembly.layers[layer], "previewHighlight", hasPreview) as
+      | RenderObj<"rectangle">
+      | nil
+    if (highlight) {
+      highlight.color = util.mix_color(getMapColor(entityName), HighlightColors.previewIconTint as Color)
+    }
     const icon = setHighlight(entity, assembly.layers[layer], "previewIcon", hasPreview) as RenderObj<"sprite"> | nil
     if (icon) {
-      icon.sprite = "entity/" + entity.getBaseValue().name
+      icon.sprite = "entity/" + entityName
     }
   }
 
@@ -346,23 +353,8 @@ export const DefaultHighlightCreator: HighlightCreator = {
       force: "player",
     })
   },
-  createSprite(
-    surface: LuaSurface,
-    position: Position,
-    orientation: RealOrientation,
-    scale: number,
-    sprite: SpritePath,
-    tint: Color | ColorArray | nil,
-  ): RenderObj<"sprite"> {
-    return draw("sprite", {
-      surface,
-      target: position,
-      sprite,
-      x_scale: scale,
-      y_scale: scale,
-      orientation,
-      tint,
-    })
+  createSprite(params: DrawParams["sprite"]): RenderObj<"sprite"> {
+    return draw("sprite", params)
   },
   createRectangle(surface: LuaSurface, box: BBox, color: Color | ColorArray, filled: boolean): RenderObj<"rectangle"> {
     return draw("rectangle", {

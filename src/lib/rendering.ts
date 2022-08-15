@@ -48,7 +48,7 @@ type OtherSetters = {
 type GetOnlyKeys = Exclude<keyof Getters, keyof Setters>
 type GetAndSetKeys = keyof Getters & keyof Setters
 
-type DrawParams = {
+export type DrawParams = {
   readonly [K in keyof LuaRendering as K extends `draw_${infer P}` ? P : never]: LuaRendering[K] extends (
     params: infer P,
   ) => uint64
@@ -70,8 +70,12 @@ type AsObj = {
 } & {
   [K in GetAndSetKeys]-?: Getters[K] & Setters[K]
 }
+interface KeyRemap {
+  tint: "color"
+}
+
 export type RenderObj<T extends RenderType = RenderType> = BaseRenderObj<T> &
-  Pick<AsObj, keyof DrawParams[T] & keyof AsObj> &
+  Pick<AsObj, (keyof DrawParams[T] & keyof AsObj) | KeyRemap[keyof DrawParams[T] & keyof KeyRemap]> &
   Pick<OtherSetters, `set_${keyof DrawParams[T] & string}` & keyof OtherSetters>
 
 const rendering: LuaRendering = (_G as any).rendering

@@ -110,8 +110,8 @@ namespace BBox {
     if (direction === defines.direction.west) return BBox({ x: ly, y: -rx }, { x: ry, y: -lx })
     if (direction === defines.direction.east) return BBox({ x: -ry, y: lx }, { x: -ly, y: rx })
 
-    // diagonal, not yet supported, just assume not rotated
-    return from(box)
+    // diagonal, not yet supported, rotate -45 degrees
+    return rotateAboutOrigin(box, (direction + 7) % 8)
   }
   export function intersect(box1: BBox, box2: BBox): BBoxClass {
     const { left_top, right_bottom } = box1
