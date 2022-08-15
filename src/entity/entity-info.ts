@@ -12,6 +12,13 @@
 import { PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
 
+let theEntityPrototypes: typeof game.entity_prototypes
+
+function getEntityPrototypes(): typeof game.entity_prototypes {
+  if (!theEntityPrototypes) theEntityPrototypes = game.entity_prototypes
+  return theEntityPrototypes
+}
+
 // <type>|<fast_replaceable_group>|<lx>|<ly>|<rx>|<ry> or <none>|<entity_name>
 export type CategoryName = `${string}|${string}|${number}|${number}|${number}|${number}` | `<${string}>|${string}`
 
@@ -20,7 +27,7 @@ const typeRemap: PRecord<string, string> = {
   "rail-chain-signal": "rail-signal",
 }
 function computeCategoryName(entityName: string): CategoryName {
-  const prototype = game.entity_prototypes[entityName]
+  const prototype = getEntityPrototypes()[entityName]
   if (!prototype) return `<unknown>|${entityName}`
   const { fast_replaceable_group, type, collision_box } = prototype
   if (fast_replaceable_group === nil) return `<none>|${entityName}`
@@ -41,16 +48,11 @@ const selectionBoxes: PRecord<string, BBoxClass> = {}
 export function getSelectionBox(entityName: string): BBoxClass {
   const selectionBox = selectionBoxes[entityName]
   if (selectionBox) return selectionBox
-  const prototype = game.entity_prototypes[entityName]
-  return (selectionBoxes[entityName] = BBox.load(prototype.selection_box))
+  return (selectionBoxes[entityName] = BBox.load(getEntityPrototypes()[entityName].selection_box))
 }
 
-const mapColors: PRecord<string, Color> = {}
 export function getMapColor(entityName: string): Color {
-  const mapColor = mapColors[entityName]
-  if (mapColor) return mapColor
-  const prototype = game.entity_prototypes[entityName]
-  return (mapColors[entityName] = prototype.friendly_map_color)
+  return getEntityPrototypes()[entityName].friendly_map_color
 }
 
 export function _overrideEntityCategory(entityName: string, categoryName: string): void {

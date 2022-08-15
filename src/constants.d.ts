@@ -13,3 +13,7 @@ export const enum CustomInputs {
   Build = "bp3:build",
   RemovePoleCables = "bp3:remove-pole-cables",
 }
+
+export const enum Prototypes {
+  EntityMarker = "bp3:entity-marker",
+}

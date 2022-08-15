@@ -42,7 +42,14 @@ export function debugPrint(...values: unknown[]): void {
   const source = tryUseSourcemap(info.source, info.currentline)
   const sourceString = source ? `${source.file}:${source.line ?? 1}` : "<unknown source>"
   const output = values
-    .map((value) => (typeof value === "number" || typeof value === "string" ? value.toString() : serpent.block(value)))
+    .map((value) =>
+      typeof value === "number" || typeof value === "string"
+        ? value.toString()
+        : serpent.block(value, {
+            maxlevel: 3,
+            nocode: true,
+          }),
+    )
     .join(" ")
   const message: LocalisedString = ["", sourceString, ": ", output]
   game?.print(message)
