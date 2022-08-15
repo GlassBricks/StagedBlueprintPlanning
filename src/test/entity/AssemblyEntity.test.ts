@@ -78,12 +78,12 @@ test("hasLayerChanges", () => {
 
 test("iterateValues", () => {
   const expected = []
-  for (let layer = 2; layer <= 6; layer++) {
-    expected.push([layer, assemblyEntity.getValueAtLayer(layer)])
+  for (let layer = 1; layer <= 6; layer++) {
+    expected[layer] = assemblyEntity.getValueAtLayer(layer) ?? "nil"
   }
   const result = []
-  for (const [layer, entity] of assemblyEntity.iterateValues(2, 6)) {
-    result.push([layer, shallowCopy(entity)])
+  for (const [layer, entity] of assemblyEntity.iterateValues(1, 6)) {
+    result[layer] = entity === nil ? "nil" : shallowCopy(entity)
   }
   assert.same(expected, result)
 })

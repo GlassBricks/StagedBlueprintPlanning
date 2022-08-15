@@ -54,7 +54,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    * Iterates the values of layers in the given range. More efficient than repeated calls to getValueAtLayer.
    * The same instance will be returned for each layer; its value is ephemeral.
    */
-  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T>]>>
+  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
 
   /** Moves the entity to a lower layer. */
   moveDown(lowerLayer: LayerNumber): LayerNumber
@@ -179,15 +179,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     const diff = this.setValueAndGetDiff(layer, value)
     if (!diff) return false
 
-    // add a key at this layer so pairs works properly
-    const thisDiff = layerChanges[layer]
-    if (!thisDiff) layerChanges[layer] = {}
-
     // trim diffs in higher layers, remove those that are ineffectual
-    for (const [layerNumber, changes] of this.iterateLayerChangesFrom(layer) as LuaIterable<
-      LuaMultiReturn<[LayerNumber, LayerDiff<T>]>,
-      any
-    >) {
+    for (const [layerNumber, changes] of pairs(layerChanges)) {
+      if (layerNumber <= layer) continue
       for (const [k, v] of pairs(diff)) {
         if (deepCompare(changes[k], v)) {
           // changed to same value, remove
@@ -200,14 +194,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       if (isEmpty(changes)) delete layerChanges[layerNumber]
       if (isEmpty(diff)) break
     }
-    if (!thisDiff) delete layerChanges[layer]
 
     return true
-  }
-
-  private iterateLayerChangesFrom(layer: LayerNumber): any
-  private iterateLayerChangesFrom(layer: LayerNumber) {
-    return $multi(next, this.layerChanges, layer)
   }
 
   private setValueAndGetDiff(layer: LayerNumber, value: T): LayerDiff<T> | nil {
@@ -232,15 +220,23 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
   }
 
-  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, T]>>
+  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
   iterateValues(start: LayerNumber, end: LayerNumber) {
-    const value = this.getValueAtLayer(start)!
+    const { baseLayer, baseValue } = this
+    let value = this.getValueAtLayer(start)
     function next(layerValues: LayerChanges, prevLayer: LayerNumber | nil) {
-      if (!prevLayer) return $multi(start, value)
+      if (!prevLayer) {
+        return $multi(start, value)
+      }
       const nextLayer = prevLayer + 1
+      if (nextLayer < baseLayer) return $multi(nextLayer, nil)
       if (nextLayer > end) return $multi()
-      const diff = layerValues[nextLayer]
-      if (diff) applyDiffToEntity(value, diff)
+      if (nextLayer === baseLayer) {
+        value = baseValue
+      } else {
+        const diff = layerValues[nextLayer]
+        if (diff) applyDiffToEntity(value!, diff)
+      }
       return $multi(nextLayer, value)
     }
     return $multi<any>(next, this.layerChanges, nil)
