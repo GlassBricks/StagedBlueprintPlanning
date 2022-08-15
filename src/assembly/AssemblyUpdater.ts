@@ -173,7 +173,7 @@ export function createAssemblyUpdater(
       return
     }
 
-    if (existing.hasLayerChanges()) {
+    if (existing.hasLayerChange()) {
       existing.isLostReference = true
     } else {
       content.delete(existing)

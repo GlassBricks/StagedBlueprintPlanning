@@ -50,8 +50,8 @@ export function createWorldUpdater(
   highlighter: EntityHighlighter,
 ): WorldUpdater {
   const { createEntity, updateEntity } = entityCreator
-  const { setHasError, removeAllHighlights, updateLostReferenceHighlights, updateConfigChangedHighlight } = highlighter
   const { updateWireConnections } = wireHandler
+  const { updateHighlights, deleteAllHighlights } = highlighter
 
   function updateWorldEntities(
     assembly: AssemblyContent,
@@ -69,7 +69,6 @@ export function createWorldUpdater(
     if (startLayer > endLayer) return
 
     assert(!entity.isLostReference)
-    updateLostReferenceHighlights(assembly, entity)
 
     const direction = entity.direction ?? 0
 
@@ -80,7 +79,6 @@ export function createWorldUpdater(
         existing.direction = direction
         luaEntity = updateEntity(existing, value)
         entity.replaceWorldEntity(layerNum, luaEntity)
-        setHasError(assembly, entity, layerNum, luaEntity === nil)
       } else {
         if (existing) existing.destroy()
         const layer = layers[layerNum]
@@ -92,9 +90,8 @@ export function createWorldUpdater(
         if (layerNum !== baseLayer) makeEntityIndestructible(luaEntity)
         updateWireConnections(assembly, entity, layerNum, luaEntity)
       }
-      setHasError(assembly, entity, layerNum, luaEntity === nil)
-      updateConfigChangedHighlight(assembly, entity, layerNum)
     }
+    updateHighlights(assembly, entity)
   }
 
   function makeEntityIndestructible(entity: LuaEntity) {
@@ -105,8 +102,11 @@ export function createWorldUpdater(
 
   function deleteAllWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void {
     entity.destroyAllWorldEntities("mainEntity")
-    removeAllHighlights(entity)
-    updateLostReferenceHighlights(assembly, entity)
+    if (entity.isLostReference) {
+      updateHighlights(assembly, entity)
+    } else {
+      deleteAllHighlights(entity)
+    }
   }
 
   return {

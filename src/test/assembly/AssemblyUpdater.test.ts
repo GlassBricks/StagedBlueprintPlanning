@@ -194,7 +194,7 @@ describe("add", () => {
       assert.same(1, added.getBaseLayer())
       if (!withChanges) {
         assert.equal(2, added.getBaseValue().prop1)
-        assert.false(added.hasLayerChanges())
+        assert.false(added.hasLayerChange())
       } else {
         assert.equal(3, added.getBaseValue().prop1)
         assertLayerChanges(added, { 3: { prop1: 2 } })
@@ -260,7 +260,7 @@ describe("revive", () => {
 
     if (reviveLayer >= 5) {
       assert.equal(4, added.getBaseValue().prop1)
-      assert.false(added.hasLayerChanges())
+      assert.false(added.hasLayerChange())
     } else if (reviveLayer >= 3) {
       assert.equal(3, added.getBaseValue().prop1)
       assertLayerChanges(added, { 5: { prop1: 4 } })
@@ -357,7 +357,7 @@ describe("update", () => {
   test("updating match previous layer removes layer changes", () => {
     const { luaEntity, added } = addAndReset(1, 2)
     added._applyDiffAtLayer(2, { prop1: 5 })
-    assert.true(added.hasLayerChanges())
+    assert.true(added.hasLayerChange())
     luaEntity.prop1 = 2
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
 

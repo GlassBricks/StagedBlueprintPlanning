@@ -69,11 +69,11 @@ describe("getValueAtLayer", () => {
 
 test("hasLayerChanges", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.false(assemblyEntity.hasLayerChanges())
+  assert.false(assemblyEntity.hasLayerChange())
   assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
-  assert.true(assemblyEntity.hasLayerChanges())
-  assert.true(assemblyEntity.hasLayerChanges(3))
-  assert.false(assemblyEntity.hasLayerChanges(2))
+  assert.true(assemblyEntity.hasLayerChange())
+  assert.true(assemblyEntity.hasLayerChange(3))
+  assert.false(assemblyEntity.hasLayerChange(2))
 })
 
 test("iterateValues", () => {
@@ -126,14 +126,14 @@ describe("adjustValueAtLayer", () => {
     assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
     assemblyEntity.adjustValueAtLayer(1, { ...entity, foo1: 3 })
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
-    assert.false(assemblyEntity.hasLayerChanges())
+    assert.false(assemblyEntity.hasLayerChange())
   })
 
   test("creates diff if set at higher layer", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity.adjustValueAtLayer(2, { ...entity, foo1: 3 })
     assert.same(entity, assemblyEntity.getBaseValue())
-    assert.true(assemblyEntity.hasLayerChanges())
+    assert.true(assemblyEntity.hasLayerChange())
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtLayer(2))
   })
 
@@ -248,7 +248,7 @@ describe("get/set properties", () => {
   test("clear property", () => {
     assemblyEntity.setProperty(2, "foo", "bar")
     assemblyEntity.setProperty(3, "foo", "bar")
-    assemblyEntity.clearProperty("foo")
+    assemblyEntity.clearPropertyInAllLayers("foo")
     assert.nil(assemblyEntity.getProperty(2, "foo"))
     assert.nil(assemblyEntity.getProperty(3, "foo"))
   })

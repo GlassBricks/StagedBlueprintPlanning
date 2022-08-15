@@ -48,10 +48,8 @@ before_each(() => {
   mockEntityCreator = createMockEntityCreator()
   wireUpdater = { updateWireConnections: spy() }
   highlighter = {
-    setHasError: spy(),
-    updateConfigChangedHighlight: spy(),
-    updateLostReferenceHighlights: spy(),
-    removeAllHighlights: spy(),
+    updateHighlights: spy(),
+    deleteAllHighlights: spy(),
   }
 
   worldUpdater = createWorldUpdater(mockEntityCreator, wireUpdater, highlighter)
@@ -172,6 +170,11 @@ describe("with mock entity", () => {
         worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
         for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
       })
+
+      test("calls updateHighlights", () => {
+        worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+        assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity))
+      })
     })
 
     describe("invalid layers", () => {
@@ -193,41 +196,7 @@ describe("with mock entity", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     worldUpdater.deleteAllWorldEntities(assembly, entity)
     for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
-  })
-
-  describe("highlights", () => {
-    test("creates error highlight if entity cannot be placed", () => {
-      mockEntityCreator.createEntity(assembly.layers[2], entity, entity.getBaseValue())
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      assert.spy(highlighter.setHasError).called_with(match._, match._, 1, false)
-      assert.spy(highlighter.setHasError).called_with(match._, match._, 2, true)
-      assert.spy(highlighter.setHasError).called_with(match._, match._, 3, false)
-    })
-
-    test("removes error highlight after entity removed", () => {
-      mockEntityCreator.createEntity(assembly.layers[1], entity, entity.getBaseValue())
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
-      worldUpdater.deleteAllWorldEntities(assembly, entity)
-      assert.spy(highlighter.removeAllHighlights).called_with(entity)
-    })
-
-    test("calls updateConfigChangedHighlight", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      for (let i = 1; i <= 3; i++) {
-        assert.spy(highlighter.updateConfigChangedHighlight).called_with(match._, match._, i)
-      }
-    })
-  })
-
-  describe("lost reference highlight", () => {
-    test("updateWorldEntities called updateLostReferenceHighlights", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      assert.spy(highlighter.updateLostReferenceHighlights).called(1)
-    })
-    test("deleteAllWorldEntities called deleteLostReferenceHighlights", () => {
-      worldUpdater.deleteAllWorldEntities(assembly, entity)
-      assert.spy(highlighter.updateLostReferenceHighlights).called(1)
-    })
+    assert.spy(highlighter.deleteAllHighlights).called_with(match.ref(entity))
   })
 })
 

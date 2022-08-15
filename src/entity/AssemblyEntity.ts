@@ -36,7 +36,8 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   getBaseValue(): Readonly<T>
 
   /** @return if this entity has any changes at the given layer, or any layer if nil */
-  hasLayerChanges(layer?: LayerNumber): boolean
+  hasLayerChange(layer?: LayerNumber): boolean
+  getLayerChange(layer: LayerNumber): LayerDiff<T> | nil
   _getLayerChanges(): LayerChanges<T>
   _applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void
 
@@ -89,7 +90,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void
   getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil
   propertySetInAnyLayer(key: keyof LayerProperties): boolean
-  clearProperty<T extends keyof LayerProperties>(key: T): void
+  clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void
 }
 
 export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, LayerDiff<E>>
@@ -136,9 +137,12 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return this.baseValue
   }
 
-  hasLayerChanges(layer?: LayerNumber): boolean {
+  hasLayerChange(layer?: LayerNumber): boolean {
     if (layer) return this.layerChanges[layer] !== nil
     return next(this.layerChanges)[0] !== nil
+  }
+  public getLayerChange(layer: LayerNumber): LayerDiff<T> | nil {
+    return this.layerChanges[layer]
   }
   _getLayerChanges(): LayerChanges<T> {
     return this.layerChanges
@@ -353,7 +357,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (!byType) return false
     return next(byType)[0] !== nil
   }
-  clearProperty<T extends keyof LayerProperties>(key: T): void {
+  clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void {
     delete this.layerProperties[key]
   }
 }
