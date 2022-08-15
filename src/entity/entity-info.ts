@@ -45,6 +45,16 @@ export function getSelectionBox(entityName: string): BBoxClass {
   return (selectionBoxes[entityName] = BBox.load(prototype.selection_box))
 }
 
+const railTypes = newLuaSet("straight-rail", "curved-rail")
+const collisionBoxes: PRecord<string, BBoxClass> = {}
+export function getHighlightBox(entityName: string): BBoxClass {
+  const collisionBox = collisionBoxes[entityName]
+  if (collisionBox) return collisionBox
+  const prototype = game.entity_prototypes[entityName]
+  if (railTypes.has(prototype.type)) return (collisionBoxes[entityName] = BBox.load(prototype.selection_box))
+  return (collisionBoxes[entityName] = BBox.load(prototype.collision_box))
+}
+
 export function _overrideEntityCategory(entityName: string, categoryName: string): void {
   categoryNames[entityName] = categoryName as CategoryName
 }

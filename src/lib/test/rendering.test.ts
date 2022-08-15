@@ -21,6 +21,7 @@ describe("line", () => {
       width: 1,
     })
     assert.true(obj.valid)
+    assert.equal("_RenderObj", obj.object_name)
     assert.equal(game.surfaces[1], obj.surface)
     assert.same({ x: 1, y: 1 }, obj.from.position)
     obj.set_from({ x: 1, y: 2 })

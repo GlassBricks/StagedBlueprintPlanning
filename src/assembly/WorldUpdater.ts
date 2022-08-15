@@ -51,7 +51,7 @@ export function createWorldUpdater(
 ): WorldUpdater {
   const { createEntity, updateEntity } = entityCreator
   const { updateWireConnections } = wireHandler
-  const { updateHighlights, deleteAllHighlights } = highlighter
+  const { updateEntityPreviewHighlight, updateHighlights, deleteAllHighlights } = highlighter
 
   function updateWorldEntities(
     assembly: AssemblyContent,
@@ -64,7 +64,7 @@ export function createWorldUpdater(
     const baseLayer = entity.getBaseLayer()
     const maxLayer = luaLength(layers)
 
-    if (startLayer < baseLayer) startLayer = baseLayer
+    if (startLayer < 1) startLayer = 1
     if (!endLayer || endLayer > maxLayer) endLayer = maxLayer
     if (startLayer > endLayer) return
 
@@ -73,6 +73,12 @@ export function createWorldUpdater(
     const direction = entity.direction ?? 0
 
     for (const [layerNum, value] of entity.iterateValues(startLayer, endLayer)) {
+      updateEntityPreviewHighlight(assembly, entity, layerNum, value === nil)
+      if (value === nil) {
+        entity.destroyWorldEntity(layerNum, "mainEntity")
+        continue
+      }
+
       const existing = entity.getWorldEntity(layerNum)
       let luaEntity: LuaEntity | undefined
       if (existing && !replace) {

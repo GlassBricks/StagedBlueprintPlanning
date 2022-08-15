@@ -167,11 +167,11 @@ function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): v
   assert.equal(luaEntity, added.getWorldEntity(layer.layerNumber))
 
   assertOneEntity()
-  assertUpdateCalled(added, layer.layerNumber + 1, nil, false)
+  assertUpdateCalled(added, 1, nil, false)
 }
 
 describe("add", () => {
-  test("updates later layers", () => {
+  test("updates all layers", () => {
     const { added, luaEntity } = addEntity()
     assertAdded(added, luaEntity)
   })
@@ -330,8 +330,7 @@ describe("update", () => {
     assertUpdateCalled(added, 1, nil, false)
   })
 
-  test.each(
-    [false, true],
+  test.each([false, true])(
     "in higher layer updates content and entities, with existing changes: %s",
     (withExistingChanges) => {
       const { luaEntity, added } = addAndReset(1, 2)
@@ -478,7 +477,7 @@ describe("circuit wires", () => {
     const { added: entity2 } = addEntity()
     assertSingleWireMatches(entity2, entity1)
 
-    assertUpdateCalled(entity2, 2, nil, false)
+    assertUpdateCalled(entity2, 1, nil, false)
     assertNEntities(2)
   })
 

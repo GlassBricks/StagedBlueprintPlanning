@@ -77,7 +77,6 @@ export function createAssemblyUpdater(
     }
 
     if (!saved) return
-
     // add new entity
     const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
     content.add(assemblyEntity)
@@ -85,7 +84,7 @@ export function createAssemblyUpdater(
 
     updateCircuitWires(assembly, assemblyEntity, layerNumber, entity)
 
-    updateWorldEntities(assembly, assemblyEntity, layerNumber + 1)
+    updateWorldEntities(assembly, assemblyEntity, 1)
     return assemblyEntity
   }
 

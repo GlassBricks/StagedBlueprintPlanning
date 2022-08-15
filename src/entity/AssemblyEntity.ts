@@ -20,6 +20,7 @@ import {
   shallowCopy,
 } from "../lib"
 import { Position } from "../lib/geometry"
+import { RenderObj } from "../lib/rendering"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
 import { Entity, EntityPose } from "./Entity"
 import { CategoryName, getEntityCategory } from "./entity-info"
@@ -75,10 +76,10 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   moveToLayer(layer: LayerNumber): void
 
   /** Returns nil if world entity does not exist or is invalid */
-  getWorldEntity(layer: LayerNumber): LuaEntity | nil
+  getWorldEntity(layer: LayerNumber): WorldEntities["mainEntity"] | nil
   getWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): WorldEntities[T] | nil
   /** Destroys the old world entity, if exists. If `entity` is not nil, sets the new world entity. */
-  replaceWorldEntity(layer: LayerNumber, entity: LuaEntity | nil): void
+  replaceWorldEntity(layer: LayerNumber, entity: WorldEntities["mainEntity"] | nil): void
   replaceWorldEntity<T extends WorldEntityType>(layer: LayerNumber, entity: WorldEntities[T] | nil, type: T): void
   destroyWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): void
   hasAnyWorldEntity(type: WorldEntityType): boolean
@@ -97,6 +98,7 @@ export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, Laye
 
 export interface WorldEntities {
   mainEntity?: LuaEntity
+  previewHighlight?: RenderObj<"rectangle">
 }
 export type WorldEntityType = keyof WorldEntities
 type AnyWorldEntity = WorldEntities[keyof WorldEntities]
@@ -232,7 +234,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       if (nextLayer < baseLayer) return $multi(nextLayer, nil)
       if (nextLayer > end) return $multi()
       if (nextLayer === baseLayer) {
-        value = baseValue
+        value = shallowCopy(baseValue)
       } else {
         const diff = layerValues[nextLayer]
         if (diff) applyDiffToEntity(value!, diff)

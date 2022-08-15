@@ -21,7 +21,7 @@ import {
 } from "../../assembly/EntityHighlighter"
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { Pos } from "../../lib/geometry"
+import { BBox, Pos } from "../../lib/geometry"
 import { RenderObj } from "../../lib/rendering"
 import { entityMock, simpleMock } from "../simple-mock"
 
@@ -42,16 +42,49 @@ before_each(() => {
         bounding_box: bbox,
         highlight_box_type: type,
       }),
-    createSprite: (_, position, scale, sprite) =>
+    createSprite: (_, position, orientation, scale, sprite) =>
       simpleMock<RenderObj<"sprite">>({
         target: { position },
+        orientation,
         x_scale: scale,
         y_scale: scale,
         sprite,
       }),
+    createRectangle(
+      surface: LuaSurface,
+      box: BBox,
+      color: Color | ColorArray,
+      filled: boolean,
+    ): RenderObj<"rectangle"> {
+      return simpleMock<RenderObj<"rectangle">>({
+        left_top: { position: box.left_top },
+        right_bottom: { position: box.right_bottom },
+        color,
+        filled,
+      })
+    },
   }
   highlightCreator = createHighlightCreator(entityCreator)
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
+})
+describe("entity preview highlights", () => {
+  test("doesn't create anything if false", () => {
+    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, false)
+    assert.is_nil(entity.getWorldEntity(1, "previewHighlight")!)
+    assert.is_nil(entity.getWorldEntity(1, "previewIcon")!)
+  })
+  test("can create highlights", () => {
+    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, true)
+    assert.not_nil(entity.getWorldEntity(1, "previewHighlight")!)
+    const icon = assert.not_nil(entity.getWorldEntity(1, "previewIcon")!) as RenderObj<"sprite">
+    assert.equal(icon.sprite, "entity/" + entity.getBaseValue().name)
+  })
+  test("can delete highlights", () => {
+    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, true)
+    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, false)
+    assert.is_nil(entity.getWorldEntity(1, "previewHighlight")!)
+    assert.is_nil(entity.getWorldEntity(1, "previewIcon")!)
+  })
 })
 
 describe("error highlights", () => {

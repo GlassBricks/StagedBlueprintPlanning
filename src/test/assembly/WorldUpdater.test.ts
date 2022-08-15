@@ -34,7 +34,7 @@ let wireUpdater: mock.Mocked<WireUpdater>
 let worldUpdater: WorldUpdater
 
 before_each(() => {
-  assembly = createMockAssembly(3)
+  assembly = createMockAssembly(4)
   entity = createAssemblyEntity(
     {
       name: "test",
@@ -50,6 +50,7 @@ before_each(() => {
   highlighter = {
     updateHighlights: spy(),
     deleteAllHighlights: spy(),
+    updateEntityPreviewHighlight: spy(),
   }
 
   worldUpdater = createWorldUpdater(mockEntityCreator, wireUpdater, highlighter)
@@ -100,6 +101,15 @@ describe("with mock entity", () => {
             .called_with(match.ref(assembly), match.ref(entity), i, entity.getWorldEntity(i)!)
       })
 
+      test("calls updateEntityPreviewHighlight", () => {
+        entity.moveToLayer(2)
+        worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+        for (let i = 1; i <= 3; i++)
+          assert
+            .spy(highlighter.updateEntityPreviewHighlight)
+            .called_with(match.ref(assembly), match.ref(entity), i, i < 2)
+      })
+
       function assertDestructible(luaEntity: LuaEntity, value: boolean) {
         assert.equal(value, luaEntity.destructible, `destructible not ${value}`)
         assert.equal(value, luaEntity.minable, `minable not ${value}`)
@@ -107,18 +117,19 @@ describe("with mock entity", () => {
       }
 
       test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {
+        entity.moveToLayer(2)
         if (withExisting) {
-          const luaEntity = mockEntityCreator.createEntity(assembly.layers[2], entity, {
+          const luaEntity = mockEntityCreator.createEntity(assembly.layers[3], entity, {
             name: "test",
             prop1: 10,
           } as TestEntity)!
-          entity.replaceWorldEntity(2, luaEntity)
+          entity.replaceWorldEntity(3, luaEntity)
         }
-        worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+        worldUpdater.updateWorldEntities(assembly, entity, 1, 4)
 
-        assertDestructible(assertEntityCorrect(1), true)
-        assertDestructible(assertEntityCorrect(2), false)
+        assertDestructible(assertEntityCorrect(2), true)
         assertDestructible(assertEntityCorrect(3), false)
+        assertDestructible(assertEntityCorrect(4), false)
       })
 
       test("can refresh a single entity", () => {
@@ -181,7 +192,7 @@ describe("with mock entity", () => {
       test("out of range is ignored", () => {
         assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1, 5))
         for (let i = -1; i <= 5; i++) {
-          if (i >= 1 && i <= 3) assertEntityCorrect(i)
+          if (i >= 1 && i <= 4) assertEntityCorrect(i)
           else assertEntityNotPresent(i)
         }
       })

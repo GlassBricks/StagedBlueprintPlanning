@@ -62,6 +62,7 @@ interface BaseRenderObj<T extends RenderType> {
   readonly id: uint64
   readonly valid: boolean
   readonly type: T
+  readonly object_name: "_RenderObj"
   destroy(): void
 }
 type AsObj = {
@@ -99,21 +100,24 @@ getters.destroy = (id) => () => {
   rendering.destroy(id)
 }
 
-const otherMethods: {
+const otherProps: {
   [K in keyof OtherSetters]: (this: BaseRenderObj<RenderType>, ...args: any[]) => void
+} & {
+  object_name: BaseRenderObj<any>["object_name"]
 } = {} as any
 for (const key of otherSetterKeys) {
   const set = rendering[key] as (id: uint64, ...args: any) => void
-  otherMethods[key] = function (this: BaseRenderObj<RenderType>, ...args: any[]) {
+  otherProps[key] = function (this: BaseRenderObj<RenderType>, ...args: any[]) {
     set(this.id, ...args)
   }
 }
+otherProps.object_name = "_RenderObj"
 
 const metatable: LuaMetatable<BaseRenderObj<RenderType>, any> = {
   __index(this: BaseRenderObj<RenderType>, key: string) {
     const getter = getters[key as keyof Getters]
     if (getter) return getter(this.id)
-    return otherMethods[key as keyof OtherSetters]
+    return otherProps[key as keyof OtherSetters]
   },
   __newindex(this: BaseRenderObj<RenderType>, key: string, value: any) {
     const setter = setters[key as keyof Setters]
