@@ -67,6 +67,9 @@ namespace Pos {
   export function ceil(pos1: Position): PositionClass {
     return Pos(_ceil(pos1.x), _ceil(pos1.y))
   }
+  export function round(pos1: Position): PositionClass {
+    return Pos(_floor(pos1.x + 0.5), _floor(pos1.y + 0.5))
+  }
   export function floorToNearest(pos1: Position, base: number): PositionClass {
     return Pos(_floor(pos1.x / base) * base, _floor(pos1.y / base) * base)
   }
@@ -79,8 +82,8 @@ namespace Pos {
   export function isZero(pos1: Position): boolean {
     return pos1.x === 0 && pos1.y === 0
   }
-  export function rotateAboutOrigin(pos1: Position, direction: defines.direction): PositionClass {
-    if (direction === defines.direction.north) return Pos.from(pos1)
+  export function rotateAboutOrigin(pos1: Position, direction: defines.direction | nil): PositionClass {
+    if (direction === nil || direction === defines.direction.north) return Pos.from(pos1)
     if (direction === defines.direction.south) return Pos(-pos1.x, -pos1.y)
     if (direction === defines.direction.west) return Pos(pos1.y, -pos1.x)
     if (direction === defines.direction.east) return Pos(-pos1.y, pos1.x)

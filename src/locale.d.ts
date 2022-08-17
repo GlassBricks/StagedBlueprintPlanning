@@ -16,15 +16,19 @@ export declare const enum L_EntityName {
   /** Blueprint entity marker */
   EntityMarker = "entity-name.bp3:entity-marker",
 }
+export declare const enum L_Bp3 {
+  /** __1__ (preview) */
+  PreviewEntity = "bp3.preview-entity",
+}
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp3.interaction.unexpected-error",
-  /** WARNING: this blueprint is not handled by bbpp3. Entities that have [font=default-bold]changed settings[/font] due to pasting this blueprint will not be detected properly. */
+  /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
   BlueprintNotHandled = "bp3.interaction.blueprint-not-handled",
 }
 export declare const enum L_Assembly {
-  /** <Unnamed assembly __1__> */
+  /**  */
   UnnamedAssembly = "bp3.assembly.unnamed-assembly",
-  /** <Layer __1__> */
+  /**  */
   UnnamedLayer = "bp3.assembly.unnamed-layer",
 }

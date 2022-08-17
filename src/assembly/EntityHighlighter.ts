@@ -10,41 +10,34 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import * as util from "util"
+import { Prototypes } from "../constants"
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { getMapColor, getSelectionBox } from "../entity/entity-info"
+import { getSelectionBox } from "../entity/entity-info"
 import { getWorldPosition } from "../entity/EntityHandler"
 import { assertNever } from "../lib"
-import { BBox, Pos, Position } from "../lib/geometry"
-import draw, { DrawParams, RenderObj } from "../lib/rendering"
+import { Position } from "../lib/geometry"
+import draw, { AnyRender, DrawParams, RectangleRender, SpriteRender } from "../lib/rendering"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 
-export type HighlightEntity = HighlightBoxEntity | RenderObj<"sprite"> | RenderObj<"rectangle">
+export type HighlightEntity = HighlightBoxEntity | SpriteRender | RectangleRender
 export interface HighlightEntities {
-  /** Outline on the floor for entity previews. */
-  previewHighlight?: HighlightEntity
-  /** Icon for entity previews. */
-  previewIcon?: HighlightEntity
-  /** Error outline when an entity cannot be placed. */
-  errorHighlight?: HighlightEntity
+  /** Error outline when an entity cannot be placed. Should be placed on preview entity. */
+  errorOutline?: HighlightBoxEntity
   /** Indicator sprite when there is an error highlight in another layer. */
-  errorInOtherLayerHighlight?: HighlightEntity
+  errorElsewhereIndicator?: SpriteRender
+
   /** Blue outline when a lost reference entity is left behind. */
-  lostReferenceHighlight?: HighlightEntity
+  lostReferenceHighlight?: HighlightBoxEntity
 
   /** Blue outline when an entity's settings have changed. */
-  configChangedHighlight?: HighlightEntity
+  configChangedHighlight?: HighlightBoxEntity
   /** Blueprint sprite when an entity's settings have changed in a future layer. */
-  configChangedLaterHighlight?: HighlightEntity
-}
-export interface HighlightProperties {
-  hasLostReferenceHighlight?: true
+  configChangedLaterHighlight?: SpriteRender
 }
 declare module "../entity/AssemblyEntity" {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  export interface WorldEntities extends HighlightEntities {}
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  export interface LayerProperties extends HighlightProperties {}
+  export interface WorldEntities extends HighlightEntities {
+    previewEntity?: LuaEntity
+  }
 }
 
 /**
@@ -53,33 +46,38 @@ declare module "../entity/AssemblyEntity" {
  * @noSelf
  */
 export interface EntityHighlighter {
-  updateEntityPreviewHighlight(
+  /** Updates config changed, and error highlights. */
+  updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void
+  updateHighlights(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    layer: LayerNumber,
-    hasPreview: boolean,
+    layerStart: LayerNumber,
+    layerEnd: LayerNumber,
   ): void
-  /** Updates lost reference, config changed, and error highlights. */
-  updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void
-  deleteAllHighlights(entity: AssemblyEntity): void
+
+  deleteEntity(entity: AssemblyEntity): void
+  makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
+  reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
 
 /** @noSelf */
 export interface HighlightCreator {
-  createHighlightBox(
-    surface: LuaSurface,
-    position: Position,
-    bbox: BoundingBox,
-    type: CursorBoxRenderType,
-  ): LuaEntity | nil
+  createHighlightBox(target: LuaEntity, type: CursorBoxRenderType): LuaEntity | nil
 
-  createSprite(params: DrawParams["sprite"]): RenderObj<"sprite">
-  createRectangle(surface: LuaSurface, box: BBox, color: Color | ColorArray, filled: boolean): RenderObj<"rectangle">
+  createSprite(params: DrawParams["sprite"]): SpriteRender
+
+  createEntityPreview(
+    surface: LuaSurface,
+    type: string,
+    position: Position,
+    direction: defines.direction | nil,
+  ): LuaEntity | nil
 }
 
 interface HighlightConfig {
   readonly type: "highlight"
   readonly renderType: CursorBoxRenderType
+  readonly target: "mainEntity" | "previewEntity"
 }
 
 interface SpriteConfig {
@@ -91,48 +89,25 @@ interface SpriteConfig {
   readonly scaleRelative?: boolean
   readonly renderLayer: RenderLayer
 }
-interface RectangleConfig {
-  readonly type: "rectangle"
-  readonly color: Color | ColorArray
-  readonly filled: boolean
-}
-
 export const enum HighlightValues {
-  DefaultIcon = "utility/close_black",
   Error = "not-allowed",
-  ErrorInOtherLayer = "utility/danger_icon",
   LostReference = "train-visualization",
   ConfigChanged = "logistics",
   Upgraded = "copy",
+  ErrorInOtherLayer = "utility/danger_icon",
   ConfigChangedLater = "item/blueprint",
   UpgradedLater = "item/upgrade-planner",
 }
-export const HighlightColors = {
-  previewColor: [0.4, 0.4, 0.4, 0.1],
-  previewIconTint: [0.4, 0.4, 0.4, 0.6],
-} as const
+
 const highlightConfigs: {
-  [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig | RectangleConfig
+  [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig
 } = {
-  previewHighlight: {
-    type: "rectangle",
-    color: HighlightColors.previewColor,
-    filled: true,
-  },
-  previewIcon: {
-    type: "sprite",
-    sprite: HighlightValues.DefaultIcon,
-    offset: { x: 0.5, y: 0.5 },
-    scale: 0.9,
-    scaleRelative: true,
-    tint: HighlightColors.previewIconTint,
-    renderLayer: "floor",
-  },
-  errorHighlight: {
+  errorOutline: {
     type: "highlight",
     renderType: HighlightValues.Error,
+    target: "previewEntity",
   },
-  errorInOtherLayerHighlight: {
+  errorElsewhereIndicator: {
     type: "sprite",
     sprite: HighlightValues.ErrorInOtherLayer,
     offset: { x: 0.2, y: 0.1 },
@@ -142,10 +117,12 @@ const highlightConfigs: {
   lostReferenceHighlight: {
     type: "highlight",
     renderType: HighlightValues.LostReference,
+    target: "previewEntity",
   },
   configChangedHighlight: {
     type: "highlight",
     renderType: HighlightValues.ConfigChanged,
+    target: "mainEntity",
   },
   configChangedLaterHighlight: {
     type: "sprite",
@@ -159,7 +136,7 @@ const highlightConfigs: {
 declare const luaLength: LuaLength<table, number>
 
 export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
-  const { createHighlightBox, createSprite, createRectangle } = entityCreator
+  const { createHighlightBox, createSprite, createEntityPreview } = entityCreator
 
   function createHighlight<T extends keyof HighlightEntities>(
     entity: AssemblyEntity,
@@ -172,16 +149,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     const config = highlightConfigs[type]
     const prototypeName = entity.getBaseValue().name
     const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
-    let result: LuaEntity | RenderObj | nil
+    let result: LuaEntity | AnyRender | nil
     if (config.type === "highlight") {
-      const worldSelectionBox = BBox.translate(
-        selectionBox.rotateAboutOrigin(entity.direction),
-        getWorldPosition(layer, entity),
-      )
-      result = createHighlightBox(layer.surface, entity.position, worldSelectionBox, config.renderType)
+      const { renderType, target } = config
+      const entityTarget = entity.getWorldEntity(layer.layerNumber, target)
+      result = entityTarget && createHighlightBox(entityTarget!, renderType)
     } else if (config.type === "sprite") {
       const size = selectionBox.size()
-      const relativePosition = Pos.plus(selectionBox.left_top, size.emul(config.offset))
+      const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
       const worldPosition = relativePosition.plus(getWorldPosition(layer, entity))
       const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
       result = createSprite({
@@ -193,12 +168,6 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
         tint: config.tint,
         render_layer: config.renderLayer,
       })
-    } else if (config.type === "rectangle") {
-      const worldSelectionBox = BBox.translate(
-        selectionBox.rotateAboutOrigin(entity.direction),
-        getWorldPosition(layer, entity),
-      )
-      result = createRectangle(layer.surface, worldSelectionBox, config.color, config.filled)
     } else {
       assertNever(config)
     }
@@ -212,7 +181,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function removeHighlightFromAllLayers(entity: AssemblyEntity, type: keyof HighlightEntities): void {
     entity.destroyAllWorldEntities(type)
   }
-  function setHighlight(
+  function updateHighlight(
     entity: AssemblyEntity,
     layer: LayerPosition,
     type: keyof HighlightEntities,
@@ -223,22 +192,40 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     return nil
   }
 
-  function updateEntityPreviewHighlight(
+  function makePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
+    const preview = createEntityPreview(
+      layer.surface,
+      entity.getNameAtLayer(layer.layerNumber),
+      getWorldPosition(layer, entity),
+      entity.direction,
+    )
+    entity.replaceWorldEntity(layer.layerNumber, preview, "previewEntity")
+    return preview
+  }
+
+  function getOrCreatePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
+    const existing = entity.getWorldEntity(layer.layerNumber, "previewEntity")
+    if (!existing || existing.name !== Prototypes.PreviewEntityPrefix + entity.getNameAtLayer(layer.layerNumber)) {
+      return makePreviewEntity(entity, layer)
+    } else if (existing) {
+      existing.direction = entity.direction ?? 0
+      return existing
+    }
+  }
+
+  function updateAllPreviewEntities(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    layer: LayerNumber,
-    hasPreview: boolean,
+    layerStart: number | undefined,
+    layerEnd: number | undefined,
   ): void {
-    const entityName = entity.getBaseValue().name
-    const highlight = setHighlight(entity, assembly.layers[layer], "previewHighlight", hasPreview) as
-      | RenderObj<"rectangle">
-      | nil
-    if (highlight) {
-      highlight.color = util.mix_color(getMapColor(entityName), HighlightColors.previewIconTint as Color)
-    }
-    const icon = setHighlight(entity, assembly.layers[layer], "previewIcon", hasPreview) as RenderObj<"sprite"> | nil
-    if (icon) {
-      icon.sprite = "entity/" + entityName
+    for (const i of $range(layerStart ?? 1, layerEnd ?? luaLength(assembly.layers))) {
+      const shouldHavePreview = entity.getWorldEntity(i, "mainEntity") === nil
+      if (shouldHavePreview) {
+        getOrCreatePreviewEntity(entity, assembly.layers[i])
+      } else {
+        entity.destroyWorldEntity(i, "previewEntity")
+      }
     }
   }
 
@@ -256,8 +243,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       const hasErrorInOtherLayer = !hasError && hasErrorAnywhere
 
       const layer = assembly.layers[i]
-      setHighlight(entity, layer, "errorHighlight", hasError)
-      setHighlight(entity, layer, "errorInOtherLayerHighlight", hasErrorInOtherLayer)
+      if (hasError) getOrCreatePreviewEntity(entity, layer)
+      updateHighlight(entity, layer, "errorOutline", hasError)
+      updateHighlight(entity, layer, "errorElsewhereIndicator", hasErrorInOtherLayer)
     }
   }
 
@@ -267,7 +255,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     for (const i of $range(baseLayer, luaLength(assembly.layers))) {
       const hasConfigChanged = entity.hasLayerChange(i)
       const isUpgrade = hasConfigChanged && entity.getLayerChange(i)!.name !== nil
-      const highlight = setHighlight(entity, assembly.layers[i], "configChangedHighlight", hasConfigChanged)
+      const highlight = updateHighlight(entity, assembly.layers[i], "configChangedHighlight", hasConfigChanged)
       if (highlight) {
         ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
           ? HighlightValues.Upgraded
@@ -278,12 +266,12 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       // update configChangedLaterHighlights in previous layers
       const sprite = isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater
       for (; lastLayerWithHighlights < i; lastLayerWithHighlights++) {
-        const highlight = setHighlight(
+        const highlight = updateHighlight(
           entity,
           assembly.layers[lastLayerWithHighlights],
           "configChangedLaterHighlight",
           true,
-        ) as RenderObj<"sprite">
+        ) as SpriteRender
         highlight.sprite = sprite
       }
     }
@@ -296,75 +284,76 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       }
     }
   }
-
-  function updateLostReferenceHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    const isLost = entity.isLostReference === true
-    const hasHighlight = entity.propertySetInAnyLayer("hasLostReferenceHighlight")
-    if (isLost === hasHighlight) return
-    if (isLost) {
-      removeAllHighlights(entity)
-
-      entity.setProperty(entity.getBaseLayer(), "hasLostReferenceHighlight", true)
-      for (const layer of $range(entity.getBaseLayer(), luaLength(assembly.layers))) {
-        createHighlight(entity, assembly.layers[layer], "lostReferenceHighlight")
-      }
-    } else {
-      entity.clearPropertyInAllLayers("hasLostReferenceHighlight")
-      removeHighlightFromAllLayers(entity, "lostReferenceHighlight")
-    }
+  function updateHighlights(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity,
+    layerStart?: LayerNumber,
+    layerEnd?: LayerNumber,
+  ): void {
+    updateAllPreviewEntities(assembly, entity, layerStart, layerEnd)
+    updateAllErrorHighlights(assembly, entity)
+    updateAllConfigChangedHighlights(assembly, entity)
   }
 
-  function updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    updateLostReferenceHighlights(assembly, entity)
-    if (!entity.isLostReference) {
-      updateAllErrorHighlights(assembly, entity)
-      updateAllConfigChangedHighlights(assembly, entity)
+  function makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    if (!entity.isLostReference) return
+    for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
+    for (const i of $range(1, luaLength(assembly.layers))) {
+      getOrCreatePreviewEntity(entity, assembly.layers[i])
+      updateHighlight(entity, assembly.layers[i], "lostReferenceHighlight", true)
     }
   }
+  function reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    if (entity.isLostReference) return
+    entity.destroyAllWorldEntities("lostReferenceHighlight")
+    updateHighlights(assembly, entity)
+  }
 
-  function removeAllHighlights(entity: AssemblyEntity): void {
-    for (const type of keys<HighlightEntities>()) {
-      removeHighlightFromAllLayers(entity, type)
-    }
-    for (const prop of keys<HighlightProperties>()) {
-      entity.clearPropertyInAllLayers(prop)
-    }
+  function deleteEntity(entity: AssemblyEntity): void {
+    for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
+    entity.destroyAllWorldEntities("previewEntity")
   }
 
   return {
-    updateEntityPreviewHighlight,
     updateHighlights,
-    deleteAllHighlights: removeAllHighlights,
+    deleteEntity,
+    makeLostReference,
+    reviveLostReference,
   }
 }
 
 export const DefaultHighlightCreator: HighlightCreator = {
-  createHighlightBox(
-    surface: LuaSurface,
-    position: Position,
-    bbox: BoundingBox,
-    type: CursorBoxRenderType,
-  ): LuaEntity | nil {
-    return surface.create_entity({
+  createHighlightBox(target: LuaEntity, type: CursorBoxRenderType): LuaEntity | nil {
+    return target.surface.create_entity({
       name: "highlight-box",
-      position,
-      bounding_box: bbox,
+      position: target.position,
+      target,
       box_type: type,
-      force: "player",
+      force: target.force,
     })
   },
-  createSprite(params: DrawParams["sprite"]): RenderObj<"sprite"> {
+  createSprite(params: DrawParams["sprite"]): SpriteRender {
     return draw("sprite", params)
   },
-  createRectangle(surface: LuaSurface, box: BBox, color: Color | ColorArray, filled: boolean): RenderObj<"rectangle"> {
-    return draw("rectangle", {
-      surface,
-      left_top: box.left_top,
-      right_bottom: box.right_bottom,
-      color,
-      filled,
-      draw_on_ground: true,
+  createEntityPreview(
+    surface: LuaSurface,
+    type: string,
+    position: Position,
+    direction: defines.direction | nil,
+  ): LuaEntity | nil {
+    const name = Prototypes.PreviewEntityPrefix + type
+    const result = surface.create_entity({
+      name,
+      position,
+      direction,
+      force: "player",
     })
+    if (result) {
+      result.destructible = false
+      result.minable = false
+      result.rotatable = false
+    }
+    return result
   },
 }
 

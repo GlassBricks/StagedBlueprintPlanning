@@ -9,11 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const enum CustomInputs {
-  Build = "bp3:build",
-  RemovePoleCables = "bp3:remove-pole-cables",
-}
-
-export const enum Prototypes {
-  EntityMarker = "bp3:entity-marker",
+/**
+ * @noSelf
+ * @noResolution
+ */
+declare module "collision_mask_util" {
+  export function get_first_unused_layer(): CollisionMaskLayer
 }

@@ -11,25 +11,18 @@
 
 import { Data } from "typed-factorio/data/types"
 import { CustomInputs, Prototypes } from "./constants"
+import { CustomInputPrototype, ItemPrototype, SimpleEntityPrototype, Sprite } from "./declarations/data"
 
 declare const data: Data
 
-interface CustomInput {
-  type: "custom-input"
-  name: string
-
-  key_sequence: string
-  linked_game_control?: string
-}
-
-const buildInput: CustomInput = {
+const buildInput: CustomInputPrototype = {
   type: "custom-input",
   name: CustomInputs.Build,
 
   key_sequence: "",
   linked_game_control: "build",
 }
-const removePoleCablesInput: CustomInput = {
+const removePoleCablesInput: CustomInputPrototype = {
   name: CustomInputs.RemovePoleCables,
   type: "custom-input",
 
@@ -39,49 +32,21 @@ const removePoleCablesInput: CustomInput = {
 
 data.extend([buildInput, removePoleCablesInput])
 
-interface Sprite {
-  filename: string
-  width: number
-  height: number
-  priority?: SpritePriority
-}
-type SpritePriority = "extra-high-no-scale" | "extra-high" | "high" | "medium" | "low" | "very-low" | "no-atlas"
-
 const emptySprite: Sprite = {
   filename: "__core__/graphics/empty.png",
   width: 1,
   height: 1,
 }
 
-interface SimpleEntity {
-  type: "simple-entity"
-  name: string
-
-  // picture?: Sprite
-  pictures?: Sprite | [Sprite, Sprite, Sprite, Sprite]
-  flags: Array<keyof EntityPrototypeFlags>
-  collision_mask: Array<keyof CollisionMaskWithFlags>
-}
-
-const entityMarker: SimpleEntity = {
+const entityMarker: SimpleEntityPrototype = {
   type: "simple-entity",
   name: Prototypes.EntityMarker,
-  pictures: [emptySprite, emptySprite, emptySprite, emptySprite],
+  picture: emptySprite,
   flags: ["hidden", "player-creation", "placeable-off-grid"],
   collision_mask: [],
 }
 
-interface Item {
-  type: "item"
-  name: string
-  icon: string
-  icon_size: number
-  stack_size: number
-  flags: Array<keyof ItemPrototypeFlags>
-  place_result?: string
-}
-
-const entityMarkerItem: Item = {
+const entityMarkerItem: ItemPrototype = {
   type: "item",
   name: Prototypes.EntityMarker,
   icon: "__core__/graphics/spawn-flag.png",

@@ -74,9 +74,20 @@ interface KeyRemap {
   tint: "color"
 }
 
-export type RenderObj<T extends RenderType = RenderType> = BaseRenderObj<T> &
+type RenderObj<T extends RenderType = RenderType> = BaseRenderObj<T> &
   Pick<AsObj, (keyof DrawParams[T] & keyof AsObj) | KeyRemap[keyof DrawParams[T] & keyof KeyRemap]> &
   Pick<OtherSetters, `set_${keyof DrawParams[T] & string}` & keyof OtherSetters>
+
+export type SpriteRender = RenderObj<"sprite">
+export type RectangleRender = RenderObj<"rectangle">
+export type CircleRender = RenderObj<"circle">
+export type PolygonRender = RenderObj<"polygon">
+export type TextRender = RenderObj<"text">
+export type ArcRender = RenderObj<"arc">
+export type LineRender = RenderObj<"line">
+export type AnimationRender = RenderObj<"animation">
+export type LightRender = RenderObj<"light">
+export type AnyRender = { [K in RenderType]: RenderObj<K> }[RenderType]
 
 const rendering: LuaRendering = (_G as any).rendering
 

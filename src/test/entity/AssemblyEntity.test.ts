@@ -65,6 +65,15 @@ describe("getValueAtLayer", () => {
 
     assert.same(expected, result)
   })
+
+  test("getNameAtLayer ", () => {
+    assemblyEntity._applyDiffAtLayer(4, { name: "foo2" })
+    assert.same("foo", assemblyEntity.getNameAtLayer(1))
+    assert.same("foo", assemblyEntity.getNameAtLayer(2))
+    assert.same("foo", assemblyEntity.getNameAtLayer(3))
+    assert.same("foo2", assemblyEntity.getNameAtLayer(4))
+    assert.same("foo2", assemblyEntity.getNameAtLayer(5))
+  })
 })
 
 test("hasLayerChanges", () => {

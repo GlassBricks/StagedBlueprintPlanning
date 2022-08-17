@@ -14,7 +14,6 @@ import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { AssemblyContent, LayerPosition } from "./Assembly"
-import { EntityMap } from "./EntityMap"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
@@ -51,7 +50,7 @@ export function createAssemblyUpdater(
   entitySaver: EntitySaver,
   wireSaver: WireSaver,
 ): AssemblyUpdater {
-  const { deleteAllWorldEntities, updateWorldEntities } = worldUpdater
+  const { deleteWorldEntities, updateWorldEntities } = worldUpdater
   const { saveEntity } = entitySaver
   const { getWireConnectionDiff } = wireSaver
 
@@ -112,20 +111,9 @@ export function createAssemblyUpdater(
     if (existing.isLostReference) {
       reviveLostReference(assembly, existing, layerNumber, entity)
     } else {
+      // missing entity revived, update to match
       updateWorldEntities(assembly, existing, layerNumber, layerNumber)
     }
-  }
-
-  function reviveLostReference(
-    assembly: AssemblyContent,
-    existing: AssemblyEntity,
-    layerNumber: LayerNumber,
-    entity: LuaEntity,
-  ): void {
-    existing.isLostReference = nil
-    existing.moveToLayer(layerNumber)
-    existing.replaceWorldEntity(layerNumber, entity)
-    updateWorldEntities(assembly, existing, layerNumber, nil, true)
   }
 
   function entityAddedBelow(
@@ -144,15 +132,16 @@ export function createAssemblyUpdater(
     }
   }
 
-  function findCompatible(
-    content: EntityMap,
+  function reviveLostReference(
+    assembly: AssemblyContent,
+    existing: AssemblyEntity,
+    layerNumber: LayerNumber,
     entity: LuaEntity,
-    layer: LayerPosition,
-    previousDirection?: defines.direction,
-  ): AssemblyEntity | nil {
-    const position = getLayerPosition(layer, entity)
-    const existing = content.findCompatible(entity, position, previousDirection ?? entity.direction)
-    if (existing && layer.layerNumber >= existing.getBaseLayer()) return existing
+  ): void {
+    existing.isLostReference = nil
+    existing.moveToLayer(layerNumber)
+    existing.replaceWorldEntity(layerNumber, entity)
+    worldUpdater.reviveLostReference(assembly, existing)
   }
 
   function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
@@ -174,10 +163,11 @@ export function createAssemblyUpdater(
 
     if (existing.hasLayerChange()) {
       existing.isLostReference = true
+      worldUpdater.makeLostReference(assembly, existing)
     } else {
       content.delete(existing)
+      deleteWorldEntities(assembly, existing)
     }
-    deleteAllWorldEntities(assembly, existing)
   }
 
   function getCompatibleOrAdd(
@@ -186,8 +176,9 @@ export function createAssemblyUpdater(
     layer: LayerPosition,
     previousDirection?: defines.direction,
   ): AssemblyEntity | nil {
-    const compatible = findCompatible(assembly.content, entity, layer, previousDirection)
-    if (compatible) {
+    const position = getLayerPosition(layer, entity)
+    const compatible = assembly.content.findCompatible(entity, position, previousDirection ?? entity.direction)
+    if (compatible && layer.layerNumber >= compatible.getBaseLayer()) {
       compatible.replaceWorldEntity(layer.layerNumber, entity) // just in case
     } else {
       onEntityCreated(assembly, entity, layer)
@@ -215,15 +206,14 @@ export function createAssemblyUpdater(
     if (upgradeTo) newValue.name = upgradeTo
 
     const hasDiff = existing.adjustValueAtLayer(layerNumber, newValue)
-    if (hasDiff || rotateAllowed) {
-      // if rotate or upgrade base value, update all layers
-      if (rotateAllowed || (hasDiff && isBaseLayer)) {
-        updateWorldEntities(assembly, existing, 1)
-      } else {
-        updateWorldEntities(assembly, existing, layerNumber)
-      }
+    if (rotateAllowed || (hasDiff && isBaseLayer)) {
+      // if rotate or upgrade base value, update all layers (including highlights)
+      updateWorldEntities(assembly, existing, 1)
+    } else if (hasDiff) {
+      // update all above layers
+      updateWorldEntities(assembly, existing, layerNumber)
     } else if (rotateTo) {
-      // only this entity (if rotation forbidden)
+      // rotation forbidden, update only this layer
       updateWorldEntities(assembly, existing, layerNumber, layerNumber)
     }
     // else, no diff, do nothing

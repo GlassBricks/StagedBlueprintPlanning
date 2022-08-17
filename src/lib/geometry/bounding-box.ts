@@ -21,7 +21,8 @@ const ceil = math.ceil
 const setmetatable = globalThis.setmetatable
 
 type BBox = BoundingBox
-export type BBoxClass = WithMetatable<BBox, typeof BBox>
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface BBoxClass extends WithMetatable<BBox, typeof BBox> {}
 
 function BBox(left_top: Position, right_bottom: Position): BBoxClass {
   return setmetatable({ left_top, right_bottom }, meta)

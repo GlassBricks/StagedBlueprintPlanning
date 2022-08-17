@@ -21,7 +21,8 @@ import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from ".
 import { getLayerAtPosition } from "./world-register"
 
 function getLayer(entity: LuaEntity): Layer | nil {
-  if (!isWorldEntityAssemblyEntity(entity)) return
+  if (!entity.valid) return nil
+  if (!isWorldEntityAssemblyEntity(entity)) return nil
   const layer = getLayerAtPosition(entity.surface, entity.position)
   if (layer && layer.valid) return layer
 }

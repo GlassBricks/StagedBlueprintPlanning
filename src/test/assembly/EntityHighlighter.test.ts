@@ -21,8 +21,8 @@ import {
 } from "../../assembly/EntityHighlighter"
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { BBox, Pos } from "../../lib/geometry"
-import { RenderObj } from "../../lib/rendering"
+import { Pos } from "../../lib/geometry"
+import { SpriteRender } from "../../lib/rendering"
 import { entityMock, simpleMock } from "../simple-mock"
 
 interface FooEntity extends Entity {
@@ -35,48 +35,39 @@ let highlightCreator: EntityHighlighter
 before_each(() => {
   assembly = createMockAssembly(5)
   const entityCreator: HighlightCreator = {
-    createHighlightBox: (surface, position, bbox, type) =>
+    createHighlightBox: (target, type) =>
       entityMock({
         name: "test-highlight",
-        position,
-        bounding_box: bbox,
+        position: target.position,
         highlight_box_type: type,
       }),
-    createSprite: (params) => simpleMock<RenderObj<"sprite">>(params as any),
-    createRectangle(
-      surface: LuaSurface,
-      box: BBox,
-      color: Color | ColorArray,
-      filled: boolean,
-    ): RenderObj<"rectangle"> {
-      return simpleMock<RenderObj<"rectangle">>({
-        left_top: { position: box.left_top },
-        right_bottom: { position: box.right_bottom },
-        color,
-        filled,
+    createSprite: (params) => simpleMock(params as any),
+    createEntityPreview(surface, type, position, direction): LuaEntity | nil {
+      return entityMock({
+        name: "test-preview",
+        position,
+        direction,
       })
     },
   }
   highlightCreator = createHighlightCreator(entityCreator)
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
-describe("entity preview highlights", () => {
-  test("doesn't create anything if false", () => {
-    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, false)
-    assert.is_nil(entity.getWorldEntity(1, "previewHighlight")!)
-    assert.is_nil(entity.getWorldEntity(1, "previewIcon")!)
+describe("entity previews", () => {
+  test("doesn't create anything if has entity", () => {
+    entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
+    highlightCreator.updateHighlights(assembly, entity)
+    assert.is_nil(entity.getWorldEntity(2, "previewEntity")!)
   })
-  test("can create highlights", () => {
-    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, true)
-    assert.not_nil(entity.getWorldEntity(1, "previewHighlight")!)
-    const icon = assert.not_nil(entity.getWorldEntity(1, "previewIcon")!) as RenderObj<"sprite">
-    assert.equal(icon.sprite, "entity/" + entity.getBaseValue().name)
+  test("can create previews", () => {
+    highlightCreator.updateHighlights(assembly, entity)
+    assert.not_nil(entity.getWorldEntity(1, "previewEntity")!)
   })
-  test("can delete highlights", () => {
-    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, true)
-    highlightCreator.updateEntityPreviewHighlight(assembly, entity, 1, false)
-    assert.is_nil(entity.getWorldEntity(1, "previewHighlight")!)
-    assert.is_nil(entity.getWorldEntity(1, "previewIcon")!)
+  test("can delete previews", () => {
+    highlightCreator.updateHighlights(assembly, entity)
+    entity.replaceWorldEntity(1, simpleMock<LuaEntity>())
+    highlightCreator.updateHighlights(assembly, entity)
+    assert.is_nil(entity.getWorldEntity(1, "previewEntity")!)
   })
 })
 
@@ -88,19 +79,16 @@ describe("error highlights", () => {
   })
   test("creates highlight when world entity missing", () => {
     entity.destroyWorldEntity(2, "mainEntity")
-    highlightCreator.updateHighlights(assembly, entity)
-    const highlight = entity.getWorldEntity(2, "errorHighlight")!
-    assert.not_nil(highlight)
+    highlightCreator.updateHighlights(assembly, entity, 2, 2)
+    assert.not_nil(entity.getWorldEntity(2, "errorOutline")!)
   })
 
   test("deletes highlight when set to false", () => {
     entity.destroyWorldEntity(2, "mainEntity")
-    highlightCreator.updateHighlights(assembly, entity)
-    const highlight = entity.getWorldEntity(2, "errorHighlight")!
+    highlightCreator.updateHighlights(assembly, entity, 2, 2)
     entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
-    highlightCreator.updateHighlights(assembly, entity)
-    assert.false(highlight.valid)
-    assert.nil(entity.getWorldEntity(2, "errorHighlight"))
+    highlightCreator.updateHighlights(assembly, entity, 2, 2)
+    assert.nil(entity.getWorldEntity(2, "errorOutline"))
   })
 
   test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other layers, %s", (layers) => {
@@ -113,9 +101,9 @@ describe("error highlights", () => {
 
     for (let i = 1; i < 5; i++) {
       if (i === 1 || layerSet.has(i)) {
-        assert.nil(entity.getWorldEntity(i, "errorInOtherLayerHighlight"), `should not have indicator in layer ${i}`)
+        assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should not have indicator in layer ${i}`)
       } else {
-        assert.not_nil(entity.getWorldEntity(i, "errorInOtherLayerHighlight"), `should have indicator in layer ${i}`)
+        assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should have indicator in layer ${i}`)
       }
     }
   })
@@ -124,22 +112,25 @@ describe("error highlights", () => {
     entity.destroyWorldEntity(2, "mainEntity")
     entity.destroyWorldEntity(3, "mainEntity")
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorInOtherLayerHighlight"), `layer ${i}`)
+    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `layer ${i}`)
     entity.replaceWorldEntity(3, simpleMock<LuaEntity>())
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorInOtherLayerHighlight"), `layer ${i}`)
+    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `layer ${i}`)
     entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorInOtherLayerHighlight"), `layer ${i}`)
+    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `layer ${i}`)
   })
 
   test("does nothing if created in lower layer", () => {
     highlightCreator.updateHighlights(assembly, entity)
-    assert.nil(entity.getWorldEntity(1, "errorHighlight"))
+    assert.nil(entity.getWorldEntity(1, "errorOutline"))
   })
 })
 
 describe("config changed highlight", () => {
+  before_each(() => {
+    for (const i of $range(1, 5)) entity.replaceWorldEntity(i, entityMock({ name: "test" }))
+  })
   function setAt(layer: LayerNumber) {
     assert(layer >= 2)
     ;(entity._getLayerChanges() as any)[layer] = { foo: layer }
@@ -161,11 +152,7 @@ describe("config changed highlight", () => {
       const highlight = assert.not_nil(
         entity.getWorldEntity(layerNumber, "configChangedHighlight"),
       ) as HighlightBoxEntity
-      assert.equal(
-        isUpgrade ? HighlightValues.Upgraded : HighlightValues.ConfigChanged,
-        highlight.highlight_box_type,
-        "highlight type",
-      )
+      assert.equal(isUpgrade ? HighlightValues.Upgraded : "logistics", highlight.highlight_box_type, "highlight type")
 
       const firstI = i
       for (; i < layerNumber; i++) {
@@ -175,8 +162,8 @@ describe("config changed highlight", () => {
         const highlight = assert.not_nil(
           entity.getWorldEntity(i, "configChangedLaterHighlight"),
           `layer ${i}`,
-        ) as RenderObj<"sprite">
-        assert.equal(isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater, highlight.sprite)
+        ) as SpriteRender
+        assert.equal(isUpgrade ? HighlightValues.UpgradedLater : "item/blueprint", highlight.sprite)
       }
     }
     for (let j = i; j <= 5; j++) {
@@ -222,31 +209,29 @@ describe("config changed highlight", () => {
   })
 })
 
-describe("lost reference highlights", () => {
-  test("does nothing if not a lost reference", () => {
-    highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(2, "lostReferenceHighlight"))
-  })
-  test("creates lost reference highlights in layers above base if lost reference", () => {
-    entity.isLostReference = true
-    highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 2; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
-    assert.nil(entity.getWorldEntity(1, "lostReferenceHighlight"))
-  })
-  test("deletes lost reference highlights if no longer lost reference", () => {
-    entity.isLostReference = true
-    highlightCreator.updateHighlights(assembly, entity)
-    entity.isLostReference = nil
-    highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
-  })
+test("makeLostReference creates highlights", () => {
+  entity.isLostReference = true
+  highlightCreator.makeLostReference(assembly, entity)
+  for (let i = 1; i <= 5; i++) {
+    assert.not_nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
+  }
+})
+test("deleteLostReference removes highlights and sets entities correct", () => {
+  entity.isLostReference = true
+  highlightCreator.makeLostReference(assembly, entity)
+  entity.isLostReference = nil
+  highlightCreator.reviveLostReference(assembly, entity)
+  for (let i = 1; i <= 5; i++) {
+    assert.nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
+    assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
+  }
 })
 
 test("deleteErrorHighlights deletes all highlights", () => {
   entity.destroyWorldEntity(2, "mainEntity")
   entity.destroyWorldEntity(3, "mainEntity")
   highlightCreator.updateHighlights(assembly, entity)
-  highlightCreator.deleteAllHighlights(entity)
+  highlightCreator.deleteEntity(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
       assert.nil(entity.getWorldEntity(i, type), `layer ${i}`)

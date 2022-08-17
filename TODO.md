@@ -107,8 +107,8 @@
 
 ### Queue
 
-- [ ] Improve lost reference highlight
-- [ ] Entity sprite on overlap
+- [x] Improve lost reference highlight
+- [x] Entity sprite on overlap
 - [ ] Lost reference stuff
 - [ ] Loss of information stuff
     - [ ] Change behavior of add below to match entity

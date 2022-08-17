@@ -32,7 +32,7 @@ let content: MutableEntityMap
 let assembly: AssemblyContent
 
 let assemblyUpdater: AssemblyUpdater
-let worldUpdater: WorldUpdater
+let worldUpdater: mock.Stubbed<WorldUpdater>
 let wireSaver: mock.Stubbed<WireSaver>
 before_all(() => {
   _overrideEntityCategory("test", "test")
@@ -52,7 +52,9 @@ before_each(() => {
   }
   worldUpdater = {
     updateWorldEntities: spyFn(),
-    deleteAllWorldEntities: spyFn(),
+    deleteWorldEntities: spyFn(),
+    makeLostReference: spyFn(),
+    reviveLostReference: spyFn(),
   }
   wireSaver = {
     getWireConnectionDiff: stub<WireSaver["getWireConnectionDiff"]>().invokes(() => $multi([], [])),
@@ -137,7 +139,17 @@ function assertUpdateCalled(
 function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.deleteAllWorldEntities as any).called_with(match.not_nil(), entity)
+  assert.spy(worldUpdater.deleteWorldEntities).called_with(match.not_nil(), entity)
+}
+function assertMakeLostReferenceCalled(entity: AssemblyEntity<TestEntity>) {
+  eventsAsserted = true
+  assert.equal(1, totalCalls)
+  assert.spy(worldUpdater.makeLostReference).called_with(assembly, entity)
+}
+function assertReviveLostReferenceCalled(entity: AssemblyEntity<TestEntity>) {
+  eventsAsserted = true
+  assert.equal(1, totalCalls)
+  assert.spy(worldUpdater.reviveLostReference).called_with(assembly, entity)
 }
 
 function assertOneEntity() {
@@ -236,13 +248,13 @@ describe("delete", () => {
     assertDeleteAllEntitiesCalled(added)
   })
 
-  test("in base layer with updates also creates lost reference", () => {
+  test("in base layer with updates creates lost reference", () => {
     const { luaEntity, added } = addAndReset()
     added._applyDiffAtLayer(2, { prop1: 3 })
     assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
     assertOneEntity()
     assert.true(added.isLostReference)
-    assertDeleteAllEntitiesCalled(added)
+    assertMakeLostReferenceCalled(added)
   })
 })
 
@@ -270,7 +282,7 @@ describe("revive", () => {
     }
 
     assertOneEntity()
-    assertUpdateCalled(added, reviveLayer, nil, true)
+    assertReviveLostReferenceCalled(added)
   })
 
   test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
@@ -293,7 +305,7 @@ describe("revive", () => {
     }
 
     assertOneEntity()
-    assertUpdateCalled(added, 1, nil, true)
+    assertReviveLostReferenceCalled(added)
   })
 })
 

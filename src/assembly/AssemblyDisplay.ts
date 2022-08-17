@@ -11,7 +11,7 @@
 
 import { assertNever, bind, RegisterClass } from "../lib"
 import { Observer, Subscription } from "../lib/observable"
-import draw, { RenderObj } from "../lib/rendering"
+import draw, { AnyRender, TextRender } from "../lib/rendering"
 import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
 
 /**
@@ -19,7 +19,7 @@ import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
  */
 @RegisterClass("AssemblyDisplay")
 class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
-  private highlights: RenderObj[][] = []
+  private highlights: AnyRender[][] = []
   private subscription: Subscription | undefined
 
   public invoke(_: Subscription, event: AssemblyChangeEvent) {
@@ -60,7 +60,7 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
     this.subscription = layer.displayName.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, text))
   }
 
-  private static onLayerNameChange(this: void, text: RenderObj<"text">, _: unknown, name: LocalisedString): void {
+  private static onLayerNameChange(this: void, text: TextRender, _: unknown, name: LocalisedString): void {
     text.text = name
   }
 

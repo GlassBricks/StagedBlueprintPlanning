@@ -43,7 +43,6 @@ function isModifiedBlueprint(stack: BlueprintItemStack): boolean {
 }
 
 function modifyBlueprint(stack: BlueprintItemStack): void {
-  game.print("modifyBlueprint")
   const entities = stack.get_blueprint_entities()
   if (!entities) return
   const numEntities = entities.length

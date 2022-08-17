@@ -37,7 +37,7 @@ export function simpleMock<T extends LuaObjectLike | LuaObject>(value?: Partial<
 
 export interface MockCreateEntity {
   readonly name: string
-  readonly position: MapPosition
+  readonly position?: MapPosition
   readonly direction?: defines.direction
 }
 
@@ -48,6 +48,7 @@ function noop() {
 export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Partial<T>): T {
   return simpleMock<T>({
     direction: 0,
+    position: { x: 0, y: 0 },
     ...params,
     object_name: "LuaEntity",
     destructible: true,

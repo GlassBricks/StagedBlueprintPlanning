@@ -20,7 +20,6 @@ import {
   shallowCopy,
 } from "../lib"
 import { Position } from "../lib/geometry"
-import { RenderObj } from "../lib/rendering"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
 import { Entity, EntityPose } from "./Entity"
 import { CategoryName, getEntityCategory } from "./entity-info"
@@ -44,6 +43,9 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   /** @return the value at a given layer. Nil if below the first layer. The result is a new table. */
   getValueAtLayer(layer: LayerNumber): T | nil
+
+  /** Gets the entity name at the given layer. If below the first layer, returns the base entity name. */
+  getNameAtLayer(layer: LayerNumber): string
 
   /**
    * Adjusts diff so that the value at the given layer matches the given value.
@@ -89,7 +91,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   iterateWorldEntities<T extends WorldEntityType>(type: T): LuaIterable<LuaMultiReturn<[LayerNumber, WorldEntities[T]]>>
 
   setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void
-  getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil
+  getProperty<T extends keyof LayerProperties>(layr: LayerNumber, key: T): LayerProperties[T] | nil
   propertySetInAnyLayer(key: keyof LayerProperties): boolean
   clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void
 }
@@ -98,7 +100,6 @@ export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, Laye
 
 export interface WorldEntities {
   mainEntity?: LuaEntity
-  previewHighlight?: RenderObj<"rectangle">
 }
 export type WorldEntityType = keyof WorldEntities
 type AnyWorldEntity = WorldEntities[keyof WorldEntities]
@@ -173,6 +174,16 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       applyDiffToEntity(value, diff)
     }
     return value
+  }
+
+  public getNameAtLayer(layer: LayerNumber): string {
+    let name = this.baseValue.name
+    if (layer <= this.baseLayer) return name
+    for (const [changedLayer, diff] of pairs(this.layerChanges)) {
+      if (changedLayer > layer) break
+      if (diff.name) name = diff.name
+    }
+    return name
   }
 
   adjustValueAtLayer(layer: LayerNumber, value: T): boolean {
@@ -351,9 +362,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return byType && byType[layer]
   }
   propertySetInAnyLayer(key: keyof LayerProperties): boolean {
-    const byType = this.layerProperties[key]
-    if (!byType) return false
-    return next(byType)[0] !== nil
+    return this.layerProperties[key] !== nil
   }
   clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void {
     delete this.layerProperties[key]

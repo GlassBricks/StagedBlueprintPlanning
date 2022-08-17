@@ -38,8 +38,10 @@ export interface WorldUpdater {
     replace?: boolean,
   ): void
 
-  /** If the entity is a lost reference, creates lost reference highlights. */
-  deleteAllWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void
+  deleteWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void
+
+  makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
+  reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
@@ -51,29 +53,20 @@ export function createWorldUpdater(
 ): WorldUpdater {
   const { createEntity, updateEntity } = entityCreator
   const { updateWireConnections } = wireHandler
-  const { updateEntityPreviewHighlight, updateHighlights, deleteAllHighlights } = highlighter
+  const { updateHighlights } = highlighter
 
-  function updateWorldEntities(
+  function doUpdateWorldEntities(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    startLayer: LayerNumber,
-    endLayer?: LayerNumber,
-    replace?: boolean,
+    startLayer: number,
+    endLayer: number,
+    replace: boolean | undefined,
   ): void {
     const { layers } = assembly
     const baseLayer = entity.getBaseLayer()
-    const maxLayer = luaLength(layers)
-
-    if (startLayer < 1) startLayer = 1
-    if (!endLayer || endLayer > maxLayer) endLayer = maxLayer
-    if (startLayer > endLayer) return
-
-    assert(!entity.isLostReference)
 
     const direction = entity.direction ?? 0
-
     for (const [layerNum, value] of entity.iterateValues(startLayer, endLayer)) {
-      updateEntityPreviewHighlight(assembly, entity, layerNum, value === nil)
       if (value === nil) {
         entity.destroyWorldEntity(layerNum, "mainEntity")
         continue
@@ -97,7 +90,24 @@ export function createWorldUpdater(
         updateWireConnections(assembly, entity, layerNum, luaEntity)
       }
     }
-    updateHighlights(assembly, entity)
+  }
+
+  function updateWorldEntities(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity,
+    startLayer: LayerNumber,
+    endLayer?: LayerNumber,
+    replace?: boolean,
+  ): void {
+    assert(!entity.isLostReference)
+
+    if (startLayer < 1) startLayer = 1
+    const maxLayer = luaLength(assembly.layers)
+    if (!endLayer || endLayer > maxLayer) endLayer = maxLayer
+    if (startLayer > endLayer) return
+
+    doUpdateWorldEntities(assembly, entity, startLayer, endLayer, replace)
+    updateHighlights(assembly, entity, startLayer, endLayer)
   }
 
   function makeEntityIndestructible(entity: LuaEntity) {
@@ -106,18 +116,27 @@ export function createWorldUpdater(
     entity.rotatable = false
   }
 
-  function deleteAllWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function doDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity): void {
     entity.destroyAllWorldEntities("mainEntity")
-    if (entity.isLostReference) {
-      updateHighlights(assembly, entity)
-    } else {
-      deleteAllHighlights(entity)
-    }
+    highlighter.deleteEntity(entity)
+  }
+
+  function makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    assert(entity.isLostReference)
+    entity.destroyAllWorldEntities("mainEntity")
+    highlighter.makeLostReference(assembly, entity)
+  }
+  function reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    assert(!entity.isLostReference)
+    doUpdateWorldEntities(assembly, entity, 1, luaLength(assembly.layers), true)
+    highlighter.reviveLostReference(assembly, entity)
   }
 
   return {
     updateWorldEntities,
-    deleteAllWorldEntities,
+    deleteWorldEntities: doDeleteEntity,
+    makeLostReference,
+    reviveLostReference,
   }
 }
 
