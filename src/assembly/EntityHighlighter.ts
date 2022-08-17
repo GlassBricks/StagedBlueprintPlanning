@@ -143,10 +143,11 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     layer: LayerPosition,
     type: T,
   ): HighlightEntities[T] {
-    const existing = entity.getWorldEntity(layer.layerNumber, type)
-    if (existing) return existing!
-
     const config = highlightConfigs[type]
+    const existing = entity.getWorldEntity(layer.layerNumber, type)
+    if (existing && config.type === "sprite") return existing
+    // always replace highlight box, in case of upgrade
+
     const prototypeName = entity.getBaseValue().name
     const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
     let result: LuaEntity | AnyRender | nil
