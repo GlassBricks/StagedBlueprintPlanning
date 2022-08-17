@@ -73,6 +73,18 @@ export interface CustomInputPrototype extends PrototypeBase {
   linked_game_control?: string
 }
 
+export interface ItemGroupPrototype extends PrototypeBase {
+  type: "item-group"
+  icon: string
+  icon_size: number
+  order?: string
+}
+export interface ItemSubgroupPrototype extends PrototypeBase {
+  type: "item-subgroup"
+  group: string
+  order?: string
+}
+
 export interface BasicSprite {
   filename: string
   priority?: SpritePriority

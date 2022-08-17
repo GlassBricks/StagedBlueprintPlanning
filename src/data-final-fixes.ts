@@ -195,6 +195,7 @@ for (const type of keys<typeof BuildableEntityTypes>()) {
       placeable_by: placeableBy,
       collision_mask: ["resource-layer"],
       render_layer: "floor",
+      subgroup: Prototypes.PreviewEntitySubgroup,
       create_ghost_on_death: false,
     })
   }

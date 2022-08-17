@@ -18,6 +18,9 @@ export const enum Prototypes {
   // used to handle blueprints
   EntityMarker = "bp3:entity-marker",
   PreviewEntityPrefix = "bp3:preview-entity-",
+
+  UtilityGroup = "bp3:utility",
+  PreviewEntitySubgroup = "bp3:preview-entity",
 }
 
 export const enum BuildableEntityTypes {

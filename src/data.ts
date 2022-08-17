@@ -11,7 +11,14 @@
 
 import { Data } from "typed-factorio/data/types"
 import { CustomInputs, Prototypes } from "./constants"
-import { CustomInputPrototype, ItemPrototype, SimpleEntityPrototype, Sprite } from "./declarations/data"
+import {
+  CustomInputPrototype,
+  ItemGroupPrototype,
+  ItemPrototype,
+  ItemSubgroupPrototype,
+  SimpleEntityPrototype,
+  Sprite,
+} from "./declarations/data"
 
 declare const data: Data
 
@@ -57,3 +64,19 @@ const entityMarkerItem: ItemPrototype = {
 }
 
 data.extend([entityMarker, entityMarkerItem])
+
+const utilityGroup: ItemGroupPrototype = {
+  type: "item-group",
+  name: Prototypes.UtilityGroup,
+  order: "z-utility",
+  icon: "__base__/graphics/icons/blueprint.png",
+  icon_size: 64,
+}
+const previewEntitySubgroup: ItemSubgroupPrototype = {
+  type: "item-subgroup",
+  name: Prototypes.PreviewEntitySubgroup,
+  group: Prototypes.UtilityGroup,
+  order: "a",
+}
+
+data.extend([utilityGroup, previewEntitySubgroup])

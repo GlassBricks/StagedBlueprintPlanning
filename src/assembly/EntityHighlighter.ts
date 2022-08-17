@@ -16,10 +16,10 @@ import { getSelectionBox } from "../entity/entity-info"
 import { getWorldPosition } from "../entity/EntityHandler"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
-import draw, { AnyRender, DrawParams, RectangleRender, SpriteRender } from "../lib/rendering"
+import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 
-export type HighlightEntity = HighlightBoxEntity | SpriteRender | RectangleRender
+export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {
   /** Error outline when an entity cannot be placed. Should be placed on preview entity. */
   errorOutline?: HighlightBoxEntity
