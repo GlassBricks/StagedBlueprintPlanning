@@ -16,6 +16,7 @@ import {
   ItemGroupPrototype,
   ItemPrototype,
   ItemSubgroupPrototype,
+  SelectionToolPrototype,
   SimpleEntityPrototype,
   Sprite,
 } from "./declarations/data"
@@ -78,5 +79,50 @@ const previewEntitySubgroup: ItemSubgroupPrototype = {
   group: Prototypes.UtilityGroup,
   order: "a",
 }
+const selectionProxySubgroup: ItemSubgroupPrototype = {
+  type: "item-subgroup",
+  name: Prototypes.SelectionProxySubgroup,
+  group: Prototypes.UtilityGroup,
+  order: "b",
+}
 
-data.extend([utilityGroup, previewEntitySubgroup])
+data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup])
+
+// light yellow
+const cleanupToolColor: ColorArray = [0.9, 0.9, 0.2]
+const cleanupToolDeleteColor: ColorArray = [0.9, 0.2, 0.2, 0.5]
+const cleanupTool: SelectionToolPrototype = {
+  type: "selection-tool",
+  name: Prototypes.CleanupTool,
+  icons: [
+    {
+      icon: "__base__/graphics/icons/blueprint.png",
+      icon_size: 64,
+      tint: [1, 1, 1, 0.5],
+    },
+    {
+      icon: "__bbpp3__/graphics/cleanup.png",
+      icon_size: 64,
+      scale: 0.4,
+    },
+  ],
+  icon_mipmaps: 4,
+
+  flags: ["only-in-cursor", "spawnable", "not-stackable"],
+  stack_size: 1,
+
+  subgroup: "tool",
+  order: "z-bp3-cleanup",
+
+  selection_mode: ["entity-with-owner"],
+  selection_color: cleanupToolColor,
+  selection_cursor_box_type: "entity",
+
+  alt_selection_mode: ["entity-with-owner"],
+  alt_selection_color: cleanupToolDeleteColor,
+  alt_selection_cursor_box_type: "not-allowed",
+
+  // filters set in data-final-fixes
+}
+
+data.extend([cleanupTool])

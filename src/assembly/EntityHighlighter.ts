@@ -37,6 +37,7 @@ export interface HighlightEntities {
 declare module "../entity/AssemblyEntity" {
   export interface WorldEntities extends HighlightEntities {
     previewEntity?: LuaEntity
+    selectionProxy?: LuaEntity
   }
 }
 
@@ -67,6 +68,13 @@ export interface HighlightCreator {
   createSprite(params: DrawParams["sprite"]): SpriteRender
 
   createEntityPreview(
+    surface: LuaSurface,
+    type: string,
+    position: Position,
+    direction: defines.direction | nil,
+  ): LuaEntity | nil
+
+  createSelectionProxy(
     surface: LuaSurface,
     type: string,
     position: Position,
@@ -136,7 +144,7 @@ const highlightConfigs: {
 declare const luaLength: LuaLength<table, number>
 
 export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
-  const { createHighlightBox, createSprite, createEntityPreview } = entityCreator
+  const { createHighlightBox, createSprite, createEntityPreview, createSelectionProxy } = entityCreator
 
   function createHighlight<T extends keyof HighlightEntities>(
     entity: AssemblyEntity,
@@ -193,44 +201,82 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     return nil
   }
 
-  function makePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
-    const preview = createEntityPreview(
+  //
+  // function makePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
+  //   const preview = createEntityPreview(
+  //     layer.surface,
+  //     entity.getNameAtLayer(layer.layerNumber),
+  //     getWorldPosition(layer, entity),
+  //     entity.direction,
+  //   )
+  //   entity.replaceWorldEntity(layer.layerNumber, preview, "previewEntity")
+  //   return preview
+  // }
+  //
+  // function getOrCreatePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
+  //   const existing = entity.getWorldEntity(layer.layerNumber, "previewEntity")
+  //   if (!existing || existing.name !== Prototypes.PreviewEntityPrefix + entity.getNameAtLayer(layer.layerNumber)) {
+  //     return makePreviewEntity(entity, layer)
+  //   } else if (existing) {
+  //     existing.direction = entity.direction ?? 0
+  //     return existing
+  //   }
+  // }
+
+  function createAssociatedEntity(
+    entity: AssemblyEntity,
+    layer: LayerPosition,
+    type: "previewEntity" | "selectionProxy",
+  ): LuaEntity | nil {
+    const creator = type === "previewEntity" ? createEntityPreview : createSelectionProxy
+    const result = creator(
       layer.surface,
       entity.getNameAtLayer(layer.layerNumber),
       getWorldPosition(layer, entity),
       entity.direction,
     )
-    entity.replaceWorldEntity(layer.layerNumber, preview, "previewEntity")
-    return preview
+    entity.replaceWorldEntity(layer.layerNumber, result, type)
+    return result
   }
 
-  function getOrCreatePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
-    const existing = entity.getWorldEntity(layer.layerNumber, "previewEntity")
-    if (!existing || existing.name !== Prototypes.PreviewEntityPrefix + entity.getNameAtLayer(layer.layerNumber)) {
-      return makePreviewEntity(entity, layer)
-    } else if (existing) {
-      existing.direction = entity.direction ?? 0
+  function getOrCreateAssociatedEntity(
+    entity: AssemblyEntity,
+    layer: LayerPosition,
+    type: "previewEntity" | "selectionProxy",
+  ): LuaEntity | nil {
+    const prefix = type === "previewEntity" ? Prototypes.PreviewEntityPrefix : Prototypes.SelectionProxyPrefix
+    const existing = entity.getWorldEntity(layer.layerNumber, type)
+    if (existing && existing.name === prefix + entity.getNameAtLayer(layer.layerNumber)) {
       return existing
     }
+    return createAssociatedEntity(entity, layer, type)
   }
 
-  function updateAllPreviewEntities(
-    assembly: AssemblyContent,
+  function updateAssociatedEntity(
     entity: AssemblyEntity,
-    layerStart: number | undefined,
-    layerEnd: number | undefined,
+    layer: LayerPosition,
+    type: "previewEntity" | "selectionProxy",
+    shouldHave: boolean,
   ): void {
-    for (const i of $range(layerStart ?? 1, layerEnd ?? luaLength(assembly.layers))) {
-      const shouldHavePreview = entity.getWorldEntity(i, "mainEntity") === nil
-      if (shouldHavePreview) {
-        getOrCreatePreviewEntity(entity, assembly.layers[i])
-      } else {
-        entity.destroyWorldEntity(i, "previewEntity")
-      }
+    if (shouldHave) {
+      createAssociatedEntity(entity, layer, type)
+    } else {
+      entity.destroyWorldEntity(layer.layerNumber, type)
     }
   }
 
-  function updateAllErrorHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    for (const i of $range(1, luaLength(assembly.layers))) {
+      const layer = assembly.layers[i]
+      const shouldHaveEntityPreview = entity.getWorldEntity(layer.layerNumber, "mainEntity") === nil
+      const hasError = shouldHaveEntityPreview && i >= entity.getBaseLayer()
+      updateAssociatedEntity(entity, layer, "previewEntity", shouldHaveEntityPreview)
+      updateAssociatedEntity(entity, layer, "selectionProxy", hasError)
+      updateHighlight(entity, layer, "errorOutline", hasError)
+    }
+  }
+
+  function updateErrorIndicators(assembly: AssemblyContent, entity: AssemblyEntity): void {
     let hasErrorAnywhere = false
     for (const i of $range(entity.getBaseLayer(), luaLength(assembly.layers))) {
       const hasError = entity.getWorldEntity(i) === nil
@@ -239,14 +285,15 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
         break
       }
     }
-    for (const i of $range(entity.getBaseLayer(), luaLength(assembly.layers))) {
-      const hasError = entity.getWorldEntity(i) === nil
-      const hasErrorInOtherLayer = !hasError && hasErrorAnywhere
+    if (!hasErrorAnywhere) {
+      entity.destroyAllWorldEntities("errorElsewhereIndicator")
+      return
+    }
 
+    for (const i of $range(1, luaLength(assembly.layers))) {
       const layer = assembly.layers[i]
-      if (hasError) getOrCreatePreviewEntity(entity, layer)
-      updateHighlight(entity, layer, "errorOutline", hasError)
-      updateHighlight(entity, layer, "errorElsewhereIndicator", hasErrorInOtherLayer)
+      const shouldHaveIndicator = i >= entity.getBaseLayer() && entity.getWorldEntity(i, "mainEntity") !== nil
+      updateHighlight(entity, layer, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
 
@@ -285,14 +332,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       }
     }
   }
-  function updateHighlights(
-    assembly: AssemblyContent,
-    entity: AssemblyEntity,
-    layerStart?: LayerNumber,
-    layerEnd?: LayerNumber,
-  ): void {
-    updateAllPreviewEntities(assembly, entity, layerStart, layerEnd)
-    updateAllErrorHighlights(assembly, entity)
+  function updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    updateAssociatedEntitiesAndErrorHighlight(assembly, entity)
+    updateErrorIndicators(assembly, entity)
     updateAllConfigChangedHighlights(assembly, entity)
   }
 
@@ -300,8 +342,10 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     if (!entity.isLostReference) return
     for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
     for (const i of $range(1, luaLength(assembly.layers))) {
-      getOrCreatePreviewEntity(entity, assembly.layers[i])
-      updateHighlight(entity, assembly.layers[i], "lostReferenceHighlight", true)
+      const layer = assembly.layers[i]
+      getOrCreateAssociatedEntity(entity, layer, "previewEntity")
+      getOrCreateAssociatedEntity(entity, layer, "selectionProxy")
+      updateHighlight(entity, layer, "lostReferenceHighlight", true)
     }
   }
   function reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
@@ -313,6 +357,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function deleteEntity(entity: AssemblyEntity): void {
     for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
     entity.destroyAllWorldEntities("previewEntity")
+    entity.destroyAllWorldEntities("selectionProxy")
   }
 
   return {
@@ -343,6 +388,26 @@ export const DefaultHighlightCreator: HighlightCreator = {
     direction: defines.direction | nil,
   ): LuaEntity | nil {
     const name = Prototypes.PreviewEntityPrefix + type
+    const result = surface.create_entity({
+      name,
+      position,
+      direction,
+      force: "player",
+    })
+    if (result) {
+      result.destructible = false
+      result.minable = false
+      result.rotatable = false
+    }
+    return result
+  },
+  createSelectionProxy(
+    surface: LuaSurface,
+    type: string,
+    position: Position,
+    direction: defines.direction | nil,
+  ): LuaEntity | nil {
+    const name = Prototypes.SelectionProxyPrefix + type
     const result = surface.create_entity({
       name,
       position,

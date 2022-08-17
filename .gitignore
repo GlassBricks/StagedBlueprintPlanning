@@ -131,3 +131,5 @@ tstlPlugin/*.js
 tstlPlugin/*.js.map
 
 factorio/
+
+*.xcf

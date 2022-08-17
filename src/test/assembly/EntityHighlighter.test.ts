@@ -49,6 +49,13 @@ before_each(() => {
         direction,
       })
     },
+    createSelectionProxy(surface, type, position, direction): LuaEntity | nil {
+      return entityMock({
+        name: "test-proxy",
+        position,
+        direction,
+      })
+    },
   }
   highlightCreator = createHighlightCreator(entityCreator)
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
@@ -71,7 +78,7 @@ describe("entity previews", () => {
   })
 })
 
-describe("error highlights", () => {
+describe("error highlights/selection proxy", () => {
   before_each(() => {
     for (const i of $range(1, 5)) {
       entity.replaceWorldEntity(i, simpleMock<LuaEntity>())
@@ -81,6 +88,7 @@ describe("error highlights", () => {
     entity.destroyWorldEntity(2, "mainEntity")
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
     assert.not_nil(entity.getWorldEntity(2, "errorOutline")!)
+    assert.not_nil(entity.getWorldEntity(2, "selectionProxy")!)
   })
 
   test("deletes highlight when set to false", () => {
@@ -89,6 +97,7 @@ describe("error highlights", () => {
     entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
     assert.nil(entity.getWorldEntity(2, "errorOutline"))
+    assert.nil(entity.getWorldEntity(2, "selectionProxy"))
   })
 
   test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other layers, %s", (layers) => {
@@ -121,7 +130,7 @@ describe("error highlights", () => {
     for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `layer ${i}`)
   })
 
-  test("does nothing if created in lower layer", () => {
+  test("does nothing if created in lower than base layer", () => {
     highlightCreator.updateHighlights(assembly, entity)
     assert.nil(entity.getWorldEntity(1, "errorOutline"))
   })
@@ -214,6 +223,8 @@ test("makeLostReference creates highlights", () => {
   highlightCreator.makeLostReference(assembly, entity)
   for (let i = 1; i <= 5; i++) {
     assert.not_nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
+    assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
+    assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
   }
 })
 test("deleteLostReference removes highlights and sets entities correct", () => {
@@ -224,6 +235,8 @@ test("deleteLostReference removes highlights and sets entities correct", () => {
   for (let i = 1; i <= 5; i++) {
     assert.nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
     assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
+    if (i >= entity.getBaseLayer()) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
+    else assert.nil(entity.getWorldEntity(i, "selectionProxy"))
   }
 })
 
@@ -236,5 +249,7 @@ test("deleteErrorHighlights deletes all highlights", () => {
     for (const type of keys<HighlightEntities>()) {
       assert.nil(entity.getWorldEntity(i, type), `layer ${i}`)
     }
+    assert.nil(entity.getWorldEntity(i, "previewEntity"), `layer ${i}`)
+    assert.nil(entity.getWorldEntity(i, "selectionProxy"), `layer ${i}`)
   }
 })

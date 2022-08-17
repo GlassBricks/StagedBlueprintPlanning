@@ -17,10 +17,15 @@ export const enum CustomInputs {
 export const enum Prototypes {
   // used to handle blueprints
   EntityMarker = "bp3:entity-marker",
+
   PreviewEntityPrefix = "bp3:preview-entity-",
+  SelectionProxyPrefix = "bp3:selection-proxy-",
 
   UtilityGroup = "bp3:utility",
   PreviewEntitySubgroup = "bp3:preview-entity",
+  SelectionProxySubgroup = "bp3:selection-proxy",
+
+  CleanupTool = "bp3:cleanup-tool",
 }
 
 export const enum BuildableEntityTypes {

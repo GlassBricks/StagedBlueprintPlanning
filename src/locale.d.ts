@@ -16,9 +16,15 @@ export declare const enum L_EntityName {
   /** Blueprint entity marker */
   EntityMarker = "entity-name.bp3:entity-marker",
 }
+export declare const enum L_ItemGroupName {
+  /** BP3 utility entities */
+  Utility = "item-group-name.bp3:utility",
+}
 export declare const enum L_Bp3 {
   /** __1__ (preview) */
   PreviewEntity = "bp3.preview-entity",
+  /** __1__ (selection proxy) */
+  SelectionProxy = "bp3.selection-proxy",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */

@@ -18,6 +18,7 @@ import {
   EntityPrototype,
   IconData,
   ItemPrototype,
+  SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
   Sprite,
   Sprite4Way,
@@ -119,6 +120,13 @@ export function createWhiteSprite(
   }
 }
 
+const emptySprite: Sprite = {
+  filename: "__core__/graphics/empty.png",
+  size: 1,
+  priority: "extra-high",
+  tint: [1, 1, 1, 1],
+}
+
 const entityToItemBuild = new LuaMap<string, string>()
 for (const [name, itemPrototype] of pairs<Record<string, ItemPrototype>>(data.raw.item)) {
   if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)
@@ -134,6 +142,7 @@ function isBuildablePrototype(prototype: EntityPrototype): boolean {
 }
 
 const previews: SimpleEntityWithOwnerPrototype[] = []
+const selectionProxies: SimpleEntityWithOwnerPrototype[] = []
 // simple-entity-with-owner is used instead of simple-entity so that it can be rotated 4 ways
 for (const type of keys<typeof BuildableEntityTypes>()) {
   const prototypes = data.raw[type]
@@ -146,9 +155,11 @@ for (const type of keys<typeof BuildableEntityTypes>()) {
       const itemToBuild = entityToItemBuild.get(name)
       if (itemToBuild) placeableBy = { item: itemToBuild, count: 1 }
     }
+    if (!placeableBy) continue
 
     const flags = prototype.flags!.filter((flag) => flagsToTransfer.has(flag))
     flags.push("hidden")
+    flags.push("not-on-map")
     if (prototype.friendly_map_color) {
       debugPrint(name, "has friendly_map_color", prototype.friendly_map_color)
     }
@@ -180,6 +191,8 @@ for (const type of keys<typeof BuildableEntityTypes>()) {
       tile_height: prototype.tile_height,
       tile_width: prototype.tile_width,
 
+      collision_mask: [],
+
       open_sound: prototype.open_sound,
       close_sound: prototype.close_sound,
 
@@ -193,12 +206,41 @@ for (const type of keys<typeof BuildableEntityTypes>()) {
       // other
       flags,
       placeable_by: placeableBy,
-      collision_mask: ["resource-layer"],
       render_layer: "floor",
       subgroup: Prototypes.PreviewEntitySubgroup,
       create_ghost_on_death: false,
+    })
+
+    selectionProxies.push({
+      name: Prototypes.SelectionProxyPrefix + name,
+      type: "simple-entity-with-owner",
+      localised_name: [L_Bp3.SelectionProxy, ["entity-name." + name]],
+
+      // copied from prototype
+      icons: prototype.icons,
+      icon_size: prototype.icon_size,
+      icon_mipmaps: prototype.icon_mipmaps,
+      icon: prototype.icon,
+
+      selection_box: selectionBox,
+      collision_box: prototype.collision_box,
+      tile_height: prototype.tile_height,
+      tile_width: prototype.tile_width,
+
+      collision_mask: [],
+
+      picture: emptySprite,
+      flags,
+      selectable_in_game: false,
+      subgroup: Prototypes.SelectionProxySubgroup,
     })
   }
 }
 
 data.extend(previews)
+data.extend(selectionProxies)
+
+const selectionProxyNames = selectionProxies.map((proxy) => proxy.name)
+
+const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.CleanupTool]
+cleanupTool.entity_filters = cleanupTool.alt_entity_filters = selectionProxyNames

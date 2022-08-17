@@ -27,6 +27,7 @@ export interface EntityPrototype extends PrototypeBase {
   icon_mipmaps?: number
   icon?: string
 
+  order?: string
   subgroup?: string
 
   selection_box?: BoundingBoxWrite | BoundingBoxArray
@@ -58,13 +59,57 @@ export interface SimpleEntityWithOwnerPrototype extends EntityPrototype {
   render_layer?: RenderLayer
 }
 export interface ItemPrototype extends PrototypeBase {
-  type: "item"
-  icon: string
-  icon_size: number
+  icons?: IconData[]
+  icon_size?: number
+  icon_mipmaps?: number
+  icon?: string
+
+  subgroup?: string
+  order?: string
+
   stack_size: number
-  flags: Array<keyof ItemPrototypeFlags>
+  flags?: Array<keyof ItemPrototypeFlags>
   place_result?: string
 }
+export interface SelectionToolPrototype extends Omit<ItemPrototype, "type"> {
+  type: "selection-tool"
+  selection_color: Color | ColorArray
+  alt_selection_color: Color | ColorArray
+  selection_mode: SelectionMode[]
+  alt_selection_mode: SelectionMode[]
+  selection_cursor_box_type: CursorBoxRenderType
+  alt_selection_cursor_box_type: CursorBoxRenderType
+
+  reverse_selection_color?: Color | ColorArray
+  reverse_selection_mode?: SelectionMode[]
+  reverse_selection_cursor_box_type?: CursorBoxRenderType
+
+  entity_filters?: string[]
+  alt_entity_filters?: string[]
+  reverse_entity_filters?: string[]
+}
+type SelectionMode =
+  | "blueprint"
+  | "deconstruct"
+  | "cancel-deconstruct"
+  | "items"
+  | "trees"
+  | "buildable-type"
+  | "nothing"
+  | "items-to-place"
+  | "any-entity"
+  | "any-tile"
+  | "same-force"
+  | "not-same-force"
+  | "friend"
+  | "enemy"
+  | "upgrade"
+  | "cancel-upgrade"
+  | "downgrade"
+  | "entity-with-health"
+  | "entity-with-force"
+  | "entity-with-owner"
+  | "avoid-rolling-stock"
 
 export interface CustomInputPrototype extends PrototypeBase {
   type: "custom-input"
