@@ -15,8 +15,10 @@ import { _mockAssembly } from "../../assembly/UserAssembly"
 import { _inValidState } from "../../assembly/world-listener"
 import { deleteAssembly, registerAssembly } from "../../assembly/world-register"
 import { LayerNumber } from "../../entity/AssemblyEntity"
+import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
 import { Events } from "../../lib"
 import { BBox, Pos, PositionClass } from "../../lib/geometry"
+import { testArea } from "../area"
 
 let updater: mock.Stubbed<AssemblyUpdater>
 let assembly: Assembly
@@ -242,5 +244,71 @@ describe("upgrade", () => {
       stack: nil!,
     })
     assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, layers[1], oldDirection)
+  })
+})
+
+describe("robot actions", () => {
+  const setupBlueprint =
+    "0eNqF0e9qxCAMAPB3yWc9rv/o6quMcVgv7QSronasK777aY/J4Arzi0SSXyTZYVQrWid1ALaDFEZ7YO87eDlrrvJb2CwCAxlwAQKaLzlyZjTWuACRgNR3/AZWxQ8CqIMMEp/GEWw3vS4jupTwWk3AGp8KjM6dMpKSNmC0usZIXoS6CH7hSlFUKIKTglqj8ARrLt0vd+nOwKaAyszSh0SJT/SB+mAcn8/M9j+zLWb5Hmp080bTkNFNXJyyT3RI8xzXaUJ38/InIdW1nDzfYwvsz9IIfKHzB1S/VW0/1H03NH26Y3wA6bmb8w=="
+  before_each(() => {
+    const area = testArea(0)
+    const stack = getTempBpItemStack()
+    stack.import_stack(setupBlueprint)
+    const ghosts = stack.build_blueprint({
+      surface,
+      position: getLayerCenter(1),
+      force: "player",
+    })
+    assert(ghosts[0], "blueprint pasted")
+    ghosts.forEach((x) => reviveGhost(x))
+    const roboport = surface.find_entities_filtered({
+      area: area.bbox,
+      type: "roboport",
+      limit: 1,
+    })[0]
+    roboport.insert("construction-robot")
+    const storageChest = surface.find_entities_filtered({
+      area: area.bbox,
+      name: "logistic-chest-storage",
+      limit: 1,
+    })[0]
+    storageChest.insert("iron-chest")
+  })
+  test("build", () => {
+    const pos = getLayerCenter(1).plus(Pos(4.5, 0.5))
+    const ghost = surface.create_entity({
+      name: "entity-ghost",
+      inner_name: "iron-chest",
+      position: pos,
+      force: "player",
+    })
+    assert(ghost, "ghost created")
+    async()
+    after_ticks(120, () => {
+      done()
+      const chest = surface.find_entities_filtered({
+        area: testArea(0).bbox,
+        name: "iron-chest",
+        limit: 1,
+      })[0]
+      assert.not_nil(chest, "chest created")
+      assert.spy(updater.onEntityCreated).called_with(assembly, chest, layers[1])
+    })
+  })
+
+  test("mine", () => {
+    const pos = getLayerCenter(1).plus(Pos(4.5, 0.5))
+    const chest = surface.create_entity({
+      name: "iron-chest",
+      position: pos,
+      force: "player",
+    })!
+    assert(chest, "chest created")
+    chest.order_deconstruction("player")
+    async()
+    after_ticks(120, () => {
+      done()
+      assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
+    })
   })
 })

@@ -9,23 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Events, Mutable } from "../../lib"
+import { Mutable } from "../../lib"
 import { BBox, Pos, Position } from "../../lib/geometry"
+import { getTempBpItemStack, reviveGhost } from "../blueprinting"
 import { DiffHandler } from "./DiffHandler"
-
-declare const global: {
-  tempBPInventory: LuaInventory
-}
-
-Events.on_init(() => {
-  global.tempBPInventory = game.create_inventory(1)
-})
-
-function getTempItemStack(): BlueprintItemStack {
-  const stack = global.tempBPInventory[0]
-  stack.set_stack("blueprint")
-  return stack
-}
 
 function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | nil {
   for (const [index, mEntity] of pairs(mapping)) {
@@ -36,7 +23,7 @@ function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity):
 function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   const { surface, position } = entity
 
-  const stack = getTempItemStack()
+  const stack = getTempBpItemStack()
   for (const radius of [0.01, 0.5]) {
     const indexMapping = stack.create_blueprint({
       surface,
@@ -51,38 +38,13 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   }
 }
 
-function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
-  if (!ghost.valid) return
-  const [, entity, requestProxy] = ghost.silent_revive({
-    return_item_request_proxy: true,
-  })
-  if (entity === nil) return
-
-  if (!requestProxy) return entity
-
-  // manually add items from request proxy
-  const requests = requestProxy.item_requests
-  const moduleInventory = entity.get_module_inventory()
-  if (moduleInventory) {
-    for (const [item, amount] of pairs(requests)) {
-      moduleInventory.insert({ name: item, count: amount })
-    }
-  } else {
-    for (const [item, amount] of pairs(requests)) {
-      entity.insert({ name: item, count: amount })
-    }
-  }
-  requestProxy.destroy()
-  return entity
-}
-
 function pasteEntity(
   surface: LuaSurface,
   position: MapPosition,
   direction: defines.direction | undefined,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
-  const stack = getTempItemStack()
+  const stack = getTempBpItemStack()
   const tilePosition = Pos.floor(position)
   const offsetPosition = Pos.minus(position, tilePosition)
   stack.set_blueprint_entities([

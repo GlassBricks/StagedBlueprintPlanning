@@ -114,9 +114,11 @@ Start:
 
 // simple:
 Events.script_raised_built((e) => luaEntityCreated(e.entity))
+Events.on_robot_built_entity((e) => luaEntityCreated(e.created_entity))
 
 Events.on_entity_died((e) => luaEntityDeleted(e.entity))
 Events.script_raised_destroy((e) => luaEntityDeleted(e.entity))
+Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity))
 
 Events.on_entity_settings_pasted((e) => luaEntityPotentiallyUpdated(e.destination))
 Events.on_gui_closed((e) => {
@@ -319,5 +321,4 @@ Events.on_selected_entity_changed((e) => {
   clearPlayerAffectedWires(game.get_player(e.player_index)!)
 })
 
-// todo: blueprinting, bot stuff, go through the list of events
 export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil
