@@ -91,7 +91,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   iterateWorldEntities<T extends WorldEntityType>(type: T): LuaIterable<LuaMultiReturn<[LayerNumber, WorldEntities[T]]>>
 
   setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void
-  getProperty<T extends keyof LayerProperties>(layr: LayerNumber, key: T): LayerProperties[T] | nil
+  getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil
   propertySetInAnyLayer(key: keyof LayerProperties): boolean
   clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void
 }
