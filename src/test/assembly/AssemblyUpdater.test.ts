@@ -203,13 +203,9 @@ describe("add", () => {
       assemblyUpdater.onEntityCreated(assembly, newEntity, layer) // again
       assert.equal(newEntity, added.getWorldEntity(1))
       assert.same(1, added.getBaseLayer())
-      if (!withChanges) {
-        assert.equal(2, added.getBaseValue().prop1)
-        assert.false(added.hasLayerChange())
-      } else {
-        assert.equal(3, added.getBaseValue().prop1)
-        assertLayerChanges(added, { 3: { prop1: 2 } })
-      }
+
+      assert.equal(2, added.getBaseValue().prop1)
+      assert.false(added.hasLayerChange())
 
       assertOneEntity()
       assertUpdateCalled(added, 1, 2, true)
@@ -295,13 +291,8 @@ describe("revive", () => {
     assert.falsy(added.isSettingsRemnant)
     assert.equal(added.getBaseLayer(), 1)
 
-    if (!withChanges) {
-      assert.equal(2, added.getBaseValue().prop1)
-      assertLayerChanges(added, { 3: { prop1: 3 } })
-    } else {
-      assert.equal(1, added.getBaseValue().prop1)
-      assertLayerChanges(added, { 2: { prop1: 2 }, 3: { prop1: 3 } })
-    }
+    assert.equal(2, added.getBaseValue().prop1)
+    assertLayerChanges(added, { 3: { prop1: 3 } })
 
     assertOneEntity()
     assertReviveSettingsRemnantCalled(added)

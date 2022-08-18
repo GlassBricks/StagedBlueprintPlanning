@@ -130,7 +130,7 @@ export function createAssemblyUpdater(
     added: Entity,
     luaEntity: LuaEntity,
   ): void {
-    const oldLayerNumber = existing.moveDown(layerNumber, added, true)
+    const oldLayerNumber = existing.moveToLayer(layerNumber)
     if (existing.isSettingsRemnant) {
       reviveSettingsRemnant(assembly, existing, layerNumber, luaEntity)
     } else {

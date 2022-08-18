@@ -58,18 +58,11 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    */
   adjustValueAtLayer(layer: LayerNumber, value: T): boolean
 
-  /** Moves the entity to a lower layer. */
-  moveDown(lowerLayer: LayerNumber): LayerNumber
   /**
-   * Moves an entity to a lower layer.
-   * @param lowerLayer
-   * @param newValue The value to set at the new layer.
-   * @param createDiffAtOldLayer If a diff should be created at the old layer, so that the value at the old layer remains unchanged.
-   * @return The old layer number.
+   * If moving up, deletes/merges all layer changes from old layer to new layer.
+   * @return the previous base layer
    */
-  moveDown(lowerLayer: LayerNumber, newValue: Mutable<T>, createDiffAtOldLayer?: boolean): LayerNumber
-  /** If moving up, deletes/merges all layer changes from old layer to new layer. */
-  moveToLayer(layer: LayerNumber): void
+  moveToLayer(layer: LayerNumber): LayerNumber
 
   /** Returns nil if world entity does not exist or is invalid */
   getWorldEntity(layer: LayerNumber): WorldEntities["mainEntity"] | nil
@@ -246,20 +239,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       }
     }
   }
-
-  moveDown(lowerLayer: LayerNumber, newValue?: Mutable<T>, createDiffAtOldLayer?: boolean): LayerNumber {
-    const { baseLayer: higherLayer, baseValue: higherValue } = this
-    assert(lowerLayer < higherLayer, "new layer number must be greater than old layer number")
-    const lowerValue = newValue ?? higherValue
-    this.baseLayer = lowerLayer
-    this.baseValue = lowerValue
-    const newDiff = createDiffAtOldLayer ? getEntityDiff(lowerValue, higherValue) : nil
-    this.layerChanges[higherLayer] = newDiff
-    return higherLayer
-  }
-  private moveUp(higherLayer: LayerNumber): LayerNumber {
-    const { baseLayer: lowerLayer, baseValue } = this
-    assert(higherLayer > lowerLayer, "new layer number must be greater than old layer number")
+  private moveUp(higherLayer: LayerNumber): void {
+    const { baseValue } = this
     const { layerChanges } = this
     for (const [changeLayer, changed] of pairs(layerChanges)) {
       if (changeLayer > higherLayer) break
@@ -267,15 +248,15 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       layerChanges[changeLayer] = nil
     }
     this.baseLayer = higherLayer
-    return lowerLayer
   }
-  moveToLayer(layer: LayerNumber): void {
+  moveToLayer(layer: LayerNumber): LayerNumber {
     const { baseLayer } = this
     if (layer > baseLayer) {
       this.moveUp(layer)
     } else if (layer < baseLayer) {
-      this.moveDown(layer)
+      this.baseLayer = layer
     }
+    return baseLayer
     // else do nothing
   }
 

@@ -97,29 +97,17 @@ test("iterateValues", () => {
   assert.same(expected, result)
 })
 
-describe("moveEntityDown", () => {
-  test("with no changes", () => {
-    assemblyEntity.moveDown(1)
+describe("move to layer", () => {
+  test("move down", () => {
+    assemblyEntity.moveToLayer(1)
     assert.same(entity, assemblyEntity.getBaseValue())
     assert.equal(1, assemblyEntity.getBaseLayer())
   })
 
-  test("with new value", () => {
-    assemblyEntity.moveDown(1, { ...entity, foo1: 3 })
-    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
-    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtLayer(2))
-    assert.equal(1, assemblyEntity.getBaseLayer())
-  })
-
-  test("with new value and changes", () => {
-    assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
-    assemblyEntity.moveDown(1, { ...entity, foo1: 3 }, true)
-    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
-    assert.same({ ...entity }, assemblyEntity.getValueAtLayer(2))
-  })
-
-  test("error if moving up", () => {
-    assert.error(() => assemblyEntity.moveDown(2))
+  test("moving up", () => {
+    const valueAt5 = assemblyEntity.getValueAtLayer(5)
+    assemblyEntity.moveToLayer(5)
+    assert.same(valueAt5, assemblyEntity.getBaseValue())
   })
 })
 
