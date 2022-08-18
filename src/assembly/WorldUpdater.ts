@@ -44,8 +44,6 @@ export interface WorldUpdater {
   reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
 
-declare const luaLength: LuaLength<Record<number, any>, number>
-
 export function createWorldUpdater(
   entityCreator: EntityCreator,
   wireHandler: WireUpdater,
@@ -62,7 +60,6 @@ export function createWorldUpdater(
     endLayer: number,
     replace: boolean | undefined,
   ): void {
-    const { layers } = assembly
     const baseLayer = entity.getBaseLayer()
 
     const direction = entity.direction ?? 0
@@ -80,8 +77,7 @@ export function createWorldUpdater(
         entity.replaceWorldEntity(layerNum, luaEntity)
       } else {
         if (existing) existing.destroy()
-        const layer = layers[layerNum]
-        luaEntity = createEntity(layer, entity, value)
+        luaEntity = createEntity(assembly.getLayer(layerNum), entity, value)
         entity.replaceWorldEntity(layerNum, luaEntity)
       }
 
@@ -102,7 +98,7 @@ export function createWorldUpdater(
     assert(!entity.isLostReference)
 
     if (startLayer < 1) startLayer = 1
-    const maxLayer = luaLength(assembly.layers)
+    const maxLayer = assembly.numLayers()
     if (!endLayer || endLayer > maxLayer) endLayer = maxLayer
     if (startLayer > endLayer) return
 
@@ -128,7 +124,7 @@ export function createWorldUpdater(
   }
   function reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
     assert(!entity.isLostReference)
-    doUpdateWorldEntities(assembly, entity, 1, luaLength(assembly.layers), true)
+    doUpdateWorldEntities(assembly, entity, 1, assembly.numLayers(), true)
     highlighter.reviveLostReference(assembly, entity)
   }
 

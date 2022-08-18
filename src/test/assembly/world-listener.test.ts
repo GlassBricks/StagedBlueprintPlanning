@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, Layer } from "../../assembly/Assembly"
+import { Assembly } from "../../assembly/Assembly"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _mockAssembly } from "../../assembly/UserAssembly"
 import { _inValidState } from "../../assembly/world-listener"
@@ -23,7 +23,6 @@ import { testArea } from "../area"
 
 let updater: mock.Stubbed<AssemblyUpdater>
 let assembly: Assembly
-let layers: Record<number, Layer>
 let surface: LuaSurface
 let player: LuaPlayer
 before_all(() => {
@@ -39,7 +38,6 @@ before_all(() => {
       position: Pos(i * 32, 0),
     })
   }
-  layers = assembly.layers
   registerAssembly(assembly)
 })
 
@@ -63,7 +61,7 @@ after_each(() => {
 })
 
 function getLayerCenter(layer: LayerNumber): PositionClass {
-  return BBox.center(layers[layer])
+  return BBox.center(assembly.getLayer(layer))
 }
 
 describe("add", () => {
@@ -78,7 +76,7 @@ describe("add", () => {
       limit: 1,
       name: "iron-chest",
     })[0]
-    assert.spy(updater.onEntityCreated).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onEntityCreated).called_with(assembly, entity, assembly.getLayer(1))
   })
 
   test("script raise built", () => {
@@ -89,7 +87,7 @@ describe("add", () => {
       raise_built: true,
     })
     assert.not_nil(entity)
-    assert.spy(updater.onEntityCreated).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onEntityCreated).called_with(assembly, entity, assembly.getLayer(1))
   })
 })
 
@@ -105,15 +103,15 @@ describe("delete", () => {
   })
   test("player mined entity", () => {
     player.mine_entity(entity, true)
-    assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
+    assert.spy(updater.onEntityDeleted).called_with(assembly, match._, assembly.getLayer(1))
   })
   test("script raised destroy", () => {
     entity.destroy({ raise_destroy: true })
-    assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
+    assert.spy(updater.onEntityDeleted).called_with(assembly, match._, assembly.getLayer(1))
   })
   test("die", () => {
     entity.die()
-    assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
+    assert.spy(updater.onEntityDeleted).called_with(assembly, match._, assembly.getLayer(1))
   })
 })
 
@@ -131,7 +129,7 @@ describe("update", () => {
   test("gui", () => {
     player.opened = entity
     player.opened = nil
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1], match.nil())
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, assembly.getLayer(1), match.nil())
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -139,13 +137,13 @@ describe("update", () => {
       destination: entity,
       player_index: 1 as PlayerIndex,
     })
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1], match.nil())
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, assembly.getLayer(1), match.nil())
   })
 
   test("rotate", () => {
     const oldDirection = entity.direction
     entity.rotate({ by_player: 1 as PlayerIndex })
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, layers[1], oldDirection)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, entity, assembly.getLayer(1), oldDirection)
   })
 })
 
@@ -176,7 +174,7 @@ describe("fast replace", () => {
     assert.not_nil(newEntity)
 
     assert.false(entity.valid, "entity replaced")
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, layers[1], match._)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, assembly.getLayer(1), match._)
   })
 
   test("to rotate", () => {
@@ -194,7 +192,7 @@ describe("fast replace", () => {
     player.build_from_cursor({ position, direction: defines.direction.east })
 
     assert.false(entity.valid, "entity replaced")
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, match._, layers[1], oldDirection)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, match._, assembly.getLayer(1), oldDirection)
   })
 })
 
@@ -215,7 +213,7 @@ describe("upgrade", () => {
       force: "player",
       target: "fast-inserter",
     })
-    assert.spy(updater.onEntityMarkedForUpgrade).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onEntityMarkedForUpgrade).called_with(assembly, entity, assembly.getLayer(1))
   })
   test("marked to rotate", () => {
     entity.order_upgrade({
@@ -223,7 +221,7 @@ describe("upgrade", () => {
       target: "inserter",
       direction: defines.direction.east,
     })
-    assert.spy(updater.onEntityMarkedForUpgrade).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onEntityMarkedForUpgrade).called_with(assembly, entity, assembly.getLayer(1))
   })
 
   test("instant upgrade planner", () => {
@@ -244,7 +242,7 @@ describe("upgrade", () => {
       created_entity: newEntity,
       stack: nil!,
     })
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, layers[1], oldDirection)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(assembly, newEntity, assembly.getLayer(1), oldDirection)
   })
 })
 
@@ -293,7 +291,7 @@ describe("robot actions", () => {
         limit: 1,
       })[0]
       assert.not_nil(chest, "chest created")
-      assert.spy(updater.onEntityCreated).called_with(assembly, chest, layers[1])
+      assert.spy(updater.onEntityCreated).called_with(assembly, chest, assembly.getLayer(1))
     })
   })
 
@@ -309,7 +307,7 @@ describe("robot actions", () => {
     async()
     after_ticks(120, () => {
       done()
-      assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
+      assert.spy(updater.onEntityDeleted).called_with(assembly, match._, assembly.getLayer(1))
     })
   })
 })
@@ -329,7 +327,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onErrorEntityRevived).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onErrorEntityRevived).called_with(assembly, entity, assembly.getLayer(1))
   })
   test("delete lost reference", () => {
     const entity = surface.create_entity({
@@ -346,6 +344,6 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onLostReferenceDeleted).called_with(assembly, entity, layers[1])
+    assert.spy(updater.onLostReferenceDeleted).called_with(assembly, entity, assembly.getLayer(1))
   })
 })

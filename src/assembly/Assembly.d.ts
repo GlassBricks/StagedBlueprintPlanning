@@ -21,11 +21,11 @@ export interface LayerPosition extends BoundingBox {
 }
 
 export interface AssemblyContent {
-  readonly layers: Record<LayerNumber, LayerContent>
+  getLayer(layerNumber: LayerNumber): LayerPosition
+  numLayers(): number
+  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, LayerPosition]>>
   readonly content: MutableEntityMap
 }
-
-interface LayerContent extends LayerPosition {}
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 
@@ -37,7 +37,9 @@ export interface Assembly extends AssemblyContent {
 
   readonly chunkSize: Position
 
-  readonly layers: Record<LayerNumber, Layer>
+  getLayer(layerNumber: LayerNumber): Layer
+  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
+
   pushLayer(leftTop: WorldPosition): Layer
 
   readonly content: MutableEntityMap

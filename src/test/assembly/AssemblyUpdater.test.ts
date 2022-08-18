@@ -10,8 +10,8 @@
  */
 
 import { AssemblyContent, LayerPosition } from "../../assembly/Assembly"
+import { createMockAssembly } from "../../assembly/Assembly-mock"
 import { AssemblyUpdater, createAssemblyUpdater } from "../../assembly/AssemblyUpdater"
-import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { Prototypes } from "../../constants"
@@ -28,9 +28,8 @@ import wire_type = defines.wire_type
 
 const pos = Pos(10.5, 10.5)
 
-let layer: Mutable<LayerPosition>
-let content: MutableEntityMap
 let assembly: AssemblyContent
+let layer: Mutable<LayerPosition>
 
 let assemblyUpdater: AssemblyUpdater
 let worldUpdater: mock.Stubbed<WorldUpdater>
@@ -43,8 +42,7 @@ before_all(() => {
 let totalCalls: number
 before_each(() => {
   layer = { surface: nil!, ...BBox.coords(0, 0, 32, 32), layerNumber: 1 }
-  content = newEntityMap()
-  assembly = { content, layers: [] }
+  assembly = createMockAssembly(1)
   totalCalls = 0
   function spyFn<F extends ContextualFun>(): F {
     return stub<F>().invokes((() => {
@@ -81,7 +79,7 @@ function createEntity(args?: Partial<LuaEntity>): LuaEntity & TestEntity {
 function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
   assemblyUpdater.onEntityCreated(assembly, entity, layer)
-  const found = content.findCompatible(entity.name, entity.position, nil) as AssemblyEntity<TestEntity> | nil
+  const found = assembly.content.findCompatible(entity.name, entity.position, nil) as AssemblyEntity<TestEntity> | nil
   assert(found)
   return { luaEntity: entity, added: found! }
 }
@@ -154,16 +152,16 @@ function assertReviveLostReferenceCalled(entity: AssemblyEntity<TestEntity>) {
 }
 
 function assertOneEntity() {
-  assert.equal(1, content.countNumEntities(), "has one entity")
+  assert.equal(1, assembly.content.countNumEntities(), "has one entity")
   entitiesAsserted = true
 }
 function assertNEntities(n: number) {
-  assert.equal(n, content.countNumEntities(), `has ${n} entities`)
+  assert.equal(n, assembly.content.countNumEntities(), `has ${n} entities`)
   entitiesAsserted = true
 }
 
 function assertNoEntities() {
-  assert.same(0, content.countNumEntities(), "has no entities")
+  assert.same(0, assembly.content.countNumEntities(), "has no entities")
   entitiesAsserted = true
 }
 
@@ -197,7 +195,7 @@ describe("add", () => {
   })
 
   test.each([false, true])(
-    "again at lower layer updates content and all world entities, with layer changes: %s",
+    "again at lower layer updates assembly.content and all world entities, with layer changes: %s",
     (withChanges) => {
       const { added } = addAndReset(3, 1)
       const newEntity = createEntity()
@@ -314,7 +312,7 @@ describe("update", () => {
   test("non-existent defaults to add behavior (bug)", () => {
     const entity = createEntity()
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer)
-    const added = content.findCompatible("test", pos, nil) as AssemblyEntity<TestEntity>
+    const added = assembly.content.findCompatible("test", pos, nil) as AssemblyEntity<TestEntity>
     assertAdded(added, entity)
   })
 
@@ -344,7 +342,7 @@ describe("update", () => {
   })
 
   test.each([false, true])(
-    "in higher layer updates content and entities, with existing changes: %s",
+    "in higher layer updates assembly.content and entities, with existing changes: %s",
     (withExistingChanges) => {
       const { luaEntity, added } = addAndReset(1, 2)
       if (withExistingChanges) {
@@ -519,8 +517,8 @@ describe("circuit wires", () => {
       const value = next(connections)[0] as AssemblyWireConnection
       assert.true(wireConnectionEquals(value, expectedConnection), "connections do not match")
     }
-    assertConnectionsMatch(content.getWireConnections(entity1)?.get(entity2))
-    assertConnectionsMatch(content.getWireConnections(entity1)?.get(entity2))
+    assertConnectionsMatch(assembly.content.getWireConnections(entity1)?.get(entity2))
+    assertConnectionsMatch(assembly.content.getWireConnections(entity1)?.get(entity2))
   }
 
   test("added circuit wires when entity added", () => {
@@ -559,15 +557,15 @@ describe("circuit wires", () => {
       setupNewWire(luaEntity1, entity1)
       const { added: entity2 } = addAndReset()
 
-      const connection = next(content.getWireConnections(entity1)!.get(entity2)!)[0] as AssemblyWireConnection
+      const connection = next(assembly.content.getWireConnections(entity1)!.get(entity2)!)[0] as AssemblyWireConnection
 
       wireSaver.getWireConnectionDiff.invokes(() => {
         wireSaver.getWireConnectionDiff.invokes(() => false as any)
         return $multi([], [connection])
       })
       assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, layer)
-      assert.falsy(content.getWireConnections(entity1)?.get(entity2))
-      assert.falsy(content.getWireConnections(entity2)?.get(entity1))
+      assert.falsy(assembly.content.getWireConnections(entity1)?.get(entity2))
+      assert.falsy(assembly.content.getWireConnections(entity2)?.get(entity1))
       assertUpdateCalled(entity1, 1, nil, false)
       assertNEntities(2)
     })

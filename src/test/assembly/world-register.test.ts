@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, Layer } from "../../assembly/Assembly"
+import { Assembly } from "../../assembly/Assembly"
 import { _mockAssembly } from "../../assembly/UserAssembly"
 import { deleteAssembly, getLayerAtPosition, registerAssembly } from "../../assembly/world-register"
 import { BBox, Pos } from "../../lib/geometry"
@@ -30,7 +30,7 @@ test("registers in world correctly", () => {
   registerAssembly(mockAssembly)
   after_test(() => deleteAssembly(mockAssembly))
   function assertLayersCorrect(): void {
-    for (const layer of mockAssembly.layers as Layer[]) {
+    for (const [, layer] of mockAssembly.iterateLayers()) {
       const center = BBox.center(layer)
       assert.equal(layer, getLayerAtPosition(layer.surface, center))
       assert.not_equal(layer, getLayerAtPosition(layer.surface, center.plus(Pos(33, 33))))
@@ -43,7 +43,7 @@ test("registers in world correctly", () => {
   })
   assertLayersCorrect()
   mockAssembly.delete()
-  for (const layer of mockAssembly.layers as Layer[]) {
+  for (const [, layer] of mockAssembly.iterateLayers()) {
     const center = BBox.center(layer)
     assert.nil(getLayerAtPosition(layer.surface, center))
   }

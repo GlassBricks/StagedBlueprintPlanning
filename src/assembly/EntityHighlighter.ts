@@ -141,8 +141,6 @@ const highlightConfigs: {
   },
 }
 
-declare const luaLength: LuaLength<table, number>
-
 export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
   const { createHighlightBox, createSprite, createEntityPreview, createSelectionProxy } = entityCreator
 
@@ -266,8 +264,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    for (const i of $range(1, luaLength(assembly.layers))) {
-      const layer = assembly.layers[i]
+    for (const [i, layer] of assembly.iterateLayers()) {
       const shouldHaveEntityPreview = entity.getWorldEntity(layer.layerNumber, "mainEntity") === nil
       const hasError = shouldHaveEntityPreview && i >= entity.getBaseLayer()
       updateAssociatedEntity(entity, layer, "previewEntity", shouldHaveEntityPreview)
@@ -278,7 +275,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
   function updateErrorIndicators(assembly: AssemblyContent, entity: AssemblyEntity): void {
     let hasErrorAnywhere = false
-    for (const i of $range(entity.getBaseLayer(), luaLength(assembly.layers))) {
+    for (const i of $range(entity.getBaseLayer(), assembly.numLayers())) {
       const hasError = entity.getWorldEntity(i) === nil
       if (hasError) {
         hasErrorAnywhere = true
@@ -290,8 +287,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       return
     }
 
-    for (const i of $range(1, luaLength(assembly.layers))) {
-      const layer = assembly.layers[i]
+    for (const [i, layer] of assembly.iterateLayers()) {
       const shouldHaveIndicator = i >= entity.getBaseLayer() && entity.getWorldEntity(i, "mainEntity") !== nil
       updateHighlight(entity, layer, "errorElsewhereIndicator", shouldHaveIndicator)
     }
@@ -300,10 +296,10 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function updateAllConfigChangedHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
     const baseLayer = entity.getBaseLayer()
     let lastLayerWithHighlights = baseLayer
-    for (const i of $range(baseLayer, luaLength(assembly.layers))) {
+    for (const [i, layer] of assembly.iterateLayers()) {
       const hasConfigChanged = entity.hasLayerChange(i)
       const isUpgrade = hasConfigChanged && entity.getLayerChange(i)!.name !== nil
-      const highlight = updateHighlight(entity, assembly.layers[i], "configChangedHighlight", hasConfigChanged)
+      const highlight = updateHighlight(entity, layer, "configChangedHighlight", hasConfigChanged)
       if (highlight) {
         ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
           ? HighlightValues.Upgraded
@@ -316,7 +312,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       for (; lastLayerWithHighlights < i; lastLayerWithHighlights++) {
         const highlight = updateHighlight(
           entity,
-          assembly.layers[lastLayerWithHighlights],
+          assembly.getLayer(lastLayerWithHighlights),
           "configChangedLaterHighlight",
           true,
         ) as SpriteRender
@@ -327,7 +323,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       // remove later highlights for all layers
       removeHighlightFromAllLayers(entity, "configChangedLaterHighlight")
     } else {
-      for (const i of $range(lastLayerWithHighlights, luaLength(assembly.layers))) {
+      for (const i of $range(lastLayerWithHighlights, assembly.numLayers())) {
         removeHighlight(entity, i, "configChangedLaterHighlight")
       }
     }
@@ -341,8 +337,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
     if (!entity.isLostReference) return
     for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
-    for (const i of $range(1, luaLength(assembly.layers))) {
-      const layer = assembly.layers[i]
+    for (const [, layer] of assembly.iterateLayers()) {
       getOrCreateAssociatedEntity(entity, layer, "previewEntity")
       getOrCreateAssociatedEntity(entity, layer, "selectionProxy")
       updateHighlight(entity, layer, "lostReferenceHighlight", true)

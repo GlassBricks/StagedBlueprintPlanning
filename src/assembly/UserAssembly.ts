@@ -35,7 +35,8 @@ type AssemblyLayer = Mutable<Layer>
 class AssemblyImpl implements Assembly {
   name = state("")
   displayName: State<LocalisedString>
-  layers: AssemblyLayer[] = []
+
+  private layers: AssemblyLayer[] = []
 
   content = newEntityMap()
 
@@ -63,6 +64,25 @@ class AssemblyImpl implements Assembly {
   static _mock(chunkSize: Vec2): AssemblyImpl {
     // does not hook to anything.
     return new AssemblyImpl(0 as AssemblyId, chunkSize)
+  }
+
+  getLayer(layerNumber: LayerNumber): Layer {
+    const layer = this.layers[layerNumber - 1]
+    assert(layer, "layer not found")
+    return layer
+  }
+  numLayers(): number {
+    return this.layers.length
+  }
+
+  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
+  iterateLayers(start: LayerNumber = 1, end: LayerNumber = this.layers.length): any {
+    function next(layers: Layer[], i: number) {
+      if (i >= end) return
+      i++
+      return $multi(i, layers[i - 1])
+    }
+    return $multi(next, this.layers, start - 1)
   }
 
   delete() {

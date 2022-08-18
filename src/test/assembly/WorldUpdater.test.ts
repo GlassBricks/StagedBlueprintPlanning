@@ -110,7 +110,7 @@ describe("updateWorldEntities", () => {
     test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {
       entity.moveToLayer(2)
       if (withExisting) {
-        const luaEntity = mockEntityCreator.createEntity(assembly.layers[3], entity, {
+        const luaEntity = mockEntityCreator.createEntity(assembly.getLayer(3), entity, {
           name: "test",
           prop1: 10,
         } as TestEntity)!
@@ -124,7 +124,7 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = mockEntityCreator.createEntity(assembly.layers[2], entity, {
+      const replaced = mockEntityCreator.createEntity(assembly.getLayer(2), entity, {
         name: "test",
         prop1: 10,
       } as TestEntity)!

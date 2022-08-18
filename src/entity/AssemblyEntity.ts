@@ -43,9 +43,13 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   /** @return the value at a given layer. Nil if below the first layer. The result is a new table. */
   getValueAtLayer(layer: LayerNumber): T | nil
-
   /** Gets the entity name at the given layer. If below the first layer, returns the base entity name. */
   getNameAtLayer(layer: LayerNumber): string
+  /**
+   * Iterates the values of layers in the given range. More efficient than repeated calls to getValueAtLayer.
+   * The same instance will be returned for each layer; its value is ephemeral.
+   */
+  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
 
   /**
    * Adjusts diff so that the value at the given layer matches the given value.
@@ -53,11 +57,6 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    * @return true if the value changed.
    */
   adjustValueAtLayer(layer: LayerNumber, value: T): boolean
-  /**
-   * Iterates the values of layers in the given range. More efficient than repeated calls to getValueAtLayer.
-   * The same instance will be returned for each layer; its value is ephemeral.
-   */
-  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
 
   /** Moves the entity to a lower layer. */
   moveDown(lowerLayer: LayerNumber): LayerNumber
@@ -69,12 +68,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    * @return The old layer number.
    */
   moveDown(lowerLayer: LayerNumber, newValue: Mutable<T>, createDiffAtOldLayer?: boolean): LayerNumber
-  /**
-   * Move the entity to a higher layer
-   * All layer changes from the old layer to the new layer will be applied (and then removed).
-   */
-  moveUp(higherLayer: LayerNumber): LayerNumber
-
+  /** If moving up, deletes/merges all layer changes from old layer to new layer. */
   moveToLayer(layer: LayerNumber): void
 
   /** Returns nil if world entity does not exist or is invalid */
@@ -85,7 +79,6 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   replaceWorldEntity<T extends WorldEntityType>(layer: LayerNumber, entity: WorldEntities[T] | nil, type: T): void
   destroyWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): void
   hasAnyWorldEntity(type: WorldEntityType): boolean
-
   destroyAllWorldEntities(type: WorldEntityType): void
   /** Iterates all valid world entities. May skip layers. */
   iterateWorldEntities<T extends WorldEntityType>(type: T): LuaIterable<LuaMultiReturn<[LayerNumber, WorldEntities[T]]>>
@@ -175,8 +168,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     return value
   }
-
-  public getNameAtLayer(layer: LayerNumber): string {
+  getNameAtLayer(layer: LayerNumber): string {
     let name = this.baseValue.name
     if (layer <= this.baseLayer) return name
     for (const [changedLayer, diff] of pairs(this.layerChanges)) {
@@ -184,6 +176,28 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       if (diff.name) name = diff.name
     }
     return name
+  }
+
+  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
+  iterateValues(start: LayerNumber, end: LayerNumber) {
+    const { baseLayer, baseValue } = this
+    let value = this.getValueAtLayer(start)
+    function next(layerValues: LayerChanges, prevLayer: LayerNumber | nil) {
+      if (!prevLayer) {
+        return $multi(start, value)
+      }
+      const nextLayer = prevLayer + 1
+      if (nextLayer < baseLayer) return $multi(nextLayer, nil)
+      if (nextLayer > end) return $multi()
+      if (nextLayer === baseLayer) {
+        value = shallowCopy(baseValue)
+      } else {
+        const diff = layerValues[nextLayer]
+        if (diff) applyDiffToEntity(value!, diff)
+      }
+      return $multi(nextLayer, value)
+    }
+    return $multi<any>(next, this.layerChanges, nil)
   }
 
   adjustValueAtLayer(layer: LayerNumber, value: T): boolean {
@@ -233,28 +247,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
   }
 
-  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
-  iterateValues(start: LayerNumber, end: LayerNumber) {
-    const { baseLayer, baseValue } = this
-    let value = this.getValueAtLayer(start)
-    function next(layerValues: LayerChanges, prevLayer: LayerNumber | nil) {
-      if (!prevLayer) {
-        return $multi(start, value)
-      }
-      const nextLayer = prevLayer + 1
-      if (nextLayer < baseLayer) return $multi(nextLayer, nil)
-      if (nextLayer > end) return $multi()
-      if (nextLayer === baseLayer) {
-        value = shallowCopy(baseValue)
-      } else {
-        const diff = layerValues[nextLayer]
-        if (diff) applyDiffToEntity(value!, diff)
-      }
-      return $multi(nextLayer, value)
-    }
-    return $multi<any>(next, this.layerChanges, nil)
-  }
-
   moveDown(lowerLayer: LayerNumber, newValue?: Mutable<T>, createDiffAtOldLayer?: boolean): LayerNumber {
     const { baseLayer: higherLayer, baseValue: higherValue } = this
     assert(lowerLayer < higherLayer, "new layer number must be greater than old layer number")
@@ -265,7 +257,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.layerChanges[higherLayer] = newDiff
     return higherLayer
   }
-  moveUp(higherLayer: LayerNumber): LayerNumber {
+  private moveUp(higherLayer: LayerNumber): LayerNumber {
     const { baseLayer: lowerLayer, baseValue } = this
     assert(higherLayer > lowerLayer, "new layer number must be greater than old layer number")
     const { layerChanges } = this
@@ -341,12 +333,12 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (!byType) return (() => nil) as any
     let curKey = next(byType)[0]
     return function () {
-      while (true) {
+      while (curKey) {
         const key = curKey
-        if (!key) return nil
         curKey = next(byType, key)[0]
         const entity = byType[key]!
         if (entity.valid) return $multi(key, entity)
+        delete byType[key]
       }
     } as any
   }
