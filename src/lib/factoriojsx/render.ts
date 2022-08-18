@@ -385,7 +385,7 @@ export function cleanGuiInstances(): number {
   return count
 }
 
-if (script.active_mods.debugadapter) {
+if (script.active_mods.debugadapter !== nil) {
   commands.add_command("clean-gui-instances", "", () => {
     const count = cleanGuiInstances()
     if (count > 0) {

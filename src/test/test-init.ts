@@ -43,10 +43,10 @@ declare let global: {
   lastCompileTimestamp?: string
 }
 
-if (script.active_mods.testorio) {
+if (script.active_mods.testorio !== nil) {
   function reinit() {
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
-    if (inventories) inventories.forEach((x) => x.destroy())
+    if (inventories !== nil) inventories.forEach((x) => x.destroy())
     global = {}
     Events.raiseFakeEventNamed("on_init", nil!)
   }

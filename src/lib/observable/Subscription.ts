@@ -63,7 +63,7 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   }
 
   private callUnsubscription(subscription: Unsubscription): void {
-    if ((subscription as Unsubscribable).close) {
+    if ((subscription as Unsubscribable).close !== nil) {
       ;(subscription as Unsubscribable).close()
     } else {
       ;(subscription as Func).invoke()

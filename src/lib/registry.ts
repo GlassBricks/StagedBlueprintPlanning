@@ -11,12 +11,12 @@
 
 export class Registry<T> {
   private nameToItem = {} as Record<string, T>
-  private itemToName = new LuaTable<T, string>()
+  private itemToName = new LuaMap<T, string>()
 
   constructor(protected itemName: string, protected getDebugDescription: (item: T) => string) {}
 
   registerRaw(name: string, item: T): void {
-    if (game) {
+    if (game !== nil) {
       error("This operation must only be done during script load.")
     }
     const existingItem: T = this.nameToItem[name]
