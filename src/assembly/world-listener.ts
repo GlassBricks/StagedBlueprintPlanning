@@ -94,8 +94,6 @@ Fast replace:
   (on_player_mined_item)
   on_built_entity
 
-Todo: bot actions
-
 Event tree:
 Start:
   on_player_mined_entity -> destroy
@@ -192,7 +190,6 @@ Events.on_pre_player_mined_item(() => {
 Events.on_player_mined_entity((e) => {
   const preMinedItemCalled = state.preMinedItemCalled
   state.preMinedItemCalled = nil
-  // todo: without on_pre_player_mined_item
   const { entity } = e
   const layer = getLayer(entity)
   if (!layer) return
