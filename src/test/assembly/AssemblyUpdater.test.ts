@@ -52,8 +52,8 @@ before_each(() => {
   worldUpdater = {
     updateWorldEntities: spyFn(),
     deleteWorldEntities: spyFn(),
-    makeLostReference: spyFn(),
-    reviveLostReference: spyFn(),
+    makeSettingsRemnant: spyFn(),
+    reviveSettingsRemnant: spyFn(),
   }
   wireSaver = {
     getWireConnectionDiff: stub<WireSaver["getWireConnectionDiff"]>().invokes(() => $multi([], [])),
@@ -140,15 +140,15 @@ function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.deleteWorldEntities).called_with(match.not_nil(), match.ref(entity))
 }
-function assertMakeLostReferenceCalled(entity: AssemblyEntity<TestEntity>) {
+function assertMakeSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.makeLostReference).called_with(assembly, entity)
+  assert.spy(worldUpdater.makeSettingsRemnant).called_with(assembly, entity)
 }
-function assertReviveLostReferenceCalled(entity: AssemblyEntity<TestEntity>) {
+function assertReviveSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.reviveLostReference).called_with(assembly, entity)
+  assert.spy(worldUpdater.reviveSettingsRemnant).called_with(assembly, entity)
 }
 
 function assertOneEntity() {
@@ -242,31 +242,31 @@ describe("delete", () => {
   test("in base layer deletes entity", () => {
     const { luaEntity, added } = addAndReset()
     assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer) // simulated
-    assert.falsy(added.isLostReference)
+    assert.falsy(added.isSettingsRemnant)
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
   })
 
-  test("in base layer with updates creates lost reference", () => {
+  test("in base layer with updates creates settings remnant", () => {
     const { luaEntity, added } = addAndReset()
     added._applyDiffAtLayer(2, { prop1: 3 })
     assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
     assertOneEntity()
-    assert.true(added.isLostReference)
-    assertMakeLostReferenceCalled(added)
+    assert.true(added.isSettingsRemnant)
+    assertMakeSettingsRemnantCalled(added)
   })
 })
 
 describe("revive", () => {
-  test.each([1, 2, 3, 4, 5, 6], "lost reference 1->3->5, revive at layer %d", (reviveLayer) => {
+  test.each([1, 2, 3, 4, 5, 6], "settings remnant 1->3->5, revive at layer %d", (reviveLayer) => {
     const { luaEntity, added } = addAndReset(1, reviveLayer)
     added._applyDiffAtLayer(3, { prop1: 3 })
     added._applyDiffAtLayer(5, { prop1: 4 })
-    added.isLostReference = true
+    added.isSettingsRemnant = true
 
     assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
     assert.equal(luaEntity, added.getWorldEntity(reviveLayer))
-    assert.falsy(added.isLostReference)
+    assert.falsy(added.isSettingsRemnant)
     assert.equal(added.getBaseLayer(), reviveLayer)
 
     if (reviveLayer >= 5) {
@@ -281,18 +281,18 @@ describe("revive", () => {
     }
 
     assertOneEntity()
-    assertReviveLostReferenceCalled(added)
+    assertReviveSettingsRemnantCalled(added)
   })
 
-  test.each([false, true], "lost reference 2->3, revive at layer 1, with changes: %s", (withChanges) => {
+  test.each([false, true], "settings remnant 2->3, revive at layer 1, with changes: %s", (withChanges) => {
     const { luaEntity, added } = addAndReset(2, 1)
     added._applyDiffAtLayer(3, { prop1: 3 })
-    added.isLostReference = true
+    added.isSettingsRemnant = true
 
     if (withChanges) luaEntity.prop1 = 1
 
     assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
-    assert.falsy(added.isLostReference)
+    assert.falsy(added.isSettingsRemnant)
     assert.equal(added.getBaseLayer(), 1)
 
     if (!withChanges) {
@@ -304,7 +304,7 @@ describe("revive", () => {
     }
 
     assertOneEntity()
-    assertReviveLostReferenceCalled(added)
+    assertReviveSettingsRemnantCalled(added)
   })
 })
 
@@ -458,27 +458,27 @@ describe("cleanup tool", () => {
     assertUpdateCalled(added, 1, 1, false)
   })
 
-  test("onErrorEntityRevived ignored if lost reference", () => {
+  test("onErrorEntityRevived ignored if settings remnant", () => {
     const { added, proxy } = setupWithProxy()
-    added.isLostReference = true
+    added.isSettingsRemnant = true
     assemblyUpdater.onErrorEntityRevived(assembly, proxy, layer)
     assert.nil(added.getWorldEntity(1))
     assertOneEntity()
     assertNoCalls()
   })
 
-  test("onLostReferenceRemoved", () => {
+  test("onSettingsRemnantRemoved", () => {
     const { added, proxy } = setupWithProxy()
-    added.isLostReference = true
-    assemblyUpdater.onLostReferenceDeleted(assembly, proxy, layer)
+    added.isSettingsRemnant = true
+    assemblyUpdater.onSettingsRemnantDeleted(assembly, proxy, layer)
     assert.nil(added.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
   })
 
-  test("onLostReferenceRemoved ignored if not lost reference", () => {
+  test("onSettingsRemnantRemoved ignored if not settings remnant", () => {
     const { added, proxy } = setupWithProxy()
-    assemblyUpdater.onLostReferenceDeleted(assembly, proxy, layer)
+    assemblyUpdater.onSettingsRemnantDeleted(assembly, proxy, layer)
     assert.nil(added.getWorldEntity(1))
     assertOneEntity()
     assertNoCalls()

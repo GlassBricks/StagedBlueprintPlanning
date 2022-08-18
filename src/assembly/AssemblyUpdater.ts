@@ -48,8 +48,8 @@ export interface AssemblyUpdater {
   /** When cleanup tool is normal-selected on an error entity. */
   onErrorEntityRevived(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
 
-  /** When cleanup tool is alt-selected on a lost reference entity. */
-  onLostReferenceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
+  /** When cleanup tool is alt-selected on a settings remnant entity. */
+  onSettingsRemnantDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
 }
 
 export function createAssemblyUpdater(
@@ -115,8 +115,8 @@ export function createAssemblyUpdater(
     layerNumber: LayerNumber,
     entity: LuaEntity,
   ): void {
-    if (existing.isLostReference) {
-      reviveLostReference(assembly, existing, layerNumber, entity)
+    if (existing.isSettingsRemnant) {
+      reviveSettingsRemnant(assembly, existing, layerNumber, entity)
     } else {
       // missing entity revived, update to match
       updateWorldEntities(assembly, existing, layerNumber, layerNumber)
@@ -131,24 +131,24 @@ export function createAssemblyUpdater(
     luaEntity: LuaEntity,
   ): void {
     const oldLayerNumber = existing.moveDown(layerNumber, added, true)
-    if (existing.isLostReference) {
-      reviveLostReference(assembly, existing, layerNumber, luaEntity)
+    if (existing.isSettingsRemnant) {
+      reviveSettingsRemnant(assembly, existing, layerNumber, luaEntity)
     } else {
       existing.replaceWorldEntity(layerNumber, luaEntity)
       updateWorldEntities(assembly, existing, layerNumber, oldLayerNumber - 1, true)
     }
   }
 
-  function reviveLostReference(
+  function reviveSettingsRemnant(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
     layerNumber: LayerNumber,
     entity: LuaEntity,
   ): void {
-    existing.isLostReference = nil
+    existing.isSettingsRemnant = nil
     existing.moveToLayer(layerNumber)
     existing.replaceWorldEntity(layerNumber, entity)
-    worldUpdater.reviveLostReference(assembly, existing)
+    worldUpdater.reviveSettingsRemnant(assembly, existing)
   }
 
   function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
@@ -169,8 +169,8 @@ export function createAssemblyUpdater(
     }
 
     if (existing.hasLayerChange()) {
-      existing.isLostReference = true
-      worldUpdater.makeLostReference(assembly, existing)
+      existing.isSettingsRemnant = true
+      worldUpdater.makeSettingsRemnant(assembly, existing)
     } else {
       content.delete(existing)
       deleteWorldEntities(assembly, existing)
@@ -286,13 +286,13 @@ export function createAssemblyUpdater(
 
   function onErrorEntityRevived(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
     const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
-    if (!existing || existing.isLostReference || layer.layerNumber < existing.getBaseLayer()) return
+    if (!existing || existing.isSettingsRemnant || layer.layerNumber < existing.getBaseLayer()) return
     updateWorldEntities(assembly, existing, layer.layerNumber, layer.layerNumber)
   }
 
-  function onLostReferenceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
+  function onSettingsRemnantDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
     const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
-    if (!existing || !existing.isLostReference) return
+    if (!existing || !existing.isSettingsRemnant) return
     assembly.content.delete(existing)
     deleteWorldEntities(assembly, existing)
   }
@@ -304,7 +304,7 @@ export function createAssemblyUpdater(
     onEntityMarkedForUpgrade,
     onCircuitWiresPotentiallyUpdated,
     onErrorEntityRevived,
-    onLostReferenceDeleted,
+    onSettingsRemnantDeleted,
   }
 }
 

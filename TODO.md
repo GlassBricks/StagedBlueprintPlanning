@@ -29,17 +29,16 @@
 - [ ] "Locked" properties
 - [x] Upgraded entities
 - [x] Upgraded modules
-- [ ] Stop relying on hacky blueprinting
-    - [ ] A save/paste algorithm for every building entity in the game
-    - [ ] Or maybe it's not so bad to rely on blueprinting
+- [x] Stop relying on hacky blueprinting
+    - [x] Or maybe it's not so bad to rely on blueprinting
 - [x] Neighbors/circuit connections
-- [ ] Lost references (entities deleted, but has changed in other layers)
+- [x] Lost references (entities deleted, but has changed in other layers)
     - Meant so you don't lost information if accidentally deleted something
     - [x] Create lost references
-    - [ ] Decide on a better name for it
+    - [x] Decide on a better name for it (settings remnant)
     - [x] Revive lost references
-    - [ ] Provide way to revive/delete lost references
-    - [ ] Notification/indication when lost reference created
+    - [x] Provide way to revive/delete lost references
+    - [x] Notification/indication when lost reference created
 - [x] Make entities from previous layers indestructible
 - [ ] Decide how to handle situations that can result in accidental loss of information
     - [ ] Build to match entity in later layer, then delete

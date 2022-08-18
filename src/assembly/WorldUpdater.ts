@@ -40,8 +40,8 @@ export interface WorldUpdater {
 
   deleteWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void
 
-  makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
-  reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
+  makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
+  reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
 
 export function createWorldUpdater(
@@ -95,7 +95,7 @@ export function createWorldUpdater(
     endLayer?: LayerNumber,
     replace?: boolean,
   ): void {
-    assert(!entity.isLostReference)
+    assert(!entity.isSettingsRemnant)
 
     if (startLayer < 1) startLayer = 1
     const maxLayer = assembly.numLayers()
@@ -117,22 +117,22 @@ export function createWorldUpdater(
     highlighter.deleteEntity(entity)
   }
 
-  function makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    assert(entity.isLostReference)
+  function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    assert(entity.isSettingsRemnant)
     entity.destroyAllWorldEntities("mainEntity")
-    highlighter.makeLostReference(assembly, entity)
+    highlighter.makeSettingsRemnant(assembly, entity)
   }
-  function reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    assert(!entity.isLostReference)
+  function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    assert(!entity.isSettingsRemnant)
     doUpdateWorldEntities(assembly, entity, 1, assembly.numLayers(), true)
-    highlighter.reviveLostReference(assembly, entity)
+    highlighter.reviveSettingsRemnant(assembly, entity)
   }
 
   return {
     updateWorldEntities,
     deleteWorldEntities: doDeleteEntity,
-    makeLostReference,
-    reviveLostReference,
+    makeSettingsRemnant,
+    reviveSettingsRemnant,
   }
 }
 

@@ -329,7 +329,7 @@ describe("Cleanup tool", () => {
     })
     assert.spy(updater.onErrorEntityRevived).called_with(assembly, entity, assembly.getLayer(1))
   })
-  test("delete lost reference", () => {
+  test("delete settings remnant", () => {
     const entity = surface.create_entity({
       name: Prototypes.SelectionProxyPrefix + "iron-chest",
       position: getLayerCenter(1),
@@ -344,6 +344,6 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onLostReferenceDeleted).called_with(assembly, entity, assembly.getLayer(1))
+    assert.spy(updater.onSettingsRemnantDeleted).called_with(assembly, entity, assembly.getLayer(1))
   })
 })

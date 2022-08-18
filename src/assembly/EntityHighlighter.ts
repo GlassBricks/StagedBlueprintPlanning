@@ -26,8 +26,8 @@ export interface HighlightEntities {
   /** Indicator sprite when there is an error highlight in another layer. */
   errorElsewhereIndicator?: SpriteRender
 
-  /** Blue outline when a lost reference entity is left behind. */
-  lostReferenceHighlight?: HighlightBoxEntity
+  /** Blue outline when a settings remnant entity is left behind. */
+  settingsRemnantHighlight?: HighlightBoxEntity
 
   /** Blue outline when an entity's settings have changed. */
   configChangedHighlight?: HighlightBoxEntity
@@ -57,8 +57,8 @@ export interface EntityHighlighter {
   ): void
 
   deleteEntity(entity: AssemblyEntity): void
-  makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
-  reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void
+  makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
+  reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
 
 /** @noSelf */
@@ -99,7 +99,7 @@ interface SpriteConfig {
 }
 export const enum HighlightValues {
   Error = "not-allowed",
-  LostReference = "train-visualization",
+  SettingsRemnant = "train-visualization",
   ConfigChanged = "logistics",
   Upgraded = "copy",
   ErrorInOtherLayer = "utility/danger_icon",
@@ -122,9 +122,9 @@ const highlightConfigs: {
     scale: 0.3,
     renderLayer: "entity-info-icon-above",
   },
-  lostReferenceHighlight: {
+  settingsRemnantHighlight: {
     type: "highlight",
-    renderType: HighlightValues.LostReference,
+    renderType: HighlightValues.SettingsRemnant,
     target: "previewEntity",
   },
   configChangedHighlight: {
@@ -334,18 +334,18 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     updateAllConfigChangedHighlights(assembly, entity)
   }
 
-  function makeLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    if (!entity.isLostReference) return
+  function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    if (!entity.isSettingsRemnant) return
     for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
     for (const [, layer] of assembly.iterateLayers()) {
       getOrCreateAssociatedEntity(entity, layer, "previewEntity")
       getOrCreateAssociatedEntity(entity, layer, "selectionProxy")
-      updateHighlight(entity, layer, "lostReferenceHighlight", true)
+      updateHighlight(entity, layer, "settingsRemnantHighlight", true)
     }
   }
-  function reviveLostReference(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    if (entity.isLostReference) return
-    entity.destroyAllWorldEntities("lostReferenceHighlight")
+  function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    if (entity.isSettingsRemnant) return
+    entity.destroyAllWorldEntities("settingsRemnantHighlight")
     updateHighlights(assembly, entity)
   }
 
@@ -358,8 +358,8 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   return {
     updateHighlights,
     deleteEntity,
-    makeLostReference,
-    reviveLostReference,
+    makeSettingsRemnant,
+    reviveSettingsRemnant,
   }
 }
 

@@ -29,8 +29,8 @@ export type LayerNumber = number
 export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPose {
   readonly categoryName: CategoryName
   direction: defines.direction | nil
-  /** If this entity is a lost reference */
-  isLostReference?: true
+  /** If this entity is a settings remnant */
+  isSettingsRemnant?: true
 
   getBaseLayer(): LayerNumber
   getBaseValue(): Readonly<T>
@@ -108,7 +108,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   public readonly position: Position
   public direction: defines.direction | nil
 
-  public isLostReference?: true
+  public isSettingsRemnant?: true
 
   private baseLayer: LayerNumber
   private baseValue: T

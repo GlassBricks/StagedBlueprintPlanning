@@ -334,7 +334,7 @@ Events.on_player_alt_selected_area((e) => {
   for (const entity of e.entities) {
     const layer = getLayer(entity)
     if (!layer) continue
-    DefaultAssemblyUpdater.onLostReferenceDeleted(layer.assembly, entity, layer)
+    DefaultAssemblyUpdater.onSettingsRemnantDeleted(layer.assembly, entity, layer)
   }
 })
 

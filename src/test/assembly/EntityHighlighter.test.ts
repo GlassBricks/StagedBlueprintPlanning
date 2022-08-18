@@ -218,22 +218,22 @@ describe("config changed highlight", () => {
   })
 })
 
-test("makeLostReference creates highlights", () => {
-  entity.isLostReference = true
-  highlightCreator.makeLostReference(assembly, entity)
+test("makeSettingsRemnant creates highlights", () => {
+  entity.isSettingsRemnant = true
+  highlightCreator.makeSettingsRemnant(assembly, entity)
   for (let i = 1; i <= 5; i++) {
-    assert.not_nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
+    assert.not_nil(entity.getWorldEntity(i, "settingsRemnantHighlight"))
     assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
     assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
   }
 })
-test("deleteLostReference removes highlights and sets entities correct", () => {
-  entity.isLostReference = true
-  highlightCreator.makeLostReference(assembly, entity)
-  entity.isLostReference = nil
-  highlightCreator.reviveLostReference(assembly, entity)
+test("deleteSettingsRemnant removes highlights and sets entities correct", () => {
+  entity.isSettingsRemnant = true
+  highlightCreator.makeSettingsRemnant(assembly, entity)
+  entity.isSettingsRemnant = nil
+  highlightCreator.reviveSettingsRemnant(assembly, entity)
   for (let i = 1; i <= 5; i++) {
-    assert.nil(entity.getWorldEntity(i, "lostReferenceHighlight"))
+    assert.nil(entity.getWorldEntity(i, "settingsRemnantHighlight"))
     assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
     if (i >= entity.getBaseLayer()) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
     else assert.nil(entity.getWorldEntity(i, "selectionProxy"))

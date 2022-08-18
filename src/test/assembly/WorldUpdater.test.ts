@@ -50,8 +50,8 @@ before_each(() => {
   highlighter = {
     updateHighlights: spy(),
     deleteEntity: spy(),
-    makeLostReference: spy(),
-    reviveLostReference: spy(),
+    makeSettingsRemnant: spy(),
+    reviveSettingsRemnant: spy(),
   }
 
   worldUpdater = createWorldUpdater(mockEntityCreator, wireUpdater, highlighter)
@@ -201,21 +201,21 @@ test("deleteWorldEntities", () => {
   assert.spy(highlighter.deleteEntity).called_with(match.ref(entity))
 })
 
-test("makeLostReference deletes all entities and calls highlighter.makeLostReference", () => {
-  entity.isLostReference = true
-  worldUpdater.makeLostReference(assembly, entity)
+test("makeSettingsRemnant deletes all entities and calls highlighter.makeSettingsRemnant", () => {
+  entity.isSettingsRemnant = true
+  worldUpdater.makeSettingsRemnant(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
-  assert.spy(highlighter.makeLostReference).called_with(match.ref(assembly), match.ref(entity))
+  assert.spy(highlighter.makeSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
 })
 
-test("reviveLostReference deletes all entities and calls highlighter.reviveLostReference", () => {
-  entity.isLostReference = true
-  worldUpdater.makeLostReference(assembly, entity)
+test("reviveSettingsRemnant deletes all entities and calls highlighter.reviveSettingsRemnant", () => {
+  entity.isSettingsRemnant = true
+  worldUpdater.makeSettingsRemnant(assembly, entity)
 
-  entity.isLostReference = nil
-  worldUpdater.reviveLostReference(assembly, entity)
+  entity.isSettingsRemnant = nil
+  worldUpdater.reviveSettingsRemnant(assembly, entity)
   for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
-  assert.spy(highlighter.reviveLostReference).called_with(match.ref(assembly), match.ref(entity))
+  assert.spy(highlighter.reviveSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
 })
 
 // this duplicates WireHandler test a bit
