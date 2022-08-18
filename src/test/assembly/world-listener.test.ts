@@ -14,6 +14,7 @@ import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/Assembly
 import { _mockAssembly } from "../../assembly/UserAssembly"
 import { _inValidState } from "../../assembly/world-listener"
 import { deleteAssembly, registerAssembly } from "../../assembly/world-register"
+import { Prototypes } from "../../constants"
 import { LayerNumber } from "../../entity/AssemblyEntity"
 import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
 import { Events } from "../../lib"
@@ -310,5 +311,41 @@ describe("robot actions", () => {
       done()
       assert.spy(updater.onEntityDeleted).called_with(assembly, match._, layers[1])
     })
+  })
+})
+
+describe("Cleanup tool", () => {
+  test("revive error entity", () => {
+    const entity = surface.create_entity({
+      name: Prototypes.SelectionProxyPrefix + "iron-chest",
+      position: getLayerCenter(1),
+      force: "player",
+    })!
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.CleanupTool,
+      surface,
+      area: testArea(0).bbox,
+      entities: [entity],
+      tiles: [],
+    })
+    assert.spy(updater.onErrorEntityRevived).called_with(assembly, entity, layers[1])
+  })
+  test("delete lost reference", () => {
+    const entity = surface.create_entity({
+      name: Prototypes.SelectionProxyPrefix + "iron-chest",
+      position: getLayerCenter(1),
+      force: "player",
+    })!
+    // alt select
+    Events.raiseFakeEventNamed("on_player_alt_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.CleanupTool,
+      surface,
+      area: testArea(0).bbox,
+      entities: [entity],
+      tiles: [],
+    })
+    assert.spy(updater.onLostReferenceDeleted).called_with(assembly, entity, layers[1])
   })
 })

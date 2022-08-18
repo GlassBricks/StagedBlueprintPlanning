@@ -13,6 +13,9 @@ export interface PrototypeBase {
   name: string
   type: string
   localised_name?: LocalisedString
+  localised_description?: LocalisedString
+
+  order?: string
 }
 export interface Sound {
   // stub type
@@ -27,7 +30,6 @@ export interface EntityPrototype extends PrototypeBase {
   icon_mipmaps?: number
   icon?: string
 
-  order?: string
   subgroup?: string
 
   selection_box?: BoundingBoxWrite | BoundingBoxArray
@@ -65,7 +67,6 @@ export interface ItemPrototype extends PrototypeBase {
   icon?: string
 
   subgroup?: string
-  order?: string
 
   stack_size: number
   flags?: Array<keyof ItemPrototypeFlags>
@@ -116,18 +117,42 @@ export interface CustomInputPrototype extends PrototypeBase {
 
   key_sequence: string
   linked_game_control?: string
+  item_to_spawn?: string
+  action?:
+    | "lua"
+    | "spawn-item"
+    | "toggle-personal-roboport"
+    | "toggle-personal-logistic-requests"
+    | "toggle-equipment-movement-bonus"
+}
+
+export interface ShortcutPrototype extends PrototypeBase {
+  type: "shortcut"
+  action:
+    | "toggle-alt-mode"
+    | "undo"
+    | "copy"
+    | "cut"
+    | "paste"
+    | "import-string"
+    | "toggle-personal-roboport"
+    | "toggle-equipment-movement-bonus"
+    | "spawn-item"
+    | "lua"
+  icon: Sprite
+  item_to_spawn?: string
+  associated_control_input?: string
+  style?: "default" | "blue" | "red" | "green"
 }
 
 export interface ItemGroupPrototype extends PrototypeBase {
   type: "item-group"
   icon: string
   icon_size: number
-  order?: string
 }
 export interface ItemSubgroupPrototype extends PrototypeBase {
   type: "item-subgroup"
   group: string
-  order?: string
 }
 
 export interface BasicSprite {

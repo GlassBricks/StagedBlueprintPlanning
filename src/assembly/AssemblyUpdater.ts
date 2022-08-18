@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
@@ -43,6 +44,12 @@ export interface AssemblyUpdater {
 
   /** Handles possible circuit wires changes of an entity. */
   onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+
+  /** When cleanup tool is normal-selected on an error entity. */
+  onErrorEntityRevived(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
+
+  /** When cleanup tool is alt-selected on a lost reference entity. */
+  onLostReferenceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
 }
 
 export function createAssemblyUpdater(
@@ -59,7 +66,7 @@ export function createAssemblyUpdater(
     const { layerNumber } = layer
     const { content } = assembly
 
-    const existing = content.findCompatible(entity, position, entity.direction)
+    const existing = content.findCompatible(entity.name, position, entity.direction)
     if (existing) {
       const existingLayer = existing.getBaseLayer()
       if (existingLayer <= layerNumber) {
@@ -148,7 +155,7 @@ export function createAssemblyUpdater(
     const position = getLayerPosition(layer, entity)
     const { content } = assembly
 
-    const existing = content.findCompatible(entity, position, entity.direction)
+    const existing = content.findCompatible(entity.name, position, entity.direction)
     if (!existing) return
     const { layerNumber } = layer
     const existingLayer = existing.getBaseLayer()
@@ -177,7 +184,7 @@ export function createAssemblyUpdater(
     previousDirection?: defines.direction,
   ): AssemblyEntity | nil {
     const position = getLayerPosition(layer, entity)
-    const compatible = assembly.content.findCompatible(entity, position, previousDirection ?? entity.direction)
+    const compatible = assembly.content.findCompatible(entity.name, position, previousDirection ?? entity.direction)
     if (compatible && layer.layerNumber >= compatible.getBaseLayer()) {
       compatible.replaceWorldEntity(layer.layerNumber, entity) // just in case
     } else {
@@ -263,12 +270,41 @@ export function createAssemblyUpdater(
     }
   }
 
+  function getEntityFromProxyEntity(
+    proxyEntity: LuaEntity,
+    layer: LayerPosition,
+    assembly: AssemblyContent,
+  ): AssemblyEntity | nil {
+    const proxyName = proxyEntity.name
+    assert(proxyName.startsWith(Prototypes.SelectionProxyPrefix))
+    const actualName = proxyName.substring(Prototypes.SelectionProxyPrefix.length)
+
+    const position = getLayerPosition(layer, proxyEntity)
+    const existing = assembly.content.findCompatible(actualName, position, proxyEntity.direction)
+    return existing
+  }
+
+  function onErrorEntityRevived(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
+    const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
+    if (!existing || existing.isLostReference || layer.layerNumber < existing.getBaseLayer()) return
+    updateWorldEntities(assembly, existing, layer.layerNumber, layer.layerNumber)
+  }
+
+  function onLostReferenceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
+    const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
+    if (!existing || !existing.isLostReference) return
+    assembly.content.delete(existing)
+    deleteWorldEntities(assembly, existing)
+  }
+
   return {
     onEntityCreated,
     onEntityDeleted,
     onEntityPotentiallyUpdated,
     onEntityMarkedForUpgrade,
     onCircuitWiresPotentiallyUpdated,
+    onErrorEntityRevived,
+    onLostReferenceDeleted,
   }
 }
 

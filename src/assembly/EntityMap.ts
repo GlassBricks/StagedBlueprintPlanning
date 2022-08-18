@@ -19,7 +19,7 @@ import { MutableMap2D, newMap2D } from "../lib/map2d"
 
 export interface EntityMap {
   has(entity: AssemblyEntity): boolean
-  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
+  findCompatible(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
 
   getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil
 
@@ -27,8 +27,6 @@ export interface EntityMap {
 }
 
 export interface MutableEntityMap extends EntityMap {
-  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
-
   add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
   delete<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
 
@@ -49,11 +47,11 @@ class EntityMapImpl implements MutableEntityMap {
     return this.entities.has(entity)
   }
 
-  findCompatible(entity: Entity, position: Position, direction: defines.direction | nil): AssemblyEntity | nil {
+  findCompatible(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
-    const categoryName = getEntityCategory(entity.name)
+    const categoryName = getEntityCategory(entityName)
     if (direction === 0) direction = nil
     for (const candidate of atPos) {
       if (isCompatibleEntity(candidate, categoryName, direction)) return candidate

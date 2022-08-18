@@ -139,7 +139,7 @@ function analyzeExistingConnections(
   for (const existingConnection of existingConnections) {
     const otherLuaEntity = existingConnection.target_entity
     const otherEntity = content.findCompatible(
-      otherLuaEntity,
+      otherLuaEntity.name,
       getLayerPosition(layer, otherLuaEntity),
       otherLuaEntity.direction,
     )

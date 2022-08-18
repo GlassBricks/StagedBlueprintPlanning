@@ -22,7 +22,7 @@ import { getLayerAtPosition } from "./world-register"
 
 function getLayer(entity: LuaEntity): Layer | nil {
   if (!entity.valid) return nil
-  if (!isWorldEntityAssemblyEntity(entity)) return nil
+  if (!isWorldEntityAssemblyEntity(entity) && !entity.name.startsWith(Prototypes.SelectionProxyPrefix)) return nil
   const layer = getLayerAtPosition(entity.surface, entity.position)
   if (layer && layer.valid) return layer
 }
@@ -316,6 +316,26 @@ Events.on(CustomInputs.RemovePoleCables, (e) => {
 })
 Events.on_selected_entity_changed((e) => {
   clearPlayerAffectedWires(game.get_player(e.player_index)!)
+})
+
+// Cleanup tool
+
+Events.on_player_selected_area((e) => {
+  if (e.item !== Prototypes.CleanupTool) return
+  for (const entity of e.entities) {
+    const layer = getLayer(entity)
+    if (!layer) continue
+    DefaultAssemblyUpdater.onErrorEntityRevived(layer.assembly, entity, layer)
+  }
+})
+
+Events.on_player_alt_selected_area((e) => {
+  if (e.item !== Prototypes.CleanupTool) return
+  for (const entity of e.entities) {
+    const layer = getLayer(entity)
+    if (!layer) continue
+    DefaultAssemblyUpdater.onLostReferenceDeleted(layer.assembly, entity, layer)
+  }
 })
 
 export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil

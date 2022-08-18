@@ -14,6 +14,7 @@ import { AssemblyUpdater, createAssemblyUpdater } from "../../assembly/AssemblyU
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
+import { Prototypes } from "../../constants"
 import { AssemblyEntity, LayerChanges, LayerNumber } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
 import { Entity } from "../../entity/Entity"
@@ -80,7 +81,7 @@ function createEntity(args?: Partial<LuaEntity>): LuaEntity & TestEntity {
 function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
   assemblyUpdater.onEntityCreated(assembly, entity, layer)
-  const found = content.findCompatible({ name: entity.name }, entity.position, nil) as AssemblyEntity<TestEntity> | nil
+  const found = content.findCompatible(entity.name, entity.position, nil) as AssemblyEntity<TestEntity> | nil
   assert(found)
   return { luaEntity: entity, added: found! }
 }
@@ -139,7 +140,7 @@ function assertUpdateCalled(
 function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.deleteWorldEntities).called_with(match.not_nil(), entity)
+  assert.spy(worldUpdater.deleteWorldEntities).called_with(match.not_nil(), match.ref(entity))
 }
 function assertMakeLostReferenceCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
@@ -153,16 +154,16 @@ function assertReviveLostReferenceCalled(entity: AssemblyEntity<TestEntity>) {
 }
 
 function assertOneEntity() {
-  assert.equal(1, content.countNumEntities())
+  assert.equal(1, content.countNumEntities(), "has one entity")
   entitiesAsserted = true
 }
 function assertNEntities(n: number) {
-  assert.equal(n, content.countNumEntities())
+  assert.equal(n, content.countNumEntities(), `has ${n} entities`)
   entitiesAsserted = true
 }
 
 function assertNoEntities() {
-  assert.same(0, content.countNumEntities())
+  assert.same(0, content.countNumEntities(), "has no entities")
   entitiesAsserted = true
 }
 
@@ -313,7 +314,7 @@ describe("update", () => {
   test("non-existent defaults to add behavior (bug)", () => {
     const entity = createEntity()
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer)
-    const added = content.findCompatible({ name: "test" }, pos, nil) as AssemblyEntity<TestEntity>
+    const added = content.findCompatible("test", pos, nil) as AssemblyEntity<TestEntity>
     assertAdded(added, entity)
   })
 
@@ -441,6 +442,48 @@ describe("mark for upgrade", () => {
     assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
+  })
+})
+
+describe("cleanup tool", () => {
+  function setupWithProxy() {
+    const { luaEntity, added } = addAndReset()
+    luaEntity.destroy()
+    const proxy = createEntity({ name: Prototypes.SelectionProxyPrefix + "test" })
+    return { added, proxy }
+  }
+  test("onErrorEntityRevived", () => {
+    const { added, proxy } = setupWithProxy()
+    assemblyUpdater.onErrorEntityRevived(assembly, proxy, layer)
+    assert.nil(added.getWorldEntity(1))
+    assertOneEntity()
+    assertUpdateCalled(added, 1, 1, false)
+  })
+
+  test("onErrorEntityRevived ignored if lost reference", () => {
+    const { added, proxy } = setupWithProxy()
+    added.isLostReference = true
+    assemblyUpdater.onErrorEntityRevived(assembly, proxy, layer)
+    assert.nil(added.getWorldEntity(1))
+    assertOneEntity()
+    assertNoCalls()
+  })
+
+  test("onLostReferenceRemoved", () => {
+    const { added, proxy } = setupWithProxy()
+    added.isLostReference = true
+    assemblyUpdater.onLostReferenceDeleted(assembly, proxy, layer)
+    assert.nil(added.getWorldEntity(1))
+    assertNoEntities()
+    assertDeleteAllEntitiesCalled(added)
+  })
+
+  test("onLostReferenceRemoved ignored if not lost reference", () => {
+    const { added, proxy } = setupWithProxy()
+    assemblyUpdater.onLostReferenceDeleted(assembly, proxy, layer)
+    assert.nil(added.getWorldEntity(1))
+    assertOneEntity()
+    assertNoCalls()
   })
 })
 

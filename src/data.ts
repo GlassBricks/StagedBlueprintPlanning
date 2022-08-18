@@ -17,6 +17,7 @@ import {
   ItemPrototype,
   ItemSubgroupPrototype,
   SelectionToolPrototype,
+  ShortcutPrototype,
   SimpleEntityPrototype,
   Sprite,
 } from "./declarations/data"
@@ -89,7 +90,7 @@ const selectionProxySubgroup: ItemSubgroupPrototype = {
 data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup])
 
 // light yellow
-const cleanupToolColor: ColorArray = [0.9, 0.9, 0.2]
+const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
 const cleanupToolDeleteColor: ColorArray = [0.9, 0.2, 0.2, 0.5]
 const cleanupTool: SelectionToolPrototype = {
   type: "selection-tool",
@@ -125,4 +126,26 @@ const cleanupTool: SelectionToolPrototype = {
   // filters set in data-final-fixes
 }
 
-data.extend([cleanupTool])
+const getCleanupToolShortcut: ShortcutPrototype = {
+  type: "shortcut",
+  name: Prototypes.CleanupTool,
+  localised_name: ["item-name." + Prototypes.CleanupTool],
+  order: "bp3-cleanup",
+  action: "spawn-item",
+  item_to_spawn: Prototypes.CleanupTool,
+  icon: {
+    filename: "__bbpp3__/graphics/cleanup.png",
+    size: 64,
+    scale: 0.4,
+  },
+}
+
+const getCleanupToolInput: CustomInputPrototype = {
+  type: "custom-input",
+  name: Prototypes.CleanupTool,
+  key_sequence: "",
+  item_to_spawn: Prototypes.CleanupTool,
+  action: "spawn-item",
+}
+
+data.extend([cleanupTool, getCleanupToolShortcut, getCleanupToolInput])
