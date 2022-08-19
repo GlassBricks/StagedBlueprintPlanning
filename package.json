@@ -50,5 +50,6 @@
   },
   "watch": {
     "build:locale": "src/locale/en/en.cfg"
-  }
+  },
+  "packageManager": "yarn@3.2.2"
 }
