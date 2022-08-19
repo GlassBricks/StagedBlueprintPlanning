@@ -9,11 +9,16 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Mutable } from "../../lib"
-import { BBox, Pos, Position } from "../../lib/geometry"
-import { getTempBpItemStack, reviveGhost } from "../blueprinting"
-import { DiffHandler } from "./DiffHandler"
+import { Mutable } from "../lib"
+import { BBox, Pos, Position } from "../lib/geometry"
+import { getTempBpItemStack, reviveGhost } from "./blueprinting"
+import { Entity } from "./Entity"
 
+export interface DiffHandler<E extends Entity> {
+  save(luaEntity: LuaEntity): E | nil
+  create(surface: LuaSurface, position: Position, direction: defines.direction | nil, entity: E): LuaEntity | nil
+  match(luaEntity: LuaEntity, value: E): LuaEntity
+}
 function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | nil {
   for (const [index, mEntity] of pairs(mapping)) {
     if (entity === mEntity) return index

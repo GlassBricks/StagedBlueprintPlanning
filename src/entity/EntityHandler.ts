@@ -12,7 +12,7 @@
 import { LayerPosition } from "../assembly/Assembly"
 import { Mutable } from "../lib"
 import { Pos, PositionClass } from "../lib/geometry"
-import { BlueprintDiffHandler } from "./diff/BlueprintDiffHandler"
+import { BlueprintDiffHandler } from "./BlueprintDiffHandler"
 import { BasicEntityInfo, Entity, EntityPose } from "./Entity"
 import minus = Pos.minus
 import plus = Pos.plus
