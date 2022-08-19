@@ -43,19 +43,21 @@ type GuiElementType =
   | "textfield"
 
 const outDir = path.resolve(__dirname, "../src/lib/factoriojsx")
-const indexFileName = path.resolve(__dirname, "../node_modules/typed-factorio/index.d.ts")
-const classesFileName = path.resolve(__dirname, "../node_modules/typed-factorio/generated/classes.d.ts")
 const guiEventsFileName = path.resolve(__dirname, "gui-events.ts")
 
 const program = ts.createProgram({
-  rootNames: [classesFileName, indexFileName, guiEventsFileName],
-  options: {},
+  rootNames: [guiEventsFileName],
+  options: {
+    types: ["typed-factorio/runtime"],
+  },
 })
 
 function error(msg: string): never {
   throw new Error(msg)
 }
-const classesFile = program.getSourceFile(classesFileName) ?? error("Could not find classes.d.ts")
+const classesFile =
+  program.getSourceFiles().find((f) => f.fileName.endsWith("typed-factorio/generated/classes.d.ts")) ??
+  error("Could not find classes.d.ts")
 const guiEventsFile = program.getSourceFile(guiEventsFileName) ?? error("Could not find gui-events.ts")
 
 const guiElementTypes: (GuiElementType | "base")[] = [
