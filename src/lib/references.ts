@@ -232,6 +232,5 @@ class KeyFunc implements Func {
   }
 }
 
-export function funcOn<T extends Record<K, ContextualFun>, K extends keyof T>(obj: T, key: K): Func<T[K]> {
-  return new KeyFunc(obj, key) as any
-}
+export const funcOn2: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
+  new KeyFunc(obj, key) as any) as any

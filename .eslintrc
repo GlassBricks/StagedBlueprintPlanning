@@ -73,6 +73,11 @@
       "rules": {
         "import/no-nodejs-modules": "off"
       }
+    }, {
+      "files": ["**/*.tsx"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "off"
+      }
     }
   ]
 }

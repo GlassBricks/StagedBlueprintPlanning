@@ -10,5 +10,6 @@
  */
 
 import "./assembly"
-// import "./test/test-init"
+import "./ui"
+
 pcall(require, "test.test-init")

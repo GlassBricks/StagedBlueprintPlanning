@@ -62,3 +62,17 @@ test("nil as other identifier", () => {
     .tap(setupPluginTest)
     .expectToEqual(3)
 })
+
+test("access split", () => {
+  testFunction`// noinspection TypeScriptValidateTypes
+
+  function foo(this: void, a: any, b: any) {
+    return [a, b];
+  }
+  const foo2 = foo as (AccessSplit<(this: void, a: any) => any>)
+  const baz = { a: 1 }
+  return foo2(baz.a)
+  `
+    .tap(setupPluginTest)
+    .expectToEqual([{ a: 1 }, "a"])
+})

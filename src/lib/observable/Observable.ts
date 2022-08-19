@@ -17,12 +17,14 @@ export interface Subscribable<L extends Func> {
   subscribeIndependently(observer: L): Subscription
 }
 
-export interface ValueListener<T> {
+export interface Observer<T> {
   invoke(subscription: Subscription, value: T): void
 }
 
-export type Observer<T> = ValueListener<T>
-export type Observable<T> = Subscribable<ValueListener<T>>
+export interface Observable<T> {
+  subscribe(context: Subscription, observer: Observer<T>): Subscription
+  subscribeIndependently(observer: Observer<T>): Subscription
+}
 
 type AdditionalArgs<L extends Func> = L["invoke"] extends (this: any, arg1: any, ...args: infer A) => void ? A : never
 
@@ -68,6 +70,6 @@ class ObserverSubscription extends Subscription {
   }
 }
 
-export type EventListener<T> = ValueListener<T>
+export type EventListener<T> = Observer<T>
 export type Event<T> = ObserverList<EventListener<T>>
 export const Event: new <T>() => Event<T> = ObserverList

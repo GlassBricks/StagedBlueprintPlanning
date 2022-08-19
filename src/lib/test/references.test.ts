@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { bind, Func, funcOn, funcRef, Functions, RegisterClass, registerFunctions } from "../references"
+import { bind, Func, funcOn2, funcRef, Functions, RegisterClass, registerFunctions } from "../references"
 
 declare const global: {
   __tbl1: object
@@ -92,9 +92,10 @@ describe("classes", () => {
     const subclass2Instance = new TestSubclass2("3")
     global.__tbl3 = subclass2Instance
 
-    global.__ref1 = funcOn(instance, "foo")
-    global.__ref2 = funcOn(subclassInstance, "foo")
-    global.__ref3 = funcOn(subclass2Instance, "foo")
+    // global.__ref1 = funcOn(instance, "foo")
+    global.__ref1 = funcOn2(instance.foo)
+    global.__ref2 = funcOn2(subclassInstance.foo)
+    global.__ref3 = funcOn2(subclass2Instance.foo)
     assertRefsCorrect()
   }).after_mod_reload(() => {
     assertRefsCorrect()

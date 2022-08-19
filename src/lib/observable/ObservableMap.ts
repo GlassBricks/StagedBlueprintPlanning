@@ -9,10 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// noinspection JSUnusedLocalSymbols
-
 import { RegisterClass } from "../references"
-import { Event, Observable, ValueListener } from "./Observable"
+import { Event, Observable, Observer } from "./Observable"
 import { Subscription } from "./Subscription"
 
 export interface ObservableMapChange<K extends AnyNotNil, V> {
@@ -22,7 +20,7 @@ export interface ObservableMapChange<K extends AnyNotNil, V> {
   value: V | nil
 }
 
-export type MapObserver<K extends AnyNotNil, V> = ValueListener<ObservableMapChange<K, V>>
+export type MapObserver<K extends AnyNotNil, V> = Observer<ObservableMapChange<K, V>>
 
 export interface ObservableMap<K extends AnyNotNil, V>
   extends Observable<ObservableMapChange<K, V>>,
@@ -38,8 +36,10 @@ export interface MutableObservableMap<K extends AnyNotNil, V> extends Observable
   delete(key: K): void
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface ObservableMapImpl<K extends AnyNotNil, V> extends LuaPairsIterable<K, V> {}
+// noinspection JSUnusedLocalSymbols
+interface ObservableMapImpl<K extends AnyNotNil, V> extends LuaPairsIterable<K, V> {
+  _used: never
+}
 @RegisterClass("ObservableMap")
 class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<K, V> {
   private event = new Event<ObservableMapChange<K, V>>()

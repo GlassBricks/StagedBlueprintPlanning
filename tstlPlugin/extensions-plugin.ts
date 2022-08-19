@@ -24,6 +24,7 @@ import {
   getEmitOutDir,
   getSourceDir,
   isCallExpression,
+  isTableIndexExpression,
   LuaLibFeature,
   Plugin,
   TransformationContext,
@@ -46,6 +47,13 @@ const spreadNotSupported = createSerialDiagnosticFactory((node: ts.Node) => ({
   messageText: "Spread is not supported in newLuaSet.",
   category: ts.DiagnosticCategory.Error,
 }))
+const invalidAccessSplitCall = createSerialDiagnosticFactory((node: ts.Node) => ({
+  file: ts.getOriginalNode(node).getSourceFile(),
+  start: ts.getOriginalNode(node).getStart(),
+  length: ts.getOriginalNode(node).getWidth(),
+  messageText: "This must be called with either a property access or an element access.",
+  category: ts.DiagnosticCategory.Error,
+}))
 
 function transformLuaSetNewCall(context: TransformationContext, node: ts.CallExpression) {
   let args = node.arguments ?? []
@@ -62,6 +70,20 @@ function transformLuaSetNewCall(context: TransformationContext, node: ts.CallExp
     node,
   )
 }
+
+// func(a[b]) -> func(a, b)
+function transformAccessSplitCall(context: TransformationContext, node: ts.CallExpression) {
+  const luaCall = context.superTransformExpression(node)
+  if (!isCallExpression(luaCall) || luaCall.params.length !== 1 || !isTableIndexExpression(luaCall.params[0])) {
+    context.diagnostics.push(invalidAccessSplitCall(node))
+    return luaCall
+  }
+  const param = luaCall.params[0]
+  luaCall.params = [param.table, param.index]
+
+  return luaCall
+}
+
 function createPlugin(options: { testPattern?: string }): Plugin {
   const testPattern = options.testPattern ? RegExp(options.testPattern) : undefined
   function getTestFiles(context: TransformationContext) {
@@ -98,16 +120,19 @@ function createPlugin(options: { testPattern?: string }): Plugin {
     },
     [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       // handle special case when call = __getTestFiles(), replace with list of files
+      const type = context.checker.getTypeAtLocation(node.expression)
       if (ts.isIdentifier(node.expression)) {
         if (testPattern && node.expression.text === "__getTestFiles") {
           return getTestFiles(context)
         }
         if (node.expression.text === "newLuaSet") {
-          const type = context.checker.getTypeAtLocation(node.expression)
           if (type.getProperty("__newLuaSetBrand")) {
             return transformLuaSetNewCall(context, node)
           }
         }
+      }
+      if (type.getProperty("__accessSplitBrand")) {
+        return transformAccessSplitCall(context, node)
       }
       return context.superTransformExpression(node)
     },

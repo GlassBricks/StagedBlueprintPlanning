@@ -10,7 +10,7 @@
  */
 
 import { RegisterClass } from "../references"
-import { Event, Observable, ValueListener } from "./Observable"
+import { Event, Observable, Observer } from "./Observable"
 import { Subscription } from "./Subscription"
 
 export interface ObservableSetChange<T> {
@@ -19,7 +19,7 @@ export interface ObservableSetChange<T> {
   added?: true
 }
 
-export type SetObserver<T> = ValueListener<ObservableSetChange<T>>
+export type SetObserver<T> = Observer<ObservableSetChange<T>>
 
 export interface ObservableSet<T> extends Observable<ObservableSetChange<T>>, LuaPairsKeyIterable<T> {
   size(): number
@@ -36,8 +36,10 @@ export function observableSet<T>(): MutableObservableSet<T> {
   return new ObservableSetImpl()
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface ObservableSetImpl<T> extends LuaPairsKeyIterable<T> {}
+// noinspection JSUnusedLocalSymbols
+interface ObservableSetImpl<T> extends LuaPairsKeyIterable<T> {
+  _used: never
+}
 
 @RegisterClass("ObservableSet")
 class ObservableSetImpl<T> implements MutableObservableSet<T> {

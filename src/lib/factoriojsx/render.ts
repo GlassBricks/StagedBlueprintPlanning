@@ -10,7 +10,7 @@
  */
 
 import { Events } from "../Events"
-import { MutableState, State, Subscription, ValueListener } from "../observable"
+import { MutableState, Observer, State, Subscription } from "../observable"
 import { onPlayerInit, onPlayerRemoved } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
@@ -198,7 +198,7 @@ function renderElement(
 
   for (const [key, value] of pairs(elemProps)) {
     if (value instanceof State) {
-      let observer: ValueListener<unknown>
+      let observer: Observer<unknown>
       let name: string
       if (typeof key !== "object") {
         observer = bind(setValueObserver, element, key)

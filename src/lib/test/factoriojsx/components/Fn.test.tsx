@@ -9,19 +9,19 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// <reference types="typescript-to-lua/language-extensions" />
+import { FactorioJsx } from "../../../factoriojsx"
+import { Fn } from "../../../factoriojsx/components/Fn"
+import { state } from "../../../observable"
+import { testRender } from "../../gui"
 
-declare const newLuaSet: (<T>(...values: T[]) => LuaSet<T>) & {
-  __newLuaSetBrand: any
-}
+test("fn", () => {
+  const val = state("one")
+  const wrapper = testRender(<Fn from={val} uses="flow" map={{ invoke: (x) => <label caption={x} /> }} />)
+  function findLabels() {
+    return wrapper.findAll("label").map((x) => x.native.caption)
+  }
 
-/** Translated directly to nil in lua */
-declare const nil: undefined
-// declare type nil = undefined
-
-/**
- * Calls to this function must be in the form (a.b) or (a[b]), and will be split into 2 arguments.
- */
-type AccessSplit<T extends (this: void, value: any) => any> = T & {
-  __accessSplitBrand: any
-}
+  assert.same(["one"], findLabels())
+  val.set("two")
+  assert.same(["two"], findLabels())
+})

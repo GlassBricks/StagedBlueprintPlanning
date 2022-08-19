@@ -9,19 +9,13 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// <reference types="typescript-to-lua/language-extensions" />
+import { FactorioJsx, Spec } from "../index"
 
-declare const newLuaSet: (<T>(...values: T[]) => LuaSet<T>) & {
-  __newLuaSetBrand: any
-}
-
-/** Translated directly to nil in lua */
-declare const nil: undefined
-// declare type nil = undefined
-
-/**
- * Calls to this function must be in the form (a.b) or (a[b]), and will be split into 2 arguments.
- */
-type AccessSplit<T extends (this: void, value: any) => any> = T & {
-  __accessSplitBrand: any
-}
+export const HorizontalPusher = (): Spec => (
+  <empty-widget
+    styleMod={{
+      horizontally_stretchable: true,
+      horizontally_squashable: true,
+    }}
+  />
+)
