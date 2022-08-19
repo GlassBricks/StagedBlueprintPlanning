@@ -11,7 +11,7 @@
 
 import { AssemblyContent, LayerPosition } from "../../assembly/Assembly"
 import { createMockAssembly } from "../../assembly/Assembly-mock"
-import { AssemblyUpdater, createAssemblyUpdater } from "../../assembly/AssemblyUpdater"
+import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { Prototypes } from "../../constants"
@@ -21,7 +21,8 @@ import { Entity } from "../../entity/Entity"
 import { _overrideEntityCategory } from "../../entity/entity-info"
 import { createMockEntitySaver } from "../../entity/EntityHandler-mock"
 import { ContextualFun, Mutable } from "../../lib"
-import { BBox, Pos } from "../../lib/geometry"
+import { Pos } from "../../lib/geometry"
+import { L_Interaction } from "../../locale"
 import { entityMock, simpleMock } from "../simple-mock"
 import direction = defines.direction
 import wire_type = defines.wire_type
@@ -34,6 +35,7 @@ let layer: Mutable<LayerPosition>
 let assemblyUpdater: AssemblyUpdater
 let worldUpdater: mock.Stubbed<WorldUpdater>
 let wireSaver: mock.Stubbed<WireSaver>
+let worldNotifier: mock.Mocked<WorldNotifier>
 before_all(() => {
   _overrideEntityCategory("test", "test")
   _overrideEntityCategory("test2", "test")
@@ -41,8 +43,8 @@ before_all(() => {
 
 let totalCalls: number
 before_each(() => {
-  layer = { surface: nil!, ...BBox.coords(0, 0, 32, 32), layerNumber: 1 }
   assembly = createMockAssembly(1)
+  layer = assembly.getLayer(1)
   totalCalls = 0
   function spyFn<F extends ContextualFun>(): F {
     return stub<F>().invokes((() => {
@@ -58,7 +60,10 @@ before_each(() => {
   wireSaver = {
     getWireConnectionDiff: stub<WireSaver["getWireConnectionDiff"]>().invokes(() => $multi([], [])),
   }
-  assemblyUpdater = createAssemblyUpdater(worldUpdater, createMockEntitySaver(), wireSaver)
+  worldNotifier = {
+    createNotification: spy(),
+  }
+  assemblyUpdater = createAssemblyUpdater(worldUpdater, createMockEntitySaver(), wireSaver, worldNotifier)
 })
 
 interface TestEntity extends Entity {
@@ -95,13 +100,17 @@ function addAndReset(addedNum: LayerNumber = layer.layerNumber, setNum = layer.l
 
 let eventsAsserted = false
 let entitiesAsserted = false
+let notificationsAsserted = false
 before_each(() => {
   eventsAsserted = false
   entitiesAsserted = false
+  notificationsAsserted = false
 })
 after_each(() => {
   assert(eventsAsserted, "events not asserted")
   assert(entitiesAsserted, "entities not asserted")
+  if (!notificationsAsserted)
+    assert.message("unexpected notification").spy(worldNotifier.createNotification).not_called()
 })
 
 function assertNoCalls() {
@@ -165,6 +174,13 @@ function assertNoEntities() {
   entitiesAsserted = true
 }
 
+function assertNotified(entity: LuaEntity, message: LocalisedString) {
+  assert.false(notificationsAsserted, "notifications already asserted")
+  assert.spy(worldNotifier.createNotification).called(1)
+  assert.spy(worldNotifier.createNotification).called_with(match.ref(entity), message)
+  notificationsAsserted = true
+}
+
 function assertLayerChanges(entity: AssemblyEntity, changes: LayerChanges<TestEntity>) {
   assert.same(changes, entity._getLayerChanges())
 }
@@ -194,23 +210,25 @@ describe("add", () => {
     assertUpdateCalled(added, layerNumber, layerNumber, false)
   })
 
-  test.each([false, true])(
-    "again at lower layer updates assembly.content and all world entities, with layer changes: %s",
-    (withChanges) => {
-      const { added } = addAndReset(3, 1)
-      const newEntity = createEntity()
-      if (withChanges) newEntity.prop1 = 3
-      assemblyUpdater.onEntityCreated(assembly, newEntity, layer) // again
-      assert.equal(newEntity, added.getWorldEntity(1))
-      assert.same(1, added.getBaseLayer())
-
-      assert.equal(2, added.getBaseValue().prop1)
-      assert.false(added.hasLayerChange())
-
-      assertOneEntity()
-      assertUpdateCalled(added, 1, 2, true)
-    },
-  )
+  test.each([false, true])("add at lower layer does all behaviors, with layer changes: %s", (withChanges) => {
+    const { added } = addAndReset(3, 1)
+    const newEntity = createEntity()
+    if (withChanges) newEntity.prop1 = 3
+    assemblyUpdater.onEntityCreated(assembly, newEntity, layer) // again
+    // updates entity
+    assert.equal(newEntity, added.getWorldEntity(1))
+    assert.same(1, added.getBaseLayer())
+    // does not create layer changes
+    assert.equal(2, added.getBaseValue().prop1)
+    assert.false(added.hasLayerChange())
+    // calls updateWorldEntities
+    assertOneEntity()
+    assertUpdateCalled(added, 1, 3, true)
+    // records old layer
+    assert.equal(3, added.getOldLayer())
+    // creates notification
+    assertNotified(newEntity, [L_Interaction.EntityMovedFromLayer, "mock layer 3"])
+  })
 })
 
 describe("delete", () => {
@@ -237,10 +255,21 @@ describe("delete", () => {
 
   test("in base layer deletes entity", () => {
     const { luaEntity, added } = addAndReset()
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer) // simulated
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
     assert.falsy(added.isSettingsRemnant)
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
+  })
+
+  test("in base layer with oldLayer moves back to old layer", () => {
+    const { luaEntity, added } = addAndReset(3, 2)
+    added.moveToLayer(2, true)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+    assert.falsy(added.isSettingsRemnant)
+    assertOneEntity()
+    assertUpdateCalled(added, 2, 3, true)
+    assert.nil(added.getOldLayer())
+    assertNotified(luaEntity, [L_Interaction.EntityMovedBackToLayer, "mock layer 3"])
   })
 
   test("in base layer with updates creates settings remnant", () => {
@@ -319,7 +348,8 @@ describe("update", () => {
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
     assert.equal(luaEntity, added.getWorldEntity(1))
     assertOneEntity()
-    assertUpdateCalled(added, 1, 2, true)
+    assertUpdateCalled(added, 1, 3, true)
+    notificationsAsserted = true // skip
   })
 
   test("in base layer updates all entities", () => {

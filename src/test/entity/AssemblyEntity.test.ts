@@ -109,6 +109,29 @@ describe("move to layer", () => {
     assemblyEntity.moveToLayer(5)
     assert.same(valueAt5, assemblyEntity.getBaseValue())
   })
+
+  test("records old layer", () => {
+    assemblyEntity.moveToLayer(5, true)
+    assert.equal(2, assemblyEntity.getOldLayer())
+  })
+
+  test("clears old layer if recordOldLayer is false", () => {
+    assemblyEntity.moveToLayer(4, true)
+    assemblyEntity.moveToLayer(2)
+    assert.nil(assemblyEntity.getOldLayer())
+  })
+
+  test("clears old layer if same layer", () => {
+    assemblyEntity.moveToLayer(5)
+    assemblyEntity.moveToLayer(5)
+    assert.nil(assemblyEntity.getOldLayer())
+  })
+
+  test("clears old layer if adjustValueAtLayer called at layer", () => {
+    assemblyEntity.moveToLayer(5, true)
+    assemblyEntity.adjustValueAtLayer(6, { ...entity, foo1: 6 })
+    assert.nil(assemblyEntity.getOldLayer())
+  })
 })
 
 describe("adjustValueAtLayer", () => {

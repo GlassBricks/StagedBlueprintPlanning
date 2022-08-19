@@ -24,6 +24,8 @@ export interface AssemblyContent {
   getLayer(layerNumber: LayerNumber): LayerPosition
   numLayers(): number
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, LayerPosition]>>
+
+  getLayerName(layerNumber: LayerNumber): LocalisedString
   readonly content: MutableEntityMap
 }
 

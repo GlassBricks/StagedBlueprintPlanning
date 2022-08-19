@@ -93,36 +93,6 @@ describe("updateWorldEntities", () => {
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
     })
 
-    test("calls wireUpdater", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      for (let i = 1; i <= 3; i++)
-        assert
-          .spy(wireUpdater.updateWireConnections)
-          .called_with(match.ref(assembly), match.ref(entity), i, entity.getWorldEntity(i)!)
-    })
-
-    function assertDestructible(luaEntity: LuaEntity, value: boolean) {
-      assert.equal(value, luaEntity.destructible, `destructible not ${value}`)
-      assert.equal(value, luaEntity.minable, `minable not ${value}`)
-      assert.equal(value, luaEntity.rotatable, `rotatable not ${value}`)
-    }
-
-    test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {
-      entity.moveToLayer(2)
-      if (withExisting) {
-        const luaEntity = mockEntityCreator.createEntity(assembly.getLayer(3), entity, {
-          name: "test",
-          prop1: 10,
-        } as TestEntity)!
-        entity.replaceWorldEntity(3, luaEntity)
-      }
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 4)
-
-      assertDestructible(assertEntityCorrect(2), true)
-      assertDestructible(assertEntityCorrect(3), false)
-      assertDestructible(assertEntityCorrect(4), false)
-    })
-
     test("can refresh a single entity", () => {
       const replaced = mockEntityCreator.createEntity(assembly.getLayer(2), entity, {
         name: "test",
@@ -158,39 +128,79 @@ describe("updateWorldEntities", () => {
       assertEntityCorrect(1)
       assert.false(oldEntry.luaEntity.valid)
     })
-
-    test("can rotate entities", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      entity.direction = defines.direction.west
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
-    })
-
-    test("can un-rotate entities", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      entity.getWorldEntity(2)!.direction = defines.direction.west
-      worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
-      for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
-    })
-
-    test("calls updateHighlights", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-      assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, 3)
-    })
   })
 
-  describe("invalid layers", () => {
-    test("out of range is ignored", () => {
-      assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1, 5))
-      for (let i = -1; i <= 5; i++) {
-        if (i >= 1 && i <= 4) assertEntityCorrect(i)
-        else assertEntityNotPresent(i)
-      }
-    })
-    test("does nothing if range is empty", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 3, 1)
-      for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
-    })
+  test("calls wireUpdater", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    for (let i = 1; i <= 3; i++)
+      assert
+        .spy(wireUpdater.updateWireConnections)
+        .called_with(match.ref(assembly), match.ref(entity), i, entity.getWorldEntity(i)!)
+  })
+
+  function assertDestructible(luaEntity: LuaEntity, value: boolean) {
+    assert.equal(value, luaEntity.destructible, `destructible not ${value}`)
+    assert.equal(value, luaEntity.minable, `minable not ${value}`)
+    assert.equal(value, luaEntity.rotatable, `rotatable not ${value}`)
+  }
+
+  test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {
+    entity.moveToLayer(2)
+    if (withExisting) {
+      const luaEntity = mockEntityCreator.createEntity(assembly.getLayer(3), entity, {
+        name: "test",
+        prop1: 10,
+      } as TestEntity)!
+      entity.replaceWorldEntity(3, luaEntity)
+    }
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 4)
+
+    assertDestructible(assertEntityCorrect(2), true)
+    assertDestructible(assertEntityCorrect(3), false)
+    assertDestructible(assertEntityCorrect(4), false)
+  })
+
+  test("can handle entity moving up", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    entity.moveToLayer(2)
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+
+    assert.nil(mockEntityCreator.getAt(1))
+    assertDestructible(assertEntityCorrect(2), true)
+    assertDestructible(assertEntityCorrect(3), false)
+  })
+
+  test("can rotate entities", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    entity.direction = defines.direction.west
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+  })
+
+  test("can un-rotate entities", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    entity.getWorldEntity(2)!.direction = defines.direction.west
+    worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
+    for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+  })
+
+  test("calls updateHighlights", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, 3)
+  })
+})
+
+describe("invalid layers", () => {
+  test("out of range is ignored", () => {
+    assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1, 5))
+    for (let i = -1; i <= 5; i++) {
+      if (i >= 1 && i <= 4) assertEntityCorrect(i)
+      else assertEntityNotPresent(i)
+    }
+  })
+  test("does nothing if range is empty", () => {
+    worldUpdater.updateWorldEntities(assembly, entity, 3, 1)
+    for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
   })
 })
 

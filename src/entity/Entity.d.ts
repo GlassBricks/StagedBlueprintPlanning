@@ -18,4 +18,6 @@ export interface Entity {
   readonly name: string
   readonly items?: Record<string, number>
 }
-export interface BasicEntityInfo extends Entity, EntityPose {}
+export interface BasicEntityInfo extends Entity, EntityPose {
+  readonly surface: LuaSurface
+}

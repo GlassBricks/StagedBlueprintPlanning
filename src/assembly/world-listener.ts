@@ -169,6 +169,7 @@ function setLastDeleted(layer: Layer, entity: LuaEntity): void {
     name: entity.name,
     position: entity.position,
     direction: entity.direction,
+    surface: entity.surface,
     layer,
   }
 }

@@ -11,9 +11,10 @@
 
 import { Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { BasicEntityInfo, Entity } from "../entity/Entity"
+import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
+import { L_Interaction } from "../locale"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -52,14 +53,38 @@ export interface AssemblyUpdater {
   onSettingsRemnantDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
 }
 
+/**
+ * @noSelf
+ */
+export interface WorldNotifier {
+  createNotification(at: BasicEntityInfo, message: LocalisedString): void
+}
+
 export function createAssemblyUpdater(
   worldUpdater: WorldUpdater,
   entitySaver: EntitySaver,
   wireSaver: WireSaver,
+  notifier: WorldNotifier,
 ): AssemblyUpdater {
   const { deleteWorldEntities, updateWorldEntities } = worldUpdater
   const { saveEntity } = entitySaver
   const { getWireConnectionDiff } = wireSaver
+  const { createNotification } = notifier
+
+  function recordCircuitWires(
+    assembly: AssemblyContent,
+    assemblyEntity: AssemblyEntity,
+    layerNumber: LayerNumber,
+    entity: LuaEntity,
+  ): boolean {
+    const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, layerNumber, entity)
+    if (!added) return false
+    if (added[0] === nil && removed![0] === nil) return false
+    const { content } = assembly
+    for (const connection of added) content.addWireConnection(connection)
+    for (const connection of removed!) content.removeWireConnection(connection)
+    return true
+  }
 
   function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
     const position = getLayerPosition(layer, entity)
@@ -75,38 +100,32 @@ export function createAssemblyUpdater(
       }
     }
 
-    const saved = saveEntity(entity)
     if (existing) {
       // layerNumber < existing.layerNumber
-      entityAddedBelow(assembly, existing, layerNumber, saved!, entity)
+      entityAddedBelow(assembly, existing, layerNumber, entity)
       return existing
     }
 
+    const saved = saveEntity(entity)
     if (!saved) return
     // add new entity
     const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
     content.add(assemblyEntity)
+
     assemblyEntity.replaceWorldEntity(layerNumber, entity)
-
-    updateCircuitWires(assembly, assemblyEntity, layerNumber, entity)
-
+    recordCircuitWires(assembly, assemblyEntity, layerNumber, entity)
     updateWorldEntities(assembly, assemblyEntity, 1)
+
     return assemblyEntity
   }
 
-  function updateCircuitWires(
+  function updateSingleWorldEntity(
     assembly: AssemblyContent,
     assemblyEntity: AssemblyEntity,
     layerNumber: LayerNumber,
-    entity: LuaEntity,
-  ): boolean {
-    const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, layerNumber, entity)
-    if (!added) return false
-    if (added[0] === nil && removed![0] === nil) return false
-    const { content } = assembly
-    for (const connection of added) content.addWireConnection(connection)
-    for (const connection of removed!) content.removeWireConnection(connection)
-    return true
+    replace: boolean,
+  ): void {
+    updateWorldEntities(assembly, assemblyEntity, layerNumber, layerNumber, replace)
   }
 
   function entityAddedAbove(
@@ -118,8 +137,7 @@ export function createAssemblyUpdater(
     if (existing.isSettingsRemnant) {
       reviveSettingsRemnant(assembly, existing, layerNumber, entity)
     } else {
-      // missing entity revived, update to match
-      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
+      updateSingleWorldEntity(assembly, existing, layerNumber, false)
     }
   }
 
@@ -127,15 +145,12 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
     layerNumber: LayerNumber,
-    added: Entity,
     luaEntity: LuaEntity,
   ): void {
-    const oldLayerNumber = existing.moveToLayer(layerNumber)
     if (existing.isSettingsRemnant) {
       reviveSettingsRemnant(assembly, existing, layerNumber, luaEntity)
     } else {
-      existing.replaceWorldEntity(layerNumber, luaEntity)
-      updateWorldEntities(assembly, existing, layerNumber, oldLayerNumber - 1, true)
+      moveEntityDown(assembly, existing, layerNumber, luaEntity)
     }
   }
 
@@ -151,6 +166,18 @@ export function createAssemblyUpdater(
     worldUpdater.reviveSettingsRemnant(assembly, existing)
   }
 
+  function moveEntityDown(
+    assembly: AssemblyContent,
+    existing: AssemblyEntity,
+    layerNumber: number,
+    luaEntity: LuaEntity,
+  ): void {
+    const oldLayer = existing.moveToLayer(layerNumber, true)
+    existing.replaceWorldEntity(layerNumber, luaEntity)
+    createNotification(luaEntity, [L_Interaction.EntityMovedFromLayer, assembly.getLayerName(oldLayer)])
+    updateWorldEntities(assembly, existing, layerNumber, oldLayer, true)
+  }
+
   function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
     const position = getLayerPosition(layer, entity)
     const { content } = assembly
@@ -162,19 +189,37 @@ export function createAssemblyUpdater(
 
     if (existingLayer !== layerNumber) {
       if (existingLayer < layerNumber) {
-        updateWorldEntities(assembly, existing, layerNumber, layerNumber, true)
+        updateSingleWorldEntity(assembly, existing, layerNumber, true)
       }
-      // else: layerNumber > compatible.layerNumber; is bug, ignore
+      // else: layerNumber > existingLayer; bug, ignore
       return
     }
+    doEntityDelete(assembly, existing, entity)
+  }
 
-    if (existing.hasLayerChange()) {
-      existing.isSettingsRemnant = true
-      worldUpdater.makeSettingsRemnant(assembly, existing)
+  function doEntityDelete(assembly: AssemblyContent, assemblyEntity: AssemblyEntity, entity: BasicEntityInfo): void {
+    const oldLayer = assemblyEntity.getOldLayer()
+    if (oldLayer !== nil) {
+      moveEntityToOldLayer(assembly, assemblyEntity, oldLayer, entity)
+    } else if (assemblyEntity.hasLayerChange()) {
+      assemblyEntity.isSettingsRemnant = true
+      worldUpdater.makeSettingsRemnant(assembly, assemblyEntity)
     } else {
-      content.delete(existing)
-      deleteWorldEntities(assembly, existing)
+      assembly.content.delete(assemblyEntity)
+      deleteWorldEntities(assembly, assemblyEntity)
     }
+  }
+
+  function moveEntityToOldLayer(
+    assembly: AssemblyContent,
+    existing: AssemblyEntity,
+    oldLayer: LayerNumber,
+    luaEntity: BasicEntityInfo,
+  ): void {
+    const currentLayer = existing.getBaseLayer()
+    existing.moveToLayer(oldLayer)
+    createNotification(luaEntity, [L_Interaction.EntityMovedBackToLayer, assembly.getLayerName(oldLayer)])
+    updateWorldEntities(assembly, existing, currentLayer, oldLayer, true)
   }
 
   function getCompatibleOrAdd(
@@ -265,7 +310,7 @@ export function createAssemblyUpdater(
   function onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
     const existing = getCompatibleOrAdd(assembly, entity, layer)
     if (!existing) return
-    if (updateCircuitWires(assembly, existing, layer.layerNumber, entity)) {
+    if (recordCircuitWires(assembly, existing, layer.layerNumber, entity)) {
       updateWorldEntities(assembly, existing, existing.getBaseLayer())
     }
   }
@@ -308,8 +353,19 @@ export function createAssemblyUpdater(
   }
 }
 
+const DefaultWorldNotifier: WorldNotifier = {
+  createNotification(at: BasicEntityInfo, message: LocalisedString): void {
+    at.surface.create_entity({
+      name: "flying-text",
+      position: at.position,
+      text: message,
+    })
+  },
+}
+
 export const DefaultAssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(
   DefaultWorldUpdater,
   DefaultEntityHandler,
   DefaultWireHandler,
+  DefaultWorldNotifier,
 )

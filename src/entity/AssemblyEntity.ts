@@ -52,17 +52,26 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
 
   /**
-   * Adjusts diff so that the value at the given layer matches the given value.
-   * Trims diff in higher layers if they no longer have any effect.
+   * Adjusts layer changes so that the value at the given layer matches the given value.
+   * Trims layer changes in higher layers if they no longer have any effect.
+   * If there is diff, also clears oldLayer (see {@link getOldLayer}).
    * @return true if the value changed.
    */
   adjustValueAtLayer(layer: LayerNumber, value: T): boolean
 
   /**
-   * If moving up, deletes/merges all layer changes from old layer to new layer.
+   *
+   * @param layer the layer to move to. If moving up, deletes/merges all layer changes from old layer to new layer.
+   * @param recordOldLayer if true, records the old layer (so the entity can be moved back). Otherwise, clears the old layer.
    * @return the previous base layer
    */
-  moveToLayer(layer: LayerNumber): LayerNumber
+  moveToLayer(layer: LayerNumber, recordOldLayer?: boolean): LayerNumber
+
+  /**
+   * The last layer before moveToLayer() was called with recordOldLayer.
+   * The layer memo is cleared when adjustValueAtLayer() is called with changes on a layer that is not the base layer.
+   */
+  getOldLayer(): LayerNumber | nil
 
   /** Returns nil if world entity does not exist or is invalid */
   getWorldEntity(layer: LayerNumber): WorldEntities["mainEntity"] | nil
@@ -101,11 +110,12 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   public readonly position: Position
   public direction: defines.direction | nil
 
-  public isSettingsRemnant?: true
+  public isSettingsRemnant: true | nil
 
   private baseLayer: LayerNumber
-  private baseValue: T
+  private readonly baseValue: T
   private readonly layerChanges: Mutable<LayerChanges<T>> = {}
+  private oldLayer: LayerNumber | nil
 
   private readonly layerProperties: {
     [P in keyof LayerData]?: PRecord<LayerNumber, LayerData[P]>
@@ -215,6 +225,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       if (isEmpty(diff)) break
     }
 
+    this.oldLayer = nil
     return true
   }
 
@@ -249,15 +260,19 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     this.baseLayer = higherLayer
   }
-  moveToLayer(layer: LayerNumber): LayerNumber {
+  moveToLayer(layer: LayerNumber, recordOldLayer?: boolean): LayerNumber {
     const { baseLayer } = this
     if (layer > baseLayer) {
       this.moveUp(layer)
     } else if (layer < baseLayer) {
       this.baseLayer = layer
     }
+    this.oldLayer = recordOldLayer && baseLayer !== layer ? baseLayer : nil
     return baseLayer
     // else do nothing
+  }
+  getOldLayer(): LayerNumber | nil {
+    return this.oldLayer
   }
 
   getWorldEntity(layer: LayerNumber, type: WorldEntityType = "mainEntity") {

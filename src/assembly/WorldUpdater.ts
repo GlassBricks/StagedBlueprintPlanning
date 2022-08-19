@@ -83,6 +83,7 @@ export function createWorldUpdater(
 
       if (luaEntity) {
         if (layerNum !== baseLayer) makeEntityIndestructible(luaEntity)
+        else makeEntityDestructible(luaEntity)
         updateWireConnections(assembly, entity, layerNum, luaEntity)
       }
     }
@@ -110,6 +111,11 @@ export function createWorldUpdater(
     entity.minable = false
     entity.destructible = false
     entity.rotatable = false
+  }
+  function makeEntityDestructible(entity: LuaEntity) {
+    entity.minable = true
+    entity.destructible = true
+    entity.rotatable = true
   }
 
   function doDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity): void {

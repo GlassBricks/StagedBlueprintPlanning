@@ -40,13 +40,11 @@
     - [x] Provide way to revive/delete lost references
     - [x] Notification/indication when lost reference created
 - [x] Make entities from previous layers indestructible
-- [ ] Decide how to handle situations that can result in accidental loss of information
-    - [ ] Build to match entity in later layer, then delete
-        - [ ] Remember (old layer, new lower layer) pair, move instead of delete when deleted
-            - [ ] Clear this when config changed
-        - [ ] notification on build-down
-        - [ ] notification on delete-up
-        - [ ] Expiry time?
+- [x] Build to match entity in later layer, then delete
+  - [x] Remember (old layer, new lower layer) pair, move instead of delete when deleted
+  - [x] Clear this when config changed
+  - [x] notification on build-down
+  - [x] notification on delete-up
 
 ### Detect and display conflicts
 

@@ -10,8 +10,8 @@
  */
 
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { bind, Events, Mutable, RegisterClass, registerFunctions } from "../lib"
-import { Pos, Vec2 } from "../lib/geometry"
+import { bind, Events, RegisterClass, registerFunctions } from "../lib"
+import { Pos, Position, Vec2 } from "../lib/geometry"
 import { Event, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
 import { WorldPosition } from "../utils/world-location"
@@ -29,15 +29,12 @@ Events.on_init(() => {
   global.assemblies = new LuaMap()
 })
 
-type AssemblyLayer = Mutable<Layer>
-
 @RegisterClass("Assembly")
 class AssemblyImpl implements Assembly {
   name = state("")
   displayName: State<LocalisedString>
 
-  private layers: AssemblyLayer[] = []
-
+  private layers: LayerImpl[] = []
   content = newEntityMap()
 
   events: Event<AssemblyChangeEvent> = new Event()
@@ -85,6 +82,10 @@ class AssemblyImpl implements Assembly {
     return $multi(next, this.layers, start - 1)
   }
 
+  public getLayerName(layerNumber: LayerNumber): LocalisedString {
+    return this.getLayer(layerNumber).displayName.get()
+  }
+
   delete() {
     if (!this.valid) return
     global.assemblies.delete(this.id)
@@ -98,7 +99,7 @@ class AssemblyImpl implements Assembly {
 
   pushLayer(leftTop: WorldPosition): Layer {
     const nextIndex = this.layers.length + 1
-    const layer = (this.layers[nextIndex - 1] = createLayer(this, nextIndex, leftTop))
+    const layer = (this.layers[nextIndex - 1] = new LayerImpl(this, nextIndex, leftTop))
     this.events.raise({ type: "layer-pushed", layer, assembly: this })
     return layer
   }
@@ -123,20 +124,25 @@ function getDisplayName(locale: string, id: number, name: string): LocalisedStri
 }
 registerFunctions("AssemblyName", { getDisplayName })
 
-function createLayer(parent: AssemblyImpl, layerNumber: LayerNumber, worldTopLeft: WorldPosition): Layer {
-  const { chunkSize } = parent
-  const { surface, position: leftTop } = worldTopLeft
-  const actualLeftTop = Pos.floorToNearest(leftTop, 32)
-  const rightBottom = Pos.plus(actualLeftTop, Pos.times(chunkSize, 32))
-  const name = state("")
-  return {
-    layerNumber,
-    surface,
-    left_top: actualLeftTop,
-    right_bottom: rightBottom,
-    name,
-    displayName: name.map(bind(getDisplayName, L_Assembly.UnnamedLayer, layerNumber)),
-    assembly: parent,
-    valid: true,
+@RegisterClass("Layer")
+class LayerImpl implements Layer {
+  surface: LuaSurface
+  left_top: Position
+  right_bottom: Position
+
+  name = state("")
+  displayName: State<LocalisedString>
+
+  valid = true
+
+  constructor(public readonly assembly: AssemblyImpl, public layerNumber: LayerNumber, worldLeftTop: WorldPosition) {
+    const { chunkSize } = assembly
+    const { surface, position: leftTop } = worldLeftTop
+    const actualLeftTop = Pos.floorToNearest(leftTop, 32)
+    const rightBottom = Pos.plus(actualLeftTop, Pos.times(chunkSize, 32))
+    this.surface = surface
+    this.left_top = actualLeftTop
+    this.right_bottom = rightBottom
+    this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedLayer, this.layerNumber))
   }
 }

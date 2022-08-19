@@ -31,5 +31,6 @@ export function createMockAssembly(numLayers: number): AssemblyContent {
       return $multi(next, layers, start - 1)
     },
     content: newEntityMap(),
+    getLayerName: (n) => "mock layer " + n,
   }
 }

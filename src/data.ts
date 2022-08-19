@@ -123,6 +123,8 @@ const cleanupTool: SelectionToolPrototype = {
   alt_selection_color: cleanupToolDeleteColor,
   alt_selection_cursor_box_type: "not-allowed",
 
+  reverse_selection_mode: ["nothing"],
+
   // filters set in data-final-fixes
 }
 
