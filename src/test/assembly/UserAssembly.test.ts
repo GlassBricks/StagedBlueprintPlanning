@@ -29,13 +29,6 @@ describe("Assembly", () => {
     assert.not_same(asm1.id, asm2.id)
   })
 
-  test("Display name is correct", () => {
-    const asm = _mockAssembly()
-    assert.same([L_Assembly.UnnamedAssembly, asm.id], asm.displayName.get())
-    asm.name.set("test")
-    assert.same("test", asm.displayName.get())
-  })
-
   describe("deletion", () => {
     test("sets to invalid", () => {
       const asm = _mockAssembly()

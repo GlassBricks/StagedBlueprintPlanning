@@ -84,6 +84,14 @@ namespace BBox {
     const { left_top, right_bottom } = box
     return BBox({ x: floor(left_top.x), y: floor(left_top.y) }, { x: ceil(right_bottom.x), y: ceil(right_bottom.y) })
   }
+  export function roundChunk(box: BBox): BBoxClass {
+    // chunk is 32x32
+    const { left_top, right_bottom } = box
+    return BBox(
+      { x: floor(left_top.x / 32) * 32, y: floor(left_top.y / 32) * 32 },
+      { x: ceil(right_bottom.x / 32) * 32, y: ceil(right_bottom.y / 32) * 32 },
+    )
+  }
   export function scale(box: BBox, factor: number): BBoxClass {
     const { left_top, right_bottom } = box
     return BBox(

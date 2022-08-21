@@ -8,4 +8,9 @@
  *
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
-import "./assembly-creation"
+
+export function setRefFn<T, K extends keyof T>(refs: T, key: K): (element: T[K]) => void {
+  return (element: T[K]) => {
+    refs[key] = element
+  }
+}

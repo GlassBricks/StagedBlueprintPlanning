@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { bind, Callback, cfuncRef, Func, funcOn2, funcRef, RegisterClass } from "../references"
+import { bind, Callback, cfuncRef, Func, funcOn, funcRef, RegisterClass } from "../references"
 import { isEmpty } from "../util"
 import { ObserverList, Subscribable } from "./Observable"
 import { Subscription } from "./Subscription"
@@ -148,7 +148,7 @@ class MappedState<T, U> extends State<U> {
   private subscribeToSource() {
     const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(funcOn2(this.sourceListener))
+    this.sourceSubscription = source.subscribeIndependently(funcOn(this.sourceListener))
     this.curValue = mapper.invoke(source.get())
   }
 
@@ -194,14 +194,14 @@ class FlatMappedState<T, U> extends State<U> {
   private subscribeToSource() {
     const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(funcOn2(this.sourceListener))
+    this.sourceSubscription = source.subscribeIndependently(funcOn(this.sourceListener))
     this.receiveNewMappedValue(mapper.invoke(source.get()))
   }
 
   private receiveNewMappedValue(newValue: MaybeState<U>) {
     this.nestedSubscription?.close()
     if (newValue instanceof State) {
-      this.nestedSubscription = newValue.subscribeIndependently(funcOn2(this.nestedListener))
+      this.nestedSubscription = newValue.subscribeIndependently(funcOn(this.nestedListener))
       this.curValue = newValue.get()
     } else {
       this.nestedSubscription = nil

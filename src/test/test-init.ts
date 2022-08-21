@@ -48,6 +48,11 @@ if (script.active_mods.testorio !== nil) {
     if (inventories !== nil) inventories.forEach((x) => x.destroy())
     global = {}
     Events.raiseFakeEventNamed("on_init", nil!)
+    for (const [, player] of game.players) {
+      for (const child of player.gui.screen.children) {
+        if (child.get_mod() === script.mod_name) child.destroy()
+      }
+    }
   }
 
   commands.add_command("reinit", "", reinit)

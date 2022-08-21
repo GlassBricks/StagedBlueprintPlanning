@@ -4,6 +4,14 @@
 export declare const enum L_ItemName {
   /** Blueprint cleanup tool */
   CleanupTool = "item-name.bp3:cleanup-tool",
+  /** Assembly creation tool */
+  AssemblyAddTool = "item-name.bp3:assembly-add-tool",
+}
+export declare const enum L_ShortcutName {
+  /** Blueprint cleanup tool */
+  CleanupTool = "shortcut-name.bp3:cleanup-tool",
+  /** Create new assembly */
+  AssemblyAddTool = "shortcut-name.bp3:assembly-add-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
@@ -12,10 +20,6 @@ export declare const enum L_EntityName {
 export declare const enum L_ItemGroupName {
   /** BP3 utility entities */
   Utility = "item-group-name.bp3:utility",
-}
-export declare const enum L_Controls {
-  /** Spawn cleanup tool */
-  CleanupTool = "controls.bp3:cleanup-tool",
 }
 export declare const enum L_Bp3 {
   /** __1__ (preview) */
@@ -26,6 +30,8 @@ export declare const enum L_Bp3 {
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp3.interaction.unexpected-error",
+  /** This area intersects assembly __1__ (possibly on a different surface) */
+  AreaIntersectsWithOtherAssembly = "bp3.interaction.area-intersects-with-other-assembly",
   /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
   BlueprintNotHandled = "bp3.interaction.blueprint-not-handled",
   /** Entity moved down from __1__ */
@@ -34,8 +40,18 @@ export declare const enum L_Interaction {
   EntityMovedBackToLayer = "bp3.interaction.entity-moved-back-to-layer",
 }
 export declare const enum L_Assembly {
-  /** <Assembly __1__> */
+  /** <Unnamed assembly> */
   UnnamedAssembly = "bp3.assembly.unnamed-assembly",
   /** <Layer __1__> */
   UnnamedLayer = "bp3.assembly.unnamed-layer",
+}
+export declare const enum L_GuiNewAssembly {
+  /** New Assembly */
+  Title = "bp3.gui.new-assembly.title",
+  /** Name */
+  Name = "bp3.gui.new-assembly.name",
+  /** Initial number of layers */
+  InitialNumLayers = "bp3.gui.new-assembly.initial-num-layers",
+  /** Create */
+  Create = "bp3.gui.new-assembly.create",
 }

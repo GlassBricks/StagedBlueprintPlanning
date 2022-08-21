@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Func, funcOn2, RegisterClass } from "../../index"
+import { Func, funcOn, RegisterClass } from "../../index"
 import { State, Subscription } from "../../observable"
 import { Component, destroyChildren, ElemProps, FactorioJsx, renderMultiple, Spec, Tracker } from "../index"
 
@@ -30,7 +30,7 @@ export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> 
     this.map = map
     tracker.onMount((element) => {
       this.element = element
-      from.subscribeAndFire(tracker.getSubscription(), funcOn2(this.onChange))
+      from.subscribeAndFire(tracker.getSubscription(), funcOn(this.onChange))
     })
 
     return <props.uses {...(props as any)} />
@@ -39,6 +39,6 @@ export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> 
   onChange(_: Subscription, value: T): void {
     const spec = this.map.invoke(value)
     destroyChildren(this.element)
-    renderMultiple(this.element, spec)
+    renderMultiple(spec, this.element)
   }
 }

@@ -68,6 +68,12 @@ test("roundTile", () => {
   assert.same({ x: 1, y: 2 }, box2.left_top)
   assert.same({ x: 4, y: 5 }, box2.right_bottom)
 })
+test("roundChunk", () => {
+  const box = BBox({ x: 1.5, y: 32 }, { x: 33.5, y: 65 })
+  const box2 = box.roundChunk()
+  assert.same({ x: 0, y: 32 }, box2.left_top)
+  assert.same({ x: 64, y: 32 * 3 }, box2.right_bottom)
+})
 
 test("scale", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })

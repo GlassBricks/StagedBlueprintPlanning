@@ -232,5 +232,17 @@ class KeyFunc implements Func {
   }
 }
 
-export const funcOn2: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
+@RegisterClass("NoSelfKeyFunc")
+class NoSelfKeyFunc implements Func {
+  constructor(private readonly instance: Record<keyof any, SelflessFun>, private readonly key: keyof any) {}
+
+  invoke(...args: unknown[]) {
+    return this.instance[this.key](...args)
+  }
+}
+
+export const funcOn: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
   new KeyFunc(obj, key) as any) as any
+
+export const noSelfFuncOn: AccessSplit<<F extends SelflessFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
+  new NoSelfKeyFunc(obj, key) as any) as any

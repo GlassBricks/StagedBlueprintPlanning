@@ -32,7 +32,7 @@ export interface Tracker {
 export type FunctionComponent<T> = (props: T, tracker: Tracker) => Spec
 
 @RegisterClass("FactorioJsxComponent")
-export abstract class Component<P> {
+export abstract class Component<P = EmptyProps> {
   abstract render(props: P, tracker: Tracker): Spec
   declare _props: P
 }

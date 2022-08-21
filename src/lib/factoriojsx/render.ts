@@ -16,7 +16,7 @@ import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
 import { isEmpty } from "../util"
 import { PRecord } from "../util-types"
-import * as propTypes from "./propTypes.json"
+import * as propInfo from "./propInfo.json"
 import { ClassComponentSpec, ElementSpec, FCSpec, FragmentSpec, GuiEvent, GuiEventHandler, Spec, Tracker } from "./spec"
 
 type GuiEventName = Extract<keyof typeof defines.events, `on_gui_${string}`>
@@ -159,7 +159,7 @@ function renderElement(
 
   // eslint-disable-next-line prefer-const
   for (let [key, value] of pairs(spec)) {
-    const propProperties = propTypes[key]
+    const propProperties = propInfo[key]
     if (!propProperties) continue
     if (typeof value === "function") value = funcRef(value as any)
     if (propProperties === "event") {
@@ -277,12 +277,12 @@ function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponentSpe
 }
 
 export function render<T extends GuiElementType>(
-  parent: BaseGuiElement,
   spec: ElementSpec & { type: T },
+  parent: BaseGuiElement,
   index?: number,
 ): Extract<LuaGuiElement, { type: T }>
-export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | nil
-export function render(parent: BaseGuiElement, element: Spec, index?: number): LuaGuiElement | nil {
+export function render(element: Spec, parent: BaseGuiElement, index?: number): LuaGuiElement | nil
+export function render(element: Spec, parent: BaseGuiElement, index?: number): LuaGuiElement | nil {
   const result = renderInternal(parent, element, newTracker(nil, index))
   if (!result || isLuaGuiElement(result)) return result
   if (result.length > 1) {
@@ -291,13 +291,23 @@ export function render(parent: BaseGuiElement, element: Spec, index?: number): L
   return result[0]
 }
 
-export function renderMultiple(parent: BaseGuiElement, elements: Spec): LuaGuiElement[] | nil {
+export function renderMultiple(elements: Spec, parent: BaseGuiElement): LuaGuiElement[] | nil {
   const result = renderInternal(parent, elements, newTracker(nil))
   return !result || isLuaGuiElement(result) ? [result as LuaGuiElement] : result
 }
 
+/**
+ * Replaces if another element with the same name already exists.
+ */
+export function renderNamed(element: Spec, parent: LuaGuiElement, name: string): LuaGuiElement | nil {
+  destroy(parent[name])
+  const result = render(element, parent)
+  if (result) result.name = name
+  return result
+}
+
 export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | nil {
-  const element = render(player.gui.screen, spec)
+  const element = render(spec, player.gui.screen)
   if (element) {
     player.opened = element
   }

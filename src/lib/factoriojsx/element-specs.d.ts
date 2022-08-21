@@ -27,7 +27,7 @@ export interface ChooseElemButtonElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<ChooseElemButtonGuiElementMembers>
+  onCreate?: OnCreateHandler<ChooseElemButtonGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -38,7 +38,7 @@ export interface DropDownElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<DropDownGuiElementMembers>
+  onCreate?: OnCreateHandler<DropDownGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -48,7 +48,7 @@ export interface EmptyWidgetElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<EmptyWidgetGuiElementMembers>
+  onCreate?: OnCreateHandler<EmptyWidgetGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -58,7 +58,7 @@ export interface EntityPreviewElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<EntityPreviewGuiElementMembers>
+  onCreate?: OnCreateHandler<EntityPreviewGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -69,7 +69,7 @@ export interface ListBoxElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<ListBoxGuiElementMembers>
+  onCreate?: OnCreateHandler<ListBoxGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -84,7 +84,7 @@ export interface ScrollPaneElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<ScrollPaneGuiElementMembers>
+  onCreate?: OnCreateHandler<ScrollPaneGuiElement>
   styleMod?: ScrollPaneStyleMod
 }
 
@@ -99,7 +99,7 @@ export interface SpriteButtonElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<SpriteButtonGuiElementMembers>
+  onCreate?: OnCreateHandler<SpriteButtonGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -109,7 +109,7 @@ export interface TabbedPaneElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<TabbedPaneGuiElementMembers>
+  onCreate?: OnCreateHandler<TabbedPaneGuiElement>
   styleMod?: TabbedPaneStyleMod
 }
 
@@ -124,7 +124,7 @@ export interface TextBoxElementSpec extends BaseElementSpec {
   on_gui_confirmed?: GuiEventHandler<OnGuiConfirmedEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<TextBoxGuiElementMembers>
+  onCreate?: OnCreateHandler<TextBoxGuiElement>
   styleMod?: TextBoxStyleMod
 }
 
@@ -134,7 +134,7 @@ export interface ButtonElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<ButtonGuiElementMembers>
+  onCreate?: OnCreateHandler<ButtonGuiElement>
   styleMod?: ButtonStyleMod
 }
 
@@ -147,7 +147,7 @@ export interface CameraElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<CameraGuiElementMembers>
+  onCreate?: OnCreateHandler<CameraGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -157,7 +157,7 @@ export interface CheckboxElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<CheckboxGuiElementMembers>
+  onCreate?: OnCreateHandler<CheckboxGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -168,7 +168,7 @@ export interface FlowElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<FlowGuiElementMembers>
+  onCreate?: OnCreateHandler<FlowGuiElement>
   styleMod?: FlowStyleMod
 }
 
@@ -181,7 +181,7 @@ export interface FrameElementSpec extends BaseElementSpec {
   on_gui_location_changed?: GuiEventHandler<OnGuiLocationChangedEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<FrameGuiElementMembers>
+  onCreate?: OnCreateHandler<FrameGuiElement>
   styleMod?: FrameStyleMod
 }
 
@@ -191,7 +191,7 @@ export interface LabelElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<LabelGuiElementMembers>
+  onCreate?: OnCreateHandler<LabelGuiElement>
   styleMod?: LabelStyleMod
 }
 
@@ -201,7 +201,7 @@ export interface LineElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<LineGuiElementMembers>
+  onCreate?: OnCreateHandler<LineGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -217,7 +217,7 @@ export interface MinimapElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<MinimapGuiElementMembers>
+  onCreate?: OnCreateHandler<MinimapGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -227,7 +227,7 @@ export interface ProgressBarElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<ProgressBarGuiElementMembers>
+  onCreate?: OnCreateHandler<ProgressBarGuiElement>
   styleMod?: ProgressBarStyleMod
 }
 
@@ -237,7 +237,7 @@ export interface RadioButtonElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<RadioButtonGuiElementMembers>
+  onCreate?: OnCreateHandler<RadioButtonGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -252,7 +252,7 @@ export interface SliderElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<SliderGuiElementMembers>
+  onCreate?: OnCreateHandler<SliderGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -263,7 +263,7 @@ export interface SpriteElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<SpriteGuiElementMembers>
+  onCreate?: OnCreateHandler<SpriteGuiElement>
   styleMod?: SpriteStyleMod
 }
 
@@ -278,7 +278,7 @@ export interface SwitchElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<SwitchGuiElementMembers>
+  onCreate?: OnCreateHandler<SwitchGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -288,7 +288,7 @@ export interface TabElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<TabGuiElementMembers>
+  onCreate?: OnCreateHandler<TabGuiElement>
   styleMod?: TabStyleMod
 }
 
@@ -303,7 +303,7 @@ export interface TableElementSpec extends BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<TableGuiElementMembers>
+  onCreate?: OnCreateHandler<TableGuiElement>
   styleMod?: TableStyleMod
 }
 
@@ -320,7 +320,7 @@ export interface TextFieldElementSpec extends BaseElementSpec {
   on_gui_confirmed?: GuiEventHandler<OnGuiConfirmedEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
-  onCreate?: OnCreateHandler<TextFieldGuiElementMembers>
+  onCreate?: OnCreateHandler<TextFieldGuiElement>
   styleMod?: TextFieldStyleMod
 }
 

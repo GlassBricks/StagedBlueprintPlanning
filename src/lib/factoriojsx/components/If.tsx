@@ -11,7 +11,7 @@
 
 // this could maybe be moved to shared lib in the future
 
-import { Func, funcOn2, RegisterClass } from "../../index"
+import { Func, funcOn, RegisterClass } from "../../index"
 import { State, Subscription } from "../../observable"
 import { Component, destroyChildren, ElemProps, FactorioJsx, renderMultiple, Spec, Tracker } from "../index"
 
@@ -35,7 +35,7 @@ export class If extends Component<IfProps> {
         {...props}
         onCreate={(element) => {
           this.element = element
-          props.condition.subscribeAndFire(tracker.getSubscription(), funcOn2(this.onChange))
+          props.condition.subscribeAndFire(tracker.getSubscription(), funcOn(this.onChange))
         }}
       />
     )
@@ -45,7 +45,7 @@ export class If extends Component<IfProps> {
     destroyChildren(this.element)
     const spec = value ? this.then.invoke() : this.else && this.else.invoke()
     if (spec) {
-      renderMultiple(this.element, spec)
+      renderMultiple(spec, this.element)
     }
   }
 }

@@ -12,7 +12,7 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { bind, Events, RegisterClass, registerFunctions } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Event, state, State } from "../lib/observable"
+import { Event, State, state } from "../lib/observable"
 import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
 import { Assembly, AssemblyChangeEvent, AssemblyId, Layer } from "./Assembly"
@@ -65,10 +65,6 @@ class AssemblyImpl implements Assembly {
     setupAssemblyDisplay(assembly)
   }
 
-  public getLayerAt(surface: LuaSurface, position: Position): Layer | nil {
-    error("not implemented")
-  }
-
   getLayer(layerNumber: LayerNumber): Layer {
     const layer = this.layers[layerNumber - 1]
     assert(layer, "layer not found")
@@ -86,6 +82,10 @@ class AssemblyImpl implements Assembly {
       return $multi(i, layers[i - 1])
     }
     return $multi(next, this.layers, start - 1)
+  }
+
+  getLayerAt(surface: LuaSurface, position: Position): Layer | nil {
+    error("not implemented")
   }
 
   public getLayerName(layerNumber: LayerNumber): LocalisedString {
@@ -124,7 +124,7 @@ export function _deleteAllAssemblies(): void {
 function getDisplayName(locale: string, id: number, name: string): LocalisedString {
   return name !== "" ? name : [locale, id]
 }
-registerFunctions("AssemblyName", { getDisplayName })
+registerFunctions("Assembly", { getDisplayName })
 
 @RegisterClass("Layer")
 class LayerImpl implements Layer {

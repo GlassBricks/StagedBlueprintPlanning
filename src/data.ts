@@ -89,6 +89,28 @@ const selectionProxySubgroup: ItemSubgroupPrototype = {
 
 data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup])
 
+const assemblyAddTool: SelectionToolPrototype = {
+  type: "selection-tool",
+  name: Prototypes.AssemblyAddTool,
+  icon: "__bbpp3__/graphics/icons/assembly-add.png",
+  icon_size: 64,
+  icon_mipmaps: 4,
+
+  flags: ["only-in-cursor", "spawnable", "not-stackable"],
+  stack_size: 1,
+  subgroup: "tool",
+  order: "z[bp3]-a[assembly-add]",
+
+  selection_mode: ["blueprint"],
+  selection_color: [1, 1, 1],
+  selection_cursor_box_type: "not-allowed",
+  alt_selection_mode: ["blueprint"],
+  alt_selection_color: [1, 1, 1],
+  alt_selection_cursor_box_type: "not-allowed",
+}
+
+data.extend([assemblyAddTool])
+
 // light yellow
 const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
 const cleanupToolDeleteColor: ColorArray = [0.9, 0.2, 0.2, 0.5]
@@ -102,7 +124,7 @@ const cleanupTool: SelectionToolPrototype = {
       tint: [1, 1, 1, 0.5],
     },
     {
-      icon: "__bbpp3__/graphics/cleanup.png",
+      icon: "__bbpp3__/graphics/icons/cleanup-white.png",
       icon_size: 64,
       scale: 0.4,
     },
@@ -113,7 +135,7 @@ const cleanupTool: SelectionToolPrototype = {
   stack_size: 1,
 
   subgroup: "tool",
-  order: "z-bp3-cleanup",
+  order: "z[bp3]-b[cleanup]",
 
   selection_mode: ["entity-with-owner"],
   selection_color: cleanupToolColor,
@@ -128,26 +150,37 @@ const cleanupTool: SelectionToolPrototype = {
   // filters set in data-final-fixes
 }
 
-const getCleanupToolShortcut: ShortcutPrototype = {
-  type: "shortcut",
-  name: Prototypes.CleanupTool,
-  localised_name: ["item-name." + Prototypes.CleanupTool],
-  order: "bp3-cleanup",
-  action: "spawn-item",
-  item_to_spawn: Prototypes.CleanupTool,
-  icon: {
-    filename: "__bbpp3__/graphics/cleanup.png",
-    size: 64,
-    scale: 0.4,
-  },
+function selectionToolToShortcut(prototype: SelectionToolPrototype, icon: Sprite): ShortcutPrototype {
+  const value: ShortcutPrototype = {
+    type: "shortcut",
+    name: prototype.name,
+    order: prototype.order,
+    action: "spawn-item",
+    item_to_spawn: prototype.name,
+    icon,
+    style: "blue",
+  }
+  return value
 }
 
 const getCleanupToolInput: CustomInputPrototype = {
   type: "custom-input",
   name: Prototypes.CleanupTool,
+  localised_name: ["item-name." + Prototypes.CleanupTool],
   key_sequence: "",
   item_to_spawn: Prototypes.CleanupTool,
   action: "spawn-item",
 }
 
-data.extend([cleanupTool, getCleanupToolShortcut, getCleanupToolInput])
+data.extend([
+  cleanupTool,
+  selectionToolToShortcut(assemblyAddTool, {
+    filename: "__bbpp3__/graphics/icons/assembly-add-white.png",
+    size: 64,
+  }),
+  selectionToolToShortcut(cleanupTool, {
+    filename: "__bbpp3__/graphics/icons/cleanup-white.png",
+    size: 64,
+  }),
+  getCleanupToolInput,
+])

@@ -25,7 +25,13 @@ export const enum Prototypes {
   PreviewEntitySubgroup = "bp3:preview-entity",
   SelectionProxySubgroup = "bp3:selection-proxy",
 
+  AssemblyAddTool = "bp3:assembly-add-tool",
   CleanupTool = "bp3:cleanup-tool",
+}
+
+export namespace Colors {
+  export const ErrorHighlight: ColorArray = [0.9, 0.2, 0.2]
+  export const AreaPreview: ColorArray = [0.7, 0.7, 0.9]
 }
 
 export const enum BuildableEntityTypes {

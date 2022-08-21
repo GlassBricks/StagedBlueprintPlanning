@@ -11,7 +11,7 @@
 
 import { Events, funcRef, registerFunctions } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
+import { Assembly, AssemblyChangeEvent } from "./Assembly"
 import floor = math.floor
 
 type AssembliesByChunk = Record<number, Record<number, Assembly | nil>>

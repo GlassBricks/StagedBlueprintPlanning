@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { assertNever, Func, funcOn2, RegisterClass } from "../../index"
+import { assertNever, Func, funcOn, RegisterClass } from "../../index"
 import { ObservableList, ObservableListChange, Subscription } from "../../observable"
 import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
 
@@ -34,26 +34,26 @@ export class List<T, U extends GuiElementType> extends Component<ListProps<T, U>
       const { of, map, ifEmpty } = props
       if (of.length() === 0) {
         if (ifEmpty) {
-          render(this.element, ifEmpty.invoke())
+          render(ifEmpty.invoke(), this.element)
         }
       } else {
         for (const item of of.value()) {
-          const result = render(this.element, map.invoke(item))
+          const result = render(map.invoke(item), this.element)
           if (!result) {
             //placeholder
-            render(this.element, <empty-widget />)
+            render(<empty-widget />, this.element)
           }
         }
       }
-      of.subscribe(tracker.getSubscription(), funcOn2(this.onChange))
+      of.subscribe(tracker.getSubscription(), funcOn(this.onChange))
     })
 
     return <props.uses {...(props as any)} />
   }
 
   private add(value: T, index: number) {
-    if (!render(this.element, this.map.invoke(value), index + 1)) {
-      render(this.element, <empty-widget />, index + 1)
+    if (!render(this.map.invoke(value), this.element, index + 1)) {
+      render(<empty-widget />, this.element, index + 1)
     }
   }
   private remove(index: number) {
@@ -78,7 +78,7 @@ export class List<T, U extends GuiElementType> extends Component<ListProps<T, U>
     } else if (changeType === "remove") {
       this.remove(change.index)
       if (ifEmpty && array.length() === 0) {
-        render(element, ifEmpty.invoke())
+        render(ifEmpty.invoke(), element)
       }
     } else if (changeType === "set") {
       this.remove(change.index)

@@ -339,7 +339,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
   writeFile(filename, content, "typescript")
 }
 
-// propTypes: Record<property, [guiSpecProp, elementProp, event?] | "event">
+// propInfo: Record<property, [guiSpecProp, elementProp, event?] | "event">
 {
   const result: Record<string, unknown> = {}
 
@@ -380,7 +380,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
   set("onCreate", null)
   set("styleMod", null)
 
-  void writeFile("propTypes.json", JSON.stringify(result), "json")
+  void writeFile("propInfo.json", JSON.stringify(result), "json")
 }
 
 // spec-types.d.ts
@@ -469,7 +469,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
         "onCreate",
         ts.factory.createToken(ts.SyntaxKind.QuestionToken),
         ts.factory.createTypeReferenceNode("OnCreateHandler", [
-          ts.factory.createTypeReferenceNode(toPascalCase(type) + "GuiElementMembers"),
+          ts.factory.createTypeReferenceNode(toPascalCase(type) + "GuiElement"),
         ]),
       ),
       ts.factory.createPropertySignature(

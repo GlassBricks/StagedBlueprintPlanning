@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Func, funcOn2, RegisterClass } from "../../index"
+import { Func, funcOn, RegisterClass } from "../../index"
 import { ObservableSet, ObservableSetChange, Subscription } from "../../observable"
 import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
 
@@ -35,18 +35,18 @@ export class EnumerateSet<T, U extends GuiElementType> extends Component<Enumera
       const { set, map, ifEmpty } = this
       if (set.size() === 0) {
         if (ifEmpty) {
-          render(this.element, ifEmpty.invoke())
+          render(ifEmpty.invoke(), this.element)
         }
       } else {
         const { associated } = this
         for (const item of set) {
-          const result = render(this.element, map.invoke(item))
+          const result = render(map.invoke(item), this.element)
           if (result) {
             associated.set(item, result)
           }
         }
       }
-      set.subscribe(tracker.getSubscription(), funcOn2(this.onChange))
+      set.subscribe(tracker.getSubscription(), funcOn(this.onChange))
     })
     return <props.uses {...(props as any)} />
   }
@@ -66,7 +66,7 @@ export class EnumerateSet<T, U extends GuiElementType> extends Component<Enumera
       if (ifEmpty && change.set.size() === 1) {
         destroyChildren(element)
       }
-      const result = render(element, map.invoke(value))
+      const result = render(map.invoke(value), element)
       if (result) {
         associated.set(value, result)
       }
@@ -74,7 +74,7 @@ export class EnumerateSet<T, U extends GuiElementType> extends Component<Enumera
       const item = associated.get(value)
       destroy(item)
       if (ifEmpty && change.set.size() === 0) {
-        render(element, ifEmpty.invoke())
+        render(ifEmpty.invoke(), element)
       }
     }
   }
