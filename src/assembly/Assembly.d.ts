@@ -41,6 +41,8 @@ export interface Assembly extends AssemblyContent {
   getLayer(layerNumber: LayerNumber): Layer
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
 
+  getAllLayers(): readonly Layer[]
+
   getLayerAt(surface: LuaSurface, position: Position): Layer | nil
 
   readonly content: MutableEntityMap
@@ -53,6 +55,8 @@ export interface Assembly extends AssemblyContent {
 export interface Layer extends LayerPosition {
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
+
+  readonly assembly: Assembly
 
   readonly valid: boolean
 }
@@ -69,3 +73,15 @@ export interface AssemblyDeletedEvent {
   readonly assembly: Assembly
 }
 export type AssemblyChangeEvent = LayerPushedEvent | AssemblyDeletedEvent
+
+export interface AssemblyCreatedEvent {
+  readonly type: "assembly-created"
+  readonly assembly: Assembly
+}
+
+export interface AssemblyDeletedEvent {
+  readonly type: "assembly-deleted"
+  readonly assembly: Assembly
+}
+
+export type GlobalAssemblyEvent = AssemblyCreatedEvent | AssemblyDeletedEvent

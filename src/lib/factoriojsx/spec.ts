@@ -27,6 +27,8 @@ export interface Tracker {
    * This is closed when the element is destroyed.
    */
   getSubscription(): Subscription
+
+  readonly playerIndex: PlayerIndex
 }
 
 export type FunctionComponent<T> = (props: T, tracker: Tracker) => Spec

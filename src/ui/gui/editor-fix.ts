@@ -9,5 +9,22 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "./assembly-creation"
-import "./gui"
+import { Events, onPlayerInit } from "../../lib"
+import controllers = defines.controllers
+
+if (!script.active_mods.EditorExtensions) {
+  const editorGuiWidth = 474
+  function update(index: PlayerIndex): void {
+    const player = game.get_player(index)!
+    const isEditor = player.controller_type === controllers.editor
+    if (isEditor) {
+      player.gui.top.style.left_margin = editorGuiWidth
+      player.gui.left.style.left_margin = editorGuiWidth
+    } else {
+      player.gui.top.style.left_margin = 0
+      player.gui.left.style.left_margin = 0
+    }
+  }
+  Events.on_player_toggled_map_editor((e) => update(e.player_index))
+  onPlayerInit(update)
+}

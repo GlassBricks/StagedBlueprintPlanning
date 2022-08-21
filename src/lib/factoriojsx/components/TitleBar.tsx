@@ -14,7 +14,7 @@ import { MaybeState } from "../../observable"
 import { destroy, FactorioJsx, GuiEvent, Spec, SpecChildren } from "../index"
 import { CloseButton } from "./buttons"
 
-export function TitleBar(props: { title: MaybeState<LocalisedString>; children?: SpecChildren }): Spec {
+export function TitleBar(props: { children?: SpecChildren }): Spec {
   return (
     <flow
       direction="horizontal"
@@ -28,8 +28,7 @@ export function TitleBar(props: { title: MaybeState<LocalisedString>; children?:
       }}
       name="title_bar"
     >
-      <label caption={props.title} style="frame_title" ignored_by_interaction />
-      <>{props.children}</>
+      {props.children}
     </flow>
   )
 }
@@ -60,7 +59,8 @@ registerFunctions("gui:TitleBar", { closeParentParent, closeSelf })
 // noinspection JSUnusedGlobalSymbols
 export function SimpleTitleBar(props: { title: MaybeState<LocalisedString> }): Spec {
   return (
-    <TitleBar title={props.title}>
+    <TitleBar>
+      <label caption={props.title} style="frame_title" ignored_by_interaction />
       <DraggableSpace />
       <CloseButton onClick={funcRef(closeParentParent)} />
     </TitleBar>

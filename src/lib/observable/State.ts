@@ -40,10 +40,8 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
     return subscription
   }
 
-  subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
-    const subscription = this.event.subscribe(context, observer)
-    observer.invoke(subscription, this.get(), nil)
-    return subscription
+  private static subFn(this: void, key: keyof any, value: Record<keyof any, any> | nil): any {
+    return value && value[key]
   }
   subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {
     const subscription = this.subscribeIndependently(observer)
@@ -62,7 +60,6 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   switch<V>(whenTruthy: V, whenFalsy: V): State<V> {
     return this.map(bind(State.switchFn, whenTruthy, whenFalsy)) as State<V>
   }
-
   static switchFn<V>(this: void, whenTrue: V, whenFalse: V, value: unknown): V {
     return value ? whenTrue : whenFalse
   }
@@ -71,6 +68,17 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   }
   static truthyFn<V>(this: void, value: V): boolean {
     return !!value
+  }
+  subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
+    const subscription = this.subscribe(context, observer)
+    observer.invoke(subscription, this.get(), nil)
+    return subscription
+  }
+  sub<K extends keyof T>(key: K): State<T[K]> {
+    return this.map(bind(State.subFn, key)) as State<T[K]>
+  }
+  nullableSub<T, K extends keyof T>(this: State<T | nil>, key: K): State<T[K] | nil> {
+    return this.map(bind(State.subFn, key)) as State<T[K]>
   }
 
   static _numObservers(state: State<any>): number {

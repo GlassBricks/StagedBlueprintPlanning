@@ -9,5 +9,5 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "./assembly-creation"
-import "./gui"
+import "./CurrentAssembly"
+import "./editor-fix"

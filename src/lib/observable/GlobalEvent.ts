@@ -9,5 +9,24 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "./assembly-creation"
-import "./gui"
+export interface GlobalEvent<T> {
+  addListener(listener: (value: T) => void): void
+  raise(value: T): void
+}
+
+class GlobalEventImpl<T> implements GlobalEvent<T> {
+  private listeners: ((value: T) => void)[] = []
+
+  addListener(listener: (value: T) => void): void {
+    this.listeners.push(listener)
+  }
+  raise(value: T): void {
+    for (const listener of this.listeners) {
+      listener(value)
+    }
+  }
+}
+
+export function globalEvent<T>(): GlobalEvent<T> {
+  return new GlobalEventImpl<T>()
+}

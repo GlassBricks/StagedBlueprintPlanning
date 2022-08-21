@@ -1,3 +1,8 @@
-cleanup.png:
-    Icon from Icon Fonts (http://www.onlinewebfonts.com/icon) is licensed by CC BY 3.0
-    Resized and edited.
+cleanup.png
+Icon from Icon Fonts (http://www.onlinewebfonts.com/icon) is licensed by CC BY 3.0
+Resized and edited
+----------------------------------------------------------------------------------
+external-link-black.png; external-link-white.png
+icons8.com
+URL: https://icons8.com
+License: Public Domain

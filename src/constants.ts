@@ -29,6 +29,11 @@ export const enum Prototypes {
   CleanupTool = "bp3:cleanup-tool",
 }
 
+export const enum Sprites {
+  ExternalLinkWhite = "bp3:external-link-white",
+  ExternalLinkBlack = "bp3:external-link-black",
+}
+
 export namespace Colors {
   export const ErrorHighlight: ColorArray = [0.9, 0.2, 0.2]
   export const AreaPreview: ColorArray = [0.7, 0.7, 0.9]

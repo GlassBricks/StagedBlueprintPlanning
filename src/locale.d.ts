@@ -57,3 +57,11 @@ export declare const enum L_GuiNewAssembly {
   /** Invalid specified number of layers */
   InvalidNumLayers = "bp3.gui.new-assembly.invalid-num-layers",
 }
+export declare const enum L_GuiCurrentAssembly {
+  /** Assembly: */
+  Assembly = "bp3.gui.current-assembly.assembly",
+  /** (None) */
+  NoAssembly = "bp3.gui.current-assembly.no-assembly",
+  /** Open assembly settings */
+  OpenAssemblySettings = "bp3.gui.current-assembly.open-assembly-settings",
+}

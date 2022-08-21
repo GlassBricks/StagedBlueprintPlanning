@@ -47,15 +47,18 @@ if (script.active_mods.testorio !== nil) {
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories !== nil) inventories.forEach((x) => x.destroy())
     global = {}
-    Events.raiseFakeEventNamed("on_init", nil!)
     for (const [, player] of game.players) {
-      for (const child of player.gui.screen.children) {
-        if (child.get_mod() === script.mod_name) child.destroy()
+      const { screen, left, top, center } = player.gui
+      for (const gui of [screen, left, top, center]) {
+        for (const child of gui.children) {
+          if (child.get_mod() === script.mod_name) child.destroy()
+        }
       }
     }
     for (const [, surface] of game.surfaces) {
       if (surface.index !== 1) game.delete_surface(surface)
     }
+    Events.raiseFakeEventNamed("on_init", nil!)
   }
 
   commands.add_command("reinit", "", reinit)

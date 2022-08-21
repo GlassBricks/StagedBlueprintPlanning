@@ -13,9 +13,10 @@ import { LayerNumber } from "../entity/AssemblyEntity"
 import { bind, Events, RegisterClass, registerFunctions } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Event, State, state } from "../lib/observable"
+import { globalEvent } from "../lib/observable/GlobalEvent"
 import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
-import { Assembly, AssemblyChangeEvent, AssemblyId, Layer } from "./Assembly"
+import { Assembly, AssemblyChangeEvent, AssemblyId, GlobalAssemblyEvent, Layer } from "./Assembly"
 import { setupAssemblyDisplay } from "./AssemblyDisplay"
 import { newEntityMap } from "./EntityMap"
 import { getLayerNumberOfSurface } from "./surfaces"
@@ -30,6 +31,8 @@ Events.on_init(() => {
   global.nextAssemblyId = 1 as AssemblyId
   global.assemblies = new LuaMap()
 })
+
+export const AssemblyEvents = globalEvent<GlobalAssemblyEvent>()
 
 @RegisterClass("Assembly")
 class AssemblyImpl implements Assembly {
@@ -54,16 +57,18 @@ class AssemblyImpl implements Assembly {
       bbox,
       surfaces.map((surface) => ({ surface, bbox })),
     )
-    AssemblyImpl.setupAssembly(assembly)
+    AssemblyImpl.onAssemblyCreated(assembly)
 
     return assembly
   }
 
-  static setupAssembly(assembly: AssemblyImpl): void {
+  static onAssemblyCreated(assembly: AssemblyImpl): void {
     global.assemblies.set(assembly.id, assembly)
 
+    // todo: move to event?
     registerAssemblyLocation(assembly)
     setupAssemblyDisplay(assembly)
+    AssemblyEvents.raise({ type: "assembly-created", assembly })
   }
 
   getLayer(layerNumber: LayerNumber): Layer {
@@ -85,10 +90,15 @@ class AssemblyImpl implements Assembly {
     return $multi(next, this.layers, start - 1)
   }
 
-  getLayerAt(surface: LuaSurface, position: Position): Layer | nil {
+  public getAllLayers(): readonly Layer[] {
+    return this.layers
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getLayerAt(surface: LuaSurface, _position: Position): Layer | nil {
     const layerIndex = getLayerNumberOfSurface(surface.index)
     if (layerIndex === nil) return nil
-    return this.getLayer(layerIndex)
+    return this.layers[layerIndex - 1]
   }
 
   public getLayerName(layerNumber: LayerNumber): LocalisedString {
@@ -102,8 +112,11 @@ class AssemblyImpl implements Assembly {
     for (const layer of this.layers) {
       layer.valid = false
     }
+    // todo: move this to global event?
     this.events.raise({ type: "assembly-deleted", assembly: this })
     this.events.closeAll()
+
+    AssemblyEvents.raise({ type: "assembly-deleted", assembly: this })
   }
 }
 
@@ -174,6 +187,6 @@ export function _mockAssembly(numLayers: number = 0): Assembly {
 }
 export function createDemonstrationAssembly(numLayers: number): Assembly {
   const assembly = new DemonstrationAssembly(numLayers)
-  AssemblyImpl.setupAssembly(assembly)
+  AssemblyImpl.onAssemblyCreated(assembly)
   return assembly
 }

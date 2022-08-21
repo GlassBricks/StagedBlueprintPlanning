@@ -10,7 +10,7 @@
  */
 
 import { Data } from "typed-factorio/data/types"
-import { CustomInputs, Prototypes } from "./constants"
+import { CustomInputs, Prototypes, Sprites } from "./constants"
 import {
   CustomInputPrototype,
   ItemGroupPrototype,
@@ -20,6 +20,7 @@ import {
   ShortcutPrototype,
   SimpleEntityPrototype,
   Sprite,
+  SpritePrototype,
 } from "./declarations/data"
 
 declare const data: Data
@@ -92,7 +93,7 @@ data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup])
 const assemblyAddTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.AssemblyAddTool,
-  icon: "__bbpp3__/graphics/icons/assembly-add.png",
+  icon: "__bbpp3__/graphics/icons/assembly-add-tool.png",
   icon_size: 64,
   icon_mipmaps: 4,
 
@@ -183,4 +184,26 @@ data.extend([
     size: 64,
   }),
   getCleanupToolInput,
+])
+
+function createSprite(
+  name: string,
+  filename: string,
+  size: number,
+  position?: MapPositionArray,
+  mipmaps?: number,
+): SpritePrototype {
+  return {
+    type: "sprite",
+    name,
+    filename,
+    size,
+    flags: ["icon"],
+    mipmap_count: mipmaps,
+  }
+}
+
+data.extend([
+  createSprite(Sprites.ExternalLinkBlack, "__bbpp3__/graphics/icons/external-link-black.png", 32),
+  createSprite(Sprites.ExternalLinkWhite, "__bbpp3__/graphics/icons/external-link-white.png", 32),
 ])

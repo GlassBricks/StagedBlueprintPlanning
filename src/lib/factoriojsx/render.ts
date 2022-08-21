@@ -63,8 +63,9 @@ interface TrackerInternal extends Tracker {
   onMountCallbacks: ((this: unknown, element: LuaGuiElement) => void)[]
 }
 
-function newTracker(parent: TrackerInternal | nil, firstIndex?: number): TrackerInternal {
+function _newTracker(parent: TrackerInternal | nil, playerIndex: PlayerIndex, firstIndex?: number): TrackerInternal {
   return {
+    playerIndex,
     firstIndex,
     parent,
     onMountCallbacks: [],
@@ -78,6 +79,12 @@ function newTracker(parent: TrackerInternal | nil, firstIndex?: number): Tracker
       return (this.subscriptionContext = parent?.getSubscription() ?? new Subscription())
     },
   }
+}
+function newRootTracker(playerIndex: PlayerIndex, firstIndex: number | nil): TrackerInternal {
+  return _newTracker(nil, playerIndex, firstIndex)
+}
+function newTracker(parent: TrackerInternal, firstIndex: number | nil): TrackerInternal {
+  return _newTracker(parent, parent.playerIndex, firstIndex)
 }
 
 function callOnMount(tracker: TrackerInternal, element: LuaGuiElement): void {
@@ -131,7 +138,7 @@ function renderFragment(parent: BaseGuiElement, spec: FragmentSpec, tracker: Tra
   for (const child of children) {
     const childResult = renderInternal(parent, child, usedTracker)
     if (!childResult || isEmpty(childResult)) continue
-    usedTracker = newTracker(nil)
+    usedTracker = newRootTracker(usedTracker.playerIndex, nil)
     if (isLuaGuiElement(childResult)) {
       elements.push(childResult)
     } else {
@@ -233,7 +240,7 @@ function renderElement(
   const children = spec.children
   if (children) {
     for (const child of children as Spec[]) {
-      renderInternal(element, child, newTracker(nil))
+      renderInternal(element, child, newRootTracker(tracker.playerIndex, nil))
     }
   }
 
@@ -284,7 +291,7 @@ export function render<T extends GuiElementType>(
 ): Extract<LuaGuiElement, { type: T }>
 export function render(element: Spec, parent: BaseGuiElement, index?: number): LuaGuiElement | nil
 export function render(element: Spec, parent: BaseGuiElement, index?: number): LuaGuiElement | nil {
-  const result = renderInternal(parent, element, newTracker(nil, index))
+  const result = renderInternal(parent, element, newRootTracker(parent.player_index, index))
   if (!result || isLuaGuiElement(result)) return result
   if (result.length > 1) {
     error("cannot render multiple elements at root. Try wrapping them in another element.")
@@ -293,7 +300,7 @@ export function render(element: Spec, parent: BaseGuiElement, index?: number): L
 }
 
 export function renderMultiple(elements: Spec, parent: BaseGuiElement): LuaGuiElement[] | nil {
-  const result = renderInternal(parent, elements, newTracker(nil))
+  const result = renderInternal(parent, elements, newRootTracker(parent.player_index, nil))
   return !result || isLuaGuiElement(result) ? [result as LuaGuiElement] : result
 }
 

@@ -155,6 +155,11 @@ export interface ItemSubgroupPrototype extends PrototypeBase {
   group: string
 }
 
+export interface SpritePrototype extends PrototypeBase, BasicSprite {
+  type: "sprite"
+  name: string
+}
+
 export interface BasicSprite {
   filename: string
   priority?: SpritePriority
@@ -163,6 +168,7 @@ export interface BasicSprite {
   height?: number
   size?: number | MapPosition | MapPositionArray
   shift?: MapPosition | MapPositionArray
+  position?: MapPositionArray
   scale?: number
 
   mipmap_count?: number
