@@ -12,29 +12,27 @@
 import { Events } from "./Events"
 import { Mutable } from "./util-types"
 
-declare const global: {
-  players: GlobalPlayerData
-}
+declare const global: Mutable<GlobalWithPlayers>
 /**
  * Called when player is initialized (both during on_init and on_player_created).
  */
-export function onPlayerInit(action: (player: LuaPlayer) => void): void {
+export function onPlayerInit(action: (player: PlayerIndex) => void): void {
   Events.onAll({
     on_init() {
       for (const [, player] of game.players) {
-        action(player)
+        action(player.index)
       }
     },
     on_player_created(e): void {
-      action(game.get_player(e.player_index)!)
+      action(e.player_index)
     },
   })
 }
 Events.on_init(() => {
   global.players = {}
 })
-onPlayerInit((player) => {
-  ;(global.players as Mutable<GlobalPlayerData>)[player.index] = {} as PlayerData
+onPlayerInit((index) => {
+  ;(global.players as Mutable<GlobalPlayerData>)[index] = {} as PlayerData
 })
 
 const playerRemovedHandlers: Array<(playerIndex: PlayerIndex) => void> = []

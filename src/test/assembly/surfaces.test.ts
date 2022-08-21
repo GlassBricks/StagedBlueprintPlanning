@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getAssemblySurface, generateAssemblySurfaces, prepareArea } from "../../assembly/surfaces"
+import { generateAssemblySurfaces, getAssemblySurface, prepareArea } from "../../assembly/surfaces"
 import { BBox } from "../../lib/geometry"
 
 test("getBlueprintSurface(1) returns nauvis", () => {
@@ -25,7 +25,7 @@ test("makeSurfaces() creates other surfaces", () => {
   assert.true(surface.generate_with_lab_tiles)
 })
 
-test("prepareArea() sets chunk status", () => {
+test('prepareArea() "generates" chunks', () => {
   generateAssemblySurfaces(2)
   const surface = getAssemblySurface(2)
 

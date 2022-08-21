@@ -149,9 +149,8 @@ declare global {
     justClosedBlueprint?: BlueprintItemStack
   }
 }
-declare const global: {
+declare const global: GlobalWithPlayers & {
   worldListenerState: typeof state
-  players: GlobalPlayerData
 }
 Events.on_init(() => {
   state = global.worldListenerState = {}
@@ -295,7 +294,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
   const layer = getAssemblyAt(entity)
   if (!layer) return
 
-  const data = global.players[player.index]!
+  const data = global.players[player.index]
   const existingEntity = data.lastWireAffectedEntity
   if (existingEntity && existingEntity !== entity) {
     const [assembly, layer] = getAssemblyAt(entity)
@@ -305,7 +304,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
 }
 
 function clearPlayerAffectedWires(player: LuaPlayer): void {
-  const data = global.players[player.index]!
+  const data = global.players[player.index]
   const entity = data.lastWireAffectedEntity
   if (entity) {
     data.lastWireAffectedEntity = nil

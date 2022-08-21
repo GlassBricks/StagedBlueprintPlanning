@@ -38,10 +38,10 @@ export interface Assembly extends AssemblyContent {
 
   readonly bbox: BoundingBox
 
-  getLayerAt(surface: LuaSurface, position: Position): Layer | nil
-
   getLayer(layerNumber: LayerNumber): Layer
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
+
+  getLayerAt(surface: LuaSurface, position: Position): Layer | nil
 
   readonly content: MutableEntityMap
   readonly events: Observable<AssemblyChangeEvent>

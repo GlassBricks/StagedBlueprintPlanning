@@ -11,7 +11,7 @@
 
 import { Events } from "../Events"
 import { MutableState, Observer, State, Subscription } from "../observable"
-import { onPlayerInit, onPlayerRemoved } from "../player-init"
+import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
 import { isEmpty } from "../util"
@@ -89,17 +89,18 @@ function isLuaGuiElement(element: unknown): element is LuaGuiElement {
   return typeof element === "object" && (element as LuaGuiElement).object_name === "LuaGuiElement"
 }
 
-declare const global: {
-  guiElements: PRecord<PlayerIndex, PRecord<GuiElementIndex, ElementInstance>>
+declare global {
+  interface PlayerData {
+    guiElements: PRecord<GuiElementIndex, ElementInstance>
+  }
 }
-Events.on_init(() => {
-  global.guiElements = {}
+declare const global: GlobalWithPlayers
+onPlayerInit((index) => {
+  global.players[index].guiElements = {}
 })
-onPlayerInit((player) => {
-  global.guiElements[player.index] = {}
-})
-onPlayerRemoved((playerIndex) => {
-  delete global.guiElements[playerIndex]
+let players: typeof global.players
+Events.onInitOrLoad(() => {
+  players = global.players
 })
 
 const type = _G.type
@@ -252,7 +253,7 @@ function renderElement(
 
   const subscription = tracker.subscriptionContext
   if ((subscription && subscription.hasActions()) || !isEmpty(events)) {
-    global.guiElements[element.player_index]![element.index] = {
+    players[element.player_index].guiElements[element.index] = {
       element,
       events,
       subscription,
@@ -315,13 +316,13 @@ export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | nil
 }
 
 function getInstance(element: BaseGuiElement): ElementInstance | nil {
-  return !element.valid ? nil : global.guiElements[element.player_index]![element.index]
+  return !element.valid ? nil : players[element.player_index].guiElements[element.index]
 }
 
 export function destroy(element: BaseGuiElement | nil, destroyElement = true): void {
   if (!element || !element.valid) return
   // is lua gui element
-  const instance = global.guiElements[element.player_index]![element.index]
+  const instance = players[element.player_index].guiElements[element.index]
   if (!instance) {
     for (const child of element.children) {
       destroy(child, false)
@@ -341,7 +342,7 @@ export function destroy(element: BaseGuiElement | nil, destroyElement = true): v
   }
   subscription?.close()
   if (destroyElement && element.valid) element.destroy()
-  global.guiElements[player_index]![index] = nil!
+  players[player_index].guiElements[index] = nil!
 }
 
 export function destroyChildren(element: BaseGuiElement): void {
@@ -383,8 +384,8 @@ for (const [name] of pairs(guiEventNames)) {
 
 export function cleanGuiInstances(): number {
   let count = 0
-  for (const [, byPlayer] of pairs(global.guiElements)) {
-    for (const [, instance] of pairs(byPlayer)) {
+  for (const [, data] of pairs(global.players)) {
+    for (const [, instance] of pairs(data.guiElements)) {
       const element = instance.element
       if (!element.valid) {
         destroy(element)
