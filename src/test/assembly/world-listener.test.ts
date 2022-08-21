@@ -13,7 +13,7 @@ import { Assembly } from "../../assembly/Assembly"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _mockAssembly } from "../../assembly/UserAssembly"
 import { _inValidState } from "../../assembly/world-listener"
-import { deleteAssembly, registerAssembly } from "../../assembly/world-register"
+import { registerAssemblyLocation, unregisterAssemblyLocation } from "../../assembly/world-register"
 import { Prototypes } from "../../constants"
 import { LayerNumber } from "../../entity/AssemblyEntity"
 import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
@@ -31,14 +31,8 @@ before_all(() => {
 
   updater = mock(DefaultAssemblyUpdater, true)
 
-  assembly = _mockAssembly(Pos(1, 1))
-  for (let i = 0; i < 2; i++) {
-    assembly.pushLayer({
-      surface,
-      position: Pos(i * 32, 0),
-    })
-  }
-  registerAssembly(assembly)
+  assembly = _mockAssembly(2)
+  registerAssemblyLocation(assembly)
 })
 
 before_each(() => {
@@ -52,7 +46,7 @@ before_each(() => {
 })
 after_all(() => {
   mock.revert(updater)
-  deleteAssembly(assembly)
+  unregisterAssemblyLocation(assembly)
 })
 
 after_each(() => {

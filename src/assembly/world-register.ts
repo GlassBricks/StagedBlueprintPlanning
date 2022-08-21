@@ -10,84 +10,86 @@
  */
 
 import { Events, funcRef, registerFunctions } from "../lib"
-import { Pos, Position } from "../lib/geometry"
+import { BBox, Pos, Position } from "../lib/geometry"
 import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
 import floor = math.floor
 
-type LayersByChunk = Record<number, Record<number, Layer | nil>>
+type AssembliesByChunk = Record<number, Record<number, Assembly | nil>>
 declare const global: {
-  inWorldLayers: Record<SurfaceIndex, LayersByChunk>
+  inWorldAssemblies: AssembliesByChunk
 }
 
 Events.on_init(() => {
-  global.inWorldLayers = {}
+  global.inWorldAssemblies = {}
   for (const [, surface] of game.surfaces) {
-    global.inWorldLayers[surface.index] = {}
+    global.inWorldAssemblies[surface.index] = {}
   }
 })
 Events.on_surface_created((e) => {
-  global.inWorldLayers[e.surface_index] = {}
+  global.inWorldAssemblies[e.surface_index] = {}
 })
 Events.on_pre_surface_deleted((e) => {
-  delete global.inWorldLayers[e.surface_index]
+  delete global.inWorldAssemblies[e.surface_index]
 })
 
-function addLayer(layer: Layer): void {
-  const surface = layer.surface
-  if (!surface.valid) return
-  const layersByChunk = global.inWorldLayers[surface.index]
-  const topLeft = Pos.div(layer.left_top, 32).floor()
-  const bottomRight = Pos.div(layer.right_bottom, 32).ceil()
+function addAssembly(assembly: Assembly): void {
+  const byChunk = global.inWorldAssemblies
+  const bbox = assembly.bbox
+  const topLeft = Pos.div(bbox.left_top, 32).floor()
+  const bottomRight = Pos.div(bbox.right_bottom, 32).ceil()
   for (const x of $range(topLeft.x, bottomRight.x - 1)) {
-    const byX = layersByChunk[x] ?? (layersByChunk[x] = {})
+    const byX = byChunk[x] ?? (byChunk[x] = {})
     for (const y of $range(topLeft.y, bottomRight.y - 1)) {
-      byX[y] = layer
+      byX[y] = assembly
     }
   }
 }
 
-function removeLayer(layer: Layer): void {
-  const surface = layer.surface
-  if (!surface.valid) return
-  const layersByChunk = global.inWorldLayers[surface.index]
-  const topLeft = Pos.div(layer.left_top, 32).floor()
-  const bottomRight = Pos.div(layer.right_bottom, 32).ceil()
+export function registerAssemblyLocation(assembly: Assembly): void {
+  addAssembly(assembly)
+  assembly.events.subscribeIndependently(funcRef(onAssemblyChanged))
+}
+
+export function unregisterAssemblyLocation(assembly: Assembly): void {
+  const byChunk = global.inWorldAssemblies
+  const bbox = assembly.bbox
+  const topLeft = Pos.div(bbox.left_top, 32).floor()
+  const bottomRight = Pos.div(bbox.right_bottom, 32).ceil()
   for (const x of $range(topLeft.x, bottomRight.x - 1)) {
-    const byX = layersByChunk[x]
+    const byX = byChunk[x]
     if (!byX) continue
     for (const y of $range(topLeft.y, bottomRight.y - 1)) {
       delete byX[y]
     }
-    if (next(byX)[0] === nil) delete layersByChunk[x]
+    if (next(byX)[0] === nil) delete byChunk[x]
   }
 }
 
-export function registerAssembly(assembly: Assembly): void {
-  for (const [, layer] of assembly.iterateLayers()) {
-    addLayer(layer)
+export function findIntersectingAssembly(area: BBox): Assembly | nil {
+  const topLeft = Pos.div(area.left_top, 32).floor()
+  const bottomRight = Pos.div(area.right_bottom, 32).ceil()
+  const layersByChunk = global.inWorldAssemblies
+  for (const x of $range(topLeft.x, bottomRight.x - 1)) {
+    const byX = layersByChunk[x]
+    if (!byX) continue
+    for (const y of $range(topLeft.y, bottomRight.y - 1)) {
+      const assembly = byX[y]
+      if (assembly) return assembly
+    }
   }
-  assembly.events.subscribeIndependently(funcRef(onAssemblyChanged))
+  return nil
 }
 
 function onAssemblyChanged(_: unknown, event: AssemblyChangeEvent) {
-  if (event.type === "layer-pushed") {
-    addLayer(event.layer)
-  } else if (event.type === "assembly-deleted") {
-    deleteAssembly(event.assembly)
+  if (event.type === "assembly-deleted") {
+    unregisterAssemblyLocation(event.assembly)
   }
 }
 registerFunctions("WorldRegister", { onAssemblyChanged })
 
-export function deleteAssembly(assembly: Assembly): void {
-  for (const [, layer] of assembly.iterateLayers()) {
-    removeLayer(layer)
-  }
-}
-
-export function getLayerAtPosition(surface: LuaSurface, position: Position): Layer | nil {
-  const bySurface = global.inWorldLayers[surface.index]
-  if (!bySurface) return nil
-  const byX = bySurface[floor(position.x / 32)]
+export function getAssemblyAtPosition(position: Position): Assembly | nil {
+  const byChunk = global.inWorldAssemblies
+  const byX = byChunk[floor(position.x / 32)]
   if (!byX) return nil
   return byX[floor(position.y / 32)]
 }

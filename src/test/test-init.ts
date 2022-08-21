@@ -9,9 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { newAssembly } from "../assembly/UserAssembly"
+import { createDemonstrationAssembly } from "../assembly/UserAssembly"
 import { Events } from "../lib"
-import { Pos } from "../lib/geometry"
 import { destroyAllRenders } from "../lib/rendering"
 
 // better source map traceback
@@ -77,13 +76,7 @@ if (script.active_mods.testorio !== nil) {
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
-      const assembly = newAssembly(Pos(1, 1))
-      for (let i = 0; i < 3; i++) {
-        assembly.pushLayer({
-          surface: game.surfaces[1],
-          position: Pos(i * 32, 0),
-        })
-      }
+      createDemonstrationAssembly(3)
     },
     log_passed_tests: false,
     sound_effects: true,

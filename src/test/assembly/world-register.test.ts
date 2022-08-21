@@ -11,40 +11,31 @@
 
 import { Assembly } from "../../assembly/Assembly"
 import { _mockAssembly } from "../../assembly/UserAssembly"
-import { deleteAssembly, getLayerAtPosition, registerAssembly } from "../../assembly/world-register"
+import {
+  findIntersectingAssembly,
+  getAssemblyAtPosition,
+  registerAssemblyLocation,
+  unregisterAssemblyLocation,
+} from "../../assembly/world-register"
 import { BBox, Pos } from "../../lib/geometry"
 
-let mockAssembly: Assembly
+let assembly: Assembly
 before_all(() => {
-  const surface = game.surfaces[1]
-  mockAssembly = _mockAssembly(Pos(1, 1))
-  for (let i = 0; i < 5; i++) {
-    mockAssembly.pushLayer({
-      surface,
-      position: Pos(i * 32, 0),
-    })
-  }
+  assembly = _mockAssembly(5)
 })
 
 test("registers in world correctly", () => {
-  registerAssembly(mockAssembly)
-  after_test(() => deleteAssembly(mockAssembly))
-  function assertLayersCorrect(): void {
-    for (const [, layer] of mockAssembly.iterateLayers()) {
-      const center = BBox.center(layer)
-      assert.equal(layer, getLayerAtPosition(layer.surface, center))
-      assert.not_equal(layer, getLayerAtPosition(layer.surface, center.plus(Pos(33, 33))))
-    }
-  }
-  assertLayersCorrect()
-  mockAssembly.pushLayer({
-    surface: game.surfaces[1],
-    position: Pos(5 * 32, 0),
-  })
-  assertLayersCorrect()
-  mockAssembly.delete()
-  for (const [, layer] of mockAssembly.iterateLayers()) {
+  registerAssemblyLocation(assembly)
+  after_test(() => unregisterAssemblyLocation(assembly))
+  const center = BBox.center(assembly.bbox)
+  assert.equal(assembly, getAssemblyAtPosition(center))
+  assert.not_equal(assembly, getAssemblyAtPosition(center.plus(Pos(33, 33))))
+
+  assert.equal(assembly, findIntersectingAssembly(assembly.bbox))
+
+  assembly.delete()
+  for (const [, layer] of assembly.iterateLayers()) {
     const center = BBox.center(layer)
-    assert.nil(getLayerAtPosition(layer.surface, center))
+    assert.nil(getAssemblyAtPosition(center))
   }
 })

@@ -20,18 +20,24 @@ import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
 @RegisterClass("AssemblyDisplay")
 class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
   private highlights: AnyRender[][] = []
-  private subscription: Subscription | undefined
 
   public invoke(_: Subscription, event: AssemblyChangeEvent) {
     if (event.type === "layer-pushed") {
-      this.createHighlightsForNewLayer(event.layer)
+      this.createHighlightsForLayer(event.layer)
     } else if (event.type === "assembly-deleted") {
       this.removeAllHighlights()
     } else {
       assertNever(event)
     }
   }
-  private createHighlightsForNewLayer(layer: Layer): void {
+  public init(assembly: Assembly) {
+    for (const [, layer] of assembly.iterateLayers()) {
+      this.createHighlightsForLayer(layer)
+    }
+    assembly.events.subscribeIndependently(this)
+  }
+
+  private createHighlightsForLayer(layer: Layer): void {
     const { surface, left_top, right_bottom } = layer
 
     // const boxId = rendering.draw_rectangle({
@@ -57,7 +63,7 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
     })
     this.highlights.push([box, text])
 
-    this.subscription = layer.displayName.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, text))
+    layer.displayName.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, text))
   }
 
   private static onLayerNameChange(this: void, text: TextRender, _: unknown, name: LocalisedString): void {
@@ -65,9 +71,6 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
   }
 
   private removeAllHighlights(): void {
-    if (!this.subscription) return
-    this.subscription.close()
-    this.subscription = nil
     for (const [boxId, textId] of this.highlights) {
       boxId.destroy()
       textId.destroy()
@@ -77,5 +80,6 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
 }
 
 export function setupAssemblyDisplay(assembly: Assembly): void {
-  assembly.events.subscribeIndependently(new AssemblyDisplay())
+  const display = new AssemblyDisplay()
+  display.init(assembly)
 }

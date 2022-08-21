@@ -12,7 +12,6 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { Position } from "../lib/geometry"
 import { MutableState, Observable, State } from "../lib/observable"
-import { WorldPosition } from "../utils/world-location"
 import { MutableEntityMap } from "./EntityMap"
 
 export interface LayerPosition extends BoundingBox {
@@ -37,25 +36,21 @@ export interface Assembly extends AssemblyContent {
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
 
-  readonly chunkSize: Position
+  readonly bbox: BoundingBox
+
+  getLayerAt(surface: LuaSurface, position: Position): Layer | nil
 
   getLayer(layerNumber: LayerNumber): Layer
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
 
-  pushLayer(leftTop: WorldPosition): Layer
-
   readonly content: MutableEntityMap
-
   readonly events: Observable<AssemblyChangeEvent>
-
   readonly valid: boolean
 
   delete(): void
 }
 
 export interface Layer extends LayerPosition {
-  readonly assembly: Assembly
-
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
 

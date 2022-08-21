@@ -11,14 +11,15 @@
 
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { bind, Events, RegisterClass, registerFunctions } from "../lib"
-import { Pos, Position, Vec2 } from "../lib/geometry"
+import { BBox, Pos, Position } from "../lib/geometry"
 import { Event, state, State } from "../lib/observable"
 import { L_Assembly } from "../locale"
-import { WorldPosition } from "../utils/world-location"
+import { WorldArea } from "../utils/world-location"
 import { Assembly, AssemblyChangeEvent, AssemblyId, Layer } from "./Assembly"
 import { setupAssemblyDisplay } from "./AssemblyDisplay"
 import { newEntityMap } from "./EntityMap"
-import { registerAssembly } from "./world-register"
+import { registerAssemblyLocation } from "./world-register"
+import floor = math.floor
 
 declare const global: {
   nextAssemblyId: AssemblyId
@@ -34,33 +35,38 @@ class AssemblyImpl implements Assembly {
   name = state("")
   displayName: State<LocalisedString>
 
-  private layers: LayerImpl[] = []
+  private readonly layers: LayerImpl[]
   content = newEntityMap()
 
   events: Event<AssemblyChangeEvent> = new Event()
 
   valid = true
 
-  private constructor(readonly id: AssemblyId, readonly chunkSize: Vec2) {
+  protected constructor(readonly id: AssemblyId, readonly bbox: BBox, initialLayerPositions: readonly WorldArea[]) {
     this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedAssembly, id))
+    this.layers = initialLayerPositions.map((area, i) => new LayerImpl(this, i + 1, area.surface, area.bbox))
   }
 
-  static create(chunkSize: Vec2): AssemblyImpl {
-    const id = global.nextAssemblyId++ as AssemblyId
-    assert(chunkSize.x > 0 && chunkSize.y > 0, "size must be positive")
-    const actualSize = Pos.ceil(chunkSize)
-
-    const assembly = new AssemblyImpl(id, actualSize)
-    global.assemblies.set(id, assembly)
-
-    registerAssembly(assembly)
-    setupAssemblyDisplay(assembly)
+  static create(bbox: BBox, surfaces: readonly LuaSurface[]): AssemblyImpl {
+    const assembly = new AssemblyImpl(
+      global.nextAssemblyId++ as AssemblyId,
+      bbox,
+      surfaces.map((surface) => ({ surface, bbox })),
+    )
+    AssemblyImpl.setupAssembly(assembly)
 
     return assembly
   }
-  static _mock(chunkSize: Vec2): AssemblyImpl {
-    // does not hook to anything.
-    return new AssemblyImpl(0 as AssemblyId, chunkSize)
+
+  static setupAssembly(assembly: AssemblyImpl): void {
+    global.assemblies.set(assembly.id, assembly)
+
+    registerAssemblyLocation(assembly)
+    setupAssemblyDisplay(assembly)
+  }
+
+  public getLayerAt(surface: LuaSurface, position: Position): Layer | nil {
+    error("not implemented")
   }
 
   getLayer(layerNumber: LayerNumber): Layer {
@@ -96,20 +102,16 @@ class AssemblyImpl implements Assembly {
     this.events.raise({ type: "assembly-deleted", assembly: this })
     this.events.closeAll()
   }
-
-  pushLayer(leftTop: WorldPosition): Layer {
-    const nextIndex = this.layers.length + 1
-    const layer = (this.layers[nextIndex - 1] = new LayerImpl(this, nextIndex, leftTop))
-    this.events.raise({ type: "layer-pushed", layer, assembly: this })
-    return layer
-  }
 }
 
-export function newAssembly(chunkSize: Vec2): Assembly {
-  return AssemblyImpl.create(chunkSize)
-}
-export function _mockAssembly(chunkSize: Vec2): Assembly {
-  return AssemblyImpl._mock(chunkSize)
+/**
+ * Does not perform any checks.
+ */
+export function newAssembly(surfaces: readonly LuaSurface[], bbox: BoundingBox): Assembly {
+  bbox = BBox.scale(bbox, 1 / 32)
+    .roundTile()
+    .scale(32)
+  return AssemblyImpl.create(bbox, surfaces)
 }
 
 export function _deleteAllAssemblies(): void {
@@ -126,7 +128,6 @@ registerFunctions("AssemblyName", { getDisplayName })
 
 @RegisterClass("Layer")
 class LayerImpl implements Layer {
-  surface: LuaSurface
   left_top: Position
   right_bottom: Position
 
@@ -135,14 +136,41 @@ class LayerImpl implements Layer {
 
   valid = true
 
-  constructor(public readonly assembly: AssemblyImpl, public layerNumber: LayerNumber, worldLeftTop: WorldPosition) {
-    const { chunkSize } = assembly
-    const { surface, position: leftTop } = worldLeftTop
-    const actualLeftTop = Pos.floorToNearest(leftTop, 32)
-    const rightBottom = Pos.plus(actualLeftTop, Pos.times(chunkSize, 32))
-    this.surface = surface
-    this.left_top = actualLeftTop
-    this.right_bottom = rightBottom
+  constructor(
+    public readonly assembly: AssemblyImpl,
+    public layerNumber: LayerNumber,
+    public readonly surface: LuaSurface,
+    bbox: BoundingBox,
+  ) {
     this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedLayer, this.layerNumber))
+    this.left_top = bbox.left_top
+    this.right_bottom = bbox.right_bottom
   }
+}
+
+@RegisterClass("DemonstrationAssembly")
+class DemonstrationAssembly extends AssemblyImpl {
+  constructor(numLayers: LayerNumber) {
+    super(
+      0 as AssemblyId,
+      BBox.coords(0, 0, 32 * numLayers, 32),
+      Array.from({ length: numLayers }, (_, i) => ({
+        surface: game.surfaces[1],
+        bbox: BBox.coords(0, 0, 32, 32).translate(Pos(i * 32, 0)),
+      })),
+    )
+  }
+  override getLayerAt(surface: LuaSurface, position: Position): Layer | nil {
+    const index = floor(position.x / 32)
+    if (index < 0 || index >= this.numLayers()) return nil
+    return this.getLayer(index + 1)
+  }
+}
+export function _mockAssembly(numLayers: number = 0): Assembly {
+  return new DemonstrationAssembly(numLayers)
+}
+export function createDemonstrationAssembly(numLayers: number): Assembly {
+  const assembly = new DemonstrationAssembly(numLayers)
+  AssemblyImpl.setupAssembly(assembly)
+  return assembly
 }
