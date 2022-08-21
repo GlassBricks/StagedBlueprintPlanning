@@ -53,6 +53,9 @@ if (script.active_mods.testorio !== nil) {
         if (child.get_mod() === script.mod_name) child.destroy()
       }
     }
+    for (const [, surface] of game.surfaces) {
+      if (surface.index !== 1) game.delete_surface(surface)
+    }
   }
 
   commands.add_command("reinit", "", reinit)

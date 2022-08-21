@@ -10,6 +10,8 @@
  */
 
 import { Assembly } from "../assembly/Assembly"
+import { prepareAssembly } from "../assembly/surfaces"
+import { newAssembly } from "../assembly/UserAssembly"
 import { findIntersectingAssembly } from "../assembly/world-register"
 import { Colors, Prototypes } from "../constants"
 import { Events, funcOn, noSelfFuncOn, RegisterClass } from "../lib"
@@ -18,8 +20,8 @@ import { HorizontalPusher } from "../lib/factoriojsx/components/misc"
 import { SimpleTitleBar } from "../lib/factoriojsx/components/TitleBar"
 import { BBox } from "../lib/geometry"
 import draw, { RectangleRender } from "../lib/rendering"
-import { debugPrint } from "../lib/test/misc"
 import { L_GuiNewAssembly, L_Interaction } from "../locale"
+import floor = math.floor
 
 function notifyIntersectingAssembly(player: LuaPlayer, assembly: Assembly) {
   notifyPlayer(player, [L_Interaction.AreaIntersectsWithOtherAssembly, assembly.displayName.get()])
@@ -38,6 +40,19 @@ function highlightArea(player: LuaPlayer, area: BBox, surface: LuaSurface) {
     time_to_live: 60 * 2,
   })
 }
+function createAreaPreview(player: LuaPlayer, surface: LuaSurface, area: BBox): RectangleRender {
+  const render = draw("rectangle", {
+    surface,
+    left_top: area.left_top,
+    right_bottom: area.right_bottom,
+    color: Colors.AreaPreview,
+    filled: true,
+    width: 5,
+    players: [player],
+  })
+  return render
+}
+
 function notifyPlayer(player: LuaPlayer, message: LocalisedString) {
   player.create_local_flying_text({
     text: message,
@@ -45,38 +60,19 @@ function notifyPlayer(player: LuaPlayer, message: LocalisedString) {
   })
 }
 
-function createAreaPreview(
-  player: LuaPlayer,
-  surface: LuaSurface,
-  area: BBox,
-): LuaMultiReturn<[BBox, RectangleRender]> {
-  const actualArea = BBox.roundChunk(area)
-  const render = draw("rectangle", {
-    surface,
-    left_top: actualArea.left_top,
-    right_bottom: actualArea.right_bottom,
-    color: Colors.AreaPreview,
-    filled: true,
-    width: 5,
-    players: [player],
-  })
-  return $multi(actualArea, render)
-}
-
-function tryAddAssembly(event: OnPlayerSelectedAreaEvent) {
+function tryBeginCreateAssembly(event: OnPlayerSelectedAreaEvent) {
   const player = game.get_player(event.player_index)!
   const intersecting = findIntersectingAssembly(event.area)
   if (intersecting) return notifyIntersectingAssembly(player, intersecting)
 
-  const [area, view] = createAreaPreview(player, player.surface, event.area)
+  const area = BBox.roundChunk(event.area)
+  const view = createAreaPreview(player, player.surface, area)
 
   render(<NewAssemblyGui area={area} view={view} />, player.gui.screen)
 }
 
 Events.on_player_selected_area((e) => {
-  if (e.item === Prototypes.AssemblyAddTool) {
-    tryAddAssembly(e)
-  }
+  if (e.item === Prototypes.AssemblyAddTool) tryBeginCreateAssembly(e)
 })
 
 interface NewGuiData {
@@ -131,16 +127,26 @@ class NewAssemblyGui extends Component<NewGuiData> {
     )
   }
   create() {
+    const player = game.get_player(this.element.player_index)!
     const area = this.area
-    const name = this.name.text
+    const name = this.name.text.trim()
     const numLayers = tonumber(this.numLayers.text)
-
-    debugPrint({
-      area,
-      name,
-      numLayers,
-    })
-
+    if (!numLayers || numLayers <= 0) {
+      notifyPlayer(player, [L_GuiNewAssembly.InvalidNumLayers])
+      return
+    }
     destroy(this.element)
+
+    tryCreateAssembly(player, name, area, floor(numLayers))
   }
+}
+
+function tryCreateAssembly(player: LuaPlayer, name: string, area: BBox, numLayers: number) {
+  area = BBox.roundChunk(area)
+  const existing = findIntersectingAssembly(area) // check again
+  if (existing) return notifyIntersectingAssembly(player, existing)
+
+  const surfaces = prepareAssembly(area, numLayers)
+  const assembly = newAssembly(surfaces, area)
+  assembly.name.set(name)
 }

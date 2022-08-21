@@ -54,4 +54,6 @@ export declare const enum L_GuiNewAssembly {
   InitialNumLayers = "bp3.gui.new-assembly.initial-num-layers",
   /** Create */
   Create = "bp3.gui.new-assembly.create",
+  /** Invalid specified number of layers */
+  InvalidNumLayers = "bp3.gui.new-assembly.invalid-num-layers",
 }

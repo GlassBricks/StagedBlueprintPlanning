@@ -18,6 +18,7 @@ import { WorldArea } from "../utils/world-location"
 import { Assembly, AssemblyChangeEvent, AssemblyId, Layer } from "./Assembly"
 import { setupAssemblyDisplay } from "./AssemblyDisplay"
 import { newEntityMap } from "./EntityMap"
+import { getLayerNumberOfSurface } from "./surfaces"
 import { registerAssemblyLocation } from "./world-register"
 import floor = math.floor
 
@@ -85,7 +86,9 @@ class AssemblyImpl implements Assembly {
   }
 
   getLayerAt(surface: LuaSurface, position: Position): Layer | nil {
-    error("not implemented")
+    const layerIndex = getLayerNumberOfSurface(surface.index)
+    if (layerIndex === nil) return nil
+    return this.getLayer(layerIndex)
   }
 
   public getLayerName(layerNumber: LayerNumber): LocalisedString {
