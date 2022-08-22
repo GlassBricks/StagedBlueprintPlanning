@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { createDemonstrationAssembly } from "../../assembly/AssemblyImpl"
 import { generateAssemblySurfaces, getAssemblySurface } from "../../assembly/surfaces"
-import { createDemonstrationAssembly } from "../../assembly/UserAssembly"
 import { BBox } from "../../lib/geometry"
 import { playerCurrentLayer } from "../../ui/player-position"
 

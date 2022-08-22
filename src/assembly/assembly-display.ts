@@ -14,7 +14,7 @@ import { assertNever, bind, Events, registerFunctions } from "../lib"
 import { Pos } from "../lib/geometry"
 import draw, { AnyRender, TextRender } from "../lib/rendering"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer } from "./Assembly"
-import { AssemblyEvents } from "./UserAssembly"
+import { AssemblyEvents } from "./AssemblyImpl"
 
 declare const global: {
   assemblyHighlights: LuaMap<AssemblyId, LuaMap<LayerNumber, AnyRender[]>>

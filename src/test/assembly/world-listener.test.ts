@@ -10,8 +10,8 @@
  */
 
 import { Assembly } from "../../assembly/Assembly"
+import { _mockAssembly } from "../../assembly/AssemblyImpl"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
-import { _mockAssembly } from "../../assembly/UserAssembly"
 import { _inValidState } from "../../assembly/world-listener"
 import { registerAssemblyLocation, unregisterAssemblyLocation } from "../../assembly/world-register"
 import { Prototypes } from "../../constants"

@@ -10,7 +10,7 @@
  */
 
 import { Layer } from "../assembly/Assembly"
-import { AssemblyEvents } from "../assembly/UserAssembly"
+import { AssemblyEvents } from "../assembly/AssemblyImpl"
 import { getAssemblyAtPosition } from "../assembly/world-register"
 import { assertNever, Events, onPlayerInit } from "../lib"
 import { BBox } from "../lib/geometry"

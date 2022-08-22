@@ -10,8 +10,8 @@
  */
 
 import { assertNever } from "../lib"
+import { AssemblyEvents } from "./AssemblyImpl"
 import { AssemblyOperations } from "./AssemblyOperations"
-import { AssemblyEvents } from "./UserAssembly"
 
 AssemblyEvents.addListener((e) => {
   switch (e.type) {

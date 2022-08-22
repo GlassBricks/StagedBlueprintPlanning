@@ -10,7 +10,7 @@
  */
 
 import { Assembly, AssemblyCreatedEvent } from "../../assembly/Assembly"
-import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/UserAssembly"
+import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/AssemblyImpl"
 import { SelflessFun } from "../../lib"
 import { BBox } from "../../lib/geometry"
 

@@ -12,7 +12,7 @@
 import { assertNever, Events } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Assembly } from "./Assembly"
-import { AssemblyEvents } from "./UserAssembly"
+import { AssemblyEvents } from "./AssemblyImpl"
 import floor = math.floor
 
 type AssembliesByChunk = Record<number, Record<number, Assembly | nil>>

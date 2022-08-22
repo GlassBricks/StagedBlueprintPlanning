@@ -10,7 +10,7 @@
  */
 
 import { Assembly } from "../../assembly/Assembly"
-import { onAssemblyDeleted } from "../../assembly/UserAssembly"
+import { onAssemblyDeleted } from "../../assembly/AssemblyImpl"
 import { funcOn, RegisterClass } from "../../lib"
 import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { TrashButton } from "../../lib/factoriojsx/components/buttons"

@@ -10,8 +10,8 @@
  */
 
 import { Assembly } from "../assembly/Assembly"
+import { newAssembly } from "../assembly/AssemblyImpl"
 import { prepareAssembly } from "../assembly/surfaces"
-import { newAssembly } from "../assembly/UserAssembly"
 import { findIntersectingAssembly } from "../assembly/world-register"
 import { Colors, Prototypes } from "../constants"
 import { Events, funcOn, noSelfFuncOn, RegisterClass } from "../lib"

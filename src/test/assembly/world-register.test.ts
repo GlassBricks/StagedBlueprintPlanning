@@ -10,7 +10,7 @@
  */
 
 import { Assembly } from "../../assembly/Assembly"
-import { _mockAssembly } from "../../assembly/UserAssembly"
+import { _mockAssembly } from "../../assembly/AssemblyImpl"
 import {
   findIntersectingAssembly,
   getAssemblyAtPosition,
