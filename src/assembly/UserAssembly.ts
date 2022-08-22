@@ -12,15 +12,13 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { bind, Events, RegisterClass, registerFunctions } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Event, MutableState, State, state } from "../lib/observable"
+import { MutableState, State, state } from "../lib/observable"
 import { globalEvent } from "../lib/observable/GlobalEvent"
 import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
-import { Assembly, AssemblyChangeEvent, AssemblyId, GlobalAssemblyEvent, Layer } from "./Assembly"
-import { setupAssemblyDisplay } from "./AssemblyDisplay"
+import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer } from "./Assembly"
 import { newEntityMap } from "./EntityMap"
 import { getLayerNumberOfSurface } from "./surfaces"
-import { registerAssemblyLocation } from "./world-register"
 import floor = math.floor
 
 declare const global: {
@@ -42,8 +40,6 @@ class AssemblyImpl implements Assembly {
   private readonly layers: LayerImpl[]
   content = newEntityMap()
 
-  events: Event<AssemblyChangeEvent> = new Event()
-
   valid = true
 
   protected constructor(readonly id: AssemblyId, readonly bbox: BBox, initialLayerPositions: readonly WorldArea[]) {
@@ -64,17 +60,11 @@ class AssemblyImpl implements Assembly {
 
   static onAssemblyCreated(assembly: AssemblyImpl): void {
     global.assemblies.set(assembly.id, assembly)
-
-    // todo: move to event?
-    registerAssemblyLocation(assembly)
-    setupAssemblyDisplay(assembly)
     AssemblyEvents.raise({ type: "assembly-created", assembly })
   }
 
-  getLayer(layerNumber: LayerNumber): Layer {
-    const layer = this.layers[layerNumber - 1]
-    assert(layer, "layer not found")
-    return layer
+  getLayer(layerNumber: LayerNumber): Layer | nil {
+    return this.layers[layerNumber - 1]
   }
   numLayers(): number {
     return this.layers.length
@@ -100,12 +90,12 @@ class AssemblyImpl implements Assembly {
     if (layerIndex === nil) return nil
     return this.layers[layerIndex - 1]
   }
-
-  getLayerName(layerNumber: LayerNumber): LocalisedString {
-    return this.getLayer(layerNumber).name.get()
-  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getLayerLabel(layerNumber: LayerNumber): State<LocalisedString> {
     return this.displayName
+  }
+  getLayerName(layerNumber: LayerNumber): LocalisedString {
+    return this.layers[layerNumber - 1].name.get()
   }
 
   delete() {
@@ -115,9 +105,6 @@ class AssemblyImpl implements Assembly {
     for (const layer of this.layers) {
       layer.valid = false
     }
-    // todo: move this to global event?
-    this.events.raise({ type: "assembly-deleted", assembly: this })
-    this.events.closeAll()
 
     AssemblyEvents.raise({ type: "assembly-deleted", assembly: this })
   }
@@ -184,7 +171,7 @@ class DemonstrationAssembly extends AssemblyImpl {
     return this.getLayer(index + 1)
   }
   public override getLayerLabel(layerNumber: LayerNumber): State<LocalisedString> {
-    return this.getLayer(layerNumber).name
+    return this.getLayer(layerNumber)!.name
   }
 }
 export function _mockAssembly(numLayers: number = 0): Assembly {
@@ -194,4 +181,10 @@ export function createDemonstrationAssembly(numLayers: number): Assembly {
   const assembly = new DemonstrationAssembly(numLayers)
   AssemblyImpl.onAssemblyCreated(assembly)
   return assembly
+}
+
+export function onAssemblyDeleted(cb: (assembly: Assembly) => void): void {
+  AssemblyEvents.addListener((e) => {
+    if (e.type === "assembly-deleted") cb(e.assembly)
+  })
 }

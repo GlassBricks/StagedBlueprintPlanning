@@ -44,7 +44,7 @@ before_all(() => {
 let totalCalls: number
 before_each(() => {
   assembly = createMockAssemblyContent(1)
-  layer = assembly.getLayer(1)
+  layer = assembly.getLayer(1)!
   totalCalls = 0
   function spyFn<F extends ContextualFun>(): F {
     return stub<F>().invokes((() => {
@@ -54,6 +54,7 @@ before_each(() => {
   worldUpdater = {
     updateWorldEntities: spyFn(),
     deleteWorldEntities: spyFn(),
+    deleteExtraEntitiesOnly: spyFn(),
     makeSettingsRemnant: spyFn(),
     reviveSettingsRemnant: spyFn(),
   }

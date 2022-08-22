@@ -28,9 +28,9 @@ export function CloseButton(props: { tooltip?: LocalisedString; onClick?: ClickE
 export function RenameButton(props: { tooltip?: LocalisedString; onClick?: ClickEventHandler }): Spec {
   return (
     <sprite-button
-      style="tool_button"
-      sprite="utility/rename_icon_normal"
-      tooltip={props.tooltip ?? ["gui.rename"]}
+      style="mini_button_aligned_to_text_vertically_when_centered"
+      sprite="utility/rename_icon_small_black"
+      tooltip={props.tooltip}
       mouse_button_filter={["left"]}
       on_gui_click={props.onClick}
     />

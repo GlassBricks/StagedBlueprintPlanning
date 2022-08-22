@@ -12,7 +12,7 @@
 import { Layer } from "../assembly/Assembly"
 import { AssemblyEvents } from "../assembly/UserAssembly"
 import { getAssemblyAtPosition } from "../assembly/world-register"
-import { Events, onPlayerInit } from "../lib"
+import { assertNever, Events, onPlayerInit } from "../lib"
 import { BBox } from "../lib/geometry"
 import { MutableState, State, state } from "../lib/observable"
 
@@ -46,6 +46,8 @@ AssemblyEvents.addListener((e) => {
     for (const [, player] of game.players) {
       updatePlayer(player)
     }
+  } else {
+    assertNever(e)
   }
 })
 

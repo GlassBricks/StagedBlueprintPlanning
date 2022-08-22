@@ -9,37 +9,53 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { clamp } from "util"
 import { Assembly, Layer } from "../../assembly/Assembly"
 import { LayerNumber } from "../../entity/AssemblyEntity"
 import { bind, funcOn, RegisterClass } from "../../lib"
 import { Component, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"
-import { state, Subscription } from "../../lib/observable"
+import { MutableState, state, Subscription } from "../../lib/observable"
 import { playerCurrentLayer, teleportToLayer } from "../player-position"
 
 @RegisterClass("gui:CurrentLayer")
-export class LayerSelector extends Component<{ assembly: Assembly }> {
+export class LayerSelector extends Component<{
+  assembly: Assembly
+  selectedIndex?: MutableState<LayerNumber>
+}> {
   private assembly!: Assembly
   private trackerSubscription!: Subscription
   private playerIndex!: PlayerIndex
 
   private elementsSubscription!: Subscription
   private dropDown!: DropDownGuiElement
-  private selectedIndex = state(0)
+  private selectedIndex!: MutableState<number>
 
-  public override render(props: { assembly: Assembly }, tracker: Tracker): Spec {
+  public override render(
+    props: {
+      assembly: Assembly
+      selectedIndex?: MutableState<LayerNumber>
+    },
+    tracker: Tracker,
+  ): Spec {
     this.assembly = props.assembly
+    this.selectedIndex = props.selectedIndex ?? state(0)
+
     this.trackerSubscription = tracker.getSubscription()
     this.playerIndex = tracker.playerIndex
 
-    tracker.onMount(() => this.setupDropDown())
+    this.selectedIndex.set(clamp(this.selectedIndex.get(), 1, this.assembly.numLayers()))
     this.selectedIndex.subscribe(this.trackerSubscription, funcOn(this.onSelectedIndexChanged))
 
+    tracker.onMount(() => this.setupDropDown())
+
+    const layers = this.assembly.getAllLayers()
     return (
       <drop-down
         styleMod={{
           minimal_width: 200,
         }}
         onCreate={(e) => (this.dropDown = e)}
+        items={layers.map((l) => l.name.get())}
         selected_index={this.selectedIndex}
       />
     )
@@ -51,7 +67,6 @@ export class LayerSelector extends Component<{ assembly: Assembly }> {
     this.trackerSubscription.add(subscription)
 
     const layers = this.assembly.getAllLayers()
-    this.dropDown.items = layers.map((l) => l.name.get())
     for (const layer of layers) {
       layer.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), layer.layerNumber))
     }
@@ -65,10 +80,10 @@ export class LayerSelector extends Component<{ assembly: Assembly }> {
   }
 
   private onSelectedIndexChanged(_: Subscription, index: number) {
-    if (!this.assembly.valid || index <= 0 || index > this.assembly.numLayers()) return
+    if (!this.assembly.valid) return
     const layer = this.assembly.getLayer(index)
-    const player = game.get_player(this.playerIndex)!
-    teleportToLayer(player, layer)
+    if (!layer) return
+    teleportToLayer(game.get_player(this.playerIndex)!, layer)
   }
 
   private playerLayerChanged(_: any, layer: Layer | nil) {

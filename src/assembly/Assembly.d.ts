@@ -11,7 +11,7 @@
 
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { Position } from "../lib/geometry"
-import { MutableState, Observable, State } from "../lib/observable"
+import { MutableState, State } from "../lib/observable"
 import { MutableEntityMap } from "./EntityMap"
 
 export interface LayerPosition extends BoundingBox {
@@ -20,7 +20,7 @@ export interface LayerPosition extends BoundingBox {
 }
 
 export interface AssemblyContent {
-  getLayer(layerNumber: LayerNumber): LayerPosition
+  getLayer(layerNumber: LayerNumber): LayerPosition | nil
   numLayers(): number
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, LayerPosition]>>
 
@@ -38,7 +38,7 @@ export interface Assembly extends AssemblyContent {
 
   readonly bbox: BoundingBox
 
-  getLayer(layerNumber: LayerNumber): Layer
+  getLayer(layerNumber: LayerNumber): Layer | nil
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
 
   getAllLayers(): readonly Layer[]
@@ -48,7 +48,6 @@ export interface Assembly extends AssemblyContent {
   getLayerLabel(layerNumber: LayerNumber): State<LocalisedString>
 
   readonly content: MutableEntityMap
-  readonly events: Observable<AssemblyChangeEvent>
   readonly valid: boolean
 
   delete(): void
@@ -62,21 +61,12 @@ export interface Layer extends LayerPosition {
   readonly valid: boolean
 }
 
-// events
-export interface LayerPushedEvent {
-  readonly type: "layer-pushed"
-  readonly assembly: Assembly
-  readonly layer: Layer
-}
-
-export interface AssemblyDeletedEvent {
-  readonly type: "assembly-deleted"
-  readonly assembly: Assembly
-}
-export type AssemblyChangeEvent = LayerPushedEvent | AssemblyDeletedEvent
-
 export interface AssemblyCreatedEvent {
   readonly type: "assembly-created"
+  readonly assembly: Assembly
+}
+export interface AssemblyDeletedEvent {
+  readonly type: "assembly-deleted"
   readonly assembly: Assembly
 }
 

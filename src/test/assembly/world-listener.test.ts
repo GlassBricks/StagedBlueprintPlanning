@@ -55,7 +55,7 @@ after_each(() => {
 })
 
 function getLayerCenter(layer: LayerNumber): PositionClass {
-  return BBox.center(assembly.getLayer(layer))
+  return BBox.center(assembly.getLayer(layer)!)
 }
 
 describe("add", () => {

@@ -9,8 +9,19 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-export function setRefFn<T, K extends keyof T>(refs: T, key: K): (element: T[K]) => void {
-  return (element: T[K]) => {
-    refs[key] = element
+import { assertNever } from "../lib"
+import { AssemblyOperations } from "./AssemblyOperations"
+import { AssemblyEvents } from "./UserAssembly"
+
+AssemblyEvents.addListener((e) => {
+  switch (e.type) {
+    case "assembly-deleted": {
+      AssemblyOperations.deleteAllWorldEntities(e.assembly)
+      break
+    }
+    case "assembly-created":
+      break
+    default:
+      assertNever(e)
   }
-}
+})

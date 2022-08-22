@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Events, funcRef, registerFunctions } from "../lib"
+import { assertNever, Events } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Assembly, AssemblyChangeEvent } from "./Assembly"
+import { Assembly } from "./Assembly"
+import { AssemblyEvents } from "./UserAssembly"
 import floor = math.floor
 
 type AssembliesByChunk = Record<number, Record<number, Assembly | nil>>
@@ -32,7 +33,7 @@ Events.on_pre_surface_deleted((e) => {
   delete global.inWorldAssemblies[e.surface_index]
 })
 
-function addAssembly(assembly: Assembly): void {
+export function registerAssemblyLocation(assembly: Assembly): void {
   const byChunk = global.inWorldAssemblies
   const bbox = assembly.bbox
   const topLeft = Pos.div(bbox.left_top, 32).floor()
@@ -43,11 +44,6 @@ function addAssembly(assembly: Assembly): void {
       byX[y] = assembly
     }
   }
-}
-
-export function registerAssemblyLocation(assembly: Assembly): void {
-  addAssembly(assembly)
-  assembly.events.subscribeIndependently(funcRef(onAssemblyChanged))
 }
 
 export function unregisterAssemblyLocation(assembly: Assembly): void {
@@ -65,6 +61,16 @@ export function unregisterAssemblyLocation(assembly: Assembly): void {
   }
 }
 
+AssemblyEvents.addListener((e) => {
+  if (e.type === "assembly-created") {
+    registerAssemblyLocation(e.assembly)
+  } else if (e.type === "assembly-deleted") {
+    unregisterAssemblyLocation(e.assembly)
+  } else {
+    assertNever(e)
+  }
+})
+
 export function findIntersectingAssembly(area: BBox): Assembly | nil {
   const topLeft = Pos.div(area.left_top, 32).floor()
   const bottomRight = Pos.div(area.right_bottom, 32).ceil()
@@ -79,13 +85,6 @@ export function findIntersectingAssembly(area: BBox): Assembly | nil {
   }
   return nil
 }
-
-function onAssemblyChanged(_: unknown, event: AssemblyChangeEvent) {
-  if (event.type === "assembly-deleted") {
-    unregisterAssemblyLocation(event.assembly)
-  }
-}
-registerFunctions("WorldRegister", { onAssemblyChanged })
 
 export function getAssemblyAtPosition(position: Position): Assembly | nil {
   const byChunk = global.inWorldAssemblies

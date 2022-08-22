@@ -16,10 +16,8 @@ import { getEntityCategory } from "../entity/entity-info"
 import { Events } from "../lib"
 import { Pos } from "../lib/geometry"
 import { Assembly, Layer } from "./Assembly"
-import { AssemblyOperations } from "./AssemblyOperations"
 import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from "./blueprint-paste"
-import { AssemblyEvents } from "./UserAssembly"
 import { getAssemblyAtPosition } from "./world-register"
 
 function getAssemblyAt(entity: LuaEntity): LuaMultiReturn<[Assembly, Layer] | [nil]> {
@@ -346,12 +344,6 @@ Events.on_player_alt_selected_area((e) => {
     const [assembly, layer] = getAssemblyAt(entity)
     if (!assembly) continue
     DefaultAssemblyUpdater.onSettingsRemnantDeleted(assembly, entity, layer)
-  }
-})
-
-AssemblyEvents.addListener((e) => {
-  if (e.type === "assembly-deleted") {
-    AssemblyOperations.deleteAllWorldEntities(e.assembly)
   }
 })
 

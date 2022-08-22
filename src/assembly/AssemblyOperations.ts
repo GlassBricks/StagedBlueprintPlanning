@@ -9,7 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyContent } from "./Assembly"
+import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyContent, LayerPosition } from "./Assembly"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**
@@ -18,19 +19,48 @@ import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
  */
 export interface AssemblyOperations {
   deleteAllWorldEntities(assembly: AssemblyContent): void
+
+  resetLayer(assembly: AssemblyContent, layer: LayerPosition): void
 }
 
-export function createAssemblyOperations(worldUpdater: WorldUpdater): AssemblyOperations {
-  const { deleteWorldEntities } = worldUpdater
+/** @noSelf */
+export interface AssemblyOpWorldInteractor {
+  deleteAllWorldEntities(layer: LayerPosition): void
+}
+
+export function createAssemblyOperations(
+  worldUpdater: WorldUpdater,
+  worldInteractor: AssemblyOpWorldInteractor,
+): AssemblyOperations {
+  const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
 
   function deleteAllWorldEntities(assembly: AssemblyContent) {
     for (const entity of assembly.content.iterateAllEntities()) {
-      deleteWorldEntities(entity)
+      deleteExtraEntitiesOnly(entity)
     }
   }
+
+  function resetLayer(assembly: AssemblyContent, layer: LayerPosition) {
+    worldInteractor.deleteAllWorldEntities(layer)
+    const layerNumber = layer.layerNumber
+    for (const entity of assembly.content.iterateAllEntities()) {
+      updateWorldEntities(assembly, entity, layerNumber, layerNumber, true)
+    }
+  }
+
   return {
     deleteAllWorldEntities,
+    resetLayer,
   }
 }
 
-export const AssemblyOperations = createAssemblyOperations(DefaultWorldUpdater)
+const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
+  deleteAllWorldEntities(layer: LayerPosition) {
+    layer.surface
+      .find_entities_filtered({ area: layer })
+      .filter((x) => isWorldEntityAssemblyEntity(x))
+      .forEach((x) => x.destroy())
+  },
+}
+
+export const AssemblyOperations = createAssemblyOperations(DefaultWorldUpdater, DefaultWorldInteractor)

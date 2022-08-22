@@ -312,7 +312,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       for (; lastLayerWithHighlights < i; lastLayerWithHighlights++) {
         const highlight = updateHighlight(
           entity,
-          assembly.getLayer(lastLayerWithHighlights),
+          assembly.getLayer(lastLayerWithHighlights)!,
           "configChangedLaterHighlight",
           true,
         ) as SpriteRender

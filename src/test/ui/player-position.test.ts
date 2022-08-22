@@ -34,7 +34,7 @@ test("playerCurrentLayer", () => {
     assert.equal(currentLayer.get(), layer)
   }
 
-  const layer1 = assembly.getLayer(1)
+  const layer1 = assembly.getLayer(1)!
   player.teleport(BBox.center(layer1), layer1.surface)
   assert.equal(currentLayer.get(), layer1)
 

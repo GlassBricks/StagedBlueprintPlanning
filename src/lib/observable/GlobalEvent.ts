@@ -11,14 +11,18 @@
 
 export interface GlobalEvent<T> {
   addListener(listener: (value: T) => void): void
+  removeListener(listener: (value: T) => void): void
   raise(value: T): void
 }
 
 class GlobalEventImpl<T> implements GlobalEvent<T> {
-  private listeners: ((value: T) => void)[] = []
+  private listeners = new LuaSet<(value: T) => void>()
 
   addListener(listener: (value: T) => void): void {
-    this.listeners.push(listener)
+    this.listeners.add(listener)
+  }
+  removeListener(listener: (value: T) => void): void {
+    this.listeners.delete(listener)
   }
   raise(value: T): void {
     for (const listener of this.listeners) {

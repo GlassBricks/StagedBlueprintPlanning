@@ -19,3 +19,11 @@ export const HorizontalPusher = (): Spec => (
     }}
   />
 )
+
+export const HorizontalSpacer = (props: { width: number }): Spec => (
+  <empty-widget
+    styleMod={{
+      natural_width: props.width,
+    }}
+  />
+)

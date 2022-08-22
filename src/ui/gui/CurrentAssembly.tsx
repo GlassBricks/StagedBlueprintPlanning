@@ -10,7 +10,7 @@
  */
 
 import { Assembly, Layer } from "../../assembly/Assembly"
-import { funcRef, onPlayerInit, RegisterClass } from "../../lib"
+import { funcOn, funcRef, onPlayerInit, RegisterClass } from "../../lib"
 import { Component, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { Fn } from "../../lib/factoriojsx/components/Fn"
 import { HorizontalPusher } from "../../lib/factoriojsx/components/misc"
@@ -18,6 +18,7 @@ import { TitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { MaybeState } from "../../lib/observable"
 import { L_GuiCurrentAssembly } from "../../locale"
 import { playerCurrentLayer } from "../player-position"
+import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"
 import { LayerSelector } from "./LayerSelector"
 
@@ -58,7 +59,11 @@ class CurrentAssembly extends Component {
             caption={currentLayer.flatMap(funcRef(CurrentAssembly.mapLayerToAssemblyTitle))}
           />
           <HorizontalPusher />
-          <ExternalLinkButton tooltip={[L_GuiCurrentAssembly.OpenAssemblySettings]} enabled={currentLayer.truthy()} />
+          <ExternalLinkButton
+            tooltip={[L_GuiCurrentAssembly.OpenAssemblySettings]}
+            enabled={currentLayer.truthy()}
+            on_gui_click={funcOn(this.openAssemblySettings)}
+          />
         </TitleBar>
         <Fn
           uses="flow"
@@ -67,6 +72,14 @@ class CurrentAssembly extends Component {
         />
       </frame>
     )
+  }
+
+  private openAssemblySettings(event: OnGuiClickEvent) {
+    const { player_index } = event
+    const currentLayer = playerCurrentLayer(player_index).get()
+    if (currentLayer === nil) return
+    const assembly = currentLayer.assembly
+    openAssemblySettings(game.get_player(player_index)!, assembly)
   }
 }
 

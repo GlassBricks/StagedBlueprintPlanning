@@ -83,7 +83,9 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   hasAnyWorldEntity(type: WorldEntityType): boolean
   destroyAllWorldEntities(type: WorldEntityType): void
   /** Iterates all valid world entities. May skip layers. */
-  iterateWorldEntities<T extends WorldEntityType>(type: T): LuaIterable<LuaMultiReturn<[LayerNumber, WorldEntities[T]]>>
+  iterateWorldEntities<T extends WorldEntityType>(
+    type: T,
+  ): LuaIterable<LuaMultiReturn<[LayerNumber, NonNullable<WorldEntities[T]>]>>
 
   setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void
   getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil

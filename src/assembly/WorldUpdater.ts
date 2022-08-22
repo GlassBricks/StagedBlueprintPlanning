@@ -39,6 +39,7 @@ export interface WorldUpdater {
   ): void
 
   deleteWorldEntities(entity: AssemblyEntity): void
+  deleteExtraEntitiesOnly(entity: AssemblyEntity): void
 
   makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
@@ -77,7 +78,7 @@ export function createWorldUpdater(
         entity.replaceWorldEntity(layerNum, luaEntity)
       } else {
         if (existing) existing.destroy()
-        luaEntity = createEntity(assembly.getLayer(layerNum), entity, value)
+        luaEntity = createEntity(assembly.getLayer(layerNum)!, entity, value)
         entity.replaceWorldEntity(layerNum, luaEntity)
       }
 
@@ -134,6 +135,12 @@ export function createWorldUpdater(
     deleteWorldEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldEntities("mainEntity")
       highlighter.deleteEntity(entity)
+    },
+    deleteExtraEntitiesOnly(entity: AssemblyEntity): void {
+      highlighter.deleteEntity(entity)
+      for (const [, luaEntity] of entity.iterateWorldEntities("mainEntity")) {
+        makeEntityDestructible(luaEntity)
+      }
     },
     makeSettingsRemnant,
     reviveSettingsRemnant,

@@ -94,7 +94,7 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = mockEntityCreator.createEntity(assembly.getLayer(2), entity, {
+      const replaced = mockEntityCreator.createEntity(assembly.getLayer(2)!, entity, {
         name: "test",
         prop1: 10,
       } as TestEntity)!
@@ -147,7 +147,7 @@ describe("updateWorldEntities", () => {
   test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {
     entity.moveToLayer(2)
     if (withExisting) {
-      const luaEntity = mockEntityCreator.createEntity(assembly.getLayer(3), entity, {
+      const luaEntity = mockEntityCreator.createEntity(assembly.getLayer(3)!, entity, {
         name: "test",
         prop1: 10,
       } as TestEntity)!
@@ -208,6 +208,13 @@ test("deleteWorldEntities", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
   worldUpdater.deleteWorldEntities(entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
+  assert.spy(highlighter.deleteEntity).called_with(match.ref(entity))
+})
+
+test("deleteExtraEntitiesOnly", () => {
+  worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+  worldUpdater.deleteExtraEntitiesOnly(entity)
+  for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   assert.spy(highlighter.deleteEntity).called_with(match.ref(entity))
 })
 

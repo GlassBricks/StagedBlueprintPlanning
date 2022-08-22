@@ -43,6 +43,12 @@ export declare const enum L_Assembly {
   /** <Unnamed assembly> */
   UnnamedAssembly = "bp3.assembly.unnamed-assembly",
 }
+export declare const enum L_Gui {
+  /** Rename assembly */
+  RenameAssembly = "bp3.gui.rename-assembly",
+  /** Rename current layer */
+  RenameLayer = "bp3.gui.rename-layer",
+}
 export declare const enum L_GuiNewAssembly {
   /** New Assembly */
   Title = "bp3.gui.new-assembly.title",
@@ -66,4 +72,18 @@ export declare const enum L_GuiCurrentAssembly {
   NoAssembly = "bp3.gui.current-assembly.no-assembly",
   /** Open assembly settings */
   OpenAssemblySettings = "bp3.gui.current-assembly.open-assembly-settings",
+}
+export declare const enum L_GuiAssemblySettings {
+  /** Assembly */
+  Title = "bp3.gui.assembly-settings.title",
+  /** Delete assembly */
+  DeleteAssembly = "bp3.gui.assembly-settings.delete-assembly",
+  /** Are you sure you want to delete assembly __1__? */
+  DeleteAssemblyConfirmation1 = "bp3.gui.assembly-settings.delete-assembly-confirmation1",
+  /** In-world entities will not be affected. */
+  DeleteAssemblyConfirmation2 = "bp3.gui.assembly-settings.delete-assembly-confirmation2",
+  /** This action cannot be undone. */
+  DeleteAssemblyConfirmation3 = "bp3.gui.assembly-settings.delete-assembly-confirmation3",
+  /** Layer: */
+  Layer = "bp3.gui.assembly-settings.layer",
 }

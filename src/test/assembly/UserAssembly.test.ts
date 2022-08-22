@@ -9,8 +9,9 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly } from "../../assembly/Assembly"
-import { _deleteAllAssemblies, _mockAssembly, newAssembly } from "../../assembly/UserAssembly"
+import { Assembly, AssemblyCreatedEvent } from "../../assembly/Assembly"
+import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/UserAssembly"
+import { SelflessFun } from "../../lib"
 import { BBox } from "../../lib/geometry"
 
 after_each(() => {
@@ -19,38 +20,44 @@ after_each(() => {
 
 const bbox: BBox = BBox.coords(0, 0, 32, 32)
 
-describe("Assembly", () => {
-  test("basic", () => {
-    const asm1 = newAssembly([], bbox)
-    assert.true(asm1.valid)
+test("basic", () => {
+  const asm1 = newAssembly([], bbox)
+  assert.true(asm1.valid)
 
-    const asm2 = newAssembly([], bbox)
-    assert.not_same(asm1.id, asm2.id)
+  const asm2 = newAssembly([], bbox)
+  assert.not_same(asm1.id, asm2.id)
+})
+
+describe("deletion", () => {
+  test("sets to invalid", () => {
+    const asm = _mockAssembly()
+    asm.delete()
+    assert.false(asm.valid)
   })
+  test("sets layers to invalid", () => {
+    const asm = _mockAssembly(1)
+    const layer = asm.getLayer(1)!
+    assert.true(layer.valid)
+    asm.delete()
+    assert.false(layer.valid)
+  })
+})
 
-  describe("deletion", () => {
-    test("sets to invalid", () => {
-      const asm = _mockAssembly()
-      asm.delete()
-      assert.false(asm.valid)
-    })
-    test("sets layers to invalid", () => {
-      const asm = _mockAssembly(1)
-      const layer = asm.getLayer(1)
-      assert.true(layer.valid)
-      asm.delete()
-      assert.false(layer.valid)
-    })
-    test("fires event", () => {
-      const asm = _mockAssembly()
-      const sp = spy()
-      asm.events.subscribeIndependently({ invoke: sp })
-      asm.delete()
-      assert.same(sp.calls[0].refs[2], {
-        type: "assembly-deleted",
-        assembly: asm,
-      })
-    })
+describe("events", () => {
+  let sp: SelflessFun & spy.SpyObj<SelflessFun>
+  before_each(() => {
+    sp = spy()
+    AssemblyEvents.addListener(sp)
+  })
+  after_each(() => {
+    AssemblyEvents.removeListener(sp)
+  })
+  test("assembly created", () => {
+    const asm = newAssembly([], bbox)
+    assert.spy(sp).called_with({
+      type: "assembly-created",
+      assembly: asm,
+    } as AssemblyCreatedEvent)
   })
 })
 
@@ -60,12 +67,12 @@ describe("Layers", () => {
     asm = _mockAssembly(2)
   })
   test("layerNumber is correct", () => {
-    assert.equals(1, asm.getLayer(1).layerNumber)
-    assert.equals(2, asm.getLayer(2).layerNumber)
+    assert.equals(1, asm.getLayer(1)!.layerNumber)
+    assert.equals(2, asm.getLayer(2)!.layerNumber)
   })
 
   test("initial name is correct", () => {
-    const layer = asm.getLayer(1)
+    const layer = asm.getLayer(1)!
     assert.same("<Layer 1>", layer.name.get())
   })
 })

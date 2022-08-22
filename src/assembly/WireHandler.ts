@@ -58,7 +58,7 @@ function updateWireConnections(
     assemblyConnections,
     existingConnections,
     assembly.content,
-    assembly.getLayer(layerNumber),
+    assembly.getLayer(layerNumber)!,
   )
   for (const [extraConnection] of extraConnections) luaEntity.disconnect_neighbour(extraConnection)
 
@@ -93,7 +93,7 @@ function getWireConnectionDiff(
     assemblyConnections,
     existingConnections,
     assembly.content,
-    assembly.getLayer(layerNumber),
+    assembly.getLayer(layerNumber)!,
   )
 
   const added: AssemblyWireConnection[] = []

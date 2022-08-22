@@ -242,7 +242,7 @@ class NoSelfKeyFunc implements Func {
 }
 
 export const funcOn: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
-  new KeyFunc(obj, key) as any) as any
+  new KeyFunc(obj, key)) as any
 
 export const noSelfFuncOn: AccessSplit<<F extends SelflessFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
-  new NoSelfKeyFunc(obj, key) as any) as any
+  new NoSelfKeyFunc(obj, key)) as any
