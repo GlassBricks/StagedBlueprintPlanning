@@ -9,7 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Mutable } from "./util-types"
+import { LayerNumber } from "../entity/AssemblyEntity"
+import { Mutable, PRecord } from "./util-types"
 
 export function shallowCopy<T extends object>(obj: T): T {
   const result: Partial<T> = {}
@@ -71,4 +72,16 @@ export function nilIfEmpty<T extends object>(obj: T): T | nil {
 
 export function assertNever(value: never): never {
   error("should not be reachable: " + serpent.block(value))
+}
+
+export function shiftNumberKeys(obj: PRecord<LayerNumber, any>, number: number): void {
+  const keysToChange: number[] = []
+  for (const [changeLayer] of pairs(obj)) {
+    if (changeLayer >= number) keysToChange.push(changeLayer)
+  }
+  for (let i = keysToChange.length - 1; i >= 0; i--) {
+    const layer = keysToChange[i]
+    obj[layer + 1] = obj[layer]
+    delete obj[layer]
+  }
 }

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, isCompatibleEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, isCompatibleEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
@@ -24,7 +24,6 @@ export interface EntityMap {
   getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil
 
   countNumEntities(): number
-
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity>
 }
 
@@ -35,6 +34,9 @@ export interface MutableEntityMap extends EntityMap {
   /** Returns if connection was successfully added. */
   addWireConnection(wireConnection: AssemblyWireConnection): boolean
   removeWireConnection(wireConnection: AssemblyWireConnection): void
+
+  /** Modifies all entities */
+  insertLayer(layerNumber: LayerNumber): void
 }
 
 export type AssemblyEntityConnections = LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>
@@ -139,6 +141,12 @@ class EntityMapImpl implements MutableEntityMap {
         toSet.delete(wireConnection)
         if (isEmpty(toSet)) toData.delete(fromEntity)
       }
+    }
+  }
+
+  public insertLayer(layerNumber: LayerNumber): void {
+    for (const [entity] of this.entities) {
+      entity.insertLayer(layerNumber)
     }
   }
 }

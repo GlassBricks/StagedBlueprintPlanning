@@ -273,3 +273,47 @@ describe("get/set properties", () => {
     assert.nil(assemblyEntity.getProperty(3, "foo"))
   })
 })
+
+test("insert layer after base", () => {
+  const luaEntity = entityMock({ name: "test", position: Pos(0, 0) })
+  const entity = createAssemblyEntity<FooEntity>({ name: luaEntity.name, foo1: 1 }, Pos(0, 0), nil, 1)
+  entity.replaceWorldEntity(2, luaEntity)
+  entity.replaceWorldEntity(3, luaEntity)
+  entity.setProperty(2, "foo", "bar2")
+  entity.setProperty(3, "foo", "bar3")
+  entity.setProperty(4, "foo", "bar4")
+  entity._applyDiffAtLayer(2, { foo1: 2 })
+  entity._applyDiffAtLayer(3, { foo1: 3 })
+  entity._applyDiffAtLayer(4, { foo1: 4 })
+
+  entity.insertLayer(3)
+
+  assert.equal(entity.getBaseLayer(), 1)
+
+  assert.not_nil(entity.getWorldEntity(2))
+  assert.nil(entity.getWorldEntity(3))
+  assert.not_nil(entity.getWorldEntity(4))
+
+  assert.equal("bar2", entity.getProperty(2, "foo"))
+  assert.nil(entity.getProperty(3, "foo"))
+  assert.equal("bar3", entity.getProperty(4, "foo"))
+  assert.equal("bar4", entity.getProperty(5, "foo"))
+
+  assert.same(
+    {
+      2: { foo1: 2 },
+      3: nil,
+      4: { foo1: 3 },
+      5: { foo1: 4 },
+    },
+    entity._getLayerChanges(),
+  )
+})
+
+test("insert layer before base", () => {
+  const luaEntity = entityMock({ name: "test", position: Pos(0, 0) })
+  const entity = createAssemblyEntity<FooEntity>({ name: luaEntity.name, foo1: 1 }, Pos(0, 0), nil, 2)
+
+  entity.insertLayer(1)
+  assert.equal(3, entity.getBaseLayer())
+})

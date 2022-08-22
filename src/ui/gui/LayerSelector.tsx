@@ -64,14 +64,14 @@ export class LayerSelector<T extends "drop-down" | "list-box"> extends Component
     for (const layer of layers) {
       layer.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), layer.layerNumber))
     }
-    playerCurrentLayer(this.playerIndex).subscribeAndFire(this.elementsSubscription, funcOn(this.playerLayerChanged))
+    playerCurrentLayer(this.playerIndex).subscribeAndFire(subscription, funcOn(this.playerLayerChanged))
 
-    this.assembly.localEvents.subscribe(this.elementsSubscription, funcOn(this.onAssemblyEvent))
+    this.assembly.localEvents.subscribe(subscription, funcOn(this.onAssemblyEvent))
   }
 
   private onAssemblyEvent(_: Subscription, event: LocalAssemblyEvent) {
-    if (event.type === "layer-pushed") {
-      this.element.add_item(event.layer.name.get())
+    if (event.type === "layer-added") {
+      this.element.add_item(event.layer.name.get(), event.layer.layerNumber)
     } else if (event.type !== "assembly-deleted") {
       assertNever(event)
     }
@@ -91,6 +91,7 @@ export class LayerSelector<T extends "drop-down" | "list-box"> extends Component
   private playerLayerChanged(_: any, layer: Layer | nil) {
     if (layer && layer.assembly === this.assembly) {
       this.selectedIndex.set(layer.layerNumber)
+      this.selectedIndex.forceNotify()
     }
   }
 }

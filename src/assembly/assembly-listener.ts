@@ -21,7 +21,7 @@ AssemblyEvents.addListener((e) => {
       AssemblyOperations.deleteAllWorldEntities(e.assembly)
       break
     }
-    case "layer-pushed": {
+    case "layer-added": {
       AssemblyOperations.resetLayer(e.assembly, e.layer)
       break
     }

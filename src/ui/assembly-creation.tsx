@@ -21,6 +21,7 @@ import { SimpleTitleBar } from "../lib/factoriojsx/components/TitleBar"
 import { BBox } from "../lib/geometry"
 import draw, { RectangleRender } from "../lib/rendering"
 import { L_GuiNewAssembly, L_Interaction } from "../locale"
+import { openAssemblySettings } from "./gui/AssemblySettings"
 import floor = math.floor
 
 function notifyIntersectingAssembly(player: LuaPlayer, assembly: Assembly) {
@@ -164,4 +165,6 @@ function tryCreateAssembly(player: LuaPlayer, name: string, area: BBox, numLayer
   }
   const assembly = newAssembly(surfaces, area)
   assembly.name.set(name)
+
+  openAssemblySettings(player, assembly)
 }

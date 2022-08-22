@@ -48,7 +48,7 @@ export interface Assembly extends AssemblyContent {
 
   getLayerAt(surface: LuaSurface, position: Position): Layer | nil
 
-  pushLayer(surface: LuaSurface, bbox: BoundingBox): Layer
+  insertLayer(index: LayerNumber): Layer
 
   readonly valid: boolean
 
@@ -72,11 +72,11 @@ export interface AssemblyDeletedEvent {
   readonly assembly: Assembly
 }
 
-export interface LayerPushedEvent {
-  readonly type: "layer-pushed"
+export interface LayerAddedEvent {
+  readonly type: "layer-added"
   readonly assembly: Assembly
   readonly layer: Layer
 }
 
-export type GlobalAssemblyEvent = AssemblyCreatedEvent | AssemblyDeletedEvent | LayerPushedEvent
-export type LocalAssemblyEvent = AssemblyDeletedEvent | LayerPushedEvent
+export type GlobalAssemblyEvent = AssemblyCreatedEvent | AssemblyDeletedEvent | LayerAddedEvent
+export type LocalAssemblyEvent = AssemblyDeletedEvent | LayerAddedEvent

@@ -10,7 +10,7 @@
  */
 
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { assertNever, bind, Events, registerFunctions } from "../lib"
+import { assertNever, bind, Events, PRecord, registerFunctions, shiftNumberKeys } from "../lib"
 import { Pos } from "../lib/geometry"
 import { State } from "../lib/observable"
 import draw, { AnyRender, DrawParams, TextRender } from "../lib/rendering"
@@ -18,7 +18,7 @@ import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer } from "./Assembly"
 import { AssemblyEvents } from "./AssemblyImpl"
 
 declare const global: {
-  assemblyHighlights: LuaMap<AssemblyId, LuaMap<LayerNumber, AnyRender[]>>
+  assemblyHighlights: LuaMap<AssemblyId, PRecord<LayerNumber, AnyRender[]>>
 }
 Events.on_init(() => {
   global.assemblyHighlights = new LuaMap()
@@ -29,15 +29,15 @@ AssemblyEvents.addListener((event: GlobalAssemblyEvent) => {
     createAssemblyHighlights(event.assembly)
   } else if (event.type === "assembly-deleted") {
     removeHighlights(event.assembly.id)
-  } else if (event.type === "layer-pushed") {
+  } else if (event.type === "layer-added") {
+    shiftNumberKeys(global.assemblyHighlights.get(event.assembly.id)!, event.layer.layerNumber)
     createHighlightsForLayer(event.layer)
   } else {
     assertNever(event)
   }
 })
 function createAssemblyHighlights(assembly: Assembly) {
-  const highlights = new LuaMap<LayerNumber, AnyRender[]>()
-  global.assemblyHighlights.set(assembly.id, highlights)
+  global.assemblyHighlights.set(assembly.id, {})
   for (const [, layer] of assembly.iterateLayers()) {
     createHighlightsForLayer(layer)
   }
@@ -79,7 +79,7 @@ function createHighlightsForLayer(layer: Layer): void {
   const assemblyText: TextRender = createText(layer.assembly.displayName, "bottom")
   const layerText: TextRender = createText(layer.name, "top")
 
-  global.assemblyHighlights.get(layer.assembly.id)!.set(layer.layerNumber, [box, assemblyText, layerText])
+  global.assemblyHighlights.get(layer.assembly.id)![layer.layerNumber] = [box, assemblyText, layerText]
 }
 
 function onLayerNameChange(text: TextRender, _: unknown, name: LocalisedString): void {
@@ -91,7 +91,7 @@ function removeHighlights(id: AssemblyId): void {
   const highlights = global.assemblyHighlights.get(id)
   if (!highlights) return
   global.assemblyHighlights.delete(id)
-  for (const [, renders] of highlights) {
+  for (const [, renders] of pairs(highlights)) {
     for (const render of renders) {
       if (render.valid) render.destroy()
     }

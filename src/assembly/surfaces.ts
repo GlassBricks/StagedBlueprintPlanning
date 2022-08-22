@@ -39,12 +39,15 @@ function createBpSurface(number: number): LuaSurface {
 }
 
 /** 1 indexed */
-export function getAssemblySurface(index: number): LuaSurface {
-  return global.bpSurfaces[index - 1] ?? error(`No assembly surface with index ${index}`)
+export function getAssemblySurface(index: number): LuaSurface | nil {
+  return global.bpSurfaces[index - 1]
 }
 
-export function getLayerNumberOfSurface(index: SurfaceIndex): LayerNumber | nil {
-  return global.surfaceIndexToLayerIndex[index]
+export function getOrGenerateAssemblySurface(index: number): LuaSurface {
+  const surface = getAssemblySurface(index)
+  if (surface) return surface
+  generateAssemblySurfaces(index)
+  return getAssemblySurface(index)!
 }
 
 export function prepareArea(surface: LuaSurface, area: BBox): void {
@@ -67,7 +70,7 @@ export function prepareAssembly(area: BBox, numLayers: number): LuaSurface[] {
   generateAssemblySurfaces(numLayers)
   const surfaces: LuaSurface[] = []
   for (const i of $range(1, numLayers)) {
-    const surface = getAssemblySurface(i)
+    const surface = getAssemblySurface(i)!
     prepareArea(surface, area)
     surfaces.push(surface)
   }
@@ -75,8 +78,7 @@ export function prepareAssembly(area: BBox, numLayers: number): LuaSurface[] {
 }
 
 export function prepareNewArea(index: number, area: BBox): LuaSurface {
-  generateAssemblySurfaces(index)
-  const surface = getAssemblySurface(index)
+  const surface = getOrGenerateAssemblySurface(index)
   prepareArea(surface, area)
   return surface
 }

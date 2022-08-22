@@ -9,10 +9,11 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, AssemblyCreatedEvent, AssemblyDeletedEvent, LayerPushedEvent } from "../../assembly/Assembly"
+import { Assembly, AssemblyCreatedEvent, AssemblyDeletedEvent, LayerAddedEvent } from "../../assembly/Assembly"
 import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/AssemblyImpl"
+import { getOrGenerateAssemblySurface } from "../../assembly/surfaces"
 import { SelflessFun } from "../../lib"
-import { BBox } from "../../lib/geometry"
+import { BBox, BBoxClass, Pos } from "../../lib/geometry"
 
 let eventListener: SelflessFun & spy.SpyObj<SelflessFun>
 before_each(() => {
@@ -24,7 +25,7 @@ after_each(() => {
   _deleteAllAssemblies()
 })
 
-const bbox: BBox = BBox.coords(0, 0, 32, 32)
+const bbox: BBoxClass = BBox.coords(0, 0, 32, 32)
 
 test("basic", () => {
   const asm1 = newAssembly([], bbox)
@@ -40,6 +41,13 @@ test("assembly created calls event", () => {
     type: "assembly-created",
     assembly: asm,
   } as AssemblyCreatedEvent)
+})
+
+test("get layer at", () => {
+  const surfaces = [getOrGenerateAssemblySurface(1), getOrGenerateAssemblySurface(2)]
+  const asm = newAssembly(surfaces, bbox)
+  assert.same(asm.getLayerAt(surfaces[0], bbox.center()), asm.getLayer(1))
+  assert.same(asm.getLayerAt(surfaces[1], bbox.center()), asm.getLayer(2))
 })
 
 describe("deletion", () => {
@@ -84,23 +92,49 @@ describe("Layers", () => {
   })
 })
 
-test("push layer", () => {
+test("insert layer", () => {
   const sp = spy()
-  const asm = newAssembly([], bbox)
+  const asm = newAssembly([game.surfaces[1]], bbox)
+  const oldLayer = asm.getLayer(1)!
   asm.localEvents.subscribeIndependently({ invoke: sp })
-
   eventListener.clear()
 
-  const layer = asm.pushLayer(game.surfaces[1], bbox)
+  const layer = asm.insertLayer(1)
+
+  assert.not_equal(layer.surface.index, oldLayer.surface.index)
+
+  assert.equal(asm.getLayerAt(layer.surface, Pos(1, 1)), layer)
+  assert.equal(asm.getLayerAt(oldLayer.surface, Pos(1, 1)), oldLayer)
 
   assert.equals(1, layer.layerNumber)
-  assert.equals("<Layer 1>", layer.name.get())
-  let call = eventListener.calls[0].refs[0] as LayerPushedEvent
-  assert.equals("layer-pushed", call.type)
+  assert.equals(2, oldLayer.layerNumber)
+
+  assert.equals("<New layer>", layer.name.get())
+
+  assert.equals(layer, asm.getLayer(1)!)
+  assert.equals(oldLayer, asm.getLayer(2)!)
+
+  let call = eventListener.calls[0].refs[0] as LayerAddedEvent
+  assert.equals("layer-added", call.type)
   assert.equals(asm, call.assembly)
   assert.equals(layer, call.layer)
-  call = sp.calls[0].refs[2] as LayerPushedEvent
-  assert.equals("layer-pushed", call.type)
+  call = sp.calls[0].refs[2] as LayerAddedEvent
+  assert.equals("layer-added", call.type)
   assert.equals(asm, call.assembly)
   assert.equals(layer, call.layer)
+
+  const anotherInserted = asm.insertLayer(1)
+  assert.not_same(anotherInserted, layer)
+  assert.equals(asm.getLayerAt(anotherInserted.surface, Pos(1, 1)), anotherInserted)
+  assert.equals(asm.getLayerAt(layer.surface, Pos(1, 1)), layer)
+  assert.equals(asm.getLayerAt(oldLayer.surface, Pos(1, 1)), oldLayer)
+  assert.equals("<New layer> (1)", anotherInserted.name.get())
+
+  assert.equals(1, anotherInserted.layerNumber)
+  assert.equals(2, layer.layerNumber)
+  assert.equals(3, oldLayer.layerNumber)
+
+  assert.equals(anotherInserted, asm.getLayer(1)!)
+  assert.equals(layer, asm.getLayer(2)!)
+  assert.equals(oldLayer, asm.getLayer(3)!)
 })

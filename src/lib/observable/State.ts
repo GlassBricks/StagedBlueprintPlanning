@@ -69,6 +69,14 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   static truthyFn<V>(this: void, value: V): boolean {
     return !!value
   }
+
+  static gtFn(this: void, value: number, value2: number): boolean {
+    return value2 > value
+  }
+  gt(this: State<number>, value: number): State<boolean> {
+    return this.map(bind(State.gtFn, value)) as State<boolean>
+  }
+
   subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
     const subscription = this.subscribe(context, observer)
     observer.invoke(subscription, this.get(), nil)

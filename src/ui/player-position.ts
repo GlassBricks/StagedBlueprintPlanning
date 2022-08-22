@@ -43,7 +43,7 @@ Events.on_player_changed_position((e) => updatePlayer(game.get_player(e.player_i
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
 
 AssemblyEvents.addListener((e) => {
-  if (e.type === "assembly-created" || e.type === "assembly-deleted" || e.type === "layer-pushed") {
+  if (e.type === "assembly-created" || e.type === "assembly-deleted" || e.type === "layer-added") {
     for (const [, player] of game.players) {
       updatePlayer(player)
     }

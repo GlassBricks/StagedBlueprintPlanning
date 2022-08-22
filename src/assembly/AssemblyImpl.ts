@@ -18,7 +18,7 @@ import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer, LocalAssemblyEvent } from "./Assembly"
 import { newEntityMap } from "./EntityMap"
-import { getLayerNumberOfSurface } from "./surfaces"
+import { getOrGenerateAssemblySurface, prepareArea } from "./surfaces"
 import floor = math.floor
 
 declare const global: {
@@ -33,21 +33,29 @@ Events.on_init(() => {
 const GlobalAssemblyEvents = globalEvent<GlobalAssemblyEvent>()
 export { GlobalAssemblyEvents as AssemblyEvents }
 
+declare const luaLength: LuaLength<Record<number, any>, number>
+
 @RegisterClass("Assembly")
 class AssemblyImpl implements Assembly {
   name = state("")
   displayName: State<LocalisedString>
 
-  private readonly layers: LayerImpl[]
   content = newEntityMap()
-
   localEvents = new Event<LocalAssemblyEvent>()
 
   valid = true
 
+  private readonly layers: Record<number, LayerImpl>
+  private readonly surfaceIndexToLayerNumber = new LuaMap<SurfaceIndex, LayerNumber>()
+
   protected constructor(readonly id: AssemblyId, readonly bbox: BBox, initialLayerPositions: readonly WorldArea[]) {
     this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedAssembly, id))
-    this.layers = initialLayerPositions.map((area, i) => new LayerImpl(this, i + 1, area.surface, area.bbox))
+    this.layers = initialLayerPositions.map(
+      (area, i) => new LayerImpl(this, i + 1, area.surface, area.bbox, `<Layer ${i + 1}>`),
+    )
+    for (const [number, layer] of pairs(this.layers)) {
+      this.surfaceIndexToLayerNumber.set(layer.surface.index, number)
+    }
   }
 
   static create(bbox: BBox, surfaces: readonly LuaSurface[]): AssemblyImpl {
@@ -60,25 +68,13 @@ class AssemblyImpl implements Assembly {
 
     return assembly
   }
-  public pushLayer(surface: LuaSurface, bbox: BoundingBox): Layer {
-    this.assertValid()
-    const layerNumber = this.layers.length + 1
-    const layer = new LayerImpl(this, layerNumber, surface, bbox)
-    this.layers.push(layer)
-
-    if (this.id !== 0) this.raiseEvent({ type: "layer-pushed", assembly: this, layer })
-    return layer
-  }
 
   getLayer(layerNumber: LayerNumber): Layer | nil {
-    return this.layers[layerNumber - 1]
-  }
-  numLayers(): number {
-    return this.layers.length
+    return this.layers[layerNumber]
   }
 
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
-  iterateLayers(start: LayerNumber = 1, end: LayerNumber = this.layers.length): any {
+  iterateLayers(start: LayerNumber = 1, end: LayerNumber = this.numLayers()): any {
     function next(layers: Layer[], i: number) {
       if (i >= end) return
       i++
@@ -88,36 +84,83 @@ class AssemblyImpl implements Assembly {
   }
 
   public getAllLayers(): readonly Layer[] {
-    return this.layers
+    return this.layers as unknown as readonly Layer[]
   }
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getLayerAt(surface: LuaSurface, _position: Position): Layer | nil {
-    const layerIndex = getLayerNumberOfSurface(surface.index)
+    const layerIndex = this.surfaceIndexToLayerNumber.get(surface.index)
     if (layerIndex === nil) return nil
-    return this.layers[layerIndex - 1]
+    return this.layers[layerIndex]
   }
-  getLayerName(layerNumber: LayerNumber): LocalisedString {
-    return this.layers[layerNumber - 1].name.get()
+  public insertLayer(index: LayerNumber): Layer {
+    this.assertValid()
+    const curNumLayers = this.numLayers()
+    assert(index >= 1 && index <= curNumLayers + 1, "Invalid new layer number")
+    // find new surface
+    let surface: LuaSurface
+    for (let i = 1; ; i++) {
+      surface = getOrGenerateAssemblySurface(i)
+      if (!this.surfaceIndexToLayerNumber.has(surface.index)) {
+        this.surfaceIndexToLayerNumber.set(surface.index, index)
+        break
+      }
+    }
+    prepareArea(surface, this.bbox)
+
+    // move further layers up
+    for (const i of $range(curNumLayers, index, -1)) {
+      const layer = this.layers[i]
+      layer.layerNumber = i + 1
+      this.surfaceIndexToLayerNumber.set(layer.surface.index, i + 1)
+      this.layers[i + 1] = layer
+    }
+
+    // get new name
+    const newLayer = new LayerImpl(this, index, surface, this.bbox, this.getDefaultLayerName())
+    this.layers[index] = newLayer
+
+    // modify content
+    this.content.insertLayer(index)
+
+    this.raiseEvent({ type: "layer-added", assembly: this, layer: newLayer })
+    // todo: change content
+    return newLayer
   }
   delete() {
     if (!this.valid) return
     global.assemblies.delete(this.id)
     this.valid = false
-    for (const layer of this.layers) {
+    for (const [, layer] of pairs(this.layers)) {
       layer.valid = false
     }
     this.raiseEvent({ type: "assembly-deleted", assembly: this })
     this.localEvents.closeAll()
+  }
+  numLayers(): number {
+    return luaLength(this.layers)
+  }
+  getLayerName(layerNumber: LayerNumber): LocalisedString {
+    return this.layers[layerNumber].name.get()
+  }
+  private getDefaultLayerName(): string {
+    let subName = ""
+    for (let i = 1; ; i++) {
+      const name = `<New layer>${subName}`
+      if ((this.layers as unknown as Layer[]).some((layer) => layer.name.get() === name)) {
+        subName = ` (${i})`
+      } else {
+        return name
+      }
+    }
   }
   static onAssemblyCreated(assembly: AssemblyImpl): void {
     global.assemblies.set(assembly.id, assembly)
     GlobalAssemblyEvents.raise({ type: "assembly-created", assembly })
   }
   private raiseEvent(event: LocalAssemblyEvent): void {
-    // global first, more useful event order
-    GlobalAssemblyEvents.raise(event)
+    // local first, more useful event order
     this.localEvents.raise(event)
+    GlobalAssemblyEvents.raise(event)
   }
   private assertValid(): void {
     if (!this.valid) error("Assembly is invalid")
@@ -152,7 +195,6 @@ class LayerImpl implements Layer {
   right_bottom: Position
 
   name: MutableState<string>
-
   valid = true
 
   constructor(
@@ -160,10 +202,11 @@ class LayerImpl implements Layer {
     public layerNumber: LayerNumber,
     public readonly surface: LuaSurface,
     bbox: BoundingBox,
+    name: string,
   ) {
     this.left_top = bbox.left_top
     this.right_bottom = bbox.right_bottom
-    this.name = state(`<Layer ${layerNumber}>`)
+    this.name = state(name)
   }
 }
 
@@ -184,8 +227,8 @@ class DemonstrationAssembly extends AssemblyImpl {
     if (index < 0 || index >= this.numLayers()) return nil
     return this.getLayer(index + 1)
   }
-  public override pushLayer(): Layer {
-    error("Cannot push layers to a demonstration assembly")
+  override insertLayer(): Layer {
+    error("Cannot add layers to a demonstration assembly")
   }
 }
 export function _mockAssembly(numLayers: number = 0): Assembly {

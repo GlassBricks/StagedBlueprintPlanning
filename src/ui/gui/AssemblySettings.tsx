@@ -10,13 +10,13 @@
  */
 
 import { Assembly, LocalAssemblyEvent } from "../../assembly/Assembly"
-import { pushLayer } from "../../assembly/AssemblyOperations"
 import { assertNever, funcOn, RegisterClass } from "../../lib"
 import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { TrashButton } from "../../lib/factoriojsx/components/buttons"
 import { showDialog } from "../../lib/factoriojsx/components/Dialog"
-import { HorizontalPusher } from "../../lib/factoriojsx/components/misc"
+import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/components/misc"
 import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
+import { state } from "../../lib/observable"
 import { L_GuiAssemblySettings } from "../../locale"
 import { teleportToLayer } from "../player-position"
 import { AssemblyRename } from "./AssemblyRename"
@@ -38,6 +38,8 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
   assembly!: Assembly
   playerIndex!: PlayerIndex
   element!: LuaGuiElement
+
+  private selectedLayer = state(0)
   public override render(props: { assembly: Assembly }, tracker: Tracker): Spec {
     this.assembly = props.assembly
     this.playerIndex = tracker.playerIndex
@@ -61,10 +63,18 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
           <flow
             direction="horizontal"
             styleMod={{
-              padding: 5,
+              padding: [5, 10],
+              vertical_align: "center",
             }}
           >
-            <button caption={[L_GuiAssemblySettings.NewLayer]} on_gui_click={funcOn(this.newLayer)} />
+            <label style="caption_label" caption={[L_GuiAssemblySettings.NewLayer]} />
+            <HorizontalSpacer width={10} />
+            <button caption={[L_GuiAssemblySettings.AtEnd]} on_gui_click={funcOn(this.addLayer)} />
+            <button
+              caption={[L_GuiAssemblySettings.InsertAboveCurrent]}
+              enabled={this.selectedLayer.gt(0)}
+              on_gui_click={funcOn(this.insertLayer)}
+            />
           </flow>
         </frame>
         <flow
@@ -80,6 +90,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
               width: layerListBoxWidth,
             }}
             assembly={this.assembly}
+            selectedIndex={this.selectedLayer}
           />
 
           <frame
@@ -105,7 +116,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
   private onAssemblyEvent(_: any, event: LocalAssemblyEvent) {
     if (event.type === "assembly-deleted") {
       this.onClose()
-    } else if (event.type !== "layer-pushed") {
+    } else if (event.type !== "layer-added") {
       assertNever(event)
     }
   }
@@ -127,22 +138,20 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     })
   }
 
-  private newLayer() {
+  private insertLayer() {
+    this.doInsertLayer(this.selectedLayer.get())
+  }
+
+  private addLayer() {
+    this.doInsertLayer(this.assembly.numLayers() + 1)
+  }
+  private doInsertLayer(index: number) {
     if (!this.assembly.valid) return
-    const layer = pushLayer(this.assembly)
-    if (!layer) return
+    const layer = this.assembly.insertLayer(index)
     teleportToLayer(game.get_player(this.playerIndex)!, layer)
   }
 }
 const AssemblySettingsName = script.mod_name + ":AssemblySettings"
-//
-// onAssemblyDeleted((assembly: Assembly) => {
-//   for (const [, { currentAssemblySettings }] of pairs(global.players)) {
-//     if (currentAssemblySettings && currentAssemblySettings.assembly === assembly) {
-//       destroy(currentAssemblySettings.element)
-//     }
-//   }
-// })
 
 export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): void {
   const existing = global.players[player.index].currentAssemblySettings

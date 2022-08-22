@@ -18,6 +18,7 @@ import {
   PRRecord,
   RegisterClass,
   shallowCopy,
+  shiftNumberKeys,
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
@@ -91,6 +92,9 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil
   propertySetInAnyLayer(key: keyof LayerProperties): boolean
   clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void
+
+  /** Modifies to be consistent with an inserted layer. */
+  insertLayer(layerNumber: LayerNumber): void
 }
 
 export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, LayerDiff<E>>
@@ -356,6 +360,17 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
   clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void {
     delete this.layerProperties[key]
+  }
+
+  public insertLayer(layerNumber: LayerNumber): void {
+    if (this.baseLayer >= layerNumber) this.baseLayer++
+    if (this.oldLayer && this.oldLayer >= layerNumber) this.oldLayer++
+
+    shiftNumberKeys(this.layerChanges, layerNumber)
+    // old layer
+    for (const [, byType] of pairs(this.layerProperties)) {
+      shiftNumberKeys(byType, layerNumber)
+    }
   }
 }
 
