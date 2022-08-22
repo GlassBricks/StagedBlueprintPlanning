@@ -47,8 +47,8 @@ function createAreaPreview(player: LuaPlayer, surface: LuaSurface, area: BBox): 
     right_bottom: area.right_bottom,
     color: Colors.AreaPreview,
     filled: true,
-    width: 5,
     players: [player],
+    draw_on_ground: true,
   })
   return render
 }
@@ -87,6 +87,7 @@ class NewAssemblyGui extends Component<NewGuiData> {
   area!: BBox
   name!: TextFieldGuiElement
   numLayers!: TextFieldGuiElement
+  deleteExisting!: CheckboxGuiElement
   override render(props: NewGuiData, tracker: Tracker): Spec {
     tracker.getSubscription().add(noSelfFuncOn(props.view.destroy))
     this.area = props.area
@@ -94,7 +95,7 @@ class NewAssemblyGui extends Component<NewGuiData> {
       <frame
         direction="vertical"
         styleMod={{
-          width: guiWidth,
+          natural_width: guiWidth,
         }}
         auto_center
         onCreate={(e) => (this.element = e)}
@@ -118,6 +119,16 @@ class NewAssemblyGui extends Component<NewGuiData> {
               onCreate={(e) => (this.numLayers = e)}
             />
           </flow>
+          <flow direction="horizontal" style="player_input_horizontal_flow">
+            <label
+              style="caption_label"
+              caption={[L_GuiNewAssembly.DeleteExistingEntities]}
+              tooltip={[L_GuiNewAssembly.DeleteExistingEntitiesTooltip]}
+            />
+
+            <HorizontalPusher />
+            <checkbox state={true} enabled={false} onCreate={(e) => (this.deleteExisting = e)} />
+          </flow>
           <flow direction="horizontal">
             <HorizontalPusher />
             <button style="button" caption={[L_GuiNewAssembly.Create]} on_gui_click={funcOn(this.create)} />
@@ -131,22 +142,27 @@ class NewAssemblyGui extends Component<NewGuiData> {
     const area = this.area
     const name = this.name.text.trim()
     const numLayers = tonumber(this.numLayers.text)
+    // const deleteExisting = this.deleteExisting.state
+    const deleteExisting = true
     if (!numLayers || numLayers <= 0) {
       notifyPlayer(player, [L_GuiNewAssembly.InvalidNumLayers])
       return
     }
     destroy(this.element)
 
-    tryCreateAssembly(player, name, area, floor(numLayers))
+    tryCreateAssembly(player, name, area, floor(numLayers), deleteExisting)
   }
 }
 
-function tryCreateAssembly(player: LuaPlayer, name: string, area: BBox, numLayers: number) {
+function tryCreateAssembly(player: LuaPlayer, name: string, area: BBox, numLayers: number, deleteExisting: boolean) {
   area = BBox.roundChunk(area)
   const existing = findIntersectingAssembly(area) // check again
   if (existing) return notifyIntersectingAssembly(player, existing)
 
   const surfaces = prepareAssembly(area, numLayers)
+  if (deleteExisting) {
+    for (const surface of surfaces) for (const e of surface.find_entities(area)) e.destroy()
+  }
   const assembly = newAssembly(surfaces, area)
   assembly.name.set(name)
 }

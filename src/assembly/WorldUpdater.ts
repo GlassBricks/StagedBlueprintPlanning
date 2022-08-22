@@ -38,7 +38,7 @@ export interface WorldUpdater {
     replace?: boolean,
   ): void
 
-  deleteWorldEntities(assembly: AssemblyContent, entity: AssemblyEntity): void
+  deleteWorldEntities(entity: AssemblyEntity): void
 
   makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
@@ -118,11 +118,6 @@ export function createWorldUpdater(
     entity.rotatable = true
   }
 
-  function doDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    entity.destroyAllWorldEntities("mainEntity")
-    highlighter.deleteEntity(entity)
-  }
-
   function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     assert(entity.isSettingsRemnant)
     entity.destroyAllWorldEntities("mainEntity")
@@ -136,7 +131,10 @@ export function createWorldUpdater(
 
   return {
     updateWorldEntities,
-    deleteWorldEntities: doDeleteEntity,
+    deleteWorldEntities(entity: AssemblyEntity): void {
+      entity.destroyAllWorldEntities("mainEntity")
+      highlighter.deleteEntity(entity)
+    },
     makeSettingsRemnant,
     reviveSettingsRemnant,
   }

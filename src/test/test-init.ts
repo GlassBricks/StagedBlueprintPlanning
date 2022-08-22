@@ -87,6 +87,7 @@ if (script.active_mods.testorio !== nil) {
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
+      game.surfaces[1].find_entities().forEach((e) => e.destroy())
       createDemonstrationAssembly(3)
     },
     log_passed_tests: false,

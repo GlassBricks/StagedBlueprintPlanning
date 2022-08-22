@@ -19,7 +19,11 @@ import { AssemblyContent, LayerPosition } from "./Assembly"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
-/** @noSelf */
+/**
+ * Updates assembly in response to world changes.
+ *
+ * @noSelf
+ */
 export interface AssemblyUpdater {
   /** Handles when an entity is created. */
   onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
@@ -206,7 +210,7 @@ export function createAssemblyUpdater(
       worldUpdater.makeSettingsRemnant(assembly, assemblyEntity)
     } else {
       assembly.content.delete(assemblyEntity)
-      deleteWorldEntities(assembly, assemblyEntity)
+      deleteWorldEntities(assemblyEntity)
     }
   }
 
@@ -339,7 +343,7 @@ export function createAssemblyUpdater(
     const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
     if (!existing || !existing.isSettingsRemnant) return
     assembly.content.delete(existing)
-    deleteWorldEntities(assembly, existing)
+    deleteWorldEntities(existing)
   }
 
   return {

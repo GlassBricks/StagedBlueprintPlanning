@@ -12,7 +12,7 @@
 import { AssemblyContent, Layer, LayerPosition } from "./Assembly"
 import { newEntityMap } from "./EntityMap"
 
-export function createMockAssembly(numLayers: number): AssemblyContent {
+export function createMockAssemblyContent(numLayers: number): AssemblyContent {
   const layers: LayerPosition[] = Array.from({ length: numLayers }, (_, i) => ({
     layerNumber: i + 1,
     surface: game.surfaces[1],

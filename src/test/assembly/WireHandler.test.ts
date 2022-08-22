@@ -10,7 +10,7 @@
  */
 
 import { AssemblyContent } from "../../assembly/Assembly"
-import { createMockAssembly } from "../../assembly/Assembly-mock"
+import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { DefaultWireHandler, WireHandler } from "../../assembly/WireHandler"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
@@ -25,7 +25,7 @@ let entity2: AssemblyEntity
 const handler: WireHandler = DefaultWireHandler
 
 before_each(() => {
-  assembly = createMockAssembly(3)
+  assembly = createMockAssemblyContent(3)
   const area = clearTestArea()
   luaEntity1 = area.surface.create_entity({ name: "arithmetic-combinator", position: { x: 5.5, y: 6 } })!
   luaEntity2 = area.surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!

@@ -10,7 +10,7 @@
  */
 
 import { AssemblyContent, LayerPosition } from "../../assembly/Assembly"
-import { createMockAssembly } from "../../assembly/Assembly-mock"
+import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
@@ -43,7 +43,7 @@ before_all(() => {
 
 let totalCalls: number
 before_each(() => {
-  assembly = createMockAssembly(1)
+  assembly = createMockAssemblyContent(1)
   layer = assembly.getLayer(1)
   totalCalls = 0
   function spyFn<F extends ContextualFun>(): F {
@@ -147,7 +147,7 @@ function assertUpdateCalled(
 function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.deleteWorldEntities).called_with(match.not_nil(), match.ref(entity))
+  assert.spy(worldUpdater.deleteWorldEntities).called_with(match.ref(entity))
 }
 function assertMakeSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true

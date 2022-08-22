@@ -11,7 +11,7 @@
 
 import { keys } from "ts-transformer-keys"
 import { AssemblyContent } from "../../assembly/Assembly"
-import { createMockAssembly } from "../../assembly/Assembly-mock"
+import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import {
   createHighlightCreator,
   EntityHighlighter,
@@ -33,7 +33,7 @@ let assembly: AssemblyContent
 let highlightCreator: EntityHighlighter
 
 before_each(() => {
-  assembly = createMockAssembly(5)
+  assembly = createMockAssemblyContent(5)
   const entityCreator: HighlightCreator = {
     createHighlightBox: (target, type) =>
       entityMock({

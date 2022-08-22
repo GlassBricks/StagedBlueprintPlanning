@@ -36,7 +36,7 @@ export const enum Sprites {
 
 export namespace Colors {
   export const ErrorHighlight: ColorArray = [0.9, 0.2, 0.2]
-  export const AreaPreview: ColorArray = [0.7, 0.7, 0.9]
+  export const AreaPreview: ColorArray = [0.5, 0.5, 0.9, 0.5]
 }
 
 export const enum BuildableEntityTypes {

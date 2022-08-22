@@ -10,7 +10,7 @@
  */
 
 import { AssemblyContent } from "../../assembly/Assembly"
-import { createMockAssembly } from "../../assembly/Assembly-mock"
+import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
@@ -34,7 +34,7 @@ let wireUpdater: mock.Mocked<WireUpdater>
 let worldUpdater: WorldUpdater
 
 before_each(() => {
-  assembly = createMockAssembly(4)
+  assembly = createMockAssemblyContent(4)
   entity = createAssemblyEntity(
     {
       name: "test",
@@ -206,7 +206,7 @@ describe("invalid layers", () => {
 
 test("deleteWorldEntities", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-  worldUpdater.deleteWorldEntities(assembly, entity)
+  worldUpdater.deleteWorldEntities(entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
   assert.spy(highlighter.deleteEntity).called_with(match.ref(entity))
 })

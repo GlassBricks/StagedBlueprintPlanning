@@ -24,6 +24,8 @@ export interface EntityMap {
   getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil
 
   countNumEntities(): number
+
+  iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity>
 }
 
 export interface MutableEntityMap extends EntityMap {
@@ -60,6 +62,9 @@ class EntityMapImpl implements MutableEntityMap {
 
   countNumEntities(): number {
     return table_size(this.entities)
+  }
+  iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity> {
+    return this.entities as any
   }
 
   add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {

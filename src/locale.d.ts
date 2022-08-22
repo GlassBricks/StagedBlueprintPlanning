@@ -2,13 +2,13 @@
 // noinspection JSUnusedGlobalSymbols
 
 export declare const enum L_ItemName {
-  /** Blueprint cleanup tool */
+  /** Assembly cleanup tool */
   CleanupTool = "item-name.bp3:cleanup-tool",
   /** Assembly creation tool */
   AssemblyAddTool = "item-name.bp3:assembly-add-tool",
 }
 export declare const enum L_ShortcutName {
-  /** Blueprint cleanup tool */
+  /** Assembly cleanup tool */
   CleanupTool = "shortcut-name.bp3:cleanup-tool",
   /** Create new assembly */
   AssemblyAddTool = "shortcut-name.bp3:assembly-add-tool",
@@ -32,7 +32,7 @@ export declare const enum L_Interaction {
   UnexpectedError = "bp3.interaction.unexpected-error",
   /** This area intersects assembly __1__ (possibly on a different surface) */
   AreaIntersectsWithOtherAssembly = "bp3.interaction.area-intersects-with-other-assembly",
-  /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
+  /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected in assemblies (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
   BlueprintNotHandled = "bp3.interaction.blueprint-not-handled",
   /** Entity moved down from __1__ */
   EntityMovedFromLayer = "bp3.interaction.entity-moved-from-layer",
@@ -54,6 +54,10 @@ export declare const enum L_GuiNewAssembly {
   InitialNumLayers = "bp3.gui.new-assembly.initial-num-layers",
   /** Create */
   Create = "bp3.gui.new-assembly.create",
+  /** Delete existing entities [img=info] */
+  DeleteExistingEntities = "bp3.gui.new-assembly.delete-existing-entities",
+  /** Existing entities are not yet processed (this may be a future feature). To import, paste entities after creating the assembly. */
+  DeleteExistingEntitiesTooltip = "bp3.gui.new-assembly.delete-existing-entities-tooltip",
   /** Invalid specified number of layers */
   InvalidNumLayers = "bp3.gui.new-assembly.invalid-num-layers",
 }
