@@ -12,7 +12,6 @@
 import { Assembly } from "../../assembly/Assembly"
 import { _deleteAllAssemblies, _mockAssembly, newAssembly } from "../../assembly/UserAssembly"
 import { BBox } from "../../lib/geometry"
-import { L_Assembly } from "../../locale"
 
 after_each(() => {
   _deleteAllAssemblies()
@@ -65,10 +64,8 @@ describe("Layers", () => {
     assert.equals(2, asm.getLayer(2).layerNumber)
   })
 
-  test("display name is correct", () => {
+  test("initial name is correct", () => {
     const layer = asm.getLayer(1)
-    assert.same([L_Assembly.UnnamedLayer, layer.layerNumber], layer.displayName.get())
-    layer.name.set("test")
-    assert.same("test", layer.displayName.get())
+    assert.same("<Layer 1>", layer.name.get())
   })
 })

@@ -12,7 +12,7 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { bind, Events, RegisterClass, registerFunctions } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Event, State, state } from "../lib/observable"
+import { Event, MutableState, State, state } from "../lib/observable"
 import { globalEvent } from "../lib/observable/GlobalEvent"
 import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
@@ -101,8 +101,11 @@ class AssemblyImpl implements Assembly {
     return this.layers[layerIndex - 1]
   }
 
-  public getLayerName(layerNumber: LayerNumber): LocalisedString {
-    return this.getLayer(layerNumber).displayName.get()
+  getLayerName(layerNumber: LayerNumber): LocalisedString {
+    return this.getLayer(layerNumber).name.get()
+  }
+  getLayerLabel(layerNumber: LayerNumber): State<LocalisedString> {
+    return this.displayName
   }
 
   delete() {
@@ -147,8 +150,7 @@ class LayerImpl implements Layer {
   left_top: Position
   right_bottom: Position
 
-  name = state("")
-  displayName: State<LocalisedString>
+  name: MutableState<string>
 
   valid = true
 
@@ -158,9 +160,9 @@ class LayerImpl implements Layer {
     public readonly surface: LuaSurface,
     bbox: BoundingBox,
   ) {
-    this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedLayer, this.layerNumber))
     this.left_top = bbox.left_top
     this.right_bottom = bbox.right_bottom
+    this.name = state(`<Layer ${layerNumber}>`)
   }
 }
 
@@ -180,6 +182,9 @@ class DemonstrationAssembly extends AssemblyImpl {
     const index = floor(position.x / 32)
     if (index < 0 || index >= this.numLayers()) return nil
     return this.getLayer(index + 1)
+  }
+  public override getLayerLabel(layerNumber: LayerNumber): State<LocalisedString> {
+    return this.getLayer(layerNumber).name
   }
 }
 export function _mockAssembly(numLayers: number = 0): Assembly {

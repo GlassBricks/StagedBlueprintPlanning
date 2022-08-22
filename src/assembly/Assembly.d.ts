@@ -44,6 +44,8 @@ export interface Assembly extends AssemblyContent {
   getAllLayers(): readonly Layer[]
 
   getLayerAt(surface: LuaSurface, position: Position): Layer | nil
+  /** Used by in-world display */
+  getLayerLabel(layerNumber: LayerNumber): State<LocalisedString>
 
   readonly content: MutableEntityMap
   readonly events: Observable<AssemblyChangeEvent>
@@ -54,7 +56,6 @@ export interface Assembly extends AssemblyContent {
 
 export interface Layer extends LayerPosition {
   readonly name: MutableState<string>
-  readonly displayName: State<LocalisedString>
 
   readonly assembly: Assembly
 
@@ -76,11 +77,6 @@ export type AssemblyChangeEvent = LayerPushedEvent | AssemblyDeletedEvent
 
 export interface AssemblyCreatedEvent {
   readonly type: "assembly-created"
-  readonly assembly: Assembly
-}
-
-export interface AssemblyDeletedEvent {
-  readonly type: "assembly-deleted"
   readonly assembly: Assembly
 }
 

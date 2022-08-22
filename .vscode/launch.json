@@ -13,7 +13,7 @@
         "WiderNoticeTextBoxes": true,
         "testorio": true
       },
-      "disableExtraMods": true,
+//      "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
         "BBPP2Test",

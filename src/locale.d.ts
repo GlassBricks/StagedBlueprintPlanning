@@ -42,8 +42,6 @@ export declare const enum L_Interaction {
 export declare const enum L_Assembly {
   /** <Unnamed assembly> */
   UnnamedAssembly = "bp3.assembly.unnamed-assembly",
-  /** <Layer __1__> */
-  UnnamedLayer = "bp3.assembly.unnamed-layer",
 }
 export declare const enum L_GuiNewAssembly {
   /** New Assembly */

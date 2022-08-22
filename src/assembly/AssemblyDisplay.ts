@@ -10,6 +10,7 @@
  */
 
 import { assertNever, bind, RegisterClass } from "../lib"
+import { Pos } from "../lib/geometry"
 import { Observer, Subscription } from "../lib/observable"
 import draw, { AnyRender, TextRender } from "../lib/rendering"
 import { Assembly, AssemblyChangeEvent, Layer } from "./Assembly"
@@ -51,10 +52,11 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
       draw_on_ground: true,
     })
 
+    const name = layer.assembly.getLayerLabel(layer.layerNumber)
     const text = draw("text", {
-      text: layer.displayName.get(),
+      text: name.get(),
       surface,
-      target: left_top,
+      target: Pos.plus(left_top, Pos(0.5, 0)),
       color: [1, 1, 1],
       font: "default",
       scale: 1.5,
@@ -63,7 +65,7 @@ class AssemblyDisplay implements Observer<AssemblyChangeEvent> {
     })
     this.highlights.push([box, text])
 
-    layer.displayName.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, text))
+    name.subscribeIndependently(bind(AssemblyDisplay.onLayerNameChange, text))
   }
 
   private static onLayerNameChange(this: void, text: TextRender, _: unknown, name: LocalisedString): void {

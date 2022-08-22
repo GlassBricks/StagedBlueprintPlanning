@@ -51,9 +51,9 @@ export class LayerSelector extends Component<{ assembly: Assembly }> {
     this.trackerSubscription.add(subscription)
 
     const layers = this.assembly.getAllLayers()
-    this.dropDown.items = layers.map((l) => l.displayName.get())
+    this.dropDown.items = layers.map((l) => l.name.get())
     for (const layer of layers) {
-      layer.displayName.subscribe(subscription, bind(funcOn(this.setDropDownItem), layer.layerNumber))
+      layer.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), layer.layerNumber))
     }
     playerCurrentLayer(this.playerIndex).subscribeAndFire(this.elementsSubscription, funcOn(this.playerLayerChanged))
 
