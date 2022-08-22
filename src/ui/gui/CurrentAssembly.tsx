@@ -29,8 +29,17 @@ class CurrentAssembly extends Component {
     return layer.assembly.displayName
   }
   static mapAssemblyToContent(this: void, assembly: Assembly | nil) {
-    if (assembly === nil) return <></>
-    return <LayerSelector assembly={assembly} />
+    return (
+      assembly && (
+        <LayerSelector
+          uses="drop-down"
+          assembly={assembly}
+          styleMod={{
+            minimal_width: 200,
+          }}
+        />
+      )
+    )
   }
   public override render(_: EmptyProps, tracker: Tracker): Spec {
     const { playerIndex } = tracker

@@ -9,12 +9,18 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, AssemblyCreatedEvent } from "../../assembly/Assembly"
+import { Assembly, AssemblyCreatedEvent, AssemblyDeletedEvent, LayerPushedEvent } from "../../assembly/Assembly"
 import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/AssemblyImpl"
 import { SelflessFun } from "../../lib"
 import { BBox } from "../../lib/geometry"
 
+let eventListener: SelflessFun & spy.SpyObj<SelflessFun>
+before_each(() => {
+  eventListener = spy()
+  AssemblyEvents.addListener(eventListener)
+})
 after_each(() => {
+  AssemblyEvents.removeListener(eventListener)
   _deleteAllAssemblies()
 })
 
@@ -26,6 +32,14 @@ test("basic", () => {
 
   const asm2 = newAssembly([], bbox)
   assert.not_same(asm1.id, asm2.id)
+})
+
+test("assembly created calls event", () => {
+  const asm = newAssembly([], bbox)
+  assert.spy(eventListener).called_with({
+    type: "assembly-created",
+    assembly: asm,
+  } as AssemblyCreatedEvent)
 })
 
 describe("deletion", () => {
@@ -41,23 +55,17 @@ describe("deletion", () => {
     asm.delete()
     assert.false(layer.valid)
   })
-})
-
-describe("events", () => {
-  let sp: SelflessFun & spy.SpyObj<SelflessFun>
-  before_each(() => {
-    sp = spy()
-    AssemblyEvents.addListener(sp)
-  })
-  after_each(() => {
-    AssemblyEvents.removeListener(sp)
-  })
-  test("assembly created", () => {
+  test("calls event", () => {
     const asm = newAssembly([], bbox)
-    assert.spy(sp).called_with({
-      type: "assembly-created",
-      assembly: asm,
-    } as AssemblyCreatedEvent)
+    const sp2 = spy()
+    asm.localEvents.subscribeIndependently({ invoke: sp2 })
+    asm.delete()
+    let call = eventListener.calls[1].refs[0] as AssemblyDeletedEvent
+    assert.same("assembly-deleted", call.type)
+    assert.same(asm, call.assembly)
+    call = sp2.calls[0].refs[2] as AssemblyDeletedEvent
+    assert.same("assembly-deleted", call.type)
+    assert.same(asm, call.assembly)
   })
 })
 
@@ -70,9 +78,29 @@ describe("Layers", () => {
     assert.equals(1, asm.getLayer(1)!.layerNumber)
     assert.equals(2, asm.getLayer(2)!.layerNumber)
   })
-
   test("initial name is correct", () => {
     const layer = asm.getLayer(1)!
     assert.same("<Layer 1>", layer.name.get())
   })
+})
+
+test("push layer", () => {
+  const sp = spy()
+  const asm = newAssembly([], bbox)
+  asm.localEvents.subscribeIndependently({ invoke: sp })
+
+  eventListener.clear()
+
+  const layer = asm.pushLayer(game.surfaces[1], bbox)
+
+  assert.equals(1, layer.layerNumber)
+  assert.equals("<Layer 1>", layer.name.get())
+  let call = eventListener.calls[0].refs[0] as LayerPushedEvent
+  assert.equals("layer-pushed", call.type)
+  assert.equals(asm, call.assembly)
+  assert.equals(layer, call.layer)
+  call = sp.calls[0].refs[2] as LayerPushedEvent
+  assert.equals("layer-pushed", call.type)
+  assert.equals(asm, call.assembly)
+  assert.equals(layer, call.layer)
 })

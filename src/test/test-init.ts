@@ -10,8 +10,9 @@
  */
 
 import { createDemonstrationAssembly } from "../assembly/AssemblyImpl"
-import { Events } from "../lib"
+import { Events, protectedAction } from "../lib"
 import { destroyAllRenders } from "../lib/rendering"
+import { openAssemblySettings } from "../ui/gui/AssemblySettings"
 
 // better source map traceback
 declare const ____lualib: {
@@ -89,8 +90,14 @@ if (script.active_mods.testorio !== nil) {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
       game.surfaces[1].find_entities().forEach((e) => e.destroy())
       const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo" }
-      if (result.status === "passed") game.players[1].gui.screen["testorio:test-progress"]?.destroy()
-      createDemonstrationAssembly(3)
+      const assembly = createDemonstrationAssembly(12)
+      if (result.status === "passed") {
+        const player = game.players[1]
+        player.gui.screen["testorio:test-progress"]?.destroy()
+        protectedAction(player, () => {
+          openAssemblySettings(player, assembly)
+        })
+      }
     },
     log_passed_tests: false,
     sound_effects: true,

@@ -68,7 +68,7 @@ function tryBeginCreateAssembly(event: OnPlayerSelectedAreaEvent) {
   const area = BBox.roundChunk(event.area)
   const view = createAreaPreview(player, player.surface, area)
 
-  render(<NewAssemblyGui area={area} view={view} />, player.gui.screen)
+  render(<NewAssembly area={area} view={view} />, player.gui.screen)
 }
 
 Events.on_player_selected_area((e) => {
@@ -82,7 +82,7 @@ interface NewGuiData {
 
 const guiWidth = 300
 @RegisterClass("gui:NewAssemblyGui")
-class NewAssemblyGui extends Component<NewGuiData> {
+class NewAssembly extends Component<NewGuiData> {
   element!: LuaGuiElement
   area!: BBox
   name!: TextFieldGuiElement
@@ -103,12 +103,12 @@ class NewAssemblyGui extends Component<NewGuiData> {
         <SimpleTitleBar title={[L_GuiNewAssembly.Title]} />
         <frame direction="vertical" style="bordered_frame">
           <flow direction="horizontal" style="player_input_horizontal_flow">
-            <label style="caption_label" caption={[L_GuiNewAssembly.Name]} />
+            <label caption={[L_GuiNewAssembly.Name]} />
             <HorizontalPusher />
             <textfield lose_focus_on_confirm onCreate={(e) => (this.name = e)} />
           </flow>
           <flow direction="horizontal" style="player_input_horizontal_flow">
-            <label style="caption_label" caption={[L_GuiNewAssembly.InitialNumLayers]} />
+            <label caption={[L_GuiNewAssembly.InitialNumLayers]} />
             <HorizontalPusher />
             <textfield
               style="short_number_textfield"
@@ -121,7 +121,6 @@ class NewAssemblyGui extends Component<NewGuiData> {
           </flow>
           <flow direction="horizontal" style="player_input_horizontal_flow">
             <label
-              style="caption_label"
               caption={[L_GuiNewAssembly.DeleteExistingEntities]}
               tooltip={[L_GuiNewAssembly.DeleteExistingEntitiesTooltip]}
             />

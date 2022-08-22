@@ -73,3 +73,10 @@ export function prepareAssembly(area: BBox, numLayers: number): LuaSurface[] {
   }
   return surfaces
 }
+
+export function prepareNewArea(index: number, area: BBox): LuaSurface {
+  generateAssemblySurfaces(index)
+  const surface = getAssemblySurface(index)
+  prepareArea(surface, area)
+  return surface
+}

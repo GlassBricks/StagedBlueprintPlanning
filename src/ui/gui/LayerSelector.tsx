@@ -10,33 +10,29 @@
  */
 
 import { clamp } from "util"
-import { Assembly, Layer } from "../../assembly/Assembly"
+import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/Assembly"
 import { LayerNumber } from "../../entity/AssemblyEntity"
-import { bind, funcOn, RegisterClass } from "../../lib"
-import { Component, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"
+import { assertNever, bind, funcOn, RegisterClass } from "../../lib"
+import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"
 import { MutableState, state, Subscription } from "../../lib/observable"
 import { playerCurrentLayer, teleportToLayer } from "../player-position"
 
-@RegisterClass("gui:CurrentLayer")
-export class LayerSelector extends Component<{
+export type LayerSelectorProps<T extends "drop-down" | "list-box"> = {
+  uses: T
   assembly: Assembly
   selectedIndex?: MutableState<LayerNumber>
-}> {
+} & ElemProps<T>
+@RegisterClass("gui:CurrentLayer")
+export class LayerSelector<T extends "drop-down" | "list-box"> extends Component<LayerSelectorProps<T>> {
   private assembly!: Assembly
   private trackerSubscription!: Subscription
   private playerIndex!: PlayerIndex
 
   private elementsSubscription!: Subscription
-  private dropDown!: DropDownGuiElement
+  private element!: DropDownGuiElement | ListBoxGuiElement
   private selectedIndex!: MutableState<number>
 
-  public override render(
-    props: {
-      assembly: Assembly
-      selectedIndex?: MutableState<LayerNumber>
-    },
-    tracker: Tracker,
-  ): Spec {
+  public override render(props: LayerSelectorProps<T>, tracker: Tracker): Spec {
     this.assembly = props.assembly
     this.selectedIndex = props.selectedIndex ?? state(0)
 
@@ -46,22 +42,20 @@ export class LayerSelector extends Component<{
     this.selectedIndex.set(clamp(this.selectedIndex.get(), 1, this.assembly.numLayers()))
     this.selectedIndex.subscribe(this.trackerSubscription, funcOn(this.onSelectedIndexChanged))
 
-    tracker.onMount(() => this.setupDropDown())
+    tracker.onMount(() => this.setup())
 
     const layers = this.assembly.getAllLayers()
     return (
-      <drop-down
-        styleMod={{
-          minimal_width: 200,
-        }}
-        onCreate={(e) => (this.dropDown = e)}
+      <props.uses
+        {...props}
+        onCreate={(e) => (this.element = e)}
         items={layers.map((l) => l.name.get())}
         selected_index={this.selectedIndex}
       />
     )
   }
 
-  private setupDropDown() {
+  private setup() {
     this.elementsSubscription?.close()
     const subscription = (this.elementsSubscription = new Subscription())
     this.trackerSubscription.add(subscription)
@@ -72,11 +66,19 @@ export class LayerSelector extends Component<{
     }
     playerCurrentLayer(this.playerIndex).subscribeAndFire(this.elementsSubscription, funcOn(this.playerLayerChanged))
 
-    // todo: listen for layer changes
+    this.assembly.localEvents.subscribe(this.elementsSubscription, funcOn(this.onAssemblyEvent))
+  }
+
+  private onAssemblyEvent(_: Subscription, event: LocalAssemblyEvent) {
+    if (event.type === "layer-pushed") {
+      this.element.add_item(event.layer.name.get())
+    } else if (event.type !== "assembly-deleted") {
+      assertNever(event)
+    }
   }
 
   private setDropDownItem(layerNumber: LayerNumber, _: Subscription, name: LocalisedString) {
-    this.dropDown.set_item(layerNumber, name)
+    this.element.set_item(layerNumber, name)
   }
 
   private onSelectedIndexChanged(_: Subscription, index: number) {

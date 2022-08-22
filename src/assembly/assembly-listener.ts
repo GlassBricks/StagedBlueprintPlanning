@@ -15,12 +15,16 @@ import { AssemblyOperations } from "./AssemblyOperations"
 
 AssemblyEvents.addListener((e) => {
   switch (e.type) {
+    case "assembly-created":
+      break
     case "assembly-deleted": {
       AssemblyOperations.deleteAllWorldEntities(e.assembly)
       break
     }
-    case "assembly-created":
+    case "layer-pushed": {
+      AssemblyOperations.resetLayer(e.assembly, e.layer)
       break
+    }
     default:
       assertNever(e)
   }

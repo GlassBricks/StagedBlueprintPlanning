@@ -40,9 +40,10 @@ function updatePlayer(player: LuaPlayer): void {
   currentLayer.set(getAssemblyAtPosition(position)?.getLayerAt(surface, position))
 }
 Events.on_player_changed_position((e) => updatePlayer(game.get_player(e.player_index)!))
+Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
 
 AssemblyEvents.addListener((e) => {
-  if (e.type === "assembly-created" || e.type === "assembly-deleted") {
+  if (e.type === "assembly-created" || e.type === "assembly-deleted" || e.type === "layer-pushed") {
     for (const [, player] of game.players) {
       updatePlayer(player)
     }

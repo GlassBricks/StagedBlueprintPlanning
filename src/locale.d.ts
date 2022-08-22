@@ -84,6 +84,8 @@ export declare const enum L_GuiAssemblySettings {
   DeleteAssemblyConfirmation2 = "bp3.gui.assembly-settings.delete-assembly-confirmation2",
   /** This action cannot be undone. */
   DeleteAssemblyConfirmation3 = "bp3.gui.assembly-settings.delete-assembly-confirmation3",
+  /** New layer */
+  NewLayer = "bp3.gui.assembly-settings.new-layer",
   /** Layer: */
   Layer = "bp3.gui.assembly-settings.layer",
 }

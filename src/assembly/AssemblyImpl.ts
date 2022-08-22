@@ -12,11 +12,11 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { bind, Events, RegisterClass, registerFunctions } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { MutableState, State, state } from "../lib/observable"
+import { Event, MutableState, State, state } from "../lib/observable"
 import { globalEvent } from "../lib/observable/GlobalEvent"
 import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
-import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer } from "./Assembly"
+import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer, LocalAssemblyEvent } from "./Assembly"
 import { newEntityMap } from "./EntityMap"
 import { getLayerNumberOfSurface } from "./surfaces"
 import floor = math.floor
@@ -30,7 +30,8 @@ Events.on_init(() => {
   global.assemblies = new LuaMap()
 })
 
-export const AssemblyEvents = globalEvent<GlobalAssemblyEvent>()
+const GlobalAssemblyEvents = globalEvent<GlobalAssemblyEvent>()
+export { GlobalAssemblyEvents as AssemblyEvents }
 
 @RegisterClass("Assembly")
 class AssemblyImpl implements Assembly {
@@ -39,6 +40,8 @@ class AssemblyImpl implements Assembly {
 
   private readonly layers: LayerImpl[]
   content = newEntityMap()
+
+  localEvents = new Event<LocalAssemblyEvent>()
 
   valid = true
 
@@ -57,10 +60,14 @@ class AssemblyImpl implements Assembly {
 
     return assembly
   }
+  public pushLayer(surface: LuaSurface, bbox: BoundingBox): Layer {
+    this.assertValid()
+    const layerNumber = this.layers.length + 1
+    const layer = new LayerImpl(this, layerNumber, surface, bbox)
+    this.layers.push(layer)
 
-  static onAssemblyCreated(assembly: AssemblyImpl): void {
-    global.assemblies.set(assembly.id, assembly)
-    AssemblyEvents.raise({ type: "assembly-created", assembly })
+    if (this.id !== 0) this.raiseEvent({ type: "layer-pushed", assembly: this, layer })
+    return layer
   }
 
   getLayer(layerNumber: LayerNumber): Layer | nil {
@@ -90,14 +97,9 @@ class AssemblyImpl implements Assembly {
     if (layerIndex === nil) return nil
     return this.layers[layerIndex - 1]
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getLayerLabel(layerNumber: LayerNumber): State<LocalisedString> {
-    return this.displayName
-  }
   getLayerName(layerNumber: LayerNumber): LocalisedString {
     return this.layers[layerNumber - 1].name.get()
   }
-
   delete() {
     if (!this.valid) return
     global.assemblies.delete(this.id)
@@ -105,8 +107,20 @@ class AssemblyImpl implements Assembly {
     for (const layer of this.layers) {
       layer.valid = false
     }
-
-    AssemblyEvents.raise({ type: "assembly-deleted", assembly: this })
+    this.raiseEvent({ type: "assembly-deleted", assembly: this })
+    this.localEvents.closeAll()
+  }
+  static onAssemblyCreated(assembly: AssemblyImpl): void {
+    global.assemblies.set(assembly.id, assembly)
+    GlobalAssemblyEvents.raise({ type: "assembly-created", assembly })
+  }
+  private raiseEvent(event: LocalAssemblyEvent): void {
+    // global first, more useful event order
+    GlobalAssemblyEvents.raise(event)
+    this.localEvents.raise(event)
+  }
+  private assertValid(): void {
+    if (!this.valid) error("Assembly is invalid")
   }
 }
 
@@ -155,11 +169,11 @@ class LayerImpl implements Layer {
 
 @RegisterClass("DemonstrationAssembly")
 class DemonstrationAssembly extends AssemblyImpl {
-  constructor(numLayers: LayerNumber) {
+  constructor(id: AssemblyId, private initialNumLayers: LayerNumber) {
     super(
-      0 as AssemblyId,
-      BBox.coords(0, 0, 32 * numLayers, 32),
-      Array.from({ length: numLayers }, (_, i) => ({
+      id,
+      BBox.coords(0, 0, 32 * initialNumLayers, 32),
+      Array.from({ length: initialNumLayers }, (_, i) => ({
         surface: game.surfaces[1],
         bbox: BBox.coords(0, 0, 32, 32).translate(Pos(i * 32, 0)),
       })),
@@ -170,21 +184,25 @@ class DemonstrationAssembly extends AssemblyImpl {
     if (index < 0 || index >= this.numLayers()) return nil
     return this.getLayer(index + 1)
   }
-  public override getLayerLabel(layerNumber: LayerNumber): State<LocalisedString> {
-    return this.getLayer(layerNumber)!.name
+  public override pushLayer(): Layer {
+    error("Cannot push layers to a demonstration assembly")
   }
 }
 export function _mockAssembly(numLayers: number = 0): Assembly {
-  return new DemonstrationAssembly(numLayers)
+  return new DemonstrationAssembly(0 as AssemblyId, numLayers)
 }
 export function createDemonstrationAssembly(numLayers: number): Assembly {
-  const assembly = new DemonstrationAssembly(numLayers)
+  const id = global.nextAssemblyId++ as AssemblyId
+  const assembly = new DemonstrationAssembly(id, numLayers)
   AssemblyImpl.onAssemblyCreated(assembly)
   return assembly
 }
 
+/**
+ * @deprecated
+ */
 export function onAssemblyDeleted(cb: (assembly: Assembly) => void): void {
-  AssemblyEvents.addListener((e) => {
+  GlobalAssemblyEvents.addListener((e) => {
     if (e.type === "assembly-deleted") cb(e.assembly)
   })
 }

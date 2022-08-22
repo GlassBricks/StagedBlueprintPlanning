@@ -26,7 +26,6 @@ export function TitleBar(props: { children?: SpecChildren }): Spec {
         const parent = element.parent!
         if (parent.type === "frame" && parent.parent === element.gui.screen) element.drag_target = parent
       }}
-      name="title_bar"
     >
       {props.children}
     </flow>

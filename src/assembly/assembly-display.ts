@@ -12,7 +12,8 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { assertNever, bind, Events, registerFunctions } from "../lib"
 import { Pos } from "../lib/geometry"
-import draw, { AnyRender, TextRender } from "../lib/rendering"
+import { State } from "../lib/observable"
+import draw, { AnyRender, DrawParams, TextRender } from "../lib/rendering"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer } from "./Assembly"
 import { AssemblyEvents } from "./AssemblyImpl"
 
@@ -28,6 +29,8 @@ AssemblyEvents.addListener((event: GlobalAssemblyEvent) => {
     createAssemblyHighlights(event.assembly)
   } else if (event.type === "assembly-deleted") {
     removeHighlights(event.assembly.id)
+  } else if (event.type === "layer-pushed") {
+    createHighlightsForLayer(event.layer)
   } else {
     assertNever(event)
   }
@@ -35,12 +38,13 @@ AssemblyEvents.addListener((event: GlobalAssemblyEvent) => {
 function createAssemblyHighlights(assembly: Assembly) {
   const highlights = new LuaMap<LayerNumber, AnyRender[]>()
   global.assemblyHighlights.set(assembly.id, highlights)
-  for (const [layerNum, layer] of assembly.iterateLayers()) {
-    highlights.set(layerNum, createHighlightsForLayer(layer))
+  for (const [, layer] of assembly.iterateLayers()) {
+    createHighlightsForLayer(layer)
   }
 }
 
-function createHighlightsForLayer(layer: Layer): AnyRender[] {
+function createHighlightsForLayer(layer: Layer): void {
+  if (!layer.valid) return
   const { surface, left_top, right_bottom } = layer
 
   // const boxId = rendering.draw_rectangle({
@@ -54,20 +58,28 @@ function createHighlightsForLayer(layer: Layer): AnyRender[] {
     draw_on_ground: true,
   })
 
-  const name = layer.assembly.getLayerLabel(layer.layerNumber)
-  const text = draw("text", {
-    text: name.get(),
-    surface,
-    target: Pos.plus(left_top, Pos(0.5, 0)),
-    color: [1, 1, 1],
-    font: "default",
-    scale: 1.5,
-    alignment: "left",
-    scale_with_zoom: true,
-  })
+  function createText(
+    name: State<LocalisedString>,
+    vertical_alignment: DrawParams["text"]["vertical_alignment"],
+  ): TextRender {
+    const text: TextRender = draw("text", {
+      text: name.get(),
+      surface,
+      target: Pos.plus(left_top, Pos(0.5, 0)),
+      color: [1, 1, 1],
+      font: "default",
+      scale: 1.5,
+      alignment: "left",
+      scale_with_zoom: true,
+      vertical_alignment,
+    })
+    name.subscribeIndependently(bind(onLayerNameChange, text))
+    return text
+  }
+  const assemblyText: TextRender = createText(layer.assembly.displayName, "bottom")
+  const layerText: TextRender = createText(layer.name, "top")
 
-  name.subscribeIndependently(bind(onLayerNameChange, text))
-  return [box, text]
+  global.assemblyHighlights.get(layer.assembly.id)!.set(layer.layerNumber, [box, assemblyText, layerText])
 }
 
 function onLayerNameChange(text: TextRender, _: unknown, name: LocalisedString): void {

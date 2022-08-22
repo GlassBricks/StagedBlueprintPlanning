@@ -10,7 +10,8 @@
  */
 
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
-import { AssemblyContent, LayerPosition } from "./Assembly"
+import { Assembly, AssemblyContent, Layer, LayerPosition } from "./Assembly"
+import { prepareNewArea } from "./surfaces"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**
@@ -64,3 +65,11 @@ const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
 }
 
 export const AssemblyOperations = createAssemblyOperations(DefaultWorldUpdater, DefaultWorldInteractor)
+
+export function pushLayer(assembly: Assembly): Layer | nil {
+  if (!assembly.valid) return
+  const nextLayerNum = assembly.numLayers() + 1
+  const bbox = assembly.bbox
+  const surface = prepareNewArea(nextLayerNum, bbox)
+  return assembly.pushLayer(surface, bbox)
+}

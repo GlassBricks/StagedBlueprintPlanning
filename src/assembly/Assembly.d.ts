@@ -11,7 +11,7 @@
 
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { Position } from "../lib/geometry"
-import { MutableState, State } from "../lib/observable"
+import { MutableState, Observable, State } from "../lib/observable"
 import { MutableEntityMap } from "./EntityMap"
 
 export interface LayerPosition extends BoundingBox {
@@ -37,6 +37,9 @@ export interface Assembly extends AssemblyContent {
   readonly displayName: State<LocalisedString>
 
   readonly bbox: BoundingBox
+  readonly content: MutableEntityMap
+
+  readonly localEvents: Observable<LocalAssemblyEvent>
 
   getLayer(layerNumber: LayerNumber): Layer | nil
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
@@ -44,10 +47,9 @@ export interface Assembly extends AssemblyContent {
   getAllLayers(): readonly Layer[]
 
   getLayerAt(surface: LuaSurface, position: Position): Layer | nil
-  /** Used by in-world display */
-  getLayerLabel(layerNumber: LayerNumber): State<LocalisedString>
 
-  readonly content: MutableEntityMap
+  pushLayer(surface: LuaSurface, bbox: BoundingBox): Layer
+
   readonly valid: boolean
 
   delete(): void
@@ -70,4 +72,11 @@ export interface AssemblyDeletedEvent {
   readonly assembly: Assembly
 }
 
-export type GlobalAssemblyEvent = AssemblyCreatedEvent | AssemblyDeletedEvent
+export interface LayerPushedEvent {
+  readonly type: "layer-pushed"
+  readonly assembly: Assembly
+  readonly layer: Layer
+}
+
+export type GlobalAssemblyEvent = AssemblyCreatedEvent | AssemblyDeletedEvent | LayerPushedEvent
+export type LocalAssemblyEvent = AssemblyDeletedEvent | LayerPushedEvent

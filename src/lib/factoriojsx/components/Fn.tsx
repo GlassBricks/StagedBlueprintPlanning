@@ -16,12 +16,12 @@ import { Component, destroyChildren, ElemProps, FactorioJsx, renderMultiple, Spe
 export type FuncProps<T, U extends GuiElementType> = {
   uses: U
   from: State<T>
-  map: Func<(value: T) => Spec>
+  map: Func<(value: T) => Spec | false | nil>
 } & ElemProps<U>
 
 @RegisterClass("gui:Fn")
 export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> {
-  map!: Func<(value: T) => Spec>
+  map!: Func<(value: T) => Spec | false | nil>
 
   element!: LuaGuiElement
 
@@ -39,6 +39,6 @@ export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> 
   onChange(_: Subscription, value: T): void {
     const spec = this.map.invoke(value)
     destroyChildren(this.element)
-    renderMultiple(spec, this.element)
+    if (spec) renderMultiple(spec, this.element)
   }
 }
