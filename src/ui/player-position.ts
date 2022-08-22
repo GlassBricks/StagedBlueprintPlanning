@@ -69,3 +69,9 @@ export function teleportToLayer(player: LuaPlayer, layer: Layer): void {
     player.teleport(BBox.center(layer), surface)
   }
 }
+
+export function teleportToSurface1(player: LuaPlayer): void {
+  if (player.surface.index !== 1) {
+    player.teleport(player.position, game.surfaces[1])
+  }
+}

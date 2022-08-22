@@ -22,6 +22,7 @@ import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"
 import { LayerSelector } from "./LayerSelector"
 
+const CurrentAssemblyWidth = 260
 @RegisterClass("gui:CurrentAssembly")
 class CurrentAssembly extends Component {
   static mapLayerToAssemblyTitle(this: void, layer: Layer | nil): MaybeState<LocalisedString> {
@@ -29,41 +30,20 @@ class CurrentAssembly extends Component {
     return layer.assembly.displayName
   }
   static mapAssemblyToContent(this: void, assembly: Assembly | nil) {
-    return (
-      assembly && (
-        <LayerSelector
-          uses="drop-down"
-          assembly={assembly}
-          styleMod={{
-            minimal_width: 200,
-          }}
-        />
-      )
-    )
+    return assembly && <LayerSelector uses="drop-down" assembly={assembly} styleMod={{ width: CurrentAssemblyWidth }} />
   }
   public override render(_: EmptyProps, tracker: Tracker): Spec {
     const { playerIndex } = tracker
     const currentLayer = playerCurrentLayer(playerIndex)
 
     return (
-      <frame
-        direction="vertical"
-        styleMod={{
-          natural_width: 300,
-        }}
-      >
+      <frame direction="vertical">
         <TitleBar>
           <label
             style="frame_title"
             styleMod={{
               font: "heading-2",
-            }}
-            caption={[L_GuiCurrentAssembly.Assembly]}
-          />
-          <label
-            style="frame_title"
-            styleMod={{
-              font: "heading-2",
+              width: CurrentAssemblyWidth - 40,
             }}
             caption={currentLayer.flatMap(funcRef(CurrentAssembly.mapLayerToAssemblyTitle))}
           />

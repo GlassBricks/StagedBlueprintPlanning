@@ -61,7 +61,7 @@ export function SimpleTitleBar(props: { title: MaybeState<LocalisedString> }): S
     <TitleBar>
       <label caption={props.title} style="frame_title" ignored_by_interaction />
       <DraggableSpace />
-      <CloseButton onClick={funcRef(closeParentParent)} />
+      <CloseButton on_gui_click={funcRef(closeParentParent)} />
     </TitleBar>
   )
 }

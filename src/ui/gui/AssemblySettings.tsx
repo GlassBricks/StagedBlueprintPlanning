@@ -9,17 +9,19 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, LocalAssemblyEvent } from "../../assembly/Assembly"
+import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/Assembly"
 import { assertNever, funcOn, RegisterClass } from "../../lib"
 import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { TrashButton } from "../../lib/factoriojsx/components/buttons"
 import { showDialog } from "../../lib/factoriojsx/components/Dialog"
+import { Fn } from "../../lib/factoriojsx/components/Fn"
 import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/components/misc"
 import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { state } from "../../lib/observable"
+import { debugPrint } from "../../lib/test/misc"
 import { L_GuiAssemblySettings } from "../../locale"
-import { teleportToLayer } from "../player-position"
-import { AssemblyRename } from "./AssemblyRename"
+import { teleportToLayer, teleportToSurface1 } from "../player-position"
+import { ItemRename } from "./ItemRename"
 import { LayerSelector } from "./LayerSelector"
 
 declare global {
@@ -56,9 +58,9 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
 
         <frame style="inside_shallow_frame" direction="vertical">
           <frame style="subheader_frame" direction="horizontal">
-            <AssemblyRename assembly={this.assembly} />
+            <ItemRename name={this.assembly.name} displayName={this.assembly.displayName} />
             <HorizontalPusher />
-            <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} onClick={funcOn(this.beginDelete)} />
+            <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
           </frame>
           <flow
             direction="horizontal"
@@ -93,16 +95,16 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
             selectedIndex={this.selectedLayer}
           />
 
-          <frame
+          <Fn
+            uses="frame"
+            from={this.selectedLayer}
+            map={funcOn(this.renderLayerSettings)}
             style="inside_shallow_frame"
             styleMod={{
               width: layerSettingsWidth,
               vertically_stretchable: true,
-              padding: 12,
             }}
-          >
-            <label caption={"Interesting settings go here"} />
-          </frame>
+          />
         </flow>
       </frame>
     )
@@ -134,8 +136,13 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
       redConfirm: true,
       backCaption: ["gui.cancel"],
       confirmCaption: ["gui.delete"],
-      onConfirm: funcOn(this.assembly.delete),
+      onConfirm: funcOn(this.deleteAssembly),
     })
+  }
+
+  private deleteAssembly() {
+    this.assembly.delete()
+    teleportToSurface1(game.get_player(this.playerIndex)!)
   }
 
   private insertLayer() {
@@ -145,10 +152,68 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
   private addLayer() {
     this.doInsertLayer(this.assembly.numLayers() + 1)
   }
+
   private doInsertLayer(index: number) {
     if (!this.assembly.valid) return
     const layer = this.assembly.insertLayer(index)
     teleportToLayer(game.get_player(this.playerIndex)!, layer)
+  }
+
+  private renderLayerSettings(selectedLayerIndex: number): Spec | nil {
+    const layer = this.assembly.getLayer(selectedLayerIndex)
+    if (!layer) return nil
+    return <LayerSettings layer={layer} />
+  }
+}
+
+@RegisterClass("gui:LayerSettings")
+export class LayerSettings extends Component<{ layer: Layer }> {
+  playerIndex!: PlayerIndex
+  layer!: Layer
+  public override render(props: { layer: Layer }, tracker: Tracker): Spec {
+    this.layer = props.layer
+    this.playerIndex = tracker.playerIndex
+
+    const canDeleteLayer = this.layer.layerNumber > 1
+
+    return (
+      <>
+        <frame style="subheader_frame" direction="horizontal">
+          <ItemRename name={props.layer.name} displayName={props.layer.name} />
+          <HorizontalPusher />
+          <TrashButton
+            enabled={canDeleteLayer}
+            tooltip={
+              canDeleteLayer ? [L_GuiAssemblySettings.DeleteLayer] : [L_GuiAssemblySettings.CannotDeleteFirstLayer]
+            }
+            on_gui_click={funcOn(this.beginDelete)}
+          />
+        </frame>
+      </>
+    )
+  }
+
+  private beginDelete() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    const layerNumber = this.layer.layerNumber
+    if (layerNumber <= 1) return // can't delete the first layer
+    const previousLayer = this.layer.assembly.getLayer(layerNumber - 1)
+    if (!previousLayer) return
+    showDialog(player, {
+      title: [L_GuiAssemblySettings.DeleteLayer],
+      message: [
+        [L_GuiAssemblySettings.DeleteLayerConfirmation1, this.layer.name.get()],
+        [L_GuiAssemblySettings.DeleteLayerConfirmation2, previousLayer.name.get()],
+      ],
+      redConfirm: true,
+      backCaption: ["gui.cancel"],
+      confirmCaption: ["gui.delete"],
+      onConfirm: funcOn(this.delete),
+    })
+  }
+  private delete() {
+    debugPrint("todo")
   }
 }
 const AssemblySettingsName = script.mod_name + ":AssemblySettings"

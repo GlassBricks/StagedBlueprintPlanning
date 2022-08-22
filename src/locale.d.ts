@@ -40,8 +40,10 @@ export declare const enum L_Interaction {
   EntityMovedBackToLayer = "bp3.interaction.entity-moved-back-to-layer",
 }
 export declare const enum L_Assembly {
-  /** <Unnamed assembly> */
+  /** <Unnamed assembly __1__> */
   UnnamedAssembly = "bp3.assembly.unnamed-assembly",
+  /** <Layer __1__> */
+  UnnamedLayer = "bp3.assembly.unnamed-layer",
 }
 export declare const enum L_Gui {
   /** Rename assembly */
@@ -68,7 +70,7 @@ export declare const enum L_GuiNewAssembly {
 export declare const enum L_GuiCurrentAssembly {
   /** Assembly: */
   Assembly = "bp3.gui.current-assembly.assembly",
-  /** (None) */
+  /** (Not in an assembly) */
   NoAssembly = "bp3.gui.current-assembly.no-assembly",
   /** Open assembly settings */
   OpenAssemblySettings = "bp3.gui.current-assembly.open-assembly-settings",
@@ -84,6 +86,14 @@ export declare const enum L_GuiAssemblySettings {
   DeleteAssemblyConfirmation2 = "bp3.gui.assembly-settings.delete-assembly-confirmation2",
   /** This action cannot be undone. */
   DeleteAssemblyConfirmation3 = "bp3.gui.assembly-settings.delete-assembly-confirmation3",
+  /** Delete layer */
+  DeleteLayer = "bp3.gui.assembly-settings.delete-layer",
+  /** The first layer cannot be deleted. */
+  CannotDeleteFirstLayer = "bp3.gui.assembly-settings.cannot-delete-first-layer",
+  /** Are you sure you want to delete layer __1__? */
+  DeleteLayerConfirmation1 = "bp3.gui.assembly-settings.delete-layer-confirmation1",
+  /** Layer contents will be merged with the previous layer (__1__). */
+  DeleteLayerConfirmation2 = "bp3.gui.assembly-settings.delete-layer-confirmation2",
   /** New layer: */
   NewLayer = "bp3.gui.assembly-settings.new-layer",
   /** Insert above current */

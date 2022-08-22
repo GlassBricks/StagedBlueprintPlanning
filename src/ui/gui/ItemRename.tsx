@@ -9,41 +9,55 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly } from "../../assembly/Assembly"
 import { funcOn, RegisterClass } from "../../lib"
 import { Component, FactorioJsx, Spec } from "../../lib/factoriojsx"
 import { RenameButton } from "../../lib/factoriojsx/components/buttons"
 import { Fn } from "../../lib/factoriojsx/components/Fn"
-import { HorizontalSpacer } from "../../lib/factoriojsx/components/misc"
-import { state } from "../../lib/observable"
+import { MutableState, State, state } from "../../lib/observable"
 import { L_Gui } from "../../locale"
 
-@RegisterClass("gui:AssemblyRename")
-export class AssemblyRename extends Component<{ assembly: Assembly }> {
-  isRenaming = state(false)
-  assembly!: Assembly
+export interface ItemRenameProps {
+  readonly name: MutableState<string>
+  readonly displayName: State<LocalisedString>
+}
 
-  override render(props: { assembly: Assembly }): Spec {
-    this.assembly = props.assembly
+@RegisterClass("gui:ItemRename")
+export class ItemRename extends Component<ItemRenameProps> {
+  isRenaming = state(false)
+  item!: ItemRenameProps
+
+  override render(props: ItemRenameProps): Spec {
+    this.item = props
     return (
       <flow
         direction="horizontal"
         styleMod={{
           vertical_align: "center",
+          horizontal_spacing: 5,
         }}
       >
         <Fn uses="flow" from={this.isRenaming} map={funcOn(this.nameDisplay)} />
-        <HorizontalSpacer width={5} />
-        <RenameButton tooltip={[L_Gui.RenameAssembly]} onClick={this.isRenaming.toggleFn()} />
+        <RenameButton tooltip={[L_Gui.RenameAssembly]} on_gui_click={this.isRenaming.toggleFn()} />
       </flow>
     )
   }
 
   nameDisplay(isRenaming: boolean): Spec {
     return isRenaming ? (
-      <textfield text={this.assembly.name} lose_focus_on_confirm on_gui_confirmed={this.isRenaming.setValueFn(false)} />
+      <textfield
+        text={this.item.name}
+        clear_and_focus_on_right_click
+        lose_focus_on_confirm
+        on_gui_confirmed={this.isRenaming.setValueFn(false)}
+      />
     ) : (
-      <label style="subheader_caption_label" caption={this.assembly.displayName} />
+      <label
+        style="subheader_caption_label"
+        caption={this.item.displayName}
+        styleMod={{
+          maximal_width: 200,
+        }}
+      />
     )
   }
 }
