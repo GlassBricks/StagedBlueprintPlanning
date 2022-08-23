@@ -14,8 +14,11 @@ export interface BaseElementSpec {
   style?: string
   tags?: Tags
   anchor?: MaybeState<GuiAnchor | nil>
-  location?: MaybeState<GuiLocation | GuiLocationArray>
+  location?: MaybeMutableState<GuiLocation | GuiLocationArray>
   children?: Spec[]
+  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
+  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
+  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
 }
 
 export interface ChooseElemButtonElementSpec extends BaseElementSpec {
@@ -24,9 +27,6 @@ export interface ChooseElemButtonElementSpec extends BaseElementSpec {
   elem_filters?: MaybeState<ChooseElemButtonFilters[this["elem_type"]] | nil>
   elem_value?: MaybeMutableState<(this["elem_type"] extends "signal" ? SignalID : string) | nil>
   locked?: MaybeState<boolean>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<ChooseElemButtonGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -35,9 +35,6 @@ export interface DropDownElementSpec extends BaseElementSpec {
   type: "drop-down"
   items?: MaybeState<LocalisedString[]>
   selected_index?: MaybeMutableState<uint>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<DropDownGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -45,9 +42,6 @@ export interface DropDownElementSpec extends BaseElementSpec {
 export interface EmptyWidgetElementSpec extends BaseElementSpec {
   type: "empty-widget"
   drag_target?: MaybeState<FrameGuiElement | nil>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<EmptyWidgetGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -55,9 +49,6 @@ export interface EmptyWidgetElementSpec extends BaseElementSpec {
 export interface EntityPreviewElementSpec extends BaseElementSpec {
   type: "entity-preview"
   entity?: MaybeState<LuaEntity>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<EntityPreviewGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -66,9 +57,6 @@ export interface ListBoxElementSpec extends BaseElementSpec {
   type: "list-box"
   items?: MaybeState<LocalisedString[]>
   selected_index?: MaybeMutableState<uint>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<ListBoxGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -81,9 +69,6 @@ export interface ScrollPaneElementSpec extends BaseElementSpec {
   vertical_scroll_policy?: MaybeState<
     "auto" | "never" | "always" | "auto-and-reserve-space" | "dont-show-but-allow-scrolling"
   >
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<ScrollPaneGuiElement>
   styleMod?: ScrollPaneStyleMod
 }
@@ -96,9 +81,6 @@ export interface SpriteButtonElementSpec extends BaseElementSpec {
   number?: MaybeState<double | nil>
   show_percent_for_small_numbers?: MaybeState<boolean>
   mouse_button_filter?: MaybeState<MouseButtonFlagsWrite>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<SpriteButtonGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -106,9 +88,6 @@ export interface SpriteButtonElementSpec extends BaseElementSpec {
 export interface TabbedPaneElementSpec extends BaseElementSpec {
   type: "tabbed-pane"
   selected_tab_index?: MaybeMutableState<uint | nil>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<TabbedPaneGuiElement>
   styleMod?: TabbedPaneStyleMod
 }
@@ -120,10 +99,6 @@ export interface TextBoxElementSpec extends BaseElementSpec {
   selectable?: MaybeState<boolean>
   word_wrap?: MaybeState<boolean>
   read_only?: MaybeState<boolean>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_confirmed?: GuiEventHandler<OnGuiConfirmedEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<TextBoxGuiElement>
   styleMod?: TextBoxStyleMod
 }
@@ -131,9 +106,6 @@ export interface TextBoxElementSpec extends BaseElementSpec {
 export interface ButtonElementSpec extends BaseElementSpec {
   type: "button"
   mouse_button_filter?: MaybeState<MouseButtonFlagsWrite>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<ButtonGuiElement>
   styleMod?: ButtonStyleMod
 }
@@ -144,9 +116,6 @@ export interface CameraElementSpec extends BaseElementSpec {
   surface_index?: MaybeState<SurfaceIndex>
   zoom?: MaybeState<double>
   entity?: MaybeState<LuaEntity>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<CameraGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -154,9 +123,6 @@ export interface CameraElementSpec extends BaseElementSpec {
 export interface CheckboxElementSpec extends BaseElementSpec {
   type: "checkbox"
   state: MaybeMutableState<boolean>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<CheckboxGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -165,9 +131,6 @@ export interface FlowElementSpec extends BaseElementSpec {
   type: "flow"
   direction?: "horizontal" | "vertical"
   drag_target?: MaybeState<FrameGuiElement | nil>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<FlowGuiElement>
   styleMod?: FlowStyleMod
 }
@@ -177,10 +140,6 @@ export interface FrameElementSpec extends BaseElementSpec {
   direction?: "horizontal" | "vertical"
   auto_center?: MaybeState<boolean>
   drag_target?: MaybeState<FrameGuiElement | nil>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_location_changed?: GuiEventHandler<OnGuiLocationChangedEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<FrameGuiElement>
   styleMod?: FrameStyleMod
 }
@@ -188,9 +147,6 @@ export interface FrameElementSpec extends BaseElementSpec {
 export interface LabelElementSpec extends BaseElementSpec {
   type: "label"
   drag_target?: MaybeState<FrameGuiElement | nil>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<LabelGuiElement>
   styleMod?: LabelStyleMod
 }
@@ -198,9 +154,6 @@ export interface LabelElementSpec extends BaseElementSpec {
 export interface LineElementSpec extends BaseElementSpec {
   type: "line"
   direction?: "horizontal" | "vertical"
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<LineGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -214,9 +167,6 @@ export interface MinimapElementSpec extends BaseElementSpec {
   zoom?: MaybeState<double>
   minimap_player_index?: MaybeState<uint>
   entity?: MaybeState<LuaEntity>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<MinimapGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -224,9 +174,6 @@ export interface MinimapElementSpec extends BaseElementSpec {
 export interface ProgressBarElementSpec extends BaseElementSpec {
   type: "progressbar"
   value?: MaybeState<double>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<ProgressBarGuiElement>
   styleMod?: ProgressBarStyleMod
 }
@@ -234,9 +181,6 @@ export interface ProgressBarElementSpec extends BaseElementSpec {
 export interface RadioButtonElementSpec extends BaseElementSpec {
   type: "radiobutton"
   state: MaybeMutableState<boolean>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<RadioButtonGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -249,9 +193,6 @@ export interface SliderElementSpec extends BaseElementSpec {
   discrete_slider?: MaybeState<boolean>
   discrete_values?: MaybeState<boolean>
   slider_value?: MaybeMutableState<double>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<SliderGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -260,9 +201,6 @@ export interface SpriteElementSpec extends BaseElementSpec {
   type: "sprite"
   sprite?: MaybeState<SpritePath>
   resize_to_sprite?: MaybeState<boolean>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<SpriteGuiElement>
   styleMod?: SpriteStyleMod
 }
@@ -275,9 +213,6 @@ export interface SwitchElementSpec extends BaseElementSpec {
   left_label_tooltip?: MaybeState<LocalisedString>
   right_label_caption?: MaybeState<LocalisedString>
   right_label_tooltip?: MaybeState<LocalisedString>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<SwitchGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -285,9 +220,6 @@ export interface SwitchElementSpec extends BaseElementSpec {
 export interface TabElementSpec extends BaseElementSpec {
   type: "tab"
   badge_text?: MaybeState<LocalisedString>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<TabGuiElement>
   styleMod?: TabStyleMod
 }
@@ -300,9 +232,6 @@ export interface TableElementSpec extends BaseElementSpec {
   draw_horizontal_line_after_headers?: MaybeState<boolean>
   vertical_centering?: MaybeState<boolean>
   drag_target?: MaybeState<FrameGuiElement | nil>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<TableGuiElement>
   styleMod?: TableStyleMod
 }
@@ -316,10 +245,7 @@ export interface TextFieldElementSpec extends BaseElementSpec {
   is_password?: MaybeState<boolean>
   lose_focus_on_confirm?: MaybeState<boolean>
   clear_and_focus_on_right_click?: MaybeState<boolean>
-  on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_confirmed?: GuiEventHandler<OnGuiConfirmedEvent>
-  on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
-  on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
   onCreate?: OnCreateHandler<TextFieldGuiElement>
   styleMod?: TextFieldStyleMod
 }

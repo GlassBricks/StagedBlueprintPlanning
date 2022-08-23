@@ -11,7 +11,7 @@
 
 import { funcRef, registerFunctions } from "../../index"
 import { MaybeState } from "../../observable"
-import { destroy, FactorioJsx, GuiEvent, Spec, SpecChildren } from "../index"
+import { ClickEventHandler, destroy, FactorioJsx, GuiEvent, Spec, SpecChildren } from "../index"
 import { CloseButton } from "./buttons"
 
 export function TitleBar(props: { children?: SpecChildren }): Spec {
@@ -56,12 +56,12 @@ export function closeSelf(e: GuiEvent): void {
 registerFunctions("gui:TitleBar", { closeParentParent, closeSelf })
 
 // noinspection JSUnusedGlobalSymbols
-export function SimpleTitleBar(props: { title: MaybeState<LocalisedString> }): Spec {
+export function SimpleTitleBar(props: { title: MaybeState<LocalisedString>; onClose?: ClickEventHandler }): Spec {
   return (
     <TitleBar>
       <label caption={props.title} style="frame_title" ignored_by_interaction />
       <DraggableSpace />
-      <CloseButton on_gui_click={funcRef(closeParentParent)} />
+      <CloseButton on_gui_click={props.onClose ?? funcRef(closeParentParent)} />
     </TitleBar>
   )
 }

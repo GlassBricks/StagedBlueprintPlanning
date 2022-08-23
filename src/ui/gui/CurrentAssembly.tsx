@@ -10,14 +10,16 @@
  */
 
 import { Assembly, Layer } from "../../assembly/AssemblyDef"
-import { funcOn, funcRef, onPlayerInit, RegisterClass } from "../../lib"
+import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
 import { Component, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
+import { DotDotDotButton } from "../../lib/factoriojsx/components/buttons"
 import { Fn } from "../../lib/factoriojsx/components/Fn"
 import { HorizontalPusher } from "../../lib/factoriojsx/components/misc"
 import { TitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { MaybeState } from "../../lib/observable"
 import { L_GuiCurrentAssembly } from "../../locale"
 import { playerCurrentLayer } from "../player-position"
+import { openAllAssemblies } from "./AllAssemblies"
 import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"
 import { LayerSelector } from "./LayerSelector"
@@ -43,7 +45,7 @@ class CurrentAssembly extends Component {
             style="frame_title"
             styleMod={{
               font: "heading-2",
-              width: CurrentAssemblyWidth - 40,
+              width: CurrentAssemblyWidth - 80,
             }}
             caption={currentLayer.flatMap(funcRef(CurrentAssembly.mapLayerToAssemblyTitle))}
           />
@@ -52,6 +54,10 @@ class CurrentAssembly extends Component {
             tooltip={[L_GuiCurrentAssembly.OpenAssemblySettings]}
             enabled={currentLayer.truthy()}
             on_gui_click={funcOn(this.openAssemblySettings)}
+          />
+          <DotDotDotButton
+            tooltip={[L_GuiCurrentAssembly.ShowAllAssemblies]}
+            on_gui_click={funcRef(onOpenAllAssembliesClicked)}
           />
         </TitleBar>
         <Fn
@@ -71,6 +77,16 @@ class CurrentAssembly extends Component {
     openAssemblySettings(game.get_player(player_index)!, assembly)
   }
 }
+function onOpenAllAssembliesClicked(event: OnGuiClickEvent) {
+  const { player_index } = event
+  const player = game.get_player(player_index)
+  if (player) {
+    openAllAssemblies(player)
+  }
+}
+registerFunctions("gui:CurrentAssembly", {
+  onOpenAllAssembliesClicked,
+})
 
 const currentAssemblyName = script.mod_name + ":current-assembly"
 onPlayerInit((index) => {

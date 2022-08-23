@@ -10,7 +10,7 @@
  */
 
 import { Events } from "../Events"
-import { MutableState, Observer, State, Subscription } from "../observable"
+import { isMutableState, MutableState, Observer, State, Subscription } from "../observable"
 import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
@@ -188,10 +188,10 @@ function renderElement(
       }
       if (typeof isElemProp === "string") elemProps.set([isElemProp], value)
       else elemProps.set(key, value)
-      if (stateEvent) {
-        events[stateEvent] = bind(setStateFunc, value as MutableState<any>, key)
+      if (stateEvent && value instanceof State) {
+        if (isMutableState<any>(value)) events[stateEvent] = bind(setStateFunc, value, key)
         if (isSpecProp) {
-          guiSpec[key] = (value as State<any>).get()
+          guiSpec[key] = value.get()
         }
       }
     } else if (isSpecProp) {

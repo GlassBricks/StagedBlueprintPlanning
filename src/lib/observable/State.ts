@@ -147,6 +147,10 @@ export function state<T>(value: T): MutableState<T> {
   return new MutableStateImpl(value)
 }
 
+export function isMutableState<T>(state: State<T>): state is MutableState<T> {
+  return state instanceof MutableStateImpl
+}
+
 @RegisterClass("MappedState")
 class MappedState<T, U> extends State<U> {
   private sourceSubscription: Subscription | nil

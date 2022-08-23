@@ -120,8 +120,8 @@ type SpecDef = Record<string, SpecProp>
 
 const elementSpecs = {} as Record<GuiElementType | "base", SpecDef>
 const styleMods = {} as Record<GuiElementType | "base", SpecDef>
-const events = {} as Record<GuiElementType, Record<string, true | string>>
-const stateProps = {} as Record<GuiElementType, Record<string, string>>
+const events = {} as Record<GuiElementType | "base", Record<string, true | string>>
+const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
 
 // read and process types
 {
@@ -218,6 +218,10 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
 
   // gui events
 
+  for (const elemType of guiElementTypes) {
+    events[elemType] = {}
+    stateProps[elemType] = {}
+  }
   for (const def of guiEventsFile.statements) {
     if (!ts.isInterfaceDeclaration(def)) continue
     const name = def.name.text
@@ -226,11 +230,8 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
     if (!match) continue
     const matchName = match[1]
     const elemType = normElemTypeNames[normalizeName(matchName)]
-    if (!elemType || elemType === "base" || elemType === "other")
-      throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
+    if (!elemType || elemType === "other") throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
 
-    events[elemType] = {}
-    stateProps[elemType] = {}
     const evs = events[elemType]
     const evProps = stateProps[elemType]
     for (const member of def.members) {
@@ -276,8 +277,7 @@ const stateProps = {} as Record<GuiElementType, Record<string, string>>
       if (attr.optional) {
         attrType += " | nil"
       }
-      const typeName =
-        type !== "base" && stateProps[type][name] ? `MaybeMutableState<${attrType}>` : `MaybeState<${attrType}>`
+      const typeName = stateProps[type][name] ? `MaybeMutableState<${attrType}>` : `MaybeState<${attrType}>`
       merge(name, {
         name,
         type: typeName,
@@ -364,7 +364,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
         set(name, null)
         continue
       }
-      if (type !== "base" && stateProps[type][name]) {
+      if (stateProps[type][name]) {
         value.push(stateProps[type][name])
       }
       set(
@@ -372,7 +372,6 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
         value.map((x) => x ?? false),
       )
     }
-    if (type === "base") continue
     for (const event of Object.keys(events[type])) {
       set(event, "event")
     }
@@ -419,7 +418,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
         )
       }
       // events
-      if (events && type !== "base")
+      if (events)
         for (const [name, value] of Object.entries(events[type as GuiElementType])) {
           if (value !== true) continue
           const type = ts.factory.createTypeReferenceNode("GuiEventHandler", [

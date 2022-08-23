@@ -45,6 +45,24 @@ export declare const enum L_Assembly {
   /** <Layer __1__> */
   UnnamedLayer = "bp3.assembly.unnamed-layer",
 }
+export declare const enum L_GuiCurrentAssembly {
+  /** Assembly: */
+  Assembly = "bp3.gui.current-assembly.assembly",
+  /** (Not in an assembly) */
+  NoAssembly = "bp3.gui.current-assembly.no-assembly",
+  /** Open assembly settings */
+  OpenAssemblySettings = "bp3.gui.current-assembly.open-assembly-settings",
+  /** Show all assemblies */
+  ShowAllAssemblies = "bp3.gui.current-assembly.show-all-assemblies",
+}
+export declare const enum L_GuiAllAssemblies {
+  /** All assemblies */
+  Title = "bp3.gui.all-assemblies.title",
+  /** New assembly [img=info] */
+  NewAssembly = "bp3.gui.all-assemblies.new-assembly",
+  /** You can also use the tool shortcut (bottom right) to create a new assembly */
+  NewAssemblyTooltip = "bp3.gui.all-assemblies.new-assembly-tooltip",
+}
 export declare const enum L_GuiNewAssembly {
   /** New Assembly */
   Title = "bp3.gui.new-assembly.title",
@@ -61,14 +79,6 @@ export declare const enum L_GuiNewAssembly {
   /** Invalid specified number of layers */
   InvalidNumLayers = "bp3.gui.new-assembly.invalid-num-layers",
 }
-export declare const enum L_GuiCurrentAssembly {
-  /** Assembly: */
-  Assembly = "bp3.gui.current-assembly.assembly",
-  /** (Not in an assembly) */
-  NoAssembly = "bp3.gui.current-assembly.no-assembly",
-  /** Open assembly settings */
-  OpenAssemblySettings = "bp3.gui.current-assembly.open-assembly-settings",
-}
 export declare const enum L_GuiAssemblySettings {
   /** Assembly */
   Title = "bp3.gui.assembly-settings.title",
@@ -78,9 +88,9 @@ export declare const enum L_GuiAssemblySettings {
   RenameLayer = "bp3.gui.assembly-settings.rename-layer",
   /** New layer: */
   NewLayer = "bp3.gui.assembly-settings.new-layer",
-  /** Insert above current */
+  /** Insert before current */
   InsertAboveCurrent = "bp3.gui.assembly-settings.insert-above-current",
-  /** At end */
+  /** Add at end */
   AtEnd = "bp3.gui.assembly-settings.at-end",
   /** Delete assembly */
   DeleteAssembly = "bp3.gui.assembly-settings.delete-assembly",

@@ -16,8 +16,9 @@ import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../
 import { TrashButton } from "../../lib/factoriojsx/components/buttons"
 import { showDialog } from "../../lib/factoriojsx/components/Dialog"
 import { Fn } from "../../lib/factoriojsx/components/Fn"
-import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/components/misc"
+import { HorizontalPusher } from "../../lib/factoriojsx/components/misc"
 import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
+import { Pos } from "../../lib/geometry"
 import { state } from "../../lib/observable"
 import { L_GuiAssemblySettings } from "../../locale"
 import { teleportToLayer, teleportToSurface1 } from "../player-position"
@@ -48,13 +49,13 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
 
     global.players[this.playerIndex].currentAssemblySettings = this
     tracker.onMount((e) => (this.element = e))
-    tracker.getSubscription().add(funcOn(this.onClose))
+    tracker.getSubscription().add(funcOn(this.onDestroyed))
 
     this.assembly.localEvents.subscribe(tracker.getSubscription(), funcOn(this.onAssemblyEvent))
 
     return (
-      <frame direction="vertical" auto_center>
-        <SimpleTitleBar title={[L_GuiAssemblySettings.Title]} />
+      <frame direction="vertical">
+        <SimpleTitleBar title={[L_GuiAssemblySettings.Title]} onClose={funcOn(this.onClose)} />
 
         <frame style="inside_shallow_frame" direction="vertical">
           <frame style="subheader_frame" direction="horizontal">
@@ -73,8 +74,13 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
               vertical_align: "center",
             }}
           >
-            <label style="caption_label" caption={[L_GuiAssemblySettings.NewLayer]} />
-            <HorizontalSpacer width={10} />
+            <label
+              style="caption_label"
+              caption={[L_GuiAssemblySettings.NewLayer]}
+              styleMod={{
+                right_margin: 10,
+              }}
+            />
             <button caption={[L_GuiAssemblySettings.AtEnd]} on_gui_click={funcOn(this.addLayer)} />
             <button
               caption={[L_GuiAssemblySettings.InsertAboveCurrent]}
@@ -115,14 +121,17 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     )
   }
 
-  private onClose() {
-    destroy(this.element)
+  private onDestroyed() {
     delete global.players[this.playerIndex].currentAssemblySettings
+  }
+
+  private onClose() {
+    this.element.visible = false
   }
 
   private onAssemblyEvent(_: any, event: LocalAssemblyEvent) {
     if (event.type === "assembly-deleted") {
-      this.onClose()
+      destroy(this.element)
     } else if (event.type !== "layer-added" && event.type !== "pre-layer-deleted" && event.type !== "layer-deleted") {
       assertNever(event)
     }
@@ -247,11 +256,23 @@ export class LayerSettings extends Component<{ layer: Layer }> {
     AssemblyOperations.resetLayer(this.layer.assembly, this.layer)
   }
 }
-const AssemblySettingsName = script.mod_name + ":AssemblySettings"
 
+const AssemblySettingsName = script.mod_name + ":AssemblySettings"
+const defaultLocation = Pos(20, 200)
 export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): void {
   const existing = global.players[player.index].currentAssemblySettings
-  if (existing && existing.assembly === assembly) existing.element.bring_to_front()
-
-  renderNamed(<AssemblySettings assembly={assembly} />, player.gui.screen, AssemblySettingsName)
+  const existingValid = existing && existing.element.valid
+  if (existingValid && existing.assembly === assembly) {
+    existing.element.visible = true
+    existing.element.bring_to_front()
+  } else {
+    const location = existingValid ? existing.element.location : defaultLocation
+    const element = renderNamed(
+      <AssemblySettings assembly={assembly} />,
+      player.gui.screen,
+      AssemblySettingsName,
+    ) as FrameGuiElement
+    element.location = location
+    element.bring_to_front()
+  }
 }

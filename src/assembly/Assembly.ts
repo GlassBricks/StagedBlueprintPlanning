@@ -88,9 +88,9 @@ class AssemblyImpl implements Assembly {
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getLayerAt(surface: LuaSurface, _position: Position): Layer | nil {
-    const layerIndex = this.surfaceIndexToLayerNumber.get(surface.index)
-    if (layerIndex === nil) return nil
-    return this.layers[layerIndex]
+    const layerNum = this.surfaceIndexToLayerNumber.get(surface.index)
+    if (layerNum === nil) return nil
+    return this.layers[layerNum]
   }
 
   insertLayer(index: LayerNumber): Layer {
@@ -221,6 +221,10 @@ function prepareAssemblySurfaces(area: BBox, numLayers: number): LuaSurface[] {
     surfaces.push(surface)
   }
   return surfaces
+}
+
+export function getAllAssemblies(): Assembly[] {
+  return Object.values(global.assemblies)
 }
 
 export function _deleteAllAssemblies(): void {

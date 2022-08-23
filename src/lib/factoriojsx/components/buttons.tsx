@@ -40,6 +40,15 @@ export function TrashButton(props: Partial<ElemProps<"sprite-button">>): Spec {
   return <sprite-button style="tool_button_red" sprite={"utility/trash"} mouse_button_filter={["left"]} {...props} />
 }
 
-export function DotDotDotButton(props: Partial<ElemProps<"button">>): Spec {
-  return <button style="tool_button" caption="..." mouse_button_filter={["left"]} {...props} />
+export function DotDotDotButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+  return (
+    <sprite-button
+      style="frame_action_button"
+      sprite="utility/expand_dots_white"
+      hovered_sprite="utility/expand_dots"
+      clicked_sprite="utility/expand_dots"
+      mouse_button_filter={["left"]}
+      {...props}
+    />
+  )
 }
