@@ -331,22 +331,17 @@ Events.on_selected_entity_changed((e) => {
 
 // Cleanup tool
 
-Events.on_player_selected_area((e) => {
+function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
   if (e.item !== Prototypes.CleanupTool) return
   for (const entity of e.entities) {
     const [assembly, layer] = getAssemblyAt(entity)
     if (!assembly) continue
-    DefaultAssemblyUpdater.onErrorEntityRevived(assembly, entity, layer)
+    DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, layer)
   }
-})
+}
 
-Events.on_player_alt_selected_area((e) => {
-  if (e.item !== Prototypes.CleanupTool) return
-  for (const entity of e.entities) {
-    const [assembly, layer] = getAssemblyAt(entity)
-    if (!assembly) continue
-    DefaultAssemblyUpdater.onSettingsRemnantDeleted(assembly, entity, layer)
-  }
+Events.onAll({
+  on_player_selected_area: checkCleanupTool,
+  on_player_alt_selected_area: checkCleanupTool,
 })
-
 export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil

@@ -473,38 +473,21 @@ describe("cleanup tool", () => {
     const proxy = createEntity({ name: Prototypes.SelectionProxyPrefix + "test" })
     return { added, proxy }
   }
-  test("onErrorEntityRevived", () => {
+  test("revive error entity", () => {
     const { added, proxy } = setupWithProxy()
-    assemblyUpdater.onErrorEntityRevived(assembly, proxy, layer)
+    assemblyUpdater.onCleanupToolUsed(assembly, proxy, layer)
     assert.nil(added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, 1, false)
   })
 
-  test("onErrorEntityRevived ignored if settings remnant", () => {
+  test("clear settings remnant", () => {
     const { added, proxy } = setupWithProxy()
     added.isSettingsRemnant = true
-    assemblyUpdater.onErrorEntityRevived(assembly, proxy, layer)
-    assert.nil(added.getWorldEntity(1))
-    assertOneEntity()
-    assertNoCalls()
-  })
-
-  test("onSettingsRemnantRemoved", () => {
-    const { added, proxy } = setupWithProxy()
-    added.isSettingsRemnant = true
-    assemblyUpdater.onSettingsRemnantDeleted(assembly, proxy, layer)
+    assemblyUpdater.onCleanupToolUsed(assembly, proxy, layer)
     assert.nil(added.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
-  })
-
-  test("onSettingsRemnantRemoved ignored if not settings remnant", () => {
-    const { added, proxy } = setupWithProxy()
-    assemblyUpdater.onSettingsRemnantDeleted(assembly, proxy, layer)
-    assert.nil(added.getWorldEntity(1))
-    assertOneEntity()
-    assertNoCalls()
   })
 })
 

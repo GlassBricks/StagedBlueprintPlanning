@@ -347,7 +347,7 @@ describe("Cleanup tool", () => {
       tiles: [],
     })
     assert
-      .spy(updater.onErrorEntityRevived)
+      .spy(updater.onCleanupToolUsed)
       .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
   })
   test("delete settings remnant", () => {
@@ -366,7 +366,7 @@ describe("Cleanup tool", () => {
       tiles: [],
     })
     assert
-      .spy(updater.onSettingsRemnantDeleted)
+      .spy(updater.onCleanupToolUsed)
       .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
   })
 })

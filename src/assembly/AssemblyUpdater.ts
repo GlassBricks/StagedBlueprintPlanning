@@ -50,11 +50,7 @@ export interface AssemblyUpdater {
   /** Handles possible circuit wires changes of an entity. */
   onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 
-  /** When cleanup tool is normal-selected on an error entity. */
-  onErrorEntityRevived(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
-
-  /** When cleanup tool is alt-selected on a settings remnant entity. */
-  onSettingsRemnantDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
+  onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
 }
 
 /**
@@ -333,17 +329,18 @@ export function createAssemblyUpdater(
     return existing
   }
 
-  function onErrorEntityRevived(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
+  function onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
     const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
-    if (!existing || existing.isSettingsRemnant || layer.layerNumber < existing.getBaseLayer()) return
-    updateWorldEntities(assembly, existing, layer.layerNumber, layer.layerNumber)
-  }
-
-  function onSettingsRemnantDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
-    const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
-    if (!existing || !existing.isSettingsRemnant) return
-    assembly.content.delete(existing)
-    deleteWorldEntities(existing)
+    if (!existing) return
+    if (!existing.isSettingsRemnant) {
+      // this is an error entity, try revive
+      if (layer.layerNumber < existing.getBaseLayer()) return
+      updateWorldEntities(assembly, existing, layer.layerNumber, layer.layerNumber)
+    } else {
+      // settings remnant, remove
+      assembly.content.delete(existing)
+      deleteWorldEntities(existing)
+    }
   }
 
   return {
@@ -352,8 +349,7 @@ export function createAssemblyUpdater(
     onEntityPotentiallyUpdated,
     onEntityMarkedForUpgrade,
     onCircuitWiresPotentiallyUpdated,
-    onErrorEntityRevived,
-    onSettingsRemnantDeleted,
+    onCleanupToolUsed,
   }
 }
 

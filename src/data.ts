@@ -114,7 +114,6 @@ data.extend([assemblyAddTool])
 
 // light yellow
 const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
-const cleanupToolDeleteColor: ColorArray = [0.9, 0.2, 0.2, 0.5]
 const cleanupTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.CleanupTool,
@@ -143,8 +142,8 @@ const cleanupTool: SelectionToolPrototype = {
   selection_cursor_box_type: "entity",
 
   alt_selection_mode: ["entity-with-owner"],
-  alt_selection_color: cleanupToolDeleteColor,
-  alt_selection_cursor_box_type: "not-allowed",
+  alt_selection_color: cleanupToolColor,
+  alt_selection_cursor_box_type: "entity",
 
   reverse_selection_mode: ["nothing"],
 
