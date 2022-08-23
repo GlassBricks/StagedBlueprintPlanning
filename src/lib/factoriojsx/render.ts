@@ -384,7 +384,7 @@ for (const [name] of pairs(guiEventNames)) {
     if (!instance) return
     const event = instance.events[name]
     if (event) {
-      protectedAction(e.player_index, event.invoke, event, e)
+      protectedAction(event.invoke, event, e)
     }
   })
 }

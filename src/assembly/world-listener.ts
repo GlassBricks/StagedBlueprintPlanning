@@ -13,12 +13,14 @@ import { CustomInputs, Prototypes } from "../constants"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
-import { Events } from "../lib"
 import { Pos } from "../lib/geometry"
+import { ProtectedEvents } from "../lib/ProtectedEvents"
 import { Assembly, Layer } from "./AssemblyDef"
 import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from "./blueprint-paste"
 import { getAssemblyAtPosition } from "./world-register"
+
+const Events = ProtectedEvents
 
 function getAssemblyAt(entity: LuaEntity): LuaMultiReturn<[Assembly, Layer] | [nil]> {
   if (

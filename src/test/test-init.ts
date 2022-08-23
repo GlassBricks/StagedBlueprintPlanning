@@ -94,7 +94,7 @@ if (script.active_mods.testorio !== nil) {
       if (result.status === "passed") {
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()
-        protectedAction(player, () => {
+        protectedAction(() => {
           openAssemblySettings(player, assembly)
         })
       }

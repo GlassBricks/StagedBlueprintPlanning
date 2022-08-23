@@ -10,42 +10,23 @@
  */
 
 import { L_Interaction } from "../../locale"
-import { protectedAction, raiseUserError } from "../protected-action"
-import { getPlayer } from "./misc"
+import { protectedAction } from "../protected-action"
 
 test("Protected action with no error", () => {
-  const player = getPlayer()
-  const result = protectedAction(player, () => "test")
+  const result = protectedAction(() => "test")
   assert.same("test", result)
 })
 
-test("Protected action with user error", () => {
-  const player = getPlayer()
-  rawset(player, "print", player.print)
-  const print = stub(player, "print")
-  const result = protectedAction(player, () => {
-    raiseUserError("test", "print")
-  })
-  assert.is_nil(result)
-  assert.spy(print).called_with("test")
-})
-
-test("Protected action with user error using flying text", () => {
-  const player = getPlayer()
-  rawset(player, "create_local_flying_text", player.create_local_flying_text)
-  const fn = stub(player, "create_local_flying_text")
-  const result = protectedAction(player, () => {
-    raiseUserError("test", "flying-text")
-  })
-  assert.is_nil(result)
-  assert.spy(fn).called()
-})
-
 test("Protected action with unexpected error", () => {
-  const player = getPlayer()
-  rawset(player, "print", player.print)
-  const print = stub(player, "print")
-  const result = protectedAction(player, () => error("test"))
+  const sp = spy()
+  rawset(game, "print", sp)
+  after_test(() => rawset(game, "print", nil!))
+
+  const result = protectedAction(() => error("test1231"))
   assert.is_nil(result)
-  assert.equal(L_Interaction.UnexpectedError, (print.calls[0].vals[0] as [string])[0])
+  const called = sp.calls[0].refs[0] as [string, string]
+  assert.equal(L_Interaction.UnexpectedError, called[0])
+  const data = called[1]
+  assert.is_string(data)
+  assert.match("test1231", data)
 })

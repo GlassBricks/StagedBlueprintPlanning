@@ -27,18 +27,18 @@ export type EventHandlers = {
   [E in keyof NamedEventTypes]?: (data: NamedEventTypes[E]) => void
 }
 
-type EventDataOf<T extends EventId<any, any> | string> = T extends EventId<any, any>
+export type EventDataOf<T extends EventId<any, any> | string> = T extends EventId<any, any>
   ? T["_eventData"]
   : T extends string
   ? CustomInputEvent
   : never
 
-type ShorthandRegister = {
+export type ShorthandRegister = {
   -readonly [E in keyof NamedEventTypes]: (handler: (data: NamedEventTypes[E]) => void) => void
 }
 
 /** @noSelf */
-export interface EventsObj extends ShorthandRegister {
+export interface EventsRegistration extends ShorthandRegister {
   /**
    * Registers an event handler by id only. This can be called multiple times, and the event handlers will be called in
    * the order that they are registered.
@@ -55,7 +55,10 @@ export interface EventsObj extends ShorthandRegister {
   onAll(handlers: EventHandlers): void
 
   onInitOrLoad(f: () => void): void
+}
 
+/** @noSelf */
+export interface EventsObj extends EventsRegistration {
   clearHandlers<E extends EventId<any, any> | string>(event: E): void
 
   raiseFakeEvent<E extends EventId<any, any>>(event: E, data: E["_eventData"]): void
@@ -69,7 +72,7 @@ export const scriptEventIds: Record<keyof ScriptEvents, symbol> = {
   on_load: Symbol("on_load"),
   on_configuration_changed: Symbol("on_configuration_changed"),
 }
-type AnyHandler = (data?: any) => void
+export type AnyHandler = (this: void, data?: any) => void
 
 // number -- event id
 // string -- custom input handler
