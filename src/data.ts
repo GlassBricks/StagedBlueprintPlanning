@@ -153,7 +153,11 @@ const cleanupTool: SelectionToolPrototype = {
   reverse_selection_cursor_box_type: "not-allowed",
 }
 
-function selectionToolToShortcut(prototype: SelectionToolPrototype, icon: Sprite): ShortcutPrototype {
+function selectionToolToShortcut(
+  prototype: SelectionToolPrototype,
+  icon: Sprite,
+  associatedControl?: string,
+): ShortcutPrototype {
   const value: ShortcutPrototype = {
     type: "shortcut",
     name: prototype.name,
@@ -162,10 +166,10 @@ function selectionToolToShortcut(prototype: SelectionToolPrototype, icon: Sprite
     item_to_spawn: prototype.name,
     icon,
     style: "blue",
+    associated_control_input: associatedControl,
   }
   return value
 }
-
 const getCleanupToolInput: CustomInputPrototype = {
   type: "custom-input",
   name: Prototypes.CleanupTool,
@@ -182,10 +186,14 @@ data.extend([
     filename: "__bbpp3__/graphics/icons/assembly-add-white.png",
     size: 64,
   }),
-  selectionToolToShortcut(cleanupTool, {
-    filename: "__bbpp3__/graphics/icons/cleanup-white.png",
-    size: 64,
-  }),
+  selectionToolToShortcut(
+    cleanupTool,
+    {
+      filename: "__bbpp3__/graphics/icons/cleanup-white.png",
+      size: 64,
+    },
+    Prototypes.CleanupTool,
+  ),
   getCleanupToolInput,
 ])
 

@@ -9,6 +9,11 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**
+ * This file handles player navigation.
+ * For assembly editing, see assembly/world-listener.ts.
+ */
+
 import { Layer } from "../assembly/AssemblyDef"
 import { getLayerAtPosition } from "../assembly/world-register"
 import { CustomInputs, Prototypes, Settings } from "../constants"

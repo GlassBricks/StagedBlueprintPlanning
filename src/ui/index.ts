@@ -10,5 +10,5 @@
  */
 
 import "./assembly-creation"
-import "./custom-inputs"
 import "./gui"
+import "./player-navigation"
