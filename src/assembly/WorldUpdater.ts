@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyContent } from "./AssemblyContent"
 import { DefaultEntityHighlighter, EntityHighlighter } from "./EntityHighlighter"
@@ -23,24 +23,24 @@ import { DefaultWireHandler, WireUpdater } from "./WireHandler"
  */
 export interface WorldUpdater {
   /**
-   * Re-syncs all layer entities for a given assembly entity.
+   * Re-syncs all stage entities for a given assembly entity.
    * @param assembly the assembly position info
    * @param entity the assembly entity
-   * @param startLayer
-   * @param endLayer inclusive. If not specified, defaults to the max assembly layer
+   * @param startStage
+   * @param endStage inclusive. If not specified, defaults to the max assembly stage
    * @param replace if entities should be replaced (deleted and created) instead of updated
    */
   updateWorldEntities(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    startLayer: LayerNumber,
-    endLayer?: LayerNumber,
+    startStage: StageNumber,
+    endStage?: StageNumber,
     replace?: boolean,
   ): void
 
-  forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, layer: LayerNumber): void
+  forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void
 
-  deleteWorldEntitiesInLayer(entity: AssemblyEntity, layer: LayerNumber): void
+  deleteWorldEntitiesInStage(entity: AssemblyEntity, stage: StageNumber): void
 
   deleteWorldEntities(entity: AssemblyEntity): void
   deleteExtraEntitiesOnly(entity: AssemblyEntity): void
@@ -61,35 +61,35 @@ export function createWorldUpdater(
   function doUpdateWorldEntities(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    startLayer: number,
-    endLayer: number,
+    startStage: number,
+    endStage: number,
     replace: boolean | undefined,
   ): void {
-    const baseLayer = entity.getBaseLayer()
+    const baseStage = entity.getBaseStage()
 
     const direction = entity.direction ?? 0
-    for (const [layerNum, value] of entity.iterateValues(startLayer, endLayer)) {
+    for (const [stageNum, value] of entity.iterateValues(startStage, endStage)) {
       if (value === nil) {
-        entity.destroyWorldEntity(layerNum, "mainEntity")
+        entity.destroyWorldEntity(stageNum, "mainEntity")
         continue
       }
 
-      const existing = entity.getWorldEntity(layerNum)
+      const existing = entity.getWorldEntity(stageNum)
       let luaEntity: LuaEntity | undefined
       if (existing && !replace) {
         existing.direction = direction
         luaEntity = updateEntity(existing, value)
-        entity.replaceWorldEntity(layerNum, luaEntity)
+        entity.replaceWorldEntity(stageNum, luaEntity)
       } else {
         if (existing) existing.destroy()
-        luaEntity = createEntity(assembly.getLayer(layerNum)!, entity, value)
-        entity.replaceWorldEntity(layerNum, luaEntity)
+        luaEntity = createEntity(assembly.getStage(stageNum)!, entity, value)
+        entity.replaceWorldEntity(stageNum, luaEntity)
       }
 
       if (luaEntity) {
-        if (layerNum !== baseLayer) makeEntityIndestructible(luaEntity)
+        if (stageNum !== baseStage) makeEntityIndestructible(luaEntity)
         else makeEntityDestructible(luaEntity)
-        updateWireConnections(assembly, entity, layerNum, luaEntity)
+        updateWireConnections(assembly, entity, stageNum, luaEntity)
       }
     }
   }
@@ -97,24 +97,24 @@ export function createWorldUpdater(
   function updateWorldEntities(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    startLayer: LayerNumber,
-    endLayer?: LayerNumber,
+    startStage: StageNumber,
+    endStage?: StageNumber,
     replace?: boolean,
   ): void {
     assert(!entity.isSettingsRemnant)
 
-    if (startLayer < 1) startLayer = 1
-    const maxLayer = assembly.numLayers()
-    if (!endLayer || endLayer > maxLayer) endLayer = maxLayer
-    if (startLayer > endLayer) return
+    if (startStage < 1) startStage = 1
+    const maxStage = assembly.numStages()
+    if (!endStage || endStage > maxStage) endStage = maxStage
+    if (startStage > endStage) return
 
-    doUpdateWorldEntities(assembly, entity, startLayer, endLayer, replace)
-    updateHighlights(assembly, entity, startLayer, endLayer)
+    doUpdateWorldEntities(assembly, entity, startStage, endStage, replace)
+    updateHighlights(assembly, entity, startStage, endStage)
   }
 
-  function forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, layer: LayerNumber): void {
-    entity.destroyWorldEntity(layer, "mainEntity")
-    updateHighlights(assembly, entity, layer, layer)
+  function forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void {
+    entity.destroyWorldEntity(stage, "mainEntity")
+    updateHighlights(assembly, entity, stage, stage)
   }
 
   function makeEntityIndestructible(entity: LuaEntity) {
@@ -135,7 +135,7 @@ export function createWorldUpdater(
   }
   function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     assert(!entity.isSettingsRemnant)
-    doUpdateWorldEntities(assembly, entity, 1, assembly.numLayers(), true)
+    doUpdateWorldEntities(assembly, entity, 1, assembly.numStages(), true)
     highlighter.reviveSettingsRemnant(assembly, entity)
   }
 
@@ -146,9 +146,9 @@ export function createWorldUpdater(
       entity.destroyAllWorldEntities("mainEntity")
       highlighter.deleteHighlights(entity)
     },
-    deleteWorldEntitiesInLayer(entity: AssemblyEntity, layer: LayerNumber): void {
-      entity.destroyWorldEntity(layer, "mainEntity")
-      highlighter.deleteHighlightsInLayer(entity, layer)
+    deleteWorldEntitiesInStage(entity: AssemblyEntity, stage: StageNumber): void {
+      entity.destroyWorldEntity(stage, "mainEntity")
+      highlighter.deleteHighlightsInStage(entity, stage)
     },
     deleteExtraEntitiesOnly(entity: AssemblyEntity): void {
       highlighter.deleteHighlights(entity)

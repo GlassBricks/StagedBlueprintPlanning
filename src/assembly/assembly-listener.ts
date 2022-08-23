@@ -21,17 +21,17 @@ AssemblyEvents.addListener((e) => {
       AssemblyOperations.deleteAllExtraEntitiesOnly(e.assembly)
       break
     }
-    case "layer-added": {
-      AssemblyOperations.resetLayer(e.assembly, e.layer)
+    case "stage-added": {
+      AssemblyOperations.resetStage(e.assembly, e.stage)
       break
     }
-    case "pre-layer-deleted": {
-      AssemblyOperations.deleteLayerEntities(e.assembly, e.layer.layerNumber)
+    case "pre-stage-deleted": {
+      AssemblyOperations.deleteStageEntities(e.assembly, e.stage.stageNumber)
       break
     }
-    case "layer-deleted": {
-      const previousLayer = e.assembly.getLayer(e.layer.layerNumber - 1)
-      if (previousLayer) AssemblyOperations.resetLayer(e.assembly, previousLayer)
+    case "stage-deleted": {
+      const previousStage = e.assembly.getStage(e.stage.stageNumber - 1)
+      if (previousStage) AssemblyOperations.resetStage(e.assembly, previousStage)
       break
     }
     default:

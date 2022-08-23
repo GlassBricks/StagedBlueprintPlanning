@@ -14,7 +14,7 @@ import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
-import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
 import { createMockEntityCreator, MockEntityCreator } from "../../entity/EntityHandler-mock"
@@ -50,7 +50,7 @@ before_each(() => {
   highlighter = {
     updateHighlights: spy(),
     deleteHighlights: spy(),
-    deleteHighlightsInLayer: spy(),
+    deleteHighlightsInStage: spy(),
     makeSettingsRemnant: spy(),
     reviveSettingsRemnant: spy(),
   }
@@ -58,19 +58,19 @@ before_each(() => {
   worldUpdater = createWorldUpdater(mockEntityCreator, wireUpdater, highlighter)
 })
 
-function assertEntityNotPresent(i: LayerNumber): void {
+function assertEntityNotPresent(i: StageNumber): void {
   assert.falsy(mockEntityCreator.getAt(i) ?? nil)
   assert.is_nil(entity.getWorldEntity(i))
 }
 
-function assertEntityCorrect(i: LayerNumber): LuaEntity {
+function assertEntityCorrect(i: StageNumber): LuaEntity {
   const entry = mockEntityCreator.getAt(i)!
   assert.not_nil(entry)
   assert(entry.luaEntity.valid)
   assert.equal(entry.luaEntity, entity.getWorldEntity(i) ?? "nil")
   assert.equal(entity.direction ?? 0, entry.luaEntity.direction)
-  const valueAtLayer = entity.getValueAtLayer(i)
-  assert.same(valueAtLayer, entry.value, `value not equal at layer ${i}`)
+  const valueAtStage = entity.getValueAtStage(i)
+  assert.same(valueAtStage, entry.value, `value not equal at stage ${i}`)
   return entry.luaEntity
 }
 
@@ -78,14 +78,14 @@ describe("updateWorldEntities", () => {
   describe.each([false, true], "with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
-        entity._applyDiffAtLayer(entity.getBaseLayer(), { prop1: 2 })
-        entity._applyDiffAtLayer(3, { prop1: 1 })
+        entity._applyDiffAtStage(entity.getBaseStage(), { prop1: 2 })
+        entity._applyDiffAtStage(3, { prop1: 1 })
       })
     }
-    test.each([1, 2, 3], "can create one entity %d", (layer) => {
-      worldUpdater.updateWorldEntities(assembly, entity, layer, layer)
+    test.each([1, 2, 3], "can create one entity %d", (stage) => {
+      worldUpdater.updateWorldEntities(assembly, entity, stage, stage)
       for (let i = 1; i <= 3; i++) {
-        if (i === layer) assertEntityCorrect(i)
+        if (i === stage) assertEntityCorrect(i)
         else assertEntityNotPresent(i)
       }
     })
@@ -95,7 +95,7 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = mockEntityCreator.createEntity(assembly.getLayer(2)!, entity, {
+      const replaced = mockEntityCreator.createEntity(assembly.getStage(2)!, entity, {
         name: "test",
         prop1: 10,
       } as TestEntity)!
@@ -123,7 +123,7 @@ describe("updateWorldEntities", () => {
 
     test("can upgrade entities", () => {
       worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
-      entity._applyDiffAtLayer(1, { name: "test2" })
+      entity._applyDiffAtStage(1, { name: "test2" })
       const oldEntry = mockEntityCreator.getAt(1)!
       worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
       assertEntityCorrect(1)
@@ -145,10 +145,10 @@ describe("updateWorldEntities", () => {
     assert.false(luaEntity.destructible, "destructible always false")
   }
 
-  test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {
-    entity.moveToLayer(2)
+  test.each([true, false])("entities not in base stage are indestructible, with existing: %s", (withExisting) => {
+    entity.moveToStage(2)
     if (withExisting) {
-      const luaEntity = mockEntityCreator.createEntity(assembly.getLayer(3)!, entity, {
+      const luaEntity = mockEntityCreator.createEntity(assembly.getStage(3)!, entity, {
         name: "test",
         prop1: 10,
       } as TestEntity)!
@@ -163,7 +163,7 @@ describe("updateWorldEntities", () => {
 
   test("can handle entity moving up", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-    entity.moveToLayer(2)
+    entity.moveToStage(2)
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
 
     assert.nil(mockEntityCreator.getAt(1))
@@ -200,7 +200,7 @@ test("force delete", () => {
   assertEntityCorrect(3)
 })
 
-describe("invalid layers", () => {
+describe("invalid stages", () => {
   test("out of range is ignored", () => {
     assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1, 5))
     for (let i = -1; i <= 5; i++) {

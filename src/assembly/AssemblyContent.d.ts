@@ -9,19 +9,19 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerNumber } from "../entity/AssemblyEntity"
+import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableEntityMap } from "./EntityMap"
 
-export interface LayerPosition extends BoundingBox {
-  readonly layerNumber: LayerNumber
+export interface StagePosition extends BoundingBox {
+  readonly stageNumber: StageNumber
   readonly surface: LuaSurface
 }
 
 export interface AssemblyContent {
-  getLayer(layerNumber: LayerNumber): LayerPosition | nil
-  numLayers(): number
-  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, LayerPosition]>>
+  getStage(stageNumber: StageNumber): StagePosition | nil
+  numStages(): number
+  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, StagePosition]>>
 
-  getLayerName(layerNumber: LayerNumber): LocalisedString
+  getStageName(stageNumber: StageNumber): LocalisedString
   readonly content: MutableEntityMap
 }

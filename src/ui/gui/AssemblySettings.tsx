@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/AssemblyDef"
+import { Assembly, LocalAssemblyEvent, Stage } from "../../assembly/AssemblyDef"
 import { AssemblyOperations } from "../../assembly/AssemblyOperations"
 import { assertNever, funcOn, RegisterClass } from "../../lib"
 import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
@@ -21,9 +21,9 @@ import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { Pos } from "../../lib/geometry"
 import { state } from "../../lib/observable"
 import { L_GuiAssemblySettings } from "../../locale"
-import { teleportToLayer, teleportToSurface1 } from "../player-position"
+import { teleportToStage, teleportToSurface1 } from "../player-position"
 import { ItemRename } from "./ItemRename"
-import { LayerSelector } from "./LayerSelector"
+import { StageSelector } from "./StageSelector"
 
 declare global {
   interface PlayerData {
@@ -32,9 +32,9 @@ declare global {
 }
 declare const global: GlobalWithPlayers
 
-const layerListBoxHeight = 28 * 12
-const layerListBoxWidth = 150
-const layerSettingsWidth = 300
+const stageListBoxHeight = 28 * 12
+const stageListBoxWidth = 150
+const stageSettingsWidth = 300
 
 @RegisterClass("gui:AssemblySettings")
 export class AssemblySettings extends Component<{ assembly: Assembly }> {
@@ -42,7 +42,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
   playerIndex!: PlayerIndex
   element!: LuaGuiElement
 
-  private selectedLayer = state(0)
+  private selectedStage = state(0)
   public override render(props: { assembly: Assembly }, tracker: Tracker): Spec {
     this.assembly = props.assembly
     this.playerIndex = tracker.playerIndex
@@ -76,16 +76,16 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
           >
             <label
               style="caption_label"
-              caption={[L_GuiAssemblySettings.NewLayer]}
+              caption={[L_GuiAssemblySettings.NewStage]}
               styleMod={{
                 right_margin: 10,
               }}
             />
-            <button caption={[L_GuiAssemblySettings.AtEnd]} on_gui_click={funcOn(this.addLayer)} />
+            <button caption={[L_GuiAssemblySettings.AtEnd]} on_gui_click={funcOn(this.addStage)} />
             <button
               caption={[L_GuiAssemblySettings.InsertAboveCurrent]}
-              enabled={this.selectedLayer.gt(0)}
-              on_gui_click={funcOn(this.insertLayer)}
+              enabled={this.selectedStage.gt(0)}
+              on_gui_click={funcOn(this.insertStage)}
             />
           </flow>
         </frame>
@@ -95,24 +95,24 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
             horizontal_spacing: 12,
           }}
         >
-          <LayerSelector
+          <StageSelector
             uses="list-box"
             styleMod={{
-              height: layerListBoxHeight,
-              width: layerListBoxWidth,
+              height: stageListBoxHeight,
+              width: stageListBoxWidth,
             }}
             assembly={this.assembly}
-            selectedIndex={this.selectedLayer}
+            selectedIndex={this.selectedStage}
           />
 
           <Fn
             uses="frame"
-            from={this.selectedLayer}
-            map={funcOn(this.renderLayerSettings)}
+            from={this.selectedStage}
+            map={funcOn(this.renderStageSettings)}
             direction="vertical"
             style="inside_shallow_frame"
             styleMod={{
-              width: layerSettingsWidth,
+              width: stageSettingsWidth,
               vertically_stretchable: true,
             }}
           />
@@ -132,7 +132,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
   private onAssemblyEvent(_: any, event: LocalAssemblyEvent) {
     if (event.type === "assembly-deleted") {
       destroy(this.element)
-    } else if (event.type !== "layer-added" && event.type !== "pre-layer-deleted" && event.type !== "layer-deleted") {
+    } else if (event.type !== "stage-added" && event.type !== "pre-stage-deleted" && event.type !== "stage-deleted") {
       assertNever(event)
     }
   }
@@ -159,50 +159,50 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     teleportToSurface1(game.get_player(this.playerIndex)!)
   }
 
-  private insertLayer() {
-    this.doInsertLayer(this.selectedLayer.get())
+  private insertStage() {
+    this.doInsertStage(this.selectedStage.get())
   }
 
-  private addLayer() {
-    this.doInsertLayer(this.assembly.numLayers() + 1)
+  private addStage() {
+    this.doInsertStage(this.assembly.numStages() + 1)
   }
 
-  private doInsertLayer(index: number) {
+  private doInsertStage(index: number) {
     if (!this.assembly.valid) return
-    const layer = this.assembly.insertLayer(index)
-    teleportToLayer(game.get_player(this.playerIndex)!, layer)
+    const stage = this.assembly.insertStage(index)
+    teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private renderLayerSettings(selectedLayerIndex: number): Spec | nil {
-    const layer = this.assembly.getLayer(selectedLayerIndex)
-    if (!layer) return nil
-    return <LayerSettings layer={layer} />
+  private renderStageSettings(selectedStageIndex: number): Spec | nil {
+    const stage = this.assembly.getStage(selectedStageIndex)
+    if (!stage) return nil
+    return <StageSettings stage={stage} />
   }
 }
 
-@RegisterClass("gui:LayerSettings")
-export class LayerSettings extends Component<{ layer: Layer }> {
+@RegisterClass("gui:StageSettings")
+export class StageSettings extends Component<{ stage: Stage }> {
   playerIndex!: PlayerIndex
-  layer!: Layer
-  public override render(props: { layer: Layer }, tracker: Tracker): Spec {
-    this.layer = props.layer
+  stage!: Stage
+  public override render(props: { stage: Stage }, tracker: Tracker): Spec {
+    this.stage = props.stage
     this.playerIndex = tracker.playerIndex
 
-    const canDeleteLayer = this.layer.layerNumber > 1
+    const canDeleteStage = this.stage.stageNumber > 1
 
     return (
       <>
         <frame style="subheader_frame" direction="horizontal">
           <ItemRename
-            name={props.layer.name}
-            displayName={props.layer.name}
-            renameTooltip={[L_GuiAssemblySettings.RenameLayer]}
+            name={props.stage.name}
+            displayName={props.stage.name}
+            renameTooltip={[L_GuiAssemblySettings.RenameStage]}
           />
           <HorizontalPusher />
           <TrashButton
-            enabled={canDeleteLayer}
+            enabled={canDeleteStage}
             tooltip={
-              canDeleteLayer ? [L_GuiAssemblySettings.DeleteLayer] : [L_GuiAssemblySettings.CannotDeleteFirstLayer]
+              canDeleteStage ? [L_GuiAssemblySettings.DeleteStage] : [L_GuiAssemblySettings.CannotDeleteFirstStage]
             }
             on_gui_click={funcOn(this.beginDelete)}
           />
@@ -217,9 +217,9 @@ export class LayerSettings extends Component<{ layer: Layer }> {
           horizontal_scroll_policy="never"
         >
           <button
-            caption={[L_GuiAssemblySettings.ResetLayer]}
-            tooltip={[L_GuiAssemblySettings.ResetLayerTooltip]}
-            on_gui_click={funcOn(this.resetLayer)}
+            caption={[L_GuiAssemblySettings.ResetStage]}
+            tooltip={[L_GuiAssemblySettings.ResetStageTooltip]}
+            on_gui_click={funcOn(this.resetStage)}
           />
         </scroll-pane>
       </>
@@ -229,31 +229,31 @@ export class LayerSettings extends Component<{ layer: Layer }> {
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const layerNumber = this.layer.layerNumber
-    if (layerNumber <= 1) return // can't delete the first layer
-    const previousLayer = this.layer.assembly.getLayer(layerNumber - 1)
-    if (!previousLayer) return
+    const stageNumber = this.stage.stageNumber
+    if (stageNumber <= 1) return // can't delete the first stage
+    const previousStage = this.stage.assembly.getStage(stageNumber - 1)
+    if (!previousStage) return
     showDialog(player, {
-      title: [L_GuiAssemblySettings.DeleteLayer],
+      title: [L_GuiAssemblySettings.DeleteStage],
       message: [
-        [L_GuiAssemblySettings.DeleteLayerConfirmation1, this.layer.name.get()],
-        [L_GuiAssemblySettings.DeleteLayerConfirmation2, previousLayer.name.get()],
+        [L_GuiAssemblySettings.DeleteStageConfirmation1, this.stage.name.get()],
+        [L_GuiAssemblySettings.DeleteStageConfirmation2, previousStage.name.get()],
       ],
       redConfirm: true,
       backCaption: ["gui.cancel"],
       confirmCaption: ["gui.delete"],
-      onConfirm: funcOn(this.deleteLayer),
+      onConfirm: funcOn(this.deleteStage),
     })
   }
-  private deleteLayer() {
-    const previousLayer = this.layer.assembly.getLayer(this.layer.layerNumber - 1)
-    if (!previousLayer) return
-    this.layer.deleteInAssembly()
-    teleportToLayer(game.get_player(this.playerIndex)!, previousLayer)
+  private deleteStage() {
+    const previousStage = this.stage.assembly.getStage(this.stage.stageNumber - 1)
+    if (!previousStage) return
+    this.stage.deleteInAssembly()
+    teleportToStage(game.get_player(this.playerIndex)!, previousStage)
   }
 
-  private resetLayer() {
-    AssemblyOperations.resetLayer(this.layer.assembly, this.layer)
+  private resetStage() {
+    AssemblyOperations.resetStage(this.stage.assembly, this.stage)
   }
 }
 

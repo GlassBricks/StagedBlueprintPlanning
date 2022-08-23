@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, Layer } from "../../assembly/AssemblyDef"
+import { Assembly, Stage } from "../../assembly/AssemblyDef"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
 import { Component, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { DotDotDotButton } from "../../lib/factoriojsx/components/buttons"
@@ -18,29 +18,29 @@ import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/compon
 import { TitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { MaybeState } from "../../lib/observable"
 import { L_GuiCurrentAssembly } from "../../locale"
-import { playerCurrentLayer } from "../player-position"
+import { playerCurrentStage } from "../player-position"
 import { openAllAssemblies } from "./AllAssemblies"
 import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"
-import { LayerSelector } from "./LayerSelector"
+import { StageSelector } from "./StageSelector"
 
 const CurrentAssemblyWidth = 260
 @RegisterClass("gui:CurrentAssembly")
 class CurrentAssembly extends Component {
-  static mapLayerToAssemblyTitle(this: void, layer: Layer | nil): MaybeState<LocalisedString> {
-    if (layer === nil) return [L_GuiCurrentAssembly.NoAssembly]
-    return layer.assembly.displayName
+  static maplayerToAssemblyTitle(this: void, stage: Stage | nil): MaybeState<LocalisedString> {
+    if (stage === nil) return [L_GuiCurrentAssembly.NoAssembly]
+    return stage.assembly.displayName
   }
   static mapAssemblyToContent(this: void, assembly: Assembly | nil) {
     return assembly ? (
-      <LayerSelector uses="drop-down" assembly={assembly} styleMod={{ width: CurrentAssemblyWidth }} />
+      <StageSelector uses="drop-down" assembly={assembly} styleMod={{ width: CurrentAssemblyWidth }} />
     ) : (
       <HorizontalSpacer width={CurrentAssemblyWidth} />
     )
   }
   public override render(_: EmptyProps, tracker: Tracker): Spec {
     const { playerIndex } = tracker
-    const currentLayer = playerCurrentLayer(playerIndex)
+    const currentStage = playerCurrentStage(playerIndex)
 
     return (
       <frame direction="vertical">
@@ -51,12 +51,12 @@ class CurrentAssembly extends Component {
               font: "heading-2",
               width: CurrentAssemblyWidth - 80,
             }}
-            caption={currentLayer.flatMap(funcRef(CurrentAssembly.mapLayerToAssemblyTitle))}
+            caption={currentStage.flatMap(funcRef(CurrentAssembly.maplayerToAssemblyTitle))}
           />
           <HorizontalPusher />
           <ExternalLinkButton
             tooltip={[L_GuiCurrentAssembly.OpenAssemblySettings]}
-            enabled={currentLayer.truthy()}
+            enabled={currentStage.truthy()}
             on_gui_click={funcOn(this.openAssemblySettings)}
           />
           <DotDotDotButton
@@ -66,7 +66,7 @@ class CurrentAssembly extends Component {
         </TitleBar>
         <Fn
           uses="flow"
-          from={currentLayer.nullableSub("assembly")}
+          from={currentStage.nullableSub("assembly")}
           map={funcRef(CurrentAssembly.mapAssemblyToContent)}
         />
       </frame>
@@ -75,9 +75,9 @@ class CurrentAssembly extends Component {
 
   private openAssemblySettings(event: OnGuiClickEvent) {
     const { player_index } = event
-    const currentLayer = playerCurrentLayer(player_index).get()
-    if (currentLayer === nil) return
-    const assembly = currentLayer.assembly
+    const currentStage = playerCurrentStage(player_index).get()
+    if (currentStage === nil) return
+    const assembly = currentStage.assembly
     openAssemblySettings(game.get_player(player_index)!, assembly)
   }
 }

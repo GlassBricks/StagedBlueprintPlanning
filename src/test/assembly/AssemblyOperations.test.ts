@@ -32,7 +32,7 @@ before_each(() => {
     updateWorldEntities: spy(),
     deleteWorldEntities: spy(),
     forceDeleteEntity: spy(),
-    deleteWorldEntitiesInLayer: spy(),
+    deleteWorldEntitiesInStage: spy(),
     deleteExtraEntitiesOnly: spy(),
     makeSettingsRemnant: spy(),
     reviveSettingsRemnant: spy(),
@@ -55,27 +55,27 @@ test("deleteAllExtraEntitiesOnly", () => {
   assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity2))
 })
 
-test("deleteLayerEntities", () => {
+test("deleteStageEntities", () => {
   const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
   const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
   assembly.content.add(entity1)
   assembly.content.add(entity2)
 
-  operations.deleteLayerEntities(assembly, 1)
-  assert.spy(worldUpdater.deleteWorldEntitiesInLayer).called_with(match.ref(entity1), 1)
-  assert.spy(worldUpdater.deleteWorldEntitiesInLayer).called_with(match.ref(entity2), 1)
+  operations.deleteStageEntities(assembly, 1)
+  assert.spy(worldUpdater.deleteWorldEntitiesInStage).called_with(match.ref(entity1), 1)
+  assert.spy(worldUpdater.deleteWorldEntitiesInStage).called_with(match.ref(entity2), 1)
 })
 
-test("resetLayer", () => {
+test("resetStage", () => {
   const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
   const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
   assembly.content.add(entity1)
   assembly.content.add(entity2)
 
-  const layer = assembly.getLayer(2)!
-  operations.resetLayer(assembly, layer)
+  const stage = assembly.getStage(2)!
+  operations.resetStage(assembly, stage)
 
-  assert.spy(worldInteractor.deleteAllWorldEntities).called_with(match.ref(layer))
+  assert.spy(worldInteractor.deleteAllWorldEntities).called_with(match.ref(stage))
 
   assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity1), 2, 2, true)
   assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity2), 2, 2, true)

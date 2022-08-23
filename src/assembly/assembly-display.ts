@@ -9,16 +9,16 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerNumber } from "../entity/AssemblyEntity"
+import { StageNumber } from "../entity/AssemblyEntity"
 import { assertNever, bind, Events, PRecord, registerFunctions, shiftNumberKeysDown, shiftNumberKeysUp } from "../lib"
 import { Pos } from "../lib/geometry"
 import { State } from "../lib/observable"
 import draw, { AnyRender, DrawParams, TextRender } from "../lib/rendering"
 import { AssemblyEvents } from "./Assembly"
-import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer } from "./AssemblyDef"
+import { Assembly, AssemblyId, GlobalAssemblyEvent, Stage } from "./AssemblyDef"
 
 declare const global: {
-  assemblyHighlights: LuaMap<AssemblyId, PRecord<LayerNumber, AnyRender[]>>
+  assemblyHighlights: LuaMap<AssemblyId, PRecord<StageNumber, AnyRender[]>>
 }
 Events.on_init(() => {
   global.assemblyHighlights = new LuaMap()
@@ -29,26 +29,26 @@ AssemblyEvents.addListener((event: GlobalAssemblyEvent) => {
     createAssemblyHighlights(event.assembly)
   } else if (event.type === "assembly-deleted") {
     removeAllHighlights(event.assembly.id)
-  } else if (event.type === "layer-added") {
-    shiftNumberKeysUp(global.assemblyHighlights.get(event.assembly.id)!, event.layer.layerNumber)
-    createHighlightsForLayer(event.layer)
-  } else if (event.type === "pre-layer-deleted") {
-    removeHighlightsForLayer(event.assembly, event.layer)
-    shiftNumberKeysDown(global.assemblyHighlights.get(event.assembly.id)!, event.layer.layerNumber)
-  } else if (event.type !== "layer-deleted") {
+  } else if (event.type === "stage-added") {
+    shiftNumberKeysUp(global.assemblyHighlights.get(event.assembly.id)!, event.stage.stageNumber)
+    createHighlightsForStage(event.stage)
+  } else if (event.type === "pre-stage-deleted") {
+    removeHighlightsForStage(event.assembly, event.stage)
+    shiftNumberKeysDown(global.assemblyHighlights.get(event.assembly.id)!, event.stage.stageNumber)
+  } else if (event.type !== "stage-deleted") {
     assertNever(event)
   }
 })
 function createAssemblyHighlights(assembly: Assembly) {
   global.assemblyHighlights.set(assembly.id, {})
-  for (const [, layer] of assembly.iterateLayers()) {
-    createHighlightsForLayer(layer)
+  for (const [, stage] of assembly.iterateStages()) {
+    createHighlightsForStage(stage)
   }
 }
 
-function createHighlightsForLayer(layer: Layer): void {
-  if (!layer.valid) return
-  const { surface, left_top, right_bottom } = layer
+function createHighlightsForStage(stage: Stage): void {
+  if (!stage.valid) return
+  const { surface, left_top, right_bottom } = stage
 
   // const boxId = rendering.draw_rectangle({
   const box = draw("rectangle", {
@@ -76,19 +76,19 @@ function createHighlightsForLayer(layer: Layer): void {
       scale_with_zoom: true,
       vertical_alignment,
     })
-    name.subscribeIndependently(bind(onLayerNameChange, text))
+    name.subscribeIndependently(bind(onStageNameChange, text))
     return text
   }
-  const assemblyText: TextRender = createText(layer.assembly.displayName, "bottom")
-  const layerText: TextRender = createText(layer.name, "top")
+  const assemblyText: TextRender = createText(stage.assembly.displayName, "bottom")
+  const stageText: TextRender = createText(stage.name, "top")
 
-  global.assemblyHighlights.get(layer.assembly.id)![layer.layerNumber] = [box, assemblyText, layerText]
+  global.assemblyHighlights.get(stage.assembly.id)![stage.stageNumber] = [box, assemblyText, stageText]
 }
 
-function onLayerNameChange(text: TextRender, _: unknown, name: LocalisedString): void {
+function onStageNameChange(text: TextRender, _: unknown, name: LocalisedString): void {
   if (text.valid) text.text = name
 }
-registerFunctions("assembly-display", { onLayerNameChange })
+registerFunctions("assembly-display", { onStageNameChange })
 
 function removeAllHighlights(id: AssemblyId): void {
   const highlights = global.assemblyHighlights.get(id)
@@ -101,10 +101,10 @@ function removeAllHighlights(id: AssemblyId): void {
   }
 }
 
-function removeHighlightsForLayer(assembly: Assembly, layer: Layer): void {
+function removeHighlightsForStage(assembly: Assembly, stage: Stage): void {
   const highlights = global.assemblyHighlights.get(assembly.id)
   if (!highlights) return
-  const renders = highlights[layer.layerNumber]
+  const renders = highlights[stage.stageNumber]
   if (!renders) return
   for (const render of renders) {
     if (render.valid) render.destroy()

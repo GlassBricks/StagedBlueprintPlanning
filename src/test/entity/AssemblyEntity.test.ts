@@ -29,132 +29,132 @@ before_each(() => {
     foo1: 1,
   }
   assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assemblyEntity._applyDiffAtLayer(3, { foo1: 3, foo2: 4 })
-  assemblyEntity._applyDiffAtLayer(5, { foo1: 5 })
-  assemblyEntity._applyDiffAtLayer(7, { foo2: getNilPlaceholder() })
+  assemblyEntity._applyDiffAtStage(3, { foo1: 3, foo2: 4 })
+  assemblyEntity._applyDiffAtStage(5, { foo1: 5 })
+  assemblyEntity._applyDiffAtStage(7, { foo2: getNilPlaceholder() })
 })
 
 test("getters", () => {
-  assert.same(2, assemblyEntity.getBaseLayer())
+  assert.same(2, assemblyEntity.getBaseStage())
   assert.same(entity, assemblyEntity.getBaseValue())
 })
 
-describe("getValueAtLayer", () => {
-  test("nil if lower than layer", () => {
-    assert.nil(assemblyEntity.getValueAtLayer(1))
+describe("getValueAtStage", () => {
+  test("nil if lower than stage", () => {
+    assert.nil(assemblyEntity.getValueAtStage(1))
   })
 
-  test("getValueAtLayer returns same entity if no layerChanges", () => {
-    assert.same(entity, assemblyEntity.getValueAtLayer(2))
+  test("getValueAtStage returns same entity if no stageChanges", () => {
+    assert.same(entity, assemblyEntity.getValueAtStage(2))
   })
 
-  test("applies changes from one layer", () => {
-    const result = assemblyEntity.getValueAtLayer(3)
+  test("applies changes from one stage", () => {
+    const result = assemblyEntity.getValueAtStage(3)
     assert.same({ ...entity, foo1: 3, foo2: 4 }, result)
   })
 
-  test("applies changes from multiple layers", () => {
-    const result = assemblyEntity.getValueAtLayer(5)
+  test("applies changes from multiple stages", () => {
+    const result = assemblyEntity.getValueAtStage(5)
     assert.same({ ...entity, foo1: 5, foo2: 4 }, result)
   })
 
   test("replaces nilPlaceholder with nil", () => {
-    const result = assemblyEntity.getValueAtLayer(7)
+    const result = assemblyEntity.getValueAtStage(7)
     const expected = { ...entity, foo1: 5 }
     delete expected.foo2
 
     assert.same(expected, result)
   })
 
-  test("getNameAtLayer ", () => {
-    assemblyEntity._applyDiffAtLayer(4, { name: "foo2" })
-    assert.same("foo", assemblyEntity.getNameAtLayer(1))
-    assert.same("foo", assemblyEntity.getNameAtLayer(2))
-    assert.same("foo", assemblyEntity.getNameAtLayer(3))
-    assert.same("foo2", assemblyEntity.getNameAtLayer(4))
-    assert.same("foo2", assemblyEntity.getNameAtLayer(5))
+  test("getNameAtStage ", () => {
+    assemblyEntity._applyDiffAtStage(4, { name: "foo2" })
+    assert.same("foo", assemblyEntity.getNameAtStage(1))
+    assert.same("foo", assemblyEntity.getNameAtStage(2))
+    assert.same("foo", assemblyEntity.getNameAtStage(3))
+    assert.same("foo2", assemblyEntity.getNameAtStage(4))
+    assert.same("foo2", assemblyEntity.getNameAtStage(5))
   })
 })
 
-test("hasLayerChanges", () => {
+test("hasStageChanges", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.false(assemblyEntity.hasLayerChange())
-  assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
-  assert.true(assemblyEntity.hasLayerChange())
-  assert.true(assemblyEntity.hasLayerChange(3))
-  assert.false(assemblyEntity.hasLayerChange(2))
+  assert.false(assemblyEntity.hasStageChange())
+  assemblyEntity._applyDiffAtStage(3, { foo1: 3 })
+  assert.true(assemblyEntity.hasStageChange())
+  assert.true(assemblyEntity.hasStageChange(3))
+  assert.false(assemblyEntity.hasStageChange(2))
 })
 
 test("iterateValues", () => {
   const expected = []
-  for (let layer = 1; layer <= 6; layer++) {
-    expected[layer] = assemblyEntity.getValueAtLayer(layer) ?? "nil"
+  for (let stage = 1; stage <= 6; stage++) {
+    expected[stage] = assemblyEntity.getValueAtStage(stage) ?? "nil"
   }
   const result = []
-  for (const [layer, entity] of assemblyEntity.iterateValues(1, 6)) {
-    result[layer] = entity === nil ? "nil" : shallowCopy(entity)
+  for (const [stage, entity] of assemblyEntity.iterateValues(1, 6)) {
+    result[stage] = entity === nil ? "nil" : shallowCopy(entity)
   }
   assert.same(expected, result)
 })
 
-describe("move to layer", () => {
+describe("move to stage", () => {
   test("move down", () => {
-    assemblyEntity.moveToLayer(1)
+    assemblyEntity.moveToStage(1)
     assert.same(entity, assemblyEntity.getBaseValue())
-    assert.equal(1, assemblyEntity.getBaseLayer())
+    assert.equal(1, assemblyEntity.getBaseStage())
   })
 
   test("moving up", () => {
-    const valueAt5 = assemblyEntity.getValueAtLayer(5)
-    assemblyEntity.moveToLayer(5)
+    const valueAt5 = assemblyEntity.getValueAtStage(5)
+    assemblyEntity.moveToStage(5)
     assert.same(valueAt5, assemblyEntity.getBaseValue())
   })
 
-  test("records old layer", () => {
-    assemblyEntity.moveToLayer(5, true)
-    assert.equal(2, assemblyEntity.getOldLayer())
+  test("records old stage", () => {
+    assemblyEntity.moveToStage(5, true)
+    assert.equal(2, assemblyEntity.getOldStage())
   })
 
-  test("clears old layer if recordOldLayer is false", () => {
-    assemblyEntity.moveToLayer(4, true)
-    assemblyEntity.moveToLayer(2)
-    assert.nil(assemblyEntity.getOldLayer())
+  test("clears old stage if recordOldStage is false", () => {
+    assemblyEntity.moveToStage(4, true)
+    assemblyEntity.moveToStage(2)
+    assert.nil(assemblyEntity.getOldStage())
   })
 
-  test("clears old layer if same layer", () => {
-    assemblyEntity.moveToLayer(5)
-    assemblyEntity.moveToLayer(5)
-    assert.nil(assemblyEntity.getOldLayer())
+  test("clears old stage if same stage", () => {
+    assemblyEntity.moveToStage(5)
+    assemblyEntity.moveToStage(5)
+    assert.nil(assemblyEntity.getOldStage())
   })
 
-  test("clears old layer if adjustValueAtLayer called at layer", () => {
-    assemblyEntity.moveToLayer(5, true)
-    assemblyEntity.adjustValueAtLayer(6, { ...entity, foo1: 6 })
-    assert.nil(assemblyEntity.getOldLayer())
+  test("clears old stage if adjustValueAtStage called at stage", () => {
+    assemblyEntity.moveToStage(5, true)
+    assemblyEntity.adjustValueAtStage(6, { ...entity, foo1: 6 })
+    assert.nil(assemblyEntity.getOldStage())
   })
 })
 
-describe("adjustValueAtLayer", () => {
+describe("adjustValueAtStage", () => {
   test("can set base value", () => {
     const newEntity = { ...entity, foo1: 3 }
-    assemblyEntity.adjustValueAtLayer(2, newEntity)
+    assemblyEntity.adjustValueAtStage(2, newEntity)
     assert.same(newEntity, assemblyEntity.getBaseValue())
   })
 
   test("removes no longer effectual diffs after set at base value", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
-    assemblyEntity._applyDiffAtLayer(3, { foo1: 3 })
-    assemblyEntity.adjustValueAtLayer(1, { ...entity, foo1: 3 })
+    assemblyEntity._applyDiffAtStage(3, { foo1: 3 })
+    assemblyEntity.adjustValueAtStage(1, { ...entity, foo1: 3 })
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
-    assert.false(assemblyEntity.hasLayerChange())
+    assert.false(assemblyEntity.hasStageChange())
   })
 
-  test("creates diff if set at higher layer", () => {
+  test("creates diff if set at higher stage", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
-    assemblyEntity.adjustValueAtLayer(2, { ...entity, foo1: 3 })
+    assemblyEntity.adjustValueAtStage(2, { ...entity, foo1: 3 })
     assert.same(entity, assemblyEntity.getBaseValue())
-    assert.true(assemblyEntity.hasLayerChange())
-    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtLayer(2))
+    assert.true(assemblyEntity.hasStageChange())
+    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtStage(2))
   })
 
   test("complex case", () => {
@@ -163,19 +163,19 @@ describe("adjustValueAtLayer", () => {
     const newValue2 = { ...baseValue, a: 2, b: 1, c: 5 }
     const value3 = { ...baseValue, a: 2, b: 2, c: 5 }
     const assemblyEntity = createAssemblyEntity(baseValue, Pos(0, 0), nil, 1)
-    assemblyEntity.adjustValueAtLayer(2, value2)
+    assemblyEntity.adjustValueAtStage(2, value2)
     assert.same(baseValue, assemblyEntity.getBaseValue())
-    assert.same(value2, assemblyEntity.getValueAtLayer(2))
-    assemblyEntity.adjustValueAtLayer(3, value3)
+    assert.same(value2, assemblyEntity.getValueAtStage(2))
+    assemblyEntity.adjustValueAtStage(3, value3)
     assert.same(baseValue, assemblyEntity.getBaseValue())
-    assert.same(value2, assemblyEntity.getValueAtLayer(2))
-    assert.same(value3, assemblyEntity.getValueAtLayer(3))
-    assemblyEntity.adjustValueAtLayer(2, newValue2)
+    assert.same(value2, assemblyEntity.getValueAtStage(2))
+    assert.same(value3, assemblyEntity.getValueAtStage(3))
+    assemblyEntity.adjustValueAtStage(2, newValue2)
     assert.same(baseValue, assemblyEntity.getBaseValue())
-    assert.same(newValue2, assemblyEntity.getValueAtLayer(2))
+    assert.same(newValue2, assemblyEntity.getValueAtStage(2))
     const newValue3 = { ...value3, b: 1 } // due to change in newValue2
-    assert.same(newValue3, assemblyEntity.getValueAtLayer(3))
-    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity._getLayerChanges()[3], "diff trimmed")
+    assert.same(newValue3, assemblyEntity.getValueAtStage(3))
+    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity._getStageChanges()[3], "diff trimmed")
   })
 })
 
@@ -243,7 +243,7 @@ describe("Get/set world entities", () => {
 })
 
 declare module "../../entity/AssemblyEntity" {
-  export interface LayerProperties {
+  export interface StageProperties {
     foo?: string
   }
 }
@@ -256,25 +256,25 @@ describe("get/set properties", () => {
     assert.equal("bar", assemblyEntity.getProperty(2, "foo"))
   })
   test("propertyIsSetAnywhere", () => {
-    assert.false(assemblyEntity.propertySetInAnyLayer("foo"))
+    assert.false(assemblyEntity.propertySetInAnyStage("foo"))
     assemblyEntity.setProperty(2, "foo", "bar")
-    assert.true(assemblyEntity.propertySetInAnyLayer("foo"))
+    assert.true(assemblyEntity.propertySetInAnyStage("foo"))
     assemblyEntity.setProperty(3, "foo", "bar")
     assemblyEntity.setProperty(2, "foo", nil)
-    assert.true(assemblyEntity.propertySetInAnyLayer("foo"))
+    assert.true(assemblyEntity.propertySetInAnyStage("foo"))
     assemblyEntity.setProperty(3, "foo", nil)
-    assert.false(assemblyEntity.propertySetInAnyLayer("foo"))
+    assert.false(assemblyEntity.propertySetInAnyStage("foo"))
   })
   test("clear property", () => {
     assemblyEntity.setProperty(2, "foo", "bar")
     assemblyEntity.setProperty(3, "foo", "bar")
-    assemblyEntity.clearPropertyInAllLayers("foo")
+    assemblyEntity.clearPropertyInAllStages("foo")
     assert.nil(assemblyEntity.getProperty(2, "foo"))
     assert.nil(assemblyEntity.getProperty(3, "foo"))
   })
 })
 
-test("insert layer after base", () => {
+test("insert stage after base", () => {
   const luaEntity = entityMock({ name: "test", position: Pos(0, 0) })
   const entity = createAssemblyEntity<FooEntity>({ name: luaEntity.name, foo1: 1 }, Pos(0, 0), nil, 1)
   entity.replaceWorldEntity(2, luaEntity)
@@ -282,15 +282,15 @@ test("insert layer after base", () => {
   entity.setProperty(2, "foo", "bar2")
   entity.setProperty(3, "foo", "bar3")
   entity.setProperty(4, "foo", "bar4")
-  entity._applyDiffAtLayer(2, { foo1: 2 })
-  entity._applyDiffAtLayer(3, { foo1: 3 })
-  entity._applyDiffAtLayer(4, { foo1: 4 })
+  entity._applyDiffAtStage(2, { foo1: 2 })
+  entity._applyDiffAtStage(3, { foo1: 3 })
+  entity._applyDiffAtStage(4, { foo1: 4 })
 
-  entity.insertLayer(3)
+  entity.insertStage(3)
 
   // all keys at 3 and above are shifted up
 
-  assert.equal(entity.getBaseLayer(), 1)
+  assert.equal(entity.getBaseStage(), 1)
 
   assert.not_nil(entity.getWorldEntity(2))
   assert.nil(entity.getWorldEntity(3))
@@ -308,18 +308,18 @@ test("insert layer after base", () => {
       4: { foo1: 3 },
       5: { foo1: 4 },
     },
-    entity._getLayerChanges(),
+    entity._getStageChanges(),
   )
 })
 
-test("insert layer before base", () => {
+test("insert stage before base", () => {
   const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 2)
 
-  entity.insertLayer(1)
-  assert.equal(3, entity.getBaseLayer())
+  entity.insertStage(1)
+  assert.equal(3, entity.getBaseStage())
 })
 
-test("delete layer after base", () => {
+test("delete stage after base", () => {
   const luaEntity = entityMock({ name: "test", position: Pos(0, 0) })
   const entity = createAssemblyEntity<FooEntity>({ name: luaEntity.name, foo1: 1 }, Pos(0, 0), nil, 1)
   entity.replaceWorldEntity(2, luaEntity)
@@ -328,15 +328,15 @@ test("delete layer after base", () => {
   entity.setProperty(2, "foo", "bar2")
   entity.setProperty(3, "foo", "bar3")
   entity.setProperty(4, "foo", "bar4")
-  entity._applyDiffAtLayer(2, { foo1: 2, foo2: 2 })
-  entity._applyDiffAtLayer(3, { foo1: 3 })
-  entity._applyDiffAtLayer(4, { foo1: 4 })
+  entity._applyDiffAtStage(2, { foo1: 2, foo2: 2 })
+  entity._applyDiffAtStage(3, { foo1: 3 })
+  entity._applyDiffAtStage(4, { foo1: 4 })
 
-  entity.deleteLayer(3)
+  entity.deleteStage(3)
 
   // key 3 is deleted, all keys above it are shifted down
 
-  assert.equal(entity.getBaseLayer(), 1)
+  assert.equal(entity.getBaseStage(), 1)
 
   assert.not_nil(entity.getWorldEntity(2))
   assert.not_nil(entity.getWorldEntity(3))
@@ -351,22 +351,22 @@ test("delete layer after base", () => {
       2: { foo1: 3, foo2: 2 }, // merge of 2 and 3
       3: { foo1: 4 },
     },
-    entity._getLayerChanges(),
+    entity._getStageChanges(),
   )
 })
 
-test("delete layer before base", () => {
+test("delete stage before base", () => {
   const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 3)
 
-  entity.deleteLayer(2)
-  assert.equal(2, entity.getBaseLayer())
+  entity.deleteStage(2)
+  assert.equal(2, entity.getBaseStage())
 })
 
-test("delete layer right after base applies layer changes to first entity", () => {
+test("delete stage right after base applies stage changes to first entity", () => {
   const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 1)
-  entity._applyDiffAtLayer(2, { foo1: 2 })
-  const value = entity.getValueAtLayer(2)
+  entity._applyDiffAtStage(2, { foo1: 2 })
+  const value = entity.getValueAtStage(2)
 
-  entity.deleteLayer(2)
-  assert.same(value, entity.getValueAtLayer(1))
+  entity.deleteStage(2)
+  assert.same(value, entity.getValueAtStage(1))
 })

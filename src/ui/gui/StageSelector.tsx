@@ -10,20 +10,20 @@
  */
 
 import { clamp } from "util"
-import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/AssemblyDef"
-import { LayerNumber } from "../../entity/AssemblyEntity"
+import { Assembly, LocalAssemblyEvent, Stage } from "../../assembly/AssemblyDef"
+import { StageNumber } from "../../entity/AssemblyEntity"
 import { assertNever, bind, funcOn, RegisterClass } from "../../lib"
 import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"
 import { MutableState, state, Subscription } from "../../lib/observable"
-import { playerCurrentLayer, teleportToLayer } from "../player-position"
+import { playerCurrentStage, teleportToStage } from "../player-position"
 
-export type LayerSelectorProps<T extends "drop-down" | "list-box"> = {
+export type StageSelectorProps<T extends "drop-down" | "list-box"> = {
   uses: T
   assembly: Assembly
-  selectedIndex?: MutableState<LayerNumber>
+  selectedIndex?: MutableState<StageNumber>
 } & ElemProps<T>
-@RegisterClass("gui:CurrentLayer")
-export class LayerSelector<T extends "drop-down" | "list-box"> extends Component<LayerSelectorProps<T>> {
+@RegisterClass("gui:CurrentStage")
+export class StageSelector<T extends "drop-down" | "list-box"> extends Component<StageSelectorProps<T>> {
   private assembly!: Assembly
   private trackerSubscription!: Subscription
   private playerIndex!: PlayerIndex
@@ -32,24 +32,24 @@ export class LayerSelector<T extends "drop-down" | "list-box"> extends Component
   private element!: DropDownGuiElement | ListBoxGuiElement
   private selectedIndex!: MutableState<number>
 
-  public override render(props: LayerSelectorProps<T>, tracker: Tracker): Spec {
+  public override render(props: StageSelectorProps<T>, tracker: Tracker): Spec {
     this.assembly = props.assembly
     this.selectedIndex = props.selectedIndex ?? state(0)
 
     this.trackerSubscription = tracker.getSubscription()
     this.playerIndex = tracker.playerIndex
 
-    this.selectedIndex.set(clamp(this.selectedIndex.get(), 1, this.assembly.numLayers()))
+    this.selectedIndex.set(clamp(this.selectedIndex.get(), 1, this.assembly.numStages()))
     this.selectedIndex.subscribe(this.trackerSubscription, funcOn(this.onSelectedIndexChanged))
 
     tracker.onMount(() => this.setup())
 
-    const layers = this.assembly.getAllLayers()
+    const stages = this.assembly.getAllStages()
     return (
       <props.uses
         {...props}
         onCreate={(e) => (this.element = e)}
-        items={layers.map((l) => l.name.get())}
+        items={stages.map((l) => l.name.get())}
         selected_index={this.selectedIndex}
       />
     )
@@ -60,39 +60,39 @@ export class LayerSelector<T extends "drop-down" | "list-box"> extends Component
     const subscription = (this.elementsSubscription = new Subscription())
     this.trackerSubscription.add(subscription)
 
-    const layers = this.assembly.getAllLayers()
-    for (const layer of layers) {
-      layer.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), layer.layerNumber))
+    const stages = this.assembly.getAllStages()
+    for (const stage of stages) {
+      stage.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), stage.stageNumber))
     }
-    playerCurrentLayer(this.playerIndex).subscribeAndFire(subscription, funcOn(this.playerLayerChanged))
+    playerCurrentStage(this.playerIndex).subscribeAndFire(subscription, funcOn(this.playerStageChanged))
 
     this.assembly.localEvents.subscribe(subscription, funcOn(this.onAssemblyEvent))
   }
 
   private onAssemblyEvent(_: Subscription, event: LocalAssemblyEvent) {
-    if (event.type === "layer-added") {
-      this.element.add_item(event.layer.name.get(), event.layer.layerNumber)
-    } else if (event.type === "layer-deleted") {
-      this.element.remove_item(event.layer.layerNumber)
-    } else if (event.type !== "assembly-deleted" && event.type !== "pre-layer-deleted") {
+    if (event.type === "stage-added") {
+      this.element.add_item(event.stage.name.get(), event.stage.stageNumber)
+    } else if (event.type === "stage-deleted") {
+      this.element.remove_item(event.stage.stageNumber)
+    } else if (event.type !== "assembly-deleted" && event.type !== "pre-stage-deleted") {
       assertNever(event)
     }
   }
 
-  private setDropDownItem(layerNumber: LayerNumber, _: Subscription, name: LocalisedString) {
-    this.element.set_item(layerNumber, name)
+  private setDropDownItem(stageNumber: StageNumber, _: Subscription, name: LocalisedString) {
+    this.element.set_item(stageNumber, name)
   }
 
   private onSelectedIndexChanged(_: Subscription, index: number) {
     if (!this.assembly.valid) return
-    const layer = this.assembly.getLayer(index)
-    if (!layer) return
-    teleportToLayer(game.get_player(this.playerIndex)!, layer)
+    const stage = this.assembly.getStage(index)
+    if (!stage) return
+    teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private playerLayerChanged(_: any, layer: Layer | nil) {
-    if (layer && layer.assembly === this.assembly) {
-      this.selectedIndex.set(layer.layerNumber)
+  private playerStageChanged(_: any, stage: Stage | nil) {
+    if (stage && stage.assembly === this.assembly) {
+      this.selectedIndex.set(stage.stageNumber)
       this.selectedIndex.forceNotify()
     }
   }

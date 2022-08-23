@@ -14,5 +14,5 @@
  * @noResolution
  */
 declare module "collision_mask_util" {
-  export function get_first_unused_layer(): CollisionMaskLayer
+  export function get_first_unused_stage(): CollisionMaskStage
 }

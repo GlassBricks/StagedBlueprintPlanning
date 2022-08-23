@@ -19,7 +19,7 @@ import {
   HighlightEntities,
   HighlightValues,
 } from "../../assembly/EntityHighlighter"
-import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { Pos } from "../../lib/geometry"
 import { SpriteRender } from "../../lib/rendering"
@@ -100,19 +100,19 @@ describe("error highlights/selection proxy", () => {
     assert.nil(entity.getWorldEntity(2, "selectionProxy"))
   })
 
-  test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other layers, %s", (layers) => {
-    const layerSet = new LuaSet()
-    for (const layer of layers) {
-      entity.destroyWorldEntity(layer, "mainEntity")
-      layerSet.add(layer)
+  test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other stages, %s", (stages) => {
+    const stageSet = new LuaSet()
+    for (const stage of stages) {
+      entity.destroyWorldEntity(stage, "mainEntity")
+      stageSet.add(stage)
     }
     highlightCreator.updateHighlights(assembly, entity)
 
     for (let i = 1; i < 5; i++) {
-      if (i === 1 || layerSet.has(i)) {
-        assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should not have indicator in layer ${i}`)
+      if (i === 1 || stageSet.has(i)) {
+        assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should not have indicator in stage ${i}`)
       } else {
-        assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should have indicator in layer ${i}`)
+        assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should have indicator in stage ${i}`)
       }
     }
   })
@@ -121,16 +121,16 @@ describe("error highlights/selection proxy", () => {
     entity.destroyWorldEntity(2, "mainEntity")
     entity.destroyWorldEntity(3, "mainEntity")
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `layer ${i}`)
+    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `stage ${i}`)
     entity.replaceWorldEntity(3, simpleMock<LuaEntity>())
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `layer ${i}`)
+    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `stage ${i}`)
     entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `layer ${i}`)
+    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `stage ${i}`)
   })
 
-  test("does nothing if created in lower than base layer", () => {
+  test("does nothing if created in lower than base stage", () => {
     highlightCreator.updateHighlights(assembly, entity)
     assert.nil(entity.getWorldEntity(1, "errorOutline"))
   })
@@ -140,47 +140,47 @@ describe("config changed highlight", () => {
   before_each(() => {
     for (const i of $range(1, 5)) entity.replaceWorldEntity(i, entityMock({ name: "test" }))
   })
-  function setAt(layer: LayerNumber) {
-    assert(layer >= 2)
-    ;(entity._getLayerChanges() as any)[layer] = { foo: layer }
+  function setAt(stage: StageNumber) {
+    assert(stage >= 2)
+    ;(entity._getStageChanges() as any)[stage] = { foo: stage }
   }
-  function setUpgradeAt(layer: LayerNumber) {
-    assert(layer >= 2)
-    ;(entity._getLayerChanges() as any)[layer] = { name: "test" + layer.toString() }
+  function setUpgradeAt(stage: StageNumber) {
+    assert(stage >= 2)
+    ;(entity._getStageChanges() as any)[stage] = { name: "test" + stage.toString() }
   }
-  function clearAt(layer: LayerNumber) {
-    assert(layer >= 2)
-    ;(entity._getLayerChanges() as any)[layer] = nil
+  function clearAt(stage: StageNumber) {
+    assert(stage >= 2)
+    ;(entity._getStageChanges() as any)[stage] = nil
   }
   function assertCorrect() {
     highlightCreator.updateHighlights(assembly, entity)
     let i = 2
-    for (const [layerNumber, changes] of pairs(entity._getLayerChanges())) {
+    for (const [stageNumber, changes] of pairs(entity._getStageChanges())) {
       const isUpgrade = changes.name !== nil
 
       const highlight = assert.not_nil(
-        entity.getWorldEntity(layerNumber, "configChangedHighlight"),
+        entity.getWorldEntity(stageNumber, "configChangedHighlight"),
       ) as HighlightBoxEntity
       assert.equal(isUpgrade ? HighlightValues.Upgraded : "logistics", highlight.highlight_box_type, "highlight type")
 
       const firstI = i
-      for (; i < layerNumber; i++) {
+      for (; i < stageNumber; i++) {
         if (i !== firstI)
-          assert.nil(entity.getWorldEntity(i, "configChangedHighlight"), "should not have highlight in layer " + i)
+          assert.nil(entity.getWorldEntity(i, "configChangedHighlight"), "should not have highlight in stage " + i)
 
         const highlight = assert.not_nil(
           entity.getWorldEntity(i, "configChangedLaterHighlight"),
-          `layer ${i}`,
+          `stage ${i}`,
         ) as SpriteRender
         assert.equal(isUpgrade ? HighlightValues.UpgradedLater : "item/blueprint", highlight.sprite)
       }
     }
     for (let j = i; j <= 5; j++) {
       if (j !== i)
-        assert.nil(entity.getWorldEntity(j, "configChangedHighlight"), "should not have highlight in layer " + j)
+        assert.nil(entity.getWorldEntity(j, "configChangedHighlight"), "should not have highlight in stage " + j)
       assert.nil(
         entity.getWorldEntity(j, "configChangedLaterHighlight"),
-        "should not have later highlight in layer " + j,
+        "should not have later highlight in stage " + j,
       )
     }
   }
@@ -216,10 +216,10 @@ describe("config changed highlight", () => {
     clearAt(3)
     assertCorrect()
   })
-  test("clears when moved to higher layer", () => {
+  test("clears when moved to higher stage", () => {
     setAt(3)
     assertCorrect()
-    entity.moveToLayer(2)
+    entity.moveToStage(2)
     assertCorrect()
     assert.nil(entity.getWorldEntity(1, "configChangedLaterHighlight"))
   })
@@ -242,7 +242,7 @@ test("deleteSettingsRemnant removes highlights and sets entities correct", () =>
   for (let i = 1; i <= 5; i++) {
     assert.nil(entity.getWorldEntity(i, "settingsRemnantHighlight"))
     assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
-    if (i >= entity.getBaseLayer()) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
+    if (i >= entity.getBaseStage()) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
     else assert.nil(entity.getWorldEntity(i, "selectionProxy"))
   }
 })
@@ -254,9 +254,9 @@ test("deleteErrorHighlights deletes all highlights", () => {
   highlightCreator.deleteHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
-      assert.nil(entity.getWorldEntity(i, type), `layer ${i}`)
+      assert.nil(entity.getWorldEntity(i, type), `stage ${i}`)
     }
-    assert.nil(entity.getWorldEntity(i, "previewEntity"), `layer ${i}`)
-    assert.nil(entity.getWorldEntity(i, "selectionProxy"), `layer ${i}`)
+    assert.nil(entity.getWorldEntity(i, "previewEntity"), `stage ${i}`)
+    assert.nil(entity.getWorldEntity(i, "selectionProxy"), `stage ${i}`)
   }
 })

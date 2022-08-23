@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerPosition } from "../../assembly/AssemblyContent"
+import { StagePosition } from "../../assembly/AssemblyContent"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
 import { WorldArea } from "../../utils/world-location"
@@ -31,13 +31,13 @@ test("can save an entity", () => {
 })
 
 test("can create an entity", () => {
-  const layer: LayerPosition = {
+  const stage: StagePosition = {
     surface: area.surface,
     left_top: { x: 0, y: 0 },
     right_bottom: { x: 1, y: 1 },
-    layerNumber: 0,
+    stageNumber: 0,
   }
-  const luaEntity = DefaultEntityHandler.createEntity(layer, { position: { x: 0.5, y: 0.5 }, direction: nil }, {
+  const luaEntity = DefaultEntityHandler.createEntity(stage, { position: { x: 0.5, y: 0.5 }, direction: nil }, {
     name: "iron-chest",
     bar: 3,
   } as Entity)!

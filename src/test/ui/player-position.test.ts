@@ -12,33 +12,33 @@
 import { createDemonstrationAssembly } from "../../assembly/Assembly"
 import { generateAssemblySurfaces, getAssemblySurface } from "../../assembly/surfaces"
 import { BBox } from "../../lib/geometry"
-import { playerCurrentLayer } from "../../ui/player-position"
+import { playerCurrentStage } from "../../ui/player-position"
 
-test("playerCurrentLayer", () => {
+test("playerCurrentStage", () => {
   const assembly = createDemonstrationAssembly(3)
   after_test(() => assembly.delete())
   const player = game.players[1]!
   player.teleport([-1, -1], game.surfaces[1])
-  const currentLayer = playerCurrentLayer(1 as PlayerIndex)
-  assert.nil(currentLayer.get())
+  const currentStage = playerCurrentStage(1 as PlayerIndex)
+  assert.nil(currentStage.get())
 
-  for (const [, layer] of assembly.iterateLayers()) {
-    player.teleport(BBox.center(layer), layer.surface)
-    assert.equal(currentLayer.get(), layer)
+  for (const [, stage] of assembly.iterateStages()) {
+    player.teleport(BBox.center(stage), stage.surface)
+    assert.equal(currentStage.get(), stage)
   }
 
   generateAssemblySurfaces(2)
 
-  for (const [, layer] of assembly.iterateLayers()) {
-    player.teleport(BBox.center(layer), getAssemblySurface(2))
-    assert.equal(currentLayer.get(), layer)
+  for (const [, stage] of assembly.iterateStages()) {
+    player.teleport(BBox.center(stage), getAssemblySurface(2))
+    assert.equal(currentStage.get(), stage)
   }
 
-  const layer1 = assembly.getLayer(1)!
-  player.teleport(BBox.center(layer1), layer1.surface)
-  assert.equal(currentLayer.get(), layer1)
+  const stage1 = assembly.getStage(1)!
+  player.teleport(BBox.center(stage1), stage1.surface)
+  assert.equal(currentStage.get(), stage1)
 
   assembly.delete()
 
-  assert.nil(currentLayer.get())
+  assert.nil(currentStage.get())
 })

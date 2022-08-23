@@ -12,7 +12,7 @@
 import { assertNever, Events } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { AssemblyEvents } from "./Assembly"
-import { Assembly, Layer } from "./AssemblyDef"
+import { Assembly, Stage } from "./AssemblyDef"
 import floor = math.floor
 
 type AssembliesByChunk = Record<number, Record<number, Assembly | nil>>
@@ -66,7 +66,7 @@ AssemblyEvents.addListener((e) => {
     registerAssemblyLocation(e.assembly)
   } else if (e.type === "assembly-deleted") {
     unregisterAssemblyLocation(e.assembly)
-  } else if (e.type !== "layer-added" && e.type !== "layer-deleted" && e.type !== "pre-layer-deleted") {
+  } else if (e.type !== "stage-added" && e.type !== "stage-deleted" && e.type !== "pre-stage-deleted") {
     assertNever(e)
   }
 })
@@ -74,9 +74,9 @@ AssemblyEvents.addListener((e) => {
 export function findIntersectingAssembly(area: BBox): Assembly | nil {
   const topLeft = Pos.div(area.left_top, 32).floor()
   const bottomRight = Pos.div(area.right_bottom, 32).ceil()
-  const layersByChunk = global.inWorldAssemblies
+  const stagesByChunk = global.inWorldAssemblies
   for (const x of $range(topLeft.x, bottomRight.x - 1)) {
-    const byX = layersByChunk[x]
+    const byX = stagesByChunk[x]
     if (!byX) continue
     for (const y of $range(topLeft.y, bottomRight.y - 1)) {
       const assembly = byX[y]
@@ -93,11 +93,11 @@ export function getAssemblyAtPosition(position: Position): Assembly | nil {
   return byX[floor(position.y / 32)]
 }
 
-export function getLayerAtPosition(surface: LuaSurface, position: Position): LuaMultiReturn<[Assembly, Layer] | [nil]> {
+export function getStageAtPosition(surface: LuaSurface, position: Position): LuaMultiReturn<[Assembly, Stage] | [nil]> {
   const assembly = getAssemblyAtPosition(position)
   if (assembly && assembly.valid) {
-    const layer = assembly.getLayerAt(surface, position)
-    if (layer && layer.valid) return $multi(assembly, layer)
+    const stage = assembly.getStageAt(surface, position)
+    if (stage && stage.valid) return $multi(assembly, stage)
   }
   return $multi(nil)
 }

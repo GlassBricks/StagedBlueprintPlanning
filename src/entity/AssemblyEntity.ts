@@ -22,11 +22,11 @@ import {
   shiftNumberKeysUp,
 } from "../lib"
 import { Position } from "../lib/geometry"
-import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
+import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, mergeDiff, StageDiff } from "./diff"
 import { Entity, EntityPose } from "./Entity"
 import { CategoryName, getEntityCategory } from "./entity-info"
 
-export type LayerNumber = number
+export type StageNumber = number
 
 export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPose {
   readonly categoryName: CategoryName
@@ -34,76 +34,76 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   /** If this entity is a settings remnant */
   isSettingsRemnant?: true
 
-  getBaseLayer(): LayerNumber
+  getBaseStage(): StageNumber
   getBaseValue(): Readonly<T>
 
-  /** @return if this entity has any changes at the given layer, or any layer if nil */
-  hasLayerChange(layer?: LayerNumber): boolean
-  getLayerChange(layer: LayerNumber): LayerDiff<T> | nil
-  _getLayerChanges(): LayerChanges<T>
-  _applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void
+  /** @return if this entity has any changes at the given stage, or any stage if nil */
+  hasStageChange(stage?: StageNumber): boolean
+  getStageChange(stage: StageNumber): StageDiff<T> | nil
+  _getStageChanges(): StageChanges<T>
+  _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void
 
-  /** @return the value at a given layer. Nil if below the first layer. The result is a new table. */
-  getValueAtLayer(layer: LayerNumber): T | nil
-  /** Gets the entity name at the given layer. If below the first layer, returns the base entity name. */
-  getNameAtLayer(layer: LayerNumber): string
+  /** @return the value at a given stage. Nil if below the first stage. The result is a new table. */
+  getValueAtStage(stage: StageNumber): T | nil
+  /** Gets the entity name at the given stage. If below the first stage, returns the base entity name. */
+  getNameAtStage(stage: StageNumber): string
   /**
-   * Iterates the values of layers in the given range. More efficient than repeated calls to getValueAtLayer.
-   * The same instance will be returned for each layer; its value is ephemeral.
+   * Iterates the values of stages in the given range. More efficient than repeated calls to getValueAtStage.
+   * The same instance will be returned for each stage; its value is ephemeral.
    */
-  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
+  iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
 
   /**
-   * Adjusts layer changes so that the value at the given layer matches the given value.
-   * Trims layer changes in higher layers if they no longer have any effect.
-   * If there is diff, also clears oldLayer (see {@link getOldLayer}).
+   * Adjusts stage changes so that the value at the given stage matches the given value.
+   * Trims stage changes in higher stages if they no longer have any effect.
+   * If there is diff, also clears oldStage (see {@link getOldStage}).
    * @return true if the value changed.
    */
-  adjustValueAtLayer(layer: LayerNumber, value: T): boolean
+  adjustValueAtStage(stage: StageNumber, value: T): boolean
 
   /**
-   * @param layer the layer to move to. If moving up, deletes/merges all layer changes from old layer to new layer.
-   * @param recordOldLayer if true, records the old layer (so the entity can be moved back). Otherwise, clears the old layer.
-   * @return the previous base layer
+   * @param stage the stage to move to. If moving up, deletes/merges all stage changes from old stage to new stage.
+   * @param recordOldStage if true, records the old stage (so the entity can be moved back). Otherwise, clears the old stage.
+   * @return the previous base stage
    */
-  moveToLayer(layer: LayerNumber, recordOldLayer?: boolean): LayerNumber
+  moveToStage(stage: StageNumber, recordOldStage?: boolean): StageNumber
 
   /**
-   * The last layer before moveToLayer() was called with recordOldLayer.
-   * The layer memo is cleared when adjustValueAtLayer() is called with changes on a layer that is not the base layer.
+   * The last stage before moveToStage() was called with recordOldStage.
+   * The stage memo is cleared when adjustValueAtStage() is called with changes on a stage that is not the base stage.
    */
-  getOldLayer(): LayerNumber | nil
+  getOldStage(): StageNumber | nil
 
   /** Returns nil if world entity does not exist or is invalid */
-  getWorldEntity(layer: LayerNumber): WorldEntities["mainEntity"] | nil
-  getWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): WorldEntities[T] | nil
+  getWorldEntity(stage: StageNumber): WorldEntities["mainEntity"] | nil
+  getWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): WorldEntities[T] | nil
   /** Destroys the old world entity, if exists. If `entity` is not nil, sets the new world entity. */
-  replaceWorldEntity(layer: LayerNumber, entity: WorldEntities["mainEntity"] | nil): void
-  replaceWorldEntity<T extends WorldEntityType>(layer: LayerNumber, entity: WorldEntities[T] | nil, type: T): void
-  destroyWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): void
+  replaceWorldEntity(stage: StageNumber, entity: WorldEntities["mainEntity"] | nil): void
+  replaceWorldEntity<T extends WorldEntityType>(stage: StageNumber, entity: WorldEntities[T] | nil, type: T): void
+  destroyWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): void
   hasAnyWorldEntity(type: WorldEntityType): boolean
   destroyAllWorldEntities(type: WorldEntityType): void
-  /** Iterates all valid world entities. May skip layers. */
+  /** Iterates all valid world entities. May skip stages. */
   iterateWorldEntities<T extends WorldEntityType>(
     type: T,
-  ): LuaIterable<LuaMultiReturn<[LayerNumber, NonNullable<WorldEntities[T]>]>>
+  ): LuaIterable<LuaMultiReturn<[StageNumber, NonNullable<WorldEntities[T]>]>>
 
-  setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void
-  getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil
-  propertySetInAnyLayer(key: keyof LayerProperties): boolean
-  clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void
+  setProperty<T extends keyof StageProperties>(stage: StageNumber, key: T, value: StageProperties[T] | nil): void
+  getProperty<T extends keyof StageProperties>(stage: StageNumber, key: T): StageProperties[T] | nil
+  propertySetInAnyStage(key: keyof StageProperties): boolean
+  clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 
-  /** Modifies to be consistent with an inserted layer. */
-  insertLayer(layerNumber: LayerNumber): void
+  /** Modifies to be consistent with an inserted stage. */
+  insertStage(stageNumber: StageNumber): void
 
   /**
-   * Modifies to be consistent with a deleted layer.
-   * Layer contents will be merged with previous layer.
+   * Modifies to be consistent with a deleted stage.
+   * Stage contents will be merged with previous stage.
    */
-  deleteLayer(layerNumber: LayerNumber): void
+  deleteStage(stageNumber: StageNumber): void
 }
 
-export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, LayerDiff<E>>
+export type StageChanges<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
 
 export interface WorldEntities {
   mainEntity?: LuaEntity
@@ -112,9 +112,9 @@ export type WorldEntityType = keyof WorldEntities
 type AnyWorldEntity = WorldEntities[keyof WorldEntities]
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface LayerProperties {}
+export interface StageProperties {}
 
-type LayerData = WorldEntities & LayerProperties
+type StageData = WorldEntities & StageProperties
 
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
@@ -124,106 +124,106 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   public isSettingsRemnant: true | nil
 
-  private baseLayer: LayerNumber
+  private baseStage: StageNumber
   private readonly baseValue: T
-  private readonly layerChanges: Mutable<LayerChanges<T>> = {}
-  private oldLayer: LayerNumber | nil
+  private readonly stageChanges: Mutable<StageChanges<T>> = {}
+  private oldStage: StageNumber | nil
 
-  private readonly layerProperties: {
-    [P in keyof LayerData]?: PRecord<LayerNumber, LayerData[P]>
+  private readonly stageProperties: {
+    [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
   } = {}
 
-  constructor(baseLayer: LayerNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
+  constructor(baseStage: StageNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
     this.categoryName = getEntityCategory(baseEntity.name)
     this.position = position
     this.direction = direction === 0 ? nil : direction
     this.baseValue = shallowCopy(baseEntity)
-    this.baseLayer = baseLayer
+    this.baseStage = baseStage
   }
 
-  getBaseLayer(): LayerNumber {
-    return this.baseLayer
+  getBaseStage(): StageNumber {
+    return this.baseStage
   }
   getBaseValue(): T {
     return this.baseValue
   }
 
-  hasLayerChange(layer?: LayerNumber): boolean {
-    if (layer) return this.layerChanges[layer] !== nil
-    return next(this.layerChanges)[0] !== nil
+  hasStageChange(stage?: StageNumber): boolean {
+    if (stage) return this.stageChanges[stage] !== nil
+    return next(this.stageChanges)[0] !== nil
   }
-  public getLayerChange(layer: LayerNumber): LayerDiff<T> | nil {
-    return this.layerChanges[layer]
+  public getStageChange(stage: StageNumber): StageDiff<T> | nil {
+    return this.stageChanges[stage]
   }
-  _getLayerChanges(): LayerChanges<T> {
-    return this.layerChanges
+  _getStageChanges(): StageChanges<T> {
+    return this.stageChanges
   }
-  _applyDiffAtLayer(layer: LayerNumber, diff: LayerDiff<T>): void {
-    const { baseLayer, layerChanges } = this
-    assert(layer >= baseLayer, "layer must be >= first layer")
-    if (layer === baseLayer) {
+  _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void {
+    const { baseStage, stageChanges } = this
+    assert(stage >= baseStage, "stage must be >= first stage")
+    if (stage === baseStage) {
       applyDiffToEntity(this.baseValue, diff)
       return
     }
-    const existingDiff = layerChanges[layer]
+    const existingDiff = stageChanges[stage]
     if (existingDiff) {
       applyDiffToDiff(existingDiff, diff)
     } else {
-      layerChanges[layer] = shallowCopy(diff)
+      stageChanges[stage] = shallowCopy(diff)
     }
   }
 
-  getValueAtLayer(layer: LayerNumber): T | nil {
-    // assert(layer >= 1, "layer must be >= 1")
-    if (layer < this.baseLayer) return nil
+  getValueAtStage(stage: StageNumber): T | nil {
+    // assert(stage >= 1, "stage must be >= 1")
+    if (stage < this.baseStage) return nil
     const value = mutableShallowCopy(this.baseValue)
-    for (const [changedLayer, diff] of pairs(this.layerChanges)) {
-      if (changedLayer > layer) break
+    for (const [changedStage, diff] of pairs(this.stageChanges)) {
+      if (changedStage > stage) break
       applyDiffToEntity(value, diff)
     }
     return value
   }
-  getNameAtLayer(layer: LayerNumber): string {
+  getNameAtStage(stage: StageNumber): string {
     let name = this.baseValue.name
-    if (layer <= this.baseLayer) return name
-    for (const [changedLayer, diff] of pairs(this.layerChanges)) {
-      if (changedLayer > layer) break
+    if (stage <= this.baseStage) return name
+    for (const [changedStage, diff] of pairs(this.stageChanges)) {
+      if (changedStage > stage) break
       if (diff.name) name = diff.name
     }
     return name
   }
 
-  iterateValues(start: LayerNumber, end: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Readonly<T> | nil]>>
-  iterateValues(start: LayerNumber, end: LayerNumber) {
-    const { baseLayer, baseValue } = this
-    let value = this.getValueAtLayer(start)
-    function next(layerValues: LayerChanges, prevLayer: LayerNumber | nil) {
-      if (!prevLayer) {
+  iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
+  iterateValues(start: StageNumber, end: StageNumber) {
+    const { baseStage, baseValue } = this
+    let value = this.getValueAtStage(start)
+    function next(stageValues: StageChanges, prevStage: StageNumber | nil) {
+      if (!prevStage) {
         return $multi(start, value)
       }
-      const nextLayer = prevLayer + 1
-      if (nextLayer < baseLayer) return $multi(nextLayer, nil)
-      if (nextLayer > end) return $multi()
-      if (nextLayer === baseLayer) {
+      const nextStage = prevStage + 1
+      if (nextStage < baseStage) return $multi(nextStage, nil)
+      if (nextStage > end) return $multi()
+      if (nextStage === baseStage) {
         value = shallowCopy(baseValue)
       } else {
-        const diff = layerValues[nextLayer]
+        const diff = stageValues[nextStage]
         if (diff) applyDiffToEntity(value!, diff)
       }
-      return $multi(nextLayer, value)
+      return $multi(nextStage, value)
     }
-    return $multi<any>(next, this.layerChanges, nil)
+    return $multi<any>(next, this.stageChanges, nil)
   }
 
-  adjustValueAtLayer(layer: LayerNumber, value: T): boolean {
-    const { baseLayer, layerChanges } = this
-    assert(layer >= baseLayer, "layer must be >= first layer")
-    const diff = this.setValueAndGetDiff(layer, value)
+  adjustValueAtStage(stage: StageNumber, value: T): boolean {
+    const { baseStage, stageChanges } = this
+    assert(stage >= baseStage, "stage must be >= first stage")
+    const diff = this.setValueAndGetDiff(stage, value)
     if (!diff) return false
 
-    // trim diffs in higher layers, remove those that are ineffectual
-    for (const [layerNumber, changes] of pairs(layerChanges)) {
-      if (layerNumber <= layer) continue
+    // trim diffs in higher stages, remove those that are ineffectual
+    for (const [stageNumber, changes] of pairs(stageChanges)) {
+      if (stageNumber <= stage) continue
       for (const [k, v] of pairs(diff)) {
         if (deepCompare(changes[k], v)) {
           // changed to same value, remove
@@ -233,16 +233,16 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
           delete diff[k]
         }
       }
-      if (isEmpty(changes)) delete layerChanges[layerNumber]
+      if (isEmpty(changes)) delete stageChanges[stageNumber]
       if (isEmpty(diff)) break
     }
 
-    this.oldLayer = nil
+    this.oldStage = nil
     return true
   }
 
-  private setValueAndGetDiff(layer: LayerNumber, value: T): LayerDiff<T> | nil {
-    if (layer === this.baseLayer) {
+  private setValueAndGetDiff(stage: StageNumber, value: T): StageDiff<T> | nil {
+    if (stage === this.baseStage) {
       const { baseValue } = this
       const diff = getEntityDiff(baseValue, value)
       if (diff) {
@@ -250,95 +250,95 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
         return diff
       }
     } else {
-      const valueAtPreviousLayer = assert(this.getValueAtLayer(layer - 1))
-      const newLayerDiff = getEntityDiff(valueAtPreviousLayer, value)
+      const valueAtPreviousStage = assert(this.getValueAtStage(stage - 1))
+      const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
 
-      const { layerChanges } = this
-      const oldLayerDiff = layerChanges[layer]
-      const diff = mergeDiff(valueAtPreviousLayer, oldLayerDiff, newLayerDiff)
+      const { stageChanges } = this
+      const oldStageDiff = stageChanges[stage]
+      const diff = mergeDiff(valueAtPreviousStage, oldStageDiff, newStageDiff)
       if (diff) {
-        layerChanges[layer] = newLayerDiff
+        stageChanges[stage] = newStageDiff
         return diff
       }
     }
   }
-  private moveUp(higherLayer: LayerNumber): void {
+  private moveUp(higherStage: StageNumber): void {
     // todo: what happens if moved up, and lost data?
     const { baseValue } = this
-    const { layerChanges } = this
-    for (const [changeLayer, changed] of pairs(layerChanges)) {
-      if (changeLayer > higherLayer) break
+    const { stageChanges } = this
+    for (const [changeStage, changed] of pairs(stageChanges)) {
+      if (changeStage > higherStage) break
       applyDiffToEntity(baseValue, changed)
-      layerChanges[changeLayer] = nil
+      stageChanges[changeStage] = nil
     }
-    this.baseLayer = higherLayer
+    this.baseStage = higherStage
   }
-  moveToLayer(layer: LayerNumber, recordOldLayer?: boolean): LayerNumber {
-    const { baseLayer } = this
-    if (layer > baseLayer) {
-      this.moveUp(layer)
-    } else if (layer < baseLayer) {
-      this.baseLayer = layer
+  moveToStage(stage: StageNumber, recordOldStage?: boolean): StageNumber {
+    const { baseStage } = this
+    if (stage > baseStage) {
+      this.moveUp(stage)
+    } else if (stage < baseStage) {
+      this.baseStage = stage
     }
-    this.oldLayer = recordOldLayer && baseLayer !== layer ? baseLayer : nil
-    return baseLayer
+    this.oldStage = recordOldStage && baseStage !== stage ? baseStage : nil
+    return baseStage
     // else do nothing
   }
-  getOldLayer(): LayerNumber | nil {
-    return this.oldLayer
+  getOldStage(): StageNumber | nil {
+    return this.oldStage
   }
 
-  getWorldEntity(layer: LayerNumber, type: WorldEntityType = "mainEntity") {
-    const { layerProperties } = this
-    const byType = layerProperties[type]
+  getWorldEntity(stage: StageNumber, type: WorldEntityType = "mainEntity") {
+    const { stageProperties } = this
+    const byType = stageProperties[type]
     if (!byType) return nil
-    const worldEntity = byType[layer]
+    const worldEntity = byType[stage]
     if (worldEntity && worldEntity.valid) {
       return worldEntity as LuaEntity
     }
     // delete
-    delete byType[layer]
-    if (isEmpty(byType)) delete layerProperties[type]
+    delete byType[stage]
+    if (isEmpty(byType)) delete stageProperties[type]
   }
-  replaceWorldEntity(layer: LayerNumber, entity: AnyWorldEntity | nil, type: WorldEntityType = "mainEntity"): void {
-    if (entity === nil) return this.destroyWorldEntity(layer, type)
-    const { layerProperties } = this
-    const byType = layerProperties[type] || (layerProperties[type] = {})
-    const existing = byType[layer]
+  replaceWorldEntity(stage: StageNumber, entity: AnyWorldEntity | nil, type: WorldEntityType = "mainEntity"): void {
+    if (entity === nil) return this.destroyWorldEntity(stage, type)
+    const { stageProperties } = this
+    const byType = stageProperties[type] || (stageProperties[type] = {})
+    const existing = byType[stage]
     if (existing && existing.valid && existing !== entity) existing.destroy()
-    byType[layer] = entity
+    byType[stage] = entity
   }
-  destroyWorldEntity<T extends WorldEntityType>(layer: LayerNumber, type: T): void {
-    const { layerProperties } = this
-    const byType = layerProperties[type]
+  destroyWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): void {
+    const { stageProperties } = this
+    const byType = stageProperties[type]
     if (!byType) return
-    const entity = byType[layer]
+    const entity = byType[stage]
     if (entity && entity.valid) entity.destroy()
-    delete byType[layer]
-    if (isEmpty(byType)) delete layerProperties[type]
+    delete byType[stage]
+    if (isEmpty(byType)) delete stageProperties[type]
   }
   hasAnyWorldEntity(type: WorldEntityType): boolean {
-    const { layerProperties } = this
-    const byType = layerProperties[type]
+    const { stageProperties } = this
+    const byType = stageProperties[type]
     if (!byType) return false
     for (const [key, entity] of pairs(byType)) {
       if (entity && entity.valid) return true
       byType[key] = nil
     }
-    if (isEmpty(byType)) delete layerProperties[type]
+    if (isEmpty(byType)) delete stageProperties[type]
     return false
   }
   destroyAllWorldEntities(type: WorldEntityType): void {
-    const { layerProperties } = this
-    const byType = layerProperties[type]
+    const { stageProperties } = this
+    const byType = stageProperties[type]
     if (!byType) return
     for (const [, entity] of pairs(byType)) {
       if (entity && entity.valid) entity.destroy()
     }
-    delete layerProperties[type]
+    delete stageProperties[type]
   }
-  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[LayerNumber, any]>> {
-    const byType = this.layerProperties[type]
+  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {
+    const byType = this.stageProperties[type]
     if (!byType) return (() => nil) as any
     let curKey = next(byType)[0]
     return function () {
@@ -352,61 +352,61 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     } as any
   }
 
-  setProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T, value: LayerProperties[T] | nil): void {
-    const { layerProperties } = this
-    const byType: PRecord<LayerNumber, LayerProperties[T]> = layerProperties[key] || (layerProperties[key] = {})
-    byType[layer] = value
-    if (isEmpty(byType)) delete layerProperties[key]
+  setProperty<T extends keyof StageProperties>(stage: StageNumber, key: T, value: StageProperties[T] | nil): void {
+    const { stageProperties } = this
+    const byType: PRecord<StageNumber, StageProperties[T]> = stageProperties[key] || (stageProperties[key] = {})
+    byType[stage] = value
+    if (isEmpty(byType)) delete stageProperties[key]
   }
-  getProperty<T extends keyof LayerProperties>(layer: LayerNumber, key: T): LayerProperties[T] | nil {
-    const byType = this.layerProperties[key]
-    return byType && byType[layer]
+  getProperty<T extends keyof StageProperties>(stage: StageNumber, key: T): StageProperties[T] | nil {
+    const byType = this.stageProperties[key]
+    return byType && byType[stage]
   }
-  propertySetInAnyLayer(key: keyof LayerProperties): boolean {
-    return this.layerProperties[key] !== nil
+  propertySetInAnyStage(key: keyof StageProperties): boolean {
+    return this.stageProperties[key] !== nil
   }
-  clearPropertyInAllLayers<T extends keyof LayerProperties>(key: T): void {
-    delete this.layerProperties[key]
+  clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void {
+    delete this.stageProperties[key]
   }
 
-  insertLayer(layerNumber: LayerNumber): void {
-    if (this.baseLayer >= layerNumber) this.baseLayer++
-    if (this.oldLayer && this.oldLayer >= layerNumber) this.oldLayer++
+  insertStage(stageNumber: StageNumber): void {
+    if (this.baseStage >= stageNumber) this.baseStage++
+    if (this.oldStage && this.oldStage >= stageNumber) this.oldStage++
 
-    shiftNumberKeysUp(this.layerChanges, layerNumber)
-    for (const [, byType] of pairs(this.layerProperties)) {
-      shiftNumberKeysUp(byType, layerNumber)
+    shiftNumberKeysUp(this.stageChanges, stageNumber)
+    for (const [, byType] of pairs(this.stageProperties)) {
+      shiftNumberKeysUp(byType, stageNumber)
     }
   }
 
-  deleteLayer(layerNumber: LayerNumber): void {
-    assert(layerNumber > 1, "Can't delete first layer")
-    this.mergeLayerChangeWithBelow(layerNumber)
+  deleteStage(stageNumber: StageNumber): void {
+    assert(stageNumber > 1, "Can't delete first stage")
+    this.mergeStageChangeWithBelow(stageNumber)
 
-    if (this.baseLayer >= layerNumber) this.baseLayer--
-    if (this.oldLayer && this.oldLayer >= layerNumber) this.oldLayer--
+    if (this.baseStage >= stageNumber) this.baseStage--
+    if (this.oldStage && this.oldStage >= stageNumber) this.oldStage--
 
-    shiftNumberKeysDown(this.layerChanges, layerNumber)
-    for (const [, byType] of pairs(this.layerProperties)) {
-      shiftNumberKeysDown(byType, layerNumber)
+    shiftNumberKeysDown(this.stageChanges, stageNumber)
+    for (const [, byType] of pairs(this.stageProperties)) {
+      shiftNumberKeysDown(byType, stageNumber)
     }
   }
-  private mergeLayerChangeWithBelow(layerNumber: number): void {
-    const { layerChanges } = this
-    const thisChange = layerChanges[layerNumber]
+  private mergeStageChangeWithBelow(stageNumber: number): void {
+    const { stageChanges } = this
+    const thisChange = stageChanges[stageNumber]
     if (thisChange) {
-      const prevLayer = layerNumber - 1
-      if (this.baseLayer === prevLayer) {
+      const prevStage = stageNumber - 1
+      if (this.baseStage === prevStage) {
         applyDiffToEntity(this.baseValue, thisChange)
       } else {
-        const prevChange = layerChanges[prevLayer]
+        const prevChange = stageChanges[prevStage]
         if (prevChange) {
           applyDiffToDiff(prevChange, thisChange)
         } else {
-          layerChanges[prevLayer] = thisChange
+          stageChanges[prevStage] = thisChange
         }
       }
-      delete layerChanges[layerNumber]
+      delete stageChanges[stageNumber]
     }
   }
 }
@@ -415,9 +415,9 @@ export function createAssemblyEntity<E extends Entity>(
   entity: E,
   position: Position,
   direction: defines.direction | nil,
-  layerNumber: LayerNumber,
+  stageNumber: StageNumber,
 ): AssemblyEntity<E> {
-  return new AssemblyEntityImpl(layerNumber, entity, position, direction)
+  return new AssemblyEntityImpl(stageNumber, entity, position, direction)
 }
 
 // vehicles and units
@@ -445,13 +445,13 @@ export function isCompatibleEntity(
 }
 
 // note: see also EntityHighlighter, updateErrorHighlight
-export function entityHasErrorAt(entity: AssemblyEntity, layerNumber: LayerNumber): boolean {
-  return layerNumber >= entity.getBaseLayer() && entity.getWorldEntity(layerNumber) === nil
+export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+  return stageNumber >= entity.getBaseStage() && entity.getWorldEntity(stageNumber) === nil
 }
 
 /** Used by custom input */
-export function isNotableLayer(entity: AssemblyEntity, layerNumber: LayerNumber): boolean {
+export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
   return (
-    entity.getBaseLayer() === layerNumber || entity.hasLayerChange(layerNumber) || entityHasErrorAt(entity, layerNumber)
+    entity.getBaseStage() === stageNumber || entity.hasStageChange(stageNumber) || entityHasErrorAt(entity, stageNumber)
   )
 }

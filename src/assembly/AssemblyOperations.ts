@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isWorldEntityAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { AssemblyContent, LayerPosition } from "./AssemblyContent"
+import { isWorldEntityAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**
@@ -19,21 +19,21 @@ import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
  */
 export interface AssemblyOperations {
   deleteAllExtraEntitiesOnly(assembly: AssemblyContent): void
-  deleteLayerEntities(assembly: AssemblyContent, layerNumber: LayerNumber): void
+  deleteStageEntities(assembly: AssemblyContent, stageNumber: StageNumber): void
 
-  resetLayer(assembly: AssemblyContent, layer: LayerPosition): void
+  resetStage(assembly: AssemblyContent, stage: StagePosition): void
 }
 
 /** @noSelf */
 export interface AssemblyOpWorldInteractor {
-  deleteAllWorldEntities(layer: LayerPosition): void
+  deleteAllWorldEntities(stage: StagePosition): void
 }
 
 export function createAssemblyOperations(
   worldUpdater: WorldUpdater,
   worldInteractor: AssemblyOpWorldInteractor,
 ): AssemblyOperations {
-  const { updateWorldEntities, deleteExtraEntitiesOnly, deleteWorldEntitiesInLayer } = worldUpdater
+  const { updateWorldEntities, deleteExtraEntitiesOnly, deleteWorldEntitiesInStage } = worldUpdater
 
   function deleteAllExtraEntitiesOnly(assembly: AssemblyContent) {
     for (const entity of assembly.content.iterateAllEntities()) {
@@ -41,31 +41,31 @@ export function createAssemblyOperations(
     }
   }
 
-  function resetLayer(assembly: AssemblyContent, layer: LayerPosition) {
-    worldInteractor.deleteAllWorldEntities(layer)
-    const layerNumber = layer.layerNumber
+  function resetStage(assembly: AssemblyContent, stage: StagePosition) {
+    worldInteractor.deleteAllWorldEntities(stage)
+    const stageNumber = stage.stageNumber
     for (const entity of assembly.content.iterateAllEntities()) {
-      updateWorldEntities(assembly, entity, layerNumber, layerNumber, true)
+      updateWorldEntities(assembly, entity, stageNumber, stageNumber, true)
     }
   }
 
-  function deleteLayerEntities(assembly: AssemblyContent, layerNumber: LayerNumber) {
+  function deleteStageEntities(assembly: AssemblyContent, stageNumber: StageNumber) {
     for (const entity of assembly.content.iterateAllEntities()) {
-      deleteWorldEntitiesInLayer(entity, layerNumber)
+      deleteWorldEntitiesInStage(entity, stageNumber)
     }
   }
 
   return {
     deleteAllExtraEntitiesOnly,
-    deleteLayerEntities,
-    resetLayer,
+    deleteStageEntities,
+    resetStage,
   }
 }
 
 const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
-  deleteAllWorldEntities(layer: LayerPosition) {
-    layer.surface
-      .find_entities_filtered({ area: layer })
+  deleteAllWorldEntities(stage: StagePosition) {
+    stage.surface
+      .find_entities_filtered({ area: stage })
       .filter((x) => isWorldEntityAssemblyEntity(x))
       .forEach((x) => x.destroy())
   },

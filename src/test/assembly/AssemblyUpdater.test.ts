@@ -10,12 +10,12 @@
  */
 
 import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
-import { AssemblyContent, LayerPosition } from "../../assembly/AssemblyContent"
+import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
 import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { Prototypes } from "../../constants"
-import { AssemblyEntity, LayerChanges, LayerNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, StageChanges, StageNumber } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
 import { Entity } from "../../entity/Entity"
 import { _overrideEntityCategory } from "../../entity/entity-info"
@@ -30,7 +30,7 @@ import wire_type = defines.wire_type
 const pos = Pos(10.5, 10.5)
 
 let assembly: AssemblyContent
-let layer: Mutable<LayerPosition>
+let stage: Mutable<StagePosition>
 
 let assemblyUpdater: AssemblyUpdater
 let worldUpdater: mock.Stubbed<WorldUpdater>
@@ -44,7 +44,7 @@ before_all(() => {
 let totalCalls: number
 before_each(() => {
   assembly = createMockAssemblyContent(1)
-  layer = assembly.getLayer(1)!
+  stage = assembly.getStage(1)!
   totalCalls = 0
   function spyFn<F extends ContextualFun>(): F {
     return stub<F>().invokes((() => {
@@ -55,7 +55,7 @@ before_each(() => {
     updateWorldEntities: spyFn(),
     forceDeleteEntity: spyFn(),
     deleteWorldEntities: spyFn(),
-    deleteWorldEntitiesInLayer: spyFn(),
+    deleteWorldEntitiesInStage: spyFn(),
     deleteExtraEntitiesOnly: spyFn(),
     makeSettingsRemnant: spyFn(),
     reviveSettingsRemnant: spyFn(),
@@ -86,16 +86,16 @@ function createEntity(args?: Partial<LuaEntity>): LuaEntity & TestEntity {
 
 function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
-  assemblyUpdater.onEntityCreated(assembly, entity, layer)
+  assemblyUpdater.onEntityCreated(assembly, entity, stage)
   const found = assembly.content.findCompatible(entity.name, entity.position, nil) as AssemblyEntity<TestEntity> | nil
   assert(found)
   return { luaEntity: entity, added: found! }
 }
 
-function addAndReset(addedNum: LayerNumber = layer.layerNumber, setNum = layer.layerNumber, args?: Partial<LuaEntity>) {
-  layer.layerNumber = addedNum
+function addAndReset(addedNum: StageNumber = stage.stageNumber, setNum = stage.stageNumber, args?: Partial<LuaEntity>) {
+  stage.stageNumber = addedNum
   const ret = addEntity(args)
-  layer.layerNumber = setNum
+  stage.stageNumber = setNum
   mock.clear(worldUpdater)
   totalCalls = 0
   return ret
@@ -130,8 +130,8 @@ function assertNoCalls() {
 
 function assertUpdateCalled(
   entity: AssemblyEntity<TestEntity>,
-  startLayer: LayerNumber,
-  endLayer: LayerNumber | nil,
+  startStage: StageNumber,
+  endStage: StageNumber | nil,
   replace: boolean,
 ) {
   eventsAsserted = true
@@ -139,11 +139,11 @@ function assertUpdateCalled(
   const spy = worldUpdater.updateWorldEntities as spy.Spy<WorldUpdater["updateWorldEntities"]>
   assert.spy(spy).called(1)
   const refs = spy.calls[0].refs as any[]
-  const [cAssembly, cEntity, cStartLayer, cEndLayer, cReplace] = table.unpack(refs, 1, 5)
+  const [cAssembly, cEntity, cStartStage, cEndStage, cReplace] = table.unpack(refs, 1, 5)
   assert.equal(assembly, cAssembly)
   assert.equal(entity, cEntity)
-  assert.equal(startLayer, cStartLayer, "start layer")
-  assert.equal(endLayer, cEndLayer, "end layer")
+  assert.equal(startStage, cStartStage, "start stage")
+  assert.equal(endStage, cEndStage, "end stage")
   if (replace) assert.true(cReplace, "replace")
   else assert.falsy(cReplace, "replace")
 }
@@ -152,10 +152,10 @@ function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.deleteWorldEntities).called_with(match.ref(entity))
 }
-function assertForceDeleteCalled(entity: AssemblyEntity<TestEntity>, layer: LayerNumber) {
+function assertForceDeleteCalled(entity: AssemblyEntity<TestEntity>, stage: StageNumber) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.forceDeleteEntity).called_with(match.ref(assembly), match.ref(entity), layer)
+  assert.spy(worldUpdater.forceDeleteEntity).called_with(match.ref(assembly), match.ref(entity), stage)
 }
 function assertMakeSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
@@ -189,8 +189,8 @@ function assertNotified(entity: LuaEntity, message: LocalisedString) {
   notificationsAsserted = true
 }
 
-function assertLayerChanges(entity: AssemblyEntity, changes: LayerChanges<TestEntity>) {
-  assert.same(changes, entity._getLayerChanges())
+function assertStageChanges(entity: AssemblyEntity, changes: StageChanges<TestEntity>) {
+  assert.same(changes, entity._getStageChanges())
 }
 
 function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): void {
@@ -199,91 +199,91 @@ function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): v
   assert.same(pos, added.position)
   assert.nil(added.direction)
 
-  assert.equal(luaEntity, added.getWorldEntity(layer.layerNumber))
+  assert.equal(luaEntity, added.getWorldEntity(stage.stageNumber))
 
   assertOneEntity()
   assertUpdateCalled(added, 1, nil, false)
 }
 
 describe("add", () => {
-  test("updates all layers", () => {
+  test("updates all stages", () => {
     const { added, luaEntity } = addEntity()
     assertAdded(added, luaEntity)
   })
 
-  test.each([1, 2], "at same or higher layer updates the newly added entity, added layer: %d", (layerNumber) => {
-    const { luaEntity, added } = addAndReset(1, layerNumber)
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
+  test.each([1, 2], "at same or higher stage updates the newly added entity, added stage: %d", (stageNumber) => {
+    const { luaEntity, added } = addAndReset(1, stageNumber)
+    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage)
     assertOneEntity()
-    assertUpdateCalled(added, layerNumber, layerNumber, false)
+    assertUpdateCalled(added, stageNumber, stageNumber, false)
   })
 
-  test.each([false, true])("add at lower layer does all behaviors, with layer changes: %s", (withChanges) => {
+  test.each([false, true])("add at lower stage does all behaviors, with stage changes: %s", (withChanges) => {
     const { added } = addAndReset(3, 1)
     const newEntity = createEntity()
     if (withChanges) newEntity.prop1 = 3
-    assemblyUpdater.onEntityCreated(assembly, newEntity, layer) // again
+    assemblyUpdater.onEntityCreated(assembly, newEntity, stage) // again
     // updates entity
     assert.equal(newEntity, added.getWorldEntity(1))
-    assert.same(1, added.getBaseLayer())
-    // does not create layer changes
+    assert.same(1, added.getBaseStage())
+    // does not create stage changes
     assert.equal(2, added.getBaseValue().prop1)
-    assert.false(added.hasLayerChange())
+    assert.false(added.hasStageChange())
     // calls updateWorldEntities
     assertOneEntity()
     assertUpdateCalled(added, 1, 3, true)
-    // records old layer
-    assert.equal(3, added.getOldLayer())
+    // records old stage
+    assert.equal(3, added.getOldStage())
     // creates notification
-    assertNotified(newEntity, [L_Interaction.EntityMovedFromLayer, "mock layer 3"])
+    assertNotified(newEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"])
   })
 })
 
 describe("delete", () => {
   test("not in assembly does nothing", () => {
     const entity = createEntity()
-    assemblyUpdater.onEntityDeleted(assembly, entity, layer)
+    assemblyUpdater.onEntityDeleted(assembly, entity, stage)
     assertNoEntities()
     assertNoCalls()
   })
 
-  test("in layer below base does nothing (bug)", () => {
+  test("in stage below base does nothing (bug)", () => {
     const { luaEntity } = addAndReset(2, 1)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
     assertOneEntity()
     assertNoCalls()
   })
 
-  test("in layer above base forbids deletion", () => {
+  test("in stage above base forbids deletion", () => {
     const { luaEntity, added } = addAndReset(1, 2)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, true)
   })
 
-  test("in base layer deletes entity", () => {
+  test("in base stage deletes entity", () => {
     const { luaEntity, added } = addAndReset()
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
     assert.falsy(added.isSettingsRemnant)
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
   })
 
-  test("in base layer with oldLayer moves back to old layer", () => {
+  test("in base stage with oldStage moves back to old stage", () => {
     const { luaEntity, added } = addAndReset(3, 2)
-    added.moveToLayer(2, true)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+    added.moveToStage(2, true)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
     assert.falsy(added.isSettingsRemnant)
     assertOneEntity()
     assertUpdateCalled(added, 2, 3, false)
-    assert.nil(added.getOldLayer())
-    assertNotified(luaEntity, [L_Interaction.EntityMovedBackToLayer, "mock layer 3"])
+    assert.nil(added.getOldStage())
+    assertNotified(luaEntity, [L_Interaction.EntityMovedBackToStage, "mock stage 3"])
   })
 
-  test("in base layer with updates creates settings remnant", () => {
+  test("in base stage with updates creates settings remnant", () => {
     const { luaEntity, added } = addAndReset()
-    added._applyDiffAtLayer(2, { prop1: 3 })
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
+    added._applyDiffAtStage(2, { prop1: 3 })
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
     assertOneEntity()
     assert.true(added.isSettingsRemnant)
     assertMakeSettingsRemnantCalled(added)
@@ -292,51 +292,51 @@ describe("delete", () => {
 
 test("force delete", () => {
   const { luaEntity, added } = addAndReset(1, 2)
-  assemblyUpdater.onEntityForceDeleted(assembly, luaEntity, layer)
+  assemblyUpdater.onEntityForceDeleted(assembly, luaEntity, stage)
   assertOneEntity()
   assertForceDeleteCalled(added, 2)
 })
 
 describe("revive", () => {
-  test.each([1, 2, 3, 4, 5, 6], "settings remnant 1->3->5, revive at layer %d", (reviveLayer) => {
-    const { luaEntity, added } = addAndReset(1, reviveLayer)
-    added._applyDiffAtLayer(3, { prop1: 3 })
-    added._applyDiffAtLayer(5, { prop1: 4 })
+  test.each([1, 2, 3, 4, 5, 6], "settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
+    const { luaEntity, added } = addAndReset(1, reviveStage)
+    added._applyDiffAtStage(3, { prop1: 3 })
+    added._applyDiffAtStage(5, { prop1: 4 })
     added.isSettingsRemnant = true
 
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
-    assert.equal(luaEntity, added.getWorldEntity(reviveLayer))
+    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage)
+    assert.equal(luaEntity, added.getWorldEntity(reviveStage))
     assert.falsy(added.isSettingsRemnant)
-    assert.equal(added.getBaseLayer(), reviveLayer)
+    assert.equal(added.getBaseStage(), reviveStage)
 
-    if (reviveLayer >= 5) {
+    if (reviveStage >= 5) {
       assert.equal(4, added.getBaseValue().prop1)
-      assert.false(added.hasLayerChange())
-    } else if (reviveLayer >= 3) {
+      assert.false(added.hasStageChange())
+    } else if (reviveStage >= 3) {
       assert.equal(3, added.getBaseValue().prop1)
-      assertLayerChanges(added, { 5: { prop1: 4 } })
+      assertStageChanges(added, { 5: { prop1: 4 } })
     } else {
       assert.equal(2, added.getBaseValue().prop1)
-      assertLayerChanges(added, { 3: { prop1: 3 }, 5: { prop1: 4 } })
+      assertStageChanges(added, { 3: { prop1: 3 }, 5: { prop1: 4 } })
     }
 
     assertOneEntity()
     assertReviveSettingsRemnantCalled(added)
   })
 
-  test.each([false, true], "settings remnant 2->3, revive at layer 1, with changes: %s", (withChanges) => {
+  test.each([false, true], "settings remnant 2->3, revive at stage 1, with changes: %s", (withChanges) => {
     const { luaEntity, added } = addAndReset(2, 1)
-    added._applyDiffAtLayer(3, { prop1: 3 })
+    added._applyDiffAtStage(3, { prop1: 3 })
     added.isSettingsRemnant = true
 
     if (withChanges) luaEntity.prop1 = 1
 
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage)
     assert.falsy(added.isSettingsRemnant)
-    assert.equal(added.getBaseLayer(), 1)
+    assert.equal(added.getBaseStage(), 1)
 
     assert.equal(2, added.getBaseValue().prop1)
-    assertLayerChanges(added, { 3: { prop1: 3 } })
+    assertStageChanges(added, { 3: { prop1: 3 } })
 
     assertOneEntity()
     assertReviveSettingsRemnantCalled(added)
@@ -346,31 +346,31 @@ describe("revive", () => {
 describe("update", () => {
   test("non-existent defaults to add behavior (bug)", () => {
     const entity = createEntity()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage)
     const added = assembly.content.findCompatible("test", pos, nil) as AssemblyEntity<TestEntity>
     assertAdded(added, entity)
   })
 
   test("with no changes does nothing", () => {
     const { luaEntity } = addAndReset()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
     assertOneEntity()
     assertNoCalls()
   })
 
-  test("in lower than base layer defaults to add below behavior (bug)", () => {
+  test("in lower than base stage defaults to add below behavior (bug)", () => {
     const { luaEntity, added } = addAndReset(3, 1)
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
     assert.equal(luaEntity, added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, 3, true)
     notificationsAsserted = true // skip
   })
 
-  test("in base layer updates all entities", () => {
+  test("in base stage updates all entities", () => {
     const { luaEntity, added } = addAndReset(2, 2)
     luaEntity.prop1 = 3
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
     assert.equal(3, added.getBaseValue().prop1)
 
     assertOneEntity()
@@ -378,21 +378,21 @@ describe("update", () => {
   })
 
   test.each([false, true])(
-    "in higher layer updates assembly.content and entities, with existing changes: %s",
+    "in higher stage updates assembly.content and entities, with existing changes: %s",
     (withExistingChanges) => {
       const { luaEntity, added } = addAndReset(1, 2)
       if (withExistingChanges) {
-        added._applyDiffAtLayer(2, { prop1: 5, prop2: "val2" })
+        added._applyDiffAtStage(2, { prop1: 5, prop2: "val2" })
         luaEntity.prop2 = "val2" // not changed
       }
 
       luaEntity.prop1 = 3 // changed
-      assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+      assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
       assert.equal(2, added.getBaseValue().prop1)
       if (withExistingChanges) {
-        assertLayerChanges(added, { 2: { prop1: 3, prop2: "val2" } })
+        assertStageChanges(added, { 2: { prop1: 3, prop2: "val2" } })
       } else {
-        assertLayerChanges(added, { 2: { prop1: 3 } })
+        assertStageChanges(added, { 2: { prop1: 3 } })
       }
 
       assertOneEntity()
@@ -400,12 +400,12 @@ describe("update", () => {
     },
   )
 
-  test("updating match previous layer removes layer changes", () => {
+  test("updating match previous stage removes stage changes", () => {
     const { luaEntity, added } = addAndReset(1, 2)
-    added._applyDiffAtLayer(2, { prop1: 5 })
-    assert.true(added.hasLayerChange())
+    added._applyDiffAtStage(2, { prop1: 5 })
+    assert.true(added.hasStageChange())
     luaEntity.prop1 = 2
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
 
     assertOneEntity()
     assertUpdateCalled(added, 2, nil, false)
@@ -413,21 +413,21 @@ describe("update", () => {
 })
 
 describe("rotate", () => {
-  test("in base layer rotates all entities", () => {
+  test("in base stage rotates all entities", () => {
     const { luaEntity, added } = addAndReset(2, 2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer, oldDirection)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, oldDirection)
     assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })
 
-  test("in higher layer forbids rotation", () => {
+  test("in higher stage forbids rotation", () => {
     const { luaEntity, added } = addAndReset(1, 2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, layer, oldDirection)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, oldDirection)
     assert.equal(oldDirection, added.direction ?? 0)
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
@@ -439,7 +439,7 @@ describe("fast replace", () => {
     const { luaEntity, added } = addAndReset()
     const newEntity = createEntity({ name: "test2" })
     luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, layer)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage)
     assert.equal(newEntity, added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -449,7 +449,7 @@ describe("fast replace", () => {
     const oldDirection = luaEntity.direction
     const newEntity = createEntity({ name: "test2", direction: direction.west })
     luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, layer, oldDirection)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
     assert.equal(newEntity, added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -462,7 +462,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
     rawset(luaEntity, "get_upgrade_direction", () => nil)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
     assert.equal("test2", added.getBaseValue().name)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -472,7 +472,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => nil)
     rawset(luaEntity, "get_upgrade_direction", () => direction.west)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, layer)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
     assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -488,7 +488,7 @@ describe("cleanup tool", () => {
   }
   test("revive error entity", () => {
     const { added, proxy } = setupWithProxy()
-    assemblyUpdater.onCleanupToolUsed(assembly, proxy, layer)
+    assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage)
     assert.nil(added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, 1, false)
@@ -497,31 +497,31 @@ describe("cleanup tool", () => {
   test("clear settings remnant", () => {
     const { added, proxy } = setupWithProxy()
     added.isSettingsRemnant = true
-    assemblyUpdater.onCleanupToolUsed(assembly, proxy, layer)
+    assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage)
     assert.nil(added.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
   })
 })
 
-describe("move to current layer", () => {
+describe("move to current stage", () => {
   test("normal entity", () => {
     const { luaEntity, added } = addAndReset(1, 3)
-    assemblyUpdater.onMoveEntityToLayer(assembly, luaEntity, layer)
-    assert.equal(3, added.getBaseLayer())
+    assemblyUpdater.onMoveEntityToStage(assembly, luaEntity, stage)
+    assert.equal(3, added.getBaseStage())
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
-    assertNotified(luaEntity, [L_Interaction.EntityMovedFromLayer, "mock layer 1"])
+    assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"])
   })
   test("preview entity", () => {
     const { luaEntity, added } = addAndReset(1, 3)
     luaEntity.destroy()
     const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
-    assemblyUpdater.onMoveEntityToLayer(assembly, preview, layer)
-    assert.equal(3, added.getBaseLayer())
+    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage)
+    assert.equal(3, added.getBaseStage())
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
-    assertNotified(preview, [L_Interaction.EntityMovedFromLayer, "mock layer 1"])
+    assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"])
   })
   test("settings remnant", () => {
     // with preview again
@@ -529,8 +529,8 @@ describe("move to current layer", () => {
     luaEntity.destroy()
     const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
     added.isSettingsRemnant = true
-    assemblyUpdater.onMoveEntityToLayer(assembly, preview, layer)
-    assert.equal(3, added.getBaseLayer())
+    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage)
+    assert.equal(3, added.getBaseStage())
     assertOneEntity()
     assertReviveSettingsRemnantCalled(added)
   })
@@ -594,7 +594,7 @@ describe("circuit wires", () => {
       addAndReset()
       setupNewWire(luaEntity1, entity1)
 
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, layer)
+      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage)
 
       assertUpdateCalled(entity1, 1, nil, false)
       assertNEntities(2)
@@ -614,7 +614,7 @@ describe("circuit wires", () => {
         wireSaver.getWireConnectionDiff.invokes(() => false as any)
         return $multi([], [connection])
       })
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, layer)
+      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage)
       assert.falsy(assembly.content.getWireConnections(entity1)?.get(entity2))
       assert.falsy(assembly.content.getWireConnections(entity2)?.get(entity1))
       assertUpdateCalled(entity1, 1, nil, false)
@@ -629,7 +629,7 @@ describe("circuit wires", () => {
       setupNewWire(luaEntity1, entity1)
       addAndReset()
 
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, layer)
+      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage)
       assertNoCalls()
       assertNEntities(2)
     })

@@ -9,14 +9,14 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerNumber } from "../entity/AssemblyEntity"
+import { StageNumber } from "../entity/AssemblyEntity"
 import { bind, Events, RegisterClass, registerFunctions } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Event, MutableState, State, state } from "../lib/observable"
 import { globalEvent } from "../lib/observable/GlobalEvent"
 import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
-import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer, LocalAssemblyEvent } from "./AssemblyDef"
+import { Assembly, AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage } from "./AssemblyDef"
 import { newEntityMap } from "./EntityMap"
 import { generateAssemblySurfaces, getAssemblySurface, getOrGenerateAssemblySurface, prepareArea } from "./surfaces"
 import floor = math.floor
@@ -45,16 +45,16 @@ class AssemblyImpl implements Assembly {
 
   valid = true
 
-  private readonly layers: Record<number, LayerImpl>
-  private readonly surfaceIndexToLayerNumber = new LuaMap<SurfaceIndex, LayerNumber>()
+  private readonly stages: Record<number, StageImpl>
+  private readonly surfaceIndexToStageNumber = new LuaMap<SurfaceIndex, StageNumber>()
 
-  protected constructor(readonly id: AssemblyId, readonly bbox: BBox, initialLayerPositions: readonly WorldArea[]) {
+  protected constructor(readonly id: AssemblyId, readonly bbox: BBox, initialStagePositions: readonly WorldArea[]) {
     this.displayName = this.name.map(bind(getDisplayName, L_Assembly.UnnamedAssembly, id))
-    this.layers = initialLayerPositions.map(
-      (area, i) => new LayerImpl(this, i + 1, area.surface, area.bbox, `<Layer ${i + 1}>`),
+    this.stages = initialStagePositions.map(
+      (area, i) => new StageImpl(this, i + 1, area.surface, area.bbox, `<Stage ${i + 1}>`),
     )
-    for (const [number, layer] of pairs(this.layers)) {
-      this.surfaceIndexToLayerNumber.set(layer.surface.index, number)
+    for (const [number, stage] of pairs(this.stages)) {
+      this.surfaceIndexToStageNumber.set(stage.surface.index, number)
     }
   }
 
@@ -69,104 +69,104 @@ class AssemblyImpl implements Assembly {
     return assembly
   }
 
-  getLayer(layerNumber: LayerNumber): Layer | nil {
-    return this.layers[layerNumber]
+  getStage(stageNumber: StageNumber): Stage | nil {
+    return this.stages[stageNumber]
   }
 
-  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
-  iterateLayers(start: LayerNumber = 1, end: LayerNumber = this.numLayers()): any {
-    function next(layers: Layer[], i: number) {
+  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Stage]>>
+  iterateStages(start: StageNumber = 1, end: StageNumber = this.numStages()): any {
+    function next(stages: Stage[], i: number) {
       if (i >= end) return
       i++
-      return $multi(i, layers[i - 1])
+      return $multi(i, stages[i - 1])
     }
-    return $multi(next, this.layers, start - 1)
+    return $multi(next, this.stages, start - 1)
   }
 
-  getAllLayers(): readonly Layer[] {
-    return this.layers as unknown as readonly Layer[]
+  getAllStages(): readonly Stage[] {
+    return this.stages as unknown as readonly Stage[]
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getLayerAt(surface: LuaSurface, _position: Position): Layer | nil {
-    const layerNum = this.surfaceIndexToLayerNumber.get(surface.index)
-    if (layerNum === nil) return nil
-    return this.layers[layerNum]
+  getStageAt(surface: LuaSurface, _position: Position): Stage | nil {
+    const stageNum = this.surfaceIndexToStageNumber.get(surface.index)
+    if (stageNum === nil) return nil
+    return this.stages[stageNum]
   }
 
-  insertLayer(index: LayerNumber): Layer {
+  insertStage(index: StageNumber): Stage {
     this.assertValid()
-    assert(index >= 1 && index <= this.numLayers() + 1, "Invalid new layer number")
+    assert(index >= 1 && index <= this.numStages() + 1, "Invalid new stage number")
 
-    const surface = this.findNewLayerSurface()
+    const surface = this.findNewStageSurface()
 
-    const newLayer = new LayerImpl(this, index, surface, this.bbox, this.createNewLayerName())
-    table.insert(this.layers as unknown as Layer[], index, newLayer)
-    // update layers
-    for (const i of $range(index, luaLength(this.layers))) {
-      const layer = this.layers[i]
-      layer.layerNumber = i
-      this.surfaceIndexToLayerNumber.set(layer.surface.index, i)
+    const newStage = new StageImpl(this, index, surface, this.bbox, this.createNewStageName())
+    table.insert(this.stages as unknown as Stage[], index, newStage)
+    // update stages
+    for (const i of $range(index, luaLength(this.stages))) {
+      const stage = this.stages[i]
+      stage.stageNumber = i
+      this.surfaceIndexToStageNumber.set(stage.surface.index, i)
     }
 
-    this.content.insertLayer(index)
+    this.content.insertStage(index)
 
-    this.raiseEvent({ type: "layer-added", assembly: this, layer: newLayer })
-    return newLayer
+    this.raiseEvent({ type: "stage-added", assembly: this, stage: newStage })
+    return newStage
   }
-  private findNewLayerSurface(): LuaSurface {
+  private findNewStageSurface(): LuaSurface {
     for (let i = 1; ; i++) {
       const surface: LuaSurface = getOrGenerateAssemblySurface(i)
-      if (!this.surfaceIndexToLayerNumber.has(surface.index)) {
+      if (!this.surfaceIndexToStageNumber.has(surface.index)) {
         prepareArea(surface, this.bbox)
         return surface
       }
     }
   }
-  public deleteLayer(index: LayerNumber): Layer {
+  public deleteStage(index: StageNumber): Stage {
     this.assertValid()
-    assert(index > 1, "Cannot delete first layer")
-    const layer = this.layers[index]
-    assert(layer !== nil, "invalid layer number")
+    assert(index > 1, "Cannot delete first stage")
+    const stage = this.stages[index]
+    assert(stage !== nil, "invalid stage number")
 
-    this.raiseEvent({ type: "pre-layer-deleted", assembly: this, layer })
+    this.raiseEvent({ type: "pre-stage-deleted", assembly: this, stage })
 
-    layer.valid = false
-    this.surfaceIndexToLayerNumber.delete(layer.surface.index)
-    table.remove(this.layers as unknown as Layer[], index)
-    // update layers
-    for (const i of $range(index, this.numLayers())) {
-      const layer = this.layers[i]
-      layer.layerNumber = i
-      this.surfaceIndexToLayerNumber.set(layer.surface.index, i)
+    stage.valid = false
+    this.surfaceIndexToStageNumber.delete(stage.surface.index)
+    table.remove(this.stages as unknown as Stage[], index)
+    // update stages
+    for (const i of $range(index, this.numStages())) {
+      const stage = this.stages[i]
+      stage.stageNumber = i
+      this.surfaceIndexToStageNumber.set(stage.surface.index, i)
     }
 
-    this.content.deleteLayer(index)
+    this.content.deleteStage(index)
 
-    this.raiseEvent({ type: "layer-deleted", assembly: this, layer })
-    return layer
+    this.raiseEvent({ type: "stage-deleted", assembly: this, stage })
+    return stage
   }
 
   delete() {
     if (!this.valid) return
     global.assemblies.delete(this.id)
     this.valid = false
-    for (const [, layer] of pairs(this.layers)) {
-      layer.valid = false
+    for (const [, stage] of pairs(this.stages)) {
+      stage.valid = false
     }
     this.raiseEvent({ type: "assembly-deleted", assembly: this })
     this.localEvents.closeAll()
   }
-  numLayers(): number {
-    return luaLength(this.layers)
+  numStages(): number {
+    return luaLength(this.stages)
   }
-  getLayerName(layerNumber: LayerNumber): LocalisedString {
-    return this.layers[layerNumber].name.get()
+  getStageName(stageNumber: StageNumber): LocalisedString {
+    return this.stages[stageNumber].name.get()
   }
-  private createNewLayerName(): string {
+  private createNewStageName(): string {
     let subName = ""
     for (let i = 1; ; i++) {
-      const name = `<New layer>${subName}`
-      if ((this.layers as unknown as Layer[]).some((layer) => layer.name.get() === name)) {
+      const name = `<New stage>${subName}`
+      if ((this.stages as unknown as Stage[]).some((stage) => stage.name.get() === name)) {
         subName = ` (${i})`
       } else {
         return name
@@ -199,11 +199,11 @@ export function newAssembly(surfaces: readonly LuaSurface[], bbox: BoundingBox):
 
 export function userCreateAssembly(
   area: BoundingBox,
-  numLayers: number,
+  numStages: number,
   deleteExistingEntities: boolean,
   name: string,
 ): Assembly {
-  const surfaces = prepareAssemblySurfaces(area, numLayers)
+  const surfaces = prepareAssemblySurfaces(area, numStages)
   if (deleteExistingEntities) {
     for (const surface of surfaces) for (const e of surface.find_entities(area)) e.destroy()
   }
@@ -212,10 +212,10 @@ export function userCreateAssembly(
   return assembly
 }
 
-function prepareAssemblySurfaces(area: BBox, numLayers: number): LuaSurface[] {
-  generateAssemblySurfaces(numLayers)
+function prepareAssemblySurfaces(area: BBox, numStages: number): LuaSurface[] {
+  generateAssemblySurfaces(numStages)
   const surfaces: LuaSurface[] = []
-  for (const i of $range(1, numLayers)) {
+  for (const i of $range(1, numStages)) {
     const surface = getAssemblySurface(i)!
     prepareArea(surface, area)
     surfaces.push(surface)
@@ -239,8 +239,8 @@ function getDisplayName(locale: string, id: number, name: string): LocalisedStri
 }
 registerFunctions("Assembly", { getDisplayName })
 
-@RegisterClass("Layer")
-class LayerImpl implements Layer {
+@RegisterClass("Stage")
+class StageImpl implements Stage {
   left_top: Position
   right_bottom: Position
 
@@ -249,7 +249,7 @@ class LayerImpl implements Layer {
 
   constructor(
     public readonly assembly: AssemblyImpl,
-    public layerNumber: LayerNumber,
+    public stageNumber: StageNumber,
     public readonly surface: LuaSurface,
     bbox: BoundingBox,
     name: string,
@@ -261,40 +261,40 @@ class LayerImpl implements Layer {
 
   public deleteInAssembly(): void {
     if (!this.valid) return
-    this.assembly.deleteLayer(this.layerNumber)
+    this.assembly.deleteStage(this.stageNumber)
   }
 }
 
 @RegisterClass("DemonstrationAssembly")
 class DemonstrationAssembly extends AssemblyImpl {
-  constructor(id: AssemblyId, private initialNumLayers: LayerNumber) {
+  constructor(id: AssemblyId, private initialNumStages: StageNumber) {
     super(
       id,
-      BBox.coords(0, 0, 32 * initialNumLayers, 32),
-      Array.from({ length: initialNumLayers }, (_, i) => ({
+      BBox.coords(0, 0, 32 * initialNumStages, 32),
+      Array.from({ length: initialNumStages }, (_, i) => ({
         surface: game.surfaces[1],
         bbox: BBox.coords(0, 0, 32, 32).translate(Pos(i * 32, 0)),
       })),
     )
   }
-  override getLayerAt(surface: LuaSurface, position: Position): Layer | nil {
+  override getStageAt(surface: LuaSurface, position: Position): Stage | nil {
     const index = floor(position.x / 32)
-    if (index < 0 || index >= this.numLayers()) return nil
-    return this.getLayer(index + 1)
+    if (index < 0 || index >= this.numStages()) return nil
+    return this.getStage(index + 1)
   }
-  override insertLayer(): Layer {
-    error("Cannot add layers to a demonstration assembly")
+  override insertStage(): Stage {
+    error("Cannot add stages to a demonstration assembly")
   }
-  override deleteLayer(): Layer {
-    error("Cannot delete layers from a demonstration assembly")
+  override deleteStage(): Stage {
+    error("Cannot delete stages from a demonstration assembly")
   }
 }
-export function _mockAssembly(numLayers: number = 0): Assembly {
-  return new DemonstrationAssembly(0 as AssemblyId, numLayers)
+export function _mockAssembly(numStages: number = 0): Assembly {
+  return new DemonstrationAssembly(0 as AssemblyId, numStages)
 }
-export function createDemonstrationAssembly(numLayers: number): Assembly {
+export function createDemonstrationAssembly(numStages: number): Assembly {
   const id = global.nextAssemblyId++ as AssemblyId
-  const assembly = new DemonstrationAssembly(id, numLayers)
+  const assembly = new DemonstrationAssembly(id, numStages)
   AssemblyImpl.onAssemblyCreated(assembly)
   return assembly
 }

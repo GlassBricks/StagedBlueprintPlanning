@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerPosition } from "../assembly/AssemblyContent"
+import { StagePosition } from "../assembly/AssemblyContent"
 import { Mutable } from "../lib"
 import { Pos, PositionClass } from "../lib/geometry"
 import { BlueprintDiffHandler } from "./BlueprintDiffHandler"
@@ -17,16 +17,16 @@ import { BasicEntityInfo, Entity, EntityPose } from "./Entity"
 import minus = Pos.minus
 import plus = Pos.plus
 
-export function getLayerPosition(layer: LayerPosition, luaEntity: BasicEntityInfo): PositionClass {
-  return minus(luaEntity.position, layer.left_top)
+export function getStagePosition(stage: StagePosition, luaEntity: BasicEntityInfo): PositionClass {
+  return minus(luaEntity.position, stage.left_top)
 }
-export function getWorldPosition(layer: LayerPosition, entity: EntityPose): PositionClass {
-  return plus(entity.position, layer.left_top)
+export function getWorldPosition(stage: StagePosition, entity: EntityPose): PositionClass {
+  return plus(entity.position, stage.left_top)
 }
 
 /** @noSelf */
 export interface EntityCreator {
-  createEntity(layer: LayerPosition, pos: EntityPose, entity: Entity): LuaEntity | nil
+  createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil
   updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity
 }
 
@@ -42,10 +42,10 @@ export const DefaultEntityHandler: EntityHandler = {
     return BlueprintDiffHandler.save(luaEntity)
   },
 
-  createEntity(layer: LayerPosition, pose: EntityPose, entity: Entity): LuaEntity | nil {
+  createEntity(stage: StagePosition, pose: EntityPose, entity: Entity): LuaEntity | nil {
     return BlueprintDiffHandler.create(
-      layer.surface,
-      getWorldPosition(layer, pose),
+      stage.surface,
+      getWorldPosition(stage, pose),
       pose.direction,
       entity as BlueprintEntity,
     )

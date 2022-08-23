@@ -10,12 +10,12 @@
  */
 
 import { Prototypes } from "../constants"
-import { AssemblyEntity, createAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
-import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
+import { DefaultEntityHandler, EntitySaver, getStagePosition } from "../entity/EntityHandler"
 import { L_Interaction } from "../locale"
-import { AssemblyContent, LayerPosition } from "./AssemblyContent"
+import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 import min = math.min
@@ -27,9 +27,9 @@ import min = math.min
  */
 export interface AssemblyUpdater {
   /** Handles when an entity is created. */
-  onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+  onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void
   /** Handles when an entity is removed. */
-  onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
+  onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
   /**
    * Handles when an entity has its properties updated.
    * Checks ALL properties except wire connections.
@@ -38,7 +38,7 @@ export interface AssemblyUpdater {
   onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
     entity: LuaEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     previousDirection?: defines.direction,
   ): void
   /**
@@ -46,16 +46,16 @@ export interface AssemblyUpdater {
    * Performs the requested upgrade, and cancels upgrade.
    * Also handles rotation via upgrade.
    */
-  onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+  onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void
 
   /** Handles possible circuit wires changes of an entity. */
-  onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+  onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void
 
-  onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
+  onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
   /** Either: entity died, or reverse select with cleanup tool */
-  onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
+  onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
   /** User activated. */
-  onMoveEntityToLayer(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
+  onMoveEntityToStage(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void
 }
 
 /**
@@ -79,10 +79,10 @@ export function createAssemblyUpdater(
   function recordCircuitWires(
     assembly: AssemblyContent,
     assemblyEntity: AssemblyEntity,
-    layerNumber: LayerNumber,
+    stageNumber: StageNumber,
     entity: LuaEntity,
   ): boolean {
-    const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, layerNumber, entity)
+    const [added, removed] = getWireConnectionDiff(assembly, assemblyEntity, stageNumber, entity)
     if (!added) return false
     if (added[0] === nil && removed![0] === nil) return false
     const { content } = assembly
@@ -91,34 +91,34 @@ export function createAssemblyUpdater(
     return true
   }
 
-  function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): AssemblyEntity | nil {
-    const position = getLayerPosition(layer, entity)
-    const { layerNumber } = layer
+  function onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): AssemblyEntity | nil {
+    const position = getStagePosition(stage, entity)
+    const { stageNumber } = stage
     const { content } = assembly
 
     const existing = content.findCompatible(entity.name, position, entity.direction)
     if (existing) {
-      const existingLayer = existing.getBaseLayer()
-      if (existingLayer <= layerNumber) {
-        entityAddedAbove(assembly, existing, layerNumber, entity)
+      const existingStage = existing.getBaseStage()
+      if (existingStage <= stageNumber) {
+        entityAddedAbove(assembly, existing, stageNumber, entity)
         return existing
       }
     }
 
     if (existing) {
-      // layerNumber < existing.layerNumber
-      entityAddedBelow(assembly, existing, layerNumber, entity)
+      // stageNumber < existing.stageNumber
+      entityAddedBelow(assembly, existing, stageNumber, entity)
       return existing
     }
 
     const saved = saveEntity(entity)
     if (!saved) return
     // add new entity
-    const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, layerNumber)
+    const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, stageNumber)
     content.add(assemblyEntity)
 
-    assemblyEntity.replaceWorldEntity(layerNumber, entity)
-    recordCircuitWires(assembly, assemblyEntity, layerNumber, entity)
+    assemblyEntity.replaceWorldEntity(stageNumber, entity)
+    recordCircuitWires(assembly, assemblyEntity, stageNumber, entity)
     updateWorldEntities(assembly, assemblyEntity, 1)
 
     return assemblyEntity
@@ -127,82 +127,82 @@ export function createAssemblyUpdater(
   function updateSingleWorldEntity(
     assembly: AssemblyContent,
     assemblyEntity: AssemblyEntity,
-    layerNumber: LayerNumber,
+    stageNumber: StageNumber,
     replace: boolean,
   ): void {
-    updateWorldEntities(assembly, assemblyEntity, layerNumber, layerNumber, replace)
+    updateWorldEntities(assembly, assemblyEntity, stageNumber, stageNumber, replace)
   }
 
   function entityAddedAbove(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
-    layerNumber: LayerNumber,
+    stageNumber: StageNumber,
     luaEntity: LuaEntity,
   ): void {
     if (existing.isSettingsRemnant) {
-      existing.replaceWorldEntity(layerNumber, luaEntity)
-      reviveSettingsRemnant(assembly, existing, layerNumber)
+      existing.replaceWorldEntity(stageNumber, luaEntity)
+      reviveSettingsRemnant(assembly, existing, stageNumber)
     } else {
-      updateSingleWorldEntity(assembly, existing, layerNumber, false)
+      updateSingleWorldEntity(assembly, existing, stageNumber, false)
     }
   }
 
   function entityAddedBelow(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
-    layerNumber: LayerNumber,
+    stageNumber: StageNumber,
     luaEntity: LuaEntity,
   ): void {
     if (existing.isSettingsRemnant) {
-      existing.replaceWorldEntity(layerNumber, luaEntity)
-      reviveSettingsRemnant(assembly, existing, layerNumber)
+      existing.replaceWorldEntity(stageNumber, luaEntity)
+      reviveSettingsRemnant(assembly, existing, stageNumber)
     } else {
-      moveEntityDown(assembly, existing, layerNumber, luaEntity)
+      moveEntityDown(assembly, existing, stageNumber, luaEntity)
     }
   }
 
-  function reviveSettingsRemnant(assembly: AssemblyContent, existing: AssemblyEntity, layerNumber: LayerNumber): void {
+  function reviveSettingsRemnant(assembly: AssemblyContent, existing: AssemblyEntity, stageNumber: StageNumber): void {
     existing.isSettingsRemnant = nil
-    existing.moveToLayer(layerNumber)
+    existing.moveToStage(stageNumber)
     worldUpdater.reviveSettingsRemnant(assembly, existing)
   }
 
   function moveEntityDown(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
-    layerNumber: number,
+    stageNumber: number,
     luaEntity: LuaEntity,
   ): void {
-    const oldLayer = existing.moveToLayer(layerNumber, true)
-    createNotification(luaEntity, [L_Interaction.EntityMovedFromLayer, assembly.getLayerName(oldLayer)])
-    existing.replaceWorldEntity(layerNumber, luaEntity)
-    updateWorldEntities(assembly, existing, layerNumber, oldLayer, true)
+    const oldStage = existing.moveToStage(stageNumber, true)
+    createNotification(luaEntity, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)])
+    existing.replaceWorldEntity(stageNumber, luaEntity)
+    updateWorldEntities(assembly, existing, stageNumber, oldStage, true)
   }
 
-  function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
-    const position = getLayerPosition(layer, entity)
+  function onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void {
+    const position = getStagePosition(stage, entity)
     const { content } = assembly
 
     const existing = content.findCompatible(entity.name, position, entity.direction)
     if (!existing) return
-    const { layerNumber } = layer
-    const existingLayer = existing.getBaseLayer()
+    const { stageNumber } = stage
+    const existingStage = existing.getBaseStage()
 
-    if (existingLayer !== layerNumber) {
-      if (existingLayer < layerNumber) {
-        updateSingleWorldEntity(assembly, existing, layerNumber, true)
+    if (existingStage !== stageNumber) {
+      if (existingStage < stageNumber) {
+        updateSingleWorldEntity(assembly, existing, stageNumber, true)
       }
-      // else: layerNumber > existingLayer; bug, ignore
+      // else: stageNumber > existingStage; bug, ignore
       return
     }
     doEntityDelete(assembly, existing, entity)
   }
 
   function doEntityDelete(assembly: AssemblyContent, assemblyEntity: AssemblyEntity, entity: BasicEntityInfo): void {
-    const oldLayer = assemblyEntity.getOldLayer()
-    if (oldLayer !== nil) {
-      moveEntityToOldLayer(assembly, assemblyEntity, oldLayer, entity)
-    } else if (assemblyEntity.hasLayerChange()) {
+    const oldStage = assemblyEntity.getOldStage()
+    if (oldStage !== nil) {
+      moveEntityToOldStage(assembly, assemblyEntity, oldStage, entity)
+    } else if (assemblyEntity.hasStageChange()) {
       assemblyEntity.isSettingsRemnant = true
       worldUpdater.makeSettingsRemnant(assembly, assemblyEntity)
     } else {
@@ -211,37 +211,37 @@ export function createAssemblyUpdater(
     }
   }
 
-  function moveEntityToOldLayer(
+  function moveEntityToOldStage(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
-    oldLayer: LayerNumber,
+    oldStage: StageNumber,
     luaEntity: BasicEntityInfo,
   ): void {
-    const currentLayer = existing.getBaseLayer()
-    existing.moveToLayer(oldLayer)
-    createNotification(luaEntity, [L_Interaction.EntityMovedBackToLayer, assembly.getLayerName(oldLayer)])
-    updateWorldEntities(assembly, existing, currentLayer, oldLayer)
+    const currentStage = existing.getBaseStage()
+    existing.moveToStage(oldStage)
+    createNotification(luaEntity, [L_Interaction.EntityMovedBackToStage, assembly.getStageName(oldStage)])
+    updateWorldEntities(assembly, existing, currentStage, oldStage)
   }
 
-  function onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
-    const existing = assembly.content.findCompatible(entity.name, getLayerPosition(layer, entity), entity.direction)
+  function onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void {
+    const existing = assembly.content.findCompatible(entity.name, getStagePosition(stage, entity), entity.direction)
     if (existing) {
-      forceDeleteEntity(assembly, existing, layer.layerNumber)
+      forceDeleteEntity(assembly, existing, stage.stageNumber)
     }
   }
 
   function getCompatibleOrAdd(
     assembly: AssemblyContent,
     entity: LuaEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     previousDirection?: defines.direction,
   ): AssemblyEntity | nil {
-    const position = getLayerPosition(layer, entity)
+    const position = getStagePosition(stage, entity)
     const compatible = assembly.content.findCompatible(entity.name, position, previousDirection ?? entity.direction)
-    if (compatible && layer.layerNumber >= compatible.getBaseLayer()) {
-      compatible.replaceWorldEntity(layer.layerNumber, entity) // just in case
+    if (compatible && stage.stageNumber >= compatible.getBaseStage()) {
+      compatible.replaceWorldEntity(stage.stageNumber, entity) // just in case
     } else {
-      onEntityCreated(assembly, entity, layer)
+      onEntityCreated(assembly, entity, stage)
     }
     return compatible
   }
@@ -249,13 +249,13 @@ export function createAssemblyUpdater(
   function doUpdate(
     assembly: AssemblyContent,
     entity: LuaEntity,
-    layerNumber: number,
+    stageNumber: number,
     existing: AssemblyEntity,
     rotateTo: defines.direction | nil,
     upgradeTo?: string | nil,
   ): void {
-    const isBaseLayer = existing.getBaseLayer() === layerNumber
-    const rotateAllowed = rotateTo !== nil && isBaseLayer
+    const isBaseStage = existing.getBaseStage() === stageNumber
+    const rotateAllowed = rotateTo !== nil && isBaseStage
     if (rotateAllowed) {
       existing.direction = rotateTo !== 0 ? rotateTo : nil
     }
@@ -265,16 +265,16 @@ export function createAssemblyUpdater(
     if (!newValue) return // bug?
     if (upgradeTo) newValue.name = upgradeTo
 
-    const hasDiff = existing.adjustValueAtLayer(layerNumber, newValue)
-    if (rotateAllowed || (hasDiff && isBaseLayer)) {
-      // if rotate or upgrade base value, update all layers (including highlights)
+    const hasDiff = existing.adjustValueAtStage(stageNumber, newValue)
+    if (rotateAllowed || (hasDiff && isBaseStage)) {
+      // if rotate or upgrade base value, update all stages (including highlights)
       updateWorldEntities(assembly, existing, 1)
     } else if (hasDiff) {
-      // update all above layers
-      updateWorldEntities(assembly, existing, layerNumber)
+      // update all above stages
+      updateWorldEntities(assembly, existing, stageNumber)
     } else if (rotateTo) {
-      // rotation forbidden, update only this layer
-      updateWorldEntities(assembly, existing, layerNumber, layerNumber)
+      // rotation forbidden, update only this stage
+      updateWorldEntities(assembly, existing, stageNumber, stageNumber)
     }
     // else, no diff, do nothing
   }
@@ -282,18 +282,18 @@ export function createAssemblyUpdater(
   function onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
     entity: LuaEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     previousDirection?: defines.direction,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, layer, previousDirection)
+    const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection)
     if (!existing) return
 
     const rotation = previousDirection && previousDirection !== entity.direction ? entity.direction : nil
-    doUpdate(assembly, entity, layer.layerNumber, existing, rotation)
+    doUpdate(assembly, entity, stage.stageNumber, existing, rotation)
   }
 
-  function onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
-    const existing = getCompatibleOrAdd(assembly, entity, layer)
+  function onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void {
+    const existing = getCompatibleOrAdd(assembly, entity, stage)
     if (!existing) return
 
     const upgradeDirection = entity.get_upgrade_direction()
@@ -310,40 +310,40 @@ export function createAssemblyUpdater(
       }
     }
     if (upgradeDirection || upgradeType) {
-      doUpdate(assembly, entity, layer.layerNumber, existing, upgradeDirection, upgradeType)
+      doUpdate(assembly, entity, stage.stageNumber, existing, upgradeDirection, upgradeType)
     }
     if (entity.valid) entity.cancel_upgrade("player")
   }
 
-  function onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void {
-    const existing = getCompatibleOrAdd(assembly, entity, layer)
+  function onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void {
+    const existing = getCompatibleOrAdd(assembly, entity, stage)
     if (!existing) return
-    if (recordCircuitWires(assembly, existing, layer.layerNumber, entity)) {
-      updateWorldEntities(assembly, existing, existing.getBaseLayer())
+    if (recordCircuitWires(assembly, existing, stage.stageNumber, entity)) {
+      updateWorldEntities(assembly, existing, existing.getBaseStage())
     }
   }
 
   function getEntityFromProxyEntity(
     proxyEntity: LuaEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     assembly: AssemblyContent,
   ): AssemblyEntity | nil {
     const proxyName = proxyEntity.name
     assert(proxyName.startsWith(Prototypes.SelectionProxyPrefix))
     const actualName = proxyName.substring(Prototypes.SelectionProxyPrefix.length)
 
-    const position = getLayerPosition(layer, proxyEntity)
+    const position = getStagePosition(stage, proxyEntity)
     const existing = assembly.content.findCompatible(actualName, position, proxyEntity.direction)
     return existing
   }
 
-  function onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void {
-    const existing = getEntityFromProxyEntity(proxyEntity, layer, assembly)
+  function onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void {
+    const existing = getEntityFromProxyEntity(proxyEntity, stage, assembly)
     if (!existing) return
     if (!existing.isSettingsRemnant) {
       // this is an error entity, try revive
-      if (layer.layerNumber < existing.getBaseLayer()) return
-      updateWorldEntities(assembly, existing, layer.layerNumber, layer.layerNumber)
+      if (stage.stageNumber < existing.getBaseStage()) return
+      updateWorldEntities(assembly, existing, stage.stageNumber, stage.stageNumber)
     } else {
       // settings remnant, remove
       assembly.content.delete(existing)
@@ -353,32 +353,32 @@ export function createAssemblyUpdater(
 
   function getEntityFromPreviewEntity(
     entityOrPreviewEntity: LuaEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     assembly: AssemblyContent,
   ): AssemblyEntity | nil {
     let name = entityOrPreviewEntity.name
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) name = name.substring(Prototypes.PreviewEntityPrefix.length)
-    const position = getLayerPosition(layer, entityOrPreviewEntity)
+    const position = getStagePosition(stage, entityOrPreviewEntity)
     const existing = assembly.content.findCompatible(name, position, entityOrPreviewEntity.direction)
     return existing
   }
 
-  function onMoveEntityToLayer(
+  function onMoveEntityToStage(
     assembly: AssemblyContent,
     entityOrPreviewEntity: LuaEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
   ): void {
-    const existing = getEntityFromPreviewEntity(entityOrPreviewEntity, layer, assembly)
+    const existing = getEntityFromPreviewEntity(entityOrPreviewEntity, stage, assembly)
     if (!existing) return
-    const { layerNumber } = layer
+    const { stageNumber } = stage
     if (existing.isSettingsRemnant) {
-      // revive at current layer
-      reviveSettingsRemnant(assembly, existing, layerNumber)
+      // revive at current stage
+      reviveSettingsRemnant(assembly, existing, stageNumber)
     } else {
       // move
-      const oldLayer = existing.moveToLayer(layerNumber, true)
-      updateWorldEntities(assembly, existing, min(oldLayer, layerNumber))
-      createNotification(entityOrPreviewEntity, [L_Interaction.EntityMovedFromLayer, assembly.getLayerName(oldLayer)])
+      const oldStage = existing.moveToStage(stageNumber, true)
+      updateWorldEntities(assembly, existing, min(oldStage, stageNumber))
+      createNotification(entityOrPreviewEntity, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)])
     }
   }
 
@@ -390,7 +390,7 @@ export function createAssemblyUpdater(
     onCircuitWiresPotentiallyUpdated,
     onCleanupToolUsed,
     onEntityForceDeleted,
-    onMoveEntityToLayer,
+    onMoveEntityToStage,
   }
 }
 

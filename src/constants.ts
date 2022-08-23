@@ -13,12 +13,12 @@ export const enum CustomInputs {
   Build = "bp3:build",
   RemovePoleCables = "bp3:remove-pole-cables",
 
-  NextLayer = "bp3:next-layer",
-  PreviousLayer = "bp3:previous-layer",
-  GoToBaseLayer = "bp3:go-to-base-layer",
-  GoToNextNotableLayer = "bp3:go-to-next-notable-layer",
+  NextStage = "bp3:next-stage",
+  PreviousStage = "bp3:previous-stage",
+  GoToBaseStage = "bp3:go-to-base-stage",
+  GoToNextNotableStage = "bp3:go-to-next-notable-stage",
 
-  MoveToThisLayer = "bp3:move-to-this-layer",
+  MoveToThisStage = "bp3:move-to-this-stage",
 }
 
 export const enum Settings {

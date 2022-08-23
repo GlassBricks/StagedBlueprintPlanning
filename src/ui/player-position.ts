@@ -10,7 +10,7 @@
  */
 
 import { AssemblyEvents } from "../assembly/Assembly"
-import { Layer } from "../assembly/AssemblyDef"
+import { Stage } from "../assembly/AssemblyDef"
 import { getAssemblyAtPosition } from "../assembly/world-register"
 import { assertNever, Events, onPlayerInit } from "../lib"
 import { BBox } from "../lib/geometry"
@@ -18,13 +18,13 @@ import { MutableState, State, state } from "../lib/observable"
 
 declare global {
   interface PlayerData {
-    currentLayer: MutableState<Layer | nil>
+    currentStage: MutableState<Stage | nil>
   }
 }
 declare const global: GlobalWithPlayers
 
 onPlayerInit((index) => {
-  global.players[index].currentLayer = state(nil)
+  global.players[index].currentStage = state(nil)
 })
 let players: typeof global.players
 Events.onInitOrLoad(() => (players = global.players))
@@ -32,12 +32,12 @@ Events.onInitOrLoad(() => (players = global.players))
 function updatePlayer(player: LuaPlayer): void {
   const data = players[player.index]
   if (!data) return // bug workaround
-  const currentLayer = data.currentLayer
-  const layer = currentLayer.get()
+  const currentStage = data.currentStage
+  const stage = currentStage.get()
   const { position, surface } = player
-  if (layer && layer.valid && layer.surface === surface && BBox.contains(layer, position)) return
+  if (stage && stage.valid && stage.surface === surface && BBox.contains(stage, position)) return
 
-  currentLayer.set(getAssemblyAtPosition(position)?.getLayerAt(surface, position))
+  currentStage.set(getAssemblyAtPosition(position)?.getStageAt(surface, position))
 }
 Events.on_player_changed_position((e) => updatePlayer(game.get_player(e.player_index)!))
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
@@ -46,32 +46,32 @@ AssemblyEvents.addListener((e) => {
   if (
     e.type === "assembly-created" ||
     e.type === "assembly-deleted" ||
-    e.type === "layer-added" ||
-    e.type === "layer-deleted"
+    e.type === "stage-added" ||
+    e.type === "stage-deleted"
   ) {
     for (const [, player] of game.players) {
       updatePlayer(player)
     }
-  } else if (e.type !== "pre-layer-deleted") {
+  } else if (e.type !== "pre-stage-deleted") {
     assertNever(e)
   }
 })
 
-export function playerCurrentLayer(index: PlayerIndex): State<Layer | nil> {
-  return players[index].currentLayer
+export function playerCurrentStage(index: PlayerIndex): State<Stage | nil> {
+  return players[index].currentStage
 }
 
-export function teleportToLayer(player: LuaPlayer, layer: Layer): void {
+export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   const currentPos = player.position
-  const surface = layer.surface
-  if (BBox.contains(layer, currentPos)) {
+  const surface = stage.surface
+  if (BBox.contains(stage, currentPos)) {
     // already in position, check surface
     if (player.surface !== surface) {
       player.teleport(player.position, surface)
     }
   } else {
     // teleport to center
-    player.teleport(BBox.center(layer), surface)
+    player.teleport(BBox.center(stage), surface)
   }
 }
 

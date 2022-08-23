@@ -15,7 +15,7 @@ import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/Assembly
 import { _inValidState } from "../../assembly/world-listener"
 import { registerAssemblyLocation, unregisterAssemblyLocation } from "../../assembly/world-register"
 import { CustomInputs, Prototypes } from "../../constants"
-import { LayerNumber } from "../../entity/AssemblyEntity"
+import { StageNumber } from "../../entity/AssemblyEntity"
 import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
 import { Events } from "../../lib"
 import { BBox, Pos, PositionClass } from "../../lib/geometry"
@@ -34,7 +34,7 @@ before_all(() => {
   assembly = _mockAssembly(2)
   registerAssemblyLocation(assembly)
 
-  player.teleport(getLayerCenter(1), surface)
+  player.teleport(getStageCenter(1), surface)
 })
 
 before_each(() => {
@@ -56,13 +56,13 @@ after_each(() => {
   player?.cursor_stack?.clear()
 })
 
-function getLayerCenter(layer: LayerNumber): PositionClass {
-  return BBox.center(assembly.getLayer(layer)!)
+function getStageCenter(stage: StageNumber): PositionClass {
+  return BBox.center(assembly.getStage(stage)!)
 }
 
 describe("add", () => {
   test("player built entity", () => {
-    const position = getLayerCenter(1)
+    const position = getStageCenter(1)
     player.cursor_stack!.set_stack("iron-chest")
     player.build_from_cursor({ position })
     player.cursor_stack!.clear()
@@ -75,11 +75,11 @@ describe("add", () => {
     assert.not_nil(entity)
     assert
       .spy(updater.onEntityCreated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
 
   test("script raise built", () => {
-    const position = getLayerCenter(1)
+    const position = getStageCenter(1)
     const entity = surface.create_entity({
       name: "iron-chest",
       position,
@@ -88,14 +88,14 @@ describe("add", () => {
     assert.not_nil(entity)
     assert
       .spy(updater.onEntityCreated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
 })
 
 describe("delete", () => {
   let entity: LuaEntity
   before_each(() => {
-    const position = getLayerCenter(1)
+    const position = getStageCenter(1)
     entity = surface.create_entity({
       name: "iron-chest",
       position,
@@ -104,22 +104,22 @@ describe("delete", () => {
   })
   test("player mined entity", () => {
     player.mine_entity(entity, true)
-    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getLayer(1)!))
+    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!))
   })
   test("script raised destroy", () => {
     entity.destroy({ raise_destroy: true })
-    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getLayer(1)!))
+    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!))
   })
   test("die", () => {
     entity.die()
-    assert.spy(updater.onEntityForceDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getLayer(1)!))
+    assert.spy(updater.onEntityForceDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!))
   })
 })
 
 describe("update", () => {
   let entity: LuaEntity
   before_each(() => {
-    const position = getLayerCenter(1)
+    const position = getStageCenter(1)
     entity = surface.create_entity({
       name: "inserter",
       position,
@@ -132,7 +132,7 @@ describe("update", () => {
     player.opened = nil
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!), match.nil())
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), match.nil())
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -142,7 +142,7 @@ describe("update", () => {
     })
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!), match.nil())
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), match.nil())
   })
 
   test("rotate", () => {
@@ -150,14 +150,14 @@ describe("update", () => {
     entity.rotate({ by_player: 1 as PlayerIndex })
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!), oldDirection)
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), oldDirection)
   })
 })
 
 describe("fast replace", () => {
   let entity: LuaEntity
   before_each(() => {
-    const position = getLayerCenter(1)
+    const position = getStageCenter(1)
     entity = surface.create_entity({
       name: "inserter",
       position,
@@ -183,7 +183,7 @@ describe("fast replace", () => {
     assert.false(entity.valid, "entity replaced")
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(newEntity!), match.ref(assembly.getLayer(1)!), match._)
+      .called_with(match.ref(assembly), match.ref(newEntity!), match.ref(assembly.getStage(1)!), match._)
   })
 
   test("to rotate", () => {
@@ -203,14 +203,14 @@ describe("fast replace", () => {
     assert.false(entity.valid, "entity replaced")
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match._, match.ref(assembly.getLayer(1)!), oldDirection)
+      .called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!), oldDirection)
   })
 })
 
 describe("upgrade", () => {
   let entity: LuaEntity
   before_each(() => {
-    const position = getLayerCenter(1)
+    const position = getStageCenter(1)
     entity = surface.create_entity({
       name: "inserter",
       position,
@@ -226,7 +226,7 @@ describe("upgrade", () => {
     })
     assert
       .spy(updater.onEntityMarkedForUpgrade)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
   test("marked to rotate", () => {
     entity.order_upgrade({
@@ -236,7 +236,7 @@ describe("upgrade", () => {
     })
     assert
       .spy(updater.onEntityMarkedForUpgrade)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
 
   test("instant upgrade planner", () => {
@@ -259,7 +259,7 @@ describe("upgrade", () => {
     })
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(newEntity!), match.ref(assembly.getLayer(1)!), oldDirection)
+      .called_with(match.ref(assembly), match.ref(newEntity!), match.ref(assembly.getStage(1)!), oldDirection)
   })
 })
 
@@ -272,7 +272,7 @@ describe("robot actions", () => {
     stack.import_stack(setupBlueprint)
     const ghosts = stack.build_blueprint({
       surface,
-      position: getLayerCenter(1),
+      position: getStageCenter(1),
       force: "player",
     })
     assert(ghosts[0], "blueprint pasted")
@@ -291,7 +291,7 @@ describe("robot actions", () => {
     storageChest.insert("iron-chest")
   })
   test("build", () => {
-    const pos = getLayerCenter(1).plus(Pos(4.5, 0.5))
+    const pos = getStageCenter(1).plus(Pos(4.5, 0.5))
     const ghost = surface.create_entity({
       name: "entity-ghost",
       inner_name: "iron-chest",
@@ -310,12 +310,12 @@ describe("robot actions", () => {
       assert.not_nil(chest, "chest created")
       assert
         .spy(updater.onEntityCreated)
-        .called_with(match.ref(assembly), match.ref(chest), match.ref(assembly.getLayer(1)!))
+        .called_with(match.ref(assembly), match.ref(chest), match.ref(assembly.getStage(1)!))
     })
   })
 
   test("mine", () => {
-    const pos = getLayerCenter(1).plus(Pos(4.5, 0.5))
+    const pos = getStageCenter(1).plus(Pos(4.5, 0.5))
     const chest = surface.create_entity({
       name: "iron-chest",
       position: pos,
@@ -326,7 +326,7 @@ describe("robot actions", () => {
     async()
     after_ticks(120, () => {
       done()
-      assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getLayer(1)!))
+      assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!))
     })
   })
 })
@@ -335,7 +335,7 @@ describe("Cleanup tool", () => {
   test("revive error entity", () => {
     const entity = surface.create_entity({
       name: Prototypes.SelectionProxyPrefix + "iron-chest",
-      position: getLayerCenter(1),
+      position: getStageCenter(1),
       force: "player",
     })!
     Events.raiseFakeEventNamed("on_player_selected_area", {
@@ -348,12 +348,12 @@ describe("Cleanup tool", () => {
     })
     assert
       .spy(updater.onCleanupToolUsed)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
   test("delete settings remnant", () => {
     const entity = surface.create_entity({
       name: Prototypes.SelectionProxyPrefix + "iron-chest",
-      position: getLayerCenter(1),
+      position: getStageCenter(1),
       force: "player",
     })!
     // alt select
@@ -367,12 +367,12 @@ describe("Cleanup tool", () => {
     })
     assert
       .spy(updater.onCleanupToolUsed)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
   test("force-delete", () => {
     const entity = surface.create_entity({
       name: "iron-chest",
-      position: getLayerCenter(1),
+      position: getStageCenter(1),
       force: "player",
     })!
     // alt select
@@ -386,28 +386,28 @@ describe("Cleanup tool", () => {
     })
     assert
       .spy(updater.onEntityForceDeleted)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
 })
 
-describe("move to this layer", () => {
+describe("move to this stage", () => {
   function testOnEntity(entity: LuaEntity | nil): void {
     assert.not_nil(entity, "entity found")
     player.selected = entity
     assert.equal(entity, player.selected)
-    Events.raiseFakeEvent(CustomInputs.MoveToThisLayer, {
+    Events.raiseFakeEvent(CustomInputs.MoveToThisStage, {
       player_index: player.index,
-      input_name: CustomInputs.MoveToThisLayer,
+      input_name: CustomInputs.MoveToThisStage,
       cursor_position: player.position,
     })
     assert
-      .spy(updater.onMoveEntityToLayer)
-      .called_with(match.ref(assembly), match.ref(entity!), match.ref(assembly.getLayer(1)!))
+      .spy(updater.onMoveEntityToStage)
+      .called_with(match.ref(assembly), match.ref(entity!), match.ref(assembly.getStage(1)!))
   }
   test("on normal entity", () => {
     const entity = surface.create_entity({
       name: "inserter",
-      position: getLayerCenter(1),
+      position: getStageCenter(1),
       force: "player",
     })
     testOnEntity(entity)
@@ -415,7 +415,7 @@ describe("move to this layer", () => {
   test("on preview entity", () => {
     const entity = surface.create_entity({
       name: Prototypes.PreviewEntityPrefix + "inserter",
-      position: getLayerCenter(1),
+      position: getStageCenter(1),
       force: "player",
     })
     testOnEntity(entity)

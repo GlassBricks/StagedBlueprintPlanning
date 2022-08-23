@@ -11,19 +11,19 @@
 
 import { keys } from "ts-transformer-keys"
 import { Prototypes } from "../constants"
-import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
 import { getWorldPosition } from "../entity/EntityHandler"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
-import { AssemblyContent, LayerPosition } from "./AssemblyContent"
+import { AssemblyContent, StagePosition } from "./AssemblyContent"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {
   /** Error outline when an entity cannot be placed. Should be placed on preview entity. */
   errorOutline?: HighlightBoxEntity
-  /** Indicator sprite when there is an error highlight in another layer. */
+  /** Indicator sprite when there is an error highlight in another stage. */
   errorElsewhereIndicator?: SpriteRender
 
   /** Blue outline when a settings remnant entity is left behind. */
@@ -31,7 +31,7 @@ export interface HighlightEntities {
 
   /** Blue outline when an entity's settings have changed. */
   configChangedHighlight?: HighlightBoxEntity
-  /** Blueprint sprite when an entity's settings have changed in a future layer. */
+  /** Blueprint sprite when an entity's settings have changed in a future stage. */
   configChangedLaterHighlight?: SpriteRender
 }
 declare module "../entity/AssemblyEntity" {
@@ -52,12 +52,12 @@ export interface EntityHighlighter {
   updateHighlights(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    layerStart: LayerNumber,
-    layerEnd: LayerNumber,
+    stageStart: StageNumber,
+    stageEnd: StageNumber,
   ): void
 
   deleteHighlights(entity: AssemblyEntity): void
-  deleteHighlightsInLayer(entity: AssemblyEntity, layer: LayerNumber): void
+  deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber): void
 
   makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
@@ -104,7 +104,7 @@ export const enum HighlightValues {
   SettingsRemnant = "train-visualization",
   ConfigChanged = "logistics",
   Upgraded = "copy",
-  ErrorInOtherLayer = "utility/danger_icon",
+  ErrorInOtherStage = "utility/danger_icon",
   ConfigChangedLater = "item/blueprint",
   UpgradedLater = "item/upgrade-planner",
 }
@@ -119,7 +119,7 @@ const highlightConfigs: {
   },
   errorElsewhereIndicator: {
     type: "sprite",
-    sprite: HighlightValues.ErrorInOtherLayer,
+    sprite: HighlightValues.ErrorInOtherStage,
     offset: { x: 0.2, y: 0.1 },
     scale: 0.3,
     renderLayer: "entity-info-icon-above",
@@ -148,11 +148,11 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
   function createHighlight<T extends keyof HighlightEntities>(
     entity: AssemblyEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     type: T,
   ): HighlightEntities[T] {
     const config = highlightConfigs[type]
-    const existing = entity.getWorldEntity(layer.layerNumber, type)
+    const existing = entity.getWorldEntity(stage.stageNumber, type)
     if (existing && config.type === "sprite") return existing
     // always replace highlight box, in case of upgrade
 
@@ -161,15 +161,15 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     let result: LuaEntity | AnyRender | nil
     if (config.type === "highlight") {
       const { renderType, target } = config
-      const entityTarget = entity.getWorldEntity(layer.layerNumber, target)
+      const entityTarget = entity.getWorldEntity(stage.stageNumber, target)
       result = entityTarget && createHighlightBox(entityTarget!, renderType)
     } else if (config.type === "sprite") {
       const size = selectionBox.size()
       const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
-      const worldPosition = relativePosition.plus(getWorldPosition(layer, entity))
+      const worldPosition = relativePosition.plus(getWorldPosition(stage, entity))
       const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
       result = createSprite({
-        surface: layer.surface,
+        surface: stage.surface,
         target: worldPosition,
         x_scale: scale,
         y_scale: scale,
@@ -181,81 +181,81 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       assertNever(config)
     }
 
-    entity.replaceWorldEntity<any>(layer.layerNumber, result, type)
+    entity.replaceWorldEntity<any>(stage.stageNumber, result, type)
     return result as HighlightEntities[T]
   }
-  function removeHighlight(entity: AssemblyEntity, layerNumber: LayerNumber, type: keyof HighlightEntities): void {
-    entity.destroyWorldEntity(layerNumber, type)
+  function removeHighlight(entity: AssemblyEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
+    entity.destroyWorldEntity(stageNumber, type)
   }
-  function removeHighlightFromAllLayers(entity: AssemblyEntity, type: keyof HighlightEntities): void {
+  function removeHighlightFromAllStages(entity: AssemblyEntity, type: keyof HighlightEntities): void {
     entity.destroyAllWorldEntities(type)
   }
   function updateHighlight(
     entity: AssemblyEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     type: keyof HighlightEntities,
     value: boolean | nil,
   ): HighlightEntity | nil {
-    if (value) return createHighlight(entity, layer, type)
-    removeHighlight(entity, layer.layerNumber, type)
+    if (value) return createHighlight(entity, stage, type)
+    removeHighlight(entity, stage.stageNumber, type)
     return nil
   }
 
   function createAssociatedEntity(
     entity: AssemblyEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     type: "previewEntity" | "selectionProxy",
   ): LuaEntity | nil {
     const creator = type === "previewEntity" ? createEntityPreview : createSelectionProxy
     const result = creator(
-      layer.surface,
-      entity.getNameAtLayer(layer.layerNumber),
-      getWorldPosition(layer, entity),
+      stage.surface,
+      entity.getNameAtStage(stage.stageNumber),
+      getWorldPosition(stage, entity),
       entity.direction,
     )
-    entity.replaceWorldEntity(layer.layerNumber, result, type)
+    entity.replaceWorldEntity(stage.stageNumber, result, type)
     return result
   }
 
   function getOrCreateAssociatedEntity(
     entity: AssemblyEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     type: "previewEntity" | "selectionProxy",
   ): LuaEntity | nil {
     const prefix = type === "previewEntity" ? Prototypes.PreviewEntityPrefix : Prototypes.SelectionProxyPrefix
-    const existing = entity.getWorldEntity(layer.layerNumber, type)
-    if (existing && existing.name === prefix + entity.getNameAtLayer(layer.layerNumber)) {
+    const existing = entity.getWorldEntity(stage.stageNumber, type)
+    if (existing && existing.name === prefix + entity.getNameAtStage(stage.stageNumber)) {
       return existing
     }
-    return createAssociatedEntity(entity, layer, type)
+    return createAssociatedEntity(entity, stage, type)
   }
 
   function updateAssociatedEntity(
     entity: AssemblyEntity,
-    layer: LayerPosition,
+    stage: StagePosition,
     type: "previewEntity" | "selectionProxy",
     shouldHave: boolean,
   ): void {
     if (shouldHave) {
-      createAssociatedEntity(entity, layer, type)
+      createAssociatedEntity(entity, stage, type)
     } else {
-      entity.destroyWorldEntity(layer.layerNumber, type)
+      entity.destroyWorldEntity(stage.stageNumber, type)
     }
   }
 
   function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    for (const [i, layer] of assembly.iterateLayers()) {
-      const shouldHaveEntityPreview = entity.getWorldEntity(layer.layerNumber, "mainEntity") === nil
-      const hasError = shouldHaveEntityPreview && i >= entity.getBaseLayer()
-      updateAssociatedEntity(entity, layer, "previewEntity", shouldHaveEntityPreview)
-      updateAssociatedEntity(entity, layer, "selectionProxy", hasError)
-      updateHighlight(entity, layer, "errorOutline", hasError)
+    for (const [i, stage] of assembly.iterateStages()) {
+      const shouldHaveEntityPreview = entity.getWorldEntity(stage.stageNumber, "mainEntity") === nil
+      const hasError = shouldHaveEntityPreview && i >= entity.getBaseStage()
+      updateAssociatedEntity(entity, stage, "previewEntity", shouldHaveEntityPreview)
+      updateAssociatedEntity(entity, stage, "selectionProxy", hasError)
+      updateHighlight(entity, stage, "errorOutline", hasError)
     }
   }
 
   function updateErrorIndicators(assembly: AssemblyContent, entity: AssemblyEntity): void {
     let hasErrorAnywhere = false
-    for (const i of $range(entity.getBaseLayer(), assembly.numLayers())) {
+    for (const i of $range(entity.getBaseStage(), assembly.numStages())) {
       const hasError = entity.getWorldEntity(i) === nil
       if (hasError) {
         hasErrorAnywhere = true
@@ -267,19 +267,19 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       return
     }
 
-    for (const [i, layer] of assembly.iterateLayers()) {
-      const shouldHaveIndicator = i >= entity.getBaseLayer() && entity.getWorldEntity(i, "mainEntity") !== nil
-      updateHighlight(entity, layer, "errorElsewhereIndicator", shouldHaveIndicator)
+    for (const [i, stage] of assembly.iterateStages()) {
+      const shouldHaveIndicator = i >= entity.getBaseStage() && entity.getWorldEntity(i, "mainEntity") !== nil
+      updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
 
   function updateAllConfigChangedHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    const baseLayer = entity.getBaseLayer()
-    let lastLayerWithHighlights = baseLayer
-    for (const [i, layer] of assembly.iterateLayers()) {
-      const hasConfigChanged = entity.hasLayerChange(i)
-      const isUpgrade = hasConfigChanged && entity.getLayerChange(i)!.name !== nil
-      const highlight = updateHighlight(entity, layer, "configChangedHighlight", hasConfigChanged)
+    const baseStage = entity.getBaseStage()
+    let lastStageWithHighlights = baseStage
+    for (const [i, stage] of assembly.iterateStages()) {
+      const hasConfigChanged = entity.hasStageChange(i)
+      const isUpgrade = hasConfigChanged && entity.getStageChange(i)!.name !== nil
+      const highlight = updateHighlight(entity, stage, "configChangedHighlight", hasConfigChanged)
       if (highlight) {
         ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
           ? HighlightValues.Upgraded
@@ -287,26 +287,26 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       }
       if (!hasConfigChanged) continue
 
-      // update configChangedLaterHighlights in previous layers
+      // update configChangedLaterHighlights in previous stages
       const sprite = isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater
-      for (; lastLayerWithHighlights < i; lastLayerWithHighlights++) {
+      for (; lastStageWithHighlights < i; lastStageWithHighlights++) {
         const highlight = updateHighlight(
           entity,
-          assembly.getLayer(lastLayerWithHighlights)!,
+          assembly.getStage(lastStageWithHighlights)!,
           "configChangedLaterHighlight",
           true,
         ) as SpriteRender
         highlight.sprite = sprite
       }
     }
-    if (lastLayerWithHighlights === baseLayer) {
-      // remove later highlights for all layers
-      removeHighlightFromAllLayers(entity, "configChangedLaterHighlight")
+    if (lastStageWithHighlights === baseStage) {
+      // remove later highlights for all stages
+      removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
     } else {
-      for (const i of $range(lastLayerWithHighlights, assembly.numLayers())) {
+      for (const i of $range(lastStageWithHighlights, assembly.numStages())) {
         removeHighlight(entity, i, "configChangedLaterHighlight")
       }
-      for (const i of $range(1, baseLayer - 1)) {
+      for (const i of $range(1, baseStage - 1)) {
         removeHighlight(entity, i, "configChangedLaterHighlight")
       }
     }
@@ -320,10 +320,10 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     if (!entity.isSettingsRemnant) return
     for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
-    for (const [, layer] of assembly.iterateLayers()) {
-      getOrCreateAssociatedEntity(entity, layer, "previewEntity")
-      getOrCreateAssociatedEntity(entity, layer, "selectionProxy")
-      updateHighlight(entity, layer, "settingsRemnantHighlight", true)
+    for (const [, stage] of assembly.iterateStages()) {
+      getOrCreateAssociatedEntity(entity, stage, "previewEntity")
+      getOrCreateAssociatedEntity(entity, stage, "selectionProxy")
+      updateHighlight(entity, stage, "settingsRemnantHighlight", true)
     }
   }
   function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
@@ -337,16 +337,16 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     entity.destroyAllWorldEntities("previewEntity")
     entity.destroyAllWorldEntities("selectionProxy")
   }
-  function deleteLayer(entity: AssemblyEntity, layer: LayerNumber) {
-    for (const type of keys<HighlightEntities>()) entity.destroyWorldEntity(layer, type)
-    entity.destroyWorldEntity(layer, "previewEntity")
-    entity.destroyWorldEntity(layer, "selectionProxy")
+  function deleteStage(entity: AssemblyEntity, stage: StageNumber) {
+    for (const type of keys<HighlightEntities>()) entity.destroyWorldEntity(stage, type)
+    entity.destroyWorldEntity(stage, "previewEntity")
+    entity.destroyWorldEntity(stage, "selectionProxy")
   }
 
   return {
     updateHighlights,
     deleteHighlights: deleteEntity,
-    deleteHighlightsInLayer: deleteLayer,
+    deleteHighlightsInStage: deleteStage,
     makeSettingsRemnant,
     reviveSettingsRemnant,
   }

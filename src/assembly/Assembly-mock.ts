@@ -9,29 +9,29 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyContent, LayerPosition } from "./AssemblyContent"
-import { Layer } from "./AssemblyDef"
+import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { Stage } from "./AssemblyDef"
 import { newEntityMap } from "./EntityMap"
 
-export function createMockAssemblyContent(numLayers: number): AssemblyContent {
-  const layers: LayerPosition[] = Array.from({ length: numLayers }, (_, i) => ({
-    layerNumber: i + 1,
+export function createMockAssemblyContent(numStages: number): AssemblyContent {
+  const stages: StagePosition[] = Array.from({ length: numStages }, (_, i) => ({
+    stageNumber: i + 1,
     surface: game.surfaces[1],
     left_top: { x: 0, y: 0 },
     right_bottom: { x: 32, y: 32 },
   }))
   return {
-    getLayer: (n) => layers[n - 1],
-    numLayers: () => layers.length,
-    iterateLayers: (start = 1, end = layers.length): any => {
-      function next(layers: Layer[], i: number) {
+    getStage: (n) => stages[n - 1],
+    numStages: () => stages.length,
+    iterateStages: (start = 1, end = stages.length): any => {
+      function next(stages: Stage[], i: number) {
         if (i >= end) return
         i++
-        return $multi(i, layers[i - 1])
+        return $multi(i, stages[i - 1])
       }
-      return $multi(next, layers, start - 1)
+      return $multi(next, stages, start - 1)
     },
     content: newEntityMap(),
-    getLayerName: (n) => "mock layer " + n,
+    getStageName: (n) => "mock stage " + n,
   }
 }

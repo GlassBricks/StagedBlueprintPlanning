@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerNumber } from "../entity/AssemblyEntity"
+import { StageNumber } from "../entity/AssemblyEntity"
 import { Position } from "../lib/geometry"
 import { MutableState, Observable, State } from "../lib/observable"
-import { AssemblyContent, LayerPosition } from "./AssemblyContent"
+import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { MutableEntityMap } from "./EntityMap"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
@@ -27,20 +27,20 @@ export interface Assembly extends AssemblyContent {
 
   readonly localEvents: Observable<LocalAssemblyEvent>
 
-  getLayer(layerNumber: LayerNumber): Layer | nil
-  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
-  getAllLayers(): readonly Layer[]
-  getLayerAt(surface: LuaSurface, position: Position): Layer | nil
+  getStage(stageNumber: StageNumber): Stage | nil
+  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Stage]>>
+  getAllStages(): readonly Stage[]
+  getStageAt(surface: LuaSurface, position: Position): Stage | nil
 
-  insertLayer(index: LayerNumber): Layer
-  /** Cannot be first layer, contents will be merged with previous layer. */
-  deleteLayer(index: LayerNumber): Layer
+  insertStage(index: StageNumber): Stage
+  /** Cannot be first stage, contents will be merged with previous stage. */
+  deleteStage(index: StageNumber): Stage
 
   readonly valid: boolean
 
   delete(): void
 }
-export interface Layer extends LayerPosition {
+export interface Stage extends StagePosition {
   readonly name: MutableState<string>
 
   readonly assembly: Assembly
@@ -57,25 +57,25 @@ export interface AssemblyDeletedEvent {
   readonly type: "assembly-deleted"
   readonly assembly: Assembly
 }
-export interface LayerAddedEvent {
-  readonly type: "layer-added"
+export interface StageAddedEvent {
+  readonly type: "stage-added"
   readonly assembly: Assembly
-  readonly layer: Layer
+  readonly stage: Stage
 }
-export interface PreLayerDeletedEvent {
-  readonly type: "pre-layer-deleted"
+export interface PreStageDeletedEvent {
+  readonly type: "pre-stage-deleted"
   readonly assembly: Assembly
-  readonly layer: Layer
+  readonly stage: Stage
 }
-export interface LayerDeletedEvent {
-  readonly type: "layer-deleted"
+export interface StageDeletedEvent {
+  readonly type: "stage-deleted"
   readonly assembly: Assembly
-  readonly layer: Layer
+  readonly stage: Stage
 }
 export type GlobalAssemblyEvent =
   | AssemblyCreatedEvent
   | AssemblyDeletedEvent
-  | LayerAddedEvent
-  | PreLayerDeletedEvent
-  | LayerDeletedEvent
-export type LocalAssemblyEvent = AssemblyDeletedEvent | LayerAddedEvent | PreLayerDeletedEvent | LayerDeletedEvent
+  | StageAddedEvent
+  | PreStageDeletedEvent
+  | StageDeletedEvent
+export type LocalAssemblyEvent = AssemblyDeletedEvent | StageAddedEvent | PreStageDeletedEvent | StageDeletedEvent

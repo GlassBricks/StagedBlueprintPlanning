@@ -34,8 +34,8 @@ test("registers in world correctly", () => {
   assert.equal(assembly, findIntersectingAssembly(assembly.bbox))
 
   assembly.delete()
-  for (const [, layer] of assembly.iterateLayers()) {
-    const center = BBox.center(layer)
+  for (const [, stage] of assembly.iterateStages()) {
+    const center = BBox.center(stage)
     assert.nil(getAssemblyAtPosition(center))
   }
 })

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerNumber } from "../entity/AssemblyEntity"
+import { StageNumber } from "../entity/AssemblyEntity"
 import { Mutable, PRecord } from "./util-types"
 
 export function shallowCopy<T extends object>(obj: T): T {
@@ -74,10 +74,10 @@ export function assertNever(value: never): never {
   error("should not be reachable: " + serpent.block(value))
 }
 
-export function shiftNumberKeysUp(obj: PRecord<LayerNumber, any>, number: number): void {
+export function shiftNumberKeysUp(obj: PRecord<StageNumber, any>, number: number): void {
   const keysToChange: number[] = []
-  for (const [changeLayer] of pairs(obj)) {
-    if (changeLayer >= number) keysToChange.push(changeLayer)
+  for (const [changeStage] of pairs(obj)) {
+    if (changeStage >= number) keysToChange.push(changeStage)
   }
   for (let i = keysToChange.length - 1; i >= 0; i--) {
     const key = keysToChange[i]
@@ -86,14 +86,14 @@ export function shiftNumberKeysUp(obj: PRecord<LayerNumber, any>, number: number
   }
 }
 
-export function shiftNumberKeysDown(obj: PRecord<LayerNumber, any>, number: number): void {
+export function shiftNumberKeysDown(obj: PRecord<StageNumber, any>, number: number): void {
   const keysToChange: number[] = []
-  for (const [changeLayer] of pairs(obj)) {
-    if (changeLayer > number) keysToChange.push(changeLayer)
+  for (const [changeStage] of pairs(obj)) {
+    if (changeStage > number) keysToChange.push(changeStage)
   }
   delete obj[number]
-  for (const layer of keysToChange) {
-    obj[layer - 1] = obj[layer]
-    delete obj[layer]
+  for (const stage of keysToChange) {
+    obj[stage - 1] = obj[stage]
+    delete obj[stage]
   }
 }

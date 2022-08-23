@@ -10,35 +10,35 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { LayerPosition } from "../assembly/AssemblyContent"
+import { StagePosition } from "../assembly/AssemblyContent"
 import { shallowCopy } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableMap2D, newMap2D } from "../lib/map2d"
 import { BuiltinEntityKeys, entityMock, isMock } from "../test/simple-mock"
-import { LayerNumber } from "./AssemblyEntity"
+import { StageNumber } from "./AssemblyEntity"
 import { Entity, EntityPose } from "./Entity"
 import { DefaultEntityHandler, EntityCreator, EntitySaver } from "./EntityHandler"
 
 /** @noSelf */
 export interface MockEntityCreator extends EntityCreator {
-  getAt(layer: LayerNumber, position?: Position): MockEntityEntry | nil
+  getAt(stage: StageNumber, position?: Position): MockEntityEntry | nil
 }
 
 export interface MockEntityEntry {
   value: Entity
   luaEntity: LuaEntity
-  layer: LayerNumber
+  stage: StageNumber
 }
 
 export function createMockEntityCreator(): MockEntityCreator {
-  const values: Record<LayerNumber, MutableMap2D<MockEntityEntry>> = {}
+  const values: Record<StageNumber, MutableMap2D<MockEntityEntry>> = {}
   const luaEntityToEntry = new LuaMap<LuaEntity, MockEntityEntry>()
 
-  function getAt(layer: LayerNumber, position?: Position): MockEntityEntry | nil {
-    const layerValues = values[layer]
-    if (layerValues === nil) return nil
+  function getAt(stage: StageNumber, position?: Position): MockEntityEntry | nil {
+    const stageValues = values[stage]
+    if (stageValues === nil) return nil
     if (position === nil) {
-      for (const [, byX] of layerValues) {
+      for (const [, byX] of stageValues) {
         for (const [, byY] of pairs(byX)) {
           for (const entry of byY) {
             if (entry.luaEntity.valid) return entry
@@ -47,7 +47,7 @@ export function createMockEntityCreator(): MockEntityCreator {
       }
       return nil
     }
-    const atPos = layerValues.get(position.x, position.y)
+    const atPos = stageValues.get(position.x, position.y)
     if (!atPos) return nil
     for (const entry of atPos) {
       if (entry.luaEntity.valid) return entry
@@ -55,12 +55,12 @@ export function createMockEntityCreator(): MockEntityCreator {
   }
 
   function createEntity(
-    layer: number,
+    stage: number,
     value: Entity,
     direction: defines.direction | undefined,
     position: MapPosition,
   ): LuaEntity {
-    const byLayer = values[layer] ?? (values[layer] = newMap2D())
+    const byStage = values[stage] ?? (values[stage] = newMap2D())
 
     const luaEntity = entityMock({
       ...value,
@@ -71,29 +71,29 @@ export function createMockEntityCreator(): MockEntityCreator {
     const entry: MockEntityEntry = {
       value: shallowCopy(value),
       luaEntity,
-      layer,
+      stage,
     }
-    byLayer.add(position.x, position.y, entry)
+    byStage.add(position.x, position.y, entry)
     luaEntityToEntry.set(luaEntity, entry)
     return luaEntity
   }
   return {
-    createEntity(layerPos: LayerPosition, { position, direction }: EntityPose, value: Entity): LuaEntity | nil {
-      const layer = layerPos.layerNumber
-      if (getAt(layer, position) !== nil) return nil // overlapping entity
-      return createEntity(layer, value, direction, position)
+    createEntity(stagePos: StagePosition, { position, direction }: EntityPose, value: Entity): LuaEntity | nil {
+      const stage = stagePos.stageNumber
+      if (getAt(stage, position) !== nil) return nil // overlapping entity
+      return createEntity(stage, value, direction, position)
     },
     updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity {
       assert(luaEntity.valid)
       const entry = luaEntityToEntry.get(luaEntity)
       if (entry) {
-        const { value: oldValue, layer } = entry
+        const { value: oldValue, stage } = entry
         if (oldValue.name !== value.name) {
           // simulate fast replace
           luaEntityToEntry.delete(luaEntity)
           luaEntity.destroy()
-          values[entry.layer].delete(luaEntity.position.x, luaEntity.position.y, entry)
-          return createEntity(layer, value, luaEntity.direction, luaEntity.position)
+          values[entry.stage].delete(luaEntity.position.x, luaEntity.position.y, entry)
+          return createEntity(stage, value, luaEntity.direction, luaEntity.position)
         }
         entry.value = shallowCopy(value)
       }

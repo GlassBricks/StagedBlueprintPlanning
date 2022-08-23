@@ -86,7 +86,7 @@ class NewAssembly extends Component<NewGuiData> {
   element!: LuaGuiElement
   area!: BBox
   name!: TextFieldGuiElement
-  numLayers!: TextFieldGuiElement
+  numStages!: TextFieldGuiElement
   deleteExisting!: CheckboxGuiElement
   override render(props: NewGuiData, tracker: Tracker): Spec {
     tracker.getSubscription().add(noSelfFuncOn(props.view.destroy))
@@ -108,7 +108,7 @@ class NewAssembly extends Component<NewGuiData> {
             <textfield lose_focus_on_confirm onCreate={(e) => (this.name = e)} />
           </flow>
           <flow direction="horizontal" style="player_input_horizontal_flow">
-            <label caption={[L_GuiNewAssembly.InitialNumLayers]} />
+            <label caption={[L_GuiNewAssembly.InitialNumStages]} />
             <HorizontalPusher />
             <textfield
               style="short_number_textfield"
@@ -116,7 +116,7 @@ class NewAssembly extends Component<NewGuiData> {
               numeric
               clear_and_focus_on_right_click
               lose_focus_on_confirm
-              onCreate={(e) => (this.numLayers = e)}
+              onCreate={(e) => (this.numStages = e)}
             />
           </flow>
           <flow direction="horizontal" style="player_input_horizontal_flow">
@@ -140,24 +140,24 @@ class NewAssembly extends Component<NewGuiData> {
     const player = game.get_player(this.element.player_index)!
     const area = this.area
     const name = this.name.text.trim()
-    const numLayers = tonumber(this.numLayers.text)
+    const numStages = tonumber(this.numStages.text)
     // const deleteExisting = this.deleteExisting.state
     const deleteExisting = true
-    if (!numLayers || numLayers <= 0) {
-      notifyPlayer(player, [L_GuiNewAssembly.InvalidNumLayers])
+    if (!numStages || numStages <= 0) {
+      notifyPlayer(player, [L_GuiNewAssembly.InvalidNumStages])
       return
     }
     destroy(this.element)
 
-    tryCreateAssembly(player, name, area, floor(numLayers), deleteExisting)
+    tryCreateAssembly(player, name, area, floor(numStages), deleteExisting)
   }
 }
 
-function tryCreateAssembly(player: LuaPlayer, name: string, area: BBox, numLayers: number, deleteExisting: boolean) {
+function tryCreateAssembly(player: LuaPlayer, name: string, area: BBox, numStages: number, deleteExisting: boolean) {
   area = BBox.roundChunk(area)
   const existing = findIntersectingAssembly(area) // check again
   if (existing) return notifyIntersectingAssembly(player, existing)
-  const assembly = userCreateAssembly(area, numLayers, deleteExisting, name)
+  const assembly = userCreateAssembly(area, numStages, deleteExisting, name)
 
   openAssemblySettings(player, assembly)
 }

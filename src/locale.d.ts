@@ -22,18 +22,18 @@ export declare const enum L_ItemGroupName {
   Utility = "item-group-name.bp3:utility",
 }
 export declare const enum L_ModSettingName {
-  /** Use cyclic layer navigation */
+  /** Use cyclic stage navigation */
   CyclicNavigation = "mod-setting-name.bp3:cyclic-navigation",
 }
 export declare const enum L_Controls {
-  /** Next layer */
-  NextLayer = "controls.bp3:next-layer",
-  /** Previous layer */
-  PreviousLayer = "controls.bp3:previous-layer",
-  /** Go to entity's first layer */
-  GoToBaseLayer = "controls.bp3:go-to-base-layer",
-  /** Go to entity's next notable layer */
-  GoToNextNotableLayer = "controls.bp3:go-to-next-notable-layer",
+  /** Next stage */
+  NextStage = "controls.bp3:next-stage",
+  /** Previous stage */
+  PreviousStage = "controls.bp3:previous-stage",
+  /** Go to entity's first stage */
+  GoToBaseStage = "controls.bp3:go-to-base-stage",
+  /** Go to entity's next notable stage */
+  GoToNextNotableStage = "controls.bp3:go-to-next-notable-stage",
 }
 export declare const enum L_Bp3 {
   /** __1__ (preview) */
@@ -49,27 +49,27 @@ export declare const enum L_Interaction {
   /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected in assemblies (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
   BlueprintNotHandled = "bp3.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
-  EntityMovedFromLayer = "bp3.interaction.entity-moved-from-layer",
+  EntityMovedFromStage = "bp3.interaction.entity-moved-from-stage",
   /** Entity moved back to __1__ */
-  EntityMovedBackToLayer = "bp3.interaction.entity-moved-back-to-layer",
+  EntityMovedBackToStage = "bp3.interaction.entity-moved-back-to-stage",
   /** Not in an assembly */
   PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",
   /** Entity is not in an assembly */
   EntityNotInAssembly = "bp3.interaction.entity-not-in-assembly",
-  /** No next layer */
-  NoNextLayer = "bp3.interaction.no-next-layer",
-  /** No previous layer */
-  NoPreviousLayer = "bp3.interaction.no-previous-layer",
-  /** Already at entity first layer */
-  AlreadyAtBaseLayer = "bp3.interaction.already-at-base-layer",
-  /** Entity is the same in all layers */
-  EntitySameInAllLayers = "bp3.interaction.entity-same-in-all-layers",
+  /** No next stage */
+  NoNextStage = "bp3.interaction.no-next-stage",
+  /** No previous stage */
+  NoPreviousStage = "bp3.interaction.no-previous-stage",
+  /** Already at entity first stage */
+  AlreadyAtBaseStage = "bp3.interaction.already-at-base-stage",
+  /** Entity is the same in all stages */
+  EntitySameInAllStages = "bp3.interaction.entity-same-in-all-stages",
 }
 export declare const enum L_Assembly {
   /** <Unnamed assembly __1__> */
   UnnamedAssembly = "bp3.assembly.unnamed-assembly",
-  /** <Layer __1__> */
-  UnnamedLayer = "bp3.assembly.unnamed-layer",
+  /** <Stage __1__> */
+  UnnamedStage = "bp3.assembly.unnamed-stage",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** Assembly: */
@@ -94,26 +94,26 @@ export declare const enum L_GuiNewAssembly {
   Title = "bp3.gui.new-assembly.title",
   /** Name */
   Name = "bp3.gui.new-assembly.name",
-  /** Initial number of layers */
-  InitialNumLayers = "bp3.gui.new-assembly.initial-num-layers",
+  /** Initial number of stages */
+  InitialNumStages = "bp3.gui.new-assembly.initial-num-stages",
   /** Create */
   Create = "bp3.gui.new-assembly.create",
   /** Delete existing entities [img=info] */
   DeleteExistingEntities = "bp3.gui.new-assembly.delete-existing-entities",
   /** Existing entities are not yet processed (this may be a future feature). To import, paste entities after creating the assembly. */
   DeleteExistingEntitiesTooltip = "bp3.gui.new-assembly.delete-existing-entities-tooltip",
-  /** Invalid specified number of layers */
-  InvalidNumLayers = "bp3.gui.new-assembly.invalid-num-layers",
+  /** Invalid specified number of stages */
+  InvalidNumStages = "bp3.gui.new-assembly.invalid-num-stages",
 }
 export declare const enum L_GuiAssemblySettings {
   /** Assembly */
   Title = "bp3.gui.assembly-settings.title",
   /** Rename assembly */
   RenameAssembly = "bp3.gui.assembly-settings.rename-assembly",
-  /** Rename current layer */
-  RenameLayer = "bp3.gui.assembly-settings.rename-layer",
-  /** New layer: */
-  NewLayer = "bp3.gui.assembly-settings.new-layer",
+  /** Rename current stage */
+  RenameStage = "bp3.gui.assembly-settings.rename-stage",
+  /** New stage: */
+  NewStage = "bp3.gui.assembly-settings.new-stage",
   /** Insert before current */
   InsertAboveCurrent = "bp3.gui.assembly-settings.insert-above-current",
   /** Add at end */
@@ -126,16 +126,16 @@ export declare const enum L_GuiAssemblySettings {
   DeleteAssemblyConfirmation2 = "bp3.gui.assembly-settings.delete-assembly-confirmation2",
   /** This action cannot be undone. */
   DeleteAssemblyConfirmation3 = "bp3.gui.assembly-settings.delete-assembly-confirmation3",
-  /** Delete layer */
-  DeleteLayer = "bp3.gui.assembly-settings.delete-layer",
-  /** The first layer cannot be deleted. */
-  CannotDeleteFirstLayer = "bp3.gui.assembly-settings.cannot-delete-first-layer",
-  /** Are you sure you want to delete layer __1__? */
-  DeleteLayerConfirmation1 = "bp3.gui.assembly-settings.delete-layer-confirmation1",
-  /** Layer contents will be merged with the previous layer (__1__). */
-  DeleteLayerConfirmation2 = "bp3.gui.assembly-settings.delete-layer-confirmation2",
-  /** Reset layer [img=info] */
-  ResetLayer = "bp3.gui.assembly-settings.reset-layer",
-  /** Resets all entities in the layer to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
-  ResetLayerTooltip = "bp3.gui.assembly-settings.reset-layer-tooltip",
+  /** Delete stage */
+  DeleteStage = "bp3.gui.assembly-settings.delete-stage",
+  /** The first stage cannot be deleted. */
+  CannotDeleteFirstStage = "bp3.gui.assembly-settings.cannot-delete-first-stage",
+  /** Are you sure you want to delete stage __1__? */
+  DeleteStageConfirmation1 = "bp3.gui.assembly-settings.delete-stage-confirmation1",
+  /** Stage contents will be merged with the previous stage (__1__). */
+  DeleteStageConfirmation2 = "bp3.gui.assembly-settings.delete-stage-confirmation2",
+  /** Reset stage [img=info] */
+  ResetStage = "bp3.gui.assembly-settings.reset-stage",
+  /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
+  ResetStageTooltip = "bp3.gui.assembly-settings.reset-stage-tooltip",
 }

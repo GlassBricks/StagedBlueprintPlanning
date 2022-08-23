@@ -219,40 +219,40 @@ data.extend([
   createSprite(Sprites.ExternalLinkWhite, "__bbpp3__/graphics/icons/external-link-white.png", 32),
 ])
 
-const nextLayer: CustomInputPrototype = {
+const nextStage: CustomInputPrototype = {
   type: "custom-input",
-  name: CustomInputs.NextLayer,
+  name: CustomInputs.NextStage,
   action: "lua",
   key_sequence: "CONTROL + mouse-wheel-down",
-  order: "b[navigate]-a[next-layer]",
+  order: "b[navigate]-a[next-stage]",
 }
-const previousLayer: CustomInputPrototype = {
+const previousStage: CustomInputPrototype = {
   type: "custom-input",
-  name: CustomInputs.PreviousLayer,
+  name: CustomInputs.PreviousStage,
   action: "lua",
   key_sequence: "CONTROL + mouse-wheel-up",
-  order: "b[navigate]-b[previous-layer]",
+  order: "b[navigate]-b[previous-stage]",
 }
-const goToNextNotableLayer: CustomInputPrototype = {
+const goToNextNotableStage: CustomInputPrototype = {
   type: "custom-input",
-  name: CustomInputs.GoToNextNotableLayer,
+  name: CustomInputs.GoToNextNotableStage,
   action: "lua",
   key_sequence: "CONTROL + mouse-button-3",
-  order: "b[navigate]-c[go-to-next-notable-layer]",
+  order: "b[navigate]-c[go-to-next-notable-stage]",
 }
-const goToBaseLayer: CustomInputPrototype = {
+const goToBaseStage: CustomInputPrototype = {
   type: "custom-input",
-  name: CustomInputs.GoToBaseLayer,
+  name: CustomInputs.GoToBaseStage,
   action: "lua",
   key_sequence: "CONTROL + SHIFT + mouse-button-3",
-  order: "b[navigate]-d[go-to-base-layer]",
+  order: "b[navigate]-d[go-to-base-stage]",
 }
-const moveToThisLayer: CustomInputPrototype = {
+const moveToThisStage: CustomInputPrototype = {
   type: "custom-input",
-  name: CustomInputs.MoveToThisLayer,
+  name: CustomInputs.MoveToThisStage,
   action: "lua",
   key_sequence: "CONTROL + ALT + mouse-button-3",
-  order: "b[navigate]-e[move-to-this-layer]",
+  order: "b[navigate]-e[move-to-this-stage]",
 }
 
-data.extend([nextLayer, previousLayer, goToBaseLayer, goToNextNotableLayer, moveToThisLayer])
+data.extend([nextStage, previousStage, goToBaseStage, goToNextNotableStage, moveToThisStage])

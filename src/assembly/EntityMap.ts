@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, isCompatibleEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, isCompatibleEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
@@ -36,8 +36,8 @@ export interface MutableEntityMap extends EntityMap {
   removeWireConnection(wireConnection: AssemblyWireConnection): void
 
   /** Modifies all entities */
-  insertLayer(layerNumber: LayerNumber): void
-  deleteLayer(layerNumber: LayerNumber): void
+  insertStage(stageNumber: StageNumber): void
+  deleteStage(stageNumber: StageNumber): void
 }
 
 export type AssemblyEntityConnections = LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>
@@ -145,14 +145,14 @@ class EntityMapImpl implements MutableEntityMap {
     }
   }
 
-  insertLayer(layerNumber: LayerNumber): void {
+  insertStage(stageNumber: StageNumber): void {
     for (const [entity] of this.entities) {
-      entity.insertLayer(layerNumber)
+      entity.insertStage(stageNumber)
     }
   }
-  deleteLayer(layerNumber: LayerNumber): void {
+  deleteStage(stageNumber: StageNumber): void {
     for (const [entity] of this.entities) {
-      entity.deleteLayer(layerNumber)
+      entity.deleteStage(stageNumber)
     }
   }
 }

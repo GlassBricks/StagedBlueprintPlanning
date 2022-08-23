@@ -14,9 +14,9 @@ import {
   Assembly,
   AssemblyCreatedEvent,
   AssemblyDeletedEvent,
-  LayerAddedEvent,
-  LayerDeletedEvent,
-  PreLayerDeletedEvent,
+  PreStageDeletedEvent,
+  StageAddedEvent,
+  StageDeletedEvent,
 } from "../../assembly/AssemblyDef"
 import { getOrGenerateAssemblySurface } from "../../assembly/surfaces"
 import { SelflessFun } from "../../lib"
@@ -50,11 +50,11 @@ test("assembly created calls event", () => {
   } as AssemblyCreatedEvent)
 })
 
-test("get layer at", () => {
+test("get stage at", () => {
   const surfaces = [getOrGenerateAssemblySurface(1), getOrGenerateAssemblySurface(2)]
   const asm = newAssembly(surfaces, bbox)
-  assert.same(asm.getLayerAt(surfaces[0], bbox.center()), asm.getLayer(1))
-  assert.same(asm.getLayerAt(surfaces[1], bbox.center()), asm.getLayer(2))
+  assert.same(asm.getStageAt(surfaces[0], bbox.center()), asm.getStage(1))
+  assert.same(asm.getStageAt(surfaces[1], bbox.center()), asm.getStage(2))
 })
 
 describe("deletion", () => {
@@ -63,12 +63,12 @@ describe("deletion", () => {
     asm.delete()
     assert.false(asm.valid)
   })
-  test("sets layers to invalid", () => {
+  test("sets stages to invalid", () => {
     const asm = _mockAssembly(1)
-    const layer = asm.getLayer(1)!
-    assert.true(layer.valid)
+    const stage = asm.getStage(1)!
+    assert.true(stage.valid)
     asm.delete()
-    assert.false(layer.valid)
+    assert.false(stage.valid)
   })
   test("calls event", () => {
     const asm = newAssembly([], bbox)
@@ -84,99 +84,99 @@ describe("deletion", () => {
   })
 })
 
-describe("Layers", () => {
+describe("Stages", () => {
   let asm: Assembly
   before_each(() => {
     asm = _mockAssembly(2)
   })
-  test("layerNumber is correct", () => {
-    assert.equals(1, asm.getLayer(1)!.layerNumber)
-    assert.equals(2, asm.getLayer(2)!.layerNumber)
+  test("stageNumber is correct", () => {
+    assert.equals(1, asm.getStage(1)!.stageNumber)
+    assert.equals(2, asm.getStage(2)!.stageNumber)
   })
   test("initial name is correct", () => {
-    const layer = asm.getLayer(1)!
-    assert.same("<Layer 1>", layer.name.get())
+    const stage = asm.getStage(1)!
+    assert.same("<Stage 1>", stage.name.get())
   })
 })
 
-test("insert layer", () => {
+test("insert stage", () => {
   const sp = spy()
   const asm = newAssembly([game.surfaces[1]], bbox)
-  const oldLayer = asm.getLayer(1)!
+  const oldStage = asm.getStage(1)!
   asm.localEvents.subscribeIndependently({ invoke: sp })
   eventListener.clear()
 
-  const layer = asm.insertLayer(1)
+  const stage = asm.insertStage(1)
 
-  assert.not_equal(layer.surface.index, oldLayer.surface.index)
+  assert.not_equal(stage.surface.index, oldStage.surface.index)
 
-  assert.equals(1, layer.layerNumber)
-  assert.equals(2, oldLayer.layerNumber)
+  assert.equals(1, stage.stageNumber)
+  assert.equals(2, oldStage.stageNumber)
 
-  assert.equal(asm.getLayerAt(layer.surface, Pos(1, 1)), layer)
-  assert.equal(asm.getLayerAt(oldLayer.surface, Pos(1, 1)), oldLayer)
+  assert.equal(asm.getStageAt(stage.surface, Pos(1, 1)), stage)
+  assert.equal(asm.getStageAt(oldStage.surface, Pos(1, 1)), oldStage)
 
-  assert.equals("<New layer>", layer.name.get())
+  assert.equals("<New stage>", stage.name.get())
 
-  assert.equals(layer, asm.getLayer(1)!)
-  assert.equals(oldLayer, asm.getLayer(2)!)
+  assert.equals(stage, asm.getStage(1)!)
+  assert.equals(oldStage, asm.getStage(2)!)
 
-  let call = eventListener.calls[0].refs[0] as LayerAddedEvent
-  assert.equals("layer-added", call.type)
+  let call = eventListener.calls[0].refs[0] as StageAddedEvent
+  assert.equals("stage-added", call.type)
   assert.equals(asm, call.assembly)
-  assert.equals(layer, call.layer)
-  call = sp.calls[0].refs[2] as LayerAddedEvent
-  assert.equals("layer-added", call.type)
+  assert.equals(stage, call.stage)
+  call = sp.calls[0].refs[2] as StageAddedEvent
+  assert.equals("stage-added", call.type)
   assert.equals(asm, call.assembly)
-  assert.equals(layer, call.layer)
+  assert.equals(stage, call.stage)
 
-  const anotherInserted = asm.insertLayer(1)
-  assert.not_same(anotherInserted, layer)
-  assert.equals(asm.getLayerAt(anotherInserted.surface, Pos(1, 1)), anotherInserted)
-  assert.equals(asm.getLayerAt(layer.surface, Pos(1, 1)), layer)
-  assert.equals(asm.getLayerAt(oldLayer.surface, Pos(1, 1)), oldLayer)
-  assert.equals("<New layer> (1)", anotherInserted.name.get())
+  const anotherInserted = asm.insertStage(1)
+  assert.not_same(anotherInserted, stage)
+  assert.equals(asm.getStageAt(anotherInserted.surface, Pos(1, 1)), anotherInserted)
+  assert.equals(asm.getStageAt(stage.surface, Pos(1, 1)), stage)
+  assert.equals(asm.getStageAt(oldStage.surface, Pos(1, 1)), oldStage)
+  assert.equals("<New stage> (1)", anotherInserted.name.get())
 
-  assert.equals(1, anotherInserted.layerNumber)
-  assert.equals(2, layer.layerNumber)
-  assert.equals(3, oldLayer.layerNumber)
+  assert.equals(1, anotherInserted.stageNumber)
+  assert.equals(2, stage.stageNumber)
+  assert.equals(3, oldStage.stageNumber)
 
-  assert.equals(anotherInserted, asm.getLayer(1)!)
-  assert.equals(layer, asm.getLayer(2)!)
-  assert.equals(oldLayer, asm.getLayer(3)!)
+  assert.equals(anotherInserted, asm.getStage(1)!)
+  assert.equals(stage, asm.getStage(2)!)
+  assert.equals(oldStage, asm.getStage(3)!)
 })
 
-test("delete layer", () => {
+test("delete stage", () => {
   const sp = spy()
   const surfaces = [getOrGenerateAssemblySurface(1), getOrGenerateAssemblySurface(2), getOrGenerateAssemblySurface(3)]
   const asm = newAssembly(surfaces, bbox)
   asm.localEvents.subscribeIndependently({ invoke: sp })
   eventListener.clear()
 
-  const layer1 = asm.getLayer(1)!
-  const layer2 = asm.getLayer(2)!
-  const layer3 = asm.getLayer(3)!
+  const stage1 = asm.getStage(1)!
+  const stage2 = asm.getStage(2)!
+  const stage3 = asm.getStage(3)!
 
-  asm.deleteLayer(2)
+  asm.deleteStage(2)
 
-  assert.false(layer2.valid)
+  assert.false(stage2.valid)
 
-  assert.equals(1, layer1.layerNumber)
-  assert.equals(2, layer3.layerNumber)
+  assert.equals(1, stage1.stageNumber)
+  assert.equals(2, stage3.stageNumber)
 
-  assert.equals(asm.getLayerAt(layer1.surface, Pos(1, 1)), layer1)
-  assert.equals(asm.getLayerAt(layer3.surface, Pos(1, 1)), layer3)
-  assert.nil(asm.getLayerAt(layer2.surface, Pos(1, 1)))
+  assert.equals(asm.getStageAt(stage1.surface, Pos(1, 1)), stage1)
+  assert.equals(asm.getStageAt(stage3.surface, Pos(1, 1)), stage3)
+  assert.nil(asm.getStageAt(stage2.surface, Pos(1, 1)))
 
-  assert.equals(layer1, asm.getLayer(1)!)
-  assert.equals(layer3, asm.getLayer(2)!)
+  assert.equals(stage1, asm.getStage(1)!)
+  assert.equals(stage3, asm.getStage(2)!)
 
-  const call1 = eventListener.calls[0].refs[0] as PreLayerDeletedEvent
-  assert.equals("pre-layer-deleted", call1.type)
+  const call1 = eventListener.calls[0].refs[0] as PreStageDeletedEvent
+  assert.equals("pre-stage-deleted", call1.type)
   assert.equals(asm, call1.assembly)
-  assert.equals(layer2, call1.layer)
-  const call2 = eventListener.calls[1].refs[0] as LayerDeletedEvent
-  assert.equals("layer-deleted", call2.type)
+  assert.equals(stage2, call1.stage)
+  const call2 = eventListener.calls[1].refs[0] as StageDeletedEvent
+  assert.equals("stage-deleted", call2.type)
   assert.equals(asm, call2.assembly)
-  assert.equals(layer2, call2.layer)
+  assert.equals(stage2, call2.stage)
 })

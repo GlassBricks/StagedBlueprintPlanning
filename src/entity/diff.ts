@@ -15,7 +15,7 @@ import { Entity } from "./Entity"
 declare const NilPlaceholder: unique symbol
 export type NilPlaceholder = typeof NilPlaceholder
 export type WithNilPlaceholder<T> = T extends nil ? NilPlaceholder : T
-export type LayerDiff<E extends Entity = Entity> = {
+export type StageDiff<E extends Entity = Entity> = {
   readonly [P in keyof E]?: WithNilPlaceholder<E[P]>
 }
 declare const global: {
@@ -33,7 +33,7 @@ export function getNilPlaceholder(): NilPlaceholder {
 }
 
 const ignoredProps = newLuaSet<keyof any>("position", "direction")
-export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): LayerDiff<E> | nil {
+export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): StageDiff<E> | nil {
   const changes: any = {}
   for (const [key, value] of pairs(above)) {
     if (!ignoredProps.has(key) && !deepCompare(value, below[key])) {
@@ -45,12 +45,12 @@ export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): La
   }
   return nilIfEmpty(changes)
 }
-export function applyDiffToDiff<E extends Entity = Entity>(existing: Mutable<LayerDiff<E>>, diff: LayerDiff<E>): void {
+export function applyDiffToDiff<E extends Entity = Entity>(existing: Mutable<StageDiff<E>>, diff: StageDiff<E>): void {
   for (const [key, value] of pairs(diff)) {
     existing[key] = value as any
   }
 }
-export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: LayerDiff<E>): void {
+export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: StageDiff<E>): void {
   for (const [key, value] of pairs(diff)) {
     if (value === nilPlaceholder) {
       delete entity[key]
@@ -62,9 +62,9 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
 
 export function mergeDiff<E extends Entity = Entity>(
   previousValue: E,
-  oldDiff: LayerDiff<E> | nil,
-  newDiff: LayerDiff<E> | nil,
-): LayerDiff<E> | nil {
+  oldDiff: StageDiff<E> | nil,
+  newDiff: StageDiff<E> | nil,
+): StageDiff<E> | nil {
   if (oldDiff === nil) return newDiff && shallowCopy(newDiff)
   const result: any = {}
   if (newDiff === nil) {

@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, getDirectionalInfo } from "../entity/AssemblyWireConnection"
-import { getLayerPosition } from "../entity/EntityHandler"
-import { AssemblyContent, LayerPosition } from "./AssemblyContent"
+import { getStagePosition } from "../entity/EntityHandler"
+import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { AssemblyEntityConnections, EntityMap } from "./EntityMap"
 
 /** @noSelf */
@@ -20,7 +20,7 @@ export interface WireUpdater {
   updateWireConnections(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    layerNumber: LayerNumber,
+    stageNumber: StageNumber,
     luaEntity: LuaEntity,
   ): void
 }
@@ -30,7 +30,7 @@ export interface WireSaver {
   getWireConnectionDiff(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
-    layerNumber: LayerNumber,
+    stageNumber: StageNumber,
     luaEntity: LuaEntity,
   ): LuaMultiReturn<[added: AssemblyWireConnection[], removed: AssemblyWireConnection[]] | [_: false, _?: never]>
 }
@@ -41,7 +41,7 @@ export interface WireHandler extends WireUpdater, WireSaver {}
 function updateWireConnections(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
-  layerNumber: LayerNumber,
+  stageNumber: StageNumber,
   luaEntity: LuaEntity,
 ): void {
   const existingConnections = luaEntity.circuit_connection_definitions
@@ -58,13 +58,13 @@ function updateWireConnections(
     assemblyConnections,
     existingConnections,
     assembly.content,
-    assembly.getLayer(layerNumber)!,
+    assembly.getStage(stageNumber)!,
   )
   for (const [extraConnection] of extraConnections) luaEntity.disconnect_neighbour(extraConnection)
 
   // add missing connections
   for (const [otherEntity, connections] of assemblyConnections) {
-    const otherLuaEntity = otherEntity.getWorldEntity(layerNumber)
+    const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
     if (!otherLuaEntity) continue
     for (const connection of connections) {
       if (matchingConnections.has(connection)) continue
@@ -82,7 +82,7 @@ function updateWireConnections(
 function getWireConnectionDiff(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
-  layerNumber: LayerNumber,
+  stageNumber: StageNumber,
   luaEntity: LuaEntity,
 ): LuaMultiReturn<[added: AssemblyWireConnection[], removed: AssemblyWireConnection[]] | [false]> {
   const existingConnections = luaEntity.circuit_connection_definitions
@@ -93,7 +93,7 @@ function getWireConnectionDiff(
     assemblyConnections,
     existingConnections,
     assembly.content,
-    assembly.getLayer(layerNumber)!,
+    assembly.getStage(stageNumber)!,
   )
 
   const added: AssemblyWireConnection[] = []
@@ -110,7 +110,7 @@ function getWireConnectionDiff(
   const removed: AssemblyWireConnection[] = []
   if (assemblyConnections) {
     for (const [otherEntity, connections] of assemblyConnections) {
-      const otherLuaEntity = otherEntity.getWorldEntity(layerNumber)
+      const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
       if (!otherLuaEntity) continue
       for (const connection of connections) {
         if (matchingConnections.has(connection)) continue
@@ -126,7 +126,7 @@ function analyzeExistingConnections(
   assemblyConnections: AssemblyEntityConnections | nil,
   existingConnections: readonly CircuitConnectionDefinition[],
   content: EntityMap,
-  layer: LayerPosition,
+  stage: StagePosition,
 ): LuaMultiReturn<
   [
     matchingConnections: LuaMap<AssemblyWireConnection, CircuitConnectionDefinition>,
@@ -140,7 +140,7 @@ function analyzeExistingConnections(
     const otherLuaEntity = existingConnection.target_entity
     const otherEntity = content.findCompatible(
       otherLuaEntity.name,
-      getLayerPosition(layer, otherLuaEntity),
+      getStagePosition(stage, otherLuaEntity),
       otherLuaEntity.direction,
     )
     if (!otherEntity) continue

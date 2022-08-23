@@ -9,18 +9,18 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerNumber } from "../entity/AssemblyEntity"
+import { StageNumber } from "../entity/AssemblyEntity"
 import { Events } from "../lib"
 import { BBox } from "../lib/geometry"
 
 declare const global: {
   bpSurfaces: LuaSurface[]
-  surfaceIndexToLayerIndex: Record<SurfaceIndex, LayerNumber>
+  surfaceIndexToStageIndex: Record<SurfaceIndex, StageNumber>
 }
 
 Events.on_init(() => {
   global.bpSurfaces = [game.surfaces[1]]
-  global.surfaceIndexToLayerIndex = { [1 as SurfaceIndex]: 1 }
+  global.surfaceIndexToStageIndex = { [1 as SurfaceIndex]: 1 }
 })
 
 export function generateAssemblySurfaces(amount: number): void {
@@ -31,10 +31,10 @@ export function generateAssemblySurfaces(amount: number): void {
 }
 
 function createBpSurface(number: number): LuaSurface {
-  const result = game.create_surface("bp3-layer-" + number)
+  const result = game.create_surface("bp3-stage-" + number)
   result.always_day = true
   result.generate_with_lab_tiles = true
-  global.surfaceIndexToLayerIndex[result.index] = number
+  global.surfaceIndexToStageIndex[result.index] = number
   return result
 }
 
