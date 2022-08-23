@@ -27,18 +27,19 @@ export function getWorldPosition(stage: StagePosition, entity: EntityPose): Posi
 /** @noSelf */
 export interface EntityCreator {
   createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil
-  updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity
+  updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction | nil): LuaEntity
+  // todo: handle opposite affected entities?
 }
 
 /** @noSelf */
 export interface EntitySaver {
-  saveEntity(entity: LuaEntity): Mutable<Entity> | nil
+  saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, defines.direction] | []>
 }
 
 export interface EntityHandler extends EntityCreator, EntitySaver {}
 
 export const DefaultEntityHandler: EntityHandler = {
-  saveEntity(luaEntity: LuaEntity): Entity | nil {
+  saveEntity(luaEntity: LuaEntity) {
     return BlueprintDiffHandler.save(luaEntity)
   },
 
@@ -50,7 +51,7 @@ export const DefaultEntityHandler: EntityHandler = {
       entity as BlueprintEntity,
     )
   },
-  updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity {
-    return BlueprintDiffHandler.match(luaEntity, value as BlueprintEntity)
+  updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction | nil): LuaEntity {
+    return BlueprintDiffHandler.match(luaEntity, value as BlueprintEntity, direction)
   },
 }

@@ -83,7 +83,7 @@ export function createMockEntityCreator(): MockEntityCreator {
       if (getAt(stage, position) !== nil) return nil // overlapping entity
       return createEntity(stage, value, direction, position)
     },
-    updateEntity(luaEntity: LuaEntity, value: Entity): LuaEntity {
+    updateEntity(luaEntity: LuaEntity, value: Entity, direction): LuaEntity {
       assert(luaEntity.valid)
       const entry = luaEntityToEntry.get(luaEntity)
       if (entry) {
@@ -93,10 +93,11 @@ export function createMockEntityCreator(): MockEntityCreator {
           luaEntityToEntry.delete(luaEntity)
           luaEntity.destroy()
           values[entry.stage].delete(luaEntity.position.x, luaEntity.position.y, entry)
-          return createEntity(stage, value, luaEntity.direction, luaEntity.position)
+          return createEntity(stage, value, direction, luaEntity.position)
         }
         entry.value = shallowCopy(value)
       }
+      luaEntity.direction = direction ?? 0
       return luaEntity
     },
     getAt,
@@ -107,7 +108,7 @@ const excludedKeys = newLuaSet("valid", "object_name", "position", "direction")
 for (const key of keys<BuiltinEntityKeys>()) excludedKeys.add(key)
 export function createMockEntitySaver(): EntitySaver {
   return {
-    saveEntity(entity: LuaEntity): Entity | nil {
+    saveEntity(entity: LuaEntity) {
       if (!isMock(entity)) return DefaultEntityHandler.saveEntity(entity)
       const result: any = {}
       for (const [key, value] of pairs(entity)) {
@@ -115,7 +116,7 @@ export function createMockEntitySaver(): EntitySaver {
           result[key] = value
         }
       }
-      return result
+      return $multi(result, entity.direction ?? 0)
     },
   }
 }

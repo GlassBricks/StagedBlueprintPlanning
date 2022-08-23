@@ -88,10 +88,10 @@ if (script.active_mods.testorio !== nil) {
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
-      game.surfaces[1].find_entities().forEach((e) => e.destroy())
       const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo" }
-      const assembly = createDemonstrationAssembly(12)
       if (result.status === "passed") {
+        // game.surfaces[1].find_entities().forEach((e) => e.destroy())
+        const assembly = createDemonstrationAssembly(12)
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()
         protectedAction(() => {

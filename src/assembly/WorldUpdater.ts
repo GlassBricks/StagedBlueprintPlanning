@@ -77,14 +77,12 @@ export function createWorldUpdater(
       const existing = entity.getWorldEntity(stageNum)
       let luaEntity: LuaEntity | undefined
       if (existing && !replace) {
-        existing.direction = direction
-        luaEntity = updateEntity(existing, value)
-        entity.replaceWorldEntity(stageNum, luaEntity)
+        luaEntity = updateEntity(existing, value, direction)
       } else {
         if (existing) existing.destroy()
         luaEntity = createEntity(assembly.getStage(stageNum)!, entity, value)
-        entity.replaceWorldEntity(stageNum, luaEntity)
       }
+      entity.replaceWorldEntity(stageNum, luaEntity)
 
       if (luaEntity) {
         if (stageNum !== firstStage) makeEntityIndestructible(luaEntity)

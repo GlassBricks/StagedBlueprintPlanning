@@ -111,10 +111,10 @@ export function createAssemblyUpdater(
       return existing
     }
 
-    const saved = saveEntity(entity)
+    const [saved, savedDir] = saveEntity(entity)
     if (!saved) return
     // add new entity
-    const assemblyEntity = createAssemblyEntity(saved, position, entity.direction, stageNumber)
+    const assemblyEntity = createAssemblyEntity(saved, position, savedDir, stageNumber)
     content.add(assemblyEntity)
 
     assemblyEntity.replaceWorldEntity(stageNumber, entity)
@@ -261,7 +261,8 @@ export function createAssemblyUpdater(
     }
     // else, direction will be reset by updateWorldEntities
 
-    const newValue = saveEntity(entity)
+    const [newValue, direction] = saveEntity(entity)
+    // todo: handle direction
     if (!newValue) return // bug?
     if (upgradeTo) newValue.name = upgradeTo
 

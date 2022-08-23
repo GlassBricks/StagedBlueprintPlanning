@@ -15,8 +15,8 @@ import { BBox, BBoxClass } from "../lib/geometry"
 let theEntityPrototypes: typeof game.entity_prototypes
 
 function getEntityPrototypes(): typeof game.entity_prototypes {
-  if (!theEntityPrototypes) theEntityPrototypes = game.entity_prototypes
-  return theEntityPrototypes
+  if (theEntityPrototypes !== nil) return theEntityPrototypes
+  return (theEntityPrototypes = game.entity_prototypes)
 }
 
 // <type>|<fast_replaceable_group>|<lx>|<ly>|<rx>|<ry> or <none>|<entity_name>
@@ -51,8 +51,8 @@ export function getSelectionBox(entityName: string): BBoxClass {
   return (selectionBoxes[entityName] = BBox.load(getEntityPrototypes()[entityName].selection_box))
 }
 
-export function getMapColor(entityName: string): Color {
-  return getEntityPrototypes()[entityName].friendly_map_color
+export function isUndergroundBeltType(entityName: string): boolean {
+  return getEntityPrototypes()[entityName].type === "underground-belt"
 }
 
 export function _overrideEntityCategory(entityName: string, categoryName: string): void {

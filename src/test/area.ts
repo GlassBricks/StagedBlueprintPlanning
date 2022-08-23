@@ -15,7 +15,7 @@ import { WorldArea } from "../utils/world-location"
 export function testArea(index: number): WorldArea {
   return {
     surface: game.surfaces[1],
-    bbox: BBox.coords(2 + index * 100, 2, 102 + index * 100, 102),
+    bbox: BBox.coords(index * 100, 0, 100 + index * 100, 100),
   }
 }
 

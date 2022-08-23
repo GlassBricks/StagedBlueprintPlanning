@@ -9,16 +9,13 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
 import { Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getTempBpItemStack, reviveGhost } from "./blueprinting"
 import { Entity } from "./Entity"
+import { getPastedDirection, getSavedDirection } from "./undergrounds"
 
-export interface DiffHandler<E extends Entity> {
-  save(luaEntity: LuaEntity): E | nil
-  create(surface: LuaSurface, position: Position, direction: defines.direction | nil, entity: E): LuaEntity | nil
-  match(luaEntity: LuaEntity, value: E): LuaEntity
-}
 function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | nil {
   for (const [index, mEntity] of pairs(mapping)) {
     if (entity === mEntity) return index
@@ -57,7 +54,7 @@ function pasteEntity(
     {
       ...entity,
       position: offsetPosition,
-      direction,
+      direction: getPastedDirection(entity, direction),
       entity_number: 1,
     },
   ])
@@ -83,6 +80,7 @@ function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
     fast_replace: true,
     spill: false,
     create_build_effect_smoke: false,
+    type: entity.type === "underground-belt" ? entity.belt_to_ground_type : nil,
   })
   if (!newEntity) return entity
   if (entity.valid) {
@@ -120,16 +118,26 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
   // todo: report cannot insert items
 }
 
-export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
-  save(entity: LuaEntity): BlueprintEntity | nil {
+function rotateUnderground(
+  luaEntity: LuaEntity,
+  mode: "input" | "output",
+  direction: defines.direction | undefined,
+): void {
+  const dirType = mode
+  if (luaEntity.belt_to_ground_type !== dirType) luaEntity.rotate()
+  const expectedDirection = dirType === "output" ? oppositedirection(direction ?? 0) : direction ?? 0
+  assert(luaEntity.direction === expectedDirection, "cannot rotate underground-belt")
+}
+export const BlueprintDiffHandler = {
+  save(entity: LuaEntity): LuaMultiReturn<[Entity, defines.direction] | []> {
     const bpEntity = blueprintEntity(entity)
-    if (!bpEntity) return nil
+    if (!bpEntity) return $multi()
     bpEntity.entity_number = nil!
     bpEntity.position = nil!
     bpEntity.direction = nil
     bpEntity.neighbours = nil
     bpEntity.connections = nil
-    return bpEntity
+    return $multi(bpEntity, getSavedDirection(entity))
   },
 
   create(
@@ -139,13 +147,26 @@ export const BlueprintDiffHandler: DiffHandler<BlueprintEntity> = {
     entity: BlueprintEntity,
   ): LuaEntity | nil {
     const ghost = pasteEntity(surface, position, direction, entity)
-    return ghost && reviveGhost(ghost)
+    if (!ghost) return nil
+    if (ghost.ghost_type === "underground-belt" && ghost.belt_to_ground_type !== entity.type) {
+      ghost.destroy()
+      return nil
+    }
+    return reviveGhost(ghost)
   },
 
-  match(luaEntity: LuaEntity, value: BlueprintEntity): LuaEntity {
-    assert(luaEntity.force.name === "player")
+  match(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction | nil): LuaEntity {
     if (luaEntity.name !== value.name) {
       luaEntity = upgradeEntity(luaEntity, value.name)
+    }
+
+    if (luaEntity.type === "underground-belt") {
+      rotateUnderground(luaEntity, value.type ?? "input", direction)
+    } else {
+      if (luaEntity.type === "loader" || luaEntity.type === "loader-1x1") {
+        luaEntity.loader_type = value.type ?? "input"
+      }
+      luaEntity.direction = direction ?? 0
     }
 
     const ghost = pasteEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, value)
