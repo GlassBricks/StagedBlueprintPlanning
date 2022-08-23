@@ -299,10 +299,9 @@ export function createAssemblyUpdater(
     const upgradeDirection = entity.get_upgrade_direction()
     let upgradeType = entity.get_upgrade_target()?.name
     if (upgradeType) {
-      // assert(getEntityCategory(upgradeType) === existing.categoryName)
       if (getEntityCategory(upgradeType) !== existing.categoryName) {
         game.print(
-          `WARNING: incompatible upgrade type to ${upgradeType}: category ${getEntityCategory(
+          `BUG: incompatible upgrade type to ${upgradeType}: category ${getEntityCategory(
             upgradeType,
           )}, existing category: ${existing.categoryName}`,
         )
