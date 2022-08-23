@@ -14,7 +14,7 @@ import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from 
 import { Component, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { DotDotDotButton } from "../../lib/factoriojsx/components/buttons"
 import { Fn } from "../../lib/factoriojsx/components/Fn"
-import { HorizontalPusher } from "../../lib/factoriojsx/components/misc"
+import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/components/misc"
 import { TitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { MaybeState } from "../../lib/observable"
 import { L_GuiCurrentAssembly } from "../../locale"
@@ -32,7 +32,11 @@ class CurrentAssembly extends Component {
     return layer.assembly.displayName
   }
   static mapAssemblyToContent(this: void, assembly: Assembly | nil) {
-    return assembly && <LayerSelector uses="drop-down" assembly={assembly} styleMod={{ width: CurrentAssemblyWidth }} />
+    return assembly ? (
+      <LayerSelector uses="drop-down" assembly={assembly} styleMod={{ width: CurrentAssemblyWidth }} />
+    ) : (
+      <HorizontalSpacer width={CurrentAssemblyWidth} />
+    )
   }
   public override render(_: EmptyProps, tracker: Tracker): Spec {
     const { playerIndex } = tracker

@@ -60,7 +60,7 @@ export declare const enum L_GuiAllAssemblies {
   Title = "bp3.gui.all-assemblies.title",
   /** New assembly [img=info] */
   NewAssembly = "bp3.gui.all-assemblies.new-assembly",
-  /** You can also use the tool shortcut (bottom right) to create a new assembly */
+  /** You can also use the "Create new assembly" shortcut (bottom right) to create a new assembly. */
   NewAssemblyTooltip = "bp3.gui.all-assemblies.new-assembly-tooltip",
 }
 export declare const enum L_GuiNewAssembly {
