@@ -269,7 +269,7 @@ describe("delete", () => {
     assemblyUpdater.onEntityDeleted(assembly, luaEntity, layer)
     assert.falsy(added.isSettingsRemnant)
     assertOneEntity()
-    assertUpdateCalled(added, 2, 3, true)
+    assertUpdateCalled(added, 2, 3, false)
     assert.nil(added.getOldLayer())
     assertNotified(luaEntity, [L_Interaction.EntityMovedBackToLayer, "mock layer 3"])
   })

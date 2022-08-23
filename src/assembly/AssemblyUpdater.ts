@@ -223,7 +223,7 @@ export function createAssemblyUpdater(
     const currentLayer = existing.getBaseLayer()
     existing.moveToLayer(oldLayer)
     createNotification(luaEntity, [L_Interaction.EntityMovedBackToLayer, assembly.getLayerName(oldLayer)])
-    updateWorldEntities(assembly, existing, currentLayer, oldLayer, true)
+    updateWorldEntities(assembly, existing, currentLayer, oldLayer)
   }
 
   function getCompatibleOrAdd(

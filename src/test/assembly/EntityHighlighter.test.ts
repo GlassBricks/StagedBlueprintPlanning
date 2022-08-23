@@ -216,6 +216,13 @@ describe("config changed highlight", () => {
     clearAt(3)
     assertCorrect()
   })
+  test("clears when moved to higher layer", () => {
+    setAt(3)
+    assertCorrect()
+    entity.moveToLayer(2)
+    assertCorrect()
+    assert.nil(entity.getWorldEntity(1, "configChangedLaterHighlight"))
+  })
 })
 
 test("makeSettingsRemnant creates highlights", () => {

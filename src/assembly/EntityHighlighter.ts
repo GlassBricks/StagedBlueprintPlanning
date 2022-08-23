@@ -328,6 +328,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       for (const i of $range(lastLayerWithHighlights, assembly.numLayers())) {
         removeHighlight(entity, i, "configChangedLaterHighlight")
       }
+      for (const i of $range(1, baseLayer - 1)) {
+        removeHighlight(entity, i, "configChangedLaterHighlight")
+      }
     }
   }
   function updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
