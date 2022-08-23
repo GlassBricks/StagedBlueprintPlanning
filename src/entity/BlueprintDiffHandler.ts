@@ -34,6 +34,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
       surface,
       force: entity.force,
       area: BBox.around(position, radius),
+      include_station_names: true,
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {

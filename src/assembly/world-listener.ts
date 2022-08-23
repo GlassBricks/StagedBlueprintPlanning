@@ -32,6 +32,11 @@ function luaEntityDeleted(entity: LuaEntity): void {
   if (assembly) DefaultAssemblyUpdater.onEntityDeleted(assembly, entity, layer)
 }
 
+function luaEntityForceDeleted(entity: LuaEntity): void {
+  const [assembly, layer] = getLayerAtEntity(entity)
+  if (assembly) DefaultAssemblyUpdater.onEntityForceDeleted(assembly, entity, layer)
+}
+
 function luaEntityPotentiallyUpdated(entity: LuaEntity, previousDirection?: defines.direction): void {
   const [assembly, layer] = getLayerAtEntity(entity)
   if (assembly) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, layer, previousDirection)
@@ -108,9 +113,9 @@ Start:
 Events.script_raised_built((e) => luaEntityCreated(e.entity))
 Events.on_robot_built_entity((e) => luaEntityCreated(e.created_entity))
 
-Events.on_entity_died((e) => luaEntityDeleted(e.entity))
 Events.script_raised_destroy((e) => luaEntityDeleted(e.entity))
 Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity))
+Events.on_entity_died((e) => luaEntityForceDeleted(e.entity))
 
 Events.on_entity_settings_pasted((e) => luaEntityPotentiallyUpdated(e.destination))
 Events.on_gui_closed((e) => {
@@ -324,9 +329,18 @@ function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
     DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, layer)
   }
 }
+function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
+  if (e.item !== Prototypes.CleanupTool) return
+  for (const entity of e.entities) {
+    const [assembly, layer] = getLayerAtEntity(entity)
+    if (!assembly) continue
+    DefaultAssemblyUpdater.onEntityForceDeleted(assembly, entity, layer)
+  }
+}
 
 Events.onAll({
   on_player_selected_area: checkCleanupTool,
   on_player_alt_selected_area: checkCleanupTool,
+  on_player_reverse_selected_area: checkCleanupToolReverse,
 })
 export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil

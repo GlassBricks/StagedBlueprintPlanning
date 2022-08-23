@@ -191,6 +191,15 @@ describe("updateWorldEntities", () => {
   })
 })
 
+test("force delete", () => {
+  worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+  worldUpdater.forceDeleteEntity(assembly, entity, 2)
+  assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 2, 2)
+  assert.nil(mockEntityCreator.getAt(2))
+  assertEntityCorrect(1)
+  assertEntityCorrect(3)
+})
+
 describe("invalid layers", () => {
   test("out of range is ignored", () => {
     assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1, 5))

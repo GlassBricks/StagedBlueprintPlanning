@@ -53,6 +53,7 @@ before_each(() => {
   }
   worldUpdater = {
     updateWorldEntities: spyFn(),
+    forceDeleteEntity: spyFn(),
     deleteWorldEntities: spyFn(),
     deleteWorldEntitiesInLayer: spyFn(),
     deleteExtraEntitiesOnly: spyFn(),
@@ -150,6 +151,11 @@ function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.deleteWorldEntities).called_with(match.ref(entity))
+}
+function assertForceDeleteCalled(entity: AssemblyEntity<TestEntity>, layer: LayerNumber) {
+  eventsAsserted = true
+  assert.equal(1, totalCalls)
+  assert.spy(worldUpdater.forceDeleteEntity).called_with(match.ref(assembly), match.ref(entity), layer)
 }
 function assertMakeSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
@@ -282,6 +288,13 @@ describe("delete", () => {
     assert.true(added.isSettingsRemnant)
     assertMakeSettingsRemnantCalled(added)
   })
+})
+
+test("force delete", () => {
+  const { luaEntity, added } = addAndReset(1, 2)
+  assemblyUpdater.onEntityForceDeleted(assembly, luaEntity, layer)
+  assertOneEntity()
+  assertForceDeleteCalled(added, 2)
 })
 
 describe("revive", () => {

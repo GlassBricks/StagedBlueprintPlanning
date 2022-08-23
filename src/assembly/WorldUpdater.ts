@@ -38,6 +38,8 @@ export interface WorldUpdater {
     replace?: boolean,
   ): void
 
+  forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, layer: LayerNumber): void
+
   deleteWorldEntitiesInLayer(entity: AssemblyEntity, layer: LayerNumber): void
 
   deleteWorldEntities(entity: AssemblyEntity): void
@@ -110,6 +112,11 @@ export function createWorldUpdater(
     updateHighlights(assembly, entity, startLayer, endLayer)
   }
 
+  function forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, layer: LayerNumber): void {
+    entity.destroyWorldEntity(layer, "mainEntity")
+    updateHighlights(assembly, entity, layer, layer)
+  }
+
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
     entity.destructible = false
@@ -134,6 +141,7 @@ export function createWorldUpdater(
 
   return {
     updateWorldEntities,
+    forceDeleteEntity,
     deleteWorldEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldEntities("mainEntity")
       highlighter.deleteHighlights(entity)

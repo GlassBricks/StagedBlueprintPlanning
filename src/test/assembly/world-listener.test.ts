@@ -112,7 +112,7 @@ describe("delete", () => {
   })
   test("die", () => {
     entity.die()
-    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getLayer(1)!))
+    assert.spy(updater.onEntityForceDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getLayer(1)!))
   })
 })
 
@@ -367,6 +367,25 @@ describe("Cleanup tool", () => {
     })
     assert
       .spy(updater.onCleanupToolUsed)
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+  })
+  test("force-delete", () => {
+    const entity = surface.create_entity({
+      name: "iron-chest",
+      position: getLayerCenter(1),
+      force: "player",
+    })!
+    // alt select
+    Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.CleanupTool,
+      surface,
+      area: testArea(0).bbox,
+      entities: [entity],
+      tiles: [],
+    })
+    assert
+      .spy(updater.onEntityForceDeleted)
       .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
   })
 })

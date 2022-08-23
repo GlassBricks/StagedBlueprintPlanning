@@ -114,6 +114,7 @@ data.extend([assemblyAddTool])
 
 // light yellow
 const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
+const cleanupReverseToolColor: ColorArray = [0.9, 0.5, 0.5]
 const cleanupTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.CleanupTool,
@@ -145,9 +146,11 @@ const cleanupTool: SelectionToolPrototype = {
   alt_selection_color: cleanupToolColor,
   alt_selection_cursor_box_type: "entity",
 
-  reverse_selection_mode: ["nothing"],
-
   // filters set in data-final-fixes
+
+  reverse_selection_mode: ["blueprint"],
+  reverse_selection_color: cleanupReverseToolColor,
+  reverse_selection_cursor_box_type: "not-allowed",
 }
 
 function selectionToolToShortcut(prototype: SelectionToolPrototype, icon: Sprite): ShortcutPrototype {
@@ -207,13 +210,6 @@ data.extend([
   createSprite(Sprites.ExternalLinkBlack, "__bbpp3__/graphics/icons/external-link-black.png", 32),
   createSprite(Sprites.ExternalLinkWhite, "__bbpp3__/graphics/icons/external-link-white.png", 32),
 ])
-
-// other inputs
-let order: number = 0
-function nextOrder(): string {
-  order++
-  return tostring(order)
-}
 
 const nextLayer: CustomInputPrototype = {
   type: "custom-input",

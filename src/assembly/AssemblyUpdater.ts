@@ -29,6 +29,7 @@ export interface AssemblyUpdater {
   onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
   /** Handles when an entity is removed. */
   onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
+  onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
   /**
    * Handles when an entity has its properties updated.
    * Checks ALL properties except wire connections.
@@ -66,7 +67,7 @@ export function createAssemblyUpdater(
   wireSaver: WireSaver,
   notifier: WorldNotifier,
 ): AssemblyUpdater {
-  const { deleteWorldEntities, updateWorldEntities } = worldUpdater
+  const { deleteWorldEntities, updateWorldEntities, forceDeleteEntity } = worldUpdater
   const { saveEntity } = entitySaver
   const { getWireConnectionDiff } = wireSaver
   const { createNotification } = notifier
@@ -222,6 +223,13 @@ export function createAssemblyUpdater(
     updateWorldEntities(assembly, existing, currentLayer, oldLayer)
   }
 
+  function onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void {
+    const existing = assembly.content.findCompatible(entity.name, getLayerPosition(layer, entity), entity.direction)
+    if (existing) {
+      forceDeleteEntity(assembly, existing, layer.layerNumber)
+    }
+  }
+
   function getCompatibleOrAdd(
     assembly: AssemblyContent,
     entity: LuaEntity,
@@ -346,6 +354,7 @@ export function createAssemblyUpdater(
   return {
     onEntityCreated,
     onEntityDeleted,
+    onEntityForceDeleted,
     onEntityPotentiallyUpdated,
     onEntityMarkedForUpgrade,
     onCircuitWiresPotentiallyUpdated,

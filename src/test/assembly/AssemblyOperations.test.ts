@@ -31,6 +31,7 @@ before_each(() => {
   worldUpdater = {
     updateWorldEntities: spy(),
     deleteWorldEntities: spy(),
+    forceDeleteEntity: spy(),
     deleteWorldEntitiesInLayer: spy(),
     deleteExtraEntitiesOnly: spy(),
     makeSettingsRemnant: spy(),
