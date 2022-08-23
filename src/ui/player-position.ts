@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Layer } from "../assembly/Assembly"
-import { AssemblyEvents } from "../assembly/AssemblyImpl"
+import { AssemblyEvents } from "../assembly/Assembly"
+import { Layer } from "../assembly/AssemblyDef"
 import { getAssemblyAtPosition } from "../assembly/world-register"
 import { assertNever, Events, onPlayerInit } from "../lib"
 import { BBox } from "../lib/geometry"

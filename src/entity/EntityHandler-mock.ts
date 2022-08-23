@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { LayerPosition } from "../assembly/Assembly"
+import { LayerPosition } from "../assembly/AssemblyContent"
 import { shallowCopy } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableMap2D, newMap2D } from "../lib/map2d"

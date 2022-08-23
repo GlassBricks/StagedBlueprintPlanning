@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createDemonstrationAssembly } from "../assembly/AssemblyImpl"
+import { createDemonstrationAssembly } from "../assembly/Assembly"
 import { Events, protectedAction } from "../lib"
 import { destroyAllRenders } from "../lib/rendering"
 import { openAssemblySettings } from "../ui/gui/AssemblySettings"

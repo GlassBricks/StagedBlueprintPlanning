@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/Assembly"
+import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/AssemblyDef"
 import { AssemblyOperations } from "../../assembly/AssemblyOperations"
 import { assertNever, funcOn, RegisterClass } from "../../lib"
 import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"

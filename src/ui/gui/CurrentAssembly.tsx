@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, Layer } from "../../assembly/Assembly"
+import { Assembly, Layer } from "../../assembly/AssemblyDef"
 import { funcOn, funcRef, onPlayerInit, RegisterClass } from "../../lib"
 import { Component, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { Fn } from "../../lib/factoriojsx/components/Fn"

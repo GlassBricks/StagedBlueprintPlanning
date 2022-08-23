@@ -11,7 +11,7 @@
 
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
-import { AssemblyContent } from "./Assembly"
+import { AssemblyContent } from "./AssemblyContent"
 import { DefaultEntityHighlighter, EntityHighlighter } from "./EntityHighlighter"
 import { DefaultWireHandler, WireUpdater } from "./WireHandler"
 

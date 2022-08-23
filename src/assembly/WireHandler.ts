@@ -12,7 +12,7 @@
 import { AssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, getDirectionalInfo } from "../entity/AssemblyWireConnection"
 import { getLayerPosition } from "../entity/EntityHandler"
-import { AssemblyContent, LayerPosition } from "./Assembly"
+import { AssemblyContent, LayerPosition } from "./AssemblyContent"
 import { AssemblyEntityConnections, EntityMap } from "./EntityMap"
 
 /** @noSelf */

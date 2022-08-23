@@ -10,7 +10,7 @@
  */
 
 import { isWorldEntityAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
-import { AssemblyContent, LayerPosition } from "./Assembly"
+import { AssemblyContent, LayerPosition } from "./AssemblyContent"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**

@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyContent } from "../../assembly/Assembly"
 import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
+import { AssemblyContent } from "../../assembly/AssemblyContent"
 import {
   AssemblyOperations,
   AssemblyOpWorldInteractor,

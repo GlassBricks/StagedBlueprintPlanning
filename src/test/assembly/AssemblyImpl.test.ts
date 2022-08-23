@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/Assembly"
 import {
   Assembly,
   AssemblyCreatedEvent,
@@ -16,8 +17,7 @@ import {
   LayerAddedEvent,
   LayerDeletedEvent,
   PreLayerDeletedEvent,
-} from "../../assembly/Assembly"
-import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/AssemblyImpl"
+} from "../../assembly/AssemblyDef"
 import { getOrGenerateAssemblySurface } from "../../assembly/surfaces"
 import { SelflessFun } from "../../lib"
 import { BBox, BBoxClass, Pos } from "../../lib/geometry"

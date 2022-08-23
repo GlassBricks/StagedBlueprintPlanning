@@ -12,24 +12,10 @@
 import { LayerNumber } from "../entity/AssemblyEntity"
 import { Position } from "../lib/geometry"
 import { MutableState, Observable, State } from "../lib/observable"
+import { AssemblyContent, LayerPosition } from "./AssemblyContent"
 import { MutableEntityMap } from "./EntityMap"
 
-export interface LayerPosition extends BoundingBox {
-  readonly layerNumber: LayerNumber
-  readonly surface: LuaSurface
-}
-
-export interface AssemblyContent {
-  getLayer(layerNumber: LayerNumber): LayerPosition | nil
-  numLayers(): number
-  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, LayerPosition]>>
-
-  getLayerName(layerNumber: LayerNumber): LocalisedString
-  readonly content: MutableEntityMap
-}
-
 export type AssemblyId = number & { _assemblyIdBrand: never }
-
 export interface Assembly extends AssemblyContent {
   readonly id: AssemblyId
 
@@ -54,7 +40,6 @@ export interface Assembly extends AssemblyContent {
 
   delete(): void
 }
-
 export interface Layer extends LayerPosition {
   readonly name: MutableState<string>
 
@@ -64,23 +49,19 @@ export interface Layer extends LayerPosition {
 
   deleteInAssembly(): void
 }
-
 export interface AssemblyCreatedEvent {
   readonly type: "assembly-created"
   readonly assembly: Assembly
 }
-
 export interface AssemblyDeletedEvent {
   readonly type: "assembly-deleted"
   readonly assembly: Assembly
 }
-
 export interface LayerAddedEvent {
   readonly type: "layer-added"
   readonly assembly: Assembly
   readonly layer: Layer
 }
-
 export interface PreLayerDeletedEvent {
   readonly type: "pre-layer-deleted"
   readonly assembly: Assembly
@@ -91,7 +72,6 @@ export interface LayerDeletedEvent {
   readonly assembly: Assembly
   readonly layer: Layer
 }
-
 export type GlobalAssemblyEvent =
   | AssemblyCreatedEvent
   | AssemblyDeletedEvent

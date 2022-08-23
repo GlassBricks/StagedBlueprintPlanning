@@ -10,7 +10,7 @@
  */
 
 import { clamp } from "util"
-import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/Assembly"
+import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/AssemblyDef"
 import { LayerNumber } from "../../entity/AssemblyEntity"
 import { assertNever, bind, funcOn, RegisterClass } from "../../lib"
 import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"

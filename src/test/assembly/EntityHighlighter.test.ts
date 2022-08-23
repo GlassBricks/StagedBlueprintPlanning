@@ -10,8 +10,8 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyContent } from "../../assembly/Assembly"
 import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
+import { AssemblyContent } from "../../assembly/AssemblyContent"
 import {
   createHighlightCreator,
   EntityHighlighter,

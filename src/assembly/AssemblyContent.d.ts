@@ -9,7 +9,19 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "./Assembly"
-import "./assembly-display"
-import "./assembly-listener"
-import "./world-listener"
+import { LayerNumber } from "../entity/AssemblyEntity"
+import { MutableEntityMap } from "./EntityMap"
+
+export interface LayerPosition extends BoundingBox {
+  readonly layerNumber: LayerNumber
+  readonly surface: LuaSurface
+}
+
+export interface AssemblyContent {
+  getLayer(layerNumber: LayerNumber): LayerPosition | nil
+  numLayers(): number
+  iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, LayerPosition]>>
+
+  getLayerName(layerNumber: LayerNumber): LocalisedString
+  readonly content: MutableEntityMap
+}

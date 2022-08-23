@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly } from "../../assembly/Assembly"
-import { _mockAssembly } from "../../assembly/AssemblyImpl"
+import { _mockAssembly } from "../../assembly/Assembly"
+import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _inValidState } from "../../assembly/world-listener"
 import { registerAssemblyLocation, unregisterAssemblyLocation } from "../../assembly/world-register"

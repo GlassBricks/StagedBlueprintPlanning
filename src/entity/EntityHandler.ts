@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerPosition } from "../assembly/Assembly"
+import { LayerPosition } from "../assembly/AssemblyContent"
 import { Mutable } from "../lib"
 import { Pos, PositionClass } from "../lib/geometry"
 import { BlueprintDiffHandler } from "./BlueprintDiffHandler"

@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly } from "../assembly/Assembly"
-import { userCreateAssembly } from "../assembly/AssemblyImpl"
+import { userCreateAssembly } from "../assembly/Assembly"
+import { Assembly } from "../assembly/AssemblyDef"
 import { findIntersectingAssembly } from "../assembly/world-register"
 import { Colors, Prototypes } from "../constants"
 import { Events, funcOn, noSelfFuncOn, RegisterClass } from "../lib"

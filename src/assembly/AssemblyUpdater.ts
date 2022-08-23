@@ -15,7 +15,7 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getLayerPosition } from "../entity/EntityHandler"
 import { L_Interaction } from "../locale"
-import { AssemblyContent, LayerPosition } from "./Assembly"
+import { AssemblyContent, LayerPosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 

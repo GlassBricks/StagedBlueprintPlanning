@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LayerPosition } from "../../assembly/Assembly"
+import { LayerPosition } from "../../assembly/AssemblyContent"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
 import { WorldArea } from "../../utils/world-location"

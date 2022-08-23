@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyContent, LayerPosition } from "../../assembly/Assembly"
 import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
+import { AssemblyContent, LayerPosition } from "../../assembly/AssemblyContent"
 import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"

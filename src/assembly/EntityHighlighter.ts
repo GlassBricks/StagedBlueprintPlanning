@@ -17,7 +17,7 @@ import { getWorldPosition } from "../entity/EntityHandler"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
-import { AssemblyContent, LayerPosition } from "./Assembly"
+import { AssemblyContent, LayerPosition } from "./AssemblyContent"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {

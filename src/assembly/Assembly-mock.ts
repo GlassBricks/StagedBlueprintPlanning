@@ -9,7 +9,8 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyContent, Layer, LayerPosition } from "./Assembly"
+import { AssemblyContent, LayerPosition } from "./AssemblyContent"
+import { Layer } from "./AssemblyDef"
 import { newEntityMap } from "./EntityMap"
 
 export function createMockAssemblyContent(numLayers: number): AssemblyContent {

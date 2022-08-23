@@ -16,7 +16,7 @@ import { Event, MutableState, State, state } from "../lib/observable"
 import { globalEvent } from "../lib/observable/GlobalEvent"
 import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
-import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer, LocalAssemblyEvent } from "./Assembly"
+import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer, LocalAssemblyEvent } from "./AssemblyDef"
 import { newEntityMap } from "./EntityMap"
 import { generateAssemblySurfaces, getAssemblySurface, getOrGenerateAssemblySurface, prepareArea } from "./surfaces"
 import floor = math.floor
