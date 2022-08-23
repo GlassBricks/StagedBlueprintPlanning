@@ -21,6 +21,20 @@ export declare const enum L_ItemGroupName {
   /** BP3 utility entities */
   Utility = "item-group-name.bp3:utility",
 }
+export declare const enum L_ModSettingName {
+  /** Use cyclic layer navigation */
+  CyclicNavigation = "mod-setting-name.bp3:cyclic-navigation",
+}
+export declare const enum L_Controls {
+  /** Next layer */
+  NextLayer = "controls.bp3:next-layer",
+  /** Previous layer */
+  PreviousLayer = "controls.bp3:previous-layer",
+  /** Go to entity's first layer */
+  GoToBaseLayer = "controls.bp3:go-to-base-layer",
+  /** Go to entity's next notable layer */
+  GoToNextNotableLayer = "controls.bp3:go-to-next-notable-layer",
+}
 export declare const enum L_Bp3 {
   /** __1__ (preview) */
   PreviewEntity = "bp3.preview-entity",
@@ -38,6 +52,16 @@ export declare const enum L_Interaction {
   EntityMovedFromLayer = "bp3.interaction.entity-moved-from-layer",
   /** Entity moved back up to __1__ */
   EntityMovedBackToLayer = "bp3.interaction.entity-moved-back-to-layer",
+  /** Not in an assembly */
+  PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",
+  /** Entity is not in an assembly */
+  EntityNotInAssembly = "bp3.interaction.entity-not-in-assembly",
+  /** No next layer */
+  NoNextLayer = "bp3.interaction.no-next-layer",
+  /** No previous layer */
+  NoPreviousLayer = "bp3.interaction.no-previous-layer",
+  /** Already at entity's first layer */
+  AlreadyAtBaseLayer = "bp3.interaction.already-at-base-layer",
 }
 export declare const enum L_Assembly {
   /** <Unnamed assembly __1__> */

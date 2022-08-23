@@ -201,28 +201,6 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     return nil
   }
 
-  //
-  // function makePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
-  //   const preview = createEntityPreview(
-  //     layer.surface,
-  //     entity.getNameAtLayer(layer.layerNumber),
-  //     getWorldPosition(layer, entity),
-  //     entity.direction,
-  //   )
-  //   entity.replaceWorldEntity(layer.layerNumber, preview, "previewEntity")
-  //   return preview
-  // }
-  //
-  // function getOrCreatePreviewEntity(entity: AssemblyEntity, layer: LayerPosition): LuaEntity | nil {
-  //   const existing = entity.getWorldEntity(layer.layerNumber, "previewEntity")
-  //   if (!existing || existing.name !== Prototypes.PreviewEntityPrefix + entity.getNameAtLayer(layer.layerNumber)) {
-  //     return makePreviewEntity(entity, layer)
-  //   } else if (existing) {
-  //     existing.direction = entity.direction ?? 0
-  //     return existing
-  //   }
-  // }
-
   function createAssociatedEntity(
     entity: AssemblyEntity,
     layer: LayerPosition,

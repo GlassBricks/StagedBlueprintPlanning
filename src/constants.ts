@@ -12,6 +12,15 @@
 export const enum CustomInputs {
   Build = "bp3:build",
   RemovePoleCables = "bp3:remove-pole-cables",
+
+  NextLayer = "bp3:next-layer",
+  PreviousLayer = "bp3:previous-layer",
+  GoToBaseLayer = "bp3:go-to-base-layer",
+  GoToNextNotableLayer = "bp3:go-to-next-notable-layer",
+}
+
+export const enum Settings {
+  CyclicNavigation = "bp3:cyclic-navigation",
 }
 
 export const enum Prototypes {

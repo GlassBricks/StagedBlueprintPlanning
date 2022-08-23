@@ -9,6 +9,17 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "./assembly-creation"
-import "./custom-inputs"
-import "./gui"
+import { Data } from "typed-factorio/settings/types"
+import { Settings } from "./constants"
+
+declare const data: Data
+
+data.extend([
+  {
+    name: Settings.CyclicNavigation,
+    type: "bool-setting",
+    setting_type: "runtime-per-user",
+    default_value: false,
+    order: "a",
+  },
+])

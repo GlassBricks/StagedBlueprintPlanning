@@ -170,6 +170,7 @@ const getCleanupToolInput: CustomInputPrototype = {
   key_sequence: "",
   item_to_spawn: Prototypes.CleanupTool,
   action: "spawn-item",
+  order: "a[tools]-[cleanup]",
 }
 
 data.extend([
@@ -206,3 +207,41 @@ data.extend([
   createSprite(Sprites.ExternalLinkBlack, "__bbpp3__/graphics/icons/external-link-black.png", 32),
   createSprite(Sprites.ExternalLinkWhite, "__bbpp3__/graphics/icons/external-link-white.png", 32),
 ])
+
+// other inputs
+let order: number = 0
+function nextOrder(): string {
+  order++
+  return tostring(order)
+}
+
+const nextLayer: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.NextLayer,
+  action: "lua",
+  key_sequence: "CONTROL + mouse-wheel-down",
+  order: "b[navigate]-a[next-layer]",
+}
+const previousLayer: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.PreviousLayer,
+  action: "lua",
+  key_sequence: "CONTROL + mouse-wheel-up",
+  order: "b[navigate]-b[previous-layer]",
+}
+const goToBaseLayer: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.GoToBaseLayer,
+  action: "lua",
+  key_sequence: "CONTROL + mouse-button-3",
+  order: "b[navigate]-c[go-to-base-layer]",
+}
+const goToNextNotableLayer: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.GoToNextNotableLayer,
+  action: "lua",
+  key_sequence: "CONTROL + SHIFT + mouse-button-3",
+  order: "b[navigate]-d[go-to-next-notable-layer]",
+}
+
+data.extend([nextLayer, previousLayer, goToBaseLayer, goToNextNotableLayer])

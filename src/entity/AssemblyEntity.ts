@@ -420,8 +420,19 @@ export function createAssemblyEntity<E extends Entity>(
   return new AssemblyEntityImpl(layerNumber, entity, position, direction)
 }
 
+// vehicles and units
+const excludedTypes = newLuaSet(
+  "unit",
+  "car",
+  "artillery-wagon",
+  "cargo-wagon",
+  "fluid-wagon",
+  "locomotive",
+  "spider-vehicle",
+)
+
 export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
-  return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation")
+  return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation") && !excludedTypes.has(luaEntity.type)
 }
 
 /** Does not check position */
@@ -431,4 +442,16 @@ export function isCompatibleEntity(
   direction: defines.direction | nil,
 ): boolean {
   return a.categoryName === categoryName && a.direction === direction
+}
+
+// note: see also EntityHighlighter, updateErrorHighlight
+export function entityHasErrorAt(entity: AssemblyEntity, layerNumber: LayerNumber): boolean {
+  return entity.getWorldEntity(layerNumber) === nil
+}
+
+/** Used by custom input */
+export function isNotableLayer(entity: AssemblyEntity, layerNumber: LayerNumber): boolean {
+  return (
+    entity.getBaseLayer() === layerNumber || entity.hasLayerChange(layerNumber) || entityHasErrorAt(entity, layerNumber)
+  )
 }
