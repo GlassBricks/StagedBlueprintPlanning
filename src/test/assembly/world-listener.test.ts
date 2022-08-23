@@ -14,7 +14,7 @@ import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _inValidState } from "../../assembly/world-listener"
 import { registerAssemblyLocation, unregisterAssemblyLocation } from "../../assembly/world-register"
-import { Prototypes } from "../../constants"
+import { CustomInputs, Prototypes } from "../../constants"
 import { LayerNumber } from "../../entity/AssemblyEntity"
 import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
 import { Events } from "../../lib"
@@ -387,5 +387,37 @@ describe("Cleanup tool", () => {
     assert
       .spy(updater.onEntityForceDeleted)
       .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getLayer(1)!))
+  })
+})
+
+describe("move to this layer", () => {
+  function testOnEntity(entity: LuaEntity | nil): void {
+    assert.not_nil(entity, "entity found")
+    player.selected = entity
+    assert.equal(entity, player.selected)
+    Events.raiseFakeEvent(CustomInputs.MoveToThisLayer, {
+      player_index: player.index,
+      input_name: CustomInputs.MoveToThisLayer,
+      cursor_position: player.position,
+    })
+    assert
+      .spy(updater.onMoveEntityToLayer)
+      .called_with(match.ref(assembly), match.ref(entity!), match.ref(assembly.getLayer(1)!))
+  }
+  test("on normal entity", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: getLayerCenter(1),
+      force: "player",
+    })
+    testOnEntity(entity)
+  })
+  test("on preview entity", () => {
+    const entity = surface.create_entity({
+      name: Prototypes.PreviewEntityPrefix + "inserter",
+      position: getLayerCenter(1),
+      force: "player",
+    })
+    testOnEntity(entity)
   })
 })

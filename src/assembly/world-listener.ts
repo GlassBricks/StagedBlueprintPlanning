@@ -22,9 +22,17 @@ import { getLayerAtPosition } from "./world-register"
 
 const Events = ProtectedEvents
 
-export function getLayerAtEntity(entity: LuaEntity): LuaMultiReturn<[Assembly, Layer] | [nil]> {
+function getLayerAtEntity(entity: LuaEntity): LuaMultiReturn<[Assembly, Layer] | [nil]> {
   if (
     !(entity.valid && (isWorldEntityAssemblyEntity(entity) || entity.name.startsWith(Prototypes.SelectionProxyPrefix)))
+  )
+    return $multi(nil)
+  return getLayerAtPosition(entity.surface, entity.position)
+}
+
+function getLayerAtEntityOrPreview(entity: LuaEntity): LuaMultiReturn<[Assembly, Layer] | [nil]> {
+  if (
+    !(entity.valid && (isWorldEntityAssemblyEntity(entity) || entity.name.startsWith(Prototypes.PreviewEntityPrefix)))
   )
     return $multi(nil)
   return getLayerAtPosition(entity.surface, entity.position)
@@ -352,4 +360,14 @@ Events.onAll({
   on_player_alt_selected_area: checkCleanupTool,
   on_player_reverse_selected_area: checkCleanupToolReverse,
 })
+
+Events.on(CustomInputs.MoveToThisLayer, (e) => {
+  const player = game.get_player(e.player_index)!
+  const entity = player.selected
+  if (!entity) return
+  const [assembly, layer] = getLayerAtEntityOrPreview(entity)
+  if (!assembly) return
+  DefaultAssemblyUpdater.onMoveEntityToLayer(assembly, entity, layer)
+})
+
 export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil

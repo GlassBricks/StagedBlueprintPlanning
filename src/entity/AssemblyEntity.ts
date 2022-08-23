@@ -62,7 +62,6 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   adjustValueAtLayer(layer: LayerNumber, value: T): boolean
 
   /**
-   *
    * @param layer the layer to move to. If moving up, deletes/merges all layer changes from old layer to new layer.
    * @param recordOldLayer if true, records the old layer (so the entity can be moved back). Otherwise, clears the old layer.
    * @return the previous base layer
@@ -264,6 +263,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
   }
   private moveUp(higherLayer: LayerNumber): void {
+    // todo: what happens if moved up, and lost data?
     const { baseValue } = this
     const { layerChanges } = this
     for (const [changeLayer, changed] of pairs(layerChanges)) {
@@ -446,7 +446,7 @@ export function isCompatibleEntity(
 
 // note: see also EntityHighlighter, updateErrorHighlight
 export function entityHasErrorAt(entity: AssemblyEntity, layerNumber: LayerNumber): boolean {
-  return entity.getWorldEntity(layerNumber) === nil
+  return layerNumber >= entity.getBaseLayer() && entity.getWorldEntity(layerNumber) === nil
 }
 
 /** Used by custom input */

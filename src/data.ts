@@ -247,5 +247,12 @@ const goToBaseLayer: CustomInputPrototype = {
   key_sequence: "CONTROL + SHIFT + mouse-button-3",
   order: "b[navigate]-d[go-to-base-layer]",
 }
+const moveToThisLayer: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.MoveToThisLayer,
+  action: "lua",
+  key_sequence: "CONTROL + ALT + mouse-button-3",
+  order: "b[navigate]-e[move-to-this-layer]",
+}
 
-data.extend([nextLayer, previousLayer, goToBaseLayer, goToNextNotableLayer])
+data.extend([nextLayer, previousLayer, goToBaseLayer, goToNextNotableLayer, moveToThisLayer])

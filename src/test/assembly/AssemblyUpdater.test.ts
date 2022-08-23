@@ -504,6 +504,38 @@ describe("cleanup tool", () => {
   })
 })
 
+describe("move to current layer", () => {
+  test("normal entity", () => {
+    const { luaEntity, added } = addAndReset(1, 3)
+    assemblyUpdater.onMoveEntityToLayer(assembly, luaEntity, layer)
+    assert.equal(3, added.getBaseLayer())
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+    assertNotified(luaEntity, [L_Interaction.EntityMovedFromLayer, "mock layer 1"])
+  })
+  test("preview entity", () => {
+    const { luaEntity, added } = addAndReset(1, 3)
+    luaEntity.destroy()
+    const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
+    assemblyUpdater.onMoveEntityToLayer(assembly, preview, layer)
+    assert.equal(3, added.getBaseLayer())
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+    assertNotified(preview, [L_Interaction.EntityMovedFromLayer, "mock layer 1"])
+  })
+  test("settings remnant", () => {
+    // with preview again
+    const { luaEntity, added } = addAndReset(1, 3)
+    luaEntity.destroy()
+    const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
+    added.isSettingsRemnant = true
+    assemblyUpdater.onMoveEntityToLayer(assembly, preview, layer)
+    assert.equal(3, added.getBaseLayer())
+    assertOneEntity()
+    assertReviveSettingsRemnantCalled(added)
+  })
+})
+
 describe("circuit wires", () => {
   function setupNewWire(luaEntity1: LuaEntity, entity1: AssemblyEntity<TestEntity>): void {
     wireSaver.getWireConnectionDiff.invokes((_, entity2) => {

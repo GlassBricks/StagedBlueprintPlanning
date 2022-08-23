@@ -48,9 +48,9 @@ export declare const enum L_Interaction {
   AreaIntersectsWithOtherAssembly = "bp3.interaction.area-intersects-with-other-assembly",
   /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected in assemblies (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
   BlueprintNotHandled = "bp3.interaction.blueprint-not-handled",
-  /** Entity moved down from __1__ */
+  /** Entity moved from __1__ */
   EntityMovedFromLayer = "bp3.interaction.entity-moved-from-layer",
-  /** Entity moved back up to __1__ */
+  /** Entity moved back to __1__ */
   EntityMovedBackToLayer = "bp3.interaction.entity-moved-back-to-layer",
   /** Not in an assembly */
   PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",

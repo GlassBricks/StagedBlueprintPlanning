@@ -17,6 +17,8 @@ export const enum CustomInputs {
   PreviousLayer = "bp3:previous-layer",
   GoToBaseLayer = "bp3:go-to-base-layer",
   GoToNextNotableLayer = "bp3:go-to-next-notable-layer",
+
+  MoveToThisLayer = "bp3:move-to-this-layer",
 }
 
 export const enum Settings {

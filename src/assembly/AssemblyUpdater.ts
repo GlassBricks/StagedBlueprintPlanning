@@ -18,6 +18,7 @@ import { L_Interaction } from "../locale"
 import { AssemblyContent, LayerPosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
+import min = math.min
 
 /**
  * Updates assembly in response to world changes.
@@ -29,7 +30,6 @@ export interface AssemblyUpdater {
   onEntityCreated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
   /** Handles when an entity is removed. */
   onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
-  onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
   /**
    * Handles when an entity has its properties updated.
    * Checks ALL properties except wire connections.
@@ -52,6 +52,10 @@ export interface AssemblyUpdater {
   onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 
   onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, layer: LayerPosition): void
+  /** Either: entity died, or reverse select with cleanup tool */
+  onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, layer: LayerPosition): void
+  /** User activated. */
+  onMoveEntityToLayer(assembly: AssemblyContent, entity: LuaEntity, layer: LayerPosition): void
 }
 
 /**
@@ -133,10 +137,11 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
     layerNumber: LayerNumber,
-    entity: LuaEntity,
+    luaEntity: LuaEntity,
   ): void {
     if (existing.isSettingsRemnant) {
-      reviveSettingsRemnant(assembly, existing, layerNumber, entity)
+      existing.replaceWorldEntity(layerNumber, luaEntity)
+      reviveSettingsRemnant(assembly, existing, layerNumber)
     } else {
       updateSingleWorldEntity(assembly, existing, layerNumber, false)
     }
@@ -149,21 +154,16 @@ export function createAssemblyUpdater(
     luaEntity: LuaEntity,
   ): void {
     if (existing.isSettingsRemnant) {
-      reviveSettingsRemnant(assembly, existing, layerNumber, luaEntity)
+      existing.replaceWorldEntity(layerNumber, luaEntity)
+      reviveSettingsRemnant(assembly, existing, layerNumber)
     } else {
       moveEntityDown(assembly, existing, layerNumber, luaEntity)
     }
   }
 
-  function reviveSettingsRemnant(
-    assembly: AssemblyContent,
-    existing: AssemblyEntity,
-    layerNumber: LayerNumber,
-    entity: LuaEntity,
-  ): void {
+  function reviveSettingsRemnant(assembly: AssemblyContent, existing: AssemblyEntity, layerNumber: LayerNumber): void {
     existing.isSettingsRemnant = nil
     existing.moveToLayer(layerNumber)
-    existing.replaceWorldEntity(layerNumber, entity)
     worldUpdater.reviveSettingsRemnant(assembly, existing)
   }
 
@@ -174,8 +174,8 @@ export function createAssemblyUpdater(
     luaEntity: LuaEntity,
   ): void {
     const oldLayer = existing.moveToLayer(layerNumber, true)
-    existing.replaceWorldEntity(layerNumber, luaEntity)
     createNotification(luaEntity, [L_Interaction.EntityMovedFromLayer, assembly.getLayerName(oldLayer)])
+    existing.replaceWorldEntity(layerNumber, luaEntity)
     updateWorldEntities(assembly, existing, layerNumber, oldLayer, true)
   }
 
@@ -351,14 +351,46 @@ export function createAssemblyUpdater(
     }
   }
 
+  function getEntityFromPreviewEntity(
+    entityOrPreviewEntity: LuaEntity,
+    layer: LayerPosition,
+    assembly: AssemblyContent,
+  ): AssemblyEntity | nil {
+    let name = entityOrPreviewEntity.name
+    if (name.startsWith(Prototypes.PreviewEntityPrefix)) name = name.substring(Prototypes.PreviewEntityPrefix.length)
+    const position = getLayerPosition(layer, entityOrPreviewEntity)
+    const existing = assembly.content.findCompatible(name, position, entityOrPreviewEntity.direction)
+    return existing
+  }
+
+  function onMoveEntityToLayer(
+    assembly: AssemblyContent,
+    entityOrPreviewEntity: LuaEntity,
+    layer: LayerPosition,
+  ): void {
+    const existing = getEntityFromPreviewEntity(entityOrPreviewEntity, layer, assembly)
+    if (!existing) return
+    const { layerNumber } = layer
+    if (existing.isSettingsRemnant) {
+      // revive at current layer
+      reviveSettingsRemnant(assembly, existing, layerNumber)
+    } else {
+      // move
+      const oldLayer = existing.moveToLayer(layerNumber, true)
+      updateWorldEntities(assembly, existing, min(oldLayer, layerNumber))
+      createNotification(entityOrPreviewEntity, [L_Interaction.EntityMovedFromLayer, assembly.getLayerName(oldLayer)])
+    }
+  }
+
   return {
     onEntityCreated,
     onEntityDeleted,
-    onEntityForceDeleted,
     onEntityPotentiallyUpdated,
     onEntityMarkedForUpgrade,
     onCircuitWiresPotentiallyUpdated,
     onCleanupToolUsed,
+    onEntityForceDeleted,
+    onMoveEntityToLayer,
   }
 }
 
