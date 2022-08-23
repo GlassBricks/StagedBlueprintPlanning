@@ -14,11 +14,11 @@ import { Component, FactorioJsx, Spec } from "../../lib/factoriojsx"
 import { RenameButton } from "../../lib/factoriojsx/components/buttons"
 import { Fn } from "../../lib/factoriojsx/components/Fn"
 import { MutableState, State, state } from "../../lib/observable"
-import { L_Gui } from "../../locale"
 
 export interface ItemRenameProps {
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
+  readonly renameTooltip: LocalisedString
 }
 
 @RegisterClass("gui:ItemRename")
@@ -37,7 +37,7 @@ export class ItemRename extends Component<ItemRenameProps> {
         }}
       >
         <Fn uses="flow" from={this.isRenaming} map={funcOn(this.nameDisplay)} />
-        <RenameButton tooltip={[L_Gui.RenameAssembly]} on_gui_click={this.isRenaming.toggleFn()} />
+        <RenameButton tooltip={props.renameTooltip} on_gui_click={this.isRenaming.toggleFn()} />
       </flow>
     )
   }

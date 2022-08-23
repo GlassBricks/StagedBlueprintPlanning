@@ -49,7 +49,8 @@ before_each(() => {
   wireUpdater = { updateWireConnections: spy() }
   highlighter = {
     updateHighlights: spy(),
-    deleteEntity: spy(),
+    deleteHighlights: spy(),
+    deleteHighlightsInLayer: spy(),
     makeSettingsRemnant: spy(),
     reviveSettingsRemnant: spy(),
   }
@@ -208,14 +209,14 @@ test("deleteWorldEntities", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
   worldUpdater.deleteWorldEntities(entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
-  assert.spy(highlighter.deleteEntity).called_with(match.ref(entity))
+  assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
 })
 
 test("deleteExtraEntitiesOnly", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
   worldUpdater.deleteExtraEntitiesOnly(entity)
   for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
-  assert.spy(highlighter.deleteEntity).called_with(match.ref(entity))
+  assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
 })
 
 test("makeSettingsRemnant deletes all entities and calls highlighter.makeSettingsRemnant", () => {

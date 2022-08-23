@@ -43,12 +43,12 @@ export interface Assembly extends AssemblyContent {
 
   getLayer(layerNumber: LayerNumber): Layer | nil
   iterateLayers(start?: LayerNumber, end?: LayerNumber): LuaIterable<LuaMultiReturn<[LayerNumber, Layer]>>
-
   getAllLayers(): readonly Layer[]
-
   getLayerAt(surface: LuaSurface, position: Position): Layer | nil
 
   insertLayer(index: LayerNumber): Layer
+  /** Cannot be first layer, contents will be merged with previous layer. */
+  deleteLayer(index: LayerNumber): Layer
 
   readonly valid: boolean
 
@@ -61,12 +61,15 @@ export interface Layer extends LayerPosition {
   readonly assembly: Assembly
 
   readonly valid: boolean
+
+  deleteInAssembly(): void
 }
 
 export interface AssemblyCreatedEvent {
   readonly type: "assembly-created"
   readonly assembly: Assembly
 }
+
 export interface AssemblyDeletedEvent {
   readonly type: "assembly-deleted"
   readonly assembly: Assembly
@@ -78,5 +81,21 @@ export interface LayerAddedEvent {
   readonly layer: Layer
 }
 
-export type GlobalAssemblyEvent = AssemblyCreatedEvent | AssemblyDeletedEvent | LayerAddedEvent
-export type LocalAssemblyEvent = AssemblyDeletedEvent | LayerAddedEvent
+export interface PreLayerDeletedEvent {
+  readonly type: "pre-layer-deleted"
+  readonly assembly: Assembly
+  readonly layer: Layer
+}
+export interface LayerDeletedEvent {
+  readonly type: "layer-deleted"
+  readonly assembly: Assembly
+  readonly layer: Layer
+}
+
+export type GlobalAssemblyEvent =
+  | AssemblyCreatedEvent
+  | AssemblyDeletedEvent
+  | LayerAddedEvent
+  | PreLayerDeletedEvent
+  | LayerDeletedEvent
+export type LocalAssemblyEvent = AssemblyDeletedEvent | LayerAddedEvent | PreLayerDeletedEvent | LayerDeletedEvent

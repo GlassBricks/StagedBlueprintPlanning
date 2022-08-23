@@ -66,8 +66,7 @@ AssemblyEvents.addListener((e) => {
     registerAssemblyLocation(e.assembly)
   } else if (e.type === "assembly-deleted") {
     unregisterAssemblyLocation(e.assembly)
-  } else if (e.type !== "layer-added") {
-    // will be same area
+  } else if (e.type !== "layer-added" && e.type !== "layer-deleted" && e.type !== "pre-layer-deleted") {
     assertNever(e)
   }
 })

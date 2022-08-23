@@ -18,7 +18,8 @@ import {
   PRRecord,
   RegisterClass,
   shallowCopy,
-  shiftNumberKeys,
+  shiftNumberKeysDown,
+  shiftNumberKeysUp,
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, LayerDiff, mergeDiff } from "./diff"
@@ -95,6 +96,12 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   /** Modifies to be consistent with an inserted layer. */
   insertLayer(layerNumber: LayerNumber): void
+
+  /**
+   * Modifies to be consistent with a deleted layer.
+   * Layer contents will be merged with previous layer.
+   */
+  deleteLayer(layerNumber: LayerNumber): void
 }
 
 export type LayerChanges<E extends Entity = Entity> = PRRecord<LayerNumber, LayerDiff<E>>
@@ -362,14 +369,44 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     delete this.layerProperties[key]
   }
 
-  public insertLayer(layerNumber: LayerNumber): void {
+  insertLayer(layerNumber: LayerNumber): void {
     if (this.baseLayer >= layerNumber) this.baseLayer++
     if (this.oldLayer && this.oldLayer >= layerNumber) this.oldLayer++
 
-    shiftNumberKeys(this.layerChanges, layerNumber)
-    // old layer
+    shiftNumberKeysUp(this.layerChanges, layerNumber)
     for (const [, byType] of pairs(this.layerProperties)) {
-      shiftNumberKeys(byType, layerNumber)
+      shiftNumberKeysUp(byType, layerNumber)
+    }
+  }
+
+  deleteLayer(layerNumber: LayerNumber): void {
+    assert(layerNumber > 1, "Can't delete first layer")
+    this.mergeLayerChangeWithBelow(layerNumber)
+
+    if (this.baseLayer >= layerNumber) this.baseLayer--
+    if (this.oldLayer && this.oldLayer >= layerNumber) this.oldLayer--
+
+    shiftNumberKeysDown(this.layerChanges, layerNumber)
+    for (const [, byType] of pairs(this.layerProperties)) {
+      shiftNumberKeysDown(byType, layerNumber)
+    }
+  }
+  private mergeLayerChangeWithBelow(layerNumber: number): void {
+    const { layerChanges } = this
+    const thisChange = layerChanges[layerNumber]
+    if (thisChange) {
+      const prevLayer = layerNumber - 1
+      if (this.baseLayer === prevLayer) {
+        applyDiffToEntity(this.baseValue, thisChange)
+      } else {
+        const prevChange = layerChanges[prevLayer]
+        if (prevChange) {
+          applyDiffToDiff(prevChange, thisChange)
+        } else {
+          layerChanges[prevLayer] = thisChange
+        }
+      }
+      delete layerChanges[layerNumber]
     }
   }
 }

@@ -10,6 +10,7 @@
  */
 
 import { Assembly, Layer, LocalAssemblyEvent } from "../../assembly/Assembly"
+import { AssemblyOperations } from "../../assembly/AssemblyOperations"
 import { assertNever, funcOn, RegisterClass } from "../../lib"
 import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { TrashButton } from "../../lib/factoriojsx/components/buttons"
@@ -18,7 +19,6 @@ import { Fn } from "../../lib/factoriojsx/components/Fn"
 import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/components/misc"
 import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { state } from "../../lib/observable"
-import { debugPrint } from "../../lib/test/misc"
 import { L_GuiAssemblySettings } from "../../locale"
 import { teleportToLayer, teleportToSurface1 } from "../player-position"
 import { ItemRename } from "./ItemRename"
@@ -58,7 +58,11 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
 
         <frame style="inside_shallow_frame" direction="vertical">
           <frame style="subheader_frame" direction="horizontal">
-            <ItemRename name={this.assembly.name} displayName={this.assembly.displayName} />
+            <ItemRename
+              name={this.assembly.name}
+              displayName={this.assembly.displayName}
+              renameTooltip={[L_GuiAssemblySettings.RenameAssembly]}
+            />
             <HorizontalPusher />
             <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
           </frame>
@@ -99,6 +103,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
             uses="frame"
             from={this.selectedLayer}
             map={funcOn(this.renderLayerSettings)}
+            direction="vertical"
             style="inside_shallow_frame"
             styleMod={{
               width: layerSettingsWidth,
@@ -118,7 +123,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
   private onAssemblyEvent(_: any, event: LocalAssemblyEvent) {
     if (event.type === "assembly-deleted") {
       this.onClose()
-    } else if (event.type !== "layer-added") {
+    } else if (event.type !== "layer-added" && event.type !== "pre-layer-deleted" && event.type !== "layer-deleted") {
       assertNever(event)
     }
   }
@@ -179,7 +184,11 @@ export class LayerSettings extends Component<{ layer: Layer }> {
     return (
       <>
         <frame style="subheader_frame" direction="horizontal">
-          <ItemRename name={props.layer.name} displayName={props.layer.name} />
+          <ItemRename
+            name={props.layer.name}
+            displayName={props.layer.name}
+            renameTooltip={[L_GuiAssemblySettings.RenameLayer]}
+          />
           <HorizontalPusher />
           <TrashButton
             enabled={canDeleteLayer}
@@ -189,6 +198,21 @@ export class LayerSettings extends Component<{ layer: Layer }> {
             on_gui_click={funcOn(this.beginDelete)}
           />
         </frame>
+        <scroll-pane
+          style="naked_scroll_pane"
+          styleMod={{
+            padding: [5, 10],
+            vertically_stretchable: true,
+            horizontally_stretchable: true,
+          }}
+          horizontal_scroll_policy="never"
+        >
+          <button
+            caption={[L_GuiAssemblySettings.ResetLayer]}
+            tooltip={[L_GuiAssemblySettings.ResetLayerTooltip]}
+            on_gui_click={funcOn(this.resetLayer)}
+          />
+        </scroll-pane>
       </>
     )
   }
@@ -209,11 +233,18 @@ export class LayerSettings extends Component<{ layer: Layer }> {
       redConfirm: true,
       backCaption: ["gui.cancel"],
       confirmCaption: ["gui.delete"],
-      onConfirm: funcOn(this.delete),
+      onConfirm: funcOn(this.deleteLayer),
     })
   }
-  private delete() {
-    debugPrint("todo")
+  private deleteLayer() {
+    const previousLayer = this.layer.assembly.getLayer(this.layer.layerNumber - 1)
+    if (!previousLayer) return
+    this.layer.deleteInAssembly()
+    teleportToLayer(game.get_player(this.playerIndex)!, previousLayer)
+  }
+
+  private resetLayer() {
+    AssemblyOperations.resetLayer(this.layer.assembly, this.layer)
   }
 }
 const AssemblySettingsName = script.mod_name + ":AssemblySettings"

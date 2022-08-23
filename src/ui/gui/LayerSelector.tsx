@@ -72,8 +72,9 @@ export class LayerSelector<T extends "drop-down" | "list-box"> extends Component
   private onAssemblyEvent(_: Subscription, event: LocalAssemblyEvent) {
     if (event.type === "layer-added") {
       this.element.add_item(event.layer.name.get(), event.layer.layerNumber)
-      this.selectedIndex.forceNotify()
-    } else if (event.type !== "assembly-deleted") {
+    } else if (event.type === "layer-deleted") {
+      this.element.remove_item(event.layer.layerNumber)
+    } else if (event.type !== "assembly-deleted" && event.type !== "pre-layer-deleted") {
       assertNever(event)
     }
   }

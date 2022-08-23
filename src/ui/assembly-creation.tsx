@@ -10,8 +10,7 @@
  */
 
 import { Assembly } from "../assembly/Assembly"
-import { newAssembly } from "../assembly/AssemblyImpl"
-import { prepareAssembly } from "../assembly/surfaces"
+import { userCreateAssembly } from "../assembly/AssemblyImpl"
 import { findIntersectingAssembly } from "../assembly/world-register"
 import { Colors, Prototypes } from "../constants"
 import { Events, funcOn, noSelfFuncOn, RegisterClass } from "../lib"
@@ -158,13 +157,7 @@ function tryCreateAssembly(player: LuaPlayer, name: string, area: BBox, numLayer
   area = BBox.roundChunk(area)
   const existing = findIntersectingAssembly(area) // check again
   if (existing) return notifyIntersectingAssembly(player, existing)
-
-  const surfaces = prepareAssembly(area, numLayers)
-  if (deleteExisting) {
-    for (const surface of surfaces) for (const e of surface.find_entities(area)) e.destroy()
-  }
-  const assembly = newAssembly(surfaces, area)
-  assembly.name.set(name)
+  const assembly = userCreateAssembly(area, numLayers, deleteExisting, name)
 
   openAssemblySettings(player, assembly)
 }

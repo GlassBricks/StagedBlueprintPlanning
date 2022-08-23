@@ -288,6 +288,8 @@ test("insert layer after base", () => {
 
   entity.insertLayer(3)
 
+  // all keys at 3 and above are shifted up
+
   assert.equal(entity.getBaseLayer(), 1)
 
   assert.not_nil(entity.getWorldEntity(2))
@@ -311,9 +313,60 @@ test("insert layer after base", () => {
 })
 
 test("insert layer before base", () => {
-  const luaEntity = entityMock({ name: "test", position: Pos(0, 0) })
-  const entity = createAssemblyEntity<FooEntity>({ name: luaEntity.name, foo1: 1 }, Pos(0, 0), nil, 2)
+  const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 2)
 
   entity.insertLayer(1)
   assert.equal(3, entity.getBaseLayer())
+})
+
+test("delete layer after base", () => {
+  const luaEntity = entityMock({ name: "test", position: Pos(0, 0) })
+  const entity = createAssemblyEntity<FooEntity>({ name: luaEntity.name, foo1: 1 }, Pos(0, 0), nil, 1)
+  entity.replaceWorldEntity(2, luaEntity)
+  entity.replaceWorldEntity(3, luaEntity)
+  entity.replaceWorldEntity(4, luaEntity)
+  entity.setProperty(2, "foo", "bar2")
+  entity.setProperty(3, "foo", "bar3")
+  entity.setProperty(4, "foo", "bar4")
+  entity._applyDiffAtLayer(2, { foo1: 2, foo2: 2 })
+  entity._applyDiffAtLayer(3, { foo1: 3 })
+  entity._applyDiffAtLayer(4, { foo1: 4 })
+
+  entity.deleteLayer(3)
+
+  // key 3 is deleted, all keys above it are shifted down
+
+  assert.equal(entity.getBaseLayer(), 1)
+
+  assert.not_nil(entity.getWorldEntity(2))
+  assert.not_nil(entity.getWorldEntity(3))
+  assert.nil(entity.getWorldEntity(4))
+
+  assert.equal("bar2", entity.getProperty(2, "foo"))
+  assert.equal("bar4", entity.getProperty(3, "foo"))
+  assert.nil(entity.getProperty(4, "foo"))
+
+  assert.same(
+    {
+      2: { foo1: 3, foo2: 2 }, // merge of 2 and 3
+      3: { foo1: 4 },
+    },
+    entity._getLayerChanges(),
+  )
+})
+
+test("delete layer before base", () => {
+  const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 3)
+
+  entity.deleteLayer(2)
+  assert.equal(2, entity.getBaseLayer())
+})
+
+test("delete layer right after base applies layer changes to first entity", () => {
+  const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 1)
+  entity._applyDiffAtLayer(2, { foo1: 2 })
+  const value = entity.getValueAtLayer(2)
+
+  entity.deleteLayer(2)
+  assert.same(value, entity.getValueAtLayer(1))
 })

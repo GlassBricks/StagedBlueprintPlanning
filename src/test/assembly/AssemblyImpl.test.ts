@@ -9,7 +9,14 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, AssemblyCreatedEvent, AssemblyDeletedEvent, LayerAddedEvent } from "../../assembly/Assembly"
+import {
+  Assembly,
+  AssemblyCreatedEvent,
+  AssemblyDeletedEvent,
+  LayerAddedEvent,
+  LayerDeletedEvent,
+  PreLayerDeletedEvent,
+} from "../../assembly/Assembly"
 import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/AssemblyImpl"
 import { getOrGenerateAssemblySurface } from "../../assembly/surfaces"
 import { SelflessFun } from "../../lib"
@@ -103,11 +110,11 @@ test("insert layer", () => {
 
   assert.not_equal(layer.surface.index, oldLayer.surface.index)
 
-  assert.equal(asm.getLayerAt(layer.surface, Pos(1, 1)), layer)
-  assert.equal(asm.getLayerAt(oldLayer.surface, Pos(1, 1)), oldLayer)
-
   assert.equals(1, layer.layerNumber)
   assert.equals(2, oldLayer.layerNumber)
+
+  assert.equal(asm.getLayerAt(layer.surface, Pos(1, 1)), layer)
+  assert.equal(asm.getLayerAt(oldLayer.surface, Pos(1, 1)), oldLayer)
 
   assert.equals("<New layer>", layer.name.get())
 
@@ -137,4 +144,39 @@ test("insert layer", () => {
   assert.equals(anotherInserted, asm.getLayer(1)!)
   assert.equals(layer, asm.getLayer(2)!)
   assert.equals(oldLayer, asm.getLayer(3)!)
+})
+
+test("delete layer", () => {
+  const sp = spy()
+  const surfaces = [getOrGenerateAssemblySurface(1), getOrGenerateAssemblySurface(2), getOrGenerateAssemblySurface(3)]
+  const asm = newAssembly(surfaces, bbox)
+  asm.localEvents.subscribeIndependently({ invoke: sp })
+  eventListener.clear()
+
+  const layer1 = asm.getLayer(1)!
+  const layer2 = asm.getLayer(2)!
+  const layer3 = asm.getLayer(3)!
+
+  asm.deleteLayer(2)
+
+  assert.false(layer2.valid)
+
+  assert.equals(1, layer1.layerNumber)
+  assert.equals(2, layer3.layerNumber)
+
+  assert.equals(asm.getLayerAt(layer1.surface, Pos(1, 1)), layer1)
+  assert.equals(asm.getLayerAt(layer3.surface, Pos(1, 1)), layer3)
+  assert.nil(asm.getLayerAt(layer2.surface, Pos(1, 1)))
+
+  assert.equals(layer1, asm.getLayer(1)!)
+  assert.equals(layer3, asm.getLayer(2)!)
+
+  const call1 = eventListener.calls[0].refs[0] as PreLayerDeletedEvent
+  assert.equals("pre-layer-deleted", call1.type)
+  assert.equals(asm, call1.assembly)
+  assert.equals(layer2, call1.layer)
+  const call2 = eventListener.calls[1].refs[0] as LayerDeletedEvent
+  assert.equals("layer-deleted", call2.type)
+  assert.equals(asm, call2.assembly)
+  assert.equals(layer2, call2.layer)
 })

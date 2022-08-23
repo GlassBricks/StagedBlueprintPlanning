@@ -18,7 +18,7 @@ import { L_Assembly } from "../locale"
 import { WorldArea } from "../utils/world-location"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, Layer, LocalAssemblyEvent } from "./Assembly"
 import { newEntityMap } from "./EntityMap"
-import { getOrGenerateAssemblySurface, prepareArea } from "./surfaces"
+import { generateAssemblySurfaces, getAssemblySurface, getOrGenerateAssemblySurface, prepareArea } from "./surfaces"
 import floor = math.floor
 
 declare const global: {
@@ -83,7 +83,7 @@ class AssemblyImpl implements Assembly {
     return $multi(next, this.layers, start - 1)
   }
 
-  public getAllLayers(): readonly Layer[] {
+  getAllLayers(): readonly Layer[] {
     return this.layers as unknown as readonly Layer[]
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -92,40 +92,60 @@ class AssemblyImpl implements Assembly {
     if (layerIndex === nil) return nil
     return this.layers[layerIndex]
   }
-  public insertLayer(index: LayerNumber): Layer {
+
+  insertLayer(index: LayerNumber): Layer {
     this.assertValid()
-    const curNumLayers = this.numLayers()
-    assert(index >= 1 && index <= curNumLayers + 1, "Invalid new layer number")
-    // find new surface
-    let surface: LuaSurface
-    for (let i = 1; ; i++) {
-      surface = getOrGenerateAssemblySurface(i)
-      if (!this.surfaceIndexToLayerNumber.has(surface.index)) {
-        this.surfaceIndexToLayerNumber.set(surface.index, index)
-        break
-      }
-    }
-    prepareArea(surface, this.bbox)
+    assert(index >= 1 && index <= this.numLayers() + 1, "Invalid new layer number")
 
-    // move further layers up
-    for (const i of $range(curNumLayers, index, -1)) {
+    const surface = this.findNewLayerSurface()
+
+    const newLayer = new LayerImpl(this, index, surface, this.bbox, this.createNewLayerName())
+    table.insert(this.layers as unknown as Layer[], index, newLayer)
+    // update layers
+    for (const i of $range(index, luaLength(this.layers))) {
       const layer = this.layers[i]
-      layer.layerNumber = i + 1
-      this.surfaceIndexToLayerNumber.set(layer.surface.index, i + 1)
-      this.layers[i + 1] = layer
+      layer.layerNumber = i
+      this.surfaceIndexToLayerNumber.set(layer.surface.index, i)
     }
 
-    // get new name
-    const newLayer = new LayerImpl(this, index, surface, this.bbox, this.getDefaultLayerName())
-    this.layers[index] = newLayer
-
-    // modify content
     this.content.insertLayer(index)
 
     this.raiseEvent({ type: "layer-added", assembly: this, layer: newLayer })
-    // todo: change content
     return newLayer
   }
+  private findNewLayerSurface(): LuaSurface {
+    for (let i = 1; ; i++) {
+      const surface: LuaSurface = getOrGenerateAssemblySurface(i)
+      if (!this.surfaceIndexToLayerNumber.has(surface.index)) {
+        prepareArea(surface, this.bbox)
+        return surface
+      }
+    }
+  }
+  public deleteLayer(index: LayerNumber): Layer {
+    this.assertValid()
+    assert(index > 1, "Cannot delete first layer")
+    const layer = this.layers[index]
+    assert(layer !== nil, "invalid layer number")
+
+    this.raiseEvent({ type: "pre-layer-deleted", assembly: this, layer })
+
+    layer.valid = false
+    this.surfaceIndexToLayerNumber.delete(layer.surface.index)
+    table.remove(this.layers as unknown as Layer[], index)
+    // update layers
+    for (const i of $range(index, this.numLayers())) {
+      const layer = this.layers[i]
+      layer.layerNumber = i
+      this.surfaceIndexToLayerNumber.set(layer.surface.index, i)
+    }
+
+    this.content.deleteLayer(index)
+
+    this.raiseEvent({ type: "layer-deleted", assembly: this, layer })
+    return layer
+  }
+
   delete() {
     if (!this.valid) return
     global.assemblies.delete(this.id)
@@ -142,7 +162,7 @@ class AssemblyImpl implements Assembly {
   getLayerName(layerNumber: LayerNumber): LocalisedString {
     return this.layers[layerNumber].name.get()
   }
-  private getDefaultLayerName(): string {
+  private createNewLayerName(): string {
     let subName = ""
     for (let i = 1; ; i++) {
       const name = `<New layer>${subName}`
@@ -177,6 +197,32 @@ export function newAssembly(surfaces: readonly LuaSurface[], bbox: BoundingBox):
   return AssemblyImpl.create(bbox, surfaces)
 }
 
+export function userCreateAssembly(
+  area: BoundingBox,
+  numLayers: number,
+  deleteExistingEntities: boolean,
+  name: string,
+): Assembly {
+  const surfaces = prepareAssemblySurfaces(area, numLayers)
+  if (deleteExistingEntities) {
+    for (const surface of surfaces) for (const e of surface.find_entities(area)) e.destroy()
+  }
+  const assembly = newAssembly(surfaces, area)
+  assembly.name.set(name)
+  return assembly
+}
+
+function prepareAssemblySurfaces(area: BBox, numLayers: number): LuaSurface[] {
+  generateAssemblySurfaces(numLayers)
+  const surfaces: LuaSurface[] = []
+  for (const i of $range(1, numLayers)) {
+    const surface = getAssemblySurface(i)!
+    prepareArea(surface, area)
+    surfaces.push(surface)
+  }
+  return surfaces
+}
+
 export function _deleteAllAssemblies(): void {
   for (const [, assembly] of global.assemblies) {
     assembly.delete()
@@ -208,6 +254,11 @@ class LayerImpl implements Layer {
     this.right_bottom = bbox.right_bottom
     this.name = state(name)
   }
+
+  public deleteInAssembly(): void {
+    if (!this.valid) return
+    this.assembly.deleteLayer(this.layerNumber)
+  }
 }
 
 @RegisterClass("DemonstrationAssembly")
@@ -230,6 +281,9 @@ class DemonstrationAssembly extends AssemblyImpl {
   override insertLayer(): Layer {
     error("Cannot add layers to a demonstration assembly")
   }
+  override deleteLayer(): Layer {
+    error("Cannot delete layers from a demonstration assembly")
+  }
 }
 export function _mockAssembly(numLayers: number = 0): Assembly {
   return new DemonstrationAssembly(0 as AssemblyId, numLayers)
@@ -239,13 +293,4 @@ export function createDemonstrationAssembly(numLayers: number): Assembly {
   const assembly = new DemonstrationAssembly(id, numLayers)
   AssemblyImpl.onAssemblyCreated(assembly)
   return assembly
-}
-
-/**
- * @deprecated
- */
-export function onAssemblyDeleted(cb: (assembly: Assembly) => void): void {
-  GlobalAssemblyEvents.addListener((e) => {
-    if (e.type === "assembly-deleted") cb(e.assembly)
-  })
 }

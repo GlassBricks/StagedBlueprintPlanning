@@ -43,11 +43,16 @@ Events.on_player_changed_position((e) => updatePlayer(game.get_player(e.player_i
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
 
 AssemblyEvents.addListener((e) => {
-  if (e.type === "assembly-created" || e.type === "assembly-deleted" || e.type === "layer-added") {
+  if (
+    e.type === "assembly-created" ||
+    e.type === "assembly-deleted" ||
+    e.type === "layer-added" ||
+    e.type === "layer-deleted"
+  ) {
     for (const [, player] of game.players) {
       updatePlayer(player)
     }
-  } else {
+  } else if (e.type !== "pre-layer-deleted") {
     assertNever(e)
   }
 })

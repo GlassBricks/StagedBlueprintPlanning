@@ -74,14 +74,26 @@ export function assertNever(value: never): never {
   error("should not be reachable: " + serpent.block(value))
 }
 
-export function shiftNumberKeys(obj: PRecord<LayerNumber, any>, number: number): void {
+export function shiftNumberKeysUp(obj: PRecord<LayerNumber, any>, number: number): void {
   const keysToChange: number[] = []
   for (const [changeLayer] of pairs(obj)) {
     if (changeLayer >= number) keysToChange.push(changeLayer)
   }
   for (let i = keysToChange.length - 1; i >= 0; i--) {
-    const layer = keysToChange[i]
-    obj[layer + 1] = obj[layer]
+    const key = keysToChange[i]
+    obj[key + 1] = obj[key]
+    delete obj[key]
+  }
+}
+
+export function shiftNumberKeysDown(obj: PRecord<LayerNumber, any>, number: number): void {
+  const keysToChange: number[] = []
+  for (const [changeLayer] of pairs(obj)) {
+    if (changeLayer > number) keysToChange.push(changeLayer)
+  }
+  delete obj[number]
+  for (const layer of keysToChange) {
+    obj[layer - 1] = obj[layer]
     delete obj[layer]
   }
 }

@@ -65,20 +65,3 @@ export function prepareArea(surface: LuaSurface, area: BBox): void {
   const actualArea = chunkArea.scale(32)
   surface.build_checkerboard(actualArea)
 }
-
-export function prepareAssembly(area: BBox, numLayers: number): LuaSurface[] {
-  generateAssemblySurfaces(numLayers)
-  const surfaces: LuaSurface[] = []
-  for (const i of $range(1, numLayers)) {
-    const surface = getAssemblySurface(i)!
-    prepareArea(surface, area)
-    surfaces.push(surface)
-  }
-  return surfaces
-}
-
-export function prepareNewArea(index: number, area: BBox): LuaSurface {
-  const surface = getOrGenerateAssemblySurface(index)
-  prepareArea(surface, area)
-  return surface
-}

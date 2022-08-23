@@ -10,7 +10,7 @@
  */
 
 import { LayerNumber } from "../entity/AssemblyEntity"
-import { assertNever, bind, Events, PRecord, registerFunctions, shiftNumberKeys } from "../lib"
+import { assertNever, bind, Events, PRecord, registerFunctions, shiftNumberKeysDown, shiftNumberKeysUp } from "../lib"
 import { Pos } from "../lib/geometry"
 import { State } from "../lib/observable"
 import draw, { AnyRender, DrawParams, TextRender } from "../lib/rendering"
@@ -28,11 +28,14 @@ AssemblyEvents.addListener((event: GlobalAssemblyEvent) => {
   if (event.type === "assembly-created") {
     createAssemblyHighlights(event.assembly)
   } else if (event.type === "assembly-deleted") {
-    removeHighlights(event.assembly.id)
+    removeAllHighlights(event.assembly.id)
   } else if (event.type === "layer-added") {
-    shiftNumberKeys(global.assemblyHighlights.get(event.assembly.id)!, event.layer.layerNumber)
+    shiftNumberKeysUp(global.assemblyHighlights.get(event.assembly.id)!, event.layer.layerNumber)
     createHighlightsForLayer(event.layer)
-  } else {
+  } else if (event.type === "pre-layer-deleted") {
+    removeHighlightsForLayer(event.assembly, event.layer)
+    shiftNumberKeysDown(global.assemblyHighlights.get(event.assembly.id)!, event.layer.layerNumber)
+  } else if (event.type !== "layer-deleted") {
     assertNever(event)
   }
 })
@@ -87,7 +90,7 @@ function onLayerNameChange(text: TextRender, _: unknown, name: LocalisedString):
 }
 registerFunctions("assembly-display", { onLayerNameChange })
 
-function removeHighlights(id: AssemblyId): void {
+function removeAllHighlights(id: AssemblyId): void {
   const highlights = global.assemblyHighlights.get(id)
   if (!highlights) return
   global.assemblyHighlights.delete(id)
@@ -95,5 +98,15 @@ function removeHighlights(id: AssemblyId): void {
     for (const render of renders) {
       if (render.valid) render.destroy()
     }
+  }
+}
+
+function removeHighlightsForLayer(assembly: Assembly, layer: Layer): void {
+  const highlights = global.assemblyHighlights.get(assembly.id)
+  if (!highlights) return
+  const renders = highlights[layer.layerNumber]
+  if (!renders) return
+  for (const render of renders) {
+    if (render.valid) render.destroy()
   }
 }

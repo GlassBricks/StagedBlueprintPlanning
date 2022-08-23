@@ -22,49 +22,60 @@ import { Pos } from "../../lib/geometry"
 
 let assembly: AssemblyContent
 
-describe("AssemblyOperations", () => {
-  let worldUpdater: mock.Mocked<WorldUpdater>
-  let worldInteractor: mock.Mocked<AssemblyOpWorldInteractor>
+let worldUpdater: mock.Mocked<WorldUpdater>
+let worldInteractor: mock.Mocked<AssemblyOpWorldInteractor>
 
-  let operations: AssemblyOperations
-  before_each(() => {
-    assembly = createMockAssemblyContent(3)
-    worldUpdater = {
-      updateWorldEntities: spy(),
-      deleteWorldEntities: spy(),
-      deleteExtraEntitiesOnly: spy(),
-      makeSettingsRemnant: spy(),
-      reviveSettingsRemnant: spy(),
-    }
-    worldInteractor = {
-      deleteAllWorldEntities: spy(),
-    }
+let operations: AssemblyOperations
+before_each(() => {
+  assembly = createMockAssemblyContent(3)
+  worldUpdater = {
+    updateWorldEntities: spy(),
+    deleteWorldEntities: spy(),
+    deleteWorldEntitiesInLayer: spy(),
+    deleteExtraEntitiesOnly: spy(),
+    makeSettingsRemnant: spy(),
+    reviveSettingsRemnant: spy(),
+  }
+  worldInteractor = {
+    deleteAllWorldEntities: spy(),
+  }
 
-    operations = createAssemblyOperations(worldUpdater, worldInteractor)
-  })
-  test("deleteAllWorldEntities", () => {
-    const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
-    const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
-    assembly.content.add(entity1)
-    assembly.content.add(entity2)
+  operations = createAssemblyOperations(worldUpdater, worldInteractor)
+})
 
-    operations.deleteAllWorldEntities(assembly)
-    assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity1))
-    assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity2))
-  })
+test("deleteAllExtraEntitiesOnly", () => {
+  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
+  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
+  assembly.content.add(entity1)
+  assembly.content.add(entity2)
 
-  test("resetLayer", () => {
-    const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
-    const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
-    assembly.content.add(entity1)
-    assembly.content.add(entity2)
+  operations.deleteAllExtraEntitiesOnly(assembly)
+  assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity1))
+  assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity2))
+})
 
-    const layer = assembly.getLayer(2)!
-    operations.resetLayer(assembly, layer)
+test("deleteLayerEntities", () => {
+  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
+  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
+  assembly.content.add(entity1)
+  assembly.content.add(entity2)
 
-    assert.spy(worldInteractor.deleteAllWorldEntities).called_with(match.ref(layer))
+  operations.deleteLayerEntities(assembly, 1)
+  assert.spy(worldUpdater.deleteWorldEntitiesInLayer).called_with(match.ref(entity1), 1)
+  assert.spy(worldUpdater.deleteWorldEntitiesInLayer).called_with(match.ref(entity2), 1)
+})
 
-    assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity1), 2, 2, true)
-    assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity2), 2, 2, true)
-  })
+test("resetLayer", () => {
+  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
+  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
+  assembly.content.add(entity1)
+  assembly.content.add(entity2)
+
+  const layer = assembly.getLayer(2)!
+  operations.resetLayer(assembly, layer)
+
+  assert.spy(worldInteractor.deleteAllWorldEntities).called_with(match.ref(layer))
+
+  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity1), 2, 2, true)
+  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity2), 2, 2, true)
 })

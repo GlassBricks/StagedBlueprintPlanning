@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
+import { isWorldEntityAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
 import { AssemblyContent, LayerPosition } from "./Assembly"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
@@ -18,7 +18,8 @@ import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
  * @noSelf
  */
 export interface AssemblyOperations {
-  deleteAllWorldEntities(assembly: AssemblyContent): void
+  deleteAllExtraEntitiesOnly(assembly: AssemblyContent): void
+  deleteLayerEntities(assembly: AssemblyContent, layerNumber: LayerNumber): void
 
   resetLayer(assembly: AssemblyContent, layer: LayerPosition): void
 }
@@ -32,9 +33,9 @@ export function createAssemblyOperations(
   worldUpdater: WorldUpdater,
   worldInteractor: AssemblyOpWorldInteractor,
 ): AssemblyOperations {
-  const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
+  const { updateWorldEntities, deleteExtraEntitiesOnly, deleteWorldEntitiesInLayer } = worldUpdater
 
-  function deleteAllWorldEntities(assembly: AssemblyContent) {
+  function deleteAllExtraEntitiesOnly(assembly: AssemblyContent) {
     for (const entity of assembly.content.iterateAllEntities()) {
       deleteExtraEntitiesOnly(entity)
     }
@@ -48,8 +49,15 @@ export function createAssemblyOperations(
     }
   }
 
+  function deleteLayerEntities(assembly: AssemblyContent, layerNumber: LayerNumber) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      deleteWorldEntitiesInLayer(entity, layerNumber)
+    }
+  }
+
   return {
-    deleteAllWorldEntities,
+    deleteAllExtraEntitiesOnly,
+    deleteLayerEntities,
     resetLayer,
   }
 }

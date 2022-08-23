@@ -37,6 +37,7 @@ export interface MutableEntityMap extends EntityMap {
 
   /** Modifies all entities */
   insertLayer(layerNumber: LayerNumber): void
+  deleteLayer(layerNumber: LayerNumber): void
 }
 
 export type AssemblyEntityConnections = LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>
@@ -144,9 +145,14 @@ class EntityMapImpl implements MutableEntityMap {
     }
   }
 
-  public insertLayer(layerNumber: LayerNumber): void {
+  insertLayer(layerNumber: LayerNumber): void {
     for (const [entity] of this.entities) {
       entity.insertLayer(layerNumber)
+    }
+  }
+  deleteLayer(layerNumber: LayerNumber): void {
+    for (const [entity] of this.entities) {
+      entity.deleteLayer(layerNumber)
     }
   }
 }

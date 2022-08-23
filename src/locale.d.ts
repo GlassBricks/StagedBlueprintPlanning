@@ -45,12 +45,6 @@ export declare const enum L_Assembly {
   /** <Layer __1__> */
   UnnamedLayer = "bp3.assembly.unnamed-layer",
 }
-export declare const enum L_Gui {
-  /** Rename assembly */
-  RenameAssembly = "bp3.gui.rename-assembly",
-  /** Rename current layer */
-  RenameLayer = "bp3.gui.rename-layer",
-}
 export declare const enum L_GuiNewAssembly {
   /** New Assembly */
   Title = "bp3.gui.new-assembly.title",
@@ -78,6 +72,16 @@ export declare const enum L_GuiCurrentAssembly {
 export declare const enum L_GuiAssemblySettings {
   /** Assembly */
   Title = "bp3.gui.assembly-settings.title",
+  /** Rename assembly */
+  RenameAssembly = "bp3.gui.assembly-settings.rename-assembly",
+  /** Rename current layer */
+  RenameLayer = "bp3.gui.assembly-settings.rename-layer",
+  /** New layer: */
+  NewLayer = "bp3.gui.assembly-settings.new-layer",
+  /** Insert above current */
+  InsertAboveCurrent = "bp3.gui.assembly-settings.insert-above-current",
+  /** At end */
+  AtEnd = "bp3.gui.assembly-settings.at-end",
   /** Delete assembly */
   DeleteAssembly = "bp3.gui.assembly-settings.delete-assembly",
   /** Are you sure you want to delete assembly __1__? */
@@ -94,12 +98,8 @@ export declare const enum L_GuiAssemblySettings {
   DeleteLayerConfirmation1 = "bp3.gui.assembly-settings.delete-layer-confirmation1",
   /** Layer contents will be merged with the previous layer (__1__). */
   DeleteLayerConfirmation2 = "bp3.gui.assembly-settings.delete-layer-confirmation2",
-  /** New layer: */
-  NewLayer = "bp3.gui.assembly-settings.new-layer",
-  /** Insert above current */
-  InsertAboveCurrent = "bp3.gui.assembly-settings.insert-above-current",
-  /** At end */
-  AtEnd = "bp3.gui.assembly-settings.at-end",
-  /** Layer: */
-  Layer = "bp3.gui.assembly-settings.layer",
+  /** Reset layer [img=info] */
+  ResetLayer = "bp3.gui.assembly-settings.reset-layer",
+  /** Resets all entities in the layer to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
+  ResetLayerTooltip = "bp3.gui.assembly-settings.reset-layer-tooltip",
 }

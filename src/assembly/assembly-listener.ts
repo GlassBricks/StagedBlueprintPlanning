@@ -18,11 +18,20 @@ AssemblyEvents.addListener((e) => {
     case "assembly-created":
       break
     case "assembly-deleted": {
-      AssemblyOperations.deleteAllWorldEntities(e.assembly)
+      AssemblyOperations.deleteAllExtraEntitiesOnly(e.assembly)
       break
     }
     case "layer-added": {
       AssemblyOperations.resetLayer(e.assembly, e.layer)
+      break
+    }
+    case "pre-layer-deleted": {
+      AssemblyOperations.deleteLayerEntities(e.assembly, e.layer.layerNumber)
+      break
+    }
+    case "layer-deleted": {
+      const previousLayer = e.assembly.getLayer(e.layer.layerNumber - 1)
+      if (previousLayer) AssemblyOperations.resetLayer(e.assembly, previousLayer)
       break
     }
     default:

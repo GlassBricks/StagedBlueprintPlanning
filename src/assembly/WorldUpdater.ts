@@ -38,6 +38,8 @@ export interface WorldUpdater {
     replace?: boolean,
   ): void
 
+  deleteWorldEntitiesInLayer(entity: AssemblyEntity, layer: LayerNumber): void
+
   deleteWorldEntities(entity: AssemblyEntity): void
   deleteExtraEntitiesOnly(entity: AssemblyEntity): void
 
@@ -134,10 +136,14 @@ export function createWorldUpdater(
     updateWorldEntities,
     deleteWorldEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldEntities("mainEntity")
-      highlighter.deleteEntity(entity)
+      highlighter.deleteHighlights(entity)
+    },
+    deleteWorldEntitiesInLayer(entity: AssemblyEntity, layer: LayerNumber): void {
+      entity.destroyWorldEntity(layer, "mainEntity")
+      highlighter.deleteHighlightsInLayer(entity, layer)
     },
     deleteExtraEntitiesOnly(entity: AssemblyEntity): void {
-      highlighter.deleteEntity(entity)
+      highlighter.deleteHighlights(entity)
       for (const [, luaEntity] of entity.iterateWorldEntities("mainEntity")) {
         makeEntityDestructible(luaEntity)
       }

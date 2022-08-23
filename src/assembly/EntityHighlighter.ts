@@ -56,7 +56,9 @@ export interface EntityHighlighter {
     layerEnd: LayerNumber,
   ): void
 
-  deleteEntity(entity: AssemblyEntity): void
+  deleteHighlights(entity: AssemblyEntity): void
+  deleteHighlightsInLayer(entity: AssemblyEntity, layer: LayerNumber): void
+
   makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
@@ -354,10 +356,16 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     entity.destroyAllWorldEntities("previewEntity")
     entity.destroyAllWorldEntities("selectionProxy")
   }
+  function deleteLayer(entity: AssemblyEntity, layer: LayerNumber) {
+    for (const type of keys<HighlightEntities>()) entity.destroyWorldEntity(layer, type)
+    entity.destroyWorldEntity(layer, "previewEntity")
+    entity.destroyWorldEntity(layer, "selectionProxy")
+  }
 
   return {
     updateHighlights,
-    deleteEntity,
+    deleteHighlights: deleteEntity,
+    deleteHighlightsInLayer: deleteLayer,
     makeSettingsRemnant,
     reviveSettingsRemnant,
   }

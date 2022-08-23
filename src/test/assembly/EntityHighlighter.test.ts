@@ -244,7 +244,7 @@ test("deleteErrorHighlights deletes all highlights", () => {
   entity.destroyWorldEntity(2, "mainEntity")
   entity.destroyWorldEntity(3, "mainEntity")
   highlightCreator.updateHighlights(assembly, entity)
-  highlightCreator.deleteEntity(entity)
+  highlightCreator.deleteHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
       assert.nil(entity.getWorldEntity(i, type), `layer ${i}`)
