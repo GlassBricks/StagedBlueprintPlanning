@@ -9,8 +9,6 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Prototypes } from "../constants"
-import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { assertNever, Events } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { AssemblyEvents } from "./Assembly"
@@ -95,15 +93,10 @@ export function getAssemblyAtPosition(position: Position): Assembly | nil {
   return byX[floor(position.y / 32)]
 }
 
-export function getLayerAtEntity(entity: LuaEntity): LuaMultiReturn<[Assembly, Layer] | [nil]> {
-  if (
-    !entity.valid ||
-    (!isWorldEntityAssemblyEntity(entity) && !entity.name.startsWith(Prototypes.SelectionProxyPrefix))
-  )
-    return $multi(nil)
-  const assembly = getAssemblyAtPosition(entity.position)
+export function getLayerAtPosition(surface: LuaSurface, position: Position): LuaMultiReturn<[Assembly, Layer] | [nil]> {
+  const assembly = getAssemblyAtPosition(position)
   if (assembly && assembly.valid) {
-    const layer = assembly.getLayerAt(entity.surface, entity.position)
+    const layer = assembly.getLayerAt(surface, position)
     if (layer && layer.valid) return $multi(assembly, layer)
   }
   return $multi(nil)

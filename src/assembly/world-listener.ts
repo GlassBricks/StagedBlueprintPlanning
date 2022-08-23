@@ -10,6 +10,7 @@
  */
 
 import { CustomInputs, Prototypes } from "../constants"
+import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { Pos } from "../lib/geometry"
@@ -17,9 +18,17 @@ import { ProtectedEvents } from "../lib/ProtectedEvents"
 import { Assembly, Layer } from "./AssemblyDef"
 import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from "./blueprint-paste"
-import { getLayerAtEntity } from "./world-register"
+import { getLayerAtPosition } from "./world-register"
 
 const Events = ProtectedEvents
+
+export function getLayerAtEntity(entity: LuaEntity): LuaMultiReturn<[Assembly, Layer] | [nil]> {
+  if (
+    !(entity.valid && (isWorldEntityAssemblyEntity(entity) || entity.name.startsWith(Prototypes.SelectionProxyPrefix)))
+  )
+    return $multi(nil)
+  return getLayerAtPosition(entity.surface, entity.position)
+}
 
 function luaEntityCreated(entity: LuaEntity): void {
   if (isMarkerEntity(entity)) entity.destroy() // only handle in on_entity_built; see below

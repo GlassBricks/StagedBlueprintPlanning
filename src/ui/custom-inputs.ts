@@ -10,9 +10,9 @@
  */
 
 import { Layer } from "../assembly/AssemblyDef"
-import { getLayerAtEntity } from "../assembly/world-register"
+import { getLayerAtPosition } from "../assembly/world-register"
 import { CustomInputs, Prototypes, Settings } from "../constants"
-import { AssemblyEntity, isNotableLayer, isWorldEntityAssemblyEntity, LayerNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, isNotableLayer, LayerNumber } from "../entity/AssemblyEntity"
 import { getLayerPosition } from "../entity/EntityHandler"
 import { ProtectedEvents } from "../lib/ProtectedEvents"
 import { L_Interaction } from "../locale"
@@ -66,9 +66,8 @@ Events.on(CustomInputs.PreviousLayer, (e) => {
   }
   teleportToLayer(player, toLayer)
 })
-
 function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Layer, AssemblyEntity] | [_?: nil]> {
-  const [assembly, layer] = getLayerAtEntity(entity)
+  const [assembly, layer] = getLayerAtPosition(entity.surface, entity.position)
   if (!assembly) return $multi()
   const entityName = entity.name.startsWith(Prototypes.PreviewEntityPrefix)
     ? entity.name.substring(Prototypes.PreviewEntityPrefix.length)
@@ -81,7 +80,7 @@ function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Layer, As
 Events.on(CustomInputs.GoToBaseLayer, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
-  if (!entity || !isWorldEntityAssemblyEntity(entity)) return
+  if (!entity) return
   const [layer, assemblyEntity] = getAssemblyEntityOfEntity(entity)
   if (!assemblyEntity) {
     return notifyError(player, [L_Interaction.EntityNotInAssembly])
@@ -109,12 +108,16 @@ function getNextNotableLayer(layer: Layer, entity: AssemblyEntity): LayerNumber 
 Events.on(CustomInputs.GoToNextNotableLayer, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
-  if (!entity || !isWorldEntityAssemblyEntity(entity)) return
+  if (!entity) return
   const [layer, assemblyEntity] = getAssemblyEntityOfEntity(entity)
   if (!assemblyEntity) {
     return notifyError(player, [L_Interaction.EntityNotInAssembly])
   }
   const nextNotableLayerNum = getNextNotableLayer(layer!, assemblyEntity)
+  if (nextNotableLayerNum === layer!.layerNumber) {
+    return notifyError(player, [L_Interaction.EntitySameInAllLayers])
+  }
+
   const nextNotableLayer = layer!.assembly.getLayer(nextNotableLayerNum)
   assert(nextNotableLayer, "layer not found")
   teleportToLayer(player, nextNotableLayer!)

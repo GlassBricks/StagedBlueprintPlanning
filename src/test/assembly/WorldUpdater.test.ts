@@ -140,9 +140,9 @@ describe("updateWorldEntities", () => {
   })
 
   function assertDestructible(luaEntity: LuaEntity, value: boolean) {
-    assert.equal(value, luaEntity.destructible, `destructible not ${value}`)
     assert.equal(value, luaEntity.minable, `minable not ${value}`)
     assert.equal(value, luaEntity.rotatable, `rotatable not ${value}`)
+    assert.false(luaEntity.destructible, "destructible always false")
   }
 
   test.each([true, false])("entities not in base layer are indestructible, with existing: %s", (withExisting) => {

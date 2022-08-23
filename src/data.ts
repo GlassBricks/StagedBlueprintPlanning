@@ -225,19 +225,19 @@ const previousLayer: CustomInputPrototype = {
   key_sequence: "CONTROL + mouse-wheel-up",
   order: "b[navigate]-b[previous-layer]",
 }
-const goToBaseLayer: CustomInputPrototype = {
-  type: "custom-input",
-  name: CustomInputs.GoToBaseLayer,
-  action: "lua",
-  key_sequence: "CONTROL + mouse-button-3",
-  order: "b[navigate]-c[go-to-base-layer]",
-}
 const goToNextNotableLayer: CustomInputPrototype = {
   type: "custom-input",
   name: CustomInputs.GoToNextNotableLayer,
   action: "lua",
+  key_sequence: "CONTROL + mouse-button-3",
+  order: "b[navigate]-c[go-to-next-notable-layer]",
+}
+const goToBaseLayer: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.GoToBaseLayer,
+  action: "lua",
   key_sequence: "CONTROL + SHIFT + mouse-button-3",
-  order: "b[navigate]-d[go-to-next-notable-layer]",
+  order: "b[navigate]-d[go-to-base-layer]",
 }
 
 data.extend([nextLayer, previousLayer, goToBaseLayer, goToNextNotableLayer])

@@ -60,8 +60,10 @@ export declare const enum L_Interaction {
   NoNextLayer = "bp3.interaction.no-next-layer",
   /** No previous layer */
   NoPreviousLayer = "bp3.interaction.no-previous-layer",
-  /** Already at entity's first layer */
+  /** Already at entity first layer */
   AlreadyAtBaseLayer = "bp3.interaction.already-at-base-layer",
+  /** Entity is the same in all layers */
+  EntitySameInAllLayers = "bp3.interaction.entity-same-in-all-layers",
 }
 export declare const enum L_Assembly {
   /** <Unnamed assembly __1__> */

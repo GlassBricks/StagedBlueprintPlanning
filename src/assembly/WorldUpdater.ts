@@ -119,13 +119,13 @@ export function createWorldUpdater(
 
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
-    entity.destructible = false
     entity.rotatable = false
+    entity.destructible = false
   }
   function makeEntityDestructible(entity: LuaEntity) {
     entity.minable = true
-    entity.destructible = true
     entity.rotatable = true
+    entity.destructible = false
   }
 
   function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
