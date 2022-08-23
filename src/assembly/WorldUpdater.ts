@@ -65,7 +65,7 @@ export function createWorldUpdater(
     endStage: number,
     replace: boolean | undefined,
   ): void {
-    const baseStage = entity.getBaseStage()
+    const firstStage = entity.getFirstStage()
 
     const direction = entity.direction ?? 0
     for (const [stageNum, value] of entity.iterateValues(startStage, endStage)) {
@@ -87,7 +87,7 @@ export function createWorldUpdater(
       }
 
       if (luaEntity) {
-        if (stageNum !== baseStage) makeEntityIndestructible(luaEntity)
+        if (stageNum !== firstStage) makeEntityIndestructible(luaEntity)
         else makeEntityDestructible(luaEntity)
         updateWireConnections(assembly, entity, stageNum, luaEntity)
       }

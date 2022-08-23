@@ -15,7 +15,7 @@ export const enum CustomInputs {
 
   NextStage = "bp3:next-stage",
   PreviousStage = "bp3:previous-stage",
-  GoToBaseStage = "bp3:go-to-base-stage",
+  GoToFirstStage = "bp3:go-to-first-stage",
   GoToNextNotableStage = "bp3:go-to-next-notable-stage",
 
   MoveToThisStage = "bp3:move-to-this-stage",

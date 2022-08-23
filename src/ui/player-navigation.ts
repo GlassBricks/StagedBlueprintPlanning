@@ -82,7 +82,7 @@ function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, As
   return $multi()
 }
 
-Events.on(CustomInputs.GoToBaseStage, (e) => {
+Events.on(CustomInputs.GoToFirstStage, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
   if (!entity) return
@@ -90,14 +90,14 @@ Events.on(CustomInputs.GoToBaseStage, (e) => {
   if (!assemblyEntity) {
     return notifyError(player, [L_Interaction.EntityNotInAssembly])
   }
-  const baseStageNum = assemblyEntity.getBaseStage()
+  const firstStageNum = assemblyEntity.getFirstStage()
   const currentStage = stage!.stageNumber
-  if (baseStageNum === currentStage) {
-    return notifyError(player, [L_Interaction.AlreadyAtBaseStage])
+  if (firstStageNum === currentStage) {
+    return notifyError(player, [L_Interaction.AlreadyAtFirstStage])
   }
-  const baseStage = stage!.assembly.getStage(baseStageNum)
-  assert(baseStage, "Base stage not found")
-  teleportToStage(player, baseStage!)
+  const firstStage = stage!.assembly.getStage(firstStageNum)
+  assert(firstStage, "First stage not found")
+  teleportToStage(player, firstStage!)
 })
 
 function getNextNotableStage(stage: Stage, entity: AssemblyEntity): StageNumber {

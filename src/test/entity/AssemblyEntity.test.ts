@@ -35,8 +35,8 @@ before_each(() => {
 })
 
 test("getters", () => {
-  assert.same(2, assemblyEntity.getBaseStage())
-  assert.same(entity, assemblyEntity.getBaseValue())
+  assert.same(2, assemblyEntity.getFirstStage())
+  assert.same(entity, assemblyEntity.getFirstValue())
 })
 
 describe("getValueAtStage", () => {
@@ -44,7 +44,7 @@ describe("getValueAtStage", () => {
     assert.nil(assemblyEntity.getValueAtStage(1))
   })
 
-  test("getValueAtStage returns same entity if no stageChanges", () => {
+  test("getValueAtStage returns same entity if no stageDiffs", () => {
     assert.same(entity, assemblyEntity.getValueAtStage(2))
   })
 
@@ -76,13 +76,13 @@ describe("getValueAtStage", () => {
   })
 })
 
-test("hasStageChanges", () => {
+test("hasStageDiffs", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.false(assemblyEntity.hasStageChange())
+  assert.false(assemblyEntity.hasStageDiff())
   assemblyEntity._applyDiffAtStage(3, { foo1: 3 })
-  assert.true(assemblyEntity.hasStageChange())
-  assert.true(assemblyEntity.hasStageChange(3))
-  assert.false(assemblyEntity.hasStageChange(2))
+  assert.true(assemblyEntity.hasStageDiff())
+  assert.true(assemblyEntity.hasStageDiff(3))
+  assert.false(assemblyEntity.hasStageDiff(2))
 })
 
 test("iterateValues", () => {
@@ -100,14 +100,14 @@ test("iterateValues", () => {
 describe("move to stage", () => {
   test("move down", () => {
     assemblyEntity.moveToStage(1)
-    assert.same(entity, assemblyEntity.getBaseValue())
-    assert.equal(1, assemblyEntity.getBaseStage())
+    assert.same(entity, assemblyEntity.getFirstValue())
+    assert.equal(1, assemblyEntity.getFirstStage())
   })
 
   test("moving up", () => {
     const valueAt5 = assemblyEntity.getValueAtStage(5)
     assemblyEntity.moveToStage(5)
-    assert.same(valueAt5, assemblyEntity.getBaseValue())
+    assert.same(valueAt5, assemblyEntity.getFirstValue())
   })
 
   test("records old stage", () => {
@@ -135,47 +135,47 @@ describe("move to stage", () => {
 })
 
 describe("adjustValueAtStage", () => {
-  test("can set base value", () => {
+  test("can set first value", () => {
     const newEntity = { ...entity, foo1: 3 }
     assemblyEntity.adjustValueAtStage(2, newEntity)
-    assert.same(newEntity, assemblyEntity.getBaseValue())
+    assert.same(newEntity, assemblyEntity.getFirstValue())
   })
 
-  test("removes no longer effectual diffs after set at base value", () => {
+  test("removes no longer effectual diffs after set at first value", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { foo1: 3 })
     assemblyEntity.adjustValueAtStage(1, { ...entity, foo1: 3 })
-    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getBaseValue())
-    assert.false(assemblyEntity.hasStageChange())
+    assert.same({ ...entity, foo1: 3 }, assemblyEntity.getFirstValue())
+    assert.false(assemblyEntity.hasStageDiff())
   })
 
   test("creates diff if set at higher stage", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity.adjustValueAtStage(2, { ...entity, foo1: 3 })
-    assert.same(entity, assemblyEntity.getBaseValue())
-    assert.true(assemblyEntity.hasStageChange())
+    assert.same(entity, assemblyEntity.getFirstValue())
+    assert.true(assemblyEntity.hasStageDiff())
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtStage(2))
   })
 
   test("complex case", () => {
-    const baseValue = { name: "test", a: 1, b: 1, c: 1 }
-    const value2 = { ...baseValue, b: 2, c: 2 }
-    const newValue2 = { ...baseValue, a: 2, b: 1, c: 5 }
-    const value3 = { ...baseValue, a: 2, b: 2, c: 5 }
-    const assemblyEntity = createAssemblyEntity(baseValue, Pos(0, 0), nil, 1)
+    const firstValue = { name: "test", a: 1, b: 1, c: 1 }
+    const value2 = { ...firstValue, b: 2, c: 2 }
+    const newValue2 = { ...firstValue, a: 2, b: 1, c: 5 }
+    const value3 = { ...firstValue, a: 2, b: 2, c: 5 }
+    const assemblyEntity = createAssemblyEntity(firstValue, Pos(0, 0), nil, 1)
     assemblyEntity.adjustValueAtStage(2, value2)
-    assert.same(baseValue, assemblyEntity.getBaseValue())
+    assert.same(firstValue, assemblyEntity.getFirstValue())
     assert.same(value2, assemblyEntity.getValueAtStage(2))
     assemblyEntity.adjustValueAtStage(3, value3)
-    assert.same(baseValue, assemblyEntity.getBaseValue())
+    assert.same(firstValue, assemblyEntity.getFirstValue())
     assert.same(value2, assemblyEntity.getValueAtStage(2))
     assert.same(value3, assemblyEntity.getValueAtStage(3))
     assemblyEntity.adjustValueAtStage(2, newValue2)
-    assert.same(baseValue, assemblyEntity.getBaseValue())
+    assert.same(firstValue, assemblyEntity.getFirstValue())
     assert.same(newValue2, assemblyEntity.getValueAtStage(2))
     const newValue3 = { ...value3, b: 1 } // due to change in newValue2
     assert.same(newValue3, assemblyEntity.getValueAtStage(3))
-    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity._getStageChanges()[3], "diff trimmed")
+    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity._getStageDiffs()[3], "diff trimmed")
   })
 })
 
@@ -290,7 +290,7 @@ test("insert stage after base", () => {
 
   // all keys at 3 and above are shifted up
 
-  assert.equal(entity.getBaseStage(), 1)
+  assert.equal(entity.getFirstStage(), 1)
 
   assert.not_nil(entity.getWorldEntity(2))
   assert.nil(entity.getWorldEntity(3))
@@ -308,7 +308,7 @@ test("insert stage after base", () => {
       4: { foo1: 3 },
       5: { foo1: 4 },
     },
-    entity._getStageChanges(),
+    entity._getStageDiffs(),
   )
 })
 
@@ -316,7 +316,7 @@ test("insert stage before base", () => {
   const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 2)
 
   entity.insertStage(1)
-  assert.equal(3, entity.getBaseStage())
+  assert.equal(3, entity.getFirstStage())
 })
 
 test("delete stage after base", () => {
@@ -336,7 +336,7 @@ test("delete stage after base", () => {
 
   // key 3 is deleted, all keys above it are shifted down
 
-  assert.equal(entity.getBaseStage(), 1)
+  assert.equal(entity.getFirstStage(), 1)
 
   assert.not_nil(entity.getWorldEntity(2))
   assert.not_nil(entity.getWorldEntity(3))
@@ -351,7 +351,7 @@ test("delete stage after base", () => {
       2: { foo1: 3, foo2: 2 }, // merge of 2 and 3
       3: { foo1: 4 },
     },
-    entity._getStageChanges(),
+    entity._getStageDiffs(),
   )
 })
 
@@ -359,10 +359,10 @@ test("delete stage before base", () => {
   const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 3)
 
   entity.deleteStage(2)
-  assert.equal(2, entity.getBaseStage())
+  assert.equal(2, entity.getFirstStage())
 })
 
-test("delete stage right after base applies stage changes to first entity", () => {
+test("delete stage right after base applies stage diffs to first entity", () => {
   const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 1)
   entity._applyDiffAtStage(2, { foo1: 2 })
   const value = entity.getValueAtStage(2)

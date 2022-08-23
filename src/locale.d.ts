@@ -31,7 +31,7 @@ export declare const enum L_Controls {
   /** Previous stage */
   PreviousStage = "controls.bp3:previous-stage",
   /** Go to entity's first stage */
-  GoToBaseStage = "controls.bp3:go-to-base-stage",
+  GoToFirstStage = "controls.bp3:go-to-first-stage",
   /** Go to entity's next notable stage */
   GoToNextNotableStage = "controls.bp3:go-to-next-notable-stage",
 }
@@ -61,7 +61,7 @@ export declare const enum L_Interaction {
   /** No previous stage */
   NoPreviousStage = "bp3.interaction.no-previous-stage",
   /** Already at entity first stage */
-  AlreadyAtBaseStage = "bp3.interaction.already-at-base-stage",
+  AlreadyAtFirstStage = "bp3.interaction.already-at-first-stage",
   /** Entity is the same in all stages */
   EntitySameInAllStages = "bp3.interaction.entity-same-in-all-stages",
 }

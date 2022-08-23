@@ -78,7 +78,7 @@ describe("updateWorldEntities", () => {
   describe.each([false, true], "with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
-        entity._applyDiffAtStage(entity.getBaseStage(), { prop1: 2 })
+        entity._applyDiffAtStage(entity.getFirstStage(), { prop1: 2 })
         entity._applyDiffAtStage(3, { prop1: 1 })
       })
     }
@@ -145,7 +145,7 @@ describe("updateWorldEntities", () => {
     assert.false(luaEntity.destructible, "destructible always false")
   }
 
-  test.each([true, false])("entities not in base stage are indestructible, with existing: %s", (withExisting) => {
+  test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
     entity.moveToStage(2)
     if (withExisting) {
       const luaEntity = mockEntityCreator.createEntity(assembly.getStage(3)!, entity, {

@@ -34,13 +34,13 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   /** If this entity is a settings remnant */
   isSettingsRemnant?: true
 
-  getBaseStage(): StageNumber
-  getBaseValue(): Readonly<T>
+  getFirstStage(): StageNumber
+  getFirstValue(): Readonly<T>
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
-  hasStageChange(stage?: StageNumber): boolean
-  getStageChange(stage: StageNumber): StageDiff<T> | nil
-  _getStageChanges(): StageChanges<T>
+  hasStageDiff(stage?: StageNumber): boolean
+  getStageDiff(stage: StageNumber): StageDiff<T> | nil
+  _getStageDiffs(): StageDiffs<T>
   _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void
 
   /** @return the value at a given stage. Nil if below the first stage. The result is a new table. */
@@ -54,23 +54,23 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
 
   /**
-   * Adjusts stage changes so that the value at the given stage matches the given value.
-   * Trims stage changes in higher stages if they no longer have any effect.
+   * Adjusts stage diffs so that the value at the given stage matches the given value.
+   * Trims stage diffs in higher stages if they no longer have any effect.
    * If there is diff, also clears oldStage (see {@link getOldStage}).
    * @return true if the value changed.
    */
   adjustValueAtStage(stage: StageNumber, value: T): boolean
 
   /**
-   * @param stage the stage to move to. If moving up, deletes/merges all stage changes from old stage to new stage.
+   * @param stage the stage to move to. If moving up, deletes/merges all stage diffs from old stage to new stage.
    * @param recordOldStage if true, records the old stage (so the entity can be moved back). Otherwise, clears the old stage.
-   * @return the previous base stage
+   * @return the previous first stage
    */
   moveToStage(stage: StageNumber, recordOldStage?: boolean): StageNumber
 
   /**
    * The last stage before moveToStage() was called with recordOldStage.
-   * The stage memo is cleared when adjustValueAtStage() is called with changes on a stage that is not the base stage.
+   * The stage memo is cleared when adjustValueAtStage() is called with changes on a stage that is not the first stage.
    */
   getOldStage(): StageNumber | nil
 
@@ -103,7 +103,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   deleteStage(stageNumber: StageNumber): void
 }
 
-export type StageChanges<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
+export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
 
 export interface WorldEntities {
   mainEntity?: LuaEntity
@@ -124,69 +124,69 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   public isSettingsRemnant: true | nil
 
-  private baseStage: StageNumber
-  private readonly baseValue: T
-  private readonly stageChanges: Mutable<StageChanges<T>> = {}
+  private firstStage: StageNumber
+  private readonly firstValue: T
+  private readonly stageDiffs: Mutable<StageDiffs<T>> = {}
   private oldStage: StageNumber | nil
 
   private readonly stageProperties: {
     [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
   } = {}
 
-  constructor(baseStage: StageNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
+  constructor(firstStage: StageNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
     this.categoryName = getEntityCategory(baseEntity.name)
     this.position = position
     this.direction = direction === 0 ? nil : direction
-    this.baseValue = shallowCopy(baseEntity)
-    this.baseStage = baseStage
+    this.firstValue = shallowCopy(baseEntity)
+    this.firstStage = firstStage
   }
 
-  getBaseStage(): StageNumber {
-    return this.baseStage
+  getFirstStage(): StageNumber {
+    return this.firstStage
   }
-  getBaseValue(): T {
-    return this.baseValue
+  getFirstValue(): T {
+    return this.firstValue
   }
 
-  hasStageChange(stage?: StageNumber): boolean {
-    if (stage) return this.stageChanges[stage] !== nil
-    return next(this.stageChanges)[0] !== nil
+  hasStageDiff(stage?: StageNumber): boolean {
+    if (stage) return this.stageDiffs[stage] !== nil
+    return next(this.stageDiffs)[0] !== nil
   }
-  public getStageChange(stage: StageNumber): StageDiff<T> | nil {
-    return this.stageChanges[stage]
+  public getStageDiff(stage: StageNumber): StageDiff<T> | nil {
+    return this.stageDiffs[stage]
   }
-  _getStageChanges(): StageChanges<T> {
-    return this.stageChanges
+  _getStageDiffs(): StageDiffs<T> {
+    return this.stageDiffs
   }
   _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void {
-    const { baseStage, stageChanges } = this
-    assert(stage >= baseStage, "stage must be >= first stage")
-    if (stage === baseStage) {
-      applyDiffToEntity(this.baseValue, diff)
+    const { firstStage, stageDiffs } = this
+    assert(stage >= firstStage, "stage must be >= first stage")
+    if (stage === firstStage) {
+      applyDiffToEntity(this.firstValue, diff)
       return
     }
-    const existingDiff = stageChanges[stage]
+    const existingDiff = stageDiffs[stage]
     if (existingDiff) {
       applyDiffToDiff(existingDiff, diff)
     } else {
-      stageChanges[stage] = shallowCopy(diff)
+      stageDiffs[stage] = shallowCopy(diff)
     }
   }
 
   getValueAtStage(stage: StageNumber): T | nil {
     // assert(stage >= 1, "stage must be >= 1")
-    if (stage < this.baseStage) return nil
-    const value = mutableShallowCopy(this.baseValue)
-    for (const [changedStage, diff] of pairs(this.stageChanges)) {
+    if (stage < this.firstStage) return nil
+    const value = mutableShallowCopy(this.firstValue)
+    for (const [changedStage, diff] of pairs(this.stageDiffs)) {
       if (changedStage > stage) break
       applyDiffToEntity(value, diff)
     }
     return value
   }
   getNameAtStage(stage: StageNumber): string {
-    let name = this.baseValue.name
-    if (stage <= this.baseStage) return name
-    for (const [changedStage, diff] of pairs(this.stageChanges)) {
+    let name = this.firstValue.name
+    if (stage <= this.firstStage) return name
+    for (const [changedStage, diff] of pairs(this.stageDiffs)) {
       if (changedStage > stage) break
       if (diff.name) name = diff.name
     }
@@ -195,34 +195,34 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
   iterateValues(start: StageNumber, end: StageNumber) {
-    const { baseStage, baseValue } = this
+    const { firstStage, firstValue } = this
     let value = this.getValueAtStage(start)
-    function next(stageValues: StageChanges, prevStage: StageNumber | nil) {
+    function next(stageValues: StageDiffs, prevStage: StageNumber | nil) {
       if (!prevStage) {
         return $multi(start, value)
       }
       const nextStage = prevStage + 1
-      if (nextStage < baseStage) return $multi(nextStage, nil)
+      if (nextStage < firstStage) return $multi(nextStage, nil)
       if (nextStage > end) return $multi()
-      if (nextStage === baseStage) {
-        value = shallowCopy(baseValue)
+      if (nextStage === firstStage) {
+        value = shallowCopy(firstValue)
       } else {
         const diff = stageValues[nextStage]
         if (diff) applyDiffToEntity(value!, diff)
       }
       return $multi(nextStage, value)
     }
-    return $multi<any>(next, this.stageChanges, nil)
+    return $multi<any>(next, this.stageDiffs, nil)
   }
 
   adjustValueAtStage(stage: StageNumber, value: T): boolean {
-    const { baseStage, stageChanges } = this
-    assert(stage >= baseStage, "stage must be >= first stage")
+    const { firstStage, stageDiffs } = this
+    assert(stage >= firstStage, "stage must be >= first stage")
     const diff = this.setValueAndGetDiff(stage, value)
     if (!diff) return false
 
     // trim diffs in higher stages, remove those that are ineffectual
-    for (const [stageNumber, changes] of pairs(stageChanges)) {
+    for (const [stageNumber, changes] of pairs(stageDiffs)) {
       if (stageNumber <= stage) continue
       for (const [k, v] of pairs(diff)) {
         if (deepCompare(changes[k], v)) {
@@ -233,7 +233,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
           delete diff[k]
         }
       }
-      if (isEmpty(changes)) delete stageChanges[stageNumber]
+      if (isEmpty(changes)) delete stageDiffs[stageNumber]
       if (isEmpty(diff)) break
     }
 
@@ -242,46 +242,46 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   private setValueAndGetDiff(stage: StageNumber, value: T): StageDiff<T> | nil {
-    if (stage === this.baseStage) {
-      const { baseValue } = this
-      const diff = getEntityDiff(baseValue, value)
+    if (stage === this.firstStage) {
+      const { firstValue } = this
+      const diff = getEntityDiff(firstValue, value)
       if (diff) {
-        applyDiffToEntity(baseValue, diff)
+        applyDiffToEntity(firstValue, diff)
         return diff
       }
     } else {
       const valueAtPreviousStage = assert(this.getValueAtStage(stage - 1))
       const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
 
-      const { stageChanges } = this
-      const oldStageDiff = stageChanges[stage]
+      const { stageDiffs } = this
+      const oldStageDiff = stageDiffs[stage]
       const diff = mergeDiff(valueAtPreviousStage, oldStageDiff, newStageDiff)
       if (diff) {
-        stageChanges[stage] = newStageDiff
+        stageDiffs[stage] = newStageDiff
         return diff
       }
     }
   }
   private moveUp(higherStage: StageNumber): void {
     // todo: what happens if moved up, and lost data?
-    const { baseValue } = this
-    const { stageChanges } = this
-    for (const [changeStage, changed] of pairs(stageChanges)) {
+    const { firstValue } = this
+    const { stageDiffs } = this
+    for (const [changeStage, changed] of pairs(stageDiffs)) {
       if (changeStage > higherStage) break
-      applyDiffToEntity(baseValue, changed)
-      stageChanges[changeStage] = nil
+      applyDiffToEntity(firstValue, changed)
+      stageDiffs[changeStage] = nil
     }
-    this.baseStage = higherStage
+    this.firstStage = higherStage
   }
   moveToStage(stage: StageNumber, recordOldStage?: boolean): StageNumber {
-    const { baseStage } = this
-    if (stage > baseStage) {
+    const { firstStage } = this
+    if (stage > firstStage) {
       this.moveUp(stage)
-    } else if (stage < baseStage) {
-      this.baseStage = stage
+    } else if (stage < firstStage) {
+      this.firstStage = stage
     }
-    this.oldStage = recordOldStage && baseStage !== stage ? baseStage : nil
-    return baseStage
+    this.oldStage = recordOldStage && firstStage !== stage ? firstStage : nil
+    return firstStage
     // else do nothing
   }
   getOldStage(): StageNumber | nil {
@@ -370,10 +370,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   insertStage(stageNumber: StageNumber): void {
-    if (this.baseStage >= stageNumber) this.baseStage++
+    if (this.firstStage >= stageNumber) this.firstStage++
     if (this.oldStage && this.oldStage >= stageNumber) this.oldStage++
 
-    shiftNumberKeysUp(this.stageChanges, stageNumber)
+    shiftNumberKeysUp(this.stageDiffs, stageNumber)
     for (const [, byType] of pairs(this.stageProperties)) {
       shiftNumberKeysUp(byType, stageNumber)
     }
@@ -381,32 +381,32 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   deleteStage(stageNumber: StageNumber): void {
     assert(stageNumber > 1, "Can't delete first stage")
-    this.mergeStageChangeWithBelow(stageNumber)
+    this.mergeStageDiffWithBelow(stageNumber)
 
-    if (this.baseStage >= stageNumber) this.baseStage--
+    if (this.firstStage >= stageNumber) this.firstStage--
     if (this.oldStage && this.oldStage >= stageNumber) this.oldStage--
 
-    shiftNumberKeysDown(this.stageChanges, stageNumber)
+    shiftNumberKeysDown(this.stageDiffs, stageNumber)
     for (const [, byType] of pairs(this.stageProperties)) {
       shiftNumberKeysDown(byType, stageNumber)
     }
   }
-  private mergeStageChangeWithBelow(stageNumber: number): void {
-    const { stageChanges } = this
-    const thisChange = stageChanges[stageNumber]
+  private mergeStageDiffWithBelow(stageNumber: number): void {
+    const { stageDiffs } = this
+    const thisChange = stageDiffs[stageNumber]
     if (thisChange) {
       const prevStage = stageNumber - 1
-      if (this.baseStage === prevStage) {
-        applyDiffToEntity(this.baseValue, thisChange)
+      if (this.firstStage === prevStage) {
+        applyDiffToEntity(this.firstValue, thisChange)
       } else {
-        const prevChange = stageChanges[prevStage]
+        const prevChange = stageDiffs[prevStage]
         if (prevChange) {
           applyDiffToDiff(prevChange, thisChange)
         } else {
-          stageChanges[prevStage] = thisChange
+          stageDiffs[prevStage] = thisChange
         }
       }
-      delete stageChanges[stageNumber]
+      delete stageDiffs[stageNumber]
     }
   }
 }
@@ -446,12 +446,12 @@ export function isCompatibleEntity(
 
 // note: see also EntityHighlighter, updateErrorHighlight
 export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  return stageNumber >= entity.getBaseStage() && entity.getWorldEntity(stageNumber) === nil
+  return stageNumber >= entity.getFirstStage() && entity.getWorldEntity(stageNumber) === nil
 }
 
 /** Used by custom input */
 export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
   return (
-    entity.getBaseStage() === stageNumber || entity.hasStageChange(stageNumber) || entityHasErrorAt(entity, stageNumber)
+    entity.getFirstStage() === stageNumber || entity.hasStageDiff(stageNumber) || entityHasErrorAt(entity, stageNumber)
   )
 }

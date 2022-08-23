@@ -98,7 +98,7 @@ export function createAssemblyUpdater(
 
     const existing = content.findCompatible(entity.name, position, entity.direction)
     if (existing) {
-      const existingStage = existing.getBaseStage()
+      const existingStage = existing.getFirstStage()
       if (existingStage <= stageNumber) {
         entityAddedAbove(assembly, existing, stageNumber, entity)
         return existing
@@ -186,7 +186,7 @@ export function createAssemblyUpdater(
     const existing = content.findCompatible(entity.name, position, entity.direction)
     if (!existing) return
     const { stageNumber } = stage
-    const existingStage = existing.getBaseStage()
+    const existingStage = existing.getFirstStage()
 
     if (existingStage !== stageNumber) {
       if (existingStage < stageNumber) {
@@ -202,7 +202,7 @@ export function createAssemblyUpdater(
     const oldStage = assemblyEntity.getOldStage()
     if (oldStage !== nil) {
       moveEntityToOldStage(assembly, assemblyEntity, oldStage, entity)
-    } else if (assemblyEntity.hasStageChange()) {
+    } else if (assemblyEntity.hasStageDiff()) {
       assemblyEntity.isSettingsRemnant = true
       worldUpdater.makeSettingsRemnant(assembly, assemblyEntity)
     } else {
@@ -217,7 +217,7 @@ export function createAssemblyUpdater(
     oldStage: StageNumber,
     luaEntity: BasicEntityInfo,
   ): void {
-    const currentStage = existing.getBaseStage()
+    const currentStage = existing.getFirstStage()
     existing.moveToStage(oldStage)
     createNotification(luaEntity, [L_Interaction.EntityMovedBackToStage, assembly.getStageName(oldStage)])
     updateWorldEntities(assembly, existing, currentStage, oldStage)
@@ -238,7 +238,7 @@ export function createAssemblyUpdater(
   ): AssemblyEntity | nil {
     const position = getStagePosition(stage, entity)
     const compatible = assembly.content.findCompatible(entity.name, position, previousDirection ?? entity.direction)
-    if (compatible && stage.stageNumber >= compatible.getBaseStage()) {
+    if (compatible && stage.stageNumber >= compatible.getFirstStage()) {
       compatible.replaceWorldEntity(stage.stageNumber, entity) // just in case
     } else {
       onEntityCreated(assembly, entity, stage)
@@ -254,8 +254,8 @@ export function createAssemblyUpdater(
     rotateTo: defines.direction | nil,
     upgradeTo?: string | nil,
   ): void {
-    const isBaseStage = existing.getBaseStage() === stageNumber
-    const rotateAllowed = rotateTo !== nil && isBaseStage
+    const isFirstStage = existing.getFirstStage() === stageNumber
+    const rotateAllowed = rotateTo !== nil && isFirstStage
     if (rotateAllowed) {
       existing.direction = rotateTo !== 0 ? rotateTo : nil
     }
@@ -266,8 +266,8 @@ export function createAssemblyUpdater(
     if (upgradeTo) newValue.name = upgradeTo
 
     const hasDiff = existing.adjustValueAtStage(stageNumber, newValue)
-    if (rotateAllowed || (hasDiff && isBaseStage)) {
-      // if rotate or upgrade base value, update all stages (including highlights)
+    if (rotateAllowed || (hasDiff && isFirstStage)) {
+      // if rotate or upgrade first value, update all stages (including highlights)
       updateWorldEntities(assembly, existing, 1)
     } else if (hasDiff) {
       // update all above stages
@@ -319,7 +319,7 @@ export function createAssemblyUpdater(
     const existing = getCompatibleOrAdd(assembly, entity, stage)
     if (!existing) return
     if (recordCircuitWires(assembly, existing, stage.stageNumber, entity)) {
-      updateWorldEntities(assembly, existing, existing.getBaseStage())
+      updateWorldEntities(assembly, existing, existing.getFirstStage())
     }
   }
 
@@ -342,7 +342,7 @@ export function createAssemblyUpdater(
     if (!existing) return
     if (!existing.isSettingsRemnant) {
       // this is an error entity, try revive
-      if (stage.stageNumber < existing.getBaseStage()) return
+      if (stage.stageNumber < existing.getFirstStage()) return
       updateWorldEntities(assembly, existing, stage.stageNumber, stage.stageNumber)
     } else {
       // settings remnant, remove

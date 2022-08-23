@@ -240,12 +240,12 @@ const goToNextNotableStage: CustomInputPrototype = {
   key_sequence: "CONTROL + mouse-button-3",
   order: "b[navigate]-c[go-to-next-notable-stage]",
 }
-const goToBaseStage: CustomInputPrototype = {
+const goToFirstStage: CustomInputPrototype = {
   type: "custom-input",
-  name: CustomInputs.GoToBaseStage,
+  name: CustomInputs.GoToFirstStage,
   action: "lua",
   key_sequence: "CONTROL + SHIFT + mouse-button-3",
-  order: "b[navigate]-d[go-to-base-stage]",
+  order: "b[navigate]-d[go-to-first-stage]",
 }
 const moveToThisStage: CustomInputPrototype = {
   type: "custom-input",
@@ -255,4 +255,4 @@ const moveToThisStage: CustomInputPrototype = {
   order: "b[navigate]-e[move-to-this-stage]",
 }
 
-data.extend([nextStage, previousStage, goToBaseStage, goToNextNotableStage, moveToThisStage])
+data.extend([nextStage, previousStage, goToFirstStage, goToNextNotableStage, moveToThisStage])

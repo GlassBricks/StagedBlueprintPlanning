@@ -96,7 +96,7 @@ export function createWhiteSprite(
   const { x, y } = bbox.scale(32 / scale).size()
   function createRotated(dir: defines.direction | nil): Sprite {
     const isRotated90 = dir === direction.east || dir === direction.west
-    const baseValue: Sprite = {
+    const firstValue: Sprite = {
       filename: whiteTile,
       width: isRotated90 ? y : x,
       height: isRotated90 ? x : y,
@@ -106,9 +106,9 @@ export function createWhiteSprite(
       tint,
     }
     if (iconSprite) {
-      return { layers: [baseValue, iconSprite] }
+      return { layers: [firstValue, iconSprite] }
     }
-    return baseValue
+    return firstValue
   }
 
   if (bbox.isCenteredSquare()) return createRotated(direction.north)

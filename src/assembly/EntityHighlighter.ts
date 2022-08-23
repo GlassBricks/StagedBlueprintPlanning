@@ -156,7 +156,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     if (existing && config.type === "sprite") return existing
     // always replace highlight box, in case of upgrade
 
-    const prototypeName = entity.getBaseValue().name
+    const prototypeName = entity.getFirstValue().name
     const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
     let result: LuaEntity | AnyRender | nil
     if (config.type === "highlight") {
@@ -246,7 +246,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
     for (const [i, stage] of assembly.iterateStages()) {
       const shouldHaveEntityPreview = entity.getWorldEntity(stage.stageNumber, "mainEntity") === nil
-      const hasError = shouldHaveEntityPreview && i >= entity.getBaseStage()
+      const hasError = shouldHaveEntityPreview && i >= entity.getFirstStage()
       updateAssociatedEntity(entity, stage, "previewEntity", shouldHaveEntityPreview)
       updateAssociatedEntity(entity, stage, "selectionProxy", hasError)
       updateHighlight(entity, stage, "errorOutline", hasError)
@@ -255,7 +255,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
   function updateErrorIndicators(assembly: AssemblyContent, entity: AssemblyEntity): void {
     let hasErrorAnywhere = false
-    for (const i of $range(entity.getBaseStage(), assembly.numStages())) {
+    for (const i of $range(entity.getFirstStage(), assembly.numStages())) {
       const hasError = entity.getWorldEntity(i) === nil
       if (hasError) {
         hasErrorAnywhere = true
@@ -268,17 +268,17 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
 
     for (const [i, stage] of assembly.iterateStages()) {
-      const shouldHaveIndicator = i >= entity.getBaseStage() && entity.getWorldEntity(i, "mainEntity") !== nil
+      const shouldHaveIndicator = i >= entity.getFirstStage() && entity.getWorldEntity(i, "mainEntity") !== nil
       updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
 
   function updateAllConfigChangedHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    const baseStage = entity.getBaseStage()
-    let lastStageWithHighlights = baseStage
+    const firstStage = entity.getFirstStage()
+    let lastStageWithHighlights = firstStage
     for (const [i, stage] of assembly.iterateStages()) {
-      const hasConfigChanged = entity.hasStageChange(i)
-      const isUpgrade = hasConfigChanged && entity.getStageChange(i)!.name !== nil
+      const hasConfigChanged = entity.hasStageDiff(i)
+      const isUpgrade = hasConfigChanged && entity.getStageDiff(i)!.name !== nil
       const highlight = updateHighlight(entity, stage, "configChangedHighlight", hasConfigChanged)
       if (highlight) {
         ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
@@ -299,14 +299,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
         highlight.sprite = sprite
       }
     }
-    if (lastStageWithHighlights === baseStage) {
+    if (lastStageWithHighlights === firstStage) {
       // remove later highlights for all stages
       removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
     } else {
       for (const i of $range(lastStageWithHighlights, assembly.numStages())) {
         removeHighlight(entity, i, "configChangedLaterHighlight")
       }
-      for (const i of $range(1, baseStage - 1)) {
+      for (const i of $range(1, firstStage - 1)) {
         removeHighlight(entity, i, "configChangedLaterHighlight")
       }
     }

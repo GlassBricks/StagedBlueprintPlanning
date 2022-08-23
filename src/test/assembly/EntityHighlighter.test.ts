@@ -130,7 +130,7 @@ describe("error highlights/selection proxy", () => {
     for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `stage ${i}`)
   })
 
-  test("does nothing if created in lower than base stage", () => {
+  test("does nothing if created in lower than first stage", () => {
     highlightCreator.updateHighlights(assembly, entity)
     assert.nil(entity.getWorldEntity(1, "errorOutline"))
   })
@@ -142,20 +142,20 @@ describe("config changed highlight", () => {
   })
   function setAt(stage: StageNumber) {
     assert(stage >= 2)
-    ;(entity._getStageChanges() as any)[stage] = { foo: stage }
+    ;(entity._getStageDiffs() as any)[stage] = { foo: stage }
   }
   function setUpgradeAt(stage: StageNumber) {
     assert(stage >= 2)
-    ;(entity._getStageChanges() as any)[stage] = { name: "test" + stage.toString() }
+    ;(entity._getStageDiffs() as any)[stage] = { name: "test" + stage.toString() }
   }
   function clearAt(stage: StageNumber) {
     assert(stage >= 2)
-    ;(entity._getStageChanges() as any)[stage] = nil
+    ;(entity._getStageDiffs() as any)[stage] = nil
   }
   function assertCorrect() {
     highlightCreator.updateHighlights(assembly, entity)
     let i = 2
-    for (const [stageNumber, changes] of pairs(entity._getStageChanges())) {
+    for (const [stageNumber, changes] of pairs(entity._getStageDiffs())) {
       const isUpgrade = changes.name !== nil
 
       const highlight = assert.not_nil(
@@ -242,7 +242,7 @@ test("deleteSettingsRemnant removes highlights and sets entities correct", () =>
   for (let i = 1; i <= 5; i++) {
     assert.nil(entity.getWorldEntity(i, "settingsRemnantHighlight"))
     assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
-    if (i >= entity.getBaseStage()) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
+    if (i >= entity.getFirstStage()) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
     else assert.nil(entity.getWorldEntity(i, "selectionProxy"))
   }
 })
