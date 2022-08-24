@@ -37,7 +37,7 @@ function findUndergroundPairOneDirection(
   const reach = game.entity_prototypes[name].max_underground_distance
   if (!reach) return $multi(nil, false)
 
-  const direction = member.direction ?? 0
+  const direction = member.getDirection()
   const otherDirection = oppositedirection(direction)
 
   const { x, y } = member.position

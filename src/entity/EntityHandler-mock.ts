@@ -54,17 +54,12 @@ export function createMockEntityCreator(): MockEntityCreator {
     }
   }
 
-  function createEntity(
-    stage: number,
-    value: Entity,
-    direction: defines.direction | undefined,
-    position: MapPosition,
-  ): LuaEntity {
+  function createEntity(stage: number, value: Entity, direction: defines.direction, position: MapPosition): LuaEntity {
     const byStage = values[stage] ?? (values[stage] = newMap2D())
 
     const luaEntity = entityMock({
       ...value,
-      direction: direction ?? 0,
+      direction,
       position,
     })
 
@@ -81,7 +76,7 @@ export function createMockEntityCreator(): MockEntityCreator {
     createEntity(stagePos: StagePosition, { position, direction }: EntityPose, value: Entity): LuaEntity | nil {
       const stage = stagePos.stageNumber
       if (getAt(stage, position) !== nil) return nil // overlapping entity
-      return createEntity(stage, value, direction, position)
+      return createEntity(stage, value, direction ?? 0, position)
     },
     updateEntity(luaEntity: LuaEntity, value: Entity, direction): LuaEntity {
       assert(luaEntity.valid)
@@ -97,7 +92,7 @@ export function createMockEntityCreator(): MockEntityCreator {
         }
         entry.value = shallowCopy(value)
       }
-      luaEntity.direction = direction ?? 0
+      luaEntity.direction = direction
       return luaEntity
     },
     getAt,

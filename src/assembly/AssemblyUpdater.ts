@@ -284,7 +284,7 @@ export function createAssemblyUpdater(
   ): boolean {
     const rotateAllowed = stage.stageNumber === existing.getFirstStage()
     if (rotateAllowed) {
-      existing.direction = newDirection === 0 ? nil : newDirection
+      existing.setDirection(newDirection)
     } else {
       createNotification(entity, [L_Interaction.CannotRotateEntity])
       updateSingleWorldEntity(assembly, existing, stage.stageNumber, false)
@@ -347,7 +347,7 @@ export function createAssemblyUpdater(
     existing: AssemblyEntity<UndergroundBeltEntity>,
   ): void {
     const actualDirection = getSavedDirection(entity)
-    assert(actualDirection === (existing.direction ?? 0), "underground belt direction mismatch with saved state")
+    assert(actualDirection === existing.getDirection(), "underground belt direction mismatch with saved state")
     const oldDir = existing.getFirstValue().type
     const newDir = entity.belt_to_ground_type
     if (oldDir === newDir) return

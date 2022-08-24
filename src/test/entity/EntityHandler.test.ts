@@ -56,7 +56,7 @@ test("can update an entity", () => {
     force: "player",
     bar: 3,
   })!
-  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, nil)
+  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, 0)
   assert.equal(entity, newEntity)
   assert.equal(4, entity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
 })
@@ -69,7 +69,7 @@ test("can upgrade an entity", () => {
   })!
   entity.minable = false
   entity.destructible = false
-  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, nil)
+  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, 0)
   assert.equal("steel-chest", newEntity.name)
   assert.false(entity.valid)
 })
@@ -255,7 +255,7 @@ test("can handle item changes", () => {
       name: "assembling-machine-3",
       items: newContents,
     } as Entity,
-    nil,
+    0,
   )
   assert.equal(newEntity, entity)
   assert.same(newContents, entity.get_module_inventory()!.get_contents())

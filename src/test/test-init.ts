@@ -115,7 +115,7 @@ function isTestsRunning() {
   }
   return true
 }
-let shouldTryRerun = true
+let shouldTryRerun = !__DebugAdapter
 
 Events.on_tick(() => {
   if (!shouldTryRerun) return

@@ -21,14 +21,11 @@ export function getSavedDirection(entity: LuaEntity): defines.direction {
   return entity.direction
 }
 
-export function getPastedDirection(
-  entity: BlueprintEntity,
-  direction: defines.direction | nil,
-): defines.direction | nil {
+export function getPastedDirection(entity: BlueprintEntity, direction: defines.direction): defines.direction {
   const name = entity.name
   const isUnderground = isUndergroundBeltType(name)
   if (isUnderground && entity.type === "output") {
-    return oppositedirection(direction ?? 0)
+    return oppositedirection(direction)
   }
   return direction
 }

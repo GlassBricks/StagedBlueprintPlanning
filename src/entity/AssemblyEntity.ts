@@ -31,8 +31,10 @@ export type StageNumber = number
 
 export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPose {
   readonly categoryName: CategoryName
-  direction: defines.direction | nil
-  /** If this entity is a settings remnant */
+  readonly direction: defines.direction | nil
+  getDirection(): defines.direction
+  setDirection(direction: defines.direction): void
+
   isSettingsRemnant?: true
 
   getFirstStage(): StageNumber
@@ -147,6 +149,17 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.direction = direction === 0 ? nil : direction
     this.firstValue = shallowCopy(firstValue)
     this.firstStage = firstStage
+  }
+
+  public getDirection(): defines.direction {
+    return this.direction ?? 0
+  }
+  public setDirection(direction: defines.direction): void {
+    if (direction === 0) {
+      this.direction = nil
+    } else {
+      this.direction = direction
+    }
   }
 
   getFirstStage(): StageNumber {

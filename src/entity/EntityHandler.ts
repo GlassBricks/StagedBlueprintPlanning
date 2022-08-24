@@ -29,7 +29,7 @@ export function getWorldPosition(stage: StagePosition, entity: EntityPose): Posi
 /** @noSelf */
 export interface EntityCreator {
   createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil
-  updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction | nil): LuaEntity
+  updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity
   // todo: handle opposite affected entities?
 }
 
@@ -68,7 +68,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
 function pasteEntity(
   surface: LuaSurface,
   position: MapPosition,
-  direction: defines.direction | undefined,
+  direction: defines.direction,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
   const stack = getTempBpItemStack()
@@ -142,18 +142,14 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
   // todo: report cannot insert items
 }
 
-function rotateUnderground(
-  luaEntity: LuaEntity,
-  mode: "input" | "output",
-  direction: defines.direction | undefined,
-): void {
+function rotateUnderground(luaEntity: LuaEntity, mode: "input" | "output", direction: defines.direction): void {
   if (luaEntity.belt_to_ground_type !== mode) {
     const wasRotatable = luaEntity.rotatable
     luaEntity.rotatable = true
     luaEntity.rotate()
     luaEntity.rotatable = wasRotatable
   }
-  const expectedDirection = mode === "output" ? oppositedirection(direction ?? 0) : direction ?? 0
+  const expectedDirection = mode === "output" ? oppositedirection(direction) : direction
   assert(luaEntity.direction === expectedDirection, "cannot rotate underground-belt")
 }
 
@@ -172,7 +168,7 @@ const BlueprintEntityHandler: EntityHandler = {
   createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil {
     const surface = stage.surface
     const position = getWorldPosition(stage, pos)
-    const direction = pos.direction
+    const direction = pos.direction ?? 0
 
     const ghost = pasteEntity(surface, position, direction, entity as BlueprintEntity)
     if (!ghost) return nil
@@ -183,7 +179,7 @@ const BlueprintEntityHandler: EntityHandler = {
     return reviveGhost(ghost)
   },
 
-  updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction | nil): LuaEntity {
+  updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity {
     if (luaEntity.name !== value.name) {
       luaEntity = upgradeEntity(luaEntity, value.name)
     }

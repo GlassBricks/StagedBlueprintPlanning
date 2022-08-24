@@ -68,7 +68,7 @@ function assertEntityCorrect(i: StageNumber): LuaEntity {
   assert.not_nil(entry)
   assert(entry.luaEntity.valid)
   assert.equal(entry.luaEntity, entity.getWorldEntity(i) ?? "nil")
-  assert.equal(entity.direction ?? 0, entry.luaEntity.direction)
+  assert.equal(entity.getDirection(), entry.luaEntity.direction)
   const valueAtStage = entity.getValueAtStage(i)
   assert.same(valueAtStage, entry.value, `value not equal at stage ${i}`)
   return entry.luaEntity
@@ -173,7 +173,7 @@ describe("updateWorldEntities", () => {
 
   test("can rotate entities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-    entity.direction = defines.direction.west
+    entity.setDirection(defines.direction.west)
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })

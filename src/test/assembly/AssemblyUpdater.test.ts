@@ -460,7 +460,7 @@ describe("rotate", () => {
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
     assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, oldDirection)
-    assert.equal(oldDirection, added.direction ?? 0)
+    assert.equal(oldDirection, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
     assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
@@ -651,7 +651,7 @@ describe("fast replace", () => {
     const newEntity = createEntity({ name: "test2", direction: direction.west })
     luaEntity.destroy()
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
-    assert.equal(oldDirection, added.direction ?? 0)
+    assert.equal(oldDirection, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
     assertNotified(newEntity, [L_Interaction.CannotRotateEntity])
@@ -685,7 +685,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_direction", () => direction.west)
     rawset(luaEntity, "cancel_upgrade", () => true)
     assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
-    assert.equal(0, added.direction ?? 0)
+    assert.equal(0, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
     assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
