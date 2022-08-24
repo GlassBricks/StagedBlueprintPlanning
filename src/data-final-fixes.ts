@@ -128,9 +128,13 @@ const emptySprite: Sprite = {
 }
 
 const entityToItemBuild = new LuaMap<string, string>()
-for (const [name, itemPrototype] of pairs<Record<string, ItemPrototype>>(data.raw.item)) {
-  if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)
+function iterate(prototypes: Record<string, ItemPrototype>): void {
+  for (const [name, itemPrototype] of pairs(prototypes)) {
+    if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)
+  }
 }
+iterate(data.raw.item)
+iterate(data.raw["rail-planner"])
 
 const utilityConstants: UtilityConstants = data.raw["utility-constants"].default
 
@@ -144,7 +148,7 @@ function isBuildablePrototype(prototype: EntityPrototype): boolean {
 const previews: SimpleEntityWithOwnerPrototype[] = []
 const selectionProxies: SimpleEntityWithOwnerPrototype[] = []
 // simple-entity-with-owner is used instead of simple-entity so that it can be rotated 4 ways
-for (const type of keys<typeof BuildableEntityTypes>()) {
+for (const [, type] of ipairs(keys<typeof BuildableEntityTypes>())) {
   const prototypes = data.raw[type]
   if (!prototypes) continue
   for (const [name, prototype] of pairs<Record<string, EntityPrototype>>(prototypes)) {

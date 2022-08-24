@@ -13,7 +13,7 @@
         "WiderNoticeTextBoxes": true,
         "testorio": true
       },
-//      "disableExtraMods": true,
+      //      "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
         "BBPP2Test",
@@ -57,8 +57,34 @@
       ],
       "checkGlobals": false,
       "hookControl": true
-    },
-    {
+    }, {
+      "type": "factoriomod",
+      "request": "launch",
+      "name": "debug data",
+      "adjustMods": {
+        "bbpp3": true,
+        "WiderNoticeTextBoxes": true,
+        "testorio": true
+      },
+      "disableExtraMods": true,
+      "factorioArgs": [
+        "--load-scenario",
+        "BBPP2Test",
+        "--window-size",
+        "1440,1200",
+        "--cache-sprite-atlas",
+        "true",
+        "--graphics-quality",
+        "low",
+        "-c",
+        "${workspaceRoot}/factorio/config.ini",
+        "-mod-directory",
+        "${workspaceRoot}/factorio"
+      ],
+      "checkGlobals": false,
+      "hookData": true,
+      "hookControl": false
+    }, {
       "type": "factoriomod",
       "request": "launch",
       "name": "debug only",
