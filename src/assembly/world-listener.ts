@@ -49,14 +49,19 @@ function luaEntityDeleted(entity: LuaEntity): void {
   if (assembly) DefaultAssemblyUpdater.onEntityDeleted(assembly, entity, stage)
 }
 
+function luaEntityPotentiallyUpdated(entity: LuaEntity): void {
+  const [assembly, stage] = getStageAtEntity(entity)
+  if (assembly) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage)
+}
+
+function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction): void {
+  const [assembly, stage] = getStageAtEntity(entity)
+  if (assembly) DefaultAssemblyUpdater.onEntityRotated(assembly, entity, stage, previousDirection)
+}
+
 function luaEntityForceDeleted(entity: LuaEntity): void {
   const [assembly, stage] = getStageAtEntity(entity)
   if (assembly) DefaultAssemblyUpdater.onEntityForceDeleted(assembly, entity, stage)
-}
-
-function luaEntityPotentiallyUpdated(entity: LuaEntity, previousDirection?: defines.direction): void {
-  const [assembly, stage] = getStageAtEntity(entity)
-  if (assembly) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, previousDirection)
 }
 
 /*
@@ -138,7 +143,7 @@ Events.on_entity_settings_pasted((e) => luaEntityPotentiallyUpdated(e.destinatio
 Events.on_gui_closed((e) => {
   if (e.entity) luaEntityPotentiallyUpdated(e.entity)
 })
-Events.on_player_rotated_entity((e) => luaEntityPotentiallyUpdated(e.entity, e.previous_direction))
+Events.on_player_rotated_entity((e) => luaEntityRotated(e.entity, e.previous_direction))
 Events.on_player_fast_transferred((e) => luaEntityPotentiallyUpdated(e.entity))
 
 interface AnnotatedEntity extends BasicEntityInfo {

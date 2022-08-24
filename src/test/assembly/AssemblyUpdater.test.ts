@@ -221,7 +221,10 @@ describe("add", () => {
   test.each([false, true])("add at lower stage does all behaviors, with stage diffs: %s", (withChanges) => {
     const { added } = addAndReset(3, 1)
     const newEntity = createEntity()
-    if (withChanges) newEntity.prop1 = 3
+    if (withChanges) {
+      newEntity.prop1 = 3
+      newEntity.direction = defines.direction.east
+    }
     assemblyUpdater.onEntityCreated(assembly, newEntity, stage) // again
     // updates entity
     assert.equal(newEntity, added.getWorldEntity(1))
@@ -374,7 +377,7 @@ describe("update", () => {
     assert.equal(3, added.getFirstValue().prop1)
 
     assertOneEntity()
-    assertUpdateCalled(added, 1, nil, false)
+    assertUpdateCalled(added, 2, nil, false)
   })
 
   test.each([false, true])(
@@ -417,7 +420,7 @@ describe("rotate", () => {
     const { luaEntity, added } = addAndReset(2, 2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, oldDirection)
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, oldDirection)
     assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -427,7 +430,7 @@ describe("rotate", () => {
     const { luaEntity, added } = addAndReset(1, 2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, oldDirection)
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, oldDirection)
     assert.equal(oldDirection, added.direction ?? 0)
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
@@ -455,6 +458,17 @@ describe("fast replace", () => {
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })
+  test("fast replace with forbidden rotation", () => {
+    const { luaEntity, added } = addAndReset(1, 2)
+    const oldDirection = luaEntity.direction
+    const newEntity = createEntity({ name: "test2", direction: direction.west })
+    luaEntity.destroy()
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
+    assert.equal(oldDirection, added.direction ?? 0)
+    assertOneEntity()
+    assertUpdateCalled(added, 2, 2, false)
+    assertNotified(newEntity, [L_Interaction.CannotRotateEntity])
+  })
 })
 
 describe("mark for upgrade", () => {
@@ -477,6 +491,17 @@ describe("mark for upgrade", () => {
     assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
+  })
+  test("upgrade to rotate forbidden", () => {
+    const { luaEntity, added } = addAndReset(1, 2)
+    rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
+    rawset(luaEntity, "get_upgrade_direction", () => direction.west)
+    rawset(luaEntity, "cancel_upgrade", () => true)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+    assert.equal(0, added.direction ?? 0)
+    assertOneEntity()
+    assertUpdateCalled(added, 2, 2, false)
+    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
   })
 })
 

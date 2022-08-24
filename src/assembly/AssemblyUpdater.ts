@@ -14,7 +14,6 @@ import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/Ass
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getStagePosition } from "../entity/EntityHandler"
-import { Mutable } from "../lib"
 import { L_Interaction } from "../locale"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
@@ -33,8 +32,8 @@ export interface AssemblyUpdater {
   onEntityDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
   /**
    * Handles when an entity has its properties updated.
-   * Checks ALL properties except wire connections.
-   * Handles rotation (if previousDirection is provided).
+   * Does not handle wires.
+   * If previousDirection is specified, also checks for rotation.
    */
   onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
@@ -42,15 +41,23 @@ export interface AssemblyUpdater {
     stage: StagePosition,
     previousDirection?: defines.direction,
   ): void
-  /**
-   * Handles upgrade planner.
-   * Performs the requested upgrade, and cancels upgrade.
-   * Also handles rotation via upgrade.
-   */
-  onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void
+
+  /** Handles when an entity is rotated by player. */
+  onEntityRotated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    previousDirection: defines.direction,
+  ): void
 
   /** Handles possible circuit wires changes of an entity. */
   onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void
+
+  /**
+   * Handles upgrade planner.
+   * Performs the requested upgrade, also handles rotation via upgrade.
+   */
+  onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void
 
   onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
   /** Either: entity died, or reverse select with cleanup tool */
@@ -259,38 +266,32 @@ export function createAssemblyUpdater(
     stageNumber: StageNumber,
     existing: AssemblyEntity,
     newValue: Entity,
-    newDirection: defines.direction | nil,
+    forceUpdate: boolean,
   ): void {
-    const isFirstStage = existing.getFirstStage() === stageNumber
-
-    const isRotated =
-      newDirection !== nil &&
-      (newDirection !== (existing.direction ?? 0) ||
-        // undergrounds treated specially
-        (entity.type === "underground-belt" &&
-          entity.belt_to_ground_type !== (existing.getFirstValue() as BlueprintEntity).type))
-
-    if (isRotated) {
-      if (isFirstStage) {
-        // rotate allowed
-        existing.direction = newDirection !== 0 ? newDirection : nil
-        // fall through to checking newValue
-      } else {
-        createNotification(entity, [L_Interaction.CannotRotateEntity])
-        updateWorldEntities(assembly, existing, stageNumber, stageNumber)
-        return // don't change to newValue
-      }
-    }
-
     const hasDiff = existing.adjustValueAtStage(stageNumber, newValue)
-    if ((isRotated || hasDiff) && isFirstStage) {
-      // update all stages (including highlights)
-      updateWorldEntities(assembly, existing, 1)
-    } else if (hasDiff) {
-      // update all above stages
+    if (hasDiff || forceUpdate) {
       updateWorldEntities(assembly, existing, stageNumber)
     }
-    // else, no diff, do nothing
+  }
+
+  /**
+   * Undoes rotation if rotation failed.
+   */
+  function tryRotateOrUndo(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    existing: AssemblyEntity,
+    newDirection: defines.direction,
+  ): boolean {
+    const rotateAllowed = stage.stageNumber === existing.getFirstStage()
+    if (rotateAllowed) {
+      existing.direction = newDirection
+    } else {
+      createNotification(entity, [L_Interaction.CannotRotateEntity])
+      updateSingleWorldEntity(assembly, existing, stage.stageNumber, false)
+    }
+    return rotateAllowed
   }
 
   function onEntityPotentiallyUpdated(
@@ -302,31 +303,70 @@ export function createAssemblyUpdater(
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection)
     if (!existing) return
 
+    const hasRotation = previousDirection !== nil
+    if (hasRotation) {
+      const newDirection = entity.direction
+      if (!tryRotateOrUndo(assembly, entity, stage, existing, newDirection)) {
+        // don't update other stuff if rotation failed
+        return
+      }
+    }
+
     const [newValue, direction] = saveEntity(entity)
-    if (!newValue) error("could not save value on existing entity")
-    doUpdate(assembly, entity, stage.stageNumber, existing, newValue, direction)
+    assert(newValue, "could not save value on existing entity")
+    assert(direction === (existing.direction ?? 0), "entity direction mismatch with saved state")
+
+    const hasDiff = existing.adjustValueAtStage(stage.stageNumber, newValue)
+    if (hasDiff || hasRotation) {
+      updateWorldEntities(assembly, existing, stage.stageNumber)
+    }
+  }
+
+  function onEntityRotated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    previousDirection: defines.direction,
+  ): void {
+    // todo: handle rotation of preview entities?
+    // todo: handle rotation of undergrounds
+    // todo: handle rotation of loaders
+    const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection)
+    if (!existing) return
+
+    const newDirection = entity.direction
+    if (tryRotateOrUndo(assembly, entity, stage, existing, newDirection)) {
+      // update all entities
+      updateWorldEntities(assembly, existing, 1)
+    }
   }
 
   function onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage)
     if (!existing) return
 
-    const upgradeDirection = entity.get_upgrade_direction()
-    let upgradeType = entity.get_upgrade_target()?.name
+    const rotated = entity.get_upgrade_direction()
+    if (rotated) {
+      if (!tryRotateOrUndo(assembly, entity, stage, existing, rotated)) {
+        // don't update other stuff if rotation failed
+        if (entity.valid) entity.cancel_upgrade(entity.force)
+        return
+      }
+    }
+    let upgraded = false
+    const upgradeType = entity.get_upgrade_target()?.name
     if (upgradeType) {
       if (getEntityCategory(upgradeType) !== existing.categoryName) {
-        game.print(
-          `BUG: incompatible upgrade type to ${upgradeType}: category ${getEntityCategory(
+        error(
+          ` incompatible upgrade type to ${upgradeType}: category ${getEntityCategory(
             upgradeType,
           )}, existing category: ${existing.categoryName}`,
         )
-        upgradeType = nil
       }
+      upgraded = existing.applyUpgradeAtStage(stage.stageNumber, upgradeType)
     }
-    if (upgradeDirection || upgradeType) {
-      const value = existing.getValueAtStage(stage.stageNumber)! as Mutable<Entity>
-      if (upgradeType) value.name = upgradeType
-      doUpdate(assembly, entity, stage.stageNumber, existing, value, upgradeDirection)
+    if (rotated || upgraded) {
+      updateWorldEntities(assembly, existing, stage.stageNumber)
     }
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }
@@ -403,8 +443,9 @@ export function createAssemblyUpdater(
     onEntityCreated,
     onEntityDeleted,
     onEntityPotentiallyUpdated,
-    onEntityMarkedForUpgrade,
+    onEntityRotated,
     onCircuitWiresPotentiallyUpdated,
+    onEntityMarkedForUpgrade,
     onCleanupToolUsed,
     onEntityForceDeleted,
     onMoveEntityToStage,

@@ -20,6 +20,7 @@ import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
 import { Events } from "../../lib"
 import { BBox, Pos, PositionClass } from "../../lib/geometry"
 import { testArea } from "../area"
+import direction = defines.direction
 
 let updater: mock.Stubbed<AssemblyUpdater>
 let assembly: Assembly
@@ -128,11 +129,12 @@ describe("update", () => {
     })!
   })
   test("gui", () => {
+    player.opened = nil
     player.opened = entity
     player.opened = nil
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), match.nil())
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -142,69 +144,49 @@ describe("update", () => {
     })
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), match.nil())
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
   })
 
   test("rotate", () => {
     const oldDirection = entity.direction
     entity.rotate({ by_player: 1 as PlayerIndex })
     assert
-      .spy(updater.onEntityPotentiallyUpdated)
+      .spy(updater.onEntityRotated)
       .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), oldDirection)
   })
 })
 
-describe("fast replace", () => {
-  let entity: LuaEntity
-  before_each(() => {
-    const position = getStageCenter(1)
-    entity = surface.create_entity({
-      name: "inserter",
-      position,
-      raise_built: true,
+test.each([
+  [false, true],
+  [true, false],
+  [true, true],
+])("fast replace, rotate: %s, upgrade: %s", (rotate, upgrade) => {
+  const entity: LuaEntity = surface.create_entity({
+    name: "inserter",
+    position: getStageCenter(1),
+    raise_built: true,
+    force: "player",
+  })!
+  const newType = upgrade ? "fast-inserter" : "inserter"
+  assert(
+    surface.can_fast_replace({
+      name: newType,
+      position: entity.position,
       force: "player",
-    })!
-  })
-  test("to upgrade", () => {
-    assert(
-      surface.can_fast_replace({
-        name: "fast-inserter",
-        position: entity.position,
-        force: "player",
-      }),
-      "can fast replace",
-    )
-    const { position } = entity
-    player.cursor_stack!.set_stack("fast-inserter")
-    player.build_from_cursor({ position })
-    const newEntity = surface.find_entity("fast-inserter", position)
-    assert.not_nil(newEntity)
+      direction: rotate ? direction.east : nil,
+    }),
+    "can fast replace",
+  )
+  const { position } = entity
+  player.cursor_stack!.set_stack(newType)
+  player.build_from_cursor({ position, direction: rotate ? direction.east : nil })
+  const newEntity = surface.find_entity(newType, position)!
+  assert.not_nil(newEntity)
 
-    assert.false(entity.valid, "entity replaced")
-    assert
-      .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(newEntity!), match.ref(assembly.getStage(1)!), match._)
-  })
-
-  test("to rotate", () => {
-    assert(
-      surface.can_fast_replace({
-        name: "inserter",
-        position: entity.position,
-        direction: defines.direction.east,
-        force: "player",
-      }),
-      "can fast replace",
-    )
-    const { position, direction: oldDirection } = entity
-    player.cursor_stack!.set_stack("inserter")
-    player.build_from_cursor({ position, direction: defines.direction.east })
-
-    assert.false(entity.valid, "entity replaced")
-    assert
-      .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!), oldDirection)
-  })
+  assert.false(entity.valid, "entity replaced")
+  assert
+    .spy(updater.onEntityPotentiallyUpdated)
+    .called_with(match.ref(assembly), newEntity, match.ref(assembly.getStage(1)!), match._)
 })
 
 describe("upgrade", () => {

@@ -157,6 +157,12 @@ describe("adjustValueAtStage", () => {
     assert.same({ ...entity, foo1: 3 }, assemblyEntity.getValueAtStage(2))
   })
 
+  test("removes diff entirely if matches lower stage", () => {
+    assert.true(assemblyEntity.hasStageDiff(3))
+    assemblyEntity.adjustValueAtStage(3, assemblyEntity.getFirstValue())
+    assert.false(assemblyEntity.hasStageDiff(3))
+  })
+
   test("complex case", () => {
     const firstValue = { name: "test", a: 1, b: 1, c: 1 }
     const value2 = { ...firstValue, b: 2, c: 2 }

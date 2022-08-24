@@ -45,7 +45,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   /** @return the value at a given stage. Nil if below the first stage. The result is a new table. */
   getValueAtStage(stage: StageNumber): T | nil
-  /** Gets the entity name at the given stage. If below the first stage, returns the base entity name. */
+  /** Gets the entity name at the given stage. If below the first stage, returns the first entity name. */
   getNameAtStage(stage: StageNumber): string
   /**
    * Iterates the values of stages in the given range. More efficient than repeated calls to getValueAtStage.
@@ -60,6 +60,12 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    * @return true if the value changed.
    */
   adjustValueAtStage(stage: StageNumber, value: T): boolean
+
+  /**
+   * Similar to adjustValueAtStage, but only does upgrades ("name" property).
+   * More efficient than repeated adjustValueAtStage.
+   */
+  applyUpgradeAtStage(stage: StageNumber, newName: string): boolean
 
   /**
    * @param stage the stage to move to. If moving up, deletes/merges all stage diffs from old stage to new stage.
@@ -125,7 +131,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   public isSettingsRemnant: true | nil
 
   private firstStage: StageNumber
-  private readonly firstValue: T
+  private readonly firstValue: Mutable<T>
   private readonly stageDiffs: Mutable<StageDiffs<T>> = {}
   private oldStage: StageNumber | nil
 
@@ -133,11 +139,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
   } = {}
 
-  constructor(firstStage: StageNumber, baseEntity: T, position: Position, direction: defines.direction | nil) {
-    this.categoryName = getEntityCategory(baseEntity.name)
+  constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
+    this.categoryName = getEntityCategory(firstValue.name)
     this.position = position
     this.direction = direction === 0 ? nil : direction
-    this.firstValue = shallowCopy(baseEntity)
+    this.firstValue = shallowCopy(firstValue)
     this.firstStage = firstStage
   }
 
@@ -255,13 +261,26 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
       const { stageDiffs } = this
       const oldStageDiff = stageDiffs[stage]
-      const diff = mergeDiff(valueAtPreviousStage, oldStageDiff, newStageDiff)
-      if (diff) {
-        stageDiffs[stage] = newStageDiff
-        return diff
-      }
+      stageDiffs[stage] = newStageDiff
+      return mergeDiff(valueAtPreviousStage, oldStageDiff, newStageDiff)
     }
   }
+
+  public applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
+    const { firstStage, stageDiffs } = this
+    assert(stage >= firstStage, "stage must be >= first stage")
+    const previousName = this.getNameAtStage(stage)
+    if (newName === previousName) return false
+    if (stage === this.firstStage) {
+      this.firstValue.name = newName
+    } else {
+      const diff = stageDiffs[stage] || (stageDiffs[stage] = {} as Mutable<StageDiff<T>>)
+      ;(diff as Mutable<T>).name = newName
+    }
+    this.oldStage = nil
+    return true
+  }
+
   private moveUp(higherStage: StageNumber): void {
     // todo: what happens if moved up, and lost data?
     const { firstValue } = this
