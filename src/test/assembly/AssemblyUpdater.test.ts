@@ -10,6 +10,7 @@
  */
 
 import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
+import { findUndergroundPair } from "../../assembly/assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
 import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
 import { WireSaver } from "../../assembly/WireHandler"
@@ -20,6 +21,7 @@ import { AssemblyWireConnection, wireConnectionEquals } from "../../entity/Assem
 import { Entity } from "../../entity/Entity"
 import { _overrideEntityCategory } from "../../entity/entity-info"
 import { createMockEntitySaver } from "../../entity/EntityHandler-mock"
+import { UndergroundBeltEntity } from "../../entity/undergrounds"
 import { ContextualFun, Mutable } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
@@ -101,6 +103,32 @@ function addAndReset(addedNum: StageNumber = stage.stageNumber, setNum = stage.s
   return ret
 }
 
+function createRealEntity(args: SurfaceCreateEntity) {
+  return stage.surface.create_entity(args)
+}
+
+function addRealEntity(args: SurfaceCreateEntity) {
+  const entity = createRealEntity(args)!
+  assert.not_nil(entity, "created entity")
+  assemblyUpdater.onEntityCreated(assembly, entity, stage)
+  const found = assembly.content.findCompatible(entity, entity.position, nil) as AssemblyEntity<BlueprintEntity> | nil
+  assert(found)
+  return { luaEntity: entity, added: found! }
+}
+
+function addAndResetRealEntity(
+  args: SurfaceCreateEntity,
+  addedNum: StageNumber = stage.stageNumber,
+  setNum = stage.stageNumber,
+) {
+  stage.stageNumber = addedNum
+  const ret = addRealEntity(args)
+  stage.stageNumber = setNum
+  mock.clear(worldUpdater)
+  totalCalls = 0
+  return ret
+}
+
 let eventsAsserted = false
 let entitiesAsserted = false
 let notificationsAsserted = false
@@ -133,12 +161,14 @@ function assertUpdateCalled(
   startStage: StageNumber,
   endStage: StageNumber | nil,
   replace: boolean,
+  n?: number,
 ) {
   eventsAsserted = true
-  assert.equal(1, totalCalls, "called once")
-  const spy = worldUpdater.updateWorldEntities as spy.Spy<WorldUpdater["updateWorldEntities"]>
-  assert.spy(spy).called(1)
-  const refs = spy.calls[0].refs as any[]
+  if (n === nil) assert.equal(1, totalCalls, "called once")
+  const spy = worldUpdater.updateWorldEntities
+  if (n) assert.spy(spy).called_at_least(n + 1)
+  else assert.spy(spy).called(1)
+  const refs = spy.calls[n ?? 0].refs as any[]
   const [cAssembly, cEntity, cStartStage, cEndStage, cReplace] = table.unpack(refs, 1, 5)
   assert.equal(assembly, cAssembly)
   assert.equal(entity, cEntity)
@@ -183,7 +213,6 @@ function assertNoEntities() {
 }
 
 function assertNotified(entity: LuaEntity, message: LocalisedString) {
-  assert.false(notificationsAsserted, "notifications already asserted")
   assert.spy(worldNotifier.createNotification).called(1)
   assert.spy(worldNotifier.createNotification).called_with(match.ref(entity), message)
   notificationsAsserted = true
@@ -438,8 +467,166 @@ describe("rotate", () => {
   })
 })
 
+describe("undergrounds", () => {
+  before_each(() => {
+    game.surfaces[1].find_entities().forEach((e) => e.destroy())
+  })
+  function createUndergroundBelt(
+    firstStage: StageNumber,
+    endStage: StageNumber,
+    args?: Partial<UndergroundBeltSurfaceCreateEntity>,
+  ) {
+    const { luaEntity, added } = addAndResetRealEntity(
+      {
+        name: "underground-belt",
+        position: pos,
+        direction: direction.west,
+        ...args,
+      },
+      firstStage,
+      endStage,
+    )
+
+    return { luaEntity, added: added as AssemblyEntity<UndergroundBeltEntity> }
+  }
+
+  test("creating underground automatically sets to correct direction", () => {
+    const { luaEntity: entity1 } = createUndergroundBelt(1, 2)
+    entity1.destroy()
+    const { added: added2 } = addRealEntity({
+      name: "underground-belt",
+      position: Pos.plus(pos, { x: -3, y: 0 }),
+      direction: direction.east,
+      type: "input",
+    })
+
+    assert.equal("output", added2.getFirstValue().type)
+    assertNEntities(2)
+    assertUpdateCalled(added2, 1, nil, false)
+  })
+
+  function createUndergroundBeltPair(
+    firstStage: StageNumber,
+    endStage: StageNumber,
+    otherStage: StageNumber = firstStage,
+  ): {
+    entity1: LuaEntity
+    entity2: LuaEntity
+    added1: AssemblyEntity<UndergroundBeltEntity>
+    added2: AssemblyEntity<UndergroundBeltEntity>
+  } {
+    const { luaEntity: entity1, added: added1 } = createUndergroundBelt(firstStage, otherStage)
+    const { luaEntity: entity2, added: added2 } = createUndergroundBelt(otherStage, endStage, {
+      position: Pos.plus(pos, { x: -3, y: 0 }),
+      type: "output",
+    })
+    return { entity1, entity2, added1, added2 }
+  }
+
+  test("lone underground belt in first stage rotates all entities", () => {
+    const { luaEntity, added } = createUndergroundBelt(1, 1)
+
+    const [rotated] = luaEntity.rotate()
+    assert(rotated)
+
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, direction.west)
+
+    assert.equal("output", added.getFirstValue().type)
+    assert.equal(direction.west, added.direction)
+
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+
+  test("lone underground belt in higher stage forbids rotation", () => {
+    const { luaEntity, added } = createUndergroundBelt(1, 2)
+
+    const [rotated] = luaEntity.rotate()
+    assert(rotated)
+
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, direction.west)
+
+    assert.equal("input", added.getFirstValue().type)
+    assert.equal(direction.west, added.direction)
+
+    assertOneEntity()
+    assertUpdateCalled(added, 2, 2, false)
+    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
+  })
+
+  test("rotating pair of underground belts in first stage rotates all entities", () => {
+    const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1, 2)
+
+    const [rotated1] = entity1.rotate()
+    assert(rotated1)
+
+    assemblyUpdater.onEntityRotated(assembly, entity1, stage, direction.west)
+
+    assert.equal("output", added1.getFirstValue().type)
+    assert.equal(direction.west, added1.direction)
+    assert.equal("input", added2.getFirstValue().type)
+    assert.equal(direction.east, added2.direction)
+
+    assertNEntities(2)
+    assertUpdateCalled(added1, 1, nil, false, 0)
+    assertUpdateCalled(added2, 1, nil, false, 1)
+  })
+
+  test("cannot rotate underground if other in lower layer", () => {
+    const { entity1, added1, added2 } = createUndergroundBeltPair(2, 2, 1)
+
+    const [rotated1] = entity1.rotate()
+    assert(rotated1)
+
+    assemblyUpdater.onEntityRotated(assembly, entity1, stage, direction.west)
+
+    assert.equal("input", added1.getFirstValue().type)
+    assert.equal(direction.west, added1.direction)
+    assert.equal("output", added2.getFirstValue().type)
+    assert.equal(direction.east, added2.direction)
+
+    assertNEntities(2)
+    assertUpdateCalled(added1, 2, 2, false)
+    assertNotified(entity1, [L_Interaction.CannotFlipUndergroundDueToPairInLowerStage])
+  })
+
+  test("cannot rotate underground with multiple pairs", () => {
+    const { entity1, entity2, added1, added2 } = createUndergroundBeltPair(1, 1)
+    const { luaEntity: entity3, added: added3 } = createUndergroundBelt(1, 1, {
+      position: Pos.plus(pos, { x: -2, y: 0 }),
+    })
+
+    const added = [added1, added2, added3]
+    for (const [i, tryRotate] of ipairs([entity1, entity2, entity3])) {
+      const [rotated] = tryRotate.rotate()
+      assert(rotated)
+
+      const [, hasMultiple] = findUndergroundPair(assembly.content, added[i - 1])
+      assert.true(hasMultiple)
+
+      assemblyUpdater.onEntityRotated(assembly, tryRotate, stage, direction.west)
+
+      assert.equal("input", added1.getFirstValue().type)
+      assert.equal(direction.west, added1.direction)
+      assert.equal("output", added2.getFirstValue().type)
+      assert.equal(direction.east, added2.direction)
+      assert.equal("input", added3.getFirstValue().type)
+      assert.equal(direction.west, added3.direction)
+
+      assertNEntities(3)
+      assertUpdateCalled(added[i - 1], 1, 1, false, 0)
+      assertNotified(tryRotate, [L_Interaction.CannotFlipUndergroundDueToMultiplePairs])
+      worldUpdater.updateWorldEntities.clear()
+      worldNotifier.createNotification.clear()
+
+      const [rotatedBack] = tryRotate.rotate()
+      assert.true(rotatedBack, "rotated back")
+    }
+  })
+})
+
 describe("fast replace", () => {
-  test("fast replace sets world entity and calls update", () => {
+  test("sets world entity and calls update", () => {
     const { luaEntity, added } = addAndReset()
     const newEntity = createEntity({ name: "test2" })
     luaEntity.destroy()
@@ -448,7 +635,7 @@ describe("fast replace", () => {
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })
-  test("fast replace with new direction sets world entity and calls update", () => {
+  test("with new direction sets world entity and calls update", () => {
     const { luaEntity, added } = addAndReset()
     const oldDirection = luaEntity.direction
     const newEntity = createEntity({ name: "test2", direction: direction.west })
@@ -458,7 +645,7 @@ describe("fast replace", () => {
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })
-  test("fast replace with forbidden rotation", () => {
+  test("with forbidden rotation", () => {
     const { luaEntity, added } = addAndReset(1, 2)
     const oldDirection = luaEntity.direction
     const newEntity = createEntity({ name: "test2", direction: direction.west })

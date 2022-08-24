@@ -25,6 +25,7 @@ import { Position } from "../lib/geometry"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, mergeDiff, StageDiff } from "./diff"
 import { Entity, EntityPose } from "./Entity"
 import { CategoryName, getEntityCategory } from "./entity-info"
+import { UndergroundBeltEntity } from "./undergrounds"
 
 export type StageNumber = number
 
@@ -60,12 +61,13 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    * @return true if the value changed.
    */
   adjustValueAtStage(stage: StageNumber, value: T): boolean
-
   /**
    * Similar to adjustValueAtStage, but only does upgrades ("name" property).
    * More efficient than repeated adjustValueAtStage.
    */
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean
+
+  setUndergroundBeltDirection(this: AssemblyEntity<UndergroundBeltEntity>, direction: "input" | "output"): void
 
   /**
    * @param stage the stage to move to. If moving up, deletes/merges all stage diffs from old stage to new stage.
@@ -266,7 +268,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
   }
 
-  public applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
+  applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
     const { firstStage, stageDiffs } = this
     assert(stage >= firstStage, "stage must be >= first stage")
     const previousName = this.getNameAtStage(stage)
@@ -279,6 +281,16 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     this.oldStage = nil
     return true
+  }
+
+  public setUndergroundBeltDirection(
+    this: AssemblyEntityImpl<UndergroundBeltEntity>,
+    direction: "input" | "output",
+  ): void {
+    const { firstValue } = this
+    const existingType = firstValue.type
+    assert(existingType === "input" || existingType === "output", "must already be underground belt")
+    firstValue.type = direction
   }
 
   private moveUp(higherStage: StageNumber): void {

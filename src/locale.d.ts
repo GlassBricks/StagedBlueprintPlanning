@@ -54,6 +54,10 @@ export declare const enum L_Interaction {
   EntityMovedBackToStage = "bp3.interaction.entity-moved-back-to-stage",
   /** This cannot be rotated */
   CannotRotateEntity = "bp3.interaction.cannot-rotate-entity",
+  /** This underground pairs with multiple other undergrounds, cannot flip. */
+  CannotFlipUndergroundDueToMultiplePairs = "bp3.interaction.cannot-flip-underground-due-to-multiple-pairs",
+  /** This underground pairs with another underground in a lower stage, cannot flip. */
+  CannotFlipUndergroundDueToPairInLowerStage = "bp3.interaction.cannot-flip-underground-due-to-pair-in-lower-stage",
   /** Not in an assembly */
   PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",
   /** Entity is not in an assembly */

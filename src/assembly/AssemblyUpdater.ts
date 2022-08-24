@@ -11,10 +11,12 @@
 
 import { Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { BasicEntityInfo, Entity } from "../entity/Entity"
+import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getStagePosition } from "../entity/EntityHandler"
+import { getSavedDirection, UndergroundBeltEntity } from "../entity/undergrounds"
 import { L_Interaction } from "../locale"
+import { AssemblyUndergroundEntity, findUndergroundPair } from "./assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -128,9 +130,19 @@ export function createAssemblyUpdater(
     if (!saved) return
     // add new entity
     const assemblyEntity = createAssemblyEntity(saved, position, savedDir, stageNumber)
+    assemblyEntity.replaceWorldEntity(stageNumber, entity)
     content.add(assemblyEntity)
 
-    assemblyEntity.replaceWorldEntity(stageNumber, entity)
+    if (entity.type === "underground-belt") {
+      const [pair] = findUndergroundPair(assembly.content, assemblyEntity as AssemblyUndergroundEntity)
+      if (pair) {
+        const otherDir = pair.getFirstValue().type
+        ;(assemblyEntity as AssemblyUndergroundEntity).setUndergroundBeltDirection(
+          otherDir === "output" ? "input" : "output",
+        )
+      }
+    }
+
     recordCircuitWires(assembly, assemblyEntity, stageNumber, entity)
     updateWorldEntities(assembly, assemblyEntity, 1)
 
@@ -260,20 +272,6 @@ export function createAssemblyUpdater(
     return compatible
   }
 
-  function doUpdate(
-    assembly: AssemblyContent,
-    entity: LuaEntity,
-    stageNumber: StageNumber,
-    existing: AssemblyEntity,
-    newValue: Entity,
-    forceUpdate: boolean,
-  ): void {
-    const hasDiff = existing.adjustValueAtStage(stageNumber, newValue)
-    if (hasDiff || forceUpdate) {
-      updateWorldEntities(assembly, existing, stageNumber)
-    }
-  }
-
   /**
    * Undoes rotation if rotation failed.
    */
@@ -286,7 +284,7 @@ export function createAssemblyUpdater(
   ): boolean {
     const rotateAllowed = stage.stageNumber === existing.getFirstStage()
     if (rotateAllowed) {
-      existing.direction = newDirection
+      existing.direction = newDirection === 0 ? nil : newDirection
     } else {
       createNotification(entity, [L_Interaction.CannotRotateEntity])
       updateSingleWorldEntity(assembly, existing, stage.stageNumber, false)
@@ -303,7 +301,10 @@ export function createAssemblyUpdater(
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection)
     if (!existing) return
 
-    const hasRotation = previousDirection !== nil
+    const [newValue, direction] = saveEntity(entity)
+    assert(newValue, "could not save value on existing entity")
+
+    const hasRotation = previousDirection !== nil && previousDirection !== direction
     if (hasRotation) {
       const newDirection = entity.direction
       if (!tryRotateOrUndo(assembly, entity, stage, existing, newDirection)) {
@@ -311,10 +312,6 @@ export function createAssemblyUpdater(
         return
       }
     }
-
-    const [newValue, direction] = saveEntity(entity)
-    assert(newValue, "could not save value on existing entity")
-    assert(direction === (existing.direction ?? 0), "entity direction mismatch with saved state")
 
     const hasDiff = existing.adjustValueAtStage(stage.stageNumber, newValue)
     if (hasDiff || hasRotation) {
@@ -329,15 +326,56 @@ export function createAssemblyUpdater(
     previousDirection: defines.direction,
   ): void {
     // todo: handle rotation of preview entities?
-    // todo: handle rotation of undergrounds
-    // todo: handle rotation of loaders
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection)
     if (!existing) return
+
+    if (entity.type === "underground-belt") {
+      return onUndergroundBeltRotated(assembly, entity, stage, existing as AssemblyEntity<UndergroundBeltEntity>)
+    }
 
     const newDirection = entity.direction
     if (tryRotateOrUndo(assembly, entity, stage, existing, newDirection)) {
       // update all entities
       updateWorldEntities(assembly, existing, 1)
+    }
+  }
+
+  function onUndergroundBeltRotated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    existing: AssemblyEntity<UndergroundBeltEntity>,
+  ): void {
+    const actualDirection = getSavedDirection(entity)
+    assert(actualDirection === (existing.direction ?? 0), "underground belt direction mismatch with saved state")
+    const oldDir = existing.getFirstValue().type
+    const newDir = entity.belt_to_ground_type
+    if (oldDir === newDir) return
+
+    const { stageNumber } = stage
+    const [pair, hasMultiple] = findUndergroundPair(assembly.content, existing)
+
+    const rotateAllowed =
+      !hasMultiple &&
+      stageNumber === (pair ? min(existing.getFirstStage(), pair.getFirstStage()) : existing.getFirstStage())
+
+    if (rotateAllowed) {
+      existing.setUndergroundBeltDirection(newDir)
+      updateWorldEntities(assembly, existing, stageNumber)
+      if (pair) {
+        pair.setUndergroundBeltDirection(newDir === "output" ? "input" : "output")
+        updateWorldEntities(assembly, pair, stageNumber)
+      }
+    } else {
+      createNotification(
+        entity,
+        hasMultiple
+          ? [L_Interaction.CannotFlipUndergroundDueToMultiplePairs]
+          : pair && existing.getFirstStage() === stageNumber
+          ? [L_Interaction.CannotFlipUndergroundDueToPairInLowerStage]
+          : [L_Interaction.CannotRotateEntity],
+      )
+      updateSingleWorldEntity(assembly, existing, stageNumber, false)
     }
   }
 
