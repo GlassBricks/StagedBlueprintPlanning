@@ -97,7 +97,12 @@ export function createAssemblyUpdater(
     const { stageNumber } = stage
     const { content } = assembly
 
-    const existing = content.findCompatible(entity, position, nil)
+    let existing = content.findCompatibleAnyDirection(entity.name, position)
+    if (existing && existing.getWorldEntity(stage.stageNumber) !== nil) {
+      // if there is an existing entity at the layer, it must match direction this time
+      existing = content.findCompatible(entity, position, nil)
+    }
+
     if (existing) {
       const existingStage = existing.getFirstStage()
       if (existingStage <= stageNumber) {

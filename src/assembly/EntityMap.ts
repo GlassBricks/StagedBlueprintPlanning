@@ -10,7 +10,7 @@
  */
 
 import { oppositedirection } from "util"
-import { AssemblyEntity, isCompatibleEntity, StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
@@ -26,6 +26,7 @@ export interface EntityMap {
     position: Position,
     previousDirection: defines.direction | nil,
   ): AssemblyEntity | nil
+  findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
 
   getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil
 
@@ -69,10 +70,10 @@ class EntityMapImpl implements MutableEntityMap {
     const categoryName = getEntityCategory(entityName)
     if (direction === 0) direction = nil
     for (const candidate of atPos) {
-      if (isCompatibleEntity(candidate, categoryName, direction)) return candidate
+      if (candidate.categoryName === categoryName && candidate.direction === direction) return candidate
     }
   }
-  public findCompatible(
+  findCompatible(
     entity: BasicEntityInfo,
     position: Position,
     previousDirection?: defines.direction | nil,
@@ -83,6 +84,16 @@ class EntityMapImpl implements MutableEntityMap {
       return this.findCompatibleBasic(type, position, direction)
     }
     return this.findCompatibleBasic(entity.name, position, previousDirection ?? entity.direction)
+  }
+
+  findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil {
+    const { x, y } = position
+    const atPos = this.byPosition.get(x, y)
+    if (!atPos) return
+    const categoryName = getEntityCategory(entityName)
+    for (const candidate of atPos) {
+      if (candidate.categoryName === categoryName) return candidate
+    }
   }
 
   countNumEntities(): number {
