@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2022 GlassBricks
+ * This file is part of BBPP3.
+ *
+ * BBPP3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * BBPP3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import { oppositedirection } from "util"
+import { AssemblyEntity } from "../entity/AssemblyEntity"
+import { UndergroundBeltEntity } from "../entity/undergrounds"
+import { Mutable } from "../lib"
+import { Pos, Position, PositionClass } from "../lib/geometry"
+import { MutableEntityMap } from "./EntityMap"
+
+export type AssemblyUndergroundEntity = AssemblyEntity<UndergroundBeltEntity>
+
+export function findUndergroundPair(
+  content: MutableEntityMap,
+  member: AssemblyUndergroundEntity,
+): LuaMultiReturn<[underground: AssemblyUndergroundEntity | nil, hasMultiple: boolean]> {
+  const [pair, hasMultiple] = findUndergroundPairOneDirection(content, member)
+  if (!pair || hasMultiple) return $multi(pair, hasMultiple)
+
+  const [, pairHasMultiple] = findUndergroundPairOneDirection(content, pair)
+  return $multi(pair, pairHasMultiple)
+}
+
+function findUndergroundPairOneDirection(
+  content: MutableEntityMap,
+  member: AssemblyUndergroundEntity,
+): LuaMultiReturn<[underground: AssemblyUndergroundEntity | nil, hasMultiple: boolean]> {
+  const name = member.getFirstValue().name
+  const reach = game.entity_prototypes[name].max_underground_distance
+  if (!reach) return $multi(nil, false)
+
+  const direction = member.direction ?? 0
+  const otherDirection = oppositedirection(direction)
+
+  const { x, y } = member.position
+  const { x: dx, y: dy } = unit(direction)
+
+  let found: AssemblyUndergroundEntity | nil
+  const curPos = {} as Mutable<Position>
+  for (const i of $range(1, reach - 1)) {
+    curPos.x = x + i * dx
+    curPos.y = y + i * dy
+    const underground = content.findCompatibleBasic(name, curPos, otherDirection) as AssemblyUndergroundEntity | nil
+    if (underground) {
+      if (found) return $multi(found, true)
+      found = underground
+    }
+  }
+  return $multi(found, false)
+}
+
+export function unit(direction: defines.direction): PositionClass {
+  if (direction === defines.direction.north) return Pos(0, -1)
+  if (direction === defines.direction.south) return Pos(0, 1)
+  if (direction === defines.direction.west) return Pos(-1, 0)
+  if (direction === defines.direction.east) return Pos(1, 0)
+  error("Invalid direction: " + direction)
+}

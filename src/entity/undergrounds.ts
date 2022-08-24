@@ -10,6 +10,7 @@
  */
 
 import { oppositedirection } from "util"
+import { Entity } from "./Entity"
 import { isUndergroundBeltType } from "./entity-info"
 
 /** Inverts direction if is a output underground belt. */
@@ -30,4 +31,8 @@ export function getPastedDirection(
     return oppositedirection(direction ?? 0)
   }
   return direction
+}
+
+export interface UndergroundBeltEntity extends Entity {
+  type: "input" | "output"
 }
