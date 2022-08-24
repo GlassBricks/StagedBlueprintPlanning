@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
 import { AssemblyEntity, isCompatibleEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
-import { Entity } from "../entity/Entity"
+import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { isEmpty, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
@@ -19,7 +20,12 @@ import { MutableMap2D, newMap2D } from "../lib/map2d"
 
 export interface EntityMap {
   has(entity: AssemblyEntity): boolean
-  findCompatible(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
+  findCompatibleBasic(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
+  findCompatible(
+    entity: BasicEntityInfo,
+    position: Position,
+    previousDirection: defines.direction | nil,
+  ): AssemblyEntity | nil
 
   getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil
 
@@ -52,7 +58,11 @@ class EntityMapImpl implements MutableEntityMap {
     return this.entities.has(entity)
   }
 
-  findCompatible(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil {
+  findCompatibleBasic(
+    entityName: string,
+    position: Position,
+    direction: defines.direction | nil,
+  ): AssemblyEntity | nil {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
@@ -61,6 +71,18 @@ class EntityMapImpl implements MutableEntityMap {
     for (const candidate of atPos) {
       if (isCompatibleEntity(candidate, categoryName, direction)) return candidate
     }
+  }
+  public findCompatible(
+    entity: BasicEntityInfo,
+    position: Position,
+    previousDirection?: defines.direction | nil,
+  ): AssemblyEntity | nil {
+    const type = entity.type
+    if (type === "underground-belt") {
+      const direction = entity.belt_to_ground_type === "output" ? oppositedirection(entity.direction) : entity.direction
+      return this.findCompatibleBasic(type, position, direction)
+    }
+    return this.findCompatibleBasic(entity.name, position, previousDirection ?? entity.direction)
   }
 
   countNumEntities(): number {

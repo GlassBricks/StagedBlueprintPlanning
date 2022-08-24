@@ -74,10 +74,14 @@ Events.on(CustomInputs.PreviousStage, (e) => {
 function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
   const [assembly, stage] = getStageAtPosition(entity.surface, entity.position)
   if (!assembly) return $multi()
-  const entityName = entity.name.startsWith(Prototypes.PreviewEntityPrefix)
-    ? entity.name.substring(Prototypes.PreviewEntityPrefix.length)
-    : entity.name
-  const found = assembly.content.findCompatible(entityName, getStagePosition(stage, entity), entity.direction)
+  const position = getStagePosition(stage, entity)
+  const name = entity.name
+  let found: AssemblyEntity | nil
+  if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
+    found = assembly.content.findCompatibleBasic(name.substring(Prototypes.PreviewEntityPrefix.length), position, nil)
+  } else {
+    found = assembly.content.findCompatible(entity, position, nil)
+  }
   if (found) return $multi(stage, found)
   return $multi()
 }

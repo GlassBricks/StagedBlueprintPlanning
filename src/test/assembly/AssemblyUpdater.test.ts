@@ -87,7 +87,7 @@ function createEntity(args?: Partial<LuaEntity>): LuaEntity & TestEntity {
 function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
   assemblyUpdater.onEntityCreated(assembly, entity, stage)
-  const found = assembly.content.findCompatible(entity.name, entity.position, nil) as AssemblyEntity<TestEntity> | nil
+  const found = assembly.content.findCompatible(entity, entity.position, nil) as AssemblyEntity<TestEntity> | nil
   assert(found)
   return { luaEntity: entity, added: found! }
 }
@@ -347,7 +347,7 @@ describe("update", () => {
   test("non-existent defaults to add behavior (bug)", () => {
     const entity = createEntity()
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage)
-    const added = assembly.content.findCompatible("test", pos, nil) as AssemblyEntity<TestEntity>
+    const added = assembly.content.findCompatibleBasic("test", pos, nil) as AssemblyEntity<TestEntity>
     assertAdded(added, entity)
   })
 
@@ -431,6 +431,7 @@ describe("rotate", () => {
     assert.equal(oldDirection, added.direction ?? 0)
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
+    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
   })
 })
 

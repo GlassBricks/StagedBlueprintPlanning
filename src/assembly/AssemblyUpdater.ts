@@ -11,9 +11,10 @@
 
 import { Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { BasicEntityInfo } from "../entity/Entity"
+import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver, getStagePosition } from "../entity/EntityHandler"
+import { Mutable } from "../lib"
 import { L_Interaction } from "../locale"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
@@ -96,7 +97,7 @@ export function createAssemblyUpdater(
     const { stageNumber } = stage
     const { content } = assembly
 
-    const existing = content.findCompatible(entity.name, position, entity.direction)
+    const existing = content.findCompatible(entity, position, nil)
     if (existing) {
       const existingStage = existing.getFirstStage()
       if (existingStage <= stageNumber) {
@@ -183,7 +184,7 @@ export function createAssemblyUpdater(
     const position = getStagePosition(stage, entity)
     const { content } = assembly
 
-    const existing = content.findCompatible(entity.name, position, entity.direction)
+    const existing = content.findCompatible(entity, position, nil)
     if (!existing) return
     const { stageNumber } = stage
     const existingStage = existing.getFirstStage()
@@ -224,12 +225,13 @@ export function createAssemblyUpdater(
   }
 
   function onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void {
-    const existing = assembly.content.findCompatible(entity.name, getStagePosition(stage, entity), entity.direction)
+    const existing = assembly.content.findCompatible(entity, getStagePosition(stage, entity), nil)
     if (existing) {
       forceDeleteEntity(assembly, existing, stage.stageNumber)
     }
   }
 
+  /** Also asserts that stageNumber > entity's first stage. */
   function getCompatibleOrAdd(
     assembly: AssemblyContent,
     entity: LuaEntity,
@@ -237,7 +239,7 @@ export function createAssemblyUpdater(
     previousDirection?: defines.direction,
   ): AssemblyEntity | nil {
     const position = getStagePosition(stage, entity)
-    const compatible = assembly.content.findCompatible(entity.name, position, previousDirection ?? entity.direction)
+    const compatible = assembly.content.findCompatible(entity, position, previousDirection)
     if (compatible && stage.stageNumber >= compatible.getFirstStage()) {
       compatible.replaceWorldEntity(stage.stageNumber, entity) // just in case
     } else {
@@ -249,33 +251,39 @@ export function createAssemblyUpdater(
   function doUpdate(
     assembly: AssemblyContent,
     entity: LuaEntity,
-    stageNumber: number,
+    stageNumber: StageNumber,
     existing: AssemblyEntity,
-    rotateTo: defines.direction | nil,
-    upgradeTo?: string | nil,
+    newValue: Entity,
+    newDirection: defines.direction | nil,
   ): void {
     const isFirstStage = existing.getFirstStage() === stageNumber
-    const rotateAllowed = rotateTo !== nil && isFirstStage
-    if (rotateAllowed) {
-      existing.direction = rotateTo !== 0 ? rotateTo : nil
-    }
-    // else, direction will be reset by updateWorldEntities
 
-    const [newValue, direction] = saveEntity(entity)
-    // todo: handle direction
-    if (!newValue) return // bug?
-    if (upgradeTo) newValue.name = upgradeTo
+    const isRotated =
+      newDirection !== nil &&
+      (newDirection !== (existing.direction ?? 0) ||
+        // undergrounds treated specially
+        (entity.type === "underground-belt" &&
+          entity.belt_to_ground_type !== (existing.getFirstValue() as BlueprintEntity).type))
+
+    if (isRotated) {
+      if (isFirstStage) {
+        // rotate allowed
+        existing.direction = newDirection !== 0 ? newDirection : nil
+        // fall through to checking newValue
+      } else {
+        createNotification(entity, [L_Interaction.CannotRotateEntity])
+        updateWorldEntities(assembly, existing, stageNumber, stageNumber)
+        return // don't change to newValue
+      }
+    }
 
     const hasDiff = existing.adjustValueAtStage(stageNumber, newValue)
-    if (rotateAllowed || (hasDiff && isFirstStage)) {
-      // if rotate or upgrade first value, update all stages (including highlights)
+    if ((isRotated || hasDiff) && isFirstStage) {
+      // update all stages (including highlights)
       updateWorldEntities(assembly, existing, 1)
     } else if (hasDiff) {
       // update all above stages
       updateWorldEntities(assembly, existing, stageNumber)
-    } else if (rotateTo) {
-      // rotation forbidden, update only this stage
-      updateWorldEntities(assembly, existing, stageNumber, stageNumber)
     }
     // else, no diff, do nothing
   }
@@ -289,8 +297,9 @@ export function createAssemblyUpdater(
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection)
     if (!existing) return
 
-    const rotation = previousDirection && previousDirection !== entity.direction ? entity.direction : nil
-    doUpdate(assembly, entity, stage.stageNumber, existing, rotation)
+    const [newValue, direction] = saveEntity(entity)
+    if (!newValue) error("could not save value on existing entity")
+    doUpdate(assembly, entity, stage.stageNumber, existing, newValue, direction)
   }
 
   function onEntityMarkedForUpgrade(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void {
@@ -310,9 +319,11 @@ export function createAssemblyUpdater(
       }
     }
     if (upgradeDirection || upgradeType) {
-      doUpdate(assembly, entity, stage.stageNumber, existing, upgradeDirection, upgradeType)
+      const value = existing.getValueAtStage(stage.stageNumber)! as Mutable<Entity>
+      if (upgradeType) value.name = upgradeType
+      doUpdate(assembly, entity, stage.stageNumber, existing, value, upgradeDirection)
     }
-    if (entity.valid) entity.cancel_upgrade("player")
+    if (entity.valid) entity.cancel_upgrade(entity.force)
   }
 
   function onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void {
@@ -333,7 +344,7 @@ export function createAssemblyUpdater(
     const actualName = proxyName.substring(Prototypes.SelectionProxyPrefix.length)
 
     const position = getStagePosition(stage, proxyEntity)
-    const existing = assembly.content.findCompatible(actualName, position, proxyEntity.direction)
+    const existing = assembly.content.findCompatibleBasic(actualName, position, proxyEntity.direction)
     return existing
   }
 
@@ -356,11 +367,12 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     assembly: AssemblyContent,
   ): AssemblyEntity | nil {
-    let name = entityOrPreviewEntity.name
-    if (name.startsWith(Prototypes.PreviewEntityPrefix)) name = name.substring(Prototypes.PreviewEntityPrefix.length)
     const position = getStagePosition(stage, entityOrPreviewEntity)
-    const existing = assembly.content.findCompatible(name, position, entityOrPreviewEntity.direction)
-    return existing
+    const name = entityOrPreviewEntity.name
+    if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
+      return assembly.content.findCompatibleBasic(name.substring(Prototypes.PreviewEntityPrefix.length), position, nil)
+    }
+    return assembly.content.findCompatible(entityOrPreviewEntity, position, nil)
   }
 
   function onMoveEntityToStage(

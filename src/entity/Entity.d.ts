@@ -18,6 +18,11 @@ export interface Entity {
   readonly name: string
   readonly items?: Record<string, number>
 }
-export interface BasicEntityInfo extends Entity, EntityPose {
+export interface BasicEntityInfo {
+  readonly name: string
+  readonly type: string
   readonly surface: LuaSurface
+  readonly position: Position
+  readonly direction: defines.direction
+  readonly belt_to_ground_type?: "input" | "output"
 }

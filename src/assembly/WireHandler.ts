@@ -138,11 +138,7 @@ function analyzeExistingConnections(
 
   for (const existingConnection of existingConnections) {
     const otherLuaEntity = existingConnection.target_entity
-    const otherEntity = content.findCompatible(
-      otherLuaEntity.name,
-      getStagePosition(stage, otherLuaEntity),
-      otherLuaEntity.direction,
-    )
+    const otherEntity = content.findCompatible(otherLuaEntity, getStagePosition(stage, otherLuaEntity), nil)
     if (!otherEntity) continue
     const otherConnections = assemblyConnections && assemblyConnections.get(otherEntity)
     const matchingConnection =

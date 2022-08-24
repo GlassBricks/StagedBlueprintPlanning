@@ -52,6 +52,8 @@ export declare const enum L_Interaction {
   EntityMovedFromStage = "bp3.interaction.entity-moved-from-stage",
   /** Entity moved back to __1__ */
   EntityMovedBackToStage = "bp3.interaction.entity-moved-back-to-stage",
+  /** This cannot be rotated */
+  CannotRotateEntity = "bp3.interaction.cannot-rotate-entity",
   /** Not in an assembly */
   PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",
   /** Entity is not in an assembly */

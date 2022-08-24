@@ -12,6 +12,7 @@
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
+import { BasicEntityInfo } from "../../entity/Entity"
 
 let content: MutableEntityMap
 before_each(() => {
@@ -41,20 +42,52 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     content.add(entity)
 
-    assert.equal(entity, content.findCompatible("foo", { x: 0, y: 0 }, nil))
+    assert.equal(entity, content.findCompatibleBasic("foo", { x: 0, y: 0 }, nil))
   })
 
   test("finds compatible if same category", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, 0, 1)
     content.add(entity)
 
-    assert.equal(entity, content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, nil))
+    assert.equal(entity, content.findCompatibleBasic("assembling-machine-2", { x: 0, y: 0 }, nil))
   })
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
-    assert.nil(content.findCompatible("test2", entity.position, nil))
-    assert.nil(content.findCompatible("foo", entity.position, defines.direction.south))
+    assert.nil(content.findCompatibleBasic("test2", entity.position, nil))
+    assert.nil(content.findCompatibleBasic("foo", entity.position, defines.direction.south))
+  })
+
+  test("find compatible not basic returns same entity if is flipped underground", () => {
+    const same: BasicEntityInfo = {
+      name: "underground-belt",
+      type: "underground-belt",
+      belt_to_ground_type: "input",
+      position: { x: 0, y: 0 },
+      direction: defines.direction.west,
+      surface: nil!,
+    }
+    const flipped: BasicEntityInfo = {
+      name: "underground-belt",
+      type: "underground-belt",
+      belt_to_ground_type: "output",
+      position: { x: 0, y: 0 },
+      direction: defines.direction.east,
+      surface: nil!,
+    }
+    const assemblyEntity = createAssemblyEntity(
+      { name: "underground-belt", type: "input" },
+      {
+        x: 0,
+        y: 0,
+      },
+      defines.direction.west,
+      1,
+    )
+    content.add(assemblyEntity)
+
+    assert.equal(assemblyEntity, content.findCompatible(same, { x: 0, y: 0 }, nil))
+    assert.equal(assemblyEntity, content.findCompatible(flipped, { x: 0, y: 0 }, nil))
   })
 })
 

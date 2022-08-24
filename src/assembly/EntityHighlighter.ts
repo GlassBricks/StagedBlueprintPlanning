@@ -312,6 +312,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
   }
   function updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    // ignore start and end stage for now
     updateAssociatedEntitiesAndErrorHighlight(assembly, entity)
     updateErrorIndicators(assembly, entity)
     updateAllConfigChangedHighlights(assembly, entity)

@@ -47,6 +47,7 @@ function noop() {
 
 export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Partial<T>): T {
   return simpleMock<T>({
+    type: params.name,
     direction: 0,
     position: { x: 0, y: 0 },
     ...params,
@@ -57,12 +58,14 @@ export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Parti
     operable: true,
     circuit_connection_definitions: [],
     disconnect_neighbour: noop,
+    force: "player",
   })
 }
 export interface BuiltinEntityKeys {
   valid: true
   object_name: true
 
+  type: true
   direction: true
   destructible: true
   minable: true

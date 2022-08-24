@@ -177,6 +177,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       direction: !flipped ? defines.direction.east : defines.direction.west,
       type: inOut,
     })!
+    entity.rotatable = false // should not matter
     const otherDir = flipped ? "input" : "output"
     const updated = DefaultEntityHandler.updateEntity(
       entity,
@@ -188,6 +189,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     )
     assert.equal(entity, updated)
     assert.equal(otherDir, updated.belt_to_ground_type)
+    assert.false(updated.rotatable)
   })
 
   test("can upgrade underground", () => {
@@ -222,6 +224,7 @@ test("can flip loader", () => {
     direction: defines.direction.east,
   })!
   entity.loader_type = "input"
+  entity.rotatable = false // should not matter
   const updated = DefaultEntityHandler.updateEntity(
     entity,
     {
@@ -232,6 +235,7 @@ test("can flip loader", () => {
   )
   assert.equal(entity, updated)
   assert.equal("output", updated.loader_type)
+  assert.false(updated.rotatable)
 })
 
 test("can handle item changes", () => {

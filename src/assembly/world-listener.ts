@@ -142,8 +142,6 @@ Events.on_player_rotated_entity((e) => luaEntityPotentiallyUpdated(e.entity, e.p
 Events.on_player_fast_transferred((e) => luaEntityPotentiallyUpdated(e.entity))
 
 interface AnnotatedEntity extends BasicEntityInfo {
-  readonly direction: defines.direction
-  readonly assembly: Assembly
   readonly stage: Stage
 }
 // in global, so no desync in case of bugs
@@ -173,20 +171,21 @@ Events.on_load(() => {
 function clearLastDeleted(): void {
   const { lastDeleted } = state
   if (lastDeleted) {
-    const { assembly, stage } = lastDeleted
-    if (assembly.valid && stage.valid) DefaultAssemblyUpdater.onEntityDeleted(assembly, lastDeleted, stage)
+    const { stage } = lastDeleted
+    if (stage.valid) DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, lastDeleted, stage)
     state.lastDeleted = nil
   }
 }
 
-function setLastDeleted(entity: LuaEntity, assembly: Assembly, stage: Stage): void {
+function setLastDeleted(entity: LuaEntity, stage: Stage): void {
   clearLastDeleted()
   state.lastDeleted = {
     name: entity.name,
+    type: entity.type,
     position: entity.position,
     direction: entity.direction,
     surface: entity.surface,
-    assembly,
+    belt_to_ground_type: entity.type === "underground-belt" ? entity.belt_to_ground_type : nil,
     stage,
   }
 }
@@ -216,7 +215,7 @@ Events.on_player_mined_entity((e) => {
     state.currentlyInBuild = true
   }
   if (state.currentlyInBuild) {
-    setLastDeleted(entity, assembly, stage)
+    setLastDeleted(entity, stage)
   } else {
     DefaultAssemblyUpdater.onEntityDeleted(assembly, entity, stage)
   }
