@@ -76,12 +76,10 @@ function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, As
   if (!assembly) return $multi()
   const position = getStagePosition(stage, entity)
   const name = entity.name
-  let found: AssemblyEntity | nil
-  if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
-    found = assembly.content.findCompatibleBasic(name.substring(Prototypes.PreviewEntityPrefix.length), position, nil)
-  } else {
-    found = assembly.content.findCompatible(entity, position, nil)
-  }
+  const actualName = name.startsWith(Prototypes.PreviewEntityPrefix)
+    ? name.substring(Prototypes.PreviewEntityPrefix.length)
+    : name
+  const found = assembly.content.findCompatibleAnyDirection(actualName, position)
   if (found) return $multi(stage, found)
   return $multi()
 }
