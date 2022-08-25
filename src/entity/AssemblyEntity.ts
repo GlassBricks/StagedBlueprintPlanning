@@ -237,7 +237,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   adjustValueAtStage(stage: StageNumber, value: T): boolean {
-    const { firstStage, stageDiffs } = this
+    const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
     const diff = this.setValueAndGetDiff(stage, value)
     if (!diff) return false
@@ -291,19 +291,18 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (newName === previousName) return false
     if (stage === this.firstStage) {
       this.firstValue.name = newName
-      return true
-    }
-
-    const nameInPreviousStage = this.getNameAtStage(stage - 1)
-    const nameChanged = nameInPreviousStage !== newName
-    if (nameChanged) {
-      const stageDiff = stageDiffs[stage] || (stageDiffs[stage] = {} as any)
-      stageDiff.name = newName
     } else {
-      const stageDiff = stageDiffs[stage]
-      if (stageDiff) {
-        delete stageDiff.name
-        if (isEmpty(stageDiff)) delete stageDiffs[stage]
+      const nameInPreviousStage = this.getNameAtStage(stage - 1)
+      const nameChanged = nameInPreviousStage !== newName
+      if (nameChanged) {
+        const stageDiff = stageDiffs[stage] || (stageDiffs[stage] = {} as any)
+        stageDiff.name = newName
+      } else {
+        const stageDiff = stageDiffs[stage]
+        if (stageDiff) {
+          delete stageDiff.name
+          if (isEmpty(stageDiff)) delete stageDiffs[stage]
+        }
       }
     }
     this.trimDiffs(stage, { name: newName } as StageDiff<T>)

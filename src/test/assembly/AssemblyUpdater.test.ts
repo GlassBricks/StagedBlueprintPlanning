@@ -90,10 +90,11 @@ function createEntity(args?: Partial<LuaEntity>): LuaEntity & TestEntity {
     ...args,
   })
 }
+const playerIndex = 1 as PlayerIndex
 
 function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
-  assemblyUpdater.onEntityCreated(assembly, entity, stage)
+  assemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
   const found = assembly.content.findCompatible(entity, entity.position, nil) as AssemblyEntity<TestEntity> | nil
   assert(found)
   return { luaEntity: entity, added: found! }
@@ -115,7 +116,7 @@ function createRealEntity(args: SurfaceCreateEntity) {
 function addRealEntity(args: SurfaceCreateEntity) {
   const entity = createRealEntity(args)!
   assert.not_nil(entity, "created entity")
-  assemblyUpdater.onEntityCreated(assembly, entity, stage)
+  assemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
   const found = assembly.content.findCompatible(entity, entity.position, nil) as AssemblyEntity<BlueprintEntity> | nil
   assert(found)
   return { luaEntity: entity, added: found! }
@@ -217,9 +218,9 @@ function assertNoEntities() {
   entitiesAsserted = true
 }
 
-function assertNotified(entity: LuaEntity, message: LocalisedString) {
+function assertNotified(entity: LuaEntity, message: LocalisedString, errorSound: boolean) {
   assert.spy(worldNotifier.createNotification).called(1)
-  assert.spy(worldNotifier.createNotification).called_with(match.ref(entity), message)
+  assert.spy(worldNotifier.createNotification).called_with(match.ref(entity), playerIndex, message, errorSound)
   notificationsAsserted = true
 }
 
@@ -247,7 +248,7 @@ describe("add", () => {
 
   test.each([1, 2], "at same or higher stage updates the newly added entity, added stage: %d", (stageNumber) => {
     const { luaEntity, added } = addAndReset(1, stageNumber)
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, playerIndex)
     assertOneEntity()
     assertUpdateCalled(added, stageNumber, stageNumber, false)
   })
@@ -259,7 +260,7 @@ describe("add", () => {
       newEntity.prop1 = 3
       newEntity.direction = defines.direction.east
     }
-    assemblyUpdater.onEntityCreated(assembly, newEntity, stage) // again
+    assemblyUpdater.onEntityCreated(assembly, newEntity, stage, playerIndex) // again
     // updates entity
     assert.equal(newEntity, added.getWorldEntity(1))
     assert.same(1, added.getFirstStage())
@@ -272,35 +273,35 @@ describe("add", () => {
     // records old stage
     assert.equal(3, added.getOldStage())
     // creates notification
-    assertNotified(newEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"])
+    assertNotified(newEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 })
 
 describe("delete", () => {
   test("not in assembly does nothing", () => {
     const entity = createEntity()
-    assemblyUpdater.onEntityDeleted(assembly, entity, stage)
+    assemblyUpdater.onEntityDeleted(assembly, entity, stage, playerIndex)
     assertNoEntities()
     assertNoCalls()
   })
 
   test("in stage below base does nothing (bug)", () => {
     const { luaEntity } = addAndReset(2, 1)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage, playerIndex)
     assertOneEntity()
     assertNoCalls()
   })
 
   test("in stage above base forbids deletion", () => {
     const { luaEntity, added } = addAndReset(1, 2)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage, playerIndex)
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, true)
   })
 
   test("in first stage deletes entity", () => {
     const { luaEntity, added } = addAndReset()
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage, playerIndex)
     assert.falsy(added.isSettingsRemnant)
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
@@ -309,18 +310,18 @@ describe("delete", () => {
   test("in first stage with oldStage moves back to old stage", () => {
     const { luaEntity, added } = addAndReset(3, 2)
     added.moveToStage(2, true)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage, playerIndex)
     assert.falsy(added.isSettingsRemnant)
     assertOneEntity()
     assertUpdateCalled(added, 2, 3, false)
     assert.nil(added.getOldStage())
-    assertNotified(luaEntity, [L_Interaction.EntityMovedBackToStage, "mock stage 3"])
+    assertNotified(luaEntity, [L_Interaction.EntityMovedBackToStage, "mock stage 3"], false)
   })
 
   test("in first stage with updates creates settings remnant", () => {
     const { luaEntity, added } = addAndReset()
     added._applyDiffAtStage(2, { prop1: 3 })
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage, playerIndex)
     assertOneEntity()
     assert.true(added.isSettingsRemnant)
     assertMakeSettingsRemnantCalled(added)
@@ -341,7 +342,7 @@ describe("revive", () => {
     added._applyDiffAtStage(5, { prop1: 4 })
     added.isSettingsRemnant = true
 
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, playerIndex)
     assert.equal(luaEntity, added.getWorldEntity(reviveStage))
     assert.falsy(added.isSettingsRemnant)
     assert.equal(added.getFirstStage(), reviveStage)
@@ -368,7 +369,7 @@ describe("revive", () => {
 
     if (withChanges) luaEntity.prop1 = 1
 
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, playerIndex)
     assert.falsy(added.isSettingsRemnant)
     assert.equal(added.getFirstStage(), 1)
 
@@ -383,21 +384,21 @@ describe("revive", () => {
 describe("update", () => {
   test("non-existent defaults to add behavior (bug)", () => {
     const entity = createEntity()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, playerIndex)
     const added = assembly.content.findCompatibleBasic("test", pos, nil) as AssemblyEntity<TestEntity>
     assertAdded(added, entity)
   })
 
   test("with no changes does nothing", () => {
     const { luaEntity } = addAndReset()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
     assertOneEntity()
     assertNoCalls()
   })
 
   test("in lower than first stage defaults to add below behavior (bug)", () => {
     const { luaEntity, added } = addAndReset(3, 1)
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
     assert.equal(luaEntity, added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, 3, true)
@@ -407,7 +408,7 @@ describe("update", () => {
   test("in first stage updates all entities", () => {
     const { luaEntity, added } = addAndReset(2, 2)
     luaEntity.prop1 = 3
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
     assert.equal(3, added.getFirstValue().prop1)
 
     assertOneEntity()
@@ -424,7 +425,7 @@ describe("update", () => {
       }
 
       luaEntity.prop1 = 3 // changed
-      assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
+      assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
       assert.equal(2, added.getFirstValue().prop1)
       if (withExistingChanges) {
         assertStageDiffs(added, { 2: { prop1: 3, prop2: "val2" } })
@@ -442,7 +443,7 @@ describe("update", () => {
     added._applyDiffAtStage(2, { prop1: 5 })
     assert.true(added.hasStageDiff())
     luaEntity.prop1 = 2
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
 
     assertOneEntity()
     assertUpdateCalled(added, 2, nil, false)
@@ -454,7 +455,7 @@ describe("rotate", () => {
     const { luaEntity, added } = addAndReset(2, 2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, oldDirection)
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, oldDirection)
     assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -464,11 +465,11 @@ describe("rotate", () => {
     const { luaEntity, added } = addAndReset(1, 2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, oldDirection)
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, oldDirection)
     assert.equal(oldDirection, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
+    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity], true)
   })
 })
 
@@ -477,7 +478,7 @@ describe("fast replace", () => {
     const { luaEntity, added } = addAndReset()
     const newEntity = createEntity({ name: "test2" })
     luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex)
     assert.equal(newEntity, added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -487,7 +488,7 @@ describe("fast replace", () => {
     const oldDirection = luaEntity.direction
     const newEntity = createEntity({ name: "test2", direction: direction.west })
     luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex, oldDirection)
     assert.equal(newEntity, added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -497,11 +498,11 @@ describe("fast replace", () => {
     const oldDirection = luaEntity.direction
     const newEntity = createEntity({ name: "test2", direction: direction.west })
     luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex, oldDirection)
     assert.equal(oldDirection, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(newEntity, [L_Interaction.CannotRotateEntity])
+    assertNotified(newEntity, [L_Interaction.CannotRotateEntity], true)
   })
 })
 
@@ -511,7 +512,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
     rawset(luaEntity, "get_upgrade_direction", () => nil)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
     assert.equal("test2", added.getFirstValue().name)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -521,7 +522,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => nil)
     rawset(luaEntity, "get_upgrade_direction", () => direction.west)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
     assert.equal(direction.west, added.direction)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -531,11 +532,11 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
     rawset(luaEntity, "get_upgrade_direction", () => direction.west)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
     assert.equal(0, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
+    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity], true)
   })
 })
 
@@ -601,7 +602,7 @@ describe("undergrounds", () => {
     const [rotated] = luaEntity.rotate()
     assert(rotated)
 
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, direction.west)
 
     assert.equal("output", added.getFirstValue().type)
     assert.equal(direction.west, added.direction)
@@ -616,14 +617,14 @@ describe("undergrounds", () => {
     const [rotated] = luaEntity.rotate()
     assert(rotated)
 
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, direction.west)
 
     assert.equal("input", added.getFirstValue().type)
     assert.equal(direction.west, added.direction)
 
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
+    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity], true)
   })
 
   test("rotating pair of underground belts in first stage rotates all entities", () => {
@@ -632,7 +633,7 @@ describe("undergrounds", () => {
     const [rotated1] = entity1.rotate()
     assert(rotated1)
 
-    assemblyUpdater.onEntityRotated(assembly, entity1, stage, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, entity1, stage, playerIndex, direction.west)
 
     assert.equal("output", added1.getFirstValue().type)
     assert.equal(direction.west, added1.direction)
@@ -650,7 +651,7 @@ describe("undergrounds", () => {
     const [rotated1] = entity1.rotate()
     assert(rotated1)
 
-    assemblyUpdater.onEntityRotated(assembly, entity1, stage, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, entity1, stage, playerIndex, direction.west)
 
     assert.equal("input", added1.getFirstValue().type)
     assert.equal(direction.west, added1.direction)
@@ -659,7 +660,7 @@ describe("undergrounds", () => {
 
     assertNEntities(2)
     assertUpdateCalled(added1, 2, 2, false)
-    assertNotified(entity1, [L_Interaction.CannotFlipUndergroundDueToPairInLowerStage])
+    assertNotified(entity1, [L_Interaction.CannotFlipUndergroundDueToPairInLowerStage], true)
   })
 
   test("cannot rotate underground with multiple pairs", () => {
@@ -676,7 +677,7 @@ describe("undergrounds", () => {
       const [, hasMultiple] = findUndergroundPair(assembly.content, added[i - 1])
       assert.true(hasMultiple)
 
-      assemblyUpdater.onEntityRotated(assembly, tryRotate, stage, direction.west)
+      assemblyUpdater.onEntityRotated(assembly, tryRotate, stage, playerIndex, direction.west)
 
       assert.equal("input", added1.getFirstValue().type)
       assert.equal(direction.west, added1.direction)
@@ -687,7 +688,7 @@ describe("undergrounds", () => {
 
       assertNEntities(3)
       assertUpdateCalled(added[i - 1], 1, 1, false, 0)
-      assertNotified(tryRotate, [L_Interaction.CannotFlipUndergroundDueToMultiplePairs])
+      assertNotified(tryRotate, [L_Interaction.CannotFlipUndergroundDueToMultiplePairs], true)
       worldUpdater.updateWorldEntities.clear()
       worldNotifier.createNotification.clear()
 
@@ -710,7 +711,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
 
       assert.equal("fast-underground-belt", added.getFirstValue().name)
       assert.equal("input", added.getFirstValue().type)
@@ -725,7 +726,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
 
       assert.equal("fast-underground-belt", added.getValueAtStage(2)?.name)
       assert.equal("input", added.getFirstValue().type)
@@ -740,7 +741,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: entity1.force,
       })
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage, playerIndex)
 
       assert.equal("fast-underground-belt", added1.getFirstValue().name)
       assert.equal("input", added1.getFirstValue().type)
@@ -765,7 +766,7 @@ describe("undergrounds", () => {
           target: "fast-underground-belt",
           force: tryUpgrade.force,
         })
-        assemblyUpdater.onEntityMarkedForUpgrade(assembly, tryUpgrade, stage)
+        assemblyUpdater.onEntityMarkedForUpgrade(assembly, tryUpgrade, stage, playerIndex)
 
         assert.equal("input", added1.getFirstValue().type)
         assert.equal(direction.west, added1.direction)
@@ -776,7 +777,7 @@ describe("undergrounds", () => {
 
         assertNEntities(3)
         assertNoCalls()
-        assertNotified(tryUpgrade, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs])
+        assertNotified(tryUpgrade, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs], true)
         worldNotifier.createNotification.clear()
 
         assert.nil(tryUpgrade.get_upgrade_target())
@@ -795,7 +796,7 @@ describe("undergrounds", () => {
       })!
       assert.not_nil(newEntity)
 
-      assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage)
+      assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex)
       assert.equal("fast-underground-belt", added1.getFirstValue().name)
       assert.equal("input", added1.getFirstValue().type)
       assert.equal(direction.west, added1.direction)
@@ -839,21 +840,21 @@ describe("cleanup tool", () => {
 describe("move to current stage", () => {
   test("normal entity", () => {
     const { luaEntity, added } = addAndReset(1, 3)
-    assemblyUpdater.onMoveEntityToStage(assembly, luaEntity, stage)
+    assemblyUpdater.onMoveEntityToStage(assembly, luaEntity, stage, playerIndex)
     assert.equal(3, added.getFirstStage())
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
-    assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"])
+    assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
   })
   test("preview entity", () => {
     const { luaEntity, added } = addAndReset(1, 3)
     luaEntity.destroy()
     const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
-    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage)
+    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
     assert.equal(3, added.getFirstStage())
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
-    assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"])
+    assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
   })
   test("settings remnant", () => {
     // with preview again
@@ -861,7 +862,7 @@ describe("move to current stage", () => {
     luaEntity.destroy()
     const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
     added.isSettingsRemnant = true
-    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage)
+    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
     assert.equal(3, added.getFirstStage())
     assertOneEntity()
     assertReviveSettingsRemnantCalled(added)
@@ -926,7 +927,7 @@ describe("circuit wires", () => {
       addAndReset()
       setupNewWire(luaEntity1, entity1)
 
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage)
+      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage, playerIndex)
 
       assertUpdateCalled(entity1, 1, nil, false)
       assertNEntities(2)
@@ -946,7 +947,7 @@ describe("circuit wires", () => {
         wireSaver.getWireConnectionDiff.invokes(() => false as any)
         return $multi([], [connection])
       })
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage)
+      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage, playerIndex)
       assert.falsy(assembly.content.getWireConnections(entity1)?.get(entity2))
       assert.falsy(assembly.content.getWireConnections(entity2)?.get(entity1))
       assertUpdateCalled(entity1, 1, nil, false)
@@ -961,7 +962,7 @@ describe("circuit wires", () => {
       setupNewWire(luaEntity1, entity1)
       addAndReset()
 
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage)
+      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage, playerIndex)
       assertNoCalls()
       assertNEntities(2)
     })
