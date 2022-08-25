@@ -136,7 +136,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   private firstStage: StageNumber
   private readonly firstValue: Mutable<T>
-  private readonly stageDiffs: Mutable<StageDiffs<T>> = {}
+  private readonly stageDiffs: PRecord<StageNumber, Mutable<StageDiff<T>>> = {}
   private oldStage: StageNumber | nil
 
   private readonly stageProperties: {
@@ -209,7 +209,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (stage <= this.firstStage) return name
     for (const [changedStage, diff] of pairs(this.stageDiffs)) {
       if (changedStage > stage) break
-      if (diff.name) name = diff.name
+      if (diff.name) name = diff.name!
     }
     return name
   }
@@ -241,27 +241,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     assert(stage >= firstStage, "stage must be >= first stage")
     const diff = this.setValueAndGetDiff(stage, value)
     if (!diff) return false
-
-    // trim diffs in higher stages, remove those that are ineffectual
-    for (const [stageNumber, changes] of pairs(stageDiffs)) {
-      if (stageNumber <= stage) continue
-      for (const [k, v] of pairs(diff)) {
-        if (deepCompare(changes[k], v)) {
-          // changed to same value, remove
-          delete changes[k]
-        } else {
-          // changed to different value, no longer need to consider for trimming
-          delete diff[k]
-        }
-      }
-      if (isEmpty(changes)) delete stageDiffs[stageNumber]
-      if (isEmpty(diff)) break
-    }
+    this.trimDiffs(stage, diff)
 
     this.oldStage = nil
     return true
   }
-
   private setValueAndGetDiff(stage: StageNumber, value: T): StageDiff<T> | nil {
     if (stage === this.firstStage) {
       const { firstValue } = this
@@ -281,6 +265,25 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
   }
 
+  private trimDiffs(stage: number, diff: StageDiff<T>): void {
+    // trim diffs in higher stages, remove those that are ineffectual
+    const { stageDiffs } = this
+    for (const [stageNumber, changes] of pairs(stageDiffs)) {
+      if (stageNumber <= stage) continue
+      for (const [k, v] of pairs(diff)) {
+        if (deepCompare(changes[k], v)) {
+          // changed to same value, remove
+          delete changes[k]
+        } else {
+          // changed to different value, no longer need to consider for trimming
+          delete diff[k]
+        }
+      }
+      if (isEmpty(changes)) delete stageDiffs[stageNumber]
+      if (isEmpty(diff)) break
+    }
+  }
+
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
     const { firstStage, stageDiffs } = this
     assert(stage >= firstStage, "stage must be >= first stage")
@@ -288,10 +291,23 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (newName === previousName) return false
     if (stage === this.firstStage) {
       this.firstValue.name = newName
-    } else {
-      const diff = stageDiffs[stage] || (stageDiffs[stage] = {} as Mutable<StageDiff<T>>)
-      ;(diff as Mutable<T>).name = newName
+      return true
     }
+
+    const nameInPreviousStage = this.getNameAtStage(stage - 1)
+    const nameChanged = nameInPreviousStage !== newName
+    if (nameChanged) {
+      const stageDiff = stageDiffs[stage] || (stageDiffs[stage] = {} as any)
+      stageDiff.name = newName
+    } else {
+      const stageDiff = stageDiffs[stage]
+      if (stageDiff) {
+        delete stageDiff.name
+        if (isEmpty(stageDiff)) delete stageDiffs[stage]
+      }
+    }
+    this.trimDiffs(stage, { name: newName } as StageDiff<T>)
+
     this.oldStage = nil
     return true
   }

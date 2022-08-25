@@ -12,7 +12,12 @@
 import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { findUndergroundPair } from "../../assembly/assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
-import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
+import {
+  AssemblyUpdater,
+  createAssemblyUpdater,
+  DefaultAssemblyUpdater,
+  WorldNotifier,
+} from "../../assembly/AssemblyUpdater"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { Prototypes } from "../../constants"
@@ -467,6 +472,73 @@ describe("rotate", () => {
   })
 })
 
+describe("fast replace", () => {
+  test("sets world entity and calls update", () => {
+    const { luaEntity, added } = addAndReset()
+    const newEntity = createEntity({ name: "test2" })
+    luaEntity.destroy()
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage)
+    assert.equal(newEntity, added.getWorldEntity(1))
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+  test("with new direction sets world entity and calls update", () => {
+    const { luaEntity, added } = addAndReset()
+    const oldDirection = luaEntity.direction
+    const newEntity = createEntity({ name: "test2", direction: direction.west })
+    luaEntity.destroy()
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
+    assert.equal(newEntity, added.getWorldEntity(1))
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+  test("with forbidden rotation", () => {
+    const { luaEntity, added } = addAndReset(1, 2)
+    const oldDirection = luaEntity.direction
+    const newEntity = createEntity({ name: "test2", direction: direction.west })
+    luaEntity.destroy()
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
+    assert.equal(oldDirection, added.getDirection())
+    assertOneEntity()
+    assertUpdateCalled(added, 2, 2, false)
+    assertNotified(newEntity, [L_Interaction.CannotRotateEntity])
+  })
+})
+
+describe("mark for upgrade", () => {
+  test("upgrade to new value", () => {
+    const { luaEntity, added } = addAndReset()
+    rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
+    rawset(luaEntity, "get_upgrade_direction", () => nil)
+    rawset(luaEntity, "cancel_upgrade", () => true)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+    assert.equal("test2", added.getFirstValue().name)
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+  test("upgrade to rotated", () => {
+    const { luaEntity, added } = addAndReset()
+    rawset(luaEntity, "get_upgrade_target", () => nil)
+    rawset(luaEntity, "get_upgrade_direction", () => direction.west)
+    rawset(luaEntity, "cancel_upgrade", () => true)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+    assert.equal(direction.west, added.direction)
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+  test("upgrade to rotate forbidden", () => {
+    const { luaEntity, added } = addAndReset(1, 2)
+    rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
+    rawset(luaEntity, "get_upgrade_direction", () => direction.west)
+    rawset(luaEntity, "cancel_upgrade", () => true)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+    assert.equal(0, added.getDirection())
+    assertOneEntity()
+    assertUpdateCalled(added, 2, 2, false)
+    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
+  })
+})
+
 describe("undergrounds", () => {
   before_each(() => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
@@ -623,72 +695,64 @@ describe("undergrounds", () => {
       assert.true(rotatedBack, "rotated back")
     }
   })
-})
 
-describe("fast replace", () => {
-  test("sets world entity and calls update", () => {
-    const { luaEntity, added } = addAndReset()
-    const newEntity = createEntity({ name: "test2" })
-    luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage)
-    assert.equal(newEntity, added.getWorldEntity(1))
-    assertOneEntity()
-    assertUpdateCalled(added, 1, nil, false)
-  })
-  test("with new direction sets world entity and calls update", () => {
-    const { luaEntity, added } = addAndReset()
-    const oldDirection = luaEntity.direction
-    const newEntity = createEntity({ name: "test2", direction: direction.west })
-    luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
-    assert.equal(newEntity, added.getWorldEntity(1))
-    assertOneEntity()
-    assertUpdateCalled(added, 1, nil, false)
-  })
-  test("with forbidden rotation", () => {
-    const { luaEntity, added } = addAndReset(1, 2)
-    const oldDirection = luaEntity.direction
-    const newEntity = createEntity({ name: "test2", direction: direction.west })
-    luaEntity.destroy()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, oldDirection)
-    assert.equal(oldDirection, added.getDirection())
-    assertOneEntity()
-    assertUpdateCalled(added, 2, 2, false)
-    assertNotified(newEntity, [L_Interaction.CannotRotateEntity])
-  })
-})
+  describe("upgrading undergrounds", () => {
+    before_each(() => {
+      mock(DefaultAssemblyUpdater, true)
+    })
+    after_each(() => {
+      mock.revert(DefaultAssemblyUpdater)
+    })
 
-describe("mark for upgrade", () => {
-  test("upgrade to new value", () => {
-    const { luaEntity, added } = addAndReset()
-    rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
-    rawset(luaEntity, "get_upgrade_direction", () => nil)
-    rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
-    assert.equal("test2", added.getFirstValue().name)
-    assertOneEntity()
-    assertUpdateCalled(added, 1, nil, false)
-  })
-  test("upgrade to rotated", () => {
-    const { luaEntity, added } = addAndReset()
-    rawset(luaEntity, "get_upgrade_target", () => nil)
-    rawset(luaEntity, "get_upgrade_direction", () => direction.west)
-    rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
-    assert.equal(direction.west, added.direction)
-    assertOneEntity()
-    assertUpdateCalled(added, 1, nil, false)
-  })
-  test("upgrade to rotate forbidden", () => {
-    const { luaEntity, added } = addAndReset(1, 2)
-    rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "test2" }))
-    rawset(luaEntity, "get_upgrade_direction", () => direction.west)
-    rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
-    assert.equal(0, added.getDirection())
-    assertOneEntity()
-    assertUpdateCalled(added, 2, 2, false)
-    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity])
+    test("can upgrade underground in first layer", () => {
+      const { luaEntity, added } = createUndergroundBelt(1, 1)
+      luaEntity.order_upgrade({
+        target: "fast-underground-belt",
+        force: luaEntity.force,
+      })
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+
+      assert.equal("fast-underground-belt", added.getFirstValue().name)
+      assert.equal("input", added.getFirstValue().type)
+      assert.equal(direction.west, added.direction)
+      assertOneEntity()
+      assertUpdateCalled(added, 1, nil, false)
+    })
+
+    test("can upgrade underground in higher layer", () => {
+      const { luaEntity, added } = createUndergroundBelt(1, 2)
+      luaEntity.order_upgrade({
+        target: "fast-underground-belt",
+        force: luaEntity.force,
+      })
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage)
+
+      assert.equal("fast-underground-belt", added.getValueAtStage(2)?.name)
+      assert.equal("input", added.getFirstValue().type)
+
+      assertOneEntity()
+      assertUpdateCalled(added, 2, nil, false)
+    })
+
+    test("upgrading one underground in pair upgrades both", () => {
+      const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1, 2)
+      entity1.order_upgrade({
+        target: "fast-underground-belt",
+        force: entity1.force,
+      })
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage)
+
+      assert.equal("fast-underground-belt", added1.getFirstValue().name)
+      assert.equal("input", added1.getFirstValue().type)
+      assert.equal(direction.west, added1.direction)
+      assert.equal("fast-underground-belt", added2.getFirstValue().name)
+      assert.equal("output", added2.getFirstValue().type)
+      assert.equal(direction.east, added2.direction)
+
+      assertNEntities(2)
+      assertUpdateCalled(added1, 1, nil, false, 0)
+      assertUpdateCalled(added2, 2, nil, false, 1)
+    })
   })
 })
 

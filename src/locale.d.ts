@@ -58,6 +58,10 @@ export declare const enum L_Interaction {
   CannotFlipUndergroundDueToMultiplePairs = "bp3.interaction.cannot-flip-underground-due-to-multiple-pairs",
   /** This underground pairs with another underground in a lower stage, cannot flip. */
   CannotFlipUndergroundDueToPairInLowerStage = "bp3.interaction.cannot-flip-underground-due-to-pair-in-lower-stage",
+  /** This underground pairs with multiple other undergrounds, cannot upgrade. */
+  CannotUpgradeUndergroundDueToMultiplePairs = "bp3.interaction.cannot-upgrade-underground-due-to-multiple-pairs",
+  /** This underground pairs with another underground in a lower stage, cannot upgrade. */
+  CannotUpgradeUndergroundDueToPairInLowerStage = "bp3.interaction.cannot-upgrade-underground-due-to-pair-in-lower-stage",
   /** Not in an assembly */
   PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",
   /** Entity is not in an assembly */
