@@ -113,3 +113,7 @@ export const enum BuildableEntityTypes {
   // vehicles ignored
   wall = "wall",
 }
+
+export const enum L_Game {
+  CantBeRotated = "cant-be-rotated",
+}

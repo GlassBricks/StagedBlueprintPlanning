@@ -20,7 +20,7 @@ import {
 } from "../../assembly/AssemblyUpdater"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
-import { Prototypes } from "../../constants"
+import { L_Game, Prototypes } from "../../constants"
 import { AssemblyEntity, StageDiffs, StageNumber } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
 import { Entity } from "../../entity/Entity"
@@ -415,6 +415,28 @@ describe("update", () => {
     assertUpdateCalled(added, 2, nil, false)
   })
 
+  test("can detect rotate by pasting", () => {
+    const { luaEntity, added } = addAndReset(2, 2)
+    luaEntity.direction = defines.direction.east
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+
+    assert.equal(defines.direction.east, added.getDirection())
+    assertOneEntity()
+    assertUpdateCalled(added, 2, nil, false)
+  })
+
+  test("forbids rotate if in higher layer", () => {
+    const { luaEntity, added } = addAndReset(2, 3)
+    luaEntity.direction = defines.direction.east
+
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    assert.equal(defines.direction.north, added.getDirection())
+
+    assertOneEntity()
+    assertUpdateCalled(added, 3, 3, false)
+    assertNotified(luaEntity, [L_Game.CantBeRotated], true)
+  })
+
   test.each([false, true])(
     "in higher stage updates assembly.content and entities, with existing changes: %s",
     (withExistingChanges) => {
@@ -469,7 +491,7 @@ describe("rotate", () => {
     assert.equal(oldDirection, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity], true)
+    assertNotified(luaEntity, [L_Game.CantBeRotated], true)
   })
 })
 
@@ -502,7 +524,7 @@ describe("fast replace", () => {
     assert.equal(oldDirection, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(newEntity, [L_Interaction.CannotRotateEntity], true)
+    assertNotified(newEntity, [L_Game.CantBeRotated], true)
   })
 })
 
@@ -536,7 +558,7 @@ describe("mark for upgrade", () => {
     assert.equal(0, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity], true)
+    assertNotified(luaEntity, [L_Game.CantBeRotated], true)
   })
 })
 
@@ -658,7 +680,7 @@ describe("undergrounds", () => {
 
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
-    assertNotified(luaEntity, [L_Interaction.CannotRotateEntity], true)
+    assertNotified(luaEntity, [L_Game.CantBeRotated], true)
   })
 
   test.each(["lower", "higher"])("rotating %s underground in first stage rotates pair", (which) => {
@@ -695,7 +717,7 @@ describe("undergrounds", () => {
 
     assertNEntities(2)
     assertUpdateCalled(added1, 3, 3, false)
-    assertNotified(entity1, [L_Interaction.CannotRotateEntity], true)
+    assertNotified(entity1, [L_Game.CantBeRotated], true)
   })
 
   test("cannot rotate underground with multiple pairs", () => {

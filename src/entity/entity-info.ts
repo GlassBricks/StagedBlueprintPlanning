@@ -11,6 +11,7 @@
 
 import { PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
+import isCenteredSquare = BBox.isCenteredSquare
 
 let theEntityPrototypes: typeof game.entity_prototypes
 
@@ -45,10 +46,19 @@ export function getEntityCategory(entityName: string): CategoryName {
 }
 
 const selectionBoxes: PRecord<string, BBoxClass> = {}
+function computeSelectionBox(entityName: string): BBoxClass {
+  const prototype = getEntityPrototypes()[entityName]
+  if (!prototype) return BBox.coords(0, 0, 0, 0)
+  return BBox.load(prototype.selection_box)
+}
 export function getSelectionBox(entityName: string): BBoxClass {
   const selectionBox = selectionBoxes[entityName]
   if (selectionBox) return selectionBox
-  return (selectionBoxes[entityName] = BBox.load(getEntityPrototypes()[entityName].selection_box))
+  return (selectionBoxes[entityName] = computeSelectionBox(entityName))
+}
+
+export function isPasteRotatable(entityName: string): boolean {
+  return isCenteredSquare(getSelectionBox(entityName))
 }
 
 export function isUndergroundBeltType(entityName: string): boolean {

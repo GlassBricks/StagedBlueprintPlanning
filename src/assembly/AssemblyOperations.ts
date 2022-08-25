@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isWorldEntityAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
@@ -65,10 +65,11 @@ export function createAssemblyOperations(
 
 const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
   deleteAllWorldEntities(stage: StagePosition) {
-    stage.surface
-      .find_entities_filtered({ area: stage })
-      .filter((x) => isWorldEntityAssemblyEntity(x))
-      .forEach((x) => x.destroy())
+    for (const entity of stage.surface.find_entities_filtered({ area: stage })) {
+      if (entity.is_entity_with_owner && entity.has_flag("player-creation")) {
+        entity.destroy()
+      }
+    }
   },
 }
 

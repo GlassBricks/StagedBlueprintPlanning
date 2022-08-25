@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Prototypes } from "../constants"
+import { L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory, isUndergroundBeltType } from "../entity/entity-info"
@@ -339,7 +339,7 @@ export function createAssemblyUpdater(
     if (rotateAllowed) {
       existing.setDirection(newDirection)
     } else {
-      createNotification(entity, byPlayer, [L_Interaction.CannotRotateEntity], true)
+      createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
       updateSingleWorldEntity(assembly, existing, stage.stageNumber, false)
     }
     return rotateAllowed
@@ -365,9 +365,9 @@ export function createAssemblyUpdater(
       )
     }
 
-    const hasRotation = previousDirection !== nil && previousDirection !== entity.direction
-    if (hasRotation) {
-      const newDirection = entity.direction
+    const newDirection = entity.direction
+    const rotated = newDirection !== existing.getDirection()
+    if (rotated) {
       if (!tryRotateOrUndo(assembly, entity, stage, existing, newDirection, byPlayer)) {
         // don't update other stuff if rotation failed
         return
@@ -378,7 +378,7 @@ export function createAssemblyUpdater(
     assert(newValue, "could not save value on existing entity")
     assert(direction === existing.getDirection(), "direction mismatch on saved entity")
     const hasDiff = existing.adjustValueAtStage(stage.stageNumber, newValue)
-    if (hasDiff || hasRotation) {
+    if (hasDiff || rotated) {
       updateWorldEntities(assembly, existing, stage.stageNumber)
     }
   }
@@ -475,7 +475,7 @@ export function createAssemblyUpdater(
       }
       const isFirstStage = existing.getFirstStage() === stageNumber || (pair && pair.getFirstStage() === stageNumber)
       if (!isFirstStage) {
-        createNotification(entity, byPlayer, [L_Interaction.CannotRotateEntity], true)
+        createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
         return false
       }
       return true

@@ -13,7 +13,7 @@ import { oppositedirection } from "util"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
-import { getEntityCategory } from "../entity/entity-info"
+import { getEntityCategory, isPasteRotatable } from "../entity/entity-info"
 import { isEmpty, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableMap2D, newMap2D } from "../lib/map2d"
@@ -73,6 +73,16 @@ class EntityMapImpl implements MutableEntityMap {
       if (candidate.categoryName === categoryName && candidate.direction === direction) return candidate
     }
   }
+  findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil {
+    const { x, y } = position
+    const atPos = this.byPosition.get(x, y)
+    if (!atPos) return
+    const categoryName = getEntityCategory(entityName)
+    for (const candidate of atPos) {
+      if (candidate.categoryName === categoryName) return candidate
+    }
+  }
+
   findCompatible(
     entity: BasicEntityInfo,
     position: Position,
@@ -83,17 +93,11 @@ class EntityMapImpl implements MutableEntityMap {
       const direction = entity.belt_to_ground_type === "output" ? oppositedirection(entity.direction) : entity.direction
       return this.findCompatibleBasic(type, position, direction)
     }
-    return this.findCompatibleBasic(entity.name, position, previousDirection ?? entity.direction)
-  }
-
-  findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil {
-    const { x, y } = position
-    const atPos = this.byPosition.get(x, y)
-    if (!atPos) return
-    const categoryName = getEntityCategory(entityName)
-    for (const candidate of atPos) {
-      if (candidate.categoryName === categoryName) return candidate
+    const name = entity.name
+    if (isPasteRotatable(name)) {
+      return this.findCompatibleAnyDirection(name, position)
     }
+    return this.findCompatibleBasic(name, position, previousDirection ?? entity.direction)
   }
 
   countNumEntities(): number {
