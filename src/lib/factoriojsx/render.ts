@@ -105,10 +105,6 @@ declare const global: GlobalWithPlayers
 onPlayerInit((index) => {
   global.players[index].guiElements = {}
 })
-let players: typeof global.players
-Events.onInitOrLoad(() => {
-  players = global.players
-})
 
 const type = _G.type
 
@@ -260,7 +256,7 @@ function renderElement(
 
   const subscription = tracker.subscriptionContext
   if ((subscription && subscription.hasActions()) || !isEmpty(events)) {
-    players[element.player_index].guiElements[element.index] = {
+    global.players[element.player_index].guiElements[element.index] = {
       element,
       events,
       subscription,
@@ -323,13 +319,15 @@ export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | nil
 }
 
 function getInstance(element: BaseGuiElement): ElementInstance | nil {
-  return !element.valid ? nil : players[element.player_index].guiElements[element.index]
+  return !element.valid ? nil : global.players[element.player_index].guiElements[element.index]
 }
 
 export function destroy(element: BaseGuiElement | nil, destroyElement = true): void {
   if (!element || !element.valid) return
   // is lua gui element
-  const instance = players[element.player_index].guiElements[element.index]
+  const { player_index, index } = element
+  const guiElements = global.players[player_index].guiElements
+  const instance = guiElements[index]
   if (!instance) {
     for (const child of element.children) {
       destroy(child, false)
@@ -341,7 +339,6 @@ export function destroy(element: BaseGuiElement | nil, destroyElement = true): v
   }
 
   const { subscription } = instance
-  const { player_index, index } = element
   if (element.valid) {
     for (const child of element.children) {
       destroy(child, false)
@@ -349,7 +346,7 @@ export function destroy(element: BaseGuiElement | nil, destroyElement = true): v
   }
   subscription?.close()
   if (destroyElement && element.valid) element.destroy()
-  players[player_index].guiElements[index] = nil!
+  guiElements[index] = nil!
 }
 
 export function destroyChildren(element: BaseGuiElement): void {

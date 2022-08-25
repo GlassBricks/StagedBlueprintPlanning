@@ -26,11 +26,9 @@ declare const global: GlobalWithPlayers
 onPlayerInit((index) => {
   global.players[index].currentStage = state(nil)
 })
-let players: typeof global.players
-Events.onInitOrLoad(() => (players = global.players))
 
 function updatePlayer(player: LuaPlayer): void {
-  const data = players[player.index]
+  const data = global.players[player.index]
   if (!data) return // bug workaround
   const currentStage = data.currentStage
   const stage = currentStage.get()
@@ -58,7 +56,7 @@ AssemblyEvents.addListener((e) => {
 })
 
 export function playerCurrentStage(index: PlayerIndex): State<Stage | nil> {
-  return players[index].currentStage
+  return global.players[index].currentStage
 }
 
 export function teleportToStage(player: LuaPlayer, stage: Stage): void {
