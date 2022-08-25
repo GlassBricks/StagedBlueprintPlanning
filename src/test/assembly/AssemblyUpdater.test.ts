@@ -246,7 +246,7 @@ describe("add", () => {
     assertAdded(added, luaEntity)
   })
 
-  test.each([1, 2], "at same or higher stage updates the newly added entity, added stage: %d", (stageNumber) => {
+  test.each([1, 2])("at same or higher stage updates the newly added entity, added stage: %d", (stageNumber) => {
     const { luaEntity, added } = addAndReset(1, stageNumber)
     assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, playerIndex)
     assertOneEntity()
@@ -336,7 +336,7 @@ test("force delete", () => {
 })
 
 describe("revive", () => {
-  test.each([1, 2, 3, 4, 5, 6], "settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
+  test.each([1, 2, 3, 4, 5, 6])("settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
     const { luaEntity, added } = addAndReset(1, reviveStage)
     added._applyDiffAtStage(3, { prop1: 3 })
     added._applyDiffAtStage(5, { prop1: 4 })
@@ -362,7 +362,7 @@ describe("revive", () => {
     assertReviveSettingsRemnantCalled(added)
   })
 
-  test.each([false, true], "settings remnant 2->3, revive at stage 1, with changes: %s", (withChanges) => {
+  test.each([false, true])("settings remnant 2->3, revive at stage 1, with changes: %s", (withChanges) => {
     const { luaEntity, added } = addAndReset(2, 1)
     added._applyDiffAtStage(3, { prop1: 3 })
     added.isSettingsRemnant = true

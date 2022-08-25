@@ -75,14 +75,14 @@ function assertEntityCorrect(i: StageNumber): LuaEntity {
 }
 
 describe("updateWorldEntities", () => {
-  describe.each([false, true], "with entity changes %s", (withChanges) => {
+  describe.each([false, true])("with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
         entity._applyDiffAtStage(entity.getFirstStage(), { prop1: 2 })
         entity._applyDiffAtStage(3, { prop1: 1 })
       })
     }
-    test.each([1, 2, 3], "can create one entity %d", (stage) => {
+    test.each([1, 2, 3])("can create one entity %d", (stage) => {
       worldUpdater.updateWorldEntities(assembly, entity, stage, stage)
       for (let i = 1; i <= 3; i++) {
         if (i === stage) assertEntityCorrect(i)
