@@ -20,6 +20,10 @@ import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from "./blueprint-paste"
 import { getStageAtPosition } from "./world-register"
 
+/**
+ * Hooks to factorio events, and calls AssemblyUpdater.
+ */
+
 const Events = ProtectedEvents
 
 function getStageAtEntity(entity: LuaEntity): LuaMultiReturn<[Assembly, Stage] | [nil]> {

@@ -10,7 +10,7 @@
  */
 
 import { BBox } from "../lib/geometry"
-import { WorldArea } from "../utils/world-location"
+import { WorldArea } from "../lib/world-area"
 
 export function testArea(index: number): WorldArea {
   return {

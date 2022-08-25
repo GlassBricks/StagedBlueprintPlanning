@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { applyDiffToEntity, getEntityDiff, getNilPlaceholder } from "../../entity/diff"
+import { applyDiffToEntity, getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
 
 const entity1 = {
   name: "1",

@@ -42,7 +42,7 @@ declare module "../entity/AssemblyEntity" {
 }
 
 /**
- * Handles various highlights (rendering) for an entity.
+ * Handles various highlights (preview, icons, highlight-boxes) for world entities.
  *
  * @noSelf
  */
@@ -99,6 +99,7 @@ interface SpriteConfig {
   readonly scaleRelative?: boolean
   readonly renderLayer: RenderLayer
 }
+
 export const enum HighlightValues {
   Error = "not-allowed",
   SettingsRemnant = "train-visualization",
@@ -108,7 +109,6 @@ export const enum HighlightValues {
   ConfigChangedLater = "item/blueprint",
   UpgradedLater = "item/upgrade-planner",
 }
-
 const highlightConfigs: {
   [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig
 } = {

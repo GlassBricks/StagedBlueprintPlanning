@@ -61,8 +61,8 @@ before_each(() => {
   worldUpdater = {
     updateWorldEntities: spyFn(),
     forceDeleteEntity: spyFn(),
-    deleteWorldEntities: spyFn(),
-    deleteWorldEntitiesInStage: spyFn(),
+    deleteAllEntities: spyFn(),
+    deleteAllEntitiesInStage: spyFn(),
     deleteExtraEntitiesOnly: spyFn(),
     makeSettingsRemnant: spyFn(),
     reviveSettingsRemnant: spyFn(),
@@ -186,7 +186,7 @@ function assertUpdateCalled(
 function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   eventsAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.deleteWorldEntities).called_with(match.ref(entity))
+  assert.spy(worldUpdater.deleteAllEntities).called_with(match.ref(entity))
 }
 function assertForceDeleteCalled(entity: AssemblyEntity<TestEntity>, stage: StageNumber) {
   eventsAsserted = true

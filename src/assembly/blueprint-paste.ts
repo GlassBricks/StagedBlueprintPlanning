@@ -21,6 +21,10 @@ export interface MarkerTags extends Tags {
   hasCircuitWires: boolean
 }
 
+export function modifyBlueprintInStackIfNeeded(stack: BaseItemStack | nil): void {
+  const innerStack = getInnerBlueprint(stack)
+  if (innerStack && !isModifiedBlueprint(innerStack)) modifyBlueprint(innerStack)
+}
 function getInnerBlueprint(stack: BaseItemStack | nil): BlueprintItemStack | nil {
   if (!stack || !stack.valid_for_read) return nil
   const type = stack.type
@@ -71,10 +75,6 @@ function modifyBlueprint(stack: BlueprintItemStack): void {
   lastEntityTags[ModifiedBlueprintTag.Value] = true
 
   stack.set_blueprint_entities(entities)
-}
-export function modifyBlueprintInStackIfNeeded(stack: BaseItemStack | nil): void {
-  const innerStack = getInnerBlueprint(stack)
-  if (innerStack && !isModifiedBlueprint(innerStack)) modifyBlueprint(innerStack)
 }
 
 export function validateBlueprint(player: LuaPlayer): void {

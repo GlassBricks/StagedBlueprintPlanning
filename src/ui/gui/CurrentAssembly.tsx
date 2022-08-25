@@ -27,11 +27,11 @@ import { StageSelector } from "./StageSelector"
 const CurrentAssemblyWidth = 260
 @RegisterClass("gui:CurrentAssembly")
 class CurrentAssembly extends Component {
-  static maplayerToAssemblyTitle(this: void, stage: Stage | nil): MaybeState<LocalisedString> {
+  private static mapStageToAssemblyTitle(this: void, stage: Stage | nil): MaybeState<LocalisedString> {
     if (stage === nil) return [L_GuiCurrentAssembly.NoAssembly]
     return stage.assembly.displayName
   }
-  static mapAssemblyToContent(this: void, assembly: Assembly | nil) {
+  private static mapAssemblyToContent(this: void, assembly: Assembly | nil) {
     return assembly ? (
       <StageSelector uses="drop-down" assembly={assembly} styleMod={{ width: CurrentAssemblyWidth }} />
     ) : (
@@ -51,7 +51,7 @@ class CurrentAssembly extends Component {
               font: "heading-2",
               width: CurrentAssemblyWidth - 80,
             }}
-            caption={currentStage.flatMap(funcRef(CurrentAssembly.maplayerToAssemblyTitle))}
+            caption={currentStage.flatMap(funcRef(CurrentAssembly.mapStageToAssemblyTitle))}
           />
           <HorizontalPusher />
           <ExternalLinkButton

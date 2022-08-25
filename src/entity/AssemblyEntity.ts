@@ -22,13 +22,16 @@ import {
   shiftNumberKeysUp,
 } from "../lib"
 import { Position } from "../lib/geometry"
-import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, mergeDiff, StageDiff } from "./diff"
 import { Entity, EntityPose } from "./Entity"
 import { CategoryName, getEntityCategory } from "./entity-info"
+import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, mergeDiff, StageDiff } from "./stage-diff"
 import { UndergroundBeltEntity } from "./undergrounds"
 
 export type StageNumber = number
 
+/**
+ * All the data about one entity in an assembly, across all stages.
+ */
 export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPose {
   readonly categoryName: CategoryName
   readonly direction: defines.direction | nil

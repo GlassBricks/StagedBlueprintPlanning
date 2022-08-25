@@ -9,21 +9,9 @@
  * You should have received a copy of the GNU General Public License along with BBPP3. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BBox, Position } from "../lib/geometry"
-
-export interface WorldPosition {
-  readonly surface: LuaSurface
-  readonly position: Position
-}
+import { BBox } from "./geometry"
 
 export interface WorldArea {
   readonly surface: LuaSurface
   readonly bbox: BBox
-}
-
-export function getLeftTop(area: WorldArea): WorldPosition {
-  return {
-    surface: area.surface,
-    position: area.bbox.left_top,
-  }
 }

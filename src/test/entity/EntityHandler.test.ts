@@ -12,7 +12,7 @@
 import { StagePosition } from "../../assembly/AssemblyContent"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
-import { WorldArea } from "../../utils/world-location"
+import { WorldArea } from "../../lib/world-area"
 import { clearTestArea } from "../area"
 
 let area: WorldArea

@@ -78,6 +78,7 @@ export interface AssemblyUpdater {
     byPlayer: PlayerIndex | nil,
   ): void
 
+  /** When a cleanup tool has been used on an entity. */
   onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
   /** Either: entity died, or reverse select with cleanup tool */
   onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
@@ -103,7 +104,7 @@ export function createAssemblyUpdater(
   wireSaver: WireSaver,
   notifier: WorldNotifier,
 ): AssemblyUpdater {
-  const { deleteWorldEntities, updateWorldEntities, forceDeleteEntity } = worldUpdater
+  const { deleteAllEntities, updateWorldEntities, forceDeleteEntity } = worldUpdater
   const { saveEntity } = entitySaver
   const { getWireConnectionDiff } = wireSaver
   const { createNotification } = notifier
@@ -276,7 +277,7 @@ export function createAssemblyUpdater(
       worldUpdater.makeSettingsRemnant(assembly, assemblyEntity)
     } else {
       assembly.content.delete(assemblyEntity)
-      deleteWorldEntities(assemblyEntity)
+      deleteAllEntities(assemblyEntity)
     }
   }
 
@@ -610,7 +611,7 @@ export function createAssemblyUpdater(
     } else {
       // settings remnant, remove
       assembly.content.delete(existing)
-      deleteWorldEntities(existing)
+      deleteAllEntities(existing)
     }
   }
 

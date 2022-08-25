@@ -17,6 +17,10 @@ import draw, { AnyRender, DrawParams, TextRender } from "../lib/rendering"
 import { AssemblyEvents } from "./Assembly"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, Stage } from "./AssemblyDef"
 
+/**
+ * This file handles the in-world outline/text label of stages.
+ */
+
 declare const global: {
   assemblyHighlights: LuaMap<AssemblyId, PRecord<StageNumber, AnyRender[]>>
 }

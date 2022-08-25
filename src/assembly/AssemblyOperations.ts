@@ -14,10 +14,11 @@ import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**
- * User and miscellaneous operations on the assembly.
+ * User and miscellaneous operations on an entire assembly at once.
  * @noSelf
  */
 export interface AssemblyOperations {
+  /** Delete all extra (non-main) entities in the assembly. Before assembly deletion. */
   deleteAllExtraEntitiesOnly(assembly: AssemblyContent): void
   deleteStageEntities(assembly: AssemblyContent, stageNumber: StageNumber): void
 
@@ -33,7 +34,7 @@ export function createAssemblyOperations(
   worldUpdater: WorldUpdater,
   worldInteractor: AssemblyOpWorldInteractor,
 ): AssemblyOperations {
-  const { updateWorldEntities, deleteExtraEntitiesOnly, deleteWorldEntitiesInStage } = worldUpdater
+  const { updateWorldEntities, deleteExtraEntitiesOnly, deleteAllEntitiesInStage } = worldUpdater
 
   function deleteAllExtraEntitiesOnly(assembly: AssemblyContent) {
     for (const entity of assembly.content.iterateAllEntities()) {
@@ -51,7 +52,7 @@ export function createAssemblyOperations(
 
   function deleteStageEntities(assembly: AssemblyContent, stageNumber: StageNumber) {
     for (const entity of assembly.content.iterateAllEntities()) {
-      deleteWorldEntitiesInStage(entity, stageNumber)
+      deleteAllEntitiesInStage(entity, stageNumber)
     }
   }
 

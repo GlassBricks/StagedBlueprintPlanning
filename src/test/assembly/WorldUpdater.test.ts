@@ -216,7 +216,7 @@ describe("invalid stages", () => {
 
 test("deleteWorldEntities", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-  worldUpdater.deleteWorldEntities(entity)
+  worldUpdater.deleteAllEntities(entity)
   for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
   assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
 })

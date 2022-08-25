@@ -15,6 +15,10 @@ import { AssemblyEvents } from "./Assembly"
 import { Assembly, Stage } from "./AssemblyDef"
 import floor = math.floor
 
+/**
+ * Handles determining which assembly/stage is at a given location.
+ */
+
 type AssembliesByChunk = Record<number, Record<number, Assembly | nil>>
 declare const global: {
   inWorldAssemblies: AssembliesByChunk
@@ -22,15 +26,6 @@ declare const global: {
 
 Events.on_init(() => {
   global.inWorldAssemblies = {}
-  for (const [, surface] of game.surfaces) {
-    global.inWorldAssemblies[surface.index] = {}
-  }
-})
-Events.on_surface_created((e) => {
-  global.inWorldAssemblies[e.surface_index] = {}
-})
-Events.on_pre_surface_deleted((e) => {
-  delete global.inWorldAssemblies[e.surface_index]
 })
 
 export function registerAssemblyLocation(assembly: Assembly): void {

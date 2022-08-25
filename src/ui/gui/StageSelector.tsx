@@ -64,7 +64,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     for (const stage of stages) {
       stage.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), stage.stageNumber))
     }
-    playerCurrentStage(this.playerIndex).subscribeAndFire(subscription, funcOn(this.playerStageDiffd))
+    playerCurrentStage(this.playerIndex).subscribeAndFire(subscription, funcOn(this.playerStageChanged))
 
     this.assembly.localEvents.subscribe(subscription, funcOn(this.onAssemblyEvent))
   }
@@ -90,7 +90,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private playerStageDiffd(_: any, stage: Stage | nil) {
+  private playerStageChanged(_: any, stage: Stage | nil) {
     if (stage && stage.assembly === this.assembly) {
       this.selectedIndex.set(stage.stageNumber)
       this.selectedIndex.forceNotify()

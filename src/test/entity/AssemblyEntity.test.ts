@@ -10,8 +10,8 @@
  */
 
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { getEntityDiff, getNilPlaceholder } from "../../entity/diff"
 import { Entity } from "../../entity/Entity"
+import { getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
 import { shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { entityMock } from "../simple-mock"

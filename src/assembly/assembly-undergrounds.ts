@@ -18,6 +18,9 @@ import { MutableEntityMap } from "./EntityMap"
 
 export type AssemblyUndergroundEntity = AssemblyEntity<UndergroundBeltEntity>
 
+/**
+ * Finds an underground pair. If there are multiple possible pairs, returns the first one, and true as the second return value.
+ */
 export function findUndergroundPair(
   content: MutableEntityMap,
   member: AssemblyEntity,

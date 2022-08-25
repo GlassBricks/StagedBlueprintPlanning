@@ -30,7 +30,6 @@ export function getWorldPosition(stage: StagePosition, entity: EntityPose): Posi
 export interface EntityCreator {
   createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil
   updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity
-  // todo: handle opposite affected entities?
 }
 
 /** @noSelf */

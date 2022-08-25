@@ -30,9 +30,9 @@ before_each(() => {
   assembly = createMockAssemblyContent(3)
   worldUpdater = {
     updateWorldEntities: spy(),
-    deleteWorldEntities: spy(),
+    deleteAllEntities: spy(),
     forceDeleteEntity: spy(),
-    deleteWorldEntitiesInStage: spy(),
+    deleteAllEntitiesInStage: spy(),
     deleteExtraEntitiesOnly: spy(),
     makeSettingsRemnant: spy(),
     reviveSettingsRemnant: spy(),
@@ -62,8 +62,8 @@ test("deleteStageEntities", () => {
   assembly.content.add(entity2)
 
   operations.deleteStageEntities(assembly, 1)
-  assert.spy(worldUpdater.deleteWorldEntitiesInStage).called_with(match.ref(entity1), 1)
-  assert.spy(worldUpdater.deleteWorldEntitiesInStage).called_with(match.ref(entity2), 1)
+  assert.spy(worldUpdater.deleteAllEntitiesInStage).called_with(match.ref(entity1), 1)
+  assert.spy(worldUpdater.deleteAllEntitiesInStage).called_with(match.ref(entity2), 1)
 })
 
 test("resetStage", () => {

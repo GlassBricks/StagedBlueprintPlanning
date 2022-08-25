@@ -13,6 +13,10 @@ import { assertNever } from "../lib"
 import { AssemblyEvents } from "./Assembly"
 import { AssemblyOperations } from "./AssemblyOperations"
 
+/**
+ * Calls assembly operations in response to assembly events.
+ */
+
 AssemblyEvents.addListener((e) => {
   switch (e.type) {
     case "assembly-created":

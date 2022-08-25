@@ -13,6 +13,3 @@ import "./assembly"
 import "./ui"
 
 pcall(require, "test.test-init")
-
-// TODO
-// find all uses of luaEntity.direction, replace

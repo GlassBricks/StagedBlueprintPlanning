@@ -35,7 +35,8 @@ function updatePlayer(player: LuaPlayer): void {
   const { position, surface } = player
   if (stage && stage.valid && stage.surface === surface && BBox.contains(stage, position)) return
 
-  currentStage.set(getAssemblyAtPosition(position)?.getStageAt(surface, position))
+  const assembly = getAssemblyAtPosition(position)
+  currentStage.set(assembly && assembly.getStageAt(surface, position))
 }
 Events.on_player_changed_position((e) => updatePlayer(game.get_player(e.player_index)!))
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))

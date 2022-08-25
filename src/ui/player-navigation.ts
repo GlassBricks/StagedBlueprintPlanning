@@ -25,11 +25,11 @@ import { playerCurrentStage, teleportToStage } from "./player-position"
 
 const Events = ProtectedEvents
 
-function playerrorSound(player: LuaPlayer) {
+function playErrorSound(player: LuaPlayer) {
   player.play_sound({ path: "utility/cannot_build" })
 }
 function notifyError(player: LuaPlayer, message: LocalisedString) {
-  playerrorSound(player)
+  playErrorSound(player)
   player.create_local_flying_text({
     text: message,
     create_at_cursor: true,
