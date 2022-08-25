@@ -753,6 +753,61 @@ describe("undergrounds", () => {
       assertUpdateCalled(added1, 1, nil, false, 0)
       assertUpdateCalled(added2, 2, nil, false, 1)
     })
+
+    test("cannot upgrade underground with multiple pairs", () => {
+      const { entity1, entity2, added1, added2 } = createUndergroundBeltPair(1, 1)
+      const { luaEntity: entity3, added: added3 } = createUndergroundBelt(1, 1, {
+        position: Pos.plus(pos, { x: -2, y: 0 }),
+      })
+
+      for (const tryUpgrade of [entity1, entity2, entity3]) {
+        tryUpgrade.order_upgrade({
+          target: "fast-underground-belt",
+          force: tryUpgrade.force,
+        })
+        assemblyUpdater.onEntityMarkedForUpgrade(assembly, tryUpgrade, stage)
+
+        assert.equal("input", added1.getFirstValue().type)
+        assert.equal(direction.west, added1.direction)
+        assert.equal("output", added2.getFirstValue().type)
+        assert.equal(direction.east, added2.direction)
+        assert.equal("input", added3.getFirstValue().type)
+        assert.equal(direction.west, added3.direction)
+
+        assertNEntities(3)
+        assertNoCalls()
+        assertNotified(tryUpgrade, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs])
+        worldNotifier.createNotification.clear()
+
+        assert.nil(tryUpgrade.get_upgrade_target())
+      }
+    })
+
+    test("fast replace to upgrade also upgrades pair", () => {
+      const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1)
+      const newEntity = entity1.surface.create_entity({
+        name: "fast-underground-belt",
+        direction: entity1.direction,
+        position: entity1.position,
+        force: entity1.force,
+        type: entity1.belt_to_ground_type,
+        fast_replace: true,
+      })!
+      assert.not_nil(newEntity)
+
+      assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage)
+      assert.equal("fast-underground-belt", added1.getFirstValue().name)
+      assert.equal("input", added1.getFirstValue().type)
+      assert.equal(direction.west, added1.direction)
+
+      assert.equal("fast-underground-belt", added2.getFirstValue().name)
+      assert.equal("output", added2.getFirstValue().type)
+      assert.equal(direction.east, added2.direction)
+
+      assertNEntities(2)
+      assertUpdateCalled(added1, 1, nil, false, 0)
+      assertUpdateCalled(added2, 1, nil, false, 1)
+    })
   })
 })
 

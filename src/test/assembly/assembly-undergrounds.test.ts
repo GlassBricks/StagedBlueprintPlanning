@@ -75,4 +75,12 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
   test("backwards out of reach", () => {
     testStr("v___v^", 4, 5, false)
   })
+
+  test("different underground types not same group", () => {
+    const undergrounds = strToUndergrounds("v^") as AssemblyUndergroundEntity[]
+    undergrounds[0].applyUpgradeAtStage(1, "fast-underground-belt")
+    const [pair, hasMultiple] = findUndergroundPair(content, undergrounds[1])
+    assert.nil(pair)
+    assert.false(hasMultiple)
+  })
 })

@@ -302,7 +302,9 @@ export function createAssemblyUpdater(
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection)
     if (!existing) return
 
-    // todo: handle underground belts
+    if (entity.type === "underground-belt") {
+      return onUndergroundBeltPotentiallyUpdated(assembly, entity, stage, existing as AssemblyUndergroundEntity)
+    }
 
     const hasRotation = previousDirection !== nil && previousDirection !== entity.direction
     if (hasRotation) {
@@ -315,6 +317,7 @@ export function createAssemblyUpdater(
 
     const [newValue, direction] = saveEntity(entity)
     assert(newValue, "could not save value on existing entity")
+    assert(direction === existing.getDirection(), "direction mismatch on saved entity")
     const hasDiff = existing.adjustValueAtStage(stage.stageNumber, newValue)
     if (hasDiff || hasRotation) {
       updateWorldEntities(assembly, existing, stage.stageNumber)
@@ -339,45 +342,6 @@ export function createAssemblyUpdater(
     if (tryRotateOrUndo(assembly, entity, stage, existing, newDirection)) {
       // update all entities
       updateWorldEntities(assembly, existing, 1)
-    }
-  }
-
-  function onUndergroundBeltRotated(
-    assembly: AssemblyContent,
-    entity: LuaEntity,
-    stage: StagePosition,
-    existing: AssemblyUndergroundEntity,
-  ): void {
-    const actualDirection = getSavedDirection(entity)
-    assert(actualDirection === existing.getDirection(), "underground belt direction mismatch with saved state")
-    const oldDir = existing.getFirstValue().type
-    const newDir = entity.belt_to_ground_type
-    if (oldDir === newDir) return
-
-    const { stageNumber } = stage
-    const [pair, hasMultiple] = findUndergroundPair(assembly.content, existing)
-
-    const rotateAllowed =
-      !hasMultiple &&
-      stageNumber === (pair ? min(existing.getFirstStage(), pair.getFirstStage()) : existing.getFirstStage())
-
-    if (rotateAllowed) {
-      existing.setUndergroundBeltDirection(newDir)
-      updateWorldEntities(assembly, existing, stageNumber)
-      if (pair) {
-        pair.setUndergroundBeltDirection(newDir === "output" ? "input" : "output")
-        updateWorldEntities(assembly, pair, stageNumber)
-      }
-    } else {
-      createNotification(
-        entity,
-        hasMultiple
-          ? [L_Interaction.CannotFlipUndergroundDueToMultiplePairs]
-          : pair && existing.getFirstStage() === stageNumber
-          ? [L_Interaction.CannotFlipUndergroundDueToPairInLowerStage]
-          : [L_Interaction.CannotRotateEntity],
-      )
-      updateSingleWorldEntity(assembly, existing, stageNumber, false)
     }
   }
 
@@ -423,6 +387,71 @@ export function createAssemblyUpdater(
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }
 
+  function onUndergroundBeltRotated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    existing: AssemblyUndergroundEntity,
+  ): void {
+    const actualDirection = getSavedDirection(entity)
+    assert(actualDirection === existing.getDirection(), "underground belt direction mismatch with saved state")
+    const oldDir = existing.getFirstValue().type
+    const newDir = entity.belt_to_ground_type
+    if (oldDir === newDir) return
+
+    const { stageNumber } = stage
+    const [pair, hasMultiple] = findUndergroundPair(assembly.content, existing)
+
+    const rotateAllowed =
+      !hasMultiple &&
+      stageNumber === (pair ? min(existing.getFirstStage(), pair.getFirstStage()) : existing.getFirstStage())
+
+    if (rotateAllowed) {
+      existing.setUndergroundBeltDirection(newDir)
+      updateWorldEntities(assembly, existing, stageNumber)
+      if (pair) {
+        pair.setUndergroundBeltDirection(newDir === "output" ? "input" : "output")
+        updateWorldEntities(assembly, pair, stageNumber)
+      }
+    } else {
+      createNotification(
+        entity,
+        hasMultiple
+          ? [L_Interaction.CannotFlipUndergroundDueToMultiplePairs]
+          : pair && existing.getFirstStage() === stageNumber
+          ? [L_Interaction.CannotFlipUndergroundDueToPairInLowerStage]
+          : [L_Interaction.CannotRotateEntity],
+      )
+      updateSingleWorldEntity(assembly, existing, stageNumber, false)
+    }
+  }
+
+  function tryUpgradeUnderground(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    existing: AssemblyUndergroundEntity,
+    upgradeType: string,
+  ): boolean {
+    const { stageNumber } = stage
+
+    const [pair, hasMultiple] = findUndergroundPair(assembly.content, existing)
+    if (hasMultiple) {
+      createNotification(entity, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs])
+      return false
+    }
+    const upgraded = existing.applyUpgradeAtStage(stageNumber, upgradeType)
+    if (upgraded) {
+      updateWorldEntities(assembly, existing, stageNumber)
+      if (pair) {
+        const pairStage = max(pair.getFirstStage(), stageNumber)
+        const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
+        if (pairUpgraded) updateWorldEntities(assembly, pair, pairStage)
+      }
+    }
+    return true
+  }
+
   function onUndergroundBeltMarkedForUpgrade(
     assembly: AssemblyContent,
     entity: LuaEntity,
@@ -430,28 +459,26 @@ export function createAssemblyUpdater(
     existing: AssemblyUndergroundEntity,
   ): void {
     const upgradeType = entity.get_upgrade_target()?.name
-    if (!upgradeType) {
-      if (entity.valid) entity.cancel_upgrade(entity.force)
-      return
-    }
-    checkUpgradeType(existing, upgradeType)
-
-    const { stageNumber } = stage
-
-    const [pair, hasMultiple] = findUndergroundPair(assembly.content, existing)
-    if (hasMultiple) {
-      createNotification(entity, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs])
-      if (entity.valid) entity.cancel_upgrade(entity.force)
-      return
-    }
-    const upgraded = existing.applyUpgradeAtStage(stageNumber, upgradeType)
-    if (upgraded) updateWorldEntities(assembly, existing, stageNumber)
-    if (pair) {
-      const pairStage = max(pair.getFirstStage(), stageNumber)
-      const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
-      if (pairUpgraded) updateWorldEntities(assembly, pair, pairStage)
+    if (upgradeType) {
+      checkUpgradeType(existing, upgradeType)
+      tryUpgradeUnderground(assembly, entity, stage, existing, upgradeType)
     }
     if (entity.valid) entity.cancel_upgrade(entity.force)
+  }
+
+  function onUndergroundBeltPotentiallyUpdated(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    existing: AssemblyUndergroundEntity,
+  ): void {
+    const newType = entity.name
+    if (newType !== existing.getNameAtStage(stage.stageNumber)) {
+      const upgraded = tryUpgradeUnderground(assembly, entity, stage, existing, newType)
+      if (!upgraded) {
+        updateSingleWorldEntity(assembly, existing, stage.stageNumber, false)
+      }
+    }
   }
 
   function onCircuitWiresPotentiallyUpdated(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition): void {

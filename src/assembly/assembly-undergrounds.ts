@@ -49,7 +49,7 @@ function findUndergroundPairOneDirection(
     curPos.x = x + i * dx
     curPos.y = y + i * dy
     const underground = content.findCompatibleBasic(name, curPos, otherDirection) as AssemblyUndergroundEntity | nil
-    if (underground) {
+    if (underground && underground.getFirstValue().name === name) {
       if (found) return $multi(found, true)
       found = underground
     }

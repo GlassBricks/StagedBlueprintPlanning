@@ -189,6 +189,44 @@ test.each([
     .called_with(match.ref(assembly), newEntity, match.ref(assembly.getStage(1)!), match._)
 })
 
+// this test doesn't work because build_from_cursor doesn't fast replace both undergrounds?
+// test.only("fast replace an underground runs onEntityPotentiallyUpdate on both", () => {
+//   const u1 = surface.create_entity({
+//     name: "underground-belt",
+//     direction: direction.east,
+//     type: "input",
+//     position: getStageCenter(1),
+//     force: "player",
+//   })!
+//   assert.not_nil(u1)
+//   const u2 = surface.create_entity({
+//     name: "underground-belt",
+//     direction: direction.east,
+//     type: "output",
+//     position: Pos.plus(u1.position, Pos(1, 0)),
+//   })!
+//   assert.not_nil(u2)
+//   const pos1 = u1.position
+//   const pos2 = u2.position
+//
+//   player.cursor_stack!.set_stack("fast-underground-belt")
+//   player.build_from_cursor({ position: u1.position, direction: direction.east })
+//   const newU1 = surface.find_entity("fast-underground-belt", pos1)!
+//   assert.not_nil(newU1)
+//   const newU2 = surface.find_entity("fast-underground-belt", pos2)!
+//   assert.not_nil(newU2)
+//
+//   assert
+//     .spy(updater.onEntityPotentiallyUpdated)
+//     .called_with(match.ref(assembly), match.ref(newU1), match.ref(assembly.getStage(1)!), match._)
+//   assert
+//     .spy(updater.onEntityPotentiallyUpdated)
+//     .called_with(match.ref(assembly), match.ref(newU2), match.ref(assembly.getStage(1)!), match._)
+//
+//   assert.spy(updater.onEntityCreated).not_called()
+//   assert.spy(updater.onEntityDeleted).not_called()
+// })
+
 describe("upgrade", () => {
   let entity: LuaEntity
   before_each(() => {

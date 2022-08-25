@@ -148,6 +148,8 @@ Events.on_player_fast_transferred((e) => luaEntityPotentiallyUpdated(e.entity))
 
 interface AnnotatedEntity extends BasicEntityInfo {
   readonly stage: Stage
+  undergroundPair?: LuaEntity
+  undergroundPairValue?: AnnotatedEntity
 }
 // in global, so no desync in case of bugs
 let state: {
@@ -178,30 +180,47 @@ function clearLastDeleted(): void {
   if (lastDeleted) {
     const { stage } = lastDeleted
     if (stage.valid) DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, lastDeleted, stage)
+    const { undergroundPairValue } = lastDeleted
+    if (undergroundPairValue) {
+      DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, undergroundPairValue, stage)
+    }
     state.lastDeleted = nil
   }
 }
 
 function setLastDeleted(entity: LuaEntity, stage: Stage): void {
-  clearLastDeleted()
-  state.lastDeleted = {
+  const isUnderground = entity.type === "underground-belt"
+  const oldValue = state.lastDeleted
+  const newValue: AnnotatedEntity = {
     name: entity.name,
     type: entity.type,
     position: entity.position,
     direction: entity.direction,
     surface: entity.surface,
-    belt_to_ground_type: entity.type === "underground-belt" ? entity.belt_to_ground_type : nil,
+    belt_to_ground_type: isUnderground ? entity.belt_to_ground_type : nil,
     stage,
   }
+
+  if (isUnderground) {
+    if (oldValue && oldValue.undergroundPair === entity) {
+      oldValue.undergroundPair = nil
+      oldValue.undergroundPairValue = newValue
+      return
+    }
+    newValue.undergroundPair = entity.neighbours as LuaEntity | nil
+  }
+
+  clearLastDeleted()
+  state.lastDeleted = newValue
 }
 
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
-  if (!player.is_cursor_blueprint()) {
+  if (player.is_cursor_blueprint()) {
+    validateBlueprint(player)
+  } else {
     state.currentlyInBuild = true
     clearLastDeleted()
-  } else {
-    validateBlueprint(player)
   }
 })
 
@@ -239,16 +258,35 @@ Events.on_built_entity((e) => {
     return
   }
 
-  state.currentlyInBuild = nil
-  const { lastDeleted } = state
-  if (lastDeleted && isUpgradeable(lastDeleted, entity)) {
-    state.lastDeleted = nil
-    DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, lastDeleted.direction)
+  if (tryUpgrade(assembly, entity, stage)) {
+    if (state.lastDeleted === nil) state.currentlyInBuild = nil
   } else {
     clearLastDeleted()
     DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage)
+    state.currentlyInBuild = nil
   }
 })
+
+function tryUpgrade(assembly: Assembly, entity: LuaEntity, stage: Stage) {
+  const { lastDeleted } = state
+  if (!lastDeleted) return
+  if (isUpgradeable(lastDeleted, entity)) {
+    DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, lastDeleted.direction)
+    state.lastDeleted = lastDeleted.undergroundPairValue
+    return true
+  }
+  if (lastDeleted.undergroundPairValue && isUpgradeable(lastDeleted.undergroundPairValue, entity)) {
+    DefaultAssemblyUpdater.onEntityPotentiallyUpdated(
+      assembly,
+      entity,
+      stage,
+      lastDeleted.undergroundPairValue.direction,
+    )
+    lastDeleted.undergroundPairValue = nil
+    return true
+  }
+  return false
+}
 
 // blueprint in cursor
 Events.on_player_cursor_stack_changed((e) => {
