@@ -52,7 +52,8 @@ export function getSelectionBox(entityName: string): BBoxClass {
 }
 
 export function isUndergroundBeltType(entityName: string): boolean {
-  return getEntityPrototypes()[entityName].type === "underground-belt"
+  const prototype = getEntityPrototypes()[entityName]
+  return prototype !== nil && prototype.type === "underground-belt"
 }
 
 export function _overrideEntityCategory(entityName: string, categoryName: string): void {

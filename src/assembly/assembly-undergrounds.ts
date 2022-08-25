@@ -20,7 +20,7 @@ export type AssemblyUndergroundEntity = AssemblyEntity<UndergroundBeltEntity>
 
 export function findUndergroundPair(
   content: MutableEntityMap,
-  member: AssemblyUndergroundEntity,
+  member: AssemblyEntity,
 ): LuaMultiReturn<[underground: AssemblyUndergroundEntity | nil, hasMultiple: boolean]> {
   const [pair, hasMultiple] = findUndergroundPairOneDirection(content, member)
   if (!pair || hasMultiple) return $multi(pair, hasMultiple)
@@ -31,7 +31,7 @@ export function findUndergroundPair(
 
 function findUndergroundPairOneDirection(
   content: MutableEntityMap,
-  member: AssemblyUndergroundEntity,
+  member: AssemblyEntity,
 ): LuaMultiReturn<[underground: AssemblyUndergroundEntity | nil, hasMultiple: boolean]> {
   const name = member.getFirstValue().name
   const reach = game.entity_prototypes[name].max_underground_distance

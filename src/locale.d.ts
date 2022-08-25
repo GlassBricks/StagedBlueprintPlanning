@@ -54,14 +54,16 @@ export declare const enum L_Interaction {
   EntityMovedBackToStage = "bp3.interaction.entity-moved-back-to-stage",
   /** This cannot be rotated */
   CannotRotateEntity = "bp3.interaction.cannot-rotate-entity",
-  /** This underground pairs with multiple other undergrounds, cannot flip. */
+  /** Cannot flip underground paired with multiple other undergrounds */
   CannotFlipUndergroundDueToMultiplePairs = "bp3.interaction.cannot-flip-underground-due-to-multiple-pairs",
-  /** This underground pairs with another underground in a lower stage, cannot flip. */
-  CannotFlipUndergroundDueToPairInLowerStage = "bp3.interaction.cannot-flip-underground-due-to-pair-in-lower-stage",
-  /** This underground pairs with multiple other undergrounds, cannot upgrade. */
+  /** Cannot upgrade underground paired with multiple other undergrounds */
   CannotUpgradeUndergroundDueToMultiplePairs = "bp3.interaction.cannot-upgrade-underground-due-to-multiple-pairs",
-  /** This underground pairs with another underground in a lower stage, cannot upgrade. */
-  CannotUpgradeUndergroundDueToPairInLowerStage = "bp3.interaction.cannot-upgrade-underground-due-to-pair-in-lower-stage",
+  /** Cannot create stage upgrade if underground pair not in the same stage */
+  CannotCreateUndergroundUpgradeIfNotInSameStage = "bp3.interaction.cannot-create-underground-upgrade-if-not-in-same-stage",
+  /** Upgrading this will change the underground pair */
+  CannotUpgradeUndergroundChangedPair = "bp3.interaction.cannot-upgrade-underground-changed-pair",
+  /** Cannot move underground belt with upgrade. Try upgrading first. */
+  CannotMoveUndergroundBeltWithUpgrade = "bp3.interaction.cannot-move-underground-belt-with-upgrade",
   /** Not in an assembly */
   PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",
   /** Entity is not in an assembly */

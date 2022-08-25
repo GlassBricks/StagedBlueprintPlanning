@@ -540,6 +540,40 @@ describe("mark for upgrade", () => {
   })
 })
 
+describe("move to current stage", () => {
+  test("normal entity", () => {
+    const { luaEntity, added } = addAndReset(1, 3)
+    assemblyUpdater.onMoveEntityToStage(assembly, luaEntity, stage, playerIndex)
+    assert.equal(3, added.getFirstStage())
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+    assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
+  })
+
+  test("preview entity", () => {
+    const { luaEntity, added } = addAndReset(1, 3)
+    luaEntity.destroy()
+    const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
+    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
+    assert.equal(3, added.getFirstStage())
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+    assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
+  })
+
+  test("settings remnant", () => {
+    // with preview again
+    const { luaEntity, added } = addAndReset(1, 3)
+    luaEntity.destroy()
+    const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
+    added.isSettingsRemnant = true
+    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
+    assert.equal(3, added.getFirstStage())
+    assertOneEntity()
+    assertReviveSettingsRemnantCalled(added)
+  })
+})
+
 describe("undergrounds", () => {
   before_each(() => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
@@ -627,13 +661,14 @@ describe("undergrounds", () => {
     assertNotified(luaEntity, [L_Interaction.CannotRotateEntity], true)
   })
 
-  test("rotating pair of underground belts in first stage rotates all entities", () => {
-    const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1, 2)
+  test.each(["lower", "higher"])("rotating %s underground in first stage rotates pair", (which) => {
+    const { entity1, entity2, added1, added2 } = createUndergroundBeltPair(1, 2, 2)
 
-    const [rotated1] = entity1.rotate()
+    const toRotate = which === "lower" ? entity1 : entity2
+    const [rotated1] = toRotate.rotate()
     assert(rotated1)
 
-    assemblyUpdater.onEntityRotated(assembly, entity1, stage, playerIndex, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, toRotate, stage, playerIndex, direction.west)
 
     assert.equal("output", added1.getFirstValue().type)
     assert.equal(direction.west, added1.direction)
@@ -641,12 +676,12 @@ describe("undergrounds", () => {
     assert.equal(direction.east, added2.direction)
 
     assertNEntities(2)
-    assertUpdateCalled(added1, 1, nil, false, 0)
-    assertUpdateCalled(added2, 1, nil, false, 1)
+    assertUpdateCalled(added1, 1, nil, false, which === "lower" ? 0 : 1)
+    assertUpdateCalled(added2, 2, nil, false, which === "lower" ? 1 : 0)
   })
 
-  test("cannot rotate underground if other in lower layer", () => {
-    const { entity1, added1, added2 } = createUndergroundBeltPair(2, 2, 1)
+  test("cannot rotate underground if not in first stage", () => {
+    const { entity1, added1, added2 } = createUndergroundBeltPair(2, 3, 1)
 
     const [rotated1] = entity1.rotate()
     assert(rotated1)
@@ -659,8 +694,8 @@ describe("undergrounds", () => {
     assert.equal(direction.east, added2.direction)
 
     assertNEntities(2)
-    assertUpdateCalled(added1, 2, 2, false)
-    assertNotified(entity1, [L_Interaction.CannotFlipUndergroundDueToPairInLowerStage], true)
+    assertUpdateCalled(added1, 3, 3, false)
+    assertNotified(entity1, [L_Interaction.CannotRotateEntity], true)
   })
 
   test("cannot rotate underground with multiple pairs", () => {
@@ -735,25 +770,29 @@ describe("undergrounds", () => {
       assertUpdateCalled(added, 2, nil, false)
     })
 
-    test("upgrading one underground in pair upgrades both", () => {
-      const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1, 2)
-      entity1.order_upgrade({
-        target: "fast-underground-belt",
-        force: entity1.force,
-      })
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage, playerIndex)
+    test.each(["lower", "pair in higher", "self in higher"])(
+      "upgrading %s underground in first stage upgrades pair",
+      (which) => {
+        const { entity1, entity2, added1, added2 } = createUndergroundBeltPair(1, which === "lower" ? 1 : 2, 2)
+        const toUpgrade = which === "pair in higher" ? entity2 : entity1
+        toUpgrade.order_upgrade({
+          target: "fast-underground-belt",
+          force: toUpgrade.force,
+        })
+        assemblyUpdater.onEntityMarkedForUpgrade(assembly, toUpgrade, stage, playerIndex)
 
-      assert.equal("fast-underground-belt", added1.getFirstValue().name)
-      assert.equal("input", added1.getFirstValue().type)
-      assert.equal(direction.west, added1.direction)
-      assert.equal("fast-underground-belt", added2.getFirstValue().name)
-      assert.equal("output", added2.getFirstValue().type)
-      assert.equal(direction.east, added2.direction)
+        assert.equal("fast-underground-belt", added1.getFirstValue().name)
+        assert.equal("input", added1.getFirstValue().type)
+        assert.equal(direction.west, added1.direction)
+        assert.equal("fast-underground-belt", added2.getFirstValue().name)
+        assert.equal("output", added2.getFirstValue().type)
+        assert.equal(direction.east, added2.direction)
 
-      assertNEntities(2)
-      assertUpdateCalled(added1, 1, nil, false, 0)
-      assertUpdateCalled(added2, 2, nil, false, 1)
-    })
+        assertNEntities(2)
+        assertUpdateCalled(added1, 1, nil, false, toUpgrade === entity1 ? 0 : 1)
+        assertUpdateCalled(added2, 2, nil, false, toUpgrade === entity1 ? 1 : 0)
+      },
+    )
 
     test("cannot upgrade underground with multiple pairs", () => {
       const { entity1, entity2, added1, added2 } = createUndergroundBeltPair(1, 1)
@@ -768,12 +807,9 @@ describe("undergrounds", () => {
         })
         assemblyUpdater.onEntityMarkedForUpgrade(assembly, tryUpgrade, stage, playerIndex)
 
-        assert.equal("input", added1.getFirstValue().type)
-        assert.equal(direction.west, added1.direction)
-        assert.equal("output", added2.getFirstValue().type)
-        assert.equal(direction.east, added2.direction)
-        assert.equal("input", added3.getFirstValue().type)
-        assert.equal(direction.west, added3.direction)
+        assert.equal("underground-belt", added1.getFirstValue().name)
+        assert.equal("underground-belt", added2.getFirstValue().name)
+        assert.equal("underground-belt", added3.getFirstValue().name)
 
         assertNEntities(3)
         assertNoCalls()
@@ -784,31 +820,83 @@ describe("undergrounds", () => {
       }
     })
 
-    test("fast replace to upgrade also upgrades pair", () => {
-      const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1)
-      const newEntity = entity1.surface.create_entity({
-        name: "fast-underground-belt",
-        direction: entity1.direction,
-        position: entity1.position,
+    test("cannot upgrade underground in higher layer if pair in different layers", () => {
+      const { entity1, added1, added2 } = createUndergroundBeltPair(1, 3, 2)
+      entity1.order_upgrade({
+        target: "fast-underground-belt",
         force: entity1.force,
-        type: entity1.belt_to_ground_type,
-        fast_replace: true,
-      })!
-      assert.not_nil(newEntity)
+      })
 
-      assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex)
-      assert.equal("fast-underground-belt", added1.getFirstValue().name)
-      assert.equal("input", added1.getFirstValue().type)
-      assert.equal(direction.west, added1.direction)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage, playerIndex)
 
-      assert.equal("fast-underground-belt", added2.getFirstValue().name)
-      assert.equal("output", added2.getFirstValue().type)
-      assert.equal(direction.east, added2.direction)
+      assert.equal("underground-belt", added1.getFirstValue().name)
+      assert.equal("underground-belt", added2.getFirstValue().name)
 
       assertNEntities(2)
-      assertUpdateCalled(added1, 1, nil, false, 0)
-      assertUpdateCalled(added2, 1, nil, false, 1)
+      assertNoCalls()
+      assertNotified(entity1, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
     })
+
+    test("cannot upgrade underground if it would change pair", () => {
+      const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1)
+      const { added: added3 } = createUndergroundBelt(1, 1, {
+        position: Pos.plus(pos, { x: -2, y: 0 }),
+        name: "fast-underground-belt",
+      })
+      entity1.order_upgrade({
+        target: "fast-underground-belt",
+        force: entity1.force,
+      })
+
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage, playerIndex)
+
+      assert.equal("underground-belt", added1.getFirstValue().name)
+      assert.equal("underground-belt", added2.getFirstValue().name)
+      assert.equal("fast-underground-belt", added3.getFirstValue().name)
+
+      assertNEntities(3)
+      assertNoCalls()
+      assertNotified(entity1, [L_Interaction.CannotUpgradeUndergroundChangedPair], true)
+    })
+  })
+  test("fast replace to upgrade also upgrades pair", () => {
+    const { entity1, added1, added2 } = createUndergroundBeltPair(1, 1)
+    const newEntity = entity1.surface.create_entity({
+      name: "fast-underground-belt",
+      direction: entity1.direction,
+      position: entity1.position,
+      force: entity1.force,
+      type: entity1.belt_to_ground_type,
+      fast_replace: true,
+    })!
+    assert.not_nil(newEntity)
+
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex)
+    assert.equal("fast-underground-belt", added1.getFirstValue().name)
+    assert.equal("input", added1.getFirstValue().type)
+    assert.equal(direction.west, added1.direction)
+
+    assert.equal("fast-underground-belt", added2.getFirstValue().name)
+    assert.equal("output", added2.getFirstValue().type)
+    assert.equal(direction.east, added2.direction)
+
+    assertNEntities(2)
+    assertUpdateCalled(added1, 1, nil, false, 0)
+    assertUpdateCalled(added2, 1, nil, false, 1)
+  })
+
+  test("cannot move underground if it would also upgrade", () => {
+    const { entity1, added1, added2 } = createUndergroundBeltPair(1, 2)
+    added1.applyUpgradeAtStage(2, "fast-underground-belt")
+    added2.applyUpgradeAtStage(2, "fast-underground-belt")
+
+    assemblyUpdater.onMoveEntityToStage(assembly, entity1, stage, playerIndex)
+    assert.equal(1, added1.getFirstStage())
+    assert.equal(1, added2.getFirstStage())
+
+    assertNEntities(2)
+    assertNoCalls()
+    assertNotified(entity1, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
   })
 })
 
@@ -834,38 +922,6 @@ describe("cleanup tool", () => {
     assert.nil(added.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
-  })
-})
-
-describe("move to current stage", () => {
-  test("normal entity", () => {
-    const { luaEntity, added } = addAndReset(1, 3)
-    assemblyUpdater.onMoveEntityToStage(assembly, luaEntity, stage, playerIndex)
-    assert.equal(3, added.getFirstStage())
-    assertOneEntity()
-    assertUpdateCalled(added, 1, nil, false)
-    assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
-  })
-  test("preview entity", () => {
-    const { luaEntity, added } = addAndReset(1, 3)
-    luaEntity.destroy()
-    const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
-    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
-    assert.equal(3, added.getFirstStage())
-    assertOneEntity()
-    assertUpdateCalled(added, 1, nil, false)
-    assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
-  })
-  test("settings remnant", () => {
-    // with preview again
-    const { luaEntity, added } = addAndReset(1, 3)
-    luaEntity.destroy()
-    const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
-    added.isSettingsRemnant = true
-    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
-    assert.equal(3, added.getFirstStage())
-    assertOneEntity()
-    assertReviveSettingsRemnantCalled(added)
   })
 })
 
