@@ -48,7 +48,10 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     this.playerIndex = tracker.playerIndex
 
     global.players[this.playerIndex].currentAssemblySettings = this
-    tracker.onMount((e) => (this.element = e))
+    tracker.onMount((e) => {
+      this.element = e
+      e.bring_to_front()
+    })
     tracker.getSubscription().add(funcOn(this.onDestroyed))
 
     this.assembly.localEvents.subscribe(tracker.getSubscription(), funcOn(this.onAssemblyEvent))
@@ -221,6 +224,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
             tooltip={[L_GuiAssemblySettings.ResetStageTooltip]}
             on_gui_click={funcOn(this.resetStage)}
           />
+          <label style="bold_label" caption={[L_GuiAssemblySettings.MoreSettingsComingSoon]} />
         </scroll-pane>
       </>
     )
@@ -258,7 +262,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
 }
 
 const AssemblySettingsName = script.mod_name + ":AssemblySettings"
-const defaultLocation = Pos(20, 200)
+const defaultLocation = Pos(0, 400)
 export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): void {
   const existing = global.players[player.index].currentAssemblySettings
   const existingValid = existing && existing.element.valid

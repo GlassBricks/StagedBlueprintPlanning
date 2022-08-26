@@ -150,4 +150,6 @@ export declare const enum L_GuiAssemblySettings {
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
+  /** More settings coming soon! */
+  MoreSettingsComingSoon = "bp100.gui.assembly-settings.more-settings-coming-soon",
 }
