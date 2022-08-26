@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
@@ -17,9 +16,10 @@ import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
-import { createMockEntityCreator, MockEntityCreator } from "../../entity/EntityHandler-mock"
 import { Pos } from "../../lib/geometry"
 import { clearTestArea } from "../area"
+import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
+import { createMockAssemblyContent } from "./Assembly-mock"
 
 interface TestEntity extends Entity {
   prop1: number

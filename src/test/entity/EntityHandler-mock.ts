@@ -10,14 +10,14 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { StagePosition } from "../assembly/AssemblyContent"
-import { shallowCopy } from "../lib"
-import { Position } from "../lib/geometry"
-import { MutableMap2D, newMap2D } from "../lib/map2d"
-import { BuiltinEntityKeys, entityMock, isMock } from "../test/simple-mock"
-import { StageNumber } from "./AssemblyEntity"
-import { Entity, EntityPose } from "./Entity"
-import { DefaultEntityHandler, EntityCreator, EntitySaver } from "./EntityHandler"
+import { StagePosition } from "../../assembly/AssemblyContent"
+import { StageNumber } from "../../entity/AssemblyEntity"
+import { Entity, EntityPose } from "../../entity/Entity"
+import { DefaultEntityHandler, EntityCreator, EntitySaver } from "../../entity/EntityHandler"
+import { shallowCopy } from "../../lib"
+import { Position } from "../../lib/geometry"
+import { MutableMap2D, newMap2D } from "../../lib/map2d"
+import { BuiltinEntityKeys, entityMock, isMock } from "../simple-mock"
 
 /** @noSelf */
 export interface MockEntityCreator extends EntityCreator {

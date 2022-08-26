@@ -10,7 +10,6 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import {
   createHighlightCreator,
@@ -24,6 +23,7 @@ import { Entity } from "../../entity/Entity"
 import { Pos } from "../../lib/geometry"
 import { SpriteRender } from "../../lib/rendering"
 import { entityMock, simpleMock } from "../simple-mock"
+import { createMockAssemblyContent } from "./Assembly-mock"
 
 interface FooEntity extends Entity {
   foo?: number

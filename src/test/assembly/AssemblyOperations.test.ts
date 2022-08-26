@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import {
   AssemblyOperations,
@@ -19,6 +18,7 @@ import {
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { Pos } from "../../lib/geometry"
+import { createMockAssemblyContent } from "./Assembly-mock"
 
 let assembly: AssemblyContent
 

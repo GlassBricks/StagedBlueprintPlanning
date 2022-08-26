@@ -9,12 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { DefaultWireHandler, WireHandler } from "../../assembly/WireHandler"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
 import { clearTestArea } from "../area"
+import { createMockAssemblyContent } from "./Assembly-mock"
 
 let assembly: AssemblyContent
 let luaEntity1: LuaEntity

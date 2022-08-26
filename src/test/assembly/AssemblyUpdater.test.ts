@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createMockAssemblyContent } from "../../assembly/Assembly-mock"
 import { findUndergroundPair } from "../../assembly/assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
 import {
@@ -25,12 +24,13 @@ import { AssemblyEntity, StageDiffs, StageNumber } from "../../entity/AssemblyEn
 import { AssemblyWireConnection, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
 import { Entity } from "../../entity/Entity"
 import { getEntityInfo } from "../../entity/entity-info"
-import { createMockEntitySaver } from "../../entity/EntityHandler-mock"
 import { UndergroundBeltEntity } from "../../entity/undergrounds"
 import { ContextualFun, Mutable } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
+import { createMockEntitySaver } from "../entity/EntityHandler-mock"
 import { entityMock, simpleMock } from "../simple-mock"
+import { createMockAssemblyContent } from "./Assembly-mock"
 import direction = defines.direction
 import wire_type = defines.wire_type
 

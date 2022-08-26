@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyContent, StagePosition } from "./AssemblyContent"
-import { Stage } from "./AssemblyDef"
-import { newEntityMap } from "./EntityMap"
+import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
+import { Stage } from "../../assembly/AssemblyDef"
+import { newEntityMap } from "../../assembly/EntityMap"
 
 export function createMockAssemblyContent(numStages: number): AssemblyContent {
   const stages: StagePosition[] = Array.from({ length: numStages }, (_, i) => ({

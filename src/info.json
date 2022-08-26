@@ -10,7 +10,7 @@
       "prepackage": "yarn prepare-package"
     },
     "git_publish_branch": "main",
-    "ignore": ["readme.md", "**/*\\-test.lua", "**/*\\-mock.lua", "**/*.xcf", "**/*.ts", "**/*.tsx"],
+    "ignore": ["readme.md", "test/**/*", "**/*.xcf", "**/*.svg"],
     "removeZipAfterPackage": true
   },
   "dependencies": [
