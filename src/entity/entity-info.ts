@@ -11,7 +11,6 @@
 
 import { PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
-import isCenteredSquare = BBox.isCenteredSquare
 
 let theEntityPrototypes: typeof game.entity_prototypes
 
@@ -23,49 +22,76 @@ function getEntityPrototypes(): typeof game.entity_prototypes {
 // <type>|<fast_replaceable_group>|<lx>|<ly>|<rx>|<ry> or <none>|<entity_name>
 export type CategoryName = `${string}|${string}|${number}|${number}|${number}|${number}` | `<${string}>|${string}`
 
+export const enum PasteRotatableType {
+  None = 0,
+  Rectangular = 1,
+  Square = 2,
+}
+export interface EntityInfo {
+  categoryName: CategoryName
+  pasteRotatableType: PasteRotatableType
+  selectionBox: BBoxClass
+  type: string
+}
+
 const typeRemap: PRecord<string, string> = {
   "logistic-container": "container",
   "rail-chain-signal": "rail-signal",
 }
-function computeCategoryName(entityName: string): CategoryName {
-  const prototype = getEntityPrototypes()[entityName]
-  if (!prototype) return `<unknown>|${entityName}`
+
+function computeCategoryName(prototype: LuaEntityPrototype | nil): CategoryName {
+  if (!prototype) return `<unknown>|${prototype}`
   const { fast_replaceable_group, type, collision_box } = prototype
-  if (fast_replaceable_group === nil) return `<none>|${entityName}`
+  if (fast_replaceable_group === nil) return `<none>|${prototype.name}`
   const actualType = typeRemap[type] ?? type
   const { x: lx, y: ly } = collision_box.left_top
   const { x: rx, y: ry } = collision_box.right_bottom
   return [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|") as CategoryName
 }
 
-const categoryNames: PRecord<string, CategoryName> = {}
-export function getEntityCategory(entityName: string): CategoryName {
-  const categoryName = categoryNames[entityName]
-  if (categoryName) return categoryName
-  return (categoryNames[entityName] = computeCategoryName(entityName))
+const pasteRotatableTypes = newLuaSet("assembling-machine", "boiler")
+
+function computeEntityInfo(entityName: string): EntityInfo {
+  const prototype = getEntityPrototypes()[entityName]
+  if (!prototype)
+    return {
+      categoryName: `<unknown>|${entityName}`,
+      pasteRotatableType: PasteRotatableType.None,
+      selectionBox: BBox.coords(0, 0, 0, 0),
+      type: "",
+    }
+  const categoryName = computeCategoryName(prototype)
+  const selectionBox = BBox.from(prototype.selection_box)
+  let pasteRotatableType = PasteRotatableType.None
+  if (pasteRotatableTypes.has(prototype.type)) {
+    const collisionBox = prototype.collision_box
+    if (BBox.isCenteredSquare(collisionBox)) {
+      pasteRotatableType = PasteRotatableType.Square
+    } else if (BBox.isCenteredRectangle(collisionBox)) {
+      pasteRotatableType = PasteRotatableType.Rectangular
+    }
+  }
+
+  return { categoryName, selectionBox, pasteRotatableType, type: prototype.type }
 }
 
-const selectionBoxes: PRecord<string, BBoxClass> = {}
-function computeSelectionBox(entityName: string): BBoxClass {
-  const prototype = getEntityPrototypes()[entityName]
-  if (!prototype) return BBox.coords(0, 0, 0, 0)
-  return BBox.load(prototype.selection_box)
+const entityInfoCache: PRecord<string, EntityInfo> = {}
+
+export function getEntityInfo(entityName: string): EntityInfo {
+  const existing = entityInfoCache[entityName]
+  if (existing !== nil) return existing
+  return (entityInfoCache[entityName] = computeEntityInfo(entityName))
+}
+
+export function getEntityCategory(entityName: string): CategoryName {
+  return getEntityInfo(entityName).categoryName
 }
 export function getSelectionBox(entityName: string): BBoxClass {
-  const selectionBox = selectionBoxes[entityName]
-  if (selectionBox) return selectionBox
-  return (selectionBoxes[entityName] = computeSelectionBox(entityName))
+  return getEntityInfo(entityName).selectionBox
 }
-
-export function isPasteRotatable(entityName: string): boolean {
-  return isCenteredSquare(getSelectionBox(entityName))
+export function getPastRotatableType(entityName: string): PasteRotatableType {
+  return getEntityInfo(entityName).pasteRotatableType
 }
-
 export function isUndergroundBeltType(entityName: string): boolean {
-  const prototype = getEntityPrototypes()[entityName]
-  return prototype !== nil && prototype.type === "underground-belt"
-}
-
-export function _overrideEntityCategory(entityName: string, categoryName: string): void {
-  categoryNames[entityName] = categoryName as CategoryName
+  return getEntityInfo(entityName).type === "underground-belt"
 }

@@ -24,7 +24,7 @@ import { L_Game, Prototypes } from "../../constants"
 import { AssemblyEntity, StageDiffs, StageNumber } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
 import { Entity } from "../../entity/Entity"
-import { _overrideEntityCategory } from "../../entity/entity-info"
+import { getEntityInfo } from "../../entity/entity-info"
 import { createMockEntitySaver } from "../../entity/EntityHandler-mock"
 import { UndergroundBeltEntity } from "../../entity/undergrounds"
 import { ContextualFun, Mutable } from "../../lib"
@@ -43,10 +43,6 @@ let assemblyUpdater: AssemblyUpdater
 let worldUpdater: mock.Stubbed<WorldUpdater>
 let wireSaver: mock.Stubbed<WireSaver>
 let worldNotifier: mock.Mocked<WorldNotifier>
-before_all(() => {
-  _overrideEntityCategory("test", "test")
-  _overrideEntityCategory("test2", "test")
-})
 
 let totalCalls: number
 before_each(() => {
@@ -416,7 +412,9 @@ describe("update", () => {
   })
 
   test("can detect rotate by pasting", () => {
-    const { luaEntity, added } = addAndReset(2, 2)
+    const { luaEntity, added } = addAndReset(2, 2, {
+      name: "assembling-machine-1",
+    })
     luaEntity.direction = defines.direction.east
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
 
@@ -429,7 +427,7 @@ describe("update", () => {
     const { luaEntity, added } = addAndReset(2, 3)
     luaEntity.direction = defines.direction.east
 
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex, defines.direction.north)
     assert.equal(defines.direction.north, added.getDirection())
 
     assertOneEntity()
@@ -493,6 +491,11 @@ describe("rotate", () => {
     assertUpdateCalled(added, 2, 2, false)
     assertNotified(luaEntity, [L_Game.CantBeRotated], true)
   })
+})
+
+before_all(() => {
+  getEntityInfo("test").categoryName = "<unknown>|test"
+  getEntityInfo("test2").categoryName = "<unknown>|test"
 })
 
 describe("fast replace", () => {

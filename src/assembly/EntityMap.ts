@@ -13,7 +13,7 @@ import { oppositedirection } from "util"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
-import { getEntityCategory, isPasteRotatable } from "../entity/entity-info"
+import { getEntityCategory, getPastRotatableType, PasteRotatableType } from "../entity/entity-info"
 import { isEmpty, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableMap2D, newMap2D } from "../lib/map2d"
@@ -94,10 +94,20 @@ class EntityMapImpl implements MutableEntityMap {
       return this.findCompatibleBasic(type, position, direction)
     }
     const name = entity.name
-    if (isPasteRotatable(name)) {
+    const pasteRotatableType = getPastRotatableType(name)
+    if (pasteRotatableType === PasteRotatableType.None) {
+      return this.findCompatibleBasic(name, position, previousDirection ?? entity.direction)
+    }
+    if (pasteRotatableType === PasteRotatableType.Square) {
       return this.findCompatibleAnyDirection(name, position)
     }
-    return this.findCompatibleBasic(name, position, previousDirection ?? entity.direction)
+    if (pasteRotatableType === PasteRotatableType.Rectangular) {
+      const direction = previousDirection ?? entity.direction
+      return (
+        this.findCompatibleBasic(name, position, direction) ??
+        this.findCompatibleBasic(name, position, oppositedirection(direction))
+      )
+    }
   }
 
   countNumEntities(): number {
