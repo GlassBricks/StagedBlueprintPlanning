@@ -15,6 +15,7 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { Pos } from "../lib/geometry"
 import { ProtectedEvents } from "../lib/ProtectedEvents"
+import { L_Interaction } from "../locale"
 import { Assembly, Stage } from "./AssemblyDef"
 import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from "./blueprint-paste"
@@ -55,11 +56,23 @@ function luaEntityPotentiallyUpdated(entity: LuaEntity, player: PlayerIndex | ni
   if (assembly) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, player)
 }
 
-function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {
+function checkRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil) {
   const [assembly, stage] = getStageAtEntity(entity)
-  if (assembly) DefaultAssemblyUpdater.onEntityRotated(assembly, entity, stage, player, previousDirection)
-  else if (entity.valid && entity.name.startsWith(Prototypes.PreviewEntityPrefix)) {
+  if (assembly) {
+    DefaultAssemblyUpdater.onEntityRotated(assembly, entity, stage, player, previousDirection)
+    return true
+  }
+  return false
+}
+function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {
+  if (checkRotated(entity, previousDirection, player) || !entity.valid) return
+  if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) {
     entity.direction = previousDirection
+    return
+  }
+  if (entity.type === "entity-ghost" && entity.ghost_type === "underground-belt") {
+    const [assembly] = getStageAtPosition(entity.surface, entity.position)
+    if (assembly) game.print([L_Interaction.GhostUndergroundFlipNotHandled])
   }
 }
 

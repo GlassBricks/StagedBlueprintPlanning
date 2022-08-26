@@ -62,6 +62,8 @@ export declare const enum L_Interaction {
   CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
   /** Cannot move underground belt with upgrade. Try upgrading first. */
   CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
+  /** Warning: flipping a ghost underground in an assembly will not check its pair, due to current limitations of the factorio modding api. */
+  GhostUndergroundFlipNotHandled = "bp100.interaction.ghost-underground-flip-not-handled",
   /** Not in an assembly */
   PlayerNotInAssembly = "bp100.interaction.player-not-in-assembly",
   /** Entity is not in an assembly */
