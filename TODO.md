@@ -50,61 +50,57 @@
 
 - [ ] Diagnostics system
 - [ ] Overlapping entities
-    - [x] Detect overlapping entities
-    - [x] Show highlight
-    - ~~[ ] Automatically attempt to revive when entities change~~
-    - [ ] Manual revive
-    - [ ] Go to source
+  - [x] Detect overlapping entities
+  - [x] Show highlight
+  - ~~[ ] Automatically attempt to revive when entities change~~
+  - [x] Manual revive
+  - [x] Go to source
 - [ ] Incompatible properties due to upgraded entity
-    - [x] Automatically attempt to fix when entities change
+  - [x] Automatically attempt to fix when entities change
 - [ ] Max connections exceeded
-    - [ ] How to highlight?
-    - [ ] Automatically attempt to fix
+  - [ ] How to highlight?
+  - [ ] Automatically attempt to fix
 - [ ] Lost references
-    - [x] Show highlight
-    - [ ] Selectable?
-    - [ ] Manual revive/delete
+  - [x] Show highlight
+  - [x] Selectable?
+  - [x] Manual revive/delete
 
 ### Other utils
 
-- [ ] Move entity up/down
+- [x] Move entity up/down
 - [ ] Option to move/edit in specific layer?
 
 ### UI
 
 - [ ] Show new vs previous layer entities
 - [ ] Show conflicts/indicators in this layer/later layer
-    - [x] Overlap
-    - [x] Upgrade
-    - [x] Property changes
-    - [ ] Other conflict
+  - [x] Overlap
+  - [x] Upgrade
+  - [x] Property changes
+  - [ ] Other conflict
 - [x] Preview future layer entities?
-- [ ] Show lost references
-- [ ] Shortcuts?
-    - [ ] Move self up/down layer
-    - [ ] Move entity up/down layer
+- [x] Show lost references
+- [x] Shortcuts?
+  - [x] Move self up/down layer
+  - [x] Move entity up/down layer
 - [ ] Per entity gui
-    - [ ] Show changed properties
-    - [ ] Lock properties
-    - [ ] Reset properties
-- [ ] List all assemblies
-- [ ] New assembly
-- [ ] View/edit information about assembly
-    - [ ] New layer
-    - [ ] New layer in middle
-    - [ ] Merge layers
+  - [ ] Show changed properties
+  - [ ] Lock properties
+  - [ ] Reset properties
+- [x] List all assemblies
+- [x] New assembly
+- [x] View/edit information about assembly
+  - [x] New layer
+  - [x] New layer in middle
+  - [x] Merge layers
 - [ ] View/edit layers
-    - [ ] Other utils
-        - [ ] Reset all entities
-        - [ ] Disable/enable all entities
-    - [ ] Show diagnostics
-        - [ ] By type
-        - [ ] Teleport button
-        - [ ] Resolve options? (delete, remove, merge)
-
-### Queue
-
-- [ ] Fix indicators when entity moved up layer
+  - [ ] Other utils
+    - [x] Reset all entities
+    - [ ] Disable/enable all entities
+  - [ ] Show diagnostics
+    - [ ] By type
+    - [ ] Teleport button
+    - [ ] Resolve options? (delete, remove, merge)
 
 ### Misc
 
