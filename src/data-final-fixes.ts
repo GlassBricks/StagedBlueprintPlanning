@@ -24,7 +24,7 @@ import {
 } from "./declarations/data"
 import { BBox } from "./lib/geometry"
 import { debugPrint } from "./lib/test/misc"
-import { L_Bp3 } from "./locale"
+import { L_Bp100 } from "./locale"
 import direction = defines.direction
 import ceil = math.ceil
 import max = math.max
@@ -131,7 +131,7 @@ for (const [, type] of ipairs(keys<typeof BuildableEntityTypes>())) {
     previews.push({
       name: Prototypes.PreviewEntityPrefix + name,
       type: "simple-entity-with-owner",
-      localised_name: [L_Bp3.PreviewEntity, ["entity-name." + name]],
+      localised_name: [L_Bp100.PreviewEntity, ["entity-name." + name]],
 
       // copied from prototype
       icons: prototype.icons,
@@ -162,7 +162,7 @@ for (const [, type] of ipairs(keys<typeof BuildableEntityTypes>())) {
     selectionProxies.push({
       name: Prototypes.SelectionProxyPrefix + name,
       type: "simple-entity-with-owner",
-      localised_name: [L_Bp3.SelectionProxy, ["entity-name." + name]],
+      localised_name: [L_Bp100.SelectionProxy, ["entity-name." + name]],
 
       // copied from prototype
       icons: prototype.icons,

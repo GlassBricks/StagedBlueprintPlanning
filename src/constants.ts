@@ -10,39 +10,39 @@
  */
 
 export const enum CustomInputs {
-  Build = "bp3:build",
-  RemovePoleCables = "bp3:remove-pole-cables",
+  Build = "bp100:build",
+  RemovePoleCables = "bp100:remove-pole-cables",
 
-  NextStage = "bp3:next-stage",
-  PreviousStage = "bp3:previous-stage",
-  GoToFirstStage = "bp3:go-to-first-stage",
-  GoToNextNotableStage = "bp3:go-to-next-notable-stage",
+  NextStage = "bp100:next-stage",
+  PreviousStage = "bp100:previous-stage",
+  GoToFirstStage = "bp100:go-to-first-stage",
+  GoToNextNotableStage = "bp100:go-to-next-notable-stage",
 
-  MoveToThisStage = "bp3:move-to-this-stage",
+  MoveToThisStage = "bp100:move-to-this-stage",
 }
 
 export const enum Settings {
-  CyclicNavigation = "bp3:cyclic-navigation",
+  CyclicNavigation = "bp100:cyclic-navigation",
 }
 
 export const enum Prototypes {
   // used to handle blueprints
-  EntityMarker = "bp3:entity-marker",
+  EntityMarker = "bp100:entity-marker",
 
-  PreviewEntityPrefix = "bp3:preview-entity-",
-  SelectionProxyPrefix = "bp3:selection-proxy-",
+  PreviewEntityPrefix = "bp100:preview-entity-",
+  SelectionProxyPrefix = "bp100:selection-proxy-",
 
-  UtilityGroup = "bp3:utility",
-  PreviewEntitySubgroup = "bp3:preview-entity",
-  SelectionProxySubgroup = "bp3:selection-proxy",
+  UtilityGroup = "bp100:utility",
+  PreviewEntitySubgroup = "bp100:preview-entity",
+  SelectionProxySubgroup = "bp100:selection-proxy",
 
-  AssemblyAddTool = "bp3:assembly-add-tool",
-  CleanupTool = "bp3:cleanup-tool",
+  AssemblyAddTool = "bp100:assembly-add-tool",
+  CleanupTool = "bp100:cleanup-tool",
 }
 
 export const enum Sprites {
-  ExternalLinkWhite = "bp3:external-link-white",
-  ExternalLinkBlack = "bp3:external-link-black",
+  ExternalLinkWhite = "bp100:external-link-white",
+  ExternalLinkBlack = "bp100:external-link-black",
 }
 
 export namespace Colors {

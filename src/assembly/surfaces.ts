@@ -31,7 +31,7 @@ export function generateAssemblySurfaces(amount: number): void {
 }
 
 function createBpSurface(number: number): LuaSurface {
-  const result = game.create_surface("bp3-stage-" + number)
+  const result = game.create_surface("bp100-stage-" + number)
   result.always_day = true
   result.generate_with_lab_tiles = true
   global.surfaceIndexToStageIndex[result.index] = number

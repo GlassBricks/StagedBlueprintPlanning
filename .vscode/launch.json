@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Test run",
       "adjustMods": {
-        "bbpp3": true,
+        "bp100": true,
         "WiderNoticeTextBoxes": true,
         "testorio": true
       },
@@ -36,7 +36,7 @@
       "request": "launch",
       "name": "Test debug",
       "adjustMods": {
-        "bbpp3": true,
+        "bp100": true,
         "WiderNoticeTextBoxes": true,
         "testorio": true
       },
@@ -62,7 +62,7 @@
       "request": "launch",
       "name": "debug data",
       "adjustMods": {
-        "bbpp3": true,
+        "bp100": true,
         "WiderNoticeTextBoxes": true,
         "testorio": true
       },

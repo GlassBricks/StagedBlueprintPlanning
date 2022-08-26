@@ -14,7 +14,7 @@ import { Mutable } from "../lib"
 import { L_Interaction } from "../locale"
 
 const enum ModifiedBlueprintTag {
-  Value = "isBp3ModifiedBlueprint",
+  Value = "isBp100ModifiedBlueprint",
 }
 export interface MarkerTags extends Tags {
   referencedName: string

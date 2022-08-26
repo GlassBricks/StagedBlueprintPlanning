@@ -93,14 +93,14 @@ data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup])
 const assemblyAddTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.AssemblyAddTool,
-  icon: "__bbpp3__/graphics/icons/assembly-add-tool.png",
+  icon: "__bp100__/graphics/icons/assembly-add-tool.png",
   icon_size: 64,
   icon_mipmaps: 4,
 
   flags: ["only-in-cursor", "spawnable", "not-stackable"],
   stack_size: 1,
   subgroup: "tool",
-  order: "z[bp3]-a[assembly-add]",
+  order: "z[bp100]-a[assembly-add]",
 
   selection_mode: ["blueprint"],
   selection_color: [1, 1, 1],
@@ -125,7 +125,7 @@ const cleanupTool: SelectionToolPrototype = {
       tint: [1, 1, 1, 0.5],
     },
     {
-      icon: "__bbpp3__/graphics/icons/cleanup-white.png",
+      icon: "__bp100__/graphics/icons/cleanup-white.png",
       icon_size: 64,
       scale: 0.4,
     },
@@ -136,7 +136,7 @@ const cleanupTool: SelectionToolPrototype = {
   stack_size: 1,
 
   subgroup: "tool",
-  order: "z[bp3]-b[cleanup]",
+  order: "z[bp100]-b[cleanup]",
 
   selection_mode: ["entity-with-owner"],
   selection_color: cleanupToolColor,
@@ -183,13 +183,13 @@ const getCleanupToolInput: CustomInputPrototype = {
 data.extend([
   cleanupTool,
   selectionToolToShortcut(assemblyAddTool, {
-    filename: "__bbpp3__/graphics/icons/assembly-add-white.png",
+    filename: "__bp100__/graphics/icons/assembly-add-white.png",
     size: 64,
   }),
   selectionToolToShortcut(
     cleanupTool,
     {
-      filename: "__bbpp3__/graphics/icons/cleanup-white.png",
+      filename: "__bp100__/graphics/icons/cleanup-white.png",
       size: 64,
     },
     Prototypes.CleanupTool,
@@ -215,8 +215,8 @@ function createSprite(
 }
 
 data.extend([
-  createSprite(Sprites.ExternalLinkBlack, "__bbpp3__/graphics/icons/external-link-black.png", 32),
-  createSprite(Sprites.ExternalLinkWhite, "__bbpp3__/graphics/icons/external-link-white.png", 32),
+  createSprite(Sprites.ExternalLinkBlack, "__bp100__/graphics/icons/external-link-black.png", 32),
+  createSprite(Sprites.ExternalLinkWhite, "__bp100__/graphics/icons/external-link-white.png", 32),
 ])
 
 const nextStage: CustomInputPrototype = {

@@ -3,149 +3,149 @@
 
 export declare const enum L_ItemName {
   /** Assembly cleanup tool */
-  CleanupTool = "item-name.bp3:cleanup-tool",
+  CleanupTool = "item-name.bp100:cleanup-tool",
   /** Assembly creation tool */
-  AssemblyAddTool = "item-name.bp3:assembly-add-tool",
+  AssemblyAddTool = "item-name.bp100:assembly-add-tool",
 }
 export declare const enum L_ShortcutName {
   /** Assembly cleanup tool */
-  CleanupTool = "shortcut-name.bp3:cleanup-tool",
+  CleanupTool = "shortcut-name.bp100:cleanup-tool",
   /** Create new assembly */
-  AssemblyAddTool = "shortcut-name.bp3:assembly-add-tool",
+  AssemblyAddTool = "shortcut-name.bp100:assembly-add-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
-  EntityMarker = "entity-name.bp3:entity-marker",
+  EntityMarker = "entity-name.bp100:entity-marker",
 }
 export declare const enum L_ItemGroupName {
-  /** BP3 utility entities */
-  Utility = "item-group-name.bp3:utility",
+  /** BP100 utility entities */
+  Utility = "item-group-name.bp100:utility",
 }
 export declare const enum L_ModSettingName {
   /** Use cyclic stage navigation */
-  CyclicNavigation = "mod-setting-name.bp3:cyclic-navigation",
+  CyclicNavigation = "mod-setting-name.bp100:cyclic-navigation",
 }
 export declare const enum L_Controls {
   /** Next stage */
-  NextStage = "controls.bp3:next-stage",
+  NextStage = "controls.bp100:next-stage",
   /** Previous stage */
-  PreviousStage = "controls.bp3:previous-stage",
+  PreviousStage = "controls.bp100:previous-stage",
   /** Go to entity's first stage */
-  GoToFirstStage = "controls.bp3:go-to-first-stage",
+  GoToFirstStage = "controls.bp100:go-to-first-stage",
   /** Go to entity's next notable stage */
-  GoToNextNotableStage = "controls.bp3:go-to-next-notable-stage",
+  GoToNextNotableStage = "controls.bp100:go-to-next-notable-stage",
 }
-export declare const enum L_Bp3 {
+export declare const enum L_Bp100 {
   /** __1__ (preview) */
-  PreviewEntity = "bp3.preview-entity",
+  PreviewEntity = "bp100.preview-entity",
   /** __1__ (selection proxy) */
-  SelectionProxy = "bp3.selection-proxy",
+  SelectionProxy = "bp100.selection-proxy",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
-  UnexpectedError = "bp3.interaction.unexpected-error",
+  UnexpectedError = "bp100.interaction.unexpected-error",
   /** This area intersects assembly __1__ (possibly on a different surface) */
-  AreaIntersectsWithOtherAssembly = "bp3.interaction.area-intersects-with-other-assembly",
+  AreaIntersectsWithOtherAssembly = "bp100.interaction.area-intersects-with-other-assembly",
   /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected in assemblies (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
-  BlueprintNotHandled = "bp3.interaction.blueprint-not-handled",
+  BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
-  EntityMovedFromStage = "bp3.interaction.entity-moved-from-stage",
+  EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
   /** Entity moved back to __1__ */
-  EntityMovedBackToStage = "bp3.interaction.entity-moved-back-to-stage",
+  EntityMovedBackToStage = "bp100.interaction.entity-moved-back-to-stage",
   /** Cannot flip underground paired with multiple other undergrounds */
-  CannotFlipUndergroundDueToMultiplePairs = "bp3.interaction.cannot-flip-underground-due-to-multiple-pairs",
+  CannotFlipUndergroundDueToMultiplePairs = "bp100.interaction.cannot-flip-underground-due-to-multiple-pairs",
   /** Cannot upgrade underground paired with multiple other undergrounds */
-  CannotUpgradeUndergroundDueToMultiplePairs = "bp3.interaction.cannot-upgrade-underground-due-to-multiple-pairs",
+  CannotUpgradeUndergroundDueToMultiplePairs = "bp100.interaction.cannot-upgrade-underground-due-to-multiple-pairs",
   /** Cannot create stage upgrade if underground pair not in the same stage */
-  CannotCreateUndergroundUpgradeIfNotInSameStage = "bp3.interaction.cannot-create-underground-upgrade-if-not-in-same-stage",
+  CannotCreateUndergroundUpgradeIfNotInSameStage = "bp100.interaction.cannot-create-underground-upgrade-if-not-in-same-stage",
   /** Upgrading this will change the underground pair */
-  CannotUpgradeUndergroundChangedPair = "bp3.interaction.cannot-upgrade-underground-changed-pair",
+  CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
   /** Cannot move underground belt with upgrade. Try upgrading first. */
-  CannotMoveUndergroundBeltWithUpgrade = "bp3.interaction.cannot-move-underground-belt-with-upgrade",
+  CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
   /** Not in an assembly */
-  PlayerNotInAssembly = "bp3.interaction.player-not-in-assembly",
+  PlayerNotInAssembly = "bp100.interaction.player-not-in-assembly",
   /** Entity is not in an assembly */
-  EntityNotInAssembly = "bp3.interaction.entity-not-in-assembly",
+  EntityNotInAssembly = "bp100.interaction.entity-not-in-assembly",
   /** No next stage */
-  NoNextStage = "bp3.interaction.no-next-stage",
+  NoNextStage = "bp100.interaction.no-next-stage",
   /** No previous stage */
-  NoPreviousStage = "bp3.interaction.no-previous-stage",
+  NoPreviousStage = "bp100.interaction.no-previous-stage",
   /** Already at entity first stage */
-  AlreadyAtFirstStage = "bp3.interaction.already-at-first-stage",
+  AlreadyAtFirstStage = "bp100.interaction.already-at-first-stage",
   /** Entity is the same in all stages */
-  EntitySameInAllStages = "bp3.interaction.entity-same-in-all-stages",
+  EntitySameInAllStages = "bp100.interaction.entity-same-in-all-stages",
 }
 export declare const enum L_Assembly {
   /** <Unnamed assembly __1__> */
-  UnnamedAssembly = "bp3.assembly.unnamed-assembly",
+  UnnamedAssembly = "bp100.assembly.unnamed-assembly",
   /** <Stage __1__> */
-  UnnamedStage = "bp3.assembly.unnamed-stage",
+  UnnamedStage = "bp100.assembly.unnamed-stage",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** Assembly: */
-  Assembly = "bp3.gui.current-assembly.assembly",
+  Assembly = "bp100.gui.current-assembly.assembly",
   /** (Not in an assembly) */
-  NoAssembly = "bp3.gui.current-assembly.no-assembly",
+  NoAssembly = "bp100.gui.current-assembly.no-assembly",
   /** Open assembly settings */
-  OpenAssemblySettings = "bp3.gui.current-assembly.open-assembly-settings",
+  OpenAssemblySettings = "bp100.gui.current-assembly.open-assembly-settings",
   /** Show all assemblies */
-  ShowAllAssemblies = "bp3.gui.current-assembly.show-all-assemblies",
+  ShowAllAssemblies = "bp100.gui.current-assembly.show-all-assemblies",
 }
 export declare const enum L_GuiAllAssemblies {
   /** All assemblies */
-  Title = "bp3.gui.all-assemblies.title",
+  Title = "bp100.gui.all-assemblies.title",
   /** New assembly [img=info] */
-  NewAssembly = "bp3.gui.all-assemblies.new-assembly",
+  NewAssembly = "bp100.gui.all-assemblies.new-assembly",
   /** You can also use the "Create new assembly" shortcut (bottom right) to create a new assembly. */
-  NewAssemblyTooltip = "bp3.gui.all-assemblies.new-assembly-tooltip",
+  NewAssemblyTooltip = "bp100.gui.all-assemblies.new-assembly-tooltip",
 }
 export declare const enum L_GuiNewAssembly {
   /** New Assembly */
-  Title = "bp3.gui.new-assembly.title",
+  Title = "bp100.gui.new-assembly.title",
   /** Name */
-  Name = "bp3.gui.new-assembly.name",
+  Name = "bp100.gui.new-assembly.name",
   /** Initial number of stages */
-  InitialNumStages = "bp3.gui.new-assembly.initial-num-stages",
+  InitialNumStages = "bp100.gui.new-assembly.initial-num-stages",
   /** Create */
-  Create = "bp3.gui.new-assembly.create",
+  Create = "bp100.gui.new-assembly.create",
   /** Delete existing entities [img=info] */
-  DeleteExistingEntities = "bp3.gui.new-assembly.delete-existing-entities",
+  DeleteExistingEntities = "bp100.gui.new-assembly.delete-existing-entities",
   /** Existing entities are not yet processed (this may be a future feature). To import, paste entities after creating the assembly. */
-  DeleteExistingEntitiesTooltip = "bp3.gui.new-assembly.delete-existing-entities-tooltip",
+  DeleteExistingEntitiesTooltip = "bp100.gui.new-assembly.delete-existing-entities-tooltip",
   /** Invalid specified number of stages */
-  InvalidNumStages = "bp3.gui.new-assembly.invalid-num-stages",
+  InvalidNumStages = "bp100.gui.new-assembly.invalid-num-stages",
 }
 export declare const enum L_GuiAssemblySettings {
   /** Assembly */
-  Title = "bp3.gui.assembly-settings.title",
+  Title = "bp100.gui.assembly-settings.title",
   /** Rename assembly */
-  RenameAssembly = "bp3.gui.assembly-settings.rename-assembly",
+  RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
   /** Rename current stage */
-  RenameStage = "bp3.gui.assembly-settings.rename-stage",
+  RenameStage = "bp100.gui.assembly-settings.rename-stage",
   /** New stage: */
-  NewStage = "bp3.gui.assembly-settings.new-stage",
+  NewStage = "bp100.gui.assembly-settings.new-stage",
   /** Insert before current */
-  InsertAboveCurrent = "bp3.gui.assembly-settings.insert-above-current",
+  InsertAboveCurrent = "bp100.gui.assembly-settings.insert-above-current",
   /** Add at end */
-  AtEnd = "bp3.gui.assembly-settings.at-end",
+  AtEnd = "bp100.gui.assembly-settings.at-end",
   /** Delete assembly */
-  DeleteAssembly = "bp3.gui.assembly-settings.delete-assembly",
+  DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
   /** Are you sure you want to delete assembly __1__? */
-  DeleteAssemblyConfirmation1 = "bp3.gui.assembly-settings.delete-assembly-confirmation1",
+  DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
   /** In-world entities will not be affected. */
-  DeleteAssemblyConfirmation2 = "bp3.gui.assembly-settings.delete-assembly-confirmation2",
+  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
   /** This action cannot be undone. */
-  DeleteAssemblyConfirmation3 = "bp3.gui.assembly-settings.delete-assembly-confirmation3",
+  DeleteAssemblyConfirmation3 = "bp100.gui.assembly-settings.delete-assembly-confirmation3",
   /** Delete stage */
-  DeleteStage = "bp3.gui.assembly-settings.delete-stage",
+  DeleteStage = "bp100.gui.assembly-settings.delete-stage",
   /** The first stage cannot be deleted. */
-  CannotDeleteFirstStage = "bp3.gui.assembly-settings.cannot-delete-first-stage",
+  CannotDeleteFirstStage = "bp100.gui.assembly-settings.cannot-delete-first-stage",
   /** Are you sure you want to delete stage __1__? */
-  DeleteStageConfirmation1 = "bp3.gui.assembly-settings.delete-stage-confirmation1",
+  DeleteStageConfirmation1 = "bp100.gui.assembly-settings.delete-stage-confirmation1",
   /** Stage contents will be merged with the previous stage (__1__). */
-  DeleteStageConfirmation2 = "bp3.gui.assembly-settings.delete-stage-confirmation2",
+  DeleteStageConfirmation2 = "bp100.gui.assembly-settings.delete-stage-confirmation2",
   /** Reset stage [img=info] */
-  ResetStage = "bp3.gui.assembly-settings.reset-stage",
+  ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
-  ResetStageTooltip = "bp3.gui.assembly-settings.reset-stage-tooltip",
+  ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
 }
