@@ -1,8 +1,8 @@
 {
   "name": "bp100",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "private": true,
-  "license": "GPL-3.0",
+  "license": "LGPL-3.0",
   "packageManager": "yarn@3.2.2",
   "devDependencies": {
     "@types/glob-to-regexp": "^0.4.1",
