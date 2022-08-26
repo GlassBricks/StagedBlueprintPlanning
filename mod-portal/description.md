@@ -4,9 +4,9 @@ The ultimate mod for designing staged blueprints for 100% speedruns.
 
 Separate your builds into stages. Edit entities in any stage, and it will automatically be applied to all later stages. Many interactions and features are supported.
 
-Note: This mod is currently in _beta_. There may be bugs or issues (but hopefully not!) Feedback is greatly appreciated.
+This mod is currently in _beta_. There may be bugs or issues (but hopefully not!) Feedback is greatly appreciated.
 
-**WARNING**: high memory usage for very large blueprints, 12GB+ of computer ram is recommended.
+**Note**: high memory usage for very large blueprints, 12GB+ of computer ram is recommended.
 
 ## Basic usage
 
@@ -79,6 +79,8 @@ You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
 - Automatic analysis and basic optimization
 
 ## Acknowledgements
+
+Gallery images from Nefrum's recent 100% runs (on speedrun.com).
 
 Thanks to the [AntiElitz factorio speedrunning community](https://discord.gg/AntiElitz), and [Warger](https://discord.com/invite/nfkbu6qSCj), who does plenty of 100% speedrunning, for providing feedback and inspiration for this mod.
 
