@@ -1,10 +1,8 @@
-# Blueprinting 3
+# 100% Blueprint planning
 
-A maybe actually great factorio mod for designing staged blueprints for 100% speedrunning.
+A factorio mod for designing staged blueprints for 100% speedrunning.
 
-This is currently in development, and right now exists mostly in tests.
-
-See also the [Todo list](TODO.md).
+For more info, see the mod portal.
 
 This uses:
 
