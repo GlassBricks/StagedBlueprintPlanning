@@ -44,7 +44,7 @@
     "build:gui-specs": "ts-node scripts/gen-gui-specs.ts",
     "build:scripts": "concurrently \"yarn build:locale\" \"yarn build:gui-specs\"",
     "build:release": "yarn build:scripts && tstl -p tsconfig-release.json",
-    "prepare-package": "yarn deep-clean && yarn build:release",
+    "prepare-package": "yarn clean && yarn build:release",
     "build": "yarn build:scripts && tstl",
     "watch": "tstl --watch",
     "watch:locale": "nodemon scripts/gen-locale-defs.ts",

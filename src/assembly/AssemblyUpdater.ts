@@ -236,7 +236,7 @@ export function createAssemblyUpdater(
       false,
     )
     existing.replaceWorldEntity(stageNumber, luaEntity)
-    updateWorldEntities(assembly, existing, stageNumber, oldStage, true)
+    updateWorldEntities(assembly, existing, stageNumber, oldStage)
   }
 
   function onEntityDeleted(

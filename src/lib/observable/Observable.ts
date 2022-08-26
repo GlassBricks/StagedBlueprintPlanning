@@ -10,6 +10,7 @@
  */
 
 import { Func, RegisterClass } from "../references"
+import { shallowCopy } from "../util"
 import { Subscription } from "./Subscription"
 
 export interface Subscribable<L extends Func> {
@@ -32,10 +33,15 @@ type AdditionalArgs<L extends Func> = L["invoke"] extends (this: any, arg1: any,
 export class ObserverList<L extends Func<(subscription: Subscription, ...args: any) => void>>
   implements Subscribable<L>
 {
+  private deleteQueue?: LuaSet<ObserverSubscription>
+  private declare get: LuaTableGetMethod<ObserverSubscription, L | undefined>
+  private declare set: LuaTableSetMethod<ObserverSubscription, L>
+  private declare has: LuaTableHasMethod<ObserverSubscription>
+  private declare delete: LuaTableDeleteMethod<ObserverSubscription>
+
   subscribeIndependently(observer: L): Subscription {
-    const thisAsMap = this as unknown as LuaMap<ObserverSubscription, L>
-    const subscription = new ObserverSubscription(thisAsMap)
-    thisAsMap.set(subscription, observer)
+    const subscription = new ObserverSubscription(this)
+    this.set(subscription, observer)
     return subscription
   }
 
@@ -47,25 +53,30 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
 
   raise(...args: AdditionalArgs<L>): void
   raise(...args: any[]): void {
-    for (const [subscription, observer] of this as unknown as LuaMap<ObserverSubscription, L>) {
-      observer.invoke(subscription, ...args)
+    for (const [subscription, observer] of shallowCopy(this as unknown as LuaMap<ObserverSubscription, L>)) {
+      if (this.has(subscription)) observer.invoke(subscription, ...args)
     }
   }
 
   closeAll(): void {
-    for (const [subscription] of this as unknown as LuaMap<ObserverSubscription, L>) {
+    for (const [subscription] of shallowCopy(this as unknown as LuaMap<ObserverSubscription, L>)) {
       subscription.close()
     }
+  }
+
+  _delete(subscription: ObserverSubscription): void {
+    if (!this.deleteQueue) this.delete(subscription)
+    else this.deleteQueue.add(subscription)
   }
 }
 
 @RegisterClass("ObserverSubscription")
 class ObserverSubscription extends Subscription {
-  constructor(private readonly observers: LuaMap<ObserverSubscription>) {
+  constructor(private readonly observers: ObserverList<any>) {
     super()
   }
   override close() {
-    this.observers.delete(this)
+    this.observers._delete(this)
     super.close()
   }
 }

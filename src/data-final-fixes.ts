@@ -14,9 +14,7 @@ import { Data } from "typed-factorio/data/types"
 import * as util from "util"
 import { BuildableEntityTypes, Prototypes } from "./constants"
 import {
-  BasicSprite,
   EntityPrototype,
-  IconData,
   ItemPrototype,
   SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
@@ -30,57 +28,14 @@ import { L_Bp3 } from "./locale"
 import direction = defines.direction
 import ceil = math.ceil
 import max = math.max
-import min = math.min
 
 declare const data: Data
 
-function mixColor(color1: Color | ColorArray | nil, color2: Color | ColorArray): Color | ColorArray {
-  return color1 ? util.mix_color(color1 as Color, color2 as Color) : color2
-}
-
-interface IconSpecification {
-  icon?: string
-  icons?: IconData[]
-  icon_size?: number
-  icon_mipmaps?: number
-}
-
-const iconTint: ColorArray = [0.5, 0.5, 0.5, 0.6]
-function iconToSprite(icon: IconSpecification, scale: number): Sprite | nil {
-  if (icon.icon) {
-    // simple icon
-    return {
-      filename: icon.icon,
-      priority: "extra-high",
-      flags: ["icon"],
-      size: icon.icon_size ?? 32,
-      mipmap_count: icon.icon_mipmaps,
-      scale,
-      tint: iconTint,
-    }
-  } else if (icon.icons) {
-    const layers = icon.icons.map(
-      (iconData): BasicSprite => ({
-        filename: iconData.icon,
-        priority: "extra-high",
-        flags: ["icon"],
-        size: iconData.icon_size ?? icon.icon_size ?? 32,
-        tint: mixColor(iconData.tint, iconTint),
-        shift: iconData.shift,
-        scale: (iconData.scale ?? 1) * scale,
-        mipmap_count: iconData.icon_mipmaps,
-      }),
-    )
-    return { layers }
-  }
-}
-
 const whiteTile = "__base__/graphics/terrain/lab-tiles/lab-white.png"
-const outlineTint: ColorArray = [0.5, 0.5, 0.5, 0.2]
+const outlineTint: ColorArray = [0.5, 0.5, 0.5]
 export function createWhiteSprite(
   rawBBox: BoundingBoxWrite | BoundingBoxArray,
   color: Color | nil,
-  icon: IconSpecification | nil,
 ): Sprite | Sprite4Way {
   const bbox = BBox.normalize(rawBBox)
 
@@ -90,25 +45,19 @@ export function createWhiteSprite(
 
   const tint = color ? util.mix_color(color, outlineTint as Color) : outlineTint
 
-  const iconScale = 0.5 * min(size.x, size.y)
-  const iconSprite = icon && iconToSprite(icon, iconScale)
-
   const { x, y } = bbox.scale(32 / scale).size()
   function createRotated(dir: defines.direction | nil): Sprite {
     const isRotated90 = dir === direction.east || dir === direction.west
-    const firstValue: Sprite = {
+    return {
       filename: whiteTile,
       width: isRotated90 ? y : x,
       height: isRotated90 ? x : y,
       scale,
       shift: center.rotateAboutOrigin(dir),
       priority: "extra-high",
+      flags: ["terrain"],
       tint,
     }
-    if (iconSprite) {
-      return { layers: [firstValue, iconSprite] }
-    }
-    return firstValue
   }
 
   if (bbox.isCenteredSquare()) return createRotated(direction.north)
@@ -200,12 +149,7 @@ for (const [, type] of ipairs(keys<typeof BuildableEntityTypes>())) {
       open_sound: prototype.open_sound,
       close_sound: prototype.close_sound,
 
-      picture: createWhiteSprite(selectionBox!, color, {
-        icon: prototype.icon,
-        icons: prototype.icons,
-        icon_size: prototype.icon_size,
-        icon_mipmaps: prototype.icon_mipmaps,
-      }),
+      picture: createWhiteSprite(selectionBox!, color),
 
       // other
       flags,

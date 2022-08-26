@@ -48,7 +48,7 @@ Events.on(CustomInputs.NextStage, (e) => {
     if (player.mod_settings[Settings.CyclicNavigation].value) {
       toStage = stage.assembly.getStage(1)!
     } else {
-      return notifyError(player, [L_Interaction.NoPreviousStage])
+      return notifyError(player, [L_Interaction.NoNextStage])
     }
   }
   teleportToStage(player, toStage)

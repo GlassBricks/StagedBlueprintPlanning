@@ -269,7 +269,7 @@ describe("add", () => {
     assert.false(added.hasStageDiff())
     // calls updateWorldEntities
     assertOneEntity()
-    assertUpdateCalled(added, 1, 3, true)
+    assertUpdateCalled(added, 1, 3, false)
     // records old stage
     assert.equal(3, added.getOldStage())
     // creates notification
@@ -401,7 +401,7 @@ describe("update", () => {
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
     assert.equal(luaEntity, added.getWorldEntity(1))
     assertOneEntity()
-    assertUpdateCalled(added, 1, 3, true)
+    assertUpdateCalled(added, 1, 3, false)
     notificationsAsserted = true // skip
   })
 

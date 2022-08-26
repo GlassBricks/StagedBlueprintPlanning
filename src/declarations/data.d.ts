@@ -182,7 +182,7 @@ export interface SpriteWithLayers {
 }
 export type Sprite = BasicSprite | SpriteWithLayers
 export type SpritePriority = "extra-high-no-scale" | "extra-high" | "high" | "medium" | "low" | "very-low" | "no-atlas"
-export type SpriteFlag = "icon"
+export type SpriteFlag = "terrain-effect-map" | "terrain" | "icon"
 export interface Sprite4Way {
   north: Sprite
   east: Sprite

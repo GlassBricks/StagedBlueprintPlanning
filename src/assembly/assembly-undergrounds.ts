@@ -48,7 +48,7 @@ function findUndergroundPairOneDirection(
 
   let found: AssemblyUndergroundEntity | nil
   const curPos = {} as Mutable<Position>
-  for (const i of $range(1, reach - 1)) {
+  for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
     const underground = content.findCompatibleBasic(name, curPos, otherDirection) as AssemblyUndergroundEntity | nil

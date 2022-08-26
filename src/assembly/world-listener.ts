@@ -27,10 +27,7 @@ import { getStageAtPosition } from "./world-register"
 const Events = ProtectedEvents
 
 function getStageAtEntity(entity: LuaEntity): LuaMultiReturn<[Assembly, Stage] | [nil]> {
-  if (
-    !(entity.valid && (isWorldEntityAssemblyEntity(entity) || entity.name.startsWith(Prototypes.SelectionProxyPrefix)))
-  )
-    return $multi(nil)
+  if (!(entity.valid && isWorldEntityAssemblyEntity(entity))) return $multi(nil)
   return getStageAtPosition(entity.surface, entity.position)
 }
 
@@ -61,6 +58,9 @@ function luaEntityPotentiallyUpdated(entity: LuaEntity, player: PlayerIndex | ni
 function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {
   const [assembly, stage] = getStageAtEntity(entity)
   if (assembly) DefaultAssemblyUpdater.onEntityRotated(assembly, entity, stage, player, previousDirection)
+  else if (entity.valid && entity.name.startsWith(Prototypes.PreviewEntityPrefix)) {
+    entity.direction = previousDirection
+  }
 }
 
 function luaEntityForceDeleted(entity: LuaEntity): void {
@@ -383,20 +383,23 @@ Events.on_selected_entity_changed((e) => {
 
 // Cleanup tool
 
+function getStageAtSelectionProxy(entity: LuaEntity): LuaMultiReturn<[Assembly, Stage] | [nil]> {
+  if (!entity.name.startsWith(Prototypes.SelectionProxyPrefix)) return $multi(nil)
+  return getStageAtPosition(entity.surface, entity.position)
+}
+
 function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
   if (e.item !== Prototypes.CleanupTool) return
   for (const entity of e.entities) {
-    const [assembly, stage] = getStageAtEntity(entity)
-    if (!assembly) continue
-    DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
+    const [assembly, stage] = getStageAtSelectionProxy(entity)
+    if (assembly) DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
   }
 }
 function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   if (e.item !== Prototypes.CleanupTool) return
   for (const entity of e.entities) {
     const [assembly, stage] = getStageAtEntity(entity)
-    if (!assembly) continue
-    DefaultAssemblyUpdater.onEntityForceDeleted(assembly, entity, stage)
+    if (assembly) DefaultAssemblyUpdater.onEntityForceDeleted(assembly, entity, stage)
   }
 }
 

@@ -73,7 +73,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     testStr("v_____^", 0, nil, false)
   })
   test("backwards out of reach", () => {
-    testStr("v___v^", 4, 5, false)
+    testStr("v____v^", 5, 6, false)
   })
 
   test("different underground types not same group", () => {

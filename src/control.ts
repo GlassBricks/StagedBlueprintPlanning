@@ -10,6 +10,12 @@
  */
 
 import "./assembly"
+import { Events } from "./lib"
 import "./ui"
 
 pcall(require, "test.test-init")
+Events.on_init(() => {
+  const force = game.forces.player
+  force.research_all_technologies()
+  force.enable_all_recipes()
+})

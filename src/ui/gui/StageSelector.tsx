@@ -39,7 +39,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     this.trackerSubscription = tracker.getSubscription()
     this.playerIndex = tracker.playerIndex
 
-    this.selectedIndex.set(clamp(this.selectedIndex.get(), 1, this.assembly.numStages()))
+    this.selectedIndex.set(clamp(this.selectedIndex.get(), 0, this.assembly.numStages()))
     this.selectedIndex.subscribe(this.trackerSubscription, funcOn(this.onSelectedIndexChanged))
 
     tracker.onMount(() => this.setup())
@@ -61,6 +61,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     this.trackerSubscription.add(subscription)
 
     const stages = this.assembly.getAllStages()
+    this.element.items = stages.map((l) => l.name.get())
     for (const stage of stages) {
       stage.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), stage.stageNumber))
     }
@@ -70,10 +71,8 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   }
 
   private onAssemblyEvent(_: Subscription, event: LocalAssemblyEvent) {
-    if (event.type === "stage-added") {
-      this.element.add_item(event.stage.name.get(), event.stage.stageNumber)
-    } else if (event.type === "stage-deleted") {
-      this.element.remove_item(event.stage.stageNumber)
+    if (event.type === "stage-added" || event.type === "stage-deleted") {
+      this.setup()
     } else if (event.type !== "assembly-deleted" && event.type !== "pre-stage-deleted") {
       assertNever(event)
     }
@@ -91,7 +90,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   }
 
   private playerStageChanged(_: any, stage: Stage | nil) {
-    if (stage && stage.assembly === this.assembly) {
+    if (stage && stage.assembly === this.assembly && stage.stageNumber <= this.element.items.length) {
       this.selectedIndex.set(stage.stageNumber)
       this.selectedIndex.forceNotify()
     }

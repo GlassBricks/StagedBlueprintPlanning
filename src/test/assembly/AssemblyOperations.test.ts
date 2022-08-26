@@ -77,6 +77,6 @@ test("resetStage", () => {
 
   assert.spy(worldInteractor.deleteAllWorldEntities).called_with(match.ref(stage))
 
-  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity1), 2, 2, true)
-  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity2), 2, 2, true)
+  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity1), 2, 2)
+  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity2), 2, 2)
 })
