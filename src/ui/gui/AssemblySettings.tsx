@@ -190,8 +190,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
     this.stage = props.stage
     this.playerIndex = tracker.playerIndex
 
-    const canDeleteStage = this.stage.stageNumber > 1
-
     return (
       <>
         <frame style="subheader_frame" direction="horizontal">
@@ -201,13 +199,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
             renameTooltip={[L_GuiAssemblySettings.RenameStage]}
           />
           <HorizontalPusher />
-          <TrashButton
-            enabled={canDeleteStage}
-            tooltip={
-              canDeleteStage ? [L_GuiAssemblySettings.DeleteStage] : [L_GuiAssemblySettings.CannotDeleteFirstStage]
-            }
-            on_gui_click={funcOn(this.beginDelete)}
-          />
+          <TrashButton tooltip={[L_GuiAssemblySettings.DeleteStage]} on_gui_click={funcOn(this.beginDelete)} />
         </frame>
         <scroll-pane
           style="naked_scroll_pane"
@@ -232,15 +224,18 @@ export class StageSettings extends Component<{ stage: Stage }> {
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const stageNumber = this.stage.stageNumber
-    if (stageNumber <= 1) return // can't delete the first stage
-    const previousStage = this.stage.assembly.getStage(stageNumber - 1)
-    if (!previousStage) return
+    const { isFirst, toMerge } = this.getStageToMerge()
+    if (!toMerge) return
     showDialog(player, {
       title: [L_GuiAssemblySettings.DeleteStage],
       message: [
         [L_GuiAssemblySettings.DeleteStageConfirmation1, this.stage.name.get()],
-        [L_GuiAssemblySettings.DeleteStageConfirmation2, previousStage.name.get()],
+        [
+          isFirst
+            ? L_GuiAssemblySettings.DeleteStageConfirmation2First
+            : L_GuiAssemblySettings.DeleteStageConfirmation2Middle,
+          toMerge.name.get(),
+        ],
       ],
       redConfirm: true,
       backCaption: ["gui.cancel"],
@@ -248,11 +243,17 @@ export class StageSettings extends Component<{ stage: Stage }> {
       onConfirm: funcOn(this.deleteStage),
     })
   }
+  private getStageToMerge() {
+    const stageNumber = this.stage.stageNumber
+    const isFirst = stageNumber === 1
+    const toMerge = this.stage.assembly.getStage(isFirst ? stageNumber + 1 : stageNumber - 1)
+    return { isFirst, toMerge }
+  }
   private deleteStage() {
-    const previousStage = this.stage.assembly.getStage(this.stage.stageNumber - 1)
-    if (!previousStage) return
+    const { toMerge } = this.getStageToMerge()
+    if (!toMerge) return
     this.stage.deleteInAssembly()
-    teleportToStage(game.get_player(this.playerIndex)!, previousStage)
+    teleportToStage(game.get_player(this.playerIndex)!, toMerge)
   }
 
   private resetStage() {

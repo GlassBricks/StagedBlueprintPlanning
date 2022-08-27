@@ -120,12 +120,12 @@ export declare const enum L_GuiAssemblySettings {
   DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
   /** Delete stage */
   DeleteStage = "bp100.gui.assembly-settings.delete-stage",
-  /** The first stage cannot be deleted. */
-  CannotDeleteFirstStage = "bp100.gui.assembly-settings.cannot-delete-first-stage",
   /** Are you sure you want to delete stage __1__? */
   DeleteStageConfirmation1 = "bp100.gui.assembly-settings.delete-stage-confirmation1",
   /** Stage contents will be merged with the previous stage (__1__). */
-  DeleteStageConfirmation2 = "bp100.gui.assembly-settings.delete-stage-confirmation2",
+  DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
+  /** Stage contents will be merged with the next stage (__1__). */
+  DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
   /** Reset stage [img=info] */
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
