@@ -84,12 +84,12 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
                 right_margin: 10,
               }}
             />
-            <button caption={[L_GuiAssemblySettings.AtEnd]} on_gui_click={funcOn(this.addStage)} />
             <button
-              caption={[L_GuiAssemblySettings.InsertAboveCurrent]}
+              caption={[L_GuiAssemblySettings.AfterCurrent]}
               enabled={this.selectedStage.gt(0)}
-              on_gui_click={funcOn(this.insertStage)}
+              on_gui_click={funcOn(this.newStageAfter)}
             />
+            <button caption={[L_GuiAssemblySettings.AtFront]} on_gui_click={funcOn(this.newStageAtFront)} />
           </flow>
         </frame>
         <flow
@@ -162,15 +162,15 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     teleportToSurface1(game.get_player(this.playerIndex)!)
   }
 
-  private insertStage() {
-    this.doInsertStage(this.selectedStage.get())
+  private newStageAfter() {
+    this.insertStage(this.selectedStage.get() + 1)
   }
 
-  private addStage() {
-    this.doInsertStage(this.assembly.numStages() + 1)
+  private newStageAtFront() {
+    this.insertStage(1)
   }
 
-  private doInsertStage(index: number) {
+  private insertStage(index: number) {
     if (!this.assembly.valid) return
     const stage = this.assembly.insertStage(index)
     teleportToStage(game.get_player(this.playerIndex)!, stage)

@@ -126,10 +126,10 @@ export declare const enum L_GuiAssemblySettings {
   RenameStage = "bp100.gui.assembly-settings.rename-stage",
   /** New stage: */
   NewStage = "bp100.gui.assembly-settings.new-stage",
-  /** Insert before current */
-  InsertAboveCurrent = "bp100.gui.assembly-settings.insert-above-current",
-  /** Add at end */
-  AtEnd = "bp100.gui.assembly-settings.at-end",
+  /** After current */
+  AfterCurrent = "bp100.gui.assembly-settings.after-current",
+  /** Add front */
+  AtFront = "bp100.gui.assembly-settings.at-front",
   /** Delete assembly */
   DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
   /** Are you sure you want to delete assembly __1__? */
