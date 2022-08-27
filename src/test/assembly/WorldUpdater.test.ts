@@ -17,7 +17,6 @@ import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
-import { clearTestArea } from "../area"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
@@ -253,7 +252,7 @@ describe("circuit wires", () => {
   let entity2: AssemblyEntity
   before_each(() => {
     worldUpdater = createWorldUpdater(DefaultEntityHandler, DefaultWireHandler, highlighter) // real entity handler
-    clearTestArea()
+    game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
     entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
     assembly.content.add(entity1)

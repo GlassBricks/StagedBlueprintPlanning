@@ -10,6 +10,5 @@
  */
 
 import "./Assembly"
-import "./assembly-display"
 import "./assembly-listener"
 import "./world-listener"

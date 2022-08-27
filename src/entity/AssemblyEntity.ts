@@ -111,7 +111,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   /**
    * Modifies to be consistent with a deleted stage.
-   * Stage contents will be merged with previous stage.
+   * Stage contents will be merged with previous stage. If stage is 1, will be merged with next stage instead.
    */
   deleteStage(stageNumber: StageNumber): void
 }
@@ -442,7 +442,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   deleteStage(stageNumber: StageNumber): void {
-    assert(stageNumber > 1, "Can't delete first stage")
+    if (stageNumber === 1) stageNumber = 2 // merge with stage 2 instead
     this.mergeStageDiffWithBelow(stageNumber)
 
     if (this.firstStage >= stageNumber) this.firstStage--

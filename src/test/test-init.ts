@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createDemonstrationAssembly } from "../assembly/Assembly"
-import { Events, protectedAction } from "../lib"
+import { createAssembly } from "../assembly/Assembly"
+import { Events } from "../lib"
 import { destroyAllRenders } from "../lib/rendering"
 import { openAssemblySettings } from "../ui/gui/AssemblySettings"
 
@@ -45,6 +45,7 @@ declare let global: {
 
 if (script.active_mods.testorio !== nil) {
   function reinit() {
+    destroyAllRenders()
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories !== nil) inventories.forEach((x) => x.destroy())
     global = {}
@@ -79,7 +80,6 @@ if (script.active_mods.testorio !== nil) {
   require("__testorio__/init")(__getTestFiles(), {
     tag_blacklist: tagBlacklist,
     before_test_run() {
-      destroyAllRenders()
       reinit()
       global.lastCompileTimestamp = lastCompileTime
       const force = game.forces.player
@@ -89,14 +89,13 @@ if (script.active_mods.testorio !== nil) {
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
       const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo" }
-      const assembly = createDemonstrationAssembly(6)
       if (result.status === "passed") {
-        game.surfaces[1].find_entities().forEach((e) => e.destroy())
+        game.surfaces[1].clear()
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()
-        protectedAction(() => {
-          openAssemblySettings(player, assembly)
-        })
+
+        const assembly = createAssembly("Test", 5)
+        openAssemblySettings(player, assembly)
       }
     },
     log_passed_tests: false,

@@ -9,23 +9,20 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getAssemblySurface, getOrGenerateAssemblySurface, prepareArea } from "../../assembly/surfaces"
+import { createStageSurface, prepareArea } from "../../assembly/surfaces"
 import { BBox } from "../../lib/geometry"
 
-test("getBlueprintSurface(1) returns nauvis", () => {
-  const nauvis = getAssemblySurface(1)!
-  assert.equal(1, nauvis.index)
-})
-
-test("getOrGenerateAssemblySurface() creates other surfaces", () => {
-  const surface = getOrGenerateAssemblySurface(2)
+test("generateStageSurface", () => {
+  const surface = createStageSurface()
+  after_test(() => game.delete_surface(surface))
   assert.not_equal(1, surface.index)
   assert.true(surface.always_day)
   assert.true(surface.generate_with_lab_tiles)
 })
 
 test('prepareArea() "generates" chunks', () => {
-  const surface = getOrGenerateAssemblySurface(2)
+  const surface = createStageSurface()
+  after_test(() => game.delete_surface(surface))
 
   const area = BBox.coords(0, 0, 4, 4)
   prepareArea(surface, area.scale(32))

@@ -32,7 +32,6 @@ before_each(() => {
     updateWorldEntities: spy(),
     deleteAllEntities: spy(),
     forceDeleteEntity: spy(),
-    deleteAllEntitiesInStage: spy(),
     deleteExtraEntitiesOnly: spy(),
     makeSettingsRemnant: spy(),
     reviveSettingsRemnant: spy(),
@@ -53,17 +52,6 @@ test("deleteAllExtraEntitiesOnly", () => {
   operations.deleteAllExtraEntitiesOnly(assembly)
   assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity1))
   assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity2))
-})
-
-test("deleteStageEntities", () => {
-  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
-  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
-  assembly.content.add(entity1)
-  assembly.content.add(entity2)
-
-  operations.deleteStageEntities(assembly, 1)
-  assert.spy(worldUpdater.deleteAllEntitiesInStage).called_with(match.ref(entity1), 1)
-  assert.spy(worldUpdater.deleteAllEntitiesInStage).called_with(match.ref(entity2), 1)
 })
 
 test("resetStage", () => {

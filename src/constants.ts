@@ -36,7 +36,6 @@ export const enum Prototypes {
   PreviewEntitySubgroup = "bp100:preview-entity",
   SelectionProxySubgroup = "bp100:selection-proxy",
 
-  AssemblyAddTool = "bp100:assembly-add-tool",
   CleanupTool = "bp100:cleanup-tool",
 }
 

@@ -12,19 +12,10 @@
 import { oppositedirection } from "util"
 import { StagePosition } from "../assembly/AssemblyContent"
 import { Mutable } from "../lib"
-import { BBox, Pos, PositionClass } from "../lib/geometry"
+import { BBox, Pos } from "../lib/geometry"
 import { getTempBpItemStack, reviveGhost } from "./blueprinting"
-import { BasicEntityInfo, Entity, EntityPose } from "./Entity"
+import { Entity, EntityPose } from "./Entity"
 import { getPastedDirection, getSavedDirection } from "./undergrounds"
-import minus = Pos.minus
-import plus = Pos.plus
-
-export function getStagePosition(stage: StagePosition, luaEntity: BasicEntityInfo): PositionClass {
-  return minus(luaEntity.position, stage.left_top)
-}
-export function getWorldPosition(stage: StagePosition, entity: EntityPose): PositionClass {
-  return plus(entity.position, stage.left_top)
-}
 
 /** @noSelf */
 export interface EntityCreator {
@@ -166,7 +157,7 @@ const BlueprintEntityHandler: EntityHandler = {
 
   createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil {
     const surface = stage.surface
-    const position = getWorldPosition(stage, pos)
+    const position = pos.position
     const direction = pos.direction ?? 0
 
     const ghost = pasteEntity(surface, position, direction, entity as BlueprintEntity)

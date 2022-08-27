@@ -9,36 +9,27 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createDemonstrationAssembly } from "../../assembly/Assembly"
-import { generateAssemblySurfaces, getAssemblySurface } from "../../assembly/surfaces"
-import { BBox } from "../../lib/geometry"
-import { playerCurrentStage } from "../../ui/player-position"
+import { _deleteAllAssemblies, createAssembly } from "../../assembly/Assembly"
+import { playerCurrentStage } from "../../ui/player-current-stage"
 
 test("playerCurrentStage", () => {
-  const assembly = createDemonstrationAssembly(3)
-  after_test(() => assembly.delete())
+  const assembly = createAssembly("Test", 3)
   const player = game.players[1]!
-  player.teleport([-1, -1], game.surfaces[1])
+  player.teleport([0, 0], 1 as SurfaceIndex)
   const currentStage = playerCurrentStage(1 as PlayerIndex)
   assert.nil(currentStage.get())
 
   for (const [, stage] of assembly.iterateStages()) {
-    player.teleport(BBox.center(stage), stage.surface)
+    player.teleport(player.position, stage.surface)
     assert.equal(currentStage.get(), stage)
   }
-
-  generateAssemblySurfaces(2)
-
-  for (const [, stage] of assembly.iterateStages()) {
-    player.teleport(BBox.center(stage), getAssemblySurface(2))
-    assert.equal(currentStage.get(), stage)
-  }
-
-  const stage1 = assembly.getStage(1)!
-  player.teleport(BBox.center(stage1), stage1.surface)
-  assert.equal(currentStage.get(), stage1)
 
   assembly.delete()
-
   assert.nil(currentStage.get())
+})
+
+after_all(() => {
+  const player = game.players[1]!
+  player.teleport([0, 0], 1 as SurfaceIndex)
+  _deleteAllAssemblies()
 })

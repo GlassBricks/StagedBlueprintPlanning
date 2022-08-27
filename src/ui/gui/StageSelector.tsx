@@ -15,7 +15,7 @@ import { StageNumber } from "../../entity/AssemblyEntity"
 import { assertNever, bind, funcOn, RegisterClass } from "../../lib"
 import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"
 import { MutableState, state, Subscription } from "../../lib/observable"
-import { playerCurrentStage, teleportToStage } from "../player-position"
+import { playerCurrentStage, teleportToStage } from "../player-current-stage"
 
 export type StageSelectorProps<T extends "drop-down" | "list-box"> = {
   uses: T

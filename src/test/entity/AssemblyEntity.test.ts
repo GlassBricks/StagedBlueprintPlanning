@@ -189,7 +189,7 @@ describe("Get/set world entities", () => {
   let entity: LuaEntity
   let assemblyEntity: AssemblyEntity
   before_each(() => {
-    // entity = area.surface.create_entity({ name: "iron-chest", position: area.bbox.left_top })!
+    // entity = surface.create_entity({ name: "iron-chest", position: area.bbox.left_top })!
     entity = entityMock({ name: "test", position: Pos(0, 0) })
     assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 1)
     assert(entity)
@@ -373,6 +373,16 @@ test("delete stage right after base applies stage diffs to first entity", () => 
   entity._applyDiffAtStage(2, { foo1: 2 })
   const value = entity.getValueAtStage(2)
 
+  entity.deleteStage(2)
+  assert.same(value, entity.getValueAtStage(1))
+})
+
+test("delete layer 1 merges with layer 2 instead", () => {
+  const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 1)
+  entity._applyDiffAtStage(2, { foo1: 2 })
+  entity._applyDiffAtStage(3, { foo1: 3 })
+
+  const value = entity.getValueAtStage(2)
   entity.deleteStage(2)
   assert.same(value, entity.getValueAtStage(1))
 })

@@ -9,11 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEvents } from "../assembly/Assembly"
+import { AssemblyEvents, getStageAtSurface } from "../assembly/Assembly"
 import { Stage } from "../assembly/AssemblyDef"
-import { getAssemblyAtPosition } from "../assembly/world-register"
 import { assertNever, Events, onPlayerInit } from "../lib"
-import { BBox } from "../lib/geometry"
 import { MutableState, State, state } from "../lib/observable"
 
 declare global {
@@ -29,16 +27,10 @@ onPlayerInit((index) => {
 
 function updatePlayer(player: LuaPlayer): void {
   const data = global.players[player.index]
-  if (!data) return // bug workaround
-  const currentStage = data.currentStage
-  const stage = currentStage.get()
-  const { position, surface } = player
-  if (stage && stage.valid && stage.surface === surface && BBox.contains(stage, position)) return
-
-  const assembly = getAssemblyAtPosition(position)
-  currentStage.set(assembly && assembly.getStageAt(surface, position))
+  if (data !== nil) {
+    data.currentStage.set(getStageAtSurface(player.surface.index))
+  }
 }
-Events.on_player_changed_position((e) => updatePlayer(game.get_player(e.player_index)!))
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
 
 AssemblyEvents.addListener((e) => {
@@ -61,16 +53,13 @@ export function playerCurrentStage(index: PlayerIndex): State<Stage | nil> {
 }
 
 export function teleportToStage(player: LuaPlayer, stage: Stage): void {
-  const currentPos = player.position
-  const surface = stage.surface
-  if (BBox.contains(stage, currentPos)) {
-    // already in position, check surface
-    if (player.surface !== surface) {
-      player.teleport(player.position, surface)
-    }
+  const currentStage = getStageAtSurface(player.surface.index)
+  if (currentStage && currentStage.assembly === stage.assembly) {
+    if (currentStage === stage) return
+    player.teleport(player.position, stage.surface)
   } else {
     // teleport to center
-    player.teleport(BBox.center(stage), surface)
+    player.teleport({ x: 0, y: 0 }, stage.surface)
   }
 }
 

@@ -21,7 +21,7 @@ import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { Pos } from "../../lib/geometry"
 import { state } from "../../lib/observable"
 import { L_GuiAssemblySettings } from "../../locale"
-import { teleportToStage, teleportToSurface1 } from "../player-position"
+import { teleportToStage, teleportToSurface1 } from "../player-current-stage"
 import { ItemRename } from "./ItemRename"
 import { StageSelector } from "./StageSelector"
 
@@ -148,7 +148,6 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
       message: [
         [L_GuiAssemblySettings.DeleteAssemblyConfirmation1, this.assembly.displayName.get()],
         [L_GuiAssemblySettings.DeleteAssemblyConfirmation2],
-        [L_GuiAssemblySettings.DeleteAssemblyConfirmation3],
       ],
       redConfirm: true,
       backCaption: ["gui.cancel"],

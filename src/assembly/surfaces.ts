@@ -9,45 +9,17 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { StageNumber } from "../entity/AssemblyEntity"
-import { Events } from "../lib"
 import { BBox } from "../lib/geometry"
 
-declare const global: {
-  bpSurfaces: LuaSurface[]
-  surfaceIndexToStageIndex: Record<SurfaceIndex, StageNumber>
-}
-
-Events.on_init(() => {
-  global.bpSurfaces = [game.surfaces[1]]
-  global.surfaceIndexToStageIndex = { [1 as SurfaceIndex]: 1 }
-})
-
-export function generateAssemblySurfaces(amount: number): void {
-  const numExisting = global.bpSurfaces.length
-  for (let i = numExisting; i < amount; i++) {
-    global.bpSurfaces[i] = createBpSurface(i + 1)
-  }
-}
-
-function createBpSurface(number: number): LuaSurface {
-  const result = game.create_surface("bp100-stage-" + number)
+export function createStageSurface(): LuaSurface {
+  const result = game.create_surface("bp100-stage-temp", {
+    width: 10000,
+    height: 10000,
+  } as MapGenSettingsWrite)
   result.always_day = true
   result.generate_with_lab_tiles = true
-  global.surfaceIndexToStageIndex[result.index] = number
+  result.name = "bp100-stage-" + result.index
   return result
-}
-
-/** 1 indexed */
-export function getAssemblySurface(index: number): LuaSurface | nil {
-  return global.bpSurfaces[index - 1]
-}
-
-export function getOrGenerateAssemblySurface(index: number): LuaSurface {
-  const surface = getAssemblySurface(index)
-  if (surface) return surface
-  generateAssemblySurfaces(index)
-  return getAssemblySurface(index)!
 }
 
 export function prepareArea(surface: LuaSurface, area: BBox): void {

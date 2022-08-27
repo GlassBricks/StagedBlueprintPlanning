@@ -9,21 +9,20 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BBox } from "../lib/geometry"
 import { WorldArea } from "../lib/world-area"
+//
+// export function testArea(index: number): WorldArea {
+//   return {
+//     surface: game.surfaces[1],
+//     bbox: BBox.coords(index * 100, 0, 100 + index * 100, 100),
+//   }
+// }
 
-export function testArea(index: number): WorldArea {
-  return {
-    surface: game.surfaces[1],
-    bbox: BBox.coords(index * 100, 0, 100 + index * 100, 100),
-  }
-}
-
-export function clearTestArea(index: number = 0): WorldArea {
-  const area = testArea(index)
-  clearArea(area)
-  return area
-}
+// export function clearTestArea(index: number = 0): WorldArea {
+//   const area = testArea(index)
+//   clearArea(area)
+//   return area
+// }
 
 export function clearArea(worldArea: WorldArea): void {
   worldArea.surface.find_entities_filtered({ area: worldArea.bbox }).forEach((e) => e.destroy())

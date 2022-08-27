@@ -18,7 +18,7 @@ import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/compon
 import { TitleBar } from "../../lib/factoriojsx/components/TitleBar"
 import { MaybeState } from "../../lib/observable"
 import { L_GuiCurrentAssembly } from "../../locale"
-import { playerCurrentStage } from "../player-position"
+import { playerCurrentStage } from "../player-current-stage"
 import { openAllAssemblies } from "./AllAssemblies"
 import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"

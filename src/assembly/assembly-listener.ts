@@ -29,10 +29,8 @@ AssemblyEvents.addListener((e) => {
       AssemblyOperations.resetStage(e.assembly, e.stage)
       break
     }
-    case "pre-stage-deleted": {
-      AssemblyOperations.deleteStageEntities(e.assembly, e.stage.stageNumber)
+    case "pre-stage-deleted":
       break
-    }
     case "stage-deleted": {
       const previousStage = e.assembly.getStage(e.stage.stageNumber - 1)
       if (previousStage) AssemblyOperations.resetStage(e.assembly, previousStage)

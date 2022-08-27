@@ -12,15 +12,14 @@
 import { StagePosition } from "../../assembly/AssemblyContent"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
-import { WorldArea } from "../../lib/world-area"
-import { clearTestArea } from "../area"
 
-let area: WorldArea
+let surface: LuaSurface
 before_each(() => {
-  area = clearTestArea()
+  surface = game.surfaces[1]
+  surface.find_entities().forEach((e) => e.destroy())
 })
 test("can save an entity", () => {
-  const entity = area.surface.create_entity({
+  const entity = surface.create_entity({
     name: "inserter",
     position: { x: 12.5, y: 12.5 },
     force: "player",
@@ -33,12 +32,7 @@ test("can save an entity", () => {
 })
 
 test("can create an entity", () => {
-  const stage: StagePosition = {
-    surface: area.surface,
-    left_top: { x: 0, y: 0 },
-    right_bottom: { x: 1, y: 1 },
-    stageNumber: 0,
-  }
+  const stage: StagePosition = { surface, stageNumber: 0 }
   const luaEntity = DefaultEntityHandler.createEntity(stage, { position: { x: 0.5, y: 0.5 }, direction: nil }, {
     name: "iron-chest",
     bar: 3,
@@ -50,7 +44,7 @@ test("can create an entity", () => {
 })
 
 test("can update an entity", () => {
-  const entity = area.surface.create_entity({
+  const entity = surface.create_entity({
     name: "iron-chest",
     position: { x: 12.5, y: 12.5 },
     force: "player",
@@ -62,7 +56,7 @@ test("can update an entity", () => {
 })
 
 test("can upgrade an entity", () => {
-  const entity = area.surface.create_entity({
+  const entity = surface.create_entity({
     name: "iron-chest",
     position: { x: 12.5, y: 12.5 },
     force: "player",
@@ -75,7 +69,7 @@ test("can upgrade an entity", () => {
 })
 
 test("can rotate entity", () => {
-  const entity = area.surface.create_entity({
+  const entity = surface.create_entity({
     name: "inserter",
     position: { x: 12.5, y: 12.5 },
     force: "player",
@@ -89,7 +83,7 @@ test("can rotate entity", () => {
 describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   const inOut = flipped ? "output" : "input"
   test("saving an underground belt in output direction flips direction", () => {
-    const entity = area.surface.create_entity({
+    const entity = surface.create_entity({
       name: "underground-belt",
       position: { x: 12.5, y: 12.5 },
       force: "player",
@@ -106,12 +100,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("creating an underground belt in output direction flips direction", () => {
-    const stage: StagePosition = {
-      surface: area.surface,
-      left_top: { x: 0, y: 0 },
-      right_bottom: { x: 1, y: 1 },
-      stageNumber: 0,
-    }
+    const stage: StagePosition = { surface, stageNumber: 0 }
     const luaEntity = DefaultEntityHandler.createEntity(
       stage,
       { position: { x: 0.5, y: 0.5 }, direction: defines.direction.south },
@@ -131,14 +120,9 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("creating a flipped underground deletes entity and returns nil", () => {
-    const stage: StagePosition = {
-      surface: area.surface,
-      left_top: { x: 0, y: 0 },
-      right_bottom: { x: 1, y: 1 },
-      stageNumber: 0,
-    }
+    const stage: StagePosition = { surface, stageNumber: 1 }
     // create underground, tunneling east, at 0.5, 0.5
-    const westUnderground = area.surface.create_entity({
+    const westUnderground = surface.create_entity({
       name: "underground-belt",
       position: { x: 0.5, y: 0.5 },
       force: "player",
@@ -161,7 +145,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     )!
     if (flipped) {
       assert.nil(eastUnderground)
-      assert.nil(area.surface.find_entity("underground-belt", { x: 1.5, y: 0.5 }))
+      assert.nil(surface.find_entity("underground-belt", { x: 1.5, y: 0.5 }))
     } else {
       assert.not_nil(eastUnderground)
       assert.equal("underground-belt", eastUnderground.name)
@@ -170,7 +154,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("can flip underground", () => {
-    const entity = area.surface.create_entity({
+    const entity = surface.create_entity({
       name: "underground-belt",
       position: { x: 12.5, y: 12.5 },
       force: "player",
@@ -193,7 +177,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("can upgrade underground", () => {
-    const entity = area.surface.create_entity({
+    const entity = surface.create_entity({
       name: "underground-belt",
       position: { x: 12.5, y: 12.5 },
       force: "player",
@@ -217,7 +201,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
 })
 
 test("can flip loader", () => {
-  const entity = area.surface.create_entity({
+  const entity = surface.create_entity({
     name: "loader",
     position: { x: 12.5, y: 12 },
     force: "player",
@@ -242,7 +226,7 @@ test("can handle item changes", () => {
   const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
   const newContents = { "productivity-module-2": 2, "speed-module": 1 }
 
-  const entity = area.surface.create_entity({
+  const entity = surface.create_entity({
     name: "assembling-machine-3",
     position: { x: 12.5, y: 12.5 },
     force: "player",

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { _deleteAllAssemblies, _mockAssembly, AssemblyEvents, newAssembly } from "../../assembly/Assembly"
+import { _deleteAllAssemblies, AssemblyEvents, createAssembly, getStageAtSurface } from "../../assembly/Assembly"
 import {
   Assembly,
   AssemblyCreatedEvent,
@@ -18,9 +18,7 @@ import {
   StageAddedEvent,
   StageDeletedEvent,
 } from "../../assembly/AssemblyDef"
-import { getOrGenerateAssemblySurface } from "../../assembly/surfaces"
 import { SelflessFun } from "../../lib"
-import { BBox, BBoxClass, Pos } from "../../lib/geometry"
 
 let eventListener: SelflessFun & spy.SpyObj<SelflessFun>
 before_each(() => {
@@ -32,46 +30,37 @@ after_each(() => {
   _deleteAllAssemblies()
 })
 
-const bbox: BBoxClass = BBox.coords(0, 0, 32, 32)
-
-test("basic", () => {
-  const asm1 = newAssembly([], bbox)
-  assert.true(asm1.valid)
-
-  const asm2 = newAssembly([], bbox)
-  assert.not_same(asm1.id, asm2.id)
-})
-
 test("assembly created calls event", () => {
-  const asm = newAssembly([], bbox)
+  const asm = createAssembly("Mock", 0)
   assert.spy(eventListener).called_with({
     type: "assembly-created",
     assembly: asm,
   } as AssemblyCreatedEvent)
 })
 
-test("get stage at", () => {
-  const surfaces = [getOrGenerateAssemblySurface(1), getOrGenerateAssemblySurface(2)]
-  const asm = newAssembly(surfaces, bbox)
-  assert.same(asm.getStageAt(surfaces[0], bbox.center()), asm.getStage(1))
-  assert.same(asm.getStageAt(surfaces[1], bbox.center()), asm.getStage(2))
+test("getStageAtSurface", () => {
+  const asm = createAssembly("Mock", 2)
+  const stage1 = asm.getStage(1),
+    stage2 = asm.getStage(2)
+  assert.equal(stage1, getStageAtSurface(stage1!.surface.index))
+  assert.equal(stage2, getStageAtSurface(stage2!.surface.index))
 })
 
 describe("deletion", () => {
   test("sets to invalid", () => {
-    const asm = _mockAssembly()
+    const asm = createAssembly("Test", 0)
     asm.delete()
     assert.false(asm.valid)
   })
   test("sets stages to invalid", () => {
-    const asm = _mockAssembly(1)
+    const asm = createAssembly("Test", 1)
     const stage = asm.getStage(1)!
     assert.true(stage.valid)
     asm.delete()
     assert.false(stage.valid)
   })
   test("calls event", () => {
-    const asm = newAssembly([], bbox)
+    const asm = createAssembly("Mock", 0)
     const sp2 = spy()
     asm.localEvents.subscribeIndependently({ invoke: sp2 })
     asm.delete()
@@ -87,7 +76,7 @@ describe("deletion", () => {
 describe("Stages", () => {
   let asm: Assembly
   before_each(() => {
-    asm = _mockAssembly(2)
+    asm = createAssembly("Test", 2)
   })
   test("stageNumber is correct", () => {
     assert.equals(1, asm.getStage(1)!.stageNumber)
@@ -101,7 +90,7 @@ describe("Stages", () => {
 
 test("insert stage", () => {
   const sp = spy()
-  const asm = newAssembly([game.surfaces[1]], bbox)
+  const asm = createAssembly("Mock", 2)
   const oldStage = asm.getStage(1)!
   asm.localEvents.subscribeIndependently({ invoke: sp })
   eventListener.clear()
@@ -113,8 +102,8 @@ test("insert stage", () => {
   assert.equals(1, stage.stageNumber)
   assert.equals(2, oldStage.stageNumber)
 
-  assert.equal(asm.getStageAt(stage.surface, Pos(1, 1)), stage)
-  assert.equal(asm.getStageAt(oldStage.surface, Pos(1, 1)), oldStage)
+  assert.equal(stage, getStageAtSurface(stage.surface.index))
+  assert.equal(oldStage, getStageAtSurface(oldStage.surface.index))
 
   assert.equals("<New stage>", stage.name.get())
 
@@ -132,9 +121,9 @@ test("insert stage", () => {
 
   const anotherInserted = asm.insertStage(1)
   assert.not_same(anotherInserted, stage)
-  assert.equals(asm.getStageAt(anotherInserted.surface, Pos(1, 1)), anotherInserted)
-  assert.equals(asm.getStageAt(stage.surface, Pos(1, 1)), stage)
-  assert.equals(asm.getStageAt(oldStage.surface, Pos(1, 1)), oldStage)
+  assert.equals(anotherInserted, getStageAtSurface(anotherInserted.surface.index))
+  assert.equals(stage, getStageAtSurface(stage.surface.index))
+  assert.equals(oldStage, getStageAtSurface(oldStage.surface.index))
   assert.equals("<New stage> (1)", anotherInserted.name.get())
 
   assert.equals(1, anotherInserted.stageNumber)
@@ -148,8 +137,7 @@ test("insert stage", () => {
 
 test("delete stage", () => {
   const sp = spy()
-  const surfaces = [getOrGenerateAssemblySurface(1), getOrGenerateAssemblySurface(2), getOrGenerateAssemblySurface(3)]
-  const asm = newAssembly(surfaces, bbox)
+  const asm = createAssembly("Test", 3)
   asm.localEvents.subscribeIndependently({ invoke: sp })
   eventListener.clear()
 
@@ -159,14 +147,15 @@ test("delete stage", () => {
 
   asm.deleteStage(2)
 
+  const stage2Surface = stage2.surface.index
   assert.false(stage2.valid)
 
   assert.equals(1, stage1.stageNumber)
   assert.equals(2, stage3.stageNumber)
 
-  assert.equals(asm.getStageAt(stage1.surface, Pos(1, 1)), stage1)
-  assert.equals(asm.getStageAt(stage3.surface, Pos(1, 1)), stage3)
-  assert.nil(asm.getStageAt(stage2.surface, Pos(1, 1)))
+  assert.equal(stage1, getStageAtSurface(stage1.surface.index))
+  assert.equal(stage3, getStageAtSurface(stage3.surface.index))
+  assert.nil(getStageAtSurface(stage2Surface))
 
   assert.equals(stage1, asm.getStage(1)!)
   assert.equals(stage3, asm.getStage(2)!)
@@ -179,4 +168,22 @@ test("delete stage", () => {
   assert.equals("stage-deleted", call2.type)
   assert.equals(asm, call2.assembly)
   assert.equals(stage2, call2.stage)
+})
+
+test("delete stage by deleting surface", () => {
+  const asm = createAssembly("Test", 2)
+  const stage = asm.getStage(2)!
+  game.delete_surface(stage.surface)
+  async()
+  after_ticks(1, () => {
+    assert.false(stage.valid)
+    done()
+  })
+})
+
+test("deleting last stage deletes assembly", () => {
+  const asm = createAssembly("Test", 1)
+  const stage = asm.getStage(1)!
+  stage.deleteInAssembly()
+  assert.false(asm.valid)
 })

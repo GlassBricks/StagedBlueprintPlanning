@@ -17,8 +17,6 @@ export function createMockAssemblyContent(numStages: number): AssemblyContent {
   const stages: StagePosition[] = Array.from({ length: numStages }, (_, i) => ({
     stageNumber: i + 1,
     surface: game.surfaces[1],
-    left_top: { x: 0, y: 0 },
-    right_bottom: { x: 32, y: 32 },
   }))
   return {
     getStage: (n) => stages[n - 1],
