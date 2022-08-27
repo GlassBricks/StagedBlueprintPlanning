@@ -18,7 +18,7 @@ import { getStageAtSurface } from "../assembly/Assembly"
 import { Stage } from "../assembly/AssemblyDef"
 import { CustomInputs, Prototypes, Settings } from "../constants"
 import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
-import { ProtectedEvents } from "../lib/ProtectedEvents"
+import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 

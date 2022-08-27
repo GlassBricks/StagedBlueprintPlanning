@@ -11,11 +11,18 @@
 
 import { AssemblyEvents, getAllAssemblies } from "../../assembly/Assembly"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { bind, funcOn, funcRef, RegisterClass } from "../../lib"
-import { Component, destroy, EmptyProps, FactorioJsx, renderOpened, Spec, Tracker } from "../../lib/factoriojsx"
-import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
-import { destroyOnClose } from "../../lib/factoriojsx/util"
-import { state, Subscription } from "../../lib/observable"
+import { bind, funcOn, funcRef, RegisterClass, state, Subscription } from "../../lib"
+import {
+  Component,
+  destroy,
+  destroyOnClose,
+  EmptyProps,
+  FactorioJsx,
+  renderOpened,
+  Spec,
+  Tracker,
+} from "../../lib/factoriojsx"
+import { SimpleTitleBar } from "../../lib/factoriojsx/components"
 import { L_GuiAllAssemblies } from "../../locale"
 import { openAssemblySettings } from "./AssemblySettings"
 import { openNewAssemblyGui } from "./NewAssembly"

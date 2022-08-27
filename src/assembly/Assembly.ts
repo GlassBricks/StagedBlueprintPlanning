@@ -10,10 +10,8 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { bind, Events, Mutable, RegisterClass } from "../lib"
+import { bind, Event, Events, globalEvent, Mutable, MutableState, RegisterClass, state, State } from "../lib"
 import { BBox } from "../lib/geometry"
-import { Event, MutableState, State, state } from "../lib/observable"
-import { globalEvent } from "../lib/observable/GlobalEvent"
 import { L_Bp100 } from "../locale"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage } from "./AssemblyDef"
 import { newEntityMap } from "./EntityMap"

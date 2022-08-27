@@ -10,7 +10,7 @@
  */
 
 import { FactorioJsx, Spec } from "../../../factoriojsx"
-import { List } from "../../../factoriojsx/components/List"
+import { List } from "../../../factoriojsx/components"
 import { MutableObservableList, observableList } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
 

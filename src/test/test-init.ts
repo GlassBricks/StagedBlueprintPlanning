@@ -10,8 +10,7 @@
  */
 
 import { createAssembly } from "../assembly/Assembly"
-import { Events } from "../lib"
-import { destroyAllRenders } from "../lib/rendering"
+import { destroyAllRenders, Events } from "../lib"
 import { openAssemblySettings } from "../ui/gui/AssemblySettings"
 
 // better source map traceback

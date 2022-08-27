@@ -13,10 +13,10 @@
 ///<reference path="./jsx.d.ts" />
 
 import _createElement from "./createElement"
-import "./render"
 
 export * from "./spec"
 export * from "./render"
+export * from "./util"
 
 export namespace FactorioJsx {
   export const createElement = _createElement

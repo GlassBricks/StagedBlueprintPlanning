@@ -10,7 +10,7 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { MutableState, Observable, State } from "../lib/observable"
+import { MutableState, Observable, State } from "../lib"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { MutableEntityMap } from "./EntityMap"
 

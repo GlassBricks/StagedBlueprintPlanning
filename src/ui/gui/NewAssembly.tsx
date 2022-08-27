@@ -12,8 +12,7 @@
 import { createAssembly } from "../../assembly/Assembly"
 import { funcOn, RegisterClass } from "../../lib"
 import { Component, destroy, EmptyProps, FactorioJsx, renderOpened, Spec, Tracker } from "../../lib/factoriojsx"
-import { HorizontalPusher } from "../../lib/factoriojsx/components/misc"
-import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
+import { HorizontalPusher, SimpleTitleBar } from "../../lib/factoriojsx/components"
 import { L_GuiNewAssembly } from "../../locale"
 import { openAssemblySettings } from "./AssemblySettings"
 import floor = math.floor

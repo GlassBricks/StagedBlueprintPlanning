@@ -9,14 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Events } from "./Events"
-import "./factoriojsx"
-import "./observable"
-
 export * from "./references"
 export * from "./player-init"
 export * from "./protected-action"
 export * from "./util"
 export * from "./util-types"
-
-export { Events }
+export * from "./map2d"
+export * from "./observable"
+export * from "./Events"
+export * from "./ProtectedEvents"
+export * from "./rendering"

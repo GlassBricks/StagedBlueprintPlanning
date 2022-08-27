@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { FactorioJsx, GuiEventHandler } from "../factoriojsx"
 import { getDescription, isRoot, makeWrapper, testRender } from "./gui"
 import { getPlayer } from "./misc"

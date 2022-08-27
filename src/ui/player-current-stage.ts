@@ -11,8 +11,7 @@
 
 import { AssemblyEvents, getStageAtSurface } from "../assembly/Assembly"
 import { Stage } from "../assembly/AssemblyDef"
-import { assertNever, Events, onPlayerInit } from "../lib"
-import { MutableState, State, state } from "../lib/observable"
+import { assertNever, Events, MutableState, onPlayerInit, State, state } from "../lib"
 
 declare global {
   interface PlayerData {
