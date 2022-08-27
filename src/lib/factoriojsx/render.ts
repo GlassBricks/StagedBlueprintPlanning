@@ -185,7 +185,12 @@ function renderElement(
       if (typeof isElemProp === "string") elemProps.set([isElemProp], value)
       else elemProps.set(key, value)
       if (stateEvent && value instanceof State) {
-        if (isMutableState<any>(value)) events[stateEvent] = bind(setStateFunc, value, key)
+        if (isMutableState<any>(value)) {
+          if (events[stateEvent]) {
+            error(`Cannot specify both state and gui event for ${stateEvent}`)
+          }
+          events[stateEvent] = bind(setStateFunc, value, key)
+        }
         if (isSpecProp) {
           guiSpec[key] = value.get()
         }

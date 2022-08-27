@@ -10,7 +10,6 @@
  */
 
 import {
-  ButtonElementSpec,
   ChooseElemButtonElementSpec,
   ClassComponentSpec,
   Component,
@@ -23,6 +22,7 @@ import {
   Spec,
   TabbedPaneElementSpec,
   TextBoxElementSpec,
+  TextFieldElementSpec,
   Tracker,
 } from "../../factoriojsx"
 import { State, state } from "../../observable"
@@ -238,10 +238,11 @@ describe("destroy", () => {
 
 test("events", () => {
   const func = spy<GuiEventHandler["invoke"]>()
-  const spec: ButtonElementSpec = {
-    type: "button",
+  const spec: TextFieldElementSpec = {
+    type: "textfield",
     on_gui_click: { invoke: func },
     on_gui_opened: { invoke: func },
+    on_gui_text_changed: { invoke: func },
   }
   const element = testRender(spec).native
 
@@ -269,6 +270,16 @@ test("events", () => {
   }
   script.get_event_handler(defines.events.on_gui_opened)(fakeOpenEvent)
   assert.spy(func).called_with(match._, fakeOpenEvent)
+
+  const fakeTextChangeEvent: OnGuiTextChangedEvent = {
+    element: element as LuaGuiElement,
+    name: defines.events.on_gui_text_changed,
+    player_index: element.player_index,
+    tick: game.tick,
+    text: "hi",
+  }
+  script.get_event_handler(defines.events.on_gui_text_changed)(fakeTextChangeEvent)
+  assert.spy(func).called_with(match._, fakeTextChangeEvent)
 })
 
 test("observable value", () => {

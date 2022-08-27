@@ -419,8 +419,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
       }
       // events
       if (events)
-        for (const [name, value] of Object.entries(events[type as GuiElementType])) {
-          if (value !== true) continue
+        for (const name of Object.keys(events[type as GuiElementType])) {
           const type = ts.factory.createTypeReferenceNode("GuiEventHandler", [
             ts.factory.createTypeReferenceNode(toPascalCase(name) + "Event"),
           ])
