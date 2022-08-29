@@ -266,12 +266,13 @@ Events.on_player_mined_entity((e) => {
 
 Events.on_built_entity((e) => {
   const { created_entity: entity } = e
-  if (isMarkerEntity(entity)) {
-    return onEntityMarkerBuilt(e, entity)
-  }
-
   const stage = getStageAtEntity(entity)
   if (!stage) return
+
+  if (isMarkerEntity(entity)) {
+    return onEntityMarkerBuilt(e, entity, stage)
+  }
+
   const { assembly } = stage
   if (!state.currentlyInBuild) {
     DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage, e.player_index)
@@ -336,19 +337,17 @@ function isMarkerEntity(entity: LuaEntity): boolean {
   )
 }
 
-function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity): void {
-  handleEntityMarkerBuilt(e, entity)
+function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
+  handleEntityMarkerBuilt(e, entity, stage)
   entity.destroy()
 }
-function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity): void {
+function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
   const tags = e.tags as MarkerTags
   if (!tags) return
   const referencedName = tags.referencedName
   if (!referencedName) return
   const correspondingEntity = entity.surface.find_entity(referencedName, entity.position)
   if (!correspondingEntity) return
-  const stage = getStageAtEntity(correspondingEntity)
-  if (!stage) return
   DefaultAssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, correspondingEntity, stage, e.player_index)
   if (tags.hasCircuitWires) {
     DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, correspondingEntity, stage, e.player_index)
@@ -372,13 +371,13 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
   data.lastWireAffectedEntity = entity
 }
 
-function clearPlayerAffectedWires(player: LuaPlayer): void {
-  const data = global.players[player.index]
+function clearPlayerAffectedWires(index: PlayerIndex): void {
+  const data = global.players[index]
   const entity = data.lastWireAffectedEntity
   if (entity) {
     data.lastWireAffectedEntity = nil
     const stage = getStageAtEntity(entity)
-    if (stage) DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage, player.index)
+    if (stage) DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage, index)
   }
 }
 
@@ -393,7 +392,7 @@ Events.on(CustomInputs.RemovePoleCables, (e) => {
   markPlayerAffectedWires(game.get_player(e.player_index)!)
 })
 Events.on_selected_entity_changed((e) => {
-  clearPlayerAffectedWires(game.get_player(e.player_index)!)
+  clearPlayerAffectedWires(e.player_index)
 })
 
 // Cleanup tool
