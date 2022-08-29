@@ -33,14 +33,13 @@ type AdditionalArgs<L extends Func> = L["invoke"] extends (this: any, arg1: any,
 export class ObserverList<L extends Func<(subscription: Subscription, ...args: any) => void>>
   implements Subscribable<L>
 {
-  private deleteQueue?: LuaSet<ObserverSubscription>
   private declare get: LuaTableGetMethod<ObserverSubscription, L | undefined>
   private declare set: LuaTableSetMethod<ObserverSubscription, L>
   private declare has: LuaTableHasMethod<ObserverSubscription>
   private declare delete: LuaTableDeleteMethod<ObserverSubscription>
 
   subscribeIndependently(observer: L): Subscription {
-    const subscription = new ObserverSubscription(this)
+    const subscription = new ObserverSubscription(this as any)
     this.set(subscription, observer)
     return subscription
   }
@@ -63,20 +62,15 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
       subscription.close()
     }
   }
-
-  _delete(subscription: ObserverSubscription): void {
-    if (!this.deleteQueue) this.delete(subscription)
-    else this.deleteQueue.add(subscription)
-  }
 }
 
 @RegisterClass("ObserverSubscription")
 class ObserverSubscription extends Subscription {
-  constructor(private readonly observers: ObserverList<any>) {
+  constructor(private readonly observers: LuaMap<ObserverSubscription>) {
     super()
   }
   override close() {
-    this.observers._delete(this)
+    this.observers.delete(this)
     super.close()
   }
 }
