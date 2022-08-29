@@ -30,7 +30,7 @@ describe("subscribe", () => {
     event.subscribeIndependently({ invoke: fn })
     event.raise("hello")
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, "hello")
+    assert.spy(fn).called_with(match._, "hello")
   })
 
   it("can fire events multiple times", () => {
@@ -39,8 +39,8 @@ describe("subscribe", () => {
     event.raise("1")
     event.raise("2")
     assert.spy(fn).called(2)
-    assert.spy(fn).called_with(match._, match._, "1")
-    assert.spy(fn).called_with(match._, match._, "2")
+    assert.spy(fn).called_with(match._, "1")
+    assert.spy(fn).called_with(match._, "2")
   })
 
   it("broadcasts to multiple subscribers", () => {
@@ -76,8 +76,8 @@ describe("unsubscribe", () => {
     subscription.close()
     event.raise("after")
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, "before")
-    assert.spy(fn).not_called_with(match._, match._, "after")
+    assert.spy(fn).called_with(match._, "before")
+    assert.spy(fn).not_called_with(match._, "after")
   })
 
   it("can be unsubscribed via context", () => {
@@ -88,7 +88,7 @@ describe("unsubscribe", () => {
     context.close()
     event.raise("after")
     assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, match._, "before")
-    assert.spy(fn).not_called_with(match._, match._, "after")
+    assert.spy(fn).called_with(match._, "before")
+    assert.spy(fn).not_called_with(match._, "after")
   })
 })

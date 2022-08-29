@@ -12,7 +12,7 @@
 // this could maybe be moved to shared lib in the future
 
 import { Func, funcOn, RegisterClass } from "../../index"
-import { State, Subscription } from "../../observable"
+import { State } from "../../observable"
 import { Component, destroyChildren, ElemProps, FactorioJsx, renderMultiple, Spec, Tracker } from "../index"
 
 export type IfProps = {
@@ -41,7 +41,7 @@ export class If extends Component<IfProps> {
     )
   }
 
-  onChange(_: Subscription, value: boolean): void {
+  onChange(value: boolean): void {
     destroyChildren(this.element)
     const spec = value ? this.then.invoke() : this.else && this.else.invoke()
     if (spec) {

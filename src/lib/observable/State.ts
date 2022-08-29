@@ -15,11 +15,11 @@ import { ObserverList, Subscribable } from "./Observable"
 import { Subscription } from "./Subscription"
 
 export interface ChangeListener<T> {
-  invoke(subscription: Subscription, value: T, oldValue: T): void
+  invoke(value: T, oldValue: T): void
 }
 
 export interface PartialChangeListener<T> {
-  invoke(subscription: Subscription, value: T, oldValue: T | nil): void
+  invoke(value: T, oldValue: T | nil): void
 }
 
 export type MaybeState<T> = State<T> | T
@@ -45,7 +45,7 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
   }
   subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {
     const subscription = this.subscribeIndependently(observer)
-    observer.invoke(subscription, this.get(), nil)
+    observer.invoke(this.get(), nil)
     return subscription
   }
 
@@ -79,7 +79,7 @@ export abstract class State<T> implements Subscribable<ChangeListener<T>> {
 
   subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
     const subscription = this.subscribe(context, observer)
-    observer.invoke(subscription, this.get(), nil)
+    observer.invoke(this.get(), nil)
     return subscription
   }
   sub<K extends keyof T>(key: K): State<T[K]> {
@@ -178,7 +178,7 @@ class MappedState<T, U> extends State<U> {
     this.curValue = nil
   }
 
-  sourceListener(_: Subscription, sourceNewValue: T) {
+  sourceListener(sourceNewValue: T) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
@@ -229,7 +229,7 @@ class FlatMappedState<T, U> extends State<U> {
     }
   }
 
-  sourceListener(_: Subscription, sourceNewValue: T) {
+  sourceListener(sourceNewValue: T) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
@@ -239,7 +239,7 @@ class FlatMappedState<T, U> extends State<U> {
     if (oldValue !== newValue) this.event.raise(newValue!, oldValue!)
   }
 
-  nestedListener(_: Subscription, nestedNewValue: U) {
+  nestedListener(nestedNewValue: U) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
     const oldValue = this.curValue
     this.curValue = nestedNewValue

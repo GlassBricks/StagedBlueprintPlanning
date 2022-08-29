@@ -47,7 +47,7 @@ test("notifies subscribers of pushed items", () => {
     value: "a",
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })
 
 it("notifies subscribers of inserted items", () => {
@@ -63,7 +63,7 @@ it("notifies subscribers of inserted items", () => {
     value: "b",
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })
 
 it("notifies subscribers of popped items", () => {
@@ -79,7 +79,7 @@ it("notifies subscribers of popped items", () => {
     value: "a",
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })
 
 it("notifies subscribers of removed items", () => {
@@ -96,7 +96,7 @@ it("notifies subscribers of removed items", () => {
     value: "a",
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })
 
 it("notifies subscribers of changed items", () => {
@@ -114,7 +114,7 @@ it("notifies subscribers of changed items", () => {
     value: "c",
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })
 
 it("does not notify subscribers of changed items when value is not changed", () => {
@@ -143,5 +143,5 @@ test("it notifies subscribers of swapped items", () => {
     newValueB: "a",
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })

@@ -127,7 +127,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     this.element.visible = false
   }
 
-  private onAssemblyEvent(_: any, event: LocalAssemblyEvent) {
+  private onAssemblyEvent(event: LocalAssemblyEvent) {
     if (event.type === "assembly-deleted") {
       destroy(this.element)
     } else if (event.type !== "stage-added" && event.type !== "pre-stage-deleted" && event.type !== "stage-deleted") {

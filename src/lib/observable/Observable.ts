@@ -19,7 +19,7 @@ export interface Subscribable<L extends Func> {
 }
 
 export interface Observer<T> {
-  invoke(subscription: Subscription, value: T): void
+  invoke(value: T): void
 }
 
 export interface Observable<T> {
@@ -27,12 +27,8 @@ export interface Observable<T> {
   subscribeIndependently(observer: Observer<T>): Subscription
 }
 
-type AdditionalArgs<L extends Func> = L["invoke"] extends (this: any, arg1: any, ...args: infer A) => void ? A : never
-
 @RegisterClass("ObserverList")
-export class ObserverList<L extends Func<(subscription: Subscription, ...args: any) => void>>
-  implements Subscribable<L>
-{
+export class ObserverList<L extends Func<(...args: any) => void>> implements Subscribable<L> {
   private declare get: LuaTableGetMethod<ObserverSubscription, L | undefined>
   private declare set: LuaTableSetMethod<ObserverSubscription, L>
   private declare has: LuaTableHasMethod<ObserverSubscription>
@@ -50,10 +46,10 @@ export class ObserverList<L extends Func<(subscription: Subscription, ...args: a
     return subscription
   }
 
-  raise(...args: AdditionalArgs<L>): void
+  raise(...args: Parameters<L["invoke"]>): void
   raise(...args: any[]): void {
     for (const [subscription, observer] of shallowCopy(this as unknown as LuaMap<ObserverSubscription, L>)) {
-      if (this.has(subscription)) observer.invoke(subscription, ...args)
+      if (this.has(subscription)) observer.invoke(...args)
     }
   }
 

@@ -69,7 +69,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     this.assembly.localEvents.subscribe(subscription, funcOn(this.onAssemblyEvent))
   }
 
-  private onAssemblyEvent(_: Subscription, event: LocalAssemblyEvent) {
+  private onAssemblyEvent(event: LocalAssemblyEvent) {
     if (event.type === "stage-added" || event.type === "stage-deleted") {
       this.setup()
     } else if (event.type !== "assembly-deleted" && event.type !== "pre-stage-deleted") {
@@ -77,18 +77,18 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     }
   }
 
-  private setDropDownItem(stageNumber: StageNumber, _: Subscription, name: LocalisedString) {
+  private setDropDownItem(stageNumber: StageNumber, name: LocalisedString) {
     this.element.set_item(stageNumber, name)
   }
 
-  private onSelectedIndexChanged(_: Subscription, index: number) {
+  private onSelectedIndexChanged(index: number) {
     if (!this.assembly.valid) return
     const stage = this.assembly.getStage(index)
     if (!stage) return
     teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private playerStageChanged(_: any, stage: Stage | nil) {
+  private playerStageChanged(stage: Stage | nil) {
     if (stage && stage.assembly === this.assembly && stage.stageNumber <= this.element.items.length) {
       this.selectedIndex.set(stage.stageNumber)
       this.selectedIndex.forceNotify()

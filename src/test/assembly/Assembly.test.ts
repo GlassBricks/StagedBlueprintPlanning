@@ -67,7 +67,7 @@ describe("deletion", () => {
     let call = eventListener.calls[1].refs[0] as AssemblyDeletedEvent
     assert.same("assembly-deleted", call.type)
     assert.same(asm, call.assembly)
-    call = sp2.calls[0].refs[2] as AssemblyDeletedEvent
+    call = sp2.calls[0].refs[1] as AssemblyDeletedEvent
     assert.same("assembly-deleted", call.type)
     assert.same(asm, call.assembly)
   })
@@ -114,7 +114,7 @@ test("insert stage", () => {
   assert.equals("stage-added", call.type)
   assert.equals(asm, call.assembly)
   assert.equals(stage, call.stage)
-  call = sp.calls[0].refs[2] as StageAddedEvent
+  call = sp.calls[0].refs[1] as StageAddedEvent
   assert.equals("stage-added", call.type)
   assert.equals(asm, call.assembly)
   assert.equals(stage, call.stage)
