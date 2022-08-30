@@ -87,8 +87,8 @@ if (script.active_mods.testorio !== nil) {
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
-      const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo" }
-      if (result.status === "passed") {
+      const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo"; skipped: number }
+      if (result.status === "passed" && result.skipped === 0) {
         game.surfaces[1].clear()
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()

@@ -17,7 +17,6 @@ import { CustomInputs, Prototypes } from "../../constants"
 import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
-import { teleportToSurface1 } from "../../ui/player-current-stage"
 import direction = defines.direction
 
 let updater: mock.Stubbed<AssemblyUpdater>
@@ -34,9 +33,6 @@ before_all(() => {
 
   player.teleport(pos, surface)
 })
-after_all(() => {
-  teleportToSurface1(player)
-})
 
 before_each(() => {
   surface
@@ -52,7 +48,7 @@ after_all(() => {
 })
 
 after_each(() => {
-  assert.true(_inValidState())
+  assert.true(_inValidState(), "in valid state")
   player?.cursor_stack?.clear()
 })
 
@@ -435,5 +431,51 @@ describe("move to this stage", () => {
       force: "player",
     })
     testOnEntity(entity)
+  })
+})
+
+describe("revives ghost undergrounds", () => {
+  test("by player", () => {
+    const pos = Pos(4.5, 0.5)
+    player.cursor_stack!.set_stack("underground-belt")
+    player.build_from_cursor({
+      position: pos,
+      alt: true,
+    })
+    const underground = surface.find_entities_filtered({
+      name: "underground-belt",
+      limit: 1,
+    })[0]
+    assert.not_nil(underground, "underground found")
+    assert.same(pos, underground.position)
+    const ghosts = surface.find_entities_filtered({
+      type: "entity-ghost",
+      limit: 1,
+    })[0]
+    assert.nil(ghosts, "no ghosts found")
+
+    assert
+      .spy(updater.onEntityCreated)
+      .called_with(match.ref(assembly), match.ref(underground), match.ref(assembly.getStage(1)!), 1)
+  })
+  test("by script", () => {
+    const pos = Pos(4.5, 0.5)
+    const undergroundGhost = surface.create_entity({
+      name: "entity-ghost",
+      inner_name: "underground-belt",
+      position: pos,
+      force: "player",
+      raise_built: true,
+    })
+    assert.falsy(undergroundGhost?.valid, "ghost replaced")
+    const underground = surface.find_entities_filtered({
+      name: "underground-belt",
+      limit: 1,
+    })[0]
+    assert.not_nil(underground, "underground found")
+    assert.same(pos, underground.position)
+    assert
+      .spy(updater.onEntityCreated)
+      .called_with(match.ref(assembly), match.ref(underground), match.ref(assembly.getStage(1)!), nil)
   })
 })

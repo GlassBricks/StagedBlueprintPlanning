@@ -15,7 +15,6 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
-import { L_Interaction } from "../locale"
 import { getStageAtSurface } from "./Assembly"
 import { Assembly, Stage } from "./AssemblyDef"
 import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
@@ -42,9 +41,14 @@ function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
 }
 
 function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
+  if (!entity.valid) return
   if (isMarkerEntity(entity)) entity.destroy() // only handle in on_entity_built; see below
-  const stage = getStageAtEntity(entity)
-  if (stage) DefaultAssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, player)
+  const stage = getStageAtSurface(entity.surface.index)
+  if (!stage) return
+  if (!isWorldEntityAssemblyEntity(entity)) {
+    return checkNonAssemblyEntity(entity, stage, player)
+  }
+  DefaultAssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, player)
 }
 
 function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
@@ -62,24 +66,16 @@ function luaEntityForceDeleted(entity: LuaEntity): void {
   if (stage) DefaultAssemblyUpdater.onEntityForceDeleted(stage.assembly, entity, stage)
 }
 
-function checkRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil) {
-  const stage = getStageAtEntity(entity)
-  if (stage) {
-    DefaultAssemblyUpdater.onEntityRotated(stage.assembly, entity, stage, player, previousDirection)
-    return true
-  }
-  return false
-}
-
 function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {
-  if (checkRotated(entity, previousDirection, player) || !entity.valid) return
+  if (!entity.valid) return
+  const stage = getStageAtSurface(entity.surface.index)
+  if (!stage) return
+  if (isWorldEntityAssemblyEntity(entity)) {
+    DefaultAssemblyUpdater.onEntityRotated(stage.assembly, entity, stage, player, previousDirection)
+  }
   if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) {
     entity.direction = previousDirection
     return
-  }
-  if (entity.type === "entity-ghost" && entity.ghost_type === "underground-belt") {
-    const stage = getStageAtSurface(entity.surface.index)
-    if (stage) game.print([L_Interaction.GhostUndergroundFlipNotHandled])
   }
 }
 
@@ -266,7 +262,8 @@ Events.on_player_mined_entity((e) => {
 
 Events.on_built_entity((e) => {
   const { created_entity: entity } = e
-  const stage = getStageAtEntity(entity)
+  if (!entity.valid) return
+  const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
 
   if (isMarkerEntity(entity)) {
@@ -283,10 +280,25 @@ Events.on_built_entity((e) => {
     if (state.lastDeleted === nil) state.currentlyInBuild = nil
   } else {
     clearLastDeleted(e.player_index)
-    DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage, e.player_index)
     state.currentlyInBuild = nil
+    if (!isWorldEntityAssemblyEntity(entity)) {
+      checkNonAssemblyEntity(entity, stage, e.player_index)
+    } else {
+      DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage, e.player_index)
+    }
   }
 })
+
+function checkNonAssemblyEntity(entity: LuaEntity, stage: Stage, byPlayer: PlayerIndex | nil): void {
+  // always revive ghost undergrounds
+  if (entity.type === "entity-ghost" && entity.ghost_type === "underground-belt") {
+    // revive
+    const [, newEntity] = entity.silent_revive()
+    if (newEntity) {
+      DefaultAssemblyUpdater.onEntityCreated(stage.assembly, newEntity, stage, byPlayer)
+    } else if (entity.valid) entity.destroy()
+  }
+}
 
 function tryUpgrade(assembly: Assembly, entity: LuaEntity, stage: Stage, player: PlayerIndex) {
   const { lastDeleted } = state

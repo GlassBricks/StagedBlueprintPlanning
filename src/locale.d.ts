@@ -56,10 +56,8 @@ export declare const enum L_Interaction {
   CannotCreateUndergroundUpgradeIfNotInSameStage = "bp100.interaction.cannot-create-underground-upgrade-if-not-in-same-stage",
   /** Upgrading this will change the underground pair */
   CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
-  /** Cannot move underground belt with upgrade. Try upgrading first. */
+  /** Cannot move underground belt with upgrade. Try first upgrading in the entity first stage. */
   CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
-  /** Warning: flipping a ghost underground in an assembly will not check its pair, due to current limitations of the factorio modding api. */
-  GhostUndergroundFlipNotHandled = "bp100.interaction.ghost-underground-flip-not-handled",
   /** Not in an assembly */
   NotInAnAssembly = "bp100.interaction.Not-in-an-assembly",
   /** No next stage */
