@@ -9,10 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { clamp } from "util"
 import { Assembly, LocalAssemblyEvent, Stage } from "../../assembly/AssemblyDef"
 import { StageNumber } from "../../entity/AssemblyEntity"
-import { assertNever, bind, funcOn, MutableState, RegisterClass, state, Subscription } from "../../lib"
+import { assertNever, bind, funcOn, MutableState, RegisterClass, Subscription } from "../../lib"
 import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"
 import { playerCurrentStage, teleportToStage } from "../player-current-stage"
 
@@ -27,29 +26,22 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   private trackerSubscription!: Subscription
   private playerIndex!: PlayerIndex
 
-  private elementsSubscription!: Subscription
+  private elementsSubscription?: Subscription
   private element!: DropDownGuiElement | ListBoxGuiElement
-  private selectedIndex!: MutableState<number>
 
   public override render(props: StageSelectorProps<T>, tracker: Tracker): Spec {
     this.assembly = props.assembly
-    this.selectedIndex = props.selectedIndex ?? state(0)
 
     this.trackerSubscription = tracker.getSubscription()
     this.playerIndex = tracker.playerIndex
 
-    this.selectedIndex.set(clamp(this.selectedIndex.get(), 0, this.assembly.numStages()))
-    this.selectedIndex.subscribe(this.trackerSubscription, funcOn(this.onSelectedIndexChanged))
-
     tracker.onMount(() => this.setup())
 
-    const stages = this.assembly.getAllStages()
     return (
       <props.uses
         {...props}
         onCreate={(e) => (this.element = e)}
-        items={stages.map((l) => l.name.get())}
-        selected_index={this.selectedIndex}
+        on_gui_selection_state_changed={funcOn(this.onSelectedIndexChanged)}
       />
     )
   }
@@ -81,8 +73,9 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     this.element.set_item(stageNumber, name)
   }
 
-  private onSelectedIndexChanged(index: number) {
+  private onSelectedIndexChanged() {
     if (!this.assembly.valid) return
+    const index = this.element.selected_index
     const stage = this.assembly.getStage(index)
     if (!stage) return
     teleportToStage(game.get_player(this.playerIndex)!, stage)
@@ -90,8 +83,9 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
 
   private playerStageChanged(stage: Stage | nil) {
     if (stage && stage.assembly === this.assembly && stage.stageNumber <= this.element.items.length) {
-      this.selectedIndex.set(stage.stageNumber)
-      this.selectedIndex.forceNotify()
+      this.element.selected_index = stage.stageNumber
+    } else {
+      this.element.selected_index = 0
     }
   }
 }

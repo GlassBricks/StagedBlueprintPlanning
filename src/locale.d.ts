@@ -104,13 +104,13 @@ export declare const enum L_GuiAssemblySettings {
   Title = "bp100.gui.assembly-settings.title",
   /** Rename assembly */
   RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
-  /** Rename current stage */
+  /** Rename stage */
   RenameStage = "bp100.gui.assembly-settings.rename-stage",
   /** New stage: */
   NewStage = "bp100.gui.assembly-settings.new-stage",
   /** After current */
   AfterCurrent = "bp100.gui.assembly-settings.after-current",
-  /** Add front */
+  /** At front */
   AtFront = "bp100.gui.assembly-settings.at-front",
   /** Delete assembly */
   DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
@@ -130,6 +130,4 @@ export declare const enum L_GuiAssemblySettings {
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
-  /** More settings coming soon! */
-  MoreSettingsComingSoon = "bp100.gui.assembly-settings.more-settings-coming-soon",
 }

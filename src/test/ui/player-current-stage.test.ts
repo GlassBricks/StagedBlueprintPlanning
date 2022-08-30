@@ -24,6 +24,12 @@ test("playerCurrentStage", () => {
     assert.equal(currentStage.get(), stage)
   }
 
+  assembly.deleteStage(assembly.numStages())
+  assert.nil(currentStage.get())
+
+  player.teleport(player.position, assembly.getStage(1)!.surface)
+  assert.equal(currentStage.get(), assembly.getStage(1)!)
+
   assembly.delete()
   assert.nil(currentStage.get())
 })

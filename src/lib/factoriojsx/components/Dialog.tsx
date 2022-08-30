@@ -24,9 +24,6 @@ export interface DialogueProps {
   onConfirm?: Func<(player: LuaPlayer) => void>
 
   redConfirm?: boolean
-
-  draggable?: boolean
-  confirmShortcut?: boolean
 }
 @RegisterClass("gui:Dialog")
 export class Dialog extends Component<DialogueProps> {
@@ -45,9 +42,6 @@ export class Dialog extends Component<DialogueProps> {
       <frame
         auto_center
         caption={props.title}
-        styleMod={{
-          use_header_filler: true,
-        }}
         direction={"vertical"}
         onCreate={(e) => (this.element = e)}
         on_gui_closed={funcOn(this.onClose)}

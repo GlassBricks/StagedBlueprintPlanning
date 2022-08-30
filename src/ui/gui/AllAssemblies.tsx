@@ -27,7 +27,7 @@ import { L_GuiAllAssemblies } from "../../locale"
 import { openAssemblySettings } from "./AssemblySettings"
 import { openNewAssemblyGui } from "./NewAssembly"
 
-const AllAssembliesWidth = 300
+const AllAssembliesWidth = 260
 const AllAssembliesHeight = 28 * 10
 @RegisterClass("gui:AllAssemblies")
 class AllAssemblies extends Component {
@@ -90,7 +90,7 @@ class AllAssemblies extends Component {
     self.listBox.set_item(index, name)
   }
 
-  private assemblySelected(_: any, index: number): void {
+  private assemblySelected(index: number): void {
     const assembly = this.allAssemblies[index - 1]
     if (assembly !== nil) {
       destroy(this.element)

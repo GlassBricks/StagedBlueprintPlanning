@@ -11,7 +11,16 @@
 
 import { AssemblyEvents, getStageAtSurface } from "../assembly/Assembly"
 import { Stage } from "../assembly/AssemblyDef"
-import { assertNever, Events, MutableState, onPlayerInit, State, state } from "../lib"
+import {
+  assertNever,
+  Events,
+  globalEventMulti,
+  MutableState,
+  onPlayerInit,
+  onPlayerRemoved,
+  State,
+  state,
+} from "../lib"
 
 declare global {
   interface PlayerData {
@@ -20,36 +29,50 @@ declare global {
 }
 declare const global: GlobalWithPlayers
 
+export function playerCurrentStage(index: PlayerIndex): State<Stage | nil> {
+  return global.players[index].currentStage
+}
+const PlayerChangedStageEvent = globalEventMulti<[player: LuaPlayer, stage: Stage | nil]>()
+export { PlayerChangedStageEvent }
+
+function updatePlayer(player: LuaPlayer): void {
+  const data = global.players[player.index]
+  if (data === nil) return
+
+  const curStage = data.currentStage
+  const newStage = getStageAtSurface(player.surface.index)
+  if (curStage.get() !== newStage) {
+    curStage.set(newStage)
+    PlayerChangedStageEvent.raise(player, newStage)
+  }
+}
 onPlayerInit((index) => {
   global.players[index].currentStage = state(nil)
 })
 
-function updatePlayer(player: LuaPlayer): void {
-  const data = global.players[player.index]
-  if (data !== nil) {
-    data.currentStage.set(getStageAtSurface(player.surface.index))
-  }
-}
-Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
-
-AssemblyEvents.addListener((e) => {
-  if (
-    e.type === "assembly-created" ||
-    e.type === "assembly-deleted" ||
-    e.type === "stage-added" ||
-    e.type === "stage-deleted"
-  ) {
-    for (const [, player] of game.players) {
-      updatePlayer(player)
-    }
-  } else if (e.type !== "pre-stage-deleted") {
-    assertNever(e)
-  }
+onPlayerRemoved((index) => {
+  const currentStage = global.players[index].currentStage
+  currentStage.set(nil)
+  currentStage.closeAll()
 })
 
-export function playerCurrentStage(index: PlayerIndex): State<Stage | nil> {
-  return global.players[index].currentStage
-}
+Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
+AssemblyEvents.addListener((e) => {
+  switch (e.type) {
+    case "assembly-deleted":
+    case "stage-deleted":
+      for (const [, player] of game.players) {
+        updatePlayer(player)
+      }
+      break
+    case "assembly-created":
+    case "pre-stage-deleted":
+    case "stage-added":
+      return
+    default:
+      assertNever(e)
+  }
+})
 
 export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   const currentStage = getStageAtSurface(player.surface.index)

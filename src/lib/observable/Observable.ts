@@ -9,14 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Func, RegisterClass } from "../references"
+import { RegisterClass } from "../references"
 import { shallowCopy } from "../util"
 import { Subscription } from "./Subscription"
-
-export interface Subscribable<L extends Func> {
-  subscribe(context: Subscription, observer: L): Subscription
-  subscribeIndependently(observer: L): Subscription
-}
 
 export interface Observer<T> {
   invoke(value: T): void
@@ -27,35 +22,43 @@ export interface Observable<T> {
   subscribeIndependently(observer: Observer<T>): Subscription
 }
 
-@RegisterClass("ObserverList")
-export class ObserverList<L extends Func<(...args: any) => void>> implements Subscribable<L> {
-  private declare get: LuaTableGetMethod<ObserverSubscription, L | undefined>
-  private declare set: LuaTableSetMethod<ObserverSubscription, L>
-  private declare has: LuaTableHasMethod<ObserverSubscription>
-  private declare delete: LuaTableDeleteMethod<ObserverSubscription>
+export interface MultiObserver<A extends any[]> {
+  invoke(...args: A): void
+}
 
-  subscribeIndependently(observer: L): Subscription {
-    const subscription = new ObserverSubscription(this as any)
-    this.set(subscription, observer)
+export interface MultiObservable<A extends any[]> {
+  subscribe(context: Subscription, observer: MultiObserver<A>): Subscription
+  subscribeIndependently(observer: MultiObserver<A>): Subscription
+}
+
+type AsMap<A extends any[]> = LuaMap<ObserverSubscription, MultiObserver<A>>
+@RegisterClass("ObserverList")
+export class ObserverList<A extends any[]> implements MultiObservable<A> {
+  subscribeIndependently(observer: MultiObserver<A>): Subscription {
+    const thisAsMap = this as unknown as AsMap<A>
+    const subscription = new ObserverSubscription(thisAsMap)
+    thisAsMap.set(subscription, observer)
     return subscription
   }
 
-  subscribe(context: Subscription, observer: L): Subscription {
+  subscribe(context: Subscription, observer: MultiObserver<A>): Subscription {
     const subscription = this.subscribeIndependently(observer)
     context.add(subscription)
     return subscription
   }
 
-  raise(...args: Parameters<L["invoke"]>): void
-  raise(...args: any[]): void {
-    for (const [subscription, observer] of shallowCopy(this as unknown as LuaMap<ObserverSubscription, L>)) {
-      if (this.has(subscription)) observer.invoke(...args)
+  raise(...args: A): void {
+    const thisAsMap = this as unknown as AsMap<A>
+    for (const [subscription, observer] of shallowCopy(thisAsMap)) {
+      if (thisAsMap.has(subscription)) observer.invoke(...args)
     }
   }
 
   closeAll(): void {
-    for (const [subscription] of shallowCopy(this as unknown as LuaMap<ObserverSubscription, L>)) {
+    const thisAsMap = this as unknown as AsMap<A>
+    for (const [subscription] of shallowCopy(thisAsMap)) {
       subscription.close()
+      thisAsMap.delete(subscription)
     }
   }
 }
@@ -71,6 +74,8 @@ class ObserverSubscription extends Subscription {
   }
 }
 
-export type EventListener<T> = Observer<T>
-export type Event<T> = ObserverList<EventListener<T>>
+export type Event<T> = ObserverList<[T]>
 export const Event: new <T>() => Event<T> = ObserverList
+
+export type MultiEvent<A extends any[]> = ObserverList<A>
+export const MultiEvent: new <A extends any[]>() => MultiEvent<A> = ObserverList
