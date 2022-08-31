@@ -508,3 +508,11 @@ export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber)
     entity.getFirstStage() === stageNumber || entity.hasStageDiff(stageNumber) || entityHasErrorAt(entity, stageNumber)
   )
 }
+
+/**
+ * Gets the stage number this would merge with if this stage were to be deleted.
+ */
+export function getStageToMerge(stageNumber: StageNumber): StageNumber {
+  if (stageNumber === 1) return 2
+  return stageNumber - 1
+}

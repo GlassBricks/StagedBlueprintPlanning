@@ -36,7 +36,7 @@ describe("Migrations", () => {
 
   test("runs later migrations, in sorted order", () => {
     for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.from(version, () => run.push(version))
-    Migrations._doMigrations("1.2.3")
+    Migrations.doMigrations("1.2.3")
     assert.same(["1.2.4", "1.2.5"], run)
   })
 })

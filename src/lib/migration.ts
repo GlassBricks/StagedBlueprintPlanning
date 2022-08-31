@@ -47,15 +47,17 @@ export namespace Migrations {
       .sort()
       .flatMap((v) => migrations[v])
   }
-  export function _doMigrations(oldVersion: string): void {
+  export function doMigrations(oldVersion: string): void {
     const migrations = getMigrationsToRun(oldVersion)
     for (const fn of migrations) fn()
   }
 
-  Events.on_configuration_changed((data) => {
-    const thisChange = data.mod_changes[script.mod_name]
-    if (!thisChange) return
-    const oldVersion = thisChange.old_version
-    if (oldVersion) _doMigrations(oldVersion)
-  })
+  export function setMigrationsHook(): void {
+    Events.on_configuration_changed((data) => {
+      const thisChange = data.mod_changes[script.mod_name]
+      if (!thisChange) return
+      const oldVersion = thisChange.old_version
+      if (oldVersion) doMigrations(oldVersion)
+    })
+  }
 }

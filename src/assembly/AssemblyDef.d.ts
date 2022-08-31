@@ -39,7 +39,6 @@ export interface Assembly extends AssemblyContent {
 }
 export interface Stage extends StagePosition {
   readonly name: MutableState<string>
-
   readonly assembly: Assembly
 
   readonly valid: boolean

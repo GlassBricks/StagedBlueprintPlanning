@@ -67,7 +67,9 @@ class AssemblyImpl implements Assembly {
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-
+  numStages(): number {
+    return luaLength(this.stages)
+  }
   iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Stage]>>
   iterateStages(start: StageNumber = 1, end: StageNumber = this.numStages()): any {
     function next(stages: Stage[], i: number) {
@@ -80,6 +82,9 @@ class AssemblyImpl implements Assembly {
 
   getAllStages(): readonly Stage[] {
     return this.stages as unknown as readonly Stage[]
+  }
+  getStageName(stageNumber: StageNumber): LocalisedString {
+    return this.stages[stageNumber].name.get()
   }
 
   insertStage(index: StageNumber): Stage {
@@ -97,7 +102,8 @@ class AssemblyImpl implements Assembly {
     this.raiseEvent({ type: "stage-added", assembly: this, stage: newStage })
     return newStage
   }
-  public deleteStage(index: StageNumber): void {
+
+  deleteStage(index: StageNumber): void {
     this.assertValid()
     const stage = this.stages[index]
     assert(stage !== nil, "invalid stage number")
@@ -129,12 +135,7 @@ class AssemblyImpl implements Assembly {
     this.raiseEvent({ type: "assembly-deleted", assembly: this })
     this.localEvents.closeAll()
   }
-  numStages(): number {
-    return luaLength(this.stages)
-  }
-  getStageName(stageNumber: StageNumber): LocalisedString {
-    return this.stages[stageNumber].name.get()
-  }
+
   private getNewStageName(): string {
     let subName = ""
     for (let i = 1; ; i++) {

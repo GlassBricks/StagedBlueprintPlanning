@@ -11,6 +11,7 @@
 
 import { Assembly, LocalAssemblyEvent, Stage } from "../../assembly/AssemblyDef"
 import { AssemblyOperations } from "../../assembly/AssemblyOperations"
+import { getStageToMerge } from "../../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
 import {
   Component,
@@ -241,7 +242,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
   private getStageToMerge() {
     const stageNumber = this.stage.stageNumber
     const isFirst = stageNumber === 1
-    const toMerge = this.stage.assembly.getStage(isFirst ? stageNumber + 1 : stageNumber - 1)
+    const toMerge = this.stage.assembly.getStage(getStageToMerge(stageNumber))
     return { isFirst, toMerge }
   }
   private deleteStage() {
