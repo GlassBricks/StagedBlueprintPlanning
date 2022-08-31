@@ -77,7 +77,7 @@ function modifyBlueprint(stack: BlueprintItemStack): void {
   stack.set_blueprint_entities(entities)
 }
 
-export function validateBlueprint(player: LuaPlayer): void {
+export function validateHeldBlueprint(player: LuaPlayer): void {
   if (!isModifiedBlueprintStack(player.cursor_stack)) {
     player.print([L_Interaction.BlueprintNotHandled])
   }

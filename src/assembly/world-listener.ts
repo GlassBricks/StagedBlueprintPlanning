@@ -18,7 +18,7 @@ import { Pos } from "../lib/geometry"
 import { getStageAtSurface } from "./Assembly"
 import { Assembly, Stage } from "./AssemblyDef"
 import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
-import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from "./blueprint-paste"
+import { MarkerTags, modifyBlueprintInStackIfNeeded, validateHeldBlueprint } from "./blueprint-paste"
 
 /**
  * Hooks to factorio events, and calls AssemblyUpdater.
@@ -26,7 +26,7 @@ import { MarkerTags, modifyBlueprintInStackIfNeeded, validateBlueprint } from ".
 
 const Events = ProtectedEvents
 
-function getStageAtEntity(entity: LuaEntity): Stage | nil {
+function getStageIfAssemblyEntity(entity: LuaEntity): Stage | nil {
   if (!entity.valid) return
   const stage = getStageAtSurface(entity.surface.index)
   if (stage && isWorldEntityAssemblyEntity(entity)) {
@@ -52,17 +52,17 @@ function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
 }
 
 function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
-  const stage = getStageAtEntity(entity)
+  const stage = getStageIfAssemblyEntity(entity)
   if (stage) DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, entity, stage, player)
 }
 
 function luaEntityPotentiallyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
-  const stage = getStageAtEntity(entity)
+  const stage = getStageIfAssemblyEntity(entity)
   if (stage) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, entity, stage, player)
 }
 
 function luaEntityForceDeleted(entity: LuaEntity): void {
-  const stage = getStageAtEntity(entity)
+  const stage = getStageIfAssemblyEntity(entity)
   if (stage) DefaultAssemblyUpdater.onEntityForceDeleted(stage.assembly, entity, stage)
 }
 
@@ -72,6 +72,7 @@ function luaEntityRotated(entity: LuaEntity, previousDirection: defines.directio
   if (!stage) return
   if (isWorldEntityAssemblyEntity(entity)) {
     DefaultAssemblyUpdater.onEntityRotated(stage.assembly, entity, stage, player, previousDirection)
+    return
   }
   if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) {
     entity.direction = previousDirection
@@ -168,8 +169,8 @@ interface AnnotatedEntity extends BasicEntityInfo {
 }
 // in global, so no desync in case of bugs
 let state: {
-  currentlyInBuild?: true
-  preMinedItemCalled?: true
+  currentlyInBuild?: Stage | false // if not nil, then is in build. False if not in a stage
+  preMinedItemCalled?: Stage | false // if not nil, then is in build. False if not in a stage
   lastDeleted?: AnnotatedEntity
 }
 declare global {
@@ -188,16 +189,20 @@ Events.on_load(() => {
   state = global.worldListenerState
 })
 
+// for optimization purposes, getStageAtSurface is cached and computed as late as possible
+
 // building, deleting, fast replacing
 
 function clearLastDeleted(player: PlayerIndex | nil): void {
   const { lastDeleted } = state
   if (lastDeleted) {
     const { stage } = lastDeleted
-    if (stage.valid) DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, lastDeleted, stage, player)
-    const { undergroundPairValue } = lastDeleted
-    if (undergroundPairValue) {
-      DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, undergroundPairValue, stage, player)
+    if (stage.valid) {
+      DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, lastDeleted, stage, player)
+      const { undergroundPairValue } = lastDeleted
+      if (undergroundPairValue) {
+        DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, undergroundPairValue, stage, player)
+      }
     }
     state.lastDeleted = nil
   }
@@ -231,60 +236,85 @@ function setLastDeleted(entity: LuaEntity, stage: Stage, player: PlayerIndex | n
 
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
+  const stage = getStageAtSurface(player.surface.index)
   if (player.is_cursor_blueprint()) {
-    validateBlueprint(player)
+    if (stage) validateHeldBlueprint(player)
   } else {
-    state.currentlyInBuild = true
+    state.currentlyInBuild = stage ?? false
     clearLastDeleted(e.player_index)
   }
 })
 
-Events.on_pre_player_mined_item(() => {
-  state.preMinedItemCalled = true
+Events.on_pre_player_mined_item((e) => {
+  const player = game.get_player(e.player_index)!
+  const stage = getStageAtSurface(player.surface.index)
+  state.preMinedItemCalled = stage ?? false
 })
 
 Events.on_player_mined_entity((e) => {
+  const { entity } = e
   const preMinedItemCalled = state.preMinedItemCalled
   state.preMinedItemCalled = nil
-  const { entity } = e
-  const stage = getStageAtEntity(entity)
-  if (!stage) return
-  if (!preMinedItemCalled) {
+  if (preMinedItemCalled === false || !isWorldEntityAssemblyEntity(entity)) return
+  if (preMinedItemCalled === nil) {
     // this happens when using instant upgrade planner
-    state.currentlyInBuild = true
+    const stage = getStageAtSurface(entity.surface.index)
+    state.currentlyInBuild = stage ?? false
+    // fall through
   }
-  if (state.currentlyInBuild) {
-    setLastDeleted(entity, stage, e.player_index)
+  const currentlyInBuild = state.currentlyInBuild
+
+  if (currentlyInBuild === false) return // not in stage, do nothing
+  if (currentlyInBuild !== nil) {
+    // in a stage, set lastDeleted for fast replace
+    setLastDeleted(entity, currentlyInBuild, e.player_index)
   } else {
-    DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, entity, stage, e.player_index)
+    // normal delete
+    const stage = getStageAtSurface(entity.surface.index)
+    if (stage) DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, entity, stage, e.player_index)
   }
 })
 
 Events.on_built_entity((e) => {
   const { created_entity: entity } = e
   if (!entity.valid) return
-  const stage = getStageAtSurface(entity.surface.index)
-  if (!stage) return
+  const playerIndex = e.player_index
 
-  if (isMarkerEntity(entity)) {
-    return onEntityMarkerBuilt(e, entity, stage)
-  }
-
-  const { assembly } = stage
-  if (!state.currentlyInBuild) {
-    DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage, e.player_index)
+  const currentlyInBuild = state.currentlyInBuild
+  if (currentlyInBuild === false) {
+    // not in stage, do nothing
+    state.currentlyInBuild = nil
+    // shouldn't happen, just in case
+    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity, nil)
     return
   }
 
-  if (tryUpgrade(assembly, entity, stage, e.player_index)) {
+  if (currentlyInBuild === nil) {
+    // editor mode build, or marker entity
+    const stage = getStageAtSurface(entity.surface.index)
+
+    if (isMarkerEntity(entity)) return onEntityMarkerBuilt(e, entity, stage)
+    if (stage) DefaultAssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, playerIndex)
+    return
+  }
+
+  const stage = currentlyInBuild
+
+  // shouldn't happen, just in case
+  if (isMarkerEntity(entity)) return onEntityMarkerBuilt(e, entity, stage)
+
+  const assembly = stage.assembly
+  if (tryUpgrade(assembly, entity, stage, playerIndex)) {
+    // upgrade successful, clear currentlyInBuild if no lastDeleted (still has underground pair)
     if (state.lastDeleted === nil) state.currentlyInBuild = nil
   } else {
-    clearLastDeleted(e.player_index)
+    // can't upgrade, treat lastDeleted as delete instead of fast replace
+    clearLastDeleted(playerIndex)
     state.currentlyInBuild = nil
     if (!isWorldEntityAssemblyEntity(entity)) {
-      checkNonAssemblyEntity(entity, stage, e.player_index)
+      checkNonAssemblyEntity(entity, stage, playerIndex)
     } else {
-      DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage, e.player_index)
+      DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
     }
   }
 })
@@ -292,7 +322,6 @@ Events.on_built_entity((e) => {
 function checkNonAssemblyEntity(entity: LuaEntity, stage: Stage, byPlayer: PlayerIndex | nil): void {
   // always revive ghost undergrounds
   if (entity.type === "entity-ghost" && entity.ghost_type === "underground-belt") {
-    // revive
     const [, newEntity] = entity.silent_revive()
     if (newEntity) {
       DefaultAssemblyUpdater.onEntityCreated(stage.assembly, newEntity, stage, byPlayer)
@@ -323,12 +352,15 @@ function tryUpgrade(assembly: Assembly, entity: LuaEntity, stage: Stage, player:
 }
 
 // blueprint in cursor
-Events.on_player_cursor_stack_changed((e) => {
-  const player = game.get_player(e.player_index)!
+function handlePlayerHeldBlueprint(index: PlayerIndex): void {
+  const player = game.get_player(index)!
   if (player.is_cursor_blueprint()) {
-    modifyBlueprintInStackIfNeeded(player.cursor_stack)
+    const stage = getStageAtSurface(player.surface.index)
+    if (stage !== nil) modifyBlueprintInStackIfNeeded(player.cursor_stack)
   }
-})
+}
+Events.on_player_cursor_stack_changed((e) => handlePlayerHeldBlueprint(e.player_index))
+Events.on_player_changed_surface((e) => handlePlayerHeldBlueprint(e.player_index))
 
 // upgrading
 
@@ -337,7 +369,7 @@ function isUpgradeable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
 }
 
 Events.on_marked_for_upgrade((e) => {
-  const stage = getStageAtEntity(e.entity)
+  const stage = getStageIfAssemblyEntity(e.entity)
   if (stage) DefaultAssemblyUpdater.onEntityMarkedForUpgrade(stage.assembly, e.entity, stage, e.player_index)
 })
 
@@ -349,8 +381,8 @@ function isMarkerEntity(entity: LuaEntity): boolean {
   )
 }
 
-function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
-  handleEntityMarkerBuilt(e, entity, stage)
+function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage | nil): void {
+  if (stage) handleEntityMarkerBuilt(e, entity, stage)
   entity.destroy()
 }
 function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
@@ -372,7 +404,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage
 function markPlayerAffectedWires(player: LuaPlayer): void {
   const entity = player.selected
   if (!entity) return
-  const stage = getStageAtEntity(entity)
+  const stage = getStageIfAssemblyEntity(entity)
   if (!stage) return
 
   const data = global.players[player.index]
@@ -388,7 +420,7 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   const entity = data.lastWireAffectedEntity
   if (entity) {
     data.lastWireAffectedEntity = nil
-    const stage = getStageAtEntity(entity)
+    const stage = getStageIfAssemblyEntity(entity)
     if (stage) DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage, index)
   }
 }
@@ -444,4 +476,5 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   }
 })
 
-export const _inValidState = (): boolean => !state.currentlyInBuild && state.lastDeleted === nil
+export const _inValidState = (): boolean =>
+  state.currentlyInBuild === nil && state.lastDeleted === nil && state.lastDeleted === nil

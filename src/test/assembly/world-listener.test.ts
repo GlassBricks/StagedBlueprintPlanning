@@ -35,12 +35,7 @@ before_all(() => {
 })
 
 before_each(() => {
-  surface
-    .find_entities_filtered({
-      area: BBox.coords(0, 0, 5 * 32, 32),
-    })
-    .forEach((e) => e.destroy())
-
+  surface.find_entities().forEach((e) => e.destroy())
   mock.clear(updater)
 })
 after_all(() => {
@@ -48,7 +43,10 @@ after_all(() => {
 })
 
 after_each(() => {
-  assert.true(_inValidState(), "in valid state")
+  if (!_inValidState()) {
+    game.print("invalid state")
+    assert(false, "in valid state")
+  }
   player?.cursor_stack?.clear()
 })
 
