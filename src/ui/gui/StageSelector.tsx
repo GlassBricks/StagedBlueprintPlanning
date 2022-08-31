@@ -84,6 +84,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   private playerStageChanged(stage: Stage | nil) {
     if (stage && stage.assembly === this.assembly && stage.stageNumber <= this.element.items.length) {
       this.element.selected_index = stage.stageNumber
+      if (this.element.type === "list-box") this.element.scroll_to_item(stage.stageNumber)
     } else {
       this.element.selected_index = 0
     }
