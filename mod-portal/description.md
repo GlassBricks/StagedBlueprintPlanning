@@ -4,18 +4,17 @@ The ultimate mod for designing staged blueprints for 100% speedruns.
 
 Separate your builds into stages. Edit entities in any stage, and it will automatically be applied to all later stages. Many interactions and features are supported.
 
-This mod is currently in _beta_. There may be bugs or issues (but hopefully not!) Feedback is greatly appreciated.
+This mod is currently in _beta_. There may be bugs or issues (hopefully not)! Feedback is greatly appreciated.
 
 **Note**: high memory usage for very large blueprints, 12GB+ of computer ram is recommended.
 
 ## Basic usage
 
-Create a new assembly using the tool shortcut (in the bottom right).
-Note: assemblies cannot be resized after creation; give yourself plenty of extra space!
+Create a new assembly from the "AllAssemblies" gui ("..." button in the Current Assembly window on the top left).
 
-On the top left frame, you can see the current assembly and stage you are currently in. Here you can also change stages or open the assembly settings.
+On the top left frame, you can see the current assembly and stage you are currently in. Here you can change stages or open the assembly settings.
 
-When you make a change, that change will be applied to the _current_ and all _later_ stages.
+When you make a change, that change will be applied to the current and all _later_ stages.
 Every game interaction _should_ be handled. If this is not so, please submit a bug report!
 
 See below for full details on interactions.
@@ -23,24 +22,26 @@ See below for full details on interactions.
 Use the navigation controls! These are (with default keybindings):
 
 - `[CTRL+Mouse wheel]` to move between stages
-- `[CTRL+Middle mouse button]` to cycle between notable stages of the hovered entity (or preview)
+- `[CTRL+Middle mouse button]` to cycle between notable stages of the hovered entity (where the entity is different from the previous stage)
 - `[CTRL+SHIFT+Middle mouse button]` to teleport to the first stage of the hovered entity (or preview)
 - `[CTRL+ALT+Middle mouse button]` to move an entity to the current stage
+
+There is also the per-player setting "Use cyclic stage navigation".
 
 ## Full details
 
 ### Editing
 
-Building, mining, rotating, fast-replacing, circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, etc. are all supported. If this is not the case, please submit a bug report!
+Building, mining, rotating, fast-replacing, circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, etc. are all supported. If there is some interaction that is not handled, please submit a bug report!
 
-Deleting or rotating an entity in not in the entity's _first stage_ is not allowed (as these changes cannot be blueprinted).
+Deleting or rotating an entity is only allowed in the _first stage_ (as these changes cannot be blueprinted).
 
-Note: currently _power pole_ wires (not circuit wires) are not handled.
+Note: currently _copper cable_ wires (not circuit wires) are not handled.
 
 ### Accidental data loss prevention
 
-If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline). If you then undo the change, those settings will be restored. This is so you don't lose data if you accidentally deleted it.
-To remove settings remnants, use the `Assembly Cleanup Tool` (shortcut).
+If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline). If you undo the deletion, those settings will be restored. This is so you don't lose data if you accidentally deleted it.
+To remove settings remnants, use the `Assembly Cleanup Tool` (shortcut, in the bottom right).
 
 If you place an entity in the same position at a lower stage, it will be moved to the current stage, and a notification will appear. Deleting the entity again will move it back (instead of deleting it altogether). This prevents accidentally deleting entities.
 

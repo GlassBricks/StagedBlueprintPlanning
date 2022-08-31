@@ -13,7 +13,6 @@ import { keys } from "ts-transformer-keys"
 import { Prototypes } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
-import { getWorldPosition } from "../entity/EntityHandler"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
@@ -166,7 +165,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     } else if (config.type === "sprite") {
       const size = selectionBox.size()
       const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
-      const worldPosition = relativePosition.plus(getWorldPosition(stage, entity))
+      const worldPosition = relativePosition.plus(entity.position)
       const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
       result = createSprite({
         surface: stage.surface,
@@ -207,12 +206,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     type: "previewEntity" | "selectionProxy",
   ): LuaEntity | nil {
     const creator = type === "previewEntity" ? createEntityPreview : createSelectionProxy
-    const result = creator(
-      stage.surface,
-      entity.getNameAtStage(stage.stageNumber),
-      getWorldPosition(stage, entity),
-      entity.direction,
-    )
+    const result = creator(stage.surface, entity.getNameAtStage(stage.stageNumber), entity.position, entity.direction)
     entity.replaceWorldEntity(stage.stageNumber, result, type)
     return result
   }

@@ -10,8 +10,8 @@
  */
 
 import { Sprites } from "../../constants"
+import { MaybeState } from "../../lib"
 import { ClickEventHandler, FactorioJsx, Spec } from "../../lib/factoriojsx"
-import { MaybeState } from "../../lib/observable"
 
 export function ExternalLinkButton(props: {
   on_gui_click?: ClickEventHandler

@@ -10,7 +10,7 @@
  */
 
 import { Func, funcOn, RegisterClass } from "../../index"
-import { ObservableSet, ObservableSetChange, Subscription } from "../../observable"
+import { ObservableSet, ObservableSetChange } from "../../observable"
 import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
 
 export type EnumerateSetProps<T, U extends GuiElementType> = {
@@ -54,13 +54,8 @@ export class EnumerateSet<T, U extends GuiElementType> extends Component<Enumera
   element!: BaseGuiElement
   associated = new LuaMap<T, BaseGuiElement>()
 
-  onChange(subscription: Subscription, change: ObservableSetChange<T> | nil): void {
-    if (!change) return
+  onChange(change: ObservableSetChange<T>): void {
     const { map, ifEmpty, associated, element } = this
-    if (!element.valid) {
-      subscription.close()
-      return
-    }
     const { value, added } = change
     if (added) {
       if (ifEmpty && change.set.size() === 1) {

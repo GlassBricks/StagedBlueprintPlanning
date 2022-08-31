@@ -64,7 +64,7 @@ it("notifies subscribers of added items", () => {
     added: true,
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })
 
 it("does not notify subscribers of already present items", () => {
@@ -85,7 +85,7 @@ it("notifies subscribers of deleted items", () => {
     value: "a",
   }
   assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, match._, change)
+  assert.spy(fn).called_with(match._, change)
 })
 
 it("does not notify subscribers of deleting not present items", () => {

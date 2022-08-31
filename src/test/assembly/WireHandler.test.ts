@@ -13,7 +13,6 @@ import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { DefaultWireHandler, WireHandler } from "../../assembly/WireHandler"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
-import { clearTestArea } from "../area"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
 let assembly: AssemblyContent
@@ -26,9 +25,10 @@ const handler: WireHandler = DefaultWireHandler
 
 before_each(() => {
   assembly = createMockAssemblyContent(3)
-  const area = clearTestArea()
-  luaEntity1 = area.surface.create_entity({ name: "arithmetic-combinator", position: { x: 5.5, y: 6 } })!
-  luaEntity2 = area.surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!
+  const surface = game.surfaces[1]
+  surface.find_entities().forEach((e) => e.destroy())
+  luaEntity1 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 5.5, y: 6 } })!
+  luaEntity2 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!
   entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, nil, 1)
   entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
   entity1.replaceWorldEntity(1, luaEntity1)

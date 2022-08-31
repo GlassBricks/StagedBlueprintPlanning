@@ -12,7 +12,7 @@
 import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableEntityMap } from "./EntityMap"
 
-export interface StagePosition extends BoundingBox {
+export interface StagePosition {
   readonly stageNumber: StageNumber
   readonly surface: LuaSurface
 }

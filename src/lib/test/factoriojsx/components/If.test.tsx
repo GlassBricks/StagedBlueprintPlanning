@@ -10,7 +10,7 @@
  */
 
 import { FactorioJsx } from "../../../factoriojsx"
-import { If } from "../../../factoriojsx/components/If"
+import { If } from "../../../factoriojsx/components"
 import { MutableState, state } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
 

@@ -27,18 +27,18 @@ interface ElementInstance {
   readonly events: PRecord<GuiEventName, Func<any>>
 }
 
-function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, subscription: Subscription, value: any) {
+function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, value: any) {
   if (!elem.valid) {
     if (elem.object_name === "LuaGuiElement") destroy(elem)
-    return subscription.close()
+    return
   }
   ;(elem as any)[key] = value
 }
 
-function callSetterObserver(elem: LuaGuiElement, key: string, subscription: Subscription, value: any) {
+function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
   if (!elem.valid) {
     destroy(elem)
-    return subscription.close()
+    return
   }
   if (key === "slider_minimum") {
     ;(elem as SliderGuiElement).set_slider_minimum_maximum(value, (elem as SliderGuiElement).get_slider_maximum())
@@ -185,7 +185,12 @@ function renderElement(
       if (typeof isElemProp === "string") elemProps.set([isElemProp], value)
       else elemProps.set(key, value)
       if (stateEvent && value instanceof State) {
-        if (isMutableState<any>(value)) events[stateEvent] = bind(setStateFunc, value, key)
+        if (isMutableState<any>(value)) {
+          if (events[stateEvent]) {
+            error(`Cannot specify both state and gui event for ${stateEvent}`)
+          }
+          events[stateEvent] = bind(setStateFunc, value, key)
+        }
         if (isSpecProp) {
           guiSpec[key] = value.get()
         }

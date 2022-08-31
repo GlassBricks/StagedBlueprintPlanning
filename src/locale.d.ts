@@ -4,14 +4,10 @@
 export declare const enum L_ItemName {
   /** Assembly cleanup tool */
   CleanupTool = "item-name.bp100:cleanup-tool",
-  /** Assembly creation tool */
-  AssemblyAddTool = "item-name.bp100:assembly-add-tool",
 }
 export declare const enum L_ShortcutName {
   /** Assembly cleanup tool */
   CleanupTool = "shortcut-name.bp100:cleanup-tool",
-  /** Create new assembly */
-  AssemblyAddTool = "shortcut-name.bp100:assembly-add-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
@@ -40,12 +36,12 @@ export declare const enum L_Bp100 {
   PreviewEntity = "bp100.preview-entity",
   /** __1__ (selection proxy) */
   SelectionProxy = "bp100.selection-proxy",
+  /** <Unnamed assembly __1__> */
+  UnnamedAssembly = "bp100.unnamed-assembly",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp100.interaction.unexpected-error",
-  /** This area intersects assembly __1__ (possibly on a different surface) */
-  AreaIntersectsWithOtherAssembly = "bp100.interaction.area-intersects-with-other-assembly",
   /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected in assemblies (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
@@ -60,14 +56,10 @@ export declare const enum L_Interaction {
   CannotCreateUndergroundUpgradeIfNotInSameStage = "bp100.interaction.cannot-create-underground-upgrade-if-not-in-same-stage",
   /** Upgrading this will change the underground pair */
   CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
-  /** Cannot move underground belt with upgrade. Try upgrading first. */
+  /** Cannot move underground belt with upgrade. Try first upgrading in the entity first stage. */
   CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
-  /** Warning: flipping a ghost underground in an assembly will not check its pair, due to current limitations of the factorio modding api. */
-  GhostUndergroundFlipNotHandled = "bp100.interaction.ghost-underground-flip-not-handled",
   /** Not in an assembly */
-  PlayerNotInAssembly = "bp100.interaction.player-not-in-assembly",
-  /** Entity is not in an assembly */
-  EntityNotInAssembly = "bp100.interaction.entity-not-in-assembly",
+  NotInAnAssembly = "bp100.interaction.Not-in-an-assembly",
   /** No next stage */
   NoNextStage = "bp100.interaction.no-next-stage",
   /** No previous stage */
@@ -76,12 +68,6 @@ export declare const enum L_Interaction {
   AlreadyAtFirstStage = "bp100.interaction.already-at-first-stage",
   /** Entity is the same in all stages */
   EntitySameInAllStages = "bp100.interaction.entity-same-in-all-stages",
-}
-export declare const enum L_Assembly {
-  /** <Unnamed assembly __1__> */
-  UnnamedAssembly = "bp100.assembly.unnamed-assembly",
-  /** <Stage __1__> */
-  UnnamedStage = "bp100.assembly.unnamed-stage",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** Assembly: */
@@ -96,10 +82,8 @@ export declare const enum L_GuiCurrentAssembly {
 export declare const enum L_GuiAllAssemblies {
   /** All assemblies */
   Title = "bp100.gui.all-assemblies.title",
-  /** New assembly [img=info] */
+  /** New assembly */
   NewAssembly = "bp100.gui.all-assemblies.new-assembly",
-  /** You can also use the "Create new assembly" shortcut (bottom right) to create a new assembly. */
-  NewAssemblyTooltip = "bp100.gui.all-assemblies.new-assembly-tooltip",
 }
 export declare const enum L_GuiNewAssembly {
   /** New Assembly */
@@ -108,48 +92,40 @@ export declare const enum L_GuiNewAssembly {
   Name = "bp100.gui.new-assembly.name",
   /** Initial number of stages */
   InitialNumStages = "bp100.gui.new-assembly.initial-num-stages",
-  /** Create */
-  Create = "bp100.gui.new-assembly.create",
-  /** Delete existing entities [img=info] */
-  DeleteExistingEntities = "bp100.gui.new-assembly.delete-existing-entities",
-  /** Existing entities are not yet processed (this may be a future feature). To import, paste entities after creating the assembly. */
-  DeleteExistingEntitiesTooltip = "bp100.gui.new-assembly.delete-existing-entities-tooltip",
   /** Invalid specified number of stages */
   InvalidNumStages = "bp100.gui.new-assembly.invalid-num-stages",
+  /** Create */
+  Create = "bp100.gui.new-assembly.create",
 }
 export declare const enum L_GuiAssemblySettings {
   /** Assembly */
   Title = "bp100.gui.assembly-settings.title",
   /** Rename assembly */
   RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
-  /** Rename current stage */
+  /** Rename stage */
   RenameStage = "bp100.gui.assembly-settings.rename-stage",
   /** New stage: */
   NewStage = "bp100.gui.assembly-settings.new-stage",
-  /** Insert before current */
-  InsertAboveCurrent = "bp100.gui.assembly-settings.insert-above-current",
-  /** Add at end */
-  AtEnd = "bp100.gui.assembly-settings.at-end",
+  /** After current */
+  AfterCurrent = "bp100.gui.assembly-settings.after-current",
+  /** At front */
+  AtFront = "bp100.gui.assembly-settings.at-front",
   /** Delete assembly */
   DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
   /** Are you sure you want to delete assembly __1__? */
   DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
-  /** In-world entities will not be affected. */
-  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
   /** This action cannot be undone. */
-  DeleteAssemblyConfirmation3 = "bp100.gui.assembly-settings.delete-assembly-confirmation3",
+  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
   /** Delete stage */
   DeleteStage = "bp100.gui.assembly-settings.delete-stage",
-  /** The first stage cannot be deleted. */
-  CannotDeleteFirstStage = "bp100.gui.assembly-settings.cannot-delete-first-stage",
   /** Are you sure you want to delete stage __1__? */
   DeleteStageConfirmation1 = "bp100.gui.assembly-settings.delete-stage-confirmation1",
   /** Stage contents will be merged with the previous stage (__1__). */
-  DeleteStageConfirmation2 = "bp100.gui.assembly-settings.delete-stage-confirmation2",
+  DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
+  /** Stage contents will be merged with the next stage (__1__). */
+  DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
   /** Reset stage [img=info] */
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
-  /** More settings coming soon! */
-  MoreSettingsComingSoon = "bp100.gui.assembly-settings.more-settings-coming-soon",
 }

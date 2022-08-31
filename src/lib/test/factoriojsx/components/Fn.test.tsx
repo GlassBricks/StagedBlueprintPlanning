@@ -10,7 +10,7 @@
  */
 
 import { FactorioJsx } from "../../../factoriojsx"
-import { Fn } from "../../../factoriojsx/components/Fn"
+import { Fn } from "../../../factoriojsx/components"
 import { state } from "../../../observable"
 import { testRender } from "../../gui"
 

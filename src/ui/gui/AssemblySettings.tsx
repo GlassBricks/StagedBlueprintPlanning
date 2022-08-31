@@ -11,55 +11,58 @@
 
 import { Assembly, LocalAssemblyEvent, Stage } from "../../assembly/AssemblyDef"
 import { AssemblyOperations } from "../../assembly/AssemblyOperations"
-import { assertNever, funcOn, RegisterClass } from "../../lib"
-import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
-import { TrashButton } from "../../lib/factoriojsx/components/buttons"
-import { showDialog } from "../../lib/factoriojsx/components/Dialog"
-import { Fn } from "../../lib/factoriojsx/components/Fn"
-import { HorizontalPusher } from "../../lib/factoriojsx/components/misc"
-import { SimpleTitleBar } from "../../lib/factoriojsx/components/TitleBar"
-import { Pos } from "../../lib/geometry"
-import { state } from "../../lib/observable"
+import { getStageToMerge } from "../../entity/AssemblyEntity"
+import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
+import {
+  Component,
+  destroyChildren,
+  FactorioJsx,
+  renderMultiple,
+  renderNamed,
+  Spec,
+  Tracker,
+} from "../../lib/factoriojsx"
+import { Fn, HorizontalPusher, showDialog, SimpleTitleBar, TrashButton } from "../../lib/factoriojsx/components"
 import { L_GuiAssemblySettings } from "../../locale"
-import { teleportToStage, teleportToSurface1 } from "../player-position"
+import {
+  PlayerChangedStageEvent,
+  playerCurrentStage,
+  teleportToStage,
+  teleportToSurface1,
+} from "../player-current-stage"
 import { ItemRename } from "./ItemRename"
 import { StageSelector } from "./StageSelector"
 
 declare global {
   interface PlayerData {
-    currentAssemblySettings?: AssemblySettings
+    currentShownAssembly?: Assembly
   }
 }
 declare const global: GlobalWithPlayers
 
 const stageListBoxHeight = 28 * 12
 const stageListBoxWidth = 150
-const stageSettingsWidth = 300
+const stageSettingsWidth = 150
+
+const insertButtonWidth = 100
 
 @RegisterClass("gui:AssemblySettings")
 export class AssemblySettings extends Component<{ assembly: Assembly }> {
   assembly!: Assembly
   playerIndex!: PlayerIndex
-  element!: LuaGuiElement
 
-  private selectedStage = state(0)
   public override render(props: { assembly: Assembly }, tracker: Tracker): Spec {
     this.assembly = props.assembly
     this.playerIndex = tracker.playerIndex
 
-    global.players[this.playerIndex].currentAssemblySettings = this
-    tracker.onMount((e) => {
-      this.element = e
-      e.bring_to_front()
-    })
+    global.players[this.playerIndex].currentShownAssembly = this.assembly
     tracker.getSubscription().add(funcOn(this.onDestroyed))
 
     this.assembly.localEvents.subscribe(tracker.getSubscription(), funcOn(this.onAssemblyEvent))
+    const currentStage = playerCurrentStage(this.playerIndex)
 
     return (
-      <frame direction="vertical">
-        <SimpleTitleBar title={[L_GuiAssemblySettings.Title]} onClose={funcOn(this.onClose)} />
-
+      <>
         <frame style="inside_shallow_frame" direction="vertical">
           <frame style="subheader_frame" direction="horizontal">
             <ItemRename
@@ -77,18 +80,16 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
               vertical_align: "center",
             }}
           >
-            <label
-              style="caption_label"
-              caption={[L_GuiAssemblySettings.NewStage]}
-              styleMod={{
-                right_margin: 10,
-              }}
-            />
-            <button caption={[L_GuiAssemblySettings.AtEnd]} on_gui_click={funcOn(this.addStage)} />
+            <label style="caption_label" caption={[L_GuiAssemblySettings.NewStage]} styleMod={{ right_margin: 10 }} />
             <button
-              caption={[L_GuiAssemblySettings.InsertAboveCurrent]}
-              enabled={this.selectedStage.gt(0)}
-              on_gui_click={funcOn(this.insertStage)}
+              styleMod={{ width: insertButtonWidth }}
+              caption={[L_GuiAssemblySettings.AfterCurrent]}
+              on_gui_click={funcOn(this.newStageAfter)}
+            />
+            <button
+              styleMod={{ width: insertButtonWidth }}
+              caption={[L_GuiAssemblySettings.AtFront]}
+              on_gui_click={funcOn(this.newStageAtFront)}
             />
           </flow>
         </frame>
@@ -105,38 +106,32 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
               width: stageListBoxWidth,
             }}
             assembly={this.assembly}
-            selectedIndex={this.selectedStage}
           />
 
           <Fn
             uses="frame"
-            from={this.selectedStage}
+            from={currentStage}
             map={funcOn(this.renderStageSettings)}
             direction="vertical"
             style="inside_shallow_frame"
             styleMod={{
-              width: stageSettingsWidth,
+              minimal_width: stageSettingsWidth,
               vertically_stretchable: true,
+              horizontally_stretchable: true,
             }}
           />
         </flow>
-      </frame>
+      </>
     )
   }
 
   private onDestroyed() {
-    delete global.players[this.playerIndex].currentAssemblySettings
+    delete global.players[this.playerIndex].currentShownAssembly
   }
 
-  private onClose() {
-    this.element.visible = false
-  }
-
-  private onAssemblyEvent(_: any, event: LocalAssemblyEvent) {
+  private onAssemblyEvent(event: LocalAssemblyEvent) {
     if (event.type === "assembly-deleted") {
-      destroy(this.element)
-    } else if (event.type !== "stage-added" && event.type !== "pre-stage-deleted" && event.type !== "stage-deleted") {
-      assertNever(event)
+      hideAssemblySettings(game.get_player(this.playerIndex)!)
     }
   }
 
@@ -148,7 +143,6 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
       message: [
         [L_GuiAssemblySettings.DeleteAssemblyConfirmation1, this.assembly.displayName.get()],
         [L_GuiAssemblySettings.DeleteAssemblyConfirmation2],
-        [L_GuiAssemblySettings.DeleteAssemblyConfirmation3],
       ],
       redConfirm: true,
       backCaption: ["gui.cancel"],
@@ -162,24 +156,27 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     teleportToSurface1(game.get_player(this.playerIndex)!)
   }
 
-  private insertStage() {
-    this.doInsertStage(this.selectedStage.get())
+  private newStageAfter() {
+    const currentStage = playerCurrentStage(this.playerIndex).get()
+    if (!currentStage || currentStage.assembly !== this.assembly) return
+    this.insertStage(currentStage.stageNumber + 1)
   }
 
-  private addStage() {
-    this.doInsertStage(this.assembly.numStages() + 1)
+  private newStageAtFront() {
+    this.insertStage(1)
   }
 
-  private doInsertStage(index: number) {
+  private insertStage(index: number) {
     if (!this.assembly.valid) return
     const stage = this.assembly.insertStage(index)
     teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private renderStageSettings(selectedStageIndex: number): Spec | nil {
-    const stage = this.assembly.getStage(selectedStageIndex)
-    if (!stage) return nil
-    return <StageSettings stage={stage} />
+  private renderStageSettings(stage: Stage | nil): Spec | nil {
+    if (stage && stage.assembly === this.assembly) {
+      return <StageSettings stage={stage} />
+    }
+    return nil
   }
 }
 
@@ -191,8 +188,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
     this.stage = props.stage
     this.playerIndex = tracker.playerIndex
 
-    const canDeleteStage = this.stage.stageNumber > 1
-
     return (
       <>
         <frame style="subheader_frame" direction="horizontal">
@@ -202,30 +197,22 @@ export class StageSettings extends Component<{ stage: Stage }> {
             renameTooltip={[L_GuiAssemblySettings.RenameStage]}
           />
           <HorizontalPusher />
-          <TrashButton
-            enabled={canDeleteStage}
-            tooltip={
-              canDeleteStage ? [L_GuiAssemblySettings.DeleteStage] : [L_GuiAssemblySettings.CannotDeleteFirstStage]
-            }
-            on_gui_click={funcOn(this.beginDelete)}
-          />
         </frame>
-        <scroll-pane
-          style="naked_scroll_pane"
-          styleMod={{
-            padding: [5, 10],
-            vertically_stretchable: true,
-            horizontally_stretchable: true,
-          }}
-          horizontal_scroll_policy="never"
-        >
+        <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
           <button
+            styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.ResetStage]}
             tooltip={[L_GuiAssemblySettings.ResetStageTooltip]}
             on_gui_click={funcOn(this.resetStage)}
           />
-          <label style="bold_label" caption={[L_GuiAssemblySettings.MoreSettingsComingSoon]} />
-        </scroll-pane>
+          <button
+            style="red_button"
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiAssemblySettings.DeleteStage]}
+            enabled={this.stage.assembly.numStages() > 1}
+            on_gui_click={funcOn(this.beginDelete)}
+          />
+        </flow>
       </>
     )
   }
@@ -233,15 +220,18 @@ export class StageSettings extends Component<{ stage: Stage }> {
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const stageNumber = this.stage.stageNumber
-    if (stageNumber <= 1) return // can't delete the first stage
-    const previousStage = this.stage.assembly.getStage(stageNumber - 1)
-    if (!previousStage) return
+    const { isFirst, toMerge } = this.getStageToMerge()
+    if (!toMerge) return
     showDialog(player, {
       title: [L_GuiAssemblySettings.DeleteStage],
       message: [
         [L_GuiAssemblySettings.DeleteStageConfirmation1, this.stage.name.get()],
-        [L_GuiAssemblySettings.DeleteStageConfirmation2, previousStage.name.get()],
+        [
+          isFirst
+            ? L_GuiAssemblySettings.DeleteStageConfirmation2First
+            : L_GuiAssemblySettings.DeleteStageConfirmation2Middle,
+          toMerge.name.get(),
+        ],
       ],
       redConfirm: true,
       backCaption: ["gui.cancel"],
@@ -249,11 +239,17 @@ export class StageSettings extends Component<{ stage: Stage }> {
       onConfirm: funcOn(this.deleteStage),
     })
   }
+  private getStageToMerge() {
+    const stageNumber = this.stage.stageNumber
+    const isFirst = stageNumber === 1
+    const toMerge = this.stage.assembly.getStage(getStageToMerge(stageNumber))
+    return { isFirst, toMerge }
+  }
   private deleteStage() {
-    const previousStage = this.stage.assembly.getStage(this.stage.stageNumber - 1)
-    if (!previousStage) return
+    const { toMerge } = this.getStageToMerge()
+    if (!toMerge) return
     this.stage.deleteInAssembly()
-    teleportToStage(game.get_player(this.playerIndex)!, previousStage)
+    teleportToStage(game.get_player(this.playerIndex)!, toMerge)
   }
 
   private resetStage() {
@@ -261,22 +257,75 @@ export class StageSettings extends Component<{ stage: Stage }> {
   }
 }
 
-const AssemblySettingsName = script.mod_name + ":AssemblySettings"
-const defaultLocation = Pos(0, 400)
-export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): void {
-  const existing = global.players[player.index].currentAssemblySettings
-  const existingValid = existing && existing.element.valid
-  if (existingValid && existing.assembly === assembly) {
-    existing.element.visible = true
-    existing.element.bring_to_front()
-  } else {
-    const location = existingValid ? existing.element.location : defaultLocation
-    const element = renderNamed(
-      <AssemblySettings assembly={assembly} />,
-      player.gui.screen,
-      AssemblySettingsName,
-    ) as FrameGuiElement
-    element.location = location
-    element.bring_to_front()
-  }
+const assemblySettingsHeight = stageListBoxHeight + 120
+const assemblySettingsWidth = stageListBoxWidth + stageSettingsWidth + 30
+function AssemblySettingsFrame() {
+  return (
+    <frame
+      direction="vertical"
+      styleMod={{
+        minimal_width: assemblySettingsWidth,
+        minimal_height: assemblySettingsHeight,
+      }}
+      location={{ x: 0, y: 350 }}
+      visible={false}
+    >
+      <SimpleTitleBar title={[L_GuiAssemblySettings.Title]} onClose={funcRef(closeAssemblySettingsClick)} />
+      <flow direction="vertical" name="content" />
+    </frame>
+  )
 }
+
+const AssemblySettingsFrameName = "gui:AssemblySettingsFrame"
+onPlayerInit((index) => {
+  const player = game.get_player(index)!
+  getOrCreateFrame(player)
+})
+function getOrCreateFrame(player: LuaPlayer): FrameGuiElement {
+  const screen = player.gui.screen
+  const existing = screen[AssemblySettingsFrameName]
+  if (existing) return existing as FrameGuiElement
+  return renderNamed(<AssemblySettingsFrame />, screen, AssemblySettingsFrameName) as FrameGuiElement
+}
+
+function closeAssemblySettingsClick(event: OnGuiClickEvent) {
+  const player = game.get_player(event.player_index)
+  if (player) hideAssemblySettings(player)
+}
+registerFunctions("AssemblySettings", { closeAssemblySettingsClick })
+
+function hideAssemblySettings(player: LuaPlayer): void {
+  const frame = getOrCreateFrame(player)
+  frame.visible = false
+  destroyChildren(frame.content!)
+}
+
+/** Returns the frame if same assembly already open */
+function showAssemblySettings(player: LuaPlayer, assembly: Assembly): FrameGuiElement | nil {
+  const frame = getOrCreateFrame(player)
+  frame.visible = true
+  frame.bring_to_front()
+  const currentAssembly = global.players[player.index].currentShownAssembly
+  if (currentAssembly === assembly) {
+    return frame
+  }
+  destroyChildren(frame.content!)
+  renderMultiple(<AssemblySettings assembly={assembly} />, frame.content!)
+}
+
+export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): void {
+  const frame = showAssemblySettings(player, assembly)
+  if (frame) frame.force_auto_center() // re-center if already open
+  const currentStage = playerCurrentStage(player.index).get()
+  if (currentStage && currentStage.assembly === assembly) return
+  const firstStage = assembly.getStage(1)
+  if (firstStage) teleportToStage(player, firstStage)
+}
+
+PlayerChangedStageEvent.addListener((player, stage) => {
+  if (!stage) return
+  const currentAssembly = global.players[player.index].currentShownAssembly
+  if (currentAssembly !== stage.assembly) {
+    showAssemblySettings(player, stage.assembly)
+  }
+})

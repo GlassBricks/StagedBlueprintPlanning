@@ -14,22 +14,21 @@
  * For assembly editing, see assembly/world-listener.ts.
  */
 
+import { getStageAtSurface } from "../assembly/Assembly"
 import { Stage } from "../assembly/AssemblyDef"
-import { getStageAtPosition } from "../assembly/world-register"
 import { CustomInputs, Prototypes, Settings } from "../constants"
 import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
-import { getStagePosition } from "../entity/EntityHandler"
-import { ProtectedEvents } from "../lib/ProtectedEvents"
+import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
-import { playerCurrentStage, teleportToStage } from "./player-position"
+import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 
 const Events = ProtectedEvents
 
 function playErrorSound(player: LuaPlayer) {
   player.play_sound({ path: "utility/cannot_build" })
 }
-function notifyError(player: LuaPlayer, message: LocalisedString) {
-  playErrorSound(player)
+function notifyError(player: LuaPlayer, message: LocalisedString, playSound: boolean) {
+  if (playSound) playErrorSound(player)
   player.create_local_flying_text({
     text: message,
     create_at_cursor: true,
@@ -40,7 +39,7 @@ Events.on(CustomInputs.NextStage, (e) => {
   const player = game.get_player(e.player_index)!
   const stage = playerCurrentStage(e.player_index).get()
   if (!stage) {
-    return notifyError(player, [L_Interaction.PlayerNotInAssembly])
+    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
   }
   const nextStageNum = stage.stageNumber + 1
   let toStage = stage.assembly.getStage(nextStageNum)
@@ -48,7 +47,7 @@ Events.on(CustomInputs.NextStage, (e) => {
     if (player.mod_settings[Settings.CyclicNavigation].value) {
       toStage = stage.assembly.getStage(1)!
     } else {
-      return notifyError(player, [L_Interaction.NoNextStage])
+      return notifyError(player, [L_Interaction.NoNextStage], false)
     }
   }
   teleportToStage(player, toStage)
@@ -58,7 +57,7 @@ Events.on(CustomInputs.PreviousStage, (e) => {
   const player = game.get_player(e.player_index)!
   const stage = playerCurrentStage(e.player_index).get()
   if (!stage) {
-    return notifyError(player, [L_Interaction.PlayerNotInAssembly])
+    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
   }
   const prevStageNum = stage.stageNumber - 1
   let toStage = stage.assembly.getStage(prevStageNum)
@@ -66,20 +65,19 @@ Events.on(CustomInputs.PreviousStage, (e) => {
     if (player.mod_settings[Settings.CyclicNavigation].value) {
       toStage = stage.assembly.getStage(stage.assembly.numStages())!
     } else {
-      return notifyError(player, [L_Interaction.NoPreviousStage])
+      return notifyError(player, [L_Interaction.NoPreviousStage], false)
     }
   }
   teleportToStage(player, toStage)
 })
 function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
-  const [assembly, stage] = getStageAtPosition(entity.surface, entity.position)
-  if (!assembly) return $multi()
-  const position = getStagePosition(stage, entity)
+  const stage = getStageAtSurface(entity.surface.index)
+  if (!stage) return $multi()
   const name = entity.name
   const actualName = name.startsWith(Prototypes.PreviewEntityPrefix)
     ? name.substring(Prototypes.PreviewEntityPrefix.length)
     : name
-  const found = assembly.content.findCompatibleAnyDirection(actualName, position)
+  const found = stage.assembly.content.findCompatibleAnyDirection(actualName, entity.position)
   if (found) return $multi(stage, found)
   return $multi()
 }
@@ -90,12 +88,12 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   if (!entity) return
   const [stage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
   if (!assemblyEntity) {
-    return notifyError(player, [L_Interaction.EntityNotInAssembly])
+    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
   }
   const firstStageNum = assemblyEntity.getFirstStage()
   const currentStage = stage!.stageNumber
   if (firstStageNum === currentStage) {
-    return notifyError(player, [L_Interaction.AlreadyAtFirstStage])
+    return notifyError(player, [L_Interaction.AlreadyAtFirstStage], true)
   }
   const firstStage = stage!.assembly.getStage(firstStageNum)
   assert(firstStage, "First stage not found")
@@ -118,11 +116,11 @@ Events.on(CustomInputs.GoToNextNotableStage, (e) => {
   if (!entity) return
   const [stage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
   if (!assemblyEntity) {
-    return notifyError(player, [L_Interaction.EntityNotInAssembly])
+    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
   }
   const nextNotableStageNum = getNextNotableStage(stage!, assemblyEntity)
   if (nextNotableStageNum === stage!.stageNumber) {
-    return notifyError(player, [L_Interaction.EntitySameInAllStages])
+    return notifyError(player, [L_Interaction.EntitySameInAllStages], true)
   }
 
   const nextNotableStage = stage!.assembly.getStage(nextNotableStageNum)

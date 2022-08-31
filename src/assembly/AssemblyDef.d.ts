@@ -10,8 +10,7 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { Position } from "../lib/geometry"
-import { MutableState, Observable, State } from "../lib/observable"
+import { MutableState, Observable, State } from "../lib"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { MutableEntityMap } from "./EntityMap"
 
@@ -22,7 +21,6 @@ export interface Assembly extends AssemblyContent {
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
 
-  readonly bbox: BoundingBox
   readonly content: MutableEntityMap
 
   readonly localEvents: Observable<LocalAssemblyEvent>
@@ -30,11 +28,10 @@ export interface Assembly extends AssemblyContent {
   getStage(stageNumber: StageNumber): Stage | nil
   iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Stage]>>
   getAllStages(): readonly Stage[]
-  getStageAt(surface: LuaSurface, position: Position): Stage | nil
 
   insertStage(index: StageNumber): Stage
   /** Cannot be first stage, contents will be merged with previous stage. */
-  deleteStage(index: StageNumber): Stage
+  deleteStage(index: StageNumber): void
 
   readonly valid: boolean
 
@@ -42,7 +39,6 @@ export interface Assembly extends AssemblyContent {
 }
 export interface Stage extends StagePosition {
   readonly name: MutableState<string>
-
   readonly assembly: Assembly
 
   readonly valid: boolean

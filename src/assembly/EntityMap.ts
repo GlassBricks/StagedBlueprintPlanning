@@ -14,9 +14,8 @@ import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory, getPastRotatableType, PasteRotatableType } from "../entity/entity-info"
-import { isEmpty, RegisterClass } from "../lib"
+import { isEmpty, MutableMap2D, newMap2D, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
-import { MutableMap2D, newMap2D } from "../lib/map2d"
 
 export interface EntityMap {
   has(entity: AssemblyEntity): boolean

@@ -12,8 +12,8 @@
 import { L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { getEntityCategory, isUndergroundBeltType } from "../entity/entity-info"
-import { DefaultEntityHandler, EntitySaver, getStagePosition } from "../entity/EntityHandler"
+import { collidesWithSelf, getEntityCategory, isUndergroundBeltType } from "../entity/entity-info"
+import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/undergrounds"
 import { L_Interaction } from "../locale"
 import { AssemblyUndergroundEntity, findUndergroundPair } from "./assembly-undergrounds"
@@ -130,15 +130,14 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
   ): AssemblyEntity | nil {
-    const position = getStagePosition(stage, entity)
+    const position = entity.position
     const { stageNumber } = stage
     const { content } = assembly
 
-    let existing = content.findCompatibleAnyDirection(entity.name, position)
-    if (existing && existing.getWorldEntity(stage.stageNumber) !== nil) {
-      // if there is an existing entity at the layer, it must match direction this time
-      existing = content.findCompatible(entity, position, nil)
-    }
+    const entityName = entity.name
+    const existing = collidesWithSelf(entityName)
+      ? content.findCompatible(entity, position, nil)
+      : content.findCompatibleAnyDirection(entityName, position) // if doesn't collide with self, search any direction
 
     if (existing) {
       const existingStage = existing.getFirstStage()
@@ -245,7 +244,7 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const position = getStagePosition(stage, entity)
+    const position = entity.position
     const { content } = assembly
 
     const existing = content.findCompatible(entity, position, nil)
@@ -300,7 +299,7 @@ export function createAssemblyUpdater(
   }
 
   function onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void {
-    const existing = assembly.content.findCompatible(entity, getStagePosition(stage, entity), nil)
+    const existing = assembly.content.findCompatible(entity, entity.position, nil)
     if (existing) {
       forceDeleteEntity(assembly, existing, stage.stageNumber)
     }
@@ -314,7 +313,7 @@ export function createAssemblyUpdater(
     byPlayer: PlayerIndex | nil,
     previousDirection: defines.direction | nil,
   ): AssemblyEntity | nil {
-    const position = getStagePosition(stage, entity)
+    const position = entity.position
     const compatible = assembly.content.findCompatible(entity, position, previousDirection)
     if (compatible && stage.stageNumber >= compatible.getFirstStage()) {
       compatible.replaceWorldEntity(stage.stageNumber, entity) // just in case
@@ -593,10 +592,10 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
   ): AssemblyEntity | nil {
     const proxyName = proxyEntity.name
-    assert(proxyName.startsWith(Prototypes.SelectionProxyPrefix))
+    if (!proxyName.startsWith(Prototypes.SelectionProxyPrefix)) return nil
     const actualName = proxyName.substring(Prototypes.SelectionProxyPrefix.length)
 
-    const position = getStagePosition(stage, proxyEntity)
+    const position = proxyEntity.position
     const existing = assembly.content.findCompatibleBasic(actualName, position, proxyEntity.direction)
     return existing
   }
@@ -620,7 +619,7 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     assembly: AssemblyContent,
   ): AssemblyEntity | nil {
-    const position = getStagePosition(stage, entityOrPreviewEntity)
+    const position = entityOrPreviewEntity.position
     const name = entityOrPreviewEntity.name
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
       return assembly.content.findCompatibleBasic(name.substring(Prototypes.PreviewEntityPrefix.length), position, nil)

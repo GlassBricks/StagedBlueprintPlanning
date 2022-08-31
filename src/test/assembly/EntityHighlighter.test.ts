@@ -20,8 +20,8 @@ import {
 } from "../../assembly/EntityHighlighter"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
+import { SpriteRender } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { SpriteRender } from "../../lib/rendering"
 import { entityMock, simpleMock } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 

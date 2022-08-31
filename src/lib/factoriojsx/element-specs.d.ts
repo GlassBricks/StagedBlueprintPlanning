@@ -19,6 +19,7 @@ export interface BaseElementSpec {
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>
   on_gui_closed?: GuiEventHandler<OnGuiClosedEvent>
+  on_gui_location_changed?: GuiEventHandler<OnGuiLocationChangedEvent>
 }
 
 export interface ChooseElemButtonElementSpec extends BaseElementSpec {
@@ -27,6 +28,7 @@ export interface ChooseElemButtonElementSpec extends BaseElementSpec {
   elem_filters?: MaybeState<ChooseElemButtonFilters[this["elem_type"]] | nil>
   elem_value?: MaybeMutableState<(this["elem_type"] extends "signal" ? SignalID : string) | nil>
   locked?: MaybeState<boolean>
+  on_gui_elem_changed?: GuiEventHandler<OnGuiElemChangedEvent>
   onCreate?: OnCreateHandler<ChooseElemButtonGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -35,6 +37,7 @@ export interface DropDownElementSpec extends BaseElementSpec {
   type: "drop-down"
   items?: MaybeState<LocalisedString[]>
   selected_index?: MaybeMutableState<uint>
+  on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
   onCreate?: OnCreateHandler<DropDownGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -57,6 +60,7 @@ export interface ListBoxElementSpec extends BaseElementSpec {
   type: "list-box"
   items?: MaybeState<LocalisedString[]>
   selected_index?: MaybeMutableState<uint>
+  on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
   onCreate?: OnCreateHandler<ListBoxGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -88,6 +92,7 @@ export interface SpriteButtonElementSpec extends BaseElementSpec {
 export interface TabbedPaneElementSpec extends BaseElementSpec {
   type: "tabbed-pane"
   selected_tab_index?: MaybeMutableState<uint | nil>
+  on_gui_selected_tab_changed?: GuiEventHandler<OnGuiSelectedTabChangedEvent>
   onCreate?: OnCreateHandler<TabbedPaneGuiElement>
   styleMod?: TabbedPaneStyleMod
 }
@@ -99,6 +104,7 @@ export interface TextBoxElementSpec extends BaseElementSpec {
   selectable?: MaybeState<boolean>
   word_wrap?: MaybeState<boolean>
   read_only?: MaybeState<boolean>
+  on_gui_text_changed?: GuiEventHandler<OnGuiTextChangedEvent>
   onCreate?: OnCreateHandler<TextBoxGuiElement>
   styleMod?: TextBoxStyleMod
 }
@@ -123,6 +129,7 @@ export interface CameraElementSpec extends BaseElementSpec {
 export interface CheckboxElementSpec extends BaseElementSpec {
   type: "checkbox"
   state: MaybeMutableState<boolean>
+  on_gui_checked_state_changed?: GuiEventHandler<OnGuiCheckedStateChangedEvent>
   onCreate?: OnCreateHandler<CheckboxGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -181,6 +188,7 @@ export interface ProgressBarElementSpec extends BaseElementSpec {
 export interface RadioButtonElementSpec extends BaseElementSpec {
   type: "radiobutton"
   state: MaybeMutableState<boolean>
+  on_gui_checked_state_changed?: GuiEventHandler<OnGuiCheckedStateChangedEvent>
   onCreate?: OnCreateHandler<RadioButtonGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -193,6 +201,7 @@ export interface SliderElementSpec extends BaseElementSpec {
   discrete_slider?: MaybeState<boolean>
   discrete_values?: MaybeState<boolean>
   slider_value?: MaybeMutableState<double>
+  on_gui_value_changed?: GuiEventHandler<OnGuiValueChangedEvent>
   onCreate?: OnCreateHandler<SliderGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -213,6 +222,7 @@ export interface SwitchElementSpec extends BaseElementSpec {
   left_label_tooltip?: MaybeState<LocalisedString>
   right_label_caption?: MaybeState<LocalisedString>
   right_label_tooltip?: MaybeState<LocalisedString>
+  on_gui_switch_state_changed?: GuiEventHandler<OnGuiSwitchStateChangedEvent>
   onCreate?: OnCreateHandler<SwitchGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -246,6 +256,7 @@ export interface TextFieldElementSpec extends BaseElementSpec {
   lose_focus_on_confirm?: MaybeState<boolean>
   clear_and_focus_on_right_click?: MaybeState<boolean>
   on_gui_confirmed?: GuiEventHandler<OnGuiConfirmedEvent>
+  on_gui_text_changed?: GuiEventHandler<OnGuiTextChangedEvent>
   onCreate?: OnCreateHandler<TextFieldGuiElement>
   styleMod?: TextFieldStyleMod
 }

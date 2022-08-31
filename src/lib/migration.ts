@@ -29,30 +29,35 @@ export namespace Migrations {
   export function from(version: string, func: () => void): void {
     ;(migrations[formatVersion(version)] ||= []).push(func)
   }
+  /** Runs both during on_init and from an earlier version. */
+  export function since(version: string, func: () => void): void {
+    Events.on_init(func)
+    from(version, func)
+  }
 
   export function _prepareMock(): void {
     assert(game && script.active_mods.testorio, "should not mock until game loaded")
     migrations = {}
   }
 
-  function getMigrationsToRun(oldVersion: string | nil): (() => void)[] {
-    const formattedOldVersion = oldVersion && formatVersion(oldVersion)
-    let versions = Object.keys(migrations) as VersionString[]
-    if (formattedOldVersion) {
-      versions = versions.filter((v) => formattedOldVersion < v)
-    }
-    table.sort(versions)
-    return versions.flatMap((v) => migrations[v])
+  function getMigrationsToRun(oldVersion: string): (() => void)[] {
+    const formattedOldVersion = formatVersion(oldVersion)
+    return (Object.keys(migrations) as VersionString[])
+      .filter((v) => formattedOldVersion < v)
+      .sort()
+      .flatMap((v) => migrations[v])
   }
-  export function _doMigrations(oldVersion: string): void {
+  export function doMigrations(oldVersion: string): void {
     const migrations = getMigrationsToRun(oldVersion)
     for (const fn of migrations) fn()
   }
 
-  Events.on_configuration_changed((data) => {
-    const thisChange = data.mod_changes[script.mod_name]
-    if (!thisChange) return
-    const oldVersion = thisChange.old_version
-    if (oldVersion) _doMigrations(oldVersion)
-  })
+  export function setMigrationsHook(): void {
+    Events.on_configuration_changed((data) => {
+      const thisChange = data.mod_changes[script.mod_name]
+      if (!thisChange) return
+      const oldVersion = thisChange.old_version
+      if (oldVersion) doMigrations(oldVersion)
+    })
+  }
 }

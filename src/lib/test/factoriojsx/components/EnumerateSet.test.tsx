@@ -10,7 +10,7 @@
  */
 
 import { FactorioJsx, Spec } from "../../../factoriojsx"
-import { EnumerateSet } from "../../../factoriojsx/components/EnumerateSet"
+import { EnumerateSet } from "../../../factoriojsx/components"
 import { MutableObservableSet, observableSet } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
 

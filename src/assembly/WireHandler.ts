@@ -11,8 +11,7 @@
 
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, getDirectionalInfo } from "../entity/AssemblyWireConnection"
-import { getStagePosition } from "../entity/EntityHandler"
-import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { AssemblyContent } from "./AssemblyContent"
 import { AssemblyEntityConnections, EntityMap } from "./EntityMap"
 
 /** @noSelf */
@@ -58,7 +57,6 @@ function updateWireConnections(
     assemblyConnections,
     existingConnections,
     assembly.content,
-    assembly.getStage(stageNumber)!,
   )
   for (const [extraConnection] of extraConnections) luaEntity.disconnect_neighbour(extraConnection)
 
@@ -93,7 +91,6 @@ function getWireConnectionDiff(
     assemblyConnections,
     existingConnections,
     assembly.content,
-    assembly.getStage(stageNumber)!,
   )
 
   const added: AssemblyWireConnection[] = []
@@ -126,7 +123,6 @@ function analyzeExistingConnections(
   assemblyConnections: AssemblyEntityConnections | nil,
   existingConnections: readonly CircuitConnectionDefinition[],
   content: EntityMap,
-  stage: StagePosition,
 ): LuaMultiReturn<
   [
     matchingConnections: LuaMap<AssemblyWireConnection, CircuitConnectionDefinition>,
@@ -138,7 +134,7 @@ function analyzeExistingConnections(
 
   for (const existingConnection of existingConnections) {
     const otherLuaEntity = existingConnection.target_entity
-    const otherEntity = content.findCompatible(otherLuaEntity, getStagePosition(stage, otherLuaEntity), nil)
+    const otherEntity = content.findCompatible(otherLuaEntity, otherLuaEntity.position, nil)
     if (!otherEntity) continue
     const otherConnections = assemblyConnections && assemblyConnections.get(otherEntity)
     const matchingConnection =

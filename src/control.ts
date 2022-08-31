@@ -11,6 +11,7 @@
 
 import "./assembly"
 import { Events } from "./lib"
+import "./migrations-custom"
 import "./ui"
 
 pcall(require, "test.test-init")

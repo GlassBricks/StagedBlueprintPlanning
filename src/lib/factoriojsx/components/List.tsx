@@ -10,7 +10,7 @@
  */
 
 import { assertNever, Func, funcOn, RegisterClass } from "../../index"
-import { ObservableList, ObservableListChange, Subscription } from "../../observable"
+import { ObservableList, ObservableListChange } from "../../observable"
 import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
 
 export type ListProps<T, U extends GuiElementType> = {
@@ -60,13 +60,8 @@ export class List<T, U extends GuiElementType> extends Component<ListProps<T, U>
     destroy(this.element.children[index])
   }
 
-  onChange(subscription: Subscription, change?: ObservableListChange<T>): void {
-    if (!change) return
+  onChange(change: ObservableListChange<T>): void {
     const { ifEmpty, element } = this
-    if (!element.valid) {
-      subscription.close()
-      return
-    }
     const array = change.list
 
     const changeType = change.type

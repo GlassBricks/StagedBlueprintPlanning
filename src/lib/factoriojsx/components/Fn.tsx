@@ -10,7 +10,7 @@
  */
 
 import { Func, funcOn, RegisterClass } from "../../index"
-import { State, Subscription } from "../../observable"
+import { State } from "../../observable"
 import { Component, destroyChildren, ElemProps, FactorioJsx, renderMultiple, Spec, Tracker } from "../index"
 
 export type FuncProps<T, U extends GuiElementType> = {
@@ -36,7 +36,7 @@ export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> 
     return <props.uses {...(props as any)} />
   }
 
-  onChange(_: Subscription, value: T): void {
+  onChange(value: T): void {
     const spec = this.map.invoke(value)
     destroyChildren(this.element)
     if (spec) renderMultiple(spec, this.element)

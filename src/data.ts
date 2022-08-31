@@ -90,28 +90,6 @@ const selectionProxySubgroup: ItemSubgroupPrototype = {
 
 data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup])
 
-const assemblyAddTool: SelectionToolPrototype = {
-  type: "selection-tool",
-  name: Prototypes.AssemblyAddTool,
-  icon: "__bp100__/graphics/icons/assembly-add-tool.png",
-  icon_size: 64,
-  icon_mipmaps: 4,
-
-  flags: ["only-in-cursor", "spawnable", "not-stackable"],
-  stack_size: 1,
-  subgroup: "tool",
-  order: "z[bp100]-a[assembly-add]",
-
-  selection_mode: ["blueprint"],
-  selection_color: [1, 1, 1],
-  selection_cursor_box_type: "not-allowed",
-  alt_selection_mode: ["blueprint"],
-  alt_selection_color: [1, 1, 1],
-  alt_selection_cursor_box_type: "not-allowed",
-}
-
-data.extend([assemblyAddTool])
-
 // light yellow
 const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
 const cleanupReverseToolColor: ColorArray = [0.9, 0.5, 0.5]
@@ -182,10 +160,6 @@ const getCleanupToolInput: CustomInputPrototype = {
 
 data.extend([
   cleanupTool,
-  selectionToolToShortcut(assemblyAddTool, {
-    filename: "__bp100__/graphics/icons/assembly-add-white.png",
-    size: 64,
-  }),
   selectionToolToShortcut(
     cleanupTool,
     {

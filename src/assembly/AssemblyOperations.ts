@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isWorldEntityAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
@@ -20,7 +20,6 @@ import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 export interface AssemblyOperations {
   /** Delete all extra (non-main) entities in the assembly. Before assembly deletion. */
   deleteAllExtraEntitiesOnly(assembly: AssemblyContent): void
-  deleteStageEntities(assembly: AssemblyContent, stageNumber: StageNumber): void
 
   resetStage(assembly: AssemblyContent, stage: StagePosition): void
 }
@@ -34,7 +33,7 @@ export function createAssemblyOperations(
   worldUpdater: WorldUpdater,
   worldInteractor: AssemblyOpWorldInteractor,
 ): AssemblyOperations {
-  const { updateWorldEntities, deleteExtraEntitiesOnly, deleteAllEntitiesInStage } = worldUpdater
+  const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
 
   function deleteAllExtraEntitiesOnly(assembly: AssemblyContent) {
     for (const entity of assembly.content.iterateAllEntities()) {
@@ -50,22 +49,15 @@ export function createAssemblyOperations(
     }
   }
 
-  function deleteStageEntities(assembly: AssemblyContent, stageNumber: StageNumber) {
-    for (const entity of assembly.content.iterateAllEntities()) {
-      deleteAllEntitiesInStage(entity, stageNumber)
-    }
-  }
-
   return {
     deleteAllExtraEntitiesOnly,
-    deleteStageEntities,
     resetStage,
   }
 }
 
 const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
   deleteAllWorldEntities(stage: StagePosition) {
-    for (const entity of stage.surface.find_entities_filtered({ area: stage })) {
+    for (const entity of stage.surface.find_entities()) {
       if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
     }
   },

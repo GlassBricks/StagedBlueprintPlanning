@@ -14,9 +14,8 @@ import { StagePosition } from "../../assembly/AssemblyContent"
 import { StageNumber } from "../../entity/AssemblyEntity"
 import { Entity, EntityPose } from "../../entity/Entity"
 import { DefaultEntityHandler, EntityCreator, EntitySaver } from "../../entity/EntityHandler"
-import { shallowCopy } from "../../lib"
+import { MutableMap2D, newMap2D, shallowCopy } from "../../lib"
 import { Position } from "../../lib/geometry"
-import { MutableMap2D, newMap2D } from "../../lib/map2d"
 import { BuiltinEntityKeys, entityMock, isMock } from "../simple-mock"
 
 /** @noSelf */

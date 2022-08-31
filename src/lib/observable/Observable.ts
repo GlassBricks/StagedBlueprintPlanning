@@ -9,17 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Func, RegisterClass } from "../references"
+import { RegisterClass } from "../references"
 import { shallowCopy } from "../util"
 import { Subscription } from "./Subscription"
 
-export interface Subscribable<L extends Func> {
-  subscribe(context: Subscription, observer: L): Subscription
-  subscribeIndependently(observer: L): Subscription
-}
-
 export interface Observer<T> {
-  invoke(subscription: Subscription, value: T): void
+  invoke(value: T): void
 }
 
 export interface Observable<T> {
@@ -27,60 +22,60 @@ export interface Observable<T> {
   subscribeIndependently(observer: Observer<T>): Subscription
 }
 
-type AdditionalArgs<L extends Func> = L["invoke"] extends (this: any, arg1: any, ...args: infer A) => void ? A : never
+export interface MultiObserver<A extends any[]> {
+  invoke(...args: A): void
+}
 
+export interface MultiObservable<A extends any[]> {
+  subscribe(context: Subscription, observer: MultiObserver<A>): Subscription
+  subscribeIndependently(observer: MultiObserver<A>): Subscription
+}
+
+type AsMap<A extends any[]> = LuaMap<ObserverSubscription, MultiObserver<A>>
 @RegisterClass("ObserverList")
-export class ObserverList<L extends Func<(subscription: Subscription, ...args: any) => void>>
-  implements Subscribable<L>
-{
-  private deleteQueue?: LuaSet<ObserverSubscription>
-  private declare get: LuaTableGetMethod<ObserverSubscription, L | undefined>
-  private declare set: LuaTableSetMethod<ObserverSubscription, L>
-  private declare has: LuaTableHasMethod<ObserverSubscription>
-  private declare delete: LuaTableDeleteMethod<ObserverSubscription>
-
-  subscribeIndependently(observer: L): Subscription {
-    const subscription = new ObserverSubscription(this)
-    this.set(subscription, observer)
+export class ObserverList<A extends any[]> implements MultiObservable<A> {
+  subscribeIndependently(observer: MultiObserver<A>): Subscription {
+    const thisAsMap = this as unknown as AsMap<A>
+    const subscription = new ObserverSubscription(thisAsMap)
+    thisAsMap.set(subscription, observer)
     return subscription
   }
 
-  subscribe(context: Subscription, observer: L): Subscription {
+  subscribe(context: Subscription, observer: MultiObserver<A>): Subscription {
     const subscription = this.subscribeIndependently(observer)
     context.add(subscription)
     return subscription
   }
 
-  raise(...args: AdditionalArgs<L>): void
-  raise(...args: any[]): void {
-    for (const [subscription, observer] of shallowCopy(this as unknown as LuaMap<ObserverSubscription, L>)) {
-      if (this.has(subscription)) observer.invoke(subscription, ...args)
+  raise(...args: A): void {
+    const thisAsMap = this as unknown as AsMap<A>
+    for (const [subscription, observer] of shallowCopy(thisAsMap)) {
+      if (thisAsMap.has(subscription)) observer.invoke(...args)
     }
   }
 
   closeAll(): void {
-    for (const [subscription] of shallowCopy(this as unknown as LuaMap<ObserverSubscription, L>)) {
+    const thisAsMap = this as unknown as AsMap<A>
+    for (const [subscription] of shallowCopy(thisAsMap)) {
       subscription.close()
+      thisAsMap.delete(subscription)
     }
-  }
-
-  _delete(subscription: ObserverSubscription): void {
-    if (!this.deleteQueue) this.delete(subscription)
-    else this.deleteQueue.add(subscription)
   }
 }
 
 @RegisterClass("ObserverSubscription")
 class ObserverSubscription extends Subscription {
-  constructor(private readonly observers: ObserverList<any>) {
+  constructor(private readonly observers: LuaMap<ObserverSubscription>) {
     super()
   }
   override close() {
-    this.observers._delete(this)
+    this.observers.delete(this)
     super.close()
   }
 }
 
-export type EventListener<T> = Observer<T>
-export type Event<T> = ObserverList<EventListener<T>>
+export type Event<T> = ObserverList<[T]>
 export const Event: new <T>() => Event<T> = ObserverList
+
+export type MultiEvent<A extends any[]> = ObserverList<A>
+export const MultiEvent: new <A extends any[]>() => MultiEvent<A> = ObserverList

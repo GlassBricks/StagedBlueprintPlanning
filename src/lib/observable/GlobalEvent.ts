@@ -14,23 +14,29 @@ export interface GlobalEvent<T> {
   removeListener(listener: (value: T) => void): void
   raise(value: T): void
 }
+export interface GlobalEventMulti<A extends any[]> {
+  addListener(listener: (...args: A) => void): void
+  removeListener(listener: (...args: A) => void): void
+  raise(...args: A): void
+}
 
-class GlobalEventImpl<T> implements GlobalEvent<T> {
-  private listeners = new LuaSet<(value: T) => void>()
-
-  addListener(listener: (value: T) => void): void {
-    this.listeners.add(listener)
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface GlobalEventImpl<A extends any[]> extends LuaSet<(...args: A) => void> {}
+class GlobalEventImpl<A extends any[]> implements GlobalEventMulti<A> {
+  addListener(listener: (...args: A) => void) {
+    this.add(listener)
   }
-  removeListener(listener: (value: T) => void): void {
-    this.listeners.delete(listener)
+  removeListener(listener: (...args: A) => void) {
+    this.delete(listener)
   }
-  raise(value: T): void {
-    for (const listener of this.listeners) {
-      listener(value)
-    }
+  raise(...args: A) {
+    for (const listener of this) listener(...args)
   }
 }
 
 export function globalEvent<T>(): GlobalEvent<T> {
-  return new GlobalEventImpl<T>()
+  return new GlobalEventImpl<[T]>()
+}
+export function globalEventMulti<A extends any[]>(): GlobalEventMulti<A> {
+  return new GlobalEventImpl<A>()
 }

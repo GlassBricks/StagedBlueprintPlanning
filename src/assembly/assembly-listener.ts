@@ -20,22 +20,19 @@ import { AssemblyOperations } from "./AssemblyOperations"
 AssemblyEvents.addListener((e) => {
   switch (e.type) {
     case "assembly-created":
+    case "assembly-deleted":
       break
-    case "assembly-deleted": {
-      AssemblyOperations.deleteAllExtraEntitiesOnly(e.assembly)
-      break
-    }
     case "stage-added": {
       AssemblyOperations.resetStage(e.assembly, e.stage)
       break
     }
-    case "pre-stage-deleted": {
-      AssemblyOperations.deleteStageEntities(e.assembly, e.stage.stageNumber)
+    case "pre-stage-deleted":
       break
-    }
     case "stage-deleted": {
-      const previousStage = e.assembly.getStage(e.stage.stageNumber - 1)
-      if (previousStage) AssemblyOperations.resetStage(e.assembly, previousStage)
+      const stageNumber = e.stage.stageNumber
+      const stageNumberToMerge = stageNumber === 1 ? 2 : stageNumber - 1
+      const otherStage = e.assembly.getStage(stageNumberToMerge)
+      if (otherStage) AssemblyOperations.resetStage(e.assembly, otherStage)
       break
     }
     default:

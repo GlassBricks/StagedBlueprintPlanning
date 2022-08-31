@@ -10,15 +10,11 @@
  */
 
 import { Assembly, Stage } from "../../assembly/AssemblyDef"
-import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
+import { funcOn, funcRef, MaybeState, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
 import { Component, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
-import { DotDotDotButton } from "../../lib/factoriojsx/components/buttons"
-import { Fn } from "../../lib/factoriojsx/components/Fn"
-import { HorizontalPusher, HorizontalSpacer } from "../../lib/factoriojsx/components/misc"
-import { TitleBar } from "../../lib/factoriojsx/components/TitleBar"
-import { MaybeState } from "../../lib/observable"
+import { DotDotDotButton, Fn, HorizontalPusher, HorizontalSpacer, TitleBar } from "../../lib/factoriojsx/components"
 import { L_GuiCurrentAssembly } from "../../locale"
-import { playerCurrentStage } from "../player-position"
+import { playerCurrentStage } from "../player-current-stage"
 import { openAllAssemblies } from "./AllAssemblies"
 import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"

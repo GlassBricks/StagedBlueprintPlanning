@@ -9,61 +9,50 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { _mockAssembly } from "../../assembly/Assembly"
+import { createAssembly } from "../../assembly/Assembly"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _inValidState } from "../../assembly/world-listener"
-import { registerAssemblyLocation, unregisterAssemblyLocation } from "../../assembly/world-register"
 import { CustomInputs, Prototypes } from "../../constants"
-import { StageNumber } from "../../entity/AssemblyEntity"
 import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
 import { Events } from "../../lib"
-import { BBox, Pos, PositionClass } from "../../lib/geometry"
-import { testArea } from "../area"
+import { BBox, Pos } from "../../lib/geometry"
 import direction = defines.direction
 
 let updater: mock.Stubbed<AssemblyUpdater>
 let assembly: Assembly
 let surface: LuaSurface
 let player: LuaPlayer
+const pos = Pos(0, 0)
 before_all(() => {
-  surface = game.surfaces[1]
   player = game.players[1]
 
   updater = mock(DefaultAssemblyUpdater, true)
+  assembly = createAssembly("Test", 2)
+  surface = assembly.getStage(1)!.surface
 
-  assembly = _mockAssembly(2)
-  registerAssemblyLocation(assembly)
-
-  player.teleport(getStageCenter(1), surface)
+  player.teleport(pos, surface)
 })
 
 before_each(() => {
-  surface
-    .find_entities_filtered({
-      area: BBox.coords(0, 0, 5 * 32, 32),
-    })
-    .forEach((e) => e.destroy())
-
+  surface.find_entities().forEach((e) => e.destroy())
   mock.clear(updater)
 })
 after_all(() => {
   mock.revert(updater)
-  unregisterAssemblyLocation(assembly)
 })
 
 after_each(() => {
-  assert.true(_inValidState())
+  if (!_inValidState()) {
+    game.print("invalid state")
+    assert(false, "in valid state")
+  }
   player?.cursor_stack?.clear()
 })
 
-function getStageCenter(stage: StageNumber): PositionClass {
-  return BBox.center(assembly.getStage(stage)!)
-}
-
 describe("add", () => {
   test("player built entity", () => {
-    const position = getStageCenter(1)
+    const position = pos
     player.cursor_stack!.set_stack("iron-chest")
     player.build_from_cursor({ position })
     player.cursor_stack!.clear()
@@ -80,7 +69,7 @@ describe("add", () => {
   })
 
   test("script raise built", () => {
-    const position = getStageCenter(1)
+    const position = pos
     const entity = surface.create_entity({
       name: "iron-chest",
       position,
@@ -96,7 +85,7 @@ describe("add", () => {
 describe("delete", () => {
   let entity: LuaEntity
   before_each(() => {
-    const position = getStageCenter(1)
+    const position = pos
     entity = surface.create_entity({
       name: "iron-chest",
       position,
@@ -120,7 +109,7 @@ describe("delete", () => {
 describe("update", () => {
   let entity: LuaEntity
   before_each(() => {
-    const position = getStageCenter(1)
+    const position = pos
     entity = surface.create_entity({
       name: "inserter",
       position,
@@ -163,7 +152,7 @@ test.each([
 ])("fast replace, rotate: %s, upgrade: %s", (rotate, upgrade) => {
   const entity: LuaEntity = surface.create_entity({
     name: "inserter",
-    position: getStageCenter(1),
+    position: pos,
     raise_built: true,
     force: "player",
   })!
@@ -230,7 +219,7 @@ test.each([
 describe("upgrade", () => {
   let entity: LuaEntity
   before_each(() => {
-    const position = getStageCenter(1)
+    const position = pos
     entity = surface.create_entity({
       name: "inserter",
       position,
@@ -284,38 +273,38 @@ describe("upgrade", () => {
 })
 
 describe("robot actions", () => {
+  // noinspection SpellCheckingInspection
   const setupBlueprint =
     "0eNqF0e9qxCAMAPB3yWc9rv/o6quMcVgv7QSronasK777aY/J4Arzi0SSXyTZYVQrWid1ALaDFEZ7YO87eDlrrvJb2CwCAxlwAQKaLzlyZjTWuACRgNR3/AZWxQ8CqIMMEp/GEWw3vS4jupTwWk3AGp8KjM6dMpKSNmC0usZIXoS6CH7hSlFUKIKTglqj8ARrLt0vd+nOwKaAyszSh0SJT/SB+mAcn8/M9j+zLWb5Hmp080bTkNFNXJyyT3RI8xzXaUJ38/InIdW1nDzfYwvsz9IIfKHzB1S/VW0/1H03NH26Y3wA6bmb8w=="
   before_each(() => {
-    const area = testArea(0)
+    surface.find_entities().forEach((e) => e.destroy())
     const stack = getTempBpItemStack()
     stack.import_stack(setupBlueprint)
     const ghosts = stack.build_blueprint({
       surface,
-      position: getStageCenter(1),
+      position: pos,
       force: "player",
     })
     assert(ghosts[0], "blueprint pasted")
     ghosts.forEach((x) => reviveGhost(x))
     const roboport = surface.find_entities_filtered({
-      area: area.bbox,
       type: "roboport",
       limit: 1,
     })[0]
+    assert.not_nil(roboport, "roboport found")
     roboport.insert("construction-robot")
     const storageChest = surface.find_entities_filtered({
-      area: area.bbox,
       name: "logistic-chest-storage",
       limit: 1,
     })[0]
+    assert.not_nil(storageChest, "storage chest found")
     storageChest.insert("iron-chest")
   })
   test("build", () => {
-    const pos = getStageCenter(1).plus(Pos(4.5, 0.5))
     const ghost = surface.create_entity({
       name: "entity-ghost",
       inner_name: "iron-chest",
-      position: pos,
+      position: Pos(4.5, 0.5),
       force: "player",
     })
     assert(ghost, "ghost created")
@@ -323,7 +312,6 @@ describe("robot actions", () => {
     after_ticks(120, () => {
       done()
       const chest = surface.find_entities_filtered({
-        area: testArea(0).bbox,
         name: "iron-chest",
         limit: 1,
       })[0]
@@ -335,7 +323,7 @@ describe("robot actions", () => {
   })
 
   test("mine", () => {
-    const pos = getStageCenter(1).plus(Pos(4.5, 0.5))
+    const pos = Pos(4.5, 0.5)
     const chest = surface.create_entity({
       name: "iron-chest",
       position: pos,
@@ -357,14 +345,14 @@ describe("Cleanup tool", () => {
   test("revive error entity", () => {
     const entity = surface.create_entity({
       name: Prototypes.SelectionProxyPrefix + "iron-chest",
-      position: getStageCenter(1),
+      position: pos,
       force: "player",
     })!
     Events.raiseFakeEventNamed("on_player_selected_area", {
       player_index: 1 as PlayerIndex,
       item: Prototypes.CleanupTool,
       surface,
-      area: testArea(0).bbox,
+      area: BBox.around(pos, 10),
       entities: [entity],
       tiles: [],
     })
@@ -375,7 +363,7 @@ describe("Cleanup tool", () => {
   test("delete settings remnant", () => {
     const entity = surface.create_entity({
       name: Prototypes.SelectionProxyPrefix + "iron-chest",
-      position: getStageCenter(1),
+      position: pos,
       force: "player",
     })!
     // alt select
@@ -383,7 +371,7 @@ describe("Cleanup tool", () => {
       player_index: 1 as PlayerIndex,
       item: Prototypes.CleanupTool,
       surface,
-      area: testArea(0).bbox,
+      area: BBox.around(pos, 10),
       entities: [entity],
       tiles: [],
     })
@@ -394,7 +382,7 @@ describe("Cleanup tool", () => {
   test("force-delete", () => {
     const entity = surface.create_entity({
       name: "iron-chest",
-      position: getStageCenter(1),
+      position: pos,
       force: "player",
     })!
     // alt select
@@ -402,7 +390,7 @@ describe("Cleanup tool", () => {
       player_index: 1 as PlayerIndex,
       item: Prototypes.CleanupTool,
       surface,
-      area: testArea(0).bbox,
+      area: BBox.around(pos, 10),
       entities: [entity],
       tiles: [],
     })
@@ -429,7 +417,7 @@ describe("move to this stage", () => {
   test("on normal entity", () => {
     const entity = surface.create_entity({
       name: "inserter",
-      position: getStageCenter(1),
+      position: pos,
       force: "player",
     })
     testOnEntity(entity)
@@ -437,9 +425,55 @@ describe("move to this stage", () => {
   test("on preview entity", () => {
     const entity = surface.create_entity({
       name: Prototypes.PreviewEntityPrefix + "inserter",
-      position: getStageCenter(1),
+      position: pos,
       force: "player",
     })
     testOnEntity(entity)
+  })
+})
+
+describe("revives ghost undergrounds", () => {
+  test("by player", () => {
+    const pos = Pos(4.5, 0.5)
+    player.cursor_stack!.set_stack("underground-belt")
+    player.build_from_cursor({
+      position: pos,
+      alt: true,
+    })
+    const underground = surface.find_entities_filtered({
+      name: "underground-belt",
+      limit: 1,
+    })[0]
+    assert.not_nil(underground, "underground found")
+    assert.same(pos, underground.position)
+    const ghosts = surface.find_entities_filtered({
+      type: "entity-ghost",
+      limit: 1,
+    })[0]
+    assert.nil(ghosts, "no ghosts found")
+
+    assert
+      .spy(updater.onEntityCreated)
+      .called_with(match.ref(assembly), match.ref(underground), match.ref(assembly.getStage(1)!), 1)
+  })
+  test("by script", () => {
+    const pos = Pos(4.5, 0.5)
+    const undergroundGhost = surface.create_entity({
+      name: "entity-ghost",
+      inner_name: "underground-belt",
+      position: pos,
+      force: "player",
+      raise_built: true,
+    })
+    assert.falsy(undergroundGhost?.valid, "ghost replaced")
+    const underground = surface.find_entities_filtered({
+      name: "underground-belt",
+      limit: 1,
+    })[0]
+    assert.not_nil(underground, "underground found")
+    assert.same(pos, underground.position)
+    assert
+      .spy(updater.onEntityCreated)
+      .called_with(match.ref(assembly), match.ref(underground), match.ref(assembly.getStage(1)!), nil)
   })
 })
