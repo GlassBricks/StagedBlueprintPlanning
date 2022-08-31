@@ -12,7 +12,7 @@
 import { L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { getEntityCategory, isUndergroundBeltType } from "../entity/entity-info"
+import { collidesWithSelf, getEntityCategory, isUndergroundBeltType } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/undergrounds"
 import { L_Interaction } from "../locale"
@@ -134,11 +134,10 @@ export function createAssemblyUpdater(
     const { stageNumber } = stage
     const { content } = assembly
 
-    let existing = content.findCompatibleAnyDirection(entity.name, position)
-    if (existing && existing.getWorldEntity(stage.stageNumber) !== nil) {
-      // if there is an existing entity at the layer, it must match direction this time
-      existing = content.findCompatible(entity, position, nil)
-    }
+    const entityName = entity.name
+    const existing = collidesWithSelf(entityName)
+      ? content.findCompatible(entity, position, nil)
+      : content.findCompatibleAnyDirection(entityName, position) // if doesn't collide with self, search any direction
 
     if (existing) {
       const existingStage = existing.getFirstStage()

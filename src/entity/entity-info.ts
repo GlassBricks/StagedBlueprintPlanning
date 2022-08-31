@@ -31,6 +31,7 @@ export interface EntityInfo {
   categoryName: CategoryName
   pasteRotatableType: PasteRotatableType
   selectionBox: BBoxClass
+  collidesWithSelf: boolean
   type: string
 }
 
@@ -59,6 +60,7 @@ function computeEntityInfo(entityName: string): EntityInfo {
       pasteRotatableType: PasteRotatableType.None,
       selectionBox: BBox.coords(0, 0, 0, 0),
       type: "",
+      collidesWithSelf: false,
     }
   const categoryName = computeCategoryName(prototype)
   const selectionBox = BBox.from(prototype.selection_box)
@@ -72,7 +74,13 @@ function computeEntityInfo(entityName: string): EntityInfo {
     }
   }
 
-  return { categoryName, selectionBox, pasteRotatableType, type: prototype.type }
+  return {
+    categoryName,
+    selectionBox,
+    pasteRotatableType,
+    type: prototype.type,
+    collidesWithSelf: prototype.collision_mask_collides_with_self,
+  }
 }
 
 const entityInfoCache: PRecord<string, EntityInfo> = {}
@@ -94,4 +102,7 @@ export function getPastRotatableType(entityName: string): PasteRotatableType {
 }
 export function isUndergroundBeltType(entityName: string): boolean {
   return getEntityInfo(entityName).type === "underground-belt"
+}
+export function collidesWithSelf(entityName: string): boolean {
+  return getEntityInfo(entityName).collidesWithSelf
 }
