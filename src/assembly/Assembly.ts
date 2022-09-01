@@ -233,7 +233,7 @@ Events.on_pre_surface_deleted((e) => {
   if (stage !== nil) stage.deleteInAssembly()
 })
 
-Migrations.from("0.2.1", () => {
+Migrations.to("0.2.1", () => {
   for (const [, assembly] of global.assemblies) {
     assembly.lastPlayerPosition = {}
   }

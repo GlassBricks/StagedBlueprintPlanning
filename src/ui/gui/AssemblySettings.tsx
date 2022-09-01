@@ -15,6 +15,7 @@ import { getStageToMerge } from "../../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
 import {
   Component,
+  destroy,
   destroyChildren,
   FactorioJsx,
   renderMultiple,
@@ -23,6 +24,7 @@ import {
   Tracker,
 } from "../../lib/factoriojsx"
 import { Fn, HorizontalPusher, showDialog, SimpleTitleBar, TrashButton } from "../../lib/factoriojsx/components"
+import { Migrations } from "../../lib/migration"
 import { L_GuiAssemblySettings } from "../../locale"
 import {
   PlayerChangedStageEvent,
@@ -292,6 +294,9 @@ function getOrCreateFrame(player: LuaPlayer): FrameGuiElement {
   if (existing) return existing as FrameGuiElement
   return renderNamed(<AssemblySettingsFrame />, screen, AssemblySettingsFrameName) as FrameGuiElement
 }
+function destroyFrame(player: LuaPlayer) {
+  destroy(player.gui.screen[AssemblySettingsFrameName])
+}
 
 function closeAssemblySettingsClick(event: OnGuiClickEvent) {
   const player = game.get_player(event.player_index)
@@ -331,3 +336,13 @@ PlayerChangedStageEvent.addListener((player, stage) => {
     showAssemblySettings(player, stage.assembly)
   }
 })
+function refreshCurrentAssembly() {
+  for (const [, player] of game.players) {
+    const currentAssembly = global.players[player.index].currentShownAssembly
+    if (currentAssembly) {
+      destroyFrame(player)
+      showAssemblySettings(player, currentAssembly)
+    }
+  }
+}
+Migrations.fromAny(refreshCurrentAssembly)

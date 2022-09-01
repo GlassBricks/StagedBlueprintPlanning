@@ -26,13 +26,19 @@ export function formatVersion(version: string): VersionString {
 export namespace Migrations {
   let migrations: Record<VersionString, (() => void)[]> = {}
 
-  export function from(version: string, func: () => void): void {
+  /** Runs when migrating from a version earlier than the specified version. */
+  export function to(version: string, func: () => void): void {
     ;(migrations[formatVersion(version)] ||= []).push(func)
   }
   /** Runs both during on_init and from an earlier version. */
   export function since(version: string, func: () => void): void {
     Events.on_init(func)
-    from(version, func)
+    to(version, func)
+  }
+
+  /** Runs during any migration from an earlier version. */
+  export function fromAny(func: () => void): void {
+    to(script.active_mods[script.mod_name], func)
   }
 
   export function _prepareMock(): void {
