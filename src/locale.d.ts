@@ -44,7 +44,7 @@ export declare const enum L_Bp100 {
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp100.interaction.unexpected-error",
-  /** WARNING: this blueprint is not handled. Entities that have changed settings due to pasting this blueprint will not be detected in assemblies (newly created entities are fine).\nTo fix, make a copy of the blueprint (if it is in the blueprint library) and paste again. */
+  /** WARNING: pasting a blueprint from the blueprint [font=default-bold]library[/font] into an assembly is not fully supported.\nEntities that have changed settings due to pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (book) first, then paste again. */
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
@@ -142,8 +142,8 @@ export declare const enum L_GuiAssemblySettings {
   EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
   /** Edits the blueprint of the current stage.\nChanges (icons, snap-to-grid, grid position, etc.) [font=default-bold]will[/font] be saved.\nGrid position and snap-to-grid settings will be applied to [font=default-bold]all[/font] stages in the assembly. */
   EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
-  /** Get blueprint book */
+  /** Make blueprint book */
   GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
-  /** Gets a blueprint book of all stages in the assembly.\nYou can configure individual blueprints in the stage settings. */
+  /** Makes a blueprint book of all stages in the assembly.\nYou can configure individual blueprints in the stage settings. */
   GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
 }
