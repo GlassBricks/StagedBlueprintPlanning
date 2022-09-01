@@ -10,7 +10,8 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { MutableState, Observable, State } from "../lib"
+import { MutableState, Observable, PRecord, State } from "../lib"
+import { Position } from "../lib/geometry"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { MutableEntityMap } from "./EntityMap"
 
@@ -24,6 +25,14 @@ export interface Assembly extends AssemblyContent {
   readonly content: MutableEntityMap
 
   readonly localEvents: Observable<LocalAssemblyEvent>
+
+  readonly lastPlayerPosition: PRecord<
+    PlayerIndex,
+    {
+      stageNumber: StageNumber
+      position: Position
+    }
+  >
 
   getStage(stageNumber: StageNumber): Stage | nil
   iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Stage]>>

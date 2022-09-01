@@ -10,7 +10,19 @@
  */
 
 import { _deleteAllAssemblies, createAssembly } from "../../assembly/Assembly"
-import { playerCurrentStage } from "../../ui/player-current-stage"
+import { Assembly } from "../../assembly/AssemblyDef"
+import { Pos } from "../../lib/geometry"
+import { playerCurrentStage, teleportToAssembly, teleportToStage } from "../../ui/player-current-stage"
+
+before_each(() => {
+  const player = game.players[1]!
+  player.teleport([0, 0], 1 as SurfaceIndex)
+})
+after_all(() => {
+  const player = game.players[1]!
+  player.teleport([0, 0], 1 as SurfaceIndex)
+  _deleteAllAssemblies()
+})
 
 test("playerCurrentStage", () => {
   const assembly = createAssembly("Test", 3)
@@ -34,8 +46,51 @@ test("playerCurrentStage", () => {
   assert.nil(currentStage.get())
 })
 
-after_all(() => {
-  const player = game.players[1]!
-  player.teleport([0, 0], 1 as SurfaceIndex)
-  _deleteAllAssemblies()
+describe("teleporting to stage/assembly", () => {
+  let assembly1: Assembly
+  let assembly2: Assembly
+  let player: LuaPlayer
+  before_all(() => {
+    assembly1 = createAssembly("Test1", 3)
+    assembly2 = createAssembly("Test2", 3)
+    player = game.players[1]!
+  })
+  test("can teleport to stage", () => {
+    teleportToStage(player, assembly1.getStage(1)!)
+    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly1.getStage(1)!)
+    teleportToStage(player, assembly1.getStage(2)!)
+    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly1.getStage(2)!)
+  })
+  test("keeps players position when teleporting from same assembly", () => {
+    teleportToStage(player, assembly1.getStage(1)!)
+    player.teleport(Pos(5, 10))
+    teleportToStage(player, assembly1.getStage(2)!)
+    assert.same(Pos(5, 10), player.position)
+  })
+
+  test("remembers last position when teleporting from different assembly", () => {
+    teleportToStage(player, assembly1.getStage(1)!)
+    player.teleport(Pos(5, 10))
+    teleportToStage(player, assembly2.getStage(1)!)
+    teleportToStage(player, assembly1.getStage(1)!)
+    assert.same(Pos(5, 10), player.position)
+  })
+
+  test("can teleport to assembly", () => {
+    teleportToAssembly(player, assembly1)
+    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly1.getStage(1)!)
+    teleportToAssembly(player, assembly2)
+    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly2.getStage(1)!)
+  })
+
+  test("teleport to assembly remembers last stage and position", () => {
+    teleportToStage(player, assembly1.getStage(2)!)
+    player.teleport(Pos(5, 10))
+
+    teleportToStage(player, assembly2.getStage(1)!)
+
+    teleportToAssembly(player, assembly1)
+    assert.same(Pos(5, 10), player.position)
+    assert.equal(assembly1.getStage(2), playerCurrentStage(player.index).get())
+  })
 })

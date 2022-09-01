@@ -73,7 +73,7 @@ class AllAssemblies extends Component {
 
   private setup(subscription: Subscription): void {
     const listBox = this.listBox
-    this.allAssemblies = getAllAssemblies()
+    this.allAssemblies = Object.values(getAllAssemblies())
     listBox.items = this.allAssemblies.map((a) => a.displayName.get())
 
     for (const [i, assembly] of ipairs(this.allAssemblies)) {

@@ -10,8 +10,9 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { bind, Event, Events, globalEvent, Mutable, MutableState, RegisterClass, state, State } from "../lib"
-import { BBox } from "../lib/geometry"
+import { bind, Event, Events, globalEvent, Mutable, MutableState, PRecord, RegisterClass, state, State } from "../lib"
+import { BBox, Position } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage } from "./AssemblyDef"
 import { newEntityMap } from "./EntityMap"
@@ -40,6 +41,14 @@ class AssemblyImpl implements Assembly {
 
   content = newEntityMap()
   localEvents = new Event<LocalAssemblyEvent>()
+
+  lastPlayerPosition: PRecord<
+    PlayerIndex,
+    {
+      stageNumber: StageNumber
+      position: Position
+    }
+  > = {}
 
   valid = true
 
@@ -165,8 +174,8 @@ export function createAssembly(name: string, initialNumStages: number): Assembly
   return AssemblyImpl.create(name, initialNumStages)
 }
 
-export function getAllAssemblies(): Assembly[] {
-  return Object.values(global.assemblies)
+export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
+  return global.assemblies
 }
 
 export function _deleteAllAssemblies(): void {
@@ -222,4 +231,10 @@ export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
 Events.on_pre_surface_deleted((e) => {
   const stage = getStageAtSurface(e.surface_index)
   if (stage !== nil) stage.deleteInAssembly()
+})
+
+Migrations.from("0.2.1", () => {
+  for (const [, assembly] of global.assemblies) {
+    assembly.lastPlayerPosition = {}
+  }
 })

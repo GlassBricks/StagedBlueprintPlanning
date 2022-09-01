@@ -27,6 +27,8 @@ import { L_GuiAssemblySettings } from "../../locale"
 import {
   PlayerChangedStageEvent,
   playerCurrentStage,
+  recordLastStagePosition,
+  teleportToAssembly,
   teleportToStage,
   teleportToSurface1,
 } from "../player-current-stage"
@@ -248,8 +250,10 @@ export class StageSettings extends Component<{ stage: Stage }> {
   private deleteStage() {
     const { toMerge } = this.getStageToMerge()
     if (!toMerge) return
+    const player = game.get_player(this.playerIndex)!
+    recordLastStagePosition(player)
     this.stage.deleteInAssembly()
-    teleportToStage(game.get_player(this.playerIndex)!, toMerge)
+    teleportToStage(player, toMerge)
   }
 
   private resetStage() {
@@ -316,10 +320,7 @@ function showAssemblySettings(player: LuaPlayer, assembly: Assembly): FrameGuiEl
 export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): void {
   const frame = showAssemblySettings(player, assembly)
   if (frame) frame.force_auto_center() // re-center if already open
-  const currentStage = playerCurrentStage(player.index).get()
-  if (currentStage && currentStage.assembly === assembly) return
-  const firstStage = assembly.getStage(1)
-  if (firstStage) teleportToStage(player, firstStage)
+  teleportToAssembly(player, assembly)
 }
 
 PlayerChangedStageEvent.addListener((player, stage) => {
