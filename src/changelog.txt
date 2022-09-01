@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.1
-Date: ????
+Date: 2022-09-01
   Bugfixes:
     - Fixed incorrect entity highlight when deleting the first stage
     - Fixed adding an entity that matches an entity at a higher stage but with different orientation
