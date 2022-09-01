@@ -12,11 +12,11 @@
 import { createAssembly } from "../../assembly/Assembly"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
-import { _inValidState } from "../../assembly/world-listener"
+import { _assertInValidState } from "../../assembly/world-listener"
 import { CustomInputs, Prototypes } from "../../constants"
 import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
-import { Events } from "../../lib"
-import { BBox, Pos } from "../../lib/geometry"
+import { Events, Mutable } from "../../lib"
+import { BBox, Pos, PositionClass } from "../../lib/geometry"
 import direction = defines.direction
 
 let updater: mock.Stubbed<AssemblyUpdater>
@@ -33,20 +33,16 @@ before_all(() => {
 
   player.teleport(pos, surface)
 })
+after_all(() => {
+  mock.revert(updater)
+})
 
 before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
   mock.clear(updater)
 })
-after_all(() => {
-  mock.revert(updater)
-})
-
 after_each(() => {
-  if (!_inValidState()) {
-    game.print("invalid state")
-    assert(false, "in valid state")
-  }
+  _assertInValidState()
   player?.cursor_stack?.clear()
 })
 
@@ -475,5 +471,87 @@ describe("revives ghost undergrounds", () => {
     assert
       .spy(updater.onEntityCreated)
       .called_with(match.ref(assembly), match.ref(underground), match.ref(assembly.getStage(1)!), nil)
+  })
+})
+
+describe("blueprint paste", () => {
+  // note: this currently relies on editor mode, instant blueprint paste enabled
+  const pos: PositionClass = Pos(4.5, 0.5)
+  before_each(() => {
+    const entity: BlueprintEntity = {
+      entity_number: 1,
+      name: "inserter",
+      position: Pos(0.5, 0.5),
+      direction: direction.west,
+    }
+    const cursor = player.cursor_stack!
+    cursor.clear()
+    cursor.set_stack("blueprint")
+    cursor.set_blueprint_entities([entity])
+  })
+  function assertCorrect(entity: LuaEntity): void {
+    assert.not_nil(entity, "entity found")
+    assert.same(pos, entity.position)
+
+    assert
+      .spy(updater.onEntityPotentiallyUpdated)
+      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), 1)
+  }
+
+  test("create entity", () => {
+    player.build_from_cursor({ position: pos })
+    const inserter = surface.find_entities_filtered({
+      name: "inserter",
+      limit: 1,
+    })[0]
+    assertCorrect(inserter)
+  })
+
+  test("update existing entity", () => {
+    const inserter = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+      direction: direction.west,
+    })!
+    player.build_from_cursor({ position: pos })
+    assertCorrect(inserter)
+  })
+
+  test("update existing entity with wires", () => {
+    const entities = player.cursor_stack!.get_blueprint_entities()!
+    const firstEntity = entities[0] as Mutable<BlueprintEntity>
+    const entity2: BlueprintEntity = {
+      ...firstEntity,
+      entity_number: 2,
+      name: "inserter",
+      position: Pos(1.5, 0.5),
+      direction: direction.east,
+      connections: {
+        "1": {
+          red: [{ entity_id: 1 }],
+        },
+      },
+    }
+    firstEntity.connections = {
+      "1": {
+        red: [{ entity_id: 2 }],
+      },
+    }
+    player.cursor_stack!.set_blueprint_entities([firstEntity, entity2])
+
+    const inserter1 = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+      direction: direction.west,
+    })!
+    // ignore second inserter
+
+    player.build_from_cursor({ position: pos })
+    assertCorrect(inserter1)
+    assert
+      .spy(updater.onCircuitWiresPotentiallyUpdated)
+      .called_with(match.ref(assembly), match.ref(inserter1), match.ref(assembly.getStage(1)!), 1)
   })
 })

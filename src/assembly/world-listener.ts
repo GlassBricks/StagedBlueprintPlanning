@@ -15,10 +15,10 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
+import { L_Interaction } from "../locale"
 import { getStageAtSurface } from "./Assembly"
 import { Assembly, Stage } from "./AssemblyDef"
 import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
-import { MarkerTags, modifyBlueprintInStackIfNeeded, validateHeldBlueprint } from "./blueprint-paste"
 
 /**
  * Hooks to factorio events, and calls AssemblyUpdater.
@@ -42,7 +42,7 @@ function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
 
 function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (!entity.valid) return
-  if (isMarkerEntity(entity)) entity.destroy() // only handle in on_entity_built; see below
+  if (isMarkerEntity(entity)) entity.destroy() // only handle in on_built_entity; see below
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
   if (!isWorldEntityAssemblyEntity(entity)) {
@@ -59,6 +59,11 @@ function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
 function luaEntityPotentiallyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageIfAssemblyEntity(entity)
   if (stage) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, entity, stage, player)
+}
+
+function luaEntityMarkedForUpgrade(entity: LuaEntity, player: PlayerIndex | nil): void {
+  const stage = getStageAtSurface(entity.surface.index)
+  if (stage) DefaultAssemblyUpdater.onEntityMarkedForUpgrade(stage.assembly, entity, stage, player)
 }
 
 function luaEntityForceDeleted(entity: LuaEntity): void {
@@ -153,14 +158,20 @@ Events.on_robot_built_entity((e) => luaEntityCreated(e.created_entity, nil))
 
 Events.script_raised_destroy((e) => luaEntityDeleted(e.entity, nil))
 Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
+
 Events.on_entity_died((e) => luaEntityForceDeleted(e.entity))
 
 Events.on_entity_settings_pasted((e) => luaEntityPotentiallyUpdated(e.destination, e.player_index))
 Events.on_gui_closed((e) => {
   if (e.entity) luaEntityPotentiallyUpdated(e.entity, e.player_index)
 })
-Events.on_player_rotated_entity((e) => luaEntityRotated(e.entity, e.previous_direction, e.player_index))
 Events.on_player_fast_transferred((e) => luaEntityPotentiallyUpdated(e.entity, e.player_index))
+
+Events.on_player_rotated_entity((e) => luaEntityRotated(e.entity, e.previous_direction, e.player_index))
+
+Events.on_marked_for_upgrade((e) => luaEntityMarkedForUpgrade(e.entity, e.player_index))
+
+// building, mining, fast replacing: state machine
 
 interface AnnotatedEntity extends BasicEntityInfo {
   readonly stage: Stage
@@ -170,6 +181,11 @@ interface AnnotatedEntity extends BasicEntityInfo {
 // in global, so no desync in case of bugs
 let state: {
   currentlyInBuild?: Stage | false // if not nil, then is in build. False if not in a stage
+
+  currentlyInBlueprintPaste?: Stage
+  blueprintEntities?: BlueprintEntity[]
+  blueprintOriginalNumEntities?: number
+
   preMinedItemCalled?: Stage | false // if not nil, then is in build. False if not in a stage
   lastDeleted?: AnnotatedEntity
 }
@@ -189,8 +205,6 @@ Events.on_load(() => {
 })
 
 // for optimization purposes, getStageAtSurface is cached and computed as late as possible
-
-// building, deleting, fast replacing
 
 function clearLastDeleted(player: PlayerIndex | nil): void {
   const { lastDeleted } = state
@@ -236,8 +250,10 @@ function setLastDeleted(entity: LuaEntity, stage: Stage, player: PlayerIndex | n
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
   const stage = getStageAtSurface(player.surface.index)
+  state.currentlyInBlueprintPaste = nil
+  state.blueprintEntities = nil
   if (player.is_cursor_blueprint()) {
-    if (stage) validateHeldBlueprint(player)
+    onPreBlueprintPasted(player, stage)
   } else {
     state.currentlyInBuild = stage ?? false
     clearLastDeleted(e.player_index)
@@ -277,14 +293,24 @@ Events.on_player_mined_entity((e) => {
 Events.on_built_entity((e) => {
   const { created_entity: entity } = e
   if (!entity.valid) return
+
+  const currentlyInBlueprintPaste = state.currentlyInBlueprintPaste
+  if (currentlyInBlueprintPaste) {
+    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity, currentlyInBlueprintPaste)
+    return
+  }
+  // just in case
+  if (isMarkerEntity(entity)) {
+    entity.destroy()
+    return
+  }
+
   const playerIndex = e.player_index
 
   const currentlyInBuild = state.currentlyInBuild
   if (currentlyInBuild === false) {
     // not in stage, do nothing
     state.currentlyInBuild = nil
-    // shouldn't happen, just in case
-    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity, nil)
     return
   }
 
@@ -292,18 +318,13 @@ Events.on_built_entity((e) => {
     // editor mode build, or marker entity
     const stage = getStageAtSurface(entity.surface.index)
 
-    if (isMarkerEntity(entity)) return onEntityMarkerBuilt(e, entity, stage)
     if (stage) DefaultAssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, playerIndex)
     return
   }
 
   const stage = currentlyInBuild
-
-  // shouldn't happen, just in case
-  if (isMarkerEntity(entity)) return onEntityMarkerBuilt(e, entity, stage)
-
   const assembly = stage.assembly
-  if (tryUpgrade(assembly, entity, stage, playerIndex)) {
+  if (tryFastReplace(assembly, entity, stage, playerIndex)) {
     // upgrade successful, clear currentlyInBuild if no lastDeleted (still has underground pair)
     if (state.lastDeleted === nil) state.currentlyInBuild = nil
   } else {
@@ -328,15 +349,15 @@ function checkNonAssemblyEntity(entity: LuaEntity, stage: Stage, byPlayer: Playe
   }
 }
 
-function tryUpgrade(assembly: Assembly, entity: LuaEntity, stage: Stage, player: PlayerIndex) {
+function tryFastReplace(assembly: Assembly, entity: LuaEntity, stage: Stage, player: PlayerIndex) {
   const { lastDeleted } = state
   if (!lastDeleted) return
-  if (isUpgradeable(lastDeleted, entity)) {
+  if (isFastReplaceable(lastDeleted, entity)) {
     DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, player, lastDeleted.direction)
     state.lastDeleted = lastDeleted.undergroundPairValue
     return true
   }
-  if (lastDeleted.undergroundPairValue && isUpgradeable(lastDeleted.undergroundPairValue, entity)) {
+  if (lastDeleted.undergroundPairValue && isFastReplaceable(lastDeleted.undergroundPairValue, entity)) {
     DefaultAssemblyUpdater.onEntityPotentiallyUpdated(
       assembly,
       entity,
@@ -350,29 +371,135 @@ function tryUpgrade(assembly: Assembly, entity: LuaEntity, stage: Stage, player:
   return false
 }
 
-// blueprint in cursor
-function handlePlayerHeldBlueprint(index: PlayerIndex): void {
-  const player = game.get_player(index)!
-  if (player.is_cursor_blueprint()) {
-    const stage = getStageAtSurface(player.surface.index)
-    if (stage !== nil) modifyBlueprintInStackIfNeeded(player.cursor_stack)
-  }
-}
-Events.on_player_cursor_stack_changed((e) => handlePlayerHeldBlueprint(e.player_index))
-Events.on_player_changed_surface((e) => handlePlayerHeldBlueprint(e.player_index))
-
-// upgrading
-
-function isUpgradeable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
+function isFastReplaceable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
   return Pos.equals(old.position, next.position) && getEntityCategory(old.name) === getEntityCategory(next.name)
 }
 
-Events.on_marked_for_upgrade((e) => {
-  const stage = getStageIfAssemblyEntity(e.entity)
-  if (stage) DefaultAssemblyUpdater.onEntityMarkedForUpgrade(stage.assembly, e.entity, stage, e.player_index)
-})
+// Blueprinting
+// There is no event to detect if blueprint entities are _updated_; instead we use the following strategy:
+// When a blueprint is about to be pasted in a stage, we modify it to add entity markers at every entity
+// When the entity markers are pasted, the corresponding entity is updated
+// The blueprint is reverted to its original state after the paste, when the last entity marker is pasted
 
-// Blueprinting: marker entities (when pasted)
+const IsLastEntity = "bp100IsLastEntity"
+
+interface MarkerTags extends Tags {
+  referencedName: string
+  hasCircuitWires: true
+}
+
+function getInnerBlueprint(stack: BaseItemStack | nil): BlueprintItemStack | nil {
+  if (!stack || !stack.valid_for_read) return nil
+  const type = stack.type
+  if (type === "blueprint") return stack as BlueprintItemStack
+  if (type === "blueprint-book") {
+    const active = (stack as BlueprintBookItemStack).active_index
+    if (!active) return nil
+    const innerStack = stack.get_inventory(defines.inventory.item_main)
+    if (!innerStack) return nil
+    return active <= innerStack.length ? getInnerBlueprint(innerStack[active - 1]) : nil
+  }
+  return nil
+}
+
+function blueprintNeedsPreparation(stack: BlueprintItemStack): boolean {
+  return (
+    stack.valid_for_read && stack.is_blueprint && stack.is_blueprint_setup() && stack.get_blueprint_entity_count() > 0
+  )
+}
+
+function fixOldBlueprint(entities: BlueprintEntity[]): void {
+  // old blueprint, remove old markers
+  const firstEntityMarker = entities.findIndex((e) => e.name === Prototypes.EntityMarker)
+  // remove all entities after the first entity marker
+  // if (firstEntityMarker >= 0) entities.splice(firstEntityMarker)
+  for (const i of $range(firstEntityMarker + 1, entities.length)) {
+    entities[i - 1] = nil!
+  }
+}
+
+/**
+ * Returns entities and original num entities if successful, nil otherwise
+ * @param stack
+ */
+function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiReturn<[BlueprintEntity[], number] | []> {
+  if (!blueprintNeedsPreparation(stack)) return $multi()
+  const entities = stack.get_blueprint_entities()
+  if (!entities) return $multi()
+
+  if (stack.cost_to_build[Prototypes.EntityMarker] !== nil) fixOldBlueprint(entities)
+
+  const numEntities = entities.length
+  let nextIndex = numEntities + 1
+  for (const i of $range(1, numEntities)) {
+    const entity = entities[i - 1]
+    const { direction } = entity
+    if (direction && direction % 2 !== 0) continue // ignore diagonal stuff for now
+    const { name, position } = entity
+    const hasCircuitWires = entity.connections ? true : nil
+    entities[nextIndex - 1] = {
+      entity_number: nextIndex,
+      name: Prototypes.EntityMarker,
+      direction,
+      position,
+      tags: {
+        referencedName: name,
+        hasCircuitWires,
+      } as MarkerTags,
+    }
+    nextIndex++
+  }
+  if (nextIndex === numEntities + 1) {
+    // add one anyway
+    entities[nextIndex - 1] = {
+      entity_number: nextIndex,
+      name: Prototypes.EntityMarker,
+      position: { x: 0, y: 0 },
+      tags: {},
+    }
+  }
+
+  entities[entities.length - 1].tags![IsLastEntity] = true
+
+  stack.set_blueprint_entities(entities)
+
+  return $multi(entities, numEntities)
+}
+
+function revertPreparedBlueprint(stack: BlueprintItemStack): void {
+  const entities = assert(state.blueprintEntities)
+  const numEntities = entities.length
+  const originalNumEntities = state.blueprintOriginalNumEntities!
+  for (const i of $range(numEntities, originalNumEntities! + 1, -1)) {
+    entities[i - 1] = nil!
+  }
+  stack.set_blueprint_entities(entities)
+}
+
+function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
+  if (!stage) return // do nothing
+  const blueprint = getInnerBlueprint(player.cursor_stack)
+  if (!blueprint) {
+    player.print([L_Interaction.BlueprintNotHandled])
+    return
+  }
+  const [entities, numEntities] = prepareBlueprintForStagePaste(blueprint)
+  if (entities !== nil) {
+    state.currentlyInBlueprintPaste = stage
+    state.blueprintEntities = entities
+    state.blueprintOriginalNumEntities = numEntities!
+  }
+}
+
+function onLastEntityMarkerPasted(e: OnBuiltEntityEvent): void {
+  const player = game.get_player(e.player_index)!
+  const blueprint = getInnerBlueprint(player.cursor_stack)
+  revertPreparedBlueprint(assert(blueprint))
+  state.currentlyInBlueprintPaste = nil
+  state.blueprintEntities = nil
+  state.blueprintOriginalNumEntities = nil
+}
+
 function isMarkerEntity(entity: LuaEntity): boolean {
   return (
     entity.name === Prototypes.EntityMarker ||
@@ -380,13 +507,16 @@ function isMarkerEntity(entity: LuaEntity): boolean {
   )
 }
 
-function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage | nil): void {
-  if (stage) handleEntityMarkerBuilt(e, entity, stage)
+function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
+  const tags = e.tags as MarkerTags
+  if (tags !== nil) {
+    handleEntityMarkerBuilt(e, entity, tags, stage)
+    if (tags[IsLastEntity] !== nil) onLastEntityMarkerPasted(e)
+  }
   entity.destroy()
 }
-function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
-  const tags = e.tags as MarkerTags
-  if (!tags) return
+
+function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags, stage: Stage): void {
   const referencedName = tags.referencedName
   if (!referencedName) return
   const correspondingEntity = entity.surface.find_entity(referencedName, entity.position)
@@ -398,7 +528,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage
 }
 
 // Circuit wires
-// There is no event for this, so we listen to player inputs and on_selected_entity_changed
+// There is no event for this, so we listen to player inputs to detect potential changes, and check during on_selected_entity_changed
 
 function markPlayerAffectedWires(player: LuaPlayer): void {
   const entity = player.selected
@@ -475,5 +605,6 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   }
 })
 
-export const _inValidState = (): boolean =>
-  state.currentlyInBuild === nil && state.lastDeleted === nil && state.lastDeleted === nil
+export const _assertInValidState = (): void => {
+  assert.same({}, state, "State is not empty")
+}

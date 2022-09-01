@@ -15,7 +15,7 @@ import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage } from "./AssemblyDef"
-import { BlueprintSettings, getDefaultBlueprintSettings, tryTakeBlueprintWithSettings } from "./blueprint-paste"
+import { BlueprintSettings, getDefaultBlueprintSettings, tryTakeBlueprintWithSettings } from "./blueprint-take"
 import { newEntityMap } from "./EntityMap"
 import { createStageSurface, prepareArea } from "./surfaces"
 
