@@ -61,7 +61,7 @@ export declare const enum L_Interaction {
   /** Cannot move underground belt with upgrade. Try first upgrading in the entity first stage. */
   CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
   /** Not in an assembly */
-  NotInAnAssembly = "bp100.interaction.Not-in-an-assembly",
+  NotInAnAssembly = "bp100.interaction.not-in-an-assembly",
   /** No next stage */
   NoNextStage = "bp100.interaction.no-next-stage",
   /** No previous stage */
@@ -70,6 +70,10 @@ export declare const enum L_Interaction {
   AlreadyAtFirstStage = "bp100.interaction.already-at-first-stage",
   /** Entity is the same in all stages */
   EntitySameInAllStages = "bp100.interaction.entity-same-in-all-stages",
+  /** Blueprint is empty */
+  BlueprintEmpty = "bp100.interaction.blueprint-empty",
+  /** Entities were removed from the blueprint, settings could not be save. Try editing the blueprint again without removing entities. */
+  BlueprintEntitiesRemoved = "bp100.interaction.blueprint-entities-removed",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** Assembly: */
@@ -130,4 +134,6 @@ export declare const enum L_GuiAssemblySettings {
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
+  /** Get blueprint */
+  GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
 }

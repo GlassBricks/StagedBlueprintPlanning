@@ -176,7 +176,6 @@ let state: {
 declare global {
   interface PlayerData {
     lastWireAffectedEntity?: LuaEntity
-    justClosedBlueprint?: BlueprintItemStack
   }
 }
 declare const global: GlobalWithPlayers & {

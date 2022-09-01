@@ -15,6 +15,7 @@ import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage } from "./AssemblyDef"
+import { BlueprintSettings, getDefaultBlueprintSettings, tryTakeBlueprintWithSettings } from "./blueprint-paste"
 import { newEntityMap } from "./EntityMap"
 import { createStageSurface, prepareArea } from "./surfaces"
 
@@ -49,6 +50,9 @@ class AssemblyImpl implements Assembly {
       position: Position
     }
   > = {}
+
+  blueprintInventory?: LuaInventory
+  private blueprintSettings?: BlueprintSettings
 
   valid = true
 
@@ -143,6 +147,25 @@ class AssemblyImpl implements Assembly {
     }
     this.raiseEvent({ type: "assembly-deleted", assembly: this })
     this.localEvents.closeAll()
+    this.blueprintInventory?.destroy()
+  }
+
+  getNewBlueprintInventoryStack(): LuaItemStack {
+    if (this.blueprintInventory === nil) {
+      this.blueprintInventory = game.create_inventory(8)
+    }
+    let [stack] = this.blueprintInventory.find_empty_stack()
+    if (!stack) {
+      this.blueprintInventory.resize(this.blueprintInventory.length * 2)
+      ;[stack] = this.blueprintInventory.find_empty_stack()
+      assert(stack, "Failed to find empty stack")
+    }
+    stack!.set_stack("blueprint")
+    return stack!
+  }
+
+  getBlueprintSettings(): BlueprintSettings {
+    return (this.blueprintSettings ??= getDefaultBlueprintSettings())
   }
 
   private getNewStageName(): string {
@@ -193,6 +216,7 @@ class StageImpl implements Stage {
   readonly valid = true
 
   readonly surfaceIndex: SurfaceIndex
+  blueprintStack?: LuaItemStack
 
   public constructor(
     public readonly assembly: AssemblyImpl,
@@ -211,6 +235,14 @@ class StageImpl implements Stage {
     return new StageImpl(assembly, surface, stageNumber, name)
   }
 
+  takeBlueprint(): BlueprintItemStack | nil {
+    const stack = (this.blueprintStack ??= this.assembly.getNewBlueprintInventoryStack())
+    const takeSuccessful = tryTakeBlueprintWithSettings(stack, this.assembly.getBlueprintSettings(), this.surface)
+    if (!takeSuccessful) return nil
+    stack.label = this.name.get()
+    return stack
+  }
+
   public deleteInAssembly(): void {
     if (!this.valid) return
     this.assembly.deleteStage(this.stageNumber)
@@ -221,6 +253,7 @@ class StageImpl implements Stage {
     ;(this as Mutable<Stage>).valid = false
     global.surfaceIndexToStage.delete(this.surfaceIndex)
     if (this.surface.valid) game.delete_surface(this.surface)
+    if (this.blueprintStack) this.blueprintStack.clear()
   }
 }
 

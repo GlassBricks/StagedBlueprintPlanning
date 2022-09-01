@@ -50,8 +50,12 @@ export interface Stage extends StagePosition {
   readonly name: MutableState<string>
   readonly assembly: Assembly
 
-  readonly valid: boolean
+  /**
+   * The blueprint should be treated as readonly
+   */
+  takeBlueprint(): BlueprintItemStack | nil
 
+  readonly valid: boolean
   deleteInAssembly(): void
 }
 export interface AssemblyCreatedEvent {

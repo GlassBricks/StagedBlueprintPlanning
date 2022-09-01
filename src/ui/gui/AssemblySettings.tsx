@@ -25,7 +25,7 @@ import {
 } from "../../lib/factoriojsx"
 import { Fn, HorizontalPusher, showDialog, SimpleTitleBar, TrashButton } from "../../lib/factoriojsx/components"
 import { Migrations } from "../../lib/migration"
-import { L_GuiAssemblySettings } from "../../locale"
+import { L_GuiAssemblySettings, L_Interaction } from "../../locale"
 import {
   PlayerChangedStageEvent,
   playerCurrentStage,
@@ -211,6 +211,11 @@ export class StageSettings extends Component<{ stage: Stage }> {
             on_gui_click={funcOn(this.resetStage)}
           />
           <button
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiAssemblySettings.GetBlueprint]}
+            on_gui_click={funcOn(this.getBlueprint)}
+          />
+          <button
             style="red_button"
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.DeleteStage]}
@@ -220,6 +225,28 @@ export class StageSettings extends Component<{ stage: Stage }> {
         </flow>
       </>
     )
+  }
+
+  private resetStage() {
+    AssemblyOperations.resetStage(this.stage.assembly, this.stage)
+  }
+
+  private getBlueprint() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    const cursorStack = player.cursor_stack
+    if (!cursorStack) return
+    const blueprint = this.stage.takeBlueprint()
+    if (!blueprint) {
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintEmpty],
+        create_at_cursor: true,
+      })
+      return
+    }
+    if (player.clear_cursor()) {
+      cursorStack.set_stack(blueprint)
+    }
   }
 
   private beginDelete() {
@@ -257,10 +284,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
     recordLastStagePosition(player)
     this.stage.deleteInAssembly()
     teleportToStage(player, toMerge)
-  }
-
-  private resetStage() {
-    AssemblyOperations.resetStage(this.stage.assembly, this.stage)
   }
 }
 
