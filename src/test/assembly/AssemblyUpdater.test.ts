@@ -91,7 +91,7 @@ function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
   assemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
   const found = assembly.content.findCompatible(entity, entity.position, nil) as AssemblyEntity<TestEntity> | nil
-  assert(found)
+  assert(found, "found new entity")
   return { luaEntity: entity, added: found! }
 }
 
@@ -248,7 +248,7 @@ describe("add", () => {
     assertUpdateCalled(added, stageNumber, stageNumber, false)
   })
 
-  test.each([false, true])("add at lower stage does all behaviors, with stage diffs: %s", (withChanges) => {
+  test.each([false, true])("at below stage does all behaviors, with stage diffs: %s", (withChanges) => {
     const { added } = addAndReset(3, 1)
     const newEntity = createEntity()
     if (withChanges) {
@@ -269,6 +269,23 @@ describe("add", () => {
     assert.equal(3, added.getOldStage())
     // creates notification
     assertNotified(newEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
+  })
+
+  test("if can overlap with self, adding below with new direction creates new instead of updating old", () => {
+    const { added } = addAndReset(1, 1, {
+      name: "straight-rail",
+      direction: defines.direction.east,
+    })
+    const { added: newAdded, luaEntity: newEntity } = addEntity({
+      name: "straight-rail",
+      direction: defines.direction.west,
+    })
+    assert.not_equal(added, newAdded)
+    assert.equal(newEntity, newAdded.getWorldEntity(1))
+    assert.equal(1, newAdded.getFirstStage())
+
+    assertNEntities(2)
+    assertUpdateCalled(newAdded, 1, nil, false)
   })
 })
 

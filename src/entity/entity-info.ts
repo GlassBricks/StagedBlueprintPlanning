@@ -31,8 +31,8 @@ export interface EntityInfo {
   categoryName: CategoryName
   pasteRotatableType: PasteRotatableType
   selectionBox: BBoxClass
-  collidesWithSelf: boolean
   type: string
+  overlapsWithSelf: boolean
 }
 
 const typeRemap: PRecord<string, string> = {
@@ -51,6 +51,7 @@ function computeCategoryName(prototype: LuaEntityPrototype | nil): CategoryName 
 }
 
 const pasteRotatableTypes = newLuaSet("assembling-machine", "boiler")
+const overlapWithSelfTypes = newLuaSet("straight-rail", "curved-rail")
 
 function computeEntityInfo(entityName: string): EntityInfo {
   const prototype = getEntityPrototypes()[entityName]
@@ -60,7 +61,7 @@ function computeEntityInfo(entityName: string): EntityInfo {
       pasteRotatableType: PasteRotatableType.None,
       selectionBox: BBox.coords(0, 0, 0, 0),
       type: "",
-      collidesWithSelf: false,
+      overlapsWithSelf: false,
     }
   const categoryName = computeCategoryName(prototype)
   const selectionBox = BBox.from(prototype.selection_box)
@@ -75,21 +76,22 @@ function computeEntityInfo(entityName: string): EntityInfo {
   }
 
   return {
+    type: prototype.type,
     categoryName,
     selectionBox,
     pasteRotatableType,
-    type: prototype.type,
-    collidesWithSelf: prototype.collision_mask_collides_with_self,
+    overlapsWithSelf: overlapWithSelfTypes.has(prototype.type),
   }
 }
 
 const entityInfoCache: PRecord<string, EntityInfo> = {}
 
-export function getEntityInfo(entityName: string): EntityInfo {
+function getEntityInfo(entityName: string): EntityInfo {
   const existing = entityInfoCache[entityName]
   if (existing !== nil) return existing
   return (entityInfoCache[entityName] = computeEntityInfo(entityName))
 }
+export { getEntityInfo }
 
 export function getEntityCategory(entityName: string): CategoryName {
   return getEntityInfo(entityName).categoryName
@@ -103,6 +105,6 @@ export function getPastRotatableType(entityName: string): PasteRotatableType {
 export function isUndergroundBeltType(entityName: string): boolean {
   return getEntityInfo(entityName).type === "underground-belt"
 }
-export function collidesWithSelf(entityName: string): boolean {
-  return getEntityInfo(entityName).collidesWithSelf
+export function overlapsWithSelf(entityName: string): boolean {
+  return getEntityInfo(entityName).overlapsWithSelf
 }

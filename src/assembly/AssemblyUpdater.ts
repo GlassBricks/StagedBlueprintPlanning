@@ -12,7 +12,7 @@
 import { L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { collidesWithSelf, getEntityCategory, isUndergroundBeltType } from "../entity/entity-info"
+import { getEntityCategory, isUndergroundBeltType, overlapsWithSelf } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/undergrounds"
 import { L_Interaction } from "../locale"
@@ -135,9 +135,9 @@ export function createAssemblyUpdater(
     const { content } = assembly
 
     const entityName = entity.name
-    const existing = collidesWithSelf(entityName)
+    const existing = overlapsWithSelf(entityName)
       ? content.findCompatible(entity, position, nil)
-      : content.findCompatibleAnyDirection(entityName, position) // if doesn't collide with self, search any direction
+      : content.findCompatibleAnyDirection(entityName, position) // if doesn't overlap, find in any direction to avoid issues
 
     if (existing) {
       const existingStage = existing.getFirstStage()
@@ -389,7 +389,6 @@ export function createAssemblyUpdater(
     byPlayer: PlayerIndex | nil,
     previousDirection: defines.direction,
   ): void {
-    // todo: handle rotation of preview entities?
     const existing = getCompatibleOrAdd(assembly, entity, stage, byPlayer, previousDirection)
     if (!existing) return
 
