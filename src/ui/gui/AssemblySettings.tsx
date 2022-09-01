@@ -43,8 +43,8 @@ declare global {
 declare const global: GlobalWithPlayers
 
 const stageListBoxHeight = 28 * 12
-const stageListBoxWidth = 150
-const stageSettingsWidth = 150
+const stageListBoxWidth = 140
+const stageSettingsWidth = 160
 
 const insertButtonWidth = 100
 
@@ -197,6 +197,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
             name={props.stage.name}
             displayName={props.stage.name}
             renameTooltip={[L_GuiAssemblySettings.RenameStage]}
+            maximalWidth={stageSettingsWidth - 35}
           />
           <HorizontalPusher />
         </frame>

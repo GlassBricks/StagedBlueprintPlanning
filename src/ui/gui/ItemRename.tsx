@@ -14,9 +14,10 @@ import { Component, FactorioJsx, Spec } from "../../lib/factoriojsx"
 import { Fn, RenameButton } from "../../lib/factoriojsx/components"
 
 export interface ItemRenameProps {
-  readonly name: MutableState<string>
-  readonly displayName: State<LocalisedString>
-  readonly renameTooltip: LocalisedString
+  name: MutableState<string>
+  displayName: State<LocalisedString>
+  renameTooltip: LocalisedString
+  maximalWidth?: number
 }
 
 @RegisterClass("gui:ItemRename")
@@ -47,14 +48,13 @@ export class ItemRename extends Component<ItemRenameProps> {
         clear_and_focus_on_right_click
         lose_focus_on_confirm
         on_gui_confirmed={this.isRenaming.setValueFn(false)}
+        styleMod={{ maximal_width: this.item.maximalWidth ?? 200 }}
       />
     ) : (
       <label
         style="subheader_caption_label"
         caption={this.item.displayName}
-        styleMod={{
-          maximal_width: 200,
-        }}
+        styleMod={{ maximal_width: this.item.maximalWidth ?? 200 }}
       />
     )
   }
