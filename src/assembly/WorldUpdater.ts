@@ -59,7 +59,7 @@ export function createWorldUpdater(
   highlighter: EntityHighlighter,
 ): WorldUpdater {
   const { createEntity, updateEntity } = entityCreator
-  const { updateWireConnections } = wireHandler
+  const { updateCircuitConnections } = wireHandler
   const { updateHighlights } = highlighter
 
   function doUpdateWorldEntities(
@@ -91,7 +91,7 @@ export function createWorldUpdater(
       if (luaEntity) {
         if (stageNum !== firstStage) makeEntityIndestructible(luaEntity)
         else makeEntityDestructible(luaEntity)
-        updateWireConnections(assembly, entity, stageNum, luaEntity)
+        updateCircuitConnections(assembly, entity, stageNum, luaEntity)
       }
     }
   }

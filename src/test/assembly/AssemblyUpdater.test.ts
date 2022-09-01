@@ -20,8 +20,8 @@ import {
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
+import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, StageDiffs, StageNumber } from "../../entity/AssemblyEntity"
-import { AssemblyWireConnection, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
 import { Entity } from "../../entity/Entity"
 import { getEntityInfo } from "../../entity/entity-info"
 import { UndergroundBeltEntity } from "../../entity/undergrounds"
@@ -63,7 +63,7 @@ before_each(() => {
     reviveSettingsRemnant: spyFn(),
   }
   wireSaver = {
-    getWireConnectionDiff: stub<WireSaver["getWireConnectionDiff"]>().invokes(() => $multi([], [])),
+    getCircuitConnectionDiff: stub<WireSaver["getCircuitConnectionDiff"]>().invokes(() => $multi([], [])),
   }
   worldNotifier = {
     createNotification: spy(),
@@ -968,8 +968,8 @@ describe("cleanup tool", () => {
 
 describe("circuit wires", () => {
   function setupNewWire(luaEntity1: LuaEntity, entity1: AssemblyEntity<TestEntity>): void {
-    wireSaver.getWireConnectionDiff.invokes((_, entity2) => {
-      wireSaver.getWireConnectionDiff.invokes(() => false as any)
+    wireSaver.getCircuitConnectionDiff.invokes((_, entity2) => {
+      wireSaver.getCircuitConnectionDiff.invokes(() => false as any)
       return $multi(
         [
           {
@@ -978,28 +978,28 @@ describe("circuit wires", () => {
             toEntity: entity2,
             fromId: 1,
             toId: 0,
-          } as AssemblyWireConnection,
+          } as AsmCircuitConnection,
         ],
         [],
       )
     })
   }
   function assertSingleWireMatches(entity2: AssemblyEntity<TestEntity>, entity1: AssemblyEntity<TestEntity>): void {
-    const expectedConnection: AssemblyWireConnection = {
+    const expectedConnection: AsmCircuitConnection = {
       wire: defines.wire_type.red,
       fromEntity: entity2,
       toEntity: entity1,
       fromId: 0,
       toId: 1,
     }
-    function assertConnectionsMatch(connections: LuaSet<AssemblyWireConnection> | nil) {
+    function assertConnectionsMatch(connections: LuaSet<AsmCircuitConnection> | nil) {
       if (!connections) error("no connections")
       assert.equal(1, table_size(connections))
-      const value = next(connections)[0] as AssemblyWireConnection
-      assert.true(wireConnectionEquals(value, expectedConnection), "connections do not match")
+      const value = next(connections)[0] as AsmCircuitConnection
+      assert.true(circuitConnectionEquals(value, expectedConnection), "connections do not match")
     }
-    assertConnectionsMatch(assembly.content.getWireConnections(entity1)?.get(entity2))
-    assertConnectionsMatch(assembly.content.getWireConnections(entity1)?.get(entity2))
+    assertConnectionsMatch(assembly.content.getCircuitConnections(entity1)?.get(entity2))
+    assertConnectionsMatch(assembly.content.getCircuitConnections(entity1)?.get(entity2))
   }
 
   test("added circuit wires when entity added", () => {
@@ -1038,15 +1038,15 @@ describe("circuit wires", () => {
       setupNewWire(luaEntity1, entity1)
       const { added: entity2 } = addAndReset()
 
-      const connection = next(assembly.content.getWireConnections(entity1)!.get(entity2)!)[0] as AssemblyWireConnection
+      const connection = next(assembly.content.getCircuitConnections(entity1)!.get(entity2)!)[0] as AsmCircuitConnection
 
-      wireSaver.getWireConnectionDiff.invokes(() => {
-        wireSaver.getWireConnectionDiff.invokes(() => false as any)
+      wireSaver.getCircuitConnectionDiff.invokes(() => {
+        wireSaver.getCircuitConnectionDiff.invokes(() => false as any)
         return $multi([], [connection])
       })
       assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage, playerIndex)
-      assert.falsy(assembly.content.getWireConnections(entity1)?.get(entity2))
-      assert.falsy(assembly.content.getWireConnections(entity2)?.get(entity1))
+      assert.falsy(assembly.content.getCircuitConnections(entity1)?.get(entity2))
+      assert.falsy(assembly.content.getCircuitConnections(entity2)?.get(entity1))
       assertUpdateCalled(entity1, 1, nil, false)
       assertNEntities(2)
     })

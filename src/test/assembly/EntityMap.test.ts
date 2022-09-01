@@ -10,8 +10,8 @@
  */
 
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
+import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
 import { BasicEntityInfo } from "../../entity/Entity"
 
 let content: MutableEntityMap
@@ -91,7 +91,7 @@ describe("findCompatible", () => {
   })
 })
 
-describe("wire connections", () => {
+describe("circuit connections", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   before_each(() => {
@@ -100,11 +100,11 @@ describe("wire connections", () => {
     content.add(entity1)
     content.add(entity2)
   })
-  function createWireConnection(
+  function createCircuitConnection(
     fromEntity: AssemblyEntity,
     toEntity: AssemblyEntity,
     wireType: defines.wire_type = defines.wire_type.red,
-  ): AssemblyWireConnection {
+  ): AsmCircuitConnection {
     return {
       fromEntity,
       toEntity,
@@ -114,30 +114,30 @@ describe("wire connections", () => {
     }
   }
 
-  test("getWireConnections initially empty", () => {
-    assert.nil(content.getWireConnections(entity1))
+  test("getCircuitConnections initially empty", () => {
+    assert.nil(content.getCircuitConnections(entity1))
   })
-  test("addWireConnection shows up in getWireConnections", () => {
-    const connection = createWireConnection(entity1, entity2)
-    content.addWireConnection(connection)
-    assert.same(newLuaSet(connection), content.getWireConnections(entity1)!.get(entity2))
-    assert.same(newLuaSet(connection), content.getWireConnections(entity2)!.get(entity1))
-    const connection2 = createWireConnection(entity1, entity2, defines.wire_type.green)
-    content.addWireConnection(connection2)
-    assert.same(newLuaSet(connection, connection2), content.getWireConnections(entity1)!.get(entity2))
-    assert.same(newLuaSet(connection, connection2), content.getWireConnections(entity2)!.get(entity1))
+  test("addCircuitConnection shows up in getCircuitConnections", () => {
+    const connection = createCircuitConnection(entity1, entity2)
+    content.addCircuitConnection(connection)
+    assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
+    assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
+    const connection2 = createCircuitConnection(entity1, entity2, defines.wire_type.green)
+    content.addCircuitConnection(connection2)
+    assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity1)!.get(entity2))
+    assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity2)!.get(entity1))
   })
   test("does not add if identical connection is already present", () => {
-    const connection = createWireConnection(entity1, entity2)
-    const connection2 = createWireConnection(entity2, entity1)
-    content.addWireConnection(connection)
-    content.addWireConnection(connection2)
-    assert.same(newLuaSet(connection), content.getWireConnections(entity1)!.get(entity2))
-    assert.same(newLuaSet(connection), content.getWireConnections(entity2)!.get(entity1))
+    const connection = createCircuitConnection(entity1, entity2)
+    const connection2 = createCircuitConnection(entity2, entity1)
+    content.addCircuitConnection(connection)
+    content.addCircuitConnection(connection2)
+    assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
+    assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
   })
   test("deleting entity removes its connections", () => {
-    content.addWireConnection(createWireConnection(entity1, entity2))
+    content.addCircuitConnection(createCircuitConnection(entity1, entity2))
     content.delete(entity1)
-    assert.same(nil, content.getWireConnections(entity2) ?? nil)
+    assert.same(nil, content.getCircuitConnections(entity2) ?? nil)
   })
 })

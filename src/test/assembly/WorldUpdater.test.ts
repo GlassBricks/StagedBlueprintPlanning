@@ -45,7 +45,7 @@ before_each(() => {
   )
 
   mockEntityCreator = createMockEntityCreator()
-  wireUpdater = { updateWireConnections: spy() }
+  wireUpdater = { updateCircuitConnections: spy() }
   highlighter = {
     updateHighlights: spy(),
     deleteHighlights: spy(),
@@ -134,7 +134,7 @@ describe("updateWorldEntities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     for (let i = 1; i <= 3; i++)
       assert
-        .spy(wireUpdater.updateWireConnections)
+        .spy(wireUpdater.updateCircuitConnections)
         .called_with(match.ref(assembly), match.ref(entity), i, entity.getWorldEntity(i)!)
   })
 
@@ -283,7 +283,7 @@ describe("circuit wires", () => {
   }
 
   function addWireToAssembly() {
-    assembly.content.addWireConnection({
+    assembly.content.addCircuitConnection({
       fromEntity: entity1,
       toEntity: entity2,
       wire: defines.wire_type.red,

@@ -9,47 +9,47 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyWireConnection, getDirectionalInfo, wireConnectionEquals } from "../../entity/AssemblyWireConnection"
+import { AsmCircuitConnection, circuitConnectionEquals, getDirectionalInfo } from "../../entity/AsmCircuitConnection"
 import { shallowCopy } from "../../lib"
 
-test("wireConnectionEquals", () => {
+test("circuitConnectionEquals", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const wireConnectionA: AssemblyWireConnection = {
+  const circuitConnectionA: AsmCircuitConnection = {
     fromEntity: entityA,
     fromId: defines.circuit_connector_id.accumulator,
     toEntity: entityB,
     toId: defines.circuit_connector_id.constant_combinator,
     wire: defines.wire_type.red,
   }
-  const identical = shallowCopy(wireConnectionA)
-  const wireConnectionB: AssemblyWireConnection = {
+  const identical = shallowCopy(circuitConnectionA)
+  const circuitConnectionB: AsmCircuitConnection = {
     toEntity: entityA,
     toId: defines.circuit_connector_id.accumulator,
     fromEntity: entityB,
     fromId: defines.circuit_connector_id.constant_combinator,
     wire: defines.wire_type.red,
   }
-  assert.true(wireConnectionEquals(wireConnectionA, identical))
-  assert.true(wireConnectionEquals(wireConnectionA, wireConnectionB))
+  assert.true(circuitConnectionEquals(circuitConnectionA, identical))
+  assert.true(circuitConnectionEquals(circuitConnectionA, circuitConnectionB))
 
-  const different: AssemblyWireConnection = {
+  const different: AsmCircuitConnection = {
     toEntity: entityA,
     toId: defines.circuit_connector_id.constant_combinator,
     fromEntity: entityA,
     fromId: defines.circuit_connector_id.accumulator,
     wire: defines.wire_type.red,
   }
-  assert.false(wireConnectionEquals(wireConnectionA, different))
-  assert.false(wireConnectionEquals(wireConnectionB, different))
+  assert.false(circuitConnectionEquals(circuitConnectionA, different))
+  assert.false(circuitConnectionEquals(circuitConnectionB, different))
 })
 
 test("getDirectionalInfo", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const wireConnectionA: AssemblyWireConnection = {
+  const circuitConnectionA: AsmCircuitConnection = {
     fromEntity: entityA,
     fromId: defines.circuit_connector_id.accumulator,
     toEntity: entityB,
@@ -58,10 +58,10 @@ test("getDirectionalInfo", () => {
   }
   assert.same(
     [entityB, defines.circuit_connector_id.accumulator, defines.circuit_connector_id.constant_combinator],
-    getDirectionalInfo(wireConnectionA, entityA),
+    getDirectionalInfo(circuitConnectionA, entityA),
   )
   assert.same(
     [entityA, defines.circuit_connector_id.constant_combinator, defines.circuit_connector_id.accumulator],
-    getDirectionalInfo(wireConnectionA, entityB),
+    getDirectionalInfo(circuitConnectionA, entityB),
   )
 })

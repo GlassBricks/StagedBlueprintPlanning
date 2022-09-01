@@ -9,14 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { AsmCircuitConnection, getDirectionalInfo } from "../entity/AsmCircuitConnection"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { AssemblyWireConnection, getDirectionalInfo } from "../entity/AssemblyWireConnection"
 import { AssemblyContent } from "./AssemblyContent"
-import { AssemblyEntityConnections, EntityMap } from "./EntityMap"
+import { AsmEntityCircuitConnections, EntityMap } from "./EntityMap"
 
 /** @noSelf */
 export interface WireUpdater {
-  updateWireConnections(
+  updateCircuitConnections(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
     stageNumber: StageNumber,
@@ -26,18 +26,18 @@ export interface WireUpdater {
 
 /** @noSelf */
 export interface WireSaver {
-  getWireConnectionDiff(
+  getCircuitConnectionDiff(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
     stageNumber: StageNumber,
     luaEntity: LuaEntity,
-  ): LuaMultiReturn<[added: AssemblyWireConnection[], removed: AssemblyWireConnection[]] | [_: false, _?: never]>
+  ): LuaMultiReturn<[added: AsmCircuitConnection[], removed: AsmCircuitConnection[]] | [_: false, _?: never]>
 }
 
 /** @noSelf */
 export interface WireHandler extends WireUpdater, WireSaver {}
 
-function updateWireConnections(
+function updateCircuitConnections(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
   stageNumber: StageNumber,
@@ -46,7 +46,7 @@ function updateWireConnections(
   const existingConnections = luaEntity.circuit_connection_definitions
   if (!existingConnections) return
 
-  const assemblyConnections = assembly.content.getWireConnections(entity)
+  const assemblyConnections = assembly.content.getCircuitConnections(entity)
   if (!assemblyConnections) {
     luaEntity.disconnect_neighbour(defines.wire_type.red)
     luaEntity.disconnect_neighbour(defines.wire_type.green)
@@ -77,15 +77,15 @@ function updateWireConnections(
   }
 }
 
-function getWireConnectionDiff(
+function getCircuitConnectionDiff(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
-): LuaMultiReturn<[added: AssemblyWireConnection[], removed: AssemblyWireConnection[]] | [false]> {
+): LuaMultiReturn<[added: AsmCircuitConnection[], removed: AsmCircuitConnection[]] | [false]> {
   const existingConnections = luaEntity.circuit_connection_definitions
   if (!existingConnections) return $multi(false)
-  const assemblyConnections = assembly.content.getWireConnections(entity)
+  const assemblyConnections = assembly.content.getCircuitConnections(entity)
 
   const [matchingConnections, extraConnections] = analyzeExistingConnections(
     assemblyConnections,
@@ -93,7 +93,7 @@ function getWireConnectionDiff(
     assembly.content,
   )
 
-  const added: AssemblyWireConnection[] = []
+  const added: AsmCircuitConnection[] = []
   for (const [definition, otherEntity] of extraConnections) {
     added.push({
       fromEntity: entity,
@@ -104,7 +104,7 @@ function getWireConnectionDiff(
     })
   }
 
-  const removed: AssemblyWireConnection[] = []
+  const removed: AsmCircuitConnection[] = []
   if (assemblyConnections) {
     for (const [otherEntity, connections] of assemblyConnections) {
       const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
@@ -120,16 +120,16 @@ function getWireConnectionDiff(
 }
 
 function analyzeExistingConnections(
-  assemblyConnections: AssemblyEntityConnections | nil,
+  assemblyConnections: AsmEntityCircuitConnections | nil,
   existingConnections: readonly CircuitConnectionDefinition[],
   content: EntityMap,
 ): LuaMultiReturn<
   [
-    matchingConnections: LuaMap<AssemblyWireConnection, CircuitConnectionDefinition>,
+    matchingConnections: LuaMap<AsmCircuitConnection, CircuitConnectionDefinition>,
     extraConnections: LuaMap<CircuitConnectionDefinition, AssemblyEntity>,
   ]
 > {
-  const matching = new LuaMap<AssemblyWireConnection, CircuitConnectionDefinition>()
+  const matching = new LuaMap<AsmCircuitConnection, CircuitConnectionDefinition>()
   const extra = new LuaMap<CircuitConnectionDefinition, AssemblyEntity>()
 
   for (const existingConnection of existingConnections) {
@@ -149,10 +149,10 @@ function analyzeExistingConnections(
 }
 
 function findingMatchingConnection(
-  connections: ReadonlyLuaSet<AssemblyWireConnection>,
+  connections: ReadonlyLuaSet<AsmCircuitConnection>,
   toEntity: AssemblyEntity,
   { source_circuit_id, target_circuit_id, wire }: CircuitConnectionDefinition,
-): AssemblyWireConnection | nil {
+): AsmCircuitConnection | nil {
   for (const connection of connections) {
     if (connection.wire === wire) {
       const [, toId, fromId] = getDirectionalInfo(connection, toEntity)
@@ -163,6 +163,6 @@ function findingMatchingConnection(
 }
 
 export const DefaultWireHandler: WireHandler = {
-  updateWireConnections,
-  getWireConnectionDiff,
+  updateCircuitConnections,
+  getCircuitConnectionDiff,
 }

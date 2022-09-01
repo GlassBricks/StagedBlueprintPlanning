@@ -11,8 +11,8 @@
 
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { DefaultWireHandler, WireHandler } from "../../assembly/WireHandler"
+import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { AssemblyWireConnection } from "../../entity/AssemblyWireConnection"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
 let assembly: AssemblyContent
@@ -45,7 +45,7 @@ function addWire1(): void {
     target_circuit_id: defines.circuit_connector_id.combinator_output,
   })
 }
-function getExpectedWire1(): AssemblyWireConnection {
+function getExpectedWire1(): AsmCircuitConnection {
   return {
     fromEntity: entity1,
     toEntity: entity2,
@@ -62,7 +62,7 @@ function addWire2(): void {
     target_circuit_id: defines.circuit_connector_id.combinator_output,
   })
 }
-function getExpectedWire2(): AssemblyWireConnection {
+function getExpectedWire2(): AsmCircuitConnection {
   return {
     fromEntity: entity1,
     toEntity: entity2,
@@ -80,7 +80,7 @@ function addWire3(): void {
     target_circuit_id: defines.circuit_connector_id.combinator_output,
   })
 }
-function getExpectedWire3(): AssemblyWireConnection {
+function getExpectedWire3(): AsmCircuitConnection {
   return {
     fromEntity: entity1,
     toEntity: entity2,
@@ -90,11 +90,11 @@ function getExpectedWire3(): AssemblyWireConnection {
   }
 }
 
-describe("update wire connections", () => {
+describe("update circuit connections", () => {
   test("can remove wires", () => {
     addWire1()
     addWire2()
-    handler.updateWireConnections(assembly, entity1, 1, luaEntity1)
+    handler.updateCircuitConnections(assembly, entity1, 1, luaEntity1)
     assert.same([], luaEntity1.circuit_connection_definitions ?? [])
     assert.same([], luaEntity2.circuit_connection_definitions ?? [])
   })
@@ -112,20 +112,20 @@ describe("update wire connections", () => {
     )
   }
   test("can add wires", () => {
-    assembly.content.addWireConnection(getExpectedWire1())
-    handler.updateWireConnections(assembly, entity1, 1, luaEntity1)
+    assembly.content.addCircuitConnection(getExpectedWire1())
+    handler.updateCircuitConnections(assembly, entity1, 1, luaEntity1)
     assertWire1Matches()
   })
   test("can update wires", () => {
     addWire1()
     addWire2()
-    assembly.content.addWireConnection(getExpectedWire1())
-    handler.updateWireConnections(assembly, entity1, 1, luaEntity1)
+    assembly.content.addCircuitConnection(getExpectedWire1())
+    handler.updateCircuitConnections(assembly, entity1, 1, luaEntity1)
     assertWire1Matches()
   })
 })
 
-describe("getWireConnectionDiff", () => {
+describe("getCircuitConnectionDiff", () => {
   test.each<[number[], number[], string]>([
     [[1, 2], [1, 2], "no change"],
     [[1], [1, 2], "add"],
@@ -136,9 +136,9 @@ describe("getWireConnectionDiff", () => {
     [[1, 2], [1, 3], "mixed"],
   ])("diff: %s -> %s: %s", (existing, world) => {
     for (const number of existing)
-      assembly.content.addWireConnection([getExpectedWire1, getExpectedWire2, getExpectedWire3][number - 1]())
+      assembly.content.addCircuitConnection([getExpectedWire1, getExpectedWire2, getExpectedWire3][number - 1]())
     for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
-    const diff = handler.getWireConnectionDiff(assembly, entity1, 1, luaEntity1)
+    const diff = handler.getCircuitConnectionDiff(assembly, entity1, 1, luaEntity1)
 
     const wires = [getExpectedWire1(), getExpectedWire2(), getExpectedWire3()]
     const added = world.filter((n) => !existing.includes(n)).map((n) => wires[n - 1])

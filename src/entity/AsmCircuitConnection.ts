@@ -11,7 +11,7 @@
 
 import { AssemblyEntity } from "./AssemblyEntity"
 
-export interface AssemblyWireConnection {
+export interface AsmCircuitConnection {
   readonly fromEntity: AssemblyEntity
   readonly fromId: defines.circuit_connector_id
 
@@ -21,7 +21,7 @@ export interface AssemblyWireConnection {
   readonly wire: defines.wire_type
 }
 
-export function wireConnectionEquals(a: AssemblyWireConnection, b: AssemblyWireConnection): boolean {
+export function circuitConnectionEquals(a: AsmCircuitConnection, b: AsmCircuitConnection): boolean {
   if (a === b) return true
   if (a.wire !== b.wire) return false
   return (
@@ -31,7 +31,7 @@ export function wireConnectionEquals(a: AssemblyWireConnection, b: AssemblyWireC
 }
 
 export function getDirectionalInfo(
-  connection: AssemblyWireConnection,
+  connection: AsmCircuitConnection,
   fromEntity: AssemblyEntity,
 ): LuaMultiReturn<
   [otherEntity: AssemblyEntity, fromId: defines.circuit_connector_id, toId: defines.circuit_connector_id]

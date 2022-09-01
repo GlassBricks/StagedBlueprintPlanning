@@ -10,8 +10,8 @@
  */
 
 import { oppositedirection } from "util"
+import { AsmCircuitConnection, circuitConnectionEquals } from "../entity/AsmCircuitConnection"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory, getPasteRotatableType, PasteRotatableType } from "../entity/entity-info"
 import { isEmpty, MutableMap2D, newMap2D, RegisterClass } from "../lib"
@@ -27,7 +27,7 @@ export interface EntityMap {
   ): AssemblyEntity | nil
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
 
-  getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil
+  getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil
 
   countNumEntities(): number
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity>
@@ -38,16 +38,16 @@ export interface MutableEntityMap extends EntityMap {
   delete<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
 
   /** Returns if connection was successfully added. */
-  addWireConnection(wireConnection: AssemblyWireConnection): boolean
-  removeWireConnection(wireConnection: AssemblyWireConnection): void
+  addCircuitConnection(circuitConnection: AsmCircuitConnection): boolean
+  removeCircuitConnection(circuitConnection: AsmCircuitConnection): void
 
   /** Modifies all entities */
   insertStage(stageNumber: StageNumber): void
   deleteStage(stageNumber: StageNumber): void
 }
 
-export type AssemblyEntityConnections = LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>
-type EntityData = LuaMap<AssemblyEntity, LuaSet<AssemblyWireConnection>>
+export type AsmEntityCircuitConnections = LuaMap<AssemblyEntity, LuaSet<AsmCircuitConnection>>
+type EntityData = AsmEntityCircuitConnections
 
 @RegisterClass("EntityMap")
 class EntityMapImpl implements MutableEntityMap {
@@ -137,13 +137,13 @@ class EntityMapImpl implements MutableEntityMap {
     }
   }
 
-  getWireConnections(entity: AssemblyEntity): AssemblyEntityConnections | nil {
+  getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil {
     const value = this.entities.get(entity)
-    if (value && next(value)[0] !== nil) return value as AssemblyEntityConnections
+    if (value && next(value)[0] !== nil) return value as AsmEntityCircuitConnections
   }
-  addWireConnection(wireConnection: AssemblyWireConnection): boolean {
+  addCircuitConnection(circuitConnection: AsmCircuitConnection): boolean {
     const { entities } = this
-    const { fromEntity, toEntity } = wireConnection
+    const { fromEntity, toEntity } = circuitConnection
     const fromData = entities.get(fromEntity),
       toData = entities.get(toEntity)
     if (!fromData || !toData) return false
@@ -152,40 +152,39 @@ class EntityMapImpl implements MutableEntityMap {
       toSet = toData.get(fromEntity)
     if (fromSet) {
       for (const otherConnection of fromSet) {
-        if (wireConnectionEquals(wireConnection, otherConnection)) return false
+        if (circuitConnectionEquals(circuitConnection, otherConnection)) return false
       }
     }
-    // add wire connection
     if (fromSet) {
-      fromSet.add(wireConnection)
+      fromSet.add(circuitConnection)
     } else {
-      fromData.set(toEntity, newLuaSet(wireConnection))
+      fromData.set(toEntity, newLuaSet(circuitConnection))
     }
     if (toSet) {
-      toSet.add(wireConnection)
+      toSet.add(circuitConnection)
     } else {
-      toData.set(fromEntity, newLuaSet(wireConnection))
+      toData.set(fromEntity, newLuaSet(circuitConnection))
     }
     return true
   }
 
-  removeWireConnection(wireConnection: AssemblyWireConnection): void {
+  removeCircuitConnection(circuitConnection: AsmCircuitConnection): void {
     const { entities } = this
-    const { fromEntity, toEntity } = wireConnection
+    const { fromEntity, toEntity } = circuitConnection
 
     const fromData = entities.get(fromEntity),
       toData = entities.get(toEntity)
     if (fromData) {
       const fromSet = fromData.get(toEntity)
       if (fromSet) {
-        fromSet.delete(wireConnection)
+        fromSet.delete(circuitConnection)
         if (isEmpty(fromSet)) fromData.delete(toEntity)
       }
     }
     if (toData) {
       const toSet = toData.get(fromEntity)
       if (toSet) {
-        toSet.delete(wireConnection)
+        toSet.delete(circuitConnection)
         if (isEmpty(toSet)) toData.delete(fromEntity)
       }
     }
