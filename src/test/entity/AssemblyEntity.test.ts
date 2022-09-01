@@ -386,3 +386,14 @@ test("delete layer 1 merges with layer 2 instead", () => {
   entity.deleteStage(2)
   assert.same(value, entity.getValueAtStage(1))
 })
+
+test("delete layer 1 sets layer 1 properties to layer 2 properties", () => {
+  const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 1)
+  entity.setProperty(1, "foo", "bar1")
+  entity.setProperty(2, "foo", "bar2")
+  entity.setProperty(3, "foo", "bar3")
+
+  entity.deleteStage(1)
+  assert.equal("bar2", entity.getProperty(1, "foo"))
+  assert.equal("bar3", entity.getProperty(2, "foo"))
+})

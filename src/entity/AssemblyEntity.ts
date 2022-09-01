@@ -442,11 +442,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   deleteStage(stageNumber: StageNumber): void {
-    if (stageNumber === 1) stageNumber = 2 // merge with stage 2 instead
-    this.mergeStageDiffWithBelow(stageNumber)
+    const stageToMerge = stageNumber === 1 ? 2 : stageNumber
+    this.mergeStageDiffWithBelow(stageToMerge)
 
-    if (this.firstStage >= stageNumber) this.firstStage--
-    if (this.oldStage && this.oldStage >= stageNumber) this.oldStage--
+    if (this.firstStage >= stageToMerge) this.firstStage--
+    if (this.oldStage && this.oldStage >= stageToMerge) this.oldStage--
 
     shiftNumberKeysDown(this.stageDiffs, stageNumber)
     for (const [, byType] of pairs(this.stageProperties)) {
