@@ -134,6 +134,16 @@ export declare const enum L_GuiAssemblySettings {
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
-  /** Get blueprint */
+  /** Get blueprint [img=info] */
   GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
+  /** Gets a blueprint of the current stage.\nChanged to the given blueprint will [font=default-bold]not[/font] be saved. */
+  GetBlueprintTooltip = "bp100.gui.assembly-settings.get-blueprint-tooltip",
+  /** Edit blueprint [img=info] */
+  EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
+  /** Edits the blueprint of the current stage.\nChanges (icons, snap-to-grid, grid position, etc.) [font=default-bold]will[/font] be saved.\nGrid position and snap-to-grid settings will be applied to [font=default-bold]all[/font] stages in the assembly. */
+  EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
+  /** Get blueprint book */
+  GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
+  /** Gets a blueprint book of all stages in the assembly.\nYou can configure individual blueprints in the stage settings. */
+  GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
 }

@@ -15,7 +15,12 @@ import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import { Assembly, AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage } from "./AssemblyDef"
-import { BlueprintSettings, getDefaultBlueprintSettings, tryTakeBlueprintWithSettings } from "./blueprint-take"
+import {
+  BlueprintSettings,
+  editBlueprintSettings,
+  getDefaultBlueprintSettings,
+  tryTakeBlueprintWithSettings,
+} from "./blueprint-take"
 import { newEntityMap } from "./EntityMap"
 import { createStageSurface, prepareArea } from "./surfaces"
 
@@ -168,6 +173,20 @@ class AssemblyImpl implements Assembly {
     return (this.blueprintSettings ??= getDefaultBlueprintSettings())
   }
 
+  public makeBlueprintBook(stack: LuaItemStack): void {
+    stack.clear()
+    stack.set_stack("blueprint-book")
+    stack.label = this.name.get()
+
+    const inventory = stack.get_inventory(defines.inventory.item_main)!
+    assert(inventory, "Failed to get blueprint book inventory")
+
+    for (const [, stage] of ipairs(this.stages)) {
+      const blueprint = stage.takeBlueprint()
+      if (blueprint) inventory.insert(blueprint)
+    }
+  }
+
   private getNewStageName(): string {
     let subName = ""
     for (let i = 1; ; i++) {
@@ -241,6 +260,13 @@ class StageImpl implements Stage {
     if (!takeSuccessful) return nil
     stack.label = this.name.get()
     return stack
+  }
+
+  editBlueprint(player: LuaPlayer): boolean {
+    const blueprint = this.takeBlueprint()
+    if (blueprint === nil) return false
+    editBlueprintSettings(player, blueprint, this.assembly.getBlueprintSettings())
+    return true
   }
 
   public deleteInAssembly(): void {

@@ -42,6 +42,8 @@ export interface Assembly extends AssemblyContent {
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
 
+  makeBlueprintBook(stackToSet: LuaItemStack): void
+
   readonly valid: boolean
 
   delete(): void
@@ -50,10 +52,11 @@ export interface Stage extends StagePosition {
   readonly name: MutableState<string>
   readonly assembly: Assembly
 
-  /**
-   * The blueprint should be treated as readonly
-   */
+  /** The blueprint should be treated as readonly. */
   takeBlueprint(): BlueprintItemStack | nil
+
+  /** Opens blueprint edit gui for player. Returns if successful. */
+  editBlueprint(player: LuaPlayer): boolean
 
   readonly valid: boolean
   deleteInAssembly(): void

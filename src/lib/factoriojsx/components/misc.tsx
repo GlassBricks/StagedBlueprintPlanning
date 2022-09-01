@@ -20,6 +20,15 @@ export const HorizontalPusher = (): Spec => (
   />
 )
 
+export const VerticalPusher = (): Spec => (
+  <empty-widget
+    styleMod={{
+      vertically_stretchable: true,
+      vertically_squashable: true,
+    }}
+  />
+)
+
 export const HorizontalSpacer = (props: { width: number }): Spec => (
   <empty-widget
     styleMod={{

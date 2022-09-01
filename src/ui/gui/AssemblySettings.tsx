@@ -23,7 +23,14 @@ import {
   Spec,
   Tracker,
 } from "../../lib/factoriojsx"
-import { Fn, HorizontalPusher, showDialog, SimpleTitleBar, TrashButton } from "../../lib/factoriojsx/components"
+import {
+  Fn,
+  HorizontalPusher,
+  showDialog,
+  SimpleTitleBar,
+  TrashButton,
+  VerticalPusher,
+} from "../../lib/factoriojsx/components"
 import { Migrations } from "../../lib/migration"
 import { L_GuiAssemblySettings, L_Interaction } from "../../locale"
 import {
@@ -78,28 +85,39 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
             <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
           </frame>
           <flow
-            direction="horizontal"
+            direction="vertical"
             styleMod={{
               padding: [5, 10],
-              vertical_align: "center",
             }}
           >
-            <label style="caption_label" caption={[L_GuiAssemblySettings.NewStage]} styleMod={{ right_margin: 10 }} />
-            <button
-              styleMod={{ width: insertButtonWidth }}
-              caption={[L_GuiAssemblySettings.AfterCurrent]}
-              on_gui_click={funcOn(this.newStageAfter)}
-            />
-            <button
-              styleMod={{ width: insertButtonWidth }}
-              caption={[L_GuiAssemblySettings.AtFront]}
-              on_gui_click={funcOn(this.newStageAtFront)}
-            />
+            <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+              <label style="caption_label" caption={[L_GuiAssemblySettings.NewStage]} />
+              <HorizontalPusher />
+              <button
+                styleMod={{ width: insertButtonWidth }}
+                caption={[L_GuiAssemblySettings.AfterCurrent]}
+                on_gui_click={funcOn(this.newStageAfter)}
+              />
+              <button
+                styleMod={{ width: insertButtonWidth }}
+                caption={[L_GuiAssemblySettings.AtFront]}
+                on_gui_click={funcOn(this.newStageAtFront)}
+              />
+            </flow>
+            <flow direction="horizontal">
+              <HorizontalPusher />
+              <button
+                caption={[L_GuiAssemblySettings.GetBlueprintBook]}
+                tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
+                on_gui_click={funcOn(this.getBlueprintBook)}
+              />
+            </flow>
           </flow>
         </frame>
         <flow
           direction="horizontal"
           styleMod={{
+            top_margin: 8,
             horizontal_spacing: 12,
           }}
         >
@@ -160,6 +178,15 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     teleportToSurface1(game.get_player(this.playerIndex)!)
   }
 
+  private getBlueprintBook() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    if (!player.clear_cursor()) return
+    const cursor = player.cursor_stack
+    if (!cursor || !player.is_cursor_empty()) return
+    this.assembly.makeBlueprintBook(cursor)
+  }
+
   private newStageAfter() {
     const currentStage = playerCurrentStage(this.playerIndex).get()
     if (!currentStage || currentStage.assembly !== this.assembly) return
@@ -213,8 +240,16 @@ export class StageSettings extends Component<{ stage: Stage }> {
           <button
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.GetBlueprint]}
+            tooltip={[L_GuiAssemblySettings.GetBlueprintTooltip]}
             on_gui_click={funcOn(this.getBlueprint)}
           />
+          <button
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiAssemblySettings.EditBlueprint]}
+            tooltip={[L_GuiAssemblySettings.EditBlueprintTooltip]}
+            on_gui_click={funcOn(this.editBlueprint)}
+          />
+          <VerticalPusher />
           <button
             style="red_button"
             styleMod={{ horizontally_stretchable: true }}
@@ -238,14 +273,24 @@ export class StageSettings extends Component<{ stage: Stage }> {
     if (!cursorStack) return
     const blueprint = this.stage.takeBlueprint()
     if (!blueprint) {
-      player.create_local_flying_text({
+      return player.create_local_flying_text({
         text: [L_Interaction.BlueprintEmpty],
         create_at_cursor: true,
       })
-      return
     }
     if (player.clear_cursor()) {
       cursorStack.set_stack(blueprint)
+    }
+  }
+
+  private editBlueprint() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    if (!this.stage.editBlueprint(player)) {
+      return player.create_local_flying_text({
+        text: [L_Interaction.BlueprintEmpty],
+        create_at_cursor: true,
+      })
     }
   }
 

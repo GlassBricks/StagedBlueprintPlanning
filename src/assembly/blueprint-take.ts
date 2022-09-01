@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isEmpty, Mutable } from "../lib"
+import { Events, isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 
@@ -24,7 +24,7 @@ export interface BlueprintSettings {
 export function getDefaultBlueprintSettings(): BlueprintSettings {
   return {
     positionOffset: { x: 0, y: 0 },
-    snapToGrid: { x: 2, y: 2 },
+    snapToGrid: nil,
     positionRelativeToGrid: nil,
     absoluteSnapping: false,
   }
@@ -39,15 +39,16 @@ export function tryTakeBlueprintWithSettings(
   if (!stack.is_blueprint) {
     stack.set_stack("blueprint")
   }
-  stack.blueprint_snap_to_grid = settings.snapToGrid
-  stack.blueprint_absolute_snapping = settings.absoluteSnapping
-  stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
 
   const bpMapping = stack.create_blueprint({
     surface,
     force: "player",
     area: BBox.coords(-5000, -5000, 5000, 5000),
   })
+  stack.blueprint_snap_to_grid = settings.snapToGrid
+  stack.blueprint_absolute_snapping = settings.absoluteSnapping
+  stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
+
   if (isEmpty(bpMapping)) {
     return false
   }
@@ -117,30 +118,30 @@ export function editBlueprintSettings(
 
   return true
 }
-export function onBlueprintUpdated(player: LuaPlayer, blueprint: BlueprintItemStack): void {
-  const data = global.players[player.index]
+function onBlueprintUpdated(playerIndex: PlayerIndex): void {
+  const data = global.players[playerIndex]
   const info = data.lastOpenedBlueprint
+  if (!info) return
   delete data.lastOpenedBlueprint
-  if (!info || info.blueprint !== blueprint) return
 
-  const { settings, numEntities, firstEntityOriginalPosition } = info
+  const { blueprint, settings, numEntities, firstEntityOriginalPosition } = info
   if (blueprint.get_blueprint_entity_count() !== numEntities) {
-    player.create_local_flying_text({
+    const player = game.get_player(playerIndex)!
+    return player.create_local_flying_text({
       text: [L_Interaction.BlueprintEntitiesRemoved],
       create_at_cursor: true,
     })
-    return
   }
   const entities = blueprint.get_blueprint_entities()!
   const firstEntityBlueprintPosition = entities[0].position
   // original position + offset = blueprint position
   // offset = blueprint position - original position
   const offset = Pos.minus(firstEntityBlueprintPosition, firstEntityOriginalPosition)
-  if (!offset.equals(settings.positionOffset)) {
-    // set new offset
-    settings.positionOffset = offset
-  }
+  settings.positionOffset = offset
   settings.absoluteSnapping = blueprint.blueprint_absolute_snapping
   settings.snapToGrid = blueprint.blueprint_snap_to_grid
   settings.positionRelativeToGrid = blueprint.blueprint_position_relative_to_grid
 }
+Events.on_gui_closed((e) => {
+  onBlueprintUpdated(e.player_index)
+})
