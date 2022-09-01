@@ -13,7 +13,7 @@ import { oppositedirection } from "util"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { AssemblyWireConnection, wireConnectionEquals } from "../entity/AssemblyWireConnection"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
-import { getEntityCategory, getPastRotatableType, PasteRotatableType } from "../entity/entity-info"
+import { getEntityCategory, getPasteRotatableType, PasteRotatableType } from "../entity/entity-info"
 import { isEmpty, MutableMap2D, newMap2D, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 
@@ -93,7 +93,7 @@ class EntityMapImpl implements MutableEntityMap {
       return this.findCompatibleBasic(type, position, direction)
     }
     const name = entity.name
-    const pasteRotatableType = getPastRotatableType(name)
+    const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType === PasteRotatableType.None) {
       return this.findCompatibleBasic(name, position, previousDirection ?? entity.direction)
     }

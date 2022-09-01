@@ -99,7 +99,7 @@ export function getEntityCategory(entityName: string): CategoryName {
 export function getSelectionBox(entityName: string): BBoxClass {
   return getEntityInfo(entityName).selectionBox
 }
-export function getPastRotatableType(entityName: string): PasteRotatableType {
+export function getPasteRotatableType(entityName: string): PasteRotatableType {
   return getEntityInfo(entityName).pasteRotatableType
 }
 export function isUndergroundBeltType(entityName: string): boolean {
