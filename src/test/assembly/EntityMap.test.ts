@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
+import { CableAddResult, MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../../entity/Entity"
@@ -85,9 +85,12 @@ describe("findCompatible", () => {
 describe("connections", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
+  function makeAssemblyEntity(n: number): AssemblyEntity {
+    return createAssemblyEntity({ name: "foo" }, { x: n, y: 0 }, 0, 1)
+  }
   before_each(() => {
-    entity1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
-    entity2 = createAssemblyEntity({ name: "foo" }, { x: 1, y: 0 }, 0, 1)
+    entity1 = makeAssemblyEntity(1)
+    entity2 = makeAssemblyEntity(2)
     content.add(entity1)
     content.add(entity2)
   })
@@ -153,7 +156,7 @@ describe("connections", () => {
     })
 
     test("addCableConnection shows up in getCableConnections", () => {
-      content.addCableConnection(entity1, entity2)
+      assert.equal(CableAddResult.Added, content.addCableConnection(entity1, entity2))
       assert.same(newLuaSet(entity2), content.getCableConnections(entity1)!)
       assert.same(newLuaSet(entity1), content.getCableConnections(entity2)!)
     })
@@ -171,6 +174,24 @@ describe("connections", () => {
       content.delete(entity1)
       assert.same(nil, content.getCableConnections(entity1) ?? nil)
       assert.same(nil, content.getCableConnections(entity2) ?? nil)
+    })
+
+    test("can't add cable to itself", () => {
+      assert.equal(CableAddResult.Error, content.addCableConnection(entity1, entity1))
+    })
+
+    test("adding same cable twice does nothing", () => {
+      assert.equal(CableAddResult.Added, content.addCableConnection(entity1, entity2))
+      assert.equal(CableAddResult.AlreadyExists, content.addCableConnection(entity1, entity2))
+    })
+
+    test("won't add if max connections is reached", () => {
+      for (let i = 3; i < 3 + 5; i++) {
+        const entity = makeAssemblyEntity(i)
+        content.add(entity)
+        assert.equal(CableAddResult.Added, content.addCableConnection(entity1, entity))
+      }
+      assert.equal(CableAddResult.MaxConnectionsReached, content.addCableConnection(entity1, entity2))
     })
   })
 })

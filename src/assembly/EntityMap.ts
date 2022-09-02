@@ -35,6 +35,14 @@ export interface EntityMap {
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity>
 }
 
+export const enum CableAddResult {
+  Added,
+  Error,
+  AlreadyExists,
+  MaxConnectionsReached,
+}
+const MaxCableConnections = 5 // hard-coded in game
+
 export interface MutableEntityMap extends EntityMap {
   add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
   delete<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
@@ -43,7 +51,7 @@ export interface MutableEntityMap extends EntityMap {
   addCircuitConnection(circuitConnection: AsmCircuitConnection): boolean
   removeCircuitConnection(circuitConnection: AsmCircuitConnection): void
 
-  addCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void
+  addCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): CableAddResult
   removeCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void
 
   /** Modifies all entities */
@@ -228,21 +236,37 @@ class EntityMapImpl implements MutableEntityMap {
     return this.cableConnections.get(entity)
   }
 
-  addCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void {
-    const { cableConnections } = this
+  addCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): CableAddResult {
+    if (entity1 === entity2) return CableAddResult.Error
+    const { entities, cableConnections } = this
+    if (!entities.has(entity1) || !entities.has(entity2)) return CableAddResult.Error
     let data1 = cableConnections.get(entity1)
-    if (!data1) {
-      data1 = newLuaSet()
+    let data2 = cableConnections.get(entity2)
+
+    if (data1) {
+      if (data1.has(entity2)) return CableAddResult.AlreadyExists
+      if (table_size(data1) >= MaxCableConnections) return CableAddResult.MaxConnectionsReached
+    }
+    if (data2) {
+      if (data2.has(entity1)) return CableAddResult.AlreadyExists
+      if (table_size(data2) >= MaxCableConnections) return CableAddResult.MaxConnectionsReached
+    }
+
+    if (data1) {
+      data1.add(entity2)
+    } else {
+      data1 = newLuaSet(entity2)
       cableConnections.set(entity1, data1)
     }
-    data1.add(entity2)
 
-    let data2 = cableConnections.get(entity2)
-    if (!data2) {
-      data2 = newLuaSet()
+    if (data2) {
+      data2.add(entity1)
+    } else {
+      data2 = newLuaSet(entity1)
       cableConnections.set(entity2, data2)
     }
-    data2.add(entity1)
+
+    return CableAddResult.Added
   }
 
   removeCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void {

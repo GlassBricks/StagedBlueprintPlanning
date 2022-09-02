@@ -60,6 +60,8 @@ export declare const enum L_Interaction {
   CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
   /** Cannot move underground belt with upgrade. Try first upgrading in the entity first stage. */
   CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
+  /** Max of 5 connections reached (in another stage). */
+  MaxConnectionsReachedInAnotherStage = "bp100.interaction.max-connections-reached-in-another-stage",
   /** Not in an assembly */
   NotInAnAssembly = "bp100.interaction.not-in-an-assembly",
   /** No next stage */

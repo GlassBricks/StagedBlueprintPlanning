@@ -564,6 +564,15 @@ describe("circuitWiresPotentiallyUpdated", () => {
     assertOneEntity()
     assertNoCalls()
   })
+  test("if max connections exceeded, notifies and calls update", () => {
+    const { luaEntity, added } = addAndReset()
+    wireSaver.saveWireConnections.returns(true, true)
+    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+    assertNotified(luaEntity, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
+  })
 })
 
 describe("mark for upgrade", () => {

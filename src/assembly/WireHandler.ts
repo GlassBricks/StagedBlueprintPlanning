@@ -13,7 +13,7 @@ import { AsmCircuitConnection, getDirectionalInfo } from "../entity/AsmCircuitCo
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { isEmpty } from "../lib"
 import { AssemblyContent } from "./AssemblyContent"
-import { AsmEntityCircuitConnections, EntityMap } from "./EntityMap"
+import { AsmEntityCircuitConnections, CableAddResult, EntityMap } from "./EntityMap"
 
 /** @noSelf */
 export interface WireUpdater {
@@ -37,7 +37,7 @@ export interface WireSaver {
     entity: AssemblyEntity,
     stageNumber: StageNumber,
     luaEntity: LuaEntity,
-  ): boolean
+  ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]>
 }
 
 /** @noSelf */
@@ -182,37 +182,46 @@ function saveCableConnections(
   entity: AssemblyEntity,
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
-): boolean {
-  if (luaEntity.type !== "electric-pole") return false
+): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
+  if (luaEntity.type !== "electric-pole") return $multi(false)
   const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
   const { content } = assembly
   const assemblyConnections = content.getCableConnections(entity)
 
-  let hasDiff = false
   const matching = new LuaSet<AssemblyEntity>()
+  const toAdd: AssemblyEntity[] = []
 
   if (existingConnections) {
     for (const otherLuaEntity of existingConnections) {
       const otherEntity = content.findCompatible(otherLuaEntity, otherLuaEntity.position, nil)
       if (!otherEntity) continue
-      matching.add(otherEntity)
       if (!assemblyConnections || !assemblyConnections.has(otherEntity)) {
-        content.addCableConnection(entity, otherEntity)
-        hasDiff = true
+        toAdd.push(otherEntity)
+      } else {
+        matching.add(otherEntity)
       }
     }
   }
+
+  let hasDiff = toAdd[0] !== nil
+  // remove first, to not exceed max connections
   if (assemblyConnections) {
     for (const otherEntity of assemblyConnections) {
       const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
-      if (!otherLuaEntity) continue // ignore if not in stage
-      if (!matching.has(otherEntity)) {
+      if (otherLuaEntity && !matching.has(otherEntity)) {
         content.removeCableConnection(entity, otherEntity)
         hasDiff = true
       }
     }
   }
-  return hasDiff
+
+  let maxConnectionsExceeded: boolean | undefined
+  for (const add of toAdd) {
+    const result = content.addCableConnection(entity, add)
+    if (result === CableAddResult.MaxConnectionsReached) maxConnectionsExceeded = true
+  }
+
+  return $multi(hasDiff, maxConnectionsExceeded)
 }
 
 function saveWireConnections(
@@ -220,10 +229,10 @@ function saveWireConnections(
   entity: AssemblyEntity,
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
-): boolean {
+): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
   const diff1 = saveCircuitConnections(assembly, entity, stageNumber, luaEntity)
-  const diff2 = saveCableConnections(assembly, entity, stageNumber, luaEntity)
-  return diff1 || diff2
+  const [diff2, maxConnectionsExceeded] = saveCableConnections(assembly, entity, stageNumber, luaEntity)
+  return $multi(diff1 || diff2, maxConnectionsExceeded)
 }
 
 function analyzeExistingCircuitConnections(
