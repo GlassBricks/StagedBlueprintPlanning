@@ -400,7 +400,7 @@ export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): voi
 PlayerChangedStageEvent.addListener((player, stage) => {
   if (!stage) return
   const currentAssembly = global.players[player.index].currentShownAssembly
-  if (currentAssembly !== stage.assembly) {
+  if (currentAssembly && currentAssembly !== stage.assembly) {
     showAssemblySettings(player, stage.assembly)
   }
 })
