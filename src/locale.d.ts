@@ -88,8 +88,6 @@ export declare const enum L_GuiCurrentAssembly {
   ShowAllAssemblies = "bp100.gui.current-assembly.show-all-assemblies",
 }
 export declare const enum L_GuiAllAssemblies {
-  /** All assemblies */
-  Title = "bp100.gui.all-assemblies.title",
   /** New assembly */
   NewAssembly = "bp100.gui.all-assemblies.new-assembly",
 }

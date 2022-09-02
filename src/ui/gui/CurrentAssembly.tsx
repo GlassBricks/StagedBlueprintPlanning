@@ -9,20 +9,79 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { AssemblyEvents } from "../../assembly/Assembly"
 import { Assembly, Stage } from "../../assembly/AssemblyDef"
-import { funcOn, funcRef, MaybeState, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
-import { Component, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
+import { getAllAssemblies } from "../../assembly/global"
+import {
+  bind,
+  funcOn,
+  funcRef,
+  MaybeState,
+  onPlayerInit,
+  RegisterClass,
+  registerFunctions,
+  Subscription,
+} from "../../lib"
+import { Component, destroy, EmptyProps, FactorioJsx, render, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
 import { DotDotDotButton, Fn, HorizontalPusher, HorizontalSpacer, TitleBar } from "../../lib/factoriojsx/components"
-import { L_GuiCurrentAssembly } from "../../locale"
+import { Migrations } from "../../lib/migration"
+import { L_GuiAllAssemblies, L_GuiCurrentAssembly } from "../../locale"
 import { playerCurrentStage } from "../player-current-stage"
-import { openAllAssemblies } from "./AllAssemblies"
 import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"
+import { openNewAssemblyGui } from "./NewAssembly"
 import { StageSelector } from "./StageSelector"
+
+declare global {
+  interface PlayerData {
+    currentAssemblyGui?: CurrentAssembly
+  }
+}
+declare const global: GlobalWithPlayers
 
 const CurrentAssemblyWidth = 260
 @RegisterClass("gui:CurrentAssembly")
 class CurrentAssembly extends Component {
+  mainFlow!: FlowGuiElement
+
+  public override render(_: EmptyProps, tracker: Tracker): Spec {
+    const { playerIndex } = tracker
+    global.players[playerIndex].currentAssemblyGui = this
+
+    const currentStage = playerCurrentStage(playerIndex)
+
+    return (
+      <flow direction="vertical" styleMod={{ vertical_spacing: 0 }} onCreate={(e) => (this.mainFlow = e)}>
+        <frame direction="vertical">
+          <TitleBar>
+            <label
+              style="frame_title"
+              styleMod={{
+                font: "heading-2",
+                width: CurrentAssemblyWidth - 80,
+              }}
+              caption={currentStage.flatMap(funcRef(CurrentAssembly.mapStageToAssemblyTitle))}
+            />
+            <HorizontalPusher />
+            <ExternalLinkButton
+              tooltip={[L_GuiCurrentAssembly.OpenAssemblySettings]}
+              enabled={currentStage.truthy()}
+              on_gui_click={funcOn(this.openAssemblySettings)}
+            />
+            <DotDotDotButton
+              tooltip={[L_GuiCurrentAssembly.ShowAllAssemblies]}
+              on_gui_click={funcRef(onOpenAllAssembliesClicked)}
+            />
+          </TitleBar>
+          <Fn
+            uses="flow"
+            from={currentStage.nullableSub("assembly")}
+            map={funcRef(CurrentAssembly.mapAssemblyToContent)}
+          />
+        </frame>
+      </flow>
+    )
+  }
   private static mapStageToAssemblyTitle(this: void, stage: Stage | nil): MaybeState<LocalisedString> {
     if (stage === nil) return [L_GuiCurrentAssembly.NoAssembly]
     return stage.assembly.displayName
@@ -34,40 +93,6 @@ class CurrentAssembly extends Component {
       <HorizontalSpacer width={CurrentAssemblyWidth} />
     )
   }
-  public override render(_: EmptyProps, tracker: Tracker): Spec {
-    const { playerIndex } = tracker
-    const currentStage = playerCurrentStage(playerIndex)
-
-    return (
-      <frame direction="vertical">
-        <TitleBar>
-          <label
-            style="frame_title"
-            styleMod={{
-              font: "heading-2",
-              width: CurrentAssemblyWidth - 80,
-            }}
-            caption={currentStage.flatMap(funcRef(CurrentAssembly.mapStageToAssemblyTitle))}
-          />
-          <HorizontalPusher />
-          <ExternalLinkButton
-            tooltip={[L_GuiCurrentAssembly.OpenAssemblySettings]}
-            enabled={currentStage.truthy()}
-            on_gui_click={funcOn(this.openAssemblySettings)}
-          />
-          <DotDotDotButton
-            tooltip={[L_GuiCurrentAssembly.ShowAllAssemblies]}
-            on_gui_click={funcRef(onOpenAllAssembliesClicked)}
-          />
-        </TitleBar>
-        <Fn
-          uses="flow"
-          from={currentStage.nullableSub("assembly")}
-          map={funcRef(CurrentAssembly.mapAssemblyToContent)}
-        />
-      </frame>
-    )
-  }
 
   private openAssemblySettings(event: OnGuiClickEvent) {
     const { player_index } = event
@@ -77,19 +102,127 @@ class CurrentAssembly extends Component {
     openAssemblySettings(game.get_player(player_index)!, assembly)
   }
 }
-function onOpenAllAssembliesClicked(event: OnGuiClickEvent) {
-  const { player_index } = event
-  const player = game.get_player(player_index)
-  if (player) {
-    openAllAssemblies(player)
-  }
-}
-registerFunctions("gui:CurrentAssembly", {
-  onOpenAllAssembliesClicked,
-})
-
 const currentAssemblyName = script.mod_name + ":current-assembly"
+function rerenderCurrentAssembly(player: LuaPlayer): void {
+  renderNamed(<CurrentAssembly />, player.gui.left, currentAssemblyName)
+}
 onPlayerInit((index) => {
   const player = game.get_player(index)!
-  renderNamed(<CurrentAssembly />, player.gui.left, currentAssemblyName)
+  rerenderCurrentAssembly(player)
+})
+Migrations.fromAny(() => {
+  for (const [, player] of game.players) rerenderCurrentAssembly(player)
+})
+
+const AllAssembliesName = "all-assemblies"
+
+const AllAssembliesWidth = CurrentAssemblyWidth
+const AllAssembliesHeight = 28 * 10
+@RegisterClass("gui:AllAssemblies")
+class AllAssemblies extends Component {
+  playerIndex!: PlayerIndex
+
+  listBox!: ListBoxGuiElement
+  allAssemblies!: Assembly[]
+
+  public override render(_: EmptyProps, tracker: Tracker): Spec {
+    this.playerIndex = tracker.playerIndex
+    const subscription = tracker.getSubscription()
+    return (
+      <frame direction="vertical" name={AllAssembliesName}>
+        <list-box
+          name="assemblies"
+          style="list_box"
+          styleMod={{
+            width: AllAssembliesWidth,
+            height: AllAssembliesHeight,
+          }}
+          onCreate={(e) => {
+            this.listBox = e
+            this.setup(subscription)
+          }}
+          on_gui_selection_state_changed={funcOn(this.assemblySelected)}
+        />
+        <button caption={[L_GuiAllAssemblies.NewAssembly]} on_gui_click={funcOn(this.newAssembly)} />
+      </frame>
+    )
+  }
+
+  private setup(subscription: Subscription): void {
+    const listBox = this.listBox
+    this.allAssemblies = Object.values(getAllAssemblies())
+    listBox.items = this.allAssemblies.map((a) => a.displayName.get())
+
+    for (const [i, assembly] of ipairs(this.allAssemblies)) {
+      assembly.displayName.subscribe(subscription, bind(AllAssemblies.onAssemblyNameChange, this, i))
+    }
+  }
+  private static onAssemblyNameChange(
+    this: void,
+    self: AllAssemblies,
+    index: number,
+    _: any,
+    name: LocalisedString,
+  ): void {
+    self.listBox.set_item(index, name)
+  }
+
+  private assemblySelected(): void {
+    const assembly = this.allAssemblies[this.listBox.selected_index - 1]
+    if (assembly !== nil) {
+      closeAllAssemblies(this.playerIndex)
+      openAssemblySettings(game.get_player(this.playerIndex)!, assembly)
+    } else {
+      this.listBox.selected_index = 0
+    }
+  }
+
+  private newAssembly(): void {
+    closeAllAssemblies(this.playerIndex)
+    openNewAssemblyGui(game.get_player(this.playerIndex)!)
+  }
+}
+
+function getCurrentAssemblyGui(playerIndex: PlayerIndex): CurrentAssembly {
+  const currentAssemblyGui = global.players[playerIndex].currentAssemblyGui
+  if (currentAssemblyGui !== nil) return currentAssemblyGui
+
+  rerenderCurrentAssembly(game.get_player(playerIndex)!)
+  return assert(global.players[playerIndex].currentAssemblyGui!)
+}
+
+export function closeAllAssemblies(playerIndex: PlayerIndex): void {
+  const flow = getCurrentAssemblyGui(playerIndex).mainFlow
+  destroy(flow[AllAssembliesName])
+}
+function rerenderAllAssemblies(playerIndex: PlayerIndex): void {
+  const flow = getCurrentAssemblyGui(playerIndex).mainFlow
+  destroy(flow[AllAssembliesName])
+  render(<AllAssemblies />, flow, 2)
+}
+function toggleAllAssemblies(playerIndex: PlayerIndex): void {
+  const flow = getCurrentAssemblyGui(playerIndex).mainFlow
+  const allAssemblies = flow[AllAssembliesName]
+  if (allAssemblies) {
+    destroy(allAssemblies)
+  } else {
+    render(<AllAssemblies />, flow, 2)
+  }
+}
+function rerenderAllAssembliesIfOpen(playerIndex: PlayerIndex): void {
+  const flow = getCurrentAssemblyGui(playerIndex).mainFlow
+  if (flow[AllAssembliesName]) rerenderAllAssemblies(playerIndex)
+}
+
+function onOpenAllAssembliesClicked(event: OnGuiClickEvent) {
+  toggleAllAssemblies(event.player_index)
+}
+registerFunctions("gui:CurrentAssembly", { onOpenAllAssembliesClicked })
+
+AssemblyEvents.addListener((e) => {
+  if (e.type === "assembly-created" || e.type === "assembly-deleted") {
+    for (const [, player] of game.players) {
+      rerenderAllAssembliesIfOpen(player.index)
+    }
+  }
 })

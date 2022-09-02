@@ -13,6 +13,7 @@ import { funcRef, registerFunctions } from "../../index"
 import { MaybeState } from "../../observable"
 import { ClickEventHandler, destroy, FactorioJsx, GuiEvent, Spec, SpecChildren } from "../index"
 import { CloseButton } from "./buttons"
+import { HorizontalPusher } from "./misc"
 
 export function TitleBar(props: { children?: SpecChildren }): Spec {
   return (
@@ -55,12 +56,15 @@ export function closeSelf(e: GuiEvent): void {
 
 registerFunctions("gui:TitleBar", { closeParentParent, closeSelf })
 
-// noinspection JSUnusedGlobalSymbols
-export function SimpleTitleBar(props: { title: MaybeState<LocalisedString>; onClose?: ClickEventHandler }): Spec {
+export function SimpleTitleBar(props: {
+  title: MaybeState<LocalisedString>
+  onClose?: ClickEventHandler
+  useDraggableSpace?: boolean // default true
+}): Spec {
   return (
     <TitleBar>
       <label caption={props.title} style="frame_title" ignored_by_interaction />
-      <DraggableSpace />
+      {props.useDraggableSpace !== false ? <DraggableSpace /> : <HorizontalPusher />}
       <CloseButton on_gui_click={props.onClose ?? funcRef(closeParentParent)} />
     </TitleBar>
   )

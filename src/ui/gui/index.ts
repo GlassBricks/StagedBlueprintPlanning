@@ -9,5 +9,17 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { destroy } from "../../lib/factoriojsx"
+import { Migrations } from "../../lib/migration"
 import "./CurrentAssembly"
 import "./editor-fix"
+
+Migrations.fromAny(() => {
+  for (const [, player] of game.players) {
+    const opened = player.opened
+    if (opened && opened.object_name === "LuaGuiElement" && opened.get_mod() === script.mod_name) {
+      destroy(opened)
+      player.opened = nil
+    }
+  }
+})
