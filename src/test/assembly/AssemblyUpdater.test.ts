@@ -551,7 +551,7 @@ describe("fast replace", () => {
 describe("circuitWiresPotentiallyUpdated", () => {
   test("if saved, calls update", () => {
     const { luaEntity, added } = addAndReset()
-    wireSaver.saveWireConnections.returns(true)
+    wireSaver.saveWireConnections.on_call_with(match._, added, stage.stageNumber).returns(true)
     assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
 
     assertOneEntity()
@@ -559,6 +559,7 @@ describe("circuitWiresPotentiallyUpdated", () => {
   })
   test("if no changes, does not call update", () => {
     const { luaEntity } = addAndReset()
+    wireSaver.saveWireConnections.returns(false)
     assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
 
     assertOneEntity()
@@ -566,7 +567,7 @@ describe("circuitWiresPotentiallyUpdated", () => {
   })
   test("if max connections exceeded, notifies and calls update", () => {
     const { luaEntity, added } = addAndReset()
-    wireSaver.saveWireConnections.returns(true, true)
+    wireSaver.saveWireConnections.on_call_with(match._, added, stage.stageNumber).returns(true, true)
     assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
 
     assertOneEntity()

@@ -22,12 +22,7 @@ export interface WireUpdater {
    *
    * Returns true if connections succeeded (false if max connections exceeded).
    */
-  updateWireConnections(
-    assembly: AssemblyContent,
-    entity: AssemblyEntity,
-    stageNumber: StageNumber,
-    luaEntity: LuaEntity,
-  ): boolean
+  updateWireConnections(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
 }
 
 /** @noSelf */
@@ -36,7 +31,6 @@ export interface WireSaver {
     assembly: AssemblyContent,
     entity: AssemblyEntity,
     stageNumber: StageNumber,
-    luaEntity: LuaEntity,
   ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]>
 }
 
@@ -122,12 +116,9 @@ function updateCableConnections(
   return true
 }
 
-function updateWireConnections(
-  assembly: AssemblyContent,
-  entity: AssemblyEntity,
-  stageNumber: StageNumber,
-  luaEntity: LuaEntity,
-): boolean {
+function updateWireConnections(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+  const luaEntity = entity.getWorldEntity(stageNumber)
+  if (!luaEntity) return false
   updateCircuitConnections(assembly, entity, stageNumber, luaEntity)
   return updateCableConnections(assembly, entity, stageNumber, luaEntity)
 }
@@ -228,8 +219,9 @@ function saveWireConnections(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
   stageNumber: StageNumber,
-  luaEntity: LuaEntity,
 ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
+  const luaEntity = entity.getWorldEntity(stageNumber)
+  if (!luaEntity) return $multi(false)
   const diff1 = saveCircuitConnections(assembly, entity, stageNumber, luaEntity)
   const [diff2, maxConnectionsExceeded] = saveCableConnections(assembly, entity, stageNumber, luaEntity)
   return $multi(diff1 || diff2, maxConnectionsExceeded)

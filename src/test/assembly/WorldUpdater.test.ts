@@ -136,9 +136,7 @@ describe("updateWorldEntities", () => {
   test("calls wireUpdater", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     for (let i = 1; i <= 3; i++)
-      assert
-        .spy(wireUpdater.updateWireConnections)
-        .called_with(match.ref(assembly), match.ref(entity), i, entity.getWorldEntity(i)!)
+      assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly), match.ref(entity), i)
   })
 
   function assertDestructible(luaEntity: LuaEntity, value: boolean) {

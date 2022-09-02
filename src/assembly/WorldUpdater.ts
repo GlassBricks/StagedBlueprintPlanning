@@ -91,7 +91,7 @@ export function createWorldUpdater(
       if (luaEntity) {
         if (stageNum !== firstStage) makeEntityIndestructible(luaEntity)
         else makeEntityDestructible(luaEntity)
-        updateWireConnections(assembly, entity, stageNum, luaEntity)
+        updateWireConnections(assembly, entity, stageNum)
       }
     }
   }

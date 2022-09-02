@@ -155,7 +155,7 @@ export function createAssemblyUpdater(
       }
     }
 
-    saveWireConnections(assembly, assemblyEntity, stageNumber, entity)
+    saveWireConnections(assembly, assemblyEntity, stageNumber)
     updateWorldEntities(assembly, assemblyEntity, 1)
 
     return assemblyEntity
@@ -565,7 +565,7 @@ export function createAssemblyUpdater(
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, byPlayer, nil)
     if (!existing) return
-    const [hasDiff, maxConnectionsExceeded] = saveWireConnections(assembly, existing, stage.stageNumber, entity)
+    const [hasDiff, maxConnectionsExceeded] = saveWireConnections(assembly, existing, stage.stageNumber)
     if (maxConnectionsExceeded) {
       createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
     }
