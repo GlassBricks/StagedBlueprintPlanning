@@ -318,6 +318,6 @@ Migrations.to("0.3.0", () => {
     }
 
     content.cableConnections = new LuaMap()
-    // TODO: migrate cable connections from world
+    // see also: migrations-custom/cable
   }
 })

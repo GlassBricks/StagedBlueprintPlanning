@@ -9,10 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, AssemblyId } from "../assembly/AssemblyDef"
-import { AssemblyOperations } from "../assembly/AssemblyOperations"
-import { destroyAllRenders, Events } from "../lib"
+import { Events } from "../lib"
 import { formatVersion, Migrations } from "../lib/migration"
+
+import "./cable030"
+import from010 from "./from010"
 
 Events.on_configuration_changed((data) => {
   const thisChange = data.mod_changes[script.mod_name]
@@ -20,59 +21,7 @@ Events.on_configuration_changed((data) => {
   const oldVersion = thisChange.old_version
   if (!oldVersion) return
   if (formatVersion(oldVersion) < formatVersion("0.2.0")) {
-    return since010()
+    return from010()
   }
-  if (oldVersion !== nil) {
-    Migrations.doMigrations(oldVersion)
-  }
+  Migrations.doMigrations(oldVersion)
 })
-
-declare let global: {
-  assemblies?: LuaMap<AssemblyId, Assembly>
-  bpSurfaces?: Record<number, LuaSurface>
-}
-function since010() {
-  log("Migrating from 0.1.0 (backwards incompatible). Completely removing old data and reinitializing mod")
-
-  destroyAllRenders()
-
-  // clean old assemblies
-  const assemblies = global.assemblies
-  if (assemblies) {
-    for (const [, assembly] of assemblies) {
-      AssemblyOperations.deleteAllExtraEntitiesOnly(assembly)
-    }
-  }
-  // rename old surfaces
-  const bpSurfaces = global.bpSurfaces
-  if (bpSurfaces) {
-    for (const [, surface] of pairs(bpSurfaces)) {
-      if (surface.name.startsWith("bp100-stage-")) {
-        surface.name = "old-" + surface.name
-      }
-    }
-  }
-  // remove script inventories
-  const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
-  inventories?.forEach((x) => x.destroy())
-
-  // remove gui elements
-  for (const [, player] of game.players) {
-    const { screen, left, top, center } = player.gui
-    for (const gui of [screen, left, top, center]) {
-      for (const child of gui.children) {
-        if (child.get_mod() === script.mod_name) child.destroy()
-      }
-    }
-  }
-
-  // reinit
-  global = {}
-  Events.raiseFakeEventNamed("on_init", nil!)
-
-  log("Migration complete")
-  game.print(
-    "100% Blueprint Planning v0.1.0 is incompatible with later versions. All assemblies have been removed. " +
-      'Previous assembly entities can be found on surfaces "old-bp100-stage-*".',
-  )
-}
