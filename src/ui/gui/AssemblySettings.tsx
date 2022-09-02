@@ -117,7 +117,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
         <flow
           direction="horizontal"
           styleMod={{
-            top_margin: 8,
+            top_margin: 3,
             horizontal_spacing: 12,
           }}
         >
