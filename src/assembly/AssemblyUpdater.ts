@@ -632,8 +632,9 @@ export function createAssemblyUpdater(
       reviveSettingsRemnant(assembly, existing, stageNumber)
       return
     }
+    const oldStage = existing.getFirstStage()
 
-    if (existing.getFirstStage() === stageNumber) {
+    if (oldStage === stageNumber) {
       createNotification(entityOrPreviewEntity, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
       return
     }
@@ -646,7 +647,7 @@ export function createAssemblyUpdater(
     }
 
     // move
-    const oldStage = existing.moveToStage(stageNumber, true)
+    existing.moveToStage(stageNumber, stageNumber < oldStage)
     updateWorldEntities(assembly, existing, min(oldStage, stageNumber))
     createNotification(
       entityOrPreviewEntity,
