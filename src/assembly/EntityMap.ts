@@ -16,9 +16,10 @@ import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory, getPasteRotatableType, PasteRotatableType } from "../entity/entity-info"
 import { isEmpty, MutableMap2D, newMap2D, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
+import { getAllAssemblies } from "./global"
 
 export interface EntityMap {
-  has(entity: AssemblyEntity): boolean
   findCompatibleBasic(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
   findCompatible(
     entity: BasicEntityInfo,
@@ -47,16 +48,12 @@ export interface MutableEntityMap extends EntityMap {
 }
 
 export type AsmEntityCircuitConnections = LuaMap<AssemblyEntity, LuaSet<AsmCircuitConnection>>
-type EntityData = AsmEntityCircuitConnections
 
 @RegisterClass("EntityMap")
 class EntityMapImpl implements MutableEntityMap {
-  private readonly byPosition: MutableMap2D<AssemblyEntity> = newMap2D()
-  private readonly entities = new LuaMap<AssemblyEntity, EntityData>()
-
-  has(entity: AssemblyEntity): boolean {
-    return this.entities.has(entity)
-  }
+  readonly byPosition: MutableMap2D<AssemblyEntity> = newMap2D()
+  entities = new LuaSet<AssemblyEntity>()
+  circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
 
   findCompatibleBasic(
     entityName: string,
@@ -119,37 +116,61 @@ class EntityMapImpl implements MutableEntityMap {
   add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {
     const { entities } = this
     if (entities.has(entity)) return
-    this.entities.set(entity, new LuaMap())
+    this.entities.add(entity)
     const { x, y } = entity.position
     this.byPosition.add(x, y, entity)
   }
 
   delete<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {
     const { entities } = this
-    const entityData = entities.get(entity)
-    if (!entityData) return
+    if (!entities.has(entity)) return
     entities.delete(entity)
     const { x, y } = entity.position
     this.byPosition.delete(x, y, entity)
+
     // remove wire connections
-    for (const [otherEntity] of entityData) {
-      entities.get(otherEntity)?.delete(entity)
+    this.removeAllCircuitConnections(entity)
+  }
+
+  private removeAllCircuitConnections(entity: AssemblyEntity): void {
+    const circuitConnections = this.circuitConnections
+    const entityCircuitConnections = circuitConnections.get(entity)
+    if (!entityCircuitConnections) return
+    circuitConnections.delete(entity)
+
+    for (const [otherEntity] of entityCircuitConnections) {
+      const connectionData = circuitConnections.get(otherEntity)
+      if (connectionData) {
+        connectionData.delete(entity)
+        if (isEmpty(connectionData)) {
+          circuitConnections.delete(otherEntity)
+        }
+      }
     }
   }
 
   getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil {
-    const value = this.entities.get(entity)
-    if (value && next(value)[0] !== nil) return value as AsmEntityCircuitConnections
+    return this.circuitConnections.get(entity)
   }
   addCircuitConnection(circuitConnection: AsmCircuitConnection): boolean {
-    const { entities } = this
+    const { entities, circuitConnections } = this
     const { fromEntity, toEntity } = circuitConnection
-    const fromData = entities.get(fromEntity),
-      toData = entities.get(toEntity)
-    if (!fromData || !toData) return false
+    if (!entities.has(fromEntity) || !entities.has(toEntity)) return false
 
-    const fromSet = fromData.get(toEntity),
-      toSet = toData.get(fromEntity)
+    let fromConnections = circuitConnections.get(fromEntity)
+    if (!fromConnections) {
+      fromConnections = new LuaMap()
+      circuitConnections.set(fromEntity, fromConnections)
+    }
+
+    let toConnections = circuitConnections.get(toEntity)
+    if (!toConnections) {
+      toConnections = new LuaMap()
+      circuitConnections.set(toEntity, toConnections)
+    }
+
+    const fromSet = fromConnections.get(toEntity),
+      toSet = toConnections.get(fromEntity)
     if (fromSet) {
       for (const otherConnection of fromSet) {
         if (circuitConnectionEquals(circuitConnection, otherConnection)) return false
@@ -158,45 +179,52 @@ class EntityMapImpl implements MutableEntityMap {
     if (fromSet) {
       fromSet.add(circuitConnection)
     } else {
-      fromData.set(toEntity, newLuaSet(circuitConnection))
+      fromConnections.set(toEntity, newLuaSet(circuitConnection))
     }
     if (toSet) {
       toSet.add(circuitConnection)
     } else {
-      toData.set(fromEntity, newLuaSet(circuitConnection))
+      toConnections.set(fromEntity, newLuaSet(circuitConnection))
     }
     return true
   }
 
   removeCircuitConnection(circuitConnection: AsmCircuitConnection): void {
-    const { entities } = this
+    const { circuitConnections } = this
     const { fromEntity, toEntity } = circuitConnection
 
-    const fromData = entities.get(fromEntity),
-      toData = entities.get(toEntity)
-    if (fromData) {
-      const fromSet = fromData.get(toEntity)
-      if (fromSet) {
-        fromSet.delete(circuitConnection)
-        if (isEmpty(fromSet)) fromData.delete(toEntity)
+    const fromConnections = circuitConnections.get(fromEntity),
+      toConnections = circuitConnections.get(toEntity)
+    if (!fromConnections || !toConnections) return
+    const fromSet = fromConnections.get(toEntity)
+    if (fromSet) {
+      fromSet.delete(circuitConnection)
+      if (isEmpty(fromSet)) {
+        fromConnections.delete(toEntity)
+        if (isEmpty(fromConnections)) {
+          circuitConnections.delete(fromEntity)
+        }
       }
     }
-    if (toData) {
-      const toSet = toData.get(fromEntity)
-      if (toSet) {
-        toSet.delete(circuitConnection)
-        if (isEmpty(toSet)) toData.delete(fromEntity)
+    const toSet = toConnections.get(fromEntity)
+    if (toSet) {
+      toSet.delete(circuitConnection)
+      if (isEmpty(toSet)) {
+        toConnections.delete(fromEntity)
+        if (isEmpty(toConnections)) {
+          circuitConnections.delete(toEntity)
+        }
       }
     }
   }
 
   insertStage(stageNumber: StageNumber): void {
-    for (const [entity] of this.entities) {
+    for (const entity of this.entities) {
       entity.insertStage(stageNumber)
     }
   }
   deleteStage(stageNumber: StageNumber): void {
-    for (const [entity] of this.entities) {
+    for (const entity of this.entities) {
       entity.deleteStage(stageNumber)
     }
   }
@@ -205,3 +233,19 @@ class EntityMapImpl implements MutableEntityMap {
 export function newEntityMap(): MutableEntityMap {
   return new EntityMapImpl()
 }
+
+Migrations.to("0.3.0", () => {
+  interface OldEntityMap {
+    entities: LuaMap<AssemblyEntity, AsmEntityCircuitConnections>
+  }
+  for (const [, assembly] of getAllAssemblies()) {
+    const content = assembly.content as EntityMapImpl
+
+    const oldEntities = (content as unknown as OldEntityMap).entities
+    content.circuitConnections = oldEntities
+    const entities = (content.entities = new LuaSet<AssemblyEntity>())
+    for (const [entity] of oldEntities) {
+      entities.add(entity)
+    }
+  }
+})

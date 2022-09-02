@@ -9,7 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "./Assembly"
-import "./assembly-listener"
-import "./migrations"
-import "./world-listener"
+import { Assembly, AssemblyId } from "./AssemblyDef"
+
+declare const global: {
+  assemblies: LuaMap<AssemblyId, Assembly>
+}
+
+export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
+  return global.assemblies
+}

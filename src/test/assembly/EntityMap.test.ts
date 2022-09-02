@@ -19,15 +19,6 @@ before_each(() => {
   content = newEntityMap()
 })
 
-test("has", () => {
-  const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-  assert.false(content.has(entity))
-  content.add(entity)
-  assert.true(content.has(entity))
-  content.delete(entity)
-  assert.false(content.has(entity))
-})
-
 test("countNumEntities", () => {
   const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
   assert.equal(0, content.countNumEntities())
@@ -117,6 +108,7 @@ describe("circuit connections", () => {
   test("getCircuitConnections initially empty", () => {
     assert.nil(content.getCircuitConnections(entity1))
   })
+
   test("addCircuitConnection shows up in getCircuitConnections", () => {
     const connection = createCircuitConnection(entity1, entity2)
     content.addCircuitConnection(connection)
@@ -127,6 +119,7 @@ describe("circuit connections", () => {
     assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity1)!.get(entity2))
     assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity2)!.get(entity1))
   })
+
   test("does not add if identical connection is already present", () => {
     const connection = createCircuitConnection(entity1, entity2)
     const connection2 = createCircuitConnection(entity2, entity1)
@@ -135,9 +128,20 @@ describe("circuit connections", () => {
     assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
     assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
   })
+
+  test("removeCircuitConnection removes connection", () => {
+    const connection = createCircuitConnection(entity1, entity2)
+    content.addCircuitConnection(connection)
+    content.removeCircuitConnection(connection)
+
+    assert.nil(content.getCircuitConnections(entity1))
+    assert.nil(content.getCircuitConnections(entity2))
+  })
+
   test("deleting entity removes its connections", () => {
     content.addCircuitConnection(createCircuitConnection(entity1, entity2))
     content.delete(entity1)
+    assert.same(nil, content.getCircuitConnections(entity1) ?? nil)
     assert.same(nil, content.getCircuitConnections(entity2) ?? nil)
   })
 })

@@ -216,10 +216,6 @@ export function createAssembly(name: string, initialNumStages: number): Assembly
   return AssemblyImpl.create(name, initialNumStages)
 }
 
-export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
-  return global.assemblies
-}
-
 export function _deleteAllAssemblies(): void {
   for (const [, assembly] of global.assemblies) {
     assembly.delete()
