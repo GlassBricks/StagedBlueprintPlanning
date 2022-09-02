@@ -29,6 +29,7 @@ export interface EntityMap {
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
 
   getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil
+  getCableConnections(entity: AssemblyEntity): AsmEntityCableConnections | nil
 
   countNumEntities(): number
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity>
@@ -42,18 +43,23 @@ export interface MutableEntityMap extends EntityMap {
   addCircuitConnection(circuitConnection: AsmCircuitConnection): boolean
   removeCircuitConnection(circuitConnection: AsmCircuitConnection): void
 
+  addCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void
+  removeCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void
+
   /** Modifies all entities */
   insertStage(stageNumber: StageNumber): void
   deleteStage(stageNumber: StageNumber): void
 }
 
 export type AsmEntityCircuitConnections = LuaMap<AssemblyEntity, LuaSet<AsmCircuitConnection>>
+export type AsmEntityCableConnections = LuaSet<AssemblyEntity>
 
 @RegisterClass("EntityMap")
 class EntityMapImpl implements MutableEntityMap {
   readonly byPosition: MutableMap2D<AssemblyEntity> = newMap2D()
   entities = new LuaSet<AssemblyEntity>()
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
+  cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
   findCompatibleBasic(
     entityName: string,
@@ -128,23 +134,23 @@ class EntityMapImpl implements MutableEntityMap {
     const { x, y } = entity.position
     this.byPosition.delete(x, y, entity)
 
-    // remove wire connections
-    this.removeAllCircuitConnections(entity)
+    this.removeAllConnections(entity, this.circuitConnections)
+    this.removeAllConnections(entity, this.cableConnections)
   }
 
-  private removeAllCircuitConnections(entity: AssemblyEntity): void {
-    const circuitConnections = this.circuitConnections
-    const entityCircuitConnections = circuitConnections.get(entity)
-    if (!entityCircuitConnections) return
-    circuitConnections.delete(entity)
+  private removeAllConnections(
+    entity: AssemblyEntity,
+    map: LuaMap<AssemblyEntity, AsmEntityCircuitConnections> | LuaMap<AssemblyEntity, AsmEntityCableConnections>,
+  ) {
+    const entityData = map.get(entity)
+    if (!entityData) return
+    map.delete(entity)
 
-    for (const [otherEntity] of entityCircuitConnections) {
-      const connectionData = circuitConnections.get(otherEntity)
-      if (connectionData) {
-        connectionData.delete(entity)
-        if (isEmpty(connectionData)) {
-          circuitConnections.delete(otherEntity)
-        }
+    for (const otherEntity of entityData as LuaSet<AssemblyEntity>) {
+      const otherData = map.get(otherEntity)
+      if (otherData) {
+        otherData.delete(entity)
+        if (isEmpty(otherData)) map.delete(otherEntity)
       }
     }
   }
@@ -218,6 +224,45 @@ class EntityMapImpl implements MutableEntityMap {
     }
   }
 
+  getCableConnections(entity: AssemblyEntity): AsmEntityCableConnections | nil {
+    return this.cableConnections.get(entity)
+  }
+
+  addCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void {
+    const { cableConnections } = this
+    let data1 = cableConnections.get(entity1)
+    if (!data1) {
+      data1 = newLuaSet()
+      cableConnections.set(entity1, data1)
+    }
+    data1.add(entity2)
+
+    let data2 = cableConnections.get(entity2)
+    if (!data2) {
+      data2 = newLuaSet()
+      cableConnections.set(entity2, data2)
+    }
+    data2.add(entity1)
+  }
+
+  removeCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): void {
+    const { cableConnections } = this
+    const data1 = cableConnections.get(entity1)
+    if (data1) {
+      data1.delete(entity2)
+      if (isEmpty(data1)) {
+        cableConnections.delete(entity1)
+      }
+    }
+    const data2 = cableConnections.get(entity2)
+    if (data2) {
+      data2.delete(entity1)
+      if (isEmpty(data2)) {
+        cableConnections.delete(entity2)
+      }
+    }
+  }
+
   insertStage(stageNumber: StageNumber): void {
     for (const entity of this.entities) {
       entity.insertStage(stageNumber)
@@ -247,5 +292,8 @@ Migrations.to("0.3.0", () => {
     for (const [entity] of oldEntities) {
       entities.add(entity)
     }
+
+    content.cableConnections = new LuaMap()
+    // TODO: migrate cable connections from world
   }
 })

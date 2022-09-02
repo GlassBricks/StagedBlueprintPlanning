@@ -16,7 +16,10 @@ import { AsmEntityCircuitConnections, EntityMap } from "./EntityMap"
 
 /** @noSelf */
 export interface WireUpdater {
-  updateCircuitConnections(
+  /**
+   * Handles both cable and circuit connections.
+   */
+  updateWireConnections(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
     stageNumber: StageNumber,
@@ -32,11 +35,20 @@ export interface WireSaver {
     stageNumber: StageNumber,
     luaEntity: LuaEntity,
   ): LuaMultiReturn<[added: AsmCircuitConnection[], removed: AsmCircuitConnection[]] | [_: false, _?: never]>
+
+  getCableConnectionDiff(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity,
+    stageNumber: StageNumber,
+    luaEntity: LuaEntity,
+  ): LuaMultiReturn<[added: AssemblyEntity[], removed: AssemblyEntity[]] | [_: false, _?: never]>
 }
 
 /** @noSelf */
 export interface WireHandler extends WireUpdater, WireSaver {}
 
+const red = defines.wire_type.red
+const green = defines.wire_type.green
 function updateCircuitConnections(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
@@ -48,12 +60,12 @@ function updateCircuitConnections(
 
   const assemblyConnections = assembly.content.getCircuitConnections(entity)
   if (!assemblyConnections) {
-    luaEntity.disconnect_neighbour(defines.wire_type.red)
-    luaEntity.disconnect_neighbour(defines.wire_type.green)
+    luaEntity.disconnect_neighbour(red)
+    luaEntity.disconnect_neighbour(green)
     return
   }
 
-  const [matchingConnections, extraConnections] = analyzeExistingConnections(
+  const [matchingConnections, extraConnections] = analyzeExistingCircuitConnections(
     assemblyConnections,
     existingConnections,
     assembly.content,
@@ -77,6 +89,46 @@ function updateCircuitConnections(
   }
 }
 
+function updateCableConnections(
+  assembly: AssemblyContent,
+  entity: AssemblyEntity,
+  stageNumber: StageNumber,
+  luaEntity: LuaEntity,
+): void {
+  if (luaEntity.type !== "electric-pole") return
+  const { content } = assembly
+  const assemblyConnections = content.getCableConnections(entity)
+  if (!assemblyConnections) {
+    luaEntity.disconnect_neighbour()
+    return
+  }
+
+  const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
+  if (existingConnections) {
+    for (const otherLuaEntity of existingConnections) {
+      const otherEntity = content.findCompatible(otherLuaEntity, otherLuaEntity.position, nil)
+      if (otherEntity && !assemblyConnections.has(otherEntity)) {
+        luaEntity.disconnect_neighbour(otherLuaEntity)
+      }
+    }
+  }
+
+  for (const otherEntity of assemblyConnections) {
+    const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
+    if (otherLuaEntity) luaEntity.connect_neighbour(otherLuaEntity)
+  }
+}
+
+function updateWireConnections(
+  assembly: AssemblyContent,
+  entity: AssemblyEntity,
+  stageNumber: StageNumber,
+  luaEntity: LuaEntity,
+): void {
+  updateCircuitConnections(assembly, entity, stageNumber, luaEntity)
+  updateCableConnections(assembly, entity, stageNumber, luaEntity)
+}
+
 function getCircuitConnectionDiff(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
@@ -87,7 +139,7 @@ function getCircuitConnectionDiff(
   if (!existingConnections) return $multi(false)
   const assemblyConnections = assembly.content.getCircuitConnections(entity)
 
-  const [matchingConnections, extraConnections] = analyzeExistingConnections(
+  const [matchingConnections, extraConnections] = analyzeExistingCircuitConnections(
     assemblyConnections,
     existingConnections,
     assembly.content,
@@ -110,8 +162,7 @@ function getCircuitConnectionDiff(
       const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
       if (!otherLuaEntity) continue
       for (const connection of connections) {
-        if (matchingConnections.has(connection)) continue
-        removed.push(connection)
+        if (!matchingConnections.has(connection)) removed.push(connection)
       }
     }
   }
@@ -119,7 +170,42 @@ function getCircuitConnectionDiff(
   return $multi(added, removed)
 }
 
-function analyzeExistingConnections(
+function getCableConnectionDiff(
+  assembly: AssemblyContent,
+  entity: AssemblyEntity,
+  stageNumber: StageNumber,
+  luaEntity: LuaEntity,
+): LuaMultiReturn<[added: AssemblyEntity[], removed: AssemblyEntity[]] | [false]> {
+  if (luaEntity.type !== "electric-pole") return $multi(false)
+  const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
+  const { content } = assembly
+  const assemblyConnections = content.getCableConnections(entity)
+
+  const added: AssemblyEntity[] = []
+  const removed: AssemblyEntity[] = []
+  const matching = new LuaSet<AssemblyEntity>()
+
+  if (existingConnections) {
+    for (const otherLuaEntity of existingConnections) {
+      const otherEntity = content.findCompatible(otherLuaEntity, otherLuaEntity.position, nil)
+      if (!otherEntity) continue
+      if (!assemblyConnections || assemblyConnections.has(otherEntity)) {
+        matching.add(otherEntity)
+      } else {
+        added.push(otherEntity)
+      }
+    }
+  }
+  if (assemblyConnections) {
+    for (const otherEntity of assemblyConnections) {
+      if (!matching.has(otherEntity)) removed.push(otherEntity)
+    }
+  }
+
+  return $multi(added, removed)
+}
+
+function analyzeExistingCircuitConnections(
   assemblyConnections: AsmEntityCircuitConnections | nil,
   existingConnections: readonly CircuitConnectionDefinition[],
   content: EntityMap,
@@ -138,7 +224,7 @@ function analyzeExistingConnections(
     if (!otherEntity) continue
     const otherConnections = assemblyConnections && assemblyConnections.get(otherEntity)
     const matchingConnection =
-      otherConnections && findingMatchingConnection(otherConnections, otherEntity, existingConnection)
+      otherConnections && findMatchingCircuitConnection(otherConnections, otherEntity, existingConnection)
     if (matchingConnection) {
       matching.set(matchingConnection, existingConnection)
     } else {
@@ -148,7 +234,7 @@ function analyzeExistingConnections(
   return $multi(matching, extra)
 }
 
-function findingMatchingConnection(
+function findMatchingCircuitConnection(
   connections: ReadonlyLuaSet<AsmCircuitConnection>,
   toEntity: AssemblyEntity,
   { source_circuit_id, target_circuit_id, wire }: CircuitConnectionDefinition,
@@ -163,6 +249,7 @@ function findingMatchingConnection(
 }
 
 export const DefaultWireHandler: WireHandler = {
-  updateCircuitConnections,
+  updateWireConnections,
   getCircuitConnectionDiff,
+  getCableConnectionDiff,
 }

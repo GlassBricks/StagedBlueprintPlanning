@@ -82,7 +82,7 @@ describe("findCompatible", () => {
   })
 })
 
-describe("circuit connections", () => {
+describe("connections", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   before_each(() => {
@@ -91,57 +91,86 @@ describe("circuit connections", () => {
     content.add(entity1)
     content.add(entity2)
   })
-  function createCircuitConnection(
-    fromEntity: AssemblyEntity,
-    toEntity: AssemblyEntity,
-    wireType: defines.wire_type = defines.wire_type.red,
-  ): AsmCircuitConnection {
-    return {
-      fromEntity,
-      toEntity,
-      wire: wireType,
-      fromId: 0,
-      toId: 0,
+  describe("circuit connections", () => {
+    function createCircuitConnection(
+      fromEntity: AssemblyEntity,
+      toEntity: AssemblyEntity,
+      wireType: defines.wire_type = defines.wire_type.red,
+    ): AsmCircuitConnection {
+      return {
+        fromEntity,
+        toEntity,
+        wire: wireType,
+        fromId: 0,
+        toId: 0,
+      }
     }
-  }
 
-  test("getCircuitConnections initially empty", () => {
-    assert.nil(content.getCircuitConnections(entity1))
+    test("getCircuitConnections initially empty", () => {
+      assert.nil(content.getCircuitConnections(entity1))
+    })
+
+    test("addCircuitConnection shows up in getCircuitConnections", () => {
+      const connection = createCircuitConnection(entity1, entity2)
+      content.addCircuitConnection(connection)
+      assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
+      assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
+      const connection2 = createCircuitConnection(entity1, entity2, defines.wire_type.green)
+      content.addCircuitConnection(connection2)
+      assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity1)!.get(entity2))
+      assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity2)!.get(entity1))
+    })
+
+    test("does not add if identical connection is already present", () => {
+      const connection = createCircuitConnection(entity1, entity2)
+      const connection2 = createCircuitConnection(entity2, entity1)
+      content.addCircuitConnection(connection)
+      content.addCircuitConnection(connection2)
+      assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
+      assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
+    })
+
+    test("removeCircuitConnection removes connection", () => {
+      const connection = createCircuitConnection(entity1, entity2)
+      content.addCircuitConnection(connection)
+      content.removeCircuitConnection(connection)
+
+      assert.nil(content.getCircuitConnections(entity1))
+      assert.nil(content.getCircuitConnections(entity2))
+    })
+
+    test("deleting entity removes its connections", () => {
+      content.addCircuitConnection(createCircuitConnection(entity1, entity2))
+      content.delete(entity1)
+      assert.same(nil, content.getCircuitConnections(entity1) ?? nil)
+      assert.same(nil, content.getCircuitConnections(entity2) ?? nil)
+    })
   })
 
-  test("addCircuitConnection shows up in getCircuitConnections", () => {
-    const connection = createCircuitConnection(entity1, entity2)
-    content.addCircuitConnection(connection)
-    assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
-    assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
-    const connection2 = createCircuitConnection(entity1, entity2, defines.wire_type.green)
-    content.addCircuitConnection(connection2)
-    assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity1)!.get(entity2))
-    assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity2)!.get(entity1))
-  })
+  describe("cable connections", () => {
+    test("getCableConnections initially empty", () => {
+      assert.nil(content.getCableConnections(entity1))
+    })
 
-  test("does not add if identical connection is already present", () => {
-    const connection = createCircuitConnection(entity1, entity2)
-    const connection2 = createCircuitConnection(entity2, entity1)
-    content.addCircuitConnection(connection)
-    content.addCircuitConnection(connection2)
-    assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
-    assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
-  })
+    test("addCableConnection shows up in getCableConnections", () => {
+      content.addCableConnection(entity1, entity2)
+      assert.same(newLuaSet(entity2), content.getCableConnections(entity1)!)
+      assert.same(newLuaSet(entity1), content.getCableConnections(entity2)!)
+    })
 
-  test("removeCircuitConnection removes connection", () => {
-    const connection = createCircuitConnection(entity1, entity2)
-    content.addCircuitConnection(connection)
-    content.removeCircuitConnection(connection)
+    test("removeCableConnection removes connection", () => {
+      content.addCableConnection(entity1, entity2)
+      content.removeCableConnection(entity1, entity2)
 
-    assert.nil(content.getCircuitConnections(entity1))
-    assert.nil(content.getCircuitConnections(entity2))
-  })
+      assert.same(nil, content.getCableConnections(entity1) ?? nil)
+      assert.same(nil, content.getCableConnections(entity2) ?? nil)
+    })
 
-  test("deleting entity removes its connections", () => {
-    content.addCircuitConnection(createCircuitConnection(entity1, entity2))
-    content.delete(entity1)
-    assert.same(nil, content.getCircuitConnections(entity1) ?? nil)
-    assert.same(nil, content.getCircuitConnections(entity2) ?? nil)
+    test("deleting entity removes its connections", () => {
+      content.addCableConnection(entity1, entity2)
+      content.delete(entity1)
+      assert.same(nil, content.getCableConnections(entity1) ?? nil)
+      assert.same(nil, content.getCableConnections(entity2) ?? nil)
+    })
   })
 })

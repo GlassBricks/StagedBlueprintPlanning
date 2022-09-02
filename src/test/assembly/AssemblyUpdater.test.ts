@@ -64,6 +64,7 @@ before_each(() => {
   }
   wireSaver = {
     getCircuitConnectionDiff: stub<WireSaver["getCircuitConnectionDiff"]>().invokes(() => $multi([], [])),
+    getCableConnectionDiff: stub<WireSaver["getCableConnectionDiff"]>().invokes(() => $multi([], [])),
   }
   worldNotifier = {
     createNotification: spy(),
