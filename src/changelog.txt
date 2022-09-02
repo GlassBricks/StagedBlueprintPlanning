@@ -18,7 +18,7 @@ Date: 2022-09-01
 Version: 0.2.0
 Date: 2022-08-31
   Changes:
-    - Each stage is now on its own separate layer; Assembly creation has been simplified.
+    - Each stage is now on its own separate surface; Assembly creation has been simplified.
     - The above change is backwards incompatible. Migrating will remove all assemblies, entities will still be kept.
     - Assembly settings gui will now always match the player position
     - Other Assembly settings gui improvements
