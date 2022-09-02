@@ -44,7 +44,7 @@ export declare const enum L_Bp100 {
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp100.interaction.unexpected-error",
-  /** WARNING: pasting a blueprint from the blueprint [font=default-bold]library[/font] into an assembly is not fully supported.\nEntities that have changed settings due to pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (book) first, then paste again. */
+  /** WARNING: pasting a blueprint from the blueprint [font=default-bold]library[/font] into an assembly is not supported.\nEntities that have settings changed from pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (book) first, then paste again. */
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
@@ -74,7 +74,7 @@ export declare const enum L_Interaction {
   EntitySameInAllStages = "bp100.interaction.entity-same-in-all-stages",
   /** Blueprint is empty */
   BlueprintEmpty = "bp100.interaction.blueprint-empty",
-  /** Entities were removed from the blueprint, settings could not be save. Try editing the blueprint again without removing entities. */
+  /** Entities were removed from the blueprint, settings could not be saved. Try editing the blueprint again without removing entities. */
   BlueprintEntitiesRemoved = "bp100.interaction.blueprint-entities-removed",
 }
 export declare const enum L_GuiCurrentAssembly {
@@ -132,18 +132,18 @@ export declare const enum L_GuiAssemblySettings {
   DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
   /** Reset stage [img=info] */
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
-  /** Resets all entities in the stage to match the stored state.\nThis will delete and replace all entities.\nThis can also help resolve errors or inconsistencies due to bugs. */
+  /** Deletes and replaces all entities to match the stored state.\nThis can help resolve errors, or inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
   /** Get blueprint [img=info] */
   GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
-  /** Gets a blueprint of the current stage.\nChanged to the given blueprint will [font=default-bold]not[/font] be saved. */
+  /** Gets a blueprint of the current stage.\Changes to the given blueprint will [font=default-bold]not[/font] be saved. */
   GetBlueprintTooltip = "bp100.gui.assembly-settings.get-blueprint-tooltip",
   /** Edit blueprint [img=info] */
   EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
-  /** Edits the blueprint of the current stage.\nChanges (icons, snap-to-grid, grid position, etc.) [font=default-bold]will[/font] be saved.\nGrid position and snap-to-grid settings will be applied to [font=default-bold]all[/font] stages in the assembly. */
+  /** Edits the blueprint of the current stage.\nChanges (icons, grid settings, etc.) [font=default-bold]will[/font] be saved.\nGrid position and snap-to-grid settings will be applied to [font=default-bold]all[/font] stages. */
   EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
   /** Make blueprint book */
   GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
-  /** Makes a blueprint book of all stages in the assembly.\nYou can configure individual blueprints in the stage settings. */
+  /** You can configure individual blueprints in the stage settings. */
   GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
 }
