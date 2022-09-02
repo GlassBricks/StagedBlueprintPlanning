@@ -20,7 +20,6 @@ import {
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
-import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, StageDiffs, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { getEntityInfo } from "../../entity/entity-info"
@@ -32,7 +31,6 @@ import { createMockEntitySaver } from "../entity/EntityHandler-mock"
 import { entityMock, simpleMock } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 import direction = defines.direction
-import wire_type = defines.wire_type
 
 const pos = Pos(10.5, 10.5)
 
@@ -63,9 +61,9 @@ before_each(() => {
     reviveSettingsRemnant: spyFn(),
   }
   wireSaver = {
-    getCircuitConnectionDiff: stub<WireSaver["getCircuitConnectionDiff"]>().invokes(() => $multi([], [])),
-    getCableConnectionDiff: stub<WireSaver["getCableConnectionDiff"]>().invokes(() => $multi([], [])),
+    saveWireConnections: stub(),
   }
+  wireSaver.saveWireConnections.returns(false)
   worldNotifier = {
     createNotification: spy(),
   }
@@ -101,6 +99,7 @@ function addAndReset(addedNum: StageNumber = stage.stageNumber, setNum = stage.s
   const ret = addEntity(args)
   stage.stageNumber = setNum
   mock.clear(worldUpdater)
+  mock.clear(wireSaver)
   totalCalls = 0
   return ret
 }
@@ -131,16 +130,16 @@ function addAndResetRealEntity(
   return ret
 }
 
-let eventsAsserted = false
+let worldUpdaterAsserted = false
 let entitiesAsserted = false
 let notificationsAsserted = false
 before_each(() => {
-  eventsAsserted = false
+  worldUpdaterAsserted = false
   entitiesAsserted = false
   notificationsAsserted = false
 })
 after_each(() => {
-  assert(eventsAsserted, "events not asserted")
+  assert(worldUpdaterAsserted, "events not asserted")
   assert(entitiesAsserted, "entities not asserted")
   if (!notificationsAsserted)
     assert.message("unexpected notification").spy(worldNotifier.createNotification).not_called()
@@ -155,7 +154,7 @@ function assertNoCalls() {
         .not_called()
     }
   }
-  eventsAsserted = true
+  worldUpdaterAsserted = true
 }
 
 function assertUpdateCalled(
@@ -165,7 +164,7 @@ function assertUpdateCalled(
   replace: boolean,
   n?: number,
 ) {
-  eventsAsserted = true
+  worldUpdaterAsserted = true
   if (n === nil) assert.equal(1, totalCalls, "called once")
   const spy = worldUpdater.updateWorldEntities
   if (n) assert.spy(spy).called_at_least(n + 1)
@@ -180,22 +179,22 @@ function assertUpdateCalled(
   else assert.falsy(cReplace, "replace")
 }
 function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
-  eventsAsserted = true
+  worldUpdaterAsserted = true
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.deleteAllEntities).called_with(match.ref(entity))
 }
 function assertForceDeleteCalled(entity: AssemblyEntity<TestEntity>, stage: StageNumber) {
-  eventsAsserted = true
+  worldUpdaterAsserted = true
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.forceDeleteEntity).called_with(match.ref(assembly), match.ref(entity), stage)
 }
 function assertMakeSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
-  eventsAsserted = true
+  worldUpdaterAsserted = true
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.makeSettingsRemnant).called_with(assembly, entity)
 }
 function assertReviveSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
-  eventsAsserted = true
+  worldUpdaterAsserted = true
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.reviveSettingsRemnant).called_with(assembly, entity)
 }
@@ -234,6 +233,7 @@ function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): v
 
   assertOneEntity()
   assertUpdateCalled(added, 1, nil, false)
+  assert.spy(wireSaver.saveWireConnections).called(1)
 }
 
 describe("add", () => {
@@ -545,6 +545,24 @@ describe("fast replace", () => {
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
     assertNotified(newEntity, [L_Game.CantBeRotated], true)
+  })
+})
+
+describe("circuitWiresPotentiallyUpdated", () => {
+  test("if saved, calls update", () => {
+    const { luaEntity, added } = addAndReset()
+    wireSaver.saveWireConnections.returns(true)
+    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+
+    assertOneEntity()
+    assertUpdateCalled(added, 1, nil, false)
+  })
+  test("if no changes, does not call update", () => {
+    const { luaEntity } = addAndReset()
+    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+
+    assertOneEntity()
+    assertNoCalls()
   })
 })
 
@@ -964,105 +982,5 @@ describe("cleanup tool", () => {
     assert.nil(added.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)
-  })
-})
-
-describe("circuit wires", () => {
-  function setupNewWire(luaEntity1: LuaEntity, entity1: AssemblyEntity<TestEntity>): void {
-    wireSaver.getCircuitConnectionDiff.invokes((_, entity2) => {
-      wireSaver.getCircuitConnectionDiff.invokes(() => false as any)
-      return $multi(
-        [
-          {
-            wire: wire_type.red,
-            fromEntity: entity1,
-            toEntity: entity2,
-            fromId: 1,
-            toId: 0,
-          } as AsmCircuitConnection,
-        ],
-        [],
-      )
-    })
-  }
-  function assertSingleWireMatches(entity2: AssemblyEntity<TestEntity>, entity1: AssemblyEntity<TestEntity>): void {
-    const expectedConnection: AsmCircuitConnection = {
-      wire: defines.wire_type.red,
-      fromEntity: entity2,
-      toEntity: entity1,
-      fromId: 0,
-      toId: 1,
-    }
-    function assertConnectionsMatch(connections: LuaSet<AsmCircuitConnection> | nil) {
-      if (!connections) error("no connections")
-      assert.equal(1, table_size(connections))
-      const value = next(connections)[0] as AsmCircuitConnection
-      assert.true(circuitConnectionEquals(value, expectedConnection), "connections do not match")
-    }
-    assertConnectionsMatch(assembly.content.getCircuitConnections(entity1)?.get(entity2))
-    assertConnectionsMatch(assembly.content.getCircuitConnections(entity1)?.get(entity2))
-  }
-
-  test("added circuit wires when entity added", () => {
-    const { luaEntity: luaEntity1, added: entity1 } = addAndReset(nil, nil, {
-      name: "test2",
-      position: pos.plus(Pos(0, 1)),
-    })
-    setupNewWire(luaEntity1, entity1)
-    const { added: entity2 } = addEntity()
-    assertSingleWireMatches(entity2, entity1)
-
-    assertUpdateCalled(entity2, 1, nil, false)
-    assertNEntities(2)
-  })
-
-  describe("onCircuitWiresPotentiallyUpdated", () => {
-    test("adds wire", () => {
-      const { luaEntity: luaEntity1, added: entity1 } = addAndReset(nil, nil, {
-        name: "test2",
-        position: pos.plus(Pos(0, 1)),
-      })
-      addAndReset()
-      setupNewWire(luaEntity1, entity1)
-
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage, playerIndex)
-
-      assertUpdateCalled(entity1, 1, nil, false)
-      assertNEntities(2)
-    })
-
-    test("deletes wire", () => {
-      const { luaEntity: luaEntity1, added: entity1 } = addAndReset(nil, nil, {
-        name: "test2",
-        position: pos.plus(Pos(0, 1)),
-      })
-      setupNewWire(luaEntity1, entity1)
-      const { added: entity2 } = addAndReset()
-
-      const connection = next(assembly.content.getCircuitConnections(entity1)!.get(entity2)!)[0] as AsmCircuitConnection
-
-      wireSaver.getCircuitConnectionDiff.invokes(() => {
-        wireSaver.getCircuitConnectionDiff.invokes(() => false as any)
-        return $multi([], [connection])
-      })
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage, playerIndex)
-      assert.falsy(assembly.content.getCircuitConnections(entity1)?.get(entity2))
-      assert.falsy(assembly.content.getCircuitConnections(entity2)?.get(entity1))
-      assertUpdateCalled(entity1, 1, nil, false)
-      assertNEntities(2)
-    })
-
-    test("does nothing if no change", () => {
-      const { luaEntity: luaEntity1, added: entity1 } = addAndReset(nil, nil, {
-        name: "test2",
-        position: pos.plus(Pos(0, 1)),
-      })
-      setupNewWire(luaEntity1, entity1)
-      addAndReset()
-
-      assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity1, stage, playerIndex)
-      assertNoCalls()
-      assertNEntities(2)
-    })
   })
 })

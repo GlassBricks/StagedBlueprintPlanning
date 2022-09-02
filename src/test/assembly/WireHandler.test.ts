@@ -13,6 +13,7 @@ import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { DefaultWireHandler, WireHandler } from "../../assembly/WireHandler"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { shallowCompare } from "../../lib"
 import { Position } from "../../lib/geometry"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
@@ -132,32 +133,36 @@ describe("circuit wires", () => {
     })
   })
 
-  describe("getCircuitConnectionDiff", () => {
+  describe("saving wire connections", () => {
     test.each<[number[], number[], string]>([
       [[1, 2], [1, 2], "no change"],
       [[1], [1, 2], "add"],
+      [[], [1, 2], "add2"],
       [[1, 2], [1], "remove"],
       [[1], [2], "add and remove"],
       [[1, 2], [], "remove 2"],
       [[1], [1, 3], "add different"],
       [[1, 2], [1, 3], "mixed"],
     ])("diff: %s -> %s: %s", (existing, world) => {
-      for (const number of existing)
-        assembly.content.addCircuitConnection([getExpectedWire1, getExpectedWire2, getExpectedWire3][number - 1]())
-      for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
-      const diff = handler.getCircuitConnectionDiff(assembly, entity1, 1, luaEntity1)
-
       const wires = [getExpectedWire1(), getExpectedWire2(), getExpectedWire3()]
-      const added = world.filter((n) => !existing.includes(n)).map((n) => wires[n - 1])
-      const removed = existing.filter((n) => !world.includes(n)).map((n) => wires[n - 1])
-      assert.same(added, diff[0])
-      assert.same(removed, diff[1])
+      for (const number of existing) assembly.content.addCircuitConnection(wires[number - 1])
+      for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
+
+      const hasDiff = handler.saveWireConnections(assembly, entity1, 1, luaEntity1)
+      assert.equal(!shallowCompare(existing, world), hasDiff)
+
+      const connections = assembly.content.getCircuitConnections(entity1)?.get(entity2)
+      assert.same(
+        world.map((number) => wires[number - 1]),
+        Object.keys(connections ?? {}),
+      )
     })
   })
 })
 
 describe("cable connections", () => {
   let luaEntity3: LuaEntity
+  let entity3: AssemblyEntity
   before_each(() => {
     function setup(pos: Position) {
       const luaEntity = surface.create_entity({ name: "medium-electric-pole", position: pos })!
@@ -168,7 +173,7 @@ describe("cable connections", () => {
     }
     ;({ luaEntity: luaEntity1, entity: entity1 } = setup({ x: 5.5, y: 5.5 }))
     ;({ luaEntity: luaEntity2, entity: entity2 } = setup({ x: 7.5, y: 5.5 }))
-    ;({ luaEntity: luaEntity3 } = setup({ x: 7.5, y: 6.5 }))
+    ;({ luaEntity: luaEntity3, entity: entity3 } = setup({ x: 5.5, y: 7.5 }))
     luaEntity1.disconnect_neighbour()
     luaEntity2.disconnect_neighbour()
     luaEntity3.disconnect_neighbour()
@@ -196,5 +201,30 @@ describe("cable connections", () => {
     assert.same([luaEntity2], (luaEntity1.neighbours as { copper: LuaEntity[] }).copper)
     assert.same([luaEntity1], (luaEntity2.neighbours as { copper: LuaEntity[] }).copper)
     assert.same([], (luaEntity3.neighbours as { copper: LuaEntity[] }).copper)
+  })
+
+  describe("saving cables", () => {
+    test.each<[number[], number[], string]>([
+      [[1, 2], [1, 2], "no change"],
+      [[1], [1, 2], "add"],
+      [[], [1, 2], "add2"],
+      [[1, 2], [1], "remove"],
+      [[1], [2], "add and remove"],
+      [[1, 2], [], "remove 2"],
+    ])("diff: %s -> %s: %s", (existing, world) => {
+      if (existing.includes(1)) assembly.content.addCableConnection(entity1, entity2)
+      if (existing.includes(2)) assembly.content.addCableConnection(entity2, entity3)
+      if (world.includes(1)) luaEntity1.connect_neighbour(luaEntity2)
+      if (world.includes(2)) luaEntity2.connect_neighbour(luaEntity3)
+
+      const hasDiff = handler.saveWireConnections(assembly, entity2, 1, luaEntity2)
+      assert.equal(!shallowCompare(existing, world), hasDiff)
+
+      const connections = assembly.content.getCableConnections(entity2)
+      assert.same(
+        world.map((number) => [entity1, entity3][number - 1]),
+        Object.keys(connections ?? {}),
+      )
+    })
   })
 })

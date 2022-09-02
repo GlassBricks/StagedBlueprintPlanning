@@ -16,6 +16,7 @@ import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
+import { SelflessFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
@@ -29,7 +30,7 @@ let entity: AssemblyEntity<TestEntity>
 
 let mockEntityCreator: MockEntityCreator
 let highlighter: mock.Mocked<EntityHighlighter>
-let wireUpdater: mock.Mocked<WireUpdater>
+let wireUpdater: mock.Stubbed<WireUpdater>
 let worldUpdater: WorldUpdater
 
 before_each(() => {
@@ -46,7 +47,7 @@ before_each(() => {
 
   mockEntityCreator = createMockEntityCreator()
   wireUpdater = {
-    updateWireConnections: spy(),
+    updateWireConnections: stub<SelflessFun>().returns(true),
   }
   highlighter = {
     updateHighlights: spy(),

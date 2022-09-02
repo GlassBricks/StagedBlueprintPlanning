@@ -113,11 +113,11 @@ function isTestsRunning() {
   }
   return true
 }
-let shouldTryRerun = !__DebugAdapter
+let shouldTryRerun = true
 
 Events.on_tick(() => {
   if (!shouldTryRerun) return
-  const ticks = math.ceil(3 * 60 * game.speed)
+  const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod === 0) {
     // tests not running or not ready

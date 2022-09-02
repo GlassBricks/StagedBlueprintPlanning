@@ -527,7 +527,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   }
 }
 
-// Circuit wires
+// Circuit wires and cables
 // There is no event for this, so we listen to player inputs to detect potential changes, and check during on_selected_entity_changed
 
 function markPlayerAffectedWires(player: LuaPlayer): void {
@@ -554,11 +554,11 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   }
 }
 
-const circuitWirePrototypes = newLuaSet("red-wire", "green-wire")
+const wirePrototypes = newLuaSet("red-wire", "green-wire", "copper-cable")
 Events.on(CustomInputs.Build, (e) => {
   const player = game.get_player(e.player_index)!
   const playerStack = player.cursor_stack
-  if (!playerStack || !playerStack.valid_for_read || !circuitWirePrototypes.has(playerStack.name)) return
+  if (!playerStack || !playerStack.valid_for_read || !wirePrototypes.has(playerStack.name)) return
   markPlayerAffectedWires(player)
 })
 Events.on(CustomInputs.RemovePoleCables, (e) => {

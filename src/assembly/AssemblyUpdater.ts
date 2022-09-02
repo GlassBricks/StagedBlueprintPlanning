@@ -106,23 +106,8 @@ export function createAssemblyUpdater(
 ): AssemblyUpdater {
   const { deleteAllEntities, updateWorldEntities, forceDeleteEntity } = worldUpdater
   const { saveEntity } = entitySaver
-  const { getCircuitConnectionDiff } = wireSaver
+  const { saveWireConnections } = wireSaver
   const { createNotification } = notifier
-
-  function recordCircuitWires(
-    assembly: AssemblyContent,
-    assemblyEntity: AssemblyEntity,
-    stageNumber: StageNumber,
-    entity: LuaEntity,
-  ): boolean {
-    const [added, removed] = getCircuitConnectionDiff(assembly, assemblyEntity, stageNumber, entity)
-    if (!added) return false
-    if (added[0] === nil && removed![0] === nil) return false
-    const { content } = assembly
-    for (const connection of added) content.addCircuitConnection(connection)
-    for (const connection of removed!) content.removeCircuitConnection(connection)
-    return true
-  }
 
   function onEntityCreated(
     assembly: AssemblyContent,
@@ -170,7 +155,7 @@ export function createAssemblyUpdater(
       }
     }
 
-    recordCircuitWires(assembly, assemblyEntity, stageNumber, entity)
+    saveWireConnections(assembly, assemblyEntity, stageNumber, entity)
     updateWorldEntities(assembly, assemblyEntity, 1)
 
     return assemblyEntity
@@ -580,7 +565,7 @@ export function createAssemblyUpdater(
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, byPlayer, nil)
     if (!existing) return
-    if (recordCircuitWires(assembly, existing, stage.stageNumber, entity)) {
+    if (saveWireConnections(assembly, existing, stage.stageNumber, entity)) {
       updateWorldEntities(assembly, existing, existing.getFirstStage())
     }
   }
