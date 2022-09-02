@@ -51,9 +51,15 @@ const emptySprite: Sprite = {
 const entityMarker: SimpleEntityPrototype = {
   type: "simple-entity",
   name: Prototypes.EntityMarker,
+  icon: "__core__/graphics/spawn-flag.png",
+  icon_size: 64,
   picture: emptySprite,
   flags: ["hidden", "player-creation", "placeable-off-grid"],
   collision_mask: [],
+  selection_box: [
+    [-0.5, -0.5],
+    [0.5, 0.5],
+  ],
 }
 
 const entityMarkerItem: ItemPrototype = {
