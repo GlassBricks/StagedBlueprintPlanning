@@ -1,7 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: ????
-  Changes:
+  Features:
+    - Automatic blueprinting/blueprint book creation
+    - Added support for copper cable connections. Cable connections will now be the same in every stage. Exceeding max connections (in any stage) is detected and forbidden.
+  Gui:
+    - The all assemblies window is now placed below the current-assembly window.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.1
 Date: 2022-09-01
@@ -9,11 +13,11 @@ Date: 2022-09-01
     - Fixed incorrect entity highlight when deleting the first stage
     - Fixed adding an entity that matches an entity at a higher stage but with different orientation
   Control:
-    - Teleporting between assemblies/layers now always remembers and restores your previous position at the assembly
+    - Teleporting between assemblies/stages now always remembers and restores your previous position at the assembly
   Gui:
     - Assembly settings now always has fixed width, even with long stage names
   Locale:
-    - Added missing "Move to current layer" control locale
+    - Added missing "Move to current stage" control locale
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.0
 Date: 2022-08-31

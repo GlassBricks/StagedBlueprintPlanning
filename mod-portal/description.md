@@ -4,17 +4,18 @@ The ultimate mod for designing staged blueprints for 100% speedruns.
 
 Separate your builds into stages. Edit entities in any stage, and it will automatically be applied to all later stages. Many interactions and features are supported.
 
-This mod is currently in _beta_. There may be bugs or issues (hopefully not)! Feedback is greatly appreciated.
+This mod is in active development (new features are still being added!) Feedback is greatly appreciated.
 
 **Note**: high memory usage for very large blueprints, 12GB+ of computer ram is recommended.
 
 ## Basic usage
 
-Create a new assembly from the "AllAssemblies" gui ("..." button in the Current Assembly window on the top left).
+Create a new assembly from clicking the "⋮" button in the "Current Assembly" window on the top.
 
-On the top left frame, you can see the current assembly and stage you are currently in. Here you can change stages or open the assembly settings.
+In the "Current Assembly window", you can see the current assembly and stage you are currently in.
+Here you can also open the assembly settings.
 
-When you make a change, that change will be applied to the current and all _later_ stages.
+When you make a change, that change will be applied to the current and all _later_ stages. The exception is copper/circuit wires, which are the same in all stages.
 Every game interaction _should_ be handled. If this is not so, please submit a bug report!
 
 See below for full details on interactions.
@@ -32,11 +33,11 @@ There is also the per-player setting "Use cyclic stage navigation".
 
 ### Editing
 
-Building, mining, rotating, fast-replacing, circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, etc. are all supported. If there is some interaction that is not handled, please submit a bug report!
+Building, mining, rotating, fast-replacing, copper/circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, etc. are all supported. If there is some interaction that is not handled, please submit a bug report!
 
-Deleting or rotating an entity is only allowed in the _first stage_ (as these changes cannot be blueprinted).
+Deleting or rotating an entity is only allowed in the _first stage_ (as those changes cannot be blueprinted between stages).
 
-Note: currently _copper cable_ wires (not circuit wires) are not handled.
+Copper cable wires are handled since v0.3.0.
 
 ### Accidental data loss prevention
 
@@ -50,7 +51,7 @@ If you place an entity in the same position at a lower stage, it will be moved t
 Changing the configuration of an entity between stages is supported. When this is done, the entity will be highlighted in blue, and a blueprint sprite indicator will appear in all lower stages.
 Similarly, by using the _upgrade planner_ (not fast-replace), entities can be upgraded. A green highlight and upgrade planner sprite will appear in all lower stages.
 
-Circuit wires changes _between_ stages are not supported. Instead, they are always present in all stages.
+Copper/circuit wire changes _between_ stages are not supported. Instead, they are always present in all stages.
 
 ### Footgun removal
 
@@ -60,7 +61,7 @@ Rotating/upgrading an underground will also affect its paired underground, in an
 
 It is not possible to upgrade an underground if that will change which underground it pairs with (breaking belt weaving, etc.)
 
-Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. "cutting" undergrounds by building), it cannot be rotated/upgraded after built.
+Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. an underground "cuts" another underground), it cannot be rotated/upgraded _after_ being built.
 
 ## Known current limitations
 
