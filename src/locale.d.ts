@@ -11,7 +11,7 @@ export declare const enum L_ShortcutName {
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
-  BlueprintEntityMarker = "entity-name.bp100:blueprint-entity-marker",
+  EntityMarker = "entity-name.bp100:entity-marker",
   /** 2x2 grid enforcer */
   BlueprintGridEnforcer = "entity-name.bp100:blueprint-grid-enforcer",
 }

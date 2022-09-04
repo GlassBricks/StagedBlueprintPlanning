@@ -27,7 +27,7 @@ export const enum Settings {
 
 export const enum Prototypes {
   // used to handle blueprints
-  EntityMarker = "bp100:blueprint-entity-marker",
+  EntityMarker = "bp100:entity-marker",
   GridEnforcer = "bp100:blueprint-grid-enforcer",
 
   PreviewEntityPrefix = "bp100:preview-entity-",

@@ -18,6 +18,8 @@ Here you can also open the assembly settings.
 When you make a change, that change will be applied to the current and all _later_ stages. The exception is copper/circuit wires, which are the same in all stages.
 Every game interaction _should_ be handled. If this is not so, please submit a bug report!
 
+You can automatically create a blueprint book of all stages of an assembly. See the tooltips on the Assembly Settings buttons for more info.
+
 See below for full details on interactions.
 
 Use the navigation controls! These are (with default keybindings):
@@ -27,7 +29,7 @@ Use the navigation controls! These are (with default keybindings):
 - `[CTRL+SHIFT+Middle mouse button]` to teleport to the first stage of the hovered entity (or preview)
 - `[CTRL+ALT+Middle mouse button]` to move an entity to the current stage
 
-There is also the per-player setting "Use cyclic stage navigation".
+You can turn on cyclic stage navigation using a per-player setting.
 
 ## Full details
 
@@ -76,15 +78,16 @@ You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
 
 ## Possible future features
 
-- Automatic blueprint creation
+- Water tiles/landfill, resources
 - "locking" properties in stages
 - Automatic analysis and basic optimization
+- Import/export to string
 
 ## Acknowledgements
 
-Gallery images from Nefrum's recent 100% runs (on speedrun.com).
+Gallery images from Nefrums' recent 100% run blueprints (on speedrun.com).
 
-Thanks to the [AntiElitz factorio speedrunning community](https://discord.gg/AntiElitz), and [Warger](https://discord.com/invite/nfkbu6qSCj), who does plenty of 100% speedrunning, for providing feedback and inspiration for this mod.
+Thanks to the [AntiElitz factorio speedrunning community](https://discord.gg/AntiElitz), and [Warger](https://discord.com/invite/nfkbu6qSCj), who does plenty of 100% speedrunning, for providing inspiration and feedback for this mod.
 
 This mod was inspired by [Blueprint Stages](https://mods.factorio.com/mod/blueprint-stages).
 

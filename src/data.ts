@@ -57,10 +57,6 @@ const entityMarker: SimpleEntityPrototype = {
   picture: emptySprite,
   flags: ["hidden", "player-creation", "placeable-off-grid"],
   collision_mask: [],
-  selection_box: [
-    [-0.5, -0.5],
-    [0.5, 0.5],
-  ],
 }
 
 const entityMarkerItem: ItemPrototype = {
