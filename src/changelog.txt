@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
-Date: ????
+Date: 2022-09-04
   Features:
     - Automatic blueprinting/blueprint book creation
     - Added support for copper cable connections. Cable connections will now be the same in every stage. Exceeding max connections (in any stage) is detected and forbidden.
