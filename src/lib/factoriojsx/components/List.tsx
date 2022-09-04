@@ -13,14 +13,14 @@ import { assertNever, Func, funcOn, RegisterClass } from "../../index"
 import { ObservableList, ObservableListChange } from "../../observable"
 import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
 
-export type ListProps<T, U extends GuiElementType> = {
+export type ListProps<T extends AnyNotNil, U extends GuiElementType> = {
   uses: U
   of: ObservableList<T>
   map: Func<(value: T) => Spec>
   ifEmpty?: Func<() => Spec>
 } & ElemProps<U>
 @RegisterClass("gui:List")
-export class List<T, U extends GuiElementType> extends Component<ListProps<T, U>> {
+export class List<T extends AnyNotNil, U extends GuiElementType> extends Component<ListProps<T, U>> {
   map!: Func<(value: T) => Spec>
   ifEmpty?: Func<() => Spec>
 

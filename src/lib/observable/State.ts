@@ -36,7 +36,7 @@ export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
     return subscription
   }
 
-  private static subFn(this: void, key: keyof any, value: Record<keyof any, any> | nil): any {
+  private static subFn(this: void, key: keyof any, value: any): any {
     return value && value[key]
   }
   subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {

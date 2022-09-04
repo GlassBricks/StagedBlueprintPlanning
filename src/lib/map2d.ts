@@ -12,24 +12,26 @@
 import { RegisterClass } from "./references"
 import { PRecord, PRRecord } from "./util-types"
 
-export interface Map2D<T> {
+export interface Map2D<T extends AnyNotNil> {
   readonly [x: number]: PRRecord<number, ReadonlyLuaSet<T>>
   get(x: number, y: number): ReadonlyLuaSet<T> | nil
   asIterable(): LuaPairsIterable<number, PRRecord<number, ReadonlyLuaSet<T>>>
 }
 
-export interface MutableMap2D<T> extends Map2D<T>, LuaPairsIterable<number, PRecord<number, LuaSet<T>>> {
+export interface MutableMap2D<T extends AnyNotNil>
+  extends Map2D<T>,
+    LuaPairsIterable<number, PRecord<number, LuaSet<T>>> {
   [x: number]: PRecord<number, LuaSet<T>>
   add(x: number, y: number, value: T): void
   delete(x: number, y: number, value: T): void
 }
 
 // noinspection JSUnusedLocalSymbols
-interface Map2DImpl<T> extends LuaPairsIterable<number, PRecord<number, LuaSet<T>>> {
+interface Map2DImpl<T extends AnyNotNil> extends LuaPairsIterable<number, PRecord<number, LuaSet<T>>> {
   _: never
 }
 @RegisterClass("Map2D")
-class Map2DImpl<T> implements MutableMap2D<T> {
+class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
   [x: number]: PRecord<number, LuaSet<T>>
   get(x: number, y: number): ReadonlyLuaSet<T> | nil {
     const byX = this[x]
@@ -58,6 +60,6 @@ class Map2DImpl<T> implements MutableMap2D<T> {
   }
 }
 
-export function newMap2D<T>(): MutableMap2D<T> {
+export function newMap2D<T extends AnyNotNil>(): MutableMap2D<T> {
   return new Map2DImpl<T>()
 }

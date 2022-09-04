@@ -13,36 +13,36 @@ import { RegisterClass } from "../references"
 import { Event, Observable, Observer } from "./Observable"
 import { Subscription } from "./Subscription"
 
-export interface ObservableSetChange<T> {
+export interface ObservableSetChange<T extends AnyNotNil> {
   set: ObservableSet<T>
   value: T
   added?: true
 }
 
-export type SetObserver<T> = Observer<ObservableSetChange<T>>
+export type SetObserver<T extends AnyNotNil> = Observer<ObservableSetChange<T>>
 
-export interface ObservableSet<T> extends Observable<ObservableSetChange<T>>, LuaPairsKeyIterable<T> {
+export interface ObservableSet<T extends AnyNotNil> extends Observable<ObservableSetChange<T>>, LuaPairsKeyIterable<T> {
   size(): number
   has(value: T): boolean
   value(): ReadonlyLuaSet<T>
 }
 
-export interface MutableObservableSet<T> extends ObservableSet<T> {
+export interface MutableObservableSet<T extends AnyNotNil> extends ObservableSet<T> {
   add(value: T): void
   delete(value: T): void
 }
 
-export function observableSet<T>(): MutableObservableSet<T> {
+export function observableSet<T extends AnyNotNil>(): MutableObservableSet<T> {
   return new ObservableSetImpl()
 }
 
 // noinspection JSUnusedLocalSymbols
-interface ObservableSetImpl<T> extends LuaPairsKeyIterable<T> {
+interface ObservableSetImpl<T extends AnyNotNil> extends LuaPairsKeyIterable<T> {
   _used: never
 }
 
 @RegisterClass("ObservableSet")
-class ObservableSetImpl<T> implements MutableObservableSet<T> {
+class ObservableSetImpl<T extends AnyNotNil> implements MutableObservableSet<T> {
   private event = new Event<ObservableSetChange<T>>()
   private set = new LuaSet<T>()
   private _size = 0

@@ -9,8 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-export class Registry<T> {
-  private nameToItem = {} as Record<string, T>
+import { PRecord } from "./util-types"
+
+export class Registry<T extends AnyNotNil> {
+  private nameToItem = {} as PRecord<string, T>
   private itemToName = new LuaMap<T, string>()
 
   constructor(protected itemName: string, protected getDebugDescription: (item: T) => string) {}
@@ -19,7 +21,7 @@ export class Registry<T> {
     if (game !== nil) {
       error("This operation must only be done during script load.")
     }
-    const existingItem: T = this.nameToItem[name]
+    const existingItem = this.nameToItem[name]
     if (existingItem) {
       error(
         `${this.itemName} with the name "${name}" is already registered, existing is: ${this.getDebugDescription(
@@ -40,13 +42,13 @@ export class Registry<T> {
   }
 
   get(name: string): T {
-    return this.nameToItem[name] || error(`could not find ${this.itemName} with name ${name}`)
+    return this.nameToItem[name] ?? error(`could not find ${this.itemName} with name ${name}`)
   }
   getOrNil(name: string): T | nil {
     return this.nameToItem[name]
   }
 
-  _nameToItem(): Record<string, T> {
+  _nameToItem(): PRecord<string, T> {
     return this.nameToItem
   }
 

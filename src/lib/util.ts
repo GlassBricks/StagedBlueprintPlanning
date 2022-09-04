@@ -43,10 +43,10 @@ export function deepCompare<T>(a: T, b: T): boolean {
   if (typeof a !== "object" || typeof b !== "object") return false
   // ignore null
   for (const [k, v] of pairs(a)) {
-    if (!deepCompare(v, b[k])) return false
+    if (!deepCompare(v, b![k]!)) return false
   }
   for (const [k] of pairs(b)) {
-    if (a[k] === nil) return false
+    if (a![k] === nil) return false
   }
   return true
 }
@@ -55,10 +55,10 @@ export function shallowCompare<T>(a: T, b: T): boolean {
   if (a === b) return true
   if (typeof a !== "object" || typeof b !== "object") return false
   for (const [k, v] of pairs(a)) {
-    if (b[k] !== v) return false
+    if (b![k] !== v) return false
   }
   for (const [k] of pairs(b)) {
-    if (a[k] === nil) return false
+    if (a![k] === nil) return false
   }
   return true
 }

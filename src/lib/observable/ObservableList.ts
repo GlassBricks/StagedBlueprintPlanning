@@ -13,19 +13,19 @@ import { RegisterClass } from "../references"
 import { Event, Observable, Observer } from "./Observable"
 import { Subscription } from "./Subscription"
 
-export type ObservableListAdd<T> = {
+export type ObservableListAdd<T extends AnyNotNil> = {
   list: ObservableList<T>
   type: "add"
   index: number
   value: T
 }
-export type ObservableListRemove<T> = {
+export type ObservableListRemove<T extends AnyNotNil> = {
   list: ObservableList<T>
   type: "remove"
   index: number
   value: T
 }
-export type ObservableListSwap<T> = {
+export type ObservableListSwap<T extends AnyNotNil> = {
   list: ObservableList<T>
   type: "swap"
   indexA: number
@@ -33,20 +33,20 @@ export type ObservableListSwap<T> = {
   newValueA: T
   newValueB: T
 }
-export type ObservableListSet<T> = {
+export type ObservableListSet<T extends AnyNotNil> = {
   list: ObservableList<T>
   type: "set"
   index: number
   oldValue: T
   value: T
 }
-export type ObservableListChange<T> =
+export type ObservableListChange<T extends AnyNotNil> =
   | ObservableListAdd<T>
   | ObservableListRemove<T>
   | ObservableListSwap<T>
   | ObservableListSet<T>
 
-export type ListObserver<T> = Observer<ObservableListChange<T>>
+export type ListObserver<T extends AnyNotNil> = Observer<ObservableListChange<T>>
 
 export interface ObservableList<T extends AnyNotNil> extends Observable<ObservableListChange<T>> {
   length(): number
