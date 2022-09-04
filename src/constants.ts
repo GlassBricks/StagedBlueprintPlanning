@@ -28,6 +28,7 @@ export const enum Settings {
 export const enum Prototypes {
   // used to handle blueprints
   EntityMarker = "bp100:blueprint-entity-marker",
+  GridEnforcer = "bp100:blueprint-grid-enforcer",
 
   PreviewEntityPrefix = "bp100:preview-entity-",
   SelectionProxyPrefix = "bp100:selection-proxy-",
@@ -35,6 +36,7 @@ export const enum Prototypes {
   UtilityGroup = "bp100:utility",
   PreviewEntitySubgroup = "bp100:preview-entity",
   SelectionProxySubgroup = "bp100:selection-proxy",
+  BlueprintSubgroup = "bp100:blueprint-utility",
 
   CleanupTool = "bp100:cleanup-tool",
 }

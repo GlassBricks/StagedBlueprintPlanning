@@ -76,8 +76,8 @@ export declare const enum L_Interaction {
   EntitySameInAllStages = "bp100.interaction.entity-same-in-all-stages",
   /** Blueprint is empty */
   BlueprintEmpty = "bp100.interaction.blueprint-empty",
-  /** Entities were removed from the blueprint, settings could not be saved. Try editing the blueprint again without removing entities. */
-  BlueprintEntitiesRemoved = "bp100.interaction.blueprint-entities-removed",
+  /** The 2x2 grid enforcer was removed from the blueprint. Try editing the blueprint again without removing entities. */
+  GridEnforcerRemoved = "bp100.interaction.grid-enforcer-removed",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** Assembly: */

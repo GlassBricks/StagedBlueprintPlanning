@@ -250,16 +250,21 @@ class StageImpl implements Stage {
     return new StageImpl(assembly, surface, stageNumber, name)
   }
 
-  takeBlueprint(): BlueprintItemStack | nil {
+  takeBlueprint(forEdit = false): BlueprintItemStack | nil {
     const stack = (this.blueprintStack ??= this.assembly.getNewBlueprintInventoryStack())
-    const takeSuccessful = tryTakeBlueprintWithSettings(stack, this.assembly.getBlueprintSettings(), this.surface)
+    const takeSuccessful = tryTakeBlueprintWithSettings(
+      stack,
+      this.assembly.getBlueprintSettings(),
+      this.surface,
+      forEdit,
+    )
     if (!takeSuccessful) return nil
     stack.label = this.name.get()
     return stack
   }
 
   editBlueprint(player: LuaPlayer): boolean {
-    const blueprint = this.takeBlueprint()
+    const blueprint = this.takeBlueprint(true)
     if (blueprint === nil) return false
     editBlueprintSettings(player, blueprint, this.assembly.getBlueprintSettings())
     return true

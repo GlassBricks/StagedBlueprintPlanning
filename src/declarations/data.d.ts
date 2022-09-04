@@ -39,6 +39,8 @@ export interface EntityPrototype extends PrototypeBase {
   tile_width?: number
   selectable_in_game?: boolean
 
+  build_grid_size?: 1 | 2
+
   open_sound?: Sound
   close_sound?: Sound
 
@@ -48,11 +50,14 @@ export interface EntityPrototype extends PrototypeBase {
   friendly_map_color?: Color
   enemy_map_color?: Color
 
+  minable?: MinableProperties
   remains_when_mined?: string
 }
+
 export interface SimpleEntityPrototype extends EntityPrototype {
   type: "simple-entity"
   picture?: Sprite
+  render_layer?: RenderLayer
 }
 export interface SimpleEntityWithOwnerPrototype extends EntityPrototype {
   type: "simple-entity-with-owner"
@@ -202,6 +207,12 @@ export interface IconData {
 export interface ItemToPlace {
   item: string
   count: number
+}
+
+export interface MinableProperties {
+  // results: ProductPrototype
+  mining_time: number
+  result?: string
 }
 
 export interface UtilityConstants {

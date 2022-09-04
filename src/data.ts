@@ -53,6 +53,7 @@ const entityMarker: SimpleEntityPrototype = {
   name: Prototypes.EntityMarker,
   icon: "__core__/graphics/spawn-flag.png",
   icon_size: 64,
+  subgroup: Prototypes.BlueprintSubgroup,
   picture: emptySprite,
   flags: ["hidden", "player-creation", "placeable-off-grid"],
   collision_mask: [],
@@ -72,7 +73,42 @@ const entityMarkerItem: ItemPrototype = {
   place_result: Prototypes.EntityMarker,
 }
 
-data.extend([entityMarker, entityMarkerItem])
+const fakeSelectionBox2x2: Sprite = {
+  filename: "__core__/graphics/arrows/fake-selection-box-2x2.png",
+  size: 128,
+  scale: 0.5,
+}
+
+const gridEnforcer: SimpleEntityPrototype = {
+  type: "simple-entity",
+  name: Prototypes.GridEnforcer,
+  icon: "__core__/graphics/arrows/fake-selection-box-2x2.png",
+  icon_size: 128,
+  subgroup: Prototypes.BlueprintSubgroup,
+  picture: fakeSelectionBox2x2,
+  render_layer: "selection-box",
+
+  build_grid_size: 2,
+  flags: ["hidden", "player-creation"],
+  collision_mask: [],
+  selection_box: [
+    [-1, -1],
+    [1, 1],
+  ],
+  minable: { mining_time: 0 },
+}
+
+const gridEnforcerItem: ItemPrototype = {
+  type: "item",
+  name: Prototypes.GridEnforcer,
+  icon: "__core__/graphics/arrows/fake-selection-box-2x2.png",
+  icon_size: 128,
+  stack_size: 1,
+  flags: ["hidden"],
+  place_result: Prototypes.GridEnforcer,
+}
+
+data.extend([entityMarker, entityMarkerItem, gridEnforcer, gridEnforcerItem])
 
 const utilityGroup: ItemGroupPrototype = {
   type: "item-group",
@@ -85,16 +121,22 @@ const previewEntitySubgroup: ItemSubgroupPrototype = {
   type: "item-subgroup",
   name: Prototypes.PreviewEntitySubgroup,
   group: Prototypes.UtilityGroup,
-  order: "a",
+  order: "b",
 }
 const selectionProxySubgroup: ItemSubgroupPrototype = {
   type: "item-subgroup",
   name: Prototypes.SelectionProxySubgroup,
   group: Prototypes.UtilityGroup,
-  order: "b",
+  order: "c",
+}
+const blueprintSubgroup: ItemSubgroupPrototype = {
+  type: "item-subgroup",
+  name: Prototypes.BlueprintSubgroup,
+  group: Prototypes.UtilityGroup,
+  order: "a",
 }
 
-data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup])
+data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup, blueprintSubgroup])
 
 // light yellow
 const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]

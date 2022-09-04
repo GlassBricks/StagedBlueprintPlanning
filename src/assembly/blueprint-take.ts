@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Prototypes } from "../constants"
 import { Events, isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 
-const OriginalPositionTag = "bp100OriginalPosition"
 export interface BlueprintSettings {
   /** Original position + offset = blueprint position */
   positionOffset: Position
@@ -34,7 +34,7 @@ export function tryTakeBlueprintWithSettings(
   stack: BlueprintItemStack,
   settings: BlueprintSettings,
   surface: LuaSurface,
-  markOriginalPosition = true,
+  forEdit: boolean,
 ): boolean {
   if (!stack.is_blueprint) {
     stack.set_stack("blueprint")
@@ -49,13 +49,9 @@ export function tryTakeBlueprintWithSettings(
   stack.blueprint_absolute_snapping = settings.absoluteSnapping
   stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
 
-  if (isEmpty(bpMapping)) {
-    return false
-  }
+  if (isEmpty(bpMapping)) return false
 
   const firstEntityOriginalPosition = bpMapping[1].position
-
-  if (markOriginalPosition) stack.set_blueprint_entity_tag(1, OriginalPositionTag, firstEntityOriginalPosition)
 
   const entities = stack.get_blueprint_entities()!
   const firstEntityPosition = entities[0].position
@@ -67,15 +63,24 @@ export function tryTakeBlueprintWithSettings(
       pos.x += adjustment.x
       pos.y += adjustment.y
     }
-    stack.set_blueprint_entities(entities)
   }
+  // if forEdit, add grid-enforcer entity at original position [1, 1]
+  if (forEdit) {
+    const gridEnforcerPosition = Pos.plus({ x: 1, y: 1 }, settings.positionOffset)
+    entities.push({
+      entity_number: entities.length + 1,
+      name: Prototypes.GridEnforcer,
+      position: gridEnforcerPosition,
+    })
+  }
+
+  stack.set_blueprint_entities(entities)
+
   return true
 }
 export interface OpenedBlueprintInfo {
   blueprint: BlueprintItemStack
   settings: BlueprintSettings
-  numEntities: number
-  firstEntityOriginalPosition: Position
 }
 declare global {
   interface PlayerData {
@@ -83,6 +88,13 @@ declare global {
   }
 }
 declare const global: GlobalWithPlayers
+
+/**
+ * The blueprint should have been created with `tryTakeBlueprintWithSettings` with `forEdit = true`.
+ * @param player
+ * @param blueprint
+ * @param settings
+ */
 export function editBlueprintSettings(
   player: LuaPlayer,
   blueprint: BlueprintItemStack,
@@ -92,28 +104,7 @@ export function editBlueprintSettings(
   const numEntities = blueprint.get_blueprint_entity_count()
   if (numEntities === 0) return false
 
-  let firstEntityOriginalPosition: Position
-
-  const firstEntityTag = blueprint.get_blueprint_entity_tag(1, OriginalPositionTag) as any
-  if (
-    typeof firstEntityTag === "object" &&
-    typeof firstEntityTag.x === "number" &&
-    typeof firstEntityTag.y === "number"
-  ) {
-    firstEntityOriginalPosition = firstEntityTag
-  } else {
-    const blueprintPosition = blueprint.get_blueprint_entities()![0].position
-    // Original position + offset = blueprint position
-    // Original position = blueprint position - offset
-    firstEntityOriginalPosition = Pos.minus(blueprintPosition, settings.positionOffset)
-  }
-
-  global.players[player.index].lastOpenedBlueprint = {
-    blueprint,
-    settings,
-    numEntities,
-    firstEntityOriginalPosition,
-  }
+  global.players[player.index].lastOpenedBlueprint = { blueprint, settings }
   player.opened = blueprint as LuaItemStack
 
   return true
@@ -124,19 +115,22 @@ function onBlueprintUpdated(playerIndex: PlayerIndex): void {
   if (!info) return
   delete data.lastOpenedBlueprint
 
-  const { blueprint, settings, numEntities, firstEntityOriginalPosition } = info
-  if (blueprint.get_blueprint_entity_count() !== numEntities) {
+  const { blueprint, settings } = info
+  const entities = blueprint.get_blueprint_entities()!
+  const gridEnforcer = entities[entities.length - 1]
+  if (!gridEnforcer || gridEnforcer.name !== Prototypes.GridEnforcer) {
     const player = game.get_player(playerIndex)!
     return player.create_local_flying_text({
-      text: [L_Interaction.BlueprintEntitiesRemoved],
+      text: [L_Interaction.GridEnforcerRemoved],
       create_at_cursor: true,
     })
   }
-  const entities = blueprint.get_blueprint_entities()!
-  const firstEntityBlueprintPosition = entities[0].position
+
+  const gridEnforcerPosition = gridEnforcer.position
   // original position + offset = blueprint position
   // offset = blueprint position - original position
-  const offset = Pos.minus(firstEntityBlueprintPosition, firstEntityOriginalPosition)
+  const offset = Pos.minus(gridEnforcerPosition, { x: 1, y: 1 })
+
   settings.positionOffset = offset
   settings.absoluteSnapping = blueprint.blueprint_absolute_snapping
   settings.snapToGrid = blueprint.blueprint_snap_to_grid

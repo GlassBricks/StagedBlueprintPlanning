@@ -14,7 +14,7 @@ export interface BaseElementSpec {
   style?: string
   tags?: Tags
   anchor?: MaybeState<GuiAnchor | nil>
-  location?: MaybeMutableState<GuiLocation | GuiLocationArray>
+  location?: MaybeMutableState<GuiLocation | GuiLocationArray | nil>
   children?: Spec[]
   on_gui_click?: GuiEventHandler<OnGuiClickEvent>
   on_gui_opened?: GuiEventHandler<OnGuiOpenedEvent>

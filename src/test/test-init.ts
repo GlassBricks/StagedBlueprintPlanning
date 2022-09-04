@@ -166,22 +166,3 @@ commands.add_command("norerun", "", () => {
   }
   // shouldTryRerun = false
 }*/
-
-commands.add_command("foo", "", (e) => {
-  const player = game.players[e.player_index!]
-  const entity = player.selected
-  if (!entity) return player.print("No selected entity")
-  const hbox = entity.surface.create_entity({
-    name: "highlight-box",
-    target: entity,
-    position: entity.position,
-  })!
-  const id = script.register_on_entity_destroyed(entity)
-  game.print("entity id: " + id)
-  const id2 = script.register_on_entity_destroyed(hbox)
-  game.print("hbox id: " + id2)
-})
-
-Events.on_entity_destroyed((e) => {
-  game.print("destroyed: " + e.registration_number)
-})
