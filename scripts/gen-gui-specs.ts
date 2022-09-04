@@ -448,7 +448,6 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
 
       statements.push(
         ts.factory.createInterfaceDeclaration(
-          undefined,
           [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
           toPascalCase(type) + name,
           undefined,
@@ -481,7 +480,6 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
   )
   statements.push(
     ts.factory.createTypeAliasDeclaration(
-      undefined,
       [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
       "ElementSpec",
       undefined,

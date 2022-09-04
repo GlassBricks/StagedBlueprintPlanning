@@ -67,7 +67,6 @@ for (const [section, items] of Object.entries(config)) {
   }
 
   const decl = ts.factory.createEnumDeclaration(
-    undefined,
     [
       ts.factory.createModifier(ts.SyntaxKind.ExportKeyword),
       ts.factory.createModifier(ts.SyntaxKind.DeclareKeyword),
