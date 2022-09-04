@@ -12,6 +12,8 @@ export declare const enum L_ShortcutName {
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
   BlueprintEntityMarker = "entity-name.bp100:blueprint-entity-marker",
+  /** 2x2 grid enforcer */
+  BlueprintGridEnforcer = "entity-name.bp100:blueprint-grid-enforcer",
 }
 export declare const enum L_ItemGroupName {
   /** BP100 utility entities */
@@ -136,7 +138,7 @@ export declare const enum L_GuiAssemblySettings {
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
   /** Get blueprint [img=info] */
   GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
-  /** Gets a blueprint of the current stage.\Changes to the given blueprint will [font=default-bold]not[/font] be saved. */
+  /** Gets a blueprint of the current stage.\nChanges to the given blueprint will [font=default-bold]not[/font] be saved. */
   GetBlueprintTooltip = "bp100.gui.assembly-settings.get-blueprint-tooltip",
   /** Edit blueprint [img=info] */
   EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",

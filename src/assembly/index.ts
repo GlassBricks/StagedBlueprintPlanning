@@ -11,5 +11,4 @@
 
 import "./Assembly"
 import "./assembly-listener"
-import "./migrations"
 import "./world-listener"
