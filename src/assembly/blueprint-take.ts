@@ -44,6 +44,9 @@ export function tryTakeBlueprintWithSettings(
     surface,
     force: "player",
     area: BBox.coords(-5000, -5000, 5000, 5000),
+    include_trains: true,
+    include_station_names: true,
+    always_include_tiles: true,
   })
   stack.blueprint_snap_to_grid = settings.snapToGrid
   stack.blueprint_absolute_snapping = settings.absoluteSnapping
