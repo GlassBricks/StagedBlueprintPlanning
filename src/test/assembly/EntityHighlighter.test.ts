@@ -142,20 +142,22 @@ describe("config changed highlight", () => {
   })
   function setAt(stage: StageNumber) {
     assert(stage >= 2)
-    ;(entity._getStageDiffs() as any)[stage] = { foo: stage }
+    entity._applyDiffAtStage(stage, { foo: stage })
   }
   function setUpgradeAt(stage: StageNumber) {
     assert(stage >= 2)
-    ;(entity._getStageDiffs() as any)[stage] = { name: "test" + stage.toString() }
+    // ;(entity._getStageDiffs() as any)[stage] = { name: "test" + stage.toString() }
+    entity._applyDiffAtStage(stage, { name: "test" + stage.toString() })
   }
   function clearAt(stage: StageNumber) {
     assert(stage >= 2)
-    ;(entity._getStageDiffs() as any)[stage] = nil
+    // ;(entity._getStageDiffs() as any)[stage] = nil
+    entity.adjustValueAtStage(stage, entity.getValueAtStage(stage - 1)!)
   }
   function assertCorrect() {
     highlightCreator.updateHighlights(assembly, entity)
     let i = 2
-    for (const [stageNumber, changes] of pairs(entity._getStageDiffs())) {
+    for (const [stageNumber, changes] of pairs(entity._getStageDiffs() ?? {})) {
       const isUpgrade = changes.name !== nil
 
       const highlight = assert.not_nil(

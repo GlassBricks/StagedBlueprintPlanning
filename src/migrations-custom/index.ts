@@ -9,10 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Assembly } from "../assembly/AssemblyDef"
+import { getAllAssemblies } from "../assembly/global"
+import { DefaultWireHandler } from "../assembly/WireHandler"
+import { _migrate031 } from "../entity/AssemblyEntity"
 import { Events } from "../lib"
 import { formatVersion, Migrations } from "../lib/migration"
 
-import "./cable030"
 import from010 from "./from010"
 
 Events.on_configuration_changed((data) => {
@@ -24,4 +27,41 @@ Events.on_configuration_changed((data) => {
     return from010()
   }
   Migrations.doMigrations(oldVersion)
+})
+
+function migrateCables(assembly: Assembly): void {
+  const { saveWireConnections, updateWireConnections } = DefaultWireHandler
+  const lastStageNum = assembly.numStages()
+
+  for (const entity of assembly.content.iterateAllEntities()) {
+    saveWireConnections(assembly, entity, lastStageNum)
+  }
+  for (const i of $range(1, lastStageNum)) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      updateWireConnections(assembly, entity, i)
+    }
+  }
+}
+
+Migrations.to("0.3.0", () => {
+  log("Migrating copper cable connections. This may take a while")
+  for (const [, assembly] of getAllAssemblies()) {
+    log("   Updating assembly " + assembly.name.get())
+    migrateCables(assembly)
+  }
+  log("Done migrating copper cable connections")
+
+  game.print(
+    "100% Blueprint Planning:\nCopper cable connections support added since v0.3.0. " +
+      "Cable connections have been saved based on the [font=default-large-bold]last stage[/font] of each assembly. ",
+  )
+})
+
+Migrations.to("0.3.1", () => {
+  // remove empty stageDiffs props from all AssemblyEntities
+  for (const [, assembly] of getAllAssemblies()) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      _migrate031(entity)
+    }
+  }
 })

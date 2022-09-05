@@ -181,7 +181,7 @@ describe("adjustValueAtStage", () => {
     assert.same(newValue2, assemblyEntity.getValueAtStage(2))
     const newValue3 = { ...value3, b: 1 } // due to change in newValue2
     assert.same(newValue3, assemblyEntity.getValueAtStage(3))
-    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity._getStageDiffs()[3], "diff trimmed")
+    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity.getStageDiff(3), "diff trimmed")
   })
 })
 

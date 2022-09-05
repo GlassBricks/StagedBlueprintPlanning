@@ -46,7 +46,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
-  _getStageDiffs(): StageDiffs<T>
+  _getStageDiffs(): StageDiffs<T> | nil
   _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void
 
   /** @return the value at a given stage. Nil if below the first stage. The result is a new table. */
@@ -139,7 +139,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   private firstStage: StageNumber
   private readonly firstValue: Mutable<T>
-  private readonly stageDiffs: PRecord<StageNumber, Mutable<StageDiff<T>>> = {}
+  stageDiffs?: PRecord<StageNumber, Mutable<StageDiff<T>>>
   private oldStage: StageNumber | nil
 
   private readonly stageProperties: {
@@ -173,26 +173,31 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   hasStageDiff(stage?: StageNumber): boolean {
-    if (stage) return this.stageDiffs[stage] !== nil
-    return next(this.stageDiffs)[0] !== nil
+    const { stageDiffs } = this
+    if (!stageDiffs) return false
+    if (stage) return stageDiffs[stage] !== nil
+    return next(stageDiffs)[0] !== nil
   }
   public getStageDiff(stage: StageNumber): StageDiff<T> | nil {
-    return this.stageDiffs[stage]
+    const { stageDiffs } = this
+    return stageDiffs && stageDiffs[stage]
   }
-  _getStageDiffs(): StageDiffs<T> {
+  _getStageDiffs(): StageDiffs<T> | nil {
     return this.stageDiffs
   }
   _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void {
-    const { firstStage, stageDiffs } = this
+    let { stageDiffs } = this
+    const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
     if (stage === firstStage) {
       applyDiffToEntity(this.firstValue, diff)
       return
     }
-    const existingDiff = stageDiffs[stage]
+    const existingDiff = stageDiffs && stageDiffs[stage]
     if (existingDiff) {
       applyDiffToDiff(existingDiff, diff)
     } else {
+      stageDiffs ??= this.stageDiffs = {}
       stageDiffs[stage] = shallowCopy(diff)
     }
   }
@@ -201,18 +206,24 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     // assert(stage >= 1, "stage must be >= 1")
     if (stage < this.firstStage) return nil
     const value = mutableShallowCopy(this.firstValue)
-    for (const [changedStage, diff] of pairs(this.stageDiffs)) {
-      if (changedStage > stage) break
-      applyDiffToEntity(value, diff)
+    const { stageDiffs } = this
+    if (stageDiffs) {
+      for (const [changedStage, diff] of pairs(stageDiffs)) {
+        if (changedStage > stage) break
+        applyDiffToEntity(value, diff)
+      }
     }
     return value
   }
   getNameAtStage(stage: StageNumber): string {
     let name = this.firstValue.name
     if (stage <= this.firstStage) return name
-    for (const [changedStage, diff] of pairs(this.stageDiffs)) {
-      if (changedStage > stage) break
-      if (diff.name) name = diff.name!
+    const { stageDiffs } = this
+    if (stageDiffs) {
+      for (const [changedStage, diff] of pairs(stageDiffs)) {
+        if (changedStage > stage) break
+        if (diff.name) name = diff.name!
+      }
     }
     return name
   }
@@ -221,7 +232,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   iterateValues(start: StageNumber, end: StageNumber) {
     const { firstStage, firstValue } = this
     let value = this.getValueAtStage(start)
-    function next(stageValues: StageDiffs, prevStage: StageNumber | nil) {
+    function next(stageValues: StageDiffs | nil, prevStage: StageNumber | nil) {
       if (!prevStage) {
         return $multi(start, value)
       }
@@ -231,7 +242,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       if (nextStage === firstStage) {
         value = shallowCopy(firstValue)
       } else {
-        const diff = stageValues[nextStage]
+        const diff = stageValues && stageValues[nextStage]
         if (diff) applyDiffToEntity(value!, diff)
       }
       return $multi(nextStage, value)
@@ -261,9 +272,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       const valueAtPreviousStage = assert(this.getValueAtStage(stage - 1))
       const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
 
-      const { stageDiffs } = this
-      const oldStageDiff = stageDiffs[stage]
-      stageDiffs[stage] = newStageDiff
+      let { stageDiffs } = this
+      const oldStageDiff = stageDiffs && stageDiffs[stage]
+      if (newStageDiff) {
+        stageDiffs ??= this.stageDiffs = {}
+        stageDiffs[stage] = newStageDiff
+      } else if (stageDiffs) delete stageDiffs[stage]
+
       return mergeDiff(valueAtPreviousStage, oldStageDiff, newStageDiff)
     }
   }
@@ -271,6 +286,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   private trimDiffs(stage: number, diff: StageDiff<T>): void {
     // trim diffs in higher stages, remove those that are ineffectual
     const { stageDiffs } = this
+    if (!stageDiffs) return
     for (const [stageNumber, changes] of pairs(stageDiffs)) {
       if (stageNumber <= stage) continue
       for (const [k, v] of pairs(diff)) {
@@ -285,10 +301,12 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       if (isEmpty(changes)) delete stageDiffs[stageNumber]
       if (isEmpty(diff)) break
     }
+    if (isEmpty(stageDiffs)) delete this.stageDiffs
   }
 
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
-    const { firstStage, stageDiffs } = this
+    const { firstStage } = this
+    let { stageDiffs } = this
     assert(stage >= firstStage, "stage must be >= first stage")
     const previousName = this.getNameAtStage(stage)
     if (newName === previousName) return false
@@ -298,13 +316,14 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       const nameInPreviousStage = this.getNameAtStage(stage - 1)
       const nameChanged = nameInPreviousStage !== newName
       if (nameChanged) {
+        stageDiffs ??= this.stageDiffs = {}
         const stageDiff = stageDiffs[stage] || (stageDiffs[stage] = {} as any)
         stageDiff.name = newName
       } else {
-        const stageDiff = stageDiffs[stage]
+        const stageDiff = stageDiffs && stageDiffs[stage]
         if (stageDiff) {
           delete stageDiff.name
-          if (isEmpty(stageDiff)) delete stageDiffs[stage]
+          if (isEmpty(stageDiff)) delete stageDiffs![stage]
         }
       }
     }
@@ -328,10 +347,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     // todo: what happens if moved up, and lost data?
     const { firstValue } = this
     const { stageDiffs } = this
-    for (const [changeStage, changed] of pairs(stageDiffs)) {
-      if (changeStage > higherStage) break
-      applyDiffToEntity(firstValue, changed)
-      stageDiffs[changeStage] = nil
+    if (stageDiffs) {
+      for (const [changeStage, changed] of pairs(stageDiffs)) {
+        if (changeStage > higherStage) break
+        applyDiffToEntity(firstValue, changed)
+        delete stageDiffs[changeStage]
+      }
+      if (isEmpty(stageDiffs)) delete this.stageDiffs
     }
     this.firstStage = higherStage
   }
@@ -435,7 +457,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (this.firstStage >= stageNumber) this.firstStage++
     if (this.oldStage && this.oldStage >= stageNumber) this.oldStage++
 
-    shiftNumberKeysUp(this.stageDiffs, stageNumber)
+    if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
     for (const [, byType] of pairs(this.stageProperties)) {
       shiftNumberKeysUp(byType, stageNumber)
     }
@@ -448,28 +470,28 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (this.firstStage >= stageToMerge) this.firstStage--
     if (this.oldStage && this.oldStage >= stageToMerge) this.oldStage--
 
-    shiftNumberKeysDown(this.stageDiffs, stageNumber)
+    if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)
     for (const [, byType] of pairs(this.stageProperties)) {
       shiftNumberKeysDown(byType, stageNumber)
     }
   }
   private mergeStageDiffWithBelow(stageNumber: number): void {
     const { stageDiffs } = this
+    if (!stageDiffs) return
     const thisChange = stageDiffs[stageNumber]
-    if (thisChange) {
-      const prevStage = stageNumber - 1
-      if (this.firstStage === prevStage) {
-        applyDiffToEntity(this.firstValue, thisChange)
+    if (!thisChange) return
+    const prevStage = stageNumber - 1
+    if (this.firstStage === prevStage) {
+      applyDiffToEntity(this.firstValue, thisChange)
+    } else {
+      const prevChange = stageDiffs[prevStage]
+      if (prevChange) {
+        applyDiffToDiff(prevChange, thisChange)
       } else {
-        const prevChange = stageDiffs[prevStage]
-        if (prevChange) {
-          applyDiffToDiff(prevChange, thisChange)
-        } else {
-          stageDiffs[prevStage] = thisChange
-        }
+        stageDiffs[prevStage] = thisChange
       }
-      delete stageDiffs[stageNumber]
     }
+    delete stageDiffs[stageNumber]
   }
 }
 
@@ -515,4 +537,10 @@ export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber)
 export function getStageToMerge(stageNumber: StageNumber): StageNumber {
   if (stageNumber === 1) return 2
   return stageNumber - 1
+}
+
+export function _migrate031(entity: AssemblyEntity): void {
+  const e = entity as AssemblyEntityImpl
+  const stageDiffs = e.stageDiffs
+  if (stageDiffs && isEmpty(stageDiffs)) delete e.stageDiffs
 }
