@@ -4,6 +4,7 @@ Date: ????
   Changes:
     - Include trains, station names, and tiles in automatic blueprints
     - Slightly improved speed of taking blueprints
+    - Slightly reduced memory usage
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2022-09-04
