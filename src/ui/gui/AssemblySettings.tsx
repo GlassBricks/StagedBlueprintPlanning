@@ -184,7 +184,13 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
     if (!player.clear_cursor()) return
     const cursor = player.cursor_stack
     if (!cursor || !player.is_cursor_empty()) return
-    this.assembly.makeBlueprintBook(cursor)
+    if (!this.assembly.makeBlueprintBook(cursor)) {
+      cursor.clear()
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintBookEmpty],
+        create_at_cursor: true,
+      })
+    }
   }
 
   private newStageAfter() {

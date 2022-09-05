@@ -15,7 +15,7 @@ import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
 import { getEntityCategory, getPasteRotatableType, PasteRotatableType } from "../entity/entity-info"
 import { isEmpty, MutableMap2D, newMap2D, RegisterClass } from "../lib"
-import { Position } from "../lib/geometry"
+import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { getAllAssemblies } from "./global"
 
@@ -33,6 +33,11 @@ export interface EntityMap {
 
   countNumEntities(): number
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity>
+
+  /**
+   * Will return slightly larger than actual
+   */
+  computeBoundingBox(): BoundingBox | nil
 }
 
 export const enum CableAddResult {
@@ -125,6 +130,22 @@ class EntityMapImpl implements MutableEntityMap {
   }
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity> {
     return this.entities as any
+  }
+
+  computeBoundingBox(): BoundingBox | nil {
+    if (isEmpty(this.entities)) return nil
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity
+    for (const entity of this.entities) {
+      const { x, y } = entity.position
+      if (x < minX) minX = x
+      if (y < minY) minY = y
+      if (x > maxX) maxX = x
+      if (y > maxY) maxY = y
+    }
+    return BBox.expand(BBox.coords(minX, minY, maxX, maxY), 5)
   }
 
   add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {

@@ -42,7 +42,7 @@ export interface Assembly extends AssemblyContent {
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
 
-  makeBlueprintBook(stackToSet: LuaItemStack): void
+  makeBlueprintBook(stackToSet: LuaItemStack): boolean
 
   readonly valid: boolean
 

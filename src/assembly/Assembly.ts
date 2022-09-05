@@ -173,7 +173,10 @@ class AssemblyImpl implements Assembly {
     return (this.blueprintSettings ??= getDefaultBlueprintSettings())
   }
 
-  public makeBlueprintBook(stack: LuaItemStack): void {
+  public makeBlueprintBook(stack: LuaItemStack): boolean {
+    const bbox = this.content.computeBoundingBox()
+    if (!bbox) return false
+
     stack.clear()
     stack.set_stack("blueprint-book")
     stack.label = this.name.get()
@@ -182,9 +185,14 @@ class AssemblyImpl implements Assembly {
     assert(inventory, "Failed to get blueprint book inventory")
 
     for (const [, stage] of ipairs(this.stages)) {
-      const blueprint = stage.takeBlueprint()
-      if (blueprint) inventory.insert(blueprint)
+      const insertedCount = inventory.insert("blueprint")
+      assert(insertedCount > 0, "Failed to insert blueprint")
+      const blueprintStack = inventory[inventory.length - 1]
+      const blueprint = stage.doTakeBlueprint(blueprintStack!, bbox, false)
+      if (!blueprint) blueprintStack!.clear()
     }
+
+    return true
   }
 
   private getNewStageName(): string {
@@ -251,23 +259,30 @@ class StageImpl implements Stage {
   }
 
   takeBlueprint(forEdit = false): BlueprintItemStack | nil {
+    const bbox = this.assembly.content.computeBoundingBox()
+    if (!bbox) return nil
     const stack = (this.blueprintStack ??= this.assembly.getNewBlueprintInventoryStack())
+    if (this.doTakeBlueprint(stack, bbox, forEdit)) return stack
+    return nil
+  }
+
+  doTakeBlueprint(stack: LuaItemStack, bbox: BBox, forEdit: boolean): boolean {
     const takeSuccessful = tryTakeBlueprintWithSettings(
       stack,
       this.assembly.getBlueprintSettings(),
       this.surface,
+      bbox,
       forEdit,
     )
-    if (!takeSuccessful) return nil
+    if (!takeSuccessful) return false
     stack.label = this.name.get()
-    return stack
+    return true
   }
 
   editBlueprint(player: LuaPlayer): boolean {
     const blueprint = this.takeBlueprint(true)
     if (blueprint === nil) return false
-    editBlueprintSettings(player, blueprint, this.assembly.getBlueprintSettings())
-    return true
+    return editBlueprintSettings(player, blueprint, this.assembly.getBlueprintSettings())
   }
 
   public deleteInAssembly(): void {
