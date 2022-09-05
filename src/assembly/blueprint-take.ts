@@ -59,7 +59,8 @@ export function tryTakeBlueprintWithSettings(
   const entities = stack.get_blueprint_entities()!
   const firstEntityPosition = entities[0].position
   const expectedPosition = Pos.plus(firstEntityOriginalPosition, settings.positionOffset)
-  if (!Pos.equals(firstEntityPosition, expectedPosition)) {
+  const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
+  if (shouldAdjustPosition) {
     const adjustment = Pos.minus(expectedPosition, firstEntityPosition)
     for (const entity of entities) {
       const pos = entity.position as Mutable<Position>
@@ -77,7 +78,7 @@ export function tryTakeBlueprintWithSettings(
     })
   }
 
-  stack.set_blueprint_entities(entities)
+  if (forEdit || shouldAdjustPosition) stack.set_blueprint_entities(entities)
 
   return true
 }
