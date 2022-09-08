@@ -49,8 +49,8 @@ if (script.active_mods.testorio !== nil) {
     if (inventories !== nil) inventories.forEach((x) => x.destroy())
     global = {}
     for (const [, player] of game.players) {
-      const { screen, left, top, center } = player.gui
-      for (const gui of [screen, left, top, center]) {
+      const { screen, left, top, center, relative } = player.gui
+      for (const gui of [screen, left, top, center, relative]) {
         for (const child of gui.children) {
           if (child.get_mod() === script.mod_name) child.destroy()
         }

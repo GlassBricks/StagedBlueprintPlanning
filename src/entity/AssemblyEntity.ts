@@ -24,9 +24,26 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { Entity } from "./Entity"
-import { CategoryName, getEntityCategory, isRollingStockType, rollingStockTypes } from "./entity-info"
+import {
+  CategoryName,
+  getEntityCategory,
+  isRollingStockType,
+  isUndergroundBeltType,
+  rollingStockTypes,
+} from "./entity-info"
 import { RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
-import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, mergeDiff, StageDiff } from "./stage-diff"
+import {
+  _applyDiffToDiffUnchecked,
+  applyDiffToEntity,
+  DiffValue,
+  fromDiffValue,
+  getDiffDiff,
+  getEntityDiff,
+  getPropDiff,
+  StageDiff,
+  StageDiffInternal,
+  toDiffValue,
+} from "./stage-diff"
 
 export type StageNumber = number
 
@@ -45,17 +62,27 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   getFirstStage(): StageNumber
   getFirstValue(): Readonly<T>
 
-  isRollingStock(): this is AssemblyRollingStockEntity
+  // special entity treatment
+  isRollingStock(): this is RollingStockAssemblyEntity
+  isUndergroundBelt(): this is UndergroundBeltAssemblyEntity
+
+  setUndergroundBeltDirection(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
   _getStageDiffs(): StageDiffs<T> | nil
-  _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void
+  _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
+  /** Returns the first stage after the given stage number with a stage diff, or `nil` if none. */
+  nextStageWithDiff(stage: StageNumber): StageNumber | nil
+  /** Returns the first stage before the given stage number with a stage diff, or `nil` if none. */
+  prevStageWithDiff(stage: StageNumber): StageNumber | nil
 
   /** @return the value at a given stage. Nil if below the first stage. The result is a new table. */
   getValueAtStage(stage: StageNumber): T | nil
-  /** Gets the entity name at the given stage. If below the first stage, returns the first entity name. */
+  /** @return the value of a property at a given stage, or at the first stage if below the first stage. Also returns the stage in which the property is affected. */
+  getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
+  /** Gets the entity name at the given stage. If below the first stage, returns the first entity name. Alias for `getPropAtStage("name", stage)`. */
   getNameAtStage(stage: StageNumber): string
   /**
    * Iterates the values of stages in the given range. More efficient than repeated calls to getValueAtStage.
@@ -72,12 +99,35 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
    */
   adjustValueAtStage(stage: StageNumber, value: T): boolean
   /**
-   * Similar to adjustValueAtStage, but only does upgrades ("name" property).
-   * More efficient than repeated adjustValueAtStage.
+   * Adjusts stage diffs to set a property at the given stage to the given value.
+   * Rolling stock is not supported.
+   * See {@link adjustValueAtStage} for more info.
+   * @return true if the value changed.
    */
+  setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean
+  /** Alias for `setPropAtStage("name", stage, name)`. */
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean
 
-  setUndergroundBeltDirection(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
+  /**
+   * Removes all stage diffs at the given stage.
+   * @return true if there was a stage diff at the given stage.
+   */
+  resetValue(stage: StageNumber): boolean
+  /**
+   * Applies stage diffs at the give stage to the next lower applicable stage.
+   * @return The stage to which the diffs were applied, or `nil` if no diffs were applied.
+   */
+  moveValueDown(stage: StageNumber): StageNumber | nil
+  /**
+   * Removes a property from a stage diff property.
+   * @return true if the property was removed.
+   */
+  resetProp<K extends keyof T>(stage: StageNumber, prop: K): boolean
+  /**
+   * Applies a stage diff property to the next lower applicable stage.
+   * @return the stage number that the property was applied to, or nil if no property or applicable stage.
+   */
+  movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
 
   /**
    * @param stage the stage to move to. If moving up, deletes/merges all stage diffs from old stage to new stage.
@@ -122,6 +172,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 }
 
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
+export type StageDiffsInternal<E extends Entity = Entity> = PRRecord<StageNumber, StageDiffInternal<E>>
 
 export interface WorldEntities {
   mainEntity?: LuaEntity
@@ -132,10 +183,12 @@ type AnyWorldEntity = WorldEntities[keyof WorldEntities]
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface StageProperties {}
 
-export type AssemblyRollingStockEntity = AssemblyEntity<RollingStockEntity>
+export type RollingStockAssemblyEntity = AssemblyEntity<RollingStockEntity>
 export type UndergroundBeltAssemblyEntity = AssemblyEntity<UndergroundBeltEntity>
 
 type StageData = WorldEntities & StageProperties
+
+type MutableStageDiff<T extends Entity> = Partial<Mutable<StageDiff<T>>>
 
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
@@ -147,7 +200,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   private firstStage: StageNumber
   private readonly firstValue: Mutable<T>
-  stageDiffs?: PRecord<StageNumber, Mutable<StageDiff<T>>>
+  stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
   private oldStage: StageNumber | nil
 
   private readonly stageProperties: {
@@ -180,8 +233,15 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return this.firstValue
   }
 
-  isRollingStock(): this is AssemblyEntity<RollingStockEntity> {
+  isRollingStock(): this is AssemblyEntityImpl<RollingStockEntity> {
     return isRollingStockType(this.firstValue.name)
+  }
+  isUndergroundBelt(): this is UndergroundBeltAssemblyEntity {
+    return isUndergroundBeltType(this.firstValue.name)
+  }
+  setUndergroundBeltDirection(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
+    // assume compiler asserts this is correct
+    this.firstValue.type = direction
   }
 
   hasStageDiff(stage?: StageNumber): boolean {
@@ -194,11 +254,26 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     const { stageDiffs } = this
     return stageDiffs && stageDiffs[stage]
   }
+  private getStageDiffProp<K extends keyof T>(
+    stage: StageNumber,
+    prop: K,
+  ): LuaMultiReturn<[found: boolean, value?: T[K]]> {
+    const { stageDiffs } = this
+    if (!stageDiffs) return $multi(false)
+    const stageDiff = stageDiffs[stage]
+    if (!stageDiff) return $multi(false)
+    const val = stageDiff[prop]
+    if (val === nil) return $multi(false)
+    return $multi(true, fromDiffValue(val))
+  }
+
   _getStageDiffs(): StageDiffs<T> | nil {
     return this.stageDiffs
   }
-  _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void {
+
+  _applyDiffAtStage(stage: StageNumber, _diff: StageDiffInternal<T>): void {
     if (this.isRollingStock()) return
+    const diff = _diff as StageDiff<T>
     let { stageDiffs } = this
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
@@ -208,11 +283,30 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     const existingDiff = stageDiffs && stageDiffs[stage]
     if (existingDiff) {
-      applyDiffToDiff(existingDiff, diff)
+      _applyDiffToDiffUnchecked(existingDiff, diff)
     } else {
       stageDiffs ??= this.stageDiffs = {}
       stageDiffs[stage] = shallowCopy(diff)
     }
+  }
+
+  nextStageWithDiff(stage: StageNumber): StageNumber | nil {
+    const { stageDiffs } = this
+    if (!stageDiffs) return nil
+    return next(stageDiffs, stage)[0] // factorio guarantees that next() on a numeric key returns the next numeric key
+  }
+
+  prevStageWithDiff(stage: StageNumber): StageNumber | nil {
+    const { stageDiffs } = this
+    if (!stageDiffs) return nil
+    const { firstStage } = this
+    if (stage <= firstStage) return nil
+    let result: StageNumber | nil
+    for (const [curStage] of pairs(stageDiffs)) {
+      if (curStage >= stage) break
+      result = curStage
+    }
+    return result
   }
 
   getValueAtStage(stage: StageNumber): T | nil {
@@ -230,17 +324,27 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     return value
   }
-  getNameAtStage(stage: StageNumber): string {
-    let name = this.firstValue.name
-    if (stage <= this.firstStage) return name
+
+  getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]> {
+    let value: T[K] | nil = this.firstValue[prop]
+    const firstStage = this.firstStage
+    if (stage <= firstStage) return $multi(value, firstStage)
     const { stageDiffs } = this
+    let resultStage = firstStage
     if (stageDiffs) {
       for (const [changedStage, diff] of pairs(stageDiffs)) {
         if (changedStage > stage) break
-        if (diff.name) name = diff.name!
+        const propDiff = diff[prop]
+        if (propDiff !== nil) {
+          resultStage = changedStage
+          value = fromDiffValue(propDiff)
+        }
       }
     }
-    return name
+    return $multi(value!, resultStage)
+  }
+  getNameAtStage(stage: StageNumber): string {
+    return this.getPropAtStage(stage, "name")[0]
   }
 
   iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
@@ -285,12 +389,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
     if (this.isRollingStock()) return this.adjustValueRollingStock(stage, value)
 
-    const diff = this.setValueAndGetDiff(stage, value)
-    if (!diff) return false
-    this.trimDiffs(stage, diff)
+    if (stage === this.firstStage) return this.setValueAtFirstStage(value)
 
-    this.oldStage = nil
-    return true
+    const valueAtPreviousStage = assert(this.getValueAtStage(stage - 1))
+    const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
+    return this.setDiffInternal(stage, newStageDiff, valueAtPreviousStage)
   }
   private adjustValueRollingStock(this: AssemblyEntityImpl<RollingStockEntity>, stage: StageNumber, value: T): boolean {
     const canAdjust = stage === this.firstStage
@@ -303,33 +406,83 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return true
   }
 
-  private setValueAndGetDiff(stage: StageNumber, value: T): StageDiff<T> | nil {
-    if (stage === this.firstStage) {
-      const { firstValue } = this
-      const diff = getEntityDiff(firstValue, value)
-      if (diff) {
-        applyDiffToEntity(firstValue, diff)
-        return diff
-      }
-    } else {
-      const valueAtPreviousStage = assert(this.getValueAtStage(stage - 1))
-      const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
+  private setValueAtFirstStage(value: T): boolean {
+    const { firstValue } = this
+    const diff = getEntityDiff(firstValue, value)
+    if (!diff) return false
 
-      let { stageDiffs } = this
-      const oldStageDiff: Mutable<StageDiff<T>> | nil = stageDiffs && stageDiffs[stage]
-      if (newStageDiff) {
-        stageDiffs ??= this.stageDiffs = {}
-        stageDiffs[stage] = newStageDiff
-      } else if (stageDiffs) delete stageDiffs[stage]
-
-      return mergeDiff<T>(valueAtPreviousStage, oldStageDiff, newStageDiff)
-    }
+    applyDiffToEntity(firstValue, diff)
+    this.trimDiffs(this.firstStage, diff)
+    return true
   }
 
-  private trimDiffs(stage: number, diff: StageDiff<T>): void {
+  /** Sets the diff at a stage. The given diff should already be trimmed/minimal. */
+  private setDiffInternal(stage: StageNumber, newStageDiff: StageDiff<T> | nil, valueAtPreviousStage: T): boolean {
+    let { stageDiffs } = this
+    const oldStageDiff = this.getStageDiff(stage)
+    if (newStageDiff) {
+      stageDiffs ??= this.stageDiffs = {}
+      stageDiffs[stage] = newStageDiff
+    } else if (stageDiffs) delete stageDiffs[stage]
+
+    const diff = getDiffDiff<T>(valueAtPreviousStage, oldStageDiff, newStageDiff)
+    if (!diff) return false
+    this.trimDiffs(stage, diff)
+    return true
+  }
+
+  setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean {
+    const { firstStage } = this
+    assert(stage >= firstStage, "stage must be >= first stage")
+    if (this.isRollingStock()) return false
+
+    const [propAtPreviousStage] = this.getPropAtStage(stage - 1, prop)
+    return this.setPropAtStageInternal(stage, prop, value, propAtPreviousStage)
+  }
+
+  private setPropAtStageInternal<K extends keyof T>(
+    stage: StageNumber,
+    prop: K,
+    newValue: T[K],
+    propAtPreviousStage: T[K],
+  ): boolean {
+    let oldValue = propAtPreviousStage
+    const [hasDiff, curStageValue] = this.getStageDiffProp(stage, prop)
+    if (hasDiff) oldValue = curStageValue!
+
+    if (deepCompare(oldValue, newValue)) return false
+
+    const newDiffValue = getPropDiff(propAtPreviousStage, newValue)
+
+    if (stage === this.firstStage) {
+      this.firstValue[prop] = newValue
+    } else {
+      let { stageDiffs } = this
+      if (newDiffValue !== nil) {
+        stageDiffs ??= this.stageDiffs = {}
+        const stageDiff: MutableStageDiff<T> = stageDiffs[stage] ?? (stageDiffs[stage] = {})
+        stageDiff[prop] = newDiffValue
+      } else if (stageDiffs) {
+        delete stageDiffs[stage]?.[prop]
+      }
+    }
+
+    this.trimDiffs(stage, { [prop]: toDiffValue(newValue) } as { [P in keyof T]: DiffValue<any> })
+    return true
+  }
+
+  applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
+    return this.setPropAtStage(stage, "name", newName)
+  }
+
+  private trimDiffs(stage: StageNumber, diff: StageDiff<T>): void {
+    this.oldStage = nil
     // trim diffs in higher stages, remove those that are ineffectual
     const { stageDiffs } = this
     if (!stageDiffs) return
+    const oldDiff = stageDiffs[stage]
+    if (oldDiff && isEmpty(oldDiff)) delete stageDiffs[stage]
+
     for (const [stageNumber, changes] of pairs(stageDiffs)) {
       if (stageNumber <= stage) continue
       for (const [k, v] of pairs(diff)) {
@@ -347,60 +500,33 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (isEmpty(stageDiffs)) delete this.stageDiffs
   }
 
-  applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
-    if (this.isRollingStock()) return false // rolling stock can't be upgraded
-    const { firstStage } = this
-    let { stageDiffs } = this
-    assert(stage >= firstStage, "stage must be >= first stage")
-    const previousName = this.getNameAtStage(stage)
-    if (newName === previousName) return false
-    if (stage === this.firstStage) {
-      this.firstValue.name = newName
-    } else {
-      const nameInPreviousStage = this.getNameAtStage(stage - 1)
-      const nameChanged = nameInPreviousStage !== newName
-      if (nameChanged) {
-        stageDiffs ??= this.stageDiffs = {}
-        const stageDiff = stageDiffs[stage] || (stageDiffs[stage] = {} as any)
-        stageDiff.name = newName
-      } else {
-        const stageDiff = stageDiffs && stageDiffs[stage]
-        if (stageDiff) {
-          delete stageDiff.name
-          if (isEmpty(stageDiff)) delete stageDiffs![stage]
-        }
-      }
-    }
-    this.trimDiffs(stage, { name: newName } as StageDiff<T>)
-
-    this.oldStage = nil
-    return true
+  resetValue(stage: StageNumber): boolean {
+    if (stage <= this.firstStage) return false
+    return this.setDiffInternal(stage, nil, this.getValueAtStage(stage - 1)!)
   }
 
-  public setUndergroundBeltDirection(
-    this: AssemblyEntityImpl<UndergroundBeltEntity>,
-    direction: "input" | "output",
-  ): void {
-    const { firstValue } = this
-    const existingType = firstValue.type
-    assert(existingType === "input" || existingType === "output", "must already be underground belt")
-    firstValue.type = direction
+  resetProp<K extends keyof T>(stage: StageNumber, prop: K): boolean {
+    if (stage <= this.firstStage) return false
+    const [value] = this.getPropAtStage(stage - 1, prop)
+    return this.setPropAtStageInternal(stage, prop, value, value)
   }
 
-  private moveUp(higherStage: StageNumber): void {
-    // todo: what happens if moved up, and lost data?
-    const { firstValue } = this
-    const { stageDiffs } = this
-    if (stageDiffs) {
-      for (const [changeStage, changed] of pairs(stageDiffs)) {
-        if (changeStage > higherStage) break
-        applyDiffToEntity(firstValue, changed)
-        delete stageDiffs[changeStage]
-      }
-      if (isEmpty(stageDiffs)) delete this.stageDiffs
-    }
-    this.firstStage = higherStage
+  movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil {
+    const [hasDiff, curStageValue] = this.getStageDiffProp(stage, prop)
+    if (!hasDiff) return nil
+
+    const stageToApply = this.prevStageWithDiff(stage) ?? this.firstStage
+    if (this.setPropAtStage(stageToApply, prop, curStageValue!)) return stageToApply
+    return nil
   }
+
+  moveValueDown(stage: StageNumber): StageNumber | nil {
+    if (!this.hasStageDiff(stage)) return nil
+    const stageToApply = this.prevStageWithDiff(stage) ?? this.firstStage
+    if (this.adjustValueAtStage(stageToApply, this.getValueAtStage(stage)!)) return stageToApply
+    return nil
+  }
+
   moveToStage(stage: StageNumber, recordOldStage?: boolean): StageNumber {
     const { firstStage } = this
     if (stage > firstStage) {
@@ -411,6 +537,20 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.oldStage = recordOldStage && firstStage !== stage ? firstStage : nil
     return firstStage
     // else do nothing
+  }
+  private moveUp(higherStage: StageNumber): void {
+    // todo: what happens if moved up, and lost data?
+    const { firstValue } = this
+    const { stageDiffs } = this
+    if (stageDiffs) {
+      for (const [stage, diff] of pairs(stageDiffs)) {
+        if (stage > higherStage) break
+        applyDiffToEntity(firstValue, diff)
+        delete stageDiffs[stage]
+      }
+      if (isEmpty(stageDiffs)) delete this.stageDiffs
+    }
+    this.firstStage = higherStage
   }
   getOldStage(): StageNumber | nil {
     return this.oldStage
@@ -487,7 +627,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   setProperty<T extends keyof StageProperties>(stage: StageNumber, key: T, value: StageProperties[T] | nil): void {
     const { stageProperties } = this
-    const byType: PRecord<StageNumber, StageProperties[T]> = stageProperties[key] || (stageProperties[key] = {} as any)
+    const byType: PRecord<StageNumber, StageProperties[T]> = stageProperties[key] || (stageProperties[key] = {})
     byType[stage] = value
     if (isEmpty(byType)) delete stageProperties[key]
   }
@@ -524,23 +664,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       shiftNumberKeysDown(byType, stageNumber)
     }
   }
-  private mergeStageDiffWithBelow(stageNumber: number): void {
-    const { stageDiffs } = this
-    if (!stageDiffs) return
-    const thisChange = stageDiffs[stageNumber]
-    if (!thisChange) return
-    const prevStage = stageNumber - 1
-    if (this.firstStage === prevStage) {
-      applyDiffToEntity(this.firstValue, thisChange)
-    } else {
-      const prevChange = stageDiffs[prevStage]
-      if (prevChange) {
-        applyDiffToDiff(prevChange, thisChange)
-      } else {
-        stageDiffs[prevStage] = thisChange
-      }
-    }
-    delete stageDiffs[stageNumber]
+  private mergeStageDiffWithBelow(stage: StageNumber): void {
+    if (stage <= this.firstStage) return
+    if (!this.hasStageDiff(stage)) return
+    this.adjustValueAtStage(stage - 1, this.getValueAtStage(stage)!)
   }
 }
 

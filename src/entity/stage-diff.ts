@@ -14,9 +14,12 @@ import { Entity } from "./Entity"
 
 declare const NilPlaceholder: unique symbol
 export type NilPlaceholder = typeof NilPlaceholder
-export type WithNilPlaceholder<T> = T extends nil ? NilPlaceholder : T
-export type StageDiff<E extends Entity = Entity> = {
-  readonly [P in keyof E]?: WithNilPlaceholder<E[P]>
+export type DiffValue<T> = { __diffedValue: T }
+export type StageDiff<E extends Entity> = {
+  readonly [P in keyof E]?: DiffValue<E[P]>
+}
+export type StageDiffInternal<E extends Entity> = {
+  readonly [P in keyof E]?: E[P] | NilPlaceholder
 }
 declare const global: {
   nilPlaceholder: NilPlaceholder
@@ -45,13 +48,21 @@ export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<Sta
   }
   return nilIfEmpty(changes)
 }
-export function applyDiffToDiff<E extends Entity = Entity>(existing: Mutable<StageDiff<E>>, diff: StageDiff<E>): void {
+export function getPropDiff<E>(below: E, above: E): DiffValue<E> | nil {
+  if (deepCompare(below, above)) return nil
+  return (above === nil ? nilPlaceholder : above) as any
+}
+
+export function _applyDiffToDiffUnchecked<E extends Entity = Entity>(
+  existing: Mutable<StageDiff<E>>,
+  diff: StageDiff<E>,
+): void {
   for (const [key, value] of pairs(diff)) {
     existing[key] = value as any
   }
 }
 export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: StageDiff<E>): void {
-  for (const [key, value] of pairs(diff)) {
+  for (const [key, value] of pairs(diff as StageDiffInternal<E>)) {
     if (value === nilPlaceholder) {
       delete entity[key]
     } else {
@@ -59,12 +70,19 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
     }
   }
 }
+export function fromDiffValue<T>(value: DiffValue<T> | T): T {
+  if (value === nilPlaceholder) return nil!
+  return value as T
+}
+export function toDiffValue<T>(value: T): DiffValue<T> {
+  return value === nil ? (nilPlaceholder as any) : (value as any)
+}
 
-export function mergeDiff<E extends Entity = Entity>(
-  previousValue: E,
-  oldDiff: StageDiff<E> | nil,
-  newDiff: StageDiff<E> | nil,
-): StageDiff<E> | nil {
+export function getDiffDiff<T extends Entity>(
+  previousValue: T,
+  oldDiff: StageDiff<T> | nil,
+  newDiff: StageDiff<T> | nil,
+): StageDiff<T> | nil {
   if (oldDiff === nil) return newDiff && shallowCopy(newDiff)
   const result: any = {}
   if (newDiff === nil) {

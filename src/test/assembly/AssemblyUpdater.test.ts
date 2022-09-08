@@ -20,7 +20,7 @@ import {
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
-import { AssemblyEntity, StageDiffs, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, StageDiffsInternal, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { getEntityInfo } from "../../entity/entity-info"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
@@ -223,7 +223,7 @@ function assertNotified(entity: LuaEntity, message: LocalisedString, errorSound:
   notificationsAsserted = true
 }
 
-function assertStageDiffs(entity: AssemblyEntity, changes: StageDiffs<TestEntity>) {
+function assertStageDiffs(entity: AssemblyEntity, changes: StageDiffsInternal<TestEntity>) {
   assert.same(changes, entity._getStageDiffs())
 }
 

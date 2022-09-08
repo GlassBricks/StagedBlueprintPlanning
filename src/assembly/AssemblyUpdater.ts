@@ -17,7 +17,7 @@ import {
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { getEntityCategory, isRollingStockType, isUndergroundBeltType, overlapsWithSelf } from "../entity/entity-info"
+import { getEntityCategory, isRollingStockType, overlapsWithSelf } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
 import { L_Interaction } from "../locale"
@@ -628,10 +628,6 @@ export function createAssemblyUpdater(
     return assembly.content.findCompatible(entityOrPreviewEntity, nil)
   }
 
-  function isUndergroundEntity(entity: AssemblyEntity): entity is UndergroundBeltAssemblyEntity {
-    return isUndergroundBeltType(entity.getFirstValue().name)
-  }
-
   function onMoveEntityToStage(
     assembly: AssemblyContent,
     entityOrPreviewEntity: LuaEntity,
@@ -652,7 +648,7 @@ export function createAssemblyUpdater(
       return
     }
 
-    if (isUndergroundEntity(existing)) {
+    if (existing.isUndergroundBelt()) {
       if (existing.getNameAtStage(stageNumber) !== existing.getFirstValue().name) {
         createNotification(entityOrPreviewEntity, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
         return

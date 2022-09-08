@@ -103,6 +103,7 @@ function createPlugin(options: { testPattern?: string }): Plugin {
   }
   const visitors: Visitors = {
     [ts.SyntaxKind.DeleteExpression](node: ts.DeleteExpression, context: TransformationContext) {
+      if (ts.isOptionalChain(node.expression)) return context.superTransformExpression(node)
       const deleteCall = context.superTransformExpression(node)
       assert(isCallExpression(deleteCall))
       // replace with set property to nil

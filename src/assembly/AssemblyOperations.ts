@@ -9,12 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, isWorldEntityAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { Entity } from "../entity/Entity"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**
- * User and miscellaneous operations on an entire assembly at once.
+ * User and miscellaneous operations on assemblies.
  * @noSelf
  */
 export interface AssemblyOperations {
@@ -22,6 +23,23 @@ export interface AssemblyOperations {
   deleteAllExtraEntitiesOnly(assembly: AssemblyContent): void
 
   resetStage(assembly: AssemblyContent, stage: StagePosition): void
+
+  resetProp<T extends Entity>(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity<T>,
+    stageNumber: StageNumber,
+    prop: keyof T,
+  ): boolean
+  movePropDown<T extends Entity>(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity<T>,
+    stageNumber: StageNumber,
+    prop: keyof T,
+  ): boolean
+
+  resetAllProps(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+
+  moveAllPropsDown(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
 }
 
 /** @noSelf */
@@ -52,6 +70,42 @@ export function createAssemblyOperations(
   return {
     deleteAllExtraEntitiesOnly,
     resetStage,
+    resetProp<T extends Entity>(
+      assembly: AssemblyContent,
+      entity: AssemblyEntity<T>,
+      stageNumber: StageNumber,
+      prop: keyof T,
+    ): boolean {
+      const moved = entity.resetProp(stageNumber, prop)
+      if (moved) updateWorldEntities(assembly, entity, stageNumber, nil)
+      return moved
+    },
+    movePropDown<T extends Entity>(
+      assembly: AssemblyContent,
+      entity: AssemblyEntity<T>,
+      stageNumber: StageNumber,
+      prop: keyof T,
+    ): boolean {
+      const movedStage = entity.movePropDown(stageNumber, prop)
+      if (movedStage) {
+        updateWorldEntities(assembly, entity, movedStage, nil)
+        return true
+      }
+      return false
+    },
+    resetAllProps(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+      const moved = entity.resetValue(stageNumber)
+      if (moved) updateWorldEntities(assembly, entity, stageNumber, nil)
+      return moved
+    },
+    moveAllPropsDown(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+      const movedStage = entity.moveValueDown(stageNumber)
+      if (movedStage) {
+        updateWorldEntities(assembly, entity, movedStage, nil)
+        return true
+      }
+      return false
+    },
   }
 }
 
