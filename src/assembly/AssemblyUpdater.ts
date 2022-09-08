@@ -610,7 +610,11 @@ export function createAssemblyUpdater(
     const position = entityOrPreviewEntity.position
     const name = entityOrPreviewEntity.name
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
-      return assembly.content.findCompatibleBasic(name.substring(Prototypes.PreviewEntityPrefix.length), position, nil)
+      return assembly.content.findCompatibleBasic(
+        name.substring(Prototypes.PreviewEntityPrefix.length),
+        position,
+        entityOrPreviewEntity.direction,
+      )
     }
     return assembly.content.findCompatible(entityOrPreviewEntity, position, nil)
   }
