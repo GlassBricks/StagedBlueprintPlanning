@@ -185,11 +185,8 @@ class AssemblyImpl implements Assembly {
     assert(inventory, "Failed to get blueprint book inventory")
 
     for (const [, stage] of ipairs(this.stages)) {
-      const insertedCount = inventory.insert("blueprint")
-      assert(insertedCount > 0, "Failed to insert blueprint")
-      const blueprintStack = inventory[inventory.length - 1]
-      const blueprint = stage.doTakeBlueprint(blueprintStack!, bbox, false)
-      if (!blueprint) blueprintStack!.clear()
+      const blueprint = stage.doTakeBlueprint(bbox, false)
+      if (blueprint) inventory.insert(blueprint)
     }
 
     return true
@@ -261,12 +258,11 @@ class StageImpl implements Stage {
   takeBlueprint(forEdit = false): BlueprintItemStack | nil {
     const bbox = this.assembly.content.computeBoundingBox()
     if (!bbox) return nil
-    const stack = (this.blueprintStack ??= this.assembly.getNewBlueprintInventoryStack())
-    if (this.doTakeBlueprint(stack, bbox, forEdit)) return stack
-    return nil
+    return this.doTakeBlueprint(bbox, forEdit)
   }
 
-  doTakeBlueprint(stack: LuaItemStack, bbox: BBox, forEdit: boolean): boolean {
+  doTakeBlueprint(bbox: BBox, forEdit: boolean): BlueprintItemStack | nil {
+    const stack = (this.blueprintStack ??= this.assembly.getNewBlueprintInventoryStack())
     const takeSuccessful = tryTakeBlueprintWithSettings(
       stack,
       this.assembly.getBlueprintSettings(),
@@ -274,9 +270,9 @@ class StageImpl implements Stage {
       bbox,
       forEdit,
     )
-    if (!takeSuccessful) return false
+    if (!takeSuccessful) return nil
     stack.label = this.name.get()
-    return true
+    return stack
   }
 
   editBlueprint(player: LuaPlayer): boolean {
