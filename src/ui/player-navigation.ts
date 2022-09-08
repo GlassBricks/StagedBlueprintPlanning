@@ -14,13 +14,13 @@
  * For assembly editing, see assembly/world-listener.ts.
  */
 
-import { getStageAtSurface } from "../assembly/Assembly"
 import { Stage } from "../assembly/AssemblyDef"
-import { CustomInputs, Prototypes, Settings } from "../constants"
+import { CustomInputs, Settings } from "../constants"
 import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
+import { getAssemblyEntityOfEntity } from "./world-entities"
 
 const Events = ProtectedEvents
 
@@ -70,17 +70,6 @@ Events.on(CustomInputs.PreviousStage, (e) => {
   }
   teleportToStage(player, toStage)
 })
-function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
-  const stage = getStageAtSurface(entity.surface.index)
-  if (!stage) return $multi()
-  const name = entity.name
-  const actualName = name.startsWith(Prototypes.PreviewEntityPrefix)
-    ? name.substring(Prototypes.PreviewEntityPrefix.length)
-    : name
-  const found = stage.assembly.content.findCompatibleAnyDirection(actualName, entity.position)
-  if (found) return $multi(stage, found)
-  return $multi()
-}
 
 Events.on(CustomInputs.GoToFirstStage, (e) => {
   const player = game.get_player(e.player_index)!

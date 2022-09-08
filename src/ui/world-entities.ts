@@ -9,20 +9,19 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destroy } from "../lib/factoriojsx"
-import { Migrations } from "../lib/migration"
-import "./CurrentAssembly"
-import "./editor-fix"
-import "./NewAssembly"
-import "./opened-entity"
-import "./player-navigation"
+import { getStageAtSurface } from "../assembly/Assembly"
+import { Stage } from "../assembly/AssemblyDef"
+import { Prototypes } from "../constants"
+import { AssemblyEntity } from "../entity/AssemblyEntity"
 
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    const opened = player.opened
-    if (opened && opened.object_name === "LuaGuiElement" && opened.get_mod() === script.mod_name) {
-      destroy(opened)
-      player.opened = nil
-    }
-  }
-})
+export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
+  const stage = getStageAtSurface(entity.surface.index)
+  if (!stage) return $multi()
+  const name = entity.name
+  const actualName = name.startsWith(Prototypes.PreviewEntityPrefix)
+    ? name.substring(Prototypes.PreviewEntityPrefix.length)
+    : name
+  const found = stage.assembly.content.findCompatibleAnyDirection(actualName, entity.position)
+  if (found) return $multi(stage, found)
+  return $multi()
+}

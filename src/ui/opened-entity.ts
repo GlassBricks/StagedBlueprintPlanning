@@ -9,20 +9,22 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destroy } from "../lib/factoriojsx"
-import { Migrations } from "../lib/migration"
-import "./CurrentAssembly"
-import "./editor-fix"
-import "./NewAssembly"
-import "./opened-entity"
-import "./player-navigation"
+import { PlayerChangedStageEvent } from "./player-current-stage"
+import { getAssemblyEntityOfEntity } from "./world-entities"
 
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    const opened = player.opened
-    if (opened && opened.object_name === "LuaGuiElement" && opened.get_mod() === script.mod_name) {
-      destroy(opened)
-      player.opened = nil
-    }
+PlayerChangedStageEvent.addListener((player, stage) => {
+  const entity = player.opened
+  if (!entity || entity.object_name !== "LuaEntity") return
+
+  const [oldStage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
+  if (!oldStage || oldStage === stage) return
+  if (stage === nil || oldStage.assembly !== stage.assembly) {
+    player.opened = nil
+    return
   }
+
+  const otherEntity =
+    assemblyEntity.getWorldEntity(stage.stageNumber) ??
+    assemblyEntity.getWorldEntity(stage.stageNumber, "previewEntity")
+  player.opened = otherEntity
 })
