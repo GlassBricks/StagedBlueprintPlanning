@@ -9,27 +9,18 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEvents } from "../../assembly/Assembly"
-import { Assembly, Stage } from "../../assembly/AssemblyDef"
-import { getAllAssemblies } from "../../assembly/global"
-import {
-  bind,
-  funcOn,
-  funcRef,
-  MaybeState,
-  onPlayerInit,
-  RegisterClass,
-  registerFunctions,
-  Subscription,
-} from "../../lib"
-import { Component, destroy, EmptyProps, FactorioJsx, render, renderNamed, Spec, Tracker } from "../../lib/factoriojsx"
-import { DotDotDotButton, Fn, HorizontalPusher, HorizontalSpacer, TitleBar } from "../../lib/factoriojsx/components"
-import { Migrations } from "../../lib/migration"
-import { L_GuiAllAssemblies, L_GuiCurrentAssembly } from "../../locale"
-import { playerCurrentStage } from "../player-current-stage"
+import { AssemblyEvents } from "../assembly/Assembly"
+import { Assembly, Stage } from "../assembly/AssemblyDef"
+import { getAllAssemblies } from "../assembly/global"
+import { bind, funcOn, funcRef, MaybeState, onPlayerInit, RegisterClass, registerFunctions, Subscription } from "../lib"
+import { Component, destroy, EmptyProps, FactorioJsx, render, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
+import { DotDotDotButton, Fn, HorizontalPusher, HorizontalSpacer, TitleBar } from "../lib/factoriojsx/components"
+import { Migrations } from "../lib/migration"
+import { L_GuiAllAssemblies, L_GuiCurrentAssembly } from "../locale"
 import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"
 import { openNewAssemblyGui } from "./NewAssembly"
+import { playerCurrentStage } from "./player-current-stage"
 import { StageSelector } from "./StageSelector"
 
 declare global {

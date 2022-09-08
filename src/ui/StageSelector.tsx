@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, LocalAssemblyEvent, Stage } from "../../assembly/AssemblyDef"
-import { StageNumber } from "../../entity/AssemblyEntity"
-import { assertNever, bind, funcOn, MutableState, RegisterClass, Subscription } from "../../lib"
-import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../../lib/factoriojsx"
-import { playerCurrentStage, teleportToStage } from "../player-current-stage"
+import { Assembly, LocalAssemblyEvent, Stage } from "../assembly/AssemblyDef"
+import { StageNumber } from "../entity/AssemblyEntity"
+import { assertNever, bind, funcOn, MutableState, RegisterClass, Subscription } from "../lib"
+import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../lib/factoriojsx"
+import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 
 export type StageSelectorProps<T extends "drop-down" | "list-box"> = {
   uses: T

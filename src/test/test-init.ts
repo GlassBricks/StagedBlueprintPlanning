@@ -11,7 +11,7 @@
 
 import { createAssembly } from "../assembly/Assembly"
 import { destroyAllRenders, Events } from "../lib"
-import { openAssemblySettings } from "../ui/gui/AssemblySettings"
+import { openAssemblySettings } from "../ui/AssemblySettings"
 
 // better source map traceback
 declare const ____lualib: {

@@ -9,17 +9,25 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destroy } from "../../lib/factoriojsx"
-import { Migrations } from "../../lib/migration"
-import "./CurrentAssembly"
-import "./editor-fix"
+import { Sprites } from "../constants"
+import { MaybeState } from "../lib"
+import { ClickEventHandler, FactorioJsx, Spec } from "../lib/factoriojsx"
 
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    const opened = player.opened
-    if (opened && opened.object_name === "LuaGuiElement" && opened.get_mod() === script.mod_name) {
-      destroy(opened)
-      player.opened = nil
-    }
-  }
-})
+export function ExternalLinkButton(props: {
+  on_gui_click?: ClickEventHandler
+  tooltip?: MaybeState<LocalisedString>
+  enabled?: MaybeState<boolean>
+}): Spec {
+  return (
+    <sprite-button
+      style="frame_action_button"
+      sprite={Sprites.ExternalLinkWhite}
+      hovered_sprite={Sprites.ExternalLinkBlack}
+      clicked_sprite={Sprites.ExternalLinkBlack}
+      mouse_button_filter={["left"]}
+      on_gui_click={props.on_gui_click}
+      enabled={props.enabled}
+      tooltip={props.tooltip}
+    />
+  )
+}

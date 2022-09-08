@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { funcOn, MutableState, RegisterClass, State, state } from "../../lib"
-import { Component, FactorioJsx, Spec } from "../../lib/factoriojsx"
-import { Fn, RenameButton } from "../../lib/factoriojsx/components"
+import { funcOn, MutableState, RegisterClass, State, state } from "../lib"
+import { Component, FactorioJsx, Spec } from "../lib/factoriojsx"
+import { Fn, RenameButton } from "../lib/factoriojsx/components"
 
 export interface ItemRenameProps {
   name: MutableState<string>

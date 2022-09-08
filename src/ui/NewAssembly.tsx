@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createAssembly } from "../../assembly/Assembly"
-import { funcOn, RegisterClass } from "../../lib"
-import { Component, destroy, EmptyProps, FactorioJsx, renderOpened, Spec, Tracker } from "../../lib/factoriojsx"
-import { HorizontalPusher, SimpleTitleBar } from "../../lib/factoriojsx/components"
-import { L_GuiNewAssembly } from "../../locale"
+import { createAssembly } from "../assembly/Assembly"
+import { funcOn, RegisterClass } from "../lib"
+import { Component, destroy, EmptyProps, FactorioJsx, renderOpened, Spec, Tracker } from "../lib/factoriojsx"
+import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
+import { L_GuiNewAssembly } from "../locale"
 import { openAssemblySettings } from "./AssemblySettings"
 import floor = math.floor
 

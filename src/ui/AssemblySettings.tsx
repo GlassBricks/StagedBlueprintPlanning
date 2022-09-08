@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, LocalAssemblyEvent, Stage } from "../../assembly/AssemblyDef"
-import { AssemblyOperations } from "../../assembly/AssemblyOperations"
-import { getStageToMerge } from "../../entity/AssemblyEntity"
-import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../../lib"
+import { Assembly, LocalAssemblyEvent, Stage } from "../assembly/AssemblyDef"
+import { AssemblyOperations } from "../assembly/AssemblyOperations"
+import { getStageToMerge } from "../entity/AssemblyEntity"
+import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
   Component,
   destroy,
@@ -22,7 +22,7 @@ import {
   renderNamed,
   Spec,
   Tracker,
-} from "../../lib/factoriojsx"
+} from "../lib/factoriojsx"
 import {
   Fn,
   HorizontalPusher,
@@ -30,9 +30,10 @@ import {
   SimpleTitleBar,
   TrashButton,
   VerticalPusher,
-} from "../../lib/factoriojsx/components"
-import { Migrations } from "../../lib/migration"
-import { L_GuiAssemblySettings, L_Interaction } from "../../locale"
+} from "../lib/factoriojsx/components"
+import { Migrations } from "../lib/migration"
+import { L_GuiAssemblySettings, L_Interaction } from "../locale"
+import { ItemRename } from "./ItemRename"
 import {
   PlayerChangedStageEvent,
   playerCurrentStage,
@@ -40,8 +41,7 @@ import {
   teleportToAssembly,
   teleportToStage,
   teleportToSurface1,
-} from "../player-current-stage"
-import { ItemRename } from "./ItemRename"
+} from "./player-current-stage"
 import { StageSelector } from "./StageSelector"
 
 declare global {
