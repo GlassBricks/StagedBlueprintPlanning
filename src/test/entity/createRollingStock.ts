@@ -8,22 +8,25 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
-import { Position } from "../lib"
 
-export interface EntityPose {
-  readonly position: Position
-  readonly direction: defines.direction | nil
-}
-export interface Entity {
-  readonly name: string
-  readonly items?: Record<string, number>
-}
-export interface BasicEntityInfo {
-  readonly name: string
-  readonly type: string
-  readonly surface: LuaSurface
-  readonly position: Position
-  readonly direction: defines.direction
-  readonly belt_to_ground_type?: "input" | "output"
-  readonly object_name?: string
+import { Pos } from "../../lib/geometry"
+
+export function createRollingStock(): LuaEntity {
+  const surface = game.surfaces[1]
+  for (let i = 0; i < 3; i++) {
+    surface.create_entity({
+      name: "straight-rail",
+      position: Pos(i * 2, 0),
+      direction: 2,
+      force: "player",
+    })
+  }
+  const rollingStock = surface.create_entity({
+    name: "locomotive",
+    position: Pos(2, 0.5),
+    orientation: 0.25,
+    force: "player",
+  })!
+  assert.not_nil(rollingStock, "rolling stock created")
+  return rollingStock
 }

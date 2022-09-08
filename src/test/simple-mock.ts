@@ -30,6 +30,7 @@ export function simpleMock<T extends LuaObjectLike | LuaObject>(value?: Partial<
     destroy() {
       base.valid = false
     },
+    object_name: "mock",
   }
   Object.assign(base, value)
   return setmetatable(base, metatable) as T

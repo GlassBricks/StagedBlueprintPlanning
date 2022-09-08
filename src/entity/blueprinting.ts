@@ -28,7 +28,10 @@ export function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   const [, entity, requestProxy] = ghost.silent_revive({
     return_item_request_proxy: true,
   })
-  if (entity === nil) return
+  if (entity === nil) {
+    ghost.destroy()
+    return nil
+  }
 
   if (!requestProxy) return entity
 

@@ -112,6 +112,11 @@ export const enum BuildableEntityTypes {
   "electric-turret" = "electric-turret",
   "fluid-turret" = "fluid-turret",
   // vehicles ignored
+  // rolling stock
+  "artillery-wagon" = "artillery-wagon",
+  "cargo-wagon" = "cargo-wagon",
+  "fluid-wagon" = "fluid-wagon",
+  "locomotive" = "locomotive",
   wall = "wall",
 }
 

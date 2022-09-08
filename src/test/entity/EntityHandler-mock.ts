@@ -12,7 +12,7 @@
 import { keys } from "ts-transformer-keys"
 import { StagePosition } from "../../assembly/AssemblyContent"
 import { StageNumber } from "../../entity/AssemblyEntity"
-import { Entity, EntityPose } from "../../entity/Entity"
+import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler, EntityCreator, EntitySaver } from "../../entity/EntityHandler"
 import { MutableMap2D, newMap2D, shallowCopy } from "../../lib"
 import { Position } from "../../lib/geometry"
@@ -72,7 +72,12 @@ export function createMockEntityCreator(): MockEntityCreator {
     return luaEntity
   }
   return {
-    createEntity(stagePos: StagePosition, { position, direction }: EntityPose, value: Entity): LuaEntity | nil {
+    createEntity(
+      stagePos: StagePosition,
+      position: Position,
+      direction: defines.direction,
+      value: Entity,
+    ): LuaEntity | nil {
       const stage = stagePos.stageNumber
       if (getAt(stage, position) !== nil) return nil // overlapping entity
       return createEntity(stage, value, direction ?? 0, position)

@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { registerEntity } from "../assembly/entity-registration"
 import {
   deepCompare,
   isEmpty,
@@ -22,18 +23,19 @@ import {
   shiftNumberKeysUp,
 } from "../lib"
 import { Position } from "../lib/geometry"
-import { Entity, EntityPose } from "./Entity"
-import { CategoryName, getEntityCategory } from "./entity-info"
+import { Entity } from "./Entity"
+import { CategoryName, getEntityCategory, isRollingStockType, rollingStockTypes } from "./entity-info"
+import { RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import { applyDiffToDiff, applyDiffToEntity, getEntityDiff, mergeDiff, StageDiff } from "./stage-diff"
-import { UndergroundBeltEntity } from "./undergrounds"
 
 export type StageNumber = number
 
 /**
  * All the data about one entity in an assembly, across all stages.
  */
-export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPose {
+export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly categoryName: CategoryName
+  readonly position: Position
   readonly direction: defines.direction | nil
   getDirection(): defines.direction
   setDirection(direction: defines.direction): void
@@ -42,6 +44,8 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   getFirstStage(): StageNumber
   getFirstValue(): Readonly<T>
+
+  isRollingStock(): this is AssemblyRollingStockEntity
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
@@ -61,6 +65,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
 
   /**
    * Adjusts stage diffs so that the value at the given stage matches the given value.
+   * Rolling stock entities are ignored if not at the first stage.
    * Trims stage diffs in higher stages if they no longer have any effect.
    * If there is diff, also clears oldStage (see {@link getOldStage}).
    * @return true if the value changed.
@@ -72,7 +77,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> extends EntityPos
    */
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean
 
-  setUndergroundBeltDirection(this: AssemblyEntity<UndergroundBeltEntity>, direction: "input" | "output"): void
+  setUndergroundBeltDirection(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
 
   /**
    * @param stage the stage to move to. If moving up, deletes/merges all stage diffs from old stage to new stage.
@@ -127,6 +132,9 @@ type AnyWorldEntity = WorldEntities[keyof WorldEntities]
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface StageProperties {}
 
+export type AssemblyRollingStockEntity = AssemblyEntity<RollingStockEntity>
+export type UndergroundBeltAssemblyEntity = AssemblyEntity<UndergroundBeltEntity>
+
 type StageData = WorldEntities & StageProperties
 
 @RegisterClass("AssemblyEntity")
@@ -172,13 +180,17 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return this.firstValue
   }
 
+  isRollingStock(): this is AssemblyEntity<RollingStockEntity> {
+    return isRollingStockType(this.firstValue.name)
+  }
+
   hasStageDiff(stage?: StageNumber): boolean {
     const { stageDiffs } = this
     if (!stageDiffs) return false
     if (stage) return stageDiffs[stage] !== nil
     return next(stageDiffs)[0] !== nil
   }
-  public getStageDiff(stage: StageNumber): StageDiff<T> | nil {
+  getStageDiff(stage: StageNumber): StageDiff<T> | nil {
     const { stageDiffs } = this
     return stageDiffs && stageDiffs[stage]
   }
@@ -186,6 +198,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return this.stageDiffs
   }
   _applyDiffAtStage(stage: StageNumber, diff: StageDiff<T>): void {
+    if (this.isRollingStock()) return
     let { stageDiffs } = this
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
@@ -204,7 +217,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   getValueAtStage(stage: StageNumber): T | nil {
     // assert(stage >= 1, "stage must be >= 1")
-    if (stage < this.firstStage) return nil
+    const { firstStage } = this
+    if (stage < firstStage) return nil
+    if (this.isRollingStock() && stage !== firstStage) return nil
     const value = mutableShallowCopy(this.firstValue)
     const { stageDiffs } = this
     if (stageDiffs) {
@@ -230,6 +245,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
   iterateValues(start: StageNumber, end: StageNumber) {
+    if (this.isRollingStock()) return this.iterateValuesRollingStock(start, end)
+
     const { firstStage, firstValue } = this
     let value = this.getValueAtStage(start)
     function next(stageValues: StageDiffs | nil, prevStage: StageNumber | nil) {
@@ -250,9 +267,24 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return $multi<any>(next, this.stageDiffs, nil)
   }
 
+  private iterateValuesRollingStock(start: StageNumber, end: StageNumber) {
+    // only shows up in the first stage
+    const { firstStage, firstValue } = this
+    function next(_: any, prevStage: StageNumber) {
+      const stage = prevStage + 1
+      if (stage > end) return $multi()
+      if (stage === firstStage) return $multi(stage, firstValue)
+      return $multi(stage, nil)
+    }
+    return $multi<any>(next, nil, start - 1)
+  }
+
   adjustValueAtStage(stage: StageNumber, value: T): boolean {
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
+
+    if (this.isRollingStock()) return this.adjustValueRollingStock(stage, value)
+
     const diff = this.setValueAndGetDiff(stage, value)
     if (!diff) return false
     this.trimDiffs(stage, diff)
@@ -260,6 +292,17 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.oldStage = nil
     return true
   }
+  private adjustValueRollingStock(this: AssemblyEntityImpl<RollingStockEntity>, stage: StageNumber, value: T): boolean {
+    const canAdjust = stage === this.firstStage
+    if (!canAdjust) return false
+    const diff = getEntityDiff(this.firstValue, value)
+    if (!diff) return false
+    delete diff.orientation // ignore orientation
+    if (isEmpty(diff)) return false
+    applyDiffToEntity(this.firstValue, diff)
+    return true
+  }
+
   private setValueAndGetDiff(stage: StageNumber, value: T): StageDiff<T> | nil {
     if (stage === this.firstStage) {
       const { firstValue } = this
@@ -273,13 +316,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
 
       let { stageDiffs } = this
-      const oldStageDiff = stageDiffs && stageDiffs[stage]
+      const oldStageDiff: Mutable<StageDiff<T>> | nil = stageDiffs && stageDiffs[stage]
       if (newStageDiff) {
         stageDiffs ??= this.stageDiffs = {}
         stageDiffs[stage] = newStageDiff
       } else if (stageDiffs) delete stageDiffs[stage]
 
-      return mergeDiff(valueAtPreviousStage, oldStageDiff, newStageDiff)
+      return mergeDiff<T>(valueAtPreviousStage, oldStageDiff, newStageDiff)
     }
   }
 
@@ -305,6 +348,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
+    if (this.isRollingStock()) return false // rolling stock can't be upgraded
     const { firstStage } = this
     let { stageDiffs } = this
     assert(stage >= firstStage, "stage must be >= first stage")
@@ -391,6 +435,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     const existing = byType[stage]
     if (existing && existing.valid && existing !== entity) existing.destroy()
     byType[stage] = entity
+    if (entity && entity.object_name === "LuaEntity" && rollingStockTypes.has(entity.type)) {
+      registerEntity(entity as LuaEntity, this)
+    }
   }
   destroyWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): void {
     const { stageProperties } = this
@@ -398,8 +445,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (!byType) return
     const entity = byType[stage]
     if (entity && entity.valid) entity.destroy()
-    delete byType[stage]
-    if (isEmpty(byType)) delete stageProperties[type]
+    if (!entity || !entity.valid) {
+      delete byType[stage]
+      if (isEmpty(byType)) delete stageProperties[type]
+    }
   }
   hasAnyWorldEntity(type: WorldEntityType): boolean {
     const { stageProperties } = this
@@ -505,15 +554,7 @@ export function createAssemblyEntity<E extends Entity>(
 }
 
 // vehicles and units
-const excludedTypes = newLuaSet(
-  "unit",
-  "car",
-  "artillery-wagon",
-  "cargo-wagon",
-  "fluid-wagon",
-  "locomotive",
-  "spider-vehicle",
-)
+const excludedTypes: ReadonlyLuaSet<string> = newLuaSet("unit", "car", "spider-vehicle")
 
 export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
   return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation") && !excludedTypes.has(luaEntity.type)

@@ -12,7 +12,6 @@
 import { Prototypes } from "../constants"
 import { Events, isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { debugPrint } from "../lib/test/misc"
 import { L_Interaction } from "../locale"
 
 export interface BlueprintSettings {
@@ -63,7 +62,6 @@ export function tryTakeBlueprintWithSettings(
   const expectedPosition = Pos.plus(firstEntityOriginalPosition, settings.positionOffset)
   const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
   if (shouldAdjustPosition) {
-    debugPrint("Adjusting blueprint position")
     const adjustment = Pos.minus(expectedPosition, firstEntityPosition)
     for (const entity of entities) {
       const pos = entity.position as Mutable<Position>

@@ -33,7 +33,7 @@ export function getNilPlaceholder(): NilPlaceholder {
 }
 
 const ignoredProps = newLuaSet<keyof any>("position", "direction")
-export function getEntityDiff<E extends Entity = Entity>(below: E, above: E): StageDiff<E> | nil {
+export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<StageDiff<E>> | nil {
   const changes: any = {}
   for (const [key, value] of pairs(above)) {
     if (!ignoredProps.has(key) && !deepCompare(value, below[key])) {

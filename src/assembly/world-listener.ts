@@ -602,6 +602,11 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   const stage = getStageAtEntityOrPreview(entity)
   if (stage) {
     DefaultAssemblyUpdater.onMoveEntityToStage(stage.assembly, entity, stage, e.player_index)
+  } else {
+    player.create_local_flying_text({
+      text: [L_Interaction.NotInAnAssembly],
+      create_at_cursor: true,
+    })
   }
 })
 

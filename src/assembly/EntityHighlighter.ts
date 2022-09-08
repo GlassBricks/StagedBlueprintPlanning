@@ -13,6 +13,7 @@ import { keys } from "ts-transformer-keys"
 import { Prototypes } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
+import { orientationToDirection } from "../entity/special-entities"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
@@ -73,6 +74,7 @@ export interface HighlightCreator {
     type: string,
     position: Position,
     direction: defines.direction | nil,
+    orientation?: RealOrientation,
   ): LuaEntity | nil
 
   createSelectionProxy(
@@ -206,7 +208,10 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     type: "previewEntity" | "selectionProxy",
   ): LuaEntity | nil {
     const creator = type === "previewEntity" ? createEntityPreview : createSelectionProxy
-    const result = creator(stage.surface, entity.getNameAtStage(stage.stageNumber), entity.position, entity.direction)
+    const direction = entity.isRollingStock()
+      ? orientationToDirection(entity.getFirstValue().orientation)
+      : entity.direction
+    const result = creator(stage.surface, entity.getNameAtStage(stage.stageNumber), entity.position, direction)
     entity.replaceWorldEntity(stage.stageNumber, result, type)
     return result
   }
@@ -238,9 +243,20 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    for (const [i, stage] of assembly.iterateStages()) {
-      const shouldHaveEntityPreview = entity.getWorldEntity(stage.stageNumber, "mainEntity") === nil
-      const hasError = shouldHaveEntityPreview && i >= entity.getFirstStage()
+    const firstStage = entity.getFirstStage()
+    if (!entity.isRollingStock()) {
+      for (const [i, stage] of assembly.iterateStages()) {
+        const shouldHaveEntityPreview = entity.getWorldEntity(stage.stageNumber, "mainEntity") === nil
+        const hasError = shouldHaveEntityPreview && i >= firstStage
+        updateAssociatedEntity(entity, stage, "previewEntity", shouldHaveEntityPreview)
+        updateAssociatedEntity(entity, stage, "selectionProxy", hasError)
+        updateHighlight(entity, stage, "errorOutline", hasError)
+      }
+    } else {
+      const stage = assembly.getStage(firstStage)
+      if (!stage) return
+      const shouldHaveEntityPreview = entity.getWorldEntity(firstStage, "mainEntity") === nil
+      const hasError = shouldHaveEntityPreview
       updateAssociatedEntity(entity, stage, "previewEntity", shouldHaveEntityPreview)
       updateAssociatedEntity(entity, stage, "selectionProxy", hasError)
       updateHighlight(entity, stage, "errorOutline", hasError)
@@ -248,6 +264,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function updateErrorIndicators(assembly: AssemblyContent, entity: AssemblyEntity): void {
+    if (entity.isRollingStock()) return
     let hasErrorAnywhere = false
     for (const i of $range(entity.getFirstStage(), assembly.numStages())) {
       const hasError = entity.getWorldEntity(i) === nil
@@ -308,8 +325,10 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
     // ignore start and end stage for now
     updateAssociatedEntitiesAndErrorHighlight(assembly, entity)
-    updateErrorIndicators(assembly, entity)
-    updateAllConfigChangedHighlights(assembly, entity)
+    if (!entity.isRollingStock()) {
+      updateErrorIndicators(assembly, entity)
+      updateAllConfigChangedHighlights(assembly, entity)
+    }
   }
 
   function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
@@ -365,12 +384,14 @@ export const DefaultHighlightCreator: HighlightCreator = {
     type: string,
     position: Position,
     direction: defines.direction | nil,
+    orientation?: RealOrientation,
   ): LuaEntity | nil {
     const name = Prototypes.PreviewEntityPrefix + type
     const result = surface.create_entity({
       name,
       position,
       direction,
+      orientation,
       force: "player",
     })
     if (result) {

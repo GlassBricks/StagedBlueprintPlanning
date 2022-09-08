@@ -10,13 +10,10 @@
  */
 
 import { oppositedirection } from "util"
-import { AssemblyEntity } from "../entity/AssemblyEntity"
-import { UndergroundBeltEntity } from "../entity/undergrounds"
+import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "../entity/AssemblyEntity"
 import { Mutable } from "../lib"
 import { Pos, Position, PositionClass } from "../lib/geometry"
 import { MutableEntityMap } from "./EntityMap"
-
-export type AssemblyUndergroundEntity = AssemblyEntity<UndergroundBeltEntity>
 
 /**
  * Finds an underground pair. If there are multiple possible pairs, returns the first one, and true as the second return value.
@@ -24,7 +21,7 @@ export type AssemblyUndergroundEntity = AssemblyEntity<UndergroundBeltEntity>
 export function findUndergroundPair(
   content: MutableEntityMap,
   member: AssemblyEntity,
-): LuaMultiReturn<[underground: AssemblyUndergroundEntity | nil, hasMultiple: boolean]> {
+): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
   const [pair, hasMultiple] = findUndergroundPairOneDirection(content, member)
   if (!pair || hasMultiple) return $multi(pair, hasMultiple)
 
@@ -35,7 +32,7 @@ export function findUndergroundPair(
 function findUndergroundPairOneDirection(
   content: MutableEntityMap,
   member: AssemblyEntity,
-): LuaMultiReturn<[underground: AssemblyUndergroundEntity | nil, hasMultiple: boolean]> {
+): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
   const name = member.getFirstValue().name
   const reach = game.entity_prototypes[name].max_underground_distance
   if (!reach) return $multi(nil, false)
@@ -46,12 +43,12 @@ function findUndergroundPairOneDirection(
   const { x, y } = member.position
   const { x: dx, y: dy } = unit(direction)
 
-  let found: AssemblyUndergroundEntity | nil
+  let found: UndergroundBeltAssemblyEntity | nil
   const curPos = {} as Mutable<Position>
   for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
-    const underground = content.findCompatibleBasic(name, curPos, otherDirection) as AssemblyUndergroundEntity | nil
+    const underground = content.findCompatibleBasic(name, curPos, otherDirection) as UndergroundBeltAssemblyEntity | nil
     if (underground && underground.getFirstValue().name === name) {
       if (found) return $multi(found, true)
       found = underground

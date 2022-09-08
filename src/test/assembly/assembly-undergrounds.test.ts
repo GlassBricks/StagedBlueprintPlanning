@@ -10,10 +10,10 @@
  */
 
 import { oppositedirection } from "util"
-import { AssemblyUndergroundEntity, findUndergroundPair, unit } from "../../assembly/assembly-undergrounds"
+import { findUndergroundPair, unit } from "../../assembly/assembly-undergrounds"
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
-import { createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { UndergroundBeltEntity } from "../../entity/undergrounds"
+import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
+import { UndergroundBeltEntity } from "../../entity/special-entities"
 import direction = defines.direction
 
 let content: MutableEntityMap
@@ -35,7 +35,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
   }
 
   function strToUndergrounds(str: string) {
-    const result: (AssemblyUndergroundEntity | "none")[] = []
+    const result: (UndergroundBeltAssemblyEntity | "none")[] = []
     for (let i = 0; i < str.length; i++) {
       const c = str[i]
       if (c === "v") {
@@ -77,7 +77,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
   })
 
   test("different underground types not same group", () => {
-    const undergrounds = strToUndergrounds("v^") as AssemblyUndergroundEntity[]
+    const undergrounds = strToUndergrounds("v^") as UndergroundBeltAssemblyEntity[]
     undergrounds[0].applyUpgradeAtStage(1, "fast-underground-belt")
     const [pair, hasMultiple] = findUndergroundPair(content, undergrounds[1])
     assert.nil(pair)

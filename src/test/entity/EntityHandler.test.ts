@@ -33,7 +33,7 @@ test("can save an entity", () => {
 
 test("can create an entity", () => {
   const stage: StagePosition = { surface, stageNumber: 0 }
-  const luaEntity = DefaultEntityHandler.createEntity(stage, { position: { x: 0.5, y: 0.5 }, direction: nil }, {
+  const luaEntity = DefaultEntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, 0, {
     name: "iron-chest",
     bar: 3,
   } as Entity)!
@@ -101,14 +101,10 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
 
   test("creating an underground belt in output direction flips direction", () => {
     const stage: StagePosition = { surface, stageNumber: 0 }
-    const luaEntity = DefaultEntityHandler.createEntity(
-      stage,
-      { position: { x: 0.5, y: 0.5 }, direction: defines.direction.south },
-      {
-        name: "underground-belt",
-        type: inOut,
-      } as Entity,
-    )!
+    const luaEntity = DefaultEntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, defines.direction.south, {
+      name: "underground-belt",
+      type: inOut,
+    } as Entity)!
     assert.not_nil(luaEntity, "entity created")
     assert.equal("underground-belt", luaEntity.name)
     assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
@@ -132,17 +128,10 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     assert.not_nil(westUnderground, "entity created")
     // try pasting east output underground at 1.5, 0.5
     // if west underground is output, the created entity will be flipped
-    const eastUnderground = DefaultEntityHandler.createEntity(
-      stage,
-      {
-        position: { x: 1.5, y: 0.5 },
-        direction: defines.direction.west,
-      },
-      {
-        name: "underground-belt",
-        type: "output",
-      } as Entity,
-    )!
+    const eastUnderground = DefaultEntityHandler.createEntity(stage, { x: 1.5, y: 0.5 }, defines.direction.west, {
+      name: "underground-belt",
+      type: "output",
+    } as Entity)!
     if (flipped) {
       assert.nil(eastUnderground)
       assert.nil(surface.find_entity("underground-belt", { x: 1.5, y: 0.5 }))

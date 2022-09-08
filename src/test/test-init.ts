@@ -119,17 +119,14 @@ Events.on_tick(() => {
   if (!shouldTryRerun) return
   const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
   const mod = game.ticks_played % ticks
+  if (isTestsRunning()) return
   if (mod === 0) {
     // tests not running or not ready
-    if (!isTestsRunning()) {
-      global.lastCompileTimestamp = lastCompileTime
-      game.reload_mods()
-    }
-  } else if (mod === 1) {
-    if (!isTestsRunning() && global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
-      game.print("Rerunning: " + lastCompileTime)
-      remote.call("testorio", "runTests")
-    }
+    global.lastCompileTimestamp = lastCompileTime
+    game.reload_mods()
+  } else if (global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
+    game.print("Rerunning: " + lastCompileTime)
+    remote.call("testorio", "runTests")
   }
 })
 commands.add_command("norerun", "", () => {

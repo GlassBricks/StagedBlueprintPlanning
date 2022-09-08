@@ -9,12 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { getRegisteredAssemblyEntity } from "../../assembly/entity-registration"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
 import { shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { entityMock } from "../simple-mock"
+import { createRollingStock } from "./createRollingStock"
 
 interface FooEntity extends Entity {
   foo1: number
@@ -245,6 +247,46 @@ describe("Get/set world entities", () => {
     assert.false(assemblyEntity.hasAnyWorldEntity("mainEntity"))
     assemblyEntity.replaceWorldEntity(1, entity)
     assert.true(assemblyEntity.hasAnyWorldEntity("mainEntity"))
+  })
+})
+
+describe("rolling stock", () => {
+  test("rolling stock only appears in its first stage", () => {
+    const entity = entityMock({ name: "cargo-wagon", position: Pos(0, 0) })
+    const assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 2)
+    assert.nil(assemblyEntity.getValueAtStage(1))
+    assert.same(assemblyEntity.getFirstValue(), assemblyEntity.getValueAtStage(2))
+    assert.nil(assemblyEntity.getValueAtStage(3))
+  })
+  test("cannot apply stage diffs to rolling stock beyond first stage", () => {
+    const entity = entityMock({ name: "cargo-wagon", position: Pos(0, 0) })
+    const assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 1)
+    const adjusted = assemblyEntity.adjustValueAtStage(1, entity)
+    assert.true(adjusted)
+    const adjusted2 = assemblyEntity.adjustValueAtStage(2, entity)
+    assert.false(adjusted2)
+    assert.same(assemblyEntity.getFirstValue(), assemblyEntity.getValueAtStage(1))
+  })
+  test("apply stage diff ignores orientation changes", () => {
+    const entity = entityMock({ name: "cargo-wagon", position: Pos(0, 0), orientation: 0.25 })
+    const assemblyEntity = createAssemblyEntity({ name: entity.name, orientation: 0.25 }, Pos(0, 0), nil, 1)
+    const adjusted = assemblyEntity.adjustValueAtStage(1, { ...assemblyEntity.getFirstValue(), orientation: 0.5 })
+    assert.false(adjusted)
+    assert.equal(0.25, assemblyEntity.getFirstValue().orientation)
+  })
+  test("cannot apply upgrade to rolling stock", () => {
+    const entity = entityMock({ name: "cargo-wagon", position: Pos(0, 0) })
+    const assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 1)
+    const adjusted = assemblyEntity.applyUpgradeAtStage(1, "cargo-wagon-2")
+    assert.false(adjusted)
+    assert.equal("cargo-wagon", assemblyEntity.getNameAtStage(1))
+  })
+  test("setting a rolling stock world entity will register it in entity-registration", () => {
+    const rollingStock = createRollingStock()
+
+    assemblyEntity.replaceWorldEntity(1, rollingStock)
+    const found = getRegisteredAssemblyEntity(rollingStock)
+    assert.same(assemblyEntity, found)
   })
 })
 

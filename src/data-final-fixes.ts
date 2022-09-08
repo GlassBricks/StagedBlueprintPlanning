@@ -15,7 +15,6 @@ import * as util from "util"
 import { BuildableEntityTypes, Prototypes } from "./constants"
 import {
   EntityPrototype,
-  ItemPrototype,
   SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
   Sprite,
@@ -23,7 +22,6 @@ import {
   UtilityConstants,
 } from "./declarations/data"
 import { BBox } from "./lib/geometry"
-import { debugPrint } from "./lib/test/misc"
 import { L_Bp100 } from "./locale"
 import direction = defines.direction
 import ceil = math.ceil
@@ -77,14 +75,14 @@ const emptySprite: Sprite = {
 }
 
 const entityToItemBuild = new LuaMap<string, string>()
-function iterate(prototypes: Record<string, ItemPrototype>): void {
+const itemTypes = ["item", "item-with-entity-data", "rail-planner"]
+for (const type of itemTypes) {
+  const prototypes = data.raw[type]
+  if (prototypes === nil) continue
   for (const [name, itemPrototype] of pairs(prototypes)) {
     if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)
   }
 }
-iterate(data.raw.item)
-iterate(data.raw["rail-planner"])
-
 const utilityConstants: UtilityConstants = data.raw["utility-constants"].default
 
 const flagsToTransfer = newLuaSet<keyof EntityPrototypeFlags>("placeable-off-grid", "building-direction-8-way")
@@ -96,7 +94,6 @@ function isBuildablePrototype(prototype: EntityPrototype): boolean {
 
 const previews: SimpleEntityWithOwnerPrototype[] = []
 const selectionProxies: SimpleEntityWithOwnerPrototype[] = []
-// simple-entity-with-owner is used instead of simple-entity so that it can be rotated 4 ways
 for (const [, type] of ipairs(keys<typeof BuildableEntityTypes>())) {
   const prototypes = data.raw[type]
   if (!prototypes) continue
@@ -113,9 +110,6 @@ for (const [, type] of ipairs(keys<typeof BuildableEntityTypes>())) {
     const flags = prototype.flags!.filter((flag) => flagsToTransfer.has(flag))
     flags.push("hidden")
     flags.push("not-on-map")
-    if (prototype.friendly_map_color) {
-      debugPrint(name, "has friendly_map_color", prototype.friendly_map_color)
-    }
 
     const color =
       prototype.friendly_map_color ??

@@ -12,14 +12,15 @@
 import { oppositedirection } from "util"
 import { StagePosition } from "../assembly/AssemblyContent"
 import { Mutable } from "../lib"
-import { BBox, Pos } from "../lib/geometry"
+import { BBox, Pos, Position } from "../lib/geometry"
 import { getTempBpItemStack, reviveGhost } from "./blueprinting"
-import { Entity, EntityPose } from "./Entity"
-import { getPastedDirection, getSavedDirection } from "./undergrounds"
+import { Entity } from "./Entity"
+import { rollingStockTypes } from "./entity-info"
+import { getPastedDirection, getSavedDirection } from "./special-entities"
 
 /** @noSelf */
 export interface EntityCreator {
-  createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil
+  createEntity(stage: StagePosition, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil
   updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity
 }
 
@@ -41,11 +42,14 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
 
   const stack = getTempBpItemStack()
   for (const radius of [0.01, 0.5]) {
+    const isRollingStock = rollingStockTypes.has(entity.type)
     const indexMapping = stack.create_blueprint({
       surface,
       force: entity.force,
       area: BBox.around(position, radius),
       include_station_names: true,
+      include_trains: isRollingStock,
+      include_fuel: isRollingStock,
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {
@@ -155,10 +159,13 @@ const BlueprintEntityHandler: EntityHandler = {
     return $multi(bpEntity, getSavedDirection(entity))
   },
 
-  createEntity(stage: StagePosition, pos: EntityPose, entity: Entity): LuaEntity | nil {
+  createEntity(
+    stage: StagePosition,
+    position: Position,
+    direction: defines.direction,
+    entity: Entity,
+  ): LuaEntity | nil {
     const surface = stage.surface
-    const position = pos.position
-    const direction = pos.direction ?? 0
 
     const ghost = pasteEntity(surface, position, direction, entity as BlueprintEntity)
     if (!ghost) return nil
@@ -170,6 +177,9 @@ const BlueprintEntityHandler: EntityHandler = {
   },
 
   updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity {
+    if (rollingStockTypes.has(luaEntity.type)) {
+      return luaEntity
+    }
     if (luaEntity.name !== value.name) {
       luaEntity = upgradeEntity(luaEntity, value.name)
     }

@@ -23,10 +23,11 @@ import { L_Game, Prototypes } from "../../constants"
 import { AssemblyEntity, StageDiffs, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { getEntityInfo } from "../../entity/entity-info"
-import { UndergroundBeltEntity } from "../../entity/undergrounds"
+import { UndergroundBeltEntity } from "../../entity/special-entities"
 import { ContextualFun, Mutable } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
+import { createRollingStock } from "../entity/createRollingStock"
 import { createMockEntitySaver } from "../entity/EntityHandler-mock"
 import { entityMock, simpleMock } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
@@ -94,13 +95,16 @@ function addEntity(args?: Partial<LuaEntity>) {
   return { luaEntity: entity, added: found! }
 }
 
+function resetMocks(): void {
+  mock.clear(worldUpdater)
+  mock.clear(wireSaver)
+  totalCalls = 0
+}
 function addAndReset(addedNum: StageNumber = stage.stageNumber, setNum = stage.stageNumber, args?: Partial<LuaEntity>) {
   stage.stageNumber = addedNum
   const ret = addEntity(args)
   stage.stageNumber = setNum
-  mock.clear(worldUpdater)
-  mock.clear(wireSaver)
-  totalCalls = 0
+  resetMocks()
   return ret
 }
 
@@ -227,7 +231,7 @@ function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): v
   assert.not_nil(added)
   assert.equal("test", added.getFirstValue().name)
   assert.same(pos, added.position)
-  assert.nil(added.direction)
+  assert.equal(0, added.getDirection())
 
   assert.equal(luaEntity, added.getWorldEntity(stage.stageNumber))
 
@@ -493,7 +497,7 @@ describe("rotate", () => {
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
     assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, oldDirection)
-    assert.equal(direction.west, added.direction)
+    assert.equal(direction.west, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })
@@ -593,7 +597,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_direction", () => direction.west)
     rawset(luaEntity, "cancel_upgrade", () => true)
     assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
-    assert.equal(direction.west, added.direction)
+    assert.equal(direction.west, added.getDirection())
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })
@@ -709,7 +713,7 @@ describe("undergrounds", () => {
     assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, direction.west)
 
     assert.equal("output", added.getFirstValue().type)
-    assert.equal(direction.west, added.direction)
+    assert.equal(direction.west, added.getDirection())
 
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
@@ -724,7 +728,7 @@ describe("undergrounds", () => {
     assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, direction.west)
 
     assert.equal("input", added.getFirstValue().type)
-    assert.equal(direction.west, added.direction)
+    assert.equal(direction.west, added.getDirection())
 
     assertOneEntity()
     assertUpdateCalled(added, 2, 2, false)
@@ -741,9 +745,9 @@ describe("undergrounds", () => {
     assemblyUpdater.onEntityRotated(assembly, toRotate, stage, playerIndex, direction.west)
 
     assert.equal("output", added1.getFirstValue().type)
-    assert.equal(direction.west, added1.direction)
+    assert.equal(direction.west, added1.getDirection())
     assert.equal("input", added2.getFirstValue().type)
-    assert.equal(direction.east, added2.direction)
+    assert.equal(direction.east, added2.getDirection())
 
     assertNEntities(2)
     assertUpdateCalled(added1, 1, nil, false, which === "lower" ? 0 : 1)
@@ -759,9 +763,9 @@ describe("undergrounds", () => {
     assemblyUpdater.onEntityRotated(assembly, entity1, stage, playerIndex, direction.west)
 
     assert.equal("input", added1.getFirstValue().type)
-    assert.equal(direction.west, added1.direction)
+    assert.equal(direction.west, added1.getDirection())
     assert.equal("output", added2.getFirstValue().type)
-    assert.equal(direction.east, added2.direction)
+    assert.equal(direction.east, added2.getDirection())
 
     assertNEntities(2)
     assertUpdateCalled(added1, 3, 3, false)
@@ -785,11 +789,11 @@ describe("undergrounds", () => {
       assemblyUpdater.onEntityRotated(assembly, tryRotate, stage, playerIndex, direction.west)
 
       assert.equal("input", added1.getFirstValue().type)
-      assert.equal(direction.west, added1.direction)
+      assert.equal(direction.west, added1.getDirection())
       assert.equal("output", added2.getFirstValue().type)
-      assert.equal(direction.east, added2.direction)
+      assert.equal(direction.east, added2.getDirection())
       assert.equal("input", added3.getFirstValue().type)
-      assert.equal(direction.west, added3.direction)
+      assert.equal(direction.west, added3.getDirection())
 
       assertNEntities(3)
       assertUpdateCalled(added[i - 1], 1, 1, false, 0)
@@ -820,7 +824,7 @@ describe("undergrounds", () => {
 
       assert.equal("fast-underground-belt", added.getFirstValue().name)
       assert.equal("input", added.getFirstValue().type)
-      assert.equal(direction.west, added.direction)
+      assert.equal(direction.west, added.getDirection())
       assertOneEntity()
       assertUpdateCalled(added, 1, nil, false)
     })
@@ -853,10 +857,10 @@ describe("undergrounds", () => {
 
         assert.equal("fast-underground-belt", added1.getFirstValue().name)
         assert.equal("input", added1.getFirstValue().type)
-        assert.equal(direction.west, added1.direction)
+        assert.equal(direction.west, added1.getDirection())
         assert.equal("fast-underground-belt", added2.getFirstValue().name)
         assert.equal("output", added2.getFirstValue().type)
-        assert.equal(direction.east, added2.direction)
+        assert.equal(direction.east, added2.getDirection())
 
         assertNEntities(2)
         assertUpdateCalled(added1, 1, nil, false, toUpgrade === entity1 ? 0 : 1)
@@ -944,11 +948,11 @@ describe("undergrounds", () => {
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex)
     assert.equal("fast-underground-belt", added1.getFirstValue().name)
     assert.equal("input", added1.getFirstValue().type)
-    assert.equal(direction.west, added1.direction)
+    assert.equal(direction.west, added1.getDirection())
 
     assert.equal("fast-underground-belt", added2.getFirstValue().name)
     assert.equal("output", added2.getFirstValue().type)
-    assert.equal(direction.east, added2.direction)
+    assert.equal(direction.east, added2.getDirection())
 
     assertNEntities(2)
     assertUpdateCalled(added1, 1, nil, false, 0)
@@ -967,6 +971,42 @@ describe("undergrounds", () => {
     assertNEntities(2)
     assertNoCalls()
     assertNotified(entity1, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+  })
+})
+
+describe("rolling stock", () => {
+  let rollingStock: LuaEntity
+  before_each(() => {
+    game.surfaces[1].find_entities().forEach((e) => e.destroy())
+    rollingStock = createRollingStock()
+  })
+  function addAndReset() {
+    assemblyUpdater.onEntityCreated(assembly, rollingStock, stage, playerIndex)
+    resetMocks()
+    const found = assembly.content.findCompatibleAnyDirection(rollingStock.name, rollingStock.position)!
+    return found!
+  }
+  test("can save rolling stock", () => {
+    assemblyUpdater.onEntityCreated(assembly, rollingStock, stage, playerIndex)
+    assertNEntities(1)
+
+    const found = assembly.content.findCompatibleAnyDirection(rollingStock.name, rollingStock.position)!
+    assert.not_nil(found, "found any direction")
+
+    const foundDirectly = assembly.content.findCompatible(rollingStock, rollingStock.position, nil)
+    assert.not_nil(foundDirectly, "found directly")
+    assert.equal(found, foundDirectly, "found same entity")
+
+    assertUpdateCalled(found, 1, nil, false)
+  })
+
+  test("no update on rolling stock", () => {
+    addAndReset()
+
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, rollingStock, stage, playerIndex)
+
+    assertNEntities(1)
+    assertNoCalls()
   })
 })
 

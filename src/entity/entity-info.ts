@@ -33,6 +33,7 @@ export interface EntityInfo {
   selectionBox: BBoxClass
   type: string
   overlapsWithSelf: boolean
+  isRollingStock: boolean
 }
 
 const typeRemap: PRecord<string, string> = {
@@ -52,6 +53,12 @@ function computeCategoryName(prototype: LuaEntityPrototype | nil): CategoryName 
 
 const pasteRotatableTypes = newLuaSet("assembling-machine", "boiler")
 const overlapWithSelfTypes = newLuaSet("straight-rail", "curved-rail")
+const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
+  "artillery-wagon",
+  "cargo-wagon",
+  "fluid-wagon",
+  "locomotive",
+)
 
 function computeEntityInfo(entityName: string): EntityInfo {
   const prototype = getEntityPrototypes()[entityName]
@@ -62,6 +69,7 @@ function computeEntityInfo(entityName: string): EntityInfo {
       selectionBox: BBox.coords(0, 0, 0, 0),
       type: "",
       overlapsWithSelf: false,
+      isRollingStock: false,
     }
   const categoryName = computeCategoryName(prototype)
   const selectionBox = BBox.from(prototype.selection_box)
@@ -81,6 +89,7 @@ function computeEntityInfo(entityName: string): EntityInfo {
     selectionBox,
     pasteRotatableType,
     overlapsWithSelf: overlapWithSelfTypes.has(prototype.type),
+    isRollingStock: rollingStockTypes.has(prototype.type),
   }
 }
 
@@ -102,9 +111,13 @@ export function getSelectionBox(entityName: string): BBoxClass {
 export function getPasteRotatableType(entityName: string): PasteRotatableType {
   return getEntityInfo(entityName).pasteRotatableType
 }
-export function isUndergroundBeltType(entityName: string): boolean {
-  return getEntityInfo(entityName).type === "underground-belt"
-}
 export function overlapsWithSelf(entityName: string): boolean {
   return getEntityInfo(entityName).overlapsWithSelf
 }
+export function isUndergroundBeltType(entityName: string): boolean {
+  return getEntityInfo(entityName).type === "underground-belt"
+}
+export function isRollingStockType(entityName: string): boolean {
+  return getEntityInfo(entityName).isRollingStock
+}
+export { rollingStockTypes }

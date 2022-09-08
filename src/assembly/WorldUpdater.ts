@@ -84,7 +84,7 @@ export function createWorldUpdater(
         luaEntity = updateEntity(existing, value, direction)
       } else {
         if (existing) existing.destroy()
-        luaEntity = createEntity(assembly.getStage(stageNum)!, entity, value)
+        luaEntity = createEntity(assembly.getStage(stageNum)!, entity.position, entity.getDirection(), value)
       }
       entity.replaceWorldEntity(stageNum, luaEntity)
 

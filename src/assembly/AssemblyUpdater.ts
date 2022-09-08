@@ -10,13 +10,18 @@
  */
 
 import { L_Game, Prototypes } from "../constants"
-import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import {
+  AssemblyEntity,
+  createAssemblyEntity,
+  StageNumber,
+  UndergroundBeltAssemblyEntity,
+} from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { getEntityCategory, isUndergroundBeltType, overlapsWithSelf } from "../entity/entity-info"
+import { getEntityCategory, isRollingStockType, isUndergroundBeltType, overlapsWithSelf } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
-import { getSavedDirection } from "../entity/undergrounds"
+import { getSavedDirection } from "../entity/special-entities"
 import { L_Interaction } from "../locale"
-import { AssemblyUndergroundEntity, findUndergroundPair } from "./assembly-undergrounds"
+import { findUndergroundPair } from "./assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -146,10 +151,10 @@ export function createAssemblyUpdater(
     content.add(assemblyEntity)
 
     if (entity.type === "underground-belt") {
-      const [pair] = findUndergroundPair(assembly.content, assemblyEntity as AssemblyUndergroundEntity)
+      const [pair] = findUndergroundPair(assembly.content, assemblyEntity as UndergroundBeltAssemblyEntity)
       if (pair) {
         const otherDir = pair.getFirstValue().type
-        ;(assemblyEntity as AssemblyUndergroundEntity).setUndergroundBeltDirection(
+        ;(assemblyEntity as UndergroundBeltAssemblyEntity).setUndergroundBeltDirection(
           otherDir === "output" ? "input" : "output",
         )
       }
@@ -344,7 +349,7 @@ export function createAssemblyUpdater(
         assembly,
         entity,
         stage,
-        existing as AssemblyUndergroundEntity,
+        existing as UndergroundBeltAssemblyEntity,
         byPlayer,
       )
     }
@@ -378,7 +383,7 @@ export function createAssemblyUpdater(
     if (!existing) return
 
     if (entity.type === "underground-belt") {
-      return onUndergroundBeltRotated(assembly, entity, stage, existing as AssemblyUndergroundEntity, byPlayer)
+      return onUndergroundBeltRotated(assembly, entity, stage, existing as UndergroundBeltAssemblyEntity, byPlayer)
     }
 
     const newDirection = entity.direction
@@ -408,7 +413,13 @@ export function createAssemblyUpdater(
     if (!existing) return
 
     if (entity.type === "underground-belt") {
-      return onUndergroundBeltMarkedForUpgrade(assembly, entity, stage, existing as AssemblyUndergroundEntity, byPlayer)
+      return onUndergroundBeltMarkedForUpgrade(
+        assembly,
+        entity,
+        stage,
+        existing as UndergroundBeltAssemblyEntity,
+        byPlayer,
+      )
     }
 
     const rotateDir = entity.get_upgrade_direction()
@@ -439,7 +450,7 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     entity: LuaEntity,
     stage: StagePosition,
-    existing: AssemblyUndergroundEntity,
+    existing: UndergroundBeltAssemblyEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
     const actualDirection = getSavedDirection(entity)
@@ -482,7 +493,7 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     entity: LuaEntity,
     stage: StagePosition,
-    existing: AssemblyUndergroundEntity,
+    existing: UndergroundBeltAssemblyEntity,
     upgradeType: string,
     byPlayer: PlayerIndex | nil,
   ): boolean {
@@ -530,7 +541,7 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     entity: LuaEntity,
     stage: StagePosition,
-    existing: AssemblyUndergroundEntity,
+    existing: UndergroundBeltAssemblyEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
     const upgradeType = entity.get_upgrade_target()?.name
@@ -545,7 +556,7 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     entity: LuaEntity,
     stage: StagePosition,
-    existing: AssemblyUndergroundEntity,
+    existing: UndergroundBeltAssemblyEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
     const newType = entity.name
@@ -583,9 +594,11 @@ export function createAssemblyUpdater(
     if (!proxyName.startsWith(Prototypes.SelectionProxyPrefix)) return nil
     const actualName = proxyName.substring(Prototypes.SelectionProxyPrefix.length)
 
-    const position = proxyEntity.position
-    const existing = assembly.content.findCompatibleBasic(actualName, position, proxyEntity.direction)
-    return existing
+    if (isRollingStockType(actualName)) {
+      return assembly.content.findCompatibleAnyDirection(actualName, proxyEntity.position)
+    }
+
+    return assembly.content.findCompatibleBasic(actualName, proxyEntity.position, proxyEntity.direction)
   }
 
   function onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void {
@@ -619,7 +632,7 @@ export function createAssemblyUpdater(
     return assembly.content.findCompatible(entityOrPreviewEntity, position, nil)
   }
 
-  function isUndergroundEntity(entity: AssemblyEntity): entity is AssemblyUndergroundEntity {
+  function isUndergroundEntity(entity: AssemblyEntity): entity is UndergroundBeltAssemblyEntity {
     return isUndergroundBeltType(entity.getFirstValue().name)
   }
 

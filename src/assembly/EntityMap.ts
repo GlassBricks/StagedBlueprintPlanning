@@ -13,10 +13,11 @@ import { oppositedirection } from "util"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../entity/AsmCircuitConnection"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo, Entity } from "../entity/Entity"
-import { getEntityCategory, getPasteRotatableType, PasteRotatableType } from "../entity/entity-info"
+import { getEntityCategory, getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "../entity/entity-info"
 import { isEmpty, MutableMap2D, newMap2D, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+import { getRegisteredAssemblyEntity } from "./entity-registration"
 import { getAllAssemblies } from "./global"
 
 export interface EntityMap {
@@ -99,7 +100,7 @@ class EntityMapImpl implements MutableEntityMap {
   }
 
   findCompatible(
-    entity: BasicEntityInfo,
+    entity: BasicEntityInfo | LuaEntity,
     position: Position,
     previousDirection?: defines.direction | nil,
   ): AssemblyEntity | nil {
@@ -107,6 +108,12 @@ class EntityMapImpl implements MutableEntityMap {
     if (type === "underground-belt") {
       const direction = entity.belt_to_ground_type === "output" ? oppositedirection(entity.direction) : entity.direction
       return this.findCompatibleBasic(type, position, direction)
+    } else if (rollingStockTypes.has(type)) {
+      if (entity.object_name === "LuaEntity") {
+        const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
+        if (registered && this.entities.has(registered)) return registered
+      }
+      return nil
     }
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)

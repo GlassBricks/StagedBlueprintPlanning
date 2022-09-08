@@ -11,17 +11,27 @@
 
 import { oppositedirection } from "util"
 import { Entity } from "./Entity"
-import { isUndergroundBeltType } from "./entity-info"
+import { isUndergroundBeltType, rollingStockTypes } from "./entity-info"
+import floor = math.floor
 
+export interface UndergroundBeltEntity extends Entity {
+  type: "input" | "output"
+}
 /** Inverts direction if is a output underground belt. */
 export function getSavedDirection(entity: LuaEntity): defines.direction {
-  if (entity.type === "underground-belt" && entity.belt_to_ground_type === "output") {
-    return oppositedirection(entity.direction)
+  const type = entity.type
+  if (type === "underground-belt") {
+    if (entity.belt_to_ground_type === "output") {
+      return oppositedirection(entity.direction)
+    }
+  } else if (rollingStockTypes.has(type)) {
+    return 0
   }
   return entity.direction
 }
 
-export function getPastedDirection(entity: BlueprintEntity, direction: defines.direction): defines.direction {
+export function getPastedDirection(entity: BlueprintEntity, direction: defines.direction): defines.direction | nil {
+  if (entity.orientation !== nil) return nil
   const name = entity.name
   const isUnderground = isUndergroundBeltType(name)
   if (isUnderground && entity.type === "output") {
@@ -29,7 +39,10 @@ export function getPastedDirection(entity: BlueprintEntity, direction: defines.d
   }
   return direction
 }
-
-export interface UndergroundBeltEntity extends Entity {
-  type: "input" | "output"
+export interface RollingStockEntity extends Entity {
+  orientation?: RealOrientation
+}
+export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
+  if (orientation === nil) return 0
+  return floor(orientation * 8 + 0.5) % 8
 }
