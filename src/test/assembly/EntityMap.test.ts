@@ -77,8 +77,8 @@ describe("findCompatible", () => {
     )
     content.add(assemblyEntity)
 
-    assert.equal(assemblyEntity, content.findCompatible(same, { x: 0, y: 0 }, nil))
-    assert.equal(assemblyEntity, content.findCompatible(flipped, { x: 0, y: 0 }, nil))
+    assert.equal(assemblyEntity, content.findCompatible(same, nil))
+    assert.equal(assemblyEntity, content.findCompatible(flipped, nil))
   })
 })
 

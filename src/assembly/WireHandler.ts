@@ -97,7 +97,7 @@ function updateCableConnections(
   const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
   if (existingConnections) {
     for (const otherLuaEntity of existingConnections) {
-      const otherEntity = content.findCompatible(otherLuaEntity, otherLuaEntity.position, nil)
+      const otherEntity = content.findCompatible(otherLuaEntity, nil)
       if (!otherEntity) continue
       if (assemblyConnections.has(otherEntity)) {
         matching.add(otherEntity)
@@ -184,7 +184,7 @@ function saveCableConnections(
 
   if (existingConnections) {
     for (const otherLuaEntity of existingConnections) {
-      const otherEntity = content.findCompatible(otherLuaEntity, otherLuaEntity.position, nil)
+      const otherEntity = content.findCompatible(otherLuaEntity, nil)
       if (!otherEntity) continue
       if (!assemblyConnections || !assemblyConnections.has(otherEntity)) {
         toAdd.push(otherEntity)
@@ -242,7 +242,7 @@ function analyzeExistingCircuitConnections(
 
   for (const existingConnection of existingConnections) {
     const otherLuaEntity = existingConnection.target_entity
-    const otherEntity = content.findCompatible(otherLuaEntity, otherLuaEntity.position, nil)
+    const otherEntity = content.findCompatible(otherLuaEntity, nil)
     if (!otherEntity) continue
     let matchingConnection: AsmCircuitConnection | nil
     if (assemblyConnections) {

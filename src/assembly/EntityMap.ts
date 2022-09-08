@@ -22,11 +22,7 @@ import { getAllAssemblies } from "./global"
 
 export interface EntityMap {
   findCompatibleBasic(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
-  findCompatible(
-    entity: BasicEntityInfo,
-    position: Position,
-    previousDirection: defines.direction | nil,
-  ): AssemblyEntity | nil
+  findCompatible(entity: BasicEntityInfo, previousDirection: defines.direction | nil): AssemblyEntity | nil
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
 
   getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil
@@ -101,13 +97,12 @@ class EntityMapImpl implements MutableEntityMap {
 
   findCompatible(
     entity: BasicEntityInfo | LuaEntity,
-    position: Position,
     previousDirection?: defines.direction | nil,
   ): AssemblyEntity | nil {
     const type = entity.type
     if (type === "underground-belt") {
       const direction = entity.belt_to_ground_type === "output" ? oppositedirection(entity.direction) : entity.direction
-      return this.findCompatibleBasic(type, position, direction)
+      return this.findCompatibleBasic(type, entity.position, direction)
     } else if (rollingStockTypes.has(type)) {
       if (entity.object_name === "LuaEntity") {
         const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
@@ -118,13 +113,14 @@ class EntityMapImpl implements MutableEntityMap {
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType === PasteRotatableType.None) {
-      return this.findCompatibleBasic(name, position, previousDirection ?? entity.direction)
+      return this.findCompatibleBasic(name, entity.position, previousDirection ?? entity.direction)
     }
     if (pasteRotatableType === PasteRotatableType.Square) {
-      return this.findCompatibleAnyDirection(name, position)
+      return this.findCompatibleAnyDirection(name, entity.position)
     }
     if (pasteRotatableType === PasteRotatableType.Rectangular) {
       const direction = previousDirection ?? entity.direction
+      const position = entity.position
       return (
         this.findCompatibleBasic(name, position, direction) ??
         this.findCompatibleBasic(name, position, oppositedirection(direction))

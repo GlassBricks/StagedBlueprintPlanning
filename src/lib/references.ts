@@ -79,10 +79,6 @@ export function registerFunctions(prefix: string, functions: Functions): void {
     Functions.registerRaw(prefix + name, func)
   }
 }
-export function getCallerFile(): string {
-  const source = debug.getinfo(3, "S")!.source!
-  return string.match(source, "^.-/(.+)%.lua")[0]
-}
 
 const _nameToItem = Functions._nameToItem()
 @RegisterClass("FuncRef")

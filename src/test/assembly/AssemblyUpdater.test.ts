@@ -90,7 +90,7 @@ const playerIndex = 1 as PlayerIndex
 function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
   assemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
-  const found = assembly.content.findCompatible(entity, entity.position, nil) as AssemblyEntity<TestEntity> | nil
+  const found = assembly.content.findCompatible(entity, nil) as AssemblyEntity<TestEntity> | nil
   assert(found, "found new entity")
   return { luaEntity: entity, added: found! }
 }
@@ -116,7 +116,7 @@ function addRealEntity(args: SurfaceCreateEntity) {
   const entity = createRealEntity(args)!
   assert.not_nil(entity, "created entity")
   assemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
-  const found = assembly.content.findCompatible(entity, entity.position, nil) as AssemblyEntity<BlueprintEntity> | nil
+  const found = assembly.content.findCompatible(entity, nil) as AssemblyEntity<BlueprintEntity> | nil
   assert(found)
   return { luaEntity: entity, added: found! }
 }
@@ -993,7 +993,7 @@ describe("rolling stock", () => {
     const found = assembly.content.findCompatibleAnyDirection(rollingStock.name, rollingStock.position)!
     assert.not_nil(found, "found any direction")
 
-    const foundDirectly = assembly.content.findCompatible(rollingStock, rollingStock.position, nil)
+    const foundDirectly = assembly.content.findCompatible(rollingStock, nil)
     assert.not_nil(foundDirectly, "found directly")
     assert.equal(found, foundDirectly, "found same entity")
 

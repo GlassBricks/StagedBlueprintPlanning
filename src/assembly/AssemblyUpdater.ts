@@ -120,14 +120,13 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
   ): AssemblyEntity | nil {
-    const position = entity.position
     const { stageNumber } = stage
     const { content } = assembly
 
     const entityName = entity.name
     const existing = overlapsWithSelf(entityName)
-      ? content.findCompatible(entity, position, nil)
-      : content.findCompatibleAnyDirection(entityName, position) // if it doesn't overlap, find in any direction to avoid issues
+      ? content.findCompatible(entity, nil)
+      : content.findCompatibleAnyDirection(entityName, entity.position) // if it doesn't overlap, find in any direction to avoid issues
 
     if (existing) {
       const existingStage = existing.getFirstStage()
@@ -146,7 +145,7 @@ export function createAssemblyUpdater(
     const [saved, savedDir] = saveEntity(entity)
     if (!saved) return
     // add new entity
-    const assemblyEntity = createAssemblyEntity(saved, position, savedDir, stageNumber)
+    const assemblyEntity = createAssemblyEntity(saved, entity.position, savedDir, stageNumber)
     assemblyEntity.replaceWorldEntity(stageNumber, entity)
     content.add(assemblyEntity)
 
@@ -234,10 +233,9 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const position = entity.position
     const { content } = assembly
 
-    const existing = content.findCompatible(entity, position, nil)
+    const existing = content.findCompatible(entity, nil)
     if (!existing) return
     const { stageNumber } = stage
     const existingStage = existing.getFirstStage()
@@ -289,7 +287,7 @@ export function createAssemblyUpdater(
   }
 
   function onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void {
-    const existing = assembly.content.findCompatible(entity, entity.position, nil)
+    const existing = assembly.content.findCompatible(entity, nil)
     if (existing) {
       forceDeleteEntity(assembly, existing, stage.stageNumber)
     }
@@ -303,8 +301,7 @@ export function createAssemblyUpdater(
     byPlayer: PlayerIndex | nil,
     previousDirection: defines.direction | nil,
   ): AssemblyEntity | nil {
-    const position = entity.position
-    const compatible = assembly.content.findCompatible(entity, position, previousDirection)
+    const compatible = assembly.content.findCompatible(entity, previousDirection)
     if (compatible && stage.stageNumber >= compatible.getFirstStage()) {
       compatible.replaceWorldEntity(stage.stageNumber, entity) // just in case
     } else {
@@ -620,16 +617,15 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     assembly: AssemblyContent,
   ): AssemblyEntity | nil {
-    const position = entityOrPreviewEntity.position
     const name = entityOrPreviewEntity.name
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
       return assembly.content.findCompatibleBasic(
         name.substring(Prototypes.PreviewEntityPrefix.length),
-        position,
+        entityOrPreviewEntity.position,
         entityOrPreviewEntity.direction,
       )
     }
-    return assembly.content.findCompatible(entityOrPreviewEntity, position, nil)
+    return assembly.content.findCompatible(entityOrPreviewEntity, nil)
   }
 
   function isUndergroundEntity(entity: AssemblyEntity): entity is UndergroundBeltAssemblyEntity {
