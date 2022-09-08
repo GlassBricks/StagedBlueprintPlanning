@@ -46,11 +46,7 @@ export const enum Sprites {
   ExternalLinkBlack = "bp100:external-link-black",
 }
 
-export namespace Colors {
-  export const ErrorHighlight: ColorArray = [0.9, 0.2, 0.2]
-  export const AreaPreview: ColorArray = [0.5, 0.5, 0.9, 0.5]
-}
-
+// noinspection JSUnusedGlobalSymbols
 export const enum BuildableEntityTypes {
   accumulator = "accumulator",
   "artillery-turret" = "artillery-turret",

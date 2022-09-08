@@ -127,7 +127,7 @@ export function createAssemblyUpdater(
     const entityName = entity.name
     const existing = overlapsWithSelf(entityName)
       ? content.findCompatible(entity, position, nil)
-      : content.findCompatibleAnyDirection(entityName, position) // if doesn't overlap, find in any direction to avoid issues
+      : content.findCompatibleAnyDirection(entityName, position) // if it doesn't overlap, find in any direction to avoid issues
 
     if (existing) {
       const existingStage = existing.getFirstStage()

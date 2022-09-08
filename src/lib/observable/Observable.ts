@@ -78,4 +78,5 @@ export type Event<T> = ObserverList<[T]>
 export const Event: new <T>() => Event<T> = ObserverList
 
 export type MultiEvent<A extends any[]> = ObserverList<A>
+// noinspection JSUnusedGlobalSymbols
 export const MultiEvent: new <A extends any[]>() => MultiEvent<A> = ObserverList

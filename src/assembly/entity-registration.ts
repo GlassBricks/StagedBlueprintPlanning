@@ -39,10 +39,6 @@ export function getRegisteredAssemblyEntity(entity: LuaEntity): AssemblyEntity |
   return unitNumber && global.entityByUnitNumber.get(unitNumber)
 }
 
-export function _clearUnitNumber(unitNumber: number): void {
-  global.entityByUnitNumber.delete(unitNumber as UnitNumber)
-}
-
 Events.on_entity_destroyed((e) => {
   const eNumber = e.unit_number
   if (eNumber) global.entityByUnitNumber.delete(eNumber)

@@ -291,6 +291,7 @@ describe("rolling stock", () => {
 })
 
 declare module "../../entity/AssemblyEntity" {
+  // noinspection JSUnusedGlobalSymbols
   export interface StageProperties {
     foo?: string
   }

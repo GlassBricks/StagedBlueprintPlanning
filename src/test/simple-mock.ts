@@ -15,6 +15,7 @@ interface LuaObjectLike {
   destroy(): void
 }
 
+// noinspection JSUnusedGlobalSymbols
 const metatable = {
   __index(this: LuaObjectLike, key: string): any {
     error(`${key} not valid or supported`)

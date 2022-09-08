@@ -14,7 +14,6 @@ import {
   ClassComponentSpec,
   Component,
   destroy,
-  EmptyProps,
   FCSpec,
   FlowElementSpec,
   GuiEventHandler,
@@ -438,7 +437,7 @@ describe("Class component", () => {
   })
 
   test("unregistered components give error", () => {
-    class C extends Component<EmptyProps> {
+    class C extends Component {
       render(): Spec {
         return { type: "flow" }
       }

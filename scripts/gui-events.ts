@@ -10,7 +10,6 @@
  */
 
 // noinspection JSUnusedGlobalSymbols
-
 export interface BaseEvents {
   on_gui_click: true
   on_gui_opened: true
@@ -18,43 +17,53 @@ export interface BaseEvents {
   on_gui_location_changed: "location"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface CheckboxEvents {
   on_gui_checked_state_changed: "state"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface TextFieldEvents {
   on_gui_confirmed: true
   on_gui_text_changed: "text"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface RadioButtonEvents {
   on_gui_checked_state_changed: "state"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface DropDownEvents {
   on_gui_selection_state_changed: "selected_index"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface ListBoxEvents {
   on_gui_selection_state_changed: "selected_index"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface ChooseElemButtonEvents {
   on_gui_elem_changed: "elem_value"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface TextBoxEvents {
   on_gui_text_changed: "text"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface SliderEvents {
   on_gui_value_changed: "slider_value"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface TabbedPaneEvents {
   on_gui_selected_tab_changed: "selected_tab_index"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export interface SwitchEvents {
   on_gui_switch_state_changed: "switch_state"
 }

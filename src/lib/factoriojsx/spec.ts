@@ -36,6 +36,7 @@ export type FunctionComponent<T> = (props: T, tracker: Tracker) => Spec
 @RegisterClass("FactorioJsxComponent")
 export abstract class Component<P = EmptyProps> {
   abstract render(props: P, tracker: Tracker): Spec
+  // noinspection JSUnusedGlobalSymbols
   declare _props: P
 }
 

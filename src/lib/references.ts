@@ -83,9 +83,6 @@ export function getCallerFile(): string {
   const source = debug.getinfo(3, "S")!.source!
   return string.match(source, "^.-/(.+)%.lua")[0]
 }
-export function registerFunctionsByFile(functions: Functions): void {
-  registerFunctions(getCallerFile(), functions)
-}
 
 const _nameToItem = Functions._nameToItem()
 @RegisterClass("FuncRef")

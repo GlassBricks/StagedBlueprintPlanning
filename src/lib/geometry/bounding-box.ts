@@ -72,14 +72,6 @@ namespace BBox {
     const { left_top, right_bottom } = box
     return Pos(right_bottom.x - left_top.x, right_bottom.y - left_top.y)
   }
-  export function shiftToOrigin(box: BBox): BBoxClass {
-    const { left_top, right_bottom } = box
-    return BBox({ x: 0, y: 0 }, { x: right_bottom.x - left_top.x, y: right_bottom.y - left_top.y })
-  }
-  export function translateTo(box: BBox, leftTop: MapPosition): BBoxClass {
-    const { left_top, right_bottom } = box
-    return BBox(leftTop, { x: right_bottom.x - left_top.x + leftTop.x, y: right_bottom.y - left_top.y + leftTop.y })
-  }
   export function roundTile(box: BBox): BBoxClass {
     const { left_top, right_bottom } = box
     return BBox({ x: floor(left_top.x), y: floor(left_top.y) }, { x: ceil(right_bottom.x), y: ceil(right_bottom.y) })
@@ -172,13 +164,6 @@ namespace BBox {
     const { left_top, right_bottom } = box
     const { left_top: lt2, right_bottom: rb2 } = other
     return left_top.x < rb2.x && right_bottom.x > lt2.x && left_top.y < rb2.y && right_bottom.y > lt2.y
-  }
-
-  export function getTopRight(box: BBox): PositionClass {
-    return Pos(box.right_bottom.x, box.left_top.y)
-  }
-  export function getBottomLeft(box: BBox): PositionClass {
-    return Pos(box.left_top.x, box.right_bottom.y)
   }
 }
 

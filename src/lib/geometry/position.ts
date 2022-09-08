@@ -23,8 +23,6 @@ const _ceil = math.ceil
 export type Position = MapPosition
 export type PositionClass = WithMetatable<Position, typeof Pos>
 
-export type Vec2 = Position
-
 function Pos(x: number, y: number): PositionClass {
   return setmetatable({ x, y }, meta)
 }
@@ -69,9 +67,6 @@ namespace Pos {
   }
   export function round(pos1: Position): PositionClass {
     return Pos(_floor(pos1.x + 0.5), _floor(pos1.y + 0.5))
-  }
-  export function floorToNearest(pos1: Position, base: number): PositionClass {
-    return Pos(_floor(pos1.x / base) * base, _floor(pos1.y / base) * base)
   }
   export function length(pos1: Position): number {
     return sqrt(pos1.x * pos1.x + pos1.y * pos1.y)

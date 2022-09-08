@@ -10,10 +10,6 @@
  */
 import { Position } from "../lib"
 
-export interface EntityPose {
-  readonly position: Position
-  readonly direction: defines.direction | nil
-}
 export interface Entity {
   readonly name: string
   readonly items?: Record<string, number>

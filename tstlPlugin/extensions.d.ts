@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// <reference types="typescript-to-lua/language-extensions" />
+/// <reference types="@typescript-to-lua/language-extensions" />
 
-declare const newLuaSet: (<T>(...values: T[]) => LuaSet<T>) & {
+declare const newLuaSet: (<T extends AnyNotNil>(...values: T[]) => LuaSet<T>) & {
   __newLuaSetBrand: any
 }
 

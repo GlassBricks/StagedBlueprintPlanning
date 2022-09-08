@@ -44,9 +44,6 @@ export class Registry<T extends AnyNotNil> {
   get(name: string): T {
     return this.nameToItem[name] ?? error(`could not find ${this.itemName} with name ${name}`)
   }
-  getOrNil(name: string): T | nil {
-    return this.nameToItem[name]
-  }
 
   _nameToItem(): PRecord<string, T> {
     return this.nameToItem

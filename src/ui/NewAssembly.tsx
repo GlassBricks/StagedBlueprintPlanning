@@ -11,7 +11,7 @@
 
 import { createAssembly } from "../assembly/Assembly"
 import { funcOn, RegisterClass } from "../lib"
-import { Component, destroy, EmptyProps, FactorioJsx, renderOpened, Spec, Tracker } from "../lib/factoriojsx"
+import { Component, destroy, FactorioJsx, renderOpened, Spec } from "../lib/factoriojsx"
 import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiNewAssembly } from "../locale"
 import { openAssemblySettings } from "./AssemblySettings"
@@ -27,7 +27,7 @@ class NewAssembly extends Component {
   element!: LuaGuiElement
   name!: TextFieldGuiElement
   numStages!: TextFieldGuiElement
-  override render(props: EmptyProps, tracker: Tracker): Spec {
+  override render(): Spec {
     return (
       <frame
         direction="vertical"

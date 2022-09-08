@@ -35,6 +35,7 @@ export interface HighlightEntities {
   configChangedLaterHighlight?: SpriteRender
 }
 declare module "../entity/AssemblyEntity" {
+  // noinspection JSUnusedGlobalSymbols
   export interface WorldEntities extends HighlightEntities {
     previewEntity?: LuaEntity
     selectionProxy?: LuaEntity

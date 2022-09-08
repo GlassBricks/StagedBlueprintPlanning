@@ -131,19 +131,6 @@ export function testEachVersion<T extends TestBuilder>(
   }
 }
 
-export function expectEachVersionExceptJit<T>(
-  expectation: (builder: T) => void,
-): Record<tstl.LuaTarget, ((builder: T) => void) | boolean> {
-  return {
-    [tstl.LuaTarget.Universal]: expectation,
-    [tstl.LuaTarget.Lua51]: expectation,
-    [tstl.LuaTarget.Lua52]: expectation,
-    [tstl.LuaTarget.Lua53]: expectation,
-    [tstl.LuaTarget.Lua54]: expectation,
-    [tstl.LuaTarget.LuaJIT]: false, // Exclude JIT
-  }
-}
-
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
   const originalFunction = descriptor.value as any
   const memoized = new WeakMap()
@@ -322,8 +309,8 @@ export abstract class TestBuilder {
 
   @memoize
   public getMainLuaCodeChunk(): string {
-    const header = this.luaHeader ? `${this.luaHeader.trimRight()}\n` : ""
-    return header + this.getMainLuaFileResult().lua.trimRight()
+    const header = this.luaHeader ? `${this.luaHeader.trimEnd()}\n` : ""
+    return header + this.getMainLuaFileResult().lua.trimEnd()
   }
 
   @memoize
@@ -349,7 +336,7 @@ export abstract class TestBuilder {
     )?.js
     assert(code !== undefined)
 
-    const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : ""
+    const header = this.jsHeader ? `${this.jsHeader.trimEnd()}\n` : ""
     return header + code
   }
 
