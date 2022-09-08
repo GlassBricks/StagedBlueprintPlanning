@@ -23,8 +23,6 @@ PlayerChangedStageEvent.addListener((player, stage) => {
     return
   }
 
-  const otherEntity =
-    assemblyEntity.getWorldEntity(stage.stageNumber) ??
-    assemblyEntity.getWorldEntity(stage.stageNumber, "previewEntity")
+  const otherEntity = assemblyEntity.getWorldEntity(stage.stageNumber)
   player.opened = otherEntity
 })
