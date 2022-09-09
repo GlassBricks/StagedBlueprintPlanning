@@ -23,6 +23,7 @@ export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
 }
 
 Migrations.to("0.4.0", () => {
+  log("Finding and adding trains to assemblies")
   let anyRollingStock = false
   for (const [, assembly] of global.assemblies) {
     for (const [, stage] of assembly.iterateStages()) {
@@ -39,6 +40,7 @@ Migrations.to("0.4.0", () => {
       }
     }
   }
+  log("Done adding trains")
   if (anyRollingStock) {
     game.print(
       "100% Blueprint Planning: Train entities are supported since v0.4.0. Trains were found and added to your assemblies.",

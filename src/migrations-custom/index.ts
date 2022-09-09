@@ -46,7 +46,7 @@ function migrateCables(assembly: Assembly): void {
 Migrations.to("0.3.0", () => {
   log("Migrating copper cable connections. This may take a while")
   for (const [, assembly] of getAllAssemblies()) {
-    log("   Updating assembly " + assembly.name.get())
+    log("   Updating assembly " + assembly.displayName.get())
     migrateCables(assembly)
   }
   log("Done migrating copper cable connections")
