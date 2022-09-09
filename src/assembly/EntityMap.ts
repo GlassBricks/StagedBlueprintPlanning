@@ -46,8 +46,10 @@ export const enum CableAddResult {
 const MaxCableConnections = 5 // hard-coded in game
 
 export interface MutableEntityMap extends EntityMap {
-  add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
-  delete<E extends Entity = Entity>(entity: AssemblyEntity<E>): void
+  add(entity: AssemblyEntity): void
+  delete(entity: AssemblyEntity): void
+
+  changePosition(entity: AssemblyEntity, position: Position): boolean
 
   /** Returns if connection was successfully added. */
   addCircuitConnection(circuitConnection: AsmCircuitConnection): boolean
@@ -168,6 +170,17 @@ class EntityMapImpl implements MutableEntityMap {
 
     this.removeAllConnections(entity, this.circuitConnections)
     this.removeAllConnections(entity, this.cableConnections)
+  }
+
+  public changePosition(entity: AssemblyEntity, position: Position): boolean {
+    if (!this.entities.has(entity)) return false
+    const { x, y } = entity.position
+    const { x: newX, y: newY } = position
+    if (x === newX && y === newY) return false
+    this.byPosition.delete(x, y, entity)
+    entity.setPositionUnchecked(position)
+    this.byPosition.add(newX, newY, entity)
+    return true
   }
 
   private removeAllConnections(

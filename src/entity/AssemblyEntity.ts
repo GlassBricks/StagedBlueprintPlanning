@@ -57,6 +57,8 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   getDirection(): defines.direction
   setDirection(direction: defines.direction): void
 
+  setPositionUnchecked(position: Position): void
+
   isSettingsRemnant?: true
 
   getFirstStage(): StageNumber
@@ -193,7 +195,7 @@ type MutableStageDiff<T extends Entity> = Partial<Mutable<StageDiff<T>>>
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
   public readonly categoryName: CategoryName
-  public readonly position: Position
+  public position: Position
   public direction: defines.direction | nil
 
   public isSettingsRemnant: true | nil
@@ -224,6 +226,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     } else {
       this.direction = direction
     }
+  }
+
+  setPositionUnchecked(position: Position): void {
+    this.position = position
   }
 
   getFirstStage(): StageNumber {

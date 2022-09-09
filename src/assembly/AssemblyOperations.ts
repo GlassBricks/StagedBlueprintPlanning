@@ -17,6 +17,7 @@ import {
 } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { AssemblyUpdater, DefaultAssemblyUpdater } from "./AssemblyUpdater"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**
@@ -46,6 +47,7 @@ export interface AssemblyOperations {
   moveAllPropsDown(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
 
   resetTrainLocation(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
+  setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
 }
 
 /** @noSelf */
@@ -54,6 +56,7 @@ export interface AssemblyOpWorldInteractor {
 }
 
 export function createAssemblyOperations(
+  assemblyUpdater: AssemblyUpdater,
   worldUpdater: WorldUpdater,
   worldInteractor: AssemblyOpWorldInteractor,
 ): AssemblyOperations {
@@ -130,6 +133,31 @@ export function createAssemblyOperations(
         updateWorldEntities(assembly, entity, stage, stage, true)
       }
     },
+    setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
+      const stageNum = entity.getFirstStage()
+      const luaEntity = entity.getWorldEntity(stageNum)
+      if (!luaEntity) return
+
+      const train = luaEntity.train
+      if (!train) return
+
+      const entities = train.carriages
+      const content = assembly.content
+
+      const stage = assembly.getStage(stageNum)!
+      for (const luaEntity of entities) {
+        // todo: make this part of AssemblyUpdater instead?
+        const assemblyEntity = content.findCompatible(luaEntity, nil)
+        if (assemblyEntity) {
+          deleteExtraEntitiesOnly(assemblyEntity)
+          content.changePosition(assemblyEntity, luaEntity.position)
+          updateWorldEntities(assembly, assemblyEntity, stageNum, stageNum)
+        } else {
+          // add
+          assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, nil)
+        }
+      }
+    },
   }
 }
 
@@ -141,4 +169,8 @@ const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
   },
 }
 
-export const AssemblyOperations = createAssemblyOperations(DefaultWorldUpdater, DefaultWorldInteractor)
+export const AssemblyOperations = createAssemblyOperations(
+  DefaultAssemblyUpdater,
+  DefaultWorldUpdater,
+  DefaultWorldInteractor,
+)
