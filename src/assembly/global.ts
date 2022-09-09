@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Migrations } from "../lib/migration"
 import { Assembly, AssemblyId } from "./AssemblyDef"
 
 declare const global: {
@@ -18,3 +19,12 @@ declare const global: {
 export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
   return global.assemblies
 }
+
+Migrations.to("0.4.0", () => {
+  for (const [, assembly] of global.assemblies) {
+    for (const stage of assembly.getAllStages()) {
+      const surface = stage.surface
+      if (surface.valid) surface.show_clouds = false
+    }
+  }
+})

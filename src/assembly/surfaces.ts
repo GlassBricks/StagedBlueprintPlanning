@@ -16,8 +16,9 @@ export function createStageSurface(): LuaSurface {
     width: 10000,
     height: 10000,
   } as MapGenSettingsWrite)
-  result.always_day = true
   result.generate_with_lab_tiles = true
+  result.always_day = true
+  result.show_clouds = false
   result.name = "bp100-stage-" + result.index
   return result
 }
