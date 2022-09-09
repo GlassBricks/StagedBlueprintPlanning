@@ -84,6 +84,8 @@ if (script.active_mods.testorio !== nil) {
       const force = game.forces.player
       force.research_all_technologies()
       force.enable_all_recipes()
+      const player = game.players[1]
+      if (player.controller_type !== defines.controllers.editor) player.toggle_map_editor()
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
