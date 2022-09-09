@@ -12,21 +12,27 @@
 import { Pos } from "../../lib/geometry"
 
 export function createRollingStock(): LuaEntity {
+  return createRollingStocks("locomotive")[0]
+}
+export function createRollingStocks(...types: string[]): LuaEntity[] {
   const surface = game.surfaces[1]
-  for (let i = 0; i < 3; i++) {
+  for (let i = 1; i <= types.length * 7 + 5; i += 2) {
     surface.create_entity({
       name: "straight-rail",
-      position: Pos(i * 2, 0),
+      position: Pos(i, 1),
       direction: 2,
       force: "player",
     })
   }
-  const rollingStock = surface.create_entity({
-    name: "locomotive",
-    position: Pos(2, 0.5),
-    orientation: 0.25,
-    force: "player",
-  })!
-  assert.not_nil(rollingStock, "rolling stock created")
-  return rollingStock
+  const entities = types.map((type, i) =>
+    assert(
+      surface.create_entity({
+        name: type,
+        position: Pos(7 * i + 2, 0.5),
+        orientation: 0.25,
+        force: "player",
+      }),
+    ),
+  )
+  return entities
 }

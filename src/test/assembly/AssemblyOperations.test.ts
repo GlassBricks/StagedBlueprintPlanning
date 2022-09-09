@@ -15,13 +15,16 @@ import {
   AssemblyOpWorldInteractor,
   createAssemblyOperations,
 } from "../../assembly/AssemblyOperations"
+import { AssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
-import { createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { createAssemblyEntity, RollingStockAssemblyEntity } from "../../entity/AssemblyEntity"
 import { Pos } from "../../lib/geometry"
+import { createRollingStocks } from "../entity/createRollingStock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
 let assembly: AssemblyContent
 
+let assemblyUpdater: mock.Mocked<AssemblyUpdater>
 let worldUpdater: mock.Mocked<WorldUpdater>
 let worldInteractor: mock.Mocked<AssemblyOpWorldInteractor>
 
@@ -39,8 +42,19 @@ before_each(() => {
   worldInteractor = {
     deleteAllWorldEntities: spy(),
   }
+  assemblyUpdater = {
+    onCircuitWiresPotentiallyUpdated: spy(),
+    onCleanupToolUsed: spy(),
+    onEntityCreated: spy(),
+    onEntityDeleted: spy(),
+    onEntityForceDeleted: spy(),
+    onEntityMarkedForUpgrade: spy(),
+    onEntityPotentiallyUpdated: spy(),
+    onEntityRotated: spy(),
+    onMoveEntityToStage: spy(),
+  }
 
-  operations = createAssemblyOperations(worldUpdater, worldInteractor)
+  operations = createAssemblyOperations(assemblyUpdater, worldUpdater, worldInteractor)
 })
 
 test("deleteAllExtraEntitiesOnly", () => {
@@ -67,4 +81,53 @@ test("resetStage", () => {
 
   assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity1), 2, 2)
   assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity2), 2, 2)
+})
+
+describe("trains", () => {
+  let entities: LuaEntity[]
+  let assemblyEntities: RollingStockAssemblyEntity[]
+  before_each(() => {
+    game.surfaces[1].find_entities().forEach((e) => e.destroy())
+    entities = createRollingStocks("locomotive", "cargo-wagon", "fluid-wagon")
+    assemblyEntities = entities.map((e) => {
+      const aEntity = createAssemblyEntity(
+        {
+          name: e.name,
+          orientation: e.orientation,
+        },
+        e.position,
+        e.direction,
+        1,
+      )
+      aEntity.replaceWorldEntity(1, e)
+      assembly.content.add(aEntity)
+      e.connect_rolling_stock(defines.rail_direction.front)
+      return aEntity
+    })
+  })
+  test("resetTrainLocation", () => {
+    const anEntity = assemblyEntities[1]
+    operations.resetTrain(assembly, anEntity)
+
+    assert
+      .spy(worldUpdater.updateWorldEntities)
+      .called_with(match.ref(assembly), match.ref(assemblyEntities[0]), 1, 1, true)
+    assert
+      .spy(worldUpdater.updateWorldEntities)
+      .called_with(match.ref(assembly), match.ref(assemblyEntities[1]), 1, 1, true)
+    assert
+      .spy(worldUpdater.updateWorldEntities)
+      .called_with(match.ref(assembly), match.ref(assemblyEntities[2]), 1, 1, true)
+  })
+  test("setTrainLocationToCurrent", () => {
+    entities[0].train!.speed = 10
+    after_ticks(10, () => {
+      const anEntity = assemblyEntities[1]
+      operations.setTrainLocationToCurrent(assembly, anEntity)
+
+      for (let i = 0; i < 3; i++) {
+        assert.same(entities[i].position, assemblyEntities[i].position)
+      }
+    })
+  })
 })

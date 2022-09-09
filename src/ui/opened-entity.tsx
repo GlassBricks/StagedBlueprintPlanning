@@ -100,9 +100,18 @@ class EntityStageInfo extends Component<EntityStageInfoProps> {
               on_gui_click={funcOn(this.teleportToFirstStage)}
             />,
           ]}
-          {isRollingStock && (
-            <button caption={[L_GuiEntityInfo.ResetTrainLocation]} on_gui_click={funcOn(this.resetTrainLocation)} />
-          )}
+          {isRollingStock && [
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiEntityInfo.ResetTrain]}
+              on_gui_click={funcOn(this.resetTrain)}
+            />,
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiEntityInfo.SetTrainLocationHere]}
+              on_gui_click={funcOn(this.setTrainLocationHere)}
+            />,
+          ]}
           {prevStageWithDiff !== nil && [
             <label caption={[L_GuiEntityInfo.PrevStageWithChange]} />,
             <button
@@ -126,8 +135,11 @@ class EntityStageInfo extends Component<EntityStageInfoProps> {
     )
   }
 
-  private resetTrainLocation() {
-    AssemblyOperations.resetTrainLocation(this.stage.assembly, this.entity)
+  private resetTrain() {
+    AssemblyOperations.resetTrain(this.stage.assembly, this.entity)
+  }
+  private setTrainLocationHere() {
+    AssemblyOperations.setTrainLocationToCurrent(this.stage.assembly, this.entity)
   }
 
   private teleportToFirstStage() {

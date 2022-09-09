@@ -82,6 +82,15 @@ describe("findCompatible", () => {
   })
 })
 
+test("changePosition", () => {
+  const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+  content.add(entity)
+  content.changePosition(entity, { x: 1, y: 1 })
+  assert.equal(1, entity.position.x)
+  assert.equal(1, entity.position.y)
+  assert.equal(entity, content.findCompatibleBasic("foo", { x: 1, y: 1 }, nil))
+})
+
 describe("connections", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity

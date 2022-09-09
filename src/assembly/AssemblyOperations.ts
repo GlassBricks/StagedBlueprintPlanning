@@ -46,7 +46,7 @@ export interface AssemblyOperations {
   resetAllProps(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
   moveAllPropsDown(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
 
-  resetTrainLocation(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
+  resetTrain(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
   setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
 }
 
@@ -111,7 +111,7 @@ export function createAssemblyOperations(
       }
       return false
     },
-    resetTrainLocation(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
+    resetTrain(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
       const stage = entity.getFirstStage()
       const luaEntity = entity.getWorldEntity(stage)
       if (!luaEntity) {

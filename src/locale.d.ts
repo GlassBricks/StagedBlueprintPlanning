@@ -160,8 +160,10 @@ export declare const enum L_GuiEntityInfo {
   PrevStageWithChange = "bp100.gui.entity-info.prev-stage-with-change",
   /** Next stage w/ change */
   NextStageWithChange = "bp100.gui.entity-info.next-stage-with-change",
-  /** Reset train location */
-  ResetTrainLocation = "bp100.gui.entity-info.reset-train-location",
+  /** Reset train */
+  ResetTrain = "bp100.gui.entity-info.reset-train",
+  /** Set train location here */
+  SetTrainLocationHere = "bp100.gui.entity-info.set-train-location-here",
   /** Stage changes */
   StageDiff = "bp100.gui.entity-info.stage-diff",
   /** Reset */
