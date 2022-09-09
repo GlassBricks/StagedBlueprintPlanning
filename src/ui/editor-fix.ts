@@ -10,21 +10,32 @@
  */
 
 import { Events, onPlayerInit } from "../lib"
-import controllers = defines.controllers
+import { Migrations } from "../lib/migration"
 
+const editorGuiWidth = 474
+function updatePlayer(player: LuaPlayer): void {
+  const isEditor = player.controller_type === defines.controllers.editor
+  if (isEditor) {
+    player.gui.top.style.left_margin = editorGuiWidth
+    player.gui.left.style.left_margin = editorGuiWidth
+  } else {
+    player.gui.top.style.left_margin = 0
+    player.gui.left.style.left_margin = 0
+  }
+}
 if (!script.active_mods.EditorExtensions) {
-  const editorGuiWidth = 474
   function update(index: PlayerIndex): void {
     const player = game.get_player(index)!
-    const isEditor = player.controller_type === controllers.editor
-    if (isEditor) {
-      player.gui.top.style.left_margin = editorGuiWidth
-      player.gui.left.style.left_margin = editorGuiWidth
-    } else {
-      player.gui.top.style.left_margin = 0
-      player.gui.left.style.left_margin = 0
-    }
+    updatePlayer(player)
   }
   Events.on_player_toggled_map_editor((e) => update(e.player_index))
   onPlayerInit(update)
 }
+
+Migrations.since("0.4.0", () => {
+  if (script.active_mods.EditorExtensions !== nil) {
+    for (const [, player] of game.players) {
+      updatePlayer(player)
+    }
+  }
+})

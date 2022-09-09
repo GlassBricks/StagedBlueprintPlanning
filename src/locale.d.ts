@@ -151,3 +151,21 @@ export declare const enum L_GuiAssemblySettings {
   /** You can configure individual blueprints in the stage settings. */
   GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
 }
+export declare const enum L_GuiEntityInfo {
+  /** Assembly info */
+  Title = "bp100.gui.entity-info.title",
+  /** First stage */
+  FirstStage = "bp100.gui.entity-info.first-stage",
+  /** Last stage w/ change */
+  PrevStageWithChange = "bp100.gui.entity-info.prev-stage-with-change",
+  /** Next stage w/ change */
+  NextStageWithChange = "bp100.gui.entity-info.next-stage-with-change",
+  /** Stage changes */
+  StageDiff = "bp100.gui.entity-info.stage-diff",
+  /** Reset property */
+  ResetProp = "bp100.gui.entity-info.reset-prop",
+  /** Apply property to lower stage */
+  ApplyToLowerStage = "bp100.gui.entity-info.apply-to-lower-stage",
+  /** <All> */
+  All = "bp100.gui.entity-info.all",
+}
