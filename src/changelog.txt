@@ -1,7 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: ????
+  Features:
+    - Added support for trains. Trains will only appear in one stage.
+    - The currently opened entity gui will follow when a player moves between stages.
+    - Added entity assembly info gui, where you manage many things. See the mod description for more info.
   Changes:
+    - Clouds are now hidden on stage surfaces.
+  Bugfixes:
+    - Fixed "move to this stage" when used on rotated preview entities.
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 2022-09-08
