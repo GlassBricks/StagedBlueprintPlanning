@@ -89,6 +89,12 @@ export interface AssemblyUpdater {
   onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
   /** User activated. */
   onMoveEntityToStage(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition, byPlayer: PlayerIndex): void
+  moveEntityToStage(
+    assembly: AssemblyContent,
+    assemblyEntity: AssemblyEntity,
+    stageNumber: StageNumber,
+    byPlayer: PlayerIndex,
+  ): void
 }
 
 /**
@@ -96,7 +102,7 @@ export interface AssemblyUpdater {
  */
 export interface WorldNotifier {
   createNotification(
-    entity: BasicEntityInfo,
+    entity: BasicEntityInfo | nil,
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
     errorSound: boolean,
@@ -637,6 +643,15 @@ export function createAssemblyUpdater(
     const existing = getEntityFromPreviewEntity(entityOrPreviewEntity, stage, assembly)
     if (!existing) return
     const { stageNumber } = stage
+    moveEntityToStage(assembly, existing, stageNumber, entityOrPreviewEntity, byPlayer)
+  }
+  function moveEntityToStage(
+    assembly: AssemblyContent,
+    existing: AssemblyEntity,
+    stageNumber: StageNumber,
+    luaEntity: LuaEntity | nil,
+    byPlayer: PlayerIndex | nil,
+  ) {
     if (existing.isSettingsRemnant) {
       reviveSettingsRemnant(assembly, existing, stageNumber)
       return
@@ -644,13 +659,13 @@ export function createAssemblyUpdater(
     const oldStage = existing.getFirstStage()
 
     if (oldStage === stageNumber) {
-      createNotification(entityOrPreviewEntity, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
+      createNotification(luaEntity, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
       return
     }
 
     if (existing.isUndergroundBelt()) {
       if (existing.getNameAtStage(stageNumber) !== existing.getFirstValue().name) {
-        createNotification(entityOrPreviewEntity, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+        createNotification(luaEntity, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
         return
       }
     }
@@ -659,7 +674,7 @@ export function createAssemblyUpdater(
     existing.moveToStage(stageNumber, stageNumber < oldStage)
     updateWorldEntities(assembly, existing, min(oldStage, stageNumber))
     createNotification(
-      entityOrPreviewEntity,
+      luaEntity,
       byPlayer,
       [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
       false,
@@ -676,12 +691,15 @@ export function createAssemblyUpdater(
     onCleanupToolUsed,
     onEntityForceDeleted,
     onMoveEntityToStage,
+    moveEntityToStage(assembly, entity, stageNumber, byPlayer) {
+      moveEntityToStage(assembly, entity, stageNumber, nil, byPlayer)
+    },
   }
 }
 
 const DefaultWorldNotifier: WorldNotifier = {
   createNotification(
-    at: BasicEntityInfo,
+    at: BasicEntityInfo | nil,
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
     playSound: boolean,
@@ -693,7 +711,7 @@ const DefaultWorldNotifier: WorldNotifier = {
         create_at_cursor: true,
       })
       if (playSound) player.play_sound({ path: "utility/cannot_build" })
-    } else if (at.surface.valid) {
+    } else if (at && at.surface.valid) {
       at.surface.create_entity({
         name: "flying-text",
         position: at.position,

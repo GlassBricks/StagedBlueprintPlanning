@@ -52,6 +52,7 @@ before_each(() => {
     onEntityPotentiallyUpdated: spy(),
     onEntityRotated: spy(),
     onMoveEntityToStage: spy(),
+    moveEntityToStage: spy(),
   }
 
   operations = createAssemblyOperations(assemblyUpdater, worldUpdater, worldInteractor)
