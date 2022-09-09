@@ -575,7 +575,15 @@ function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const { assembly } = stage
+  const updateLater: LuaEntity[] = []
   for (const entity of e.entities) {
+    if (entity.train) {
+      updateLater.push(entity)
+    } else {
+      DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
+    }
+  }
+  for (const entity of updateLater) {
     DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
   }
 }

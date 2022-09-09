@@ -71,7 +71,15 @@ export function createAssemblyOperations(
     resetStage(assembly: AssemblyContent, stage: StagePosition) {
       worldInteractor.deleteAllWorldEntities(stage)
       const stageNumber = stage.stageNumber
+      const updateLater: RollingStockAssemblyEntity[] = []
       for (const entity of assembly.content.iterateAllEntities()) {
+        if (entity.isRollingStock()) {
+          updateLater.push(entity)
+        } else {
+          updateWorldEntities(assembly, entity, stageNumber, stageNumber)
+        }
+      }
+      for (const entity of updateLater) {
         updateWorldEntities(assembly, entity, stageNumber, stageNumber)
       }
     },
