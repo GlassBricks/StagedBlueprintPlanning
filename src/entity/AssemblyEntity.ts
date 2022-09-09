@@ -182,8 +182,9 @@ export interface WorldEntities {
 export type WorldEntityType = keyof WorldEntities
 type AnyWorldEntity = WorldEntities[keyof WorldEntities]
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface StageProperties {}
+export interface StageProperties {
+  _?: never
+}
 
 export type RollingStockAssemblyEntity = AssemblyEntity<RollingStockEntity>
 export type UndergroundBeltAssemblyEntity = AssemblyEntity<UndergroundBeltEntity>
