@@ -10,18 +10,35 @@
  */
 
 import { getStageAtSurface } from "../assembly/Assembly"
-import { Stage } from "../assembly/AssemblyDef"
+import { Assembly, Stage } from "../assembly/AssemblyDef"
 import { Prototypes } from "../constants"
-import { AssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
 
 export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return $multi()
   const name = entity.name
-  const actualName = name.startsWith(Prototypes.PreviewEntityPrefix)
-    ? name.substring(Prototypes.PreviewEntityPrefix.length)
-    : name
-  const found = stage.assembly.content.findCompatibleAnyDirection(actualName, entity.position)
-  if (found) return $multi(stage, found)
+  const content = stage.assembly.content
+  let assemblyEntity: AssemblyEntity | nil
+  if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
+    const actualName = name.substring(Prototypes.PreviewEntityPrefix.length)
+    assemblyEntity = content.findCompatibleAnyDirection(actualName, entity.position)
+  } else {
+    assemblyEntity = content.findCompatible(entity, nil)
+  }
+  if (assemblyEntity) return $multi(stage, assemblyEntity)
   return $multi()
+}
+
+export function getNextNotableStage(
+  assembly: Assembly,
+  currentStageNum: StageNumber,
+  entity: AssemblyEntity,
+): StageNumber {
+  const numStages = assembly.numStages()
+  for (let i = 0; i < numStages - 1; i++) {
+    const testStage = ((currentStageNum + i) % numStages) + 1
+    if (isNotableStage(entity, testStage)) return testStage
+  }
+  return currentStageNum
 }

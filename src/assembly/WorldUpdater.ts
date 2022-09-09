@@ -70,8 +70,8 @@ export function createWorldUpdater(
     replace: boolean | undefined,
   ): void {
     const firstStage = entity.getFirstStage()
-
     const direction = entity.getDirection()
+
     for (const [stageNum, value] of entity.iterateValues(startStage, endStage)) {
       if (value === nil) {
         entity.destroyWorldEntity(stageNum, "mainEntity")

@@ -613,3 +613,10 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
 export const _assertInValidState = (): void => {
   assert.same({}, state, "State is not empty")
 }
+
+export function checkEntityUpdated(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
+  const stage = getStageIfAssemblyEntity(entity)
+  if (stage) {
+    DefaultAssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, entity, stage, byPlayer)
+  }
+}

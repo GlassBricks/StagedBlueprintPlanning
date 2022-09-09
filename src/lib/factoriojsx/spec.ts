@@ -63,7 +63,9 @@ export interface FragmentSpec {
 }
 
 export type Spec = ElementSpec | FragmentSpec | FCSpec<any> | ClassComponentSpec<any>
-export type SpecChildren = Spec | false | nil | Array<Spec | false | nil>
+export type SingleChild = Spec | false | nil
+export type OneOrMoreChildren = SingleChild | SingleChild[]
+export type SpecChildren = SingleChild | Array<OneOrMoreChildren>
 
 export type GuiEvent =
   | OnGuiCheckedStateChangedEvent

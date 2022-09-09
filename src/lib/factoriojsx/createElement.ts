@@ -13,10 +13,10 @@ import { BaseElementSpec, ComponentClass, ElementSpec, FunctionComponent, Spec }
 
 const _select = select
 
-function flattenChildren(...children: Array<false | nil | Spec> | [Array<false | nil | Spec>]): Spec[] | nil {
+function flattenChildren(...children: Array<false | nil | Spec | Array<false | nil | Spec>>): Spec[] | nil {
   let childrenLen = _select("#", ...children)
   if (childrenLen === 0) return nil
-  let childArray: (false | Spec | nil)[]
+  let childArray: typeof children
   if (childrenLen === 1) {
     // optimize for the common case
     const [child] = children
@@ -29,20 +29,30 @@ function flattenChildren(...children: Array<false | nil | Spec> | [Array<false |
     const n = (childArray as any).n
     childrenLen = typeof n === "number" ? n : childArray.length
   } else {
-    childArray = [...children] as any
+    childArray = [...children]
   }
 
   const result: Spec[] = []
-  for (const i of $range(1, childrenLen)) {
-    const child = childArray[i - 1]
+  function pushSingleChild(child: Spec | false | nil) {
     if (child) {
       if (child.type === "fragment") {
-        if (child.children) {
-          result.push(...child.children)
+        const children = child.children
+        if (children) {
+          result.push(...children)
         }
       } else {
         result.push(child)
       }
+    }
+  }
+  for (const i of $range(1, childrenLen)) {
+    const child = childArray[i - 1]
+    if (Array.isArray(child)) {
+      for (const child2 of child) {
+        pushSingleChild(child2)
+      }
+    } else {
+      pushSingleChild(child)
     }
   }
   return result

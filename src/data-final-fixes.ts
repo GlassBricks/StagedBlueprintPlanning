@@ -12,7 +12,7 @@
 import { keys } from "ts-transformer-keys"
 import { Data } from "typed-factorio/data/types"
 import * as util from "util"
-import { BuildableEntityTypes, Prototypes } from "./constants"
+import { BuildableEntityType, Prototypes } from "./constants"
 import {
   EntityPrototype,
   SelectionToolPrototype,
@@ -94,7 +94,8 @@ function isBuildablePrototype(prototype: EntityPrototype): boolean {
 
 const previews: SimpleEntityWithOwnerPrototype[] = []
 const selectionProxies: SimpleEntityWithOwnerPrototype[] = []
-for (const [, type] of ipairs(keys<typeof BuildableEntityTypes>())) {
+const types = keys<Record<BuildableEntityType, true>>()
+for (const type of types.sort()) {
   const prototypes = data.raw[type]
   if (!prototypes) continue
   for (const [name, prototype] of pairs<Record<string, EntityPrototype>>(prototypes)) {

@@ -9,7 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, isWorldEntityAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import {
+  AssemblyEntity,
+  isWorldEntityAssemblyEntity,
+  RollingStockAssemblyEntity,
+  StageNumber,
+} from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
@@ -38,8 +43,9 @@ export interface AssemblyOperations {
   ): boolean
 
   resetAllProps(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
-
   moveAllPropsDown(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+
+  resetTrainLocation(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
 }
 
 /** @noSelf */
@@ -53,23 +59,19 @@ export function createAssemblyOperations(
 ): AssemblyOperations {
   const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
 
-  function deleteAllExtraEntitiesOnly(assembly: AssemblyContent) {
-    for (const entity of assembly.content.iterateAllEntities()) {
-      deleteExtraEntitiesOnly(entity)
-    }
-  }
-
-  function resetStage(assembly: AssemblyContent, stage: StagePosition) {
-    worldInteractor.deleteAllWorldEntities(stage)
-    const stageNumber = stage.stageNumber
-    for (const entity of assembly.content.iterateAllEntities()) {
-      updateWorldEntities(assembly, entity, stageNumber, stageNumber)
-    }
-  }
-
   return {
-    deleteAllExtraEntitiesOnly,
-    resetStage,
+    deleteAllExtraEntitiesOnly(assembly: AssemblyContent) {
+      for (const entity of assembly.content.iterateAllEntities()) {
+        deleteExtraEntitiesOnly(entity)
+      }
+    },
+    resetStage(assembly: AssemblyContent, stage: StagePosition) {
+      worldInteractor.deleteAllWorldEntities(stage)
+      const stageNumber = stage.stageNumber
+      for (const entity of assembly.content.iterateAllEntities()) {
+        updateWorldEntities(assembly, entity, stageNumber, stageNumber)
+      }
+    },
     resetProp<T extends Entity>(
       assembly: AssemblyContent,
       entity: AssemblyEntity<T>,
@@ -105,6 +107,28 @@ export function createAssemblyOperations(
         return true
       }
       return false
+    },
+    resetTrainLocation(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
+      const stage = entity.getFirstStage()
+      const luaEntity = entity.getWorldEntity(stage)
+      if (!luaEntity) {
+        updateWorldEntities(assembly, entity, stage, stage, true)
+        return
+      }
+
+      const train = luaEntity.train
+      if (!train) return
+
+      const entities = train.carriages
+
+      const content = assembly.content
+      const assemblyEntities = entities.map((e) => content.findCompatible(e, nil)!)
+      for (const entity of assemblyEntities) {
+        entity.destroyAllWorldEntities("mainEntity")
+      }
+      for (const entity of assemblyEntities) {
+        updateWorldEntities(assembly, entity, stage, stage, true)
+      }
     },
   }
 }

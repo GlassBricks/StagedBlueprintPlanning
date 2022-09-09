@@ -47,7 +47,7 @@ export const enum Sprites {
 }
 
 // noinspection JSUnusedGlobalSymbols
-export const enum BuildableEntityTypes {
+export const enum BuildableEntityTypesDef {
   accumulator = "accumulator",
   "artillery-turret" = "artillery-turret",
   beacon = "beacon",
@@ -115,6 +115,7 @@ export const enum BuildableEntityTypes {
   "locomotive" = "locomotive",
   wall = "wall",
 }
+export type BuildableEntityType = keyof typeof BuildableEntityTypesDef
 
 export const enum L_Game {
   CantBeRotated = "cant-be-rotated",

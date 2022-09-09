@@ -61,6 +61,7 @@ export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Parti
     circuit_connection_definitions: [],
     disconnect_neighbour: noop,
     force: "player",
+    unit_number: 0,
   })
 }
 export interface BuiltinEntityKeys {
@@ -75,6 +76,7 @@ export interface BuiltinEntityKeys {
   operable: true
   circuit_connection_definitions: true
   disconnect_neighbour: true
+  unit_number: true
 }
 
 export function isMock(obj: LuaObjectLike): boolean {

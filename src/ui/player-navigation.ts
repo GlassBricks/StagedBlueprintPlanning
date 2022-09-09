@@ -14,13 +14,11 @@
  * For assembly editing, see assembly/world-listener.ts.
  */
 
-import { Stage } from "../assembly/AssemblyDef"
 import { CustomInputs, Settings } from "../constants"
-import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
+import { getAssemblyEntityOfEntity, getNextNotableStage } from "./entity-util"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
-import { getAssemblyEntityOfEntity } from "./world-entities"
 
 const Events = ProtectedEvents
 
@@ -89,16 +87,6 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   teleportToStage(player, firstStage!)
 })
 
-function getNextNotableStage(stage: Stage, entity: AssemblyEntity): StageNumber {
-  const numStages = stage.assembly.numStages()
-  const currentStageNum = stage.stageNumber
-  for (let i = 0; i < numStages - 1; i++) {
-    const testStage = ((currentStageNum + i) % numStages) + 1
-    if (isNotableStage(entity, testStage)) return testStage
-  }
-  return currentStageNum
-}
-
 Events.on(CustomInputs.GoToNextNotableStage, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
@@ -107,7 +95,7 @@ Events.on(CustomInputs.GoToNextNotableStage, (e) => {
   if (!assemblyEntity) {
     return notifyError(player, [L_Interaction.NotInAnAssembly], true)
   }
-  const nextNotableStageNum = getNextNotableStage(stage!, assemblyEntity)
+  const nextNotableStageNum = getNextNotableStage(stage!.assembly, stage!.stageNumber, assemblyEntity)
   if (nextNotableStageNum === stage!.stageNumber) {
     return notifyError(player, [L_Interaction.EntitySameInAllStages], true)
   }

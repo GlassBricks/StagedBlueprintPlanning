@@ -291,16 +291,19 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   nextStageWithDiff(stage: StageNumber): StageNumber | nil {
+    if (stage < this.firstStage) return nil
     const { stageDiffs } = this
     if (!stageDiffs) return nil
-    return next(stageDiffs, stage)[0] // factorio guarantees that next() on a numeric key returns the next numeric key
+    for (const [curStage] of pairs(stageDiffs)) {
+      if (curStage > stage) return curStage
+    }
+    return nil
   }
 
   prevStageWithDiff(stage: StageNumber): StageNumber | nil {
+    if (stage <= this.firstStage) return nil
     const { stageDiffs } = this
     if (!stageDiffs) return nil
-    const { firstStage } = this
-    if (stage <= firstStage) return nil
     let result: StageNumber | nil
     for (const [curStage] of pairs(stageDiffs)) {
       if (curStage >= stage) break

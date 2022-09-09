@@ -46,11 +46,9 @@ export class Dialog extends Component<DialogueProps> {
         onCreate={(e) => (this.element = e)}
         on_gui_closed={funcOn(this.onClose)}
       >
-        <>
-          {props.message.map((line) => (
-            <label caption={line} />
-          ))}
-        </>
+        {props.message.map((line) => (
+          <label caption={line} />
+        ))}
         <flow style="dialog_buttons_horizontal_flow">
           {props.backCaption !== nil && (
             <button style="back_button" caption={props.backCaption} on_gui_click={funcOn(this.onBack)} />

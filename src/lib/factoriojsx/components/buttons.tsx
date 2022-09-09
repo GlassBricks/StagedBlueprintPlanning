@@ -37,7 +37,19 @@ export function RenameButton(props: Partial<ElemProps<"sprite-button">>): Spec {
 }
 
 export function TrashButton(props: Partial<ElemProps<"sprite-button">>): Spec {
-  return <sprite-button style="tool_button_red" sprite={"utility/trash"} mouse_button_filter={["left"]} {...props} />
+  return <sprite-button style="tool_button_red" sprite="utility/trash" mouse_button_filter={["left"]} {...props} />
+}
+
+export function RefreshButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+  return (
+    <sprite-button
+      style="tool_button"
+      sprite="utility/refresh"
+      mouse_button_filter={["left"]}
+      tooltip={["gui.refresh"]}
+      {...props}
+    />
+  )
 }
 
 export function DotDotDotButton(props: Partial<ElemProps<"sprite-button">>): Spec {

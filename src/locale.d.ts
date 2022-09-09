@@ -160,12 +160,14 @@ export declare const enum L_GuiEntityInfo {
   PrevStageWithChange = "bp100.gui.entity-info.prev-stage-with-change",
   /** Next stage w/ change */
   NextStageWithChange = "bp100.gui.entity-info.next-stage-with-change",
+  /** Reset train location */
+  ResetTrainLocation = "bp100.gui.entity-info.reset-train-location",
   /** Stage changes */
   StageDiff = "bp100.gui.entity-info.stage-diff",
-  /** Reset property */
+  /** Reset */
   ResetProp = "bp100.gui.entity-info.reset-prop",
-  /** Apply property to lower stage */
+  /** Apply to next lower stage (__1__) */
   ApplyToLowerStage = "bp100.gui.entity-info.apply-to-lower-stage",
   /** <All> */
-  All = "bp100.gui.entity-info.all",
+  AllProps = "bp100.gui.entity-info.all-props",
 }
