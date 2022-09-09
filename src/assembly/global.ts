@@ -25,7 +25,7 @@ export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
 Migrations.to("0.4.0", () => {
   let anyRollingStock = false
   for (const [, assembly] of global.assemblies) {
-    for (const stage of assembly.getAllStages()) {
+    for (const [, stage] of assembly.iterateStages()) {
       const surface = stage.surface
       if (!surface.valid) return
       if (surface.valid) surface.show_clouds = false

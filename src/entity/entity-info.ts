@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { merge } from "util"
 import { PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
 
@@ -32,7 +33,7 @@ export interface EntityInfo {
   pasteRotatableType: PasteRotatableType
   selectionBox: BBoxClass
   type: string
-  overlapsWithSelf: boolean
+  shouldCheckEntityExactlyForMatch: boolean
   isRollingStock: boolean
 }
 
@@ -52,13 +53,13 @@ function computeCategoryName(prototype: LuaEntityPrototype | nil): CategoryName 
 }
 
 const pasteRotatableTypes = newLuaSet("assembling-machine", "boiler")
-const overlapWithSelfTypes = newLuaSet("straight-rail", "curved-rail")
 const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
   "artillery-wagon",
   "cargo-wagon",
   "fluid-wagon",
   "locomotive",
 )
+const overlapWithSelfTypes = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
 function computeEntityInfo(entityName: string): EntityInfo {
   const prototype = getEntityPrototypes()[entityName]
@@ -68,7 +69,7 @@ function computeEntityInfo(entityName: string): EntityInfo {
       pasteRotatableType: PasteRotatableType.None,
       selectionBox: BBox.coords(0, 0, 0, 0),
       type: "",
-      overlapsWithSelf: false,
+      shouldCheckEntityExactlyForMatch: false,
       isRollingStock: false,
     }
   const categoryName = computeCategoryName(prototype)
@@ -88,7 +89,7 @@ function computeEntityInfo(entityName: string): EntityInfo {
     categoryName,
     selectionBox,
     pasteRotatableType,
-    overlapsWithSelf: overlapWithSelfTypes.has(prototype.type),
+    shouldCheckEntityExactlyForMatch: overlapWithSelfTypes.has(prototype.type),
     isRollingStock: rollingStockTypes.has(prototype.type),
   }
 }
@@ -111,8 +112,8 @@ export function getSelectionBox(entityName: string): BBoxClass {
 export function getPasteRotatableType(entityName: string): PasteRotatableType {
   return getEntityInfo(entityName).pasteRotatableType
 }
-export function overlapsWithSelf(entityName: string): boolean {
-  return getEntityInfo(entityName).overlapsWithSelf
+export function shouldCheckEntityExactlyForMatch(entityName: string): boolean {
+  return getEntityInfo(entityName).shouldCheckEntityExactlyForMatch
 }
 export function isUndergroundBeltType(entityName: string): boolean {
   return getEntityInfo(entityName).type === "underground-belt"

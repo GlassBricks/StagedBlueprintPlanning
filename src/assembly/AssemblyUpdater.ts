@@ -17,7 +17,7 @@ import {
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { getEntityCategory, isRollingStockType, overlapsWithSelf } from "../entity/entity-info"
+import { getEntityCategory, isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
 import { L_Interaction } from "../locale"
@@ -130,7 +130,7 @@ export function createAssemblyUpdater(
     const { content } = assembly
 
     const entityName = entity.name
-    const existing = overlapsWithSelf(entityName)
+    const existing = shouldCheckEntityExactlyForMatch(entityName)
       ? content.findCompatible(entity, nil)
       : content.findCompatibleAnyDirection(entityName, entity.position) // if it doesn't overlap, find in any direction to avoid issues
 
