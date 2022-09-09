@@ -12,13 +12,15 @@ This mod is in active development (new features are still being added!) Feedback
 
 Create a new assembly from clicking the "⋮" button in the "Current Assembly" window on the top.
 
-In the "Current Assembly window", you can see the current assembly and stage you are currently in.
+In the "Current Assembly" window, you can see the current assembly and stage you are currently in.
 Here you can also open the assembly settings.
 
-When you make a change, that change will be applied to the current and all _later_ stages. The exception is copper/circuit wires, which are the same in all stages.
+When you make a change, that change will be applied to the current and all _later_ stages (with some exceptions, see "Changes between stages" section below).
 Every game interaction _should_ be handled. If this is not so, please submit a bug report!
 
-You can automatically create a blueprint book of all stages of an assembly. See the tooltips on the Assembly Settings buttons for more info.
+You can automatically create blueprints/a blueprint book of an assembly. See tooltips on the Assembly Settings buttons for more info.
+
+Opening an entity's gui will show an "Assembly info" gui on the right, with more info/actions on a specific entity.
 
 See below for full details on interactions.
 
@@ -39,7 +41,10 @@ Building, mining, rotating, fast-replacing, copper/circuit wires, configuration 
 
 Deleting or rotating an entity is only allowed in the _first stage_ (as those changes cannot be blueprinted between stages).
 
-Copper cable wires are handled since v0.3.0.
+Trains are treated specially; there are only present in one stage (as you usually do not want to re-paste trains).
+Trains can move from their original position, use the Assembly info gui to reset or update their position.
+
+Copper cable wires are handled since v0.3.0. Trains are supported since v0.4.0.
 
 ### Accidental data loss prevention
 
@@ -48,12 +53,18 @@ To remove settings remnants, use the `Assembly Cleanup Tool` (shortcut, in the b
 
 If you place an entity in the same position at a lower stage, it will be moved to the current stage, and a notification will appear. Deleting the entity again will move it back (instead of deleting it altogether). This prevents accidentally deleting entities.
 
-### Configuration changes between stages
+### Assembly cleanup tool
+
+Using the assembly cleanup tool will remove "settings remnants", and attempt to revive any error entities.
+
+### Changes between stages
 
 Changing the configuration of an entity between stages is supported. When this is done, the entity will be highlighted in blue, and a blueprint sprite indicator will appear in all lower stages.
 Similarly, by using the _upgrade planner_ (not fast-replace), entities can be upgraded. A green highlight and upgrade planner sprite will appear in all lower stages.
 
 Copper/circuit wire changes _between_ stages are not supported. Instead, they are always present in all stages.
+
+As trains only appear in one stage, changes between stages are not relavant.
 
 ### Footgun removal
 
@@ -65,13 +76,9 @@ It is not possible to upgrade an underground if that will change which undergrou
 
 Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. an underground "cuts" another underground), it cannot be rotated/upgraded _after_ being built.
 
-## Known current limitations
-
-- Trains are not fully supported (yet).
-
 ## Feedback
 
-Any suggestions for changing or adding features are greatly appreciated!
+Any comments, criticisms, or suggestions are greatly appreciated!
 Please submit these in mod portal forums.
 
 You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
@@ -85,7 +92,7 @@ You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
 
 ## Acknowledgements
 
-Gallery images from Nefrums' recent 100% run blueprints (on speedrun.com).
+Gallery images from Nefrums's recent 100% run blueprints (on speedrun.com).
 
 Thanks to the [AntiElitz factorio speedrunning community](https://discord.gg/AntiElitz), and [Warger](https://discord.com/invite/nfkbu6qSCj), who does plenty of 100% speedrunning, for providing inspiration and feedback for this mod.
 

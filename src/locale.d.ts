@@ -170,7 +170,7 @@ export declare const enum L_GuiEntityInfo {
   StageDiff = "bp100.gui.entity-info.stage-diff",
   /** Reset */
   ResetProp = "bp100.gui.entity-info.reset-prop",
-  /** Apply to prev stage w/ change (__1__) */
+  /** Apply to previous stage w/ change (__1__) */
   ApplyToLowerStage = "bp100.gui.entity-info.apply-to-lower-stage",
   /** <All> */
   AllProps = "bp100.gui.entity-info.all-props",
