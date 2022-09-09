@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
-Date: ????
+Date: 2022-09-09
   Features:
     - Added support for trains. Trains will only appear in one stage.
     - The currently opened entity gui will follow when a player moves between stages.
