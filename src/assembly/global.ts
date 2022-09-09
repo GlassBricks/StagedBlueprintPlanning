@@ -9,8 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { rollingStockTypes } from "../entity/entity-info"
 import { Migrations } from "../lib/migration"
 import { Assembly, AssemblyId } from "./AssemblyDef"
+import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
 
 declare const global: {
   assemblies: LuaMap<AssemblyId, Assembly>
@@ -21,10 +23,25 @@ export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
 }
 
 Migrations.to("0.4.0", () => {
+  let anyRollingStock = false
   for (const [, assembly] of global.assemblies) {
     for (const stage of assembly.getAllStages()) {
       const surface = stage.surface
+      if (!surface.valid) return
       if (surface.valid) surface.show_clouds = false
+
+      const rollingStock = surface.find_entities_filtered({
+        type: Object.keys(rollingStockTypes),
+      })
+      if (rollingStock.length > 0) anyRollingStock = true
+      for (const luaEntity of rollingStock) {
+        DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, nil)
+      }
     }
+  }
+  if (anyRollingStock) {
+    game.print(
+      "100% Blueprint Planning: Train entities are supported since v0.4.0. Trains were found and added to your assemblies.",
+    )
   }
 })
