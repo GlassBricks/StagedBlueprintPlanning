@@ -58,6 +58,11 @@ namespace BBox {
     return BBox(Pos.normalize(box.left_top || box[1]), Pos.normalize(box.right_bottom || box[2]))
   }
 
+  export function empty(): BBoxClass {
+    const pos = { x: 0, y: 0 }
+    return BBox(pos, pos)
+  }
+
   export function translate(box: BBox, amount: Position): BBoxClass {
     const { left_top, right_bottom } = box
     const { x: bx, y: by } = amount

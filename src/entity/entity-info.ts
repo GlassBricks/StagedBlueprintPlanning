@@ -10,31 +10,15 @@
  */
 
 import { merge } from "util"
-import { PRecord } from "../lib"
+import { Events, PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
-
-let theEntityPrototypes: typeof game.entity_prototypes
-
-function getEntityPrototypes(): typeof game.entity_prototypes {
-  if (theEntityPrototypes !== nil) return theEntityPrototypes
-  return (theEntityPrototypes = game.entity_prototypes)
-}
 
 // <type>|<fast_replaceable_group>|<lx>|<ly>|<rx>|<ry> or <none>|<entity_name>
 export type CategoryName = `${string}|${string}|${number}|${number}|${number}|${number}` | `<${string}>|${string}`
 
 export const enum PasteRotatableType {
-  None = 0,
-  Rectangular = 1,
-  Square = 2,
-}
-export interface EntityInfo {
-  categoryName: CategoryName
-  pasteRotatableType: PasteRotatableType
-  selectionBox: BBoxClass
-  type: string
-  shouldCheckEntityExactlyForMatch: boolean
-  isRollingStock: boolean
+  Rectangular,
+  Square,
 }
 
 const typeRemap: PRecord<string, string> = {
@@ -53,29 +37,27 @@ function computeCategoryName(prototype: LuaEntityPrototype | nil): CategoryName 
 }
 
 const pasteRotatableTypes = newLuaSet("assembling-machine", "boiler")
+
+const categoryNames = new LuaMap<string, CategoryName>()
+const selectionBoxes = new LuaMap<string, BBoxClass>()
+const pasteRotationTypes = new LuaMap<string, PasteRotatableType>()
+const rollingStockNames = new LuaSet<string>()
+const undergroundBeltNames = new LuaSet<string>()
+const checkExactlyNames = new LuaSet<string>()
 const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
   "artillery-wagon",
   "cargo-wagon",
   "fluid-wagon",
   "locomotive",
 )
-const overlapWithSelfTypes = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
+const checkExactlyForMatchTypes = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
-function computeEntityInfo(entityName: string): EntityInfo {
-  const prototype = getEntityPrototypes()[entityName]
-  if (!prototype)
-    return {
-      categoryName: `<unknown>|${entityName}`,
-      pasteRotatableType: PasteRotatableType.None,
-      selectionBox: BBox.coords(0, 0, 0, 0),
-      type: "",
-      shouldCheckEntityExactlyForMatch: false,
-      isRollingStock: false,
-    }
+function processPrototype(name: string, prototype: LuaEntityPrototype): void {
+  const type = prototype.type
   const categoryName = computeCategoryName(prototype)
   const selectionBox = BBox.from(prototype.selection_box)
-  let pasteRotatableType = PasteRotatableType.None
-  if (pasteRotatableTypes.has(prototype.type)) {
+  let pasteRotatableType: PasteRotatableType | nil
+  if (pasteRotatableTypes.has(type)) {
     const collisionBox = prototype.collision_box
     if (BBox.isCenteredSquare(collisionBox)) {
       pasteRotatableType = PasteRotatableType.Square
@@ -83,42 +65,53 @@ function computeEntityInfo(entityName: string): EntityInfo {
       pasteRotatableType = PasteRotatableType.Rectangular
     }
   }
+  categoryNames.set(name, categoryName)
+  selectionBoxes.set(name, selectionBox)
+  if (pasteRotatableType) pasteRotationTypes.set(name, pasteRotatableType)
+  if (type === "underground-belt") undergroundBeltNames.add(name)
+  if (rollingStockTypes.has(type)) rollingStockNames.add(name)
+  if (checkExactlyForMatchTypes.has(type)) checkExactlyNames.add(name)
+}
 
-  return {
-    type: prototype.type,
-    categoryName,
-    selectionBox,
-    pasteRotatableType,
-    shouldCheckEntityExactlyForMatch: overlapWithSelfTypes.has(prototype.type),
-    isRollingStock: rollingStockTypes.has(prototype.type),
+let prototypesProcessed = false
+function processPrototypes() {
+  if (prototypesProcessed) return
+  prototypesProcessed = true
+  log("Processing blueprint-able entity prototypes")
+  for (const [name, prototype] of game.get_filtered_entity_prototypes([{ filter: "blueprintable" }])) {
+    processPrototype(name, prototype)
   }
+  log("Finished processing entity prototypes")
 }
-
-const entityInfoCache: PRecord<string, EntityInfo> = {}
-
-function getEntityInfo(entityName: string): EntityInfo {
-  const existing = entityInfoCache[entityName]
-  if (existing !== nil) return existing
-  return (entityInfoCache[entityName] = computeEntityInfo(entityName))
-}
-export { getEntityInfo }
+Events.on_configuration_changed(processPrototypes)
+Events.on_init(processPrototypes)
 
 export function getEntityCategory(entityName: string): CategoryName {
-  return getEntityInfo(entityName).categoryName
+  if (!prototypesProcessed) processPrototypes()
+  return categoryNames.get(entityName) ?? `<unknown>|${entityName}`
 }
 export function getSelectionBox(entityName: string): BBoxClass {
-  return getEntityInfo(entityName).selectionBox
+  if (!prototypesProcessed) processPrototypes()
+  return selectionBoxes.get(entityName) ?? BBox.empty()
 }
-export function getPasteRotatableType(entityName: string): PasteRotatableType {
-  return getEntityInfo(entityName).pasteRotatableType
+export function getPasteRotatableType(entityName: string): PasteRotatableType | nil {
+  if (!prototypesProcessed) processPrototypes()
+  return pasteRotationTypes.get(entityName)
 }
 export function shouldCheckEntityExactlyForMatch(entityName: string): boolean {
-  return getEntityInfo(entityName).shouldCheckEntityExactlyForMatch
+  if (!prototypesProcessed) processPrototypes()
+  return checkExactlyNames.has(entityName)
 }
 export function isUndergroundBeltType(entityName: string): boolean {
-  return getEntityInfo(entityName).type === "underground-belt"
+  if (!prototypesProcessed) processPrototypes()
+  return undergroundBeltNames.has(entityName)
 }
 export function isRollingStockType(entityName: string): boolean {
-  return getEntityInfo(entityName).isRollingStock
+  if (!prototypesProcessed) processPrototypes()
+  return rollingStockNames.has(entityName)
 }
 export { rollingStockTypes }
+
+export function _overrideEntityCategory(entityName: string, categoryName: string): void {
+  categoryNames.set(entityName, categoryName as CategoryName)
+}

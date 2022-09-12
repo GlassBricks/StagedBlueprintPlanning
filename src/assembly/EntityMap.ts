@@ -114,7 +114,7 @@ class EntityMapImpl implements MutableEntityMap {
     }
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
-    if (pasteRotatableType === PasteRotatableType.None) {
+    if (pasteRotatableType === nil) {
       return this.findCompatibleBasic(name, entity.position, previousDirection ?? entity.direction)
     }
     if (pasteRotatableType === PasteRotatableType.Square) {
