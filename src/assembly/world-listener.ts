@@ -10,6 +10,7 @@
  */
 
 import { CustomInputs, Prototypes } from "../constants"
+import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory } from "../entity/entity-info"
@@ -603,6 +604,8 @@ Events.onAll({
   on_player_reverse_selected_area: checkCleanupToolReverse,
 })
 
+// Move to this stage custom input
+
 Events.on(CustomInputs.MoveToThisStage, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
@@ -617,6 +620,20 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
     })
   }
 })
+
+// other mod interactions
+// PickerDollies
+if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
+  Events.onInitOrLoad(() => {
+    const event = remote.call("PickerDollies", "dolly_moved_entity_id") as CustomEventId<DollyMovedEntityEvent>
+    Events.on(event, (e) => {
+      const stage = getStageAtEntityOrPreview(e.moved_entity)
+      if (stage) {
+        DefaultAssemblyUpdater.onEntityMoved(stage.assembly, e.moved_entity, stage, e.start_pos, e.player_index)
+      }
+    })
+  })
+}
 
 export const _assertInValidState = (): void => {
   assert.same({}, state, "State is not empty")

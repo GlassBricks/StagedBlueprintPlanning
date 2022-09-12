@@ -11,7 +11,9 @@
       "adjustMods": {
         "bp100": true,
         "WiderNoticeTextBoxes": true,
-        "testorio": true
+        "testorio": true,
+        "PickerDollies": true,
+        "stdlib": true
       },
       "disableExtraMods": true,
       "factorioArgs": [

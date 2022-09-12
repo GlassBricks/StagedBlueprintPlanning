@@ -20,11 +20,12 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory, isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
+import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { findUndergroundPair } from "./assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
-import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
+import { AssemblyMoveEntityResult, DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 import min = math.min
 
 /**
@@ -94,6 +95,14 @@ export interface AssemblyUpdater {
     assemblyEntity: AssemblyEntity,
     stageNumber: StageNumber,
     byPlayer: PlayerIndex,
+  ): void
+
+  onEntityMoved(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    oldPosition: Position,
+    byPlayer: PlayerIndex | nil,
   ): void
 }
 
@@ -304,8 +313,8 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     entity: LuaEntity,
     stage: StagePosition,
-    byPlayer: PlayerIndex | nil,
     previousDirection: defines.direction | nil,
+    byPlayer: PlayerIndex | nil,
   ): AssemblyEntity | nil {
     const compatible = assembly.content.findCompatible(entity, previousDirection)
     if (compatible && stage.stageNumber >= compatible.getFirstStage()) {
@@ -344,7 +353,7 @@ export function createAssemblyUpdater(
     byPlayer: PlayerIndex | nil,
     previousDirection: defines.direction | nil,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, byPlayer, previousDirection)
+    const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return
 
     if (entity.type === "underground-belt") {
@@ -382,7 +391,7 @@ export function createAssemblyUpdater(
     byPlayer: PlayerIndex | nil,
     previousDirection: defines.direction,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, byPlayer, previousDirection)
+    const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return
 
     if (entity.type === "underground-belt") {
@@ -412,7 +421,7 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, byPlayer, nil)
+    const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
 
     if (entity.type === "underground-belt") {
@@ -577,7 +586,7 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, byPlayer, nil)
+    const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
     const [hasDiff, maxConnectionsExceeded] = saveWireConnections(assembly, existing, stage.stageNumber)
     if (maxConnectionsExceeded) {
@@ -681,6 +690,45 @@ export function createAssemblyUpdater(
     )
   }
 
+  function getCompatibleAtPositionOrAdd(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    oldPosition: Position,
+    byPlayer: PlayerIndex | nil,
+  ): AssemblyEntity | nil {
+    const existing = assembly.content.findExactAtPosition(entity, stage.stageNumber, oldPosition)
+    if (existing) return existing
+    onEntityCreated(assembly, entity, stage, byPlayer)
+    return nil
+  }
+
+  function onEntityMoved(
+    assembly: AssemblyContent,
+    entity: LuaEntity,
+    stage: StagePosition,
+    oldPosition: Position,
+    byPlayer: PlayerIndex | nil,
+  ): void {
+    const existing = getCompatibleAtPositionOrAdd(assembly, entity, stage, oldPosition, byPlayer)
+    if (!existing) return
+    assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
+    const result = worldUpdater.tryMoveOtherEntities(assembly, existing, stage.stageNumber)
+    const message = moveResultMessage[result]
+    if (message === nil) return
+    createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
+  }
+
+  const moveResultMessage: Record<AssemblyMoveEntityResult, L_Interaction | nil> = {
+    success: nil,
+    "connected-entities-missing": L_Interaction.ConnectedEntitiesMissing,
+    "entities-missing": L_Interaction.EntitiesMissing,
+    overlap: L_Interaction.NoRoomInAnotherStage,
+    "could-not-teleport": L_Interaction.CantBeTeleportedInAnotherStage,
+    "not-first-stage": L_Interaction.CannotMove,
+    "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
+  }
+
   return {
     onEntityCreated,
     onEntityDeleted,
@@ -694,6 +742,7 @@ export function createAssemblyUpdater(
     moveEntityToStage(assembly, entity, stageNumber, byPlayer) {
       moveEntityToStage(assembly, entity, stageNumber, nil, byPlayer)
     },
+    onEntityMoved,
   }
 }
 
@@ -706,10 +755,17 @@ const DefaultWorldNotifier: WorldNotifier = {
   ): void {
     const player = playerIndex ? game.get_player(playerIndex) : nil
     if (player) {
-      player.create_local_flying_text({
-        text: message,
-        create_at_cursor: true,
-      })
+      if (at) {
+        player.create_local_flying_text({
+          text: message,
+          position: at.position,
+        })
+      } else {
+        player.create_local_flying_text({
+          text: message,
+          create_at_cursor: true,
+        })
+      }
       if (playSound) player.play_sound({ path: "utility/cannot_build" })
     } else if (at && at.surface.valid) {
       at.surface.create_entity({
