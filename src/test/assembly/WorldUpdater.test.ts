@@ -11,6 +11,7 @@
 
 import { keys } from "ts-transformer-keys"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
+import { forceMoveEntity } from "../../assembly/entity-move"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
@@ -19,8 +20,9 @@ import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
-import { makeMocked, makeStubbed } from "../simple-mock"
+import { entityMock, makeMocked, makeStubbed } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
+import { setupEntityMoveTest } from "./setup-entity-move-test"
 
 interface TestEntity extends Entity {
   prop1: number
@@ -34,6 +36,8 @@ let highlighter: mock.Mocked<EntityHighlighter>
 let wireUpdater: mock.Stubbed<WireUpdater>
 let worldUpdater: WorldUpdater
 
+const origPos = { x: 0.5, y: 0.5 }
+const origDir = defines.direction.east
 before_each(() => {
   assembly = createMockAssemblyContent(4)
   entity = createAssemblyEntity(
@@ -41,8 +45,8 @@ before_each(() => {
       name: "test",
       prop1: 1,
     },
-    { x: 0, y: 0 },
-    defines.direction.east,
+    origPos,
+    origDir,
     1,
   )
 
@@ -181,6 +185,124 @@ describe("updateWorldEntities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, 3)
   })
+})
+
+describe("tryMoveEntity", () => {
+  // use real entities
+  const { entities } = setupEntityMoveTest(4, origPos, origDir)
+  before_each(() => {
+    entities.forEach((e, i) => {
+      entity.replaceWorldEntity(i + 1, e)
+    })
+    assembly.content.add(entity)
+  })
+  const newPos = Pos(1.5, 1.5)
+  const newDir = defines.direction.north
+
+  function assertMoved() {
+    for (let i = 0; i < 4; i++) {
+      const luaEntity = entities[i]
+      if (!luaEntity.valid) continue
+      assert.same(newPos, luaEntity.position)
+      assert.equal(newDir, luaEntity.direction)
+    }
+    assert.same(newPos, entity.position)
+    assert.equal(newDir, entity.getDirection())
+
+    assert.equal(entity, assembly.content.findCompatibleBasic(entity.getNameAtStage(1), newPos, newDir))
+  }
+
+  function assertNotMoved() {
+    for (let i = 0; i < 4; i++) {
+      const luaEntity = entities[i]
+      if (!luaEntity.valid) continue
+      assert.same(origPos, luaEntity.position)
+      assert.equal(origDir, luaEntity.direction)
+    }
+    assert.same(origPos, entity.position)
+    assert.equal(origDir, entity.getDirection())
+
+    assert.equal(entity, assembly.content.findCompatibleBasic(entity.getNameAtStage(1), origPos, origDir))
+  }
+
+  test("can move entity if moved in first stage", () => {
+    assert.true(forceMoveEntity(entities[0], newPos, newDir))
+    const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+    assert.equal("success", result)
+    assertMoved()
+  })
+
+  test("can't move entity if moved in later stage", () => {
+    assert.true(forceMoveEntity(entities[1], newPos, newDir))
+    const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 2)
+    assert.equal("not-first-stage", result)
+    assertNotMoved()
+  })
+
+  test("can't move if world entities are missing in any stage", () => {
+    assert.true(forceMoveEntity(entities[0], newPos, newDir))
+    entity.getWorldEntity(2)!.destroy()
+    const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+    assert.equal("entities-missing", result)
+    assertNotMoved()
+  })
+
+  describe("with wire connections", () => {
+    let otherEntity: AssemblyEntity
+    before_each(() => {
+      otherEntity = createAssemblyEntity({ name: "small-electric-pole" }, Pos(-0.5, 0.5), defines.direction.north, 1)
+      assembly.content.add(otherEntity)
+    })
+
+    test("can't move if cable connected missing in all stages", () => {
+      assembly.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
+
+      assert.true(forceMoveEntity(entities[0], newPos, newDir))
+      const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+      assert.equal("connected-entities-missing", result)
+    })
+
+    test("can't move if circuit connected missing in all stages", () => {
+      assembly.content.addCircuitConnection({
+        fromEntity: entity,
+        toEntity: otherEntity,
+        fromId: 1,
+        toId: 1,
+        wire: defines.wire_type.red,
+      })
+
+      assert.true(forceMoveEntity(entities[0], newPos, newDir))
+      const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+      assert.equal("connected-entities-missing", result)
+    })
+
+    test("can move if entity present in at least one stage", () => {
+      assembly.content.addCableConnection(entity, otherEntity)
+      assembly.content.addCircuitConnection({
+        fromEntity: entity,
+        toEntity: otherEntity,
+        fromId: 1,
+        toId: 1,
+        wire: defines.wire_type.red,
+      })
+      assert.true(forceMoveEntity(entities[0], newPos, newDir))
+
+      otherEntity.replaceWorldEntity(
+        2,
+        entityMock({
+          name: "small-electric-pole",
+          position: newPos,
+          direction: newDir,
+        }),
+      )
+
+      const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+      assert.equal("success", result)
+      assertMoved()
+    })
+  })
+
+  // other cases handled by entity-move.test.ts
 })
 
 test("force delete", () => {

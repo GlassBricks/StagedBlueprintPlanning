@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BBox, Position } from "../lib/geometry"
+import { BBox, Pos, Position } from "../lib/geometry"
 
 function canMoveEntity(entity: LuaEntity, position: Position, direction: defines.direction): boolean {
+  if (Pos.equals(entity.position, position) && entity.direction === direction) return true
   return entity.surface.can_place_entity({
     name: entity.name === "entity-ghost" ? entity.ghost_name : entity.name,
     position,
@@ -89,13 +90,13 @@ export function tryMoveAllEntities(
   return "success"
 }
 
-export function forceMoveEntity(entity: LuaEntity, position: Position, direction: defines.direction): void {
+export function forceMoveEntity(entity: LuaEntity, position: Position, direction: defines.direction): boolean {
   const oldPosition = entity.position
   if (!entity.teleport(position)) {
     entity.direction = direction
-    return
+    return false
   }
   entity.direction = direction
   updateMovedEntity(oldPosition, entity)
-  return
+  return true
 }

@@ -10,70 +10,50 @@
  */
 
 import { forceMoveEntity, tryMoveAllEntities } from "../../assembly/entity-move"
-import { createStageSurface, prepareArea } from "../../assembly/surfaces"
-import { BBox } from "../../lib/geometry"
+import { setupEntityMoveTest } from "./setup-entity-move-test"
 
-let surfaces: LuaSurface[]
-before_all(() => {
-  surfaces = Array.from({ length: 3 }, () => {
-    const surface = createStageSurface()
-    prepareArea(surface, BBox.around({ x: 0, y: 0 }, 20))
-    return surface
-  })
-})
-
-after_all(() => {
-  surfaces.forEach((s) => game.delete_surface(s))
-})
-
-const origPos = { x: 0.5, y: 0.5 }
-const origDir = defines.direction.east
-let entities: LuaEntity[]
-before_each(() => {
-  entities = surfaces.map((s) =>
-    assert(
-      s.create_entity({
-        name: "inserter",
-        position: origPos,
-        direction: origDir,
-        force: "player",
-      }),
-    ),
-  )
-})
-after_each(() => {
-  surfaces.forEach((s) => s.find_entities().forEach((e) => e.destroy()))
-})
+const { surfaces, entities, origDir, origPos } = setupEntityMoveTest()
 
 const newPos = { x: 1.5, y: 1.5 }
+const newDir = defines.direction.south
 test("can move single entity", () => {
   const entity = entities[0]
-  forceMoveEntity(entity, newPos, defines.direction.south)
+  forceMoveEntity(entity, newPos, newDir)
   assert.same(newPos, entity.position)
-  assert.same(defines.direction.south, entity.direction)
+  assert.same(newDir, entity.direction)
 })
 
 test("can move multiple entities", () => {
-  const result = tryMoveAllEntities(entities, newPos, defines.direction.south)
+  const result = tryMoveAllEntities(entities, newPos, newDir)
   assert.equal("success", result)
   for (const entity of entities) {
     assert.same(newPos, entity.position)
-    assert.same(defines.direction.south, entity.direction)
+    assert.same(newDir, entity.direction)
   }
 })
 
 test("does not move any if any overlaps", () => {
-  const pos = { x: 1.5, y: 1.5 }
   surfaces[1].create_entity({
     name: "inserter",
-    position: pos,
+    position: newPos,
     direction: defines.direction.east,
   })
-  const result = tryMoveAllEntities(entities, pos, defines.direction.south)
+  const result = tryMoveAllEntities(entities, newPos, newDir)
   assert.equal("overlap", result)
   for (const entity of entities) {
     assert.same(origPos, entity.position)
     assert.same(origDir, entity.direction)
+  }
+})
+
+test("ok if already at target position", () => {
+  forceMoveEntity(entities[0], newPos, newDir)
+
+  const result = tryMoveAllEntities(entities, newPos, newDir)
+  assert.equal("success", result)
+  for (const entity of entities) {
+    assert.same(newPos, entity.position)
+    assert.same(newDir, entity.direction)
   }
 })
 
@@ -89,7 +69,7 @@ test("does not move any if wires cannot reach", () => {
     }),
     "failed to connect",
   )
-  const result = tryMoveAllEntities(entities, newPos, defines.direction.south)
+  const result = tryMoveAllEntities(entities, newPos, newDir)
   assert.equal("wires-cannot-reach", result)
   for (const entity of entities) {
     assert.same(origPos, entity.position)

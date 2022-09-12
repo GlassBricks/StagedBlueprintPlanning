@@ -12,7 +12,9 @@
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyContent } from "./AssemblyContent"
+import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "./entity-move"
 import { DefaultEntityHighlighter, EntityHighlighter } from "./EntityHighlighter"
+import { EntityMap } from "./EntityMap"
 import { DefaultWireHandler, WireUpdater } from "./WireHandler"
 
 /**
@@ -38,6 +40,15 @@ export interface WorldUpdater {
     replace?: boolean,
   ): void
 
+  /**
+   * Tries to move an entity to a new position (after another entity has been moved).
+   * @param assembly the assembly position info
+   * @param entity the assembly entity
+   * @param stage the stage with the entity already moved into the new position
+   * @return the result of the move
+   */
+  tryMoveOtherEntities(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): AssemblyMoveEntityResult
+
   /** Removes the world entity at a give stage (and makes error highlight) */
   forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void
 
@@ -47,11 +58,15 @@ export interface WorldUpdater {
   /** Removes non-main entities only (in preparation for assembly deletion) */
   deleteExtraEntitiesOnly(entity: AssemblyEntity): void
 
-  /** Makes a settings remnant. */
   makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
-  /** Revives a settings remnant. */
   reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
 }
+
+export type AssemblyMoveEntityResult =
+  | MoveEntityResult
+  | "not-first-stage"
+  | "entities-missing"
+  | "connected-entities-missing"
 
 export function createWorldUpdater(
   entityCreator: EntityCreator,
@@ -60,7 +75,7 @@ export function createWorldUpdater(
 ): WorldUpdater {
   const { createEntity, updateEntity } = entityCreator
   const { updateWireConnections } = wireHandler
-  const { updateHighlights } = highlighter
+  const { updateHighlights, deleteHighlights } = highlighter
 
   function doUpdateWorldEntities(
     assembly: AssemblyContent,
@@ -114,11 +129,6 @@ export function createWorldUpdater(
     updateHighlights(assembly, entity, startStage, endStage)
   }
 
-  function forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void {
-    entity.destroyWorldEntity(stage, "mainEntity")
-    updateHighlights(assembly, entity, stage, stage)
-  }
-
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
     entity.rotatable = false
@@ -130,6 +140,73 @@ export function createWorldUpdater(
     entity.destructible = false
   }
 
+  function tryMoveEntity(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity,
+    stage: StageNumber,
+  ): AssemblyMoveEntityResult {
+    assert(!entity.isUndergroundBelt(), "can't move underground belts")
+    const movedEntity = entity.getWorldEntity(stage)
+    if (!movedEntity) return "entities-missing"
+    const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
+    if (moveResult !== "success") {
+      forceMoveEntity(movedEntity, entity.position, entity.getDirection())
+    } else {
+      entity.setDirection(movedEntity.direction)
+      const posChanged = assembly.content.changePosition(entity, movedEntity.position)
+      assert(posChanged, "failed to change position in assembly content")
+      deleteHighlights(entity)
+      updateHighlights(assembly, entity, entity.getFirstStage(), assembly.numStages())
+    }
+
+    return moveResult
+  }
+
+  function tryMoveOtherEntities(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity,
+    stage: StageNumber,
+    movedEntity: LuaEntity,
+  ): AssemblyMoveEntityResult {
+    if (stage !== entity.getFirstStage()) return "not-first-stage"
+
+    // check all entities exist
+    const entities: LuaEntity[] = []
+    for (const stageNum of $range(entity.getFirstStage(), assembly.numStages())) {
+      const worldEntity = entity.getWorldEntity(stageNum)
+      if (!worldEntity) return "entities-missing"
+      entities.push(worldEntity)
+    }
+    if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.numStages()))
+      return "connected-entities-missing"
+
+    return tryMoveAllEntities(entities, movedEntity.position, movedEntity.direction)
+  }
+  function checkConnectionWorldEntityExists(
+    content: EntityMap,
+    entity: AssemblyEntity,
+    startStage: StageNumber,
+    endStage: StageNumber,
+  ): boolean {
+    const cableConnected = content.getCableConnections(entity)
+    if (cableConnected) {
+      for (const other of cableConnected) {
+        if (!other.hasWorldEntityInRange(startStage, endStage, "mainEntity")) return false
+      }
+    }
+    const circuitConnections = content.getCircuitConnections(entity)
+    if (circuitConnections) {
+      for (const [other] of circuitConnections) {
+        if (!other.hasWorldEntityInRange(startStage, endStage, "mainEntity")) return false
+      }
+    }
+    return true
+  }
+
+  function forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void {
+    entity.destroyWorldEntity(stage, "mainEntity")
+    updateHighlights(assembly, entity, stage, stage)
+  }
   function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     assert(entity.isSettingsRemnant)
     entity.destroyAllWorldEntities("mainEntity")
@@ -143,6 +220,7 @@ export function createWorldUpdater(
 
   return {
     updateWorldEntities,
+    tryMoveOtherEntities: tryMoveEntity,
     forceDeleteEntity,
     deleteAllEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldEntities("mainEntity")

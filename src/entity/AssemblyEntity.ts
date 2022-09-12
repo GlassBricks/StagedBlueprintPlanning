@@ -152,6 +152,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   replaceWorldEntity<T extends WorldEntityType>(stage: StageNumber, entity: WorldEntities[T] | nil, type: T): void
   destroyWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): void
   hasAnyWorldEntity(type: WorldEntityType): boolean
+  hasWorldEntityInRange(start: StageNumber, end: StageNumber, type: WorldEntityType): boolean
   destroyAllWorldEntities(type: WorldEntityType): void
   /** Iterates all valid world entities. May skip stages. */
   iterateWorldEntities<T extends WorldEntityType>(
@@ -607,6 +608,21 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     for (const [key, entity] of pairs(byType)) {
       if (entity && entity.valid) return true
       byType[key] = nil
+    }
+    if (isEmpty(byType)) delete stageProperties[type]
+    return false
+  }
+  hasWorldEntityInRange(start: StageNumber, end: StageNumber, type: WorldEntityType): boolean {
+    const { stageProperties } = this
+    const byType = stageProperties[type]
+    if (!byType) return false
+    for (const [key, entity] of pairs(byType)) {
+      if (key > end) break
+      if (entity && entity.valid) {
+        if (key >= start) return true
+      } else {
+        byType[key] = nil
+      }
     }
     if (isEmpty(byType)) delete stageProperties[type]
     return false

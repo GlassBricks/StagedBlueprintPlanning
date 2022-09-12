@@ -418,6 +418,16 @@ describe("Get/set world entities", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
     assert.true(assemblyEntity.hasAnyWorldEntity("mainEntity"))
   })
+
+  test("hasWorldEntityInRange", () => {
+    assert.false(assemblyEntity.hasWorldEntityInRange(1, 2, "mainEntity"))
+    assemblyEntity.replaceWorldEntity(2, entity)
+    assemblyEntity.replaceWorldEntity(5, entity)
+    assert.false(assemblyEntity.hasWorldEntityInRange(1, 1, "mainEntity"))
+    assert.true(assemblyEntity.hasWorldEntityInRange(1, 3, "mainEntity"))
+    assert.false(assemblyEntity.hasWorldEntityInRange(3, 4, "mainEntity"))
+    assert.true(assemblyEntity.hasWorldEntityInRange(3, 5, "mainEntity"))
+  })
 })
 
 describe("rolling stock", () => {
