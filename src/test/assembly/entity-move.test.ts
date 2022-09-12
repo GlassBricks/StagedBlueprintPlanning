@@ -42,7 +42,7 @@ before_each(() => {
   )
 })
 after_each(() => {
-  entities.forEach((e) => e.destroy())
+  surfaces.forEach((s) => s.find_entities().forEach((e) => e.destroy()))
 })
 
 const newPos = { x: 1.5, y: 1.5 }
