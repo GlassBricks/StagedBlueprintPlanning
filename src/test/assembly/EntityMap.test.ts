@@ -13,6 +13,7 @@ import { CableAddResult, MutableEntityMap, newEntityMap } from "../../assembly/E
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../../entity/Entity"
+import { entityMock } from "../simple-mock"
 
 let content: MutableEntityMap
 before_each(() => {
@@ -79,6 +80,17 @@ describe("findCompatible", () => {
 
     assert.equal(assemblyEntity, content.findCompatible(same, nil))
     assert.equal(assemblyEntity, content.findCompatible(flipped, nil))
+  })
+
+  test("findExactAtPosition", () => {
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+    const luaEntity = entityMock({ name: "foo", position: { x: 0, y: 0 }, direction: 0 })
+    content.add(entity)
+    entity.replaceWorldEntity(2, luaEntity)
+
+    assert.equal(entity, content.findExactAtPosition(luaEntity, 2, nil))
+    ;(luaEntity as any).position = { x: 1, y: 1 }
+    assert.equal(entity, content.findExactAtPosition(luaEntity, 2, { x: 0, y: 0 }))
   })
 })
 

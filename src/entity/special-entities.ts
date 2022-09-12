@@ -17,6 +17,9 @@ import floor = math.floor
 export interface UndergroundBeltEntity extends Entity {
   type: "input" | "output"
 }
+export interface RollingStockEntity extends Entity {
+  orientation?: RealOrientation
+}
 /** Inverts direction if is a output underground belt. */
 export function getSavedDirection(entity: LuaEntity): defines.direction {
   const type = entity.type
@@ -39,9 +42,7 @@ export function getPastedDirection(entity: BlueprintEntity, direction: defines.d
   }
   return direction
 }
-export interface RollingStockEntity extends Entity {
-  orientation?: RealOrientation
-}
+
 export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
   if (orientation === nil) return 0
   return floor(orientation * 8 + 0.5) % 8

@@ -24,6 +24,7 @@ export interface EntityMap {
   findCompatibleBasic(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
   findCompatible(entity: BasicEntityInfo, previousDirection: defines.direction | nil): AssemblyEntity | nil
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
+  findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil
 
   getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil
   getCableConnections(entity: AssemblyEntity): AsmEntityCableConnections | nil
@@ -96,7 +97,6 @@ class EntityMapImpl implements MutableEntityMap {
       if (candidate.categoryName === categoryName) return candidate
     }
   }
-
   findCompatible(
     entity: BasicEntityInfo | LuaEntity,
     previousDirection?: defines.direction | nil,
@@ -128,6 +128,20 @@ class EntityMapImpl implements MutableEntityMap {
         this.findCompatibleBasic(name, position, oppositedirection(direction))
       )
     }
+  }
+
+  findExactAtPosition(
+    entity: LuaEntity,
+    expectedStage: StageNumber,
+    oldPosition: Position | nil,
+  ): AssemblyEntity | nil {
+    const position = oldPosition ?? entity.position
+    const atPos = this.byPosition.get(position.x, position.y)
+    if (!atPos) return
+    for (const candidate of atPos) {
+      if (candidate.getWorldEntity(expectedStage) === entity) return candidate
+    }
+    return nil
   }
 
   countNumEntities(): number {
