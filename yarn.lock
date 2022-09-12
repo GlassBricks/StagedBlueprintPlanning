@@ -1809,7 +1809,7 @@ __metadata:
     ts-jest: ^28.0.8
     ts-node: ^10.9.1
     ts-transformer-keys: ^0.4.3
-    typed-factorio: ^1.7.5
+    typed-factorio: ^1.8.1
     typescript: ~4.8.2
     typescript-to-lua: ^1.10.0
     typescript-tstl-plugin: ^0.3.2
@@ -6726,13 +6726,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typed-factorio@npm:^1.7.5":
-  version: 1.7.5
-  resolution: "typed-factorio@npm:1.7.5"
+"typed-factorio@npm:^1.8.1":
+  version: 1.8.1
+  resolution: "typed-factorio@npm:1.8.1"
   peerDependencies:
     lua-types: ^2.13.0
     typescript-to-lua: ^1.6.1
-  checksum: afe5e3a2f7a3f1c3269c8e30fdfe74e15d72a09ef515d1fdbc89315b8b23a98afc1fd2f04ef3dd7b5a334d3c8be5ce937c09426c9728b969a2cc44c3594b5ce2
+  checksum: fc42ff6924170021886aa82f740e909f3c21c0f5411dee4255c1a3cc5a5b753caf3adf0fbdb53b3b0e63cb9647d359dff57afd251287c4afe66d4edd4a229ac3
   languageName: node
   linkType: hard
 
