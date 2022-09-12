@@ -10,11 +10,12 @@
  */
 
 import { forceMoveEntity, tryMoveAllEntities } from "../../assembly/entity-move"
+import { Pos } from "../../lib/geometry"
 import { setupEntityMoveTest } from "./setup-entity-move-test"
 
-const { surfaces, entities, origDir, origPos } = setupEntityMoveTest()
+const { surfaces, entities, origDir, origPos } = setupEntityMoveTest(nil, nil, nil, false)
 
-const newPos = { x: 1.5, y: 1.5 }
+const newPos = { x: 1.5, y: 2 }
 const newDir = defines.direction.south
 test("can move single entity", () => {
   const entity = entities[0]
@@ -29,6 +30,18 @@ test("can move multiple entities", () => {
   for (const entity of entities) {
     assert.same(newPos, entity.position)
     assert.same(newDir, entity.direction)
+  }
+})
+
+test("can teleport onto self", () => {
+  const newPos2 = Pos.plus(origPos, { x: 1, y: 0 })
+  const entity = entities[0]
+  forceMoveEntity(entity, newPos2, origDir)
+  const result = tryMoveAllEntities(entities, newPos2, origDir)
+  assert.equal("success", result)
+  for (const entity of entities) {
+    assert.same(newPos2, entity.position)
+    assert.same(origDir, entity.direction)
   }
 })
 
@@ -66,13 +79,14 @@ test("does not move any if wires cannot reach", () => {
     pole.connect_neighbour({
       wire: defines.wire_type.red,
       target_entity: entities[1],
+      target_circuit_id: defines.circuit_connector_id.combinator_input,
     }),
     "failed to connect",
   )
   const result = tryMoveAllEntities(entities, newPos, newDir)
   assert.equal("wires-cannot-reach", result)
   for (const entity of entities) {
-    assert.same(origPos, entity.position)
     assert.same(origDir, entity.direction)
+    assert.same(origPos, entity.position)
   }
 })

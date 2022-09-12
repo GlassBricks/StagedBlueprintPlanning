@@ -555,3 +555,5 @@ describe("blueprint paste", () => {
       .called_with(match.ref(assembly), match.ref(inserter1), match.ref(assembly.getStage(1)!), 1)
   })
 })
+
+// picker dollies only tested up to worldupdater

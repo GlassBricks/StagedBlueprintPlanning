@@ -189,14 +189,15 @@ describe("updateWorldEntities", () => {
 
 describe("tryMoveEntity", () => {
   // use real entities
-  const { entities } = setupEntityMoveTest(4, origPos, origDir)
+  const { entities, origPos } = setupEntityMoveTest(4, nil, origDir)
   before_each(() => {
     entities.forEach((e, i) => {
       entity.replaceWorldEntity(i + 1, e)
     })
     assembly.content.add(entity)
+    assembly.content.changePosition(entity, origPos)
   })
-  const newPos = Pos(1.5, 1.5)
+  const newPos = Pos(1.5, 2)
   const newDir = defines.direction.north
 
   function assertMoved() {

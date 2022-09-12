@@ -14,7 +14,7 @@ import { BBox, Position } from "../../lib/geometry"
 
 export function setupEntityMoveTest(
   numSurfaces = 3,
-  origPos: Position = { x: 0.5, y: 0.5 },
+  origPos: Position = { x: 1, y: 0.5 },
   origDir = defines.direction.east,
   doReset = true,
 ): {
@@ -43,7 +43,7 @@ export function setupEntityMoveTest(
     for (let i = 0; i < surfaces.length; i++) {
       const surface = surfaces[i]
       const entity = surface.create_entity({
-        name: "inserter",
+        name: "decider-combinator",
         position: origPos,
         direction: origDir,
         force: "player",
