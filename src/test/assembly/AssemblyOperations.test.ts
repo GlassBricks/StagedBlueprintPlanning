@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { keys } from "ts-transformer-keys"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import {
   AssemblyOperations,
@@ -20,6 +21,7 @@ import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { createAssemblyEntity, RollingStockAssemblyEntity } from "../../entity/AssemblyEntity"
 import { Pos } from "../../lib/geometry"
 import { createRollingStocks } from "../entity/createRollingStock"
+import { makeMocked } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
 let assembly: AssemblyContent
@@ -31,30 +33,9 @@ let worldInteractor: mock.Mocked<AssemblyOpWorldInteractor>
 let operations: AssemblyOperations
 before_each(() => {
   assembly = createMockAssemblyContent(3)
-  worldUpdater = {
-    updateWorldEntities: spy(),
-    deleteAllEntities: spy(),
-    forceDeleteEntity: spy(),
-    deleteExtraEntitiesOnly: spy(),
-    makeSettingsRemnant: spy(),
-    reviveSettingsRemnant: spy(),
-  }
-  worldInteractor = {
-    deleteAllWorldEntities: spy(),
-  }
-  assemblyUpdater = {
-    onCircuitWiresPotentiallyUpdated: spy(),
-    onCleanupToolUsed: spy(),
-    onEntityCreated: spy(),
-    onEntityDeleted: spy(),
-    onEntityForceDeleted: spy(),
-    onEntityMarkedForUpgrade: spy(),
-    onEntityPotentiallyUpdated: spy(),
-    onEntityRotated: spy(),
-    onMoveEntityToStage: spy(),
-    moveEntityToStage: spy(),
-  }
-
+  worldUpdater = makeMocked(keys<WorldUpdater>())
+  worldInteractor = makeMocked(keys<AssemblyOpWorldInteractor>())
+  assemblyUpdater = makeMocked(keys<AssemblyUpdater>())
   operations = createAssemblyOperations(assemblyUpdater, worldUpdater, worldInteractor)
 })
 

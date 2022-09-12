@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { keys } from "ts-transformer-keys"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
@@ -16,9 +17,9 @@ import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
-import { SelflessFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
+import { makeMocked, makeStubbed } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
 interface TestEntity extends Entity {
@@ -46,17 +47,8 @@ before_each(() => {
   )
 
   mockEntityCreator = createMockEntityCreator()
-  wireUpdater = {
-    updateWireConnections: stub<SelflessFun>().returns(true),
-  }
-  highlighter = {
-    updateHighlights: spy(),
-    deleteHighlights: spy(),
-    deleteHighlightsInStage: spy(),
-    makeSettingsRemnant: spy(),
-    reviveSettingsRemnant: spy(),
-  }
-
+  wireUpdater = makeStubbed(keys<WireUpdater>())
+  highlighter = makeMocked(keys<EntityHighlighter>())
   worldUpdater = createWorldUpdater(mockEntityCreator, wireUpdater, highlighter)
 })
 

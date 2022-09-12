@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { keys } from "ts-transformer-keys"
 import { findUndergroundPair } from "../../assembly/assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
 import {
@@ -53,13 +54,19 @@ before_each(() => {
       totalCalls++
     }) as F)
   }
-  worldUpdater = {
-    updateWorldEntities: spyFn(),
-    forceDeleteEntity: spyFn(),
-    deleteAllEntities: spyFn(),
-    deleteExtraEntitiesOnly: spyFn(),
-    makeSettingsRemnant: spyFn(),
-    reviveSettingsRemnant: spyFn(),
+  // worldUpdater = {
+  //   updateWorldEntities: spyFn(),
+  //   tryMoveEntity: spyFn(),
+  //   forceDeleteEntity: spyFn(),
+  //   deleteAllEntities: spyFn(),
+  //   deleteExtraEntitiesOnly: spyFn(),
+  //   makeSettingsRemnant: spyFn(),
+  //   reviveSettingsRemnant: spyFn(),
+  // }
+  const k = keys<WorldUpdater>()
+  worldUpdater = {} as any
+  for (const key of k) {
+    worldUpdater[key] = spyFn()
   }
   wireSaver = {
     saveWireConnections: stub(),

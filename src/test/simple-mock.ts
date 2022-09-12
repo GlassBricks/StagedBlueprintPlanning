@@ -82,3 +82,17 @@ export interface BuiltinEntityKeys {
 export function isMock(obj: LuaObjectLike): boolean {
   return getmetatable(obj) === metatable
 }
+export function makeMocked<T>(keys: (keyof T)[]): mock.Mocked<T> {
+  const result = {} as mock.Mocked<T>
+  for (const key of keys) {
+    result[key] = spy<any>()
+  }
+  return result
+}
+export function makeStubbed<T>(keys: (keyof T)[]): mock.Stubbed<T> {
+  const result = {} as mock.Stubbed<T>
+  for (const key of keys) {
+    result[key] = stub<any>()
+  }
+  return result
+}
