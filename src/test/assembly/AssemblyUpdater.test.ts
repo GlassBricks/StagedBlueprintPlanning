@@ -226,7 +226,14 @@ function assertNoEntities() {
 
 function assertNotified(entity: LuaEntity, message: LocalisedString, errorSound: boolean) {
   assert.spy(worldNotifier.createNotification).called(1)
-  assert.spy(worldNotifier.createNotification).called_with(match.ref(entity), playerIndex, message, errorSound)
+  // assert.spy(worldNotifier.createNotification).called_with(match.ref(entity), playerIndex, message, errorSound)
+  const [cEntity, cPlayerIndex, cMessage, cErrorSound] = table.unpack(
+    worldNotifier.createNotification.calls[0]!.refs as any[],
+  )
+  assert.same(cEntity.position, entity.position, "notified position")
+  assert.same(cPlayerIndex, playerIndex, "notified player")
+  assert.same(cMessage, message, "notified message")
+  assert.same(cErrorSound, errorSound, "notified error sound")
   notificationsAsserted = true
 }
 

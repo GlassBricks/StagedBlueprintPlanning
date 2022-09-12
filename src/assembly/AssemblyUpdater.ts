@@ -111,7 +111,7 @@ export interface AssemblyUpdater {
  */
 export interface WorldNotifier {
   createNotification(
-    entity: BasicEntityInfo | nil,
+    entity: { position: Position; surface?: LuaSurface } | nil,
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
     errorSound: boolean,
@@ -647,19 +647,18 @@ export function createAssemblyUpdater(
     assembly: AssemblyContent,
     entityOrPreviewEntity: LuaEntity,
     stage: StagePosition,
-    byPlayer: PlayerIndex | nil,
+    byPlayer: PlayerIndex,
   ): void {
     const existing = getEntityFromPreviewEntity(entityOrPreviewEntity, stage, assembly)
     if (!existing) return
     const { stageNumber } = stage
-    moveEntityToStage(assembly, existing, stageNumber, entityOrPreviewEntity, byPlayer)
+    moveEntityToStage(assembly, existing, stageNumber, byPlayer)
   }
   function moveEntityToStage(
     assembly: AssemblyContent,
     existing: AssemblyEntity,
     stageNumber: StageNumber,
-    luaEntity: LuaEntity | nil,
-    byPlayer: PlayerIndex | nil,
+    byPlayer: PlayerIndex,
   ) {
     if (existing.isSettingsRemnant) {
       reviveSettingsRemnant(assembly, existing, stageNumber)
@@ -668,13 +667,13 @@ export function createAssemblyUpdater(
     const oldStage = existing.getFirstStage()
 
     if (oldStage === stageNumber) {
-      createNotification(luaEntity, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
+      createNotification(existing, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
       return
     }
 
     if (existing.isUndergroundBelt()) {
       if (existing.getNameAtStage(stageNumber) !== existing.getFirstValue().name) {
-        createNotification(luaEntity, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+        createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
         return
       }
     }
@@ -682,12 +681,7 @@ export function createAssemblyUpdater(
     // move
     existing.moveToStage(stageNumber, stageNumber < oldStage)
     updateWorldEntities(assembly, existing, min(oldStage, stageNumber))
-    createNotification(
-      luaEntity,
-      byPlayer,
-      [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
-      false,
-    )
+    createNotification(existing, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
   }
 
   function getCompatibleAtPositionOrAdd(
@@ -739,16 +733,19 @@ export function createAssemblyUpdater(
     onCleanupToolUsed,
     onEntityForceDeleted,
     onMoveEntityToStage,
-    moveEntityToStage(assembly, entity, stageNumber, byPlayer) {
-      moveEntityToStage(assembly, entity, stageNumber, nil, byPlayer)
-    },
+    moveEntityToStage,
     onEntityMoved,
   }
 }
 
 const DefaultWorldNotifier: WorldNotifier = {
   createNotification(
-    at: BasicEntityInfo | nil,
+    at:
+      | {
+          position: Position
+          surface?: LuaSurface
+        }
+      | nil,
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
     playSound: boolean,
@@ -767,7 +764,7 @@ const DefaultWorldNotifier: WorldNotifier = {
         })
       }
       if (playSound) player.play_sound({ path: "utility/cannot_build" })
-    } else if (at && at.surface.valid) {
+    } else if (at && at.surface && at.surface.valid) {
       at.surface.create_entity({
         name: "flying-text",
         position: at.position,
