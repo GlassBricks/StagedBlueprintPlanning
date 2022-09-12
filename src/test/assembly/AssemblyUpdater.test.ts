@@ -54,15 +54,6 @@ before_each(() => {
       totalCalls++
     }) as F)
   }
-  // worldUpdater = {
-  //   updateWorldEntities: spyFn(),
-  //   tryMoveEntity: spyFn(),
-  //   forceDeleteEntity: spyFn(),
-  //   deleteAllEntities: spyFn(),
-  //   deleteExtraEntitiesOnly: spyFn(),
-  //   makeSettingsRemnant: spyFn(),
-  //   reviveSettingsRemnant: spyFn(),
-  // }
   const k = keys<WorldUpdater>()
   worldUpdater = {} as any
   for (const key of k) {
@@ -194,10 +185,10 @@ function assertDeleteAllEntitiesCalled(entity: AssemblyEntity<TestEntity>) {
   assert.equal(1, totalCalls)
   assert.spy(worldUpdater.deleteAllEntities).called_with(match.ref(entity))
 }
-function assertForceDeleteCalled(entity: AssemblyEntity<TestEntity>, stage: StageNumber) {
+function assertClearWorldEntityCalled(entity: AssemblyEntity<TestEntity>, stage: StageNumber) {
   worldUpdaterAsserted = true
   assert.equal(1, totalCalls)
-  assert.spy(worldUpdater.forceDeleteEntity).called_with(match.ref(assembly), match.ref(entity), stage)
+  assert.spy(worldUpdater.clearWorldEntity).called_with(match.ref(assembly), match.ref(entity), stage)
 }
 function assertMakeSettingsRemnantCalled(entity: AssemblyEntity<TestEntity>) {
   worldUpdaterAsserted = true
@@ -359,11 +350,11 @@ describe("delete", () => {
   })
 })
 
-test("force delete", () => {
+test("onEntityDied", () => {
   const { luaEntity, added } = addAndReset(1, 2)
-  assemblyUpdater.onEntityForceDeleted(assembly, luaEntity, stage)
+  assemblyUpdater.onEntityDied(assembly, luaEntity, stage)
   assertOneEntity()
-  assertForceDeleteCalled(added, 2)
+  assertClearWorldEntityCalled(added, 2)
 })
 
 describe("revive", () => {
@@ -1043,6 +1034,14 @@ describe("cleanup tool", () => {
     const { added, proxy } = setupWithProxy()
     added.isSettingsRemnant = true
     assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage)
+    assert.nil(added.getWorldEntity(1))
+    assertNoEntities()
+    assertDeleteAllEntitiesCalled(added)
+  })
+
+  test("onEntityForceDeleted", () => {
+    const { added, proxy } = setupWithProxy()
+    assemblyUpdater.onEntityForceDeleted(assembly, proxy, stage)
     assert.nil(added.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(added)

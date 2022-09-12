@@ -50,7 +50,7 @@ export interface WorldUpdater {
   tryMoveOtherEntities(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): AssemblyMoveEntityResult
 
   /** Removes the world entity at a give stage (and makes error highlight) */
-  forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void
+  clearWorldEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void
 
   /** Removes ALL entities in ALL stages. */
   deleteAllEntities(entity: AssemblyEntity): void
@@ -221,7 +221,7 @@ export function createWorldUpdater(
   return {
     updateWorldEntities,
     tryMoveOtherEntities: tryMoveEntity,
-    forceDeleteEntity,
+    clearWorldEntity: forceDeleteEntity,
     deleteAllEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldEntities("mainEntity")
       highlighter.deleteHighlights(entity)

@@ -168,9 +168,7 @@ const cleanupTool: SelectionToolPrototype = {
   alt_selection_color: cleanupToolColor,
   alt_selection_cursor_box_type: "entity",
 
-  // filters set in data-final-fixes
-
-  reverse_selection_mode: ["blueprint"],
+  reverse_selection_mode: ["entity-with-owner"],
   reverse_selection_color: cleanupReverseToolColor,
   reverse_selection_cursor_box_type: "not-allowed",
 }

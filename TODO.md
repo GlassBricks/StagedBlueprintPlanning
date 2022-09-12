@@ -2,9 +2,7 @@
 
 ### Editing
 
-- [ ] Mod interactions?
-    - [ ] Picker dollies
-    - [ ] Modded entities?
+- [ ] Modded entities?
 - [ ] Consider alternate behaviors
 
 - [ ] "Locked" properties
@@ -34,7 +32,6 @@
 ### Queue (likely to be implemented in next version)
 
 - [ ] Opening preview entities
-- [ ] Picker dollies
 
 ## Future
 

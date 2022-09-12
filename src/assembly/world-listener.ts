@@ -69,7 +69,7 @@ function luaEntityMarkedForUpgrade(entity: LuaEntity, player: PlayerIndex | nil)
 
 function luaEntityForceDeleted(entity: LuaEntity): void {
   const stage = getStageIfAssemblyEntity(entity)
-  if (stage) DefaultAssemblyUpdater.onEntityForceDeleted(stage.assembly, entity, stage)
+  if (stage) DefaultAssemblyUpdater.onEntityDied(stage.assembly, entity, stage)
 }
 
 function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {

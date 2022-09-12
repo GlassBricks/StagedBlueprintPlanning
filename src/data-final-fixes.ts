@@ -186,4 +186,4 @@ data.extend(selectionProxies)
 const selectionProxyNames = selectionProxies.map((proxy) => proxy.name)
 
 const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.CleanupTool]
-cleanupTool.entity_filters = cleanupTool.alt_entity_filters = selectionProxyNames
+cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = selectionProxyNames

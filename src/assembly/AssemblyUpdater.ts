@@ -86,8 +86,9 @@ export interface AssemblyUpdater {
 
   /** When a cleanup tool has been used on an entity. */
   onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
+  onEntityForceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
   /** Either: entity died, or reverse select with cleanup tool */
-  onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
+  onEntityDied(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
   /** User activated. */
   onMoveEntityToStage(assembly: AssemblyContent, entity: LuaEntity, stage: StagePosition, byPlayer: PlayerIndex): void
   moveEntityToStage(
@@ -124,7 +125,7 @@ export function createAssemblyUpdater(
   wireSaver: WireSaver,
   notifier: WorldNotifier,
 ): AssemblyUpdater {
-  const { deleteAllEntities, updateWorldEntities, forceDeleteEntity } = worldUpdater
+  const { deleteAllEntities, updateWorldEntities, clearWorldEntity } = worldUpdater
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
   const { createNotification } = notifier
@@ -301,10 +302,10 @@ export function createAssemblyUpdater(
     updateWorldEntities(assembly, existing, currentStage, oldStage)
   }
 
-  function onEntityForceDeleted(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void {
+  function onEntityDied(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void {
     const existing = assembly.content.findCompatible(entity, nil)
     if (existing) {
-      forceDeleteEntity(assembly, existing, stage.stageNumber)
+      clearWorldEntity(assembly, existing, stage.stageNumber)
     }
   }
 
@@ -627,6 +628,13 @@ export function createAssemblyUpdater(
     }
   }
 
+  function onEntityForceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void {
+    const existing = getEntityFromProxyEntity(proxyEntity, stage, assembly)
+    if (!existing) return
+    assembly.content.delete(existing)
+    deleteAllEntities(existing)
+  }
+
   function getEntityFromPreviewEntity(
     entityOrPreviewEntity: LuaEntity,
     stage: StagePosition,
@@ -732,6 +740,7 @@ export function createAssemblyUpdater(
     onEntityMarkedForUpgrade,
     onCleanupToolUsed,
     onEntityForceDeleted,
+    onEntityDied,
     onMoveEntityToStage,
     moveEntityToStage,
     onEntityMoved,

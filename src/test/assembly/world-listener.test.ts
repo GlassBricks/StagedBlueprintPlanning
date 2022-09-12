@@ -98,7 +98,7 @@ describe("delete", () => {
   })
   test("die", () => {
     entity.die()
-    assert.spy(updater.onEntityForceDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!))
+    assert.spy(updater.onEntityDied).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!))
   })
 })
 
