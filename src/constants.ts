@@ -23,6 +23,13 @@ export const enum CustomInputs {
 
 export const enum Settings {
   CyclicNavigation = "bp100:cyclic-navigation",
+  FlexibleOffshorePumpPlacement = "bp100:flexible-offshore-pump-placement",
+}
+
+export enum FlexibleOffshorePumpPlacement {
+  Disabled = "disabled",
+  OneWaterTile = "one-water-tile",
+  Anywhere = "anywhere",
 }
 
 export const enum Prototypes {

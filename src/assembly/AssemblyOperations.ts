@@ -16,8 +16,12 @@ import {
   StageNumber,
 } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
+import { assertNever } from "../lib"
+import { BBox } from "../lib/geometry"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { Stage } from "./AssemblyDef"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "./AssemblyUpdater"
+import { autoLandfill, autoSetLandfillAndLabTiles, setLabTiles } from "./landfill"
 import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 
 /**
@@ -48,6 +52,13 @@ export interface AssemblyOperations {
 
   resetTrain(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
   setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
+
+  autoSetTiles(stage: Stage, tilesType: AutoSetTilesType): boolean
+}
+export const enum AutoSetTilesType {
+  LabTiles,
+  LandfillAndWater,
+  LandfillAndLabTiles,
 }
 
 /** @noSelf */
@@ -165,6 +176,20 @@ export function createAssemblyOperations(
           assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, nil)
         }
       }
+    },
+    autoSetTiles(stage: Stage, type: AutoSetTilesType): boolean {
+      const area = stage.assembly.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
+      const surface = stage.surface
+      if (type === AutoSetTilesType.LabTiles) {
+        setLabTiles(surface, area)
+        return true
+      }
+      if (type === AutoSetTilesType.LandfillAndWater) {
+        return autoLandfill(surface, area)
+      } else if (type === AutoSetTilesType.LandfillAndLabTiles) {
+        return autoSetLandfillAndLabTiles(surface, area)
+      }
+      assertNever(type)
     },
   }
 }

@@ -10,6 +10,7 @@
  */
 
 import { Data } from "typed-factorio/data/types"
+import { empty_sprite } from "util"
 import { CustomInputs, Prototypes, Sprites } from "./constants"
 import {
   CustomInputPrototype,
@@ -42,11 +43,7 @@ const removePoleCablesInput: CustomInputPrototype = {
 
 data.extend([buildInput, removePoleCablesInput])
 
-const emptySprite: Sprite = {
-  filename: "__core__/graphics/empty.png",
-  width: 1,
-  height: 1,
-}
+const emptySprite: Sprite = empty_sprite() as Sprite
 
 const entityMarker: SimpleEntityPrototype = {
   type: "simple-entity",

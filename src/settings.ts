@@ -10,7 +10,7 @@
  */
 
 import { Data } from "typed-factorio/settings/types"
-import { Settings } from "./constants"
+import { FlexibleOffshorePumpPlacement, Settings } from "./constants"
 
 declare const data: Data
 
@@ -21,5 +21,13 @@ data.extend([
     setting_type: "runtime-per-user",
     default_value: false,
     order: "a",
+  },
+  {
+    name: Settings.FlexibleOffshorePumpPlacement,
+    type: "string-setting",
+    setting_type: "startup",
+    allowed_values: Object.values(FlexibleOffshorePumpPlacement),
+    default_value: FlexibleOffshorePumpPlacement.OneWaterTile,
+    order: "b",
   },
 ])

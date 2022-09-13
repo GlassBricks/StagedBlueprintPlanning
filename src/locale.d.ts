@@ -22,6 +22,26 @@ export declare const enum L_ItemGroupName {
 export declare const enum L_ModSettingName {
   /** Use cyclic stage navigation */
   CyclicNavigation = "mod-setting-name.bp100:cyclic-navigation",
+  /** Flexible offshore pump placement */
+  FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
+}
+export declare const enum L_ModSettingDescription {
+  /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
+  FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
+}
+export declare const enum L_StringModSetting {
+  /** Disabled */
+  FlexibleOffshorePumpPlacementDisabled = "string-mod-setting.bp100:flexible-offshore-pump-placement-disabled",
+  /** One water tile */
+  FlexibleOffshorePumpPlacementOneWaterTile = "string-mod-setting.bp100:flexible-offshore-pump-placement-one-water-tile",
+  /** Anywhere */
+  FlexibleOffshorePumpPlacementAnywhere = "string-mod-setting.bp100:flexible-offshore-pump-placement-anywhere",
+}
+export declare const enum L_StringModSettingDescription {
+  /** Offshore pumps only require only one water tile behind one land tile to be placed. */
+  FlexibleOffshorePumpPlacementOneWaterTile = "string-mod-setting-description.bp100:flexible-offshore-pump-placement-one-water-tile",
+  /** Offshore pumps can be placed anywhere on land (water tiles not required). */
+  FlexibleOffshorePumpPlacementAnywhere = "string-mod-setting-description.bp100:flexible-offshore-pump-placement-anywhere",
 }
 export declare const enum L_Controls {
   /** Next stage */
