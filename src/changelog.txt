@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.0
-Date: ????
+Date: 2022-09-13
   Features:
     - Added integration with PickerDollies (mod)
     - Added support for auto-setting landfill in world/blueprints.
