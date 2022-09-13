@@ -303,6 +303,7 @@ Events.on_built_entity((e) => {
   // just in case
   if (isMarkerEntity(entity)) {
     entity.destroy()
+    game.print("Marker entity was not supposed to be built")
     return
   }
 
@@ -509,7 +510,7 @@ function isMarkerEntity(entity: LuaEntity): boolean {
 }
 
 function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
-  const tags = e.tags as MarkerTags
+  const tags = (e.tags ?? entity.tags) as MarkerTags
   if (tags !== nil) {
     handleEntityMarkerBuilt(e, entity, tags, stage)
     if (tags[IsLastEntity] !== nil) onLastEntityMarkerPasted(e)

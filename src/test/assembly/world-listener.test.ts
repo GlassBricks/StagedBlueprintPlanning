@@ -477,7 +477,7 @@ describe("revives ghost undergrounds", () => {
 describe("blueprint paste", () => {
   // note: this currently relies on editor mode, instant blueprint paste enabled
   const pos: PositionClass = Pos(4.5, 0.5)
-  before_each(() => {
+  function setBlueprint(): void {
     const entity: BlueprintEntity = {
       entity_number: 1,
       name: "inserter",
@@ -488,7 +488,8 @@ describe("blueprint paste", () => {
     cursor.clear()
     cursor.set_stack("blueprint")
     cursor.set_blueprint_entities([entity])
-  })
+  }
+  before_each(setBlueprint)
   function assertCorrect(entity: LuaEntity): void {
     assert.not_nil(entity, "entity found")
     assert.same(pos, entity.position)
@@ -505,6 +506,13 @@ describe("blueprint paste", () => {
       limit: 1,
     })[0]
     assertCorrect(inserter)
+  })
+
+  test("doesn't break when creating ghost entity", () => {
+    player.toggle_map_editor()
+    after_test(() => player.toggle_map_editor())
+    setBlueprint()
+    player.build_from_cursor({ position: pos, alt: true })
   })
 
   test("update existing entity", () => {
