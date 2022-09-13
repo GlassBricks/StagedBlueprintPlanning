@@ -11,8 +11,9 @@
 
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
+import { AutoSetTilesType } from "./AssemblyDef"
 
-export function autoLandfill(surface: LuaSurface, area: BoundingBox): boolean {
+function autoLandfill(surface: LuaSurface, area: BoundingBox): boolean {
   if (!waterLandfillTilesExist()) return false
   const tiles: Mutable<TileWrite>[] = []
   let i = 1
@@ -31,7 +32,7 @@ export function autoLandfill(surface: LuaSurface, area: BoundingBox): boolean {
   return true
 }
 
-export function autoSetLandfillAndLabTiles(surface: LuaSurface, area: BoundingBox): boolean {
+function autoSetLandfillAndLabTiles(surface: LuaSurface, area: BoundingBox): boolean {
   if (!autoLandfill(surface, area)) return false
   const landfillTiles = surface.find_tiles_filtered({
     area,
@@ -46,10 +47,24 @@ export function autoSetLandfillAndLabTiles(surface: LuaSurface, area: BoundingBo
   return true
 }
 
-export function setLabTiles(surface: LuaSurface, area: BoundingBox): void {
+function setLabTiles(surface: LuaSurface, area: BoundingBox): void {
   surface.build_checkerboard(area)
 }
 
-export function waterLandfillTilesExist(): boolean {
+function waterLandfillTilesExist(): boolean {
   return game.tile_prototypes.water !== nil && game.tile_prototypes.landfill !== nil
+}
+
+export function setTiles(surface: LuaSurface, area: BBox, type: AutoSetTilesType): boolean {
+  if (type === AutoSetTilesType.LabTiles) {
+    setLabTiles(surface, area)
+    return true
+  }
+  if (type === AutoSetTilesType.LandfillAndWater) {
+    return autoLandfill(surface, area)
+  }
+  if (type === AutoSetTilesType.LandfillAndLabTiles) {
+    return autoSetLandfillAndLabTiles(surface, area)
+  }
+  error("Invalid AutoSetTilesType")
 }

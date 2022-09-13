@@ -42,12 +42,16 @@ export interface Assembly extends AssemblyContent {
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
 
+  readonly blueprintBookSettings: BlueprintBookSettings
   makeBlueprintBook(stackToSet: LuaItemStack): boolean
 
   readonly valid: boolean
-
   delete(): void
 }
+export interface BlueprintBookSettings {
+  readonly autoLandfill: MutableState<boolean>
+}
+
 export interface Stage extends StagePosition {
   readonly name: MutableState<string>
   readonly assembly: Assembly
@@ -58,9 +62,18 @@ export interface Stage extends StagePosition {
   /** Opens blueprint edit gui for player. Returns if successful. */
   editBlueprint(player: LuaPlayer): boolean
 
+  autoSetTiles(tiles: AutoSetTilesType): boolean
+
   readonly valid: boolean
   deleteInAssembly(): void
 }
+
+export const enum AutoSetTilesType {
+  LabTiles,
+  LandfillAndWater,
+  LandfillAndLabTiles,
+}
+
 export interface AssemblyCreatedEvent {
   readonly type: "assembly-created"
   readonly assembly: Assembly

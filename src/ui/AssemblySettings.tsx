@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, LocalAssemblyEvent, Stage } from "../assembly/AssemblyDef"
-import { AssemblyOperations, AutoSetTilesType } from "../assembly/AssemblyOperations"
+import { Assembly, AutoSetTilesType, LocalAssemblyEvent, Stage } from "../assembly/AssemblyDef"
+import { AssemblyOperations } from "../assembly/AssemblyOperations"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
@@ -84,12 +84,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
             <HorizontalPusher />
             <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
           </frame>
-          <flow
-            direction="vertical"
-            styleMod={{
-              padding: [5, 10],
-            }}
-          >
+          <flow direction="vertical" styleMod={{ padding: [5, 10], vertical_spacing: 0 }}>
             <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
               <label style="caption_label" caption={[L_GuiAssemblySettings.NewStage]} />
               <HorizontalPusher />
@@ -104,14 +99,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
                 on_gui_click={funcOn(this.newStageAtFront)}
               />
             </flow>
-            <flow direction="horizontal">
-              <HorizontalPusher />
-              <button
-                caption={[L_GuiAssemblySettings.GetBlueprintBook]}
-                tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
-                on_gui_click={funcOn(this.getBlueprintBook)}
-              />
-            </flow>
+            <line direction="vertical" />
           </flow>
         </frame>
         <flow
@@ -143,6 +131,21 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
             }}
           />
         </flow>
+        <frame style="inside_shallow_frame_with_padding" direction="vertical">
+          <flow direction="vertical">
+            <label style="caption_label" caption={[L_GuiAssemblySettings.BlueprintBookSettings]} />
+            <checkbox
+              state={this.assembly.blueprintBookSettings.autoLandfill}
+              caption={[L_GuiAssemblySettings.AutoLandfill]}
+              tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
+            />
+            <button
+              caption={[L_GuiAssemblySettings.GetBlueprintBook]}
+              tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
+              on_gui_click={funcOn(this.getBlueprintBook)}
+            />
+          </flow>
+        </frame>
       </>
     )
   }
@@ -332,7 +335,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
   }
 
   private trySetTiles(type: AutoSetTilesType) {
-    const success = AssemblyOperations.autoSetTiles(this.stage, type)
+    const success = this.stage.autoSetTiles(type)
     if (!success) {
       game.get_player(this.playerIndex)?.create_local_flying_text({
         text: [L_GuiAssemblySettings.FailedToSetTiles],

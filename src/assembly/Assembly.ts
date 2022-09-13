@@ -14,7 +14,15 @@ import { bind, Event, Events, globalEvent, Mutable, MutableState, PRecord, Regis
 import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
-import { Assembly, AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage } from "./AssemblyDef"
+import {
+  Assembly,
+  AssemblyId,
+  AutoSetTilesType,
+  BlueprintBookSettings,
+  GlobalAssemblyEvent,
+  LocalAssemblyEvent,
+  Stage,
+} from "./AssemblyDef"
 import {
   BlueprintSettings,
   editBlueprintSettings,
@@ -22,6 +30,7 @@ import {
   tryTakeBlueprintWithSettings,
 } from "./blueprint-take"
 import { newEntityMap } from "./EntityMap"
+import { setTiles } from "./landfill"
 import { createStageSurface, prepareArea } from "./surfaces"
 
 declare const global: {
@@ -58,6 +67,9 @@ class AssemblyImpl implements Assembly {
 
   blueprintInventory?: LuaInventory
   private blueprintSettings?: BlueprintSettings
+  blueprintBookSettings: BlueprintBookSettings = {
+    autoLandfill: state(false),
+  }
 
   valid = true
 
@@ -184,9 +196,18 @@ class AssemblyImpl implements Assembly {
     const inventory = stack.get_inventory(defines.inventory.item_main)!
     assert(inventory, "Failed to get blueprint book inventory")
 
+    const autoLandfill = this.blueprintBookSettings.autoLandfill.get()
     for (const [, stage] of ipairs(this.stages)) {
       const blueprint = stage.doTakeBlueprint(bbox, false)
       if (blueprint) inventory.insert(blueprint)
+    }
+
+    if (autoLandfill && inventory.length > 0) {
+      for (const i of $range(1, inventory.length - 1)) {
+        const blueprint = inventory[i - 1]
+        const nextBlueprint = inventory[i]
+        blueprint.set_blueprint_tiles(nextBlueprint.get_blueprint_tiles()!)
+      }
     }
 
     return true
@@ -263,6 +284,8 @@ class StageImpl implements Stage {
 
   doTakeBlueprint(bbox: BBox, forEdit: boolean): BlueprintItemStack | nil {
     const stack = (this.blueprintStack ??= this.assembly.getNewBlueprintInventoryStack())
+    const autoLandfill = this.assembly.blueprintBookSettings.autoLandfill.get()
+    if (autoLandfill) setTiles(this.surface, bbox, AutoSetTilesType.LandfillAndLabTiles)
     const takeSuccessful = tryTakeBlueprintWithSettings(
       stack,
       this.assembly.getBlueprintSettings(),
@@ -281,7 +304,12 @@ class StageImpl implements Stage {
     return editBlueprintSettings(player, blueprint, this.assembly.getBlueprintSettings())
   }
 
-  public deleteInAssembly(): void {
+  autoSetTiles(tiles: AutoSetTilesType): boolean {
+    const bbox = this.assembly.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
+    return setTiles(this.surface, bbox, tiles)
+  }
+
+  deleteInAssembly(): void {
     if (!this.valid) return
     this.assembly.deleteStage(this.stageNumber)
   }
@@ -307,5 +335,10 @@ Events.on_pre_surface_deleted((e) => {
 Migrations.to("0.2.1", () => {
   for (const [, assembly] of global.assemblies) {
     assembly.lastPlayerPosition = {}
+  }
+})
+Migrations.to("0.5.0", () => {
+  for (const [, assembly] of global.assemblies) {
+    assembly.blueprintBookSettings = { autoLandfill: state(false) }
   }
 })
