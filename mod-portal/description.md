@@ -2,7 +2,7 @@
 
 The ultimate mod for designing staged blueprints for 100% speedruns.
 
-Separate your builds into stages. Edit entities in any stage, and it will automatically be applied to all later stages. Many interactions and features are supported.
+Separate your builds into stages. Edit entities in any stage, and it will automatically be applied to all later stages. Create a blueprint book of your assembly in one click.
 
 This mod is in active development (new features are still being added!) Feedback is greatly appreciated.
 
@@ -37,7 +37,7 @@ You can turn on cyclic stage navigation using a per-player setting.
 
 ### Editing
 
-Building, mining, rotating, fast-replacing, copper/circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, etc. are all supported. If there is some interaction that is not handled, please submit a bug report!
+Building, mining, rotating, fast-replacing, copper/circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, moving entities with [Picker Dollies](https://mods.factorio.com/mod/PickerDollies), are all supported. If there is some interaction that is not handled, please submit a bug report!
 
 Deleting or rotating an entity is only allowed in the _first stage_ (as those changes cannot be blueprinted between stages).
 
@@ -45,6 +45,14 @@ Trains are treated specially; there are only present in one stage (as you usuall
 Trains can move from their original position, use the Assembly info gui to reset or update their position.
 
 Copper cable wires are handled since v0.3.0. Trains are supported since v0.4.0.
+
+### Landfill
+
+Landfill can be automatically placed in your blueprints. See the Assembly/Stage settings gui for more info.
+
+As of now, this is the only way tiles are supported.
+
+Additionally, to assist in designing blueprints with offshore pumps, the "Flexible Offshore Pump Placement" startup setting allows you to place offshore pumps in places not usually allowed. This is enabled by default.
 
 ### Accidental data loss prevention
 
@@ -57,6 +65,8 @@ If you place an entity in the same position at a lower stage, it will be moved t
 
 Using the assembly cleanup tool will remove "settings remnants", and attempt to revive any error entities.
 
+_Reverse_ selecting using the assembly cleanup tool will **force-delete** error entities.
+
 ### Changes between stages
 
 Changing the configuration of an entity between stages is supported. When this is done, the entity will be highlighted in blue, and a blueprint sprite indicator will appear in all lower stages.
@@ -64,7 +74,7 @@ Similarly, by using the _upgrade planner_ (not fast-replace), entities can be up
 
 Copper/circuit wire changes _between_ stages are not supported. Instead, they are always present in all stages.
 
-As trains only appear in one stage, changes between stages are not relavant.
+Changes between stages are not relevant to trains, as they only appear in one stage.
 
 ### Footgun removal
 
@@ -85,7 +95,7 @@ You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
 
 ## Possible future features
 
-- Water tiles/landfill, resources
+- Handle resource entities
 - "locking" properties in stages
 - Automatic analysis and basic optimization
 - Import/export to string
