@@ -182,6 +182,16 @@ export declare const enum L_GuiAssemblySettings {
   GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
   /** You can configure individual blueprints in the stage settings. */
   GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
+  /** Set tiles */
+  SetTiles = "bp100.gui.assembly-settings.set-tiles",
+  /** Lab tiles */
+  LabTiles = "bp100.gui.assembly-settings.lab-tiles",
+  /** Landfill and water */
+  LandfillAndWater = "bp100.gui.assembly-settings.landfill-and-water",
+  /** Landfill and lab tiles */
+  LandfillAndLab = "bp100.gui.assembly-settings.landfill-and-lab",
+  /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
+  FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
 }
 export declare const enum L_GuiEntityInfo {
   /** Assembly info */

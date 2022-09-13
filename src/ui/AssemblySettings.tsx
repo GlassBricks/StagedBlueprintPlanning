@@ -10,7 +10,7 @@
  */
 
 import { Assembly, LocalAssemblyEvent, Stage } from "../assembly/AssemblyDef"
-import { AssemblyOperations } from "../assembly/AssemblyOperations"
+import { AssemblyOperations, AutoSetTilesType } from "../assembly/AssemblyOperations"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
@@ -243,6 +243,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
             tooltip={[L_GuiAssemblySettings.ResetStageTooltip]}
             on_gui_click={funcOn(this.resetStage)}
           />
+          <line direction="horizontal" />
           <button
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.GetBlueprint]}
@@ -255,6 +256,24 @@ export class StageSettings extends Component<{ stage: Stage }> {
             tooltip={[L_GuiAssemblySettings.EditBlueprintTooltip]}
             on_gui_click={funcOn(this.editBlueprint)}
           />
+          <line direction="horizontal" />
+          <label style="caption_label" caption={[L_GuiAssemblySettings.SetTiles]} />
+          <button
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiAssemblySettings.LabTiles]}
+            on_gui_click={funcOn(this.setLabTiles)}
+          />
+          <button
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiAssemblySettings.LandfillAndWater]}
+            on_gui_click={funcOn(this.setLandfillAndWater)}
+          />
+          <button
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiAssemblySettings.LandfillAndLab]}
+            on_gui_click={funcOn(this.setLandfillAndLabTiles)}
+          />
+          <line direction="horizontal" />
           <VerticalPusher />
           <button
             style="red_button"
@@ -295,6 +314,28 @@ export class StageSettings extends Component<{ stage: Stage }> {
     if (!this.stage.editBlueprint(player)) {
       return player.create_local_flying_text({
         text: [L_Interaction.BlueprintEmpty],
+        create_at_cursor: true,
+      })
+    }
+  }
+
+  private setLabTiles() {
+    this.trySetTiles(AutoSetTilesType.LabTiles)
+  }
+
+  private setLandfillAndWater() {
+    this.trySetTiles(AutoSetTilesType.LandfillAndWater)
+  }
+
+  private setLandfillAndLabTiles() {
+    this.trySetTiles(AutoSetTilesType.LandfillAndLabTiles)
+  }
+
+  private trySetTiles(type: AutoSetTilesType) {
+    const success = AssemblyOperations.autoSetTiles(this.stage, type)
+    if (!success) {
+      game.get_player(this.playerIndex)?.create_local_flying_text({
+        text: [L_GuiAssemblySettings.FailedToSetTiles],
         create_at_cursor: true,
       })
     }

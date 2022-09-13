@@ -164,7 +164,7 @@ class EntityMapImpl implements MutableEntityMap {
       if (x > maxX) maxX = x
       if (y > maxY) maxY = y
     }
-    return BBox.expand(BBox.coords(minX, minY, maxX, maxY), 5)
+    return BBox.expand(BBox.coords(minX, minY, maxX, maxY), 20)
   }
 
   add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {
