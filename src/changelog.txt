@@ -9,6 +9,7 @@ Date: 2022-09-13
     - Added integration with PickerDollies (mod)
     - Added support for auto-setting landfill in world/blueprints.
     - Added optional (recommended) flexible offshore pump placement.
+    - Changed behavior of reverse-selecting with the Assembly Cleanup Tool.
   Bugfixes:
     - Fixed placing blueprints when not in instant blueprinting mode.
     - Fixed error when moving entity to lower layer via shortcut.
