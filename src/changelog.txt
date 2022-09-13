@@ -1,7 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.0
 Date: ????
-  Changes:
+  Features:
+    - Added integration with PickerDollies (mod)
+    - Added support for auto-setting landfill in world/blueprints.
+    - Added optional (recommended) flexible offshore pump placement.
+  Bugfixes:
+    - Fixed placing blueprints when not in instant blueprinting mode.
+    - Fixed error when moving entity to lower layer via shortcut.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 2022-09-09
