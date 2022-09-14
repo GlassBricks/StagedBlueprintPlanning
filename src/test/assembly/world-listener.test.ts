@@ -496,7 +496,7 @@ describe("blueprint paste", () => {
 
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), 1)
+      .called_with(match.ref(assembly), entity, match.ref(assembly.getStage(1)!), 1)
   }
 
   test("create entity", () => {
@@ -525,8 +525,7 @@ describe("blueprint paste", () => {
     player.build_from_cursor({ position: pos })
     assertCorrect(inserter)
   })
-
-  test("update existing entity with wires", () => {
+  test.each([true, false])("update existing entity with wires, already present %s", (alreadyPresent) => {
     const entities = player.cursor_stack!.get_blueprint_entities()!
     const firstEntity = entities[0] as Mutable<BlueprintEntity>
     const entity2: BlueprintEntity = {
@@ -556,11 +555,50 @@ describe("blueprint paste", () => {
     })!
     // ignore second inserter
 
+    updater.onEntityPotentiallyUpdated.returns((alreadyPresent ? nil : false) as any)
     player.build_from_cursor({ position: pos })
     assertCorrect(inserter1)
-    assert
-      .spy(updater.onCircuitWiresPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(inserter1), match.ref(assembly.getStage(1)!), 1)
+    if (alreadyPresent) {
+      assert
+        .spy(updater.onCircuitWiresPotentiallyUpdated)
+        .called_with(match.ref(assembly), match.ref(inserter1), match.ref(assembly.getStage(1)!), 1)
+    } else {
+      assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+    }
+  })
+
+  test.each([true, false])("new entity with cable, with already present %s", (alreadyPresent) => {
+    const entity1: BlueprintEntity = {
+      entity_number: 1,
+      name: "small-electric-pole",
+      position: Pos(0.5, 0.5),
+      neighbours: [2],
+    }
+    const entity2: BlueprintEntity = {
+      entity_number: 2,
+      name: "small-electric-pole",
+      position: Pos(1.5, 0.5),
+      neighbours: [1],
+    }
+    player.cursor_stack!.set_blueprint_entities([entity1, entity2])
+
+    const pole1 = surface.create_entity({
+      name: "small-electric-pole",
+      position: pos,
+      force: "player",
+    })!
+    // ignore second pole
+
+    updater.onEntityPotentiallyUpdated.returns((alreadyPresent ? nil : false) as any)
+    player.build_from_cursor({ position: pos })
+    assertCorrect(pole1)
+    if (alreadyPresent) {
+      assert
+        .spy(updater.onCircuitWiresPotentiallyUpdated)
+        .called_with(match.ref(assembly), match.ref(pole1), match.ref(assembly.getStage(1)!), 1)
+    } else {
+      assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+    }
   })
 })
 

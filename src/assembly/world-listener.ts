@@ -438,7 +438,7 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
     const { direction } = entity
     if (direction && direction % 2 !== 0) continue // ignore diagonal stuff for now
     const { name, position } = entity
-    const hasCircuitWires = entity.connections ? true : nil
+    const hasCircuitWires = entity.connections ?? entity.neighbours ? true : nil
     entities[nextIndex - 1] = {
       entity_number: nextIndex,
       name: Prototypes.EntityMarker,
@@ -493,7 +493,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
   }
 }
 
-function onLastEntityMarkerPasted(e: OnBuiltEntityEvent): void {
+function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   const player = game.get_player(e.player_index)!
   const blueprint = getInnerBlueprint(player.cursor_stack)
   revertPreparedBlueprint(assert(blueprint))
@@ -513,7 +513,7 @@ function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: St
   const tags = (e.tags ?? entity.tags) as MarkerTags
   if (tags !== nil) {
     handleEntityMarkerBuilt(e, entity, tags, stage)
-    if (tags[IsLastEntity] !== nil) onLastEntityMarkerPasted(e)
+    if (tags[IsLastEntity] !== nil) onLastEntityMarkerBuilt(e)
   }
   entity.destroy()
 }
@@ -523,8 +523,13 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (!referencedName) return
   const correspondingEntity = entity.surface.find_entity(referencedName, entity.position)
   if (!correspondingEntity) return
-  DefaultAssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, correspondingEntity, stage, e.player_index)
-  if (tags.hasCircuitWires) {
+  const result = DefaultAssemblyUpdater.onEntityPotentiallyUpdated(
+    stage.assembly,
+    correspondingEntity,
+    stage,
+    e.player_index,
+  )
+  if (result !== false && tags.hasCircuitWires) {
     DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, correspondingEntity, stage, e.player_index)
   }
 }

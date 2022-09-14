@@ -47,6 +47,8 @@ export interface AssemblyUpdater {
    * Handles when an entity has its properties updated.
    * Does not handle wires.
    * If previousDirection is specified, also checks for rotation.
+   *
+   * Returns: `false` if a previous entity was not found (and may have been added).
    */
   onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
@@ -54,7 +56,7 @@ export interface AssemblyUpdater {
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
     previousDirection?: defines.direction,
-  ): void
+  ): false | nil
 
   /** Handles when an entity is rotated by player. */
   onEntityRotated(
@@ -322,6 +324,7 @@ export function createAssemblyUpdater(
       compatible.replaceWorldEntity(stage.stageNumber, entity) // just in case
     } else {
       onEntityCreated(assembly, entity, stage, byPlayer)
+      return nil
     }
     return compatible
   }
@@ -353,18 +356,12 @@ export function createAssemblyUpdater(
     stage: StagePosition,
     byPlayer: PlayerIndex | nil,
     previousDirection: defines.direction | nil,
-  ): void {
+  ): false | nil {
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
-    if (!existing) return
+    if (!existing) return false
 
     if (entity.type === "underground-belt") {
-      return onUndergroundBeltPotentiallyUpdated(
-        assembly,
-        entity,
-        stage,
-        existing as UndergroundBeltAssemblyEntity,
-        byPlayer,
-      )
+      onUndergroundBeltPotentiallyUpdated(assembly, entity, stage, existing as UndergroundBeltAssemblyEntity, byPlayer)
     }
 
     const newDirection = entity.direction

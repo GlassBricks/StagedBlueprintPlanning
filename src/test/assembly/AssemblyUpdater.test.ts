@@ -406,21 +406,24 @@ describe("revive", () => {
 describe("update", () => {
   test("non-existent defaults to add behavior (bug)", () => {
     const entity = createEntity()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, playerIndex)
+    assert.false(ret)
     const added = assembly.content.findCompatibleBasic("test", pos, nil) as AssemblyEntity<TestEntity>
     assertAdded(added, entity)
   })
 
   test("with no changes does nothing", () => {
     const { luaEntity } = addAndReset()
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    assert.nil(ret)
     assertOneEntity()
     assertNoCalls()
   })
 
   test("in lower than first stage defaults to add below behavior (bug)", () => {
     const { luaEntity, added } = addAndReset(3, 1)
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    assert.false(ret)
     assert.equal(luaEntity, added.getWorldEntity(1))
     assertOneEntity()
     assertUpdateCalled(added, 1, 3, false)
@@ -430,7 +433,8 @@ describe("update", () => {
   test("in first stage updates all entities", () => {
     const { luaEntity, added } = addAndReset(2, 2)
     luaEntity.prop1 = 3
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    assert.nil(ret)
     assert.equal(3, added.getFirstValue().prop1)
 
     assertOneEntity()
@@ -442,7 +446,8 @@ describe("update", () => {
       name: "assembling-machine-1",
     })
     luaEntity.direction = defines.direction.east
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    assert.nil(ret)
 
     assert.equal(defines.direction.east, added.getDirection())
     assertOneEntity()
@@ -453,7 +458,14 @@ describe("update", () => {
     const { luaEntity, added } = addAndReset(2, 3)
     luaEntity.direction = defines.direction.east
 
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex, defines.direction.north)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(
+      assembly,
+      luaEntity,
+      stage,
+      playerIndex,
+      defines.direction.north,
+    )
+    assert.nil(ret)
     assert.equal(defines.direction.north, added.getDirection())
 
     assertOneEntity()
@@ -471,7 +483,8 @@ describe("update", () => {
       }
 
       luaEntity.prop1 = 3 // changed
-      assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+      const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+      assert.nil(ret)
       assert.equal(2, added.getFirstValue().prop1)
       if (withExistingChanges) {
         assertStageDiffs(added, { 2: { prop1: 3, prop2: "val2" } })
@@ -489,7 +502,9 @@ describe("update", () => {
     added._applyDiffAtStage(2, { prop1: 5 })
     assert.true(added.hasStageDiff())
     luaEntity.prop1 = 2
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
+    assert.nil(ret)
+    assert.false(added.hasStageDiff())
 
     assertOneEntity()
     assertUpdateCalled(added, 2, nil, false)
