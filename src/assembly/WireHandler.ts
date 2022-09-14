@@ -37,8 +37,6 @@ export interface WireSaver {
 /** @noSelf */
 export interface WireHandler extends WireUpdater, WireSaver {}
 
-const red = defines.wire_type.red
-const green = defines.wire_type.green
 function updateCircuitConnections(
   assembly: AssemblyContent,
   entity: AssemblyEntity,
@@ -49,11 +47,6 @@ function updateCircuitConnections(
   if (!existingConnections) return
 
   const assemblyConnections = assembly.content.getCircuitConnections(entity)
-  if (!assemblyConnections) {
-    luaEntity.disconnect_neighbour(red)
-    luaEntity.disconnect_neighbour(green)
-    return
-  }
 
   const [matchingConnections, extraConnections] = analyzeExistingCircuitConnections(
     assemblyConnections,
@@ -62,19 +55,20 @@ function updateCircuitConnections(
   )
   for (const [extraConnection] of extraConnections) luaEntity.disconnect_neighbour(extraConnection)
 
-  // add missing connections
-  for (const [otherEntity, connections] of assemblyConnections) {
-    const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
-    if (!otherLuaEntity) continue
-    for (const connection of connections) {
-      if (matchingConnections.has(connection)) continue
-      const [, otherId, thisId] = getDirectionalInfo(connection, otherEntity)
-      luaEntity.connect_neighbour({
-        wire: connection.wire,
-        target_entity: otherLuaEntity,
-        source_circuit_id: thisId,
-        target_circuit_id: otherId,
-      })
+  if (assemblyConnections) {
+    for (const [otherEntity, connections] of assemblyConnections) {
+      const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
+      if (!otherLuaEntity) continue
+      for (const connection of connections) {
+        if (matchingConnections.has(connection)) continue
+        const [, otherId, thisId] = getDirectionalInfo(connection, otherEntity)
+        luaEntity.connect_neighbour({
+          wire: connection.wire,
+          target_entity: otherLuaEntity,
+          source_circuit_id: thisId,
+          target_circuit_id: otherId,
+        })
+      }
     }
   }
 }
@@ -88,10 +82,6 @@ function updateCableConnections(
   if (luaEntity.type !== "electric-pole") return true
   const { content } = assembly
   const assemblyConnections = content.getCableConnections(entity)
-  if (!assemblyConnections) {
-    luaEntity.disconnect_neighbour()
-    return true
-  }
 
   const matching = new Set<AssemblyEntity>()
   const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
@@ -99,7 +89,7 @@ function updateCableConnections(
     for (const otherLuaEntity of existingConnections) {
       const otherEntity = content.findCompatible(otherLuaEntity, nil)
       if (!otherEntity) continue
-      if (assemblyConnections.has(otherEntity)) {
+      if (assemblyConnections && assemblyConnections.has(otherEntity)) {
         matching.add(otherEntity)
       } else {
         luaEntity.disconnect_neighbour(otherLuaEntity)
@@ -107,10 +97,12 @@ function updateCableConnections(
     }
   }
 
-  for (const otherEntity of assemblyConnections) {
-    const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
-    if (otherLuaEntity && !matching.has(otherEntity)) {
-      if (!luaEntity.connect_neighbour(otherLuaEntity)) return false
+  if (assemblyConnections) {
+    for (const otherEntity of assemblyConnections) {
+      const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
+      if (otherLuaEntity && !matching.has(otherEntity)) {
+        if (!luaEntity.connect_neighbour(otherLuaEntity)) return false
+      }
     }
   }
   return true
@@ -247,8 +239,8 @@ function analyzeExistingCircuitConnections(
     let matchingConnection: AsmCircuitConnection | nil
     if (assemblyConnections) {
       const otherConnections = assemblyConnections.get(otherEntity)
-      if (otherConnections)
-        matchingConnection = findMatchingCircuitConnection(otherConnections, otherEntity, existingConnection)
+      matchingConnection =
+        otherConnections && findMatchingCircuitConnection(otherConnections, otherEntity, existingConnection)
     }
     if (matchingConnection) {
       matching.set(matchingConnection, existingConnection)

@@ -130,6 +130,13 @@ describe("circuit wires", () => {
       handler.updateWireConnections(assembly, entity1, 1)
       assertWire1Matches()
     })
+    test("ignores entities not in the assembly", () => {
+      addWire1() // entity1 -> entity2
+      assembly.content.delete(entity2)
+      handler.updateWireConnections(assembly, entity1, 1)
+      // wire should still be there
+      assertWire1Matches()
+    })
   })
 
   describe("saving wire connections", () => {
@@ -204,6 +211,14 @@ describe("cable connections", () => {
     assert.same([luaEntity2], (luaEntity1.neighbours as { copper: LuaEntity[] }).copper)
     assert.same([luaEntity1], (luaEntity2.neighbours as { copper: LuaEntity[] }).copper)
     assert.same([], (luaEntity3.neighbours as { copper: LuaEntity[] }).copper)
+  })
+
+  test("ignores entities not in the assembly", () => {
+    luaEntity1.connect_neighbour(luaEntity2)
+    assembly.content.delete(entity2)
+    handler.updateWireConnections(assembly, entity1, 1)
+    // cable should still be there
+    assert.same([luaEntity2], (luaEntity1.neighbours as { copper: LuaEntity[] }).copper)
   })
 
   describe("saving cables", () => {
