@@ -8,7 +8,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
-import { Position } from "../lib"
+
+import { Position } from "../lib/geometry"
 
 export interface Entity {
   readonly name: string
