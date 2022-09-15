@@ -343,11 +343,11 @@ function matchDirectional(entities: ReadonlyLuaSet<AssemblyEntity>, name: string
   const category = getEntityCategory(name)
   if (!category) {
     for (const entity of entities) {
-      if (entity.getFirstValue().name === name && entity.direction === direction) return entity
+      if (entity.firstValue.name === name && entity.direction === direction) return entity
     }
   } else {
     for (const entity of entities) {
-      if (category.has(entity.getFirstValue().name) && entity.direction === direction) return entity
+      if (category.has(entity.firstValue.name) && entity.direction === direction) return entity
     }
   }
 }
@@ -355,11 +355,11 @@ function matchAnyDirection(entities: ReadonlyLuaSet<AssemblyEntity>, name: strin
   const category = getEntityCategory(name)
   if (!category) {
     for (const entity of entities) {
-      if (entity.getFirstValue().name === name) return entity
+      if (entity.firstValue.name === name) return entity
     }
   } else {
     for (const entity of entities) {
-      if (category.has(entity.getFirstValue().name)) return entity
+      if (category.has(entity.firstValue.name)) return entity
     }
   }
 }

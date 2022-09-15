@@ -76,7 +76,7 @@ describe("updateWorldEntities", () => {
   describe.each([false, true])("with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
-        entity._applyDiffAtStage(entity.getFirstStage(), { prop1: 2 })
+        entity._applyDiffAtStage(entity.firstStage, { prop1: 2 })
         entity._applyDiffAtStage(3, { prop1: 1 })
       })
     }

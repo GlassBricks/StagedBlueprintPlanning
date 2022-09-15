@@ -77,7 +77,7 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   if (!assemblyEntity) {
     return notifyError(player, [L_Interaction.NotInAnAssembly], true)
   }
-  const firstStageNum = assemblyEntity.getFirstStage()
+  const firstStageNum = assemblyEntity.firstStage
   const currentStage = stage!.stageNumber
   if (firstStageNum === currentStage) {
     return notifyError(player, [L_Interaction.AlreadyAtFirstStage], true)

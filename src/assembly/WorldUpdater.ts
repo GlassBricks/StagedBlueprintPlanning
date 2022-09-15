@@ -84,7 +84,7 @@ export function createWorldUpdater(
     endStage: number,
     replace: boolean | undefined,
   ): void {
-    const firstStage = entity.getFirstStage()
+    const firstStage = entity.firstStage
     const direction = entity.getDirection()
 
     for (const [stageNum, value] of entity.iterateValues(startStage, endStage)) {
@@ -156,7 +156,7 @@ export function createWorldUpdater(
       const posChanged = assembly.content.changePosition(entity, movedEntity.position)
       assert(posChanged, "failed to change position in assembly content")
       deleteHighlights(entity)
-      updateHighlights(assembly, entity, entity.getFirstStage(), assembly.numStages())
+      updateHighlights(assembly, entity, entity.firstStage, assembly.numStages())
     }
 
     return moveResult
@@ -168,11 +168,11 @@ export function createWorldUpdater(
     stage: StageNumber,
     movedEntity: LuaEntity,
   ): AssemblyMoveEntityResult {
-    if (stage !== entity.getFirstStage()) return "not-first-stage"
+    if (stage !== entity.firstStage) return "not-first-stage"
 
     // check all entities exist
     const entities: LuaEntity[] = []
-    for (const stageNum of $range(entity.getFirstStage(), assembly.numStages())) {
+    for (const stageNum of $range(entity.firstStage, assembly.numStages())) {
       const worldEntity = entity.getWorldEntity(stageNum)
       if (!worldEntity) return "entities-missing"
       entities.push(worldEntity)

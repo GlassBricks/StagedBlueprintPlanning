@@ -244,7 +244,7 @@ test("deleteSettingsRemnant removes highlights and sets entities correct", () =>
   for (let i = 1; i <= 5; i++) {
     assert.nil(entity.getWorldEntity(i, "settingsRemnantHighlight"))
     assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
-    if (i >= entity.getFirstStage()) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
+    if (i >= entity.firstStage) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
     else assert.nil(entity.getWorldEntity(i, "selectionProxy"))
   }
 })

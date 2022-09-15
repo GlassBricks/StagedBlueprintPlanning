@@ -33,7 +33,7 @@ function findUndergroundPairOneDirection(
   content: MutableEntityMap,
   member: AssemblyEntity,
 ): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
-  const name = member.getFirstValue().name
+  const name = member.firstValue.name
   const reach = game.entity_prototypes[name].max_underground_distance
   if (!reach) return $multi(nil, false)
 
@@ -49,7 +49,7 @@ function findUndergroundPairOneDirection(
     curPos.x = x + i * dx
     curPos.y = y + i * dy
     const underground = content.findCompatibleBasic(name, curPos, otherDirection) as UndergroundBeltAssemblyEntity | nil
-    if (underground && underground.getFirstValue().name === name) {
+    if (underground && underground.firstValue.name === name) {
       if (found) return $multi(found, true)
       found = underground
     }

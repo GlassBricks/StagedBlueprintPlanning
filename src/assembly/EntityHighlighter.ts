@@ -158,7 +158,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     if (existing && config.type === "sprite") return existing
     // always replace highlight box, in case of upgrade
 
-    const prototypeName = entity.getFirstValue().name
+    const prototypeName = entity.firstValue.name
     const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
     let result: LuaEntity | AnyRender | nil
     if (config.type === "highlight") {
@@ -209,9 +209,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     type: "previewEntity" | "selectionProxy",
   ): LuaEntity | nil {
     const creator = type === "previewEntity" ? createEntityPreview : createSelectionProxy
-    const direction = entity.isRollingStock()
-      ? orientationToDirection(entity.getFirstValue().orientation)
-      : entity.direction
+    const direction = entity.isRollingStock() ? orientationToDirection(entity.firstValue.orientation) : entity.direction
     const result = creator(stage.surface, entity.getNameAtStage(stage.stageNumber), entity.position, direction)
     entity.replaceWorldEntity(stage.stageNumber, result, type)
     return result
@@ -244,7 +242,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    const firstStage = entity.getFirstStage()
+    const firstStage = entity.firstStage
     if (!entity.isRollingStock()) {
       for (const [i, stage] of assembly.iterateStages()) {
         const shouldHaveEntityPreview = entity.getWorldEntity(stage.stageNumber, "mainEntity") === nil
@@ -267,7 +265,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function updateErrorIndicators(assembly: AssemblyContent, entity: AssemblyEntity): void {
     if (entity.isRollingStock()) return
     let hasErrorAnywhere = false
-    for (const i of $range(entity.getFirstStage(), assembly.numStages())) {
+    for (const i of $range(entity.firstStage, assembly.numStages())) {
       const hasError = entity.getWorldEntity(i) === nil
       if (hasError) {
         hasErrorAnywhere = true
@@ -280,13 +278,13 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
 
     for (const [i, stage] of assembly.iterateStages()) {
-      const shouldHaveIndicator = i >= entity.getFirstStage() && entity.getWorldEntity(i, "mainEntity") !== nil
+      const shouldHaveIndicator = i >= entity.firstStage && entity.getWorldEntity(i, "mainEntity") !== nil
       updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
 
   function updateAllConfigChangedHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    const firstStage = entity.getFirstStage()
+    const firstStage = entity.firstStage
     let lastStageWithHighlights = firstStage
     for (const [i, stage] of assembly.iterateStages()) {
       const hasConfigChanged = entity.hasStageDiff(i)

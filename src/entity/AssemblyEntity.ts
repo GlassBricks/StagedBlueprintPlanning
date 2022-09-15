@@ -49,15 +49,12 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly direction: defines.direction | nil
   getDirection(): defines.direction
   setDirection(direction: defines.direction): void
-
-  getName(): string
-
   setPositionUnchecked(position: Position): void
 
   isSettingsRemnant?: true
 
-  getFirstStage(): StageNumber
-  getFirstValue(): Readonly<T>
+  readonly firstStage: StageNumber
+  readonly firstValue: Readonly<T>
 
   // special entity treatment
   isRollingStock(): this is RollingStockAssemblyEntity
@@ -196,8 +193,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   public isSettingsRemnant: true | nil
 
-  private firstStage: StageNumber
-  private readonly firstValue: Mutable<T>
+  firstStage: StageNumber
+  readonly firstValue: Mutable<T>
   stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
   private oldStage: StageNumber | nil
 
@@ -225,17 +222,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   setPositionUnchecked(position: Position): void {
     this.position = position
-  }
-
-  getName(): string {
-    return this.firstValue.name
-  }
-
-  getFirstStage(): StageNumber {
-    return this.firstStage
-  }
-  getFirstValue(): T {
-    return this.firstValue
   }
 
   isRollingStock(): this is AssemblyEntityImpl<RollingStockEntity> {
@@ -712,14 +698,12 @@ export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
 
 // note: see also EntityHighlighter, updateErrorHighlight
 export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  return stageNumber >= entity.getFirstStage() && entity.getWorldEntity(stageNumber) === nil
+  return stageNumber >= entity.firstStage && entity.getWorldEntity(stageNumber) === nil
 }
 
 /** Used by custom input */
 export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  return (
-    entity.getFirstStage() === stageNumber || entity.hasStageDiff(stageNumber) || entityHasErrorAt(entity, stageNumber)
-  )
+  return entity.firstStage === stageNumber || entity.hasStageDiff(stageNumber) || entityHasErrorAt(entity, stageNumber)
 }
 
 /**

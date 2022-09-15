@@ -234,7 +234,7 @@ function assertStageDiffs(entity: AssemblyEntity, changes: StageDiffsInternal<Te
 
 function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): void {
   assert.not_nil(added)
-  assert.equal("test", added.getFirstValue().name)
+  assert.equal("test", added.firstValue.name)
   assert.same(pos, added.position)
   assert.equal(0, added.getDirection())
 
@@ -268,9 +268,9 @@ describe("add", () => {
     assemblyUpdater.onEntityCreated(assembly, newEntity, stage, playerIndex) // again
     // updates entity
     assert.equal(newEntity, added.getWorldEntity(1))
-    assert.same(1, added.getFirstStage())
+    assert.same(1, added.firstStage)
     // does not create stage diffs
-    assert.equal(2, added.getFirstValue().prop1)
+    assert.equal(2, added.firstValue.prop1)
     assert.false(added.hasStageDiff())
     // calls updateWorldEntities
     assertOneEntity()
@@ -292,7 +292,7 @@ describe("add", () => {
     })
     assert.not_equal(added, newAdded)
     assert.equal(newEntity, newAdded.getWorldEntity(1))
-    assert.equal(1, newAdded.getFirstStage())
+    assert.equal(1, newAdded.firstStage)
 
     assertNEntities(2)
     assertUpdateCalled(newAdded, 1, nil, false)
@@ -367,16 +367,16 @@ describe("revive", () => {
     assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, playerIndex)
     assert.equal(luaEntity, added.getWorldEntity(reviveStage))
     assert.falsy(added.isSettingsRemnant)
-    assert.equal(added.getFirstStage(), reviveStage)
+    assert.equal(added.firstStage, reviveStage)
 
     if (reviveStage >= 5) {
-      assert.equal(4, added.getFirstValue().prop1)
+      assert.equal(4, added.firstValue.prop1)
       assert.false(added.hasStageDiff())
     } else if (reviveStage >= 3) {
-      assert.equal(3, added.getFirstValue().prop1)
+      assert.equal(3, added.firstValue.prop1)
       assertStageDiffs(added, { 5: { prop1: 4 } })
     } else {
-      assert.equal(2, added.getFirstValue().prop1)
+      assert.equal(2, added.firstValue.prop1)
       assertStageDiffs(added, { 3: { prop1: 3 }, 5: { prop1: 4 } })
     }
 
@@ -393,9 +393,9 @@ describe("revive", () => {
 
     assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, playerIndex)
     assert.falsy(added.isSettingsRemnant)
-    assert.equal(added.getFirstStage(), 1)
+    assert.equal(added.firstStage, 1)
 
-    assert.equal(2, added.getFirstValue().prop1)
+    assert.equal(2, added.firstValue.prop1)
     assertStageDiffs(added, { 3: { prop1: 3 } })
 
     assertOneEntity()
@@ -435,7 +435,7 @@ describe("update", () => {
     luaEntity.prop1 = 3
     const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
     assert.nil(ret)
-    assert.equal(3, added.getFirstValue().prop1)
+    assert.equal(3, added.firstValue.prop1)
 
     assertOneEntity()
     assertUpdateCalled(added, 2, nil, false)
@@ -485,7 +485,7 @@ describe("update", () => {
       luaEntity.prop1 = 3 // changed
       const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, playerIndex)
       assert.nil(ret)
-      assert.equal(2, added.getFirstValue().prop1)
+      assert.equal(2, added.firstValue.prop1)
       if (withExistingChanges) {
         assertStageDiffs(added, { 2: { prop1: 3, prop2: "val2" } })
       } else {
@@ -606,7 +606,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_direction", () => nil)
     rawset(luaEntity, "cancel_upgrade", () => true)
     assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
-    assert.equal("test2", added.getFirstValue().name)
+    assert.equal("test2", added.firstValue.name)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
   })
@@ -637,7 +637,7 @@ describe("move to current stage", () => {
   test("normal entity", () => {
     const { luaEntity, added } = addAndReset(1, 3)
     assemblyUpdater.onMoveEntityToStage(assembly, luaEntity, stage, playerIndex)
-    assert.equal(3, added.getFirstStage())
+    assert.equal(3, added.firstStage)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
     assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
@@ -648,7 +648,7 @@ describe("move to current stage", () => {
     luaEntity.destroy()
     const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
     assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
-    assert.equal(3, added.getFirstStage())
+    assert.equal(3, added.firstStage)
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
     assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
@@ -661,7 +661,7 @@ describe("move to current stage", () => {
     const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
     added.isSettingsRemnant = true
     assemblyUpdater.onMoveEntityToStage(assembly, preview, stage, playerIndex)
-    assert.equal(3, added.getFirstStage())
+    assert.equal(3, added.firstStage)
     assertOneEntity()
     assertReviveSettingsRemnantCalled(added)
   })
@@ -700,7 +700,7 @@ describe("undergrounds", () => {
       type: "input",
     })
 
-    assert.equal("output", added2.getFirstValue().type)
+    assert.equal("output", added2.firstValue.type)
     assertNEntities(2)
     assertUpdateCalled(added2, 1, nil, false)
   })
@@ -731,7 +731,7 @@ describe("undergrounds", () => {
 
     assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, direction.west)
 
-    assert.equal("output", added.getFirstValue().type)
+    assert.equal("output", added.firstValue.type)
     assert.equal(direction.west, added.getDirection())
 
     assertOneEntity()
@@ -746,7 +746,7 @@ describe("undergrounds", () => {
 
     assemblyUpdater.onEntityRotated(assembly, luaEntity, stage, playerIndex, direction.west)
 
-    assert.equal("input", added.getFirstValue().type)
+    assert.equal("input", added.firstValue.type)
     assert.equal(direction.west, added.getDirection())
 
     assertOneEntity()
@@ -763,9 +763,9 @@ describe("undergrounds", () => {
 
     assemblyUpdater.onEntityRotated(assembly, toRotate, stage, playerIndex, direction.west)
 
-    assert.equal("output", added1.getFirstValue().type)
+    assert.equal("output", added1.firstValue.type)
     assert.equal(direction.west, added1.getDirection())
-    assert.equal("input", added2.getFirstValue().type)
+    assert.equal("input", added2.firstValue.type)
     assert.equal(direction.east, added2.getDirection())
 
     assertNEntities(2)
@@ -781,9 +781,9 @@ describe("undergrounds", () => {
 
     assemblyUpdater.onEntityRotated(assembly, entity1, stage, playerIndex, direction.west)
 
-    assert.equal("input", added1.getFirstValue().type)
+    assert.equal("input", added1.firstValue.type)
     assert.equal(direction.west, added1.getDirection())
-    assert.equal("output", added2.getFirstValue().type)
+    assert.equal("output", added2.firstValue.type)
     assert.equal(direction.east, added2.getDirection())
 
     assertNEntities(2)
@@ -807,11 +807,11 @@ describe("undergrounds", () => {
 
       assemblyUpdater.onEntityRotated(assembly, tryRotate, stage, playerIndex, direction.west)
 
-      assert.equal("input", added1.getFirstValue().type)
+      assert.equal("input", added1.firstValue.type)
       assert.equal(direction.west, added1.getDirection())
-      assert.equal("output", added2.getFirstValue().type)
+      assert.equal("output", added2.firstValue.type)
       assert.equal(direction.east, added2.getDirection())
-      assert.equal("input", added3.getFirstValue().type)
+      assert.equal("input", added3.firstValue.type)
       assert.equal(direction.west, added3.getDirection())
 
       assertNEntities(3)
@@ -841,8 +841,8 @@ describe("undergrounds", () => {
       })
       assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
 
-      assert.equal("fast-underground-belt", added.getFirstValue().name)
-      assert.equal("input", added.getFirstValue().type)
+      assert.equal("fast-underground-belt", added.firstValue.name)
+      assert.equal("input", added.firstValue.type)
       assert.equal(direction.west, added.getDirection())
       assertOneEntity()
       assertUpdateCalled(added, 1, nil, false)
@@ -857,7 +857,7 @@ describe("undergrounds", () => {
       assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage, playerIndex)
 
       assert.equal("fast-underground-belt", added.getValueAtStage(2)?.name)
-      assert.equal("input", added.getFirstValue().type)
+      assert.equal("input", added.firstValue.type)
 
       assertOneEntity()
       assertUpdateCalled(added, 2, nil, false)
@@ -874,11 +874,11 @@ describe("undergrounds", () => {
         })
         assemblyUpdater.onEntityMarkedForUpgrade(assembly, toUpgrade, stage, playerIndex)
 
-        assert.equal("fast-underground-belt", added1.getFirstValue().name)
-        assert.equal("input", added1.getFirstValue().type)
+        assert.equal("fast-underground-belt", added1.firstValue.name)
+        assert.equal("input", added1.firstValue.type)
         assert.equal(direction.west, added1.getDirection())
-        assert.equal("fast-underground-belt", added2.getFirstValue().name)
-        assert.equal("output", added2.getFirstValue().type)
+        assert.equal("fast-underground-belt", added2.firstValue.name)
+        assert.equal("output", added2.firstValue.type)
         assert.equal(direction.east, added2.getDirection())
 
         assertNEntities(2)
@@ -900,9 +900,9 @@ describe("undergrounds", () => {
         })
         assemblyUpdater.onEntityMarkedForUpgrade(assembly, tryUpgrade, stage, playerIndex)
 
-        assert.equal("underground-belt", added1.getFirstValue().name)
-        assert.equal("underground-belt", added2.getFirstValue().name)
-        assert.equal("underground-belt", added3.getFirstValue().name)
+        assert.equal("underground-belt", added1.firstValue.name)
+        assert.equal("underground-belt", added2.firstValue.name)
+        assert.equal("underground-belt", added3.firstValue.name)
 
         assertNEntities(3)
         assertNoCalls()
@@ -922,8 +922,8 @@ describe("undergrounds", () => {
 
       assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage, playerIndex)
 
-      assert.equal("underground-belt", added1.getFirstValue().name)
-      assert.equal("underground-belt", added2.getFirstValue().name)
+      assert.equal("underground-belt", added1.firstValue.name)
+      assert.equal("underground-belt", added2.firstValue.name)
 
       assertNEntities(2)
       assertNoCalls()
@@ -943,9 +943,9 @@ describe("undergrounds", () => {
 
       assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage, playerIndex)
 
-      assert.equal("underground-belt", added1.getFirstValue().name)
-      assert.equal("underground-belt", added2.getFirstValue().name)
-      assert.equal("fast-underground-belt", added3.getFirstValue().name)
+      assert.equal("underground-belt", added1.firstValue.name)
+      assert.equal("underground-belt", added2.firstValue.name)
+      assert.equal("fast-underground-belt", added3.firstValue.name)
 
       assertNEntities(3)
       assertNoCalls()
@@ -965,12 +965,12 @@ describe("undergrounds", () => {
     assert.not_nil(newEntity)
 
     assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage, playerIndex)
-    assert.equal("fast-underground-belt", added1.getFirstValue().name)
-    assert.equal("input", added1.getFirstValue().type)
+    assert.equal("fast-underground-belt", added1.firstValue.name)
+    assert.equal("input", added1.firstValue.type)
     assert.equal(direction.west, added1.getDirection())
 
-    assert.equal("fast-underground-belt", added2.getFirstValue().name)
-    assert.equal("output", added2.getFirstValue().type)
+    assert.equal("fast-underground-belt", added2.firstValue.name)
+    assert.equal("output", added2.firstValue.type)
     assert.equal(direction.east, added2.getDirection())
 
     assertNEntities(2)
@@ -984,8 +984,8 @@ describe("undergrounds", () => {
     added2.applyUpgradeAtStage(2, "fast-underground-belt")
 
     assemblyUpdater.onMoveEntityToStage(assembly, entity1, stage, playerIndex)
-    assert.equal(1, added1.getFirstStage())
-    assert.equal(1, added2.getFirstStage())
+    assert.equal(1, added1.firstStage)
+    assert.equal(1, added2.firstStage)
 
     assertNEntities(2)
     assertNoCalls()

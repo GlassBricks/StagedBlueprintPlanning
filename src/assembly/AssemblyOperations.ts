@@ -120,7 +120,7 @@ export function createAssemblyOperations(
       return false
     },
     resetTrain(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
-      const stage = entity.getFirstStage()
+      const stage = entity.firstStage
       const luaEntity = entity.getWorldEntity(stage)
       if (!luaEntity) {
         updateWorldEntities(assembly, entity, stage, stage, true)
@@ -142,7 +142,7 @@ export function createAssemblyOperations(
       }
     },
     setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
-      const stageNum = entity.getFirstStage()
+      const stageNum = entity.firstStage
       const luaEntity = entity.getWorldEntity(stageNum)
       if (!luaEntity) return
 

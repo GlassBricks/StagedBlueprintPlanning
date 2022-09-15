@@ -69,7 +69,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
 
     const isRollingStock = entity.isRollingStock()
 
-    const firstStageNum = entity.getFirstStage()
+    const firstStageNum = entity.firstStage
     const firstStage = assembly.getStage(firstStageNum)!
     const prevStageWithDiff = entity.prevStageWithDiff(currentStageNum)
     const nextStageWithDiff = entity.nextStageWithDiff(currentStageNum)
@@ -159,7 +159,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Spec {
     const diffEntries = Object.keys(stageDiff).sort() as Array<keyof BlueprintEntity>
-    const nextLowerStageNum = this.entity.prevStageWithDiff(this.stage.stageNumber) ?? this.entity.getFirstStage()
+    const nextLowerStageNum = this.entity.prevStageWithDiff(this.stage.stageNumber) ?? this.entity.firstStage
     const nextLowerStageName = this.stage.assembly.getStage(nextLowerStageNum)!.name.get()
     return (
       <>
