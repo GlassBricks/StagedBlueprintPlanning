@@ -24,13 +24,7 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { Entity } from "./Entity"
-import {
-  CategoryName,
-  getEntityCategory,
-  isRollingStockType,
-  isUndergroundBeltType,
-  rollingStockTypes,
-} from "./entity-info"
+import { isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import { RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import {
   _applyDiffToDiffUnchecked,
@@ -51,11 +45,12 @@ export type StageNumber = number
  * All the data about one entity in an assembly, across all stages.
  */
 export interface AssemblyEntity<out T extends Entity = Entity> {
-  readonly categoryName: CategoryName
   readonly position: Position
   readonly direction: defines.direction | nil
   getDirection(): defines.direction
   setDirection(direction: defines.direction): void
+
+  getName(): string
 
   setPositionUnchecked(position: Position): void
 
@@ -196,7 +191,6 @@ type MutableStageDiff<T extends Entity> = Partial<Mutable<StageDiff<T>>>
 
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
-  public readonly categoryName: CategoryName
   public position: Position
   public direction: defines.direction | nil
 
@@ -212,7 +206,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   } = {}
 
   constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
-    this.categoryName = getEntityCategory(firstValue.name)
     this.position = position
     this.direction = direction === 0 ? nil : direction
     this.firstValue = shallowCopy(firstValue)
@@ -232,6 +225,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   setPositionUnchecked(position: Position): void {
     this.position = position
+  }
+
+  getName(): string {
+    return this.firstValue.name
   }
 
   getFirstStage(): StageNumber {
@@ -737,4 +734,12 @@ export function _migrate031(entity: AssemblyEntity): void {
   const e = entity as AssemblyEntityImpl
   const stageDiffs = e.stageDiffs
   if (stageDiffs && isEmpty(stageDiffs)) delete e.stageDiffs
+}
+
+export function _migrate060(entity: AssemblyEntity): void {
+  interface OldAssemblyEntity {
+    categoryName?: string
+  }
+  const e = entity as OldAssemblyEntity
+  delete e.categoryName
 }

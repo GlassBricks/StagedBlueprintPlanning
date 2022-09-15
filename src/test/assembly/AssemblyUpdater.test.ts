@@ -23,7 +23,7 @@ import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
 import { AssemblyEntity, StageDiffsInternal, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { _overrideEntityCategory } from "../../entity/entity-info"
+import { _makeTestEntityCategory } from "../../entity/entity-info"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import { ContextualFun, Mutable } from "../../lib"
 import { Pos } from "../../lib/geometry"
@@ -535,8 +535,7 @@ describe("rotate", () => {
 })
 
 before_all(() => {
-  _overrideEntityCategory("test", "test")
-  _overrideEntityCategory("test2", "test")
+  _makeTestEntityCategory("test", "test2")
 })
 
 describe("fast replace", () => {

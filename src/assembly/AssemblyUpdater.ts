@@ -17,7 +17,7 @@ import {
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { getEntityCategory, isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
+import { isRollingStockType, isUpgradeableEntity, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
 import { Position } from "../lib/geometry"
@@ -404,13 +404,8 @@ export function createAssemblyUpdater(
   }
 
   function checkUpgradeType(existing: AssemblyEntity, upgradeType: string): void {
-    if (getEntityCategory(upgradeType) !== existing.categoryName) {
-      error(
-        ` incompatible upgrade type to ${upgradeType}: category ${getEntityCategory(upgradeType)}, existing category: ${
-          existing.categoryName
-        }`,
-      )
-    }
+    if (!isUpgradeableEntity(existing.getName(), upgradeType))
+      error(` incompatible upgrade from ${existing.getName()} to ${upgradeType}`)
   }
 
   function onEntityMarkedForUpgrade(

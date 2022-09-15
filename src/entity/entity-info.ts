@@ -13,37 +13,51 @@ import { merge } from "util"
 import { Events, PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
 
-// <type>|<fast_replaceable_group>|<lx>|<ly>|<rx>|<ry> or <none>|<entity_name>
-export type CategoryName = `${string}|${string}|${number}|${number}|${number}|${number}` | `<${string}>|${string}`
-
-export const enum PasteRotatableType {
-  Rectangular,
-  Square,
-}
-
 const typeRemap: PRecord<string, string> = {
   "logistic-container": "container",
   "rail-chain-signal": "rail-signal",
 }
 
-function computeCategoryName(prototype: LuaEntityPrototype | nil): CategoryName {
-  if (!prototype) return `<unknown>|${prototype}`
-  const { fast_replaceable_group, type, collision_box } = prototype
-  if (fast_replaceable_group === nil) return `<none>|${prototype.name}`
+const categoryByEntityName = new LuaMap<string, LuaSet<string>>()
+const categoryByCategoryName = new LuaMap<string, LuaSet<string>>()
+function processCategory(prototype: LuaEntityPrototype) {
+  const { fast_replaceable_group, type, collision_box, name } = prototype
+  if (fast_replaceable_group === nil) return
   const actualType = typeRemap[type] ?? type
   const { x: lx, y: ly } = collision_box.left_top
   const { x: rx, y: ry } = collision_box.right_bottom
-  return [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|") as CategoryName
+  const categoryName = [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|")
+
+  let category = categoryByCategoryName.get(categoryName)
+  if (category) {
+    category.add(name)
+  } else {
+    categoryByCategoryName.set(categoryName, (category = newLuaSet(name)))
+  }
+  categoryByEntityName.set(name, category)
 }
 
+export const enum PasteRotatableType {
+  Rectangular,
+  Square,
+}
 const pasteRotatableTypes = newLuaSet("assembling-machine", "boiler")
-
-const categoryNames = new LuaMap<string, CategoryName>()
-const selectionBoxes = new LuaMap<string, BBoxClass>()
 const pasteRotationTypes = new LuaMap<string, PasteRotatableType>()
-const rollingStockNames = new LuaSet<string>()
-const undergroundBeltNames = new LuaSet<string>()
-const checkExactlyNames = new LuaSet<string>()
+
+function processPasteRotatableType(prototype: LuaEntityPrototype) {
+  const type = prototype.type
+  if (!pasteRotatableTypes.has(type)) return
+  const collisionBox = prototype.collision_box
+  if (BBox.isCenteredSquare(collisionBox)) {
+    pasteRotationTypes.set(prototype.name, PasteRotatableType.Square)
+  } else if (BBox.isCenteredRectangle(collisionBox)) {
+    pasteRotationTypes.set(prototype.name, PasteRotatableType.Rectangular)
+  }
+  // else, none
+}
+
+const selectionBoxes = new LuaMap<string, BBoxClass>()
+
 const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
   "artillery-wagon",
   "cargo-wagon",
@@ -52,22 +66,15 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
 )
 const checkExactlyForMatchTypes = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
+const undergroundBeltNames = new LuaSet<string>()
+const rollingStockNames = new LuaSet<string>()
+const checkExactlyNames = new LuaSet<string>()
+
 function processPrototype(name: string, prototype: LuaEntityPrototype): void {
+  processCategory(prototype)
+  processPasteRotatableType(prototype)
+  selectionBoxes.set(name, BBox.from(prototype.selection_box))
   const type = prototype.type
-  const categoryName = computeCategoryName(prototype)
-  const selectionBox = BBox.from(prototype.selection_box)
-  let pasteRotatableType: PasteRotatableType | nil
-  if (pasteRotatableTypes.has(type)) {
-    const collisionBox = prototype.collision_box
-    if (BBox.isCenteredSquare(collisionBox)) {
-      pasteRotatableType = PasteRotatableType.Square
-    } else if (BBox.isCenteredRectangle(collisionBox)) {
-      pasteRotatableType = PasteRotatableType.Rectangular
-    }
-  }
-  categoryNames.set(name, categoryName)
-  selectionBoxes.set(name, selectionBox)
-  if (pasteRotatableType) pasteRotationTypes.set(name, pasteRotatableType)
   if (type === "underground-belt") undergroundBeltNames.add(name)
   if (rollingStockTypes.has(type)) rollingStockNames.add(name)
   if (checkExactlyForMatchTypes.has(type)) checkExactlyNames.add(name)
@@ -86,10 +93,17 @@ function processPrototypes() {
 Events.on_configuration_changed(processPrototypes)
 Events.on_init(processPrototypes)
 
-export function getEntityCategory(entityName: string): CategoryName {
+export function getEntityCategory(entityName: string): LuaSet<string> | nil {
   if (!prototypesProcessed) processPrototypes()
-  return categoryNames.get(entityName) ?? `<unknown>|${entityName}`
+  return categoryByEntityName.get(entityName)
 }
+
+export function isUpgradeableEntity(a: string, b: string): boolean {
+  if (!prototypesProcessed) processPrototypes()
+  const category = categoryByEntityName.get(a)
+  return category !== nil && category.has(b)
+}
+
 export function getSelectionBox(entityName: string): BBoxClass {
   if (!prototypesProcessed) processPrototypes()
   return selectionBoxes.get(entityName) ?? BBox.empty()
@@ -112,6 +126,10 @@ export function isRollingStockType(entityName: string): boolean {
 }
 export { rollingStockTypes }
 
-export function _overrideEntityCategory(entityName: string, categoryName: string): void {
-  categoryNames.set(entityName, categoryName as CategoryName)
+export function _makeTestEntityCategory(...names: string[]): void {
+  const category = newLuaSet<string>()
+  for (const name of names) {
+    category.add(name)
+    categoryByEntityName.set(name, category)
+  }
 }

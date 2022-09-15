@@ -49,7 +49,7 @@ export function RegisterClass(name: string): (this: unknown, _class: Class<any>)
 }
 
 export function assertIsRegisteredClass(item: Class<any>): void {
-  if (!registeredClasses.has(item as Class<any>)) {
+  if (!registeredClasses.has(item)) {
     error(`Class ${item.name} is not registered: ` + serpent.block(item))
   }
 }

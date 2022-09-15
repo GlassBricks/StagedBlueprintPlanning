@@ -82,20 +82,14 @@ class EntityMapImpl implements MutableEntityMap {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
-    const categoryName = getEntityCategory(entityName)
     if (direction === 0) direction = nil
-    for (const candidate of atPos) {
-      if (candidate.categoryName === categoryName && candidate.direction === direction) return candidate
-    }
+    return matchDirectional(atPos, entityName, direction)
   }
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
-    const categoryName = getEntityCategory(entityName)
-    for (const candidate of atPos) {
-      if (candidate.categoryName === categoryName) return candidate
-    }
+    return matchAnyDirection(atPos, entityName)
   }
   findCompatible(
     entity: BasicEntityInfo | LuaEntity,
@@ -130,13 +124,8 @@ class EntityMapImpl implements MutableEntityMap {
     }
   }
 
-  findExactAtPosition(
-    entity: LuaEntity,
-    expectedStage: StageNumber,
-    oldPosition: Position | nil,
-  ): AssemblyEntity | nil {
-    const position = oldPosition ?? entity.position
-    const atPos = this.byPosition.get(position.x, position.y)
+  findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {
+    const atPos = this.byPosition.get(oldPosition.x, oldPosition.y)
     if (!atPos) return
     for (const candidate of atPos) {
       if (candidate.getWorldEntity(expectedStage) === entity) return candidate
@@ -346,6 +335,31 @@ class EntityMapImpl implements MutableEntityMap {
   deleteStage(stageNumber: StageNumber): void {
     for (const entity of this.entities) {
       entity.deleteStage(stageNumber)
+    }
+  }
+}
+
+function matchDirectional(entities: ReadonlyLuaSet<AssemblyEntity>, name: string, direction: defines.direction | nil) {
+  const category = getEntityCategory(name)
+  if (!category) {
+    for (const entity of entities) {
+      if (entity.getFirstValue().name === name && entity.direction === direction) return entity
+    }
+  } else {
+    for (const entity of entities) {
+      if (category.has(entity.getFirstValue().name) && entity.direction === direction) return entity
+    }
+  }
+}
+function matchAnyDirection(entities: ReadonlyLuaSet<AssemblyEntity>, name: string) {
+  const category = getEntityCategory(name)
+  if (!category) {
+    for (const entity of entities) {
+      if (entity.getFirstValue().name === name) return entity
+    }
+  } else {
+    for (const entity of entities) {
+      if (category.has(entity.getFirstValue().name)) return entity
     }
   }
 }
