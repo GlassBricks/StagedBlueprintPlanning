@@ -142,7 +142,7 @@ export function createWorldUpdater(
     if (startStage > endStage) return
 
     doUpdateWorldEntities(assembly, entity, startStage, endStage, replace)
-    updatePreviewEntities(assembly, entity) // todo: only update if needed
+    updatePreviewEntities(assembly, entity) // todo: only update where needed?
     updateHighlights(assembly, entity, startStage, endStage)
   }
 
