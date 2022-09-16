@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.0
-Date: ????
+Date: 2022-09-16
   Features:
     - Generating chunks on one stage generates chunks on other stages.
   Changes:
