@@ -340,7 +340,7 @@ describe("robot actions", () => {
 describe("Cleanup tool", () => {
   test("revive error entity", () => {
     const entity = surface.create_entity({
-      name: Prototypes.SelectionProxyPrefix + "iron-chest",
+      name: Prototypes.PreviewEntityPrefix + "iron-chest",
       position: pos,
       force: "player",
     })!
@@ -358,7 +358,7 @@ describe("Cleanup tool", () => {
   })
   test("delete settings remnant", () => {
     const entity = surface.create_entity({
-      name: Prototypes.SelectionProxyPrefix + "iron-chest",
+      name: Prototypes.PreviewEntityPrefix + "iron-chest",
       position: pos,
       force: "player",
     })!

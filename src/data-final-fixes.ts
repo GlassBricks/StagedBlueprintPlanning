@@ -97,7 +97,6 @@ function isBuildablePrototype(prototype: EntityPrototype): boolean {
 
 const railPrototypes = newLuaSet("straight-rail", "curved-rail")
 const previews: EntityPrototype[] = []
-const selectionProxies: EntityPrototype[] = []
 const types = keys<Record<BuildableEntityType, true>>()
 for (const type of types.sort()) {
   const prototypes = data.raw[type]
@@ -161,34 +160,8 @@ for (const type of types.sort()) {
         create_ghost_on_death: false,
       }
       previews.push(preview)
-
-      const selectionProxy: SimpleEntityWithOwnerPrototype = {
-        name: Prototypes.SelectionProxyPrefix + name,
-        type: "simple-entity-with-owner",
-        localised_name: [L_Bp100.SelectionProxy, ["entity-name." + name]],
-
-        // copied from prototype
-        icons: prototype.icons,
-        icon_size: prototype.icon_size,
-        icon_mipmaps: prototype.icon_mipmaps,
-        icon: prototype.icon,
-
-        selection_box: selectionBox,
-        collision_box: prototype.collision_box,
-        tile_height: prototype.tile_height,
-        tile_width: prototype.tile_width,
-
-        collision_mask: ["not-colliding-with-itself"],
-
-        picture: emptySprite,
-        flags,
-        selectable_in_game: false,
-        subgroup: Prototypes.SelectionProxySubgroup,
-      }
-      selectionProxies.push(selectionProxy)
     } else {
       previews.push(createRailPreview(prototype, placeableBy, flags))
-      selectionProxies.push(createRailSelectionProxy(prototype, flags))
     }
   }
 }
@@ -311,78 +284,11 @@ function createRailPreview(
 
   return result
 }
-function createRailSelectionProxy(
-  prototype: EntityPrototype,
-  flags: (keyof EntityPrototypeFlags)[],
-): RailRemnantsPrototype {
-  const name = Prototypes.SelectionProxyPrefix + prototype.name
-  const isCurved = prototype.type === "curved-rail"
-  if (!flags.includes("building-direction-8-way")) {
-    flags.push("building-direction-8-way")
-  }
-  if (!flags.includes("placeable-off-grid")) {
-    flags.push("placeable-off-grid")
-  }
-
-  const emptyRailPieceLayers: RailPieceLayers = spriteToRailPieceLayers(emptySprite)
-
-  const result: RailRemnantsPrototype = {
-    name,
-    type: "rail-remnants",
-    localised_name: [L_Bp100.SelectionProxy, ["entity-name." + prototype.name]],
-    bending_type: isCurved ? "turn" : "straight",
-
-    // copied from prototype
-    icons: prototype.icons,
-    icon_size: prototype.icon_size,
-    icon_mipmaps: prototype.icon_mipmaps,
-    icon: prototype.icon,
-
-    tile_height: prototype.tile_height,
-    tile_width: prototype.tile_width,
-
-    collision_mask: ["not-colliding-with-itself"],
-    collision_box: prototype.collision_box,
-    secondary_collision_box: isCurved
-      ? [
-          [-0.65, -2.43],
-          [0.65, 2.43],
-        ]
-      : nil,
-
-    flags,
-    selectable_in_game: false,
-    subgroup: Prototypes.SelectionProxySubgroup,
-
-    // time_before_removed: 2147483647,
-    remove_on_tile_placement: false,
-    remove_on_entity_placement: false,
-
-    pictures: {
-      straight_rail_horizontal: emptyRailPieceLayers,
-      straight_rail_vertical: emptyRailPieceLayers,
-      straight_rail_diagonal_left_top: emptyRailPieceLayers,
-      straight_rail_diagonal_right_top: emptyRailPieceLayers,
-      straight_rail_diagonal_right_bottom: emptyRailPieceLayers,
-      straight_rail_diagonal_left_bottom: emptyRailPieceLayers,
-      curved_rail_vertical_left_top: emptyRailPieceLayers,
-      curved_rail_vertical_right_top: emptyRailPieceLayers,
-      curved_rail_vertical_right_bottom: emptyRailPieceLayers,
-      curved_rail_vertical_left_bottom: emptyRailPieceLayers,
-      curved_rail_horizontal_left_top: emptyRailPieceLayers,
-      curved_rail_horizontal_right_top: emptyRailPieceLayers,
-      curved_rail_horizontal_right_bottom: emptyRailPieceLayers,
-      curved_rail_horizontal_left_bottom: emptyRailPieceLayers,
-      rail_endings: { sheet: emptySprite },
-    },
-  }
-  return result
-}
 
 data.extend(previews)
-data.extend(selectionProxies)
-
-const selectionProxyNames = selectionProxies.map((proxy) => proxy.name)
 
 const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.CleanupTool]
-cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = selectionProxyNames
+cleanupTool.entity_filters =
+  cleanupTool.alt_entity_filters =
+  cleanupTool.reverse_entity_filters =
+    previews.map((proxy) => proxy.name)

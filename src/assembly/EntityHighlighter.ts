@@ -10,14 +10,13 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { Prototypes } from "../constants"
 import { AssemblyEntity, entityHasErrorAt, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
-import { makePreviewIndestructible } from "../entity/special-entities"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { getPreviewStages } from "./special-entity-treatment"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {
@@ -36,9 +35,8 @@ export interface HighlightEntities {
 }
 declare module "../entity/AssemblyEntity" {
   // noinspection JSUnusedGlobalSymbols
-  export interface ExtraEntities extends HighlightEntities {
-    selectionProxy?: LuaEntity
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  export interface ExtraEntities extends HighlightEntities {}
 }
 
 /**
@@ -68,13 +66,6 @@ export interface HighlightCreator {
   createHighlightBox(target: LuaEntity | nil, type: CursorBoxRenderType): LuaEntity | nil
 
   createSprite(params: DrawParams["sprite"]): SpriteRender
-
-  createSelectionProxy(
-    surface: LuaSurface,
-    type: string,
-    position: Position,
-    direction: defines.direction | nil,
-  ): LuaEntity | nil
 }
 
 interface HighlightConfig {
@@ -133,7 +124,7 @@ const highlightConfigs: {
 }
 
 export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
-  const { createHighlightBox, createSprite, createSelectionProxy } = entityCreator
+  const { createHighlightBox, createSprite } = entityCreator
 
   function createHighlight<T extends keyof HighlightEntities>(
     entity: AssemblyEntity,
@@ -190,47 +181,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     return nil
   }
 
-  function setSelectionProxy(entity: AssemblyEntity, stage: StagePosition): LuaEntity | nil {
-    const { surface, stageNumber } = stage
-    const result = createSelectionProxy(
-      surface,
-      entity.getNameAtStage(stageNumber),
-      entity.position,
-      entity.getApparentDirection(),
-    )
-    entity.replaceExtraEntity("selectionProxy", stageNumber, result)
-    game.print(result?.name)
-    return result
-  }
-
-  function getOrCreateSelectionProxy(entity: AssemblyEntity, stage: StagePosition): LuaEntity | nil {
-    const existing = entity.getExtraEntity("selectionProxy", stage.stageNumber)
-    const expectedName = Prototypes.SelectionProxyPrefix + entity.getNameAtStage(stage.stageNumber)
-    if (existing && existing.name === expectedName) return existing
-    return setSelectionProxy(entity, stage)
-  }
-
-  function updateSelectionProxy(entity: AssemblyEntity, stage: StagePosition, shouldHave: boolean): void {
-    if (shouldHave) {
-      getOrCreateSelectionProxy(entity, stage)
-    } else {
-      entity.destroyExtraEntity("selectionProxy", stage.stageNumber)
-    }
-  }
-
   function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    const firstStage = entity.firstStage
-    if (!entity.isRollingStock()) {
-      for (const [i, stage] of assembly.iterateStages()) {
-        const hasError = entityHasErrorAt(entity, i)
-        updateSelectionProxy(entity, stage, hasError)
-        updateHighlight(entity, stage, "errorOutline", hasError)
-      }
-    } else {
-      const stage = assembly.getStage(firstStage)
-      if (!stage) return
-      const hasError = entityHasErrorAt(entity, firstStage)
-      updateSelectionProxy(entity, stage, hasError)
+    for (const [i, stage] of assembly.iterateStages(...getPreviewStages(entity))) {
+      const hasError = entityHasErrorAt(entity, i)
       updateHighlight(entity, stage, "errorOutline", hasError)
     }
   }
@@ -307,7 +260,6 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     if (!entity.isSettingsRemnant) return
     for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
     for (const [, stage] of assembly.iterateStages()) {
-      getOrCreateSelectionProxy(entity, stage)
       updateHighlight(entity, stage, "settingsRemnantHighlight", true)
     }
   }
@@ -317,19 +269,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     updateHighlights(assembly, entity)
   }
 
-  function deleteEntity(entity: AssemblyEntity): void {
-    for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
-    entity.destroyAllExtraEntities("selectionProxy")
-  }
-  function deleteStage(entity: AssemblyEntity, stage: StageNumber) {
-    for (const type of keys<HighlightEntities>()) entity.destroyExtraEntity(type, stage)
-    entity.destroyExtraEntity("selectionProxy", stage)
-  }
-
   return {
     updateHighlights,
-    deleteHighlights: deleteEntity,
-    deleteHighlightsInStage: deleteStage,
+    deleteHighlights(entity: AssemblyEntity): void {
+      for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
+    },
+    deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber) {
+      for (const type of keys<HighlightEntities>()) entity.destroyExtraEntity(type, stage)
+    },
     makeSettingsRemnant,
     reviveSettingsRemnant,
   }
@@ -341,31 +288,13 @@ export const DefaultHighlightCreator: HighlightCreator = {
     return target.surface.create_entity({
       name: "highlight-box",
       position: target.position,
-      target,
+      source: target,
       box_type: type,
       force: target.force,
     })
   },
   createSprite(params: DrawParams["sprite"]): SpriteRender {
     return draw("sprite", params)
-  },
-  createSelectionProxy(
-    surface: LuaSurface,
-    type: string,
-    position: Position,
-    direction: defines.direction | nil,
-  ): LuaEntity | nil {
-    const result = surface.create_entity({
-      name: Prototypes.SelectionProxyPrefix + type,
-      position: {
-        x: position.x + 1 / 256,
-        y: position.y,
-      },
-      direction,
-      force: "player",
-    })
-    makePreviewIndestructible(result)
-    return result
   },
 }
 

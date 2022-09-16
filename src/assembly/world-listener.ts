@@ -672,7 +672,7 @@ Events.on_chunk_generated((e) => {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const entities = e.surface.find_entities_filtered({
-    type: "simple-entity-with-owner",
+    type: ["simple-entity-with-owner", "rail-remnants"],
     area: e.area,
   })
   for (const entity of entities) {

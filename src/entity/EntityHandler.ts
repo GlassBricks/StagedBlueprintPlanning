@@ -238,7 +238,7 @@ Migrations.to("0.6.0", () => {
       type: "rail-remnants",
     },
   ])) {
-    if (name.startsWith(Prototypes.PreviewEntityPrefix) || name.startsWith(Prototypes.SelectionProxyPrefix)) {
+    if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
       railPreviews.push(name)
     }
   }

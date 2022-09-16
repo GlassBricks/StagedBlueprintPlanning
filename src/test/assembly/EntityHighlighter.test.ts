@@ -43,13 +43,6 @@ before_each(() => {
         highlight_box_type: type,
       }),
     createSprite: (params) => simpleMock(params as any),
-    createSelectionProxy(surface, type, position, direction): LuaEntity | nil {
-      return entityMock({
-        name: "test-proxy",
-        position,
-        direction,
-      })
-    },
   }
   highlightCreator = createHighlightCreator(entityCreator)
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
@@ -87,7 +80,6 @@ describe("error highlights and selection proxy", () => {
     removeInLayer(2)
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
     assert.not_nil(entity.getExtraEntity("errorOutline", 2)!, "has error highlight")
-    assert.not_nil(entity.getExtraEntity("selectionProxy", 2)!, "has selection proxy")
   })
 
   test("deletes highlight when entity revived", () => {
@@ -96,7 +88,6 @@ describe("error highlights and selection proxy", () => {
     addInLayer(2)
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
     assert.nil(entity.getExtraEntity("errorOutline", 2))
-    assert.nil(entity.getExtraEntity("selectionProxy", 2))
   })
 
   test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other stages, %s", (stages) => {
@@ -239,7 +230,6 @@ describe("settings remnants", () => {
     highlightCreator.makeSettingsRemnant(assembly, entity)
     for (let i = 1; i <= 5; i++) {
       assert.not_nil(entity.getExtraEntity("settingsRemnantHighlight", i))
-      assert.not_nil(entity.getExtraEntity("selectionProxy", i))
     }
   })
   test("reviveSettingsRemnant removes highlights and sets entities correct", () => {
@@ -249,7 +239,6 @@ describe("settings remnants", () => {
     highlightCreator.reviveSettingsRemnant(assembly, entity)
     for (let i = 1; i <= 5; i++) {
       assert.nil(entity.getExtraEntity("settingsRemnantHighlight", i))
-      assert.nil(entity.getExtraEntity("selectionProxy", i))
     }
   })
 })
@@ -263,6 +252,5 @@ test("deleteErrorHighlights deletes all highlights", () => {
     for (const type of keys<HighlightEntities>()) {
       assert.nil(entity.getExtraEntity(type, i), `stage ${i}`)
     }
-    assert.nil(entity.getExtraEntity("selectionProxy", i), `stage ${i}`)
   }
 })

@@ -23,8 +23,8 @@ import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { findUndergroundPair } from "./assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { findUndergroundPair } from "./special-entity-treatment"
 import { DefaultWireHandler, WireSaver } from "./WireHandler"
 import { AssemblyMoveEntityResult, DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
 import min = math.min
@@ -590,32 +590,36 @@ export function createAssemblyUpdater(
     }
   }
 
-  function getEntityFromProxyEntity(
-    proxyEntity: LuaEntity,
+  function getEntityIfIsSelectablePreview(
+    entity: LuaEntity,
     stage: StagePosition,
     assembly: AssemblyContent,
   ): AssemblyEntity | nil {
-    const proxyName = proxyEntity.name
-    if (!proxyName.startsWith(Prototypes.SelectionProxyPrefix)) return nil
-    const actualName = proxyName.substring(Prototypes.SelectionProxyPrefix.length)
+    const entityName = entity.name
+    if (!entityName.startsWith(Prototypes.PreviewEntityPrefix)) return nil
+    const actualName = entityName.substring(Prototypes.PreviewEntityPrefix.length)
 
+    let result: AssemblyEntity | nil
     if (isRollingStockType(actualName)) {
-      return assembly.content.findCompatibleAnyDirection(actualName, proxyEntity.position)
+      result = assembly.content.findCompatibleAnyDirection(actualName, entity.position)
+    } else {
+      result = assembly.content.findCompatibleBasic(actualName, entity.position, entity.direction)
     }
-
-    return assembly.content.findCompatibleBasic(actualName, proxyEntity.position, proxyEntity.direction)
+    if (!result) return nil
+    if (stage.stageNumber >= result.firstStage || result.isSettingsRemnant) return result
   }
 
   function onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void {
     tryFixEntity(assembly, proxyEntity, stage, true)
   }
+
   function tryFixEntity(
     assembly: AssemblyContent,
     proxyEntity: LuaEntity,
     stage: StagePosition,
     deleteSettingsRemnants: boolean,
   ) {
-    const existing = getEntityFromProxyEntity(proxyEntity, stage, assembly)
+    const existing = getEntityIfIsSelectablePreview(proxyEntity, stage, assembly)
     if (!existing) return
     if (!existing.isSettingsRemnant) {
       // this is an error entity, try revive
@@ -629,7 +633,7 @@ export function createAssemblyUpdater(
   }
 
   function onEntityForceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void {
-    const existing = getEntityFromProxyEntity(proxyEntity, stage, assembly)
+    const existing = getEntityIfIsSelectablePreview(proxyEntity, stage, assembly)
     if (!existing) return
     assembly.content.delete(existing)
     deleteAllEntities(existing)

@@ -172,11 +172,10 @@ const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
       if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
     }
     for (const entity of stage.surface.find_entities_filtered({
-      type: "simple-entity-with-owner",
+      type: ["simple-entity-with-owner", "rail-remnants"], // todo: get actual list of preview entities
     })) {
       const name = entity.name
-      if (name.startsWith(Prototypes.PreviewEntityPrefix) || name.startsWith(Prototypes.SelectionProxyPrefix))
-        entity.destroy()
+      if (name.startsWith(Prototypes.PreviewEntityPrefix)) entity.destroy()
     }
   },
 }

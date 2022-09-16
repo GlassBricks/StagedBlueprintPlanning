@@ -197,6 +197,15 @@ describe("updateWorldEntities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, 3)
   })
+
+  test("entity preview not created if is rolling stock", () => {
+    entity.applyUpgradeAtStage(1, "cargo-wagon")
+    entity.moveToStage(2)
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    assertNothingPresent(1)
+    assertEntityCorrect(2)
+    assertNothingPresent(3)
+  })
 })
 
 describe("tryMoveEntity", () => {
@@ -319,8 +328,6 @@ describe("tryMoveEntity", () => {
       assertMoved()
     })
   })
-
-  // other cases handled by entity-move.test.ts
 })
 
 test("force delete", () => {

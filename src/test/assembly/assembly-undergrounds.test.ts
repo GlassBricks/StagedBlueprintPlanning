@@ -10,8 +10,8 @@
  */
 
 import { oppositedirection } from "util"
-import { findUndergroundPair, unit } from "../../assembly/assembly-undergrounds"
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
+import { findUndergroundPair, unit } from "../../assembly/special-entity-treatment"
 import { createAssemblyEntity, SavedDirection, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import direction = defines.direction

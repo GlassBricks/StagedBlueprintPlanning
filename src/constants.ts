@@ -38,7 +38,6 @@ export const enum Prototypes {
   GridEnforcer = "bp100:blueprint-grid-enforcer",
 
   PreviewEntityPrefix = "bp100:preview-entity-",
-  SelectionProxyPrefix = "bp100:selection-proxy-",
 
   UtilityGroup = "bp100:utility",
   PreviewEntitySubgroup = "bp100:preview-entity",

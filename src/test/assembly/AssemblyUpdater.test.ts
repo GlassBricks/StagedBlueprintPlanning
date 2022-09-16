@@ -10,7 +10,6 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { findUndergroundPair } from "../../assembly/assembly-undergrounds"
 import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
 import {
   AssemblyUpdater,
@@ -18,6 +17,7 @@ import {
   DefaultAssemblyUpdater,
   WorldNotifier,
 } from "../../assembly/AssemblyUpdater"
+import { findUndergroundPair } from "../../assembly/special-entity-treatment"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
@@ -1030,14 +1030,14 @@ describe("rolling stock", () => {
 })
 
 describe("cleanup tool", () => {
-  function setupWithProxy() {
+  function setupWithSelectablePreview() {
     const { luaEntity, added } = addAndReset()
     luaEntity.destroy()
-    const proxy = createEntity({ name: Prototypes.SelectionProxyPrefix + "test" })
-    return { added, proxy }
+    const preview = createEntity({ name: Prototypes.PreviewEntityPrefix + "test" })
+    return { added, proxy: preview }
   }
   test("revive error entity", () => {
-    const { added, proxy } = setupWithProxy()
+    const { added, proxy } = setupWithSelectablePreview()
     assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage)
     assert.nil(added.getWorldEntity(1))
     assertOneEntity()
@@ -1045,7 +1045,7 @@ describe("cleanup tool", () => {
   })
 
   test("clear settings remnant", () => {
-    const { added, proxy } = setupWithProxy()
+    const { added, proxy } = setupWithSelectablePreview()
     added.isSettingsRemnant = true
     assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage)
     assert.nil(added.getWorldEntity(1))
@@ -1054,7 +1054,7 @@ describe("cleanup tool", () => {
   })
 
   test("onEntityForceDeleted", () => {
-    const { added, proxy } = setupWithProxy()
+    const { added, proxy } = setupWithSelectablePreview()
     assemblyUpdater.onEntityForceDeleted(assembly, proxy, stage)
     assert.nil(added.getWorldEntity(1))
     assertNoEntities()
