@@ -14,11 +14,12 @@ import { AsmCircuitConnection, circuitConnectionEquals } from "../entity/AsmCirc
 import { _migrate060, AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory, getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "../entity/entity-info"
-import { isEmpty, migrateMap2d060, MutableMap2D, newMap2D, RegisterClass } from "../lib"
+import { isEmpty, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { getRegisteredAssemblyEntity } from "./entity-registration"
 import { getAllAssemblies } from "./global"
+import { migrateMap2d060, MutableMap2D, newMap2D } from "./map2d"
 
 export interface EntityMap {
   findCompatibleBasic(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil

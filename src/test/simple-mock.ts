@@ -77,6 +77,7 @@ export interface BuiltinEntityKeys {
   circuit_connection_definitions: true
   disconnect_neighbour: true
   unit_number: true
+  force: true
 }
 
 export function isMock(obj: LuaObjectLike): boolean {

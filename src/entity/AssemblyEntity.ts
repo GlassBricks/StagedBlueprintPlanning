@@ -24,8 +24,8 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { Entity } from "./Entity"
-import { isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
-import { RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
+import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
+import { orientationToDirection, RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import {
   _applyDiffToDiffUnchecked,
   applyDiffToEntity,
@@ -49,6 +49,12 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly direction: defines.direction | nil
   getDirection(): defines.direction
   setDirection(direction: defines.direction): void
+
+  /**
+   * If is rolling stock, direction is based off of orientation instead.
+   */
+  getApparentDirection(): defines.direction
+
   setPositionUnchecked(position: Position): void
 
   isSettingsRemnant?: true
@@ -136,23 +142,25 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
    */
   getOldStage(): StageNumber | nil
 
-  /** Returns nil if world entity does not exist or is invalid */
-  getWorldEntity(stage: StageNumber): WorldEntities["mainEntity"] | nil
-  getWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): WorldEntities[T] | nil
-  /** Destroys the old world entity, if exists. If `entity` is not nil, sets the new world entity. */
-  replaceWorldEntity(stage: StageNumber, entity: WorldEntities["mainEntity"] | nil): void
-  replaceWorldEntity<T extends WorldEntityType>(stage: StageNumber, entity: WorldEntities[T] | nil, type: T): void
-  destroyWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): void
-  hasAnyWorldEntity(type: WorldEntityType): boolean
-  hasWorldEntityInRange(start: StageNumber, end: StageNumber, type: WorldEntityType): boolean
-  destroyAllWorldEntities(type: WorldEntityType): void
-  /** Iterates all valid world entities. May skip stages. */
-  iterateWorldEntities<T extends WorldEntityType>(
-    type: T,
-  ): LuaIterable<LuaMultiReturn<[StageNumber, NonNullable<WorldEntities[T]>]>>
+  getWorldEntity(stage: StageNumber): LuaEntity | nil
+  getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
 
-  setProperty<T extends keyof StageProperties>(stage: StageNumber, key: T, value: StageProperties[T] | nil): void
-  getProperty<T extends keyof StageProperties>(stage: StageNumber, key: T): StageProperties[T] | nil
+  replaceWorldEntity(stage: StageNumber, entity: LuaEntity | nil): void
+  replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void
+
+  destroyWorldOrPreviewEntity(stage: StageNumber): void
+  destroyAllWorldOrPreviewEntities(): void
+
+  iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, LuaEntity]>>
+  hasWorldEntityInRange(startStage: StageNumber, endStage: StageNumber): boolean
+
+  getExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber): ExtraEntities[T] | nil
+  replaceExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber, entity: ExtraEntities[T] | nil): void
+  destroyExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber): void
+  destroyAllExtraEntities(type: ExtraEntityType): void
+
+  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): void
+  getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 
@@ -169,11 +177,9 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
 export type StageDiffsInternal<E extends Entity = Entity> = PRRecord<StageNumber, StageDiffInternal<E>>
 
-export interface WorldEntities {
-  mainEntity?: LuaEntity
-}
-export type WorldEntityType = keyof WorldEntities
-type AnyWorldEntity = WorldEntities[keyof WorldEntities]
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ExtraEntities {}
+export type ExtraEntityType = keyof ExtraEntities
 
 export interface StageProperties {
   _?: never
@@ -182,7 +188,7 @@ export interface StageProperties {
 export type RollingStockAssemblyEntity = AssemblyEntity<RollingStockEntity>
 export type UndergroundBeltAssemblyEntity = AssemblyEntity<UndergroundBeltEntity>
 
-type StageData = WorldEntities & StageProperties
+type StageData = ExtraEntities & StageProperties
 
 type MutableStageDiff<T extends Entity> = Partial<Mutable<StageDiff<T>>>
 
@@ -196,11 +202,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   firstStage: StageNumber
   readonly firstValue: Mutable<T>
   stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
-  private oldStage: StageNumber | nil
-
-  private readonly stageProperties: {
+  private oldStage: StageNumber | nil;
+  [stage: StageNumber]: LuaEntity | nil // world entities and preview entities are stored in the same table
+  stageProperties?: {
     [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
-  } = {}
+  }
 
   constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
     this.position = position
@@ -218,6 +224,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     } else {
       this.direction = direction
     }
+  }
+
+  public getApparentDirection(): defines.direction {
+    if (this.isRollingStock()) {
+      return orientationToDirection((this.firstValue as RollingStockEntity).orientation)
+    }
+    return this.direction ?? 0
   }
 
   setPositionUnchecked(position: Position): void {
@@ -550,115 +563,154 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return this.oldStage
   }
 
-  getWorldEntity(stage: StageNumber, type: WorldEntityType = "mainEntity") {
+  public getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
+    const entity = this[stage]
+    if (entity && entity.valid) return entity
+  }
+
+  getWorldEntity(stage: StageNumber) {
+    const entity = this.getWorldOrPreviewEntity(stage)
+    if (entity && !isPreviewEntity(entity)) return entity
+  }
+
+  replaceWorldEntity(stage: StageNumber, entity: LuaEntity | nil): void {
+    // assert(!entity || !isPreviewEntity(entity), "entity must not be a preview entity")
+    this.replaceWorldOrPreviewEntity(stage, entity)
+  }
+  replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void {
+    if (entity === nil) return this.destroyWorldOrPreviewEntity(stage)
+    const existing = this[stage]
+    if (existing && existing.valid && existing !== entity) existing.destroy()
+    this[stage] = entity
+    if (rollingStockTypes.has(entity.type)) {
+      registerEntity(entity as LuaEntity, this)
+    }
+  }
+
+  destroyWorldOrPreviewEntity(stage: StageNumber): void {
+    const existing = this[stage]
+    if (existing && existing.valid) {
+      existing.destroy()
+      delete this[stage]
+    }
+  }
+
+  destroyAllWorldOrPreviewEntities(): void {
+    for (const [k, v] of pairs(this)) {
+      if (typeof k !== "number") break
+      if ((v as LuaEntity).valid) {
+        ;(v as LuaEntity).destroy()
+      }
+      delete this[k]
+    }
+  }
+
+  hasWorldEntityInRange(start: StageNumber, end: StageNumber): boolean {
+    for (const i of $range(start, end)) {
+      const entity = this[i]
+      if (entity && entity.valid) {
+        if (!isPreviewEntity(entity)) return true
+      } else {
+        delete this[i]
+      }
+    }
+    return false
+  }
+
+  getExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber): ExtraEntities[T] | nil {
     const { stageProperties } = this
+    if (!stageProperties) return nil
     const byType = stageProperties[type]
     if (!byType) return nil
     const worldEntity = byType[stage]
-    if (worldEntity && worldEntity.valid) {
-      return worldEntity as LuaEntity
-    }
+    if (worldEntity && worldEntity.valid) return worldEntity
     // delete
     delete byType[stage]
     if (isEmpty(byType)) delete stageProperties[type]
   }
-  replaceWorldEntity(stage: StageNumber, entity: AnyWorldEntity | nil, type: WorldEntityType = "mainEntity"): void {
-    if (entity === nil) return this.destroyWorldEntity(stage, type)
-    const { stageProperties } = this
-    const byType = stageProperties[type] || (stageProperties[type] = {})
+  replaceExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber, entity: ExtraEntities[T] | nil): void {
+    if (entity === nil) return this.destroyExtraEntity(type, stage)
+    const stageProperties = this.stageProperties ?? (this.stageProperties = {})
+    const byType = stageProperties[type] ?? ((stageProperties[type] = {}) as PRecord<StageNumber, ExtraEntities[T]>)
     const existing = byType[stage]
     if (existing && existing.valid && existing !== entity) existing.destroy()
     byType[stage] = entity
-    if (entity && entity.object_name === "LuaEntity" && rollingStockTypes.has(entity.type)) {
-      registerEntity(entity as LuaEntity, this)
-    }
   }
-  destroyWorldEntity<T extends WorldEntityType>(stage: StageNumber, type: T): void {
+  destroyExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber): void {
     const { stageProperties } = this
+    if (!stageProperties) return
     const byType = stageProperties[type]
     if (!byType) return
     const entity = byType[stage]
     if (entity && entity.valid) entity.destroy()
     if (!entity || !entity.valid) {
       delete byType[stage]
-      if (isEmpty(byType)) delete stageProperties[type]
-    }
-  }
-  hasAnyWorldEntity(type: WorldEntityType): boolean {
-    const { stageProperties } = this
-    const byType = stageProperties[type]
-    if (!byType) return false
-    for (const [key, entity] of pairs(byType)) {
-      if (entity && entity.valid) return true
-      byType[key] = nil
-    }
-    if (isEmpty(byType)) delete stageProperties[type]
-    return false
-  }
-  hasWorldEntityInRange(start: StageNumber, end: StageNumber, type: WorldEntityType): boolean {
-    const { stageProperties } = this
-    const byType = stageProperties[type]
-    if (!byType) return false
-    for (const [key, entity] of pairs(byType)) {
-      if (key > end) break
-      if (entity && entity.valid) {
-        if (key >= start) return true
-      } else {
-        byType[key] = nil
+      if (isEmpty(byType)) {
+        delete stageProperties[type]
+        if (isEmpty(stageProperties)) delete this.stageProperties
       }
     }
-    if (isEmpty(byType)) delete stageProperties[type]
-    return false
   }
-  destroyAllWorldEntities(type: WorldEntityType): void {
+
+  destroyAllExtraEntities(type: ExtraEntityType): void {
     const { stageProperties } = this
+    if (!stageProperties) return
     const byType = stageProperties[type]
     if (!byType) return
     for (const [, entity] of pairs(byType)) {
       if (entity && entity.valid) entity.destroy()
     }
     delete stageProperties[type]
-  }
-  iterateWorldEntities(type: WorldEntityType): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {
-    const byType = this.stageProperties[type]
-    if (!byType) return (() => nil) as any
-    let curKey = next(byType)[0]
-    return function () {
-      while (curKey) {
-        const key = curKey
-        curKey = next(byType, key)[0]
-        const entity = byType[key]!
-        if (entity.valid) return $multi(key, entity)
-        delete byType[key]
-      }
-    } as any
+    if (isEmpty(stageProperties)) delete this.stageProperties
   }
 
-  setProperty<T extends keyof StageProperties>(stage: StageNumber, key: T, value: StageProperties[T] | nil): void {
-    const { stageProperties } = this
+  iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {
+    let lastKey: StageNumber | nil = nil
+    return (() => {
+      while (true) {
+        const nextKey = next(this, lastKey)[0]
+        if (typeof nextKey !== "number") return nil
+        lastKey = nextKey
+        const entity = this[nextKey]
+        if (entity && entity.valid) return $multi(nextKey, entity)
+        delete this[nextKey]
+      }
+    }) as any
+  }
+
+  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): void {
+    const stageProperties = this.stageProperties ?? (this.stageProperties = {})
     const byType: PRecord<StageNumber, StageProperties[T]> = stageProperties[key] || (stageProperties[key] = {})
     byType[stage] = value
     if (isEmpty(byType)) delete stageProperties[key]
   }
-  getProperty<T extends keyof StageProperties>(stage: StageNumber, key: T): StageProperties[T] | nil {
-    const byType = this.stageProperties[key]
+  getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil {
+    const stageProperties = this.stageProperties
+    if (!stageProperties) return nil
+    const byType = stageProperties[key]
     return byType && byType[stage]
   }
   propertySetInAnyStage(key: keyof StageProperties): boolean {
-    return this.stageProperties[key] !== nil
+    const stageProperties = this.stageProperties
+    return stageProperties !== nil && stageProperties[key] !== nil
   }
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void {
-    delete this.stageProperties[key]
+    const stageProperties = this.stageProperties
+    if (!stageProperties) return
+    delete stageProperties[key]
   }
 
   insertStage(stageNumber: StageNumber): void {
     if (this.firstStage >= stageNumber) this.firstStage++
     if (this.oldStage && this.oldStage >= stageNumber) this.oldStage++
 
+    shiftNumberKeysUp(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
-    for (const [, byType] of pairs(this.stageProperties)) {
-      shiftNumberKeysUp(byType, stageNumber)
-    }
+    const { stageProperties } = this
+    if (stageProperties)
+      for (const [, byType] of pairs(stageProperties)) {
+        shiftNumberKeysUp(byType, stageNumber)
+      }
   }
 
   deleteStage(stageNumber: StageNumber): void {
@@ -668,10 +720,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (this.firstStage >= stageToMerge) this.firstStage--
     if (this.oldStage && this.oldStage >= stageToMerge) this.oldStage--
 
+    shiftNumberKeysDown(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)
-    for (const [, byType] of pairs(this.stageProperties)) {
-      shiftNumberKeysDown(byType, stageNumber)
-    }
+    const { stageProperties } = this
+    if (stageProperties)
+      for (const [, byType] of pairs(stageProperties)) {
+        shiftNumberKeysDown(byType, stageNumber)
+      }
   }
   private mergeStageDiffWithBelow(stage: StageNumber): void {
     if (stage <= this.firstStage) return
@@ -696,7 +751,6 @@ export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
   return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation") && !excludedTypes.has(luaEntity.type)
 }
 
-// note: see also EntityHighlighter, updateErrorHighlight
 export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
   return stageNumber >= entity.firstStage && entity.getWorldEntity(stageNumber) === nil
 }
@@ -723,6 +777,32 @@ export function _migrate031(entity: AssemblyEntity): void {
 export function _migrate060(entity: AssemblyEntity): void {
   interface OldAssemblyEntity {
     categoryName?: string
+    stageProperties: {
+      mainEntity?: PRecord<StageNumber, LuaEntity | nil>
+      previewEntity?: PRecord<StageNumber, LuaEntity | nil>
+    }
   }
-  delete (entity as OldAssemblyEntity).categoryName
+  const asOld = entity as unknown as OldAssemblyEntity
+  const asNew = entity as AssemblyEntityImpl
+  delete asOld.categoryName
+  const previewEntities = asOld.stageProperties.previewEntity
+  if (previewEntities) {
+    for (const [stageNum, previewEntity] of pairs(previewEntities)) {
+      if (previewEntity && previewEntity.valid) {
+        asNew.replaceWorldOrPreviewEntity(stageNum, previewEntity)
+      }
+    }
+    delete asOld.stageProperties.previewEntity
+  }
+  const mainEntities = asOld.stageProperties.mainEntity
+  // this runs later, so main entities override preview entities
+  if (mainEntities) {
+    for (const [stageNum, mainEntity] of pairs(mainEntities)) {
+      if (mainEntity && mainEntity.valid) {
+        asNew.replaceWorldOrPreviewEntity(stageNum, mainEntity)
+      }
+    }
+    delete asOld.stageProperties.mainEntity
+  }
+  if (isEmpty(asOld.stageProperties)) delete asNew.stageProperties
 }

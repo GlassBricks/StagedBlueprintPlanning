@@ -147,16 +147,11 @@ export function createAssemblyUpdater(
       : content.findCompatibleAnyDirection(entityName, entity.position) // if it doesn't overlap, find in any direction to avoid issues
 
     if (existing) {
-      const existingStage = existing.firstStage
-      if (existingStage <= stageNumber) {
+      if (stageNumber >= existing.firstStage) {
         entityAddedAbove(assembly, existing, stageNumber, entity)
-        return existing
+      } else {
+        entityAddedBelow(assembly, existing, stageNumber, entity, byPlayer)
       }
-    }
-
-    if (existing) {
-      // stageNumber < existing.stageNumber
-      entityAddedBelow(assembly, existing, stageNumber, entity, byPlayer)
       return existing
     }
 

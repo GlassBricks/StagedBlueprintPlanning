@@ -10,13 +10,10 @@
  */
 
 import { remove_from_list } from "util"
-import { RegisterClass } from "./references"
-import { PRecord, PRRecord } from "./util-types"
+import { PRecord, PRRecord, RegisterClass } from "../lib"
 
-/**
- * Map of 2d indexes to values.
- * Values may be single values or arrays. If is an array, it will have a length of 1 or more.
- */
+// WARNING: assumes values of T have a metatable
+
 export interface Map2D<T extends AnyNotNil> {
   readonly [x: number]: PRRecord<number, T | readonly T[]>
   get(x: number, y: number): T | readonly T[] | nil
@@ -35,8 +32,14 @@ interface Map2DImpl<T extends AnyNotNil> extends LuaPairsIterable<number, PRecor
   _: never
 }
 
+const arrayMeta: LuaMetatable<any[]> = {}
+const getmeta = getmetatable
+const setmeta = setmetatable
+
+script.register_metatable("Map2D:array", arrayMeta)
+
 function isArray<T>(value: T | T[]): value is T[] {
-  return (value as any)[1]
+  return getmeta(value) === arrayMeta
 }
 
 @RegisterClass("Map2D")
@@ -54,7 +57,7 @@ class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
     } else if (isArray(existing)) {
       existing.push(value)
     } else {
-      byX[y] = [existing, value]
+      byX[y] = setmeta([existing, value], arrayMeta)
     }
   }
   delete(x: number, y: number, value: T): void {
@@ -72,9 +75,6 @@ class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
         delete this[x]
       }
     }
-  }
-  public asIterable(): LuaPairsIterable<number, PRRecord<number, ReadonlyLuaSet<T>>> {
-    return this as any
   }
 }
 

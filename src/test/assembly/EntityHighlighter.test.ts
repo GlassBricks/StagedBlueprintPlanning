@@ -18,6 +18,7 @@ import {
   HighlightEntities,
   HighlightValues,
 } from "../../assembly/EntityHighlighter"
+import { Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { SpriteRender } from "../../lib"
@@ -38,17 +39,10 @@ before_each(() => {
     createHighlightBox: (target, type) =>
       entityMock({
         name: "test-highlight",
-        position: target.position,
+        position: target?.position,
         highlight_box_type: type,
       }),
     createSprite: (params) => simpleMock(params as any),
-    createEntityPreview(surface, type, position, direction): LuaEntity | nil {
-      return entityMock({
-        name: "test-preview",
-        position,
-        direction,
-      })
-    },
     createSelectionProxy(surface, type, position, direction): LuaEntity | nil {
       return entityMock({
         name: "test-proxy",
@@ -60,79 +54,84 @@ before_each(() => {
   highlightCreator = createHighlightCreator(entityCreator)
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
-describe("entity previews", () => {
-  test("doesn't create anything if has entity", () => {
-    entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
-    highlightCreator.updateHighlights(assembly, entity)
-    assert.is_nil(entity.getWorldEntity(2, "previewEntity")!)
-  })
-  test("can create previews", () => {
-    highlightCreator.updateHighlights(assembly, entity)
-    assert.not_nil(entity.getWorldEntity(1, "previewEntity")!)
-  })
-  test("can delete previews", () => {
-    highlightCreator.updateHighlights(assembly, entity)
-    entity.replaceWorldEntity(1, simpleMock<LuaEntity>())
-    highlightCreator.updateHighlights(assembly, entity)
-    assert.is_nil(entity.getWorldEntity(1, "previewEntity")!)
-  })
-})
 
-describe("error highlights/selection proxy", () => {
+// describe("entity previews", () => {
+//   test("doesn't create anything if has entity", () => {
+//     entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
+//     highlightCreator.updateHighlights(assembly, entity)
+//     assert.is_nil(entity.getWorldOrPreviewEntity(2)!)
+//   })
+//   test("can create previews", () => {
+//     highlightCreator.updateHighlights(assembly, entity)
+//     assert.not_nil(entity.getPreviewEntity(1)!)
+//   })
+//   test("can delete previews", () => {
+//     highlightCreator.updateHighlights(assembly, entity)
+//     entity.replaceWorldEntity(1, simpleMock<LuaEntity>())
+//     highlightCreator.updateHighlights(assembly, entity)
+//     assert.is_nil(entity.getPreviewEntity(1)!)
+//   })
+// })
+
+function removeInLayer(layer: StageNumber) {
+  entity.replaceWorldOrPreviewEntity(layer, entityMock({ name: Prototypes.PreviewEntityPrefix + "foo" }))
+}
+function addInLayer(layer: StageNumber) {
+  entity.replaceWorldOrPreviewEntity(layer, entityMock({ name: "foo" }))
+}
+describe("error highlights and selection proxy", () => {
   before_each(() => {
-    for (const i of $range(1, 5)) {
-      entity.replaceWorldEntity(i, simpleMock<LuaEntity>())
-    }
+    for (const i of $range(1, 5)) addInLayer(i)
   })
   test("creates highlight when world entity missing", () => {
-    entity.destroyWorldEntity(2, "mainEntity")
+    removeInLayer(2)
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
-    assert.not_nil(entity.getWorldEntity(2, "errorOutline")!)
-    assert.not_nil(entity.getWorldEntity(2, "selectionProxy")!)
+    assert.not_nil(entity.getExtraEntity("errorOutline", 2)!, "has error highlight")
+    assert.not_nil(entity.getExtraEntity("selectionProxy", 2)!, "has selection proxy")
   })
 
-  test("deletes highlight when set to false", () => {
-    entity.destroyWorldEntity(2, "mainEntity")
+  test("deletes highlight when entity revived", () => {
+    removeInLayer(2)
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
-    entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
+    addInLayer(2)
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
-    assert.nil(entity.getWorldEntity(2, "errorOutline"))
-    assert.nil(entity.getWorldEntity(2, "selectionProxy"))
+    assert.nil(entity.getExtraEntity("errorOutline", 2))
+    assert.nil(entity.getExtraEntity("selectionProxy", 2))
   })
 
   test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other stages, %s", (stages) => {
     const stageSet = new LuaSet()
     for (const stage of stages) {
-      entity.destroyWorldEntity(stage, "mainEntity")
+      removeInLayer(stage)
       stageSet.add(stage)
     }
     highlightCreator.updateHighlights(assembly, entity)
 
     for (let i = 1; i < 5; i++) {
       if (i === 1 || stageSet.has(i)) {
-        assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should not have indicator in stage ${i}`)
+        assert.nil(entity.getExtraEntity("errorElsewhereIndicator", i), `should not have indicator in stage ${i}`)
       } else {
-        assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `should have indicator in stage ${i}`)
+        assert.not_nil(entity.getExtraEntity("errorElsewhereIndicator", i), `should have indicator in stage ${i}`)
       }
     }
   })
 
   test("deletes indicators only when all highlights removed", () => {
-    entity.destroyWorldEntity(2, "mainEntity")
-    entity.destroyWorldEntity(3, "mainEntity")
+    removeInLayer(2)
+    removeInLayer(3)
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `stage ${i}`)
-    entity.replaceWorldEntity(3, simpleMock<LuaEntity>())
+    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getExtraEntity("errorElsewhereIndicator", i), `stage ${i}`)
+    addInLayer(3)
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `stage ${i}`)
-    entity.replaceWorldEntity(2, simpleMock<LuaEntity>())
+    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getExtraEntity("errorElsewhereIndicator", i), `stage ${i}`)
+    addInLayer(2)
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 1; i <= 5; i++) assert.nil(entity.getWorldEntity(i, "errorElsewhereIndicator"), `stage ${i}`)
+    for (let i = 1; i <= 5; i++) assert.nil(entity.getExtraEntity("errorElsewhereIndicator", i), `stage ${i}`)
   })
 
   test("does nothing if created in lower than first stage", () => {
     highlightCreator.updateHighlights(assembly, entity)
-    assert.nil(entity.getWorldEntity(1, "errorOutline"))
+    assert.nil(entity.getExtraEntity("errorOutline", 1))
   })
 })
 
@@ -161,17 +160,17 @@ describe("config changed highlight", () => {
       const isUpgrade = changes.name !== nil
 
       const highlight = assert.not_nil(
-        entity.getWorldEntity(stageNumber, "configChangedHighlight"),
+        entity.getExtraEntity("configChangedHighlight", stageNumber),
       ) as HighlightBoxEntity
       assert.equal(isUpgrade ? HighlightValues.Upgraded : "logistics", highlight.highlight_box_type, "highlight type")
 
       const firstI = i
       for (; i < stageNumber; i++) {
         if (i !== firstI)
-          assert.nil(entity.getWorldEntity(i, "configChangedHighlight"), "should not have highlight in stage " + i)
+          assert.nil(entity.getExtraEntity("configChangedHighlight", i), "should not have highlight in stage " + i)
 
         const highlight = assert.not_nil(
-          entity.getWorldEntity(i, "configChangedLaterHighlight"),
+          entity.getExtraEntity("configChangedLaterHighlight", i),
           `stage ${i}`,
         ) as SpriteRender
         assert.equal(isUpgrade ? HighlightValues.UpgradedLater : "item/blueprint", highlight.sprite)
@@ -179,9 +178,9 @@ describe("config changed highlight", () => {
     }
     for (let j = i; j <= 5; j++) {
       if (j !== i)
-        assert.nil(entity.getWorldEntity(j, "configChangedHighlight"), "should not have highlight in stage " + j)
+        assert.nil(entity.getExtraEntity("configChangedHighlight", j), "should not have highlight in stage " + j)
       assert.nil(
-        entity.getWorldEntity(j, "configChangedLaterHighlight"),
+        entity.getExtraEntity("configChangedLaterHighlight", j),
         "should not have later highlight in stage " + j,
       )
     }
@@ -223,42 +222,47 @@ describe("config changed highlight", () => {
     assertCorrect()
     entity.moveToStage(2)
     assertCorrect()
-    assert.nil(entity.getWorldEntity(1, "configChangedLaterHighlight"))
+    assert.nil(entity.getExtraEntity("configChangedLaterHighlight", 1))
+  })
+})
+describe("settings remnants", () => {
+  function createSettingsRemnant() {
+    entity.isSettingsRemnant = true
+    for (let i = 1; i <= 5; i++) removeInLayer(i)
+  }
+  function reviveSettingsRemnant() {
+    entity.isSettingsRemnant = nil
+    for (let i = 1; i <= 5; i++) addInLayer(i)
+  }
+  test("makeSettingsRemnant creates highlights", () => {
+    createSettingsRemnant()
+    highlightCreator.makeSettingsRemnant(assembly, entity)
+    for (let i = 1; i <= 5; i++) {
+      assert.not_nil(entity.getExtraEntity("settingsRemnantHighlight", i))
+      assert.not_nil(entity.getExtraEntity("selectionProxy", i))
+    }
+  })
+  test("reviveSettingsRemnant removes highlights and sets entities correct", () => {
+    createSettingsRemnant()
+    highlightCreator.makeSettingsRemnant(assembly, entity)
+    reviveSettingsRemnant()
+    highlightCreator.reviveSettingsRemnant(assembly, entity)
+    for (let i = 1; i <= 5; i++) {
+      assert.nil(entity.getExtraEntity("settingsRemnantHighlight", i))
+      assert.nil(entity.getExtraEntity("selectionProxy", i))
+    }
   })
 })
 
-test("makeSettingsRemnant creates highlights", () => {
-  entity.isSettingsRemnant = true
-  highlightCreator.makeSettingsRemnant(assembly, entity)
-  for (let i = 1; i <= 5; i++) {
-    assert.not_nil(entity.getWorldEntity(i, "settingsRemnantHighlight"))
-    assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
-    assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
-  }
-})
-test("deleteSettingsRemnant removes highlights and sets entities correct", () => {
-  entity.isSettingsRemnant = true
-  highlightCreator.makeSettingsRemnant(assembly, entity)
-  entity.isSettingsRemnant = nil
-  highlightCreator.reviveSettingsRemnant(assembly, entity)
-  for (let i = 1; i <= 5; i++) {
-    assert.nil(entity.getWorldEntity(i, "settingsRemnantHighlight"))
-    assert.not_nil(entity.getWorldEntity(i, "previewEntity"))
-    if (i >= entity.firstStage) assert.not_nil(entity.getWorldEntity(i, "selectionProxy"))
-    else assert.nil(entity.getWorldEntity(i, "selectionProxy"))
-  }
-})
-
 test("deleteErrorHighlights deletes all highlights", () => {
-  entity.destroyWorldEntity(2, "mainEntity")
-  entity.destroyWorldEntity(3, "mainEntity")
+  entity.destroyWorldOrPreviewEntity(2)
+  entity.destroyWorldOrPreviewEntity(3)
   highlightCreator.updateHighlights(assembly, entity)
   highlightCreator.deleteHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
-      assert.nil(entity.getWorldEntity(i, type), `stage ${i}`)
+      assert.nil(entity.getExtraEntity(type, i), `stage ${i}`)
     }
-    assert.nil(entity.getWorldEntity(i, "previewEntity"), `stage ${i}`)
-    assert.nil(entity.getWorldEntity(i, "selectionProxy"), `stage ${i}`)
+    assert.nil(entity.getExtraEntity("selectionProxy", i), `stage ${i}`)
   }
 })

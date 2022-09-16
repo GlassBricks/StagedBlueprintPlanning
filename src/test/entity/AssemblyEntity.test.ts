@@ -10,7 +10,8 @@
  */
 
 import { getRegisteredAssemblyEntity } from "../../assembly/entity-registration"
-import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { Prototypes } from "../../constants"
+import { AssemblyEntity, createAssemblyEntity, ExtraEntityType } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
 import { shallowCopy } from "../../lib"
@@ -359,12 +360,13 @@ describe("move to stage", () => {
 
 describe("Get/set world entities", () => {
   let entity: LuaEntity
+  let previewEntity: LuaEntity
   let assemblyEntity: AssemblyEntity
   before_each(() => {
     // entity = surface.create_entity({ name: "iron-chest", position: area.bbox.left_top })!
     entity = entityMock({ name: "test", position: Pos(0, 0) })
+    previewEntity = entityMock({ name: Prototypes.PreviewEntityPrefix + "test", position: Pos(0, 0) })
     assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 1)
-    assert(entity)
   })
 
   test("get after replace returns the correct entity", () => {
@@ -378,9 +380,15 @@ describe("Get/set world entities", () => {
     assert.same(entity, assemblyEntity.getWorldEntity(2))
   })
 
-  test("destroyWorldEntity", () => {
+  test("getWorldEntity returns nil if is a preview entity", () => {
+    assemblyEntity.replaceWorldOrPreviewEntity(1, previewEntity)
+    assert.nil(assemblyEntity.getWorldEntity(1))
+    assert.equal(previewEntity, assemblyEntity.getWorldOrPreviewEntity(1))
+  })
+
+  test("destroyWorldOrPreviewEntity", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
-    assemblyEntity.destroyWorldEntity(1, "mainEntity")
+    assemblyEntity.destroyWorldOrPreviewEntity(1)
     assert.false(entity.valid)
     assert.nil(assemblyEntity.getWorldEntity(1))
   })
@@ -413,20 +421,92 @@ describe("Get/set world entities", () => {
     assert.nil(assemblyEntity.getWorldEntity(1))
   })
 
-  test("hasAnyWorldEntity", () => {
-    assert.false(assemblyEntity.hasAnyWorldEntity("mainEntity"))
-    assemblyEntity.replaceWorldEntity(1, entity)
-    assert.true(assemblyEntity.hasAnyWorldEntity("mainEntity"))
+  test("destroyAllWorldOrPreviewEntities", () => {
+    assemblyEntity.replaceWorldOrPreviewEntity(1, entity)
+    assemblyEntity.replaceWorldOrPreviewEntity(2, previewEntity)
+    assemblyEntity.destroyAllWorldOrPreviewEntities()
+    assert.false(entity.valid)
+    assert.false(previewEntity.valid)
+    assert.nil(assemblyEntity.getWorldEntity(1))
+    assert.nil(assemblyEntity.getWorldEntity(2))
   })
 
   test("hasWorldEntityInRange", () => {
-    assert.false(assemblyEntity.hasWorldEntityInRange(1, 2, "mainEntity"))
+    assert.false(assemblyEntity.hasWorldEntityInRange(1, 2))
     assemblyEntity.replaceWorldEntity(2, entity)
     assemblyEntity.replaceWorldEntity(5, entity)
-    assert.false(assemblyEntity.hasWorldEntityInRange(1, 1, "mainEntity"))
-    assert.true(assemblyEntity.hasWorldEntityInRange(1, 3, "mainEntity"))
-    assert.false(assemblyEntity.hasWorldEntityInRange(3, 4, "mainEntity"))
-    assert.true(assemblyEntity.hasWorldEntityInRange(3, 5, "mainEntity"))
+    assert.false(assemblyEntity.hasWorldEntityInRange(1, 1))
+    assert.true(assemblyEntity.hasWorldEntityInRange(1, 3))
+    assert.false(assemblyEntity.hasWorldEntityInRange(3, 4))
+    assert.true(assemblyEntity.hasWorldEntityInRange(3, 5))
+  })
+})
+
+declare module "../../entity/AssemblyEntity" {
+  interface ExtraEntities {
+    _type?: LuaEntity
+  }
+}
+describe("get/set extra entities", () => {
+  const type: ExtraEntityType = "_type"
+  let entity: LuaEntity
+  let assemblyEntity: AssemblyEntity
+  before_each(() => {
+    entity = entityMock({ name: "test", position: Pos(0, 0) })
+    assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 1)
+  })
+
+  test("get after replace returns the correct entity", () => {
+    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+    assert.nil(assemblyEntity.getExtraEntity(type, 2))
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    assert.same(entity, assemblyEntity.getExtraEntity(type, 1))
+    assert.nil(assemblyEntity.getExtraEntity(type, 2))
+    assemblyEntity.replaceExtraEntity(type, 2, entity)
+    assert.same(entity, assemblyEntity.getExtraEntity(type, 1))
+    assert.same(entity, assemblyEntity.getExtraEntity(type, 2))
+  })
+
+  test("destroyExtraEntity", () => {
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    assemblyEntity.destroyExtraEntity(type, 1)
+    assert.false(entity.valid)
+    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+  })
+
+  test("replace with nil destroys the entity", () => {
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    assemblyEntity.replaceExtraEntity(type, 1, nil)
+    assert.false(entity.valid)
+    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+  })
+
+  test("replace extra entity deletes old entity", () => {
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    const newEntity = entityMock({ name: "test", position: Pos(0, 0) })
+    assemblyEntity.replaceExtraEntity(type, 1, newEntity)
+    assert.false(entity.valid)
+    assert.same(newEntity, assemblyEntity.getExtraEntity(type, 1))
+  })
+
+  test("replace extra entity does not delete if same entity", () => {
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    assert.true(entity.valid)
+    assert.same(entity, assemblyEntity.getExtraEntity(type, 1))
+  })
+
+  test("get extra entity returns nil if entity becomes invalid", () => {
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    entity.destroy()
+    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+  })
+
+  test("destroyAllExtraEntities", () => {
+    assemblyEntity.replaceExtraEntity(type, 1, entity)
+    assemblyEntity.destroyAllExtraEntities(type)
+    assert.false(entity.valid)
+    assert.nil(assemblyEntity.getExtraEntity(type, 1))
   })
 })
 
@@ -478,28 +558,28 @@ declare module "../../entity/AssemblyEntity" {
 }
 describe("get/set properties", () => {
   test("get property when not set is nil", () => {
-    assert.nil(fooAssemblyEntity.getProperty(2, "foo"))
+    assert.nil(fooAssemblyEntity.getProperty("foo", 2))
   })
   test("get and set property", () => {
-    fooAssemblyEntity.setProperty(2, "foo", "bar")
-    assert.equal("bar", fooAssemblyEntity.getProperty(2, "foo"))
+    fooAssemblyEntity.setProperty("foo", 2, "bar")
+    assert.equal("bar", fooAssemblyEntity.getProperty("foo", 2))
   })
   test("propertyIsSetAnywhere", () => {
     assert.false(fooAssemblyEntity.propertySetInAnyStage("foo"))
-    fooAssemblyEntity.setProperty(2, "foo", "bar")
+    fooAssemblyEntity.setProperty("foo", 2, "bar")
     assert.true(fooAssemblyEntity.propertySetInAnyStage("foo"))
-    fooAssemblyEntity.setProperty(3, "foo", "bar")
-    fooAssemblyEntity.setProperty(2, "foo", nil)
+    fooAssemblyEntity.setProperty("foo", 3, "bar")
+    fooAssemblyEntity.setProperty("foo", 2, nil)
     assert.true(fooAssemblyEntity.propertySetInAnyStage("foo"))
-    fooAssemblyEntity.setProperty(3, "foo", nil)
+    fooAssemblyEntity.setProperty("foo", 3, nil)
     assert.false(fooAssemblyEntity.propertySetInAnyStage("foo"))
   })
   test("clear property", () => {
-    fooAssemblyEntity.setProperty(2, "foo", "bar")
-    fooAssemblyEntity.setProperty(3, "foo", "bar")
+    fooAssemblyEntity.setProperty("foo", 2, "bar")
+    fooAssemblyEntity.setProperty("foo", 3, "bar")
     fooAssemblyEntity.clearPropertyInAllStages("foo")
-    assert.nil(fooAssemblyEntity.getProperty(2, "foo"))
-    assert.nil(fooAssemblyEntity.getProperty(3, "foo"))
+    assert.nil(fooAssemblyEntity.getProperty("foo", 2))
+    assert.nil(fooAssemblyEntity.getProperty("foo", 3))
   })
 })
 
@@ -509,9 +589,9 @@ describe("insert/deleting stages", () => {
     const entity = createAssemblyEntity<FooEntity>({ name: luaEntity.name, foo1: 1 }, Pos(0, 0), nil, 1)
     entity.replaceWorldEntity(2, luaEntity)
     entity.replaceWorldEntity(3, luaEntity)
-    entity.setProperty(2, "foo", "bar2")
-    entity.setProperty(3, "foo", "bar3")
-    entity.setProperty(4, "foo", "bar4")
+    entity.setProperty("foo", 2, "bar2")
+    entity.setProperty("foo", 3, "bar3")
+    entity.setProperty("foo", 4, "bar4")
     entity._applyDiffAtStage(2, { foo1: 2 })
     entity._applyDiffAtStage(3, { foo1: 3 })
     entity._applyDiffAtStage(4, { foo1: 4 })
@@ -526,10 +606,10 @@ describe("insert/deleting stages", () => {
     assert.nil(entity.getWorldEntity(3))
     assert.not_nil(entity.getWorldEntity(4))
 
-    assert.equal("bar2", entity.getProperty(2, "foo"))
-    assert.nil(entity.getProperty(3, "foo"))
-    assert.equal("bar3", entity.getProperty(4, "foo"))
-    assert.equal("bar4", entity.getProperty(5, "foo"))
+    assert.equal("bar2", entity.getProperty("foo", 2))
+    assert.nil(entity.getProperty("foo", 3))
+    assert.equal("bar3", entity.getProperty("foo", 4))
+    assert.equal("bar4", entity.getProperty("foo", 5))
 
     assert.same(
       {
@@ -555,9 +635,9 @@ describe("insert/deleting stages", () => {
     entity.replaceWorldEntity(2, luaEntity)
     entity.replaceWorldEntity(3, luaEntity)
     entity.replaceWorldEntity(4, luaEntity)
-    entity.setProperty(2, "foo", "bar2")
-    entity.setProperty(3, "foo", "bar3")
-    entity.setProperty(4, "foo", "bar4")
+    entity.setProperty("foo", 2, "bar2")
+    entity.setProperty("foo", 3, "bar3")
+    entity.setProperty("foo", 4, "bar4")
     entity._applyDiffAtStage(2, { foo1: 2, foo2: 2 })
     entity._applyDiffAtStage(3, { foo1: 3 })
     entity._applyDiffAtStage(4, { foo1: 4 })
@@ -572,9 +652,9 @@ describe("insert/deleting stages", () => {
     assert.not_nil(entity.getWorldEntity(3))
     assert.nil(entity.getWorldEntity(4))
 
-    assert.equal("bar2", entity.getProperty(2, "foo"))
-    assert.equal("bar4", entity.getProperty(3, "foo"))
-    assert.nil(entity.getProperty(4, "foo"))
+    assert.equal("bar2", entity.getProperty("foo", 2))
+    assert.equal("bar4", entity.getProperty("foo", 3))
+    assert.nil(entity.getProperty("foo", 4))
 
     assert.same(
       {
@@ -613,12 +693,12 @@ describe("insert/deleting stages", () => {
 
   test("delete layer 1 sets layer 1 properties to layer 2 properties", () => {
     const entity = createAssemblyEntity<FooEntity>({ name: "foo", foo1: 1 }, Pos(0, 0), nil, 1)
-    entity.setProperty(1, "foo", "bar1")
-    entity.setProperty(2, "foo", "bar2")
-    entity.setProperty(3, "foo", "bar3")
+    entity.setProperty("foo", 1, "bar1")
+    entity.setProperty("foo", 2, "bar2")
+    entity.setProperty("foo", 3, "bar3")
 
     entity.deleteStage(1)
-    assert.equal("bar2", entity.getProperty(1, "foo"))
-    assert.equal("bar3", entity.getProperty(2, "foo"))
+    assert.equal("bar2", entity.getProperty("foo", 1))
+    assert.equal("bar3", entity.getProperty("foo", 2))
   })
 })

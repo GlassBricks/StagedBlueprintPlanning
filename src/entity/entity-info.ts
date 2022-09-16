@@ -10,6 +10,7 @@
  */
 
 import { merge } from "util"
+import { Prototypes } from "../constants"
 import { Events, PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
 
@@ -129,4 +130,8 @@ export function _makeTestEntityCategory(...names: string[]): void {
   for (const name of names) {
     categories.set(name, category)
   }
+}
+
+export function isPreviewEntity(entity: LuaEntity): boolean {
+  return entity.name.startsWith(Prototypes.PreviewEntityPrefix)
 }

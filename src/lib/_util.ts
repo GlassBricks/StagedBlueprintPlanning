@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { StageNumber } from "../entity/AssemblyEntity"
 import { Mutable, PRecord } from "./util-types"
 
 export function shallowCopy<T extends object>(obj: T): T {
@@ -42,10 +41,10 @@ export function deepCompare<T>(a: T, b: T): boolean {
   if (a === b) return true
   if (typeof a !== "object" || typeof b !== "object") return false
   // ignore null
-  for (const [k, v] of pairs(a)) {
+  for (const [k, v] of pairs(a!)) {
     if (!deepCompare(v, b![k]!)) return false
   }
-  for (const [k] of pairs(b)) {
+  for (const [k] of pairs(b!)) {
     if (a![k] === nil) return false
   }
   return true
@@ -54,10 +53,10 @@ export function deepCompare<T>(a: T, b: T): boolean {
 export function shallowCompare<T>(a: T, b: T): boolean {
   if (a === b) return true
   if (typeof a !== "object" || typeof b !== "object") return false
-  for (const [k, v] of pairs(a)) {
+  for (const [k, v] of pairs(a!)) {
     if (b![k] !== v) return false
   }
-  for (const [k] of pairs(b)) {
+  for (const [k] of pairs(b!)) {
     if (a![k] === nil) return false
   }
   return true
@@ -74,9 +73,10 @@ export function assertNever(value: never): never {
   error("should not be reachable: " + serpent.block(value))
 }
 
-export function shiftNumberKeysUp(obj: PRecord<StageNumber, any>, number: number): void {
+export function shiftNumberKeysUp(obj: PRecord<any, any>, number: number): void {
   const keysToChange: number[] = []
   for (const [changeStage] of pairs(obj)) {
+    if (typeof changeStage !== "number") break
     if (changeStage >= number) keysToChange.push(changeStage)
   }
   for (let i = keysToChange.length - 1; i >= 0; i--) {
@@ -86,9 +86,10 @@ export function shiftNumberKeysUp(obj: PRecord<StageNumber, any>, number: number
   }
 }
 
-export function shiftNumberKeysDown(obj: PRecord<StageNumber, any>, number: number): void {
+export function shiftNumberKeysDown(obj: PRecord<any, any>, number: number): void {
   const keysToChange: number[] = []
   for (const [changeStage] of pairs(obj)) {
+    if (typeof changeStage !== "number") break
     if (changeStage > number) keysToChange.push(changeStage)
   }
   delete obj[number]

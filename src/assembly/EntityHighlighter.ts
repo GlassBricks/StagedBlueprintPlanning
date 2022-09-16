@@ -11,9 +11,8 @@
 
 import { keys } from "ts-transformer-keys"
 import { Prototypes } from "../constants"
-import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, entityHasErrorAt, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
-import { orientationToDirection } from "../entity/special-entities"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
@@ -36,8 +35,7 @@ export interface HighlightEntities {
 }
 declare module "../entity/AssemblyEntity" {
   // noinspection JSUnusedGlobalSymbols
-  export interface WorldEntities extends HighlightEntities {
-    previewEntity?: LuaEntity
+  export interface ExtraEntities extends HighlightEntities {
     selectionProxy?: LuaEntity
   }
 }
@@ -66,17 +64,9 @@ export interface EntityHighlighter {
 
 /** @noSelf */
 export interface HighlightCreator {
-  createHighlightBox(target: LuaEntity, type: CursorBoxRenderType): LuaEntity | nil
+  createHighlightBox(target: LuaEntity | nil, type: CursorBoxRenderType): LuaEntity | nil
 
   createSprite(params: DrawParams["sprite"]): SpriteRender
-
-  createEntityPreview(
-    surface: LuaSurface,
-    type: string,
-    position: Position,
-    direction: defines.direction | nil,
-    orientation?: RealOrientation,
-  ): LuaEntity | nil
 
   createSelectionProxy(
     surface: LuaSurface,
@@ -89,7 +79,6 @@ export interface HighlightCreator {
 interface HighlightConfig {
   readonly type: "highlight"
   readonly renderType: CursorBoxRenderType
-  readonly target: "mainEntity" | "previewEntity"
 }
 
 interface SpriteConfig {
@@ -117,7 +106,6 @@ const highlightConfigs: {
   errorOutline: {
     type: "highlight",
     renderType: HighlightValues.Error,
-    target: "previewEntity",
   },
   errorElsewhereIndicator: {
     type: "sprite",
@@ -129,12 +117,10 @@ const highlightConfigs: {
   settingsRemnantHighlight: {
     type: "highlight",
     renderType: HighlightValues.SettingsRemnant,
-    target: "previewEntity",
   },
   configChangedHighlight: {
     type: "highlight",
     renderType: HighlightValues.ConfigChanged,
-    target: "mainEntity",
   },
   configChangedLaterHighlight: {
     type: "sprite",
@@ -146,7 +132,7 @@ const highlightConfigs: {
 }
 
 export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
-  const { createHighlightBox, createSprite, createEntityPreview, createSelectionProxy } = entityCreator
+  const { createHighlightBox, createSprite, createSelectionProxy } = entityCreator
 
   function createHighlight<T extends keyof HighlightEntities>(
     entity: AssemblyEntity,
@@ -154,7 +140,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     type: T,
   ): HighlightEntities[T] {
     const config = highlightConfigs[type]
-    const existing = entity.getWorldEntity(stage.stageNumber, type)
+    const existing = entity.getExtraEntity(type, stage.stageNumber)
     if (existing && config.type === "sprite") return existing
     // always replace highlight box, in case of upgrade
 
@@ -162,8 +148,8 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
     let result: LuaEntity | AnyRender | nil
     if (config.type === "highlight") {
-      const { renderType, target } = config
-      const entityTarget = entity.getWorldEntity(stage.stageNumber, target)
+      const { renderType } = config
+      const entityTarget = entity.getWorldOrPreviewEntity(stage.stageNumber)
       result = entityTarget && createHighlightBox(entityTarget!, renderType)
     } else if (config.type === "sprite") {
       const size = selectionBox.size()
@@ -183,14 +169,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       assertNever(config)
     }
 
-    entity.replaceWorldEntity<any>(stage.stageNumber, result, type)
+    entity.replaceExtraEntity(type, stage.stageNumber, result as ExtraEntities[T])
     return result as HighlightEntities[T]
   }
   function removeHighlight(entity: AssemblyEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
-    entity.destroyWorldEntity(stageNumber, type)
+    entity.destroyExtraEntity(type, stageNumber)
   }
   function removeHighlightFromAllStages(entity: AssemblyEntity, type: keyof HighlightEntities): void {
-    entity.destroyAllWorldEntities(type)
+    entity.destroyAllExtraEntities(type)
   }
   function updateHighlight(
     entity: AssemblyEntity,
@@ -203,41 +189,30 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     return nil
   }
 
-  function createAssociatedEntity(
-    entity: AssemblyEntity,
-    stage: StagePosition,
-    type: "previewEntity" | "selectionProxy",
-  ): LuaEntity | nil {
-    const creator = type === "previewEntity" ? createEntityPreview : createSelectionProxy
-    const direction = entity.isRollingStock() ? orientationToDirection(entity.firstValue.orientation) : entity.direction
-    const result = creator(stage.surface, entity.getNameAtStage(stage.stageNumber), entity.position, direction)
-    entity.replaceWorldEntity(stage.stageNumber, result, type)
+  function setSelectionProxy(entity: AssemblyEntity, stage: StagePosition): LuaEntity | nil {
+    const { surface, stageNumber } = stage
+    const result = createSelectionProxy(
+      surface,
+      entity.getNameAtStage(stageNumber),
+      entity.position,
+      entity.getApparentDirection(),
+    )
+    entity.replaceExtraEntity("selectionProxy", stageNumber, result)
     return result
   }
 
-  function getOrCreateAssociatedEntity(
-    entity: AssemblyEntity,
-    stage: StagePosition,
-    type: "previewEntity" | "selectionProxy",
-  ): LuaEntity | nil {
-    const prefix = type === "previewEntity" ? Prototypes.PreviewEntityPrefix : Prototypes.SelectionProxyPrefix
-    const existing = entity.getWorldEntity(stage.stageNumber, type)
-    if (existing && existing.name === prefix + entity.getNameAtStage(stage.stageNumber)) {
-      return existing
-    }
-    return createAssociatedEntity(entity, stage, type)
+  function getOrCreateSelectionProxy(entity: AssemblyEntity, stage: StagePosition): LuaEntity | nil {
+    const existing = entity.getExtraEntity("selectionProxy", stage.stageNumber)
+    const expectedName = Prototypes.SelectionProxyPrefix + entity.getNameAtStage(stage.stageNumber)
+    if (existing && existing.name === expectedName) return existing
+    return setSelectionProxy(entity, stage)
   }
 
-  function updateAssociatedEntity(
-    entity: AssemblyEntity,
-    stage: StagePosition,
-    type: "previewEntity" | "selectionProxy",
-    shouldHave: boolean,
-  ): void {
+  function updateSelectionProxy(entity: AssemblyEntity, stage: StagePosition, shouldHave: boolean): void {
     if (shouldHave) {
-      createAssociatedEntity(entity, stage, type)
+      getOrCreateSelectionProxy(entity, stage)
     } else {
-      entity.destroyWorldEntity(stage.stageNumber, type)
+      entity.destroyExtraEntity("selectionProxy", stage.stageNumber)
     }
   }
 
@@ -245,19 +220,16 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     const firstStage = entity.firstStage
     if (!entity.isRollingStock()) {
       for (const [i, stage] of assembly.iterateStages()) {
-        const shouldHaveEntityPreview = entity.getWorldEntity(stage.stageNumber, "mainEntity") === nil
-        const hasError = shouldHaveEntityPreview && i >= firstStage
-        updateAssociatedEntity(entity, stage, "previewEntity", shouldHaveEntityPreview)
-        updateAssociatedEntity(entity, stage, "selectionProxy", hasError)
+        const hasError = entityHasErrorAt(entity, i)
+        updateSelectionProxy(entity, stage, hasError)
         updateHighlight(entity, stage, "errorOutline", hasError)
       }
     } else {
       const stage = assembly.getStage(firstStage)
       if (!stage) return
-      const shouldHaveEntityPreview = entity.getWorldEntity(firstStage, "mainEntity") === nil
+      const shouldHaveEntityPreview = entity.getWorldEntity(firstStage) === nil
       const hasError = shouldHaveEntityPreview
-      updateAssociatedEntity(entity, stage, "previewEntity", shouldHaveEntityPreview)
-      updateAssociatedEntity(entity, stage, "selectionProxy", hasError)
+      updateSelectionProxy(entity, stage, hasError)
       updateHighlight(entity, stage, "errorOutline", hasError)
     }
   }
@@ -273,12 +245,12 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       }
     }
     if (!hasErrorAnywhere) {
-      entity.destroyAllWorldEntities("errorElsewhereIndicator")
+      entity.destroyAllExtraEntities("errorElsewhereIndicator")
       return
     }
 
     for (const [i, stage] of assembly.iterateStages()) {
-      const shouldHaveIndicator = i >= entity.firstStage && entity.getWorldEntity(i, "mainEntity") !== nil
+      const shouldHaveIndicator = i >= entity.firstStage && entity.getWorldEntity(i) !== nil
       updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
@@ -332,28 +304,25 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
   function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     if (!entity.isSettingsRemnant) return
-    for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
+    for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
     for (const [, stage] of assembly.iterateStages()) {
-      getOrCreateAssociatedEntity(entity, stage, "previewEntity")
-      getOrCreateAssociatedEntity(entity, stage, "selectionProxy")
+      getOrCreateSelectionProxy(entity, stage)
       updateHighlight(entity, stage, "settingsRemnantHighlight", true)
     }
   }
   function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     if (entity.isSettingsRemnant) return
-    entity.destroyAllWorldEntities("settingsRemnantHighlight")
+    entity.destroyAllExtraEntities("settingsRemnantHighlight")
     updateHighlights(assembly, entity)
   }
 
   function deleteEntity(entity: AssemblyEntity): void {
-    for (const type of keys<HighlightEntities>()) entity.destroyAllWorldEntities(type)
-    entity.destroyAllWorldEntities("previewEntity")
-    entity.destroyAllWorldEntities("selectionProxy")
+    for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
+    entity.destroyAllExtraEntities("selectionProxy")
   }
   function deleteStage(entity: AssemblyEntity, stage: StageNumber) {
-    for (const type of keys<HighlightEntities>()) entity.destroyWorldEntity(stage, type)
-    entity.destroyWorldEntity(stage, "previewEntity")
-    entity.destroyWorldEntity(stage, "selectionProxy")
+    for (const type of keys<HighlightEntities>()) entity.destroyExtraEntity(type, stage)
+    entity.destroyExtraEntity("selectionProxy", stage)
   }
 
   return {
@@ -366,7 +335,8 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 }
 
 export const DefaultHighlightCreator: HighlightCreator = {
-  createHighlightBox(target: LuaEntity, type: CursorBoxRenderType): LuaEntity | nil {
+  createHighlightBox(target: LuaEntity | nil, type: CursorBoxRenderType): LuaEntity | nil {
+    if (!target) return nil
     return target.surface.create_entity({
       name: "highlight-box",
       position: target.position,
@@ -377,28 +347,6 @@ export const DefaultHighlightCreator: HighlightCreator = {
   },
   createSprite(params: DrawParams["sprite"]): SpriteRender {
     return draw("sprite", params)
-  },
-  createEntityPreview(
-    surface: LuaSurface,
-    type: string,
-    position: Position,
-    direction: defines.direction | nil,
-    orientation?: RealOrientation,
-  ): LuaEntity | nil {
-    const name = Prototypes.PreviewEntityPrefix + type
-    const result = surface.create_entity({
-      name,
-      position,
-      direction,
-      orientation,
-      force: "player",
-    })
-    if (result) {
-      result.destructible = false
-      result.minable = false
-      result.rotatable = false
-    }
-    return result
   },
   createSelectionProxy(
     surface: LuaSurface,

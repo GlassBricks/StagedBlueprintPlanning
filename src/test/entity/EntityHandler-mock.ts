@@ -11,10 +11,12 @@
 
 import { keys } from "ts-transformer-keys"
 import { StagePosition } from "../../assembly/AssemblyContent"
+import { MutableMap2D, newMap2D } from "../../assembly/map2d"
+import { Prototypes } from "../../constants"
 import { StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler, EntityCreator, EntitySaver } from "../../entity/EntityHandler"
-import { MutableMap2D, newMap2D, shallowCopy } from "../../lib"
+import { shallowCopy } from "../../lib"
 import { Position } from "../../lib/geometry"
 import { BuiltinEntityKeys, entityMock, isMock } from "../simple-mock"
 
@@ -85,6 +87,18 @@ export function createMockEntityCreator(): MockEntityCreator {
       const stage = stagePos.stageNumber
       if (getAt(stage, position) !== nil) return nil // overlapping entity
       return createEntity(stage, value, direction ?? 0, position)
+    },
+    createPreviewEntity(
+      stage: StagePosition,
+      position: Position,
+      apparentDirection: defines.direction,
+      entityName: string,
+    ): LuaEntity | nil {
+      return entityMock({
+        name: Prototypes.PreviewEntityPrefix + entityName,
+        position,
+        direction: apparentDirection,
+      })
     },
     updateEntity(luaEntity: LuaEntity, value: Entity, direction): LuaEntity {
       assert(luaEntity.valid)

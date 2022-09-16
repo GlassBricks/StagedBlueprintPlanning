@@ -89,7 +89,7 @@ function addEntity(args?: Partial<LuaEntity>) {
   const entity = createEntity(args)
   assemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
   const found = assembly.content.findCompatible(entity, nil) as AssemblyEntity<TestEntity> | nil
-  assert(found, "found new entity")
+  assert(found, "found added new entity")
   return { luaEntity: entity, added: found! }
 }
 
@@ -281,7 +281,7 @@ describe("add", () => {
     assertNotified(newEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 
-  test("if can overlap with self, adding below with new direction creates new instead of updating old", () => {
+  test("if can overlap, adding lower new direction creates new entity instead of updating old", () => {
     const { added } = addAndReset(1, 1, {
       name: "straight-rail",
       direction: defines.direction.east,

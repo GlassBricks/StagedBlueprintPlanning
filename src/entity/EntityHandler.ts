@@ -11,6 +11,7 @@
 
 import { oppositedirection } from "util"
 import { StagePosition } from "../assembly/AssemblyContent"
+import { Prototypes } from "../constants"
 import { Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getTempBpItemStack, reviveGhost } from "./blueprinting"
@@ -22,6 +23,13 @@ import { getPastedDirection, getSavedDirection } from "./special-entities"
 export interface EntityCreator {
   createEntity(stage: StagePosition, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil
   updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity
+
+  createPreviewEntity(
+    stage: StagePosition,
+    position: Position,
+    apparentDirection: defines.direction,
+    entityName: string,
+  ): LuaEntity | nil
 }
 
 /** @noSelf */
@@ -174,6 +182,22 @@ const BlueprintEntityHandler: EntityHandler = {
       return nil
     }
     return reviveGhost(ghost)
+  },
+
+  createPreviewEntity(
+    stage: StagePosition,
+    position: Position,
+    apparentDirection: defines.direction,
+    entityName: string,
+  ): LuaEntity | nil {
+    const surface = stage.surface
+
+    return surface.create_entity({
+      name: Prototypes.PreviewEntityPrefix + entityName,
+      position,
+      direction: apparentDirection,
+      force: "player",
+    })
   },
 
   updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity {

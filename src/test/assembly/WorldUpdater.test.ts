@@ -17,6 +17,7 @@ import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
+import { isPreviewEntity } from "../../entity/entity-info"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
@@ -56,9 +57,14 @@ before_each(() => {
   worldUpdater = createWorldUpdater(mockEntityCreator, wireUpdater, highlighter)
 })
 
-function assertEntityNotPresent(i: StageNumber): void {
+function assertNothingPresent(i: StageNumber): void {
   assert.falsy(mockEntityCreator.getAt(i) ?? nil)
-  assert.is_nil(entity.getWorldEntity(i))
+  assert.is_nil(entity.getWorldOrPreviewEntity(i))
+}
+function assertHasPreview(i: StageNumber): void {
+  assert.falsy(mockEntityCreator.getAt(i) ?? nil)
+  const e = entity.getWorldOrPreviewEntity(i)
+  assert.truthy(e && isPreviewEntity(e), "has preview entity")
 }
 
 function assertEntityCorrect(i: StageNumber): LuaEntity {
@@ -82,10 +88,7 @@ describe("updateWorldEntities", () => {
     }
     test.each([1, 2, 3])("can create one entity %d", (stage) => {
       worldUpdater.updateWorldEntities(assembly, entity, stage, stage)
-      for (let i = 1; i <= 3; i++) {
-        if (i === stage) assertEntityCorrect(i)
-        else assertEntityNotPresent(i)
-      }
+      assertEntityCorrect(stage)
     })
     test("can create all entities", () => {
       worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
@@ -114,7 +117,7 @@ describe("updateWorldEntities", () => {
     test("replaces deleted entity", () => {
       worldUpdater.updateWorldEntities(assembly, entity, 3, 3)
       entity.getWorldEntity(3)!.destroy()
-      assertEntityNotPresent(3)
+      assertNothingPresent(3)
       worldUpdater.updateWorldEntities(assembly, entity, 3, 3)
       assertEntityCorrect(3)
     })
@@ -127,6 +130,14 @@ describe("updateWorldEntities", () => {
       assertEntityCorrect(1)
       assert.false(oldEntry.luaEntity.valid)
     })
+  })
+
+  test("creates preview entities in stages below first stage", () => {
+    entity.moveToStage(3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
+    assertHasPreview(1)
+    assertHasPreview(2)
+    assertEntityCorrect(3)
   })
 
   test("calls wireUpdater", () => {
@@ -163,6 +174,7 @@ describe("updateWorldEntities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
 
     assert.nil(mockEntityCreator.getAt(1))
+    assertHasPreview(1)
     assertDestructible(assertEntityCorrect(2), true)
     assertDestructible(assertEntityCorrect(3), false)
   })
@@ -320,19 +332,19 @@ describe("invalid stages", () => {
     assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1, 5))
     for (let i = -1; i <= 5; i++) {
       if (i >= 1 && i <= 4) assertEntityCorrect(i)
-      else assertEntityNotPresent(i)
+      else assertNothingPresent(i)
     }
   })
   test("does nothing if range is empty", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 3, 1)
-    for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
+    for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   })
 })
 
 test("deleteWorldEntities", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
   worldUpdater.deleteAllEntities(entity)
-  for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
+  for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
 })
 
@@ -343,10 +355,10 @@ test("deleteExtraEntitiesOnly", () => {
   assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
 })
 
-test("makeSettingsRemnant deletes all entities and calls highlighter.makeSettingsRemnant", () => {
+test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
   worldUpdater.makeSettingsRemnant(assembly, entity)
-  for (let i = 1; i <= 3; i++) assertEntityNotPresent(i)
+  for (let i = 1; i <= 3; i++) assertHasPreview(i)
   assert.spy(highlighter.makeSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
 })
 

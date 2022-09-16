@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Prototypes } from "../constants"
 import {
   AssemblyEntity,
   isWorldEntityAssemblyEntity,
@@ -134,12 +135,8 @@ export function createAssemblyOperations(
 
       const content = assembly.content
       const assemblyEntities = entities.map((e) => content.findCompatible(e, nil)!)
-      for (const entity of assemblyEntities) {
-        entity.destroyAllWorldEntities("mainEntity")
-      }
-      for (const entity of assemblyEntities) {
-        updateWorldEntities(assembly, entity, stage, stage, true)
-      }
+      for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
+      for (const entity of assemblyEntities) updateWorldEntities(assembly, entity, stage, stage, true)
     },
     setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
       const stageNum = entity.firstStage
@@ -173,6 +170,13 @@ const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
   deleteAllWorldEntities(stage: StagePosition) {
     for (const entity of stage.surface.find_entities()) {
       if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
+    }
+    for (const entity of stage.surface.find_entities_filtered({
+      type: "simple-entity-with-owner",
+    })) {
+      const name = entity.name
+      if (name.startsWith(Prototypes.PreviewEntityPrefix) || name.startsWith(Prototypes.SelectionProxyPrefix))
+        entity.destroy()
     }
   },
 }

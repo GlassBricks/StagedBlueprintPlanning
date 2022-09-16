@@ -10,6 +10,7 @@
  */
 
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { isPreviewEntity } from "../entity/entity-info"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyContent } from "./AssemblyContent"
 import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "./entity-move"
@@ -73,7 +74,7 @@ export function createWorldUpdater(
   wireHandler: WireUpdater,
   highlighter: EntityHighlighter,
 ): WorldUpdater {
-  const { createEntity, updateEntity } = entityCreator
+  const { createEntity, createPreviewEntity, updateEntity } = entityCreator
   const { updateWireConnections } = wireHandler
   const { updateHighlights, deleteHighlights } = highlighter
 
@@ -89,7 +90,7 @@ export function createWorldUpdater(
 
     for (const [stageNum, value] of entity.iterateValues(startStage, endStage)) {
       if (value === nil) {
-        entity.destroyWorldEntity(stageNum, "mainEntity")
+        entity.destroyWorldOrPreviewEntity(stageNum)
         continue
       }
 
@@ -111,6 +112,16 @@ export function createWorldUpdater(
     }
   }
 
+  function updatePreviewEntities(assembly: AssemblyContent, entity: AssemblyEntity) {
+    for (const [i, stage] of assembly.iterateStages()) {
+      const worldEntity = entity.getWorldOrPreviewEntity(i)
+      if (worldEntity) continue
+
+      const previewEntity = createPreviewEntity(stage, entity.position, entity.getDirection(), entity.getNameAtStage(i))
+      entity.replaceWorldOrPreviewEntity(i, previewEntity)
+    }
+  }
+
   function updateWorldEntities(
     assembly: AssemblyContent,
     entity: AssemblyEntity,
@@ -126,6 +137,7 @@ export function createWorldUpdater(
     if (startStage > endStage) return
 
     doUpdateWorldEntities(assembly, entity, startStage, endStage, replace)
+    updatePreviewEntities(assembly, entity) // todo: only update if needed
     updateHighlights(assembly, entity, startStage, endStage)
   }
 
@@ -153,10 +165,10 @@ export function createWorldUpdater(
       forceMoveEntity(movedEntity, entity.position, entity.getDirection())
     } else {
       entity.setDirection(movedEntity.direction)
-      const posChanged = assembly.content.changePosition(entity, movedEntity.position)
-      assert(posChanged, "failed to change position in assembly content")
       deleteHighlights(entity)
       updateHighlights(assembly, entity, entity.firstStage, assembly.numStages())
+      const posChanged = assembly.content.changePosition(entity, movedEntity.position)
+      assert(posChanged, "failed to change position in assembly content")
     }
 
     return moveResult
@@ -171,14 +183,19 @@ export function createWorldUpdater(
     if (stage !== entity.firstStage) return "not-first-stage"
 
     // check all entities exist
+
+    if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.numStages()))
+      return "connected-entities-missing"
+
     const entities: LuaEntity[] = []
+    for (const stageNum of $range(1, entity.firstStage - 1)) {
+      entities.push(entity.getWorldOrPreviewEntity(stageNum)!)
+    }
     for (const stageNum of $range(entity.firstStage, assembly.numStages())) {
-      const worldEntity = entity.getWorldEntity(stageNum)
+      const worldEntity = entity.getWorldOrPreviewEntity(stageNum)
       if (!worldEntity) return "entities-missing"
       entities.push(worldEntity)
     }
-    if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.numStages()))
-      return "connected-entities-missing"
 
     return tryMoveAllEntities(entities, movedEntity.position, movedEntity.direction)
   }
@@ -191,25 +208,27 @@ export function createWorldUpdater(
     const cableConnected = content.getCableConnections(entity)
     if (cableConnected) {
       for (const other of cableConnected) {
-        if (!other.hasWorldEntityInRange(startStage, endStage, "mainEntity")) return false
+        if (!other.hasWorldEntityInRange(startStage, endStage)) return false
       }
     }
     const circuitConnections = content.getCircuitConnections(entity)
     if (circuitConnections) {
       for (const [other] of circuitConnections) {
-        if (!other.hasWorldEntityInRange(startStage, endStage, "mainEntity")) return false
+        if (!other.hasWorldEntityInRange(startStage, endStage)) return false
       }
     }
     return true
   }
 
-  function forceDeleteEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void {
-    entity.destroyWorldEntity(stage, "mainEntity")
+  function clearWorldEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void {
+    entity.getWorldEntity(stage)?.destroy()
+    updatePreviewEntities(assembly, entity)
     updateHighlights(assembly, entity, stage, stage)
   }
   function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     assert(entity.isSettingsRemnant)
-    entity.destroyAllWorldEntities("mainEntity")
+    entity.destroyAllWorldOrPreviewEntities()
+    updatePreviewEntities(assembly, entity)
     highlighter.makeSettingsRemnant(assembly, entity)
   }
   function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
@@ -221,16 +240,17 @@ export function createWorldUpdater(
   return {
     updateWorldEntities,
     tryMoveOtherEntities: tryMoveEntity,
-    clearWorldEntity: forceDeleteEntity,
+    clearWorldEntity,
     deleteAllEntities(entity: AssemblyEntity): void {
-      entity.destroyAllWorldEntities("mainEntity")
+      entity.destroyAllWorldOrPreviewEntities()
       highlighter.deleteHighlights(entity)
     },
     deleteExtraEntitiesOnly(entity: AssemblyEntity): void {
-      highlighter.deleteHighlights(entity)
-      for (const [, luaEntity] of entity.iterateWorldEntities("mainEntity")) {
-        makeEntityDestructible(luaEntity)
+      for (const [, luaEntity] of entity.iterateWorldOrPreviewEntities()) {
+        if (isPreviewEntity(luaEntity)) luaEntity.destroy()
+        else makeEntityDestructible(luaEntity)
       }
+      highlighter.deleteHighlights(entity)
     },
     makeSettingsRemnant,
     reviveSettingsRemnant,
