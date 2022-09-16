@@ -117,7 +117,12 @@ export function createWorldUpdater(
       const worldEntity = entity.getWorldOrPreviewEntity(i)
       if (worldEntity) continue
 
-      const previewEntity = createPreviewEntity(stage, entity.position, entity.getDirection(), entity.getNameAtStage(i))
+      const previewEntity = createPreviewEntity(
+        stage,
+        entity.position,
+        entity.getApparentDirection(),
+        entity.getNameAtStage(i),
+      )
       entity.replaceWorldOrPreviewEntity(i, previewEntity)
     }
   }
