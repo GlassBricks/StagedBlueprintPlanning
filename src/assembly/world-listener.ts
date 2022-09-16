@@ -479,7 +479,10 @@ function revertPreparedBlueprint(stack: BlueprintItemStack): void {
 }
 
 function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
-  if (!stage) return // do nothing
+  if (!stage) {
+    tryFixBlueprint(player)
+    return
+  }
   const blueprint = getInnerBlueprint(player.cursor_stack)
   if (!blueprint) {
     player.print([L_Interaction.BlueprintNotHandled])
@@ -492,6 +495,28 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
     state.blueprintOriginalNumEntities = numEntities!
   }
 }
+
+function tryFixBlueprint(player: LuaPlayer): void {
+  const blueprint = getInnerBlueprint(player.cursor_stack)
+  if (!blueprint) return
+  const entityCount = blueprint.get_blueprint_entity_count()
+  if (!blueprint || entityCount === 0) return
+  const lastTags = blueprint.get_blueprint_entity_tag(entityCount, IsLastEntity)
+  if (lastTags !== nil) {
+    game.print("Fixing blueprint")
+    const entities = blueprint.get_blueprint_entities()!
+    fixOldBlueprint(entities)
+    blueprint.set_blueprint_entities(entities)
+  }
+}
+
+Events.on_player_cursor_stack_changed((e) => {
+  tryFixBlueprint(game.get_player(e.player_index)!)
+})
+
+Events.on_player_changed_surface((e) => {
+  tryFixBlueprint(game.get_player(e.player_index)!)
+})
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   const player = game.get_player(e.player_index)!
@@ -640,6 +665,33 @@ if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_mov
     })
   })
 }
+
+// spawning chunks
+
+Events.on_chunk_generated((e) => {
+  const stage = getStageAtSurface(e.surface.index)
+  if (!stage) return
+  const entities = e.surface.find_entities_filtered({
+    type: "simple-entity-with-owner",
+    area: e.area,
+  })
+  for (const entity of entities) {
+    if (entity.valid) DefaultAssemblyUpdater.tryFixEntity(stage.assembly, entity, stage)
+  }
+
+  for (const [, otherStage] of stage.assembly.iterateStages()) {
+    const surface = otherStage.surface
+    if (!surface.is_chunk_generated(e.position)) {
+      if (surface.generate_with_lab_tiles) {
+        surface.build_checkerboard(e.area)
+      } else {
+        surface.request_to_generate_chunks(e.position, 1)
+        surface.force_generate_chunk_requests()
+      }
+      surface.set_chunk_generated_status(e.position, defines.chunk_generated_status.entities)
+    }
+  }
+})
 
 export const _assertInValidState = (): void => {
   assert.same({}, state, "State is not empty")

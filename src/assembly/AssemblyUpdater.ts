@@ -88,6 +88,9 @@ export interface AssemblyUpdater {
 
   /** When a cleanup tool has been used on an entity. */
   onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
+  /** Similar to above; does not remove settings remnants */
+  tryFixEntity(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
+
   onEntityForceDeleted(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void
   /** Either: entity died, or reverse select with cleanup tool */
   onEntityDied(assembly: AssemblyContent, entity: BasicEntityInfo, stage: StagePosition): void
@@ -602,13 +605,21 @@ export function createAssemblyUpdater(
   }
 
   function onCleanupToolUsed(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void {
+    tryFixEntity(assembly, proxyEntity, stage, true)
+  }
+  function tryFixEntity(
+    assembly: AssemblyContent,
+    proxyEntity: LuaEntity,
+    stage: StagePosition,
+    deleteSettingsRemnants: boolean,
+  ) {
     const existing = getEntityFromProxyEntity(proxyEntity, stage, assembly)
     if (!existing) return
     if (!existing.isSettingsRemnant) {
       // this is an error entity, try revive
       if (stage.stageNumber < existing.firstStage) return
       updateWorldEntities(assembly, existing, stage.stageNumber, stage.stageNumber)
-    } else {
+    } else if (deleteSettingsRemnants) {
       // settings remnant, remove
       assembly.content.delete(existing)
       deleteAllEntities(existing)
@@ -726,6 +737,9 @@ export function createAssemblyUpdater(
     onCircuitWiresPotentiallyUpdated,
     onEntityMarkedForUpgrade,
     onCleanupToolUsed,
+    tryFixEntity(assembly: AssemblyContent, proxyEntity: LuaEntity, stage: StagePosition): void {
+      tryFixEntity(assembly, proxyEntity, stage, false)
+    },
     onEntityForceDeleted,
     onEntityDied,
     onMoveEntityToStage,
