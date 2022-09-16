@@ -5,6 +5,7 @@ Date: ????
     - Generating chunks on one stage generates chunks on other stages.
   Changes:
     - Improved appearance of rail previews
+    - Preview tint is now consistent for all entities
     - Using the assembly cleanup tool to revive entities now attempts to revive the entity in _all_ layers, not just the current one.
     - Deleting an entity with circuit connections creates a settings remnant if an "undo" action would _not_ restore it.
     - Removed "selection proxy" entities (internal)
