@@ -157,15 +157,15 @@ const cleanupTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-b[cleanup]",
 
-  selection_mode: ["entity-with-owner"],
+  selection_mode: ["any-entity"],
   selection_color: cleanupToolColor,
   selection_cursor_box_type: "entity",
 
-  alt_selection_mode: ["entity-with-owner"],
+  alt_selection_mode: ["any-entity"],
   alt_selection_color: cleanupToolColor,
   alt_selection_cursor_box_type: "entity",
 
-  reverse_selection_mode: ["entity-with-owner"],
+  reverse_selection_mode: ["any-entity"],
   reverse_selection_color: cleanupReverseToolColor,
   reverse_selection_cursor_box_type: "not-allowed",
 }

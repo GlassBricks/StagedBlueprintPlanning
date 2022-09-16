@@ -13,6 +13,7 @@ import { keys } from "ts-transformer-keys"
 import { Prototypes } from "../constants"
 import { AssemblyEntity, entityHasErrorAt, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
+import { makePreviewIndestructible } from "../entity/special-entities"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
@@ -198,6 +199,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       entity.getApparentDirection(),
     )
     entity.replaceExtraEntity("selectionProxy", stageNumber, result)
+    game.print(result?.name)
     return result
   }
 
@@ -227,8 +229,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     } else {
       const stage = assembly.getStage(firstStage)
       if (!stage) return
-      const shouldHaveEntityPreview = entity.getWorldEntity(firstStage) === nil
-      const hasError = shouldHaveEntityPreview
+      const hasError = entityHasErrorAt(entity, firstStage)
       updateSelectionProxy(entity, stage, hasError)
       updateHighlight(entity, stage, "errorOutline", hasError)
     }
@@ -354,18 +355,16 @@ export const DefaultHighlightCreator: HighlightCreator = {
     position: Position,
     direction: defines.direction | nil,
   ): LuaEntity | nil {
-    const name = Prototypes.SelectionProxyPrefix + type
     const result = surface.create_entity({
-      name,
-      position,
+      name: Prototypes.SelectionProxyPrefix + type,
+      position: {
+        x: position.x + 1 / 256,
+        y: position.y,
+      },
       direction,
       force: "player",
     })
-    if (result) {
-      result.destructible = false
-      result.minable = false
-      result.rotatable = false
-    }
+    makePreviewIndestructible(result)
     return result
   },
 }

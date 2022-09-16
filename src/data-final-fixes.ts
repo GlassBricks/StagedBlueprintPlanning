@@ -14,7 +14,11 @@ import { Data } from "typed-factorio/data/types"
 import * as util from "util"
 import { BuildableEntityType, Prototypes } from "./constants"
 import {
+  BasicSprite,
   EntityPrototype,
+  ItemToPlace,
+  RailPieceLayers,
+  RailRemnantsPrototype,
   SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
   Sprite,
@@ -67,11 +71,10 @@ export function createWhiteSprite(
   }
 }
 
-const emptySprite: Sprite = {
-  filename: "__core__/graphics/empty.png",
+const emptySprite: BasicSprite = {
+  filename: "__bp100__/graphics/empty16.png",
   size: 1,
   priority: "extra-high",
-  tint: [1, 1, 1, 1],
 }
 
 const entityToItemBuild = new LuaMap<string, string>()
@@ -92,8 +95,9 @@ function isBuildablePrototype(prototype: EntityPrototype): boolean {
   return prototype.selection_box !== nil
 }
 
-const previews: SimpleEntityWithOwnerPrototype[] = []
-const selectionProxies: SimpleEntityWithOwnerPrototype[] = []
+const railPrototypes = newLuaSet("straight-rail", "curved-rail")
+const previews: EntityPrototype[] = []
+const selectionProxies: EntityPrototype[] = []
 const types = keys<Record<BuildableEntityType, true>>()
 for (const type of types.sort()) {
   const prototypes = data.raw[type]
@@ -112,72 +116,267 @@ for (const type of types.sort()) {
     flags.push("hidden")
     flags.push("not-on-map")
 
-    const color =
-      prototype.friendly_map_color ??
-      prototype.map_color ??
-      utilityConstants.chart.default_friendly_color_by_type[type] ??
-      utilityConstants.chart.default_friendly_color
-
     const selectionBox = prototype.selection_box ?? [
       [-0.5, -0.5],
       [0.5, 0.5],
     ]
 
-    previews.push({
-      name: Prototypes.PreviewEntityPrefix + name,
-      type: "simple-entity-with-owner",
-      localised_name: [L_Bp100.PreviewEntity, ["entity-name." + name]],
+    const isRail = railPrototypes.has(type)
+    if (!isRail) {
+      const color =
+        prototype.friendly_map_color ??
+        prototype.map_color ??
+        utilityConstants.chart.default_friendly_color_by_type[type] ??
+        utilityConstants.chart.default_friendly_color
 
-      // copied from prototype
-      icons: prototype.icons,
-      icon_size: prototype.icon_size,
-      icon_mipmaps: prototype.icon_mipmaps,
-      icon: prototype.icon,
+      const preview: SimpleEntityWithOwnerPrototype = {
+        name: Prototypes.PreviewEntityPrefix + name,
+        type: "simple-entity-with-owner",
+        localised_name: [L_Bp100.PreviewEntity, ["entity-name." + name]],
 
-      selection_box: selectionBox,
-      collision_box: prototype.collision_box,
-      tile_height: prototype.tile_height,
-      tile_width: prototype.tile_width,
+        // copied from prototype
+        icons: prototype.icons,
+        icon_size: prototype.icon_size,
+        icon_mipmaps: prototype.icon_mipmaps,
+        icon: prototype.icon,
 
-      collision_mask: [],
+        selection_box: selectionBox,
+        collision_box: prototype.collision_box,
+        tile_height: prototype.tile_height,
+        tile_width: prototype.tile_width,
 
-      open_sound: prototype.open_sound,
-      close_sound: prototype.close_sound,
+        collision_mask: [],
 
-      picture: createWhiteSprite(selectionBox!, color),
+        open_sound: prototype.open_sound,
+        close_sound: prototype.close_sound,
 
-      // other
-      flags,
-      placeable_by: placeableBy,
-      render_layer: "floor",
-      subgroup: Prototypes.PreviewEntitySubgroup,
-      create_ghost_on_death: false,
-    })
+        picture: createWhiteSprite(selectionBox!, color),
 
-    selectionProxies.push({
-      name: Prototypes.SelectionProxyPrefix + name,
-      type: "simple-entity-with-owner",
-      localised_name: [L_Bp100.SelectionProxy, ["entity-name." + name]],
+        // other
+        flags,
+        placeable_by: placeableBy,
+        render_layer: "ground-patch-higher2",
+        secondary_draw_order: 100,
+        subgroup: Prototypes.PreviewEntitySubgroup,
+        create_ghost_on_death: false,
+      }
+      previews.push(preview)
 
-      // copied from prototype
-      icons: prototype.icons,
-      icon_size: prototype.icon_size,
-      icon_mipmaps: prototype.icon_mipmaps,
-      icon: prototype.icon,
+      const selectionProxy: SimpleEntityWithOwnerPrototype = {
+        name: Prototypes.SelectionProxyPrefix + name,
+        type: "simple-entity-with-owner",
+        localised_name: [L_Bp100.SelectionProxy, ["entity-name." + name]],
 
-      selection_box: selectionBox,
-      collision_box: prototype.collision_box,
-      tile_height: prototype.tile_height,
-      tile_width: prototype.tile_width,
+        // copied from prototype
+        icons: prototype.icons,
+        icon_size: prototype.icon_size,
+        icon_mipmaps: prototype.icon_mipmaps,
+        icon: prototype.icon,
 
-      collision_mask: [],
+        selection_box: selectionBox,
+        collision_box: prototype.collision_box,
+        tile_height: prototype.tile_height,
+        tile_width: prototype.tile_width,
 
-      picture: emptySprite,
-      flags,
-      selectable_in_game: false,
-      subgroup: Prototypes.SelectionProxySubgroup,
-    })
+        collision_mask: ["not-colliding-with-itself"],
+
+        picture: emptySprite,
+        flags,
+        selectable_in_game: false,
+        subgroup: Prototypes.SelectionProxySubgroup,
+      }
+      selectionProxies.push(selectionProxy)
+    } else {
+      previews.push(createRailPreview(prototype, placeableBy, flags))
+      selectionProxies.push(createRailSelectionProxy(prototype, flags))
+    }
   }
+}
+
+function spriteToRailPieceLayers(sprite: BasicSprite): RailPieceLayers {
+  return {
+    metals: emptySprite,
+    backplates: emptySprite,
+    ties: emptySprite,
+    stone_path: sprite,
+  }
+}
+function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint: Color): RailPieceLayers {
+  return spriteToRailPieceLayers({
+    filename: "__bp100__/graphics/rails/curved-rail.png",
+    priority: "extra-high",
+    position: pos,
+    size,
+    scale: 32,
+    tint,
+    flags: ["terrain"],
+  })
+}
+function getDiagonalRailSprite(n: number, tint: Color): RailPieceLayers {
+  return spriteToRailPieceLayers({
+    filename: "__bp100__/graphics/rails/diagonal-rail.png",
+    priority: "extra-high",
+    position: [n * 2, 0],
+    size: 2,
+    scale: 32,
+    tint,
+    flags: ["terrain"],
+  })
+}
+function getStraightRailSprite(tint: Color): RailPieceLayers {
+  // use top 2x2 pixels of lab-tile
+  return spriteToRailPieceLayers({
+    filename: whiteTile,
+    priority: "extra-high",
+    size: 2,
+    scale: 32,
+    tint,
+    flags: ["terrain"],
+  })
+}
+
+function createRailPictures(tint: Color): RailRemnantsPrototype["pictures"] {
+  const straight = getStraightRailSprite(tint)
+  return {
+    straight_rail_horizontal: straight,
+    straight_rail_vertical: straight,
+    straight_rail_diagonal_left_top: getDiagonalRailSprite(0, tint),
+    straight_rail_diagonal_right_top: getDiagonalRailSprite(1, tint),
+    straight_rail_diagonal_right_bottom: getDiagonalRailSprite(2, tint),
+    straight_rail_diagonal_left_bottom: getDiagonalRailSprite(3, tint),
+    curved_rail_vertical_left_top: getCurvedRailSprite([0, 0], [4, 8], tint),
+    curved_rail_vertical_right_top: getCurvedRailSprite([4, 0], [4, 8], tint),
+    curved_rail_vertical_right_bottom: getCurvedRailSprite([8, 0], [4, 8], tint),
+    curved_rail_vertical_left_bottom: getCurvedRailSprite([12, 0], [4, 8], tint),
+    curved_rail_horizontal_left_top: getCurvedRailSprite([0, 8], [8, 4], tint),
+    curved_rail_horizontal_right_top: getCurvedRailSprite([8, 8], [8, 4], tint),
+    curved_rail_horizontal_right_bottom: getCurvedRailSprite([0, 12], [8, 4], tint),
+    curved_rail_horizontal_left_bottom: getCurvedRailSprite([8, 12], [8, 4], tint),
+    rail_endings: {
+      sheet: emptySprite,
+    },
+  }
+}
+
+function createRailPreview(
+  prototype: EntityPrototype,
+  placeableBy: ItemToPlace,
+  flags: (keyof EntityPrototypeFlags)[],
+): RailRemnantsPrototype {
+  const isCurved = prototype.type === "curved-rail"
+  const color = prototype.friendly_map_color ?? prototype.map_color ?? utilityConstants.chart.rail_color
+  if (!flags.includes("building-direction-8-way")) {
+    flags.push("building-direction-8-way")
+  }
+
+  const result: RailRemnantsPrototype = {
+    name: Prototypes.PreviewEntityPrefix + prototype.name,
+    type: "rail-remnants",
+    localised_name: [L_Bp100.PreviewEntity, ["entity-name." + prototype.name]],
+
+    bending_type: isCurved ? "turn" : "straight",
+
+    // copied from prototype
+    icons: prototype.icons,
+    icon_size: prototype.icon_size,
+    icon_mipmaps: prototype.icon_mipmaps,
+    icon: prototype.icon,
+
+    tile_height: prototype.tile_height,
+    tile_width: prototype.tile_width,
+
+    collision_mask: ["not-colliding-with-itself"],
+    collision_box: prototype.collision_box,
+    secondary_collision_box: isCurved
+      ? [
+          [-0.65, -2.43],
+          [0.65, 2.43],
+        ]
+      : nil,
+
+    open_sound: prototype.open_sound,
+    close_sound: prototype.close_sound,
+
+    pictures: createRailPictures(color),
+    // int max
+    time_before_removed: 2147483647,
+    remove_on_tile_placement: false,
+    remove_on_entity_placement: false,
+
+    flags,
+    placeable_by: placeableBy,
+    final_render_layer: "ground-patch-higher2",
+    subgroup: Prototypes.PreviewEntitySubgroup,
+  }
+
+  return result
+}
+function createRailSelectionProxy(
+  prototype: EntityPrototype,
+  flags: (keyof EntityPrototypeFlags)[],
+): RailRemnantsPrototype {
+  const name = Prototypes.SelectionProxyPrefix + prototype.name
+  const isCurved = prototype.type === "curved-rail"
+  if (!flags.includes("building-direction-8-way")) {
+    flags.push("building-direction-8-way")
+  }
+  if (!flags.includes("placeable-off-grid")) {
+    flags.push("placeable-off-grid")
+  }
+
+  const emptyRailPieceLayers: RailPieceLayers = spriteToRailPieceLayers(emptySprite)
+
+  const result: RailRemnantsPrototype = {
+    name,
+    type: "rail-remnants",
+    localised_name: [L_Bp100.SelectionProxy, ["entity-name." + prototype.name]],
+    bending_type: isCurved ? "turn" : "straight",
+
+    // copied from prototype
+    icons: prototype.icons,
+    icon_size: prototype.icon_size,
+    icon_mipmaps: prototype.icon_mipmaps,
+    icon: prototype.icon,
+
+    tile_height: prototype.tile_height,
+    tile_width: prototype.tile_width,
+
+    collision_mask: ["not-colliding-with-itself"],
+    collision_box: prototype.collision_box,
+    secondary_collision_box: isCurved
+      ? [
+          [-0.65, -2.43],
+          [0.65, 2.43],
+        ]
+      : nil,
+
+    flags,
+    selectable_in_game: false,
+    subgroup: Prototypes.SelectionProxySubgroup,
+
+    // time_before_removed: 2147483647,
+    remove_on_tile_placement: false,
+    remove_on_entity_placement: false,
+
+    pictures: {
+      straight_rail_horizontal: emptyRailPieceLayers,
+      straight_rail_vertical: emptyRailPieceLayers,
+      straight_rail_diagonal_left_top: emptyRailPieceLayers,
+      straight_rail_diagonal_right_top: emptyRailPieceLayers,
+      straight_rail_diagonal_right_bottom: emptyRailPieceLayers,
+      straight_rail_diagonal_left_bottom: emptyRailPieceLayers,
+      curved_rail_vertical_left_top: emptyRailPieceLayers,
+      curved_rail_vertical_right_top: emptyRailPieceLayers,
+      curved_rail_vertical_right_bottom: emptyRailPieceLayers,
+      curved_rail_vertical_left_bottom: emptyRailPieceLayers,
+      curved_rail_horizontal_left_top: emptyRailPieceLayers,
+      curved_rail_horizontal_right_top: emptyRailPieceLayers,
+      curved_rail_horizontal_right_bottom: emptyRailPieceLayers,
+      curved_rail_horizontal_left_bottom: emptyRailPieceLayers,
+      rail_endings: { sheet: emptySprite },
+    },
+  }
+  return result
 }
 
 data.extend(previews)

@@ -48,3 +48,14 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
   if (orientation === nil) return 0
   return floor(orientation * 8 + 0.5) % 8
 }
+
+export function makePreviewIndestructible(entity: LuaEntity | nil): void {
+  if (!entity) return
+  entity.destructible = false
+  entity.minable = false
+  entity.rotatable = false
+  if (entity.type === "rail-remnants") {
+    entity.corpse_expires = false
+    entity.corpse_immune_to_entity_placement = true
+  }
+}

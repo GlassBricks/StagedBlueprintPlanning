@@ -14,11 +14,12 @@ import { StagePosition } from "../assembly/AssemblyContent"
 import { Prototypes } from "../constants"
 import { Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
 import { SavedDirection } from "./AssemblyEntity"
 import { getTempBpItemStack, reviveGhost } from "./blueprinting"
 import { Entity } from "./Entity"
 import { rollingStockTypes } from "./entity-info"
-import { getPastedDirection, getSavedDirection } from "./special-entities"
+import { getPastedDirection, getSavedDirection, makePreviewIndestructible } from "./special-entities"
 
 /** @noSelf */
 export interface EntityCreator {
@@ -193,12 +194,14 @@ const BlueprintEntityHandler: EntityHandler = {
   ): LuaEntity | nil {
     const surface = stage.surface
 
-    return surface.create_entity({
+    const entity = surface.create_entity({
       name: Prototypes.PreviewEntityPrefix + entityName,
       position,
       direction: apparentDirection,
       force: "player",
     })
+    makePreviewIndestructible(entity)
+    return entity
   },
 
   updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity {
@@ -226,3 +229,24 @@ const BlueprintEntityHandler: EntityHandler = {
   },
 }
 export const DefaultEntityHandler: EntityHandler = BlueprintEntityHandler
+
+Migrations.to("0.6.0", () => {
+  const railPreviews: string[] = []
+  for (const [name] of game.get_filtered_entity_prototypes([
+    {
+      filter: "type",
+      type: "rail-remnants",
+    },
+  ])) {
+    if (name.startsWith(Prototypes.PreviewEntityPrefix) || name.startsWith(Prototypes.SelectionProxyPrefix)) {
+      railPreviews.push(name)
+    }
+  }
+
+  for (const [, surface] of game.surfaces) {
+    for (const entity of surface.find_entities_filtered({ name: railPreviews })) {
+      entity.corpse_expires = false
+      entity.corpse_immune_to_entity_placement = true
+    }
+  }
+})

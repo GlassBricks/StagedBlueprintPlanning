@@ -64,7 +64,43 @@ export interface SimpleEntityWithOwnerPrototype extends EntityPrototype {
   create_ghost_on_death?: boolean
   picture?: Sprite | Sprite4Way
   render_layer?: RenderLayer
+  secondary_draw_order?: number
 }
+export interface CorpsePrototype extends EntityPrototype {
+  time_before_removed?: number
+  remove_on_entity_placement?: boolean
+  remove_on_tile_placement?: boolean
+  final_render_layer?: RenderLayer
+}
+export interface RailRemnantsPrototype extends CorpsePrototype {
+  type: "rail-remnants"
+  secondary_collision_box?: BoundingBoxWrite | BoundingBoxArray
+  bending_type: "straight" | "turn"
+  pictures: {
+    straight_rail_horizontal: RailPieceLayers
+    straight_rail_vertical: RailPieceLayers
+    straight_rail_diagonal_left_top: RailPieceLayers
+    straight_rail_diagonal_right_top: RailPieceLayers
+    straight_rail_diagonal_right_bottom: RailPieceLayers
+    straight_rail_diagonal_left_bottom: RailPieceLayers
+    curved_rail_vertical_left_top: RailPieceLayers
+    curved_rail_vertical_right_top: RailPieceLayers
+    curved_rail_vertical_right_bottom: RailPieceLayers
+    curved_rail_vertical_left_bottom: RailPieceLayers
+    curved_rail_horizontal_left_top: RailPieceLayers
+    curved_rail_horizontal_right_top: RailPieceLayers
+    curved_rail_horizontal_right_bottom: RailPieceLayers
+    curved_rail_horizontal_left_bottom: RailPieceLayers
+    rail_endings: Sprite8Way
+  }
+}
+export interface RailPieceLayers {
+  metals: Sprite
+  backplates: Sprite
+  ties: Sprite
+  stone_path: Sprite
+}
+
 export interface ItemPrototype extends PrototypeBase {
   icons?: IconData[]
   icon_size?: number
@@ -194,6 +230,10 @@ export interface Sprite4Way {
   south: Sprite
   west: Sprite
 }
+// export interface BasicSprite8Way {}
+export interface Sprite8Way {
+  sheet: Sprite
+}
 
 export interface IconData {
   icon: string
@@ -219,5 +259,6 @@ export interface UtilityConstants {
   chart: {
     default_friendly_color: Color
     default_friendly_color_by_type: Partial<Record<string, Color>>
+    rail_color: Color
   }
 }
