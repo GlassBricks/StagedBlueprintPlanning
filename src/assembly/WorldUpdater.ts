@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
 import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
 import { AssemblyContent } from "./AssemblyContent"
@@ -169,7 +169,7 @@ export function createWorldUpdater(
     if (moveResult !== "success") {
       forceMoveEntity(movedEntity, entity.position, entity.getDirection())
     } else {
-      entity.setDirection(movedEntity.direction)
+      entity.setDirection(movedEntity.direction as SavedDirection)
       deleteHighlights(entity)
       updateHighlights(assembly, entity, entity.firstStage, assembly.numStages())
       const posChanged = assembly.content.changePosition(entity, movedEntity.position)

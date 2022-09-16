@@ -11,7 +11,7 @@
 
 import { CableAddResult, MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
-import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, SavedDirection } from "../../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../../entity/Entity"
 import { entityMock } from "../simple-mock"
 
@@ -38,14 +38,19 @@ describe("findCompatible", () => {
   })
 
   test("findCompatibleAnyDirection finds compatible if same name and any direction", () => {
-    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
+    const entity: AssemblyEntity = createAssemblyEntity(
+      { name: "foo" },
+      { x: 0, y: 0 },
+      defines.direction.east as SavedDirection,
+      1,
+    )
     content.add(entity)
 
     assert.equal(entity, content.findCompatibleAnyDirection("foo", { x: 0, y: 0 }))
   })
 
   test("finds compatible if same category", () => {
-    const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, 0, 1)
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
     assert.equal(entity, content.findCompatibleBasic("assembling-machine-2", { x: 0, y: 0 }, nil))
@@ -55,7 +60,7 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity(
       { name: "assembling-machine-1" },
       { x: 0, y: 0 },
-      defines.direction.east,
+      defines.direction.east as SavedDirection,
       1,
     )
     content.add(entity)
@@ -64,7 +69,7 @@ describe("findCompatible", () => {
   })
 
   test("not compatible", () => {
-    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     assert.nil(content.findCompatibleBasic("test2", entity.position, nil))
     assert.nil(content.findCompatibleBasic("foo", entity.position, defines.direction.south))
   })
@@ -92,7 +97,7 @@ describe("findCompatible", () => {
         x: 0,
         y: 0,
       },
-      defines.direction.west,
+      defines.direction.west as SavedDirection,
       1,
     )
     content.add(assemblyEntity)
@@ -102,7 +107,7 @@ describe("findCompatible", () => {
   })
 
   test("findExactAtPosition", () => {
-    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     const luaEntity = entityMock({ name: "foo", position: { x: 0, y: 0 }, direction: 0 })
     content.add(entity)
     entity.replaceWorldEntity(2, luaEntity)
@@ -116,7 +121,7 @@ describe("findCompatible", () => {
 })
 
 test("changePosition", () => {
-  const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+  const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
   content.add(entity)
   content.changePosition(entity, { x: 1, y: 1 })
   assert.equal(1, entity.position.x)
@@ -128,7 +133,7 @@ describe("connections", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   function makeAssemblyEntity(n: number): AssemblyEntity {
-    return createAssemblyEntity({ name: "foo" }, { x: n, y: 0 }, 0, 1)
+    return createAssemblyEntity({ name: "foo" }, { x: n, y: 0 }, nil, 1)
   }
   before_each(() => {
     entity1 = makeAssemblyEntity(1)

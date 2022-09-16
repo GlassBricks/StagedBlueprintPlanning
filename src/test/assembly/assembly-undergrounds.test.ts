@@ -12,7 +12,7 @@
 import { oppositedirection } from "util"
 import { findUndergroundPair, unit } from "../../assembly/assembly-undergrounds"
 import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
-import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
+import { createAssemblyEntity, SavedDirection, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import direction = defines.direction
 
@@ -27,7 +27,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     const underground = createAssemblyEntity<UndergroundBeltEntity>(
       { name: "underground-belt", type },
       unit(direction).times(location),
-      type === "output" ? oppositedirection(direction) : direction,
+      (type === "output" ? oppositedirection(direction) : direction) as SavedDirection,
       1,
     )
     content.add(underground)

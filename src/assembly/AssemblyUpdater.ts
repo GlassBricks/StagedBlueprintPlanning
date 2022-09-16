@@ -13,6 +13,7 @@ import { L_Game, Prototypes } from "../constants"
 import {
   AssemblyEntity,
   createAssemblyEntity,
+  SavedDirection,
   StageNumber,
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
@@ -335,7 +336,7 @@ export function createAssemblyUpdater(
     entity: LuaEntity,
     stage: StagePosition,
     existing: AssemblyEntity,
-    newDirection: defines.direction,
+    newDirection: SavedDirection,
     byPlayer: PlayerIndex | nil,
   ): boolean {
     const rotateAllowed = stage.stageNumber === existing.firstStage
@@ -360,9 +361,10 @@ export function createAssemblyUpdater(
 
     if (entity.type === "underground-belt") {
       onUndergroundBeltPotentiallyUpdated(assembly, entity, stage, existing as UndergroundBeltAssemblyEntity, byPlayer)
+      return
     }
 
-    const newDirection = entity.direction
+    const newDirection = entity.direction as SavedDirection
     const rotated = newDirection !== existing.getDirection()
     if (rotated) {
       if (!tryRotateOrUndo(assembly, entity, stage, existing, newDirection, byPlayer)) {
@@ -394,7 +396,7 @@ export function createAssemblyUpdater(
       return onUndergroundBeltRotated(assembly, entity, stage, existing as UndergroundBeltAssemblyEntity, byPlayer)
     }
 
-    const newDirection = entity.direction
+    const newDirection = entity.direction as SavedDirection
     if (tryRotateOrUndo(assembly, entity, stage, existing, newDirection, byPlayer)) {
       // update all entities
       updateWorldEntities(assembly, existing, 1)
@@ -425,7 +427,7 @@ export function createAssemblyUpdater(
       )
     }
 
-    const rotateDir = entity.get_upgrade_direction()
+    const rotateDir = entity.get_upgrade_direction() as SavedDirection
     const rotated = rotateDir !== nil && rotateDir !== existing.getDirection()
     if (rotated) {
       if (!tryRotateOrUndo(assembly, entity, stage, existing, rotateDir, byPlayer)) {

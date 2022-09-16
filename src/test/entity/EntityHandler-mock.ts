@@ -13,7 +13,7 @@ import { keys } from "ts-transformer-keys"
 import { StagePosition } from "../../assembly/AssemblyContent"
 import { MutableMap2D, newMap2D } from "../../assembly/map2d"
 import { Prototypes } from "../../constants"
-import { StageNumber } from "../../entity/AssemblyEntity"
+import { SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler, EntityCreator, EntitySaver } from "../../entity/EntityHandler"
 import { shallowCopy } from "../../lib"
@@ -133,7 +133,7 @@ export function createMockEntitySaver(): EntitySaver {
           result[key] = value
         }
       }
-      return $multi(result, entity.direction ?? 0)
+      return $multi(result, (entity.direction ?? 0) as SavedDirection)
     },
   }
 }

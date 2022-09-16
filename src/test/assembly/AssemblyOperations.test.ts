@@ -40,8 +40,8 @@ before_each(() => {
 })
 
 test("deleteAllExtraEntitiesOnly", () => {
-  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
-  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
+  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
+  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), nil, 2)
   assembly.content.add(entity1)
   assembly.content.add(entity2)
 
@@ -51,8 +51,8 @@ test("deleteAllExtraEntitiesOnly", () => {
 })
 
 test("resetStage", () => {
-  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), 0, 1)
-  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), 0, 2)
+  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
+  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), nil, 2)
   assembly.content.add(entity1)
   assembly.content.add(entity2)
 
@@ -78,7 +78,7 @@ describe("trains", () => {
           orientation: e.orientation,
         },
         e.position,
-        e.direction,
+        nil,
         1,
       )
       aEntity.replaceWorldEntity(1, e)

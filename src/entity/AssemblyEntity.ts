@@ -41,14 +41,18 @@ import {
 
 export type StageNumber = number
 
+// Is only different for underground belts
+export type SavedDirection = defines.direction & {
+  _savedDirectionBrand: never
+}
 /**
  * All the data about one entity in an assembly, across all stages.
  */
 export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly position: Position
   readonly direction: defines.direction | nil
-  getDirection(): defines.direction
-  setDirection(direction: defines.direction): void
+  getDirection(): SavedDirection
+  setDirection(direction: SavedDirection): void
 
   /**
    * If is rolling stock, direction is based off of orientation instead.
@@ -215,10 +219,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.firstStage = firstStage
   }
 
-  public getDirection(): defines.direction {
-    return this.direction ?? 0
+  public getDirection(): SavedDirection {
+    return (this.direction ?? 0) as SavedDirection
   }
-  public setDirection(direction: defines.direction): void {
+  public setDirection(direction: SavedDirection): void {
     if (direction === 0) {
       this.direction = nil
     } else {
@@ -735,10 +739,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 }
 
+/** nil direction means the default direction of north */
 export function createAssemblyEntity<E extends Entity>(
   entity: E,
   position: Position,
-  direction: defines.direction | nil,
+  direction: SavedDirection | nil,
   stageNumber: StageNumber,
 ): AssemblyEntity<E> {
   return new AssemblyEntityImpl(stageNumber, entity, position, direction)

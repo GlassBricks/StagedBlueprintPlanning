@@ -15,7 +15,7 @@ import { forceMoveEntity } from "../../assembly/entity-move"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
-import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { isPreviewEntity } from "../../entity/entity-info"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
@@ -38,7 +38,7 @@ let wireUpdater: mock.Stubbed<WireUpdater>
 let worldUpdater: WorldUpdater
 
 const origPos = { x: 0.5, y: 0.5 }
-const origDir = defines.direction.east
+const origDir = defines.direction.east as SavedDirection
 before_each(() => {
   assembly = createMockAssemblyContent(4)
   entity = createAssemblyEntity(
@@ -181,7 +181,7 @@ describe("updateWorldEntities", () => {
 
   test("can rotate entities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-    entity.setDirection(defines.direction.west)
+    entity.setDirection(defines.direction.west as SavedDirection)
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
@@ -263,7 +263,12 @@ describe("tryMoveEntity", () => {
   describe("with wire connections", () => {
     let otherEntity: AssemblyEntity
     before_each(() => {
-      otherEntity = createAssemblyEntity({ name: "small-electric-pole" }, Pos(-0.5, 0.5), defines.direction.north, 1)
+      otherEntity = createAssemblyEntity(
+        { name: "small-electric-pole" },
+        Pos(-0.5, 0.5),
+        defines.direction.north as SavedDirection,
+        1,
+      )
       assembly.content.add(otherEntity)
     })
 

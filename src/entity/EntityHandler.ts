@@ -14,6 +14,7 @@ import { StagePosition } from "../assembly/AssemblyContent"
 import { Prototypes } from "../constants"
 import { Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { SavedDirection } from "./AssemblyEntity"
 import { getTempBpItemStack, reviveGhost } from "./blueprinting"
 import { Entity } from "./Entity"
 import { rollingStockTypes } from "./entity-info"
@@ -34,7 +35,7 @@ export interface EntityCreator {
 
 /** @noSelf */
 export interface EntitySaver {
-  saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, defines.direction] | []>
+  saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, SavedDirection] | []>
 }
 
 export interface EntityHandler extends EntityCreator, EntitySaver {}
@@ -156,7 +157,7 @@ function rotateUnderground(luaEntity: LuaEntity, mode: "input" | "output", direc
 }
 
 const BlueprintEntityHandler: EntityHandler = {
-  saveEntity(entity: LuaEntity): LuaMultiReturn<[Entity, defines.direction] | []> {
+  saveEntity(entity: LuaEntity): LuaMultiReturn<[Entity, SavedDirection] | []> {
     const bpEntity = blueprintEntity(entity)
     if (!bpEntity) return $multi()
     bpEntity.entity_number = nil!

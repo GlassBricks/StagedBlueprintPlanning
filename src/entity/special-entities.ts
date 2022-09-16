@@ -10,6 +10,7 @@
  */
 
 import { oppositedirection } from "util"
+import { SavedDirection } from "./AssemblyEntity"
 import { Entity } from "./Entity"
 import { isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import floor = math.floor
@@ -21,16 +22,16 @@ export interface RollingStockEntity extends Entity {
   orientation?: RealOrientation
 }
 /** Inverts direction if is a output underground belt. */
-export function getSavedDirection(entity: LuaEntity): defines.direction {
+export function getSavedDirection(entity: LuaEntity): SavedDirection {
   const type = entity.type
   if (type === "underground-belt") {
     if (entity.belt_to_ground_type === "output") {
-      return oppositedirection(entity.direction)
+      return oppositedirection(entity.direction) as SavedDirection
     }
   } else if (rollingStockTypes.has(type)) {
-    return 0
+    return 0 as SavedDirection
   }
-  return entity.direction
+  return entity.direction as SavedDirection
 }
 
 export function getPastedDirection(entity: BlueprintEntity, direction: defines.direction): defines.direction | nil {
