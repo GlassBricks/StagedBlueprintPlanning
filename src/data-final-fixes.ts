@@ -34,7 +34,10 @@ import max = math.max
 declare const data: Data
 
 const whiteTile = "__base__/graphics/terrain/lab-tiles/lab-white.png"
-const outlineTint: ColorArray = [0.5, 0.5, 0.5]
+const previewTint: ColorArray = [0.5, 0.5, 0.5, 0.8]
+function getPreviewTint(color: Color | undefined): ColorArray {
+  return color ? util.mix_color(color, previewTint as Color) : previewTint
+}
 export function createWhiteSprite(
   rawBBox: BoundingBoxWrite | BoundingBoxArray,
   color: Color | nil,
@@ -44,8 +47,6 @@ export function createWhiteSprite(
   const size = bbox.size()
   const scale = ceil(max(size.x, size.y))
   const center = bbox.center()
-
-  const tint = color ? util.mix_color(color, outlineTint as Color) : outlineTint
 
   const { x, y } = bbox.scale(32 / scale).size()
   function createRotated(dir: defines.direction | nil): Sprite {
@@ -57,8 +58,8 @@ export function createWhiteSprite(
       scale,
       shift: center.rotateAboutOrigin(dir),
       priority: "extra-high",
-      flags: ["terrain"],
-      tint,
+      flags: ["group=none"],
+      tint: getPreviewTint(color),
     }
   }
 
@@ -174,7 +175,7 @@ function spriteToRailPieceLayers(sprite: BasicSprite): RailPieceLayers {
     stone_path: sprite,
   }
 }
-function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint: Color): RailPieceLayers {
+function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint: ColorArray): RailPieceLayers {
   return spriteToRailPieceLayers({
     filename: "__bp100__/graphics/rails/curved-rail.png",
     priority: "extra-high",
@@ -182,10 +183,10 @@ function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint
     size,
     scale: 32,
     tint,
-    flags: ["terrain"],
+    flags: ["group=none"],
   })
 }
-function getDiagonalRailSprite(n: number, tint: Color): RailPieceLayers {
+function getDiagonalRailSprite(n: number, tint: ColorArray): RailPieceLayers {
   return spriteToRailPieceLayers({
     filename: "__bp100__/graphics/rails/diagonal-rail.png",
     priority: "extra-high",
@@ -193,10 +194,10 @@ function getDiagonalRailSprite(n: number, tint: Color): RailPieceLayers {
     size: 2,
     scale: 32,
     tint,
-    flags: ["terrain"],
+    flags: ["group=none"],
   })
 }
-function getStraightRailSprite(tint: Color): RailPieceLayers {
+function getStraightRailSprite(tint: Color | ColorArray): RailPieceLayers {
   // use top 2x2 pixels of lab-tile
   return spriteToRailPieceLayers({
     filename: whiteTile,
@@ -204,11 +205,12 @@ function getStraightRailSprite(tint: Color): RailPieceLayers {
     size: 2,
     scale: 32,
     tint,
-    flags: ["terrain"],
+    flags: ["group=none"],
   })
 }
 
-function createRailPictures(tint: Color): RailRemnantsPrototype["pictures"] {
+function createRailPictures(color: Color): RailRemnantsPrototype["pictures"] {
+  const tint = getPreviewTint(color)
   const straight = getStraightRailSprite(tint)
   return {
     straight_rail_horizontal: straight,

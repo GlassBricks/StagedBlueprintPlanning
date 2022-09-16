@@ -782,7 +782,7 @@ export function _migrate031(entity: AssemblyEntity): void {
 export function _migrate060(entity: AssemblyEntity): void {
   interface OldAssemblyEntity {
     categoryName?: string
-    stageProperties: {
+    stageProperties?: {
       mainEntity?: PRecord<StageNumber, LuaEntity | nil>
       previewEntity?: PRecord<StageNumber, LuaEntity | nil>
     }
@@ -790,16 +790,18 @@ export function _migrate060(entity: AssemblyEntity): void {
   const asOld = entity as unknown as OldAssemblyEntity
   const asNew = entity as AssemblyEntityImpl
   delete asOld.categoryName
-  const previewEntities = asOld.stageProperties.previewEntity
+  const stageProperties = asOld.stageProperties
+  if (!stageProperties) return
+  const previewEntities = stageProperties.previewEntity
   if (previewEntities) {
     for (const [stageNum, previewEntity] of pairs(previewEntities)) {
       if (previewEntity && previewEntity.valid) {
         asNew.replaceWorldOrPreviewEntity(stageNum, previewEntity)
       }
     }
-    delete asOld.stageProperties.previewEntity
+    delete stageProperties.previewEntity
   }
-  const mainEntities = asOld.stageProperties.mainEntity
+  const mainEntities = stageProperties.mainEntity
   // this runs later, so main entities override preview entities
   if (mainEntities) {
     for (const [stageNum, mainEntity] of pairs(mainEntities)) {
@@ -807,7 +809,7 @@ export function _migrate060(entity: AssemblyEntity): void {
         asNew.replaceWorldOrPreviewEntity(stageNum, mainEntity)
       }
     }
-    delete asOld.stageProperties.mainEntity
+    delete stageProperties.mainEntity
   }
-  if (isEmpty(asOld.stageProperties)) delete asNew.stageProperties
+  if (isEmpty(stageProperties)) delete asNew.stageProperties
 }
