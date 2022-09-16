@@ -27,7 +27,7 @@ import { DefaultWireHandler, WireUpdater } from "./WireHandler"
  */
 export interface WorldUpdater {
   /**
-   * Re-syncs all stage entities for a given assembly entity.
+   * Updates/replaces stage entities for a given assembly entity.
    * @param assembly the assembly position info
    * @param entity the assembly entity
    * @param startStage

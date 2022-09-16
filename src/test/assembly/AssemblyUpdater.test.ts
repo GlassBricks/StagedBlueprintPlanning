@@ -1041,7 +1041,7 @@ describe("cleanup tool", () => {
     assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage)
     assert.nil(added.getWorldEntity(1))
     assertOneEntity()
-    assertUpdateCalled(added, 1, 1, false)
+    assertUpdateCalled(added, 1, nil, false)
   })
 
   test("clear settings remnant", () => {

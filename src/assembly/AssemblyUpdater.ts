@@ -624,7 +624,7 @@ export function createAssemblyUpdater(
     if (!existing.isSettingsRemnant) {
       // this is an error entity, try revive
       if (stage.stageNumber < existing.firstStage) return
-      updateWorldEntities(assembly, existing, stage.stageNumber, stage.stageNumber)
+      updateWorldEntities(assembly, existing, stage.stageNumber, nil)
     } else if (deleteSettingsRemnants) {
       // settings remnant, remove
       assembly.content.delete(existing)
