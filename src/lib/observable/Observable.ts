@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { shallowCopy } from "../_util"
 import { RegisterClass } from "../references"
-import { shallowCopy } from "../util"
 import { Subscription } from "./Subscription"
 
 export interface Observer<T> {

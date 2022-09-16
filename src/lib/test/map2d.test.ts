@@ -19,31 +19,39 @@ before_each(() => {
 
 test("add and get", () => {
   map2d.add(1, 1, "a")
-  assert.same(newLuaSet("a"), map2d.get(1, 1))
+  assert.same("a", map2d.get(1, 1))
 })
 
 test("add and get multiple", () => {
   map2d.add(1, 1, "a")
   map2d.add(1, 1, "b")
-  assert.same(newLuaSet("a", "b"), map2d.get(1, 1))
+  assert.same(["a", "b"], map2d.get(1, 1))
 })
 
 test("add in multiple coords", () => {
   map2d.add(1, 1, "a")
   map2d.add(2, 2, "b")
-  assert.same(newLuaSet("a"), map2d.get(1, 1))
-  assert.same(newLuaSet("b"), map2d.get(2, 2))
+  assert.same("a", map2d.get(1, 1))
+  assert.same("b", map2d.get(2, 2))
 })
 
 test("remove and get", () => {
   map2d.add(1, 1, "a")
   map2d.add(1, 1, "b")
   map2d.delete(1, 1, "a")
-  assert.same(newLuaSet("b"), map2d.get(1, 1))
+  assert.same("b", map2d.get(1, 1))
 })
 
 test("removes empty entries", () => {
   map2d.add(1, 1, "a")
   map2d.delete(1, 1, "a")
+  assert.same({}, map2d)
+})
+
+test("removes empty from multiple values", () => {
+  map2d.add(1, 1, "a")
+  map2d.add(1, 1, "b")
+  map2d.delete(1, 1, "a")
+  map2d.delete(1, 1, "b")
   assert.same({}, map2d)
 })

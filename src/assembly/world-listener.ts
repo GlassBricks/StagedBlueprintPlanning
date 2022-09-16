@@ -13,7 +13,7 @@ import { CustomInputs, Prototypes } from "../constants"
 import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { isUpgradeableEntity } from "../entity/entity-info"
+import { isCompatibleEntity } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -374,7 +374,7 @@ function tryFastReplace(assembly: Assembly, entity: LuaEntity, stage: Stage, pla
 }
 
 function isFastReplaceable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
-  return Pos.equals(old.position, next.position) && isUpgradeableEntity(old.name, next.name)
+  return Pos.equals(old.position, next.position) && isCompatibleEntity(old.name, next.name)
 }
 
 // Blueprinting

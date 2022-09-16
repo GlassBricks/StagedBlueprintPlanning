@@ -31,10 +31,17 @@ test("countNumEntities", () => {
 
 describe("findCompatible", () => {
   test("finds compatible if same name and direction", () => {
-    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
     assert.equal(entity, content.findCompatibleBasic("foo", { x: 0, y: 0 }, nil))
+  })
+
+  test("findCompatibleAnyDirection finds compatible if same name and any direction", () => {
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
+    content.add(entity)
+
+    assert.equal(entity, content.findCompatibleAnyDirection("foo", { x: 0, y: 0 }))
   })
 
   test("finds compatible if same category", () => {
@@ -42,6 +49,18 @@ describe("findCompatible", () => {
     content.add(entity)
 
     assert.equal(entity, content.findCompatibleBasic("assembling-machine-2", { x: 0, y: 0 }, nil))
+  })
+
+  test("findCompatibleAnyDirection finds compatible if same category and any direction", () => {
+    const entity: AssemblyEntity = createAssemblyEntity(
+      { name: "assembling-machine-1" },
+      { x: 0, y: 0 },
+      defines.direction.east,
+      1,
+    )
+    content.add(entity)
+
+    assert.equal(entity, content.findCompatibleAnyDirection("assembling-machine-2", { x: 0, y: 0 }))
   })
 
   test("not compatible", () => {

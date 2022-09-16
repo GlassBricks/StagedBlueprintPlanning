@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { deepCompare, isEmpty, shallowCopy } from "../util"
+import { deepCompare, isEmpty, shallowCopy } from "../_util"
 
 test("shallowCopy", () => {
   const obj = {

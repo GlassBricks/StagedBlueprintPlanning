@@ -724,6 +724,5 @@ export function _migrate060(entity: AssemblyEntity): void {
   interface OldAssemblyEntity {
     categoryName?: string
   }
-  const e = entity as OldAssemblyEntity
-  delete e.categoryName
+  delete (entity as OldAssemblyEntity).categoryName
 }

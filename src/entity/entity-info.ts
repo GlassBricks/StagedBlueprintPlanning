@@ -17,24 +17,20 @@ const typeRemap: PRecord<string, string> = {
   "logistic-container": "container",
   "rail-chain-signal": "rail-signal",
 }
+export type CategoryName = string & {
+  _categoryName: never
+}
 
-const categoryByEntityName = new LuaMap<string, LuaSet<string>>()
-const categoryByCategoryName = new LuaMap<string, LuaSet<string>>()
+const categories = new LuaMap<string, CategoryName>()
 function processCategory(prototype: LuaEntityPrototype) {
   const { fast_replaceable_group, type, collision_box, name } = prototype
   if (fast_replaceable_group === nil) return
   const actualType = typeRemap[type] ?? type
   const { x: lx, y: ly } = collision_box.left_top
   const { x: rx, y: ry } = collision_box.right_bottom
-  const categoryName = [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|")
+  const categoryName = [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|") as CategoryName
 
-  let category = categoryByCategoryName.get(categoryName)
-  if (category) {
-    category.add(name)
-  } else {
-    categoryByCategoryName.set(categoryName, (category = newLuaSet(name)))
-  }
-  categoryByEntityName.set(name, category)
+  categories.set(name, categoryName)
 }
 
 export const enum PasteRotatableType {
@@ -93,15 +89,17 @@ function processPrototypes() {
 Events.on_configuration_changed(processPrototypes)
 Events.on_init(processPrototypes)
 
-export function getEntityCategory(entityName: string): LuaSet<string> | nil {
+export function getEntityCategory(entityName: string): CategoryName | nil {
   if (!prototypesProcessed) processPrototypes()
-  return categoryByEntityName.get(entityName)
+  return categories.get(entityName)
 }
 
-export function isUpgradeableEntity(a: string, b: string): boolean {
+export function isCompatibleEntity(a: string, b: string): boolean {
   if (!prototypesProcessed) processPrototypes()
-  const category = categoryByEntityName.get(a)
-  return category !== nil && category.has(b)
+  if (a === b) return true
+  const aCategory = categories.get(a)
+  if (aCategory === nil) return false
+  return aCategory === categories.get(b)
 }
 
 export function getSelectionBox(entityName: string): BBoxClass {
@@ -127,9 +125,8 @@ export function isRollingStockType(entityName: string): boolean {
 export { rollingStockTypes }
 
 export function _makeTestEntityCategory(...names: string[]): void {
-  const category = newLuaSet<string>()
+  const category = {} as unknown as CategoryName
   for (const name of names) {
-    category.add(name)
-    categoryByEntityName.set(name, category)
+    categories.set(name, category)
   }
 }

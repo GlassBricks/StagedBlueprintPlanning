@@ -11,10 +11,10 @@
 
 import { oppositedirection } from "util"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../entity/AsmCircuitConnection"
-import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { BasicEntityInfo, Entity } from "../entity/Entity"
+import { _migrate060, AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { BasicEntityInfo } from "../entity/Entity"
 import { getEntityCategory, getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "../entity/entity-info"
-import { isEmpty, MutableMap2D, newMap2D, RegisterClass } from "../lib"
+import { isEmpty, migrateMap2d060, MutableMap2D, newMap2D, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { getRegisteredAssemblyEntity } from "./entity-registration"
@@ -67,6 +67,10 @@ export interface MutableEntityMap extends EntityMap {
 export type AsmEntityCircuitConnections = LuaMap<AssemblyEntity, LuaSet<AsmCircuitConnection>>
 export type AsmEntityCableConnections = LuaSet<AssemblyEntity>
 
+function isSingle(entity: AssemblyEntity | readonly AssemblyEntity[]): entity is AssemblyEntity {
+  return (entity as AssemblyEntity).firstStage !== nil
+}
+
 @RegisterClass("EntityMap")
 class EntityMapImpl implements MutableEntityMap {
   readonly byPosition: MutableMap2D<AssemblyEntity> = newMap2D()
@@ -83,14 +87,58 @@ class EntityMapImpl implements MutableEntityMap {
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
     if (direction === 0) direction = nil
-    return matchDirectional(atPos, entityName, direction)
+    const category = getEntityCategory(entityName)
+
+    if (isSingle(atPos)) {
+      if (atPos.direction !== direction) return nil
+      if (category === nil) {
+        if (atPos.firstValue.name === entityName) return atPos
+        return nil
+      }
+      if (getEntityCategory(atPos.firstValue.name) === category) return atPos
+      return nil
+    }
+
+    if (category === nil) {
+      for (const candidate of atPos) {
+        if (candidate.direction === direction && candidate.firstValue.name === entityName) return candidate
+      }
+      return nil
+    }
+    for (const candidate of atPos) {
+      if (candidate.direction === direction && getEntityCategory(candidate.firstValue.name) === category)
+        return candidate
+    }
+    return nil
   }
+
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
+    const category = getEntityCategory(entityName)
     if (!atPos) return
-    return matchAnyDirection(atPos, entityName)
+    if (isSingle(atPos)) {
+      if (atPos.firstValue.name === entityName) return atPos
+      if (category === nil) {
+        if (atPos.firstValue.name === entityName) return atPos
+        return nil
+      }
+      if (getEntityCategory(atPos.firstValue.name) === category) return atPos
+      return nil
+    }
+
+    if (category === nil) {
+      for (const candidate of atPos) {
+        if (candidate.firstValue.name === entityName) return candidate
+      }
+      return nil
+    }
+    for (const candidate of atPos) {
+      if (getEntityCategory(candidate.firstValue.name) === category) return candidate
+    }
+    return nil
   }
+
   findCompatible(
     entity: BasicEntityInfo | LuaEntity,
     previousDirection?: defines.direction | nil,
@@ -127,6 +175,10 @@ class EntityMapImpl implements MutableEntityMap {
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {
     const atPos = this.byPosition.get(oldPosition.x, oldPosition.y)
     if (!atPos) return
+    if (isSingle(atPos)) {
+      if (atPos.getWorldEntity(expectedStage) === entity) return atPos
+      return nil
+    }
     for (const candidate of atPos) {
       if (candidate.getWorldEntity(expectedStage) === entity) return candidate
     }
@@ -137,7 +189,7 @@ class EntityMapImpl implements MutableEntityMap {
     return table_size(this.entities)
   }
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity> {
-    return this.entities as any
+    return this.entities
   }
 
   computeBoundingBox(): BoundingBox | nil {
@@ -156,7 +208,7 @@ class EntityMapImpl implements MutableEntityMap {
     return BBox.expand(BBox.coords(minX, minY, maxX, maxY), 20)
   }
 
-  add<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {
+  add(entity: AssemblyEntity): void {
     const { entities } = this
     if (entities.has(entity)) return
     this.entities.add(entity)
@@ -164,7 +216,7 @@ class EntityMapImpl implements MutableEntityMap {
     this.byPosition.add(x, y, entity)
   }
 
-  delete<E extends Entity = Entity>(entity: AssemblyEntity<E>): void {
+  delete(entity: AssemblyEntity): void {
     const { entities } = this
     if (!entities.has(entity)) return
     entities.delete(entity)
@@ -180,9 +232,10 @@ class EntityMapImpl implements MutableEntityMap {
     const { x, y } = entity.position
     const { x: newX, y: newY } = position
     if (x === newX && y === newY) return false
-    this.byPosition.delete(x, y, entity)
+    const { byPosition } = this
+    byPosition.delete(x, y, entity)
     entity.setPositionUnchecked(position)
-    this.byPosition.add(newX, newY, entity)
+    byPosition.add(newX, newY, entity)
     return true
   }
 
@@ -339,31 +392,6 @@ class EntityMapImpl implements MutableEntityMap {
   }
 }
 
-function matchDirectional(entities: ReadonlyLuaSet<AssemblyEntity>, name: string, direction: defines.direction | nil) {
-  const category = getEntityCategory(name)
-  if (!category) {
-    for (const entity of entities) {
-      if (entity.firstValue.name === name && entity.direction === direction) return entity
-    }
-  } else {
-    for (const entity of entities) {
-      if (category.has(entity.firstValue.name) && entity.direction === direction) return entity
-    }
-  }
-}
-function matchAnyDirection(entities: ReadonlyLuaSet<AssemblyEntity>, name: string) {
-  const category = getEntityCategory(name)
-  if (!category) {
-    for (const entity of entities) {
-      if (entity.firstValue.name === name) return entity
-    }
-  } else {
-    for (const entity of entities) {
-      if (category.has(entity.firstValue.name)) return entity
-    }
-  }
-}
-
 export function newEntityMap(): MutableEntityMap {
   return new EntityMapImpl()
 }
@@ -384,5 +412,15 @@ Migrations.to("0.3.0", () => {
 
     content.cableConnections = new LuaMap()
     // see also: migrations-custom/cable
+  }
+})
+
+Migrations.to("0.6.0", () => {
+  for (const [, assembly] of getAllAssemblies()) {
+    const content = assembly.content as EntityMapImpl
+    migrateMap2d060(content.byPosition)
+    for (const entity of content.iterateAllEntities()) {
+      _migrate060(entity)
+    }
   }
 })

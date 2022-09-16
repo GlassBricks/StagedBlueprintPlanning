@@ -29,6 +29,10 @@ export interface MockEntityEntry {
   stage: StageNumber
 }
 
+function toArray<T>(value: T | readonly T[]): readonly T[] {
+  return (Array.isArray(value) ? value : [value]) as readonly T[]
+}
+
 export function createMockEntityCreator(): MockEntityCreator {
   const values: Record<StageNumber, MutableMap2D<MockEntityEntry>> = {}
   const luaEntityToEntry = new LuaMap<LuaEntity, MockEntityEntry>()
@@ -39,7 +43,7 @@ export function createMockEntityCreator(): MockEntityCreator {
     if (position === nil) {
       for (const [, byX] of stageValues) {
         for (const [, byY] of pairs(byX)) {
-          for (const entry of byY) {
+          for (const entry of toArray(byY)) {
             if (entry.luaEntity.valid) return entry
           }
         }
@@ -48,7 +52,7 @@ export function createMockEntityCreator(): MockEntityCreator {
     }
     const atPos = stageValues.get(position.x, position.y)
     if (!atPos) return nil
-    for (const entry of atPos) {
+    for (const entry of toArray(atPos)) {
       if (entry.luaEntity.valid) return entry
     }
   }

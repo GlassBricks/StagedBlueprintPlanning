@@ -9,12 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { isEmpty } from "../_util"
 import { Events } from "../Events"
 import { isMutableState, MutableState, Observer, State, Subscription } from "../observable"
 import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
-import { isEmpty } from "../util"
 import { PRecord } from "../util-types"
 import * as propInfo from "./propInfo.json"
 import { ClassComponentSpec, ElementSpec, FCSpec, FragmentSpec, GuiEvent, GuiEventHandler, Spec, Tracker } from "./spec"
