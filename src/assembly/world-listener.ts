@@ -679,16 +679,18 @@ Events.on_chunk_generated((e) => {
     if (entity.valid) DefaultAssemblyUpdater.tryFixEntity(stage.assembly, entity, stage)
   }
 
+  const status = defines.chunk_generated_status.entities
   for (const [, otherStage] of stage.assembly.iterateStages()) {
     const surface = otherStage.surface
-    if (!surface.is_chunk_generated(e.position)) {
+    const position = e.position
+    if (!surface.is_chunk_generated(position)) {
       if (surface.generate_with_lab_tiles) {
         surface.build_checkerboard(e.area)
       } else {
-        surface.request_to_generate_chunks(e.position, 1)
+        surface.request_to_generate_chunks(position, 1)
         surface.force_generate_chunk_requests()
       }
-      surface.set_chunk_generated_status(e.position, defines.chunk_generated_status.entities)
+      surface.set_chunk_generated_status(position, status)
     }
   }
 })
