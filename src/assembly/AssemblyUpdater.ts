@@ -267,6 +267,20 @@ export function createAssemblyUpdater(
     doEntityDelete(assembly, existing, entity, byPlayer)
   }
 
+  function shouldMakeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity) {
+    if (entity.hasStageDiff()) return true
+    const connections = assembly.content.getCircuitConnections(entity)
+    if (!connections) return false
+    const stage = entity.firstStage
+    for (const [otherEntity] of connections) {
+      if (otherEntity.getWorldEntity(stage) === nil) {
+        // has a connection at first stage, but not one in the world
+        return true
+      }
+    }
+    return false
+  }
+
   function doEntityDelete(
     assembly: AssemblyContent,
     assemblyEntity: AssemblyEntity,
@@ -276,7 +290,7 @@ export function createAssemblyUpdater(
     const oldStage = assemblyEntity.getOldStage()
     if (oldStage !== nil) {
       moveEntityToOldStage(assembly, assemblyEntity, oldStage, entity, byPlayer)
-    } else if (assemblyEntity.hasStageDiff()) {
+    } else if (shouldMakeSettingsRemnant(assembly, assemblyEntity)) {
       assemblyEntity.isSettingsRemnant = true
       worldUpdater.makeSettingsRemnant(assembly, assemblyEntity)
     } else {
@@ -622,7 +636,7 @@ export function createAssemblyUpdater(
     const existing = getEntityIfIsSelectablePreview(proxyEntity, stage, assembly)
     if (!existing) return
     if (!existing.isSettingsRemnant) {
-      // this is an error entity, try revive
+      // this is an error entity, trrd revive
       if (stage.stageNumber < existing.firstStage) return
       updateWorldEntities(assembly, existing, stage.stageNumber, nil)
     } else if (deleteSettingsRemnants) {

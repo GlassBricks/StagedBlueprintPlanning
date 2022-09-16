@@ -21,7 +21,7 @@ import { findUndergroundPair } from "../../assembly/special-entity-treatment"
 import { WireSaver } from "../../assembly/WireHandler"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
-import { AssemblyEntity, StageDiffsInternal, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, StageDiffsInternal, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { _makeTestEntityCategory } from "../../entity/entity-info"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
@@ -33,6 +33,7 @@ import { createMockEntitySaver } from "../entity/EntityHandler-mock"
 import { entityMock, simpleMock } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 import direction = defines.direction
+import wire_type = defines.wire_type
 
 const pos = Pos(10.5, 10.5)
 
@@ -347,6 +348,43 @@ describe("delete", () => {
     assertOneEntity()
     assert.true(added.isSettingsRemnant)
     assertMakeSettingsRemnantCalled(added)
+  })
+
+  test("in first stage with circuit connections creates settings remnant", () => {
+    const { luaEntity, added } = addAndReset()
+    const otherEntity = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
+    assembly.content.add(otherEntity)
+    assembly.content.addCircuitConnection({
+      fromEntity: otherEntity,
+      toEntity: added,
+      fromId: 1,
+      toId: 1,
+      wire: wire_type.green,
+    })
+
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage, playerIndex)
+    assert.true(added.isSettingsRemnant)
+    assertNEntities(2)
+    assertMakeSettingsRemnantCalled(added)
+  })
+
+  test("in first stage, with circuit connections, but other has world entity, does not create remnant", () => {
+    const { luaEntity, added } = addAndReset()
+    const otherEntity = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
+    assembly.content.add(otherEntity)
+    assembly.content.addCircuitConnection({
+      fromEntity: otherEntity,
+      toEntity: added,
+      fromId: 1,
+      toId: 1,
+      wire: wire_type.green,
+    })
+    otherEntity.replaceWorldEntity(1, createEntity())
+
+    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage, playerIndex)
+    assert.falsy(added.isSettingsRemnant)
+    assertOneEntity()
+    assertDeleteAllEntitiesCalled(added)
   })
 })
 
