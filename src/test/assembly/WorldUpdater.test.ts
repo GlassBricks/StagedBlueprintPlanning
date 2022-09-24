@@ -374,13 +374,16 @@ test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsR
   assert.spy(highlighter.makeSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
 })
 
-test("reviveSettingsRemnant deletes all entities and calls highlighter.reviveSettingsRemnant", () => {
+test("reviveSettingsRemnant revives correct entities and calls highlighter.reviveSettingsRemnant", () => {
+  entity.moveToStage(2)
   entity.isSettingsRemnant = true
   worldUpdater.makeSettingsRemnant(assembly, entity)
 
   entity.isSettingsRemnant = nil
   worldUpdater.reviveSettingsRemnant(assembly, entity)
-  for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+  assertHasPreview(1)
+  assertEntityCorrect(2)
+  assertEntityCorrect(3)
   assert.spy(highlighter.reviveSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
 })
 
