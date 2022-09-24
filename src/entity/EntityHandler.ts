@@ -51,7 +51,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   const { surface, position } = entity
 
   const stack = getTempBpItemStack()
-  for (const radius of [0.01, 0.5]) {
+  for (const radius of [0.01, 1]) {
     const isRollingStock = rollingStockTypes.has(entity.type)
     const indexMapping = stack.create_blueprint({
       surface,

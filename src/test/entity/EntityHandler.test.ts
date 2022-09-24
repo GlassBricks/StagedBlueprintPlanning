@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
 import { StagePosition } from "../../assembly/AssemblyContent"
 import { Entity } from "../../entity/Entity"
 import { DefaultEntityHandler } from "../../entity/EntityHandler"
@@ -29,6 +30,35 @@ test("can save an entity", () => {
   const [saved, direction] = DefaultEntityHandler.saveEntity(entity)
   assert.same({ name: "inserter", override_stack_size: 2 }, saved)
   assert.equal(defines.direction.east, direction)
+})
+const directions = Object.values(defines.direction) as defines.direction[]
+test.each(directions)("can saved a curved rail in all directions", (direction) => {
+  const entity = surface.create_entity({
+    name: "curved-rail",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction,
+  })!
+
+  const [saved, savedDirection] = DefaultEntityHandler.saveEntity(entity)
+  assert.same({ name: "curved-rail" }, saved)
+  assert.equal(direction, savedDirection)
+})
+
+test.each(directions)("can saved a straight rail in all directions", (direction) => {
+  const entity = surface.create_entity({
+    name: "straight-rail",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction,
+  })!
+
+  const [saved, savedDirection] = DefaultEntityHandler.saveEntity(entity)
+  if (direction === defines.direction.south || direction === defines.direction.west) {
+    direction = oppositedirection(direction)
+  }
+  assert.same({ name: "straight-rail" }, saved)
+  assert.equal(direction, savedDirection)
 })
 
 test("can create an entity", () => {
