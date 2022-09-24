@@ -240,6 +240,7 @@ export function createWorldUpdater(
   function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
     assert(!entity.isSettingsRemnant)
     doUpdateWorldEntities(assembly, entity, 1, assembly.numStages(), true)
+    updatePreviewEntities(assembly, entity)
     highlighter.reviveSettingsRemnant(assembly, entity)
   }
 
