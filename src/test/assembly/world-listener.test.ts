@@ -14,9 +14,10 @@ import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _assertInValidState } from "../../assembly/world-listener"
 import { CustomInputs, Prototypes } from "../../constants"
-import { getTempBpItemStack, reviveGhost } from "../../entity/blueprinting"
+import { getTempBpItemStack } from "../../entity/blueprinting"
 import { Events, Mutable } from "../../lib"
 import { BBox, Pos, PositionClass } from "../../lib/geometry"
+import { reviveGhost } from "../reviveGhost"
 import direction = defines.direction
 
 let updater: mock.Stubbed<AssemblyUpdater>

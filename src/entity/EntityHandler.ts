@@ -16,9 +16,9 @@ import { Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { SavedDirection } from "./AssemblyEntity"
-import { getTempBpItemStack, reviveGhost } from "./blueprinting"
+import { getTempBpItemStack } from "./blueprinting"
 import { Entity } from "./Entity"
-import { rollingStockTypes } from "./entity-info"
+import { isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import { getPastedDirection, getSavedDirection, makePreviewIndestructible } from "./special-entities"
 
 /** @noSelf */
@@ -78,14 +78,7 @@ function pasteEntity(
   const stack = getTempBpItemStack()
   const tilePosition = Pos.floor(position)
   const offsetPosition = Pos.minus(position, tilePosition)
-  stack.set_blueprint_entities([
-    {
-      ...entity,
-      position: offsetPosition,
-      direction: getPastedDirection(entity, direction),
-      entity_number: 1,
-    },
-  ])
+  setBlueprintEntity(stack, entity, offsetPosition, direction)
   stack.blueprint_snap_to_grid = [1, 1]
   stack.blueprint_absolute_snapping = true
 
@@ -95,6 +88,102 @@ function pasteEntity(
     position: tilePosition,
   })
   return ghosts[0]
+}
+function setBlueprintEntity(
+  stack: BlueprintItemStack,
+  entity: Mutable<BlueprintEntity>,
+  position: Position,
+  direction: defines.direction,
+): void {
+  // reuse the same table to avoid several allocations
+  entity.position = position
+  entity.direction = getPastedDirection(entity, direction)
+  entity.entity_number = 1
+  stack.set_blueprint_entities([entity])
+  entity.position = nil!
+  entity.direction = nil!
+  entity.entity_number = nil!
+}
+
+function tryCreateUndergroundEntity(
+  surface: LuaSurface,
+  position: Position,
+  direction: defines.direction,
+  entity: Entity,
+): LuaEntity | nil {
+  // assert(isUndergroundBeltType(entity.name))
+  const type = (entity as BlueprintEntity).type
+  if (type === "output") {
+    direction = oppositedirection(direction)
+  }
+  const params = {
+    name: entity.name,
+    position,
+    direction,
+    force: "player",
+    type,
+  }
+  if (!surface.can_place_entity(params)) return nil
+  const luaEntity = surface.create_entity(params)
+  if (luaEntity && luaEntity.belt_to_ground_type !== type) {
+    luaEntity.destroy()
+    return nil
+  }
+  return luaEntity
+}
+
+function tryCreateUnconfiguredEntity(
+  surface: LuaSurface,
+  position: Position,
+  direction: defines.direction,
+  entity: BlueprintEntity,
+): LuaEntity | nil {
+  // assert(!isUndergroundBeltType(entity.name))
+  const orientation = entity.orientation
+  if (orientation) direction = nil!
+  const params = {
+    name: entity.name,
+    position,
+    direction,
+    orientation: entity.orientation,
+    build_check_type: defines.build_check_type.manual,
+    force: "player",
+    create_build_effect_smoke: false,
+  }
+  if (surface.can_place_entity(params)) {
+    return surface.create_entity(params)
+  }
+}
+
+function createNormalEntity(
+  surface: LuaSurface,
+  position: MapPosition,
+  direction: defines.direction,
+  entity: Entity,
+): LuaEntity | nil {
+  const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity as BlueprintEntity)
+  if (!luaEntity) return nil
+  if (luaEntity.type === "underground-belt" && luaEntity.belt_to_ground_type !== (entity as BlueprintEntity).type) {
+    luaEntity.destroy()
+    return nil
+  }
+  if (entityHasSettings(entity)) {
+    const ghost = pasteEntity(surface, position, direction, entity as BlueprintEntity)
+    if (ghost) {
+      luaEntity.destroy()
+      ghost.destroy()
+      return nil
+    }
+  }
+  if (entity.items) createItems(luaEntity, entity.items)
+  return luaEntity
+}
+
+function entityHasSettings(entity: Entity): boolean {
+  for (const [key] of pairs(entity)) {
+    if (key !== "name" && key !== "items") return true
+  }
+  return false
 }
 
 function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
@@ -116,6 +205,13 @@ function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
     entity.destroy()
   }
   return newEntity
+}
+
+function createItems(luaEntity: LuaEntity, items: Record<string, number>): void {
+  const insertTarget = luaEntity.get_module_inventory() ?? luaEntity
+  for (const [item, amount] of pairs(items)) {
+    insertTarget.insert({ name: item, count: amount })
+  }
 }
 
 function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
@@ -176,14 +272,8 @@ const BlueprintEntityHandler: EntityHandler = {
     entity: Entity,
   ): LuaEntity | nil {
     const surface = stage.surface
-
-    const ghost = pasteEntity(surface, position, direction, entity as BlueprintEntity)
-    if (!ghost) return nil
-    if (ghost.ghost_type === "underground-belt" && ghost.belt_to_ground_type !== (entity as BlueprintEntity).type) {
-      ghost.destroy()
-      return nil
-    }
-    return reviveGhost(ghost)
+    if (isUndergroundBeltType(entity.name)) return tryCreateUndergroundEntity(surface, position, direction, entity)
+    return createNormalEntity(surface, position, direction, entity)
   },
 
   createPreviewEntity(
