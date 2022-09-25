@@ -435,7 +435,6 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
   for (const i of $range(1, numEntities)) {
     const entity = entities[i - 1]
     const { direction } = entity
-    if (direction && direction % 2 !== 0) continue // ignore diagonal stuff for now
     const { name, position } = entity
     const hasCircuitWires = entity.connections ?? entity.neighbours ? true : nil
     entities[nextIndex - 1] = {
