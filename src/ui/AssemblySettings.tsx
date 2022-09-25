@@ -26,6 +26,7 @@ import {
 import {
   Fn,
   HorizontalPusher,
+  HorizontalSpacer,
   showDialog,
   SimpleTitleBar,
   TrashButton,
@@ -131,13 +132,14 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
             }}
           />
         </flow>
-        <frame style="inside_shallow_frame_with_padding" direction="vertical">
-          <flow direction="vertical">
+        <frame style="inside_shallow_frame_with_padding" direction="horizontal">
+          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
             <button
               caption={[L_GuiAssemblySettings.GetBlueprintBook]}
               tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
               on_gui_click={funcOn(this.getBlueprintBook)}
             />
+            <HorizontalSpacer width={10} />
             <checkbox
               state={this.assembly.blueprintBookSettings.autoLandfill}
               caption={[L_GuiAssemblySettings.AutoLandfill]}
@@ -182,8 +184,7 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
 
   private getBlueprintBook() {
     const player = game.get_player(this.playerIndex)
-    if (!player) return
-    if (!player.clear_cursor()) return
+    if (!player || !player.clear_cursor()) return
     const cursor = player.cursor_stack
     if (!cursor || !player.is_cursor_empty()) return
     if (!this.assembly.makeBlueprintBook(cursor)) {
