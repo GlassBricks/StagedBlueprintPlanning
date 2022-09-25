@@ -63,18 +63,19 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
 )
 const checkExactlyForMatchTypes = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
-const undergroundBeltNames = new LuaSet<string>()
 const rollingStockNames = new LuaSet<string>()
 const checkExactlyNames = new LuaSet<string>()
+
+const nameToType = new LuaMap<string, string>()
 
 function processPrototype(name: string, prototype: LuaEntityPrototype): void {
   processCategory(prototype)
   processPasteRotatableType(prototype)
   selectionBoxes.set(name, BBox.from(prototype.selection_box))
   const type = prototype.type
-  if (type === "underground-belt") undergroundBeltNames.add(name)
   if (rollingStockTypes.has(type)) rollingStockNames.add(name)
   if (checkExactlyForMatchTypes.has(type)) checkExactlyNames.add(name)
+  nameToType.set(name, type)
 }
 
 let prototypesProcessed = false
@@ -117,7 +118,7 @@ export function shouldCheckEntityExactlyForMatch(entityName: string): boolean {
 }
 export function isUndergroundBeltType(entityName: string): boolean {
   if (!prototypesProcessed) processPrototypes()
-  return undergroundBeltNames.has(entityName)
+  return nameToType.get(entityName) === "underground-belt"
 }
 export function isRollingStockType(entityName: string): boolean {
   if (!prototypesProcessed) processPrototypes()
@@ -135,3 +136,6 @@ export function _makeTestEntityCategory(...names: string[]): void {
 export function isPreviewEntity(entity: LuaEntity): boolean {
   return entity.name.startsWith(Prototypes.PreviewEntityPrefix)
 }
+
+const nameToTypeAsReadonly: ReadonlyLuaMap<string, string> = nameToType
+export { nameToTypeAsReadonly as nameToType }

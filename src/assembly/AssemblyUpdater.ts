@@ -17,6 +17,7 @@ import {
   StageNumber,
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
+import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { BasicEntityInfo } from "../entity/Entity"
 import { isCompatibleEntity, isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
@@ -363,6 +364,19 @@ export function createAssemblyUpdater(
     return rotateAllowed
   }
 
+  function updateEntityFromWorld(
+    assembly: AssemblyContent,
+    existing: AssemblyEntity,
+    stageNumber: StageNumber,
+  ): boolean {
+    const entity = assert(existing.getWorldEntity(stageNumber))
+    const [newValue, direction] = saveEntity(entity)
+    assert(newValue, "could not save value on existing entity")
+    assert(direction === existing.getDirection(), "direction mismatch on saved entity")
+    const hasDiff = existing.adjustValueAtStage(stageNumber, newValue)
+    return hasDiff
+  }
+
   function onEntityPotentiallyUpdated(
     assembly: AssemblyContent,
     entity: LuaEntity,
@@ -386,13 +400,11 @@ export function createAssemblyUpdater(
         return
       }
     }
-
-    const [newValue, direction] = saveEntity(entity)
-    assert(newValue, "could not save value on existing entity")
-    assert(direction === existing.getDirection(), "direction mismatch on saved entity")
-    const hasDiff = existing.adjustValueAtStage(stage.stageNumber, newValue)
+    const { stageNumber } = stage
+    existing.replaceWorldEntity(stageNumber, entity)
+    const hasDiff = updateEntityFromWorld(assembly, existing, stageNumber)
     if (hasDiff || rotated) {
-      updateWorldEntities(assembly, existing, stage.stageNumber)
+      updateWorldEntities(assembly, existing, stageNumber)
     }
   }
 
@@ -595,12 +607,30 @@ export function createAssemblyUpdater(
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
-    const [hasDiff, maxConnectionsExceeded] = saveWireConnections(assembly, existing, stage.stageNumber)
+    const { stageNumber } = stage
+    const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly, existing, stageNumber)
     if (maxConnectionsExceeded) {
       createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
     }
-    if (hasDiff) {
-      updateWorldEntities(assembly, existing, existing.firstStage)
+    if (!connectionsChanged) return
+
+    const circuitConnections = assembly.content.getCircuitConnections(existing)
+    if (circuitConnections) {
+      checkDefaultControlBehavior(assembly, existing, stageNumber)
+      for (const [otherEntity] of circuitConnections) {
+        checkDefaultControlBehavior(assembly, otherEntity, stageNumber)
+      }
+    }
+    updateWorldEntities(assembly, existing, existing.firstStage)
+  }
+  function checkDefaultControlBehavior(
+    assembly: AssemblyContent,
+    entity: AssemblyEntity,
+    stageNumber: StageNumber,
+  ): void {
+    if (!hasControlBehaviorSet(entity, stageNumber)) {
+      fixEmptyControlBehavior(entity)
+      updateEntityFromWorld(assembly, entity, stageNumber)
     }
   }
 

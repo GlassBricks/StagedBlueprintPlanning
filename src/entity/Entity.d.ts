@@ -14,6 +14,7 @@ import { Position } from "../lib/geometry"
 export interface Entity {
   readonly name: string
   readonly items?: Record<string, number>
+  readonly control_behavior?: BlueprintControlBehavior
 }
 export interface BasicEntityInfo {
   readonly name: string
