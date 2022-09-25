@@ -1,12 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.7.1
-Date: ????
-  Changes:
----------------------------------------------------------------------------------------------------
 Version: 0.7.0
 Date: 2022-09-25
   Changes:
-    - The "moved back to X stage" behavior no longer occurs when using "move to stage" behavior explicitly.
+    - The "moved backed to X stage" behavior no longer occurs when using "move to stage" control explicitly. This now only happens when you build over a preview entity.
     - Improved assembly settings gui.
     - Entity assembly info gui now shows ALL stages with changes.
     - When changing between layers with an entity open, preview entities will also be opened if possible (in editor mode).
