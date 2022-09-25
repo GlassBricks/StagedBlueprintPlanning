@@ -679,6 +679,7 @@ describe("move to current stage", () => {
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
     assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
+    assert.nil(added.getOldStage())
   })
 
   test("preview entity", () => {
@@ -690,6 +691,7 @@ describe("move to current stage", () => {
     assertOneEntity()
     assertUpdateCalled(added, 1, nil, false)
     assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
+    assert.nil(added.getOldStage())
   })
 
   test("settings remnant", () => {
@@ -702,6 +704,7 @@ describe("move to current stage", () => {
     assert.equal(3, added.firstStage)
     assertOneEntity()
     assertReviveSettingsRemnantCalled(added)
+    assert.nil(added.getOldStage())
   })
 })
 

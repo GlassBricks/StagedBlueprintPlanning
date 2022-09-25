@@ -705,7 +705,7 @@ export function createAssemblyUpdater(
     }
 
     // move
-    existing.moveToStage(stageNumber, stageNumber < oldStage)
+    existing.moveToStage(stageNumber, false)
     updateWorldEntities(assembly, existing, min(oldStage, stageNumber))
     createNotification(existing, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
   }
