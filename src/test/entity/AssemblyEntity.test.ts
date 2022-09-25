@@ -618,7 +618,7 @@ describe("insert/deleting stages", () => {
         4: { foo1: 3 },
         5: { foo1: 4 },
       },
-      entity._getStageDiffs(),
+      entity.getStageDiffs(),
     )
   })
 
@@ -661,7 +661,7 @@ describe("insert/deleting stages", () => {
         2: { foo1: 3, foo2: 2 }, // merge of 2 and 3
         3: { foo1: 4 },
       },
-      entity._getStageDiffs(),
+      entity.getStageDiffs(),
     )
   })
 

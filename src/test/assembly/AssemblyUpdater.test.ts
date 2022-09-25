@@ -230,7 +230,7 @@ function assertNotified(entity: LuaEntity, message: LocalisedString, errorSound:
 }
 
 function assertStageDiffs(entity: AssemblyEntity, changes: StageDiffsInternal<TestEntity>) {
-  assert.same(changes, entity._getStageDiffs())
+  assert.same(changes, entity.getStageDiffs())
 }
 
 function assertAdded(added: AssemblyEntity<TestEntity>, luaEntity: LuaEntity): void {

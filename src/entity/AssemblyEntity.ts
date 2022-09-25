@@ -39,6 +39,7 @@ import {
   toDiffValue,
 } from "./stage-diff"
 
+/** 1 indexed */
 export type StageNumber = number
 
 // Is only different for underground belts
@@ -75,7 +76,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
-  _getStageDiffs(): StageDiffs<T> | nil
+  getStageDiffs(): StageDiffs<T> | nil
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
   /** Returns the first stage after the given stage number with a stage diff, or `nil` if none. */
   nextStageWithDiff(stage: StageNumber): StageNumber | nil
@@ -275,7 +276,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return $multi(true, fromDiffValue(val))
   }
 
-  _getStageDiffs(): StageDiffs<T> | nil {
+  getStageDiffs(): StageDiffs<T> | nil {
     return this.stageDiffs
   }
 

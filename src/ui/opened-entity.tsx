@@ -14,12 +14,13 @@ import { AssemblyOperations } from "../assembly/AssemblyOperations"
 import { DefaultAssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { checkEntityUpdated } from "../assembly/world-listener"
 import { BuildableEntityType } from "../constants"
-import { AssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { StageDiff } from "../entity/stage-diff"
 import { bind, funcOn, ProtectedEvents, RegisterClass } from "../lib"
 import { Component, destroy, ElemProps, FactorioJsx, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../lib/factoriojsx/components"
+import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
 import { getAssemblyEntityOfEntity } from "./entity-util"
 import { PlayerChangedStageEvent, teleportToStage } from "./player-current-stage"
@@ -37,7 +38,7 @@ PlayerChangedStageEvent.addListener((player, stage) => {
     return
   }
 
-  const otherEntity = assemblyEntity.getWorldEntity(stage.stageNumber)
+  const otherEntity = assemblyEntity.getWorldOrPreviewEntity(stage.stageNumber)
   player.opened = otherEntity
 })
 
@@ -71,11 +72,19 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
 
     const firstStageNum = entity.firstStage
     const firstStage = assembly.getStage(firstStageNum)!
-    const prevStageWithDiff = entity.prevStageWithDiff(currentStageNum)
-    const nextStageWithDiff = entity.nextStageWithDiff(currentStageNum)
+    const stageDiffs = entity.getStageDiffs()
+    const currentStageDiff = stageDiffs && stageDiffs[currentStageNum]
 
-    const stageDiff = entity.getStageDiff(currentStageNum)
-
+    function StageButton(buttonStage: Stage): Spec {
+      return (
+        <button
+          caption={buttonStage.name}
+          styleMod={{ width: StageButtonWidth, height: StageButtonHeight }}
+          enabled={buttonStage !== stage}
+          on_gui_click={bind(EntityAssemblyInfo.teleportToStageAction, buttonStage)}
+        />
+      )
+    }
     return (
       <frame anchor={props.anchor} style="inner_frame_in_outer_frame" direction="vertical">
         <TitleBar>
@@ -84,31 +93,30 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
           <RefreshButton on_gui_click={funcOn(this.refresh)} />
         </TitleBar>
         <frame style="inside_shallow_frame_with_padding" direction="vertical">
-          {!isRollingStock &&
-            EntityAssemblyInfo.renderStageButtonRow(
-              [L_GuiEntityInfo.FirstStage],
-              firstStage,
-              firstStageNum !== currentStageNum,
-            )}
-          {prevStageWithDiff !== nil &&
-            EntityAssemblyInfo.renderStageButtonRow(
-              [L_GuiEntityInfo.PrevStageWithChange],
-              assembly.getStage(prevStageWithDiff)!,
-              true,
-            )}
-          {nextStageWithDiff !== nil &&
-            EntityAssemblyInfo.renderStageButtonRow(
-              [L_GuiEntityInfo.NextStageWithChange],
-              assembly.getStage(nextStageWithDiff)!,
-              true,
-            )}
-          {firstStageNum !== currentStageNum && (
-            <button
-              styleMod={{ horizontally_stretchable: true }}
-              caption={[L_GuiEntityInfo.MoveToThisStage]}
-              on_gui_click={funcOn(this.moveToThisStage)}
-            />
-          )}
+          {!isRollingStock && [
+            <flow direction="horizontal">
+              <label caption={[L_GuiEntityInfo.FirstStage]} />
+              <HorizontalPusher />
+              {StageButton(firstStage)}
+            </flow>,
+          ]}
+          {stageDiffs && [
+            <flow direction="horizontal">
+              <label caption={[L_GuiEntityInfo.StagesWithChanges]} />
+              <flow direction="vertical" styleMod={{ vertical_spacing: 0 }}>
+                {(Object.keys(stageDiffs) as unknown as StageNumber[]).map((stageNum) => {
+                  const stage = assembly.getStage(stageNum)!
+                  return StageButton(stage)
+                })}
+              </flow>
+            </flow>,
+          ]}
+          <button
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiEntityInfo.MoveToThisStage]}
+            on_gui_click={funcOn(this.moveToThisStage)}
+            enabled={firstStageNum !== currentStageNum}
+          />
           {isRollingStock && [
             <button
               styleMod={{ horizontally_stretchable: true }}
@@ -121,8 +129,8 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
               on_gui_click={funcOn(this.setTrainLocationHere)}
             />,
           ]}
-          {stageDiff && <line direction="horizontal" style="control_behavior_window_line" />}
-          {stageDiff && this.renderStageDiffSettings(stageDiff)}
+          {currentStageDiff && <line direction="horizontal" style="control_behavior_window_line" />}
+          {currentStageDiff && this.renderStageDiffSettings(currentStageDiff)}
         </frame>
       </frame>
     )
@@ -131,20 +139,6 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   private static teleportToStageAction(this: void, stage: Stage, event: OnGuiClickEvent) {
     const player = game.get_player(event.player_index)
     if (player) teleportToStage(player, stage)
-  }
-  private static renderStageButtonRow(label: LocalisedString, stage: Stage, enabled?: boolean): Spec {
-    return (
-      <flow styleMod={{ vertical_align: "center" }}>
-        <label caption={label} />
-        <HorizontalPusher />
-        <button
-          caption={stage.name}
-          styleMod={{ width: StageButtonWidth, height: StageButtonHeight }}
-          enabled={enabled}
-          on_gui_click={bind(EntityAssemblyInfo.teleportToStageAction, stage)}
-        />
-      </flow>
-    )
   }
   private moveToThisStage() {
     DefaultAssemblyUpdater.moveEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
@@ -213,16 +207,21 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   private rerender(reopen: boolean) {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const worldEntity = this.entity.getWorldEntity(this.stage.stageNumber)
+    const worldEntity = this.entity.getWorldOrPreviewEntity(this.stage.stageNumber)
     if (!worldEntity) {
       player.opened = nil
       return
     }
     const currentOpened = player.opened
-    if (currentOpened === worldEntity && reopen) {
+    if (currentOpened === nil) {
+      player.opened = worldEntity
+      return
+    }
+    if (currentOpened !== worldEntity) return // opened another entity somehow, ignore
+    if (reopen) {
       reopenEntity(player)
-    } else if (currentOpened && currentOpened.object_name === "LuaEntity") {
-      tryRenderExtraStageInfo(player, currentOpened)
+    } else {
+      tryRenderExtraStageInfo(player, worldEntity)
     }
   }
 
@@ -276,8 +275,9 @@ function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, assemblyEnt
   }
 }
 function destroyEntityStageInfo(player: LuaPlayer) {
-  destroy(player.gui.relative[EntityAssemblyInfoName])
-  destroy(player.gui.relative[EntityAssemblyInfoName2])
+  const relative = player.gui.relative
+  destroy(relative[EntityAssemblyInfoName])
+  destroy(relative[EntityAssemblyInfoName2])
 }
 
 function tryRenderExtraStageInfo(player: LuaPlayer, entity: LuaEntity): boolean {
@@ -327,6 +327,15 @@ Events.on_gui_opened((e) => {
 
 Events.on_gui_closed((e) => {
   if (e.entity) destroyEntityStageInfo(game.get_player(e.player_index)!)
+})
+
+Migrations.fromAny(() => {
+  for (const [, player] of game.players) {
+    const opened = player.opened
+    if (opened && opened.object_name === "LuaEntity") {
+      tryRenderExtraStageInfo(player, opened)
+    }
+  }
 })
 
 // // testing: which relative_gui corresponds to which entity

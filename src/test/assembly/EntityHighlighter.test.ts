@@ -147,7 +147,7 @@ describe("config changed highlight", () => {
   function assertCorrect() {
     highlightCreator.updateHighlights(assembly, entity)
     let i = 2
-    for (const [stageNumber, changes] of pairs(entity._getStageDiffs() ?? {})) {
+    for (const [stageNumber, changes] of pairs(entity.getStageDiffs() ?? {})) {
       const isUpgrade = changes.name !== nil
 
       const highlight = assert.not_nil(

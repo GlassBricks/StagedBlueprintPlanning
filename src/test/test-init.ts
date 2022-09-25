@@ -10,8 +10,13 @@
  */
 
 import { createAssembly } from "../assembly/Assembly"
+import { Assembly } from "../assembly/AssemblyDef"
+import { DefaultWorldUpdater } from "../assembly/WorldUpdater"
+import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
+import { Pos } from "../lib/geometry"
 import { openAssemblySettings } from "../ui/AssemblySettings"
+import { teleportToStage } from "../ui/player-current-stage"
 
 // better source map traceback
 declare const ____lualib: {
@@ -97,6 +102,8 @@ if (script.active_mods.testorio !== nil) {
 
         const assembly = createAssembly("Test", 5)
         openAssemblySettings(player, assembly)
+
+        setupManualTests(assembly)
       }
     },
     log_passed_tests: false,
@@ -165,3 +172,25 @@ commands.add_command("norerun", "", () => {
   }
   // shouldTryRerun = false
 }*/
+
+function setupManualTests(assembly: Assembly) {
+  const player = game.players[1]
+  function createEntityWithChanges() {
+    const entity = createAssemblyEntity(
+      { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
+      Pos(0.5, 0.5),
+      nil,
+      2,
+    )
+    entity.applyUpgradeAtStage(3, "assembling-machine-2")
+    entity._applyDiffAtStage(4, { recipe: "copper-cable" })
+
+    assembly.content.add(entity)
+    DefaultWorldUpdater.updateWorldEntities(assembly, entity, 1)
+
+    teleportToStage(player, assembly.getStage(4)!)
+    player.opened = entity.getWorldEntity(4)
+  }
+
+  createEntityWithChanges()
+}
