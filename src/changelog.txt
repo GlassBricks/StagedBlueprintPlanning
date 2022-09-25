@@ -2,6 +2,13 @@
 Version: 0.7.0
 Date: ????
   Changes:
+    - The "moved back to X stage" behavior no longer occurs when using "move to stage" behavior explicitly.
+    - Improved assembly settings gui.
+    - Entity assembly info gui now shows ALL stages with changes.
+    - When changing between layers with an entity open, preview entities will also be opened if possible (in editor mode).
+    - When adding a _new_ circuit wire to an inserter or belt, entities in previous stages will be set to a "no-op" control behavior. This helps with importing existing builds + preventing accidental side effects when adding a wire.
+  Features:
+    - The location of the assembly info gui is now configurable via a player setting.
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.3
 Date: 2022-09-25
