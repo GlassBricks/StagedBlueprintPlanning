@@ -238,21 +238,46 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
 }
 
 const EntityAssemblyInfoName = script.mod_name + ":EntityAssemblyInfo"
+const EntityAssemblyInfoName2 = script.mod_name + ":EntityAssemblyInfo2"
 function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, assemblyEntity: AssemblyEntity, stage: Stage) {
   const guiType = entityTypeToGuiType[entity.type as BuildableEntityType]
   if (!guiType) return
-  const anchor: GuiAnchor = {
-    gui: guiType,
-    position: relative_gui_position.right,
+  let mainGuiType: relative_gui_type
+  if (Array.isArray(guiType)) {
+    mainGuiType = guiType[0]
+  } else {
+    mainGuiType = guiType
   }
   renderNamed(
-    <EntityAssemblyInfo assemblyEntity={assemblyEntity} stage={stage} anchor={anchor} />,
+    <EntityAssemblyInfo
+      assemblyEntity={assemblyEntity}
+      stage={stage}
+      anchor={{
+        gui: mainGuiType,
+        position: relative_gui_position.right,
+      }}
+    />,
     player.gui.relative,
     EntityAssemblyInfoName,
   )
+  if (Array.isArray(guiType)) {
+    renderNamed(
+      <EntityAssemblyInfo
+        assemblyEntity={assemblyEntity}
+        stage={stage}
+        anchor={{
+          gui: guiType[1],
+          position: relative_gui_position.right,
+        }}
+      />,
+      player.gui.relative,
+      EntityAssemblyInfoName2,
+    )
+  }
 }
 function destroyEntityStageInfo(player: LuaPlayer) {
   destroy(player.gui.relative[EntityAssemblyInfoName])
+  destroy(player.gui.relative[EntityAssemblyInfoName2])
 }
 
 function tryRenderExtraStageInfo(player: LuaPlayer, entity: LuaEntity): boolean {
@@ -322,7 +347,10 @@ Events.on_gui_closed((e) => {
 //   }
 // })
 
-const entityTypeToGuiType: Record<BuildableEntityType, relative_gui_type | nil> = {
+const entityTypeToGuiType: Record<
+  BuildableEntityType,
+  relative_gui_type | [relative_gui_type, relative_gui_type] | nil
+> = {
   accumulator: relative_gui_type.accumulator_gui,
   "ammo-turret": relative_gui_type.container_gui,
   "arithmetic-combinator": relative_gui_type.arithmetic_combinator_gui,
@@ -362,7 +390,10 @@ const entityTypeToGuiType: Record<BuildableEntityType, relative_gui_type | nil> 
   radar: relative_gui_type.entity_with_energy_source_gui,
   splitter: relative_gui_type.splitter_gui,
   "artillery-turret": relative_gui_type.container_gui,
-  "assembling-machine": relative_gui_type.assembling_machine_gui,
+  "assembling-machine": [
+    relative_gui_type.assembling_machine_gui,
+    relative_gui_type.assembling_machine_select_recipe_gui,
+  ],
   "burner-generator": relative_gui_type.entity_with_energy_source_gui,
   "constant-combinator": relative_gui_type.constant_combinator_gui,
   "decider-combinator": relative_gui_type.decider_combinator_gui,
