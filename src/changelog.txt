@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.0
-Date: ????
+Date: 2022-09-25
   Changes:
     - The "moved back to X stage" behavior no longer occurs when using "move to stage" behavior explicitly.
     - Improved assembly settings gui.
