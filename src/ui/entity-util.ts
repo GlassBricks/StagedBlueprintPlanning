@@ -22,7 +22,9 @@ export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[St
   let assemblyEntity: AssemblyEntity | nil
   if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
     const actualName = name.substring(Prototypes.PreviewEntityPrefix.length)
-    assemblyEntity = content.findCompatibleAnyDirection(actualName, entity.position)
+    assemblyEntity =
+      content.findCompatibleByName(actualName, entity.position, entity.direction) ??
+      content.findCompatibleAnyDirection(actualName, entity.position)
   } else {
     assemblyEntity = content.findCompatible(entity, nil)
   }

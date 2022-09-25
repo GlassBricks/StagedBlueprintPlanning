@@ -231,7 +231,7 @@ describe("tryMoveEntity", () => {
     assert.same(newPos, entity.position)
     assert.equal(newDir, entity.getDirection())
 
-    assert.equal(entity, assembly.content.findCompatibleBasic(entity.getNameAtStage(1), newPos, newDir))
+    assert.equal(entity, assembly.content.findCompatibleByName(entity.getNameAtStage(1), newPos, newDir))
   }
 
   function assertNotMoved() {
@@ -244,7 +244,7 @@ describe("tryMoveEntity", () => {
     assert.same(origPos, entity.position)
     assert.equal(origDir, entity.getDirection())
 
-    assert.equal(entity, assembly.content.findCompatibleBasic(entity.getNameAtStage(1), origPos, origDir))
+    assert.equal(entity, assembly.content.findCompatibleByName(entity.getNameAtStage(1), origPos, origDir))
   }
 
   test("can move entity if moved in first stage", () => {

@@ -34,7 +34,7 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    assert.equal(entity, content.findCompatibleBasic("foo", { x: 0, y: 0 }, nil))
+    assert.equal(entity, content.findCompatibleByName("foo", { x: 0, y: 0 }, nil))
   })
 
   test("findCompatibleAnyDirection finds compatible if same name and any direction", () => {
@@ -53,7 +53,7 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    assert.equal(entity, content.findCompatibleBasic("assembling-machine-2", { x: 0, y: 0 }, nil))
+    assert.equal(entity, content.findCompatibleByName("assembling-machine-2", { x: 0, y: 0 }, nil))
   })
 
   test("findCompatibleAnyDirection finds compatible if same category and any direction", () => {
@@ -70,8 +70,8 @@ describe("findCompatible", () => {
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    assert.nil(content.findCompatibleBasic("test2", entity.position, nil))
-    assert.nil(content.findCompatibleBasic("foo", entity.position, defines.direction.south))
+    assert.nil(content.findCompatibleByName("test2", entity.position, nil))
+    assert.nil(content.findCompatibleByName("foo", entity.position, defines.direction.south))
   })
 
   test("find compatible not basic returns same entity if is flipped underground", () => {
@@ -126,7 +126,7 @@ test("changePosition", () => {
   content.changePosition(entity, { x: 1, y: 1 })
   assert.equal(1, entity.position.x)
   assert.equal(1, entity.position.y)
-  assert.equal(entity, content.findCompatibleBasic("foo", { x: 1, y: 1 }, nil))
+  assert.equal(entity, content.findCompatibleByName("foo", { x: 1, y: 1 }, nil))
 })
 
 describe("connections", () => {

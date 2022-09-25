@@ -22,7 +22,7 @@ import { getAllAssemblies } from "./global"
 import { migrateMap2d060, MutableMap2D, newMap2D } from "./map2d"
 
 export interface EntityMap {
-  findCompatibleBasic(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
+  findCompatibleByName(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
   findCompatible(entity: BasicEntityInfo, previousDirection: defines.direction | nil): AssemblyEntity | nil
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil
@@ -79,7 +79,7 @@ class EntityMapImpl implements MutableEntityMap {
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
-  findCompatibleBasic(
+  findCompatibleByName(
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
@@ -147,7 +147,7 @@ class EntityMapImpl implements MutableEntityMap {
     const type = entity.type
     if (type === "underground-belt") {
       const direction = entity.belt_to_ground_type === "output" ? oppositedirection(entity.direction) : entity.direction
-      return this.findCompatibleBasic(type, entity.position, direction)
+      return this.findCompatibleByName(type, entity.position, direction)
     } else if (rollingStockTypes.has(type)) {
       if (entity.object_name === "LuaEntity") {
         const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
@@ -158,7 +158,7 @@ class EntityMapImpl implements MutableEntityMap {
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType === nil) {
-      return this.findCompatibleBasic(name, entity.position, previousDirection ?? entity.direction)
+      return this.findCompatibleByName(name, entity.position, previousDirection ?? entity.direction)
     }
     if (pasteRotatableType === PasteRotatableType.Square) {
       return this.findCompatibleAnyDirection(name, entity.position)
@@ -167,8 +167,8 @@ class EntityMapImpl implements MutableEntityMap {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       return (
-        this.findCompatibleBasic(name, position, direction) ??
-        this.findCompatibleBasic(name, position, oppositedirection(direction))
+        this.findCompatibleByName(name, position, direction) ??
+        this.findCompatibleByName(name, position, oppositedirection(direction))
       )
     }
   }

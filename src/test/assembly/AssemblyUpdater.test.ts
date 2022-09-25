@@ -446,7 +446,7 @@ describe("update", () => {
     const entity = createEntity()
     const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, playerIndex)
     assert.false(ret)
-    const added = assembly.content.findCompatibleBasic("test", pos, nil) as AssemblyEntity<TestEntity>
+    const added = assembly.content.findCompatibleByName("test", pos, nil) as AssemblyEntity<TestEntity>
     assertAdded(added, entity)
   })
 

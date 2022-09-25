@@ -617,7 +617,7 @@ export function createAssemblyUpdater(
     if (isRollingStockType(actualName)) {
       result = assembly.content.findCompatibleAnyDirection(actualName, entity.position)
     } else {
-      result = assembly.content.findCompatibleBasic(actualName, entity.position, entity.direction)
+      result = assembly.content.findCompatibleByName(actualName, entity.position, entity.direction)
     }
     if (!result) return nil
     if (stage.stageNumber >= result.firstStage || result.isSettingsRemnant) return result
@@ -660,7 +660,7 @@ export function createAssemblyUpdater(
   ): AssemblyEntity | nil {
     const name = entityOrPreviewEntity.name
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
-      return assembly.content.findCompatibleBasic(
+      return assembly.content.findCompatibleByName(
         name.substring(Prototypes.PreviewEntityPrefix.length),
         entityOrPreviewEntity.position,
         entityOrPreviewEntity.direction,
