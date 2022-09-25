@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.1
-Date: ????
+Date: 2022-09-25
   Bugfixes:
     - Fixed entity previews missing when settings-remnant was revived.
     - Fixed importing curved-rails.
