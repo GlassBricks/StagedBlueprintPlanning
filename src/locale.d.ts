@@ -24,12 +24,22 @@ export declare const enum L_ModSettingName {
   CyclicNavigation = "mod-setting-name.bp100:cyclic-navigation",
   /** Flexible offshore pump placement */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
+  /** Assembly info gui location */
+  EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
 }
 export declare const enum L_StringModSetting {
+  /** Top */
+  EntityInfoLocationTop = "string-mod-setting.bp100:entity-info-location-top",
+  /** Bottom */
+  EntityInfoLocationBottom = "string-mod-setting.bp100:entity-info-location-bottom",
+  /** Left */
+  EntityInfoLocationLeft = "string-mod-setting.bp100:entity-info-location-left",
+  /** Right */
+  EntityInfoLocationRight = "string-mod-setting.bp100:entity-info-location-right",
   /** Disabled */
   FlexibleOffshorePumpPlacementDisabled = "string-mod-setting.bp100:flexible-offshore-pump-placement-disabled",
   /** One water tile */

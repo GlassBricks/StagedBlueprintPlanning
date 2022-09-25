@@ -23,6 +23,7 @@ export const enum CustomInputs {
 
 export const enum Settings {
   CyclicNavigation = "bp100:cyclic-navigation",
+  EntityInfoLocation = "bp100:entity-info-location",
   FlexibleOffshorePumpPlacement = "bp100:flexible-offshore-pump-placement",
 }
 

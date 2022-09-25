@@ -23,6 +23,14 @@ data.extend([
     order: "a",
   },
   {
+    name: Settings.EntityInfoLocation,
+    type: "string-setting",
+    setting_type: "runtime-per-user",
+    default_value: "right",
+    allowed_values: ["right", "left"],
+    order: "b",
+  },
+  {
     name: Settings.FlexibleOffshorePumpPlacement,
     type: "string-setting",
     setting_type: "startup",

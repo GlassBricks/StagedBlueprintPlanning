@@ -13,7 +13,7 @@ import { Stage } from "../assembly/AssemblyDef"
 import { AssemblyOperations } from "../assembly/AssemblyOperations"
 import { DefaultAssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { checkEntityUpdated } from "../assembly/world-listener"
-import { BuildableEntityType } from "../constants"
+import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { StageDiff } from "../entity/stage-diff"
@@ -247,28 +247,17 @@ function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, assemblyEnt
   } else {
     mainGuiType = guiType
   }
+  const position =
+    relative_gui_position[player.mod_settings[Settings.EntityInfoLocation].value as keyof typeof relative_gui_position]
+
   renderNamed(
-    <EntityAssemblyInfo
-      assemblyEntity={assemblyEntity}
-      stage={stage}
-      anchor={{
-        gui: mainGuiType,
-        position: relative_gui_position.right,
-      }}
-    />,
+    <EntityAssemblyInfo assemblyEntity={assemblyEntity} stage={stage} anchor={{ gui: mainGuiType, position }} />,
     player.gui.relative,
     EntityAssemblyInfoName,
   )
   if (Array.isArray(guiType)) {
     renderNamed(
-      <EntityAssemblyInfo
-        assemblyEntity={assemblyEntity}
-        stage={stage}
-        anchor={{
-          gui: guiType[1],
-          position: relative_gui_position.right,
-        }}
-      />,
+      <EntityAssemblyInfo assemblyEntity={assemblyEntity} stage={stage} anchor={{ gui: guiType[1], position }} />,
       player.gui.relative,
       EntityAssemblyInfoName2,
     )
