@@ -133,16 +133,15 @@ export class AssemblySettings extends Component<{ assembly: Assembly }> {
         </flow>
         <frame style="inside_shallow_frame_with_padding" direction="vertical">
           <flow direction="vertical">
-            <label style="caption_label" caption={[L_GuiAssemblySettings.BlueprintBookSettings]} />
-            <checkbox
-              state={this.assembly.blueprintBookSettings.autoLandfill}
-              caption={[L_GuiAssemblySettings.AutoLandfill]}
-              tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
-            />
             <button
               caption={[L_GuiAssemblySettings.GetBlueprintBook]}
               tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
               on_gui_click={funcOn(this.getBlueprintBook)}
+            />
+            <checkbox
+              state={this.assembly.blueprintBookSettings.autoLandfill}
+              caption={[L_GuiAssemblySettings.AutoLandfill]}
+              tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
             />
           </flow>
         </frame>

@@ -152,8 +152,6 @@ export declare const enum L_GuiAssemblySettings {
   AfterCurrent = "bp100.gui.assembly-settings.after-current",
   /** At front */
   AtFront = "bp100.gui.assembly-settings.at-front",
-  /** Blueprint book settings */
-  BlueprintBookSettings = "bp100.gui.assembly-settings.blueprint-book-settings",
   /** Auto landfill */
   AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
   /** Automatically add landfill for both the current [font=default-bold]and[/font] next stage to each blueprint. */
