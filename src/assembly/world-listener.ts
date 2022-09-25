@@ -414,7 +414,6 @@ function fixOldBlueprint(entities: BlueprintEntity[]): void {
   // old blueprint, remove old markers
   const firstEntityMarker = entities.findIndex((e) => e.name === Prototypes.EntityMarker)
   // remove all entities after the first entity marker
-  // if (firstEntityMarker >= 0) entities.splice(firstEntityMarker)
   for (const i of $range(firstEntityMarker + 1, entities.length)) {
     entities[i - 1] = nil!
   }
@@ -503,7 +502,6 @@ function tryFixBlueprint(player: LuaPlayer): void {
   if (!blueprint || entityCount === 0) return
   const lastTags = blueprint.get_blueprint_entity_tag(entityCount, IsLastEntity)
   if (lastTags !== nil) {
-    game.print("Fixing blueprint")
     const entities = blueprint.get_blueprint_entities()!
     fixOldBlueprint(entities)
     blueprint.set_blueprint_entities(entities)
