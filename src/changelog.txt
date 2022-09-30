@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.2
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed connecting a circuit wire on a combinator to itself.
+    - Fixed missing assembly info gui to rail previews.
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.0
 Date: 2022-09-25
