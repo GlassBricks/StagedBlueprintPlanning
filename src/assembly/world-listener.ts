@@ -381,7 +381,7 @@ function isFastReplaceable(old: BasicEntityInfo, next: BasicEntityInfo): boolean
 // There is no event to detect if blueprint entities are _updated_; instead we use the following strategy:
 // When a blueprint is about to be pasted in a stage, we modify it to add entity markers at every entity
 // When the entity markers are pasted, the corresponding entity is updated
-// The blueprint is reverted to its original state after the paste, when the last entity marker is pasted
+// The blueprint is reverted after the paste, when the last entity marker is pasted
 
 const IsLastEntity = "bp100IsLastEntity"
 
@@ -633,7 +633,6 @@ Events.onAll({
 })
 
 // Move to this stage custom input
-
 Events.on(CustomInputs.MoveToThisStage, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
@@ -649,7 +648,6 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   }
 })
 
-// other mod interactions
 // PickerDollies
 if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
   Events.onInitOrLoad(() => {
@@ -663,8 +661,7 @@ if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_mov
   })
 }
 
-// spawning chunks
-
+// Generated chunks
 Events.on_chunk_generated((e) => {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return

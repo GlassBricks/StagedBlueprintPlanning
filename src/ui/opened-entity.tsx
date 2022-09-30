@@ -346,7 +346,7 @@ Migrations.fromAny(() => {
 // })
 
 const entityTypeToGuiType: Record<
-  BuildableEntityType,
+  BuildableEntityType | "rail-remnants",
   relative_gui_type | [relative_gui_type, relative_gui_type] | nil
 > = {
   accumulator: relative_gui_type.accumulator_gui,
@@ -372,6 +372,7 @@ const entityTypeToGuiType: Record<
   "rail-signal": relative_gui_type.rail_signal_gui,
   "rocket-silo": relative_gui_type.rocket_silo_gui,
   "simple-entity-with-force": relative_gui_type.additional_entity_info_gui,
+  "rail-remnants": relative_gui_type.additional_entity_info_gui,
   "simple-entity-with-owner": relative_gui_type.additional_entity_info_gui,
   "solar-panel": relative_gui_type.additional_entity_info_gui,
   "train-stop": relative_gui_type.train_stop_gui,
