@@ -39,3 +39,17 @@ export function getDirectionalInfo(
   if (connection.fromEntity === fromEntity) return $multi(connection.toEntity, connection.fromId, connection.toId)
   return $multi(connection.fromEntity, connection.toId, connection.fromId)
 }
+
+export function circuitConnectionMatches(
+  connection: AsmCircuitConnection,
+  wire: defines.wire_type,
+  toEntity: AssemblyEntity,
+  fromId: defines.circuit_connector_id,
+  toId: defines.circuit_connector_id,
+): boolean {
+  return (
+    connection.wire === wire &&
+    ((connection.toEntity === toEntity && connection.fromId === fromId && connection.toId === toId) ||
+      (connection.fromEntity === toEntity && connection.toId === fromId && connection.fromId === toId))
+  )
+}

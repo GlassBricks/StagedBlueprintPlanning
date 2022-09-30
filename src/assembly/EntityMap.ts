@@ -266,6 +266,18 @@ class EntityMapImpl implements MutableEntityMap {
     if (!entities.has(fromEntity) || !entities.has(toEntity)) return false
 
     let fromConnections = circuitConnections.get(fromEntity)
+
+    if (fromConnections) {
+      const fromSet = fromConnections.get(toEntity)
+      if (fromSet) {
+        for (const otherConnection of fromSet) {
+          if (circuitConnectionEquals(circuitConnection, otherConnection)) {
+            return false
+          }
+        }
+      }
+    }
+
     if (!fromConnections) {
       fromConnections = new LuaMap()
       circuitConnections.set(fromEntity, fromConnections)
@@ -279,11 +291,7 @@ class EntityMapImpl implements MutableEntityMap {
 
     const fromSet = fromConnections.get(toEntity),
       toSet = toConnections.get(fromEntity)
-    if (fromSet) {
-      for (const otherConnection of fromSet) {
-        if (circuitConnectionEquals(circuitConnection, otherConnection)) return false
-      }
-    }
+
     if (fromSet) {
       fromSet.add(circuitConnection)
     } else {

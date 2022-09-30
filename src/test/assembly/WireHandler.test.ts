@@ -137,6 +137,36 @@ describe("circuit wires", () => {
       // wire should still be there
       assertWire1Matches()
     })
+
+    test("can update wire connected to itself", () => {
+      const wire1 = {
+        fromEntity: entity1,
+        toEntity: entity1,
+        wire: defines.wire_type.red,
+        fromId: defines.circuit_connector_id.combinator_input,
+        toId: defines.circuit_connector_id.combinator_output,
+      }
+      assembly.content.addCircuitConnection(wire1)
+      handler.updateWireConnections(assembly, entity1, 1)
+
+      assert.same(
+        [
+          {
+            target_entity: luaEntity1,
+            wire: defines.wire_type.red,
+            source_circuit_id: defines.circuit_connector_id.combinator_input,
+            target_circuit_id: defines.circuit_connector_id.combinator_output,
+          } as CircuitConnectionDefinition,
+          {
+            target_entity: luaEntity1,
+            wire: defines.wire_type.red,
+            source_circuit_id: defines.circuit_connector_id.combinator_output,
+            target_circuit_id: defines.circuit_connector_id.combinator_input,
+          } as CircuitConnectionDefinition,
+        ],
+        luaEntity1.circuit_connection_definitions,
+      )
+    })
   })
 
   describe("saving wire connections", () => {

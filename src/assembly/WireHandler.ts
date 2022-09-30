@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AsmCircuitConnection, getDirectionalInfo } from "../entity/AsmCircuitConnection"
+import { AsmCircuitConnection, circuitConnectionMatches, getDirectionalInfo } from "../entity/AsmCircuitConnection"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { isEmpty } from "../lib"
 import { AssemblyContent } from "./AssemblyContent"
@@ -50,6 +50,7 @@ function updateCircuitConnections(
 
   const [matchingConnections, extraConnections] = analyzeExistingCircuitConnections(
     assemblyConnections,
+    luaEntity,
     existingConnections,
     assembly.content,
   )
@@ -128,6 +129,7 @@ function saveCircuitConnections(
 
   const [matchingConnections, extraConnections] = analyzeExistingCircuitConnections(
     assemblyConnections,
+    luaEntity,
     existingConnections,
     content,
   )
@@ -221,6 +223,7 @@ function saveWireConnections(
 
 function analyzeExistingCircuitConnections(
   assemblyConnections: AsmEntityCircuitConnections | nil,
+  luaEntity: LuaEntity,
   existingConnections: readonly CircuitConnectionDefinition[],
   content: EntityMap,
 ): LuaMultiReturn<
@@ -234,6 +237,8 @@ function analyzeExistingCircuitConnections(
 
   for (const existingConnection of existingConnections) {
     const otherLuaEntity = existingConnection.target_entity
+    if (luaEntity === otherLuaEntity && existingConnection.source_circuit_id > existingConnection.target_circuit_id)
+      continue
     const otherEntity = content.findCompatible(otherLuaEntity, nil)
     if (!otherEntity) continue
     let matchingConnection: AsmCircuitConnection | nil
@@ -257,10 +262,8 @@ function findMatchingCircuitConnection(
   { source_circuit_id, target_circuit_id, wire }: CircuitConnectionDefinition,
 ): AsmCircuitConnection | nil {
   for (const connection of connections) {
-    if (connection.wire === wire) {
-      const [, toId, fromId] = getDirectionalInfo(connection, toEntity)
-      // ^ is backwards!
-      if (fromId === source_circuit_id && toId === target_circuit_id) return connection
+    if (circuitConnectionMatches(connection, wire, toEntity, source_circuit_id, target_circuit_id)) {
+      return connection
     }
   }
 }

@@ -9,7 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AsmCircuitConnection, circuitConnectionEquals, getDirectionalInfo } from "../../entity/AsmCircuitConnection"
+import {
+  AsmCircuitConnection,
+  circuitConnectionEquals,
+  circuitConnectionMatches,
+  getDirectionalInfo,
+} from "../../entity/AsmCircuitConnection"
 import { shallowCopy } from "../../lib"
 
 test("circuitConnectionEquals", () => {
@@ -64,4 +69,20 @@ test("getDirectionalInfo", () => {
     [entityA, defines.circuit_connector_id.constant_combinator, defines.circuit_connector_id.accumulator],
     getDirectionalInfo(circuitConnectionA, entityB),
   )
+})
+test("circuitConnectionMatches", () => {
+  const entityA = {} as any
+  const entityB = {} as any
+
+  const connection: AsmCircuitConnection = {
+    fromEntity: entityA,
+    fromId: 0,
+    toEntity: entityB,
+    toId: 1,
+    wire: defines.wire_type.red,
+  }
+  assert.true(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 1, 0))
+  assert.true(circuitConnectionMatches(connection, defines.wire_type.red, entityB, 0, 1))
+  assert.false(circuitConnectionMatches(connection, defines.wire_type.green, entityA, 1, 0))
+  assert.false(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 0, 1))
 })
