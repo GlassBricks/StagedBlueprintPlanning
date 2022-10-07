@@ -67,6 +67,20 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly firstStage: StageNumber
   readonly firstValue: Readonly<T>
 
+  /**
+   * Get range of stages that this entity should exist in.
+   *
+   * Currently: if is rolling stock, exists only in first stage, else exists in all stages >= firstStage.
+   */
+  getStageRange(): LuaMultiReturn<[StageNumber, StageNumber | nil]>
+
+  /**
+   * Get range of stages that an entity OR preview entity should exist in.
+   *
+   * Currently: if is rolling stock, exists only in first stage, else exists in ALL stages (nil, nil).
+   */
+  getPreviewStageRange(): LuaMultiReturn<[StageNumber | nil, StageNumber | nil]>
+
   // special entity treatment
   isRollingStock(): this is RollingStockAssemblyEntity
   isUndergroundBelt(): this is UndergroundBeltAssemblyEntity
@@ -241,6 +255,20 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   setPositionUnchecked(position: Position): void {
     this.position = position
+  }
+
+  getStageRange(): LuaMultiReturn<[number, number | nil]> {
+    if (this.isRollingStock()) {
+      const firstStage = this.firstStage
+      return $multi(firstStage, firstStage)
+    }
+    return $multi(this.firstStage, nil)
+  }
+  getPreviewStageRange(): LuaMultiReturn<[number | nil, number | nil]> {
+    if (this.isRollingStock()) {
+      return $multi(this.firstStage, this.firstStage)
+    }
+    return $multi(nil, nil)
   }
 
   isRollingStock(): this is AssemblyEntityImpl<RollingStockEntity> {

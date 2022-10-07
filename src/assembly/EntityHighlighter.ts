@@ -16,7 +16,6 @@ import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
-import { getPreviewStages } from "./special-entity-treatment"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {
@@ -182,7 +181,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
-    for (const [i, stage] of assembly.iterateStages(...getPreviewStages(entity))) {
+    for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
       const hasError = entityHasErrorAt(entity, i)
       updateHighlight(entity, stage, "errorOutline", hasError)
     }

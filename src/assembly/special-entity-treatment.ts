@@ -10,7 +10,7 @@
  */
 
 import { oppositedirection } from "util"
-import { AssemblyEntity, StageNumber, UndergroundBeltAssemblyEntity } from "../entity/AssemblyEntity"
+import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "../entity/AssemblyEntity"
 import { Mutable } from "../lib"
 import { Pos, Position, PositionClass } from "../lib/geometry"
 import { MutableEntityMap } from "./EntityMap"
@@ -65,13 +65,4 @@ export function unit(direction: defines.direction): PositionClass {
   if (direction === defines.direction.west) return Pos(-1, 0)
   if (direction === defines.direction.east) return Pos(1, 0)
   error("Invalid direction: " + direction)
-}
-
-// todo: refactor this
-export function getPreviewStages(entity: AssemblyEntity): LuaMultiReturn<[StageNumber | nil, StageNumber | nil]> {
-  if (entity.isRollingStock()) {
-    const firstStage = entity.firstStage
-    return $multi(firstStage, firstStage)
-  }
-  return $multi(nil, nil)
 }

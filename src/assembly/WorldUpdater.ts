@@ -16,7 +16,6 @@ import { AssemblyContent } from "./AssemblyContent"
 import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "./entity-move"
 import { EntityHighlighter } from "./EntityHighlighter"
 import { EntityMap } from "./EntityMap"
-import { getPreviewStages } from "./special-entity-treatment"
 import { WireHandler, WireUpdater } from "./WireHandler"
 
 /**
@@ -114,7 +113,7 @@ export function createWorldUpdater(
   }
 
   function updatePreviewEntities(assembly: AssemblyContent, entity: AssemblyEntity) {
-    for (const [i, stage] of assembly.iterateStages(...getPreviewStages(entity))) {
+    for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
       const worldEntity = entity.getWorldOrPreviewEntity(i)
       if (worldEntity) continue
 

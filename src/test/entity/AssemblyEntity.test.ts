@@ -92,6 +92,16 @@ test("prevStageWithDiff", () => {
   assert.equal(nil, assemblyEntity.prevStageWithDiff(2))
 })
 
+test("getStageRange returns firstStage, nil", () => {
+  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  assert.same([2, nil], assemblyEntity.getStageRange())
+})
+
+test("getPreviewStageRange returns nil, nil", () => {
+  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  assert.same([nil, nil], assemblyEntity.getPreviewStageRange())
+})
+
 describe("getValueAtStage", () => {
   test("nil if lower than stage", () => {
     assert.nil(fooAssemblyEntity.getValueAtStage(1))
@@ -517,6 +527,16 @@ describe("rolling stock", () => {
     assert.nil(assemblyEntity.getValueAtStage(1))
     assert.same(assemblyEntity.firstValue, assemblyEntity.getValueAtStage(2))
     assert.nil(assemblyEntity.getValueAtStage(3))
+  })
+  test("stage range is only first stage", () => {
+    const entity = entityMock({ name: "cargo-wagon", position: Pos(0, 0) })
+    const assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 2)
+    assert.same([2, 2], assemblyEntity.getStageRange())
+  })
+  test("preview range is only first stage", () => {
+    const entity = entityMock({ name: "cargo-wagon", position: Pos(0, 0) })
+    const assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 2)
+    assert.same([2, 2], assemblyEntity.getPreviewStageRange())
   })
   test("cannot apply stage diffs to rolling stock beyond first stage", () => {
     const entity = entityMock({ name: "cargo-wagon", position: Pos(0, 0) })
