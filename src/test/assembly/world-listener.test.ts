@@ -265,7 +265,7 @@ describe("upgrade", () => {
     })
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(newEntity!), match.ref(assembly.getStage(1)!), 1, oldDirection)
+      .called_with(match.ref(assembly), match.ref(newEntity), match.ref(assembly.getStage(1)!), 1, oldDirection)
   })
 })
 

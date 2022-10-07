@@ -142,7 +142,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     if (config.type === "highlight") {
       const { renderType } = config
       const entityTarget = entity.getWorldOrPreviewEntity(stage.stageNumber)
-      result = entityTarget && createHighlightBox(entityTarget!, renderType)
+      result = entityTarget && createHighlightBox(entityTarget, renderType)
     } else if (config.type === "sprite") {
       const size = selectionBox.size()
       const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)

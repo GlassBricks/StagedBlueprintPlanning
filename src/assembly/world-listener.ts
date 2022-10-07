@@ -470,7 +470,7 @@ function revertPreparedBlueprint(stack: BlueprintItemStack): void {
   const entities = assert(state.blueprintEntities)
   const numEntities = entities.length
   const originalNumEntities = state.blueprintOriginalNumEntities!
-  for (const i of $range(numEntities, originalNumEntities! + 1, -1)) {
+  for (const i of $range(numEntities, originalNumEntities + 1, -1)) {
     entities[i - 1] = nil!
   }
   stack.set_blueprint_entities(entities)

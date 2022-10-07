@@ -1,8 +1,11 @@
 {
   "root": true,
-  "plugins": ["@typescript-eslint"],
   "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "import"],
   "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
     "import/resolver": "typescript"
   },
   "parserOptions": {
@@ -10,10 +13,10 @@
   },
   "extends": [
     "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:eslint-comments/recommended",
-    "plugin:prettier/recommended",
-    "esnext",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:prettier/recommended"
   ],
   "rules": {
     // fixes
@@ -25,22 +28,29 @@
     "class-methods-use-this": "off",
     "no-invalid-this": "off",
     "no-loop-func": "off",
-    "no-throw-literal": "off",
-    "@typescript-eslint/no-extra-semi": "off",
     "no-undef": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/unbound-method": "off",
     "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-return": "off",
+    "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-argument": "off",
     "@typescript-eslint/no-var-requires": "off",
-    "import/prefer-default-export": "off",
-    "import/no-namespace": "off",
-    "import/no-unresolved": "off",
-    "import/export": "off",
+    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/restrict-template-expressions": "off",
+    "@typescript-eslint/restrict-plus-operands": "off",
     // modifications/weakening
     "@typescript-eslint/no-inferrable-types": [
       "warn", {
         "ignoreProperties": true,
         "ignoreParameters": true
+      }
+    ],
+    "no-constant-condition": [
+      "error", {
+        "checkLoops": false
       }
     ],
     "prettier/prettier": "warn",
@@ -54,6 +64,8 @@
     ],
     // on
     "no-template-curly-in-string": "error",
+    "no-else-return": "error",
+    "no-lonely-if": "error",
     "eslint-comments/no-unused-disable": "error",
     "eslint-comments/disable-enable-pair": [
       "error", {

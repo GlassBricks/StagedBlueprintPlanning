@@ -240,7 +240,7 @@ function renderElement(
 
   const children = spec.children
   if (children) {
-    for (const child of children as Spec[]) {
+    for (const child of children) {
       renderInternal(element, child, newRootTracker(tracker.playerIndex, nil))
     }
   }

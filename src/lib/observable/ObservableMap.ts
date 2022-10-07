@@ -84,7 +84,7 @@ class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<
   }
 
   public delete(key: K): void {
-    this.set(key, nil!)
+    this.set(key, nil)
   }
 
   // noinspection JSUnusedGlobalSymbols

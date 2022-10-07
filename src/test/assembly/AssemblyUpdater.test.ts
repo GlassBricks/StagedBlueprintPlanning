@@ -1044,7 +1044,7 @@ describe("rolling stock", () => {
     assemblyUpdater.onEntityCreated(assembly, rollingStock, stage, playerIndex)
     resetMocks()
     const found = assembly.content.findCompatibleAnyDirection(rollingStock.name, rollingStock.position)!
-    return found!
+    return found
   }
   test("can save rolling stock", () => {
     assemblyUpdater.onEntityCreated(assembly, rollingStock, stage, playerIndex)

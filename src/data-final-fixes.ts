@@ -150,7 +150,7 @@ for (const type of types.sort()) {
         open_sound: prototype.open_sound,
         close_sound: prototype.close_sound,
 
-        picture: createWhiteSprite(selectionBox!, color),
+        picture: createWhiteSprite(selectionBox, color),
 
         // other
         flags,

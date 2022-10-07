@@ -70,7 +70,7 @@ export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
     return value2 > value
   }
   gt(this: State<number>, value: number): State<boolean> {
-    return this.map(bind(State.gtFn, value)) as State<boolean>
+    return this.map(bind(State.gtFn, value))
   }
 
   subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {

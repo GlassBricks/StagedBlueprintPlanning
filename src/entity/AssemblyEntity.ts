@@ -354,7 +354,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
         }
       }
     }
-    return $multi(value!, resultStage)
+    return $multi(value, resultStage)
   }
   getNameAtStage(stage: StageNumber): string {
     return this.getPropAtStage(stage, "name")[0]
@@ -549,7 +549,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     this.oldStage = recordOldStage && firstStage !== stage ? firstStage : nil
     return firstStage
-    // else do nothing
   }
   private moveUp(higherStage: StageNumber): void {
     // todo: what happens if moved up, and lost data?
@@ -589,7 +588,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (existing && existing.valid && existing !== entity) existing.destroy()
     this[stage] = entity
     if (rollingStockTypes.has(entity.type)) {
-      registerEntity(entity as LuaEntity, this)
+      registerEntity(entity, this)
     }
   }
 

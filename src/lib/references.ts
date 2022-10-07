@@ -39,7 +39,7 @@ function registerClass(name: string, item: Class<any>) {
   for (const [key, value] of pairs(item)) {
     // noinspection SuspiciousTypeOfGuard
     if (typeof value === "function" && typeof key === "string") {
-      Functions.registerRaw((name + "." + key) as string, value)
+      Functions.registerRaw(name + "." + key, value)
     }
   }
 }
