@@ -10,26 +10,52 @@
  */
 
 import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
-import { Stage } from "../../assembly/AssemblyDef"
 import { newEntityMap } from "../../assembly/EntityMap"
+import { createStageSurface, prepareArea } from "../../assembly/surfaces"
+import { BBox, Pos } from "../../lib/geometry"
 
-export function createMockAssemblyContent(numStages: number): AssemblyContent {
-  const stages: StagePosition[] = Array.from({ length: numStages }, (_, i) => ({
-    stageNumber: i + 1,
-    surface: game.surfaces[1],
-  }))
+export function createMockAssemblyContent(stages: number | LuaSurface[]): AssemblyContent {
+  const stagePos: StagePosition[] = Array.from(
+    {
+      length: typeof stages === "number" ? stages : stages.length,
+    },
+    (_, i) => ({
+      stageNumber: i + 1,
+      surface: typeof stages === "number" ? game.surfaces[1] : stages[i],
+    }),
+  )
   return {
-    getStage: (n) => stages[n - 1],
-    numStages: () => stages.length,
-    iterateStages: (start = 1, end = stages.length): any => {
-      function next(stages: Stage[], i: number) {
+    getStage: (n) => stagePos[n - 1],
+    numStages: () => stagePos.length,
+    iterateStages: (start = 1, end = stagePos.length): any => {
+      function next(s: StagePosition[], i: number) {
         if (i >= end) return
         i++
-        return $multi(i, stages[i - 1])
+        return $multi(i, s[i - 1])
       }
-      return $multi(next, stages, start - 1)
+      return $multi(next, stagePos, start - 1)
     },
     content: newEntityMap(),
     getStageName: (n) => "mock stage " + n,
   }
+}
+
+export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
+  const surfaces: LuaSurface[] = []
+  before_all(() => {
+    for (let i = 0; i < numSurfaces; i++) {
+      const surface = createStageSurface()
+      prepareArea(surface, BBox.around(Pos(0, 0), 10))
+      surfaces.push(surface)
+    }
+  })
+  before_each(() => {
+    for (const surface of surfaces) {
+      surface.find_entities().forEach((e) => e.destroy())
+    }
+  })
+  after_all(() => {
+    surfaces.forEach((surface) => game.delete_surface(surface))
+  })
+  return surfaces
 }

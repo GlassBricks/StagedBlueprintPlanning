@@ -37,52 +37,6 @@ export function simpleMock<T extends LuaObjectLike | LuaObject>(value?: Partial<
   return setmetatable(base, metatable) as T
 }
 
-export interface MockCreateEntity {
-  readonly name: string
-  readonly position?: MapPosition
-  readonly direction?: defines.direction
-}
-
-function noop() {
-  //
-}
-
-export function entityMock<T extends LuaEntity>(params: MockCreateEntity & Partial<T>): T {
-  return simpleMock<T>({
-    type: params.name,
-    direction: 0,
-    position: { x: 0, y: 0 },
-    ...params,
-    object_name: "LuaEntity",
-    destructible: true,
-    minable: true,
-    rotatable: true,
-    operable: true,
-    circuit_connection_definitions: [],
-    disconnect_neighbour: noop,
-    force: "player",
-    unit_number: -1,
-  })
-}
-export interface BuiltinEntityKeys {
-  valid: true
-  object_name: true
-
-  type: true
-  direction: true
-  destructible: true
-  minable: true
-  rotatable: true
-  operable: true
-  circuit_connection_definitions: true
-  disconnect_neighbour: true
-  unit_number: true
-  force: true
-}
-
-export function isMock(obj: LuaObjectLike): boolean {
-  return getmetatable(obj) === metatable
-}
 export function makeMocked<T>(keys: (keyof T)[]): mock.Mocked<T> {
   const result = {} as mock.Mocked<T>
   for (const key of keys) {

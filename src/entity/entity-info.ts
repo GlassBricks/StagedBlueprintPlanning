@@ -126,13 +126,6 @@ export function isRollingStockType(entityName: string): boolean {
 }
 export { rollingStockTypes }
 
-export function _makeTestEntityCategory(...names: string[]): void {
-  const category = {} as unknown as CategoryName
-  for (const name of names) {
-    categories.set(name, category)
-  }
-}
-
 export function isPreviewEntity(entity: LuaEntity): boolean {
   return entity.name.startsWith(Prototypes.PreviewEntityPrefix)
 }

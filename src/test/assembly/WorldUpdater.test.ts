@@ -17,76 +17,92 @@ import { WireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { isPreviewEntity } from "../../entity/entity-info"
 import { EntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
-import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
-import { entityMock, makeMocked, makeStubbed } from "../simple-mock"
-import { createMockAssemblyContent } from "./Assembly-mock"
+import { makeMocked, makeStubbed } from "../simple-mock"
+import { createMockAssemblyContent, setupTestSurfaces } from "./Assembly-mock"
 import { setupEntityMoveTest } from "./setup-entity-move-test"
 
 interface TestEntity extends Entity {
-  prop1: number
-  prop2?: string
+  name: "inserter" | "fast-inserter"
+  override_stack_size?: number
 }
 let assembly: AssemblyContent
 let entity: AssemblyEntity<TestEntity>
 
-let mockEntityCreator: MockEntityCreator
 let highlighter: mock.Mocked<EntityHighlighter>
 let wireUpdater: mock.Stubbed<WireUpdater>
 let worldUpdater: WorldUpdater
 
 const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east as SavedDirection
+const surfaces: LuaSurface[] = setupTestSurfaces(4)
 before_each(() => {
-  assembly = createMockAssemblyContent(4)
+  assembly = createMockAssemblyContent(surfaces)
   entity = createAssemblyEntity(
     {
-      name: "test",
-      prop1: 1,
+      name: "inserter",
+      override_stack_size: 1,
     },
     origPos,
     origDir,
     1,
   )
 
-  mockEntityCreator = createMockEntityCreator()
   wireUpdater = makeStubbed(keys<WireUpdater>())
   highlighter = makeMocked(keys<EntityHighlighter>())
-  worldUpdater = createWorldUpdater(mockEntityCreator, wireUpdater, highlighter)
+  worldUpdater = createWorldUpdater(EntityHandler, wireUpdater, highlighter)
 })
 
+function findPreviewEntity(i: StageNumber) {
+  return surfaces[i - 1].find_entities_filtered({
+    type: ["simple-entity-with-owner", "rail-remnants"],
+    limit: 1,
+  })[0]
+}
+function findMainEntity(i: StageNumber) {
+  return surfaces[i - 1].find_entities_filtered({
+    type: ["simple-entity-with-owner", "rail-remnants"],
+    invert: true,
+    limit: 1,
+  })[0]
+}
+function findAnyEntity(i: StageNumber): LuaEntity | undefined {
+  return surfaces[i - 1].find_entities_filtered({
+    limit: 1,
+  })[0]
+}
+
 function assertNothingPresent(i: StageNumber): void {
-  assert.falsy(mockEntityCreator.getAt(i) ?? nil)
+  if (i <= 0 || i > surfaces.length) return
+  assert.nil(findAnyEntity(i))
   assert.is_nil(entity.getWorldOrPreviewEntity(i))
 }
 function assertHasPreview(i: StageNumber): void {
-  assert.falsy(mockEntityCreator.getAt(i) ?? nil)
+  const preview = assert.not_nil(findPreviewEntity(i))
   const e = entity.getWorldOrPreviewEntity(i)
-  assert.truthy(e && isPreviewEntity(e), "has preview entity")
+  assert.nil(findMainEntity(i))
+  assert.equal(e, preview)
 }
 
 function assertEntityCorrect(i: StageNumber): LuaEntity {
-  const entry = mockEntityCreator.getAt(i)!
-  assert.not_nil(entry)
-  assert(entry.luaEntity.valid)
-  assert.equal(entry.luaEntity, entity.getWorldEntity(i) ?? "nil")
-  assert.equal(entity.getDirection(), entry.luaEntity.direction)
+  const worldEntity = assert.not_nil(findMainEntity(i))
+  const [value, direction] = EntityHandler.saveEntity(worldEntity)
+  assert.equal(direction, entity.getDirection())
   const valueAtStage = entity.getValueAtStage(i)
-  assert.same(valueAtStage, entry.value, `value not equal at stage ${i}`)
-  return entry.luaEntity
+  assert.same(value, valueAtStage)
+  return worldEntity
 }
 
 describe("updateWorldEntities", () => {
   describe.each([false, true])("with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
-        entity._applyDiffAtStage(entity.firstStage, { prop1: 2 })
-        entity._applyDiffAtStage(3, { prop1: 1 })
+        entity._applyDiffAtStage(entity.firstStage, { override_stack_size: 2 })
+        entity._applyDiffAtStage(3, { override_stack_size: 1 })
       })
     }
-    test.each([1, 2, 3])("can create one entity %d", (stage) => {
+    test.each([1, 2, 3])("can create one entity at stage %d", (stage) => {
       worldUpdater.updateWorldEntities(assembly, entity, stage, stage)
       assertEntityCorrect(stage)
     })
@@ -96,9 +112,9 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = mockEntityCreator.createEntity(assembly.getStage(2)!, entity.position, entity.getDirection(), {
-        name: "test",
-        prop1: 10,
+      const replaced = EntityHandler.createEntity(assembly.getStage(2)!, entity.position, entity.getDirection(), {
+        name: "inserter",
+        override_stack_size: 3,
       } as TestEntity)!
       entity.replaceWorldEntity(2, replaced)
       worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
@@ -124,11 +140,9 @@ describe("updateWorldEntities", () => {
 
     test("can upgrade entities", () => {
       worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
-      entity._applyDiffAtStage(1, { name: "test2" })
-      const oldEntry = mockEntityCreator.getAt(1)!
+      entity._applyDiffAtStage(1, { name: "fast-inserter" })
       worldUpdater.updateWorldEntities(assembly, entity, 1, 1)
       assertEntityCorrect(1)
-      assert.false(oldEntry.luaEntity.valid)
     })
   })
 
@@ -155,9 +169,9 @@ describe("updateWorldEntities", () => {
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
     entity.moveToStage(2)
     if (withExisting) {
-      const luaEntity = mockEntityCreator.createEntity(assembly.getStage(3)!, entity.position, entity.getDirection(), {
-        name: "test",
-        prop1: 10,
+      const luaEntity = EntityHandler.createEntity(assembly.getStage(3)!, entity.position, entity.getDirection(), {
+        name: "inserter",
+        override_stack_size: 3,
       } as TestEntity)!
       entity.replaceWorldEntity(3, luaEntity)
     }
@@ -173,7 +187,7 @@ describe("updateWorldEntities", () => {
     entity.moveToStage(2)
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
 
-    assert.nil(mockEntityCreator.getAt(1))
+    assert.nil(findMainEntity(1))
     assertHasPreview(1)
     assertDestructible(assertEntityCorrect(2), true)
     assertDestructible(assertEntityCorrect(3), false)
@@ -203,7 +217,7 @@ describe("updateWorldEntities", () => {
     entity.moveToStage(2)
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     assertNothingPresent(1)
-    assertEntityCorrect(2)
+    assertHasPreview(2) // no rail, can't create
     assertNothingPresent(3)
   })
 })
@@ -316,7 +330,7 @@ describe("tryMoveEntity", () => {
 
       otherEntity.replaceWorldEntity(
         2,
-        entityMock({
+        surfaces[0].create_entity({
           name: "small-electric-pole",
           position: newPos,
           direction: newDir,
@@ -334,7 +348,7 @@ test("force delete", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
   worldUpdater.clearWorldEntity(assembly, entity, 2)
   assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 2, 2)
-  assert.nil(mockEntityCreator.getAt(2))
+  assert.nil(findMainEntity(2))
   assertEntityCorrect(1)
   assertEntityCorrect(3)
 })

@@ -13,12 +13,13 @@ import { CableAddResult, MutableEntityMap, newEntityMap } from "../../assembly/E
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity, SavedDirection } from "../../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../../entity/Entity"
-import { entityMock } from "../simple-mock"
+import { setupTestSurfaces } from "./Assembly-mock"
 
 let content: MutableEntityMap
 before_each(() => {
   content = newEntityMap()
 })
+const surfaces = setupTestSurfaces(1)
 
 test("countNumEntities", () => {
   const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
@@ -107,15 +108,12 @@ describe("findCompatible", () => {
   })
 
   test("findExactAtPosition", () => {
-    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    const luaEntity = entityMock({ name: "foo", position: { x: 0, y: 0 }, direction: 0 })
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
+    const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
     content.add(entity)
     entity.replaceWorldEntity(2, luaEntity)
     assert.equal(entity, content.findExactAtPosition(luaEntity, 2, luaEntity.position))
-    ;(luaEntity as any).position = {
-      x: 1,
-      y: 1,
-    }
+    luaEntity.teleport(1, 1)
     assert.equal(entity, content.findExactAtPosition(luaEntity, 2, { x: 0, y: 0 }))
   })
 })
