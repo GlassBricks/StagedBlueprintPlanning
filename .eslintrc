@@ -77,7 +77,8 @@
       "error", {
         "allow": ["util"]
       }
-    ]
+    ],
+    "import/no-unresolved": "error"
   },
   "overrides": [
     {
