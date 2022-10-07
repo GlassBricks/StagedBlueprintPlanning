@@ -13,12 +13,12 @@ import { keys } from "ts-transformer-keys"
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { forceMoveEntity } from "../../assembly/entity-move"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
-import { DefaultWireHandler, WireUpdater } from "../../assembly/WireHandler"
+import { WireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { isPreviewEntity } from "../../entity/entity-info"
-import { DefaultEntityHandler } from "../../entity/EntityHandler"
+import { EntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { createMockEntityCreator, MockEntityCreator } from "../entity/EntityHandler-mock"
 import { entityMock, makeMocked, makeStubbed } from "../simple-mock"
@@ -394,7 +394,7 @@ describe("circuit wires", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   before_each(() => {
-    worldUpdater = createWorldUpdater(DefaultEntityHandler, DefaultWireHandler, highlighter) // real entity handler
+    worldUpdater = createWorldUpdater(EntityHandler, WireHandler, highlighter) // real entity handler
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
     entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)

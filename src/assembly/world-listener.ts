@@ -19,7 +19,7 @@ import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { getStageAtSurface } from "./Assembly"
 import { Assembly, Stage } from "./AssemblyDef"
-import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
+import { AssemblyUpdater } from "./AssemblyUpdater"
 
 /**
  * Hooks to factorio events, and calls AssemblyUpdater.
@@ -49,27 +49,27 @@ function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (!isWorldEntityAssemblyEntity(entity)) {
     return checkNonAssemblyEntity(entity, stage, player)
   }
-  DefaultAssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, player)
+  AssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, player)
 }
 
 function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageIfAssemblyEntity(entity)
-  if (stage) DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, entity, stage, player)
+  if (stage) AssemblyUpdater.onEntityDeleted(stage.assembly, entity, stage, player)
 }
 
 function luaEntityPotentiallyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageIfAssemblyEntity(entity)
-  if (stage) DefaultAssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, entity, stage, player)
+  if (stage) AssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, entity, stage, player)
 }
 
 function luaEntityMarkedForUpgrade(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageAtSurface(entity.surface.index)
-  if (stage) DefaultAssemblyUpdater.onEntityMarkedForUpgrade(stage.assembly, entity, stage, player)
+  if (stage) AssemblyUpdater.onEntityMarkedForUpgrade(stage.assembly, entity, stage, player)
 }
 
 function luaEntityForceDeleted(entity: LuaEntity): void {
   const stage = getStageIfAssemblyEntity(entity)
-  if (stage) DefaultAssemblyUpdater.onEntityDied(stage.assembly, entity, stage)
+  if (stage) AssemblyUpdater.onEntityDied(stage.assembly, entity, stage)
 }
 
 function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {
@@ -77,7 +77,7 @@ function luaEntityRotated(entity: LuaEntity, previousDirection: defines.directio
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
   if (isWorldEntityAssemblyEntity(entity)) {
-    DefaultAssemblyUpdater.onEntityRotated(stage.assembly, entity, stage, player, previousDirection)
+    AssemblyUpdater.onEntityRotated(stage.assembly, entity, stage, player, previousDirection)
     return
   }
   if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) {
@@ -212,10 +212,10 @@ function clearLastDeleted(player: PlayerIndex | nil): void {
   if (lastDeleted) {
     const { stage } = lastDeleted
     if (stage.valid) {
-      DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, lastDeleted, stage, player)
+      AssemblyUpdater.onEntityDeleted(stage.assembly, lastDeleted, stage, player)
       const { undergroundPairValue } = lastDeleted
       if (undergroundPairValue) {
-        DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, undergroundPairValue, stage, player)
+        AssemblyUpdater.onEntityDeleted(stage.assembly, undergroundPairValue, stage, player)
       }
     }
     state.lastDeleted = nil
@@ -287,7 +287,7 @@ Events.on_player_mined_entity((e) => {
   } else {
     // normal delete
     const stage = getStageAtSurface(entity.surface.index)
-    if (stage) DefaultAssemblyUpdater.onEntityDeleted(stage.assembly, entity, stage, e.player_index)
+    if (stage) AssemblyUpdater.onEntityDeleted(stage.assembly, entity, stage, e.player_index)
   }
 })
 
@@ -320,7 +320,7 @@ Events.on_built_entity((e) => {
     // editor mode build, or marker entity
     const stage = getStageAtSurface(entity.surface.index)
 
-    if (stage) DefaultAssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, playerIndex)
+    if (stage) AssemblyUpdater.onEntityCreated(stage.assembly, entity, stage, playerIndex)
     return
   }
 
@@ -336,7 +336,7 @@ Events.on_built_entity((e) => {
     if (!isWorldEntityAssemblyEntity(entity)) {
       checkNonAssemblyEntity(entity, stage, playerIndex)
     } else {
-      DefaultAssemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
+      AssemblyUpdater.onEntityCreated(assembly, entity, stage, playerIndex)
     }
   }
 })
@@ -346,7 +346,7 @@ function checkNonAssemblyEntity(entity: LuaEntity, stage: Stage, byPlayer: Playe
   if (entity.type === "entity-ghost" && entity.ghost_type === "underground-belt") {
     const [, newEntity] = entity.silent_revive()
     if (newEntity) {
-      DefaultAssemblyUpdater.onEntityCreated(stage.assembly, newEntity, stage, byPlayer)
+      AssemblyUpdater.onEntityCreated(stage.assembly, newEntity, stage, byPlayer)
     } else if (entity.valid) entity.destroy()
   }
 }
@@ -355,12 +355,12 @@ function tryFastReplace(assembly: Assembly, entity: LuaEntity, stage: Stage, pla
   const { lastDeleted } = state
   if (!lastDeleted) return
   if (isFastReplaceable(lastDeleted, entity)) {
-    DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, player, lastDeleted.direction)
+    AssemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage, player, lastDeleted.direction)
     state.lastDeleted = lastDeleted.undergroundPairValue
     return true
   }
   if (lastDeleted.undergroundPairValue && isFastReplaceable(lastDeleted.undergroundPairValue, entity)) {
-    DefaultAssemblyUpdater.onEntityPotentiallyUpdated(
+    AssemblyUpdater.onEntityPotentiallyUpdated(
       assembly,
       entity,
       stage,
@@ -545,14 +545,9 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (!referencedName) return
   const correspondingEntity = entity.surface.find_entity(referencedName, entity.position)
   if (!correspondingEntity) return
-  const result = DefaultAssemblyUpdater.onEntityPotentiallyUpdated(
-    stage.assembly,
-    correspondingEntity,
-    stage,
-    e.player_index,
-  )
+  const result = AssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, correspondingEntity, stage, e.player_index)
   if (result !== false && tags.hasCircuitWires) {
-    DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, correspondingEntity, stage, e.player_index)
+    AssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, correspondingEntity, stage, e.player_index)
   }
 }
 
@@ -568,7 +563,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
   const data = global.players[player.index]
   const existingEntity = data.lastWireAffectedEntity
   if (existingEntity && existingEntity !== entity) {
-    DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage, player.index)
+    AssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage, player.index)
   }
   data.lastWireAffectedEntity = entity
 }
@@ -579,7 +574,7 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   if (entity) {
     data.lastWireAffectedEntity = nil
     const stage = getStageIfAssemblyEntity(entity)
-    if (stage) DefaultAssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage, index)
+    if (stage) AssemblyUpdater.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage, index)
   }
 }
 
@@ -609,11 +604,11 @@ function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
     if (entity.train) {
       updateLater.push(entity)
     } else {
-      DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
+      AssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
     }
   }
   for (const entity of updateLater) {
-    DefaultAssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
+    AssemblyUpdater.onCleanupToolUsed(assembly, entity, stage)
   }
 }
 function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
@@ -622,7 +617,7 @@ function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   if (!stage) return
   const { assembly } = stage
   for (const entity of e.entities) {
-    DefaultAssemblyUpdater.onEntityForceDeleted(assembly, entity, stage)
+    AssemblyUpdater.onEntityForceDeleted(assembly, entity, stage)
   }
 }
 
@@ -639,7 +634,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   if (!entity) return
   const stage = getStageAtEntityOrPreview(entity)
   if (stage) {
-    DefaultAssemblyUpdater.onMoveEntityToStage(stage.assembly, entity, stage, e.player_index)
+    AssemblyUpdater.onMoveEntityToStage(stage.assembly, entity, stage, e.player_index)
   } else {
     player.create_local_flying_text({
       text: [L_Interaction.NotInAnAssembly],
@@ -655,7 +650,7 @@ if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_mov
     Events.on(event, (e) => {
       const stage = getStageAtEntityOrPreview(e.moved_entity)
       if (stage) {
-        DefaultAssemblyUpdater.onEntityMoved(stage.assembly, e.moved_entity, stage, e.start_pos, e.player_index)
+        AssemblyUpdater.onEntityMoved(stage.assembly, e.moved_entity, stage, e.start_pos, e.player_index)
       }
     })
   })
@@ -670,7 +665,7 @@ Events.on_chunk_generated((e) => {
     area: e.area,
   })
   for (const entity of entities) {
-    if (entity.valid) DefaultAssemblyUpdater.tryFixEntity(stage.assembly, entity, stage)
+    if (entity.valid) AssemblyUpdater.tryFixEntity(stage.assembly, entity, stage)
   }
 
   const status = defines.chunk_generated_status.entities
@@ -696,6 +691,6 @@ export const _assertInValidState = (): void => {
 export function checkEntityUpdated(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
   const stage = getStageIfAssemblyEntity(entity)
   if (stage) {
-    DefaultAssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, entity, stage, byPlayer)
+    AssemblyUpdater.onEntityPotentiallyUpdated(stage.assembly, entity, stage, byPlayer)
   }
 }

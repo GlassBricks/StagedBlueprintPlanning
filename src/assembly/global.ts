@@ -12,7 +12,7 @@
 import { rollingStockTypes } from "../entity/entity-info"
 import { Migrations } from "../lib/migration"
 import { Assembly, AssemblyId } from "./AssemblyDef"
-import { DefaultAssemblyUpdater } from "./AssemblyUpdater"
+import { AssemblyUpdater } from "./AssemblyUpdater"
 
 declare const global: {
   assemblies: LuaMap<AssemblyId, Assembly>
@@ -36,7 +36,7 @@ Migrations.to("0.4.0", () => {
       })
       if (rollingStock.length > 0) anyRollingStock = true
       for (const luaEntity of rollingStock) {
-        DefaultAssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, nil)
+        AssemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage, nil)
       }
     }
   }

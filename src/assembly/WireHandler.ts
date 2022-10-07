@@ -31,7 +31,7 @@ export interface WireSaver {
     assembly: AssemblyContent,
     entity: AssemblyEntity,
     stageNumber: StageNumber,
-  ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]>
+  ): LuaMultiReturn<[hasAnyDiff: boolean, maxCableConnectionsExceeded?: boolean]>
 }
 
 /** @noSelf */
@@ -268,7 +268,7 @@ function findMatchingCircuitConnection(
   }
 }
 
-export const DefaultWireHandler: WireHandler = {
+export const WireHandler: WireHandler = {
   updateWireConnections,
   saveWireConnections,
 }

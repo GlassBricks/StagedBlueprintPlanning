@@ -11,10 +11,10 @@
 
 import { createAssembly } from "../../assembly/Assembly"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { AssemblyUpdater, DefaultAssemblyUpdater } from "../../assembly/AssemblyUpdater"
+import { AssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { _assertInValidState } from "../../assembly/world-listener"
 import { CustomInputs, Prototypes } from "../../constants"
-import { getTempBpItemStack } from "../../entity/blueprinting"
+import { getTempBpItemStack } from "../../entity/EntityHandler"
 import { Events, Mutable } from "../../lib"
 import { BBox, Pos, PositionClass } from "../../lib/geometry"
 import { reviveGhost } from "../reviveGhost"
@@ -28,7 +28,7 @@ const pos = Pos(0, 0)
 before_all(() => {
   player = game.players[1]
 
-  updater = mock(DefaultAssemblyUpdater, true)
+  updater = mock(AssemblyUpdater, true)
   assembly = createAssembly("Test", 2)
   surface = assembly.getStage(1)!.surface
 

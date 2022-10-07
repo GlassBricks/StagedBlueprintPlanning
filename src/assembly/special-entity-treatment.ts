@@ -67,6 +67,7 @@ export function unit(direction: defines.direction): PositionClass {
   error("Invalid direction: " + direction)
 }
 
+// todo: refactor this
 export function getPreviewStages(entity: AssemblyEntity): LuaMultiReturn<[StageNumber | nil, StageNumber | nil]> {
   if (entity.isRollingStock()) {
     const firstStage = entity.firstStage

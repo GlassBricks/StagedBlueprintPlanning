@@ -12,7 +12,7 @@
 import { oppositedirection } from "util"
 import { StagePosition } from "../../assembly/AssemblyContent"
 import { Entity } from "../../entity/Entity"
-import { DefaultEntityHandler } from "../../entity/EntityHandler"
+import { EntityHandler } from "../../entity/EntityHandler"
 
 let surface: LuaSurface
 before_each(() => {
@@ -27,7 +27,7 @@ test("can save an entity", () => {
     direction: defines.direction.east,
   })!
   entity.inserter_stack_size_override = 2
-  const [saved, direction] = DefaultEntityHandler.saveEntity(entity)
+  const [saved, direction] = EntityHandler.saveEntity(entity)
   assert.same({ name: "inserter", override_stack_size: 2 }, saved)
   assert.equal(defines.direction.east, direction)
 })
@@ -40,7 +40,7 @@ test.each(directions)("can saved a curved rail in all directions", (direction) =
     direction,
   })!
 
-  const [saved, savedDirection] = DefaultEntityHandler.saveEntity(entity)
+  const [saved, savedDirection] = EntityHandler.saveEntity(entity)
   assert.same({ name: "curved-rail" }, saved)
   assert.equal(direction, savedDirection)
 })
@@ -53,7 +53,7 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
     direction,
   })!
 
-  const [saved, savedDirection] = DefaultEntityHandler.saveEntity(entity)
+  const [saved, savedDirection] = EntityHandler.saveEntity(entity)
   if (direction === defines.direction.south || direction === defines.direction.west) {
     direction = oppositedirection(direction)
   }
@@ -63,7 +63,7 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
 
 test("can create an entity", () => {
   const stage: StagePosition = { surface, stageNumber: 0 }
-  const luaEntity = DefaultEntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, 0, {
+  const luaEntity = EntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, 0, {
     name: "iron-chest",
     bar: 3,
   } as Entity)!
@@ -80,7 +80,7 @@ test("can update an entity", () => {
     force: "player",
     bar: 3,
   })!
-  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, 0)
+  const newEntity = EntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, 0)
   assert.equal(entity, newEntity)
   assert.equal(4, entity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
 })
@@ -93,7 +93,7 @@ test("can upgrade an entity", () => {
   })!
   entity.minable = false
   entity.destructible = false
-  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, 0)
+  const newEntity = EntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, 0)
   assert.equal("steel-chest", newEntity.name)
   assert.false(entity.valid)
 })
@@ -105,7 +105,7 @@ test("can rotate entity", () => {
     force: "player",
     direction: defines.direction.east,
   })!
-  const newEntity = DefaultEntityHandler.updateEntity(entity, { name: "inserter" } as Entity, defines.direction.south)
+  const newEntity = EntityHandler.updateEntity(entity, { name: "inserter" } as Entity, defines.direction.south)
   assert.equal(newEntity, entity)
   assert.equal(defines.direction.south, entity.direction)
 })
@@ -120,7 +120,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       direction: defines.direction.south,
       type: inOut,
     })!
-    const [saved, direction] = DefaultEntityHandler.saveEntity(entity)
+    const [saved, direction] = EntityHandler.saveEntity(entity)
     assert.same({ name: "underground-belt", type: inOut }, saved)
     if (flipped) {
       assert.equal(defines.direction.north, direction)
@@ -131,7 +131,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
 
   test("creating an underground belt in output direction flips direction", () => {
     const stage: StagePosition = { surface, stageNumber: 0 }
-    const luaEntity = DefaultEntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, defines.direction.south, {
+    const luaEntity = EntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, defines.direction.south, {
       name: "underground-belt",
       type: inOut,
     } as Entity)!
@@ -158,7 +158,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     assert.not_nil(westUnderground, "entity created")
     // try pasting east output underground at 1.5, 0.5
     // if west underground is output, the created entity will be flipped
-    const eastUnderground = DefaultEntityHandler.createEntity(stage, { x: 1.5, y: 0.5 }, defines.direction.west, {
+    const eastUnderground = EntityHandler.createEntity(stage, { x: 1.5, y: 0.5 }, defines.direction.west, {
       name: "underground-belt",
       type: "output",
     } as Entity)!
@@ -182,7 +182,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     })!
     entity.rotatable = false // should not matter
     const otherDir = flipped ? "input" : "output"
-    const updated = DefaultEntityHandler.updateEntity(
+    const updated = EntityHandler.updateEntity(
       entity,
       {
         name: "underground-belt",
@@ -204,7 +204,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       direction: !flipped ? defines.direction.west : defines.direction.east, // actual is west
     })!
     assert.not_nil(entity, "entity created")
-    const updated = DefaultEntityHandler.updateEntity(
+    const updated = EntityHandler.updateEntity(
       entity,
       {
         name: "fast-underground-belt",
@@ -228,7 +228,7 @@ test("can flip loader", () => {
   })!
   entity.loader_type = "input"
   entity.rotatable = false // should not matter
-  const updated = DefaultEntityHandler.updateEntity(
+  const updated = EntityHandler.updateEntity(
     entity,
     {
       name: "loader",
@@ -252,7 +252,7 @@ test("can handle item changes", () => {
   })!
   for (const [item, count] of pairs(oldContents)) entity.get_module_inventory()!.insert({ name: item, count })
 
-  const newEntity = DefaultEntityHandler.updateEntity(
+  const newEntity = EntityHandler.updateEntity(
     entity,
     {
       name: "assembling-machine-3",

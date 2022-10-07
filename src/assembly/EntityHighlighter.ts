@@ -282,7 +282,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 }
 
-export const DefaultHighlightCreator: HighlightCreator = {
+export const HighlightCreator: HighlightCreator = {
   createHighlightBox(target: LuaEntity | nil, type: CursorBoxRenderType): LuaEntity | nil {
     if (!target) return nil
     return target.surface.create_entity({
@@ -298,4 +298,4 @@ export const DefaultHighlightCreator: HighlightCreator = {
   },
 }
 
-export const DefaultEntityHighlighter = createHighlightCreator(DefaultHighlightCreator)
+export const EntityHighlighter = createHighlightCreator(HighlightCreator)

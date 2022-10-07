@@ -17,14 +17,14 @@ const { surfaces, entities, origDir, origPos } = setupEntityMoveTest(nil, nil, n
 
 const newPos = { x: 1.5, y: 2 }
 const newDir = defines.direction.south
-test("can move single entity", () => {
+test("forceMoveEntity moves entities", () => {
   const entity = entities[0]
   forceMoveEntity(entity, newPos, newDir)
   assert.same(newPos, entity.position)
   assert.same(newDir, entity.direction)
 })
 
-test("can move multiple entities", () => {
+test("tryMoveAllEntities moves all entities", () => {
   const result = tryMoveAllEntities(entities, newPos, newDir)
   assert.equal("success", result)
   for (const entity of entities) {
@@ -33,7 +33,7 @@ test("can move multiple entities", () => {
   }
 })
 
-test("can teleport onto self", () => {
+test("can move to position overlapping with itself", () => {
   const newPos2 = Pos.plus(origPos, { x: 1, y: 0 })
   const entity = entities[0]
   forceMoveEntity(entity, newPos2, origDir)
@@ -45,7 +45,7 @@ test("can teleport onto self", () => {
   }
 })
 
-test("does not move any if any overlaps", () => {
+test("does not move any entities if any would overlap", () => {
   surfaces[1].create_entity({
     name: "inserter",
     position: newPos,

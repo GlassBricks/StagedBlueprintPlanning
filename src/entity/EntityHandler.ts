@@ -12,11 +12,10 @@
 import { oppositedirection } from "util"
 import { StagePosition } from "../assembly/AssemblyContent"
 import { Prototypes } from "../constants"
-import { Mutable } from "../lib"
+import { Events, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { SavedDirection } from "./AssemblyEntity"
-import { getTempBpItemStack } from "./blueprinting"
 import { Entity } from "./Entity"
 import { isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import { getPastedDirection, getSavedDirection, makePreviewIndestructible } from "./special-entities"
@@ -40,6 +39,19 @@ export interface EntitySaver {
 }
 
 export interface EntityHandler extends EntityCreator, EntitySaver {}
+
+declare const global: {
+  tempBPInventory: LuaInventory
+}
+Events.on_init(() => {
+  global.tempBPInventory = game.create_inventory(1)
+})
+
+export function getTempBpItemStack(): BlueprintItemStack {
+  const stack = global.tempBPInventory[0]
+  stack.set_stack("blueprint")
+  return stack
+}
 
 function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | nil {
   for (const [index, mEntity] of pairs(mapping)) {
@@ -318,7 +330,7 @@ const BlueprintEntityHandler: EntityHandler = {
     return luaEntity
   },
 }
-export const DefaultEntityHandler: EntityHandler = BlueprintEntityHandler
+export const EntityHandler: EntityHandler = BlueprintEntityHandler
 
 Migrations.to("0.6.0", () => {
   const railPreviews: string[] = []

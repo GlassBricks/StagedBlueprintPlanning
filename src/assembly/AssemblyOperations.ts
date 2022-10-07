@@ -17,9 +17,11 @@ import {
   StageNumber,
 } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
+import { assertNever } from "../lib"
+import { AssemblyEvents } from "./Assembly"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
-import { AssemblyUpdater, DefaultAssemblyUpdater } from "./AssemblyUpdater"
-import { DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
+import { AssemblyUpdater } from "./AssemblyUpdater"
+import { WorldUpdater } from "./WorldUpdater"
 
 /**
  * User and miscellaneous operations on assemblies.
@@ -166,7 +168,7 @@ export function createAssemblyOperations(
   }
 }
 
-const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
+const AssemblyWorldInteractor: AssemblyOpWorldInteractor = {
   deleteAllWorldEntities(stage: StagePosition) {
     for (const entity of stage.surface.find_entities()) {
       if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
@@ -180,8 +182,27 @@ const DefaultWorldInteractor: AssemblyOpWorldInteractor = {
   },
 }
 
-export const AssemblyOperations = createAssemblyOperations(
-  DefaultAssemblyUpdater,
-  DefaultWorldUpdater,
-  DefaultWorldInteractor,
-)
+export const AssemblyOperations = createAssemblyOperations(AssemblyUpdater, WorldUpdater, AssemblyWorldInteractor)
+
+AssemblyEvents.addListener((e) => {
+  switch (e.type) {
+    case "assembly-created":
+    case "assembly-deleted":
+      break
+    case "stage-added": {
+      AssemblyOperations.resetStage(e.assembly, e.stage)
+      break
+    }
+    case "pre-stage-deleted":
+      break
+    case "stage-deleted": {
+      const stageNumber = e.stage.stageNumber
+      const stageNumberToMerge = stageNumber === 1 ? 2 : stageNumber - 1
+      const otherStage = e.assembly.getStage(stageNumberToMerge)
+      if (otherStage) AssemblyOperations.resetStage(e.assembly, otherStage)
+      break
+    }
+    default:
+      assertNever(e)
+  }
+})

@@ -20,7 +20,7 @@ import {
 } from "../../assembly/AssemblyDef"
 import { SelflessFun } from "../../lib"
 
-let eventListener: SelflessFun & spy.SpyObj<SelflessFun>
+let eventListener: spy.Spy<SelflessFun>
 before_each(() => {
   eventListener = spy()
   AssemblyEvents.addListener(eventListener)

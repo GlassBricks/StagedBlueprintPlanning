@@ -21,6 +21,11 @@ import { getRegisteredAssemblyEntity } from "./entity-registration"
 import { getAllAssemblies } from "./global"
 import { migrateMap2d060, MutableMap2D, newMap2D } from "./map2d"
 
+/**
+ * A collection of assembly entities: the actual data of an assembly.
+ *
+ * Also keeps tracks of wires and circuit connections.
+ */
 export interface EntityMap {
   findCompatibleByName(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
   findCompatible(entity: BasicEntityInfo, previousDirection: defines.direction | nil): AssemblyEntity | nil
@@ -228,7 +233,7 @@ class EntityMapImpl implements MutableEntityMap {
     this.removeAllConnections(entity, this.cableConnections)
   }
 
-  public changePosition(entity: AssemblyEntity, position: Position): boolean {
+  changePosition(entity: AssemblyEntity, position: Position): boolean {
     if (!this.entities.has(entity)) return false
     const { x, y } = entity.position
     const { x: newX, y: newY } = position

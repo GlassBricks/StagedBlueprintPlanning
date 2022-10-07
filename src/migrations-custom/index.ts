@@ -11,7 +11,7 @@
 
 import { Assembly } from "../assembly/AssemblyDef"
 import { getAllAssemblies } from "../assembly/global"
-import { DefaultWireHandler } from "../assembly/WireHandler"
+import { WireHandler } from "../assembly/WireHandler"
 import { _migrate031 } from "../entity/AssemblyEntity"
 import { Events } from "../lib"
 import { formatVersion, Migrations } from "../lib/migration"
@@ -30,7 +30,7 @@ Events.on_configuration_changed((data) => {
 })
 
 function migrateCables(assembly: Assembly): void {
-  const { saveWireConnections, updateWireConnections } = DefaultWireHandler
+  const { saveWireConnections, updateWireConnections } = WireHandler
   const lastStageNum = assembly.numStages()
 
   for (const entity of assembly.content.iterateAllEntities()) {

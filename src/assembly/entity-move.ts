@@ -53,13 +53,6 @@ function updateMovedEntity(oldPosition: Position, entity: LuaEntity): void {
 export type MoveEntityResult = "success" | "overlap" | "could-not-teleport" | "wires-cannot-reach"
 
 function tryMoveOutOfTheWay(entity: LuaEntity): boolean {
-  // while not entity.teleport(out_of_the_way) do
-  //   if retries <= 1 then
-  // return flying_text(player, { "picker-dollies.cant-be-teleported", entity.localised_name }, entity.position)
-  // end
-  // retries = retries - 1
-  // out_of_the_way = out_of_the_way:add { x = retries, y = retries }
-  // end
   let retries = 5
   const outOfTheWay: Mutable<MapPosition> = Pos.plus(entity.position, { x: 20, y: 20 })
   while (!entity.teleport(outOfTheWay)) {

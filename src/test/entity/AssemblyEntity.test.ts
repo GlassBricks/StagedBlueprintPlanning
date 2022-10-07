@@ -16,7 +16,6 @@ import { Entity } from "../../entity/Entity"
 import { getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
 import { shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { _breakpoint } from "../_debug"
 import { entityMock } from "../simple-mock"
 import { createRollingStock } from "./createRollingStock"
 
@@ -42,7 +41,6 @@ test("getters", () => {
   assert.same(2, fooAssemblyEntity.firstStage)
   assert.same(entity, fooAssemblyEntity.firstValue)
   assert.same(0, fooAssemblyEntity.getDirection()) // nil <=> 0
-  _breakpoint()
 })
 
 test("isRollingStock", () => {

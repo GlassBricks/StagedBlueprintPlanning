@@ -15,7 +15,7 @@ import { MutableMap2D, newMap2D } from "../../assembly/map2d"
 import { Prototypes } from "../../constants"
 import { SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { DefaultEntityHandler, EntityCreator, EntitySaver } from "../../entity/EntityHandler"
+import { EntityCreator, EntityHandler, EntitySaver } from "../../entity/EntityHandler"
 import { shallowCopy } from "../../lib"
 import { Position } from "../../lib/geometry"
 import { BuiltinEntityKeys, entityMock, isMock } from "../simple-mock"
@@ -35,6 +35,7 @@ function toArray<T>(value: T | readonly T[]): readonly T[] {
   return (Array.isArray(value) ? value : [value]) as readonly T[]
 }
 
+// todo: remove this
 export function createMockEntityCreator(): MockEntityCreator {
   const values: Record<StageNumber, MutableMap2D<MockEntityEntry>> = {}
   const luaEntityToEntry = new LuaMap<LuaEntity, MockEntityEntry>()
@@ -126,7 +127,7 @@ for (const key of keys<BuiltinEntityKeys>()) excludedKeys.add(key)
 export function createMockEntitySaver(): EntitySaver {
   return {
     saveEntity(entity: LuaEntity) {
-      if (!isMock(entity)) return DefaultEntityHandler.saveEntity(entity)
+      if (!isMock(entity)) return EntityHandler.saveEntity(entity)
       const result: any = {}
       for (const [key, value] of pairs(entity)) {
         if (typeof value !== "function" && !excludedKeys.has(key)) {

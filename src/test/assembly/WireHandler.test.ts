@@ -11,7 +11,7 @@
 
 import { AssemblyContent } from "../../assembly/AssemblyContent"
 import { CableAddResult } from "../../assembly/EntityMap"
-import { DefaultWireHandler, WireHandler } from "../../assembly/WireHandler"
+import { WireHandler } from "../../assembly/WireHandler"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { shallowCompare } from "../../lib"
@@ -26,7 +26,7 @@ before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
 })
 
-const handler: WireHandler = DefaultWireHandler
+const handler: WireHandler = WireHandler
 
 describe("circuit wires", () => {
   let luaEntity1: LuaEntity

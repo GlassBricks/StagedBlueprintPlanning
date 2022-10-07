@@ -11,13 +11,13 @@
 
 import { AssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
-import { DefaultEntityHandler, EntityCreator } from "../entity/EntityHandler"
+import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
 import { AssemblyContent } from "./AssemblyContent"
 import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "./entity-move"
-import { DefaultEntityHighlighter, EntityHighlighter } from "./EntityHighlighter"
+import { EntityHighlighter } from "./EntityHighlighter"
 import { EntityMap } from "./EntityMap"
 import { getPreviewStages } from "./special-entity-treatment"
-import { DefaultWireHandler, WireUpdater } from "./WireHandler"
+import { WireHandler, WireUpdater } from "./WireHandler"
 
 /**
  * Updates entities in the world in response to changes in the assembly.
@@ -43,7 +43,7 @@ export interface WorldUpdater {
   ): void
 
   /**
-   * Tries to move an entity to a new position (after another entity has been moved).
+   * Tries to move an entity to a new position (after one world entity has already been moved).
    * @param assembly the assembly position info
    * @param entity the assembly entity
    * @param stage the stage with the entity already moved into the new position
@@ -264,8 +264,4 @@ export function createWorldUpdater(
   }
 }
 
-export const DefaultWorldUpdater = createWorldUpdater(
-  DefaultEntityHandler,
-  DefaultWireHandler,
-  DefaultEntityHighlighter,
-)
+export const WorldUpdater = createWorldUpdater(EntityHandler, WireHandler, EntityHighlighter)

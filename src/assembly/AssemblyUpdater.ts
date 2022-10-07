@@ -20,14 +20,14 @@ import {
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { BasicEntityInfo } from "../entity/Entity"
 import { isCompatibleEntity, isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
-import { DefaultEntityHandler, EntitySaver } from "../entity/EntityHandler"
+import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { findUndergroundPair } from "./special-entity-treatment"
-import { DefaultWireHandler, WireSaver } from "./WireHandler"
-import { AssemblyMoveEntityResult, DefaultWorldUpdater, WorldUpdater } from "./WorldUpdater"
+import { WireHandler, WireSaver } from "./WireHandler"
+import { AssemblyMoveEntityResult, WorldUpdater } from "./WorldUpdater"
 import min = math.min
 
 /**
@@ -798,7 +798,7 @@ export function createAssemblyUpdater(
   }
 }
 
-const DefaultWorldNotifier: WorldNotifier = {
+const WorldNotifier: WorldNotifier = {
   createNotification(
     at:
       | {
@@ -834,9 +834,9 @@ const DefaultWorldNotifier: WorldNotifier = {
   },
 }
 
-export const DefaultAssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(
-  DefaultWorldUpdater,
-  DefaultEntityHandler,
-  DefaultWireHandler,
-  DefaultWorldNotifier,
+export const AssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(
+  WorldUpdater,
+  EntityHandler,
+  WireHandler,
+  WorldNotifier,
 )
