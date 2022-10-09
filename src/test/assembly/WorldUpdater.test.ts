@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyContent } from "../../assembly/AssemblyContent"
+import { AssemblyData } from "../../assembly/AssemblyDef"
 import { forceMoveEntity } from "../../assembly/entity-move"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { WireHandler, WireUpdater } from "../../assembly/WireHandler"
@@ -27,7 +27,7 @@ interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter"
   override_stack_size?: number
 }
-let assembly: AssemblyContent
+let assembly: AssemblyData
 let entity: AssemblyEntity<TestEntity>
 
 let highlighter: mock.Mocked<EntityHighlighter>
@@ -67,7 +67,7 @@ function findMainEntity(i: StageNumber) {
     limit: 1,
   })[0]
 }
-function findAnyEntity(i: StageNumber): LuaEntity | undefined {
+function findAnyEntity(i: StageNumber): LuaEntity | nil {
   return surfaces[i - 1].find_entities_filtered({
     limit: 1,
   })[0]
@@ -112,10 +112,15 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = EntityHandler.createEntity(assembly.getStage(2)!, entity.position, entity.getDirection(), {
-        name: "inserter",
-        override_stack_size: 3,
-      } as TestEntity)!
+      const replaced = EntityHandler.createEntity(
+        assembly.getStage(2)!.surface,
+        entity.position,
+        entity.getDirection(),
+        {
+          name: "inserter",
+          override_stack_size: 3,
+        } as TestEntity,
+      )!
       entity.replaceWorldEntity(2, replaced)
       worldUpdater.updateWorldEntities(assembly, entity, 2, 2)
       const val = assertEntityCorrect(2)
@@ -157,7 +162,7 @@ describe("updateWorldEntities", () => {
   test("calls wireUpdater", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
     for (let i = 1; i <= 3; i++)
-      assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly), match.ref(entity), i)
+      assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly.content), match.ref(entity), i)
   })
 
   function assertDestructible(luaEntity: LuaEntity, value: boolean) {
@@ -169,10 +174,15 @@ describe("updateWorldEntities", () => {
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
     entity.moveToStage(2)
     if (withExisting) {
-      const luaEntity = EntityHandler.createEntity(assembly.getStage(3)!, entity.position, entity.getDirection(), {
-        name: "inserter",
-        override_stack_size: 3,
-      } as TestEntity)!
+      const luaEntity = EntityHandler.createEntity(
+        assembly.getStage(3)!.surface,
+        entity.position,
+        entity.getDirection(),
+        {
+          name: "inserter",
+          override_stack_size: 3,
+        } as TestEntity,
+      )!
       entity.replaceWorldEntity(3, luaEntity)
     }
     worldUpdater.updateWorldEntities(assembly, entity, 1, 4)
@@ -263,14 +273,14 @@ describe("tryMoveEntity", () => {
 
   test("can move entity if moved in first stage", () => {
     assert.true(forceMoveEntity(entities[0], newPos, newDir))
-    const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+    const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
     assert.equal("success", result)
     assertMoved()
   })
 
   test("can't move entity if moved in later stage", () => {
     assert.true(forceMoveEntity(entities[1], newPos, newDir))
-    const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 2)
+    const result = worldUpdater.tryMoveOtherEntities(assembly, 2, entity)
     assert.equal("not-first-stage", result)
     assertNotMoved()
   })
@@ -278,7 +288,7 @@ describe("tryMoveEntity", () => {
   test("can't move if world entities are missing in any stage", () => {
     assert.true(forceMoveEntity(entities[0], newPos, newDir))
     entity.getWorldEntity(2)!.destroy()
-    const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+    const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
     assert.equal("entities-missing", result)
     assertNotMoved()
   })
@@ -299,7 +309,7 @@ describe("tryMoveEntity", () => {
       assembly.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
       assert.true(forceMoveEntity(entities[0], newPos, newDir))
-      const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+      const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
       assert.equal("connected-entities-missing", result)
     })
 
@@ -313,7 +323,7 @@ describe("tryMoveEntity", () => {
       })
 
       assert.true(forceMoveEntity(entities[0], newPos, newDir))
-      const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+      const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
       assert.equal("connected-entities-missing", result)
     })
 
@@ -337,7 +347,7 @@ describe("tryMoveEntity", () => {
         }),
       )
 
-      const result = worldUpdater.tryMoveOtherEntities(assembly, entity, 1)
+      const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
       assert.equal("success", result)
       assertMoved()
     })
@@ -346,7 +356,7 @@ describe("tryMoveEntity", () => {
 
 test("force delete", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1, 3)
-  worldUpdater.clearWorldEntity(assembly, entity, 2)
+  worldUpdater.clearWorldEntity(assembly, 2, entity)
   assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 2, 2)
   assert.nil(findMainEntity(2))
   assertEntityCorrect(1)

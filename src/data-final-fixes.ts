@@ -35,7 +35,7 @@ declare const data: Data
 
 const whiteTile = "__base__/graphics/terrain/lab-tiles/lab-white.png"
 const previewTint: ColorArray = [0.5, 0.5, 0.5, 0.8]
-function getPreviewTint(color: Color | undefined): ColorArray {
+function getPreviewTint(color: Color | nil): ColorArray {
   return color ? util.mix_color(color, previewTint as Color) : previewTint
 }
 export function createWhiteSprite(

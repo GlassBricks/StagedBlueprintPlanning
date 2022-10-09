@@ -33,12 +33,13 @@ function migrateCables(assembly: Assembly): void {
   const { saveWireConnections, updateWireConnections } = WireHandler
   const lastStageNum = assembly.numStages()
 
-  for (const entity of assembly.content.iterateAllEntities()) {
-    saveWireConnections(assembly, entity, lastStageNum)
+  const content = assembly.content
+  for (const entity of content.iterateAllEntities()) {
+    saveWireConnections(content, entity, lastStageNum)
   }
   for (const i of $range(1, lastStageNum)) {
-    for (const entity of assembly.content.iterateAllEntities()) {
-      updateWireConnections(assembly, entity, i)
+    for (const entity of content.iterateAllEntities()) {
+      updateWireConnections(content, entity, i)
     }
   }
 }

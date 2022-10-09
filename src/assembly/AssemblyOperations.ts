@@ -19,7 +19,7 @@ import {
 import { Entity } from "../entity/Entity"
 import { assertNever } from "../lib"
 import { AssemblyEvents } from "./Assembly"
-import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { AssemblyData, StageSurface } from "./AssemblyDef"
 import { AssemblyUpdater } from "./AssemblyUpdater"
 import { WorldUpdater } from "./WorldUpdater"
 
@@ -29,33 +29,33 @@ import { WorldUpdater } from "./WorldUpdater"
  */
 export interface AssemblyOperations {
   /** Delete all extra (non-main) entities in the assembly. Before assembly deletion. */
-  deleteAllExtraEntitiesOnly(assembly: AssemblyContent): void
+  deleteAllExtraEntitiesOnly(assembly: AssemblyData): void
 
-  resetStage(assembly: AssemblyContent, stage: StagePosition): void
+  resetStage(assembly: AssemblyData, stage: StageNumber): void
 
   resetProp<T extends Entity>(
-    assembly: AssemblyContent,
+    assembly: AssemblyData,
     entity: AssemblyEntity<T>,
     stageNumber: StageNumber,
     prop: keyof T,
   ): boolean
   movePropDown<T extends Entity>(
-    assembly: AssemblyContent,
+    assembly: AssemblyData,
     entity: AssemblyEntity<T>,
     stageNumber: StageNumber,
     prop: keyof T,
   ): boolean
 
-  resetAllProps(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
-  moveAllPropsDown(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+  resetAllProps(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+  moveAllPropsDown(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean
 
-  resetTrain(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
-  setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void
+  resetTrain(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void
+  setTrainLocationToCurrent(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void
 }
 
 /** @noSelf */
 export interface AssemblyOpWorldInteractor {
-  deleteAllWorldEntities(stage: StagePosition): void
+  deleteAllWorldEntities(stage: StageSurface): void
 }
 
 export function createAssemblyOperations(
@@ -66,14 +66,15 @@ export function createAssemblyOperations(
   const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
 
   return {
-    deleteAllExtraEntitiesOnly(assembly: AssemblyContent) {
+    deleteAllExtraEntitiesOnly(assembly: AssemblyData) {
       for (const entity of assembly.content.iterateAllEntities()) {
         deleteExtraEntitiesOnly(entity)
       }
     },
-    resetStage(assembly: AssemblyContent, stage: StagePosition) {
+    resetStage(assembly: AssemblyData, stageNumber: StageNumber) {
+      const stage = assembly.getStage(stageNumber)
+      if (!stage) return
       worldInteractor.deleteAllWorldEntities(stage)
-      const stageNumber = stage.stageNumber
       const updateLater: RollingStockAssemblyEntity[] = []
       for (const entity of assembly.content.iterateAllEntities()) {
         if (entity.isRollingStock()) {
@@ -87,7 +88,7 @@ export function createAssemblyOperations(
       }
     },
     resetProp<T extends Entity>(
-      assembly: AssemblyContent,
+      assembly: AssemblyData,
       entity: AssemblyEntity<T>,
       stageNumber: StageNumber,
       prop: keyof T,
@@ -97,7 +98,7 @@ export function createAssemblyOperations(
       return moved
     },
     movePropDown<T extends Entity>(
-      assembly: AssemblyContent,
+      assembly: AssemblyData,
       entity: AssemblyEntity<T>,
       stageNumber: StageNumber,
       prop: keyof T,
@@ -109,12 +110,12 @@ export function createAssemblyOperations(
       }
       return false
     },
-    resetAllProps(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+    resetAllProps(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
       const moved = entity.resetValue(stageNumber)
       if (moved) updateWorldEntities(assembly, entity, stageNumber, nil)
       return moved
     },
-    moveAllPropsDown(assembly: AssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+    moveAllPropsDown(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
       const movedStage = entity.moveValueDown(stageNumber)
       if (movedStage) {
         updateWorldEntities(assembly, entity, movedStage, nil)
@@ -122,7 +123,7 @@ export function createAssemblyOperations(
       }
       return false
     },
-    resetTrain(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
+    resetTrain(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void {
       const stage = entity.firstStage
       const luaEntity = entity.getWorldEntity(stage)
       if (!luaEntity) {
@@ -140,7 +141,7 @@ export function createAssemblyOperations(
       for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
       for (const entity of assemblyEntities) updateWorldEntities(assembly, entity, stage, stage, true)
     },
-    setTrainLocationToCurrent(assembly: AssemblyContent, entity: RollingStockAssemblyEntity): void {
+    setTrainLocationToCurrent(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void {
       const stageNum = entity.firstStage
       const luaEntity = entity.getWorldEntity(stageNum)
       if (!luaEntity) return
@@ -151,7 +152,6 @@ export function createAssemblyOperations(
       const entities = train.carriages
       const content = assembly.content
 
-      const stage = assembly.getStage(stageNum)!
       for (const luaEntity of entities) {
         // todo: make this part of AssemblyUpdater instead?
         const assemblyEntity = content.findCompatible(luaEntity, nil)
@@ -161,7 +161,7 @@ export function createAssemblyOperations(
           updateWorldEntities(assembly, assemblyEntity, stageNum, stageNum)
         } else {
           // add
-          assemblyUpdater.onEntityCreated(assembly, luaEntity, stage, nil)
+          assemblyUpdater.onEntityCreated(assembly, stageNum, luaEntity, nil)
         }
       }
     },
@@ -169,7 +169,7 @@ export function createAssemblyOperations(
 }
 
 const AssemblyWorldInteractor: AssemblyOpWorldInteractor = {
-  deleteAllWorldEntities(stage: StagePosition) {
+  deleteAllWorldEntities(stage: StageSurface) {
     for (const entity of stage.surface.find_entities()) {
       if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
     }
@@ -190,7 +190,7 @@ AssemblyEvents.addListener((e) => {
     case "assembly-deleted":
       break
     case "stage-added": {
-      AssemblyOperations.resetStage(e.assembly, e.stage)
+      AssemblyOperations.resetStage(e.assembly, e.stage.stageNumber)
       break
     }
     case "pre-stage-deleted":
@@ -198,8 +198,7 @@ AssemblyEvents.addListener((e) => {
     case "stage-deleted": {
       const stageNumber = e.stage.stageNumber
       const stageNumberToMerge = stageNumber === 1 ? 2 : stageNumber - 1
-      const otherStage = e.assembly.getStage(stageNumberToMerge)
-      if (otherStage) AssemblyOperations.resetStage(e.assembly, otherStage)
+      AssemblyOperations.resetStage(e.assembly, stageNumberToMerge)
       break
     }
     default:

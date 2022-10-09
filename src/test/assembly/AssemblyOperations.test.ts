@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyContent } from "../../assembly/AssemblyContent"
+import { AssemblyData } from "../../assembly/AssemblyDef"
 import {
   AssemblyOperations,
   AssemblyOpWorldInteractor,
@@ -24,7 +24,7 @@ import { createRollingStocks } from "../entity/createRollingStock"
 import { makeMocked } from "../simple-mock"
 import { createMockAssemblyContent } from "./Assembly-mock"
 
-let assembly: AssemblyContent
+let assembly: AssemblyData
 
 let assemblyUpdater: mock.Mocked<AssemblyUpdater>
 let worldUpdater: mock.Mocked<WorldUpdater>
@@ -57,7 +57,7 @@ test("resetStage", () => {
   assembly.content.add(entity2)
 
   const stage = assembly.getStage(2)!
-  operations.resetStage(assembly, stage)
+  operations.resetStage(assembly, 2)
 
   assert.spy(worldInteractor.deleteAllWorldEntities).called_with(match.ref(stage))
 

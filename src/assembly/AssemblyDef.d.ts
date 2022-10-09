@@ -12,11 +12,21 @@
 import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableState, Observable, PRecord, State } from "../lib"
 import { Position } from "../lib/geometry"
-import { AssemblyContent, StagePosition } from "./AssemblyContent"
 import { MutableEntityMap } from "./EntityMap"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
-export interface Assembly extends AssemblyContent {
+export interface StageSurface {
+  readonly surface: LuaSurface
+}
+export interface AssemblyData {
+  getStage(stageNumber: StageNumber): StageSurface | nil
+  numStages(): number
+  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, StageSurface]>>
+
+  getStageName(stageNumber: StageNumber): LocalisedString
+  readonly content: MutableEntityMap
+}
+export interface Assembly extends AssemblyData {
   readonly id: AssemblyId
 
   readonly name: MutableState<string>
@@ -52,8 +62,10 @@ export interface BlueprintBookSettings {
   readonly autoLandfill: MutableState<boolean>
 }
 
-export interface Stage extends StagePosition {
+export interface Stage extends StageSurface {
   readonly name: MutableState<string>
+
+  readonly stageNumber: StageNumber
   readonly assembly: Assembly
 
   /** The blueprint should be treated as readonly. */

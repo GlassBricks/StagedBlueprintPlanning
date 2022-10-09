@@ -12,7 +12,7 @@
 import { AssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
-import { AssemblyContent } from "./AssemblyContent"
+import { AssemblyData } from "./AssemblyDef"
 import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "./entity-move"
 import { EntityHighlighter } from "./EntityHighlighter"
 import { EntityMap } from "./EntityMap"
@@ -34,7 +34,7 @@ export interface WorldUpdater {
    * @param replace if entities should be replaced (deleted and created) instead of updated
    */
   updateWorldEntities(
-    assembly: AssemblyContent,
+    assembly: AssemblyData,
     entity: AssemblyEntity,
     startStage: StageNumber,
     endStage?: StageNumber,
@@ -44,14 +44,14 @@ export interface WorldUpdater {
   /**
    * Tries to move an entity to a new position (after one world entity has already been moved).
    * @param assembly the assembly position info
-   * @param entity the assembly entity
    * @param stage the stage with the entity already moved into the new position
+   * @param entity the assembly entity
    * @return the result of the move
    */
-  tryMoveOtherEntities(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): AssemblyMoveEntityResult
+  tryMoveOtherEntities(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyMoveEntityResult
 
   /** Removes the world entity at a give stage (and makes error highlight) */
-  clearWorldEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void
+  clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
 
   /** Removes ALL entities in ALL stages. */
   deleteAllEntities(entity: AssemblyEntity): void
@@ -59,8 +59,8 @@ export interface WorldUpdater {
   /** Removes non-main entities only (in preparation for assembly deletion) */
   deleteExtraEntitiesOnly(entity: AssemblyEntity): void
 
-  makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
-  reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
+  makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
+  reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
 }
 
 export type AssemblyMoveEntityResult =
@@ -79,11 +79,11 @@ export function createWorldUpdater(
   const { updateHighlights, deleteHighlights } = highlighter
 
   function doUpdateWorldEntities(
-    assembly: AssemblyContent,
+    assembly: AssemblyData,
     entity: AssemblyEntity,
     startStage: number,
     endStage: number,
-    replace: boolean | undefined,
+    replace: boolean | nil,
   ): void {
     const firstStage = entity.firstStage
     const direction = entity.getDirection()
@@ -95,24 +95,24 @@ export function createWorldUpdater(
       }
 
       const existing = entity.getWorldEntity(stageNum)
-      let luaEntity: LuaEntity | undefined
+      let luaEntity: LuaEntity | nil
       if (existing && !replace) {
         luaEntity = updateEntity(existing, value, direction)
       } else {
         if (existing) existing.destroy()
-        luaEntity = createEntity(assembly.getStage(stageNum)!, entity.position, entity.getDirection(), value)
+        luaEntity = createEntity(assembly.getStage(stageNum)!.surface, entity.position, entity.getDirection(), value)
       }
       entity.replaceWorldEntity(stageNum, luaEntity)
 
       if (luaEntity) {
         if (stageNum !== firstStage) makeEntityIndestructible(luaEntity)
         else makeEntityDestructible(luaEntity)
-        updateWireConnections(assembly, entity, stageNum)
+        updateWireConnections(assembly.content, entity, stageNum)
       }
     }
   }
 
-  function updatePreviewEntities(assembly: AssemblyContent, entity: AssemblyEntity) {
+  function updatePreviewEntities(assembly: AssemblyData, entity: AssemblyEntity) {
     for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
       const worldEntity = entity.getWorldOrPreviewEntity(i)
       if (worldEntity) continue
@@ -128,7 +128,7 @@ export function createWorldUpdater(
   }
 
   function updateWorldEntities(
-    assembly: AssemblyContent,
+    assembly: AssemblyData,
     entity: AssemblyEntity,
     startStage: StageNumber,
     endStage?: StageNumber,
@@ -157,11 +157,7 @@ export function createWorldUpdater(
     entity.destructible = false
   }
 
-  function tryMoveEntity(
-    assembly: AssemblyContent,
-    entity: AssemblyEntity,
-    stage: StageNumber,
-  ): AssemblyMoveEntityResult {
+  function tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyMoveEntityResult {
     assert(!entity.isUndergroundBelt(), "can't move underground belts")
     const movedEntity = entity.getWorldEntity(stage)
     if (!movedEntity) return "entities-missing"
@@ -180,7 +176,7 @@ export function createWorldUpdater(
   }
 
   function tryMoveOtherEntities(
-    assembly: AssemblyContent,
+    assembly: AssemblyData,
     entity: AssemblyEntity,
     stage: StageNumber,
     movedEntity: LuaEntity,
@@ -225,18 +221,18 @@ export function createWorldUpdater(
     return true
   }
 
-  function clearWorldEntity(assembly: AssemblyContent, entity: AssemblyEntity, stage: StageNumber): void {
+  function clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
     entity.getWorldEntity(stage)?.destroy()
     updatePreviewEntities(assembly, entity)
     updateHighlights(assembly, entity, stage, stage)
   }
-  function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
     assert(entity.isSettingsRemnant)
     entity.destroyAllWorldOrPreviewEntities()
     updatePreviewEntities(assembly, entity)
     highlighter.makeSettingsRemnant(assembly, entity)
   }
-  function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
     assert(!entity.isSettingsRemnant)
     doUpdateWorldEntities(assembly, entity, 1, assembly.numStages(), true)
     updatePreviewEntities(assembly, entity)

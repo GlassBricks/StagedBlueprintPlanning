@@ -15,7 +15,7 @@ import { getSelectionBox } from "../entity/entity-info"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
-import { AssemblyContent, StagePosition } from "./AssemblyContent"
+import { AssemblyData } from "./AssemblyDef"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {
@@ -45,19 +45,14 @@ declare module "../entity/AssemblyEntity" {
  */
 export interface EntityHighlighter {
   /** Updates config changed, and error highlights. */
-  updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void
-  updateHighlights(
-    assembly: AssemblyContent,
-    entity: AssemblyEntity,
-    stageStart: StageNumber,
-    stageEnd: StageNumber,
-  ): void
+  updateHighlights(assembly: AssemblyData, entity: AssemblyEntity): void
+  updateHighlights(assembly: AssemblyData, entity: AssemblyEntity, stageStart: StageNumber, stageEnd: StageNumber): void
 
   deleteHighlights(entity: AssemblyEntity): void
   deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber): void
 
-  makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
-  reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void
+  makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
+  reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
 }
 
 /** @noSelf */
@@ -127,11 +122,12 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
   function createHighlight<T extends keyof HighlightEntities>(
     entity: AssemblyEntity,
-    stage: StagePosition,
+    stage: StageNumber,
+    surface: LuaSurface,
     type: T,
   ): HighlightEntities[T] {
     const config = highlightConfigs[type]
-    const existing = entity.getExtraEntity(type, stage.stageNumber)
+    const existing = entity.getExtraEntity(type, stage)
     if (existing && config.type === "sprite") return existing
     // always replace highlight box, in case of upgrade
 
@@ -140,7 +136,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     let result: LuaEntity | AnyRender | nil
     if (config.type === "highlight") {
       const { renderType } = config
-      const entityTarget = entity.getWorldOrPreviewEntity(stage.stageNumber)
+      const entityTarget = entity.getWorldOrPreviewEntity(stage)
       result = entityTarget && createHighlightBox(entityTarget, renderType)
     } else if (config.type === "sprite") {
       const size = selectionBox.size()
@@ -148,7 +144,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       const worldPosition = relativePosition.plus(entity.position)
       const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
       result = createSprite({
-        surface: stage.surface,
+        surface,
         target: worldPosition,
         x_scale: scale,
         y_scale: scale,
@@ -160,7 +156,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       assertNever(config)
     }
 
-    entity.replaceExtraEntity(type, stage.stageNumber, result as ExtraEntities[T])
+    entity.replaceExtraEntity(type, stage, result as ExtraEntities[T])
     return result as HighlightEntities[T]
   }
   function removeHighlight(entity: AssemblyEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
@@ -171,23 +167,24 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
   function updateHighlight(
     entity: AssemblyEntity,
-    stage: StagePosition,
+    stage: StageNumber,
+    surface: LuaSurface,
     type: keyof HighlightEntities,
     value: boolean | nil,
   ): HighlightEntity | nil {
-    if (value) return createHighlight(entity, stage, type)
-    removeHighlight(entity, stage.stageNumber, type)
+    if (value) return createHighlight(entity, stage, surface, type)
+    removeHighlight(entity, stage, type)
     return nil
   }
 
-  function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyData, entity: AssemblyEntity): void {
     for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
       const hasError = entityHasErrorAt(entity, i)
-      updateHighlight(entity, stage, "errorOutline", hasError)
+      updateHighlight(entity, i, stage.surface, "errorOutline", hasError)
     }
   }
 
-  function updateErrorIndicators(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function updateErrorIndicators(assembly: AssemblyData, entity: AssemblyEntity): void {
     if (entity.isRollingStock()) return
     let hasErrorAnywhere = false
     for (const i of $range(entity.firstStage, assembly.numStages())) {
@@ -204,17 +201,17 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
     for (const [i, stage] of assembly.iterateStages()) {
       const shouldHaveIndicator = i >= entity.firstStage && entity.getWorldEntity(i) !== nil
-      updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
+      updateHighlight(entity, i, stage.surface, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
 
-  function updateAllConfigChangedHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function updateAllConfigChangedHighlights(assembly: AssemblyData, entity: AssemblyEntity): void {
     const firstStage = entity.firstStage
     let lastStageWithHighlights = firstStage
     for (const [i, stage] of assembly.iterateStages()) {
       const hasConfigChanged = entity.hasStageDiff(i)
       const isUpgrade = hasConfigChanged && entity.getStageDiff(i)!.name !== nil
-      const highlight = updateHighlight(entity, stage, "configChangedHighlight", hasConfigChanged)
+      const highlight = updateHighlight(entity, i, stage.surface, "configChangedHighlight", hasConfigChanged)
       if (highlight) {
         ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
           ? HighlightValues.Upgraded
@@ -227,7 +224,8 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       for (; lastStageWithHighlights < i; lastStageWithHighlights++) {
         const highlight = updateHighlight(
           entity,
-          assembly.getStage(lastStageWithHighlights)!,
+          lastStageWithHighlights,
+          assembly.getStage(lastStageWithHighlights)!.surface,
           "configChangedLaterHighlight",
           true,
         ) as SpriteRender
@@ -246,7 +244,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       }
     }
   }
-  function updateHighlights(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function updateHighlights(assembly: AssemblyData, entity: AssemblyEntity): void {
     // ignore start and end stage for now
     updateAssociatedEntitiesAndErrorHighlight(assembly, entity)
     if (!entity.isRollingStock()) {
@@ -255,14 +253,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
   }
 
-  function makeSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
     if (!entity.isSettingsRemnant) return
     for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
-    for (const [, stage] of assembly.iterateStages()) {
-      updateHighlight(entity, stage, "settingsRemnantHighlight", true)
+    for (const [i, stage] of assembly.iterateStages()) {
+      updateHighlight(entity, i, stage.surface, "settingsRemnantHighlight", true)
     }
   }
-  function reviveSettingsRemnant(assembly: AssemblyContent, entity: AssemblyEntity): void {
+  function reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
     if (entity.isSettingsRemnant) return
     entity.destroyAllExtraEntities("settingsRemnantHighlight")
     updateHighlights(assembly, entity)

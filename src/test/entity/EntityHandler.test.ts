@@ -10,7 +10,6 @@
  */
 
 import { oppositedirection } from "util"
-import { StagePosition } from "../../assembly/AssemblyContent"
 import { Entity } from "../../entity/Entity"
 import { EntityHandler } from "../../entity/EntityHandler"
 
@@ -62,8 +61,7 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
 })
 
 test("can create an entity", () => {
-  const stage: StagePosition = { surface, stageNumber: 0 }
-  const luaEntity = EntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, 0, {
+  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, 0, {
     name: "iron-chest",
     bar: 3,
   } as Entity)!
@@ -130,8 +128,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("creating an underground belt in output direction flips direction", () => {
-    const stage: StagePosition = { surface, stageNumber: 0 }
-    const luaEntity = EntityHandler.createEntity(stage, { x: 0.5, y: 0.5 }, defines.direction.south, {
+    const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.south, {
       name: "underground-belt",
       type: inOut,
     } as Entity)!
@@ -146,7 +143,6 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("creating a flipped underground deletes entity and returns nil", () => {
-    const stage: StagePosition = { surface, stageNumber: 1 }
     // create underground, tunneling east, at 0.5, 0.5
     const westUnderground = surface.create_entity({
       name: "underground-belt",
@@ -158,7 +154,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     assert.not_nil(westUnderground, "entity created")
     // try pasting east output underground at 1.5, 0.5
     // if west underground is output, the created entity will be flipped
-    const eastUnderground = EntityHandler.createEntity(stage, { x: 1.5, y: 0.5 }, defines.direction.west, {
+    const eastUnderground = EntityHandler.createEntity(surface, { x: 1.5, y: 0.5 }, defines.direction.west, {
       name: "underground-belt",
       type: "output",
     } as Entity)!

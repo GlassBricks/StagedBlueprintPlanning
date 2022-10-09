@@ -8,20 +8,3 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
-
-import { StageNumber } from "../entity/AssemblyEntity"
-import { MutableEntityMap } from "./EntityMap"
-
-export interface StagePosition {
-  readonly stageNumber: StageNumber
-  readonly surface: LuaSurface
-}
-
-export interface AssemblyContent {
-  getStage(stageNumber: StageNumber): StagePosition | nil
-  numStages(): number
-  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, StagePosition]>>
-
-  getStageName(stageNumber: StageNumber): LocalisedString
-  readonly content: MutableEntityMap
-}

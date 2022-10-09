@@ -291,7 +291,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
   }
 
   private resetStage() {
-    AssemblyOperations.resetStage(this.stage.assembly, this.stage)
+    AssemblyOperations.resetStage(this.stage.assembly, this.stage.stageNumber)
   }
 
   private getBlueprint() {

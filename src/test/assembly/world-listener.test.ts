@@ -60,9 +60,7 @@ describe("add", () => {
       name: "iron-chest",
     })[0]
     assert.not_nil(entity)
-    assert
-      .spy(updater.onEntityCreated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), 1)
+    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), 1, match.ref(entity), 1)
   })
 
   test("script raise built", () => {
@@ -73,9 +71,7 @@ describe("add", () => {
       raise_built: true,
     })!
     assert.not_nil(entity)
-    assert
-      .spy(updater.onEntityCreated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), nil)
+    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), 1, match.ref(entity), nil)
   })
 })
 
@@ -91,15 +87,15 @@ describe("delete", () => {
   })
   test("player mined entity", () => {
     player.mine_entity(entity, true)
-    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!), 1)
+    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), 1, match._, 1)
   })
   test("script raised destroy", () => {
     entity.destroy({ raise_destroy: true })
-    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!), nil)
+    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), 1, match._, nil)
   })
   test("die", () => {
     entity.die()
-    assert.spy(updater.onEntityDied).called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!))
+    assert.spy(updater.onEntityDied).called_with(match.ref(assembly), 1, match._)
   })
 })
 
@@ -118,9 +114,7 @@ describe("update", () => {
     player.opened = nil
     player.opened = entity
     player.opened = nil
-    assert
-      .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), 1)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match.ref(assembly), 1, match.ref(entity), nil, 1)
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -128,17 +122,13 @@ describe("update", () => {
       destination: entity,
       player_index: 1 as PlayerIndex,
     })
-    assert
-      .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), 1)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, 1, match.ref(entity), nil, 1)
   })
 
   test("rotate", () => {
     const oldDirection = entity.direction
     entity.rotate({ by_player: 1 as PlayerIndex })
-    assert
-      .spy(updater.onEntityRotated)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), 1, oldDirection)
+    assert.spy(updater.onEntityRotated).called_with(match._, 1, match.ref(entity), oldDirection, 1)
   })
 })
 
@@ -170,9 +160,7 @@ test.each([
   assert.not_nil(newEntity)
 
   assert.false(entity.valid, "entity replaced")
-  assert
-    .spy(updater.onEntityPotentiallyUpdated)
-    .called_with(match.ref(assembly), newEntity, match.ref(assembly.getStage(1)!), 1, match._)
+  assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, 1, newEntity, match._, 1)
 })
 
 // this test doesn't work because build_from_cursor doesn't fast replace both undergrounds?
@@ -230,9 +218,7 @@ describe("upgrade", () => {
       force: "player",
       target: "fast-inserter",
     })
-    assert
-      .spy(updater.onEntityMarkedForUpgrade)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), match._)
+    assert.spy(updater.onEntityMarkedForUpgrade).called_with(match.ref(assembly), 1, match.ref(entity), match._)
   })
   test("marked to rotate", () => {
     entity.order_upgrade({
@@ -240,9 +226,7 @@ describe("upgrade", () => {
       target: "inserter",
       direction: defines.direction.east,
     })
-    assert
-      .spy(updater.onEntityMarkedForUpgrade)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!), match._)
+    assert.spy(updater.onEntityMarkedForUpgrade).called_with(match.ref(assembly), 1, match.ref(entity), match._)
   })
 
   test("instant upgrade planner", () => {
@@ -265,7 +249,7 @@ describe("upgrade", () => {
     })
     assert
       .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), match.ref(newEntity), match.ref(assembly.getStage(1)!), 1, oldDirection)
+      .called_with(match.ref(assembly), 1, match.ref(newEntity), oldDirection, 1)
   })
 })
 
@@ -305,17 +289,13 @@ describe("robot actions", () => {
       force: "player",
     })
     assert(ghost, "ghost created")
-    async()
     after_ticks(120, () => {
-      done()
       const chest = surface.find_entities_filtered({
         name: "iron-chest",
         limit: 1,
       })[0]
       assert.not_nil(chest, "chest created")
-      assert
-        .spy(updater.onEntityCreated)
-        .called_with(match.ref(assembly), match.ref(chest), match.ref(assembly.getStage(1)!), nil)
+      assert.spy(updater.onEntityCreated).called_with(match._, 1, match.ref(chest), nil)
     })
   })
 
@@ -328,12 +308,8 @@ describe("robot actions", () => {
     })!
     assert(chest, "chest created")
     chest.order_deconstruction("player")
-    async()
     after_ticks(120, () => {
-      done()
-      assert
-        .spy(updater.onEntityDeleted)
-        .called_with(match.ref(assembly), match._, match.ref(assembly.getStage(1)!), nil)
+      assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), 1, match._, nil)
     })
   })
 })
@@ -353,9 +329,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert
-      .spy(updater.onCleanupToolUsed)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
+    assert.spy(updater.onCleanupToolUsed).called_with(match.ref(assembly), 1, match.ref(entity))
   })
   test("delete settings remnant", () => {
     const entity = surface.create_entity({
@@ -372,9 +346,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert
-      .spy(updater.onCleanupToolUsed)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
+    assert.spy(updater.onCleanupToolUsed).called_with(match.ref(assembly), 1, match.ref(entity))
   })
   test("force-delete", () => {
     const entity = surface.create_entity({
@@ -391,9 +363,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert
-      .spy(updater.onEntityForceDeleted)
-      .called_with(match.ref(assembly), match.ref(entity), match.ref(assembly.getStage(1)!))
+    assert.spy(updater.onEntityForceDeleted).called_with(match.ref(assembly), 1, match.ref(entity))
   })
 })
 
@@ -407,9 +377,7 @@ describe("move to this stage", () => {
       input_name: CustomInputs.MoveToThisStage,
       cursor_position: player.position,
     })
-    assert
-      .spy(updater.onMoveEntityToStage)
-      .called_with(match.ref(assembly), match.ref(entity!), match.ref(assembly.getStage(1)!), 1)
+    assert.spy(updater.onMoveEntityToStage).called_with(match.ref(assembly), 1, match.ref(entity!), 1)
   }
   test("on normal entity", () => {
     const entity = surface.create_entity({
@@ -449,9 +417,7 @@ describe("revives ghost undergrounds", () => {
     })[0]
     assert.nil(ghosts, "no ghosts found")
 
-    assert
-      .spy(updater.onEntityCreated)
-      .called_with(match.ref(assembly), match.ref(underground), match.ref(assembly.getStage(1)!), 1)
+    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), 1, match.ref(underground), 1)
   })
   test("by script", () => {
     const pos = Pos(4.5, 0.5)
@@ -469,9 +435,7 @@ describe("revives ghost undergrounds", () => {
     })[0]
     assert.not_nil(underground, "underground found")
     assert.same(pos, underground.position)
-    assert
-      .spy(updater.onEntityCreated)
-      .called_with(match.ref(assembly), match.ref(underground), match.ref(assembly.getStage(1)!), nil)
+    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), 1, match.ref(underground), nil)
   })
 })
 
@@ -495,9 +459,7 @@ describe("blueprint paste", () => {
     assert.not_nil(entity, "entity found")
     assert.same(pos, entity.position)
 
-    assert
-      .spy(updater.onEntityPotentiallyUpdated)
-      .called_with(match.ref(assembly), entity, match.ref(assembly.getStage(1)!), 1)
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match.ref(assembly), 1, entity, match._, 1)
   }
 
   test("create entity", () => {
@@ -560,9 +522,7 @@ describe("blueprint paste", () => {
     player.build_from_cursor({ position: pos })
     assertCorrect(inserter1)
     if (alreadyPresent) {
-      assert
-        .spy(updater.onCircuitWiresPotentiallyUpdated)
-        .called_with(match.ref(assembly), match.ref(inserter1), match.ref(assembly.getStage(1)!), 1)
+      assert.spy(updater.onCircuitWiresPotentiallyUpdated).called_with(match._, 1, match.ref(inserter1), 1)
     } else {
       assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
     }
@@ -594,9 +554,7 @@ describe("blueprint paste", () => {
     player.build_from_cursor({ position: pos })
     assertCorrect(pole1)
     if (alreadyPresent) {
-      assert
-        .spy(updater.onCircuitWiresPotentiallyUpdated)
-        .called_with(match.ref(assembly), match.ref(pole1), match.ref(assembly.getStage(1)!), 1)
+      assert.spy(updater.onCircuitWiresPotentiallyUpdated).called_with(match._, 1, match.ref(pole1), 1)
     } else {
       assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
     }

@@ -9,31 +9,26 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
+import { AssemblyData, StageSurface } from "../../assembly/AssemblyDef"
 import { newEntityMap } from "../../assembly/EntityMap"
 import { createStageSurface, prepareArea } from "../../assembly/surfaces"
 import { BBox, Pos } from "../../lib/geometry"
 
-export function createMockAssemblyContent(stages: number | LuaSurface[]): AssemblyContent {
-  const stagePos: StagePosition[] = Array.from(
-    {
-      length: typeof stages === "number" ? stages : stages.length,
-    },
-    (_, i) => ({
-      stageNumber: i + 1,
-      surface: typeof stages === "number" ? game.surfaces[1] : stages[i],
-    }),
-  )
+export function createMockAssemblyContent(stages: number | LuaSurface[]): AssemblyData {
+  const stageSurfaces: StageSurface[] =
+    typeof stages === "number"
+      ? Array.from({ length: stages }, () => ({ surface: game.surfaces[1] }))
+      : stages.map((s) => ({ surface: s }))
   return {
-    getStage: (n) => stagePos[n - 1],
-    numStages: () => stagePos.length,
-    iterateStages: (start = 1, end = stagePos.length): any => {
-      function next(s: StagePosition[], i: number) {
+    getStage: (n) => stageSurfaces[n - 1],
+    numStages: () => stageSurfaces.length,
+    iterateStages: (start = 1, end = stageSurfaces.length): any => {
+      function next(s: StageSurface[], i: number) {
         if (i >= end) return
         i++
         return $multi(i, s[i - 1])
       }
-      return $multi(next, stagePos, start - 1)
+      return $multi(next, stageSurfaces, start - 1)
     },
     content: newEntityMap(),
     getStageName: (n) => "mock stage " + n,

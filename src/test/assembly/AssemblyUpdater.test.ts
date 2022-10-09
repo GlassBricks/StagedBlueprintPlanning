@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyContent, StagePosition } from "../../assembly/AssemblyContent"
+import { AssemblyData } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
 import { findUndergroundPair } from "../../assembly/special-entity-treatment"
 import { WireSaver } from "../../assembly/WireHandler"
@@ -31,7 +31,7 @@ import wire_type = defines.wire_type
 // note: the actual surface of the lua entity passed does not matter, only the stage number (surface)
 const pos = Pos(10.5, 10.5)
 
-let assembly: AssemblyContent
+let assembly: AssemblyData
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
 let assemblyUpdater: AssemblyUpdater
@@ -74,13 +74,9 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
 }
 const playerIndex = 1 as PlayerIndex
 
-function stage(stageNumber: StageNumber): StagePosition {
-  return assert(assembly.getStage(stageNumber))
-}
-
 function addEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   const entity = createEntity(stageNum, args)
-  assemblyUpdater.onEntityCreated(assembly, entity, assembly.getStage(stageNum)!, playerIndex)
+  assemblyUpdater.onEntityCreated(assembly, stageNum, entity, playerIndex)
   const found = assembly.content.findCompatible(entity, nil) as AssemblyEntity<BlueprintEntity>
   assert(found, "found new entity")
   return { luaEntity: entity, asmEntity: found }
@@ -153,7 +149,7 @@ function assertDeleteAllEntitiesCalled(entity: AssemblyEntity) {
 function assertClearWorldEntityCalled(entity: AssemblyEntity, stage: StageNumber) {
   worldUpdaterAsserted = true
   assert.equal(1, worldUpdaterCalls)
-  assert.spy(worldUpdater.clearWorldEntity).called_with(match.ref(assembly), match.ref(entity), stage)
+  assert.spy(worldUpdater.clearWorldEntity).called_with(match.ref(assembly), stage, match.ref(entity))
 }
 function assertMakeSettingsRemnantCalled(entity: AssemblyEntity) {
   worldUpdaterAsserted = true
@@ -218,7 +214,7 @@ describe("add", () => {
 
   test.each([1, 2])("at same or higher stage updates the newly added entity, added stage: %d", (stageNumber) => {
     const { luaEntity, asmEntity } = addAndReset(1)
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage(stageNumber), playerIndex)
+    assemblyUpdater.onEntityCreated(assembly, stageNumber, luaEntity, playerIndex)
     assertOneEntity()
     assertWUCalled(asmEntity, stageNumber, stageNumber, false)
   })
@@ -230,7 +226,7 @@ describe("add", () => {
       newEntity.inserter_stack_size_override = 3
       newEntity.direction = defines.direction.east
     }
-    assemblyUpdater.onEntityCreated(assembly, newEntity, stage(1), playerIndex) // again
+    assemblyUpdater.onEntityCreated(assembly, 1, newEntity, playerIndex) // again
     // updates entity
     assert.equal(newEntity, asmEntity.getWorldEntity(1))
     assert.same(1, asmEntity.firstStage)
@@ -267,28 +263,28 @@ describe("add", () => {
 describe("delete", () => {
   test("not in assembly does nothing", () => {
     const entity = createEntity(1)
-    assemblyUpdater.onEntityDeleted(assembly, entity, stage(1), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 1, entity, playerIndex)
     assertNoEntities()
     assertWUNotCalled()
   })
 
   test("in stage below base does nothing (bug)", () => {
     const { luaEntity } = addAndReset(2)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 1, luaEntity, playerIndex)
     assertOneEntity()
     assertWUNotCalled()
   })
 
   test("in stage above base forbids deletion", () => {
     const { luaEntity, asmEntity } = addAndReset(1)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage(2), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 2, luaEntity, playerIndex)
     assertOneEntity()
     assertWUCalled(asmEntity, 2, 2, true)
   })
 
   test("in first stage deletes entity", () => {
     const { luaEntity, asmEntity } = addAndReset()
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 1, luaEntity, playerIndex)
     assert.falsy(asmEntity.isSettingsRemnant)
     assertNoEntities()
     assertDeleteAllEntitiesCalled(asmEntity)
@@ -297,7 +293,7 @@ describe("delete", () => {
   test("in first stage with oldStage moves back to old stage", () => {
     const { luaEntity, asmEntity } = addAndReset(3)
     asmEntity.moveToStage(2, true)
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage(2), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 2, luaEntity, playerIndex)
     assert.falsy(asmEntity.isSettingsRemnant)
     assertOneEntity()
     assertWUCalled(asmEntity, 2, 3, false)
@@ -308,7 +304,7 @@ describe("delete", () => {
   test("in first stage with updates creates settings remnant", () => {
     const { luaEntity, asmEntity } = addAndReset()
     asmEntity._applyDiffAtStage(2, { override_stack_size: 3 })
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 1, luaEntity, playerIndex)
     assertOneEntity()
     assert.true(asmEntity.isSettingsRemnant)
     assertMakeSettingsRemnantCalled(asmEntity)
@@ -326,7 +322,7 @@ describe("delete", () => {
       wire: wire_type.green,
     })
 
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 1, luaEntity, playerIndex)
     assert.true(asmEntity.isSettingsRemnant)
     assertNEntities(2)
     assertMakeSettingsRemnantCalled(asmEntity)
@@ -350,7 +346,7 @@ describe("delete", () => {
       }),
     )
 
-    assemblyUpdater.onEntityDeleted(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityDeleted(assembly, 1, luaEntity, playerIndex)
     assert.falsy(asmEntity.isSettingsRemnant)
     assertOneEntity()
     assertDeleteAllEntitiesCalled(asmEntity)
@@ -359,7 +355,7 @@ describe("delete", () => {
 
 test("onEntityDied", () => {
   const { luaEntity, asmEntity } = addAndReset(1)
-  assemblyUpdater.onEntityDied(assembly, luaEntity, stage(2))
+  assemblyUpdater.onEntityDied(assembly, 2, luaEntity)
   assertOneEntity()
   assertClearWorldEntityCalled(asmEntity, 2)
 })
@@ -371,7 +367,7 @@ describe("revive", () => {
     asmEntity._applyDiffAtStage(5, { override_stack_size: 3 })
     asmEntity.isSettingsRemnant = true
 
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage(reviveStage), playerIndex)
+    assemblyUpdater.onEntityCreated(assembly, reviveStage, luaEntity, playerIndex)
     assert.equal(luaEntity, asmEntity.getWorldEntity(reviveStage))
     assert.falsy(asmEntity.isSettingsRemnant)
     assert.equal(asmEntity.firstStage, reviveStage)
@@ -398,7 +394,7 @@ describe("revive", () => {
 
     if (withChanges) luaEntity.inserter_stack_size_override = 2
 
-    assemblyUpdater.onEntityCreated(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityCreated(assembly, 1, luaEntity, playerIndex)
     assert.falsy(asmEntity.isSettingsRemnant)
     assert.equal(asmEntity.firstStage, 1)
 
@@ -413,7 +409,7 @@ describe("revive", () => {
 describe("update", () => {
   test("non-existent defaults to add behavior (bug)", () => {
     const entity = createEntity(1)
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, entity, stage(1), playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 1, entity, nil, playerIndex)
     assert.false(ret)
     const asmEntity = assembly.content.findCompatibleByName("filter-inserter", pos, nil) as AssemblyEntity
     assertAdded(asmEntity, entity, 1)
@@ -421,7 +417,7 @@ describe("update", () => {
 
   test("with no changes does nothing", () => {
     const { luaEntity } = addAndReset()
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage(1), playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 1, luaEntity, nil, playerIndex)
     assert.nil(ret)
     assertOneEntity()
     assertWUNotCalled()
@@ -429,7 +425,7 @@ describe("update", () => {
 
   test("in lower than first stage defaults to add below behavior (bug)", () => {
     const { luaEntity, asmEntity } = addAndReset(3)
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage(1), playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 1, luaEntity, nil, playerIndex)
     assert.false(ret)
     assert.equal(luaEntity, asmEntity.getWorldEntity(1))
     assertOneEntity()
@@ -440,7 +436,7 @@ describe("update", () => {
   test("in first stage updates all entities", () => {
     const { luaEntity, asmEntity } = addAndReset(2)
     luaEntity.inserter_stack_size_override = 3
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage(2), playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 2, luaEntity, nil, playerIndex)
     assert.nil(ret)
 
     assert.equal(3, asmEntity.firstValue.override_stack_size)
@@ -455,7 +451,7 @@ describe("update", () => {
       recipe: "express-transport-belt",
     })
     luaEntity.direction = defines.direction.east
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage(2), playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 2, luaEntity, nil, playerIndex)
     assert.nil(ret)
 
     assert.equal(defines.direction.east, asmEntity.getDirection())
@@ -467,13 +463,7 @@ describe("update", () => {
     const { luaEntity, asmEntity } = addAndReset(2)
     luaEntity.direction = defines.direction.east
 
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(
-      assembly,
-      luaEntity,
-      stage(3),
-      playerIndex,
-      defines.direction.north,
-    )
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 3, luaEntity, defines.direction.north, playerIndex)
     assert.nil(ret)
     assert.equal(defines.direction.north, asmEntity.getDirection())
 
@@ -492,7 +482,7 @@ describe("update", () => {
       }
 
       luaEntity.inserter_stack_size_override = 3 // changed
-      const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage(2), playerIndex)
+      const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 2, luaEntity, nil, playerIndex)
       assert.nil(ret)
       assert.equal(1, asmEntity.firstValue.override_stack_size)
       if (withExistingChanges) {
@@ -511,7 +501,7 @@ describe("update", () => {
     asmEntity._applyDiffAtStage(2, { override_stack_size: 2 })
     assert.true(asmEntity.hasStageDiff())
     luaEntity.inserter_stack_size_override = 1
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, luaEntity, stage(2), playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 2, luaEntity, nil, playerIndex)
     assert.nil(ret)
     assert.false(asmEntity.hasStageDiff())
 
@@ -525,7 +515,7 @@ describe("rotate", () => {
     const { luaEntity, asmEntity } = addAndReset(2)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage(2), playerIndex, oldDirection)
+    assemblyUpdater.onEntityRotated(assembly, 2, luaEntity, oldDirection, playerIndex)
     assert.equal(direction.west, asmEntity.getDirection())
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -535,7 +525,7 @@ describe("rotate", () => {
     const { luaEntity, asmEntity } = addAndReset(1)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage(2), playerIndex, oldDirection)
+    assemblyUpdater.onEntityRotated(assembly, 2, luaEntity, oldDirection, playerIndex)
     assert.equal(oldDirection, asmEntity.getDirection())
     assertOneEntity()
     assertWUCalled(asmEntity, 2, 2, false)
@@ -548,7 +538,7 @@ describe("fast replace", () => {
     const { luaEntity, asmEntity } = addAndReset()
     luaEntity.destroy()
     const newEntity = createEntity(1, { name: "stack-filter-inserter" })
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage(1), playerIndex)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 1, newEntity, nil, playerIndex)
     assert.nil(ret)
     assert.equal(newEntity, asmEntity.getWorldEntity(1))
     assertOneEntity()
@@ -559,7 +549,7 @@ describe("fast replace", () => {
     const oldDirection = luaEntity.direction
     const newEntity = createEntity(1, { name: "stack-filter-inserter", direction: direction.west })
     luaEntity.destroy()
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage(1), playerIndex, oldDirection)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 1, newEntity, oldDirection, playerIndex)
     assert.nil(ret)
     assert.equal(newEntity, asmEntity.getWorldEntity(1))
     assertOneEntity()
@@ -570,7 +560,7 @@ describe("fast replace", () => {
     const oldDirection = luaEntity.direction
     const newEntity = createEntity(2, { name: "stack-filter-inserter", direction: direction.west })
     luaEntity.destroy()
-    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage(2), playerIndex, oldDirection)
+    const ret = assemblyUpdater.onEntityPotentiallyUpdated(assembly, 2, newEntity, oldDirection, playerIndex)
     assert.nil(ret)
     assert.equal(oldDirection, asmEntity.getDirection())
     assertOneEntity()
@@ -583,7 +573,7 @@ describe("circuitWiresPotentiallyUpdated", () => {
   test("if saved, calls update", () => {
     const { luaEntity, asmEntity } = addAndReset()
     wireSaver.saveWireConnections.on_call_with(match._, asmEntity, 1).returns(true)
-    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, 1, luaEntity, playerIndex)
 
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -591,7 +581,7 @@ describe("circuitWiresPotentiallyUpdated", () => {
   test("if no changes, does not call update", () => {
     const { luaEntity } = addAndReset()
     wireSaver.saveWireConnections.returns(false)
-    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, 1, luaEntity, playerIndex)
 
     assertOneEntity()
     assertWUNotCalled()
@@ -599,7 +589,7 @@ describe("circuitWiresPotentiallyUpdated", () => {
   test("if max connections exceeded, notifies and calls update", () => {
     const { luaEntity, asmEntity } = addAndReset()
     wireSaver.saveWireConnections.on_call_with(match._, asmEntity, 1).returns(true, true)
-    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onCircuitWiresPotentiallyUpdated(assembly, 1, luaEntity, playerIndex)
 
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -613,7 +603,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "stack-filter-inserter" }))
     rawset(luaEntity, "get_upgrade_direction", () => nil)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, 1, luaEntity, playerIndex)
     assert.equal("stack-filter-inserter", asmEntity.firstValue.name)
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -623,7 +613,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => nil)
     rawset(luaEntity, "get_upgrade_direction", () => direction.west)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, 1, luaEntity, playerIndex)
     assert.equal(direction.west, asmEntity.getDirection())
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -633,7 +623,7 @@ describe("mark for upgrade", () => {
     rawset(luaEntity, "get_upgrade_target", () => simpleMock<LuaEntityPrototype>({ name: "stack-filter-inserter" }))
     rawset(luaEntity, "get_upgrade_direction", () => direction.west)
     rawset(luaEntity, "cancel_upgrade", () => true)
-    assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage(2), playerIndex)
+    assemblyUpdater.onEntityMarkedForUpgrade(assembly, 2, luaEntity, playerIndex)
     assert.equal(0, asmEntity.getDirection())
     assertOneEntity()
     assertWUCalled(asmEntity, 2, 2, false)
@@ -644,7 +634,7 @@ describe("mark for upgrade", () => {
 describe("move to current stage", () => {
   test("normal entity", () => {
     const { luaEntity, asmEntity } = addAndReset(1)
-    assemblyUpdater.onMoveEntityToStage(assembly, luaEntity, stage(3), playerIndex)
+    assemblyUpdater.onMoveEntityToStage(assembly, 3, luaEntity, playerIndex)
     assert.equal(3, asmEntity.firstStage)
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -656,7 +646,7 @@ describe("move to current stage", () => {
     const { luaEntity, asmEntity } = addAndReset(1)
     const preview = createEntity(3, { name: Prototypes.PreviewEntityPrefix + luaEntity.name })
     luaEntity.destroy()
-    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage(3), playerIndex)
+    assemblyUpdater.onMoveEntityToStage(assembly, 3, preview, playerIndex)
     assert.equal(3, asmEntity.firstStage)
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -670,7 +660,7 @@ describe("move to current stage", () => {
     const preview = createEntity(3, { name: Prototypes.PreviewEntityPrefix + luaEntity.name })
     luaEntity.destroy()
     asmEntity.isSettingsRemnant = true
-    assemblyUpdater.onMoveEntityToStage(assembly, preview, stage(3), playerIndex)
+    assemblyUpdater.onMoveEntityToStage(assembly, 3, preview, playerIndex)
     assert.equal(3, asmEntity.firstStage)
     assertOneEntity()
     assertReviveSettingsRemnantCalled(asmEntity)
@@ -736,7 +726,7 @@ describe("undergrounds", () => {
     const [rotated] = luaEntity.rotate()
     assert(rotated)
 
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage(1), playerIndex, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, 1, luaEntity, direction.west, playerIndex)
 
     assert.equal("output", asmEntity.firstValue.type)
     assert.equal(direction.west, asmEntity.getDirection())
@@ -751,7 +741,7 @@ describe("undergrounds", () => {
     const [rotated] = luaEntity.rotate()
     assert(rotated)
 
-    assemblyUpdater.onEntityRotated(assembly, luaEntity, stage(2), playerIndex, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, 2, luaEntity, direction.west, playerIndex)
 
     assert.equal("input", asmEntity.firstValue.type)
     assert.equal(direction.west, asmEntity.getDirection())
@@ -768,7 +758,7 @@ describe("undergrounds", () => {
     const [rotated1] = toRotate.rotate()
     assert(rotated1)
 
-    assemblyUpdater.onEntityRotated(assembly, toRotate, stage(2), playerIndex, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, 2, toRotate, direction.west, playerIndex)
 
     assert.equal("output", asmEntity1.firstValue.type)
     assert.equal(direction.west, asmEntity1.getDirection())
@@ -786,7 +776,7 @@ describe("undergrounds", () => {
     const [rotated1] = entity1.rotate()
     assert(rotated1)
 
-    assemblyUpdater.onEntityRotated(assembly, entity1, stage(3), playerIndex, direction.west)
+    assemblyUpdater.onEntityRotated(assembly, 3, entity1, direction.west, playerIndex)
 
     assert.equal("input", asmEntity1.firstValue.type)
     assert.equal(direction.west, asmEntity1.getDirection())
@@ -812,7 +802,7 @@ describe("undergrounds", () => {
       const [, hasMultiple] = findUndergroundPair(assembly.content, asmEntities[i - 1])
       assert.true(hasMultiple)
 
-      assemblyUpdater.onEntityRotated(assembly, tryRotate, stage(1), playerIndex, direction.west)
+      assemblyUpdater.onEntityRotated(assembly, 1, tryRotate, direction.west, playerIndex)
 
       assert.equal("input", asmEntity1.firstValue.type)
       assert.equal(direction.west, asmEntity1.getDirection())
@@ -846,7 +836,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage(1), playerIndex)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, 1, luaEntity, playerIndex)
 
       assert.equal("fast-underground-belt", asmEntity.firstValue.name)
       assert.equal("input", asmEntity.firstValue.type)
@@ -861,7 +851,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, luaEntity, stage(2), playerIndex)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, 2, luaEntity, playerIndex)
 
       assert.equal("fast-underground-belt", asmEntity.getValueAtStage(2)?.name)
       assert.equal("input", asmEntity.firstValue.type)
@@ -880,7 +870,7 @@ describe("undergrounds", () => {
           target: "fast-underground-belt",
           force: toUpgrade.force,
         })
-        assemblyUpdater.onEntityMarkedForUpgrade(assembly, toUpgrade, stage(endStage), playerIndex)
+        assemblyUpdater.onEntityMarkedForUpgrade(assembly, endStage, toUpgrade, playerIndex)
 
         assert.equal("fast-underground-belt", asmEntity1.firstValue.name)
         assert.equal("input", asmEntity1.firstValue.type)
@@ -906,7 +896,7 @@ describe("undergrounds", () => {
           target: "fast-underground-belt",
           force: tryUpgrade.force,
         })
-        assemblyUpdater.onEntityMarkedForUpgrade(assembly, tryUpgrade, stage(1), playerIndex)
+        assemblyUpdater.onEntityMarkedForUpgrade(assembly, 1, tryUpgrade, playerIndex)
 
         assert.equal("underground-belt", asmEntity1.firstValue.name)
         assert.equal("underground-belt", asmEntity2.firstValue.name)
@@ -928,7 +918,7 @@ describe("undergrounds", () => {
         force: entity1.force,
       })
 
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage(3), playerIndex)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, 3, entity1, playerIndex)
 
       assert.equal("underground-belt", asmEntity1.firstValue.name)
       assert.equal("underground-belt", asmEntity2.firstValue.name)
@@ -949,7 +939,7 @@ describe("undergrounds", () => {
         force: entity1.force,
       })
 
-      assemblyUpdater.onEntityMarkedForUpgrade(assembly, entity1, stage(1), playerIndex)
+      assemblyUpdater.onEntityMarkedForUpgrade(assembly, 1, entity1, playerIndex)
 
       assert.equal("underground-belt", asmEntity1.firstValue.name)
       assert.equal("underground-belt", asmEntity2.firstValue.name)
@@ -972,7 +962,7 @@ describe("undergrounds", () => {
     })!
     assert.not_nil(newEntity)
 
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, newEntity, stage(1), playerIndex)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, 1, newEntity, nil, playerIndex)
     assert.equal("fast-underground-belt", asmEntity1.firstValue.name)
     assert.equal("input", asmEntity1.firstValue.type)
     assert.equal(direction.west, asmEntity1.getDirection())
@@ -991,7 +981,7 @@ describe("undergrounds", () => {
     asmEntity1.applyUpgradeAtStage(2, "fast-underground-belt")
     asmEntity2.applyUpgradeAtStage(2, "fast-underground-belt")
 
-    assemblyUpdater.onMoveEntityToStage(assembly, entity1, stage(2), playerIndex)
+    assemblyUpdater.onMoveEntityToStage(assembly, 2, entity1, playerIndex)
     assert.equal(1, asmEntity1.firstStage)
     assert.equal(1, asmEntity2.firstStage)
 
@@ -1008,13 +998,13 @@ describe("rolling stock", () => {
     rollingStock = createRollingStock()
   })
   function addAndReset() {
-    assemblyUpdater.onEntityCreated(assembly, rollingStock, stage(1), playerIndex)
+    assemblyUpdater.onEntityCreated(assembly, 1, rollingStock, playerIndex)
     resetMocks()
     const found = assembly.content.findCompatibleAnyDirection(rollingStock.name, rollingStock.position)!
     return found
   }
   test("can save rolling stock", () => {
-    assemblyUpdater.onEntityCreated(assembly, rollingStock, stage(1), playerIndex)
+    assemblyUpdater.onEntityCreated(assembly, 1, rollingStock, playerIndex)
     assertNEntities(1)
 
     const found = assembly.content.findCompatibleAnyDirection(rollingStock.name, rollingStock.position)!
@@ -1030,7 +1020,7 @@ describe("rolling stock", () => {
   test("no update on rolling stock", () => {
     addAndReset()
 
-    assemblyUpdater.onEntityPotentiallyUpdated(assembly, rollingStock, stage(1), playerIndex)
+    assemblyUpdater.onEntityPotentiallyUpdated(assembly, 1, rollingStock, nil, playerIndex)
 
     assertNEntities(1)
     assertWUNotCalled()
@@ -1046,7 +1036,7 @@ describe("cleanup tool", () => {
   }
   test("revive error entity", () => {
     const { asmEntity, proxy } = setupWithSelectablePreview()
-    assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage(1))
+    assemblyUpdater.onCleanupToolUsed(assembly, 1, proxy)
     assert.nil(asmEntity.getWorldEntity(1))
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
@@ -1055,7 +1045,7 @@ describe("cleanup tool", () => {
   test("clear settings remnant", () => {
     const { asmEntity, proxy } = setupWithSelectablePreview()
     asmEntity.isSettingsRemnant = true
-    assemblyUpdater.onCleanupToolUsed(assembly, proxy, stage(1))
+    assemblyUpdater.onCleanupToolUsed(assembly, 1, proxy)
     assert.nil(asmEntity.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(asmEntity)
@@ -1063,7 +1053,7 @@ describe("cleanup tool", () => {
 
   test("onEntityForceDeleted", () => {
     const { asmEntity, proxy } = setupWithSelectablePreview()
-    assemblyUpdater.onEntityForceDeleted(assembly, proxy, stage(1))
+    assemblyUpdater.onEntityForceDeleted(assembly, 1, proxy)
     assert.nil(asmEntity.getWorldEntity(1))
     assertNoEntities()
     assertDeleteAllEntitiesCalled(asmEntity)

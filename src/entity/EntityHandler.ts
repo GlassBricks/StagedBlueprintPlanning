@@ -10,7 +10,7 @@
  */
 
 import { oppositedirection } from "util"
-import { StagePosition } from "../assembly/AssemblyContent"
+import { StageSurface } from "../assembly/AssemblyDef"
 import { Prototypes } from "../constants"
 import { Events, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
@@ -22,11 +22,11 @@ import { getPastedDirection, getSavedDirection, makePreviewIndestructible } from
 
 /** @noSelf */
 export interface EntityCreator {
-  createEntity(stage: StagePosition, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil
+  createEntity(surface: LuaSurface, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil
   updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity
 
   createPreviewEntity(
-    stage: StagePosition,
+    stage: StageSurface,
     position: Position,
     apparentDirection: defines.direction,
     entityName: string,
@@ -277,19 +277,13 @@ const BlueprintEntityHandler: EntityHandler = {
     return $multi(bpEntity, getSavedDirection(entity))
   },
 
-  createEntity(
-    stage: StagePosition,
-    position: Position,
-    direction: defines.direction,
-    entity: Entity,
-  ): LuaEntity | nil {
-    const surface = stage.surface
+  createEntity(surface: LuaSurface, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil {
     if (isUndergroundBeltType(entity.name)) return tryCreateUndergroundEntity(surface, position, direction, entity)
     return createNormalEntity(surface, position, direction, entity)
   },
 
   createPreviewEntity(
-    stage: StagePosition,
+    stage: StageSurface,
     position: Position,
     apparentDirection: defines.direction,
     entityName: string,
