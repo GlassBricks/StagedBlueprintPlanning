@@ -10,7 +10,6 @@
  */
 
 import { oppositedirection } from "util"
-import { StageSurface } from "../assembly/AssemblyDef"
 import { Prototypes } from "../constants"
 import { Events, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
@@ -26,7 +25,7 @@ export interface EntityCreator {
   updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity
 
   createPreviewEntity(
-    stage: StageSurface,
+    surface: LuaSurface,
     position: Position,
     apparentDirection: defines.direction,
     entityName: string,
@@ -283,13 +282,11 @@ const BlueprintEntityHandler: EntityHandler = {
   },
 
   createPreviewEntity(
-    stage: StageSurface,
+    surface: LuaSurface,
     position: Position,
     apparentDirection: defines.direction,
     entityName: string,
   ): LuaEntity | nil {
-    const surface = stage.surface
-
     const entity = surface.create_entity({
       name: Prototypes.PreviewEntityPrefix + entityName,
       position,

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MutableMap2D, newMap2D } from "../../assembly/map2d"
+import { MutableMap2D, newMap2D } from "../../entity/map2d"
 
 let map2d: MutableMap2D<string>
 

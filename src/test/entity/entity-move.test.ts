@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { forceMoveEntity, tryMoveAllEntities } from "../../assembly/entity-move"
+import { forceMoveEntity, tryMoveAllEntities } from "../../entity/entity-move"
 import { Pos } from "../../lib/geometry"
 import { setupEntityMoveTest } from "./setup-entity-move-test"
 

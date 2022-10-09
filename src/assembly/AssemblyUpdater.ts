@@ -22,11 +22,11 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { isCompatibleEntity, isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
+import { findUndergroundPair } from "../entity/special-entity-treatment"
+import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { AssemblyData } from "./AssemblyDef"
-import { findUndergroundPair } from "./special-entity-treatment"
-import { WireHandler, WireSaver } from "./WireHandler"
 import { AssemblyMoveEntityResult, WorldUpdater } from "./WorldUpdater"
 import min = math.min
 

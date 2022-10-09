@@ -10,10 +10,10 @@
  */
 
 import { oppositedirection } from "util"
-import { MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
-import { findUndergroundPair, unit } from "../../assembly/special-entity-treatment"
 import { createAssemblyEntity, SavedDirection, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
+import { MutableEntityMap, newEntityMap } from "../../entity/EntityMap"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
+import { findUndergroundPair, unit } from "../../entity/special-entity-treatment"
 import direction = defines.direction
 
 let content: MutableEntityMap

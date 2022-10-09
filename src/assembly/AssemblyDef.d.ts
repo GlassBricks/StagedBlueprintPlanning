@@ -10,9 +10,9 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
+import { MutableEntityMap } from "../entity/EntityMap"
 import { MutableState, Observable, PRecord, State } from "../lib"
 import { Position } from "../lib/geometry"
-import { MutableEntityMap } from "./EntityMap"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface StageSurface {

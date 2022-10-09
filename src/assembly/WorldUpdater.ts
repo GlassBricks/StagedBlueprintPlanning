@@ -11,12 +11,12 @@
 
 import { AssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
+import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "../entity/entity-move"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
+import { EntityMap } from "../entity/EntityMap"
+import { WireHandler, WireUpdater } from "../entity/WireHandler"
 import { AssemblyData } from "./AssemblyDef"
-import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "./entity-move"
 import { EntityHighlighter } from "./EntityHighlighter"
-import { EntityMap } from "./EntityMap"
-import { WireHandler, WireUpdater } from "./WireHandler"
 
 /**
  * Updates entities in the world in response to changes in the assembly.
@@ -118,7 +118,7 @@ export function createWorldUpdater(
       if (worldEntity) continue
 
       const previewEntity = createPreviewEntity(
-        stage,
+        stage.surface,
         entity.position,
         entity.getApparentDirection(),
         entity.getNameAtStage(i),

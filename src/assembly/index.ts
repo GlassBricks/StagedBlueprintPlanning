@@ -10,5 +10,5 @@
  */
 
 import "./Assembly"
-import "./global"
+import "./migrations"
 import "./world-listener"

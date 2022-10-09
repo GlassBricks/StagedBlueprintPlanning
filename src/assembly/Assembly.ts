@@ -10,6 +10,7 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
+import { newEntityMap } from "../entity/EntityMap"
 import { bind, Event, Events, globalEvent, Mutable, MutableState, PRecord, RegisterClass, state, State } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
@@ -29,9 +30,8 @@ import {
   getDefaultBlueprintSettings,
   tryTakeBlueprintWithSettings,
 } from "./blueprint-take"
-import { newEntityMap } from "./EntityMap"
-import { setTiles } from "./landfill"
 import { createStageSurface, prepareArea } from "./surfaces"
+import { setTiles } from "./tiles"
 
 declare const global: {
   nextAssemblyId: AssemblyId

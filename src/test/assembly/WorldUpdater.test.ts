@@ -11,17 +11,17 @@
 
 import { keys } from "ts-transformer-keys"
 import { AssemblyData } from "../../assembly/AssemblyDef"
-import { forceMoveEntity } from "../../assembly/entity-move"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
-import { WireHandler, WireUpdater } from "../../assembly/WireHandler"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
+import { forceMoveEntity } from "../../entity/entity-move"
 import { EntityHandler } from "../../entity/EntityHandler"
+import { WireHandler, WireUpdater } from "../../entity/WireHandler"
 import { Pos } from "../../lib/geometry"
+import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { makeMocked, makeStubbed } from "../simple-mock"
 import { createMockAssemblyContent, setupTestSurfaces } from "./Assembly-mock"
-import { setupEntityMoveTest } from "./setup-entity-move-test"
 
 interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter"

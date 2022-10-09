@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { rollingStockTypes } from "../entity/entity-info"
+import { _migrate031, _migrate060 } from "../entity/AssemblyEntity"
+import { migrateMap030, migrateMap060 } from "../entity/EntityMap"
 import { Migrations } from "../lib/migration"
 import { Assembly, AssemblyId } from "./AssemblyDef"
-import { AssemblyUpdater } from "./AssemblyUpdater"
 
 declare const global: {
   assemblies: LuaMap<AssemblyId, Assembly>
@@ -22,28 +22,29 @@ export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
   return global.assemblies
 }
 
-Migrations.to("0.4.0", () => {
-  log("Finding and adding trains to assemblies")
-  let anyRollingStock = false
-  for (const [, assembly] of global.assemblies) {
-    for (const [, stage] of assembly.iterateStages()) {
-      const surface = stage.surface
-      if (!surface.valid) return
-      if (surface.valid) surface.show_clouds = false
+// Many classes don't know about where they are used; so this file is needed to call their migrations, from global
 
-      const rollingStock = surface.find_entities_filtered({
-        type: Object.keys(rollingStockTypes),
-      })
-      if (rollingStock.length > 0) anyRollingStock = true
-      for (const luaEntity of rollingStock) {
-        AssemblyUpdater.onEntityPotentiallyUpdated(assembly, stage.stageNumber, luaEntity, nil, nil)
-      }
+Migrations.to("0.3.0", () => {
+  for (const [, assembly] of getAllAssemblies()) {
+    // see also: migrations-custom/cable
+    migrateMap030(assembly.content)
+  }
+})
+
+Migrations.to("0.3.1", () => {
+  // remove empty stageDiffs props from all AssemblyEntities
+  for (const [, assembly] of getAllAssemblies()) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      _migrate031(entity)
     }
   }
-  log("Done adding trains")
-  if (anyRollingStock) {
-    game.print(
-      "100% Blueprint Planning: Train entities are supported since v0.4.0. Trains were found and added to your assemblies.",
-    )
+})
+
+Migrations.to("0.6.0", () => {
+  for (const [, assembly] of getAllAssemblies()) {
+    migrateMap060(assembly.content)
+    for (const entity of assembly.content.iterateAllEntities()) {
+      _migrate060(entity)
+    }
   }
 })

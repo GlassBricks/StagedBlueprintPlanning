@@ -11,7 +11,7 @@
 
 import { AssemblyEvents } from "../assembly/Assembly"
 import { Assembly, Stage } from "../assembly/AssemblyDef"
-import { getAllAssemblies } from "../assembly/global"
+import { getAllAssemblies } from "../assembly/migrations"
 import { bind, funcOn, funcRef, MaybeState, onPlayerInit, RegisterClass, registerFunctions, Subscription } from "../lib"
 import { Component, destroy, EmptyProps, FactorioJsx, render, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import { DotDotDotButton, Fn, HorizontalPusher, HorizontalSpacer, TitleBar } from "../lib/factoriojsx/components"

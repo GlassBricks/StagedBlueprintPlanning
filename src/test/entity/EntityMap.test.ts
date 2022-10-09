@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { CableAddResult, MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity, SavedDirection } from "../../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../../entity/Entity"
-import { setupTestSurfaces } from "./Assembly-mock"
+import { CableAddResult, MutableEntityMap, newEntityMap } from "../../entity/EntityMap"
+import { setupTestSurfaces } from "../assembly/Assembly-mock"
 
 let content: MutableEntityMap
 before_each(() => {

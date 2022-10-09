@@ -10,9 +10,10 @@
  */
 
 import { Assembly } from "../assembly/AssemblyDef"
-import { getAllAssemblies } from "../assembly/global"
-import { WireHandler } from "../assembly/WireHandler"
-import { _migrate031 } from "../entity/AssemblyEntity"
+import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
+import { getAllAssemblies } from "../assembly/migrations"
+import { rollingStockTypes } from "../entity/entity-info"
+import { WireHandler } from "../entity/WireHandler"
 import { Events } from "../lib"
 import { formatVersion, Migrations } from "../lib/migration"
 
@@ -28,6 +29,9 @@ Events.on_configuration_changed((data) => {
   }
   Migrations.doMigrations(oldVersion)
 })
+
+// global-data related migrations are done in other files
+// this is for entity-related migrations
 
 function migrateCables(assembly: Assembly): void {
   const { saveWireConnections, updateWireConnections } = WireHandler
@@ -58,11 +62,28 @@ Migrations.to("0.3.0", () => {
   )
 })
 
-Migrations.to("0.3.1", () => {
-  // remove empty stageDiffs props from all AssemblyEntities
+Migrations.to("0.4.0", () => {
+  log("Finding and adding trains to assemblies")
+  let anyRollingStock = false
   for (const [, assembly] of getAllAssemblies()) {
-    for (const entity of assembly.content.iterateAllEntities()) {
-      _migrate031(entity)
+    for (const [, stage] of assembly.iterateStages()) {
+      const surface = stage.surface
+      if (!surface.valid) return
+      if (surface.valid) surface.show_clouds = false
+
+      const rollingStock = surface.find_entities_filtered({
+        type: Object.keys(rollingStockTypes),
+      })
+      if (rollingStock.length > 0) anyRollingStock = true
+      for (const luaEntity of rollingStock) {
+        AssemblyUpdater.onEntityPotentiallyUpdated(assembly, stage.stageNumber, luaEntity, nil, nil)
+      }
     }
+  }
+  log("Done adding trains")
+  if (anyRollingStock) {
+    game.print(
+      "100% Blueprint Planning: Train entities are supported since v0.4.0. Trains were found and added to your assemblies.",
+    )
   }
 })

@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getRegisteredAssemblyEntity } from "../../assembly/entity-registration"
 import { Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, ExtraEntityType } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
+import { getRegisteredAssemblyEntity } from "../../entity/entity-registration"
 import { RollingStockEntity } from "../../entity/special-entities"
 import { getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
 import { shallowCopy } from "../../lib"

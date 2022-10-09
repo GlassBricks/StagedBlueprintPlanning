@@ -11,7 +11,7 @@
 
 import { AssemblyEvents, getStageAtSurface } from "../assembly/Assembly"
 import { Assembly, Stage } from "../assembly/AssemblyDef"
-import { getAllAssemblies } from "../assembly/global"
+import { getAllAssemblies } from "../assembly/migrations"
 import { StageNumber } from "../entity/AssemblyEntity"
 import {
   assertNever,

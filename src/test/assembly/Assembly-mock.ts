@@ -10,8 +10,8 @@
  */
 
 import { AssemblyData, StageSurface } from "../../assembly/AssemblyDef"
-import { newEntityMap } from "../../assembly/EntityMap"
 import { createStageSurface, prepareArea } from "../../assembly/surfaces"
+import { newEntityMap } from "../../entity/EntityMap"
 import { BBox, Pos } from "../../lib/geometry"
 
 export function createMockAssemblyContent(stages: number | LuaSurface[]): AssemblyData {

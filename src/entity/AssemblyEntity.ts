@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { registerEntity } from "../assembly/entity-registration"
 import {
   deepCompare,
   isEmpty,
@@ -25,6 +24,7 @@ import {
 import { Position } from "../lib/geometry"
 import { Entity } from "./Entity"
 import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
+import { registerEntity } from "./entity-registration"
 import { orientationToDirection, RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import {
   _applyDiffToDiffUnchecked,

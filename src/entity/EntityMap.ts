@@ -10,15 +10,13 @@
  */
 
 import { oppositedirection } from "util"
-import { AsmCircuitConnection, circuitConnectionEquals } from "../entity/AsmCircuitConnection"
-import { _migrate060, AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { BasicEntityInfo } from "../entity/Entity"
-import { getEntityCategory, getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "../entity/entity-info"
 import { isEmpty, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
+import { AsmCircuitConnection, circuitConnectionEquals } from "./AsmCircuitConnection"
+import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
+import { BasicEntityInfo } from "./Entity"
+import { getEntityCategory, getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "./entity-info"
 import { getRegisteredAssemblyEntity } from "./entity-registration"
-import { getAllAssemblies } from "./global"
 import { migrateMap2d060, MutableMap2D, newMap2D } from "./map2d"
 
 /**
@@ -410,31 +408,21 @@ export function newEntityMap(): MutableEntityMap {
   return new EntityMapImpl()
 }
 
-Migrations.to("0.3.0", () => {
+export function migrateMap030(_content: MutableEntityMap): void {
   interface OldEntityMap {
     entities: LuaMap<AssemblyEntity, AsmEntityCircuitConnections>
   }
-  for (const [, assembly] of getAllAssemblies()) {
-    const content = assembly.content as EntityMapImpl
+  const content = _content as EntityMapImpl
 
-    const oldEntities = (content as unknown as OldEntityMap).entities
-    content.circuitConnections = oldEntities
-    const entities = (content.entities = new LuaSet<AssemblyEntity>())
-    for (const [entity] of oldEntities) {
-      entities.add(entity)
-    }
-
-    content.cableConnections = new LuaMap()
-    // see also: migrations-custom/cable
+  const oldEntities = (content as unknown as OldEntityMap).entities
+  content.circuitConnections = oldEntities
+  const entities = (content.entities = new LuaSet<AssemblyEntity>())
+  for (const [entity] of oldEntities) {
+    entities.add(entity)
   }
-})
+  content.cableConnections = new LuaMap()
+}
 
-Migrations.to("0.6.0", () => {
-  for (const [, assembly] of getAllAssemblies()) {
-    const content = assembly.content as EntityMapImpl
-    migrateMap2d060(content.byPosition)
-    for (const entity of content.iterateAllEntities()) {
-      _migrate060(entity)
-    }
-  }
-})
+export function migrateMap060(content: MutableEntityMap): void {
+  migrateMap2d060((content as EntityMapImpl).byPosition)
+}

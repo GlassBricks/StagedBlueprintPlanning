@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AsmCircuitConnection, circuitConnectionMatches, getDirectionalInfo } from "../entity/AsmCircuitConnection"
-import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { isEmpty } from "../lib"
+import { AsmCircuitConnection, circuitConnectionMatches, getDirectionalInfo } from "./AsmCircuitConnection"
+import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
 import { AsmEntityCircuitConnections, CableAddResult, EntityMap, MutableEntityMap } from "./EntityMap"
 
 /** @noSelf */

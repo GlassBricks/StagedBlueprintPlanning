@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { CableAddResult, MutableEntityMap, newEntityMap } from "../../assembly/EntityMap"
-import { WireHandler } from "../../assembly/WireHandler"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { CableAddResult, MutableEntityMap, newEntityMap } from "../../entity/EntityMap"
+import { WireHandler } from "../../entity/WireHandler"
 import { shallowCompare } from "../../lib"
 
 let content: MutableEntityMap

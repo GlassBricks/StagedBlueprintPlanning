@@ -10,9 +10,9 @@
  */
 
 import { oppositedirection } from "util"
-import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "../entity/AssemblyEntity"
 import { Mutable } from "../lib"
 import { Pos, Position, PositionClass } from "../lib/geometry"
+import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
 import { MutableEntityMap } from "./EntityMap"
 
 /**
