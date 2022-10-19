@@ -134,7 +134,7 @@ export function createWorldUpdater(
     endStage?: StageNumber,
     replace?: boolean,
   ): void {
-    assert(!entity.isSettingsRemnant)
+    if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
 
     if (startStage < 1) startStage = 1
     const maxStage = assembly.numStages()

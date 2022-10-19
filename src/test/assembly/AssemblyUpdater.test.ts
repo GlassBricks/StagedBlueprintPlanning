@@ -518,7 +518,7 @@ describe("rotate", () => {
     assemblyUpdater.onEntityRotated(assembly, 2, luaEntity, oldDirection, playerIndex)
     assert.equal(direction.west, asmEntity.getDirection())
     assertOneEntity()
-    assertWUCalled(asmEntity, 1, nil, false)
+    assertWUCalled(asmEntity, 2, nil, false)
   })
 
   test("in higher stage forbids rotation", () => {

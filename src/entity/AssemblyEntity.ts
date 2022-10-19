@@ -42,7 +42,7 @@ import {
 /** 1 indexed */
 export type StageNumber = number
 
-// Is only different for underground belts
+/** Is only different for underground belts */
 export type SavedDirection = defines.direction & {
   _savedDirectionBrand: never
 }

@@ -10,23 +10,17 @@
  */
 
 import { L_Game, Prototypes } from "../constants"
-import {
-  AssemblyEntity,
-  createAssemblyEntity,
-  SavedDirection,
-  StageNumber,
-  UndergroundBeltAssemblyEntity,
-} from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { BasicEntityInfo } from "../entity/Entity"
-import { isCompatibleEntity, isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
+import { isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
-import { getSavedDirection } from "../entity/special-entities"
-import { findUndergroundPair } from "../entity/special-entity-treatment"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
+import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { AssemblyData } from "./AssemblyDef"
+import { createAssemblyUpdater2, UpdateEntityResult } from "./AssemblyUpdater2"
 import { AssemblyMoveEntityResult, WorldUpdater } from "./WorldUpdater"
 import min = math.min
 
@@ -132,7 +126,9 @@ export function createAssemblyUpdater(
   wireSaver: WireSaver,
   notifier: WorldNotifier,
 ): AssemblyUpdater {
-  const { deleteAllEntities, updateWorldEntities, clearWorldEntity } = worldUpdater
+  const au2 = createAssemblyUpdater2(worldUpdater, entitySaver, wireSaver)
+  // ^ for refactoring purposes only
+  const { deleteAllEntities, updateWorldEntities } = worldUpdater
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
   const { createNotification } = notifier
@@ -150,98 +146,36 @@ export function createAssemblyUpdater(
       ? content.findCompatible(entity, nil)
       : content.findCompatibleAnyDirection(entityName, entity.position) // if it doesn't overlap, find in any direction to avoid issues
 
-    if (existing) {
-      if (stage >= existing.firstStage) {
-        entityAddedAbove(assembly, existing, stage, entity)
-      } else {
-        entityAddedBelow(assembly, existing, stage, entity, byPlayer)
-      }
-      return existing
+    if (!existing) {
+      return au2.addNewEntity(assembly, stage, entity)
     }
 
-    const [saved, savedDir] = saveEntity(entity)
-    if (!saved) return
-    // add new entity
-    const assemblyEntity = createAssemblyEntity(saved, entity.position, savedDir, stage)
-    assemblyEntity.replaceWorldEntity(stage, entity)
-    content.add(assemblyEntity)
+    existing.replaceWorldEntity(stage, entity)
 
-    if (entity.type === "underground-belt") {
-      const [pair] = findUndergroundPair(content, assemblyEntity as UndergroundBeltAssemblyEntity)
-      if (pair) {
-        const otherDir = pair.firstValue.type
-        ;(assemblyEntity as UndergroundBeltAssemblyEntity).setUndergroundBeltDirection(
-          otherDir === "output" ? "input" : "output",
-        )
-      }
-    }
-
-    saveWireConnections(content, assemblyEntity, stage)
-    updateWorldEntities(assembly, assemblyEntity, 1)
-
-    return assemblyEntity
-  }
-
-  function updateSingleWorldEntity(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    assemblyEntity: AssemblyEntity,
-    replace: boolean,
-  ): void {
-    updateWorldEntities(assembly, assemblyEntity, stage, stage, replace)
-  }
-
-  function entityAddedAbove(
-    assembly: AssemblyData,
-    existing: AssemblyEntity,
-    stage: StageNumber,
-    luaEntity: LuaEntity,
-  ): void {
     if (existing.isSettingsRemnant) {
-      existing.replaceWorldEntity(stage, luaEntity)
-      reviveSettingsRemnant(assembly, existing, stage)
+      au2.reviveSettingsRemnant(assembly, stage, existing)
+    } else if (stage >= existing.firstStage) {
+      au2.refreshEntityAtStage(assembly, stage, existing)
     } else {
-      updateSingleWorldEntity(assembly, stage, existing, false)
+      onPreviewReplaced(assembly, stage, existing, entity, byPlayer)
     }
+    return existing
   }
 
-  function entityAddedBelow(
+  function onPreviewReplaced(
     assembly: AssemblyData,
-    existing: AssemblyEntity,
     stage: StageNumber,
+    entity: AssemblyEntity,
     luaEntity: LuaEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
-    if (existing.isSettingsRemnant) {
-      existing.replaceWorldEntity(stage, luaEntity)
-      reviveSettingsRemnant(assembly, existing, stage)
-    } else {
-      moveEntityDown(assembly, existing, stage, luaEntity, byPlayer)
-    }
-  }
-
-  function reviveSettingsRemnant(assembly: AssemblyData, existing: AssemblyEntity, stage: StageNumber): void {
-    existing.isSettingsRemnant = nil
-    existing.moveToStage(stage)
-    worldUpdater.reviveSettingsRemnant(assembly, existing)
-  }
-
-  function moveEntityDown(
-    assembly: AssemblyData,
-    existing: AssemblyEntity,
-    stage: number,
-    luaEntity: LuaEntity,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const oldStage = existing.moveToStage(stage, true)
+    const oldStage = assert(au2.moveEntityOnPreviewReplace(assembly, stage, entity))
     createNotification(
       luaEntity,
       byPlayer,
       [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
       false,
     )
-    existing.replaceWorldEntity(stage, luaEntity)
-    updateWorldEntities(assembly, existing, stage, oldStage)
   }
 
   function onEntityDeleted(
@@ -250,76 +184,35 @@ export function createAssemblyUpdater(
     entity: BasicEntityInfo,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const { content } = assembly
-
-    const existing = content.findCompatible(entity, nil)
+    const existing = assembly.content.findCompatible(entity, nil)
     if (!existing) return
     const existingStage = existing.firstStage
 
     if (existingStage !== stage) {
       if (existingStage < stage) {
-        updateSingleWorldEntity(assembly, stage, existing, true)
+        au2.disallowEntityDeletion(assembly, stage, existing)
       }
       // else: stage > existingStage; bug, ignore
       return
     }
-    doEntityDelete(assembly, existing, entity, byPlayer)
-  }
 
-  function shouldMakeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity) {
-    if (entity.hasStageDiff()) return true
-    const connections = assembly.content.getCircuitConnections(entity)
-    if (!connections) return false
-    const stage = entity.firstStage
-    for (const [otherEntity] of connections) {
-      if (otherEntity.getWorldEntity(stage) === nil) {
-        // has a connection at first stage, but not one in the world
-        return true
-      }
-    }
-    return false
-  }
-
-  function doEntityDelete(
-    assembly: AssemblyData,
-    assemblyEntity: AssemblyEntity,
-    entity: BasicEntityInfo,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const oldStage = assemblyEntity.getOldStage()
-    if (oldStage !== nil) {
-      moveEntityToOldStage(assembly, assemblyEntity, oldStage, entity, byPlayer)
-    } else if (shouldMakeSettingsRemnant(assembly, assemblyEntity)) {
-      assemblyEntity.isSettingsRemnant = true
-      worldUpdater.makeSettingsRemnant(assembly, assemblyEntity)
+    const oldStage = au2.moveEntityToOldStage(assembly, existing)
+    if (oldStage) {
+      createNotification(
+        entity,
+        byPlayer,
+        [L_Interaction.EntityMovedBackToStage, assembly.getStageName(oldStage)],
+        false,
+      )
     } else {
-      assembly.content.delete(assemblyEntity)
-      deleteAllEntities(assemblyEntity)
+      au2.deleteEntityOrCreateSettingsRemnant(assembly, existing)
     }
-  }
-
-  function moveEntityToOldStage(
-    assembly: AssemblyData,
-    existing: AssemblyEntity,
-    oldStage: StageNumber,
-    luaEntity: BasicEntityInfo,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const currentStage = existing.firstStage
-    existing.moveToStage(oldStage)
-    createNotification(
-      luaEntity,
-      byPlayer,
-      [L_Interaction.EntityMovedBackToStage, assembly.getStageName(oldStage)],
-      false,
-    )
-    updateWorldEntities(assembly, existing, currentStage, oldStage)
   }
 
   function onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
     const existing = assembly.content.findCompatible(entity, nil)
     if (existing) {
-      clearWorldEntity(assembly, stage, existing)
+      au2.clearEntityAtStage(assembly, stage, existing)
     }
   }
 
@@ -341,27 +234,6 @@ export function createAssemblyUpdater(
     return compatible
   }
 
-  /**
-   * Undoes rotation if rotation failed.
-   */
-  function tryRotateOrUndo(
-    assembly: AssemblyData,
-    entity: LuaEntity,
-    stage: StageNumber,
-    existing: AssemblyEntity,
-    newDirection: SavedDirection,
-    byPlayer: PlayerIndex | nil,
-  ): boolean {
-    const rotateAllowed = stage === existing.firstStage
-    if (rotateAllowed) {
-      existing.setDirection(newDirection)
-    } else {
-      createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
-      updateSingleWorldEntity(assembly, stage, existing, false)
-    }
-    return rotateAllowed
-  }
-
   function updateEntityFromWorld(assembly: AssemblyData, existing: AssemblyEntity, stage: StageNumber): boolean {
     const entity = assert(existing.getWorldEntity(stage))
     const [newValue, direction] = saveEntity(entity)
@@ -369,6 +241,22 @@ export function createAssemblyUpdater(
     assert(direction === existing.getDirection(), "direction mismatch on saved entity")
     const hasDiff = existing.adjustValueAtStage(stage, newValue)
     return hasDiff
+  }
+  function notifyIfError(result: UpdateEntityResult, entity: LuaEntity, byPlayer: PlayerIndex | nil) {
+    if (result === "no-change" || result === "updated") return
+    if (result === "cannot-rotate") {
+      createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
+    } else if (result === "cannot-flip-multi-pair-underground") {
+      createNotification(entity, byPlayer, [L_Interaction.CannotFlipUndergroundDueToMultiplePairs], true)
+    } else if (result === "cannot-upgrade-multi-pair-underground") {
+      createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs], true)
+    } else if (result === "cannot-create-pair-upgrade") {
+      createNotification(entity, byPlayer, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
+    } else if (result === "cannot-upgrade-changed-pair") {
+      createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundChangedPair], true)
+    } else {
+      assertNever(result)
+    }
   }
 
   function onEntityPotentiallyUpdated(
@@ -381,24 +269,8 @@ export function createAssemblyUpdater(
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return false
 
-    if (entity.type === "underground-belt") {
-      onUndergroundBeltPotentiallyUpdated(assembly, entity, stage, existing as UndergroundBeltAssemblyEntity, byPlayer)
-      return
-    }
-
-    const newDirection = entity.direction as SavedDirection
-    const rotated = newDirection !== existing.getDirection()
-    if (rotated) {
-      if (!tryRotateOrUndo(assembly, entity, stage, existing, newDirection, byPlayer)) {
-        // don't update other stuff if rotation failed
-        return
-      }
-    }
-    existing.replaceWorldEntity(stage, entity)
-    const hasDiff = updateEntityFromWorld(assembly, existing, stage)
-    if (hasDiff || rotated) {
-      updateWorldEntities(assembly, existing, stage)
-    }
+    const result = au2.tryUpdateEntityFromWorld(assembly, stage, existing, entity)
+    notifyIfError(result, entity, byPlayer)
   }
 
   function onEntityRotated(
@@ -410,21 +282,9 @@ export function createAssemblyUpdater(
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return
-
-    if (entity.type === "underground-belt") {
-      return onUndergroundBeltRotated(assembly, stage, entity, existing as UndergroundBeltAssemblyEntity, byPlayer)
-    }
-
-    const newDirection = entity.direction as SavedDirection
-    if (tryRotateOrUndo(assembly, entity, stage, existing, newDirection, byPlayer)) {
-      // update all entities
-      updateWorldEntities(assembly, existing, 1)
-    }
-  }
-
-  function checkUpgradeType(existing: AssemblyEntity, upgradeType: string): void {
-    if (!isCompatibleEntity(existing.firstValue.name, upgradeType))
-      error(` incompatible upgrade from ${existing.firstValue.name} to ${upgradeType}`)
+    const result = au2.tryRotateEntityFromWorld(assembly, stage, existing, entity)
+    notifyIfError(result, entity, byPlayer)
+    return
   }
 
   function onEntityMarkedForUpgrade(
@@ -436,155 +296,9 @@ export function createAssemblyUpdater(
     const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
 
-    if (entity.type === "underground-belt") {
-      return onUndergroundBeltMarkedForUpgrade(
-        assembly,
-        entity,
-        stage,
-        existing as UndergroundBeltAssemblyEntity,
-        byPlayer,
-      )
-    }
-
-    const rotateDir = entity.get_upgrade_direction() as SavedDirection
-    const rotated = rotateDir !== nil && rotateDir !== existing.getDirection()
-    if (rotated) {
-      if (!tryRotateOrUndo(assembly, entity, stage, existing, rotateDir, byPlayer)) {
-        // don't update other stuff if rotation failed
-        if (entity.valid) entity.cancel_upgrade(entity.force)
-        return
-      }
-    }
-
-    let upgraded = false
-    const upgradeType = entity.get_upgrade_target()?.name
-    if (upgradeType) {
-      checkUpgradeType(existing, upgradeType)
-      upgraded = existing.applyUpgradeAtStage(stage, upgradeType)
-    }
-    if (rotated || upgraded) {
-      updateWorldEntities(assembly, existing, stage)
-    }
+    const result = au2.tryUpgradeEntityFromWorld(assembly, stage, existing, entity)
+    notifyIfError(result, entity, byPlayer)
     if (entity.valid) entity.cancel_upgrade(entity.force)
-  }
-
-  function onUndergroundBeltRotated(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    existing: UndergroundBeltAssemblyEntity,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const actualDirection = getSavedDirection(entity)
-    assert(actualDirection === existing.getDirection(), "underground belt direction mismatch with saved state")
-    const oldDir = existing.firstValue.type
-    const newDir = entity.belt_to_ground_type
-    if (oldDir === newDir) return
-
-    const [pair, hasMultiple] = findUndergroundPair(assembly.content, existing)
-
-    function checkRotateAllowed() {
-      if (hasMultiple) {
-        createNotification(entity, byPlayer, [L_Interaction.CannotFlipUndergroundDueToMultiplePairs], true)
-        return false
-      }
-      const isFirstStage = existing.firstStage === stage || (pair && pair.firstStage === stage)
-      if (!isFirstStage) {
-        createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
-        return false
-      }
-      return true
-    }
-    const rotateAllowed = checkRotateAllowed()
-
-    if (!rotateAllowed) {
-      updateSingleWorldEntity(assembly, stage, existing, false)
-      return
-    }
-
-    existing.setUndergroundBeltDirection(newDir)
-    updateWorldEntities(assembly, existing, existing.firstStage)
-    if (pair) {
-      pair.setUndergroundBeltDirection(newDir === "output" ? "input" : "output")
-      updateWorldEntities(assembly, pair, pair.firstStage)
-    }
-  }
-
-  function tryUpgradeUnderground(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    existing: UndergroundBeltAssemblyEntity,
-    upgradeType: string,
-    byPlayer: PlayerIndex | nil,
-  ): boolean {
-    const [pair, hasMultiple] = findUndergroundPair(assembly.content, existing)
-    if (hasMultiple) {
-      createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs], true)
-      return false
-    }
-    let isFirstStage = existing.firstStage === stage
-    if (pair) {
-      isFirstStage ||= pair.firstStage === stage
-      if (!isFirstStage && existing.firstStage !== pair.firstStage) {
-        createNotification(entity, byPlayer, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
-        return false
-      }
-    }
-    const oldName = existing.firstValue.name
-    const applyStage = isFirstStage ? existing.firstStage : stage
-    const upgraded = existing.applyUpgradeAtStage(applyStage, upgradeType)
-    if (!upgraded) return true
-
-    if (pair) {
-      const pairStage = isFirstStage ? pair.firstStage : stage
-      const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
-      // check pair still correct
-      const [newPair, newMultiple] = findUndergroundPair(assembly.content, existing)
-      if (newPair !== pair || newMultiple) {
-        existing.applyUpgradeAtStage(applyStage, oldName)
-        pair.applyUpgradeAtStage(pairStage, oldName)
-        createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundChangedPair], true)
-        return false
-      }
-
-      updateWorldEntities(assembly, existing, applyStage)
-      if (pairUpgraded) updateWorldEntities(assembly, pair, pairStage)
-    } else {
-      updateWorldEntities(assembly, existing, applyStage)
-    }
-    return true
-  }
-
-  function onUndergroundBeltMarkedForUpgrade(
-    assembly: AssemblyData,
-    entity: LuaEntity,
-    stage: StageNumber,
-    existing: UndergroundBeltAssemblyEntity,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const upgradeType = entity.get_upgrade_target()?.name
-    if (upgradeType) {
-      checkUpgradeType(existing, upgradeType)
-      tryUpgradeUnderground(assembly, stage, entity, existing, upgradeType, byPlayer)
-    }
-    if (entity.valid) entity.cancel_upgrade(entity.force)
-  }
-
-  function onUndergroundBeltPotentiallyUpdated(
-    assembly: AssemblyData,
-    entity: LuaEntity,
-    stage: StageNumber,
-    existing: UndergroundBeltAssemblyEntity,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const newType = entity.name
-    if (newType !== existing.getNameAtStage(stage)) {
-      const upgraded = tryUpgradeUnderground(assembly, stage, entity, existing, newType, byPlayer)
-      if (!upgraded) {
-        updateSingleWorldEntity(assembly, stage, existing, false)
-      }
-    }
   }
 
   function onCircuitWiresPotentiallyUpdated(
@@ -699,7 +413,7 @@ export function createAssemblyUpdater(
     byPlayer: PlayerIndex,
   ) {
     if (existing.isSettingsRemnant) {
-      reviveSettingsRemnant(assembly, existing, stage)
+      au2.reviveSettingsRemnant(assembly, stage, existing)
       return
     }
     const oldStage = existing.firstStage
