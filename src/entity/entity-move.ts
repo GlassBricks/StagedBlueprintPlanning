@@ -50,7 +50,7 @@ function updateMovedEntity(oldPosition: Position, entity: LuaEntity): void {
   for (const e of updateableEntities) e.update_connections()
 }
 
-export type MoveEntityResult = "success" | "overlap" | "could-not-teleport" | "wires-cannot-reach"
+export type EntityMoveResult = "success" | "overlap" | "could-not-teleport" | "wires-cannot-reach"
 
 function tryMoveOutOfTheWay(entity: LuaEntity): boolean {
   let retries = 5
@@ -69,7 +69,7 @@ export function tryMoveAllEntities(
   entities: LuaEntity[],
   position: Position,
   direction: defines.direction,
-): MoveEntityResult {
+): EntityMoveResult {
   entities = entities.filter((e) => e.valid && !(Pos.equals(e.position, position) && e.direction === direction))
   const oldPositions = entities.map((e) => e.position)
   const oldDirections = entities.map((e) => e.direction)

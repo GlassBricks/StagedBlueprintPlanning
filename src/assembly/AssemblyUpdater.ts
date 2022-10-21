@@ -11,18 +11,14 @@
 
 import { L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { BasicEntityInfo } from "../entity/Entity"
 import { isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
-import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
-import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { AssemblyData } from "./AssemblyDef"
-import { createAssemblyUpdater2, UpdateEntityResult } from "./AssemblyUpdater2"
-import { AssemblyMoveEntityResult, WorldUpdater } from "./WorldUpdater"
-import min = math.min
+import { AssemblyUpdater2, EntityUpdateResult } from "./AssemblyUpdater2"
+import { AssemblyEntityMoveResult } from "./WorldUpdater"
 
 /**
  * Updates assembly in response to world changes.
@@ -120,17 +116,8 @@ export interface WorldNotifier {
   ): void
 }
 
-export function createAssemblyUpdater(
-  worldUpdater: WorldUpdater,
-  entitySaver: EntitySaver,
-  wireSaver: WireSaver,
-  notifier: WorldNotifier,
-): AssemblyUpdater {
-  const au2 = createAssemblyUpdater2(worldUpdater, entitySaver, wireSaver)
+export function createAssemblyUpdater(au2: AssemblyUpdater2, notifier: WorldNotifier): AssemblyUpdater {
   // ^ for refactoring purposes only
-  const { deleteAllEntities, updateWorldEntities } = worldUpdater
-  const { saveEntity } = entitySaver
-  const { saveWireConnections } = wireSaver
   const { createNotification } = notifier
 
   function onEntityCreated(
@@ -234,15 +221,7 @@ export function createAssemblyUpdater(
     return compatible
   }
 
-  function updateEntityFromWorld(assembly: AssemblyData, existing: AssemblyEntity, stage: StageNumber): boolean {
-    const entity = assert(existing.getWorldEntity(stage))
-    const [newValue, direction] = saveEntity(entity)
-    assert(newValue, "could not save value on existing entity")
-    assert(direction === existing.getDirection(), "direction mismatch on saved entity")
-    const hasDiff = existing.adjustValueAtStage(stage, newValue)
-    return hasDiff
-  }
-  function notifyIfError(result: UpdateEntityResult, entity: LuaEntity, byPlayer: PlayerIndex | nil) {
+  function notifyIfError(result: EntityUpdateResult, entity: LuaEntity, byPlayer: PlayerIndex | nil) {
     if (result === "no-change" || result === "updated") return
     if (result === "cannot-rotate") {
       createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
@@ -309,33 +288,13 @@ export function createAssemblyUpdater(
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
-    const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, existing, stage)
-    if (maxConnectionsExceeded) {
+    const result = au2.updateWiresFromWorld(assembly, stage, existing)
+    if (result === "max-connections-exceeded") {
       createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
     }
-    if (!connectionsChanged) return
-
-    const circuitConnections = assembly.content.getCircuitConnections(existing)
-    if (circuitConnections) {
-      checkDefaultControlBehavior(assembly, existing, stage)
-      for (const [otherEntity] of circuitConnections) {
-        checkDefaultControlBehavior(assembly, otherEntity, stage)
-      }
-    }
-    updateWorldEntities(assembly, existing, existing.firstStage)
-  }
-  function checkDefaultControlBehavior(assembly: AssemblyData, entity: AssemblyEntity, stage: StageNumber): void {
-    if (!hasControlBehaviorSet(entity, stage)) {
-      fixEmptyControlBehavior(entity)
-      updateEntityFromWorld(assembly, entity, stage)
-    }
   }
 
-  function getEntityIfIsSelectablePreview(
-    entity: LuaEntity,
-    stage: StageNumber,
-    assembly: AssemblyData,
-  ): AssemblyEntity | nil {
+  function getEntityFromPreview(entity: LuaEntity, stage: StageNumber, assembly: AssemblyData): AssemblyEntity | nil {
     const entityName = entity.name
     if (!entityName.startsWith(Prototypes.PreviewEntityPrefix)) return nil
     const actualName = entityName.substring(Prototypes.PreviewEntityPrefix.length)
@@ -350,6 +309,17 @@ export function createAssemblyUpdater(
     if (stage >= result.firstStage || result.isSettingsRemnant) return result
   }
 
+  function getEntityFromEntityOrPreview(
+    entityOrPreviewEntity: LuaEntity,
+    stage: StageNumber,
+    assembly: AssemblyData,
+  ): AssemblyEntity | nil {
+    return (
+      getEntityFromPreview(entityOrPreviewEntity, stage, assembly) ??
+      assembly.content.findCompatible(entityOrPreviewEntity, nil)
+    )
+  }
+
   function onCleanupToolUsed(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
     tryFixEntity(assembly, stage, proxyEntity, true)
   }
@@ -360,40 +330,24 @@ export function createAssemblyUpdater(
     proxyEntity: LuaEntity,
     deleteSettingsRemnants: boolean,
   ) {
-    const existing = getEntityIfIsSelectablePreview(proxyEntity, stage, assembly)
+    const existing = getEntityFromPreview(proxyEntity, stage, assembly)
     if (!existing) return
-    if (!existing.isSettingsRemnant) {
-      // this is an error entity, try revive
+    if (existing.isSettingsRemnant) {
+      if (deleteSettingsRemnants) {
+        // settings remnant, remove
+        au2.forceDeleteEntity(assembly, existing)
+      }
+    } else {
+      // this is an error entity, try fix
       if (stage < existing.firstStage) return
-      updateWorldEntities(assembly, existing, stage, nil)
-    } else if (deleteSettingsRemnants) {
-      // settings remnant, remove
-      assembly.content.delete(existing)
-      deleteAllEntities(existing)
+      au2.refreshEntityAllStages(assembly, existing)
     }
   }
 
   function onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
-    const existing = getEntityIfIsSelectablePreview(proxyEntity, stage, assembly)
+    const existing = getEntityFromPreview(proxyEntity, stage, assembly)
     if (!existing) return
-    assembly.content.delete(existing)
-    deleteAllEntities(existing)
-  }
-
-  function getEntityFromPreviewEntity(
-    entityOrPreviewEntity: LuaEntity,
-    stage: StageNumber,
-    assembly: AssemblyData,
-  ): AssemblyEntity | nil {
-    const name = entityOrPreviewEntity.name
-    if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
-      return assembly.content.findCompatibleByName(
-        name.substring(Prototypes.PreviewEntityPrefix.length),
-        entityOrPreviewEntity.position,
-        entityOrPreviewEntity.direction,
-      )
-    }
-    return assembly.content.findCompatible(entityOrPreviewEntity, nil)
+    au2.forceDeleteEntity(assembly, existing)
   }
 
   function onMoveEntityToStage(
@@ -402,38 +356,24 @@ export function createAssemblyUpdater(
     entityOrPreviewEntity: LuaEntity,
     byPlayer: PlayerIndex,
   ): void {
-    const existing = getEntityFromPreviewEntity(entityOrPreviewEntity, stage, assembly)
+    const existing = getEntityFromEntityOrPreview(entityOrPreviewEntity, stage, assembly)
     if (!existing) return
-    moveEntityToStage(assembly, stage, existing, byPlayer)
-  }
-  function moveEntityToStage(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    existing: AssemblyEntity,
-    byPlayer: PlayerIndex,
-  ) {
-    if (existing.isSettingsRemnant) {
-      au2.reviveSettingsRemnant(assembly, stage, existing)
-      return
-    }
     const oldStage = existing.firstStage
-
-    if (oldStage === stage) {
+    const result = au2.moveEntityToStage(assembly, stage, existing)
+    if (result === "updated") {
+      createNotification(
+        existing,
+        byPlayer,
+        [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
+        false,
+      )
+    } else if (result === "no-change") {
       createNotification(existing, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
-      return
+    } else if (result === "cannot-move-upgraded-underground") {
+      createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+    } else if (result !== "settings-remnant-revived") {
+      assertNever(result)
     }
-
-    if (existing.isUndergroundBelt()) {
-      if (existing.getNameAtStage(stage) !== existing.firstValue.name) {
-        createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
-        return
-      }
-    }
-
-    // move
-    existing.moveToStage(stage, false)
-    updateWorldEntities(assembly, existing, min(oldStage, stage))
-    createNotification(existing, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
   }
 
   function getCompatibleAtPositionOrAdd(
@@ -459,13 +399,14 @@ export function createAssemblyUpdater(
     const existing = getCompatibleAtPositionOrAdd(assembly, stage, entity, oldPosition, byPlayer)
     if (!existing) return
     assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
-    const result = worldUpdater.tryMoveOtherEntities(assembly, stage, existing)
+    const result = au2.tryMoveEntity(assembly, stage, existing)
     const message = moveResultMessage[result]
-    if (message === nil) return
-    createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
+    if (message !== nil) {
+      createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
+    }
   }
 
-  const moveResultMessage: Record<AssemblyMoveEntityResult, L_Interaction | nil> = {
+  const moveResultMessage: Record<AssemblyEntityMoveResult, L_Interaction | nil> = {
     success: nil,
     "connected-entities-missing": L_Interaction.ConnectedEntitiesMissing,
     "entities-missing": L_Interaction.EntitiesMissing,
@@ -489,7 +430,7 @@ export function createAssemblyUpdater(
     onEntityForceDeleted,
     onEntityDied,
     onMoveEntityToStage,
-    moveEntityToStage,
+    moveEntityToStage: au2.moveEntityToStage,
     onEntityMoved,
   }
 }
@@ -530,9 +471,4 @@ const WorldNotifier: WorldNotifier = {
   },
 }
 
-export const AssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(
-  WorldUpdater,
-  EntityHandler,
-  WireHandler,
-  WorldNotifier,
-)
+export const AssemblyUpdater: AssemblyUpdater = createAssemblyUpdater(AssemblyUpdater2, WorldNotifier)

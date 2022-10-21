@@ -11,7 +11,7 @@
 
 import { AssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
-import { forceMoveEntity, MoveEntityResult, tryMoveAllEntities } from "../entity/entity-move"
+import { EntityMoveResult, forceMoveEntity, tryMoveAllEntities } from "../entity/entity-move"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
 import { EntityMap } from "../entity/EntityMap"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
@@ -48,7 +48,7 @@ export interface WorldUpdater {
    * @param entity the assembly entity
    * @return the result of the move
    */
-  tryMoveOtherEntities(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyMoveEntityResult
+  tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityMoveResult
 
   /** Removes the world entity at a give stage (and makes error highlight) */
   clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
@@ -63,8 +63,8 @@ export interface WorldUpdater {
   reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
 }
 
-export type AssemblyMoveEntityResult =
-  | MoveEntityResult
+export type AssemblyEntityMoveResult =
+  | EntityMoveResult
   | "not-first-stage"
   | "entities-missing"
   | "connected-entities-missing"
@@ -157,7 +157,7 @@ export function createWorldUpdater(
     entity.destructible = false
   }
 
-  function tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyMoveEntityResult {
+  function tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityMoveResult {
     assert(!entity.isUndergroundBelt(), "can't move underground belts")
     const movedEntity = entity.getWorldEntity(stage)
     if (!movedEntity) return "entities-missing"
@@ -180,7 +180,7 @@ export function createWorldUpdater(
     entity: AssemblyEntity,
     stage: StageNumber,
     movedEntity: LuaEntity,
-  ): AssemblyMoveEntityResult {
+  ): AssemblyEntityMoveResult {
     if (stage !== entity.firstStage) return "not-first-stage"
 
     // check all entities exist
@@ -241,7 +241,7 @@ export function createWorldUpdater(
 
   return {
     updateWorldEntities,
-    tryMoveOtherEntities: tryMoveEntity,
+    tryMoveEntity: tryMoveEntity,
     clearWorldEntity,
     deleteAllEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldOrPreviewEntities()

@@ -141,6 +141,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (player) teleportToStage(player, stage)
   }
   private moveToThisStage() {
+    // todo: refactor
     AssemblyUpdater.moveEntityToStage(this.stage.assembly, this.stage.stageNumber, this.entity, this.playerIndex)
     this.rerender(false)
   }

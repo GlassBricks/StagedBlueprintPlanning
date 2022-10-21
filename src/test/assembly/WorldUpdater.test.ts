@@ -273,14 +273,14 @@ describe("tryMoveEntity", () => {
 
   test("can move entity if moved in first stage", () => {
     assert.true(forceMoveEntity(entities[0], newPos, newDir))
-    const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
+    const result = worldUpdater.tryMoveEntity(assembly, 1, entity)
     assert.equal("success", result)
     assertMoved()
   })
 
   test("can't move entity if moved in later stage", () => {
     assert.true(forceMoveEntity(entities[1], newPos, newDir))
-    const result = worldUpdater.tryMoveOtherEntities(assembly, 2, entity)
+    const result = worldUpdater.tryMoveEntity(assembly, 2, entity)
     assert.equal("not-first-stage", result)
     assertNotMoved()
   })
@@ -288,7 +288,7 @@ describe("tryMoveEntity", () => {
   test("can't move if world entities are missing in any stage", () => {
     assert.true(forceMoveEntity(entities[0], newPos, newDir))
     entity.getWorldEntity(2)!.destroy()
-    const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
+    const result = worldUpdater.tryMoveEntity(assembly, 1, entity)
     assert.equal("entities-missing", result)
     assertNotMoved()
   })
@@ -309,7 +309,7 @@ describe("tryMoveEntity", () => {
       assembly.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
       assert.true(forceMoveEntity(entities[0], newPos, newDir))
-      const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
+      const result = worldUpdater.tryMoveEntity(assembly, 1, entity)
       assert.equal("connected-entities-missing", result)
     })
 
@@ -323,7 +323,7 @@ describe("tryMoveEntity", () => {
       })
 
       assert.true(forceMoveEntity(entities[0], newPos, newDir))
-      const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
+      const result = worldUpdater.tryMoveEntity(assembly, 1, entity)
       assert.equal("connected-entities-missing", result)
     })
 
@@ -347,7 +347,7 @@ describe("tryMoveEntity", () => {
         }),
       )
 
-      const result = worldUpdater.tryMoveOtherEntities(assembly, 1, entity)
+      const result = worldUpdater.tryMoveEntity(assembly, 1, entity)
       assert.equal("success", result)
       assertMoved()
     })
