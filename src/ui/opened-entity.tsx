@@ -12,7 +12,7 @@
 import { Stage } from "../assembly/AssemblyDef"
 import { AssemblyOperations } from "../assembly/AssemblyOperations"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
-import { checkEntityUpdated } from "../assembly/world-listener"
+import { checkEntityUpdated } from "../assembly/event-listener"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
@@ -141,8 +141,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (player) teleportToStage(player, stage)
   }
   private moveToThisStage() {
-    // todo: refactor
-    AssemblyUpdater.moveEntityToStage(this.stage.assembly, this.stage.stageNumber, this.entity, this.playerIndex)
+    AssemblyUpdater.moveEntityToStage(this.stage.assembly, this.stage.stageNumber, this.entity)
     this.rerender(false)
   }
   private resetTrain() {

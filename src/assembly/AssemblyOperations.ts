@@ -28,9 +28,6 @@ import { WorldUpdater } from "./WorldUpdater"
  * @noSelf
  */
 export interface AssemblyOperations {
-  /** Delete all extra (non-main) entities in the assembly. Before assembly deletion. */
-  deleteAllExtraEntitiesOnly(assembly: AssemblyData): void
-
   resetStage(assembly: AssemblyData, stage: StageNumber): void
 
   resetProp<T extends Entity>(
@@ -58,6 +55,7 @@ export interface AssemblyOpWorldInteractor {
   deleteAllWorldEntities(stage: StageSurface): void
 }
 
+// todo: merge with AssemblyUpdater
 export function createAssemblyOperations(
   assemblyUpdater: AssemblyUpdater,
   worldUpdater: WorldUpdater,
@@ -66,11 +64,6 @@ export function createAssemblyOperations(
   const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
 
   return {
-    deleteAllExtraEntitiesOnly(assembly: AssemblyData) {
-      for (const entity of assembly.content.iterateAllEntities()) {
-        deleteExtraEntitiesOnly(entity)
-      }
-    },
     resetStage(assembly: AssemblyData, stageNumber: StageNumber) {
       const stage = assembly.getStage(stageNumber)
       if (!stage) return
@@ -80,11 +73,11 @@ export function createAssemblyOperations(
         if (entity.isRollingStock()) {
           updateLater.push(entity)
         } else {
-          updateWorldEntities(assembly, entity, stageNumber, stageNumber)
+          assemblyUpdater.refreshEntityAtStage(assembly, stageNumber, entity)
         }
       }
       for (const entity of updateLater) {
-        updateWorldEntities(assembly, entity, stageNumber, stageNumber)
+        assemblyUpdater.refreshEntityAtStage(assembly, stageNumber, entity)
       }
     },
     resetProp<T extends Entity>(
@@ -153,7 +146,6 @@ export function createAssemblyOperations(
       const content = assembly.content
 
       for (const luaEntity of entities) {
-        // todo: make this part of AssemblyUpdater instead?
         const assemblyEntity = content.findCompatible(luaEntity, nil)
         if (assemblyEntity) {
           deleteExtraEntitiesOnly(assemblyEntity)
@@ -161,7 +153,7 @@ export function createAssemblyOperations(
           updateWorldEntities(assembly, assemblyEntity, stageNum, stageNum)
         } else {
           // add
-          assemblyUpdater.onEntityCreated(assembly, stageNum, luaEntity, nil)
+          AssemblyUpdater.addNewEntity(assembly, stageNum, luaEntity)
         }
       }
     },

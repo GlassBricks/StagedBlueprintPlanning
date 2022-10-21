@@ -17,15 +17,15 @@ import { WireHandler } from "../entity/WireHandler"
 import { Events } from "../lib"
 import { formatVersion, Migrations } from "../lib/migration"
 
-import from010 from "./from010"
-
 Events.on_configuration_changed((data) => {
   const thisChange = data.mod_changes[script.mod_name]
   if (!thisChange) return
   const oldVersion = thisChange.old_version
   if (!oldVersion) return
   if (formatVersion(oldVersion) < formatVersion("0.2.0")) {
-    return from010()
+    return error(
+      "Migrating from 0.1.0 is backwards incompatible. Try migrating to 0.2 first before the current version.",
+    )
   }
   Migrations.doMigrations(oldVersion)
 })
@@ -76,7 +76,7 @@ Migrations.to("0.4.0", () => {
       })
       if (rollingStock.length > 0) anyRollingStock = true
       for (const luaEntity of rollingStock) {
-        AssemblyUpdater.onEntityPotentiallyUpdated(assembly, stage.stageNumber, luaEntity, nil, nil)
+        AssemblyUpdater.addNewEntity(assembly, stage.stageNumber, luaEntity)
       }
     }
   }

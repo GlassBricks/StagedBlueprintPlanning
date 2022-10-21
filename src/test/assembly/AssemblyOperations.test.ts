@@ -39,17 +39,6 @@ before_each(() => {
   operations = createAssemblyOperations(assemblyUpdater, worldUpdater, worldInteractor)
 })
 
-test("deleteAllExtraEntitiesOnly", () => {
-  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
-  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), nil, 2)
-  assembly.content.add(entity1)
-  assembly.content.add(entity2)
-
-  operations.deleteAllExtraEntitiesOnly(assembly)
-  assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity1))
-  assert.spy(worldUpdater.deleteExtraEntitiesOnly).called_with(match.ref(entity2))
-})
-
 test("resetStage", () => {
   const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
   const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), nil, 2)
@@ -61,8 +50,8 @@ test("resetStage", () => {
 
   assert.spy(worldInteractor.deleteAllWorldEntities).called_with(match.ref(stage))
 
-  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity1), 2, 2)
-  assert.spy(worldUpdater.updateWorldEntities).called_with(match.ref(assembly), match.ref(entity2), 2, 2)
+  assert.spy(assemblyUpdater.refreshEntityAtStage).called_with(match.ref(assembly), 2, match.ref(entity1))
+  assert.spy(assemblyUpdater.refreshEntityAtStage).called_with(match.ref(assembly), 2, match.ref(entity2))
 })
 
 describe("trains", () => {

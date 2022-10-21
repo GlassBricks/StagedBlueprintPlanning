@@ -11,8 +11,8 @@
 
 import { keys } from "ts-transformer-keys"
 import { AssemblyData } from "../../assembly/AssemblyDef"
-import { AssemblyUpdater, createAssemblyUpdater, WorldNotifier } from "../../assembly/AssemblyUpdater"
-import { createAssemblyUpdater2 } from "../../assembly/AssemblyUpdater2"
+import { createAssemblyUpdater2 } from "../../assembly/AssemblyUpdater"
+import { createAssemblyUpdater, WorldListener, WorldNotifier } from "../../assembly/WorldListener"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageDiffsInternal, StageNumber } from "../../entity/AssemblyEntity"
@@ -35,7 +35,7 @@ const pos = Pos(10.5, 10.5)
 let assembly: AssemblyData
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
-let assemblyUpdater: AssemblyUpdater
+let assemblyUpdater: WorldListener
 let worldUpdater: mock.Stubbed<WorldUpdater>
 let wireSaver: mock.Stubbed<WireSaver>
 let worldNotifier: mock.Mocked<WorldNotifier>
@@ -825,10 +825,10 @@ describe("undergrounds", () => {
 
   describe("upgrading undergrounds", () => {
     before_each(() => {
-      mock(AssemblyUpdater, true)
+      mock(WorldListener, true)
     })
     after_each(() => {
-      mock.revert(AssemblyUpdater)
+      mock.revert(WorldListener)
     })
 
     test("can upgrade underground in first stage", () => {

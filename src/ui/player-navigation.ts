@@ -11,7 +11,7 @@
 
 /**
  * This file handles player navigation.
- * For assembly editing, see assembly/world-listener.ts.
+ * For assembly editing, see assembly/event-listener.ts.
  */
 
 import { CustomInputs, Settings } from "../constants"
