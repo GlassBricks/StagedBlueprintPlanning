@@ -348,6 +348,7 @@ test("onEntityDied", () => {
   assertClearWorldEntityCalled(asmEntity, 2)
 })
 
+// todo: move to integration tests
 describe("revive", () => {
   test.each([1, 2, 3, 4, 5, 6])("settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
     const { luaEntity, asmEntity } = addAndReset(1)

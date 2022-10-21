@@ -81,22 +81,15 @@ export interface WorldListener {
   ): void
 
   /** When a cleanup tool has been used on an entity. */
-  onCleanupToolUsed(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void
+  onCleanupToolUsed(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): void
   /** Similar to above; does not remove settings remnants */
-  tryFixEntity(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void
+  tryFixEntity(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): void
 
-  onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void
+  onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): void
   /** Either: entity died, or reverse select with cleanup tool */
   onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void
   /** User activated. */
   onMoveEntityToStage(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity, byPlayer: PlayerIndex): void
-  moveEntityToStage(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    assemblyEntity: AssemblyEntity,
-    byPlayer: PlayerIndex,
-  ): void
-
   onEntityMoved(
     assembly: AssemblyData,
     stage: StageNumber,
@@ -295,6 +288,8 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     const result = updateWiresFromWorld(assembly, stage, existing)
     if (result === "max-connections-exceeded") {
       createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
+    } else if (result !== "updated" && result !== "no-change") {
+      assertNever(result)
     }
   }
 
@@ -331,10 +326,10 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   function tryFixEntity(
     assembly: AssemblyData,
     stage: StageNumber,
-    proxyEntity: LuaEntity,
+    previewEntity: LuaEntity,
     deleteSettingsRemnants: boolean,
   ) {
-    const existing = getEntityFromPreview(proxyEntity, stage, assembly)
+    const existing = getEntityFromPreview(previewEntity, stage, assembly)
     if (!existing) return
     if (existing.isSettingsRemnant) {
       if (deleteSettingsRemnants) {
@@ -434,7 +429,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     onEntityForceDeleted,
     onEntityDied,
     onMoveEntityToStage,
-    moveEntityToStage,
     onEntityMoved,
   }
 }
