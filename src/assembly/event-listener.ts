@@ -22,16 +22,14 @@ import { Stage } from "./AssemblyDef"
 import { WorldListener } from "./WorldListener"
 
 /**
- * Hooks to factorio events, and calls WorldListener.
+ * Listens to factorio events, and converts to those understood by calls WorldListener.
  */
 
 const Events = ProtectedEvents
 
-function getStageIfAssemblyEntity(entity: LuaEntity): Stage | nil {
-  if (!entity.valid) return
-  const stage = getStageAtSurface(entity.surface.index)
-  if (stage && isWorldEntityAssemblyEntity(entity)) {
-    return stage
+function getStageAtEntity(entity: LuaEntity): Stage | nil {
+  if (entity.valid && isWorldEntityAssemblyEntity(entity)) {
+    return getStageAtSurface(entity.surface.index)
   }
 }
 
@@ -53,12 +51,12 @@ function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
 }
 
 function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
-  const stage = getStageIfAssemblyEntity(entity)
+  const stage = getStageAtEntity(entity)
   if (stage) WorldListener.onEntityDeleted(stage.assembly, stage.stageNumber, entity, player)
 }
 
 function luaEntityPotentiallyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
-  const stage = getStageIfAssemblyEntity(entity)
+  const stage = getStageAtEntity(entity)
   if (stage) WorldListener.onEntityPotentiallyUpdated(stage.assembly, stage.stageNumber, entity, nil, player)
 }
 
@@ -67,8 +65,8 @@ function luaEntityMarkedForUpgrade(entity: LuaEntity, player: PlayerIndex | nil)
   if (stage) WorldListener.onEntityMarkedForUpgrade(stage.assembly, stage.stageNumber, entity, player)
 }
 
-function luaEntityForceDeleted(entity: LuaEntity): void {
-  const stage = getStageIfAssemblyEntity(entity)
+function luaEntityDied(entity: LuaEntity): void {
+  const stage = getStageAtEntity(entity)
   if (stage) WorldListener.onEntityDied(stage.assembly, stage.stageNumber, entity)
 }
 
@@ -160,7 +158,7 @@ Events.on_robot_built_entity((e) => luaEntityCreated(e.created_entity, nil))
 Events.script_raised_destroy((e) => luaEntityDeleted(e.entity, nil))
 Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
 
-Events.on_entity_died((e) => luaEntityForceDeleted(e.entity))
+Events.on_entity_died((e) => luaEntityDied(e.entity))
 
 Events.on_entity_settings_pasted((e) => luaEntityPotentiallyUpdated(e.destination, e.player_index))
 Events.on_gui_closed((e) => {
@@ -498,7 +496,7 @@ function tryFixBlueprint(player: LuaPlayer): void {
   const blueprint = getInnerBlueprint(player.cursor_stack)
   if (!blueprint) return
   const entityCount = blueprint.get_blueprint_entity_count()
-  if (!blueprint || entityCount === 0) return
+  if (entityCount === 0) return
   const lastTags = blueprint.get_blueprint_entity_tag(entityCount, IsLastEntity)
   if (lastTags !== nil) {
     const entities = blueprint.get_blueprint_entities()!
@@ -568,7 +566,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 function markPlayerAffectedWires(player: LuaPlayer): void {
   const entity = player.selected
   if (!entity) return
-  const stage = getStageIfAssemblyEntity(entity)
+  const stage = getStageAtEntity(entity)
   if (!stage) return
 
   const data = global.players[player.index]
@@ -584,7 +582,7 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   const entity = data.lastWireAffectedEntity
   if (entity) {
     data.lastWireAffectedEntity = nil
-    const stage = getStageIfAssemblyEntity(entity)
+    const stage = getStageAtEntity(entity)
     if (stage) WorldListener.onCircuitWiresPotentiallyUpdated(stage.assembly, stage.stageNumber, entity, index)
   }
 }
@@ -700,8 +698,11 @@ export const _assertInValidState = (): void => {
   assert.same({}, state, "State is not empty")
 }
 
-export function checkEntityUpdated(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
-  const stage = getStageIfAssemblyEntity(entity)
+/**
+ * For manual calls from other parts of the code
+ */
+export function entityPotentiallyUpdated(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
+  const stage = getStageAtEntity(entity)
   if (stage) {
     WorldListener.onEntityPotentiallyUpdated(stage.assembly, stage.stageNumber, entity, nil, byPlayer)
   }

@@ -21,7 +21,9 @@ import { AssemblyUpdater, EntityUpdateResult } from "./AssemblyUpdater"
 import { AssemblyEntityMoveResult } from "./WorldUpdater"
 
 /**
- * Updates assembly in response to world changes.
+ * Listens to changes in the world and updates the assembly accordingly.
+ *
+ * See also: event-listener.ts
  *
  * @noSelf
  */
