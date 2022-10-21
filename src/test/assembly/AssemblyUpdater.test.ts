@@ -11,8 +11,8 @@
 
 import { keys } from "ts-transformer-keys"
 import { AssemblyData } from "../../assembly/AssemblyDef"
-import { createAssemblyUpdater2 } from "../../assembly/AssemblyUpdater"
-import { createAssemblyUpdater, WorldListener, WorldNotifier } from "../../assembly/WorldListener"
+import { createAssemblyUpdater } from "../../assembly/AssemblyUpdater"
+import { createWorldListener, WorldListener, WorldNotifier } from "../../assembly/WorldListener"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { L_Game, Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageDiffsInternal, StageNumber } from "../../entity/AssemblyEntity"
@@ -53,7 +53,7 @@ before_each(() => {
   wireSaver = { saveWireConnections: stub() }
   wireSaver.saveWireConnections.returns(false)
   worldNotifier = { createNotification: spy() }
-  assemblyUpdater = createAssemblyUpdater(createAssemblyUpdater2(worldUpdater, EntityHandler, wireSaver), worldNotifier)
+  assemblyUpdater = createWorldListener(createAssemblyUpdater(worldUpdater, EntityHandler, wireSaver), worldNotifier)
 
   game.surfaces[1].find_entities().forEach((e) => e.destroy())
 })

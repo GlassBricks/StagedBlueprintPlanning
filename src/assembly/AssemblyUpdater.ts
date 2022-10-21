@@ -96,7 +96,7 @@ export type EntityUpdateResult = UpdateSuccess | UpdateError | RotateError
 export type WireUpdateResult = UpdateSuccess | "max-connections-exceeded"
 export type StageMoveResult = UpdateSuccess | "settings-remnant-revived" | "cannot-move-upgraded-underground"
 
-export function createAssemblyUpdater2(
+export function createAssemblyUpdater(
   worldUpdater: WorldUpdater,
   entitySaver: EntitySaver,
   wireSaver: WireSaver,
@@ -488,4 +488,4 @@ export function createAssemblyUpdater2(
   }
 }
 
-export const AssemblyUpdater = createAssemblyUpdater2(WorldUpdater, EntityHandler, WireHandler)
+export const AssemblyUpdater = createAssemblyUpdater(WorldUpdater, EntityHandler, WireHandler)

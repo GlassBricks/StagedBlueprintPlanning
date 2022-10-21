@@ -118,7 +118,25 @@ export interface WorldNotifier {
   ): void
 }
 
-export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotifier): WorldListener {
+export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: WorldNotifier): WorldListener {
+  const {
+    addNewEntity,
+    clearEntityAtStage,
+    deleteEntityOrCreateSettingsRemnant,
+    disallowEntityDeletion,
+    forceDeleteEntity,
+    moveEntityOnPreviewReplace,
+    moveEntityToOldStage,
+    moveEntityToStage,
+    refreshEntityAllStages,
+    refreshEntityAtStage,
+    reviveSettingsRemnant,
+    tryMoveEntity,
+    tryRotateEntityFromWorld,
+    tryUpdateEntityFromWorld,
+    tryUpgradeEntityFromWorld,
+    updateWiresFromWorld,
+  } = assemblyUpdater
   // ^ for refactoring purposes only
   const { createNotification } = notifier
 
@@ -136,15 +154,15 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
       : content.findCompatibleAnyDirection(entityName, entity.position) // if it doesn't overlap, find in any direction to avoid issues
 
     if (!existing) {
-      return au2.addNewEntity(assembly, stage, entity)
+      return addNewEntity(assembly, stage, entity)
     }
 
     existing.replaceWorldEntity(stage, entity)
 
     if (existing.isSettingsRemnant) {
-      au2.reviveSettingsRemnant(assembly, stage, existing)
+      reviveSettingsRemnant(assembly, stage, existing)
     } else if (stage >= existing.firstStage) {
-      au2.refreshEntityAtStage(assembly, stage, existing)
+      refreshEntityAtStage(assembly, stage, existing)
     } else {
       onPreviewReplaced(assembly, stage, existing, entity, byPlayer)
     }
@@ -158,7 +176,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
     luaEntity: LuaEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const oldStage = assert(au2.moveEntityOnPreviewReplace(assembly, stage, entity))
+    const oldStage = assert(moveEntityOnPreviewReplace(assembly, stage, entity))
     createNotification(
       luaEntity,
       byPlayer,
@@ -179,13 +197,13 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
 
     if (existingStage !== stage) {
       if (existingStage < stage) {
-        au2.disallowEntityDeletion(assembly, stage, existing)
+        disallowEntityDeletion(assembly, stage, existing)
       }
       // else: stage > existingStage; bug, ignore
       return
     }
 
-    const oldStage = au2.moveEntityToOldStage(assembly, existing)
+    const oldStage = moveEntityToOldStage(assembly, existing)
     if (oldStage) {
       createNotification(
         entity,
@@ -194,14 +212,14 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
         false,
       )
     } else {
-      au2.deleteEntityOrCreateSettingsRemnant(assembly, existing)
+      deleteEntityOrCreateSettingsRemnant(assembly, existing)
     }
   }
 
   function onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
     const existing = assembly.content.findCompatible(entity, nil)
     if (existing) {
-      au2.clearEntityAtStage(assembly, stage, existing)
+      clearEntityAtStage(assembly, stage, existing)
     }
   }
 
@@ -250,7 +268,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return false
 
-    const result = au2.tryUpdateEntityFromWorld(assembly, stage, existing, entity)
+    const result = tryUpdateEntityFromWorld(assembly, stage, existing, entity)
     notifyIfError(result, entity, byPlayer)
   }
 
@@ -263,7 +281,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return
-    const result = au2.tryRotateEntityFromWorld(assembly, stage, existing, entity)
+    const result = tryRotateEntityFromWorld(assembly, stage, existing, entity)
     notifyIfError(result, entity, byPlayer)
     return
   }
@@ -277,7 +295,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
     const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
 
-    const result = au2.tryUpgradeEntityFromWorld(assembly, stage, existing, entity)
+    const result = tryUpgradeEntityFromWorld(assembly, stage, existing, entity)
     notifyIfError(result, entity, byPlayer)
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }
@@ -290,7 +308,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
-    const result = au2.updateWiresFromWorld(assembly, stage, existing)
+    const result = updateWiresFromWorld(assembly, stage, existing)
     if (result === "max-connections-exceeded") {
       createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
     }
@@ -337,19 +355,19 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
     if (existing.isSettingsRemnant) {
       if (deleteSettingsRemnants) {
         // settings remnant, remove
-        au2.forceDeleteEntity(assembly, existing)
+        forceDeleteEntity(assembly, existing)
       }
     } else {
       // this is an error entity, try fix
       if (stage < existing.firstStage) return
-      au2.refreshEntityAllStages(assembly, existing)
+      refreshEntityAllStages(assembly, existing)
     }
   }
 
   function onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
     const existing = getEntityFromPreview(proxyEntity, stage, assembly)
     if (!existing) return
-    au2.forceDeleteEntity(assembly, existing)
+    forceDeleteEntity(assembly, existing)
   }
 
   function onMoveEntityToStage(
@@ -361,7 +379,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
     const existing = getEntityFromEntityOrPreview(entityOrPreviewEntity, stage, assembly)
     if (!existing) return
     const oldStage = existing.firstStage
-    const result = au2.moveEntityToStage(assembly, stage, existing)
+    const result = moveEntityToStage(assembly, stage, existing)
     if (result === "updated") {
       createNotification(
         existing,
@@ -401,7 +419,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
     const existing = getCompatibleAtPositionOrAdd(assembly, stage, entity, oldPosition, byPlayer)
     if (!existing) return
     assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
-    const result = au2.tryMoveEntity(assembly, stage, existing)
+    const result = tryMoveEntity(assembly, stage, existing)
     const message = moveResultMessage[result]
     if (message !== nil) {
       createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
@@ -432,7 +450,7 @@ export function createAssemblyUpdater(au2: AssemblyUpdater, notifier: WorldNotif
     onEntityForceDeleted,
     onEntityDied,
     onMoveEntityToStage,
-    moveEntityToStage: au2.moveEntityToStage,
+    moveEntityToStage: moveEntityToStage,
     onEntityMoved,
   }
 }
@@ -473,4 +491,4 @@ const WorldNotifier: WorldNotifier = {
   },
 }
 
-export const WorldListener: WorldListener = createAssemblyUpdater(AssemblyUpdater, WorldNotifier)
+export const WorldListener: WorldListener = createWorldListener(AssemblyUpdater, WorldNotifier)
