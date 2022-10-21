@@ -346,29 +346,6 @@ describe("move to stage", () => {
     fooAssemblyEntity.moveToStage(5)
     assert.same(valueAt5, fooAssemblyEntity.firstValue)
   })
-
-  test("records old stage", () => {
-    fooAssemblyEntity.moveToStage(5, true)
-    assert.equal(2, fooAssemblyEntity.getOldStage())
-  })
-
-  test("clears old stage if recordOldStage is false", () => {
-    fooAssemblyEntity.moveToStage(4, true)
-    fooAssemblyEntity.moveToStage(2)
-    assert.nil(fooAssemblyEntity.getOldStage())
-  })
-
-  test("clears old stage if same stage", () => {
-    fooAssemblyEntity.moveToStage(5)
-    fooAssemblyEntity.moveToStage(5)
-    assert.nil(fooAssemblyEntity.getOldStage())
-  })
-
-  test("clears old stage if adjustValueAtStage called at stage", () => {
-    fooAssemblyEntity.moveToStage(5, true)
-    fooAssemblyEntity.adjustValueAtStage(6, { ...entity, override_stack_size: 6 })
-    assert.nil(fooAssemblyEntity.getOldStage())
-  })
 })
 
 describe("Get/set world entities", () => {

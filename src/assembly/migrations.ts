@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { _migrate031, _migrate060 } from "../entity/AssemblyEntity"
+import { _migrate031, _migrate060, StageNumber } from "../entity/AssemblyEntity"
 import { migrateMap030, migrateMap060 } from "../entity/EntityMap"
 import { Migrations } from "../lib/migration"
 import { Assembly, AssemblyId } from "./AssemblyDef"
@@ -45,6 +45,17 @@ Migrations.to("0.6.0", () => {
     migrateMap060(assembly.content)
     for (const entity of assembly.content.iterateAllEntities()) {
       _migrate060(entity)
+    }
+  }
+})
+
+Migrations.to("0.8.0", () => {
+  for (const [, assembly] of getAllAssemblies()) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      interface OldAssemblyEntity {
+        oldStage?: StageNumber
+      }
+      delete (entity as unknown as OldAssemblyEntity).oldStage
     }
   }
 })

@@ -237,8 +237,6 @@ describe("add", () => {
     // calls updateWorldEntities
     assertOneEntity()
     assertWUCalled(asmEntity, 1, 3, false)
-    // records old stage
-    assert.equal(3, asmEntity.getOldStage())
     // creates notification
     assertNotified(newEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
@@ -289,17 +287,6 @@ describe("delete", () => {
     assert.falsy(asmEntity.isSettingsRemnant)
     assertNoEntities()
     assertDeleteAllEntitiesCalled(asmEntity)
-  })
-
-  test("in first stage with oldStage moves back to old stage", () => {
-    const { luaEntity, asmEntity } = addAndReset(3)
-    asmEntity.moveToStage(2, true)
-    assemblyUpdater.onEntityDeleted(assembly, 2, luaEntity, playerIndex)
-    assert.falsy(asmEntity.isSettingsRemnant)
-    assertOneEntity()
-    assertWUCalled(asmEntity, 2, 3, false)
-    assert.nil(asmEntity.getOldStage())
-    assertNotified(luaEntity, [L_Interaction.EntityMovedBackToStage, "mock stage 3"], false)
   })
 
   test("in first stage with updates creates settings remnant", () => {
@@ -640,7 +627,6 @@ describe("move to current stage", () => {
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
     assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
-    assert.nil(asmEntity.getOldStage())
   })
 
   test("preview entity", () => {
@@ -652,7 +638,6 @@ describe("move to current stage", () => {
     assertOneEntity()
     assertWUCalled(asmEntity, 1, nil, false)
     assertNotified(preview, [L_Interaction.EntityMovedFromStage, "mock stage 1"], false)
-    assert.nil(asmEntity.getOldStage())
   })
 
   test("settings remnant", () => {
@@ -665,7 +650,6 @@ describe("move to current stage", () => {
     assert.equal(3, asmEntity.firstStage)
     assertOneEntity()
     assertReviveSettingsRemnantCalled(asmEntity)
-    assert.nil(asmEntity.getOldStage())
   })
 })
 

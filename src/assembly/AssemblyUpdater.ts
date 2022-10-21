@@ -44,8 +44,6 @@ export interface AssemblyUpdater {
   /** Returns nil if not a lower stage number, else returns the old stage. */
   moveEntityOnPreviewReplace(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil
 
-  /** Returns the old stage, or nil if there was no old stage */
-  moveEntityToOldStage(assembly: AssemblyData, entity: AssemblyEntity): StageNumber | nil
   reviveSettingsRemnant(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): boolean
 
   disallowEntityDeletion(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
@@ -144,17 +142,8 @@ export function createAssemblyUpdater(
     entity: AssemblyEntity,
   ): StageNumber | nil {
     if (stage >= entity.firstStage) return nil
-    const oldStage = entity.moveToStage(stage, true)
+    const oldStage = entity.moveToStage(stage)
     updateWorldEntities(assembly, entity, stage, oldStage)
-    return oldStage
-  }
-
-  function moveEntityToOldStage(assembly: AssemblyData, entity: AssemblyEntity): StageNumber | nil {
-    const oldStage = entity.getOldStage()
-    if (!oldStage) return nil
-    const prevStage = entity.firstStage
-    entity.moveToStage(oldStage)
-    updateWorldEntities(assembly, entity, prevStage, oldStage)
     return oldStage
   }
 
@@ -473,7 +462,6 @@ export function createAssemblyUpdater(
     refreshEntityAtStage,
     refreshEntityAllStages,
     moveEntityOnPreviewReplace,
-    moveEntityToOldStage,
     tryMoveEntity: worldUpdater.tryMoveEntity,
     disallowEntityDeletion,
     deleteEntityOrCreateSettingsRemnant,

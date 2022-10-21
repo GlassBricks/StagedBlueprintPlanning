@@ -126,7 +126,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     disallowEntityDeletion,
     forceDeleteEntity,
     moveEntityOnPreviewReplace,
-    moveEntityToOldStage,
     moveEntityToStage,
     refreshEntityAllStages,
     refreshEntityAtStage,
@@ -185,12 +184,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     )
   }
 
-  function onEntityDeleted(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: BasicEntityInfo,
-    byPlayer: PlayerIndex | nil,
-  ): void {
+  function onEntityDeleted(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
     const existing = assembly.content.findCompatible(entity, nil)
     if (!existing) return
     const existingStage = existing.firstStage
@@ -203,17 +197,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       return
     }
 
-    const oldStage = moveEntityToOldStage(assembly, existing)
-    if (oldStage) {
-      createNotification(
-        entity,
-        byPlayer,
-        [L_Interaction.EntityMovedBackToStage, assembly.getStageName(oldStage)],
-        false,
-      )
-    } else {
-      deleteEntityOrCreateSettingsRemnant(assembly, existing)
-    }
+    deleteEntityOrCreateSettingsRemnant(assembly, existing)
   }
 
   function onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
@@ -450,7 +434,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     onEntityForceDeleted,
     onEntityDied,
     onMoveEntityToStage,
-    moveEntityToStage: moveEntityToStage,
+    moveEntityToStage,
     onEntityMoved,
   }
 }

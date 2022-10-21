@@ -114,7 +114,6 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
    * Adjusts stage diffs so that the value at the given stage matches the given value.
    * Rolling stock entities are ignored if not at the first stage.
    * Trims stage diffs in higher stages if they no longer have any effect.
-   * If there is diff, also clears oldStage (see {@link getOldStage}).
    * @return true if the value changed.
    */
   adjustValueAtStage(stage: StageNumber, value: T): boolean
@@ -151,17 +150,9 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 
   /**
    * @param stage the stage to move to. If moving up, deletes/merges all stage diffs from old stage to new stage.
-   * @param recordOldStage if true, records the old stage (so the entity can be moved back). Otherwise, clears the old stage.
    * @return the previous first stage
    */
-  moveToStage(stage: StageNumber, recordOldStage?: boolean): StageNumber
-
-  /**
-   * The last stage before moveToStage() was called with recordOldStage.
-   * The stage memo is cleared when adjustValueAtStage() is called with changes on a stage that is not the first stage.
-   */
-  getOldStage(): StageNumber | nil
-
+  moveToStage(stage: StageNumber): StageNumber
   getWorldEntity(stage: StageNumber): LuaEntity | nil
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
 
@@ -592,10 +583,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     this.firstStage = higherStage
   }
-  getOldStage(): StageNumber | nil {
-    return this.oldStage
-  }
-
   public getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
     const entity = this[stage]
     if (entity && entity.valid) return entity

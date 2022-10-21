@@ -80,8 +80,6 @@ export declare const enum L_Interaction {
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
-  /** Entity moved back to __1__ */
-  EntityMovedBackToStage = "bp100.interaction.entity-moved-back-to-stage",
   /** Cannot flip underground paired with multiple other undergrounds */
   CannotFlipUndergroundDueToMultiplePairs = "bp100.interaction.cannot-flip-underground-due-to-multiple-pairs",
   /** Cannot upgrade underground paired with multiple other undergrounds */
