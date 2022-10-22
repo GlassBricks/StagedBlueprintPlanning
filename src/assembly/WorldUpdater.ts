@@ -9,13 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
+import { Prototypes } from "../constants"
+import { AssemblyEntity, isWorldEntityAssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
 import { EntityMoveResult, forceMoveEntity, tryMoveAllEntities } from "../entity/entity-move"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
 import { EntityMap } from "../entity/EntityMap"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
-import { AssemblyData } from "./AssemblyDef"
+import { AssemblyData, StageSurface } from "./AssemblyDef"
 import { EntityHighlighter } from "./EntityHighlighter"
 
 /**
@@ -61,6 +62,8 @@ export interface WorldUpdater {
 
   makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
+
+  deleteAllWorldEntities(stage: StageSurface): void
 }
 
 export type AssemblyEntityDollyResult =
@@ -260,6 +263,17 @@ export function createWorldUpdater(
     },
     makeSettingsRemnant,
     reviveSettingsRemnant,
+    deleteAllWorldEntities(stage: StageSurface) {
+      for (const entity of stage.surface.find_entities()) {
+        if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
+      }
+      for (const entity of stage.surface.find_entities_filtered({
+        type: ["simple-entity-with-owner", "rail-remnants"],
+      })) {
+        const name = entity.name
+        if (name.startsWith(Prototypes.PreviewEntityPrefix)) entity.destroy()
+      }
+    },
   }
 }
 

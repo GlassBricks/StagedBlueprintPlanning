@@ -10,7 +10,7 @@
  */
 
 import { Assembly, AutoSetTilesType, LocalAssemblyEvent, Stage } from "../assembly/AssemblyDef"
-import { AssemblyOperations } from "../assembly/AssemblyOperations"
+import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
@@ -291,7 +291,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
   }
 
   private resetStage() {
-    AssemblyOperations.resetStage(this.stage.assembly, this.stage.stageNumber)
+    AssemblyUpdater.resetStage(this.stage.assembly, this.stage.stageNumber)
   }
 
   private getBlueprint() {

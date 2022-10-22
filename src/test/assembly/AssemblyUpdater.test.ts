@@ -14,14 +14,20 @@ import { AssemblyData } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, createAssemblyUpdater, StageMoveResult } from "../../assembly/AssemblyUpdater"
 import { WorldListener } from "../../assembly/WorldListener"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
-import { AssemblyEntity, createAssemblyEntity, StageDiffsInternal, StageNumber } from "../../entity/AssemblyEntity"
+import {
+  AssemblyEntity,
+  createAssemblyEntity,
+  RollingStockAssemblyEntity,
+  StageDiffsInternal,
+  StageNumber,
+} from "../../entity/AssemblyEntity"
 import { EntityHandler } from "../../entity/EntityHandler"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import { findUndergroundPair } from "../../entity/special-entity-treatment"
 import { WireSaver } from "../../entity/WireHandler"
 import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { createRollingStock } from "../entity/createRollingStock"
+import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { makeStubbed } from "../simple-mock"
 import { createMockAssemblyContent, setupTestSurfaces } from "./Assembly-mock"
 import direction = defines.direction
@@ -932,5 +938,69 @@ describe("rolling stock", () => {
 
     assertNEntities(1)
     assertWUNotCalled()
+  })
+})
+
+test("resetStage", () => {
+  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
+  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), nil, 2)
+  assembly.content.add(entity1)
+  assembly.content.add(entity2)
+
+  const stage = assembly.getStage(2)!
+  assemblyUpdater.resetStage(assembly, 2)
+
+  assert.spy(worldUpdater.deleteAllWorldEntities).called_with(match.ref(stage))
+
+  assertWUCalled(entity1, 2, 2, false, 0)
+  assertWUCalled(entity2, 2, 2, false, 1)
+  assertNEntities(2)
+})
+
+describe("trains", () => {
+  let entities: LuaEntity[]
+  let assemblyEntities: RollingStockAssemblyEntity[]
+  before_each(() => {
+    game.surfaces[1].find_entities().forEach((e) => e.destroy())
+    entities = createRollingStocks("locomotive", "cargo-wagon", "fluid-wagon")
+    assemblyEntities = entities.map((e) => {
+      const aEntity = createAssemblyEntity(
+        {
+          name: e.name,
+          orientation: e.orientation,
+        },
+        e.position,
+        nil,
+        1,
+      )
+      aEntity.replaceWorldEntity(1, e)
+      assembly.content.add(aEntity)
+      e.connect_rolling_stock(defines.rail_direction.front)
+      return aEntity
+    })
+  })
+  test("resetTrainLocation", () => {
+    const anEntity = assemblyEntities[1]
+    assemblyUpdater.resetTrain(assembly, anEntity)
+
+    assertWUCalled(assemblyEntities[2], 1, 1, true, 0)
+    assertWUCalled(assemblyEntities[1], 1, 1, true, 1)
+    assertWUCalled(assemblyEntities[0], 1, 1, true, 2)
+    assertNEntities(3)
+  })
+  test("setTrainLocationToCurrent", () => {
+    entities[0].train!.speed = 10
+    after_ticks(10, () => {
+      const anEntity = assemblyEntities[1]
+      assemblyUpdater.setTrainLocationToCurrent(assembly, anEntity)
+
+      for (let i = 0; i < 3; i++) {
+        assert.same(entities[i].position, assemblyEntities[i].position)
+      }
+      assertWUCalled(assemblyEntities[2], 1, 1, false, 0)
+      assertWUCalled(assemblyEntities[1], 1, 1, false, 1)
+      assertWUCalled(assemblyEntities[0], 1, 1, false, 2)
+      assertNEntities(3)
+    })
   })
 })

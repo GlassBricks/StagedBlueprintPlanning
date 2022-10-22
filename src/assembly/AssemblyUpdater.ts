@@ -12,6 +12,7 @@
 import {
   AssemblyEntity,
   createAssemblyEntity,
+  RollingStockAssemblyEntity,
   SavedDirection,
   StageNumber,
   UndergroundBeltAssemblyEntity,
@@ -81,6 +82,27 @@ export interface AssemblyUpdater {
 
   tryDollyEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
   moveEntityToStage(assembly: AssemblyData, newStage: StageNumber, entity: AssemblyEntity): StageMoveResult
+
+  resetStage(assembly: AssemblyData, stage: StageNumber): void
+
+  resetProp<T extends Entity>(
+    assembly: AssemblyData,
+    entity: AssemblyEntity<T>,
+    stageNumber: StageNumber,
+    prop: keyof T,
+  ): boolean
+  movePropDown<T extends Entity>(
+    assembly: AssemblyData,
+    entity: AssemblyEntity<T>,
+    stageNumber: StageNumber,
+    prop: keyof T,
+  ): boolean
+
+  resetAllProps(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+  moveAllPropsDown(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+
+  resetTrain(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void
+  setTrainLocationToCurrent(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void
 }
 export type UpdateSuccess = "updated" | "no-change"
 export type RotateError = "cannot-rotate" | "cannot-flip-multi-pair-underground"
@@ -99,7 +121,7 @@ export function createAssemblyUpdater(
   entitySaver: EntitySaver,
   wireSaver: WireSaver,
 ): AssemblyUpdater {
-  const { updateWorldEntities } = worldUpdater
+  const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
 
@@ -473,6 +495,99 @@ export function createAssemblyUpdater(
     tryApplyUpgradeTarget: tryUpgradeEntityFromWorld,
     updateWiresFromWorld,
     moveEntityToStage,
+    resetStage(assembly: AssemblyData, stageNumber: StageNumber) {
+      const stage = assembly.getStage(stageNumber)
+      if (!stage) return
+      worldUpdater.deleteAllWorldEntities(stage)
+      const updateLater: RollingStockAssemblyEntity[] = []
+      for (const entity of assembly.content.iterateAllEntities()) {
+        if (entity.isRollingStock()) {
+          updateLater.push(entity)
+        } else {
+          refreshEntityAtStage(assembly, stageNumber, entity)
+        }
+      }
+      for (const entity of updateLater) {
+        refreshEntityAtStage(assembly, stageNumber, entity)
+      }
+    },
+    resetProp<T extends Entity>(
+      assembly: AssemblyData,
+      entity: AssemblyEntity<T>,
+      stageNumber: StageNumber,
+      prop: keyof T,
+    ): boolean {
+      const moved = entity.resetProp(stageNumber, prop)
+      if (moved) updateWorldEntities(assembly, entity, stageNumber, nil)
+      return moved
+    },
+    movePropDown<T extends Entity>(
+      assembly: AssemblyData,
+      entity: AssemblyEntity<T>,
+      stageNumber: StageNumber,
+      prop: keyof T,
+    ): boolean {
+      const movedStage = entity.movePropDown(stageNumber, prop)
+      if (movedStage) {
+        updateWorldEntities(assembly, entity, movedStage, nil)
+        return true
+      }
+      return false
+    },
+    resetAllProps(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+      const moved = entity.resetValue(stageNumber)
+      if (moved) updateWorldEntities(assembly, entity, stageNumber, nil)
+      return moved
+    },
+    moveAllPropsDown(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+      const movedStage = entity.moveValueDown(stageNumber)
+      if (movedStage) {
+        updateWorldEntities(assembly, entity, movedStage, nil)
+        return true
+      }
+      return false
+    },
+    resetTrain(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void {
+      const stage = entity.firstStage
+      const luaEntity = entity.getWorldEntity(stage)
+      if (!luaEntity) {
+        updateWorldEntities(assembly, entity, stage, stage, true)
+        return
+      }
+
+      const train = luaEntity.train
+      if (!train) return
+
+      const entities = train.carriages
+
+      const content = assembly.content
+      const assemblyEntities = entities.map((e) => content.findCompatible(e, nil)!)
+      for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
+      for (const entity of assemblyEntities) updateWorldEntities(assembly, entity, stage, stage, true)
+    },
+    setTrainLocationToCurrent(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void {
+      const stageNum = entity.firstStage
+      const luaEntity = entity.getWorldEntity(stageNum)
+      if (!luaEntity) return
+
+      const train = luaEntity.train
+      if (!train) return
+
+      const entities = train.carriages
+      const content = assembly.content
+
+      for (const luaEntity of entities) {
+        const assemblyEntity = content.findCompatible(luaEntity, nil)
+        if (assemblyEntity) {
+          deleteExtraEntitiesOnly(assemblyEntity)
+          content.changePosition(assemblyEntity, luaEntity.position)
+          updateWorldEntities(assembly, assemblyEntity, stageNum, stageNum)
+        } else {
+          // add
+          AssemblyUpdater.addNewEntity(assembly, stageNum, luaEntity)
+        }
+      }
+    },
   }
 }
 

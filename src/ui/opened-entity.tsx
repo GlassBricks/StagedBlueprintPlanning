@@ -10,7 +10,6 @@
  */
 
 import { Stage } from "../assembly/AssemblyDef"
-import { AssemblyOperations } from "../assembly/AssemblyOperations"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { entityPotentiallyUpdated } from "../assembly/event-listener"
 import { BuildableEntityType, Settings } from "../constants"
@@ -145,10 +144,10 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     this.rerender(false)
   }
   private resetTrain() {
-    AssemblyOperations.resetTrain(this.stage.assembly, this.entity)
+    AssemblyUpdater.resetTrain(this.stage.assembly, this.entity)
   }
   private setTrainLocationHere() {
-    AssemblyOperations.setTrainLocationToCurrent(this.stage.assembly, this.entity)
+    AssemblyUpdater.setTrainLocationToCurrent(this.stage.assembly, this.entity)
   }
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Spec {
@@ -188,18 +187,18 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   private resetProp(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop === true) {
-      AssemblyOperations.resetAllProps(this.stage.assembly, this.entity, this.stage.stageNumber)
+      AssemblyUpdater.resetAllProps(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
-      AssemblyOperations.resetProp(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      AssemblyUpdater.resetProp(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(true)
   }
   private applyToLowerStage(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop === true) {
-      AssemblyOperations.moveAllPropsDown(this.stage.assembly, this.entity, this.stage.stageNumber)
+      AssemblyUpdater.moveAllPropsDown(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
-      AssemblyOperations.movePropDown(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      AssemblyUpdater.movePropDown(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(false)
   }
