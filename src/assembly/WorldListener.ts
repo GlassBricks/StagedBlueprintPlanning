@@ -201,7 +201,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   }
 
   /** Also asserts that stage > entity's first stage. */
-  function getCompatibleOrAdd(
+  function getCompatibleEntityOrAdd(
     assembly: AssemblyData,
     entity: LuaEntity,
     stage: StageNumber,
@@ -242,10 +242,10 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     previousDirection: defines.direction | nil,
     byPlayer: PlayerIndex | nil,
   ): false | nil {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
+    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return false
 
-    const result = tryUpdateEntityFromWorld(assembly, stage, existing, entity)
+    const result = tryUpdateEntityFromWorld(assembly, stage, existing)
     notifyIfError(result, entity, byPlayer)
   }
 
@@ -256,9 +256,9 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     previousDirection: defines.direction,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
+    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return
-    const result = tryRotateEntityToMatchWorld(assembly, stage, existing, entity)
+    const result = tryRotateEntityToMatchWorld(assembly, stage, existing)
     notifyIfError(result, entity, byPlayer)
   }
 
@@ -268,10 +268,10 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     entity: LuaEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
+    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
 
-    const result = tryApplyUpgradeTarget(assembly, stage, existing, entity)
+    const result = tryApplyUpgradeTarget(assembly, stage, existing)
     notifyIfError(result, entity, byPlayer)
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }
@@ -282,7 +282,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     entity: LuaEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
+    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
     const result = updateWiresFromWorld(assembly, stage, existing)
     if (result === "max-connections-exceeded") {

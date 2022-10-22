@@ -56,27 +56,12 @@ export interface AssemblyUpdater {
   /** Replaces entity with an error highlight */
   clearEntityAtStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
 
-  tryUpdateEntityFromWorld(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-    entitySource: LuaEntity,
-  ): EntityUpdateResult
+  tryUpdateEntityFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
 
-  tryRotateEntityToMatchWorld(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-    entitySource: LuaEntity,
-  ): EntityRotateResult
+  tryRotateEntityToMatchWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityRotateResult
 
   /** Doesn't cancel upgrade */
-  tryApplyUpgradeTarget(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-    entitySource: LuaEntity,
-  ): EntityUpdateResult
+  tryApplyUpgradeTarget(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
 
   updateWiresFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult
 
@@ -234,8 +219,9 @@ export function createAssemblyUpdater(
     assembly: AssemblyData,
     stage: StageNumber,
     entity: AssemblyEntity,
-    entitySource: LuaEntity,
   ): EntityUpdateResult {
+    const entitySource = entity.getWorldEntity(stage)
+    if (!entitySource) return "no-change"
     if (entitySource.type === "underground-belt") {
       return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
     }
@@ -274,8 +260,9 @@ export function createAssemblyUpdater(
     assembly: AssemblyData,
     stage: StageNumber,
     entity: AssemblyEntity,
-    entitySource: LuaEntity,
   ): EntityRotateResult {
+    const entitySource = entity.getWorldEntity(stage)
+    if (!entitySource) return "no-change"
     if (entitySource.type === "underground-belt") {
       return tryRotateUnderground(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
     }
@@ -299,8 +286,9 @@ export function createAssemblyUpdater(
     assembly: AssemblyData,
     stage: StageNumber,
     entity: AssemblyEntity,
-    entitySource: LuaEntity,
   ): EntityUpdateResult {
+    const entitySource = entity.getWorldEntity(stage)
+    if (!entitySource) return "no-change"
     if (entitySource.type === "underground-belt") {
       return tryUpgradeUndergroundBeltFromWorld(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
     }

@@ -224,7 +224,7 @@ describe("onEntityPotentiallyUpdated", () => {
     })
     worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity, nil, playerIndex)
 
-    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity)
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity)
     if (message) assertNotified(luaEntity, [message], true)
   })
 
@@ -238,7 +238,7 @@ describe("onEntityPotentiallyUpdated", () => {
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter" })
     worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity2, nil, playerIndex)
 
-    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity2)
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity)
   })
 
   test("works with upgrade-compatible entity (fast-replace) with different direction", () => {
@@ -252,7 +252,7 @@ describe("onEntityPotentiallyUpdated", () => {
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter", direction: defines.direction.south })
     worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity2, oldDirection, playerIndex)
 
-    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity2)
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity)
   })
 })
 
@@ -276,7 +276,7 @@ describe("onEntityRotated", () => {
     })
     worldListener.onEntityRotated(assembly, 2, luaEntity, luaEntity.direction, playerIndex)
 
-    assert.spy(assemblyUpdater.tryRotateEntityToMatchWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity)
+    assert.spy(assemblyUpdater.tryRotateEntityToMatchWorld).was.called_with(match.ref(assembly), 2, entity)
     if (message) assertNotified(luaEntity, [message], true)
   })
 })
@@ -296,7 +296,7 @@ describe("onEntityMarkedForUpgrade", () => {
     })
     worldListener.onEntityMarkedForUpgrade(assembly, 2, luaEntity, playerIndex)
 
-    assert.spy(assemblyUpdater.tryApplyUpgradeTarget).was.called_with(match.ref(assembly), 2, entity, luaEntity)
+    assert.spy(assemblyUpdater.tryApplyUpgradeTarget).was.called_with(match.ref(assembly), 2, entity)
     if (message) assertNotified(luaEntity, [message], true)
   })
 })
