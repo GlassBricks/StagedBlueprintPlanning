@@ -177,29 +177,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     )
   }
 
-  function onEntityDeleted(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
-    const existing = assembly.content.findCompatible(entity, nil)
-    if (!existing) return
-    const existingStage = existing.firstStage
-
-    if (existingStage !== stage) {
-      if (existingStage < stage) {
-        disallowEntityDeletion(assembly, stage, existing)
-      }
-      // else: stage > existingStage; bug, ignore
-      return
-    }
-
-    deleteEntityOrCreateSettingsRemnant(assembly, existing)
-  }
-
-  function onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
-    const existing = assembly.content.findCompatible(entity, nil)
-    if (existing) {
-      clearEntityAtStage(assembly, stage, existing)
-    }
-  }
-
   /** Also asserts that stage > entity's first stage. */
   function getCompatibleEntityOrAdd(
     assembly: AssemblyData,
@@ -235,63 +212,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     }
   }
 
-  function onEntityPotentiallyUpdated(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    previousDirection: defines.direction | nil,
-    byPlayer: PlayerIndex | nil,
-  ): false | nil {
-    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
-    if (!existing) return false
-
-    const result = tryUpdateEntityFromWorld(assembly, stage, existing)
-    notifyIfError(result, entity, byPlayer)
-  }
-
-  function onEntityRotated(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    previousDirection: defines.direction,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
-    if (!existing) return
-    const result = tryRotateEntityToMatchWorld(assembly, stage, existing)
-    notifyIfError(result, entity, byPlayer)
-  }
-
-  function onEntityMarkedForUpgrade(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
-    if (!existing) return
-
-    const result = tryApplyUpgradeTarget(assembly, stage, existing)
-    notifyIfError(result, entity, byPlayer)
-    if (entity.valid) entity.cancel_upgrade(entity.force)
-  }
-
-  function onCircuitWiresPotentiallyUpdated(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
-    if (!existing) return
-    const result = updateWiresFromWorld(assembly, stage, existing)
-    if (result === "max-connections-exceeded") {
-      createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
-    } else if (result !== "updated" && result !== "no-change") {
-      assertNever(result)
-    }
-  }
-
   function getEntityFromPreview(entity: LuaEntity, stage: StageNumber, assembly: AssemblyData): AssemblyEntity | nil {
     const entityName = entity.name
     if (!entityName.startsWith(Prototypes.PreviewEntityPrefix)) return nil
@@ -318,10 +238,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     )
   }
 
-  function onCleanupToolUsed(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
-    tryFixEntity(assembly, stage, proxyEntity, true)
-  }
-
   function tryFixEntity(
     assembly: AssemblyData,
     stage: StageNumber,
@@ -342,38 +258,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     }
   }
 
-  function onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
-    const existing = getEntityFromPreview(proxyEntity, stage, assembly)
-    if (!existing) return
-    forceDeleteEntity(assembly, existing)
-  }
-
-  function onMoveEntityToStage(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entityOrPreviewEntity: LuaEntity,
-    byPlayer: PlayerIndex,
-  ): void {
-    const existing = getEntityFromEntityOrPreview(entityOrPreviewEntity, stage, assembly)
-    if (!existing) return
-    const oldStage = existing.firstStage
-    const result = moveEntityToStage(assembly, stage, existing)
-    if (result === "updated") {
-      createNotification(
-        existing,
-        byPlayer,
-        [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
-        false,
-      )
-    } else if (result === "no-change") {
-      createNotification(existing, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
-    } else if (result === "cannot-move-upgraded-underground") {
-      createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
-    } else if (result !== "settings-remnant-revived") {
-      assertNever(result)
-    }
-  }
-
   function getCompatibleAtPositionOrAdd(
     assembly: AssemblyData,
     stage: StageNumber,
@@ -385,23 +269,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     if (existing) return existing
     onEntityCreated(assembly, stage, entity, byPlayer)
     return nil
-  }
-
-  function onEntityMoved(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    oldPosition: Position,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const existing = getCompatibleAtPositionOrAdd(assembly, stage, entity, oldPosition, byPlayer)
-    if (!existing) return
-    assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
-    const result = tryDollyEntity(assembly, stage, existing)
-    const message = moveResultMessage[result]
-    if (message !== nil) {
-      createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
-    }
   }
 
   const moveResultMessage: Record<AssemblyEntityDollyResult, L_Interaction | nil> = {
@@ -416,19 +283,132 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
   return {
     onEntityCreated,
-    onEntityDeleted,
-    onEntityPotentiallyUpdated,
-    onEntityRotated,
-    onCircuitWiresPotentiallyUpdated,
-    onEntityMarkedForUpgrade,
-    onCleanupToolUsed,
+    onEntityDeleted(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
+      const existing = assembly.content.findCompatible(entity, nil)
+      if (!existing) return
+      const existingStage = existing.firstStage
+
+      if (existingStage !== stage) {
+        if (existingStage < stage) {
+          disallowEntityDeletion(assembly, stage, existing)
+        }
+        // else: stage > existingStage; bug, ignore
+        return
+      }
+
+      deleteEntityOrCreateSettingsRemnant(assembly, existing)
+    },
+    onEntityPotentiallyUpdated(
+      assembly: AssemblyData,
+      stage: StageNumber,
+      entity: LuaEntity,
+      previousDirection: defines.direction | nil,
+      byPlayer: PlayerIndex | nil,
+    ): false | nil {
+      const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
+      if (!existing) return false
+
+      const result = tryUpdateEntityFromWorld(assembly, stage, existing)
+      notifyIfError(result, entity, byPlayer)
+    },
+    onEntityRotated(
+      assembly: AssemblyData,
+      stage: StageNumber,
+      entity: LuaEntity,
+      previousDirection: defines.direction,
+      byPlayer: PlayerIndex | nil,
+    ): void {
+      const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
+      if (!existing) return
+      const result = tryRotateEntityToMatchWorld(assembly, stage, existing)
+      notifyIfError(result, entity, byPlayer)
+    },
+    onCircuitWiresPotentiallyUpdated(
+      assembly: AssemblyData,
+      stage: StageNumber,
+      entity: LuaEntity,
+      byPlayer: PlayerIndex | nil,
+    ): void {
+      const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
+      if (!existing) return
+      const result = updateWiresFromWorld(assembly, stage, existing)
+      if (result === "max-connections-exceeded") {
+        createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
+      } else if (result !== "updated" && result !== "no-change") {
+        assertNever(result)
+      }
+    },
+    onEntityMarkedForUpgrade(
+      assembly: AssemblyData,
+      stage: StageNumber,
+      entity: LuaEntity,
+      byPlayer: PlayerIndex | nil,
+    ): void {
+      const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
+      if (!existing) return
+
+      const result = tryApplyUpgradeTarget(assembly, stage, existing)
+      notifyIfError(result, entity, byPlayer)
+      if (entity.valid) entity.cancel_upgrade(entity.force)
+    },
+    onCleanupToolUsed(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
+      tryFixEntity(assembly, stage, proxyEntity, true)
+    },
     tryFixEntity(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
       tryFixEntity(assembly, stage, proxyEntity, false)
     },
-    onEntityForceDeleted,
-    onEntityDied,
-    onMoveEntityToStage,
-    onEntityMoved,
+    onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
+      const existing = getEntityFromPreview(proxyEntity, stage, assembly)
+      if (!existing) return
+      forceDeleteEntity(assembly, existing)
+    },
+    onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
+      const existing = assembly.content.findCompatible(entity, nil)
+      if (existing) {
+        clearEntityAtStage(assembly, stage, existing)
+      }
+    },
+    onMoveEntityToStage(
+      assembly: AssemblyData,
+      stage: StageNumber,
+      entityOrPreviewEntity: LuaEntity,
+      byPlayer: PlayerIndex,
+    ): void {
+      const existing = getEntityFromEntityOrPreview(entityOrPreviewEntity, stage, assembly)
+      if (!existing) return
+      const oldStage = existing.firstStage
+      const result = moveEntityToStage(assembly, stage, existing)
+      if (result === "updated") {
+        createNotification(
+          existing,
+          byPlayer,
+          [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
+          false,
+        )
+      } else if (result === "no-change") {
+        createNotification(existing, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
+      } else if (result === "cannot-move-upgraded-underground") {
+        createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+      } else if (result !== "settings-remnant-revived") {
+        assertNever(result)
+      }
+    },
+    onEntityMoved(
+      assembly: AssemblyData,
+      stage: StageNumber,
+      entity: LuaEntity,
+      oldPosition: Position,
+      byPlayer: PlayerIndex | nil,
+    ): void {
+      const existing = getCompatibleAtPositionOrAdd(assembly, stage, entity, oldPosition, byPlayer)
+      if (!existing) return
+      assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
+      const result = tryDollyEntity(assembly, stage, existing)
+      const message = moveResultMessage[result]
+      if (message !== nil) {
+        createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
+      }
+    },
   }
 }
 

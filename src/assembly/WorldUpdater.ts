@@ -130,25 +130,6 @@ export function createWorldUpdater(
     }
   }
 
-  function updateWorldEntities(
-    assembly: AssemblyData,
-    entity: AssemblyEntity,
-    startStage: StageNumber,
-    endStage?: StageNumber,
-    replace?: boolean,
-  ): void {
-    if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
-
-    if (startStage < 1) startStage = 1
-    const maxStage = assembly.numStages()
-    if (!endStage || endStage > maxStage) endStage = maxStage
-    if (startStage > endStage) return
-
-    doUpdateWorldEntities(assembly, entity, startStage, endStage, replace)
-    updatePreviewEntities(assembly, entity)
-    updateHighlights(assembly, entity, startStage, endStage)
-  }
-
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
     entity.rotatable = false
@@ -158,28 +139,6 @@ export function createWorldUpdater(
     entity.minable = true
     entity.rotatable = true
     entity.destructible = false
-  }
-
-  function tryMoveEntity(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-  ): AssemblyEntityDollyResult {
-    assert(!entity.isUndergroundBelt(), "can't move underground belts")
-    const movedEntity = entity.getWorldEntity(stage)
-    if (!movedEntity) return "entities-missing"
-    const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
-    if (moveResult !== "success") {
-      forceMoveEntity(movedEntity, entity.position, entity.getDirection())
-    } else {
-      entity.setDirection(movedEntity.direction as SavedDirection)
-      deleteHighlights(entity)
-      updateHighlights(assembly, entity, entity.firstStage, assembly.numStages())
-      const posChanged = assembly.content.changePosition(entity, movedEntity.position)
-      assert(posChanged, "failed to change position in assembly content")
-    }
-
-    return moveResult
   }
 
   function tryMoveOtherEntities(
@@ -228,11 +187,6 @@ export function createWorldUpdater(
     return true
   }
 
-  function clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
-    entity.getWorldEntity(stage)?.destroy()
-    updatePreviewEntities(assembly, entity)
-    updateHighlights(assembly, entity, stage, stage)
-  }
   function makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
     assert(entity.isSettingsRemnant)
     entity.destroyAllWorldOrPreviewEntities()
@@ -247,9 +201,46 @@ export function createWorldUpdater(
   }
 
   return {
-    updateWorldEntities,
-    tryMoveEntity: tryMoveEntity,
-    clearWorldEntity,
+    updateWorldEntities(
+      assembly: AssemblyData,
+      entity: AssemblyEntity,
+      startStage: StageNumber,
+      endStage?: StageNumber,
+      replace?: boolean,
+    ): void {
+      if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+
+      if (startStage < 1) startStage = 1
+      const maxStage = assembly.numStages()
+      if (!endStage || endStage > maxStage) endStage = maxStage
+      if (startStage > endStage) return
+
+      doUpdateWorldEntities(assembly, entity, startStage, endStage, replace)
+      updatePreviewEntities(assembly, entity)
+      updateHighlights(assembly, entity, startStage, endStage)
+    },
+    tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
+      assert(!entity.isUndergroundBelt(), "can't move underground belts")
+      const movedEntity = entity.getWorldEntity(stage)
+      if (!movedEntity) return "entities-missing"
+      const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
+      if (moveResult !== "success") {
+        forceMoveEntity(movedEntity, entity.position, entity.getDirection())
+      } else {
+        entity.setDirection(movedEntity.direction as SavedDirection)
+        deleteHighlights(entity)
+        updateHighlights(assembly, entity, entity.firstStage, assembly.numStages())
+        const posChanged = assembly.content.changePosition(entity, movedEntity.position)
+        assert(posChanged, "failed to change position in assembly content")
+      }
+
+      return moveResult
+    },
+    clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
+      entity.getWorldEntity(stage)?.destroy()
+      updatePreviewEntities(assembly, entity)
+      updateHighlights(assembly, entity, stage, stage)
+    },
     deleteAllEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldOrPreviewEntities()
       highlighter.deleteHighlights(entity)

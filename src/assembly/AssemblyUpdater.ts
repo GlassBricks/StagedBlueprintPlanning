@@ -110,48 +110,8 @@ export function createAssemblyUpdater(
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
 
-  function addNewEntity(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): AssemblyEntity<any> | nil {
-    const [saved, savedDir] = saveEntity(entity)
-    if (!saved) return nil
-    const { content } = assembly
-    const assemblyEntity = createAssemblyEntity(saved, entity.position, savedDir, stage)
-    assemblyEntity.replaceWorldEntity(stage, entity)
-    content.add(assemblyEntity)
-
-    if (entity.type === "underground-belt") {
-      // match direction with underground pair
-      const [pair] = findUndergroundPair(content, assemblyEntity as UndergroundBeltAssemblyEntity)
-      if (pair) {
-        const otherDir = pair.firstValue.type
-        ;(assemblyEntity as UndergroundBeltAssemblyEntity).setUndergroundBeltDirection(
-          otherDir === "output" ? "input" : "output",
-        )
-      }
-    }
-
-    saveWireConnections(content, assemblyEntity, stage)
-    updateWorldEntities(assembly, assemblyEntity, 1)
-
-    return assemblyEntity
-  }
-
   function refreshEntityAtStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
     return updateWorldEntities(assembly, entity, stage, stage, false)
-  }
-
-  function refreshEntityAllStages(assembly: AssemblyData, entity: AssemblyEntity): void {
-    return updateWorldEntities(assembly, entity, 1, nil, false)
-  }
-
-  function moveEntityOnPreviewReplace(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-  ): StageNumber | nil {
-    if (stage >= entity.firstStage) return nil
-    const oldStage = entity.moveToStage(stage)
-    updateWorldEntities(assembly, entity, stage, oldStage)
-    return oldStage
   }
 
   function reviveSettingsRemnant(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): boolean {
@@ -160,10 +120,6 @@ export function createAssemblyUpdater(
     entity.moveToStage(stage)
     worldUpdater.reviveSettingsRemnant(assembly, entity)
     return true
-  }
-
-  function disallowEntityDeletion(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
-    return updateWorldEntities(assembly, entity, stage, stage, true)
   }
 
   function shouldMakeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity) {
@@ -178,21 +134,6 @@ export function createAssemblyUpdater(
       }
     }
     return false
-  }
-
-  function deleteEntityOrCreateSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
-    if (shouldMakeSettingsRemnant(assembly, entity)) {
-      entity.isSettingsRemnant = true
-      worldUpdater.makeSettingsRemnant(assembly, entity)
-    } else {
-      assembly.content.delete(entity)
-      worldUpdater.deleteAllEntities(entity)
-    }
-  }
-
-  function forceDeleteEntity(assembly: AssemblyData, entity: AssemblyEntity): void {
-    assembly.content.delete(entity)
-    worldUpdater.deleteAllEntities(entity)
   }
 
   function undoRotate(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity) {
@@ -215,32 +156,6 @@ export function createAssemblyUpdater(
     return rotateAllowed
   }
 
-  function tryUpdateEntityFromWorld(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-  ): EntityUpdateResult {
-    const entitySource = entity.getWorldEntity(stage)
-    if (!entitySource) return "no-change"
-    if (entitySource.type === "underground-belt") {
-      return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
-    }
-
-    const newDirection = entitySource.direction as SavedDirection
-    const rotated = newDirection !== entity.getDirection()
-    if (rotated) {
-      if (!setRotationOrUndo(assembly, stage, entity, newDirection)) {
-        return "cannot-rotate"
-      }
-    }
-    const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
-    if (hasDiff || rotated) {
-      updateWorldEntities(assembly, entity, stage)
-      return "updated"
-    }
-    return "no-change"
-  }
-
   function doUpdateEntityFromWorld(
     assembly: AssemblyData,
     stage: StageNumber,
@@ -256,63 +171,9 @@ export function createAssemblyUpdater(
     return hasDiff
   }
 
-  function tryRotateEntityFromWorld(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-  ): EntityRotateResult {
-    const entitySource = entity.getWorldEntity(stage)
-    if (!entitySource) return "no-change"
-    if (entitySource.type === "underground-belt") {
-      return tryRotateUnderground(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
-    }
-
-    const newDirection = entitySource.direction as SavedDirection
-    const rotated = newDirection !== entity.getDirection()
-    if (!rotated) return "no-change"
-    if (setRotationOrUndo(assembly, stage, entity, newDirection)) {
-      updateWorldEntities(assembly, entity, stage)
-      return "updated"
-    }
-    return "cannot-rotate"
-  }
-
   function checkUpgradeType(existing: AssemblyEntity, upgradeType: string): void {
     if (!areUpgradeable(existing.firstValue.name, upgradeType))
       error(` incompatible upgrade from ${existing.firstValue.name} to ${upgradeType}`)
-  }
-
-  function tryUpgradeEntityFromWorld(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-  ): EntityUpdateResult {
-    const entitySource = entity.getWorldEntity(stage)
-    if (!entitySource) return "no-change"
-    if (entitySource.type === "underground-belt") {
-      return tryUpgradeUndergroundBeltFromWorld(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
-    }
-
-    const rotateDir = entitySource.get_upgrade_direction() as SavedDirection | nil
-    const rotated = rotateDir !== nil && rotateDir !== entity.getDirection()
-    if (rotated) {
-      if (!setRotationOrUndo(assembly, stage, entity, rotateDir)) {
-        // don't update other stuff if rotation failed
-        return "cannot-rotate"
-      }
-    }
-
-    let upgraded = false
-    const upgradeType = entitySource.get_upgrade_target()?.name
-    if (upgradeType) {
-      checkUpgradeType(entity, upgradeType)
-      upgraded = entity.applyUpgradeAtStage(stage, upgradeType)
-    }
-    if (rotated || upgraded) {
-      updateWorldEntities(assembly, entity, stage)
-      return "updated"
-    }
-    return "no-change"
   }
 
   function tryUpdateUndergroundFromFastReplace(
@@ -422,25 +283,6 @@ export function createAssemblyUpdater(
     return "updated"
   }
 
-  function updateWiresFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult {
-    const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage)
-    if (maxConnectionsExceeded) {
-      updateWorldEntities(assembly, entity, entity.firstStage)
-      return "max-connections-exceeded"
-    }
-    if (!connectionsChanged) return "no-change"
-
-    const circuitConnections = assembly.content.getCircuitConnections(entity)
-    if (circuitConnections) {
-      checkDefaultControlBehavior(assembly, entity, stage)
-      for (const [otherEntity] of circuitConnections) {
-        checkDefaultControlBehavior(assembly, otherEntity, stage)
-      }
-    }
-    updateWorldEntities(assembly, entity, entity.firstStage)
-    return "updated"
-  }
-
   function checkDefaultControlBehavior(assembly: AssemblyData, entity: AssemblyEntity, stage: StageNumber): void {
     if (!hasControlBehaviorSet(entity, stage)) {
       fixEmptyControlBehavior(entity)
@@ -449,40 +291,169 @@ export function createAssemblyUpdater(
     }
   }
 
-  function moveEntityToStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageMoveResult {
-    if (entity.isSettingsRemnant) {
-      reviveSettingsRemnant(assembly, stage, entity)
-      return "settings-remnant-revived"
-    }
-    const oldStage = entity.firstStage
-    if (oldStage === stage) return "no-change"
-
-    if (entity.isUndergroundBelt() && entity.hasStageDiff()) {
-      return "cannot-move-upgraded-underground"
-    }
-
-    // move
-    entity.moveToStage(stage)
-    updateWorldEntities(assembly, entity, min(oldStage, stage))
-    return "updated"
-  }
-
   return {
-    addNewEntity,
+    addNewEntity(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): AssemblyEntity<any> | nil {
+      const [saved, savedDir] = saveEntity(entity)
+      if (!saved) return nil
+      const { content } = assembly
+      const assemblyEntity = createAssemblyEntity(saved, entity.position, savedDir, stage)
+      assemblyEntity.replaceWorldEntity(stage, entity)
+      content.add(assemblyEntity)
+
+      if (entity.type === "underground-belt") {
+        // match direction with underground pair
+        const [pair] = findUndergroundPair(content, assemblyEntity as UndergroundBeltAssemblyEntity)
+        if (pair) {
+          const otherDir = pair.firstValue.type
+          ;(assemblyEntity as UndergroundBeltAssemblyEntity).setUndergroundBeltDirection(
+            otherDir === "output" ? "input" : "output",
+          )
+        }
+      }
+
+      saveWireConnections(content, assemblyEntity, stage)
+      updateWorldEntities(assembly, assemblyEntity, 1)
+
+      return assemblyEntity
+    },
     refreshEntityAtStage,
-    refreshEntityAllStages,
-    moveEntityOnPreviewReplace,
+    refreshEntityAllStages(assembly: AssemblyData, entity: AssemblyEntity): void {
+      return updateWorldEntities(assembly, entity, 1, nil, false)
+    },
+    moveEntityOnPreviewReplace(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil {
+      if (stage >= entity.firstStage) return nil
+      const oldStage = entity.moveToStage(stage)
+      updateWorldEntities(assembly, entity, stage, oldStage)
+      return oldStage
+    },
     tryDollyEntity: worldUpdater.tryMoveEntity,
-    disallowEntityDeletion,
-    deleteEntityOrCreateSettingsRemnant,
-    forceDeleteEntity,
+    disallowEntityDeletion(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
+      return updateWorldEntities(assembly, entity, stage, stage, true)
+    },
+    deleteEntityOrCreateSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+      if (shouldMakeSettingsRemnant(assembly, entity)) {
+        entity.isSettingsRemnant = true
+        worldUpdater.makeSettingsRemnant(assembly, entity)
+      } else {
+        assembly.content.delete(entity)
+        worldUpdater.deleteAllEntities(entity)
+      }
+    },
+    forceDeleteEntity(assembly: AssemblyData, entity: AssemblyEntity): void {
+      assembly.content.delete(entity)
+      worldUpdater.deleteAllEntities(entity)
+    },
     reviveSettingsRemnant,
     clearEntityAtStage: worldUpdater.clearWorldEntity,
-    tryUpdateEntityFromWorld,
-    tryRotateEntityToMatchWorld: tryRotateEntityFromWorld,
-    tryApplyUpgradeTarget: tryUpgradeEntityFromWorld,
-    updateWiresFromWorld,
-    moveEntityToStage,
+    tryUpdateEntityFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
+      const entitySource = entity.getWorldEntity(stage)
+      if (!entitySource) return "no-change"
+      if (entitySource.type === "underground-belt") {
+        return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
+      }
+
+      const newDirection = entitySource.direction as SavedDirection
+      const rotated = newDirection !== entity.getDirection()
+      if (rotated) {
+        if (!setRotationOrUndo(assembly, stage, entity, newDirection)) {
+          return "cannot-rotate"
+        }
+      }
+      const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
+      if (hasDiff || rotated) {
+        updateWorldEntities(assembly, entity, stage)
+        return "updated"
+      }
+      return "no-change"
+    },
+    tryRotateEntityToMatchWorld(
+      assembly: AssemblyData,
+      stage: StageNumber,
+      entity: AssemblyEntity,
+    ): EntityRotateResult {
+      const entitySource = entity.getWorldEntity(stage)
+      if (!entitySource) return "no-change"
+      if (entitySource.type === "underground-belt") {
+        return tryRotateUnderground(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
+      }
+
+      const newDirection = entitySource.direction as SavedDirection
+      const rotated = newDirection !== entity.getDirection()
+      if (!rotated) return "no-change"
+      if (setRotationOrUndo(assembly, stage, entity, newDirection)) {
+        updateWorldEntities(assembly, entity, stage)
+        return "updated"
+      }
+      return "cannot-rotate"
+    },
+    tryApplyUpgradeTarget(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
+      const entitySource = entity.getWorldEntity(stage)
+      if (!entitySource) return "no-change"
+      if (entitySource.type === "underground-belt") {
+        return tryUpgradeUndergroundBeltFromWorld(
+          assembly,
+          stage,
+          entity as UndergroundBeltAssemblyEntity,
+          entitySource,
+        )
+      }
+
+      const rotateDir = entitySource.get_upgrade_direction() as SavedDirection | nil
+      const rotated = rotateDir !== nil && rotateDir !== entity.getDirection()
+      if (rotated) {
+        if (!setRotationOrUndo(assembly, stage, entity, rotateDir)) {
+          // don't update other stuff if rotation failed
+          return "cannot-rotate"
+        }
+      }
+
+      let upgraded = false
+      const upgradeType = entitySource.get_upgrade_target()?.name
+      if (upgradeType) {
+        checkUpgradeType(entity, upgradeType)
+        upgraded = entity.applyUpgradeAtStage(stage, upgradeType)
+      }
+      if (rotated || upgraded) {
+        updateWorldEntities(assembly, entity, stage)
+        return "updated"
+      }
+      return "no-change"
+    },
+    updateWiresFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult {
+      const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage)
+      if (maxConnectionsExceeded) {
+        updateWorldEntities(assembly, entity, entity.firstStage)
+        return "max-connections-exceeded"
+      }
+      if (!connectionsChanged) return "no-change"
+
+      const circuitConnections = assembly.content.getCircuitConnections(entity)
+      if (circuitConnections) {
+        checkDefaultControlBehavior(assembly, entity, stage)
+        for (const [otherEntity] of circuitConnections) {
+          checkDefaultControlBehavior(assembly, otherEntity, stage)
+        }
+      }
+      updateWorldEntities(assembly, entity, entity.firstStage)
+      return "updated"
+    },
+    moveEntityToStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageMoveResult {
+      if (entity.isSettingsRemnant) {
+        reviveSettingsRemnant(assembly, stage, entity)
+        return "settings-remnant-revived"
+      }
+      const oldStage = entity.firstStage
+      if (oldStage === stage) return "no-change"
+
+      if (entity.isUndergroundBelt() && entity.hasStageDiff()) {
+        return "cannot-move-upgraded-underground"
+      }
+
+      // move
+      entity.moveToStage(stage)
+      updateWorldEntities(assembly, entity, min(oldStage, stage))
+      return "updated"
+    },
     resetStage(assembly: AssemblyData, stageNumber: StageNumber) {
       const stage = assembly.getStage(stageNumber)
       if (!stage) return

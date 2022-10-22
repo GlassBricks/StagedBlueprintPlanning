@@ -253,19 +253,6 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
   }
 
-  function makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
-    if (!entity.isSettingsRemnant) return
-    for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
-    for (const [i, stage] of assembly.iterateStages()) {
-      updateHighlight(entity, i, stage.surface, "settingsRemnantHighlight", true)
-    }
-  }
-  function reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
-    if (entity.isSettingsRemnant) return
-    entity.destroyAllExtraEntities("settingsRemnantHighlight")
-    updateHighlights(assembly, entity)
-  }
-
   return {
     updateHighlights,
     deleteHighlights(entity: AssemblyEntity): void {
@@ -274,8 +261,18 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber) {
       for (const type of keys<HighlightEntities>()) entity.destroyExtraEntity(type, stage)
     },
-    makeSettingsRemnant,
-    reviveSettingsRemnant,
+    makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+      if (!entity.isSettingsRemnant) return
+      for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
+      for (const [i, stage] of assembly.iterateStages()) {
+        updateHighlight(entity, i, stage.surface, "settingsRemnantHighlight", true)
+      }
+    },
+    reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+      if (entity.isSettingsRemnant) return
+      entity.destroyAllExtraEntities("settingsRemnantHighlight")
+      updateHighlights(assembly, entity)
+    },
   }
 }
 
