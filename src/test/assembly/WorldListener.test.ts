@@ -227,6 +227,33 @@ describe("onEntityPotentiallyUpdated", () => {
     assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity)
     if (message) assertNotified(luaEntity, [message], true)
   })
+
+  test("works with upgrade-compatible entity (fast-replace)", () => {
+    const { luaEntity, entity } = addEntity(2)
+    assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
+      totalAuCalls++
+      return "updated"
+    })
+    luaEntity.destroy()
+    const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter" })
+    worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity2, nil, playerIndex)
+
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity2)
+  })
+
+  test("works with upgrade-compatible entity (fast-replace) with different direction", () => {
+    const { luaEntity, entity } = addEntity(2)
+    assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
+      totalAuCalls++
+      return "updated"
+    })
+    const oldDirection = luaEntity.direction
+    luaEntity.destroy()
+    const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter", direction: defines.direction.south })
+    worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity2, oldDirection, playerIndex)
+
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity2)
+  })
 })
 
 describe("onEntityRotated", () => {
@@ -243,13 +270,13 @@ describe("onEntityRotated", () => {
     ["cannot-flip-multi-pair-underground", L_Interaction.CannotFlipUndergroundDueToMultiplePairs],
   ])('calls tryRotateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
-    assemblyUpdater.tryRotateEntityFromWorld.invokes(() => {
+    assemblyUpdater.tryRotateEntityToMatchWorld.invokes(() => {
       totalAuCalls++
       return result
     })
     worldListener.onEntityRotated(assembly, 2, luaEntity, luaEntity.direction, playerIndex)
 
-    assert.spy(assemblyUpdater.tryRotateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity)
+    assert.spy(assemblyUpdater.tryRotateEntityToMatchWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity)
     if (message) assertNotified(luaEntity, [message], true)
   })
 })
@@ -263,13 +290,13 @@ describe("onEntityMarkedForUpgrade", () => {
 
   test.each(resultMessages)('calls tryUpgradeEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
-    assemblyUpdater.tryUpgradeEntityFromWorld.invokes(() => {
+    assemblyUpdater.tryApplyUpgradeTarget.invokes(() => {
       totalAuCalls++
       return result
     })
     worldListener.onEntityMarkedForUpgrade(assembly, 2, luaEntity, playerIndex)
 
-    assert.spy(assemblyUpdater.tryUpgradeEntityFromWorld).was.called_with(match.ref(assembly), 2, entity, luaEntity)
+    assert.spy(assemblyUpdater.tryApplyUpgradeTarget).was.called_with(match.ref(assembly), 2, entity, luaEntity)
     if (message) assertNotified(luaEntity, [message], true)
   })
 })
@@ -381,20 +408,20 @@ describe("onEntityMoved", () => {
     // already returns nil
     worldListener.onEntityMoved(assembly, 2, luaEntity, luaEntity.position, playerIndex)
 
-    assert.spy(assemblyUpdater.tryMoveEntity).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryDollyEntity).was.called_with(match.ref(assembly), 2, entity)
   })
 
   test("calls tryMoveEntity and notifies if returns error", () => {
     // just one example
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    assemblyUpdater.tryMoveEntity.invokes(() => {
+    assemblyUpdater.tryDollyEntity.invokes(() => {
       totalAuCalls++
       return "entities-missing"
     })
     worldListener.onEntityMoved(assembly, 2, luaEntity, luaEntity.position, playerIndex)
 
-    assert.spy(assemblyUpdater.tryMoveEntity).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryDollyEntity).was.called_with(match.ref(assembly), 2, entity)
     assertNotified(luaEntity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
   })
 })

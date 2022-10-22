@@ -24,7 +24,7 @@ import { getSavedDirection } from "../entity/special-entities"
 import { findUndergroundPair } from "../entity/special-entity-treatment"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { AssemblyData } from "./AssemblyDef"
-import { AssemblyEntityMoveResult, WorldUpdater } from "./WorldUpdater"
+import { AssemblyEntityDollyResult, WorldUpdater } from "./WorldUpdater"
 import min = math.min
 
 /**
@@ -62,7 +62,7 @@ export interface AssemblyUpdater {
     entitySource: LuaEntity,
   ): EntityUpdateResult
 
-  tryRotateEntityFromWorld(
+  tryRotateEntityToMatchWorld(
     assembly: AssemblyData,
     stage: StageNumber,
     entity: AssemblyEntity,
@@ -70,16 +70,16 @@ export interface AssemblyUpdater {
   ): EntityRotateResult
 
   /** Doesn't cancel upgrade */
-  tryUpgradeEntityFromWorld(
+  tryApplyUpgradeTarget(
     assembly: AssemblyData,
     stage: StageNumber,
     entity: AssemblyEntity,
     entitySource: LuaEntity,
   ): EntityUpdateResult
 
-  tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityMoveResult
-
   updateWiresFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult
+
+  tryDollyEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
   moveEntityToStage(assembly: AssemblyData, newStage: StageNumber, entity: AssemblyEntity): StageMoveResult
 }
 export type UpdateSuccess = "updated" | "no-change"
@@ -462,15 +462,15 @@ export function createAssemblyUpdater(
     refreshEntityAtStage,
     refreshEntityAllStages,
     moveEntityOnPreviewReplace,
-    tryMoveEntity: worldUpdater.tryMoveEntity,
+    tryDollyEntity: worldUpdater.tryMoveEntity,
     disallowEntityDeletion,
     deleteEntityOrCreateSettingsRemnant,
     forceDeleteEntity,
     reviveSettingsRemnant,
     clearEntityAtStage: worldUpdater.clearWorldEntity,
     tryUpdateEntityFromWorld,
-    tryRotateEntityFromWorld,
-    tryUpgradeEntityFromWorld,
+    tryRotateEntityToMatchWorld: tryRotateEntityFromWorld,
+    tryApplyUpgradeTarget: tryUpgradeEntityFromWorld,
     updateWiresFromWorld,
     moveEntityToStage,
   }

@@ -48,7 +48,7 @@ export interface WorldUpdater {
    * @param entity the assembly entity
    * @return the result of the move
    */
-  tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityMoveResult
+  tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
 
   /** Removes the world entity at a give stage (and makes error highlight) */
   clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
@@ -63,7 +63,7 @@ export interface WorldUpdater {
   reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
 }
 
-export type AssemblyEntityMoveResult =
+export type AssemblyEntityDollyResult =
   | EntityMoveResult
   | "not-first-stage"
   | "entities-missing"
@@ -157,7 +157,11 @@ export function createWorldUpdater(
     entity.destructible = false
   }
 
-  function tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityMoveResult {
+  function tryMoveEntity(
+    assembly: AssemblyData,
+    stage: StageNumber,
+    entity: AssemblyEntity,
+  ): AssemblyEntityDollyResult {
     assert(!entity.isUndergroundBelt(), "can't move underground belts")
     const movedEntity = entity.getWorldEntity(stage)
     if (!movedEntity) return "entities-missing"
@@ -180,7 +184,7 @@ export function createWorldUpdater(
     entity: AssemblyEntity,
     stage: StageNumber,
     movedEntity: LuaEntity,
-  ): AssemblyEntityMoveResult {
+  ): AssemblyEntityDollyResult {
     if (stage !== entity.firstStage) return "not-first-stage"
 
     // check all entities exist

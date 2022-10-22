@@ -18,7 +18,7 @@ import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { AssemblyData } from "./AssemblyDef"
 import { AssemblyUpdater, EntityUpdateResult } from "./AssemblyUpdater"
-import { AssemblyEntityMoveResult } from "./WorldUpdater"
+import { AssemblyEntityDollyResult } from "./WorldUpdater"
 
 /**
  * Listens to changes in the world and updates the assembly accordingly.
@@ -123,10 +123,10 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     refreshEntityAllStages,
     refreshEntityAtStage,
     reviveSettingsRemnant,
-    tryMoveEntity,
-    tryRotateEntityFromWorld,
+    tryDollyEntity,
+    tryRotateEntityToMatchWorld,
     tryUpdateEntityFromWorld,
-    tryUpgradeEntityFromWorld,
+    tryApplyUpgradeTarget,
     updateWiresFromWorld,
   } = assemblyUpdater
   // ^ for refactoring purposes only
@@ -258,9 +258,8 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   ): void {
     const existing = getCompatibleOrAdd(assembly, entity, stage, previousDirection, byPlayer)
     if (!existing) return
-    const result = tryRotateEntityFromWorld(assembly, stage, existing, entity)
+    const result = tryRotateEntityToMatchWorld(assembly, stage, existing, entity)
     notifyIfError(result, entity, byPlayer)
-    return
   }
 
   function onEntityMarkedForUpgrade(
@@ -272,7 +271,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     const existing = getCompatibleOrAdd(assembly, entity, stage, nil, byPlayer)
     if (!existing) return
 
-    const result = tryUpgradeEntityFromWorld(assembly, stage, existing, entity)
+    const result = tryApplyUpgradeTarget(assembly, stage, existing, entity)
     notifyIfError(result, entity, byPlayer)
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }
@@ -398,14 +397,14 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     const existing = getCompatibleAtPositionOrAdd(assembly, stage, entity, oldPosition, byPlayer)
     if (!existing) return
     assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
-    const result = tryMoveEntity(assembly, stage, existing)
+    const result = tryDollyEntity(assembly, stage, existing)
     const message = moveResultMessage[result]
     if (message !== nil) {
       createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
     }
   }
 
-  const moveResultMessage: Record<AssemblyEntityMoveResult, L_Interaction | nil> = {
+  const moveResultMessage: Record<AssemblyEntityDollyResult, L_Interaction | nil> = {
     success: nil,
     "connected-entities-missing": L_Interaction.ConnectedEntitiesMissing,
     "entities-missing": L_Interaction.EntitiesMissing,
