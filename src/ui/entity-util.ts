@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getStageAtSurface } from "../assembly/Assembly"
-import { Assembly, Stage } from "../assembly/AssemblyDef"
+import { Stage, UserAssembly } from "../assembly/AssemblyDef"
+import { getStageAtSurface } from "../assembly/UserAssembly"
 import { Prototypes } from "../constants"
 import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
 
@@ -33,7 +33,7 @@ export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[St
 }
 
 export function getNextNotableStage(
-  assembly: Assembly,
+  assembly: UserAssembly,
   currentStageNum: StageNumber,
   entity: AssemblyEntity,
 ): StageNumber {

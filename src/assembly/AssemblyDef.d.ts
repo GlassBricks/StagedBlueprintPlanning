@@ -26,7 +26,7 @@ export interface AssemblyData {
   getStageName(stageNumber: StageNumber): LocalisedString
   readonly content: MutableEntityMap
 }
-export interface Assembly extends AssemblyData {
+export interface UserAssembly extends AssemblyData {
   readonly id: AssemblyId
 
   readonly name: MutableState<string>
@@ -66,7 +66,7 @@ export interface Stage extends StageSurface {
   readonly name: MutableState<string>
 
   readonly stageNumber: StageNumber
-  readonly assembly: Assembly
+  readonly assembly: UserAssembly
 
   /** The blueprint should be treated as readonly. */
   takeBlueprint(): BlueprintItemStack | nil
@@ -88,25 +88,25 @@ export const enum AutoSetTilesType {
 
 export interface AssemblyCreatedEvent {
   readonly type: "assembly-created"
-  readonly assembly: Assembly
+  readonly assembly: UserAssembly
 }
 export interface AssemblyDeletedEvent {
   readonly type: "assembly-deleted"
-  readonly assembly: Assembly
+  readonly assembly: UserAssembly
 }
 export interface StageAddedEvent {
   readonly type: "stage-added"
-  readonly assembly: Assembly
+  readonly assembly: UserAssembly
   readonly stage: Stage
 }
 export interface PreStageDeletedEvent {
   readonly type: "pre-stage-deleted"
-  readonly assembly: Assembly
+  readonly assembly: UserAssembly
   readonly stage: Stage
 }
 export interface StageDeletedEvent {
   readonly type: "stage-deleted"
-  readonly assembly: Assembly
+  readonly assembly: UserAssembly
   readonly stage: Stage
 }
 export type GlobalAssemblyEvent =

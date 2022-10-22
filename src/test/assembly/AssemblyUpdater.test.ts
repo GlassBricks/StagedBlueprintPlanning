@@ -29,7 +29,7 @@ import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { makeStubbed } from "../simple-mock"
-import { createMockAssemblyContent, setupTestSurfaces } from "./Assembly-mock"
+import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import direction = defines.direction
 import wire_type = defines.wire_type
 
@@ -45,7 +45,7 @@ let wireSaver: mock.Stubbed<WireSaver>
 
 let worldUpdaterCalls: number
 before_each(() => {
-  assembly = createMockAssemblyContent(surfaces)
+  assembly = createMockAssembly(surfaces)
   worldUpdaterCalls = 0
   worldUpdater = makeStubbed(keys<WorldUpdater>())
   for (const [, v] of pairs(worldUpdater)) {

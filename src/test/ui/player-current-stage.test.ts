@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { _deleteAllAssemblies, createAssembly } from "../../assembly/Assembly"
-import { Assembly } from "../../assembly/AssemblyDef"
+import { UserAssembly } from "../../assembly/AssemblyDef"
+import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { Pos } from "../../lib/geometry"
 import { playerCurrentStage, teleportToAssembly, teleportToStage } from "../../ui/player-current-stage"
 
@@ -25,7 +25,7 @@ after_all(() => {
 })
 
 test("playerCurrentStage", () => {
-  const assembly = createAssembly("Test", 3)
+  const assembly = createUserAssembly("Test", 3)
   const player = game.players[1]!
   player.teleport([0, 0], 1 as SurfaceIndex)
   const currentStage = playerCurrentStage(1 as PlayerIndex)
@@ -47,12 +47,12 @@ test("playerCurrentStage", () => {
 })
 
 describe("teleporting to stage/assembly", () => {
-  let assembly1: Assembly
-  let assembly2: Assembly
+  let assembly1: UserAssembly
+  let assembly2: UserAssembly
   let player: LuaPlayer
   before_all(() => {
-    assembly1 = createAssembly("Test1", 3)
-    assembly2 = createAssembly("Test2", 3)
+    assembly1 = createUserAssembly("Test1", 3)
+    assembly2 = createUserAssembly("Test2", 3)
     player = game.players[1]!
   })
   test("can teleport to stage", () => {

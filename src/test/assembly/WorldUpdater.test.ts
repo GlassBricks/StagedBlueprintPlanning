@@ -21,7 +21,7 @@ import { WireHandler, WireUpdater } from "../../entity/WireHandler"
 import { Pos } from "../../lib/geometry"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { makeMocked, makeStubbed } from "../simple-mock"
-import { createMockAssemblyContent, setupTestSurfaces } from "./Assembly-mock"
+import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 
 interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter"
@@ -38,7 +38,7 @@ const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east as SavedDirection
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
 before_each(() => {
-  assembly = createMockAssemblyContent(surfaces)
+  assembly = createMockAssembly(surfaces)
   entity = createAssemblyEntity(
     {
       name: "inserter",

@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createAssembly } from "../assembly/Assembly"
-import { Assembly } from "../assembly/AssemblyDef"
+import { UserAssembly } from "../assembly/AssemblyDef"
+import { createUserAssembly } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
@@ -100,7 +100,7 @@ if (script.active_mods.testorio !== nil) {
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()
 
-        const assembly = createAssembly("Test", 5)
+        const assembly = createUserAssembly("Test", 5)
         openAssemblySettings(player, assembly)
 
         setupManualTests(assembly)
@@ -173,7 +173,7 @@ commands.add_command("norerun", "", () => {
   // shouldTryRerun = false
 }*/
 
-function setupManualTests(assembly: Assembly) {
+function setupManualTests(assembly: UserAssembly) {
   const player = game.players[1]
   function createEntityWithChanges() {
     const entity = createAssemblyEntity(

@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEvents, getStageAtSurface } from "../assembly/Assembly"
-import { Assembly, Stage } from "../assembly/AssemblyDef"
+import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { getAllAssemblies } from "../assembly/migrations"
+import { AssemblyEvents, getStageAtSurface } from "../assembly/UserAssembly"
 import { StageNumber } from "../entity/AssemblyEntity"
 import {
   assertNever,
@@ -91,7 +91,7 @@ export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   player.teleport(newPosition, stage.surface)
 }
 
-export function teleportToAssembly(player: LuaPlayer, assembly: Assembly): void {
+export function teleportToAssembly(player: LuaPlayer, assembly: UserAssembly): void {
   const currentStage = getStageAtSurface(player.surface.index)
   if (currentStage && currentStage.assembly === assembly) {
     return

@@ -17,8 +17,8 @@ import { areUpgradeable } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { getStageAtSurface } from "./Assembly"
 import { Stage } from "./AssemblyDef"
+import { getStageAtSurface } from "./UserAssembly"
 import { WorldListener } from "./WorldListener"
 
 /**

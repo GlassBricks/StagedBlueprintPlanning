@@ -14,7 +14,7 @@ import { createStageSurface, prepareArea } from "../../assembly/surfaces"
 import { newEntityMap } from "../../entity/EntityMap"
 import { BBox, Pos } from "../../lib/geometry"
 
-export function createMockAssemblyContent(stages: number | LuaSurface[]): AssemblyData {
+export function createMockAssembly(stages: number | LuaSurface[]): AssemblyData {
   const stageSurfaces: StageSurface[] =
     typeof stages === "number"
       ? Array.from({ length: stages }, () => ({ surface: game.surfaces[1] }))

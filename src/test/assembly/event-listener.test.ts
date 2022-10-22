@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createAssembly } from "../../assembly/Assembly"
-import { Assembly } from "../../assembly/AssemblyDef"
+import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _assertInValidState } from "../../assembly/event-listener"
+import { createUserAssembly } from "../../assembly/UserAssembly"
 import { WorldListener } from "../../assembly/WorldListener"
 import { CustomInputs, Prototypes } from "../../constants"
 import { getTempBpItemStack } from "../../entity/EntityHandler"
@@ -21,7 +21,7 @@ import { reviveGhost } from "../reviveGhost"
 import direction = defines.direction
 
 let updater: mock.Stubbed<WorldListener>
-let assembly: Assembly
+let assembly: UserAssembly
 let surface: LuaSurface
 let player: LuaPlayer
 const pos = Pos(0, 0)
@@ -29,7 +29,7 @@ before_all(() => {
   player = game.players[1]
 
   updater = mock(WorldListener, true)
-  assembly = createAssembly("Test", 2)
+  assembly = createUserAssembly("Test", 2)
   surface = assembly.getStage(1)!.surface
 
   player.teleport(pos, surface)

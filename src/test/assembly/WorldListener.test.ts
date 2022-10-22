@@ -25,7 +25,7 @@ import { EntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
 import { makeStubbed } from "../simple-mock"
-import { createMockAssemblyContent, setupTestSurfaces } from "./Assembly-mock"
+import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 
 let worldNotifier: mock.Stubbed<WorldNotifier>
 let assemblyUpdater: mock.Stubbed<AssemblyUpdater>
@@ -59,7 +59,7 @@ after_each(() => {
 const surfaces = setupTestSurfaces(6)
 let assembly: AssemblyData
 before_each(() => {
-  assembly = createMockAssemblyContent(surfaces)
+  assembly = createMockAssembly(surfaces)
 })
 
 const pos = Pos(10.5, 10.5)

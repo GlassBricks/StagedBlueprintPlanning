@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEvents } from "../assembly/Assembly"
-import { Assembly, Stage } from "../assembly/AssemblyDef"
+import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { getAllAssemblies } from "../assembly/migrations"
+import { AssemblyEvents } from "../assembly/UserAssembly"
 import { bind, funcOn, funcRef, MaybeState, onPlayerInit, RegisterClass, registerFunctions, Subscription } from "../lib"
 import { Component, destroy, EmptyProps, FactorioJsx, render, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import { DotDotDotButton, Fn, HorizontalPusher, HorizontalSpacer, TitleBar } from "../lib/factoriojsx/components"
@@ -77,7 +77,7 @@ class CurrentAssembly extends Component {
     if (stage === nil) return [L_GuiCurrentAssembly.NoAssembly]
     return stage.assembly.displayName
   }
-  private static mapAssemblyToContent(this: void, assembly: Assembly | nil) {
+  private static mapAssemblyToContent(this: void, assembly: UserAssembly | nil) {
     return assembly ? (
       <StageSelector uses="drop-down" assembly={assembly} styleMod={{ width: CurrentAssemblyWidth }} />
     ) : (
@@ -114,7 +114,7 @@ class AllAssemblies extends Component {
   playerIndex!: PlayerIndex
 
   listBox!: ListBoxGuiElement
-  allAssemblies!: Assembly[]
+  allAssemblies!: UserAssembly[]
 
   public override render(_: EmptyProps, tracker: Tracker): Spec {
     this.playerIndex = tracker.playerIndex

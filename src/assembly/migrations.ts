@@ -12,13 +12,13 @@
 import { _migrate031, _migrate060, StageNumber } from "../entity/AssemblyEntity"
 import { migrateMap030, migrateMap060 } from "../entity/EntityMap"
 import { Migrations } from "../lib/migration"
-import { Assembly, AssemblyId } from "./AssemblyDef"
+import { AssemblyId, UserAssembly } from "./AssemblyDef"
 
 declare const global: {
-  assemblies: LuaMap<AssemblyId, Assembly>
+  assemblies: LuaMap<AssemblyId, UserAssembly>
 }
 
-export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, Assembly> {
+export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, UserAssembly> {
   return global.assemblies
 }
 

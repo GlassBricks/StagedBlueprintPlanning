@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createAssembly } from "../assembly/Assembly"
+import { createUserAssembly } from "../assembly/UserAssembly"
 import { funcOn, RegisterClass } from "../lib"
 import { Component, destroy, FactorioJsx, renderOpened, Spec } from "../lib/factoriojsx"
 import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
@@ -86,6 +86,6 @@ class NewAssembly extends Component {
 }
 
 function tryCreateAssembly(player: LuaPlayer, name: string, numStages: number) {
-  const assembly = createAssembly(name, numStages)
+  const assembly = createUserAssembly(name, numStages)
   openAssemblySettings(player, assembly)
 }

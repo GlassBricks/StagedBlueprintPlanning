@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, AutoSetTilesType, LocalAssemblyEvent, Stage } from "../assembly/AssemblyDef"
+import { AutoSetTilesType, LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
@@ -47,7 +47,7 @@ import { StageSelector } from "./StageSelector"
 
 declare global {
   interface PlayerData {
-    currentShownAssembly?: Assembly
+    currentShownAssembly?: UserAssembly
   }
 }
 declare const global: GlobalWithPlayers
@@ -59,11 +59,11 @@ const stageSettingsWidth = 160
 const insertButtonWidth = 100
 
 @RegisterClass("gui:AssemblySettings")
-export class AssemblySettings extends Component<{ assembly: Assembly }> {
-  assembly!: Assembly
+export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
+  assembly!: UserAssembly
   playerIndex!: PlayerIndex
 
-  public override render(props: { assembly: Assembly }, tracker: Tracker): Spec {
+  public override render(props: { assembly: UserAssembly }, tracker: Tracker): Spec {
     this.assembly = props.assembly
     this.playerIndex = tracker.playerIndex
 
@@ -429,7 +429,7 @@ function hideAssemblySettings(player: LuaPlayer): void {
 }
 
 /** Returns the frame if same assembly already open */
-function showAssemblySettings(player: LuaPlayer, assembly: Assembly): FrameGuiElement | nil {
+function showAssemblySettings(player: LuaPlayer, assembly: UserAssembly): FrameGuiElement | nil {
   const frame = getOrCreateFrame(player)
   frame.visible = true
   frame.bring_to_front()
@@ -441,7 +441,7 @@ function showAssemblySettings(player: LuaPlayer, assembly: Assembly): FrameGuiEl
   renderMultiple(<AssemblySettings assembly={assembly} />, frame.content!)
 }
 
-export function openAssemblySettings(player: LuaPlayer, assembly: Assembly): void {
+export function openAssemblySettings(player: LuaPlayer, assembly: UserAssembly): void {
   const frame = showAssemblySettings(player, assembly)
   if (frame) frame.force_auto_center() // re-center if already open
   teleportToAssembly(player, assembly)

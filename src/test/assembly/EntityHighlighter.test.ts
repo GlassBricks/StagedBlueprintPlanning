@@ -24,7 +24,7 @@ import { Entity } from "../../entity/Entity"
 import { SpriteRender } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { simpleMock } from "../simple-mock"
-import { createMockAssemblyContent, setupTestSurfaces } from "./Assembly-mock"
+import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 
 interface FooEntity extends Entity {
   foo?: number
@@ -35,7 +35,7 @@ let highlightCreator: EntityHighlighter
 
 const surfaces = setupTestSurfaces(5)
 before_each(() => {
-  assembly = createMockAssemblyContent(surfaces)
+  assembly = createMockAssembly(surfaces)
   const entityCreator: HighlightCreator = {
     createHighlightBox: HighlightCreator.createHighlightBox,
     createSprite: (params) => simpleMock(params as any),

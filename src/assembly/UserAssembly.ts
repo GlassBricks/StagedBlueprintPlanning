@@ -16,13 +16,13 @@ import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import {
-  Assembly,
   AssemblyId,
   AutoSetTilesType,
   BlueprintBookSettings,
   GlobalAssemblyEvent,
   LocalAssemblyEvent,
   Stage,
+  UserAssembly,
 } from "./AssemblyDef"
 import {
   BlueprintSettings,
@@ -50,7 +50,7 @@ export { GlobalAssemblyEvents as AssemblyEvents }
 declare const luaLength: LuaLength<Record<number, any>, number>
 
 @RegisterClass("Assembly")
-class AssemblyImpl implements Assembly {
+class AssemblyImpl implements UserAssembly {
   name: MutableState<string>
   displayName: State<LocalisedString>
 
@@ -238,7 +238,7 @@ class AssemblyImpl implements Assembly {
   }
 }
 
-export function createAssembly(name: string, initialNumStages: number): Assembly {
+export function createUserAssembly(name: string, initialNumStages: number): UserAssembly {
   return AssemblyImpl.create(name, initialNumStages)
 }
 

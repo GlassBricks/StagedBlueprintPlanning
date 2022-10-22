@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly } from "../assembly/AssemblyDef"
+import { UserAssembly } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { getAllAssemblies } from "../assembly/migrations"
 import { rollingStockTypes } from "../entity/entity-info"
@@ -33,7 +33,7 @@ Events.on_configuration_changed((data) => {
 // global-data related migrations are done in other files
 // this is for entity-related migrations
 
-function migrateCables(assembly: Assembly): void {
+function migrateCables(assembly: UserAssembly): void {
   const { saveWireConnections, updateWireConnections } = WireHandler
   const lastStageNum = assembly.numStages()
 

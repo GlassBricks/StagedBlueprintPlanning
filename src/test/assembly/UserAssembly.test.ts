@@ -9,15 +9,20 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { _deleteAllAssemblies, AssemblyEvents, createAssembly, getStageAtSurface } from "../../assembly/Assembly"
 import {
-  Assembly,
   AssemblyCreatedEvent,
   AssemblyDeletedEvent,
   PreStageDeletedEvent,
   StageAddedEvent,
   StageDeletedEvent,
+  UserAssembly,
 } from "../../assembly/AssemblyDef"
+import {
+  _deleteAllAssemblies,
+  AssemblyEvents,
+  createUserAssembly,
+  getStageAtSurface,
+} from "../../assembly/UserAssembly"
 import { SelflessFun } from "../../lib"
 
 let eventListener: spy.Spy<SelflessFun>
@@ -31,7 +36,7 @@ after_each(() => {
 })
 
 test("assembly created calls event", () => {
-  const asm = createAssembly("Mock", 0)
+  const asm = createUserAssembly("Mock", 0)
   assert.spy(eventListener).called_with({
     type: "assembly-created",
     assembly: asm,
@@ -39,28 +44,28 @@ test("assembly created calls event", () => {
 })
 
 test("getStageAtSurface", () => {
-  const asm = createAssembly("Mock", 2)
-  const stage1 = asm.getStage(1),
-    stage2 = asm.getStage(2)
-  assert.equal(stage1, getStageAtSurface(stage1!.surface.index))
-  assert.equal(stage2, getStageAtSurface(stage2!.surface.index))
+  const asm = createUserAssembly("Mock", 2)
+  const stage1 = asm.getStage(1)!,
+    stage2 = asm.getStage(2)!
+  assert.equal(stage1, getStageAtSurface(stage1.surface.index))
+  assert.equal(stage2, getStageAtSurface(stage2.surface.index))
 })
 
 describe("deletion", () => {
   test("sets to invalid", () => {
-    const asm = createAssembly("Test", 0)
+    const asm = createUserAssembly("Test", 0)
     asm.delete()
     assert.false(asm.valid)
   })
   test("sets stages to invalid", () => {
-    const asm = createAssembly("Test", 1)
+    const asm = createUserAssembly("Test", 1)
     const stage = asm.getStage(1)!
     assert.true(stage.valid)
     asm.delete()
     assert.false(stage.valid)
   })
   test("calls event", () => {
-    const asm = createAssembly("Mock", 0)
+    const asm = createUserAssembly("Mock", 0)
     const sp2 = spy()
     asm.localEvents.subscribeIndependently({ invoke: sp2 })
     asm.delete()
@@ -74,9 +79,9 @@ describe("deletion", () => {
 })
 
 describe("Stages", () => {
-  let asm: Assembly
+  let asm: UserAssembly
   before_each(() => {
-    asm = createAssembly("Test", 2)
+    asm = createUserAssembly("Test", 2)
   })
   test("stageNumber is correct", () => {
     assert.equals(1, asm.getStage(1)!.stageNumber)
@@ -90,7 +95,7 @@ describe("Stages", () => {
 
 test("insert stage", () => {
   const sp = spy()
-  const asm = createAssembly("Mock", 2)
+  const asm = createUserAssembly("Mock", 2)
   const oldStage = asm.getStage(1)!
   asm.localEvents.subscribeIndependently({ invoke: sp })
   eventListener.clear()
@@ -137,7 +142,7 @@ test("insert stage", () => {
 
 test("delete stage", () => {
   const sp = spy()
-  const asm = createAssembly("Test", 3)
+  const asm = createUserAssembly("Test", 3)
   asm.localEvents.subscribeIndependently({ invoke: sp })
   eventListener.clear()
 
@@ -171,7 +176,7 @@ test("delete stage", () => {
 })
 
 test("delete stage by deleting surface", () => {
-  const asm = createAssembly("Test", 2)
+  const asm = createUserAssembly("Test", 2)
   const stage = asm.getStage(2)!
   game.delete_surface(stage.surface)
   async()
@@ -182,7 +187,7 @@ test("delete stage by deleting surface", () => {
 })
 
 test("deleting last stage deletes assembly", () => {
-  const asm = createAssembly("Test", 1)
+  const asm = createUserAssembly("Test", 1)
   const stage = asm.getStage(1)!
   stage.deleteInAssembly()
   assert.false(asm.valid)

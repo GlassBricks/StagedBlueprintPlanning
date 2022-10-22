@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "./Assembly"
 import "./assembly-event-listener"
 import "./event-listener"
 import "./migrations"
+import "./UserAssembly"
