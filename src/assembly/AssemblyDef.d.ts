@@ -18,7 +18,7 @@ export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface StageSurface {
   readonly surface: LuaSurface
 }
-export interface AssemblyData {
+export interface Assembly {
   getStage(stageNumber: StageNumber): StageSurface | nil
   numStages(): number
   iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, StageSurface]>>
@@ -26,7 +26,7 @@ export interface AssemblyData {
   getStageName(stageNumber: StageNumber): LocalisedString
   readonly content: MutableEntityMap
 }
-export interface UserAssembly extends AssemblyData {
+export interface UserAssembly extends Assembly {
   readonly id: AssemblyId
 
   readonly name: MutableState<string>

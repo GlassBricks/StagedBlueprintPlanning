@@ -16,7 +16,7 @@ import { EntityMoveResult, forceMoveEntity, tryMoveAllEntities } from "../entity
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
 import { EntityMap } from "../entity/EntityMap"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
-import { AssemblyData, StageSurface } from "./AssemblyDef"
+import { Assembly, StageSurface } from "./AssemblyDef"
 import { EntityHighlighter } from "./EntityHighlighter"
 
 /**
@@ -35,7 +35,7 @@ export interface WorldUpdater {
    * @param replace if entities should be replaced (deleted and created) instead of updated
    */
   updateAllWorldEntities(
-    assembly: AssemblyData,
+    assembly: Assembly,
     entity: AssemblyEntity,
     startStage: StageNumber,
     endStage?: StageNumber,
@@ -49,10 +49,10 @@ export interface WorldUpdater {
    * @param entity the assembly entity
    * @return the result of the move
    */
-  tryDollyEntities(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
+  tryDollyEntities(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
 
   /** Removes the world entity at a give stage (and makes error highlight) */
-  clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
+  clearWorldEntity(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
 
   /** Removes ALL entities in ALL stages. */
   deleteAllEntities(entity: AssemblyEntity): void
@@ -60,8 +60,8 @@ export interface WorldUpdater {
   /** Removes non-main entities only (in preparation for assembly deletion) */
   deleteExtraEntitiesOnly(entity: AssemblyEntity): void
 
-  makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
-  reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
+  makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
+  reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
 
   clearStage(stage: StageSurface): void
 }
@@ -82,7 +82,7 @@ export function createWorldUpdater(
   const { updateHighlights, deleteHighlights } = highlighter
 
   function doUpdateWorldEntities(
-    assembly: AssemblyData,
+    assembly: Assembly,
     entity: AssemblyEntity,
     startStage: number,
     endStage: number,
@@ -115,7 +115,7 @@ export function createWorldUpdater(
     }
   }
 
-  function updatePreviewEntities(assembly: AssemblyData, entity: AssemblyEntity) {
+  function updatePreviewEntities(assembly: Assembly, entity: AssemblyEntity) {
     for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
       const worldEntity = entity.getWorldOrPreviewEntity(i)
       if (worldEntity) continue
@@ -142,7 +142,7 @@ export function createWorldUpdater(
   }
 
   function tryMoveOtherEntities(
-    assembly: AssemblyData,
+    assembly: Assembly,
     entity: AssemblyEntity,
     stage: StageNumber,
     movedEntity: LuaEntity,
@@ -187,13 +187,13 @@ export function createWorldUpdater(
     return true
   }
 
-  function makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+  function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
     assert(entity.isSettingsRemnant)
     entity.destroyAllWorldOrPreviewEntities()
     updatePreviewEntities(assembly, entity)
     highlighter.makeSettingsRemnant(assembly, entity)
   }
-  function reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+  function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
     assert(!entity.isSettingsRemnant)
     doUpdateWorldEntities(assembly, entity, 1, assembly.numStages(), true)
     updatePreviewEntities(assembly, entity)
@@ -202,7 +202,7 @@ export function createWorldUpdater(
 
   return {
     updateAllWorldEntities(
-      assembly: AssemblyData,
+      assembly: Assembly,
       entity: AssemblyEntity,
       startStage: StageNumber,
       endStage?: StageNumber,
@@ -219,7 +219,7 @@ export function createWorldUpdater(
       updatePreviewEntities(assembly, entity)
       updateHighlights(assembly, entity, startStage, endStage)
     },
-    tryDollyEntities(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
+    tryDollyEntities(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
       assert(!entity.isUndergroundBelt(), "can't move underground belts")
       const movedEntity = entity.getWorldEntity(stage)
       if (!movedEntity) return "entities-missing"
@@ -236,7 +236,7 @@ export function createWorldUpdater(
 
       return moveResult
     },
-    clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
+    clearWorldEntity(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
       entity.getWorldEntity(stage)?.destroy()
       updatePreviewEntities(assembly, entity)
       updateHighlights(assembly, entity, stage, stage)

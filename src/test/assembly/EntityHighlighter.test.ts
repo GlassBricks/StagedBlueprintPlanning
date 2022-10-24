@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyData } from "../../assembly/AssemblyDef"
+import { Assembly } from "../../assembly/AssemblyDef"
 import {
   createHighlightCreator,
   EntityHighlighter,
@@ -30,7 +30,7 @@ interface FooEntity extends Entity {
   foo?: number
 }
 let entity: AssemblyEntity<FooEntity>
-let assembly: AssemblyData
+let assembly: Assembly
 let highlightCreator: EntityHighlighter
 
 const surfaces = setupTestSurfaces(5)

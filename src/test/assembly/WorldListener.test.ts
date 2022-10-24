@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyData } from "../../assembly/AssemblyDef"
+import { Assembly } from "../../assembly/AssemblyDef"
 import {
   AssemblyUpdater,
   EntityRotateResult,
@@ -57,7 +57,7 @@ after_each(() => {
 })
 
 const surfaces = setupTestSurfaces(6)
-let assembly: AssemblyData
+let assembly: Assembly
 before_each(() => {
   assembly = createMockAssembly(surfaces)
 })

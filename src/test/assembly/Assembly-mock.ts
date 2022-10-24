@@ -9,12 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyData, StageSurface } from "../../assembly/AssemblyDef"
+import { Assembly, StageSurface } from "../../assembly/AssemblyDef"
 import { createStageSurface, prepareArea } from "../../assembly/surfaces"
 import { newEntityMap } from "../../entity/EntityMap"
 import { BBox, Pos } from "../../lib/geometry"
 
-export function createMockAssembly(stages: number | LuaSurface[]): AssemblyData {
+export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
   const stageSurfaces: StageSurface[] =
     typeof stages === "number"
       ? Array.from({ length: stages }, () => ({ surface: game.surfaces[1] }))

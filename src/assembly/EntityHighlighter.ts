@@ -15,7 +15,7 @@ import { getSelectionBox } from "../entity/entity-info"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
-import { AssemblyData } from "./AssemblyDef"
+import { Assembly } from "./AssemblyDef"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {
@@ -45,14 +45,14 @@ declare module "../entity/AssemblyEntity" {
  */
 export interface EntityHighlighter {
   /** Updates config changed, and error highlights. */
-  updateHighlights(assembly: AssemblyData, entity: AssemblyEntity): void
-  updateHighlights(assembly: AssemblyData, entity: AssemblyEntity, stageStart: StageNumber, stageEnd: StageNumber): void
+  updateHighlights(assembly: Assembly, entity: AssemblyEntity): void
+  updateHighlights(assembly: Assembly, entity: AssemblyEntity, stageStart: StageNumber, stageEnd: StageNumber): void
 
   deleteHighlights(entity: AssemblyEntity): void
   deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber): void
 
-  makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
-  reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
+  makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
+  reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
 }
 
 /** @noSelf */
@@ -177,14 +177,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     return nil
   }
 
-  function updateAssociatedEntitiesAndErrorHighlight(assembly: AssemblyData, entity: AssemblyEntity): void {
+  function updateAssociatedEntitiesAndErrorHighlight(assembly: Assembly, entity: AssemblyEntity): void {
     for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
       const hasError = entityHasErrorAt(entity, i)
       updateHighlight(entity, i, stage.surface, "errorOutline", hasError)
     }
   }
 
-  function updateErrorIndicators(assembly: AssemblyData, entity: AssemblyEntity): void {
+  function updateErrorIndicators(assembly: Assembly, entity: AssemblyEntity): void {
     if (entity.isRollingStock()) return
     let hasErrorAnywhere = false
     for (const i of $range(entity.firstStage, assembly.numStages())) {
@@ -205,7 +205,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
   }
 
-  function updateAllConfigChangedHighlights(assembly: AssemblyData, entity: AssemblyEntity): void {
+  function updateAllConfigChangedHighlights(assembly: Assembly, entity: AssemblyEntity): void {
     const firstStage = entity.firstStage
     let lastStageWithHighlights = firstStage
     for (const [i, stage] of assembly.iterateStages()) {
@@ -244,7 +244,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       }
     }
   }
-  function updateHighlights(assembly: AssemblyData, entity: AssemblyEntity): void {
+  function updateHighlights(assembly: Assembly, entity: AssemblyEntity): void {
     // ignore start and end stage for now
     updateAssociatedEntitiesAndErrorHighlight(assembly, entity)
     if (!entity.isRollingStock()) {
@@ -261,14 +261,14 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber) {
       for (const type of keys<HighlightEntities>()) entity.destroyExtraEntity(type, stage)
     },
-    makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+    makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
       if (!entity.isSettingsRemnant) return
       for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
       for (const [i, stage] of assembly.iterateStages()) {
         updateHighlight(entity, i, stage.surface, "settingsRemnantHighlight", true)
       }
     },
-    reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+    reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
       if (entity.isSettingsRemnant) return
       entity.destroyAllExtraEntities("settingsRemnantHighlight")
       updateHighlights(assembly, entity)

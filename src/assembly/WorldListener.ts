@@ -16,7 +16,7 @@ import { isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { AssemblyData } from "./AssemblyDef"
+import { Assembly } from "./AssemblyDef"
 import { AssemblyUpdater, EntityUpdateResult } from "./AssemblyUpdater"
 import { AssemblyEntityDollyResult } from "./WorldUpdater"
 
@@ -29,14 +29,9 @@ import { AssemblyEntityDollyResult } from "./WorldUpdater"
  */
 export interface WorldListener {
   /** Handles when an entity is created. */
-  onEntityCreated(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity, byPlayer: PlayerIndex | nil): void
+  onEntityCreated(assembly: Assembly, stage: StageNumber, entity: LuaEntity, byPlayer: PlayerIndex | nil): void
   /** Handles when an entity is removed. */
-  onEntityDeleted(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: BasicEntityInfo,
-    byPlayer: PlayerIndex | nil,
-  ): void
+  onEntityDeleted(assembly: Assembly, stage: StageNumber, entity: BasicEntityInfo, byPlayer: PlayerIndex | nil): void
   /**
    * Handles when an entity has its properties updated.
    * Does not handle wires.
@@ -45,7 +40,7 @@ export interface WorldListener {
    * Returns: `false` if a previous entity was not found (and may have been added).
    */
   onEntityPotentiallyUpdated(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: LuaEntity,
     previousDirection: defines.direction | nil,
@@ -54,7 +49,7 @@ export interface WorldListener {
 
   /** Handles when an entity is rotated by player. */
   onEntityRotated(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: LuaEntity,
     previousDirection: defines.direction,
@@ -63,7 +58,7 @@ export interface WorldListener {
 
   /** Handles possible circuit wires changes of an entity. */
   onCircuitWiresPotentiallyUpdated(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: LuaEntity,
     byPlayer: PlayerIndex | nil,
@@ -73,25 +68,20 @@ export interface WorldListener {
    * Handles upgrade planner.
    * Performs the requested upgrade, also handles rotation via upgrade.
    */
-  onEntityMarkedForUpgrade(
-    assembly: AssemblyData,
-    stage: StageNumber,
-    entity: LuaEntity,
-    byPlayer: PlayerIndex | nil,
-  ): void
+  onEntityMarkedForUpgrade(assembly: Assembly, stage: StageNumber, entity: LuaEntity, byPlayer: PlayerIndex | nil): void
 
   /** When a cleanup tool has been used on an entity. */
-  onCleanupToolUsed(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): void
+  onCleanupToolUsed(assembly: Assembly, stage: StageNumber, entity: LuaEntity): void
   /** Similar to above; does not remove settings remnants */
-  tryFixEntity(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): void
+  tryFixEntity(assembly: Assembly, stage: StageNumber, entity: LuaEntity): void
 
-  onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): void
+  onEntityForceDeleted(assembly: Assembly, stage: StageNumber, entity: LuaEntity): void
   /** Either: entity died, or reverse select with cleanup tool */
-  onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void
+  onEntityDied(assembly: Assembly, stage: StageNumber, entity: BasicEntityInfo): void
   /** User activated. */
-  onMoveEntityToStage(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity, byPlayer: PlayerIndex): void
+  onMoveEntityToStage(assembly: Assembly, stage: StageNumber, entity: LuaEntity, byPlayer: PlayerIndex): void
   onEntityMoved(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: LuaEntity,
     oldPosition: Position,
@@ -133,7 +123,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   const { createNotification } = notifier
 
   function onEntityCreated(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: LuaEntity,
     byPlayer: PlayerIndex | nil,
@@ -162,7 +152,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   }
 
   function onPreviewReplaced(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: AssemblyEntity,
     luaEntity: LuaEntity,
@@ -179,7 +169,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
   /** Also asserts that stage > entity's first stage. */
   function getCompatibleEntityOrAdd(
-    assembly: AssemblyData,
+    assembly: Assembly,
     entity: LuaEntity,
     stage: StageNumber,
     previousDirection: defines.direction | nil,
@@ -212,7 +202,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     }
   }
 
-  function getEntityFromPreview(entity: LuaEntity, stage: StageNumber, assembly: AssemblyData): AssemblyEntity | nil {
+  function getEntityFromPreview(entity: LuaEntity, stage: StageNumber, assembly: Assembly): AssemblyEntity | nil {
     const entityName = entity.name
     if (!entityName.startsWith(Prototypes.PreviewEntityPrefix)) return nil
     const actualName = entityName.substring(Prototypes.PreviewEntityPrefix.length)
@@ -230,7 +220,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   function getEntityFromEntityOrPreview(
     entityOrPreviewEntity: LuaEntity,
     stage: StageNumber,
-    assembly: AssemblyData,
+    assembly: Assembly,
   ): AssemblyEntity | nil {
     return (
       getEntityFromPreview(entityOrPreviewEntity, stage, assembly) ??
@@ -239,7 +229,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   }
 
   function tryFixEntity(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     previewEntity: LuaEntity,
     deleteSettingsRemnants: boolean,
@@ -259,7 +249,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   }
 
   function getCompatibleAtPositionOrAdd(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: LuaEntity,
     oldPosition: Position,
@@ -283,7 +273,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
   return {
     onEntityCreated,
-    onEntityDeleted(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
+    onEntityDeleted(assembly: Assembly, stage: StageNumber, entity: BasicEntityInfo): void {
       const existing = assembly.content.findCompatible(entity, nil)
       if (!existing) return
       const existingStage = existing.firstStage
@@ -299,7 +289,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       deleteEntityOrCreateSettingsRemnant(assembly, existing)
     },
     onEntityPotentiallyUpdated(
-      assembly: AssemblyData,
+      assembly: Assembly,
       stage: StageNumber,
       entity: LuaEntity,
       previousDirection: defines.direction | nil,
@@ -312,7 +302,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       notifyIfError(result, entity, byPlayer)
     },
     onEntityRotated(
-      assembly: AssemblyData,
+      assembly: Assembly,
       stage: StageNumber,
       entity: LuaEntity,
       previousDirection: defines.direction,
@@ -324,7 +314,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       notifyIfError(result, entity, byPlayer)
     },
     onCircuitWiresPotentiallyUpdated(
-      assembly: AssemblyData,
+      assembly: Assembly,
       stage: StageNumber,
       entity: LuaEntity,
       byPlayer: PlayerIndex | nil,
@@ -339,7 +329,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       }
     },
     onEntityMarkedForUpgrade(
-      assembly: AssemblyData,
+      assembly: Assembly,
       stage: StageNumber,
       entity: LuaEntity,
       byPlayer: PlayerIndex | nil,
@@ -351,25 +341,25 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       notifyIfError(result, entity, byPlayer)
       if (entity.valid) entity.cancel_upgrade(entity.force)
     },
-    onCleanupToolUsed(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
+    onCleanupToolUsed(assembly: Assembly, stage: StageNumber, proxyEntity: LuaEntity): void {
       tryFixEntity(assembly, stage, proxyEntity, true)
     },
-    tryFixEntity(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
+    tryFixEntity(assembly: Assembly, stage: StageNumber, proxyEntity: LuaEntity): void {
       tryFixEntity(assembly, stage, proxyEntity, false)
     },
-    onEntityForceDeleted(assembly: AssemblyData, stage: StageNumber, proxyEntity: LuaEntity): void {
+    onEntityForceDeleted(assembly: Assembly, stage: StageNumber, proxyEntity: LuaEntity): void {
       const existing = getEntityFromPreview(proxyEntity, stage, assembly)
       if (!existing) return
       forceDeleteEntity(assembly, existing)
     },
-    onEntityDied(assembly: AssemblyData, stage: StageNumber, entity: BasicEntityInfo): void {
+    onEntityDied(assembly: Assembly, stage: StageNumber, entity: BasicEntityInfo): void {
       const existing = assembly.content.findCompatible(entity, nil)
       if (existing) {
         clearEntityAtStage(assembly, stage, existing)
       }
     },
     onMoveEntityToStage(
-      assembly: AssemblyData,
+      assembly: Assembly,
       stage: StageNumber,
       entityOrPreviewEntity: LuaEntity,
       byPlayer: PlayerIndex,
@@ -394,7 +384,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       }
     },
     onEntityMoved(
-      assembly: AssemblyData,
+      assembly: Assembly,
       stage: StageNumber,
       entity: LuaEntity,
       oldPosition: Position,

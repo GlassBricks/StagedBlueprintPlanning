@@ -24,7 +24,7 @@ import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
 import { findUndergroundPair } from "../entity/special-entity-treatment"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
-import { AssemblyData } from "./AssemblyDef"
+import { Assembly } from "./AssemblyDef"
 import { AssemblyEntityDollyResult, WorldUpdater } from "./WorldUpdater"
 import min = math.min
 
@@ -33,61 +33,61 @@ import min = math.min
  */
 export interface AssemblyUpdater {
   addNewEntity<T extends Entity = Entity>(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entitySource: LuaEntity,
   ): AssemblyEntity<T> | nil
 
-  refreshEntityAtStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
+  refreshEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
 
-  refreshEntityAllStages(assembly: AssemblyData, entity: AssemblyEntity): void
+  refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void
 
   /** Returns nil if not a lower stage number, else returns the old stage. */
-  moveEntityOnPreviewReplace(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil
+  moveEntityOnPreviewReplace(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil
 
-  reviveSettingsRemnant(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): boolean
+  reviveSettingsRemnant(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): boolean
 
-  disallowEntityDeletion(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
+  disallowEntityDeletion(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
 
-  deleteEntityOrCreateSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
+  deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
 
-  forceDeleteEntity(assembly: AssemblyData, entity: AssemblyEntity): void
+  forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): void
 
   /** Replaces entity with an error highlight */
-  clearEntityAtStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
+  clearEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
 
-  tryUpdateEntityFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
+  tryUpdateEntityFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
 
-  tryRotateEntityToMatchWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityRotateResult
+  tryRotateEntityToMatchWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityRotateResult
 
   /** Doesn't cancel upgrade */
-  tryApplyUpgradeTarget(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
+  tryApplyUpgradeTarget(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
 
-  updateWiresFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult
+  updateWiresFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult
 
-  tryDollyEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
-  moveEntityToStage(assembly: AssemblyData, newStage: StageNumber, entity: AssemblyEntity): StageMoveResult
+  tryDollyEntity(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
+  moveEntityToStage(assembly: Assembly, newStage: StageNumber, entity: AssemblyEntity): StageMoveResult
 
-  resetStage(assembly: AssemblyData, stage: StageNumber): void
+  resetStage(assembly: Assembly, stage: StageNumber): void
 
   resetProp<T extends Entity>(
-    assembly: AssemblyData,
+    assembly: Assembly,
     entity: AssemblyEntity<T>,
     stageNumber: StageNumber,
     prop: keyof T,
   ): boolean
   movePropDown<T extends Entity>(
-    assembly: AssemblyData,
+    assembly: Assembly,
     entity: AssemblyEntity<T>,
     stageNumber: StageNumber,
     prop: keyof T,
   ): boolean
 
-  resetAllProps(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean
-  moveAllPropsDown(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+  resetAllProps(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+  moveAllPropsDown(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean
 
-  resetTrain(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void
-  setTrainLocationToCurrent(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void
+  resetTrain(assembly: Assembly, entity: RollingStockAssemblyEntity): void
+  setTrainLocationToCurrent(assembly: Assembly, entity: RollingStockAssemblyEntity): void
 }
 export type UpdateSuccess = "updated" | "no-change"
 export type RotateError = "cannot-rotate" | "cannot-flip-multi-pair-underground"
@@ -110,11 +110,11 @@ export function createAssemblyUpdater(
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
 
-  function refreshEntityAtStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
+  function refreshEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
     return updateAllWorldEntities(assembly, entity, stage, stage, false)
   }
 
-  function reviveSettingsRemnant(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): boolean {
+  function reviveSettingsRemnant(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): boolean {
     if (!entity.isSettingsRemnant) return false
     entity.isSettingsRemnant = nil
     entity.moveToStage(stage)
@@ -122,7 +122,7 @@ export function createAssemblyUpdater(
     return true
   }
 
-  function shouldMakeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity) {
+  function shouldMakeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity) {
     if (entity.hasStageDiff()) return true
     const connections = assembly.content.getCircuitConnections(entity)
     if (!connections) return false
@@ -136,12 +136,12 @@ export function createAssemblyUpdater(
     return false
   }
 
-  function undoRotate(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity) {
+  function undoRotate(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity) {
     refreshEntityAtStage(assembly, stage, entity)
   }
 
   function setRotationOrUndo(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: AssemblyEntity,
     newDirection: SavedDirection,
@@ -157,7 +157,7 @@ export function createAssemblyUpdater(
   }
 
   function doUpdateEntityFromWorld(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: AssemblyEntity,
     entitySource: LuaEntity,
@@ -177,7 +177,7 @@ export function createAssemblyUpdater(
   }
 
   function tryUpdateUndergroundFromFastReplace(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: AssemblyEntity,
     entitySource: LuaEntity,
@@ -194,7 +194,7 @@ export function createAssemblyUpdater(
   }
 
   function tryRotateUnderground(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: UndergroundBeltAssemblyEntity,
     entitySource: LuaEntity,
@@ -228,7 +228,7 @@ export function createAssemblyUpdater(
   }
 
   function tryUpgradeUndergroundBeltFromWorld(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: UndergroundBeltAssemblyEntity,
     entitySource: LuaEntity,
@@ -242,7 +242,7 @@ export function createAssemblyUpdater(
   }
 
   function tryUpgradeUndergroundBelt(
-    assembly: AssemblyData,
+    assembly: Assembly,
     stage: StageNumber,
     entity: UndergroundBeltAssemblyEntity,
     upgradeType: string,
@@ -283,7 +283,7 @@ export function createAssemblyUpdater(
     return "updated"
   }
 
-  function checkDefaultControlBehavior(assembly: AssemblyData, entity: AssemblyEntity, stage: StageNumber): void {
+  function checkDefaultControlBehavior(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
     if (!hasControlBehaviorSet(entity, stage)) {
       fixEmptyControlBehavior(entity)
       const entitySource = assert(entity.getWorldEntity(stage), "Could not find circuit connected entity")[0]
@@ -292,7 +292,7 @@ export function createAssemblyUpdater(
   }
 
   return {
-    addNewEntity(assembly: AssemblyData, stage: StageNumber, entity: LuaEntity): AssemblyEntity<any> | nil {
+    addNewEntity(assembly: Assembly, stage: StageNumber, entity: LuaEntity): AssemblyEntity<any> | nil {
       const [saved, savedDir] = saveEntity(entity)
       if (!saved) return nil
       const { content } = assembly
@@ -317,20 +317,20 @@ export function createAssemblyUpdater(
       return assemblyEntity
     },
     refreshEntityAtStage,
-    refreshEntityAllStages(assembly: AssemblyData, entity: AssemblyEntity): void {
+    refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
       return updateAllWorldEntities(assembly, entity, 1, nil, false)
     },
-    moveEntityOnPreviewReplace(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil {
+    moveEntityOnPreviewReplace(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil {
       if (stage >= entity.firstStage) return nil
       const oldStage = entity.moveToStage(stage)
       updateAllWorldEntities(assembly, entity, stage, oldStage)
       return oldStage
     },
     tryDollyEntity: worldUpdater.tryDollyEntities,
-    disallowEntityDeletion(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
+    disallowEntityDeletion(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
       return updateAllWorldEntities(assembly, entity, stage, stage, true)
     },
-    deleteEntityOrCreateSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
+    deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
       if (shouldMakeSettingsRemnant(assembly, entity)) {
         entity.isSettingsRemnant = true
         worldUpdater.makeSettingsRemnant(assembly, entity)
@@ -339,13 +339,13 @@ export function createAssemblyUpdater(
         worldUpdater.deleteAllEntities(entity)
       }
     },
-    forceDeleteEntity(assembly: AssemblyData, entity: AssemblyEntity): void {
+    forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): void {
       assembly.content.delete(entity)
       worldUpdater.deleteAllEntities(entity)
     },
     reviveSettingsRemnant,
     clearEntityAtStage: worldUpdater.clearWorldEntity,
-    tryUpdateEntityFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
+    tryUpdateEntityFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
@@ -366,11 +366,7 @@ export function createAssemblyUpdater(
       }
       return "no-change"
     },
-    tryRotateEntityToMatchWorld(
-      assembly: AssemblyData,
-      stage: StageNumber,
-      entity: AssemblyEntity,
-    ): EntityRotateResult {
+    tryRotateEntityToMatchWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityRotateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
@@ -386,7 +382,7 @@ export function createAssemblyUpdater(
       }
       return "cannot-rotate"
     },
-    tryApplyUpgradeTarget(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
+    tryApplyUpgradeTarget(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
@@ -419,7 +415,7 @@ export function createAssemblyUpdater(
       }
       return "no-change"
     },
-    updateWiresFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult {
+    updateWiresFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult {
       const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage)
       if (maxConnectionsExceeded) {
         updateAllWorldEntities(assembly, entity, entity.firstStage)
@@ -437,7 +433,7 @@ export function createAssemblyUpdater(
       updateAllWorldEntities(assembly, entity, entity.firstStage)
       return "updated"
     },
-    moveEntityToStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageMoveResult {
+    moveEntityToStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): StageMoveResult {
       if (entity.isSettingsRemnant) {
         reviveSettingsRemnant(assembly, stage, entity)
         return "settings-remnant-revived"
@@ -454,7 +450,7 @@ export function createAssemblyUpdater(
       updateAllWorldEntities(assembly, entity, min(oldStage, stage))
       return "updated"
     },
-    resetStage(assembly: AssemblyData, stageNumber: StageNumber) {
+    resetStage(assembly: Assembly, stageNumber: StageNumber) {
       const stage = assembly.getStage(stageNumber)
       if (!stage) return
       worldUpdater.clearStage(stage)
@@ -471,7 +467,7 @@ export function createAssemblyUpdater(
       }
     },
     resetProp<T extends Entity>(
-      assembly: AssemblyData,
+      assembly: Assembly,
       entity: AssemblyEntity<T>,
       stageNumber: StageNumber,
       prop: keyof T,
@@ -481,7 +477,7 @@ export function createAssemblyUpdater(
       return moved
     },
     movePropDown<T extends Entity>(
-      assembly: AssemblyData,
+      assembly: Assembly,
       entity: AssemblyEntity<T>,
       stageNumber: StageNumber,
       prop: keyof T,
@@ -493,12 +489,12 @@ export function createAssemblyUpdater(
       }
       return false
     },
-    resetAllProps(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+    resetAllProps(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
       const moved = entity.resetValue(stageNumber)
       if (moved) updateAllWorldEntities(assembly, entity, stageNumber, nil)
       return moved
     },
-    moveAllPropsDown(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+    moveAllPropsDown(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
       const movedStage = entity.moveValueDown(stageNumber)
       if (movedStage) {
         updateAllWorldEntities(assembly, entity, movedStage, nil)
@@ -506,7 +502,7 @@ export function createAssemblyUpdater(
       }
       return false
     },
-    resetTrain(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void {
+    resetTrain(assembly: Assembly, entity: RollingStockAssemblyEntity): void {
       const stage = entity.firstStage
       const luaEntity = entity.getWorldEntity(stage)
       if (!luaEntity) {
@@ -524,7 +520,7 @@ export function createAssemblyUpdater(
       for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
       for (const entity of assemblyEntities) updateAllWorldEntities(assembly, entity, stage, stage, true)
     },
-    setTrainLocationToCurrent(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void {
+    setTrainLocationToCurrent(assembly: Assembly, entity: RollingStockAssemblyEntity): void {
       const stageNum = entity.firstStage
       const luaEntity = entity.getWorldEntity(stageNum)
       if (!luaEntity) return

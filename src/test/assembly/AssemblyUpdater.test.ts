@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyData } from "../../assembly/AssemblyDef"
+import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, createAssemblyUpdater, StageMoveResult } from "../../assembly/AssemblyUpdater"
 import { WorldListener } from "../../assembly/WorldListener"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
@@ -35,7 +35,7 @@ import wire_type = defines.wire_type
 
 const pos = Pos(10.5, 10.5)
 
-let assembly: AssemblyData
+let assembly: Assembly
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
 let assemblyUpdater: AssemblyUpdater

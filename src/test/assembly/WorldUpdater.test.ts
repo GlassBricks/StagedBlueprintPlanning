@@ -10,7 +10,7 @@
  */
 
 import { keys } from "ts-transformer-keys"
-import { AssemblyData } from "../../assembly/AssemblyDef"
+import { Assembly } from "../../assembly/AssemblyDef"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
@@ -27,7 +27,7 @@ interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter"
   override_stack_size?: number
 }
-let assembly: AssemblyData
+let assembly: Assembly
 let entity: AssemblyEntity<TestEntity>
 
 let highlighter: mock.Mocked<EntityHighlighter>
