@@ -354,7 +354,7 @@ describe("tryMoveEntity", () => {
   })
 })
 
-test("force delete", () => {
+test("clearWorldEntity", () => {
   worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
   worldUpdater.clearWorldEntity(assembly, 2, entity)
   assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 2, 2)

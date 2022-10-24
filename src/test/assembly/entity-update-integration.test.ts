@@ -574,7 +574,7 @@ function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHa
         hasError = true
         assert.equal(Prototypes.PreviewEntityPrefix + entity.firstValue.name, worldEntity!.name)
         assert.not_nil(entity.getExtraEntity("errorOutline", entity.firstStage))
-        assert.equal(entity.getApparentDirection(), worldEntity!.direction)
+        assert.equal(entity.getApparentDirection(), worldEntity!.direction, "direction")
       } else {
         assert.equal(entity.firstValue.name, worldEntity!.name)
         assert.nil(entity.getExtraEntity("errorOutline", entity.firstStage))

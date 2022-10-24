@@ -41,6 +41,22 @@ export interface WorldUpdater {
     endStage?: StageNumber,
     replace?: boolean,
   ): void
+  //
+  // updateWorldEntitiesOnly(
+  //   assembly: Assembly,
+  //   entity: AssemblyEntity,
+  //   startStage: StageNumber,
+  //   endStage?: StageNumber,
+  // ): void
+  //
+  // updatePreviewsAndEntities(assembly: Assembly, entity: AssemblyEntity, maxStage: StageNumber): void
+  //
+  // updateWireConnections(
+  //   assembly: Assembly,
+  //   entity: AssemblyEntity,
+  //   startStage: StageNumber,
+  //   endStage?: StageNumber,
+  // ): void
 
   /**
    * Tries to move an entity to a new position (after one world entity has already been moved).
@@ -81,55 +97,66 @@ export function createWorldUpdater(
   const { updateWireConnections } = wireHandler
   const { updateHighlights, deleteHighlights } = highlighter
 
+  function makePreviewEntity(
+    assembly: Assembly,
+    stage: StageNumber,
+    entity: AssemblyEntity,
+    entityName: string = entity.getNameAtStage(stage),
+    direction: defines.direction = entity.getApparentDirection(),
+  ): void {
+    const existing = entity.getWorldOrPreviewEntity(stage)
+    const previewName = Prototypes.PreviewEntityPrefix + entityName
+    if (existing && isPreviewEntity(existing) && existing.name === previewName) {
+      existing.direction = direction
+    } else {
+      const previewEntity = createPreviewEntity(
+        assembly.getStage(stage)!.surface,
+        entity.position,
+        direction,
+        entityName,
+      )
+      entity.replaceWorldOrPreviewEntity(stage, previewEntity)
+    }
+  }
+
   function doUpdateWorldEntities(
     assembly: Assembly,
     entity: AssemblyEntity,
     startStage: number,
     endStage: number,
-    replace: boolean | nil,
   ): void {
     const firstStage = entity.firstStage
-    const direction = entity.getDirection()
-
-    for (const [stageNum, value] of entity.iterateValues(startStage, endStage)) {
-      if (value === nil) {
-        entity.destroyWorldOrPreviewEntity(stageNum)
-        continue
-      }
-
-      const existing = entity.getWorldEntity(stageNum)
-      let luaEntity: LuaEntity | nil
-      if (existing && !replace) {
-        luaEntity = updateEntity(existing, value, direction)
-      } else {
-        if (existing) existing.destroy()
-        luaEntity = createEntity(assembly.getStage(stageNum)!.surface, entity.position, entity.getDirection(), value)
-      }
-      entity.replaceWorldEntity(stageNum, luaEntity)
-
-      if (luaEntity) {
-        if (stageNum !== firstStage) makeEntityIndestructible(luaEntity)
-        else makeEntityDestructible(luaEntity)
-        updateWireConnections(assembly.content, entity, stageNum)
-      }
-    }
-  }
-
-  function updatePreviewEntities(assembly: Assembly, entity: AssemblyEntity) {
     const direction = entity.getApparentDirection()
-    for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
-      const worldEntity = entity.getWorldOrPreviewEntity(i)
-      if (worldEntity) {
-        if (isPreviewEntity(worldEntity)) {
-          worldEntity.direction = direction
+
+    for (const [stage, value] of entity.iterateValues(startStage, endStage)) {
+      const surface = assembly.getStage(stage)!.surface
+      const existing = entity.getWorldOrPreviewEntity(stage)
+
+      if (value !== nil) {
+        let luaEntity: LuaEntity | nil
+        if (existing && !isPreviewEntity(existing)) {
+          luaEntity = updateEntity(existing, value, direction)
+        } else {
+          luaEntity = createEntity(surface, entity.position, direction, value)
         }
-      } else {
-        const previewEntity = createPreviewEntity(stage.surface, entity.position, direction, entity.getNameAtStage(i))
-        entity.replaceWorldOrPreviewEntity(i, previewEntity)
+
+        if (luaEntity) {
+          if (stage !== firstStage) makeEntityIndestructible(luaEntity)
+          else makeEntityDestructible(luaEntity)
+
+          entity.replaceWorldOrPreviewEntity(stage, luaEntity)
+
+          updateWireConnections(assembly.content, entity, stage)
+          continue
+        }
+        // else, fall through to make preview
       }
+
+      // preview
+      const entityName = (value ?? entity.firstValue).name
+      makePreviewEntity(assembly, stage, entity, entityName, direction)
     }
   }
-
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
     entity.rotatable = false
@@ -188,15 +215,17 @@ export function createWorldUpdater(
   }
 
   function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
-    assert(entity.isSettingsRemnant)
+    assert(entity.isSettingsRemnant && !entity.inFirstStageOnly())
     entity.destroyAllWorldOrPreviewEntities()
-    updatePreviewEntities(assembly, entity)
+    const direction = entity.getApparentDirection()
+    for (const stage of $range(1, assembly.numStages())) {
+      makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), direction)
+    }
     highlighter.makeSettingsRemnant(assembly, entity)
   }
   function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
     assert(!entity.isSettingsRemnant)
-    doUpdateWorldEntities(assembly, entity, 1, assembly.numStages(), true)
-    updatePreviewEntities(assembly, entity)
+    doUpdateWorldEntities(assembly, entity, 1, assembly.numStages())
     highlighter.reviveSettingsRemnant(assembly, entity)
   }
 
@@ -209,16 +238,49 @@ export function createWorldUpdater(
       replace?: boolean,
     ): void {
       if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+      const firstStage = entity.firstStage
 
       if (startStage < 1) startStage = 1
       const maxStage = assembly.numStages()
       if (!endStage || endStage > maxStage) endStage = maxStage
       if (startStage > endStage) return
 
-      doUpdateWorldEntities(assembly, entity, startStage, endStage, replace)
-      updatePreviewEntities(assembly, entity)
+      // todo: refactor away
+      if (replace) {
+        assert(startStage === endStage, "can only replace on stage; FIXME")
+        entity.getWorldEntity(startStage)?.destroy()
+      }
+
+      if (entity.inFirstStageOnly()) {
+        if (firstStage < startStage || firstStage > endStage) {
+          return
+        }
+        startStage = firstStage
+        endStage = firstStage
+      } else if (startStage === entity.firstStage) {
+        startStage = 1 // also update previews
+      }
+
+      doUpdateWorldEntities(assembly, entity, startStage, endStage)
       updateHighlights(assembly, entity, startStage, endStage)
     },
+    // updateWorldEntitiesOnly(
+    //   assembly: Assembly,
+    //   entity: AssemblyEntity,
+    //   startStage: StageNumber,
+    //   endStage?: StageNumber,
+    // ): void {
+    //   if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+    // },
+    // updatePreviewsAndEntities(assembly: Assembly, entity: AssemblyEntity, maxStage: StageNumber): void {
+    //
+    // },
+    // updateWireConnections(
+    //   assembly: Assembly,
+    //   entity: AssemblyEntity,
+    //   startStage: StageNumber,
+    //   endStage?: StageNumber,
+    // ): void {},
     tryDollyEntities(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
       assert(!entity.isUndergroundBelt(), "can't move underground belts")
       const movedEntity = entity.getWorldEntity(stage)
@@ -237,8 +299,7 @@ export function createWorldUpdater(
       return moveResult
     },
     clearWorldEntity(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
-      entity.getWorldEntity(stage)?.destroy()
-      updatePreviewEntities(assembly, entity)
+      makePreviewEntity(assembly, stage, entity)
       updateHighlights(assembly, entity, stage, stage)
     },
     deleteAllEntities(entity: AssemblyEntity): void {

@@ -122,6 +122,7 @@ export function createAssemblyUpdater(
   }
 
   function shouldMakeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity) {
+    if (entity.inFirstStageOnly()) return false
     if (entity.hasStageDiff()) return true
     const connections = assembly.content.getCircuitConnections(entity)
     if (!connections) return false

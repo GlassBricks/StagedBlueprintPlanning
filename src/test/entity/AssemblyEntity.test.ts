@@ -95,14 +95,9 @@ test("prevStageWithDiff", () => {
   assert.equal(nil, assemblyEntity.prevStageWithDiff(2))
 })
 
-test("getStageRange returns firstStage, nil", () => {
+test("inFirstStageOnly generally false", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.same([2, nil], assemblyEntity.getStageRange())
-})
-
-test("getPreviewStageRange returns nil, nil", () => {
-  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.same([nil, nil], assemblyEntity.getPreviewStageRange())
+  assert.false(assemblyEntity.inFirstStageOnly())
 })
 
 describe("getValueAtStage", () => {
@@ -507,14 +502,8 @@ describe("rolling stock", () => {
     assert.nil(assemblyEntity.getValueAtStage(1))
     assert.same(assemblyEntity.firstValue, assemblyEntity.getValueAtStage(2))
     assert.nil(assemblyEntity.getValueAtStage(3))
-  })
-  test("stage range is only first stage", () => {
-    const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" }, Pos(0, 0), nil, 2)
-    assert.same([2, 2], assemblyEntity.getStageRange())
-  })
-  test("preview range is only first stage", () => {
-    const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" }, Pos(0, 0), nil, 2)
-    assert.same([2, 2], assemblyEntity.getPreviewStageRange())
+
+    assert.true(assemblyEntity.inFirstStageOnly())
   })
   test("cannot apply stage diffs to rolling stock beyond first stage", () => {
     const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" } as RollingStockEntity, Pos(0, 0), nil, 1)

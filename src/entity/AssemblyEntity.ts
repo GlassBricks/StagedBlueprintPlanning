@@ -67,23 +67,11 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly firstStage: StageNumber
   readonly firstValue: Readonly<T>
 
-  /**
-   * Get range of stages that this entity should exist in.
-   *
-   * Currently: if is rolling stock, exists only in first stage, else exists in all stages >= firstStage.
-   */
-  getStageRange(): LuaMultiReturn<[StageNumber, StageNumber | nil]>
-
-  /**
-   * Get range of stages that an entity OR preview entity should exist in.
-   *
-   * Currently: if is rolling stock, exists only in first stage, else exists in ALL stages (nil, nil).
-   */
-  getPreviewStageRange(): LuaMultiReturn<[StageNumber | nil, StageNumber | nil]>
-
   // special entity treatment
   isRollingStock(): this is RollingStockAssemblyEntity
   isUndergroundBelt(): this is UndergroundBeltAssemblyEntity
+
+  inFirstStageOnly(): boolean
 
   setUndergroundBeltDirection(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
 
@@ -268,6 +256,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
   isUndergroundBelt(): this is UndergroundBeltAssemblyEntity {
     return isUndergroundBeltType(this.firstValue.name)
+  }
+
+  public inFirstStageOnly(): boolean {
+    return this.isRollingStock()
   }
   setUndergroundBeltDirection(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
     // assume compiler asserts this is correct

@@ -178,9 +178,12 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 
   function updateAssociatedEntitiesAndErrorHighlight(assembly: Assembly, entity: AssemblyEntity): void {
-    for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
-      const hasError = entityHasErrorAt(entity, i)
-      updateHighlight(entity, i, stage.surface, "errorOutline", hasError)
+    for (const stage of $range(
+      entity.firstStage,
+      entity.inFirstStageOnly() ? entity.firstStage : assembly.numStages(),
+    )) {
+      const hasError = entityHasErrorAt(entity, stage)
+      updateHighlight(entity, stage, assembly.getStage(stage)!.surface, "errorOutline", hasError)
     }
   }
 
