@@ -113,7 +113,7 @@ function assertWUCalled(
 ) {
   worldUpdaterAsserted = true
   if (n === nil) assert.equal(1, worldUpdaterCalls, "wu called once")
-  const spy = worldUpdater.updateWorldEntities
+  const spy = worldUpdater.updateAllWorldEntities
   if (n) assert.spy(spy).called_at_least(n + 1)
   else assert.spy(spy).called(1)
   const refs = spy.calls[n ?? 0].refs as any[]
@@ -726,7 +726,7 @@ describe("undergrounds", () => {
 
         assertNEntities(3)
         assertWUCalled(entity, 1, 1, false, 0)
-        worldUpdater.updateWorldEntities.clear()
+        worldUpdater.updateAllWorldEntities.clear()
 
         const [rotatedBack] = luaEntity.rotate()
         assert.true(rotatedBack, "rotated back")
@@ -963,7 +963,7 @@ test("resetStage", () => {
   const stage = assembly.getStage(2)!
   assemblyUpdater.resetStage(assembly, 2)
 
-  assert.spy(worldUpdater.deleteAllWorldEntities).called_with(match.ref(stage))
+  assert.spy(worldUpdater.clearStage).called_with(match.ref(stage))
 
   assertWUCalled(entity1, 2, 2, false, 0)
   assertWUCalled(entity2, 2, 2, false, 1)

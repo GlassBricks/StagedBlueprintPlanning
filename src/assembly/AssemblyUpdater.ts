@@ -106,12 +106,12 @@ export function createAssemblyUpdater(
   entitySaver: EntitySaver,
   wireSaver: WireSaver,
 ): AssemblyUpdater {
-  const { updateWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
+  const { updateAllWorldEntities, deleteExtraEntitiesOnly } = worldUpdater
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
 
   function refreshEntityAtStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
-    return updateWorldEntities(assembly, entity, stage, stage, false)
+    return updateAllWorldEntities(assembly, entity, stage, stage, false)
   }
 
   function reviveSettingsRemnant(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): boolean {
@@ -219,10 +219,10 @@ export function createAssemblyUpdater(
 
     // do rotate
     entity.setUndergroundBeltDirection(newDir)
-    updateWorldEntities(assembly, entity, entity.firstStage)
+    updateAllWorldEntities(assembly, entity, entity.firstStage)
     if (pair) {
       pair.setUndergroundBeltDirection(newDir === "output" ? "input" : "output")
-      updateWorldEntities(assembly, pair, pair.firstStage)
+      updateAllWorldEntities(assembly, pair, pair.firstStage)
     }
     return "updated"
   }
@@ -265,7 +265,7 @@ export function createAssemblyUpdater(
     if (!upgraded) return "no-change"
 
     if (!pair) {
-      updateWorldEntities(assembly, entity, applyStage)
+      updateAllWorldEntities(assembly, entity, applyStage)
     } else {
       const pairStage = isFirstStage ? pair.firstStage : stage
       const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
@@ -277,8 +277,8 @@ export function createAssemblyUpdater(
         return "cannot-upgrade-changed-pair"
       }
 
-      updateWorldEntities(assembly, entity, applyStage)
-      if (pairUpgraded) updateWorldEntities(assembly, pair, pairStage)
+      updateAllWorldEntities(assembly, entity, applyStage)
+      if (pairUpgraded) updateAllWorldEntities(assembly, pair, pairStage)
     }
     return "updated"
   }
@@ -312,23 +312,23 @@ export function createAssemblyUpdater(
       }
 
       saveWireConnections(content, assemblyEntity, stage)
-      updateWorldEntities(assembly, assemblyEntity, 1)
+      updateAllWorldEntities(assembly, assemblyEntity, 1)
 
       return assemblyEntity
     },
     refreshEntityAtStage,
     refreshEntityAllStages(assembly: AssemblyData, entity: AssemblyEntity): void {
-      return updateWorldEntities(assembly, entity, 1, nil, false)
+      return updateAllWorldEntities(assembly, entity, 1, nil, false)
     },
     moveEntityOnPreviewReplace(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil {
       if (stage >= entity.firstStage) return nil
       const oldStage = entity.moveToStage(stage)
-      updateWorldEntities(assembly, entity, stage, oldStage)
+      updateAllWorldEntities(assembly, entity, stage, oldStage)
       return oldStage
     },
-    tryDollyEntity: worldUpdater.tryMoveEntity,
+    tryDollyEntity: worldUpdater.tryDollyEntities,
     disallowEntityDeletion(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void {
-      return updateWorldEntities(assembly, entity, stage, stage, true)
+      return updateAllWorldEntities(assembly, entity, stage, stage, true)
     },
     deleteEntityOrCreateSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void {
       if (shouldMakeSettingsRemnant(assembly, entity)) {
@@ -361,7 +361,7 @@ export function createAssemblyUpdater(
       }
       const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
       if (hasDiff || rotated) {
-        updateWorldEntities(assembly, entity, stage)
+        updateAllWorldEntities(assembly, entity, stage)
         return "updated"
       }
       return "no-change"
@@ -381,7 +381,7 @@ export function createAssemblyUpdater(
       const rotated = newDirection !== entity.getDirection()
       if (!rotated) return "no-change"
       if (setRotationOrUndo(assembly, stage, entity, newDirection)) {
-        updateWorldEntities(assembly, entity, stage)
+        updateAllWorldEntities(assembly, entity, stage)
         return "updated"
       }
       return "cannot-rotate"
@@ -414,7 +414,7 @@ export function createAssemblyUpdater(
         upgraded = entity.applyUpgradeAtStage(stage, upgradeType)
       }
       if (rotated || upgraded) {
-        updateWorldEntities(assembly, entity, stage)
+        updateAllWorldEntities(assembly, entity, stage)
         return "updated"
       }
       return "no-change"
@@ -422,7 +422,7 @@ export function createAssemblyUpdater(
     updateWiresFromWorld(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult {
       const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage)
       if (maxConnectionsExceeded) {
-        updateWorldEntities(assembly, entity, entity.firstStage)
+        updateAllWorldEntities(assembly, entity, entity.firstStage)
         return "max-connections-exceeded"
       }
       if (!connectionsChanged) return "no-change"
@@ -434,7 +434,7 @@ export function createAssemblyUpdater(
           checkDefaultControlBehavior(assembly, otherEntity, stage)
         }
       }
-      updateWorldEntities(assembly, entity, entity.firstStage)
+      updateAllWorldEntities(assembly, entity, entity.firstStage)
       return "updated"
     },
     moveEntityToStage(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): StageMoveResult {
@@ -451,13 +451,13 @@ export function createAssemblyUpdater(
 
       // move
       entity.moveToStage(stage)
-      updateWorldEntities(assembly, entity, min(oldStage, stage))
+      updateAllWorldEntities(assembly, entity, min(oldStage, stage))
       return "updated"
     },
     resetStage(assembly: AssemblyData, stageNumber: StageNumber) {
       const stage = assembly.getStage(stageNumber)
       if (!stage) return
-      worldUpdater.deleteAllWorldEntities(stage)
+      worldUpdater.clearStage(stage)
       const updateLater: RollingStockAssemblyEntity[] = []
       for (const entity of assembly.content.iterateAllEntities()) {
         if (entity.isRollingStock()) {
@@ -477,7 +477,7 @@ export function createAssemblyUpdater(
       prop: keyof T,
     ): boolean {
       const moved = entity.resetProp(stageNumber, prop)
-      if (moved) updateWorldEntities(assembly, entity, stageNumber, nil)
+      if (moved) updateAllWorldEntities(assembly, entity, stageNumber, nil)
       return moved
     },
     movePropDown<T extends Entity>(
@@ -488,20 +488,20 @@ export function createAssemblyUpdater(
     ): boolean {
       const movedStage = entity.movePropDown(stageNumber, prop)
       if (movedStage) {
-        updateWorldEntities(assembly, entity, movedStage, nil)
+        updateAllWorldEntities(assembly, entity, movedStage, nil)
         return true
       }
       return false
     },
     resetAllProps(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
       const moved = entity.resetValue(stageNumber)
-      if (moved) updateWorldEntities(assembly, entity, stageNumber, nil)
+      if (moved) updateAllWorldEntities(assembly, entity, stageNumber, nil)
       return moved
     },
     moveAllPropsDown(assembly: AssemblyData, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
       const movedStage = entity.moveValueDown(stageNumber)
       if (movedStage) {
-        updateWorldEntities(assembly, entity, movedStage, nil)
+        updateAllWorldEntities(assembly, entity, movedStage, nil)
         return true
       }
       return false
@@ -510,7 +510,7 @@ export function createAssemblyUpdater(
       const stage = entity.firstStage
       const luaEntity = entity.getWorldEntity(stage)
       if (!luaEntity) {
-        updateWorldEntities(assembly, entity, stage, stage, true)
+        updateAllWorldEntities(assembly, entity, stage, stage, true)
         return
       }
 
@@ -522,7 +522,7 @@ export function createAssemblyUpdater(
       const content = assembly.content
       const assemblyEntities = entities.map((e) => content.findCompatible(e, nil)!)
       for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
-      for (const entity of assemblyEntities) updateWorldEntities(assembly, entity, stage, stage, true)
+      for (const entity of assemblyEntities) updateAllWorldEntities(assembly, entity, stage, stage, true)
     },
     setTrainLocationToCurrent(assembly: AssemblyData, entity: RollingStockAssemblyEntity): void {
       const stageNum = entity.firstStage
@@ -540,7 +540,7 @@ export function createAssemblyUpdater(
         if (assemblyEntity) {
           deleteExtraEntitiesOnly(assemblyEntity)
           content.changePosition(assemblyEntity, luaEntity.position)
-          updateWorldEntities(assembly, assemblyEntity, stageNum, stageNum)
+          updateAllWorldEntities(assembly, assemblyEntity, stageNum, stageNum)
         } else {
           // add
           AssemblyUpdater.addNewEntity(assembly, stageNum, luaEntity)

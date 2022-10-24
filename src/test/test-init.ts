@@ -186,7 +186,7 @@ function setupManualTests(assembly: UserAssembly) {
     entity._applyDiffAtStage(4, { recipe: "copper-cable" })
 
     assembly.content.add(entity)
-    WorldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateAllWorldEntities(assembly, entity, 1)
 
     teleportToStage(player, assembly.getStage(4)!)
     player.opened = entity.getWorldEntity(4)

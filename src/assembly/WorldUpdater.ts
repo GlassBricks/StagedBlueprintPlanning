@@ -34,7 +34,7 @@ export interface WorldUpdater {
    * @param endStage inclusive. If not specified, defaults to the max assembly stage
    * @param replace if entities should be replaced (deleted and created) instead of updated
    */
-  updateWorldEntities(
+  updateAllWorldEntities(
     assembly: AssemblyData,
     entity: AssemblyEntity,
     startStage: StageNumber,
@@ -49,7 +49,7 @@ export interface WorldUpdater {
    * @param entity the assembly entity
    * @return the result of the move
    */
-  tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
+  tryDollyEntities(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
 
   /** Removes the world entity at a give stage (and makes error highlight) */
   clearWorldEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): void
@@ -63,7 +63,7 @@ export interface WorldUpdater {
   makeSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: AssemblyData, entity: AssemblyEntity): void
 
-  deleteAllWorldEntities(stage: StageSurface): void
+  clearStage(stage: StageSurface): void
 }
 
 export type AssemblyEntityDollyResult =
@@ -201,7 +201,7 @@ export function createWorldUpdater(
   }
 
   return {
-    updateWorldEntities(
+    updateAllWorldEntities(
       assembly: AssemblyData,
       entity: AssemblyEntity,
       startStage: StageNumber,
@@ -219,7 +219,7 @@ export function createWorldUpdater(
       updatePreviewEntities(assembly, entity)
       updateHighlights(assembly, entity, startStage, endStage)
     },
-    tryMoveEntity(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
+    tryDollyEntities(assembly: AssemblyData, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
       assert(!entity.isUndergroundBelt(), "can't move underground belts")
       const movedEntity = entity.getWorldEntity(stage)
       if (!movedEntity) return "entities-missing"
@@ -254,7 +254,7 @@ export function createWorldUpdater(
     },
     makeSettingsRemnant,
     reviveSettingsRemnant,
-    deleteAllWorldEntities(stage: StageSurface) {
+    clearStage(stage: StageSurface) {
       for (const entity of stage.surface.find_entities()) {
         if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
       }
