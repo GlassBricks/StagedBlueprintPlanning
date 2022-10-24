@@ -13,10 +13,11 @@ import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { Prototypes } from "../../constants"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
-import { AssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { isPreviewEntity } from "../../entity/entity-info"
 import { EntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
+import { createRollingStock } from "../entity/createRollingStock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
 
@@ -67,13 +68,18 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
     }
     if (isPreview) {
       assert.equal(
-        Prototypes.PreviewEntityPrefix + entity.firstValue.name,
+        Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name,
         worldEntity.name,
         `preview is correct at stage ${stage}`,
       )
     }
     assert.same(entity.position, worldEntity.position, `position is correct at stage ${stage}`)
     assert.same(entity.getDirection(), worldEntity.direction, `direction is correct at stage ${stage}`)
+
+    assert.nil(
+      entity.getExtraEntity("settingsRemnantHighlight", stage),
+      `settingsRemnantHighlight does not exist at stage ${stage}`,
+    )
   }
 
   assert.equal(expectedHasMissing, hasMissing, "hasMissing is correct")
@@ -372,6 +378,33 @@ test("creating upgrade via fast replace", () => {
   assertEntityCorrect(entity, false)
 })
 
+test("update with upgrade", () => {
+  const entity = setupEntity(3)
+  entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
+  AssemblyUpdater.refreshEntityAllStages(assembly, entity)
+  assertEntityCorrect(entity, false)
+})
+
+test("update with upgrade and blocker", () => {
+  createEntity(5, { name: "stone-wall" })
+  const entity = setupEntity(3)
+
+  let preview = entity.getWorldOrPreviewEntity(5)!
+  assert.true(isPreviewEntity(preview))
+  assert.equal(Prototypes.PreviewEntityPrefix + "filter-inserter", preview.name)
+
+  assertEntityCorrect(entity, true)
+
+  entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
+  AssemblyUpdater.refreshEntityAllStages(assembly, entity)
+
+  preview = entity.getWorldOrPreviewEntity(5)!
+  assert.true(isPreviewEntity(preview))
+  assert.equal(Prototypes.PreviewEntityPrefix + "stack-filter-inserter", preview.name)
+
+  assertEntityCorrect(entity, true)
+})
+
 test("creating upgrade via apply upgrade target", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
@@ -529,4 +562,49 @@ test("connect and disconnect circuit wires", () => {
 
   assertEntityCorrect(inserter, false)
   assertEntityCorrect(pole, false)
+})
+
+function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHasError: boolean) {
+  let hasError = false
+  for (const stage of $range(1, assembly.numStages())) {
+    const worldEntity = entity.getWorldOrPreviewEntity(stage)
+    if (stage === entity.firstStage) {
+      assert.not_nil(worldEntity)
+      if (isPreviewEntity(worldEntity!)) {
+        hasError = true
+        assert.equal(Prototypes.PreviewEntityPrefix + entity.firstValue.name, worldEntity!.name)
+        assert.not_nil(entity.getExtraEntity("errorOutline", entity.firstStage))
+        assert.equal(entity.getApparentDirection(), worldEntity!.direction)
+      } else {
+        assert.equal(entity.firstValue.name, worldEntity!.name)
+        assert.nil(entity.getExtraEntity("errorOutline", entity.firstStage))
+        assert.equal(entity.firstValue.orientation, worldEntity!.orientation)
+      }
+      assert.same(entity.position, worldEntity!.position)
+    } else {
+      assert.nil(worldEntity, "train should only be present in first stage")
+      assert.nil(entity.getExtraEntity("errorOutline", stage))
+    }
+  }
+  assert.equal(expectedHasError, hasError, "hasError")
+  assert.false(entity.hasAnyExtraEntities("errorElsewhereIndicator"))
+  assert.false(entity.hasAnyExtraEntities("settingsRemnantHighlight"))
+  assert.false(entity.hasAnyExtraEntities("configChangedHighlight"))
+  assert.false(entity.hasAnyExtraEntities("configChangedLaterHighlight"))
+}
+
+test("create train entity", () => {
+  const train = createRollingStock(surfaces[3 - 1])
+  const entity = AssemblyUpdater.addNewEntity(assembly, 3, train)!
+  assert.not_nil(entity)
+  assertTrainEntityCorrect(entity, false)
+})
+test("train entity error", () => {
+  const train = createRollingStock(surfaces[3 - 1])
+  const entity = AssemblyUpdater.addNewEntity(assembly, 3, train)!
+  train.destroy()
+  surfaces[3 - 1].find_entities().forEach((e) => e.destroy()) // destroys rails too, so train cannot be re-created
+
+  AssemblyUpdater.refreshEntityAllStages(assembly, entity)
+  assertTrainEntityCorrect(entity, true)
 })

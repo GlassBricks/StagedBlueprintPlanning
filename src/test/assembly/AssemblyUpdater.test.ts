@@ -932,7 +932,7 @@ describe("trains", () => {
   let assemblyEntities: RollingStockAssemblyEntity[]
   before_each(() => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
-    entities = createRollingStocks("locomotive", "cargo-wagon", "fluid-wagon")
+    entities = createRollingStocks(game.surfaces[1], "locomotive", "cargo-wagon", "fluid-wagon")
     assemblyEntities = entities.map((e) => {
       const aEntity = createAssemblyEntity(
         {

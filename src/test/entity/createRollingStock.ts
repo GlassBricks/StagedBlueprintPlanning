@@ -11,11 +11,10 @@
 
 import { Pos } from "../../lib/geometry"
 
-export function createRollingStock(): LuaEntity {
-  return createRollingStocks("locomotive")[0]
+export function createRollingStock(surface: LuaSurface = game.surfaces[1], type: string = "locomotive"): LuaEntity {
+  return createRollingStocks(surface, type)[0]
 }
-export function createRollingStocks(...types: string[]): LuaEntity[] {
-  const surface = game.surfaces[1]
+export function createRollingStocks(surface: LuaSurface, ...types: string[]): LuaEntity[] {
   for (let i = 1; i <= types.length * 7 + 5; i += 2) {
     surface.create_entity({
       name: "straight-rail",
