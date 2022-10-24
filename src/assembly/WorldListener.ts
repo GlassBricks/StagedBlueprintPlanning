@@ -106,7 +106,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     addNewEntity,
     clearEntityAtStage,
     deleteEntityOrCreateSettingsRemnant,
-    disallowEntityDeletion,
+    forbidEntityDeletion,
     forceDeleteEntity,
     moveEntityOnPreviewReplace,
     moveEntityToStage,
@@ -280,7 +280,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
       if (existingStage !== stage) {
         if (existingStage < stage) {
-          disallowEntityDeletion(assembly, stage, existing)
+          forbidEntityDeletion(assembly, stage, existing)
         }
         // else: stage > existingStage; bug, ignore
         return

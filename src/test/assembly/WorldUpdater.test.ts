@@ -102,13 +102,13 @@ describe("updateWorldEntities", () => {
         entity._applyDiffAtStage(3, { override_stack_size: 1 })
       })
     }
-    test.each([1, 2, 3])("can create one entity at stage %d", (stage) => {
-      worldUpdater.updateAllWorldEntities(assembly, entity, stage, stage)
+    test.each([1, 2, 3, 4])("can create one entity at stage %d", (stage) => {
+      worldUpdater.refreshWorldEntityAtStage(assembly, stage, entity)
       assertEntityCorrect(stage)
     })
     test("can create all entities", () => {
-      worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
-      for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+      worldUpdater.updateWorldEntities(assembly, entity, 1)
+      for (let i = 1; i <= 4; i++) assertEntityCorrect(i)
     })
 
     test("can refresh a single entity", () => {
@@ -122,45 +122,37 @@ describe("updateWorldEntities", () => {
         } as TestEntity,
       )!
       entity.replaceWorldEntity(2, replaced)
-      worldUpdater.updateAllWorldEntities(assembly, entity, 2, 2)
+      worldUpdater.refreshWorldEntityAtStage(assembly, 2, entity)
       const val = assertEntityCorrect(2)
       assert.equal(val, replaced)
     })
 
-    test("when replace is true, deletes old entities", () => {
-      worldUpdater.updateAllWorldEntities(assembly, entity, 2, 2)
-      const value = assertEntityCorrect(2)
-      worldUpdater.updateAllWorldEntities(assembly, entity, 2, 2, true)
-      assert.false(value.valid)
-      assertEntityCorrect(2)
-    })
-
     test("replaces deleted entity", () => {
-      worldUpdater.updateAllWorldEntities(assembly, entity, 3, 3)
+      worldUpdater.refreshWorldEntityAtStage(assembly, 3, entity)
       entity.getWorldEntity(3)!.destroy()
       assertNothingPresent(3)
-      worldUpdater.updateAllWorldEntities(assembly, entity, 3, 3)
+      worldUpdater.refreshWorldEntityAtStage(assembly, 3, entity)
       assertEntityCorrect(3)
     })
 
     test("can upgrade entities", () => {
-      worldUpdater.updateAllWorldEntities(assembly, entity, 1, 1)
+      worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity)
       entity._applyDiffAtStage(1, { name: "fast-inserter" })
-      worldUpdater.updateAllWorldEntities(assembly, entity, 1, 1)
+      worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity)
       assertEntityCorrect(1)
     })
   })
 
   test("creates preview entities in stages below first stage", () => {
     entity.moveToStage(3)
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
     assertEntityCorrect(3)
   })
 
   test("calls wireUpdater", () => {
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
     for (let i = 1; i <= 3; i++)
       assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly.content), match.ref(entity), i)
   })
@@ -185,7 +177,7 @@ describe("updateWorldEntities", () => {
       )!
       entity.replaceWorldEntity(3, luaEntity)
     }
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 4)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
 
     assertDestructible(assertEntityCorrect(2), true)
     assertDestructible(assertEntityCorrect(3), false)
@@ -193,9 +185,9 @@ describe("updateWorldEntities", () => {
   })
 
   test("can handle entity moving up", () => {
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
     entity.moveToStage(2)
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
 
     assert.nil(findMainEntity(1))
     assertHasPreview(1)
@@ -204,32 +196,42 @@ describe("updateWorldEntities", () => {
   })
 
   test("can rotate entities", () => {
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
     entity.setDirection(defines.direction.west as SavedDirection)
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
   test("can un-rotate entities", () => {
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
     entity.getWorldEntity(2)!.direction = defines.direction.west
-    worldUpdater.updateAllWorldEntities(assembly, entity, 2, 2)
+    worldUpdater.refreshWorldEntityAtStage(assembly, 2, entity)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
   test("calls updateHighlights", () => {
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
-    assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    assert
+      .spy(highlighter.updateHighlights)
+      .called_with(match.ref(assembly), match.ref(entity), 1, assembly.numStages())
   })
 
   test("entity preview not created if is rolling stock", () => {
     entity.applyUpgradeAtStage(1, "cargo-wagon")
     entity.moveToStage(2)
-    worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+    worldUpdater.updateWorldEntities(assembly, entity, 1)
     assertNothingPresent(1)
     assertHasPreview(2) // no rail, can't create
     assertNothingPresent(3)
   })
+})
+
+test("replaceWorldEntityAtStage replaces old value", () => {
+  worldUpdater.refreshWorldEntityAtStage(assembly, 2, entity)
+  const value = assertEntityCorrect(2)
+  worldUpdater.replaceWorldEntityAtStage(assembly, 2, entity)
+  assert.false(value.valid)
+  assertEntityCorrect(2)
 })
 
 describe("tryMoveEntity", () => {
@@ -355,7 +357,7 @@ describe("tryMoveEntity", () => {
 })
 
 test("clearWorldEntity", () => {
-  worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+  worldUpdater.updateWorldEntities(assembly, entity, 1)
   worldUpdater.clearWorldEntity(assembly, 2, entity)
   assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 2, 2)
   assert.nil(findMainEntity(2))
@@ -365,29 +367,22 @@ test("clearWorldEntity", () => {
 
 describe("invalid stages", () => {
   test("out of range is ignored", () => {
-    assert.no_errors(() => worldUpdater.updateAllWorldEntities(assembly, entity, -1, 5))
+    assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1))
     for (let i = -1; i <= 5; i++) {
       if (i >= 1 && i <= 4) assertEntityCorrect(i)
       else assertNothingPresent(i)
     }
   })
   test("does nothing if range is empty", () => {
-    worldUpdater.updateAllWorldEntities(assembly, entity, 3, 1)
+    worldUpdater.updateWorldEntities(assembly, entity, 5)
     for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   })
 })
 
 test("deleteWorldEntities", () => {
-  worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+  worldUpdater.updateWorldEntities(assembly, entity, 1)
   worldUpdater.deleteAllEntities(entity)
   for (let i = 1; i <= 3; i++) assertNothingPresent(i)
-  assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
-})
-
-test("deleteExtraEntitiesOnly", () => {
-  worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
-  worldUpdater.deleteExtraEntitiesOnly(entity)
-  for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
 })
 
@@ -400,7 +395,7 @@ test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsR
 
 test("updateWorldEntities calls makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
-  worldUpdater.updateAllWorldEntities(assembly, entity, 1, 3)
+  worldUpdater.updateWorldEntities(assembly, entity, 1)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
   assert.spy(highlighter.makeSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
 })
@@ -434,8 +429,8 @@ describe("circuit wires", () => {
   })
 
   function doAdd() {
-    worldUpdater.updateAllWorldEntities(assembly, entity1, 1, 1)
-    worldUpdater.updateAllWorldEntities(assembly, entity2, 1, 1)
+    worldUpdater.updateWorldEntities(assembly, entity1, 1)
+    worldUpdater.updateWorldEntities(assembly, entity2, 1)
     const luaEntity1 = entity1.getWorldEntity(1)!
     const luaEntity2 = entity2.getWorldEntity(1)!
     return { luaEntity1, luaEntity2 }
@@ -483,7 +478,7 @@ describe("circuit wires", () => {
   test("can remove circuit wires", () => {
     const { luaEntity1, luaEntity2 } = doAdd()
     addExtraWires({ luaEntity1, luaEntity2 })
-    worldUpdater.updateAllWorldEntities(assembly, entity2, 1, 1)
+    worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity1)
     assert.same([], luaEntity1.circuit_connection_definitions ?? [])
     assert.same([], luaEntity2.circuit_connection_definitions ?? [])
   })
@@ -495,7 +490,7 @@ describe("circuit wires", () => {
     addWireToAssembly()
     const entities = doAdd()
     addExtraWires(entities)
-    worldUpdater.updateAllWorldEntities(assembly, entity2, 1, 1)
+    worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity1)
     assertSingleWire(entities)
   })
 })

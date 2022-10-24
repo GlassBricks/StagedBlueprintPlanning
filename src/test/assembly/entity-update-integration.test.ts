@@ -235,7 +235,7 @@ test("move via preview replace", () => {
 test("disallowing entity deletion", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
-  AssemblyUpdater.disallowEntityDeletion(assembly, 4, entity)
+  AssemblyUpdater.forbidEntityDeletion(assembly, 4, entity)
   assert.false(worldEntity.valid) // replaced
   assertEntityCorrect(entity, false)
 })

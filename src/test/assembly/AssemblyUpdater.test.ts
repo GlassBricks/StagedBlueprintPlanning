@@ -43,9 +43,11 @@ let worldUpdater: mock.Stubbed<WorldUpdater>
 let wireSaver: mock.Stubbed<WireSaver>
 
 let worldUpdaterCalls: number
+let expectedWuCalls: number
 before_each(() => {
   assembly = createMockAssembly(surfaces)
   worldUpdaterCalls = 0
+  expectedWuCalls = 0
   worldUpdater = makeStubbed(keys<WorldUpdater>())
   for (const [, v] of pairs(worldUpdater)) {
     v.invokes((() => {
@@ -58,6 +60,87 @@ before_each(() => {
 
   game.surfaces[1].find_entities().forEach((e) => e.destroy())
 })
+
+after_each(() => {
+  if (expectedWuCalls === worldUpdaterCalls) return
+
+  let message = `expected ${expectedWuCalls} calls to worldUpdater, got ${worldUpdaterCalls}\n`
+  for (const [key, spy] of pairs(worldUpdater)) {
+    if (spy.calls.length > 0) {
+      message += `  ${key} called ${spy.calls.length} times\n`
+    }
+  }
+  error(message)
+})
+
+function clearMocks(): void {
+  mock.clear(worldUpdater)
+  mock.clear(wireSaver)
+  worldUpdaterCalls = 0
+  expectedWuCalls = 0
+}
+
+function assertWUNotCalled() {
+  if (worldUpdaterCalls !== 0) {
+    for (const [key, spy] of pairs(worldUpdater)) {
+      assert
+        .message(`${key} called`)
+        .spy(spy as any)
+        .not_called()
+    }
+  }
+}
+function assertUpdateCalled(entity: AssemblyEntity, startStage: StageNumber, endStage: StageNumber | nil, n?: number) {
+  expectedWuCalls++
+  if (n === nil) assert.equal(1, worldUpdaterCalls, "wu called once")
+  const spy = worldUpdater.updateWorldEntities
+  if (n) assert.spy(spy).called_at_least(n + 1)
+  else assert.spy(spy).called(1)
+  const refs = spy.calls[n ?? 0].refs as any[]
+  const [cAssembly, cEntity, cStartStage, cEndStage] = table.unpack(refs, 1, 4)
+  assert.equal(assembly, cAssembly)
+  assert.equal(entity, cEntity)
+  assert.equal(startStage, cStartStage, "start stage")
+  assert.equal(endStage, cEndStage, "end stage")
+}
+
+function assertRefreshCalled(entity: AssemblyEntity, stage: StageNumber) {
+  expectedWuCalls++
+  assert.spy(worldUpdater.refreshWorldEntityAtStage).called_with(assembly, stage, entity)
+}
+function assertReplaceCalled(entity: AssemblyEntity, stage: StageNumber) {
+  expectedWuCalls++
+  assert.spy(worldUpdater.replaceWorldEntityAtStage).called_with(match.ref(assembly), stage, match.ref(entity))
+}
+function assertDeleteAllEntitiesCalled(entity: AssemblyEntity) {
+  expectedWuCalls++
+  assert.equal(1, worldUpdaterCalls)
+  assert.spy(worldUpdater.deleteAllEntities).called_with(match.ref(entity))
+}
+function assertMakeSettingsRemnantCalled(entity: AssemblyEntity) {
+  expectedWuCalls++
+  assert.equal(1, worldUpdaterCalls)
+  assert.spy(worldUpdater.makeSettingsRemnant).called_with(assembly, entity)
+}
+function assertReviveSettingsRemnantCalled(entity: AssemblyEntity) {
+  expectedWuCalls++
+  assert.equal(1, worldUpdaterCalls)
+  assert.spy(worldUpdater.reviveSettingsRemnant).called_with(assembly, entity)
+}
+
+function assertOneEntity() {
+  assert.equal(1, assembly.content.countNumEntities(), "has one entity")
+}
+function assertNEntities(n: number) {
+  assert.equal(n, assembly.content.countNumEntities(), `has ${n} entities`)
+}
+function assertNoEntities() {
+  assert.same(0, assembly.content.countNumEntities(), "has no entities")
+}
+
+function assertStageDiffs(entity: AssemblyEntity, changes: StageDiffsInternal<BlueprintEntity>) {
+  assert.same(changes, entity.getStageDiffs())
+}
 
 function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {
   const params = {
@@ -75,90 +158,6 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   return entity
 }
 
-function clearMocks(): void {
-  mock.clear(worldUpdater)
-  mock.clear(wireSaver)
-  worldUpdaterCalls = 0
-}
-
-let worldUpdaterAsserted = false
-let entitiesAsserted = false
-before_each(() => {
-  worldUpdaterAsserted = false
-  entitiesAsserted = false
-})
-after_each(() => {
-  assert(worldUpdaterAsserted, "events not asserted")
-  assert(entitiesAsserted, "entities not asserted")
-})
-
-function assertWUNotCalled() {
-  if (worldUpdaterCalls !== 0) {
-    for (const [key, spy] of pairs(worldUpdater)) {
-      assert
-        .message(`${key} called`)
-        .spy(spy as any)
-        .not_called()
-    }
-  }
-  worldUpdaterAsserted = true
-}
-
-function assertWUCalled(
-  entity: AssemblyEntity,
-  startStage: StageNumber,
-  endStage: StageNumber | nil,
-  replace: boolean,
-  n?: number,
-) {
-  worldUpdaterAsserted = true
-  if (n === nil) assert.equal(1, worldUpdaterCalls, "wu called once")
-  const spy = worldUpdater.updateAllWorldEntities
-  if (n) assert.spy(spy).called_at_least(n + 1)
-  else assert.spy(spy).called(1)
-  const refs = spy.calls[n ?? 0].refs as any[]
-  const [cAssembly, cEntity, cStartStage, cEndStage, cReplace] = table.unpack(refs, 1, 5)
-  assert.equal(assembly, cAssembly)
-  assert.equal(entity, cEntity)
-  assert.equal(startStage, cStartStage, "start stage")
-  assert.equal(endStage, cEndStage, "end stage")
-  if (replace) assert.true(cReplace, "replace")
-  else assert.falsy(cReplace, "replace")
-}
-function assertDeleteAllEntitiesCalled(entity: AssemblyEntity) {
-  worldUpdaterAsserted = true
-  assert.equal(1, worldUpdaterCalls)
-  assert.spy(worldUpdater.deleteAllEntities).called_with(match.ref(entity))
-}
-function assertMakeSettingsRemnantCalled(entity: AssemblyEntity) {
-  worldUpdaterAsserted = true
-  assert.equal(1, worldUpdaterCalls)
-  assert.spy(worldUpdater.makeSettingsRemnant).called_with(assembly, entity)
-}
-function assertReviveSettingsRemnantCalled(entity: AssemblyEntity) {
-  worldUpdaterAsserted = true
-  assert.equal(1, worldUpdaterCalls)
-  assert.spy(worldUpdater.reviveSettingsRemnant).called_with(assembly, entity)
-}
-
-function assertOneEntity() {
-  assert.equal(1, assembly.content.countNumEntities(), "has one entity")
-  entitiesAsserted = true
-}
-function assertNEntities(n: number) {
-  assert.equal(n, assembly.content.countNumEntities(), `has ${n} entities`)
-  entitiesAsserted = true
-}
-
-function assertNoEntities() {
-  assert.same(0, assembly.content.countNumEntities(), "has no entities")
-  entitiesAsserted = true
-}
-
-function assertStageDiffs(entity: AssemblyEntity, changes: StageDiffsInternal<BlueprintEntity>) {
-  assert.same(changes, entity.getStageDiffs())
-}
-
 test("addNewEntity", () => {
   const luaEntity = createEntity(2)
   const entity = assemblyUpdater.addNewEntity(assembly, 2, luaEntity)!
@@ -173,7 +172,7 @@ test("addNewEntity", () => {
   assert.equal(luaEntity, entity.getWorldEntity(2))
 
   assertOneEntity()
-  assertWUCalled(entity, 1, nil, false)
+  assertUpdateCalled(entity, 1, nil)
   assert.spy(wireSaver.saveWireConnections).called_with(assembly.content, entity, 2)
 })
 
@@ -186,13 +185,17 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   return { entity, luaEntity }
 }
 
-test("refreshEntityAtStage calls worldUpdater at one stage", () => {
-  const { entity } = addEntity(2)
-
-  assemblyUpdater.refreshEntityAtStage(assembly, 2, entity)
-
-  assertOneEntity()
-  assertWUCalled(entity, 2, 2, false)
+test("refreshEntityAtStage", () => {
+  assert.equal(worldUpdater.refreshWorldEntityAtStage, assemblyUpdater.refreshEntityAtStage)
+  expectedWuCalls = 0
+})
+test("clearEntityAtStage", () => {
+  assert.equal(worldUpdater.clearWorldEntity, assemblyUpdater.clearEntityAtStage)
+  expectedWuCalls = 0
+})
+test("forbidEntityDeletion", () => {
+  assert.equal(worldUpdater.replaceWorldEntityAtStage, assemblyUpdater.forbidEntityDeletion)
+  expectedWuCalls = 0
 })
 
 test("refreshEntityAllStages calls worldUpdater at all stages", () => {
@@ -201,7 +204,7 @@ test("refreshEntityAllStages calls worldUpdater at all stages", () => {
   assemblyUpdater.refreshEntityAllStages(assembly, entity)
 
   assertOneEntity()
-  assertWUCalled(entity, 1, nil, false)
+  assertUpdateCalled(entity, 1, nil)
 })
 
 test("moveEntityOnPreviewReplace", () => {
@@ -213,7 +216,7 @@ test("moveEntityOnPreviewReplace", () => {
   assert.equal(1, (entity.firstValue as BlueprintEntity).override_stack_size)
   assert.false(entity.hasStageDiff())
   assertOneEntity()
-  assertWUCalled(entity, 1, 2, false)
+  assertUpdateCalled(entity, 1, 2)
 })
 
 test("reviveSettingsRemnant", () => {
@@ -226,15 +229,6 @@ test("reviveSettingsRemnant", () => {
   assert.same(1, entity.firstStage)
   assertOneEntity()
   assertReviveSettingsRemnantCalled(entity)
-})
-
-test("disallowEntityDeletion", () => {
-  const { entity } = addEntity(1)
-
-  assemblyUpdater.disallowEntityDeletion(assembly, 2, entity)
-
-  assertWUCalled(entity, 2, 2, true)
-  assertOneEntity()
 })
 
 describe("deleteEntityOrCreateSettingsRemnant", () => {
@@ -310,13 +304,6 @@ test("forceDeleteEntity always deletes", () => {
   assertDeleteAllEntitiesCalled(entity)
 })
 
-test("clearEntityAtStage", () => {
-  assert.equal(assemblyUpdater.clearEntityAtStage, worldUpdater.clearWorldEntity)
-
-  entitiesAsserted = true
-  worldUpdaterAsserted = true
-})
-
 describe("tryUpdateEntityFromWorld", () => {
   test('with no changes returns "no-change"', () => {
     const { entity } = addEntity(2)
@@ -335,7 +322,7 @@ describe("tryUpdateEntityFromWorld", () => {
     assert.equal(3, entity.firstValue.override_stack_size)
 
     assertOneEntity()
-    assertWUCalled(entity, 2, nil, false)
+    assertUpdateCalled(entity, 2, nil)
   })
 
   test("can detect rotate by pasting", () => {
@@ -349,7 +336,7 @@ describe("tryUpdateEntityFromWorld", () => {
 
     assert.equal(defines.direction.east, entity.getDirection())
     assertOneEntity()
-    assertWUCalled(entity, 2, nil, false)
+    assertUpdateCalled(entity, 2, nil)
   })
 
   test("forbids rotate if in higher stage than first", () => {
@@ -362,7 +349,7 @@ describe("tryUpdateEntityFromWorld", () => {
     assert.equal(defines.direction.north, entity.getDirection())
 
     assertOneEntity()
-    assertWUCalled(entity, 3, 3, false)
+    assertRefreshCalled(entity, 3)
   })
 
   test.each([false, true])("integration: in higher stage, with changes: %s", (withExistingChanges) => {
@@ -385,7 +372,7 @@ describe("tryUpdateEntityFromWorld", () => {
     }
 
     assertOneEntity()
-    assertWUCalled(entity, 2, nil, false)
+    assertUpdateCalled(entity, 2, nil)
   })
 
   test("integration: updating to match removes stage diff", () => {
@@ -400,7 +387,7 @@ describe("tryUpdateEntityFromWorld", () => {
     assert.false(entity.hasStageDiff())
 
     assertOneEntity()
-    assertWUCalled(entity, 2, nil, false)
+    assertUpdateCalled(entity, 2, nil)
   })
 })
 
@@ -412,7 +399,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     assert.equal("updated", ret)
     assert.equal(direction.west, entity.getDirection())
     assertOneEntity()
-    assertWUCalled(entity, 2, nil, false)
+    assertUpdateCalled(entity, 2, nil)
   })
 
   test("in higher stage forbids rotation", () => {
@@ -424,7 +411,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     assert.equal("cannot-rotate", ret)
     assert.equal(oldDirection, entity.getDirection())
     assertOneEntity()
-    assertWUCalled(entity, 2, 2, false)
+    assertRefreshCalled(entity, 2)
   })
 })
 
@@ -441,7 +428,7 @@ describe("tryApplyUpgradeTarget", () => {
     assert.equal("stack-filter-inserter", entity.firstValue.name)
     assert.equal(direction, entity.getDirection())
     assertOneEntity()
-    assertWUCalled(entity, 1, nil, false)
+    assertUpdateCalled(entity, 1, nil)
   })
   test("can apply rotation", () => {
     const { luaEntity, entity } = addEntity(1)
@@ -456,7 +443,7 @@ describe("tryApplyUpgradeTarget", () => {
     assert.equal("filter-inserter", entity.firstValue.name)
     assert.equal(direction.west, entity.getDirection())
     assertOneEntity()
-    assertWUCalled(entity, 1, nil, false)
+    assertUpdateCalled(entity, 1, nil)
   })
   test("upgrade to rotate forbidden", () => {
     const { luaEntity, entity } = addEntity(1)
@@ -470,7 +457,7 @@ describe("tryApplyUpgradeTarget", () => {
     assert.equal("cannot-rotate", ret)
     assert.equal(0, entity.getDirection())
     assertOneEntity()
-    assertWUCalled(entity, 2, 2, false)
+    assertRefreshCalled(entity, 2)
   })
 })
 
@@ -482,7 +469,7 @@ describe("updateWiresFromWorld", () => {
     assert.equal("updated", ret)
 
     assertOneEntity()
-    assertWUCalled(entity, 1, nil, false)
+    assertUpdateCalled(entity, 1, nil)
   })
   test("if no changes, does not call update", () => {
     const { entity } = addEntity(1)
@@ -500,7 +487,7 @@ describe("updateWiresFromWorld", () => {
     assert.equal("max-connections-exceeded", ret)
 
     assertOneEntity()
-    assertWUCalled(entity, 1, nil, false)
+    assertUpdateCalled(entity, 1, nil)
   })
 })
 
@@ -511,7 +498,7 @@ describe("moveEntityToStage", () => {
     assert.equal("updated", result)
     assert.equal(2, entity.firstStage)
     assertOneEntity()
-    assertWUCalled(entity, 1, nil, false)
+    assertUpdateCalled(entity, 1, nil)
   })
 
   test("can move down to preview", () => {
@@ -519,7 +506,7 @@ describe("moveEntityToStage", () => {
     assemblyUpdater.moveEntityToStage(assembly, 3, entity)
     assert.equal(3, entity.firstStage)
     assertOneEntity()
-    assertWUCalled(entity, 3, nil, false)
+    assertUpdateCalled(entity, 3, nil)
   })
 
   test("can revive settings remnant", () => {
@@ -561,7 +548,7 @@ describe("undergrounds", () => {
 
     assert.equal("output", entity.firstValue.type)
     assertNEntities(2)
-    assertWUCalled(entity, 1, nil, false)
+    assertUpdateCalled(entity, 1, nil)
   })
 
   function createUndergroundBeltPair(
@@ -595,7 +582,7 @@ describe("undergrounds", () => {
       assert.equal(direction.west, entity.getDirection())
 
       assertOneEntity()
-      assertWUCalled(entity, 1, nil, false)
+      assertUpdateCalled(entity, 1, nil)
     })
 
     test("lone underground belt in higher stage forbids rotation", () => {
@@ -612,7 +599,7 @@ describe("undergrounds", () => {
       assert.equal(direction.west, entity.getDirection())
 
       assertOneEntity()
-      assertWUCalled(entity, 2, 2, false)
+      assertRefreshCalled(entity, 2)
     })
 
     test.each(["lower", "higher"])("%s underground in first stage rotates pair", (which) => {
@@ -631,8 +618,8 @@ describe("undergrounds", () => {
       assert.equal(direction.east, entity2.getDirection())
 
       assertNEntities(2)
-      assertWUCalled(entity1, 1, nil, false, which === "lower" ? 0 : 1)
-      assertWUCalled(entity2, 2, nil, false, which === "lower" ? 1 : 0)
+      assertUpdateCalled(entity1, 1, nil, which === "lower" ? 0 : 1)
+      assertUpdateCalled(entity2, 2, nil, which === "lower" ? 1 : 0)
     })
 
     test("cannot rotate if not in first stage", () => {
@@ -651,7 +638,7 @@ describe("undergrounds", () => {
       assert.equal(direction.east, entity2.getDirection())
 
       assertNEntities(2)
-      assertWUCalled(entity1, 3, 3, false)
+      assertRefreshCalled(entity1, 3)
     })
 
     test("cannot rotate underground with multiple pairs", () => {
@@ -682,8 +669,8 @@ describe("undergrounds", () => {
         assert.equal(direction.west, entity3.getDirection())
 
         assertNEntities(3)
-        assertWUCalled(entity, 1, 1, false, 0)
-        worldUpdater.updateAllWorldEntities.clear()
+        assertRefreshCalled(entity, 1)
+        clearMocks()
 
         const [rotatedBack] = luaEntity.rotate()
         assert.true(rotatedBack, "rotated back")
@@ -712,7 +699,7 @@ describe("undergrounds", () => {
       assert.equal("input", entity.firstValue.type)
       assert.equal(direction.west, entity.getDirection())
       assertOneEntity()
-      assertWUCalled(entity, 1, nil, false)
+      assertUpdateCalled(entity, 1, nil)
     })
 
     test("can upgrade underground in higher stage", () => {
@@ -729,7 +716,7 @@ describe("undergrounds", () => {
       assert.equal("input", entity.firstValue.type)
 
       assertOneEntity()
-      assertWUCalled(entity, 2, nil, false)
+      assertUpdateCalled(entity, 2, nil)
     })
 
     test.each(["lower", "pair in higher", "self in higher"])(
@@ -755,8 +742,8 @@ describe("undergrounds", () => {
         assert.equal(direction.east, entity2.getDirection())
 
         assertNEntities(2)
-        assertWUCalled(entity1, 1, nil, false, luaEntity === luaEntity1 ? 0 : 1)
-        assertWUCalled(entity2, 2, nil, false, luaEntity === luaEntity1 ? 1 : 0)
+        assertUpdateCalled(entity1, 1, nil, luaEntity === luaEntity1 ? 0 : 1)
+        assertUpdateCalled(entity2, 2, nil, luaEntity === luaEntity1 ? 1 : 0)
       },
     )
 
@@ -852,8 +839,8 @@ describe("undergrounds", () => {
     assert.equal(direction.east, entity2.getDirection())
 
     assertNEntities(2)
-    assertWUCalled(entity1, 1, nil, false, 0)
-    assertWUCalled(entity2, 1, nil, false, 1)
+    assertUpdateCalled(entity1, 1, nil, 0)
+    assertUpdateCalled(entity2, 1, nil, 1)
   })
 
   test("cannot move underground if it would also upgrade", () => {
@@ -898,7 +885,7 @@ describe("rolling stock", () => {
     assert.not_nil(foundDirectly, "found directly")
     assert.equal(found, foundDirectly, "found same entity")
 
-    assertWUCalled(found, 1, nil, false)
+    assertUpdateCalled(found, 1, nil)
   })
 
   test("no update on rolling stock", () => {
@@ -921,9 +908,10 @@ test("resetStage", () => {
   assemblyUpdater.resetStage(assembly, 2)
 
   assert.spy(worldUpdater.clearStage).called_with(match.ref(stage))
+  expectedWuCalls++
 
-  assertWUCalled(entity1, 2, 2, false, 0)
-  assertWUCalled(entity2, 2, 2, false, 1)
+  assertRefreshCalled(entity1, 2)
+  assertRefreshCalled(entity2, 2)
   assertNEntities(2)
 })
 
@@ -953,9 +941,9 @@ describe("trains", () => {
     const anEntity = assemblyEntities[1]
     assemblyUpdater.resetTrain(assembly, anEntity)
 
-    assertWUCalled(assemblyEntities[2], 1, 1, true, 0)
-    assertWUCalled(assemblyEntities[1], 1, 1, true, 1)
-    assertWUCalled(assemblyEntities[0], 1, 1, true, 2)
+    assertReplaceCalled(assemblyEntities[0], 1)
+    assertReplaceCalled(assemblyEntities[1], 1)
+    assertReplaceCalled(assemblyEntities[2], 1)
     assertNEntities(3)
   })
   test("setTrainLocationToCurrent", () => {
@@ -967,9 +955,9 @@ describe("trains", () => {
       for (let i = 0; i < 3; i++) {
         assert.same(entities[i].position, assemblyEntities[i].position)
       }
-      assertWUCalled(assemblyEntities[2], 1, 1, false, 0)
-      assertWUCalled(assemblyEntities[1], 1, 1, false, 1)
-      assertWUCalled(assemblyEntities[0], 1, 1, false, 2)
+      assertReplaceCalled(assemblyEntities[0], 1)
+      assertReplaceCalled(assemblyEntities[1], 1)
+      assertReplaceCalled(assemblyEntities[2], 1)
       assertNEntities(3)
     })
   })

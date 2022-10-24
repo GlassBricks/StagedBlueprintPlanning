@@ -32,31 +32,11 @@ export interface WorldUpdater {
    * @param entity the assembly entity
    * @param startStage
    * @param endStage inclusive. If not specified, defaults to the max assembly stage
-   * @param replace if entities should be replaced (deleted and created) instead of updated
    */
-  updateAllWorldEntities(
-    assembly: Assembly,
-    entity: AssemblyEntity,
-    startStage: StageNumber,
-    endStage?: StageNumber,
-    replace?: boolean,
-  ): void
-  //
-  // updateWorldEntitiesOnly(
-  //   assembly: Assembly,
-  //   entity: AssemblyEntity,
-  //   startStage: StageNumber,
-  //   endStage?: StageNumber,
-  // ): void
-  //
-  // updatePreviewsAndEntities(assembly: Assembly, entity: AssemblyEntity, maxStage: StageNumber): void
-  //
-  // updateWireConnections(
-  //   assembly: Assembly,
-  //   entity: AssemblyEntity,
-  //   startStage: StageNumber,
-  //   endStage?: StageNumber,
-  // ): void
+  updateWorldEntities(assembly: Assembly, entity: AssemblyEntity, startStage: StageNumber, endStage?: StageNumber): void
+
+  refreshWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
+  replaceWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
 
   /**
    * Tries to move an entity to a new position (after one world entity has already been moved).
@@ -72,9 +52,6 @@ export interface WorldUpdater {
 
   /** Removes ALL entities in ALL stages. */
   deleteAllEntities(entity: AssemblyEntity): void
-
-  /** Removes non-main entities only (in preparation for assembly deletion) */
-  deleteExtraEntitiesOnly(entity: AssemblyEntity): void
 
   makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
@@ -229,27 +206,18 @@ export function createWorldUpdater(
     highlighter.reviveSettingsRemnant(assembly, entity)
   }
 
+  function refreshWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
+    doUpdateWorldEntities(assembly, entity, stage, stage)
+    updateHighlights(assembly, entity, stage, stage)
+  }
   return {
-    updateAllWorldEntities(
-      assembly: Assembly,
-      entity: AssemblyEntity,
-      startStage: StageNumber,
-      endStage?: StageNumber,
-      replace?: boolean,
-    ): void {
+    updateWorldEntities(assembly: Assembly, entity: AssemblyEntity, startStage: StageNumber): void {
       if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+
       const firstStage = entity.firstStage
-
       if (startStage < 1) startStage = 1
-      const maxStage = assembly.numStages()
-      if (!endStage || endStage > maxStage) endStage = maxStage
+      let endStage = assembly.numStages()
       if (startStage > endStage) return
-
-      // todo: refactor away
-      if (replace) {
-        assert(startStage === endStage, "can only replace on stage; FIXME")
-        entity.getWorldEntity(startStage)?.destroy()
-      }
 
       if (entity.inFirstStageOnly()) {
         if (firstStage < startStage || firstStage > endStage) {
@@ -264,23 +232,11 @@ export function createWorldUpdater(
       doUpdateWorldEntities(assembly, entity, startStage, endStage)
       updateHighlights(assembly, entity, startStage, endStage)
     },
-    // updateWorldEntitiesOnly(
-    //   assembly: Assembly,
-    //   entity: AssemblyEntity,
-    //   startStage: StageNumber,
-    //   endStage?: StageNumber,
-    // ): void {
-    //   if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
-    // },
-    // updatePreviewsAndEntities(assembly: Assembly, entity: AssemblyEntity, maxStage: StageNumber): void {
-    //
-    // },
-    // updateWireConnections(
-    //   assembly: Assembly,
-    //   entity: AssemblyEntity,
-    //   startStage: StageNumber,
-    //   endStage?: StageNumber,
-    // ): void {},
+    refreshWorldEntityAtStage,
+    replaceWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
+      entity.destroyWorldOrPreviewEntity(stage)
+      refreshWorldEntityAtStage(assembly, stage, entity)
+    },
     tryDollyEntities(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
       assert(!entity.isUndergroundBelt(), "can't move underground belts")
       const movedEntity = entity.getWorldEntity(stage)
@@ -304,13 +260,6 @@ export function createWorldUpdater(
     },
     deleteAllEntities(entity: AssemblyEntity): void {
       entity.destroyAllWorldOrPreviewEntities()
-      highlighter.deleteHighlights(entity)
-    },
-    deleteExtraEntitiesOnly(entity: AssemblyEntity): void {
-      for (const [, luaEntity] of entity.iterateWorldOrPreviewEntities()) {
-        if (isPreviewEntity(luaEntity)) luaEntity.destroy()
-        else makeEntityDestructible(luaEntity)
-      }
       highlighter.deleteHighlights(entity)
     },
     makeSettingsRemnant,

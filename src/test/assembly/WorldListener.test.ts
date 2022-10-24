@@ -183,7 +183,7 @@ describe("onEntityDeleted", () => {
   test("in a higher stage calls disallowEntityDeletion", () => {
     const { luaEntity, entity } = addEntity(2)
     worldListener.onEntityDeleted(assembly, 3, luaEntity, playerIndex)
-    assert.spy(assemblyUpdater.disallowEntityDeletion).was.called_with(match.ref(assembly), 3, entity)
+    assert.spy(assemblyUpdater.forbidEntityDeletion).was.called_with(match.ref(assembly), 3, entity)
   })
 
   test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
