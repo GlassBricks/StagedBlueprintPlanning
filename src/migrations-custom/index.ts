@@ -76,7 +76,7 @@ Migrations.to("0.4.0", () => {
       })
       if (rollingStock.length > 0) anyRollingStock = true
       for (const luaEntity of rollingStock) {
-        AssemblyUpdater.addNewEntity(assembly, stage.stageNumber, luaEntity)
+        AssemblyUpdater.addNewEntity(assembly, luaEntity, stage.stageNumber)
       }
     }
   }

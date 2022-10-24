@@ -44,7 +44,7 @@ before_each(() => {
       totalAuCalls++
     })
   }
-  assemblyUpdater.moveEntityOnPreviewReplace.invokes((_: any, __: any, entity: AssemblyEntity) => {
+  assemblyUpdater.moveEntityOnPreviewReplace.invokes((_: any, entity: AssemblyEntity) => {
     totalAuCalls++
     return entity.firstStage
   })
@@ -118,24 +118,24 @@ after_each(() => {
 describe("onEntityCreated", () => {
   test("can add a simple entity", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityCreated(assembly, 2, luaEntity, playerIndex)
-    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, 2, luaEntity)
+    worldListener.onEntityCreated(assembly, luaEntity, 2, playerIndex)
+    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, luaEntity, 2)
   })
 
   test.each([2, 3])("at same or higher stage %d sets entity and calls refreshEntityAtStage", (newStage) => {
     const { luaEntity, entity } = addEntity(2)
-    worldListener.onEntityCreated(assembly, newStage, luaEntity, playerIndex)
+    worldListener.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
 
     assert.equal(luaEntity, entity.getWorldEntity(newStage))
-    assert.spy(assemblyUpdater.refreshEntityAtStage).was.called_with(match.ref(assembly), newStage, entity)
+    assert.spy(assemblyUpdater.refreshEntityAtStage).was.called_with(match.ref(assembly), entity, newStage)
   })
 
   test.each([1, 2], "at lower stage %d sets entity and calls moveEntityOnPreviewReplace", (newStage) => {
     const { luaEntity, entity } = addEntity(3)
-    worldListener.onEntityCreated(assembly, newStage, luaEntity, playerIndex)
+    worldListener.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
 
     assert.equal(luaEntity, entity.getWorldEntity(newStage))
-    assert.spy(assemblyUpdater.moveEntityOnPreviewReplace).was.called_with(match.ref(assembly), newStage, entity)
+    assert.spy(assemblyUpdater.moveEntityOnPreviewReplace).was.called_with(match.ref(assembly), entity, newStage)
     assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 
@@ -146,9 +146,9 @@ describe("onEntityCreated", () => {
       const { luaEntity, entity } = addEntity(2)
       entity.isSettingsRemnant = true
 
-      worldListener.onEntityCreated(assembly, newStage, luaEntity, playerIndex)
+      worldListener.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
       assert.equal(luaEntity, entity.getWorldEntity(newStage))
-      assert.spy(assemblyUpdater.reviveSettingsRemnant).was.called_with(match.ref(assembly), newStage, entity)
+      assert.spy(assemblyUpdater.reviveSettingsRemnant).was.called_with(match.ref(assembly), entity, newStage)
     },
   )
 
@@ -161,42 +161,42 @@ describe("onEntityCreated", () => {
       name: "straight-rail",
       direction: defines.direction.north,
     })
-    worldListener.onEntityCreated(assembly, 2, luaEntity2, playerIndex)
-    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, 2, luaEntity2)
+    worldListener.onEntityCreated(assembly, luaEntity2, 2, playerIndex)
+    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, luaEntity2, 2)
   })
 })
 
 describe("onEntityDeleted", () => {
   test("if entity not in assembly, does nothing", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityDeleted(assembly, 2, luaEntity, playerIndex)
+    worldListener.onEntityDeleted(assembly, luaEntity, 2, playerIndex)
     expectedAuCalls = 0
   })
 
   test("in a lower stage does nothing (bug)", () => {
     addEntity(2)
     const luaEntity = createWorldEntity(1)
-    worldListener.onEntityDeleted(assembly, 1, luaEntity, playerIndex)
+    worldListener.onEntityDeleted(assembly, luaEntity, 1, playerIndex)
     expectedAuCalls = 0
   })
 
   test("in a higher stage calls disallowEntityDeletion", () => {
     const { luaEntity, entity } = addEntity(2)
-    worldListener.onEntityDeleted(assembly, 3, luaEntity, playerIndex)
-    assert.spy(assemblyUpdater.forbidEntityDeletion).was.called_with(match.ref(assembly), 3, entity)
+    worldListener.onEntityDeleted(assembly, luaEntity, 3, playerIndex)
+    assert.spy(assemblyUpdater.forbidEntityDeletion).was.called_with(match.ref(assembly), entity, 3)
   })
 
   test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
     const { luaEntity, entity } = addEntity(2)
-    worldListener.onEntityDeleted(assembly, 2, luaEntity, playerIndex)
+    worldListener.onEntityDeleted(assembly, luaEntity, 2, playerIndex)
     assert.spy(assemblyUpdater.deleteEntityOrCreateSettingsRemnant).was.called_with(match.ref(assembly), entity)
   })
 })
 
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
-  worldListener.onEntityDied(assembly, 2, luaEntity)
-  assert.spy(assemblyUpdater.clearEntityAtStage).was.called_with(match.ref(assembly), 2, entity)
+  worldListener.onEntityDied(assembly, luaEntity, 2)
+  assert.spy(assemblyUpdater.clearEntityAtStage).was.called_with(match.ref(assembly), entity, 2)
 })
 
 const resultMessages: Array<[EntityUpdateResult, string | false]> = [
@@ -212,8 +212,8 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
 describe("onEntityPotentiallyUpdated", () => {
   test("if not in assembly, defaults to add behaviour", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity, nil, playerIndex)
-    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, 2, luaEntity)
+    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity, 2, nil, playerIndex)
+    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, luaEntity, 2)
   })
 
   test.each(resultMessages)('calls tryUpdateEntityFromWorld and notifies, with result "%s"', (result, message) => {
@@ -222,9 +222,9 @@ describe("onEntityPotentiallyUpdated", () => {
       totalAuCalls++
       return result
     })
-    worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity, nil, playerIndex)
+    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity, 2, nil, playerIndex)
 
-    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(luaEntity, [message], true)
   })
 
@@ -236,9 +236,9 @@ describe("onEntityPotentiallyUpdated", () => {
     })
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter" })
-    worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity2, nil, playerIndex)
+    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity2, 2, nil, playerIndex)
 
-    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), entity, 2)
   })
 
   test("works with upgrade-compatible entity (fast-replace) with different direction", () => {
@@ -250,17 +250,17 @@ describe("onEntityPotentiallyUpdated", () => {
     const oldDirection = luaEntity.direction
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter", direction: defines.direction.south })
-    worldListener.onEntityPotentiallyUpdated(assembly, 2, luaEntity2, oldDirection, playerIndex)
+    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity2, 2, oldDirection, playerIndex)
 
-    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), entity, 2)
   })
 })
 
 describe("onEntityRotated", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityRotated(assembly, 2, luaEntity, luaEntity.direction, playerIndex)
-    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, 2, luaEntity)
+    worldListener.onEntityRotated(assembly, luaEntity, 2, luaEntity.direction, playerIndex)
+    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, luaEntity, 2)
   })
 
   test.each<[EntityRotateResult, string | false]>([
@@ -274,9 +274,9 @@ describe("onEntityRotated", () => {
       totalAuCalls++
       return result
     })
-    worldListener.onEntityRotated(assembly, 2, luaEntity, luaEntity.direction, playerIndex)
+    worldListener.onEntityRotated(assembly, luaEntity, 2, luaEntity.direction, playerIndex)
 
-    assert.spy(assemblyUpdater.tryRotateEntityToMatchWorld).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryRotateEntityToMatchWorld).was.called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(luaEntity, [message], true)
   })
 })
@@ -284,8 +284,8 @@ describe("onEntityRotated", () => {
 describe("onEntityMarkedForUpgrade", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityMarkedForUpgrade(assembly, 2, luaEntity, playerIndex)
-    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, 2, luaEntity)
+    worldListener.onEntityMarkedForUpgrade(assembly, luaEntity, 2, playerIndex)
+    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, luaEntity, 2)
   })
 
   test.each(resultMessages)('calls tryUpgradeEntityFromWorld and notifies, with result "%s"', (result, message) => {
@@ -294,9 +294,9 @@ describe("onEntityMarkedForUpgrade", () => {
       totalAuCalls++
       return result
     })
-    worldListener.onEntityMarkedForUpgrade(assembly, 2, luaEntity, playerIndex)
+    worldListener.onEntityMarkedForUpgrade(assembly, luaEntity, 2, playerIndex)
 
-    assert.spy(assemblyUpdater.tryApplyUpgradeTarget).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryApplyUpgradeTarget).was.called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(luaEntity, [message], true)
   })
 })
@@ -304,7 +304,7 @@ describe("onEntityMarkedForUpgrade", () => {
 describe("onCircuitWiresPotentiallyUpdated", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onCircuitWiresPotentiallyUpdated(assembly, 2, luaEntity, playerIndex)
+    worldListener.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, 2, playerIndex)
   })
 
   test.each<[WireUpdateResult, string | false]>([
@@ -317,9 +317,9 @@ describe("onCircuitWiresPotentiallyUpdated", () => {
       totalAuCalls++
       return result
     })
-    worldListener.onCircuitWiresPotentiallyUpdated(assembly, 2, luaEntity, playerIndex)
+    worldListener.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, 2, playerIndex)
 
-    assert.spy(assemblyUpdater.updateWiresFromWorld).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.updateWiresFromWorld).was.called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(luaEntity, [message], true)
   })
 })
@@ -331,46 +331,46 @@ function createPreviewEntity(luaEntity: LuaEntity) {
 describe("onCleanupToolUsed", () => {
   test("if not in assembly, does nothing", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onCleanupToolUsed(assembly, 2, luaEntity)
+    worldListener.onCleanupToolUsed(assembly, luaEntity, 2)
     expectedAuCalls = 0
   })
 
   test("if is settings remnant, calls forceDeleteEntity", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.isSettingsRemnant = true
-    worldListener.onCleanupToolUsed(assembly, 2, createPreviewEntity(luaEntity))
+    worldListener.onCleanupToolUsed(assembly, createPreviewEntity(luaEntity), 2)
     assert.spy(assemblyUpdater.forceDeleteEntity).was.called_with(match.ref(assembly), entity)
   })
 
   test("if is less than first stage, does nothing", () => {
     const { luaEntity } = addEntity(1)
-    worldListener.onCleanupToolUsed(assembly, 2, luaEntity)
+    worldListener.onCleanupToolUsed(assembly, luaEntity, 2)
     expectedAuCalls = 0
   })
 
   test.each([2, 3])("if is in stage %s, calls refreshEntityAllStages", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
-    worldListener.onCleanupToolUsed(assembly, atStage, createPreviewEntity(luaEntity))
+    worldListener.onCleanupToolUsed(assembly, createPreviewEntity(luaEntity), atStage)
     assert.spy(assemblyUpdater.refreshEntityAllStages).was.called_with(match.ref(assembly), entity)
   })
 })
 
 test("onEntityForceDeleted calls forceDeleteEntity", () => {
   const { luaEntity, entity } = addEntity(2)
-  worldListener.onEntityForceDeleted(assembly, 2, createPreviewEntity(luaEntity))
+  worldListener.onEntityForceDeleted(assembly, createPreviewEntity(luaEntity), 2)
   assert.spy(assemblyUpdater.forceDeleteEntity).was.called_with(match.ref(assembly), entity)
 })
 
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
-  worldListener.onEntityDied(assembly, 2, luaEntity)
-  assert.spy(assemblyUpdater.clearEntityAtStage).was.called_with(match.ref(assembly), 2, entity)
+  worldListener.onEntityDied(assembly, luaEntity, 2)
+  assert.spy(assemblyUpdater.clearEntityAtStage).was.called_with(match.ref(assembly), entity, 2)
 })
 
 describe("onMoveEntityToStage", () => {
   test("if not in assembly, does nothing", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onMoveEntityToStage(assembly, 2, luaEntity, playerIndex)
+    worldListener.onMoveEntityToStage(assembly, luaEntity, 2, playerIndex)
     expectedAuCalls = 0
   })
   test.each<[StageMoveResult, LocalisedString | false]>([
@@ -384,9 +384,9 @@ describe("onMoveEntityToStage", () => {
       totalAuCalls++
       return result
     })
-    worldListener.onMoveEntityToStage(assembly, 2, luaEntity, playerIndex)
+    worldListener.onMoveEntityToStage(assembly, luaEntity, 2, playerIndex)
 
-    assert.spy(assemblyUpdater.moveEntityToStage).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.moveEntityToStage).was.called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(luaEntity, message, result !== "updated")
   })
 })
@@ -394,8 +394,8 @@ describe("onMoveEntityToStage", () => {
 describe("onEntityMoved", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityMoved(assembly, 2, luaEntity, luaEntity.position, playerIndex)
-    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, 2, luaEntity)
+    worldListener.onEntityMoved(assembly, luaEntity, 2, luaEntity.position, playerIndex)
+    assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, luaEntity, 2)
   })
 
   test("calls tryMoveEntity and does not notify if returns nil", () => {
@@ -406,9 +406,9 @@ describe("onEntityMoved", () => {
     //   return nil
     // })
     // already returns nil
-    worldListener.onEntityMoved(assembly, 2, luaEntity, luaEntity.position, playerIndex)
+    worldListener.onEntityMoved(assembly, luaEntity, 2, luaEntity.position, playerIndex)
 
-    assert.spy(assemblyUpdater.tryDollyEntity).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryDollyEntity).was.called_with(match.ref(assembly), entity, 2)
   })
 
   test("calls tryMoveEntity and notifies if returns error", () => {
@@ -419,9 +419,9 @@ describe("onEntityMoved", () => {
       totalAuCalls++
       return "entities-missing"
     })
-    worldListener.onEntityMoved(assembly, 2, luaEntity, luaEntity.position, playerIndex)
+    worldListener.onEntityMoved(assembly, luaEntity, 2, luaEntity.position, playerIndex)
 
-    assert.spy(assemblyUpdater.tryDollyEntity).was.called_with(match.ref(assembly), 2, entity)
+    assert.spy(assemblyUpdater.tryDollyEntity).was.called_with(match.ref(assembly), entity, 2)
     assertNotified(luaEntity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
   })
 })

@@ -35,20 +35,20 @@ export interface WorldUpdater {
    */
   updateWorldEntities(assembly: Assembly, entity: AssemblyEntity, startStage: StageNumber, endStage?: StageNumber): void
 
-  refreshWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
-  replaceWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
+  refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
+  replaceWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
 
   /**
    * Tries to move an entity to a new position (after one world entity has already been moved).
    * @param assembly the assembly position info
-   * @param stage the stage with the entity already moved into the new position
    * @param entity the assembly entity
+   * @param stage the stage with the entity already moved into the new position
    * @return the result of the move
    */
-  tryDollyEntities(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
+  tryDollyEntities(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): AssemblyEntityDollyResult
 
   /** Removes the world entity at a give stage (and makes error highlight) */
-  clearWorldEntity(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
+  clearWorldEntity(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
 
   /** Removes ALL entities in ALL stages. */
   deleteAllEntities(entity: AssemblyEntity): void
@@ -206,7 +206,7 @@ export function createWorldUpdater(
     highlighter.reviveSettingsRemnant(assembly, entity)
   }
 
-  function refreshWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
+  function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
     doUpdateWorldEntities(assembly, entity, stage, stage)
     updateHighlights(assembly, entity, stage, stage)
   }
@@ -233,11 +233,11 @@ export function createWorldUpdater(
       updateHighlights(assembly, entity, startStage, endStage)
     },
     refreshWorldEntityAtStage,
-    replaceWorldEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
+    replaceWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
       entity.destroyWorldOrPreviewEntity(stage)
-      refreshWorldEntityAtStage(assembly, stage, entity)
+      refreshWorldEntityAtStage(assembly, entity, stage)
     },
-    tryDollyEntities(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult {
+    tryDollyEntities(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): AssemblyEntityDollyResult {
       assert(!entity.isUndergroundBelt(), "can't move underground belts")
       const movedEntity = entity.getWorldEntity(stage)
       if (!movedEntity) return "entities-missing"
@@ -254,7 +254,7 @@ export function createWorldUpdater(
 
       return moveResult
     },
-    clearWorldEntity(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void {
+    clearWorldEntity(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
       makePreviewEntity(assembly, stage, entity)
       updateHighlights(assembly, entity, stage, stage)
     },

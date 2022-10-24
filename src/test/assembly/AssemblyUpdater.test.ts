@@ -106,11 +106,11 @@ function assertUpdateCalled(entity: AssemblyEntity, startStage: StageNumber, end
 
 function assertRefreshCalled(entity: AssemblyEntity, stage: StageNumber) {
   expectedWuCalls++
-  assert.spy(worldUpdater.refreshWorldEntityAtStage).called_with(assembly, stage, entity)
+  assert.spy(worldUpdater.refreshWorldEntityAtStage).called_with(assembly, entity, stage)
 }
 function assertReplaceCalled(entity: AssemblyEntity, stage: StageNumber) {
   expectedWuCalls++
-  assert.spy(worldUpdater.replaceWorldEntityAtStage).called_with(match.ref(assembly), stage, match.ref(entity))
+  assert.spy(worldUpdater.replaceWorldEntityAtStage).called_with(match.ref(assembly), match.ref(entity), stage)
 }
 function assertDeleteAllEntitiesCalled(entity: AssemblyEntity) {
   expectedWuCalls++
@@ -160,7 +160,7 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
 
 test("addNewEntity", () => {
   const luaEntity = createEntity(2)
-  const entity = assemblyUpdater.addNewEntity(assembly, 2, luaEntity)!
+  const entity = assemblyUpdater.addNewEntity(assembly, luaEntity, 2)!
   assert.not_nil(entity)
   assert.equal("filter-inserter", entity.firstValue.name)
   assert.same(pos, entity.position)
@@ -178,7 +178,7 @@ test("addNewEntity", () => {
 
 function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   const luaEntity = createEntity(stage, args)
-  const entity = assemblyUpdater.addNewEntity<BlueprintEntity>(assembly, stage, luaEntity)!
+  const entity = assemblyUpdater.addNewEntity<BlueprintEntity>(assembly, luaEntity, stage)!
   assert.not_nil(entity)
   clearMocks()
   entity.replaceWorldEntity(stage, luaEntity)
@@ -210,7 +210,7 @@ test("refreshEntityAllStages calls worldUpdater at all stages", () => {
 test("moveEntityOnPreviewReplace", () => {
   const { entity } = addEntity(2)
 
-  assemblyUpdater.moveEntityOnPreviewReplace(assembly, 1, entity)
+  assemblyUpdater.moveEntityOnPreviewReplace(assembly, entity, 1)
 
   assert.same(1, entity.firstStage)
   assert.equal(1, (entity.firstValue as BlueprintEntity).override_stack_size)
@@ -223,7 +223,7 @@ test("reviveSettingsRemnant", () => {
   const { entity } = addEntity(2)
   entity.isSettingsRemnant = true
 
-  assemblyUpdater.reviveSettingsRemnant(assembly, 1, entity)
+  assemblyUpdater.reviveSettingsRemnant(assembly, entity, 1)
 
   assert.nil(entity.isSettingsRemnant)
   assert.same(1, entity.firstStage)
@@ -307,7 +307,7 @@ test("forceDeleteEntity always deletes", () => {
 describe("tryUpdateEntityFromWorld", () => {
   test('with no changes returns "no-change"', () => {
     const { entity } = addEntity(2)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 2, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
     assert.equal("no-change", ret)
     assertOneEntity()
     assertWUNotCalled()
@@ -316,7 +316,7 @@ describe("tryUpdateEntityFromWorld", () => {
   test('with change in first stage returns "updated" and updates all entities', () => {
     const { entity, luaEntity } = addEntity(2)
     luaEntity.inserter_stack_size_override = 3
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 2, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
     assert.equal("updated", ret)
 
     assert.equal(3, entity.firstValue.override_stack_size)
@@ -331,7 +331,7 @@ describe("tryUpdateEntityFromWorld", () => {
       recipe: "express-transport-belt",
     })
     luaEntity.direction = defines.direction.east
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 2, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
     assert.equal("updated", ret)
 
     assert.equal(defines.direction.east, entity.getDirection())
@@ -344,7 +344,7 @@ describe("tryUpdateEntityFromWorld", () => {
     luaEntity.direction = defines.direction.east
 
     entity.replaceWorldEntity(3, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 3, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
     assert.equal("cannot-rotate", ret)
     assert.equal(defines.direction.north, entity.getDirection())
 
@@ -361,7 +361,7 @@ describe("tryUpdateEntityFromWorld", () => {
 
     luaEntity.inserter_stack_size_override = 3
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 2, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
     assert.equal("updated", ret)
 
     assert.equal(1, entity.firstValue.override_stack_size)
@@ -382,7 +382,7 @@ describe("tryUpdateEntityFromWorld", () => {
     luaEntity.inserter_stack_size_override = 1
 
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 2, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
     assert.equal("updated", ret)
     assert.false(entity.hasStageDiff())
 
@@ -395,7 +395,7 @@ describe("tryRotateEntityToMatchWorld", () => {
   test("in first stage rotates all entities", () => {
     const { luaEntity, entity } = addEntity(2)
     luaEntity.direction = direction.west
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 2, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
     assert.equal("updated", ret)
     assert.equal(direction.west, entity.getDirection())
     assertOneEntity()
@@ -407,7 +407,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 2, entity)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
     assert.equal("cannot-rotate", ret)
     assert.equal(oldDirection, entity.getDirection())
     assertOneEntity()
@@ -423,7 +423,7 @@ describe("tryApplyUpgradeTarget", () => {
       target: "stack-filter-inserter",
     })
     const direction = luaEntity.direction
-    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 1, entity)
+    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
     assert.equal("updated", ret)
     assert.equal("stack-filter-inserter", entity.firstValue.name)
     assert.equal(direction, entity.getDirection())
@@ -438,7 +438,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.west,
     })
 
-    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 1, entity)
+    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
     assert.equal("updated", ret)
     assert.equal("filter-inserter", entity.firstValue.name)
     assert.equal(direction.west, entity.getDirection())
@@ -453,7 +453,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.west,
     })
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 2, entity)
+    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
     assert.equal("cannot-rotate", ret)
     assert.equal(0, entity.getDirection())
     assertOneEntity()
@@ -465,7 +465,7 @@ describe("updateWiresFromWorld", () => {
   test("if saved, calls update", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.on_call_with(match._, entity, 1).returns(true)
-    const ret = assemblyUpdater.updateWiresFromWorld(assembly, 1, entity)
+    const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
     assert.equal("updated", ret)
 
     assertOneEntity()
@@ -474,7 +474,7 @@ describe("updateWiresFromWorld", () => {
   test("if no changes, does not call update", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.returns(false)
-    const ret = assemblyUpdater.updateWiresFromWorld(assembly, 1, entity)
+    const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
     assert.equal("no-change", ret)
 
     assertOneEntity()
@@ -483,7 +483,7 @@ describe("updateWiresFromWorld", () => {
   test("if max connections exceeded, notifies and calls update", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.on_call_with(match._, entity, 1).returns(true, true)
-    const ret = assemblyUpdater.updateWiresFromWorld(assembly, 1, entity)
+    const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
     assert.equal("max-connections-exceeded", ret)
 
     assertOneEntity()
@@ -494,7 +494,7 @@ describe("updateWiresFromWorld", () => {
 describe("moveEntityToStage", () => {
   test("can move up", () => {
     const { entity } = addEntity(1)
-    const result = assemblyUpdater.moveEntityToStage(assembly, 2, entity)
+    const result = assemblyUpdater.moveEntityToStage(assembly, entity, 2)
     assert.equal("updated", result)
     assert.equal(2, entity.firstStage)
     assertOneEntity()
@@ -503,7 +503,7 @@ describe("moveEntityToStage", () => {
 
   test("can move down to preview", () => {
     const { entity } = addEntity(4)
-    assemblyUpdater.moveEntityToStage(assembly, 3, entity)
+    assemblyUpdater.moveEntityToStage(assembly, entity, 3)
     assert.equal(3, entity.firstStage)
     assertOneEntity()
     assertUpdateCalled(entity, 3, nil)
@@ -512,7 +512,7 @@ describe("moveEntityToStage", () => {
   test("can revive settings remnant", () => {
     const { entity } = addEntity(1)
     entity.isSettingsRemnant = true
-    assemblyUpdater.moveEntityToStage(assembly, 2, entity)
+    assemblyUpdater.moveEntityToStage(assembly, entity, 2)
     assert.equal(2, entity.firstStage)
     assertOneEntity()
     assertReviveSettingsRemnantCalled(entity)
@@ -543,7 +543,7 @@ describe("undergrounds", () => {
       direction: direction.east,
       type: "input",
     })
-    const entity = assemblyUpdater.addNewEntity<BlueprintEntity>(assembly, 2, luaEntity2)!
+    const entity = assemblyUpdater.addNewEntity<BlueprintEntity>(assembly, luaEntity2, 2)!
     assert.not_nil(entity)
 
     assert.equal("output", entity.firstValue.type)
@@ -575,7 +575,7 @@ describe("undergrounds", () => {
       const [rotated] = luaEntity.rotate()
       assert(rotated)
 
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, 1, entity)
+      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 1)
       assert.equal("updated", ret)
 
       assert.equal("output", entity.firstValue.type)
@@ -592,7 +592,7 @@ describe("undergrounds", () => {
       assert(rotated)
 
       entity.replaceWorldEntity(2, luaEntity)
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, 2, entity)
+      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 2)
       assert.equal("cannot-rotate", ret)
 
       assert.equal("input", entity.firstValue.type)
@@ -609,7 +609,7 @@ describe("undergrounds", () => {
       const [rotated] = entity.getWorldEntity(entity.firstStage)!.rotate()
       assert(rotated)
 
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity.firstStage, entity)
+      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, entity.firstStage)
       assert.equal("updated", ret)
 
       assert.equal("output", entity1.firstValue.type)
@@ -629,7 +629,7 @@ describe("undergrounds", () => {
       assert(rotated1)
 
       entity1.replaceWorldEntity(3, luaEntity1)
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, 3, entity1)
+      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity1, 3)
       assert.equal("cannot-rotate", ret)
 
       assert.equal("input", entity1.firstValue.type)
@@ -658,7 +658,7 @@ describe("undergrounds", () => {
         const [, hasMultiple] = findUndergroundPair(assembly.content, entity)
         assert.true(hasMultiple)
 
-        const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, 1, entity)
+        const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 1)
         assert.equal("cannot-flip-multi-pair-underground", ret)
 
         assert.equal("input", entity1.firstValue.type)
@@ -692,7 +692,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 1, entity)
+      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
       assert.equal("updated", ret)
 
       assert.equal("fast-underground-belt", entity.firstValue.name)
@@ -709,7 +709,7 @@ describe("undergrounds", () => {
         force: luaEntity.force,
       })
       entity.replaceWorldEntity(2, luaEntity)
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 2, entity)
+      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
       assert.equal("updated", ret)
 
       assert.equal("fast-underground-belt", entity.getValueAtStage(2)?.name)
@@ -731,7 +731,7 @@ describe("undergrounds", () => {
           force: luaEntity.force,
         })
         entity.replaceWorldEntity(endStage, luaEntity)
-        const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, endStage, entity)
+        const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, endStage)
         assert.equal("updated", ret)
 
         assert.equal("fast-underground-belt", entity1.firstValue.name)
@@ -762,7 +762,7 @@ describe("undergrounds", () => {
           target: "fast-underground-belt",
           force: luaEntity.force,
         })
-        const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 1, entity)
+        const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
         assert.equal("cannot-upgrade-multi-pair-underground", ret)
 
         assert.equal("underground-belt", entity1.firstValue.name)
@@ -782,7 +782,7 @@ describe("undergrounds", () => {
       })
 
       entity1.replaceWorldEntity(3, luaEntity1)
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 3, entity1)
+      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity1, 3)
       assert.equal("cannot-create-pair-upgrade", ret)
 
       assert.equal("underground-belt", entity1.firstValue.name)
@@ -803,7 +803,7 @@ describe("undergrounds", () => {
         force: luaEntity1.force,
       })
 
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, 1, entity1)
+      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity1, 1)
       assert.equal("cannot-upgrade-changed-pair", ret)
 
       assert.equal("underground-belt", entity1.firstValue.name)
@@ -827,7 +827,7 @@ describe("undergrounds", () => {
     assert.not_nil(newEntity)
     entity1.replaceWorldEntity(1, newEntity)
 
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, 1, entity1)
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity1, 1)
     assert.equal("updated", ret)
 
     assert.equal("fast-underground-belt", entity1.firstValue.name)
@@ -848,7 +848,7 @@ describe("undergrounds", () => {
     entity1.applyUpgradeAtStage(2, "fast-underground-belt")
     entity2.applyUpgradeAtStage(2, "fast-underground-belt")
 
-    const ret = assemblyUpdater.moveEntityToStage(assembly, 2, entity1)
+    const ret = assemblyUpdater.moveEntityToStage(assembly, entity1, 2)
     assert.equal(<StageMoveResult>"cannot-move-upgraded-underground", ret)
 
     assert.equal(1, entity1.firstStage)
@@ -866,12 +866,12 @@ describe("rolling stock", () => {
     rollingStock = createRollingStock()
   })
   function addEntity() {
-    const result = assemblyUpdater.addNewEntity(assembly, 1, rollingStock)
+    const result = assemblyUpdater.addNewEntity(assembly, rollingStock, 1)
     clearMocks()
     return result
   }
   test("can save rolling stock", () => {
-    const result = assemblyUpdater.addNewEntity(assembly, 1, rollingStock)
+    const result = assemblyUpdater.addNewEntity(assembly, rollingStock, 1)
     assert.not_nil(result)
     assert.equal("locomotive", result!.firstValue.name)
 
@@ -891,7 +891,7 @@ describe("rolling stock", () => {
   test("no update on rolling stock", () => {
     const entity = addEntity()!
 
-    assemblyUpdater.tryUpdateEntityFromWorld(assembly, 1, entity)
+    assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 1)
 
     assertNEntities(1)
     assertWUNotCalled()

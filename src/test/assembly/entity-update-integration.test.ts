@@ -181,7 +181,7 @@ function assertIsSettingsRemnant(entity: AssemblyEntity) {
 
 function setupEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): AssemblyEntity<BlueprintEntity> {
   const luaEntity = createEntity(stage, args)
-  const entity = AssemblyUpdater.addNewEntity<BlueprintEntity>(assembly, stage, luaEntity)!
+  const entity = AssemblyUpdater.addNewEntity<BlueprintEntity>(assembly, luaEntity, stage)!
   assert(entity)
   assert.equal(stage, entity.firstStage)
   return assert(entity)
@@ -194,7 +194,7 @@ test("creating an entity", () => {
 
 test("clear entity at stage", () => {
   const entity = setupEntity(3)
-  AssemblyUpdater.clearEntityAtStage(assembly, 4, entity)
+  AssemblyUpdater.clearEntityAtStage(assembly, entity, 4)
   assertEntityCorrect(entity, true)
 })
 
@@ -208,9 +208,9 @@ test("entity can not be placed at stage", () => {
 test("refresh missing entity", () => {
   const blocker = createEntity(4, { name: "stone-wall" })
   const entity = setupEntity(3)
-  AssemblyUpdater.clearEntityAtStage(assembly, 4, entity)
+  AssemblyUpdater.clearEntityAtStage(assembly, entity, 4)
   blocker.destroy()
-  AssemblyUpdater.refreshEntityAtStage(assembly, 4, entity)
+  AssemblyUpdater.refreshEntityAtStage(assembly, entity, 4)
   assertEntityCorrect(entity, false)
 })
 
@@ -219,7 +219,7 @@ test("replacing missing entity matches", () => {
   const newEntity = createEntity(4, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(4, newEntity)
 
-  AssemblyUpdater.refreshEntityAtStage(assembly, 4, entity)
+  AssemblyUpdater.refreshEntityAtStage(assembly, entity, 4)
   assertEntityCorrect(entity, false)
 })
 
@@ -227,7 +227,7 @@ test("move via preview replace", () => {
   const entity = setupEntity(3)
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
-  AssemblyUpdater.moveEntityOnPreviewReplace(assembly, 2, entity)
+  AssemblyUpdater.moveEntityOnPreviewReplace(assembly, entity, 2)
   assert.equal(2, entity.firstStage)
   assertEntityCorrect(entity, false)
 })
@@ -235,7 +235,7 @@ test("move via preview replace", () => {
 test("disallowing entity deletion", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
-  AssemblyUpdater.forbidEntityDeletion(assembly, 4, entity)
+  AssemblyUpdater.forbidEntityDeletion(assembly, entity, 4)
   assert.false(worldEntity.valid) // replaced
   assertEntityCorrect(entity, false)
 })
@@ -262,7 +262,7 @@ describe("revive integration test", () => {
     AssemblyUpdater.deleteEntityOrCreateSettingsRemnant(assembly, entity)
     assertIsSettingsRemnant(entity)
 
-    AssemblyUpdater.reviveSettingsRemnant(assembly, reviveStage, entity)
+    AssemblyUpdater.reviveSettingsRemnant(assembly, entity, reviveStage)
     assert.falsy(entity.isSettingsRemnant)
     assert.equal(entity.firstStage, reviveStage)
 
@@ -286,7 +286,7 @@ describe("revive integration test", () => {
     AssemblyUpdater.deleteEntityOrCreateSettingsRemnant(assembly, entity)
     assertIsSettingsRemnant(entity)
 
-    AssemblyUpdater.reviveSettingsRemnant(assembly, 1, entity)
+    AssemblyUpdater.reviveSettingsRemnant(assembly, entity, 1)
     assert.falsy(entity.isSettingsRemnant)
     assert.equal(entity.firstStage, 1)
 
@@ -310,7 +310,7 @@ test("updating first value from world", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.inserter_stack_size_override = 2
-  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, 3, entity)
+  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
   assert.equal("updated", ret)
   assert.equal(2, entity.firstValue.override_stack_size)
   assertEntityCorrect(entity, false)
@@ -320,7 +320,7 @@ test("updating higher value from world", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.inserter_stack_size_override = 2
-  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, 4, entity)
+  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 4)
   assert.equal("updated", ret)
   assert.equal(1, entity.firstValue.override_stack_size)
   assert.true(entity.hasStageDiff(4))
@@ -333,7 +333,7 @@ test("rotating first value from world via update", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
-  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, 3, entity)
+  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
   assert.equal("updated", ret)
   assert.equal(defines.direction.south, entity.getDirection())
   assertEntityCorrect(entity, false)
@@ -343,7 +343,7 @@ test("rotating first value from world via rotate", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
-  AssemblyUpdater.tryRotateEntityToMatchWorld(assembly, 3, entity)
+  AssemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 3)
   assert.equal(defines.direction.south, entity.getDirection())
   assertEntityCorrect(entity, false)
 })
@@ -352,7 +352,7 @@ test("rotation forbidden at higher stage", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
-  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, 4, entity)
+  const ret = AssemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 4)
   assert.equal("cannot-rotate", ret)
   assert.equal(defines.direction.east, entity.getDirection())
   assertEntityCorrect(entity, false)
@@ -362,7 +362,7 @@ test("rotation forbidden at higher stage via rotate", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
-  AssemblyUpdater.tryRotateEntityToMatchWorld(assembly, 4, entity)
+  AssemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 4)
   assert.equal(defines.direction.east, entity.getDirection())
   assertEntityCorrect(entity, false)
 })
@@ -371,7 +371,7 @@ test("creating upgrade via fast replace", () => {
   const entity = setupEntity(3)
   const replacedEntity = createEntity(4, { name: "stack-filter-inserter" })
   entity.replaceWorldEntity(4, replacedEntity)
-  AssemblyUpdater.tryUpdateEntityFromWorld(assembly, 4, entity)
+  AssemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 4)
   assert.equal("filter-inserter", entity.firstValue.name)
   assert.same({ name: "stack-filter-inserter" }, entity.getStageDiff(4))
 
@@ -412,7 +412,7 @@ test("creating upgrade via apply upgrade target", () => {
     force: worldEntity.force,
     target: "stack-filter-inserter",
   })
-  AssemblyUpdater.tryApplyUpgradeTarget(assembly, 4, entity)
+  AssemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 4)
   assert.equal("filter-inserter", entity.firstValue.name)
   assert.same({ name: "stack-filter-inserter" }, entity.getStageDiff(4))
 
@@ -421,14 +421,14 @@ test("creating upgrade via apply upgrade target", () => {
 
 test("moving entity up", () => {
   const entity = setupEntity(3)
-  AssemblyUpdater.moveEntityToStage(assembly, 4, entity)
+  AssemblyUpdater.moveEntityToStage(assembly, entity, 4)
   assert.equal(4, entity.firstStage)
   assertEntityCorrect(entity, false)
 })
 
 test("moving entity down", () => {
   const entity = setupEntity(3)
-  AssemblyUpdater.moveEntityToStage(assembly, 2, entity)
+  AssemblyUpdater.moveEntityToStage(assembly, entity, 2)
   assert.equal(2, entity.firstStage)
   assertEntityCorrect(entity, false)
 })
@@ -438,7 +438,7 @@ test("dolly entity", () => {
   const worldEntity = entity.getWorldEntity(3)!
   assert.true(worldEntity.teleport(1, 0))
   const newPosition = worldEntity.position
-  const ret = AssemblyUpdater.tryDollyEntity(assembly, 3, entity)
+  const ret = AssemblyUpdater.tryDollyEntity(assembly, entity, 3)
   assert.equal("success", ret)
   assert.same(newPosition, entity.position)
   assertEntityCorrect(entity, false)
@@ -518,7 +518,7 @@ test("disconnect and connect cables", () => {
   const pole1 = setupPole(3)
   const pole2 = setupPole2(3)
   pole1.getWorldEntity(3)!.disconnect_neighbour(pole2.getWorldEntity(3))
-  AssemblyUpdater.updateWiresFromWorld(assembly, 3, pole1)
+  AssemblyUpdater.updateWiresFromWorld(assembly, pole1, 3)
 
   assert.falsy(assembly.content.getCableConnections(pole1)?.has(pole2))
   assert.falsy(assembly.content.getCableConnections(pole2)?.has(pole1))
@@ -526,7 +526,7 @@ test("disconnect and connect cables", () => {
   assertEntityCorrect(pole2, false)
 
   pole1.getWorldEntity(3)!.connect_neighbour(pole2.getWorldEntity(3)!)
-  AssemblyUpdater.updateWiresFromWorld(assembly, 3, pole1)
+  AssemblyUpdater.updateWiresFromWorld(assembly, pole1, 3)
 
   assert.true(assembly.content.getCableConnections(pole1)?.has(pole2))
   assert.true(assembly.content.getCableConnections(pole2)?.has(pole1))
@@ -541,7 +541,7 @@ test("connect and disconnect circuit wires", () => {
     wire: defines.wire_type.red,
     target_entity: inserter.getWorldEntity(3)!,
   })
-  AssemblyUpdater.updateWiresFromWorld(assembly, 3, pole)
+  AssemblyUpdater.updateWiresFromWorld(assembly, pole, 3)
 
   const expectedConnection = next(
     assembly.content.getCircuitConnections(inserter)!.get(pole)!,
@@ -595,13 +595,13 @@ function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHa
 
 test("create train entity", () => {
   const train = createRollingStock(surfaces[3 - 1])
-  const entity = AssemblyUpdater.addNewEntity(assembly, 3, train)!
+  const entity = AssemblyUpdater.addNewEntity(assembly, train, 3)!
   assert.not_nil(entity)
   assertTrainEntityCorrect(entity, false)
 })
 test("train entity error", () => {
   const train = createRollingStock(surfaces[3 - 1])
-  const entity = AssemblyUpdater.addNewEntity(assembly, 3, train)!
+  const entity = AssemblyUpdater.addNewEntity(assembly, train, 3)!
   train.destroy()
   surfaces[3 - 1].find_entities().forEach((e) => e.destroy()) // destroys rails too, so train cannot be re-created
 

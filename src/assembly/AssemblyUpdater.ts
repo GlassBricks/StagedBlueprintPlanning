@@ -34,56 +34,51 @@ import min = math.min
 export interface AssemblyUpdater {
   addNewEntity<T extends Entity = Entity>(
     assembly: Assembly,
-    stage: StageNumber,
     entitySource: LuaEntity,
+    stage: StageNumber,
   ): AssemblyEntity<T> | nil
 
-  refreshEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
+  refreshEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
 
   refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void
 
   /** Returns nil if not a lower stage number, else returns the old stage. */
-  moveEntityOnPreviewReplace(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil
+  moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageNumber | nil
 
-  forbidEntityDeletion(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
+  forbidEntityDeletion(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
 
   deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
-  reviveSettingsRemnant(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): boolean
+  reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
 
   forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): void
 
   /** Replaces entity with an error highlight */
-  clearEntityAtStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
+  clearEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
 
-  tryUpdateEntityFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
+  tryUpdateEntityFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult
 
-  tryRotateEntityToMatchWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityRotateResult
+  tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult
 
   /** Doesn't cancel upgrade */
-  tryApplyUpgradeTarget(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult
+  tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult
 
-  updateWiresFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult
+  updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): WireUpdateResult
 
-  tryDollyEntity(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): AssemblyEntityDollyResult
-  moveEntityToStage(assembly: Assembly, newStage: StageNumber, entity: AssemblyEntity): StageMoveResult
+  tryDollyEntity(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): AssemblyEntityDollyResult
+  moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult
 
   resetStage(assembly: Assembly, stage: StageNumber): void
 
-  resetProp<T extends Entity>(
-    assembly: Assembly,
-    entity: AssemblyEntity<T>,
-    stageNumber: StageNumber,
-    prop: keyof T,
-  ): boolean
+  resetProp<T extends Entity>(assembly: Assembly, entity: AssemblyEntity<T>, stage: StageNumber, prop: keyof T): boolean
   movePropDown<T extends Entity>(
     assembly: Assembly,
     entity: AssemblyEntity<T>,
-    stageNumber: StageNumber,
+    stage: StageNumber,
     prop: keyof T,
   ): boolean
 
-  resetAllProps(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean
-  moveAllPropsDown(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+  resetAllProps(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
+  moveAllPropsDown(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
 
   resetTrain(assembly: Assembly, entity: RollingStockAssemblyEntity): void
   setTrainLocationToCurrent(assembly: Assembly, entity: RollingStockAssemblyEntity): void
@@ -115,7 +110,7 @@ export function createAssemblyUpdater(
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
 
-  function reviveSettingsRemnant(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): boolean {
+  function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
     if (!entity.isSettingsRemnant) return false
     entity.isSettingsRemnant = nil
     entity.moveToStage(stage)
@@ -139,7 +134,7 @@ export function createAssemblyUpdater(
   }
 
   function undoRotate(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity) {
-    refreshWorldEntityAtStage(assembly, stage, entity)
+    refreshWorldEntityAtStage(assembly, entity, stage)
   }
 
   function setRotationOrUndo(
@@ -190,7 +185,7 @@ export function createAssemblyUpdater(
 
     const result = tryUpgradeUndergroundBelt(assembly, stage, entity as UndergroundBeltAssemblyEntity, newType)
     if (result !== "no-change" && result !== "updated") {
-      refreshWorldEntityAtStage(assembly, stage, entity)
+      refreshWorldEntityAtStage(assembly, entity, stage)
     }
     return result
   }
@@ -294,7 +289,7 @@ export function createAssemblyUpdater(
   }
 
   return {
-    addNewEntity(assembly: Assembly, stage: StageNumber, entity: LuaEntity): AssemblyEntity<any> | nil {
+    addNewEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): AssemblyEntity<any> | nil {
       const [saved, savedDir] = saveEntity(entity)
       if (!saved) return nil
       const { content } = assembly
@@ -322,7 +317,7 @@ export function createAssemblyUpdater(
     refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
       return updateWorldEntities(assembly, entity, 1)
     },
-    moveEntityOnPreviewReplace(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil {
+    moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageNumber | nil {
       if (stage >= entity.firstStage) return nil
       const oldStage = entity.moveToStage(stage)
       updateWorldEntities(assembly, entity, stage, oldStage)
@@ -345,7 +340,7 @@ export function createAssemblyUpdater(
     },
     reviveSettingsRemnant,
     clearEntityAtStage: worldUpdater.clearWorldEntity,
-    tryUpdateEntityFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
+    tryUpdateEntityFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
@@ -366,7 +361,7 @@ export function createAssemblyUpdater(
       }
       return "no-change"
     },
-    tryRotateEntityToMatchWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityRotateResult {
+    tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
@@ -382,7 +377,7 @@ export function createAssemblyUpdater(
       }
       return "cannot-rotate"
     },
-    tryApplyUpgradeTarget(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): EntityUpdateResult {
+    tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
@@ -415,7 +410,7 @@ export function createAssemblyUpdater(
       }
       return "no-change"
     },
-    updateWiresFromWorld(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): WireUpdateResult {
+    updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): WireUpdateResult {
       const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage)
       if (maxConnectionsExceeded) {
         updateWorldEntities(assembly, entity, entity.firstStage)
@@ -433,9 +428,9 @@ export function createAssemblyUpdater(
       updateWorldEntities(assembly, entity, entity.firstStage)
       return "updated"
     },
-    moveEntityToStage(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): StageMoveResult {
+    moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
       if (entity.isSettingsRemnant) {
-        reviveSettingsRemnant(assembly, stage, entity)
+        reviveSettingsRemnant(assembly, entity, stage)
         return "settings-remnant-revived"
       }
       const oldStage = entity.firstStage
@@ -459,11 +454,11 @@ export function createAssemblyUpdater(
         if (entity.isRollingStock()) {
           updateLater.push(entity)
         } else {
-          refreshWorldEntityAtStage(assembly, stageNumber, entity)
+          refreshWorldEntityAtStage(assembly, entity, stageNumber)
         }
       }
       for (const entity of updateLater) {
-        refreshWorldEntityAtStage(assembly, stageNumber, entity)
+        refreshWorldEntityAtStage(assembly, entity, stageNumber)
       }
     },
     resetProp<T extends Entity>(
@@ -506,7 +501,7 @@ export function createAssemblyUpdater(
       const stage = entity.firstStage
       const luaEntity = entity.getWorldEntity(stage)
       if (!luaEntity) {
-        refreshWorldEntityAtStage(assembly, stage, entity)
+        refreshWorldEntityAtStage(assembly, entity, stage)
         return
       }
 
@@ -518,7 +513,7 @@ export function createAssemblyUpdater(
       const content = assembly.content
       const assemblyEntities = entities.map((e) => content.findCompatible(e, nil)!)
       for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
-      for (const entity of assemblyEntities) replaceWorldEntityAtStage(assembly, stage, entity)
+      for (const entity of assemblyEntities) replaceWorldEntityAtStage(assembly, entity, stage)
     },
     setTrainLocationToCurrent(assembly: Assembly, entity: RollingStockAssemblyEntity): void {
       const stage = entity.firstStage
@@ -535,10 +530,10 @@ export function createAssemblyUpdater(
         const assemblyEntity = content.findCompatible(luaEntity, nil)
         if (assemblyEntity) {
           content.changePosition(assemblyEntity, luaEntity.position)
-          replaceWorldEntityAtStage(assembly, stage, assemblyEntity)
+          replaceWorldEntityAtStage(assembly, assemblyEntity, stage)
         } else {
           // add
-          AssemblyUpdater.addNewEntity(assembly, stage, luaEntity)
+          AssemblyUpdater.addNewEntity(assembly, luaEntity, stage)
         }
       }
     },

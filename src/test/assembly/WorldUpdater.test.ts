@@ -103,7 +103,7 @@ describe("updateWorldEntities", () => {
       })
     }
     test.each([1, 2, 3, 4])("can create one entity at stage %d", (stage) => {
-      worldUpdater.refreshWorldEntityAtStage(assembly, stage, entity)
+      worldUpdater.refreshWorldEntityAtStage(assembly, entity, stage)
       assertEntityCorrect(stage)
     })
     test("can create all entities", () => {
@@ -122,23 +122,23 @@ describe("updateWorldEntities", () => {
         } as TestEntity,
       )!
       entity.replaceWorldEntity(2, replaced)
-      worldUpdater.refreshWorldEntityAtStage(assembly, 2, entity)
+      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
       const val = assertEntityCorrect(2)
       assert.equal(val, replaced)
     })
 
     test("replaces deleted entity", () => {
-      worldUpdater.refreshWorldEntityAtStage(assembly, 3, entity)
+      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 3)
       entity.getWorldEntity(3)!.destroy()
       assertNothingPresent(3)
-      worldUpdater.refreshWorldEntityAtStage(assembly, 3, entity)
+      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 3)
       assertEntityCorrect(3)
     })
 
     test("can upgrade entities", () => {
-      worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity)
+      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
       entity._applyDiffAtStage(1, { name: "fast-inserter" })
-      worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity)
+      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
       assertEntityCorrect(1)
     })
   })
@@ -205,7 +205,7 @@ describe("updateWorldEntities", () => {
   test("can un-rotate entities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1)
     entity.getWorldEntity(2)!.direction = defines.direction.west
-    worldUpdater.refreshWorldEntityAtStage(assembly, 2, entity)
+    worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
@@ -227,9 +227,9 @@ describe("updateWorldEntities", () => {
 })
 
 test("replaceWorldEntityAtStage replaces old value", () => {
-  worldUpdater.refreshWorldEntityAtStage(assembly, 2, entity)
+  worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
   const value = assertEntityCorrect(2)
-  worldUpdater.replaceWorldEntityAtStage(assembly, 2, entity)
+  worldUpdater.replaceWorldEntityAtStage(assembly, entity, 2)
   assert.false(value.valid)
   assertEntityCorrect(2)
 })
@@ -275,14 +275,14 @@ describe("tryMoveEntity", () => {
 
   test("can move entity if moved in first stage", () => {
     assert.true(forceMoveEntity(entities[0], newPos, newDir))
-    const result = worldUpdater.tryDollyEntities(assembly, 1, entity)
+    const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
     assert.equal("success", result)
     assertMoved()
   })
 
   test("can't move entity if moved in later stage", () => {
     assert.true(forceMoveEntity(entities[1], newPos, newDir))
-    const result = worldUpdater.tryDollyEntities(assembly, 2, entity)
+    const result = worldUpdater.tryDollyEntities(assembly, entity, 2)
     assert.equal("not-first-stage", result)
     assertNotMoved()
   })
@@ -290,7 +290,7 @@ describe("tryMoveEntity", () => {
   test("can't move if world entities are missing in any stage", () => {
     assert.true(forceMoveEntity(entities[0], newPos, newDir))
     entity.getWorldEntity(2)!.destroy()
-    const result = worldUpdater.tryDollyEntities(assembly, 1, entity)
+    const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
     assert.equal("entities-missing", result)
     assertNotMoved()
   })
@@ -311,7 +311,7 @@ describe("tryMoveEntity", () => {
       assembly.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
       assert.true(forceMoveEntity(entities[0], newPos, newDir))
-      const result = worldUpdater.tryDollyEntities(assembly, 1, entity)
+      const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
       assert.equal("connected-entities-missing", result)
     })
 
@@ -325,7 +325,7 @@ describe("tryMoveEntity", () => {
       })
 
       assert.true(forceMoveEntity(entities[0], newPos, newDir))
-      const result = worldUpdater.tryDollyEntities(assembly, 1, entity)
+      const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
       assert.equal("connected-entities-missing", result)
     })
 
@@ -349,7 +349,7 @@ describe("tryMoveEntity", () => {
         }),
       )
 
-      const result = worldUpdater.tryDollyEntities(assembly, 1, entity)
+      const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
       assert.equal("success", result)
       assertMoved()
     })
@@ -358,7 +358,7 @@ describe("tryMoveEntity", () => {
 
 test("clearWorldEntity", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1)
-  worldUpdater.clearWorldEntity(assembly, 2, entity)
+  worldUpdater.clearWorldEntity(assembly, entity, 2)
   assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 2, 2)
   assert.nil(findMainEntity(2))
   assertEntityCorrect(1)
@@ -478,7 +478,7 @@ describe("circuit wires", () => {
   test("can remove circuit wires", () => {
     const { luaEntity1, luaEntity2 } = doAdd()
     addExtraWires({ luaEntity1, luaEntity2 })
-    worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity1)
+    worldUpdater.refreshWorldEntityAtStage(assembly, entity1, 1)
     assert.same([], luaEntity1.circuit_connection_definitions ?? [])
     assert.same([], luaEntity2.circuit_connection_definitions ?? [])
   })
@@ -490,7 +490,7 @@ describe("circuit wires", () => {
     addWireToAssembly()
     const entities = doAdd()
     addExtraWires(entities)
-    worldUpdater.refreshWorldEntityAtStage(assembly, 1, entity1)
+    worldUpdater.refreshWorldEntityAtStage(assembly, entity1, 1)
     assertSingleWire(entities)
   })
 })
