@@ -16,15 +16,14 @@ import {
   EntityHighlighter,
   HighlightCreator,
   HighlightEntities,
-  HighlightValues,
 } from "../../assembly/EntityHighlighter"
 import { Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { SpriteRender } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { simpleMock } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
+import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
 
 interface FooEntity extends Entity {
   foo?: number
@@ -70,6 +69,9 @@ function addInStage(stage: StageNumber) {
 describe("error highlights and selection proxy", () => {
   before_each(() => {
     for (const i of $range(1, 5)) addInStage(i)
+  })
+  after_each(() => {
+    assertErrorHighlightsCorrect(entity, 5)
   })
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
@@ -141,35 +143,7 @@ describe("config changed highlight", () => {
   }
   function assertCorrect() {
     highlightCreator.updateHighlights(assembly, entity)
-    let i = 2
-    for (const [stageNumber, changes] of pairs(entity.getStageDiffs() ?? {})) {
-      const isUpgrade = changes.name !== nil
-
-      const highlight = assert.not_nil(
-        entity.getExtraEntity("configChangedHighlight", stageNumber),
-      ) as HighlightBoxEntity
-      assert.equal(isUpgrade ? HighlightValues.Upgraded : "logistics", highlight.highlight_box_type, "highlight type")
-
-      const firstI = i
-      for (; i < stageNumber; i++) {
-        if (i !== firstI)
-          assert.nil(entity.getExtraEntity("configChangedHighlight", i), "should not have highlight in stage " + i)
-
-        const highlight = assert.not_nil(
-          entity.getExtraEntity("configChangedLaterHighlight", i),
-          `stage ${i}`,
-        ) as SpriteRender
-        assert.equal(isUpgrade ? HighlightValues.UpgradedLater : "item/blueprint", highlight.sprite)
-      }
-    }
-    for (let j = i; j <= 5; j++) {
-      if (j !== i)
-        assert.nil(entity.getExtraEntity("configChangedHighlight", j), "should not have highlight in stage " + j)
-      assert.nil(
-        entity.getExtraEntity("configChangedLaterHighlight", j),
-        "should not have later highlight in stage " + j,
-      )
-    }
+    assertConfigChangedHighlightsCorrect(entity, 5)
   }
   test("single", () => {
     setAt(3)

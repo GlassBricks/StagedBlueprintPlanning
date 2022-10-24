@@ -317,49 +317,6 @@ test("clearEntityAtStage", () => {
   worldUpdaterAsserted = true
 })
 
-describe("revive integration test", () => {
-  test.each([1, 2, 3, 4, 5, 6])("settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
-    const { entity } = addEntity(1)
-    entity._applyDiffAtStage(3, { override_stack_size: 2 })
-    entity._applyDiffAtStage(5, { override_stack_size: 3 })
-    entity.isSettingsRemnant = true
-
-    assemblyUpdater.reviveSettingsRemnant(assembly, reviveStage, entity)
-    assert.falsy(entity.isSettingsRemnant)
-    assert.equal(entity.firstStage, reviveStage)
-
-    if (reviveStage >= 5) {
-      assert.equal(3, entity.firstValue.override_stack_size)
-      assert.false(entity.hasStageDiff())
-    } else if (reviveStage >= 3) {
-      assert.equal(2, entity.firstValue.override_stack_size)
-      assertStageDiffs(entity, { 5: { override_stack_size: 3 } })
-    } else {
-      assert.equal(1, entity.firstValue.override_stack_size)
-      assertStageDiffs(entity, { 3: { override_stack_size: 2 }, 5: { override_stack_size: 3 } })
-    }
-
-    assertOneEntity()
-    assertReviveSettingsRemnantCalled(entity)
-  })
-
-  test("settings remnant 2->3, revive at stage 1", () => {
-    const { entity } = addEntity(1)
-    entity._applyDiffAtStage(3, { override_stack_size: 3 })
-    entity.isSettingsRemnant = true
-
-    assemblyUpdater.reviveSettingsRemnant(assembly, 1, entity)
-    assert.falsy(entity.isSettingsRemnant)
-    assert.equal(entity.firstStage, 1)
-
-    assert.equal(1, entity.firstValue.override_stack_size)
-    assertStageDiffs(entity, { 3: { override_stack_size: 3 } })
-
-    assertOneEntity()
-    assertReviveSettingsRemnantCalled(entity)
-  })
-})
-
 describe("tryUpdateEntityFromWorld", () => {
   test('with no changes returns "no-change"', () => {
     const { entity } = addEntity(2)

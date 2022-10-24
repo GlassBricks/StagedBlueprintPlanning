@@ -45,11 +45,10 @@ export interface AssemblyUpdater {
   /** Returns nil if not a lower stage number, else returns the old stage. */
   moveEntityOnPreviewReplace(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): StageNumber | nil
 
-  reviveSettingsRemnant(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): boolean
-
   disallowEntityDeletion(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): void
 
   deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
+  reviveSettingsRemnant(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity): boolean
 
   forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): void
 

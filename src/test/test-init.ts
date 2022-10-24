@@ -108,6 +108,7 @@ if (script.active_mods.testorio !== nil) {
     },
     log_passed_tests: false,
     sound_effects: true,
+    // test_pattern: "integration%-test",
   } as Testorio.Config)
   if (__DebugAdapter) {
     tagBlacklist.push("after_mod_reload")

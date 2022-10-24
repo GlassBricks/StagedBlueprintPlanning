@@ -169,6 +169,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   replaceExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber, entity: ExtraEntities[T] | nil): void
   destroyExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber): void
   destroyAllExtraEntities(type: ExtraEntityType): void
+  hasAnyExtraEntities(type: ExtraEntityType): boolean
 
   setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): void
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
@@ -682,6 +683,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     delete stageProperties[type]
     if (isEmpty(stageProperties)) delete this.stageProperties
+  }
+
+  public hasAnyExtraEntities(type: ExtraEntityType): boolean {
+    const { stageProperties } = this
+    return stageProperties !== nil && stageProperties[type] !== nil
   }
 
   iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {

@@ -116,17 +116,17 @@ export function createWorldUpdater(
   }
 
   function updatePreviewEntities(assembly: Assembly, entity: AssemblyEntity) {
+    const direction = entity.getApparentDirection()
     for (const [i, stage] of assembly.iterateStages(...entity.getPreviewStageRange())) {
       const worldEntity = entity.getWorldOrPreviewEntity(i)
-      if (worldEntity) continue
-
-      const previewEntity = createPreviewEntity(
-        stage.surface,
-        entity.position,
-        entity.getApparentDirection(),
-        entity.getNameAtStage(i),
-      )
-      entity.replaceWorldOrPreviewEntity(i, previewEntity)
+      if (worldEntity) {
+        if (isPreviewEntity(worldEntity)) {
+          worldEntity.direction = direction
+        }
+      } else {
+        const previewEntity = createPreviewEntity(stage.surface, entity.position, direction, entity.getNameAtStage(i))
+        entity.replaceWorldOrPreviewEntity(i, previewEntity)
+      }
     }
   }
 
