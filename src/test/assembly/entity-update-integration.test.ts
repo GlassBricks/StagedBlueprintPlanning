@@ -505,14 +505,20 @@ function setupPole2(stage: StageNumber) {
 test("saves initial cable connections", () => {
   const pole1 = setupPole(3)
   const pole2 = setupPole2(3)
-  assertEntityCorrect(pole1, false)
   assert.true(assembly.content.getCableConnections(pole1)?.has(pole2))
   assert.true(assembly.content.getCableConnections(pole2)?.has(pole1))
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 })
 
-// todo: saves new in higher layer
+test("saves initial cable connections to a pole in higher stage", () => {
+  const pole1 = setupPole(4)
+  const pole2 = setupPole2(3) // should connect to pole1
+  assert.true(assembly.content.getCableConnections(pole1)?.has(pole2))
+  assert.true(assembly.content.getCableConnections(pole2)?.has(pole1))
+  assertEntityCorrect(pole1, false)
+  assertEntityCorrect(pole2, false)
+})
 
 test("disconnect and connect cables", () => {
   const pole1 = setupPole(3)

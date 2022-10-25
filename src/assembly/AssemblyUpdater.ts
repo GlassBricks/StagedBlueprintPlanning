@@ -106,6 +106,8 @@ export function createAssemblyUpdater(
     replaceWorldEntityAtStage,
     makeSettingsRemnant,
     deleteAllEntities,
+    updateNewEntityWithoutWires,
+    updateWireConnections,
   } = worldUpdater
   const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
@@ -308,8 +310,9 @@ export function createAssemblyUpdater(
         }
       }
 
-      saveWireConnections(content, assemblyEntity, stage)
-      updateWorldEntities(assembly, assemblyEntity, 1)
+      updateNewEntityWithoutWires(assembly, assemblyEntity)
+      saveWireConnections(content, assemblyEntity, stage, assembly.numStages())
+      updateWireConnections(assembly, assemblyEntity)
 
       return assemblyEntity
     },
@@ -411,7 +414,7 @@ export function createAssemblyUpdater(
       return "no-change"
     },
     updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): WireUpdateResult {
-      const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage)
+      const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage, stage)
       if (maxConnectionsExceeded) {
         updateWorldEntities(assembly, entity, entity.firstStage)
         return "max-connections-exceeded"

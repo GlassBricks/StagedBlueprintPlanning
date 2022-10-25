@@ -39,7 +39,7 @@ function migrateCables(assembly: UserAssembly): void {
 
   const content = assembly.content
   for (const entity of content.iterateAllEntities()) {
-    saveWireConnections(content, entity, lastStageNum)
+    saveWireConnections(content, entity, lastStageNum, lastStageNum)
   }
   for (const i of $range(1, lastStageNum)) {
     for (const entity of content.iterateAllEntities()) {

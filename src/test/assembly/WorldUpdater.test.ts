@@ -356,6 +356,24 @@ describe("tryMoveEntity", () => {
   })
 })
 
+test("updateNewEntityWithoutWires", () => {
+  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as SavedDirection, 2)
+  assembly.content.add(entity)
+  worldUpdater.updateNewEntityWithoutWires(assembly, entity)
+  assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, assembly.numStages())
+  assert.spy(wireUpdater.updateWireConnections).not_called()
+})
+
+test("updateWireConnections", () => {
+  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as SavedDirection, 2)
+  assembly.content.add(entity)
+  worldUpdater.updateNewEntityWithoutWires(assembly, entity)
+  worldUpdater.updateWireConnections(assembly, entity)
+  for (const i of $range(2, assembly.numStages())) {
+    assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly.content), match.ref(entity), i)
+  }
+})
+
 test("clearWorldEntity", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1)
   worldUpdater.clearWorldEntity(assembly, entity, 2)

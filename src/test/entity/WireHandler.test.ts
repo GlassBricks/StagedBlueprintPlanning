@@ -182,7 +182,7 @@ describe("circuit wires", () => {
       for (const number of existing) content.addCircuitConnection(wires[number - 1])
       for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
+      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1, 1)
       assert.equal(!shallowCompare(existing, world), hasDiff)
       assert.nil(maxConnectionsReached) // not relevant for circuit wires
 
@@ -263,7 +263,7 @@ describe("cable connections", () => {
       if (world.includes(1)) luaEntity1.connect_neighbour(luaEntity2)
       if (world.includes(2)) luaEntity2.connect_neighbour(luaEntity3)
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
+      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1, 1)
       assert.equal(!shallowCompare(existing, world), hasDiff)
       assert.nil(maxConnectionsReached)
 
@@ -294,14 +294,14 @@ describe("cable connections", () => {
       luaEntity1.connect_neighbour(luaEntity2)
       // saving should fail
       {
-        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
+        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1, 1)
         assert.true(hasDiff)
         assert.true(maxConnectionsReached)
         assert.nil(content.getCableConnections(entity2))
         assert.false(content.getCableConnections(entity1)!.has(entity2))
       }
       {
-        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
+        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1, 1)
         assert.true(hasDiff)
         assert.true(maxConnectionsReached)
         assert.nil(content.getCableConnections(entity2))

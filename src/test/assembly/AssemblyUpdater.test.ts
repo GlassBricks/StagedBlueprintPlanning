@@ -157,6 +157,11 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   }
   return entity
 }
+function assertNewUpdated(entity: AssemblyEntity) {
+  assert.spy(worldUpdater.updateNewEntityWithoutWires).called_with(match.ref(assembly), match.ref(entity))
+  assert.spy(worldUpdater.updateWireConnections).called_with(match.ref(assembly), match.ref(entity))
+  expectedWuCalls = 2
+}
 
 test("addNewEntity", () => {
   const luaEntity = createEntity(2)
@@ -172,8 +177,7 @@ test("addNewEntity", () => {
   assert.equal(luaEntity, entity.getWorldEntity(2))
 
   assertOneEntity()
-  assertUpdateCalled(entity, 1, nil)
-  assert.spy(wireSaver.saveWireConnections).called_with(assembly.content, entity, 2)
+  assertNewUpdated(entity)
 })
 
 function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
@@ -464,7 +468,7 @@ describe("tryApplyUpgradeTarget", () => {
 describe("updateWiresFromWorld", () => {
   test("if saved, calls update", () => {
     const { entity } = addEntity(1)
-    wireSaver.saveWireConnections.on_call_with(match._, entity, 1).returns(true)
+    wireSaver.saveWireConnections.on_call_with(match._, entity, 1, match._).returns(true)
     const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
     assert.equal("updated", ret)
 
@@ -482,7 +486,7 @@ describe("updateWiresFromWorld", () => {
   })
   test("if max connections exceeded, notifies and calls update", () => {
     const { entity } = addEntity(1)
-    wireSaver.saveWireConnections.on_call_with(match._, entity, 1).returns(true, true)
+    wireSaver.saveWireConnections.on_call_with(match._, entity, 1, match._).returns(true, true)
     const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
     assert.equal("max-connections-exceeded", ret)
 
@@ -548,7 +552,9 @@ describe("undergrounds", () => {
 
     assert.equal("output", entity.firstValue.type)
     assertNEntities(2)
-    assertUpdateCalled(entity, 1, nil)
+
+    assertNewUpdated(entity)
+    // assert.spy(wireSaver.saveWireConnections).called_with(assembly.content, entity, 1)
   })
 
   function createUndergroundBeltPair(
@@ -871,9 +877,9 @@ describe("rolling stock", () => {
     return result
   }
   test("can save rolling stock", () => {
-    const result = assemblyUpdater.addNewEntity(assembly, rollingStock, 1)
+    const result = assemblyUpdater.addNewEntity(assembly, rollingStock, 1)!
     assert.not_nil(result)
-    assert.equal("locomotive", result!.firstValue.name)
+    assert.equal("locomotive", result.firstValue.name)
 
     assertNEntities(1)
 
@@ -885,7 +891,7 @@ describe("rolling stock", () => {
     assert.not_nil(foundDirectly, "found directly")
     assert.equal(found, foundDirectly, "found same entity")
 
-    assertUpdateCalled(found, 1, nil)
+    assertNewUpdated(result)
   })
 
   test("no update on rolling stock", () => {

@@ -34,6 +34,8 @@ export interface WorldUpdater {
    * @param endStage inclusive. If not specified, defaults to the max assembly stage
    */
   updateWorldEntities(assembly: Assembly, entity: AssemblyEntity, startStage: StageNumber, endStage?: StageNumber): void
+  updateNewEntityWithoutWires(assembly: Assembly, entity: AssemblyEntity): void
+  updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void
 
   refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
   replaceWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
@@ -96,11 +98,11 @@ export function createWorldUpdater(
     }
   }
 
-  function doUpdateWorldEntities(
+  function updateWorldEntitiesOnly(
     assembly: Assembly,
     entity: AssemblyEntity,
-    startStage: number,
-    endStage: number,
+    startStage: StageNumber,
+    endStage: StageNumber,
   ): void {
     const firstStage = entity.firstStage
     const direction = entity.getApparentDirection()
@@ -123,7 +125,6 @@ export function createWorldUpdater(
 
           entity.replaceWorldOrPreviewEntity(stage, luaEntity)
 
-          updateWireConnections(assembly.content, entity, stage)
           continue
         }
         // else, fall through to make preview
@@ -134,6 +135,32 @@ export function createWorldUpdater(
       makePreviewEntity(assembly, stage, entity, entityName, direction)
     }
   }
+
+  function updateWires(
+    assembly: Assembly,
+    entity: AssemblyEntity,
+    startStage: StageNumber,
+    endStage: StageNumber,
+  ): void {
+    const content = assembly.content
+    for (const stage of $range(startStage, endStage)) {
+      const worldEntity = entity.getWorldEntity(stage)
+      if (worldEntity) {
+        updateWireConnections(content, entity, stage)
+      }
+    }
+  }
+
+  function doUpdateWorldEntities(
+    assembly: Assembly,
+    entity: AssemblyEntity,
+    startStage: StageNumber,
+    endStage: StageNumber,
+  ) {
+    updateWorldEntitiesOnly(assembly, entity, startStage, endStage)
+    updateWires(assembly, entity, startStage, endStage)
+  }
+
   function makeEntityIndestructible(entity: LuaEntity) {
     entity.minable = false
     entity.rotatable = false
@@ -144,7 +171,6 @@ export function createWorldUpdater(
     entity.rotatable = true
     entity.destructible = false
   }
-
   function tryMoveOtherEntities(
     assembly: Assembly,
     entity: AssemblyEntity,
@@ -210,27 +236,56 @@ export function createWorldUpdater(
     doUpdateWorldEntities(assembly, entity, stage, stage)
     updateHighlights(assembly, entity, stage, stage)
   }
+  function getActualStageRange(
+    assembly: Assembly,
+    entity: AssemblyEntity,
+    startStage: StageNumber,
+    endStage: StageNumber | nil,
+  ): LuaMultiReturn<[StageNumber, StageNumber] | [_?: nil]> {
+    const firstStage = entity.firstStage
+    if (startStage < 1) startStage = 1
+    const maxStage = assembly.numStages()
+    if (!endStage || endStage > maxStage) endStage = maxStage
+    if (startStage > endStage) return $multi()
+
+    if (entity.inFirstStageOnly()) {
+      if (firstStage < startStage || firstStage > endStage) return $multi()
+      return $multi(firstStage, firstStage)
+    }
+    if (startStage === entity.firstStage) {
+      startStage = 1 // also update previews
+    }
+    return $multi(startStage, endStage)
+  }
   return {
-    updateWorldEntities(assembly: Assembly, entity: AssemblyEntity, startStage: StageNumber): void {
+    updateWorldEntities(
+      assembly: Assembly,
+      entity: AssemblyEntity,
+      startStage: StageNumber,
+      endStage: StageNumber | nil,
+    ): void {
       if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+      const [start, end] = getActualStageRange(assembly, entity, startStage, endStage)
+      if (!start) return
 
-      const firstStage = entity.firstStage
-      if (startStage < 1) startStage = 1
-      let endStage = assembly.numStages()
-      if (startStage > endStage) return
-
+      doUpdateWorldEntities(assembly, entity, start, end)
+      updateHighlights(assembly, entity, start, end)
+    },
+    updateNewEntityWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {
+      if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+      let startStage: StageNumber, endStage: StageNumber
       if (entity.inFirstStageOnly()) {
-        if (firstStage < startStage || firstStage > endStage) {
-          return
-        }
-        startStage = firstStage
-        endStage = firstStage
-      } else if (startStage === entity.firstStage) {
-        startStage = 1 // also update previews
+        startStage = entity.firstStage
+        endStage = entity.firstStage
+      } else {
+        startStage = 1
+        endStage = assembly.numStages()
       }
-
-      doUpdateWorldEntities(assembly, entity, startStage, endStage)
+      updateWorldEntitiesOnly(assembly, entity, startStage, endStage)
       updateHighlights(assembly, entity, startStage, endStage)
+    },
+    updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void {
+      updateWires(assembly, entity, entity.firstStage, assembly.numStages())
     },
     refreshWorldEntityAtStage,
     replaceWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {

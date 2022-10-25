@@ -1,9 +1,18 @@
 # THE TODO LIST
 
+### Next
+
+- Separate blueprint landfill to "landfill before" and "tiles in previous"
+- Better solution for 2x2 grid enforcement
+- Move entity to stage tool
+
+- Performance improvements
+
 ### Editing
 
 - [ ] Modded entities?
 - [ ] Consider alternate behaviors
+- [ ] Configurable behaviors
 
 - [ ] "Locked" properties
 
@@ -28,10 +37,6 @@
         - [ ] By type
         - [ ] Teleport button
         - [ ] Resolve options? (delete, remove, merge)
-
-### Queue (likely to be implemented in next version)
-
-- [ ] Opening preview entities
 
 ## Future
 

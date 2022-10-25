@@ -29,7 +29,8 @@ export interface WireSaver {
   saveWireConnections(
     content: MutableEntityMap,
     entity: AssemblyEntity,
-    stageNumber: StageNumber,
+    circuitStageNumber: StageNumber,
+    cableStageNumber: StageNumber,
   ): LuaMultiReturn<[hasAnyDiff: boolean, maxCableConnectionsExceeded?: boolean]>
 }
 
@@ -208,13 +209,18 @@ function saveCableConnections(
 function saveWireConnections(
   content: MutableEntityMap,
   entity: AssemblyEntity,
-  stageNumber: StageNumber,
+  circuitStage: StageNumber,
+  cableStage: StageNumber,
 ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
-  const luaEntity = entity.getWorldEntity(stageNumber)
-  if (!luaEntity) return $multi(false)
-  const diff1 = saveCircuitConnections(content, entity, stageNumber, luaEntity)
-  const [diff2, maxConnectionsExceeded] = saveCableConnections(content, entity, stageNumber, luaEntity)
-  return $multi(diff1 || diff2, maxConnectionsExceeded)
+  const circuitStageEntity = entity.getWorldEntity(circuitStage)
+  const diff1 = circuitStageEntity !== nil && saveCircuitConnections(content, entity, circuitStage, circuitStageEntity)
+
+  const cableStageEntity = entity.getWorldEntity(cableStage)
+  if (cableStageEntity !== nil) {
+    const [diff2, maxConnectionsExceeded] = saveCableConnections(content, entity, cableStage, cableStageEntity)
+    return $multi(diff1 || diff2, maxConnectionsExceeded)
+  }
+  return $multi(diff1)
 }
 
 function analyzeExistingCircuitConnections(
