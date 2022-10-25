@@ -180,17 +180,17 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   function updateAssociatedEntitiesAndErrorHighlight(assembly: Assembly, entity: AssemblyEntity): void {
     for (const stage of $range(
       entity.firstStage,
-      entity.inFirstStageOnly() ? entity.firstStage : assembly.numStages(),
+      entity.inFirstStageOnly() ? entity.firstStage : assembly.maxStage(),
     )) {
       const hasError = entityHasErrorAt(entity, stage)
-      updateHighlight(entity, stage, assembly.getStage(stage)!.surface, "errorOutline", hasError)
+      updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorOutline", hasError)
     }
   }
 
   function updateErrorIndicators(assembly: Assembly, entity: AssemblyEntity): void {
     if (entity.isRollingStock()) return
     let hasErrorAnywhere = false
-    for (const i of $range(entity.firstStage, assembly.numStages())) {
+    for (const i of $range(entity.firstStage, assembly.maxStage())) {
       const hasError = entity.getWorldEntity(i) === nil
       if (hasError) {
         hasErrorAnywhere = true
@@ -202,19 +202,25 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       return
     }
 
-    for (const [i, stage] of assembly.iterateStages()) {
-      const shouldHaveIndicator = i >= entity.firstStage && entity.getWorldEntity(i) !== nil
-      updateHighlight(entity, i, stage.surface, "errorElsewhereIndicator", shouldHaveIndicator)
+    for (const stage of $range(1, assembly.maxStage())) {
+      const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) !== nil
+      updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
 
   function updateAllConfigChangedHighlights(assembly: Assembly, entity: AssemblyEntity): void {
     const firstStage = entity.firstStage
     let lastStageWithHighlights = firstStage
-    for (const [i, stage] of assembly.iterateStages()) {
-      const hasConfigChanged = entity.hasStageDiff(i)
-      const isUpgrade = hasConfigChanged && entity.getStageDiff(i)!.name !== nil
-      const highlight = updateHighlight(entity, i, stage.surface, "configChangedHighlight", hasConfigChanged)
+    for (const stage of $range(1, assembly.maxStage())) {
+      const hasConfigChanged = entity.hasStageDiff(stage)
+      const isUpgrade = hasConfigChanged && entity.getStageDiff(stage)!.name !== nil
+      const highlight = updateHighlight(
+        entity,
+        stage,
+        assembly.getSurface(stage)!,
+        "configChangedHighlight",
+        hasConfigChanged,
+      )
       if (highlight) {
         ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
           ? HighlightValues.Upgraded
@@ -224,11 +230,11 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
 
       // update configChangedLaterHighlights in previous stages
       const sprite = isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater
-      for (; lastStageWithHighlights < i; lastStageWithHighlights++) {
+      for (; lastStageWithHighlights < stage; lastStageWithHighlights++) {
         const highlight = updateHighlight(
           entity,
           lastStageWithHighlights,
-          assembly.getStage(lastStageWithHighlights)!.surface,
+          assembly.getSurface(lastStageWithHighlights)!,
           "configChangedLaterHighlight",
           true,
         ) as SpriteRender
@@ -239,7 +245,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
       // remove later highlights for all stages
       removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
     } else {
-      for (const i of $range(lastStageWithHighlights, assembly.numStages())) {
+      for (const i of $range(lastStageWithHighlights, assembly.maxStage())) {
         removeHighlight(entity, i, "configChangedLaterHighlight")
       }
       for (const i of $range(1, firstStage - 1)) {
@@ -267,8 +273,8 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
       if (!entity.isSettingsRemnant) return
       for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
-      for (const [i, stage] of assembly.iterateStages()) {
-        updateHighlight(entity, i, stage.surface, "settingsRemnantHighlight", true)
+      for (const stage of $range(1, assembly.maxStage())) {
+        updateHighlight(entity, stage, assembly.getSurface(stage)!, "settingsRemnantHighlight", true)
       }
     },
     reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {

@@ -282,7 +282,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
             style="red_button"
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.DeleteStage]}
-            enabled={this.stage.assembly.numStages() > 1}
+            enabled={this.stage.assembly.maxStage() > 1}
             on_gui_click={funcOn(this.beginDelete)}
           />
         </flow>

@@ -61,7 +61,7 @@ Events.on(CustomInputs.PreviousStage, (e) => {
   let toStage = stage.assembly.getStage(prevStageNum)
   if (!toStage) {
     if (player.mod_settings[Settings.CyclicNavigation].value) {
-      toStage = stage.assembly.getStage(stage.assembly.numStages())!
+      toStage = stage.assembly.getStage(stage.assembly.maxStage())!
     } else {
       return notifyError(player, [L_Interaction.NoPreviousStage], false)
     }

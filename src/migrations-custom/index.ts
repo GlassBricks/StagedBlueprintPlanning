@@ -35,7 +35,7 @@ Events.on_configuration_changed((data) => {
 
 function migrateCables(assembly: UserAssembly): void {
   const { saveWireConnections, updateWireConnections } = WireHandler
-  const lastStageNum = assembly.numStages()
+  const lastStageNum = assembly.maxStage()
 
   const content = assembly.content
   for (const entity of content.iterateAllEntities()) {
@@ -66,7 +66,7 @@ Migrations.to("0.4.0", () => {
   log("Finding and adding trains to assemblies")
   let anyRollingStock = false
   for (const [, assembly] of getAllAssemblies()) {
-    for (const [, stage] of assembly.iterateStages()) {
+    for (const stage of assembly.getAllStages()) {
       const surface = stage.surface
       if (!surface.valid) return
       if (surface.valid) surface.show_clouds = false

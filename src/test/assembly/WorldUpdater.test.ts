@@ -112,15 +112,10 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = EntityHandler.createEntity(
-        assembly.getStage(2)!.surface,
-        entity.position,
-        entity.getDirection(),
-        {
-          name: "inserter",
-          override_stack_size: 3,
-        } as TestEntity,
-      )!
+      const replaced = EntityHandler.createEntity(assembly.getSurface(2)!, entity.position, entity.getDirection(), {
+        name: "inserter",
+        override_stack_size: 3,
+      } as TestEntity)!
       entity.replaceWorldEntity(2, replaced)
       worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
       const val = assertEntityCorrect(2)
@@ -166,15 +161,10 @@ describe("updateWorldEntities", () => {
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
     entity.moveToStage(2)
     if (withExisting) {
-      const luaEntity = EntityHandler.createEntity(
-        assembly.getStage(3)!.surface,
-        entity.position,
-        entity.getDirection(),
-        {
-          name: "inserter",
-          override_stack_size: 3,
-        } as TestEntity,
-      )!
+      const luaEntity = EntityHandler.createEntity(assembly.getSurface(3)!, entity.position, entity.getDirection(), {
+        name: "inserter",
+        override_stack_size: 3,
+      } as TestEntity)!
       entity.replaceWorldEntity(3, luaEntity)
     }
     worldUpdater.updateWorldEntities(assembly, entity, 1)
@@ -211,9 +201,7 @@ describe("updateWorldEntities", () => {
 
   test("calls updateHighlights", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1)
-    assert
-      .spy(highlighter.updateHighlights)
-      .called_with(match.ref(assembly), match.ref(entity), 1, assembly.numStages())
+    assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, assembly.maxStage())
   })
 
   test("entity preview not created if is rolling stock", () => {
@@ -360,7 +348,7 @@ test("updateNewEntityWithoutWires", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as SavedDirection, 2)
   assembly.content.add(entity)
   worldUpdater.updateNewEntityWithoutWires(assembly, entity)
-  assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, assembly.numStages())
+  assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, assembly.maxStage())
   assert.spy(wireUpdater.updateWireConnections).not_called()
 })
 
@@ -369,7 +357,7 @@ test("updateWireConnections", () => {
   assembly.content.add(entity)
   worldUpdater.updateNewEntityWithoutWires(assembly, entity)
   worldUpdater.updateWireConnections(assembly, entity)
-  for (const i of $range(2, assembly.numStages())) {
+  for (const i of $range(2, assembly.maxStage())) {
     assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly.content), match.ref(entity), i)
   }
 })

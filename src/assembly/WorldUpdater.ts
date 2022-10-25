@@ -16,7 +16,7 @@ import { EntityMoveResult, forceMoveEntity, tryMoveAllEntities } from "../entity
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
 import { EntityMap } from "../entity/EntityMap"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
-import { Assembly, StageSurface } from "./AssemblyDef"
+import { Assembly } from "./AssemblyDef"
 import { EntityHighlighter } from "./EntityHighlighter"
 
 /**
@@ -58,7 +58,7 @@ export interface WorldUpdater {
   makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
 
-  clearStage(stage: StageSurface): void
+  clearStage(surface: LuaSurface): void
 }
 
 export type AssemblyEntityDollyResult =
@@ -88,12 +88,7 @@ export function createWorldUpdater(
     if (existing && isPreviewEntity(existing) && existing.name === previewName) {
       existing.direction = direction
     } else {
-      const previewEntity = createPreviewEntity(
-        assembly.getStage(stage)!.surface,
-        entity.position,
-        direction,
-        entityName,
-      )
+      const previewEntity = createPreviewEntity(assembly.getSurface(stage)!, entity.position, direction, entityName)
       entity.replaceWorldOrPreviewEntity(stage, previewEntity)
     }
   }
@@ -108,7 +103,7 @@ export function createWorldUpdater(
     const direction = entity.getApparentDirection()
 
     for (const [stage, value] of entity.iterateValues(startStage, endStage)) {
-      const surface = assembly.getStage(stage)!.surface
+      const surface = assembly.getSurface(stage)!
       const existing = entity.getWorldOrPreviewEntity(stage)
 
       if (value !== nil) {
@@ -181,14 +176,14 @@ export function createWorldUpdater(
 
     // check all entities exist
 
-    if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.numStages()))
+    if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.maxStage()))
       return "connected-entities-missing"
 
     const entities: LuaEntity[] = []
     for (const stageNum of $range(1, entity.firstStage - 1)) {
       entities.push(entity.getWorldOrPreviewEntity(stageNum)!)
     }
-    for (const stageNum of $range(entity.firstStage, assembly.numStages())) {
+    for (const stageNum of $range(entity.firstStage, assembly.maxStage())) {
       const worldEntity = entity.getWorldOrPreviewEntity(stageNum)
       if (!worldEntity) return "entities-missing"
       entities.push(worldEntity)
@@ -221,14 +216,14 @@ export function createWorldUpdater(
     assert(entity.isSettingsRemnant && !entity.inFirstStageOnly())
     entity.destroyAllWorldOrPreviewEntities()
     const direction = entity.getApparentDirection()
-    for (const stage of $range(1, assembly.numStages())) {
+    for (const stage of $range(1, assembly.maxStage())) {
       makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), direction)
     }
     highlighter.makeSettingsRemnant(assembly, entity)
   }
   function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
     assert(!entity.isSettingsRemnant)
-    doUpdateWorldEntities(assembly, entity, 1, assembly.numStages())
+    doUpdateWorldEntities(assembly, entity, 1, assembly.maxStage())
     highlighter.reviveSettingsRemnant(assembly, entity)
   }
 
@@ -244,7 +239,7 @@ export function createWorldUpdater(
   ): LuaMultiReturn<[StageNumber, StageNumber] | [_?: nil]> {
     const firstStage = entity.firstStage
     if (startStage < 1) startStage = 1
-    const maxStage = assembly.numStages()
+    const maxStage = assembly.maxStage()
     if (!endStage || endStage > maxStage) endStage = maxStage
     if (startStage > endStage) return $multi()
 
@@ -279,13 +274,13 @@ export function createWorldUpdater(
         endStage = entity.firstStage
       } else {
         startStage = 1
-        endStage = assembly.numStages()
+        endStage = assembly.maxStage()
       }
       updateWorldEntitiesOnly(assembly, entity, startStage, endStage)
       updateHighlights(assembly, entity, startStage, endStage)
     },
     updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void {
-      updateWires(assembly, entity, entity.firstStage, assembly.numStages())
+      updateWires(assembly, entity, entity.firstStage, assembly.maxStage())
     },
     refreshWorldEntityAtStage,
     replaceWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
@@ -302,7 +297,7 @@ export function createWorldUpdater(
       } else {
         entity.setDirection(movedEntity.direction as SavedDirection)
         deleteHighlights(entity)
-        updateHighlights(assembly, entity, entity.firstStage, assembly.numStages())
+        updateHighlights(assembly, entity, entity.firstStage, assembly.maxStage())
         const posChanged = assembly.content.changePosition(entity, movedEntity.position)
         assert(posChanged, "failed to change position in assembly content")
       }
@@ -319,11 +314,11 @@ export function createWorldUpdater(
     },
     makeSettingsRemnant,
     reviveSettingsRemnant,
-    clearStage(stage: StageSurface) {
-      for (const entity of stage.surface.find_entities()) {
+    clearStage(surface: LuaSurface) {
+      for (const entity of surface.find_entities()) {
         if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
       }
-      for (const entity of stage.surface.find_entities_filtered({
+      for (const entity of surface.find_entities_filtered({
         type: ["simple-entity-with-owner", "rail-remnants"],
       })) {
         const name = entity.name

@@ -15,15 +15,11 @@ import { MutableState, Observable, PRecord, State } from "../lib"
 import { Position } from "../lib/geometry"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
-export interface StageSurface {
-  readonly surface: LuaSurface
-}
 export interface Assembly {
-  getStage(stageNumber: StageNumber): StageSurface | nil
-  numStages(): number
-  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, StageSurface]>>
+  maxStage(): StageNumber
 
-  getStageName(stageNumber: StageNumber): LocalisedString
+  getStageName(stage: StageNumber): LocalisedString
+  getSurface(stage: StageNumber): LuaSurface | nil
   readonly content: MutableEntityMap
 }
 export interface UserAssembly extends Assembly {
@@ -45,7 +41,6 @@ export interface UserAssembly extends Assembly {
   >
 
   getStage(stageNumber: StageNumber): Stage | nil
-  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Stage]>>
   getAllStages(): readonly Stage[]
 
   insertStage(index: StageNumber): Stage
@@ -62,7 +57,9 @@ export interface BlueprintBookSettings {
   readonly autoLandfill: MutableState<boolean>
 }
 
-export interface Stage extends StageSurface {
+export interface Stage {
+  readonly surface: LuaSurface
+
   readonly name: MutableState<string>
 
   readonly stageNumber: StageNumber

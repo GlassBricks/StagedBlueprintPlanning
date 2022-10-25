@@ -52,7 +52,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   assert.equal(entity, found, "found in content")
 
   let hasMissing = false
-  for (const stage of $range(1, assembly.numStages())) {
+  for (const stage of $range(1, assembly.maxStage())) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)!
     assert(worldEntity, `entity exists at stage ${stage}`)
     const isPreview = isPreviewEntity(worldEntity)
@@ -92,7 +92,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   const isElectricPole = game.entity_prototypes[entity.firstValue.name].type === "electric-pole"
   if (!cableConnections) {
     if (isElectricPole) {
-      for (const stage of $range(entity.firstStage, assembly.numStages())) {
+      for (const stage of $range(entity.firstStage, assembly.maxStage())) {
         const pole = entity.getWorldEntity(stage)
         if (!pole) continue
         const cableNeighbors = (pole.neighbours as Record<"copper", LuaEntity[]>).copper
@@ -103,7 +103,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   } else {
     assert.true(isElectricPole, "cableConnections only for electric poles")
     const otherNeighbors = Object.keys(cableConnections)
-    for (const stage of $range(entity.firstStage, assembly.numStages())) {
+    for (const stage of $range(entity.firstStage, assembly.maxStage())) {
       const expectedNeighbors = otherNeighbors
         .map((o) => o.getWorldEntity(stage))
         .filter((o) => o)
@@ -119,7 +119,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   // circuit wires
   const wireConnections = assembly.content.getCircuitConnections(entity)
   if (!wireConnections) {
-    for (const stage of $range(entity.firstStage, assembly.numStages())) {
+    for (const stage of $range(entity.firstStage, assembly.maxStage())) {
       const worldEntity = entity.getWorldEntity(stage)
       if (!worldEntity) continue
       const wireNeighbors = worldEntity.circuit_connection_definitions
@@ -131,7 +131,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
       )
     }
   } else {
-    for (const stage of $range(entity.firstStage, assembly.numStages())) {
+    for (const stage of $range(entity.firstStage, assembly.maxStage())) {
       const thisWorldEntity = entity.getWorldEntity(stage)
       if (!thisWorldEntity) continue
       const expectedNeighbors = Object.entries(wireConnections).flatMap(([entity, connections]) => {
@@ -157,7 +157,7 @@ function assertEntityNotPresent(entity: AssemblyEntity) {
   const found = assembly.content.findCompatibleByName(entity.firstValue.name, entity.position, entity.direction)
   assert.nil(found, "not found in content")
 
-  for (const stage of $range(1, assembly.numStages())) {
+  for (const stage of $range(1, assembly.maxStage())) {
     assert.nil(entity.getWorldOrPreviewEntity(stage), `entity should be deleted at stage ${stage}`)
   }
   assert.false(entity.hasAnyExtraEntities("errorOutline"), "no errorOutline")
@@ -166,7 +166,7 @@ function assertEntityNotPresent(entity: AssemblyEntity) {
 
 function assertIsSettingsRemnant(entity: AssemblyEntity) {
   assert.true(entity.isSettingsRemnant, "should be settingsRemnant")
-  for (const stage of $range(1, assembly.numStages())) {
+  for (const stage of $range(1, assembly.maxStage())) {
     const preview = entity.getWorldOrPreviewEntity(stage)!
     assert.not_nil(preview, `entity exists at stage ${stage}`)
     assert.true(isPreviewEntity(preview), `entity is preview at stage ${stage}`)
@@ -572,7 +572,7 @@ test("connect and disconnect circuit wires", () => {
 
 function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHasError: boolean) {
   let hasError = false
-  for (const stage of $range(1, assembly.numStages())) {
+  for (const stage of $range(1, assembly.maxStage())) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)
     if (stage === entity.firstStage) {
       assert.not_nil(worldEntity)

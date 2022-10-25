@@ -9,27 +9,17 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Assembly, StageSurface } from "../../assembly/AssemblyDef"
+import { Assembly } from "../../assembly/AssemblyDef"
 import { createStageSurface, prepareArea } from "../../assembly/surfaces"
 import { newEntityMap } from "../../entity/EntityMap"
 import { BBox, Pos } from "../../lib/geometry"
 
 export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
-  const stageSurfaces: StageSurface[] =
-    typeof stages === "number"
-      ? Array.from({ length: stages }, () => ({ surface: game.surfaces[1] }))
-      : stages.map((s) => ({ surface: s }))
+  const surfaces: LuaSurface[] =
+    typeof stages === "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
   return {
-    getStage: (n) => stageSurfaces[n - 1],
-    numStages: () => stageSurfaces.length,
-    iterateStages: (start = 1, end = stageSurfaces.length): any => {
-      function next(s: StageSurface[], i: number) {
-        if (i >= end) return
-        i++
-        return $multi(i, s[i - 1])
-      }
-      return $multi(next, stageSurfaces, start - 1)
-    },
+    getSurface: (stage) => surfaces[stage - 1],
+    maxStage: () => surfaces.length,
     content: newEntityMap(),
     getStageName: (n) => "mock stage " + n,
   }

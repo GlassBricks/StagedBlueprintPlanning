@@ -100,7 +100,7 @@ export function teleportToAssembly(player: LuaPlayer, assembly: UserAssembly): v
     recordPlayerAtStage(player, currentStage)
   }
   const newLocation = assembly.lastPlayerPosition[player.index]
-  if (newLocation && newLocation.stageNumber <= assembly.numStages()) {
+  if (newLocation && newLocation.stageNumber <= assembly.maxStage()) {
     const stage = assembly.getStage(newLocation.stageNumber)!
     player.teleport(newLocation.position, stage.surface)
   } else {

@@ -94,20 +94,15 @@ class AssemblyImpl implements UserAssembly {
     return assembly
   }
 
+  getSurface(stageNum: StageNumber): LuaSurface | nil {
+    const stage = this.stages[stageNum]
+    return stage && stage.surface
+  }
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-  numStages(): number {
+  maxStage(): number {
     return luaLength(this.stages)
-  }
-  iterateStages(start?: StageNumber, end?: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Stage]>>
-  iterateStages(start: StageNumber = 1, end: StageNumber = this.numStages()): any {
-    function next(stages: Stage[], i: number) {
-      if (i >= end) return
-      i++
-      return $multi(i, stages[i - 1])
-    }
-    return $multi(next, this.stages, start - 1)
   }
 
   getAllStages(): readonly Stage[] {
@@ -119,7 +114,7 @@ class AssemblyImpl implements UserAssembly {
 
   insertStage(index: StageNumber): Stage {
     this.assertValid()
-    assert(index >= 1 && index <= this.numStages() + 1, "Invalid new stage number")
+    assert(index >= 1 && index <= this.maxStage() + 1, "Invalid new stage number")
 
     const newStage = StageImpl.create(this, index, this.getNewStageName())
     table.insert(this.stages as unknown as Stage[], index, newStage)
@@ -137,7 +132,7 @@ class AssemblyImpl implements UserAssembly {
     this.assertValid()
     const stage = this.stages[index]
     assert(stage !== nil, "invalid stage number")
-    if (this.numStages() === 1) {
+    if (this.maxStage() === 1) {
       this.delete()
       return
     }
@@ -147,7 +142,7 @@ class AssemblyImpl implements UserAssembly {
     stage._doDelete()
     table.remove(this.stages as unknown as Stage[], index)
     // update stages
-    for (const i of $range(index, this.numStages())) {
+    for (const i of $range(index, this.maxStage())) {
       this.stages[i].stageNumber = i
     }
     this.content.deleteStage(index)

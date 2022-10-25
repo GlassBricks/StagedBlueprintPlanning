@@ -31,12 +31,12 @@ test("playerCurrentStage", () => {
   const currentStage = playerCurrentStage(1 as PlayerIndex)
   assert.nil(currentStage.get())
 
-  for (const [, stage] of assembly.iterateStages()) {
+  for (const stage of assembly.getAllStages()) {
     player.teleport(player.position, stage.surface)
     assert.equal(currentStage.get(), stage)
   }
 
-  assembly.deleteStage(assembly.numStages())
+  assembly.deleteStage(assembly.maxStage())
   assert.nil(currentStage.get())
 
   player.teleport(player.position, assembly.getStage(1)!.surface)

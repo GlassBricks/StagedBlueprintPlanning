@@ -679,8 +679,7 @@ Events.on_chunk_generated((e) => {
   }
 
   const status = defines.chunk_generated_status.entities
-  for (const [, otherStage] of assembly.iterateStages()) {
-    const surface = otherStage.surface
+  for (const { surface } of assembly.getAllStages()) {
     const position = e.position
     if (!surface.is_chunk_generated(position)) {
       if (surface.generate_with_lab_tiles) {

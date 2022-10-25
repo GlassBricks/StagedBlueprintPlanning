@@ -37,7 +37,7 @@ export function getNextNotableStage(
   currentStageNum: StageNumber,
   entity: AssemblyEntity,
 ): StageNumber {
-  const numStages = assembly.numStages()
+  const numStages = assembly.maxStage()
   for (let i = 0; i < numStages - 1; i++) {
     const testStage = ((currentStageNum + i) % numStages) + 1
     if (isNotableStage(entity, testStage)) return testStage

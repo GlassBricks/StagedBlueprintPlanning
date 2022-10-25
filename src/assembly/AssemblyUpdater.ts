@@ -311,7 +311,7 @@ export function createAssemblyUpdater(
       }
 
       updateNewEntityWithoutWires(assembly, assemblyEntity)
-      saveWireConnections(content, assemblyEntity, stage, assembly.numStages())
+      saveWireConnections(content, assemblyEntity, stage, assembly.maxStage())
       updateWireConnections(assembly, assemblyEntity)
 
       return assemblyEntity
@@ -448,20 +448,20 @@ export function createAssemblyUpdater(
       updateWorldEntities(assembly, entity, min(oldStage, stage))
       return "updated"
     },
-    resetStage(assembly: Assembly, stageNumber: StageNumber) {
-      const stage = assembly.getStage(stageNumber)
-      if (!stage) return
-      worldUpdater.clearStage(stage)
+    resetStage(assembly: Assembly, stage: StageNumber) {
+      const surface = assembly.getSurface(stage)
+      if (!surface) return
+      worldUpdater.clearStage(surface)
       const updateLater: RollingStockAssemblyEntity[] = []
       for (const entity of assembly.content.iterateAllEntities()) {
         if (entity.isRollingStock()) {
           updateLater.push(entity)
         } else {
-          refreshWorldEntityAtStage(assembly, entity, stageNumber)
+          refreshWorldEntityAtStage(assembly, entity, stage)
         }
       }
       for (const entity of updateLater) {
-        refreshWorldEntityAtStage(assembly, entity, stageNumber)
+        refreshWorldEntityAtStage(assembly, entity, stage)
       }
     },
     resetProp<T extends Entity>(

@@ -910,10 +910,10 @@ test("resetStage", () => {
   assembly.content.add(entity1)
   assembly.content.add(entity2)
 
-  const stage = assembly.getStage(2)!
+  const surface = assembly.getSurface(2)!
   assemblyUpdater.resetStage(assembly, 2)
 
-  assert.spy(worldUpdater.clearStage).called_with(match.ref(stage))
+  assert.spy(worldUpdater.clearStage).called_with(match.ref(surface))
   expectedWuCalls++
 
   assertRefreshCalled(entity1, 2)
