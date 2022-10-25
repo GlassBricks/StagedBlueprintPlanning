@@ -250,7 +250,6 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
     }
   }
   moduleInventory.sort_and_merge()
-  // todo: report cannot insert items
 }
 
 function rotateUnderground(luaEntity: LuaEntity, mode: "input" | "output", direction: defines.direction): void {

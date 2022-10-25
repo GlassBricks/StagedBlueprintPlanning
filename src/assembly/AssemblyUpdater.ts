@@ -148,7 +148,6 @@ export function createAssemblyUpdater(
     const rotateAllowed = stage === entity.firstStage
     if (rotateAllowed) {
       entity.setDirection(newDirection)
-      // todo: wu rotation separate
     } else {
       undoRotate(assembly, stage, entity)
     }

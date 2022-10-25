@@ -160,7 +160,6 @@ export abstract class TestBuilder {
 
   // Options
 
-  // TODO: Use testModule in these cases?
   protected tsHeader = ""
   public setTsHeader(tsHeader: string): this {
     expect(this.hasProgram).toBe(false)
@@ -521,7 +520,6 @@ end)());`
   private executeJs(): any {
     const { transpiledFiles } = this.getJsResult()
     // Custom require for extra files. Really basic. Global support is hacky
-    // TODO Should be replaced with vm.Module https://nodejs.org/api/vm.html#vm_class_vm_module
     // once stable
     const globalContext: any = {}
     const mainExports = {}

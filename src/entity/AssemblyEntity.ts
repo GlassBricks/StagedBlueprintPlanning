@@ -563,7 +563,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return firstStage
   }
   private moveUp(higherStage: StageNumber): void {
-    // todo: what happens if moved up, and lost data?
     const { firstValue } = this
     const { stageDiffs } = this
     if (stageDiffs) {
