@@ -65,10 +65,7 @@ function takeBlueprintWithSettings(
     always_include_tiles: true,
   })
 
-  if (isEmpty(bpMapping)) {
-    stack.blueprint_icons = nil // bug workaround
-    return false
-  }
+  if (isEmpty(bpMapping)) return false
 
   const firstEntityOriginalPosition = bpMapping[1].position
   if (settings.snapToGrid !== nil) {

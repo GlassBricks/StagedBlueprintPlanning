@@ -57,6 +57,8 @@ const stageSettingsWidth = 160
 
 const insertButtonWidth = 100
 
+const dropDownWidth = 180
+
 @RegisterClass("gui:AssemblySettings")
 export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   assembly!: UserAssembly
@@ -134,23 +136,59 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               />
             </flow>
           </flow>
-          <tab caption={[L_GuiAssemblySettings.BpBook]} />
+          <tab caption={[L_GuiAssemblySettings.Blueprints]} />
           <flow
             direction="vertical"
             styleMod={{
               padding: [5, 10],
             }}
           >
+            <flow direction="horizontal">
+              <label caption={[L_GuiAssemblySettings.BlueprintBookNaming]} />
+              <HorizontalPusher />
+              <drop-down
+                items={[[L_GuiAssemblySettings.BpNameEmpty], [L_GuiAssemblySettings.BpNameFromAssembly]]}
+                selected_index={this.assembly.assemblyBlueprintSettings.bookNameMode}
+                styleMod={{ width: dropDownWidth }}
+              />
+            </flow>
+            <flow direction="horizontal">
+              <label caption={[L_GuiAssemblySettings.BlueprintNaming]} />
+              <HorizontalPusher />
+              <drop-down
+                items={[
+                  [L_GuiAssemblySettings.BpNameEmpty],
+                  [L_GuiAssemblySettings.BpNameFromStage],
+                  [L_GuiAssemblySettings.BpNameCustom],
+                ]}
+                selected_index={this.assembly.assemblyBlueprintSettings.blueprintNameMode}
+                styleMod={{ width: dropDownWidth }}
+              />
+            </flow>
+
+            <line direction="horizontal" />
+
             <checkbox
-              state={this.assembly.blueprintBookSettings.autoLandfill}
-              caption={[L_GuiAssemblySettings.AutoLandfill]}
-              tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
-            />
-            <checkbox
-              state={this.assembly.blueprintBookSettings.useNextStageTiles}
+              state={this.assembly.assemblyBlueprintSettings.useNextStageTiles}
               caption={[L_GuiAssemblySettings.UseNextStageTiles]}
               tooltip={[L_GuiAssemblySettings.UseNextStageTilesDescription]}
             />
+            <checkbox
+              state={this.assembly.assemblyBlueprintSettings.autoLandfill}
+              caption={[L_GuiAssemblySettings.AutoLandfill]}
+              tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
+            />
+
+            <line direction="horizontal" />
+
+            <button
+              caption={[L_GuiAssemblySettings.SyncGridSettings]}
+              tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
+              on_gui_click={funcOn(this.syncGridSettings)}
+            />
+
+            <line direction="horizontal" />
+
             <button
               caption={[L_GuiAssemblySettings.GetBlueprintBook]}
               tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
@@ -193,20 +231,6 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     teleportToSurface1(game.get_player(this.playerIndex)!)
   }
 
-  private getBlueprintBook() {
-    const player = game.get_player(this.playerIndex)
-    if (!player || !player.clear_cursor()) return
-    const cursor = player.cursor_stack
-    if (!cursor || !player.is_cursor_empty()) return
-    if (!this.assembly.makeBlueprintBook(cursor)) {
-      cursor.clear()
-      player.create_local_flying_text({
-        text: [L_Interaction.BlueprintBookEmpty],
-        create_at_cursor: true,
-      })
-    }
-  }
-
   private newStageAfter() {
     const currentStage = playerCurrentStage(this.playerIndex).get()
     if (!currentStage || currentStage.assembly !== this.assembly) return
@@ -228,6 +252,22 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
       return <StageSettings stage={stage} />
     }
     return nil
+  }
+  private getBlueprintBook() {
+    const player = game.get_player(this.playerIndex)
+    if (!player || !player.clear_cursor()) return
+    const cursor = player.cursor_stack
+    if (!cursor || !player.is_cursor_empty()) return
+    if (!this.assembly.makeBlueprintBook(cursor)) {
+      cursor.clear()
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintBookEmpty],
+        create_at_cursor: true,
+      })
+    }
+  }
+  private syncGridSettings() {
+    this.assembly.syncGridSettings()
   }
 }
 

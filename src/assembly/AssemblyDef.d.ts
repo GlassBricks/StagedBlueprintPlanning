@@ -47,16 +47,31 @@ export interface UserAssembly extends Assembly {
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
 
-  readonly blueprintBookSettings: BlueprintBookSettings
+  // note: old name preserved to aid in migrations
+  readonly assemblyBlueprintSettings: AssemblyBlueprintSettings
   makeBlueprintBook(stackToSet: LuaItemStack): boolean
 
   readonly valid: boolean
   delete(): void
+  syncGridSettings(): void
 }
-export interface BlueprintBookSettings {
+
+export const enum BlueprintNameMode {
+  Empty = 1,
+  FromStage = 2,
+  Custom = 3,
+}
+export const enum BookNameMode {
+  Empty = 1,
+  FromAssembly = 2,
+}
+export interface AssemblyBlueprintSettings {
   readonly autoLandfill: MutableState<boolean>
 
-  useNextStageTiles: MutableState<boolean>
+  readonly useNextStageTiles: MutableState<boolean>
+
+  readonly blueprintNameMode: MutableState<BlueprintNameMode>
+  readonly bookNameMode: MutableState<BookNameMode>
 }
 
 export interface Stage {

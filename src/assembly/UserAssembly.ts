@@ -28,9 +28,11 @@ import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import {
+  AssemblyBlueprintSettings,
   AssemblyId,
   AutoSetTilesType,
-  BlueprintBookSettings,
+  BlueprintNameMode,
+  BookNameMode,
   GlobalAssemblyEvent,
   LocalAssemblyEvent,
   Stage,
@@ -47,7 +49,7 @@ import { setTiles } from "./tiles"
 
 declare const global: {
   nextAssemblyId: AssemblyId
-  assemblies: LuaMap<AssemblyId, AssemblyImpl>
+  assemblies: LuaMap<AssemblyId, UserAssemblyImpl>
   surfaceIndexToStage: LuaMap<SurfaceIndex, StageImpl>
 }
 Events.on_init(() => {
@@ -62,7 +64,7 @@ export { GlobalAssemblyEvents as AssemblyEvents }
 declare const luaLength: LuaLength<Record<number, any>, number>
 
 @RegisterClass("Assembly")
-class AssemblyImpl implements UserAssembly {
+class UserAssemblyImpl implements UserAssembly {
   name: MutableState<string>
   displayName: State<LocalisedString>
 
@@ -77,9 +79,11 @@ class AssemblyImpl implements UserAssembly {
     }
   > = {}
 
-  blueprintBookSettings: BlueprintBookSettings = {
+  assemblyBlueprintSettings: AssemblyBlueprintSettings = {
     autoLandfill: state(false),
     useNextStageTiles: state(false),
+    blueprintNameMode: state(BlueprintNameMode.FromStage),
+    bookNameMode: state(BookNameMode.FromAssembly),
   }
 
   valid = true
@@ -88,7 +92,7 @@ class AssemblyImpl implements UserAssembly {
 
   constructor(readonly id: AssemblyId, name: string, initialNumStages: number) {
     this.name = state(name)
-    this.displayName = this.name.map(bind(AssemblyImpl.getDisplayName, id))
+    this.displayName = this.name.map(bind(UserAssemblyImpl.getDisplayName, id))
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
       this.stages[i] = StageImpl.create(this, i, `<Stage ${i}>`)
@@ -98,9 +102,9 @@ class AssemblyImpl implements UserAssembly {
     return name !== "" ? name : [L_Bp100.UnnamedAssembly, id]
   }
 
-  static create(name: string, initialNumStages: number): AssemblyImpl {
-    const assembly = new AssemblyImpl(global.nextAssemblyId++ as AssemblyId, name, initialNumStages)
-    AssemblyImpl.onAssemblyCreated(assembly)
+  static create(name: string, initialNumStages: number): UserAssemblyImpl {
+    const assembly = new UserAssemblyImpl(global.nextAssemblyId++ as AssemblyId, name, initialNumStages)
+    UserAssemblyImpl.onAssemblyCreated(assembly)
 
     return assembly
   }
@@ -178,12 +182,16 @@ class AssemblyImpl implements UserAssembly {
 
     stack.clear()
     stack.set_stack("blueprint-book")
-    stack.label = this.name.get()
+    const { useNextStageTiles, bookNameMode } = this.assemblyBlueprintSettings
+    if (bookNameMode.get() === BookNameMode.FromAssembly) {
+      stack.label = this.name.get()
+    } else {
+      stack.label = ""
+    }
 
     const inventory = stack.get_inventory(defines.inventory.item_main)!
     assert(inventory, "Failed to get blueprint book inventory")
 
-    const useNextStageTiles = this.blueprintBookSettings.useNextStageTiles.get()
     for (const [, stage] of ipairs(this.stages)) {
       const nInserted = inventory.insert("blueprint")
       assert(nInserted === 1, "Failed to insert blueprint into blueprint book")
@@ -191,7 +199,7 @@ class AssemblyImpl implements UserAssembly {
       if (!stage.doTakeBlueprint(stack, bbox)) stack.clear()
     }
 
-    if (useNextStageTiles) {
+    if (useNextStageTiles.get()) {
       for (const i of $range(1, inventory.length - 1)) {
         const blueprint = inventory[i - 1]
         const nextBlueprint = inventory[i]
@@ -200,6 +208,17 @@ class AssemblyImpl implements UserAssembly {
     }
 
     return true
+  }
+
+  public syncGridSettings(): void {
+    const lastStageSettings = this.stages[this.maxStage()].getBlueprintSettings()
+    for (const i of $range(1, this.maxStage() - 1)) {
+      const stageSettings = this.stages[i].getBlueprintSettings()
+      stageSettings.snapToGrid = lastStageSettings.snapToGrid
+      stageSettings.positionOffset = lastStageSettings.positionOffset
+      stageSettings.positionRelativeToGrid = lastStageSettings.positionRelativeToGrid
+      stageSettings.absoluteSnapping = lastStageSettings.absoluteSnapping
+    }
   }
 
   private getNewStageName(): string {
@@ -213,10 +232,7 @@ class AssemblyImpl implements UserAssembly {
       }
     }
   }
-  static onAssemblyCreated(assembly: AssemblyImpl): void {
-    global.assemblies.set(assembly.id, assembly)
-    GlobalAssemblyEvents.raise({ type: "assembly-created", assembly })
-  }
+
   private raiseEvent(event: LocalAssemblyEvent): void {
     // local first, more useful event order
     this.localEvents.raise(event)
@@ -225,10 +241,14 @@ class AssemblyImpl implements UserAssembly {
   private assertValid(): void {
     if (!this.valid) error("Assembly is invalid")
   }
+  static onAssemblyCreated(assembly: UserAssemblyImpl): void {
+    global.assemblies.set(assembly.id, assembly)
+    GlobalAssemblyEvents.raise({ type: "assembly-created", assembly })
+  }
 }
 
 export function createUserAssembly(name: string, initialNumStages: number): UserAssembly {
-  return AssemblyImpl.create(name, initialNumStages)
+  return UserAssemblyImpl.create(name, initialNumStages)
 }
 
 export function _deleteAllAssemblies(): void {
@@ -247,9 +267,9 @@ class StageImpl implements Stage {
 
   readonly surfaceIndex: SurfaceIndex
 
-  blueprintSettings?: BlueprintSettings
+  public blueprintSettings: BlueprintSettings = getDefaultBlueprintSettings()
   public constructor(
-    public readonly assembly: AssemblyImpl,
+    public readonly assembly: UserAssemblyImpl,
     public readonly surface: LuaSurface,
     public stageNumber: StageNumber,
     name: string,
@@ -259,14 +279,14 @@ class StageImpl implements Stage {
     if (assembly.id !== 0) global.surfaceIndexToStage.set(this.surfaceIndex, this)
   }
 
-  static create(assembly: AssemblyImpl, stageNumber: StageNumber, name: string): StageImpl {
+  static create(assembly: UserAssemblyImpl, stageNumber: StageNumber, name: string): StageImpl {
     const surface = createStageSurface()
     prepareArea(surface, initialPreparedArea)
     return new StageImpl(assembly, surface, stageNumber, name)
   }
 
-  private getBlueprintSettings(): BlueprintSettings {
-    return (this.blueprintSettings ??= getDefaultBlueprintSettings())
+  public getBlueprintSettings(): BlueprintSettings {
+    return this.blueprintSettings
   }
 
   takeBlueprint(stack: LuaItemStack): boolean {
@@ -276,7 +296,17 @@ class StageImpl implements Stage {
   }
 
   doTakeBlueprint(stack: LuaItemStack, bbox: BBox): boolean {
-    return tryTakeBlueprintWithSettings(stack, this.getBlueprintSettings(), this.surface, bbox)
+    const took = tryTakeBlueprintWithSettings(stack, this.getBlueprintSettings(), this.surface, bbox)
+    if (took) {
+      const blueprintNameMode = this.assembly.assemblyBlueprintSettings.blueprintNameMode.get()
+      if (blueprintNameMode === BlueprintNameMode.Empty) {
+        stack.label = ""
+      } else if (blueprintNameMode === BlueprintNameMode.FromStage) {
+        stack.label = this.name.get()
+      }
+      // else, use the custom name from tryTakeBlueprintWithSettings
+    }
+    return took
   }
 
   editBlueprint(player: LuaPlayer): boolean {
@@ -319,17 +349,33 @@ Migrations.to("0.2.1", () => {
 })
 Migrations.to("0.5.0", () => {
   for (const [, assembly] of global.assemblies) {
-    assembly.blueprintBookSettings = {
+    interface OldAssembly {
+      blueprintBookSettings: {
+        autoLandfill: MutableState<boolean>
+      }
+    }
+
+    ;(assembly as unknown as OldAssembly).blueprintBookSettings = {
       autoLandfill: state(false),
-      useNextStageTiles: state(false),
+      // useNextStageTiles: state(false),
     }
   }
 })
 Migrations.to("0.8.0", () => {
   for (const [, assembly] of global.assemblies) {
-    const bpBookSettings = assembly.blueprintBookSettings
-    if (bpBookSettings.useNextStageTiles === nil) {
-      bpBookSettings.useNextStageTiles = state(bpBookSettings.autoLandfill.get())
+    interface OldAssembly {
+      blueprintBookSettings?: {
+        autoLandfill: MutableState<boolean>
+      }
+    }
+    log("Migrating assembly")
+    const bpBookSettings = (assembly as unknown as OldAssembly).blueprintBookSettings!
+    delete (assembly as unknown as OldAssembly).blueprintBookSettings
+    assembly.assemblyBlueprintSettings = {
+      autoLandfill: bpBookSettings.autoLandfill,
+      useNextStageTiles: state(bpBookSettings.autoLandfill.get()),
+      blueprintNameMode: state(BlueprintNameMode.FromStage),
+      bookNameMode: state(BookNameMode.FromAssembly),
     }
 
     type OldBlueprintSettings = Pick<
@@ -340,26 +386,25 @@ Migrations.to("0.8.0", () => {
       blueprintInventory?: LuaInventory
       blueprintSettings?: OldBlueprintSettings
     }
-    const asOld = assembly as unknown as OldAssembly
+    const oldAssembly = assembly as unknown as OldAssembly
 
     interface OldStage {
       blueprintStack?: LuaItemStack
     }
 
-    if (asOld.blueprintSettings) {
-      for (const stage of assembly.getAllStages() as StageImpl[]) {
-        const oldIcons = (stage as unknown as OldStage).blueprintStack?.blueprint_icons
-        stage.blueprintSettings = {
-          name: stage.name.get(),
-          icons: oldIcons && nilIfEmpty(oldIcons),
-          ...asOld.blueprintSettings,
-        }
+    const bpSettings = oldAssembly.blueprintSettings ?? getDefaultBlueprintSettings()
+    for (const stage of assembly.getAllStages() as StageImpl[]) {
+      const oldIcons = (stage as unknown as OldStage).blueprintStack?.blueprint_icons
+      stage.blueprintSettings = {
+        ...bpSettings,
+        name: stage.name.get(),
+        icons: oldIcons && nilIfEmpty(oldIcons),
       }
-      delete asOld.blueprintSettings
     }
-    if (asOld.blueprintInventory) {
-      asOld.blueprintInventory.destroy()
-      asOld.blueprintInventory = nil
+    delete oldAssembly.blueprintSettings
+    if (oldAssembly.blueprintInventory) {
+      oldAssembly.blueprintInventory.destroy()
+      oldAssembly.blueprintInventory = nil
       for (const stage of assembly.getAllStages() as StageImpl[]) {
         ;(stage as unknown as OldStage).blueprintStack = nil
       }

@@ -184,12 +184,8 @@ export declare const enum L_GuiAssemblySettings {
   GetBlueprintTooltip = "bp100.gui.assembly-settings.get-blueprint-tooltip",
   /** Edit blueprint [img=info] */
   EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
-  /** Edits the blueprint of the current stage.\nChanges (icons, grid settings, etc.) [font=default-bold]will[/font] be saved.\nGrid position and snap-to-grid settings will be applied to [font=default-bold]all[/font] stages. */
+  /** Edits the blueprint of the current stage.\nChanges (icons, grid settings, etc.) [font=default-bold]will[/font] be saved. */
   EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
-  /** Make blueprint book */
-  GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
-  /** You can configure individual blueprints in the stage settings. */
-  GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
   /** Set tiles */
   SetTiles = "bp100.gui.assembly-settings.set-tiles",
   /** Lab tiles */
@@ -200,16 +196,36 @@ export declare const enum L_GuiAssemblySettings {
   LandfillAndLab = "bp100.gui.assembly-settings.landfill-and-lab",
   /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
   FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
-  /** BP book */
-  BpBook = "bp100.gui.assembly-settings.bp-book",
-  /** Auto landfill [img=info] */
+  /** Blueprints */
+  Blueprints = "bp100.gui.assembly-settings.blueprints",
+  /** Auto-landfill [img=info] */
   AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
-  /** Automatically set landfill tiles taking a blueprint. */
+  /** Automatically set landfill tiles before taking a blueprint. */
   AutoLandfillDescription = "bp100.gui.assembly-settings.auto-landfill-description",
   /** Use next stage's tiles [img=info] */
   UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
   /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
   UseNextStageTilesDescription = "bp100.gui.assembly-settings.use-next-stage-tiles-description",
+  /** Blueprint names: */
+  BlueprintNaming = "bp100.gui.assembly-settings.blueprint-naming",
+  /** Empty */
+  BpNameEmpty = "bp100.gui.assembly-settings.bp-name-empty",
+  /** From stage name */
+  BpNameFromStage = "bp100.gui.assembly-settings.bp-name-from-stage",
+  /** Manually editable */
+  BpNameCustom = "bp100.gui.assembly-settings.bp-name-custom",
+  /** BP book name: */
+  BlueprintBookNaming = "bp100.gui.assembly-settings.blueprint-book-naming",
+  /** From assembly name */
+  BpNameFromAssembly = "bp100.gui.assembly-settings.bp-name-from-assembly",
+  /** Sync grid settings [img=info] */
+  SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
+  /** Copies the grid settings of the [font=default-bold]last[/font] stage's blueprint to all other stages. */
+  SyncGridSettingsDescription = "bp100.gui.assembly-settings.sync-grid-settings-description",
+  /** Make blueprint book */
+  GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
+  /** You can configure individual blueprints in the stage settings. */
+  GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
 }
 export declare const enum L_GuiEntityInfo {
   /** Assembly info */
