@@ -70,12 +70,6 @@ function takeBlueprintWithSettings(
     return false
   }
 
-  stack.label = settings.name
-  stack.blueprint_icons = settings.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
-  stack.blueprint_snap_to_grid = settings.snapToGrid
-  stack.blueprint_absolute_snapping = settings.absoluteSnapping
-  stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
-
   const firstEntityOriginalPosition = bpMapping[1].position
   if (settings.snapToGrid !== nil) {
     const entities = stack.get_blueprint_entities()!
@@ -92,6 +86,13 @@ function takeBlueprintWithSettings(
       stack.set_blueprint_entities(entities)
     }
   }
+
+  stack.label = settings.name
+  stack.blueprint_icons = settings.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
+  stack.blueprint_snap_to_grid = settings.snapToGrid
+  stack.blueprint_absolute_snapping = settings.absoluteSnapping
+  stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
+
   if (forEdit) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, firstEntityOriginalPosition)
   }
