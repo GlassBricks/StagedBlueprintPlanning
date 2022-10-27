@@ -1,12 +1,12 @@
 # 100% Blueprint Planning
 
-The ultimate mod for designing staged blueprints for 100% speedruns.
+The ultimate mod for designing staged blueprints for 100% speedruns. A.K.A the anti-anti-anti-tool.
 
 Separate your builds into stages. Edit entities in any stage, and it will automatically be applied to all later stages. Create a blueprint book of your assembly in one click.
 
 This mod is in active development (new features are still being added!) Feedback is greatly appreciated.
 
-**Note**: high memory usage for very large blueprints, 12GB+ of computer ram is recommended.
+**Note**: high memory usage for very large blueprints, 12GB+ of RAM is recommended.
 
 ## Basic usage
 
@@ -18,9 +18,9 @@ Here you can also open the assembly settings.
 When you make a change, that change will be applied to the current and all _later_ stages (with some exceptions, see "Changes between stages" section below).
 Every game interaction _should_ be handled. If this is not so, please submit a bug report!
 
-You can automatically create blueprints/a blueprint book of an assembly. See tooltips on the Assembly Settings buttons for more info.
+You can automatically create blueprints/a blueprint book of an assembly via the Assembly Settings window.
 
-Opening an entity's gui will show an "Assembly info" gui on the right, with more info/actions on a specific entity.
+Opening an entity's gui will show an "Assembly info" window on the right, with more info/actions on a specific entity.
 
 See below for full details on interactions.
 
@@ -41,31 +41,12 @@ Building, mining, rotating, fast-replacing, copper/circuit wires, configuration 
 
 Deleting or rotating an entity is only allowed in the _first stage_ (as those changes cannot be blueprinted between stages).
 
-Trains are treated specially; there are only present in one stage (as you usually do not want to re-paste trains).
+Trains are treated specially; they are only present in one stage (as you usually do not re-paste trains).
 Trains can move from their original position, use the Assembly info gui to reset or update their position.
 
-Copper cable wires are handled since v0.3.0. Trains are supported since v0.4.0.
+Preview entities (map-view-like outlines) will be shown for each entity in lower stages. If in editor mode, you can open them to view the Assembly info gui.
 
-### Landfill
-
-Landfill can be automatically placed in your blueprints. See the Assembly/Stage settings gui for more info.
-
-As of now, this is the only way tiles are supported.
-
-Additionally, to assist in designing blueprints with offshore pumps, the "Flexible Offshore Pump Placement" startup setting allows you to place offshore pumps in places not usually allowed. This is enabled by default.
-
-### Accidental data loss prevention
-
-If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline). If you undo the deletion, those settings will be restored. This is so you don't lose data if you accidentally deleted it.
-To remove settings remnants, use the `Assembly Cleanup Tool` (shortcut, in the bottom right).
-
-If you place an entity in the same position at a lower stage, it will be moved to the current stage, and a notification will appear. Deleting the entity again will move it back (instead of deleting it altogether). This prevents accidentally deleting entities.
-
-### Assembly cleanup tool
-
-Using the assembly cleanup tool will remove "settings remnants", and attempt to revive any error entities.
-
-_Reverse_ selecting using the assembly cleanup tool will **force-delete** error entities.
+If an entity cannot be created in any stage for any reason, an error indicator will be shown at all stages.
 
 ### Changes between stages
 
@@ -74,7 +55,12 @@ Similarly, by using the _upgrade planner_ (not fast-replace), entities can be up
 
 Copper/circuit wire changes _between_ stages are not supported. Instead, they are always present in all stages.
 
-Changes between stages are not relevant to trains, as they only appear in one stage.
+This is not relevant to trains, as they only appear in one stage.
+
+### Accidental data loss prevention
+
+If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline). If you undo the deletion, those settings will be restored. This is so you don't lose data if you accidentally deleted it.
+To remove settings remnants, use the `Assembly Cleanup Tool` (shortcut, in the bottom right).
 
 ### Footgun removal
 
@@ -82,9 +68,29 @@ If an entity overlaps with another in a higher stage, a red outline will appear 
 
 Rotating/upgrading an underground will also affect its paired underground, in any stage.
 
-It is not possible to upgrade an underground if that will change which underground it pairs with (breaking belt weaving, etc.)
+It is not possible to upgrade an underground if that will change which underground it pairs with (breaking belt weaving, etc.). If this is intentional, mine and replace the underground.
 
 Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. an underground "cuts" another underground), it cannot be rotated/upgraded _after_ being built.
+
+### Assembly cleanup tool
+
+Using the assembly cleanup tool will remove "settings remnants", and attempt to revive any errored entities.
+
+Reverse-selecting using the assembly cleanup tool will **force-delete** errored entities.
+
+### Landfill/tiles
+
+Landfill/lab tiles can be automatically placed in your blueprints. See the Assembly/Stage settings gui for more info.
+
+As of now, this is the only way tiles are supported.
+
+Additionally, the "Flexible Offshore Pump Placement" startup setting enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
+
+### Blueprints
+
+Using the "Get Blueprint" button in the Stage settings gui will create a blueprint of the current stage. In the "Blueprints" tab, the "Make Blueprint Book" button will create a blueprint book of the entire assembly.
+
+The Blueprints tab also has more options for creating blueprints, such as synchronizing grid-size settings, or including the next stage's tiles in each blueprint (useful for landfill).
 
 ## Feedback
 
@@ -95,6 +101,7 @@ You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
 
 ## Possible future features
 
+- A "Move to stage" tool
 - Handle resource entities
 - "locking" properties in stages
 - Automatic analysis and basic optimization
