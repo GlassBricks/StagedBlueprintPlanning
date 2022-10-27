@@ -11,7 +11,19 @@
 
 import { StageNumber } from "../entity/AssemblyEntity"
 import { newEntityMap } from "../entity/EntityMap"
-import { bind, Event, Events, globalEvent, Mutable, MutableState, PRecord, RegisterClass, state, State } from "../lib"
+import {
+  bind,
+  Event,
+  Events,
+  globalEvent,
+  Mutable,
+  MutableState,
+  nilIfEmpty,
+  PRecord,
+  RegisterClass,
+  state,
+  State,
+} from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
@@ -65,7 +77,6 @@ class AssemblyImpl implements UserAssembly {
     }
   > = {}
 
-  private blueprintSettings?: BlueprintSettings
   blueprintBookSettings: BlueprintBookSettings = {
     autoLandfill: state(false),
     useNextStageTiles: state(false),
@@ -161,10 +172,6 @@ class AssemblyImpl implements UserAssembly {
     this.localEvents.closeAll()
   }
 
-  getBlueprintSettings(): BlueprintSettings {
-    return (this.blueprintSettings ??= getDefaultBlueprintSettings())
-  }
-
   public makeBlueprintBook(stack: LuaItemStack): boolean {
     const bbox = this.content.computeBoundingBox()
     if (!bbox) return false
@@ -239,6 +246,8 @@ class StageImpl implements Stage {
   readonly valid = true
 
   readonly surfaceIndex: SurfaceIndex
+
+  blueprintSettings?: BlueprintSettings
   public constructor(
     public readonly assembly: AssemblyImpl,
     public readonly surface: LuaSurface,
@@ -256,6 +265,10 @@ class StageImpl implements Stage {
     return new StageImpl(assembly, surface, stageNumber, name)
   }
 
+  private getBlueprintSettings(): BlueprintSettings {
+    return (this.blueprintSettings ??= getDefaultBlueprintSettings())
+  }
+
   takeBlueprint(stack: LuaItemStack): boolean {
     const bbox = this.assembly.content.computeBoundingBox()
     if (!bbox) return false
@@ -263,13 +276,13 @@ class StageImpl implements Stage {
   }
 
   doTakeBlueprint(stack: LuaItemStack, bbox: BBox): boolean {
-    return tryTakeBlueprintWithSettings(stack, this.assembly.getBlueprintSettings(), this.surface, bbox)
+    return tryTakeBlueprintWithSettings(stack, this.getBlueprintSettings(), this.surface, bbox)
   }
 
   editBlueprint(player: LuaPlayer): boolean {
     const bbox = this.assembly.content.computeBoundingBox()
     if (!bbox) return false
-    return editBlueprintSettings(player, this.assembly.getBlueprintSettings(), this.surface, bbox)
+    return editBlueprintSettings(player, this.getBlueprintSettings(), this.surface, bbox)
   }
 
   autoSetTiles(tiles: AutoSetTilesType): boolean {
@@ -318,8 +331,14 @@ Migrations.to("0.8.0", () => {
     if (bpBookSettings.useNextStageTiles === nil) {
       bpBookSettings.useNextStageTiles = state(bpBookSettings.autoLandfill.get())
     }
+
+    type OldBlueprintSettings = Pick<
+      BlueprintSettings,
+      "snapToGrid" | "positionOffset" | "positionRelativeToGrid" | "absoluteSnapping"
+    >
     interface OldAssembly {
       blueprintInventory?: LuaInventory
+      blueprintSettings?: OldBlueprintSettings
     }
     const asOld = assembly as unknown as OldAssembly
 
@@ -327,6 +346,17 @@ Migrations.to("0.8.0", () => {
       blueprintStack?: LuaItemStack
     }
 
+    if (asOld.blueprintSettings) {
+      for (const stage of assembly.getAllStages() as StageImpl[]) {
+        const oldIcons = (stage as unknown as OldStage).blueprintStack?.blueprint_icons
+        stage.blueprintSettings = {
+          name: stage.name.get(),
+          icons: oldIcons && nilIfEmpty(oldIcons),
+          ...asOld.blueprintSettings,
+        }
+      }
+      delete asOld.blueprintSettings
+    }
     if (asOld.blueprintInventory) {
       asOld.blueprintInventory.destroy()
       asOld.blueprintInventory = nil

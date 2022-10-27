@@ -167,7 +167,9 @@ function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): v
 
   const settings = info.settings
   settings.name = blueprint.label ?? ""
-  settings.icons = blueprint.blueprint_icons ?? []
+  const icons = blueprint.blueprint_icons
+  if (icons && icons[0]) settings.icons = icons
+  else settings.icons = nil
   settings.snapToGrid = blueprint.blueprint_snap_to_grid
   settings.absoluteSnapping = blueprint.blueprint_absolute_snapping
   settings.positionRelativeToGrid = blueprint.blueprint_position_relative_to_grid
