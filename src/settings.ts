@@ -35,7 +35,7 @@ data.extend([
     type: "string-setting",
     setting_type: "startup",
     allowed_values: Object.values(FlexibleOffshorePumpPlacement),
-    default_value: FlexibleOffshorePumpPlacement.OneWaterTile,
+    default_value: FlexibleOffshorePumpPlacement.Disabled,
     order: "b",
   },
 ])
