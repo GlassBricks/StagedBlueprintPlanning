@@ -55,6 +55,8 @@ export interface UserAssembly extends Assembly {
 }
 export interface BlueprintBookSettings {
   readonly autoLandfill: MutableState<boolean>
+
+  useNextStageTiles: MutableState<boolean>
 }
 
 export interface Stage {

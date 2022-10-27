@@ -146,6 +146,11 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               caption={[L_GuiAssemblySettings.AutoLandfill]}
               tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
             />
+            <checkbox
+              state={this.assembly.blueprintBookSettings.useNextStageTiles}
+              caption={[L_GuiAssemblySettings.UseNextStageTiles]}
+              tooltip={[L_GuiAssemblySettings.UseNextStageTilesDescription]}
+            />
             <button
               caption={[L_GuiAssemblySettings.GetBlueprintBook]}
               tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}

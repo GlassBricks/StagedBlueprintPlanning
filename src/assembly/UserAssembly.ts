@@ -69,6 +69,7 @@ class AssemblyImpl implements UserAssembly {
   private blueprintSettings?: BlueprintSettings
   blueprintBookSettings: BlueprintBookSettings = {
     autoLandfill: state(false),
+    useNextStageTiles: state(false),
   }
 
   valid = true
@@ -191,13 +192,13 @@ class AssemblyImpl implements UserAssembly {
     const inventory = stack.get_inventory(defines.inventory.item_main)!
     assert(inventory, "Failed to get blueprint book inventory")
 
-    const autoLandfill = this.blueprintBookSettings.autoLandfill.get()
+    const useNextStageTiles = this.blueprintBookSettings.useNextStageTiles.get()
     for (const [, stage] of ipairs(this.stages)) {
       const blueprint = stage.doTakeBlueprint(bbox, false)
       if (blueprint) inventory.insert(blueprint)
     }
 
-    if (autoLandfill && inventory.length > 0) {
+    if (useNextStageTiles && inventory.length > 0) {
       for (const i of $range(1, inventory.length - 1)) {
         const blueprint = inventory[i - 1]
         const nextBlueprint = inventory[i]
@@ -334,6 +335,17 @@ Migrations.to("0.2.1", () => {
 })
 Migrations.to("0.5.0", () => {
   for (const [, assembly] of global.assemblies) {
-    assembly.blueprintBookSettings = { autoLandfill: state(false) }
+    assembly.blueprintBookSettings = {
+      autoLandfill: state(false),
+      useNextStageTiles: state(false),
+    }
+  }
+})
+Migrations.to("0.8.0", () => {
+  for (const [, assembly] of global.assemblies) {
+    const bpBookSettings = assembly.blueprintBookSettings
+    if (bpBookSettings.useNextStageTiles === nil) {
+      bpBookSettings.useNextStageTiles = state(bpBookSettings.autoLandfill.get())
+    }
   }
 })

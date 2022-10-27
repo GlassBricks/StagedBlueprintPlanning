@@ -204,10 +204,14 @@ export declare const enum L_GuiAssemblySettings {
   FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
   /** BP book */
   BpBook = "bp100.gui.assembly-settings.bp-book",
-  /** Auto landfill */
+  /** Auto landfill [img=info] */
   AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
-  /** Automatically add landfill for both the current [font=default-bold]and[/font] next stage to each blueprint. */
+  /** Automatically set landfill tiles taking a blueprint. */
   AutoLandfillDescription = "bp100.gui.assembly-settings.auto-landfill-description",
+  /** Use next stage's tiles [img=info] */
+  UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
+  /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
+  UseNextStageTilesDescription = "bp100.gui.assembly-settings.use-next-stage-tiles-description",
 }
 export declare const enum L_GuiEntityInfo {
   /** Assembly info */
