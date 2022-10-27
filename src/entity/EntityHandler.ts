@@ -157,7 +157,7 @@ function tryCreateUnconfiguredEntity(
     position,
     direction,
     orientation: entity.orientation,
-    build_check_type: defines.build_check_type.manual,
+    build_check_type: defines.build_check_type.ghost_revive,
     force: "player",
     create_build_effect_smoke: false,
   }
