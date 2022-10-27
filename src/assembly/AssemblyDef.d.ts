@@ -67,8 +67,7 @@ export interface Stage {
   readonly stageNumber: StageNumber
   readonly assembly: UserAssembly
 
-  /** The blueprint should be treated as readonly. */
-  takeBlueprint(): BlueprintItemStack | nil
+  takeBlueprint(stack: LuaItemStack): boolean
 
   /** Opens blueprint edit gui for player. Returns if successful. */
   editBlueprint(player: LuaPlayer): boolean

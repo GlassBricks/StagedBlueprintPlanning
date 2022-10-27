@@ -309,16 +309,14 @@ export class StageSettings extends Component<{ stage: Stage }> {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const cursorStack = player.cursor_stack
-    if (!cursorStack) return
-    const blueprint = this.stage.takeBlueprint()
-    if (!blueprint) {
+    if (!cursorStack || !player.clear_cursor()) return
+    const took = this.stage.takeBlueprint(cursorStack)
+    if (!took) {
+      cursorStack.clear()
       return player.create_local_flying_text({
         text: [L_Interaction.BlueprintEmpty],
         create_at_cursor: true,
       })
-    }
-    if (player.clear_cursor()) {
-      cursorStack.set_stack(blueprint)
     }
   }
 

@@ -65,7 +65,6 @@ class AssemblyImpl implements UserAssembly {
     }
   > = {}
 
-  blueprintInventory?: LuaInventory
   private blueprintSettings?: BlueprintSettings
   blueprintBookSettings: BlueprintBookSettings = {
     autoLandfill: state(false),
@@ -160,21 +159,6 @@ class AssemblyImpl implements UserAssembly {
     }
     this.raiseEvent({ type: "assembly-deleted", assembly: this })
     this.localEvents.closeAll()
-    this.blueprintInventory?.destroy()
-  }
-
-  getNewBlueprintInventoryStack(): LuaItemStack {
-    if (this.blueprintInventory === nil) {
-      this.blueprintInventory = game.create_inventory(8)
-    }
-    let [stack] = this.blueprintInventory.find_empty_stack()
-    if (!stack) {
-      this.blueprintInventory.resize(this.blueprintInventory.length * 2)
-      ;[stack] = this.blueprintInventory.find_empty_stack()
-      assert(stack, "Failed to find empty stack")
-    }
-    stack!.set_stack("blueprint")
-    return stack!
   }
 
   getBlueprintSettings(): BlueprintSettings {
@@ -194,11 +178,13 @@ class AssemblyImpl implements UserAssembly {
 
     const useNextStageTiles = this.blueprintBookSettings.useNextStageTiles.get()
     for (const [, stage] of ipairs(this.stages)) {
-      const blueprint = stage.doTakeBlueprint(bbox, false)
-      if (blueprint) inventory.insert(blueprint)
+      const nInserted = inventory.insert("blueprint")
+      assert(nInserted === 1, "Failed to insert blueprint into blueprint book")
+      const stack = inventory[inventory.length - 1]!
+      if (!stage.doTakeBlueprint(stack, bbox)) stack.clear()
     }
 
-    if (useNextStageTiles && inventory.length > 0) {
+    if (useNextStageTiles) {
       for (const i of $range(1, inventory.length - 1)) {
         const blueprint = inventory[i - 1]
         const nextBlueprint = inventory[i]
@@ -253,8 +239,6 @@ class StageImpl implements Stage {
   readonly valid = true
 
   readonly surfaceIndex: SurfaceIndex
-  blueprintStack?: LuaItemStack
-
   public constructor(
     public readonly assembly: AssemblyImpl,
     public readonly surface: LuaSurface,
@@ -272,32 +256,20 @@ class StageImpl implements Stage {
     return new StageImpl(assembly, surface, stageNumber, name)
   }
 
-  takeBlueprint(forEdit = false): BlueprintItemStack | nil {
+  takeBlueprint(stack: LuaItemStack): boolean {
     const bbox = this.assembly.content.computeBoundingBox()
-    if (!bbox) return nil
-    return this.doTakeBlueprint(bbox, forEdit)
+    if (!bbox) return false
+    return this.doTakeBlueprint(stack, bbox)
   }
 
-  doTakeBlueprint(bbox: BBox, forEdit: boolean): BlueprintItemStack | nil {
-    const stack = (this.blueprintStack ??= this.assembly.getNewBlueprintInventoryStack())
-    const autoLandfill = this.assembly.blueprintBookSettings.autoLandfill.get()
-    if (autoLandfill) setTiles(this.surface, bbox, AutoSetTilesType.LandfillAndLabTiles)
-    const takeSuccessful = tryTakeBlueprintWithSettings(
-      stack,
-      this.assembly.getBlueprintSettings(),
-      this.surface,
-      bbox,
-      forEdit,
-    )
-    if (!takeSuccessful) return nil
-    stack.label = this.name.get()
-    return stack
+  doTakeBlueprint(stack: LuaItemStack, bbox: BBox): boolean {
+    return tryTakeBlueprintWithSettings(stack, this.assembly.getBlueprintSettings(), this.surface, bbox)
   }
 
   editBlueprint(player: LuaPlayer): boolean {
-    const blueprint = this.takeBlueprint(true)
-    if (blueprint === nil) return false
-    return editBlueprintSettings(player, blueprint, this.assembly.getBlueprintSettings())
+    const bbox = this.assembly.content.computeBoundingBox()
+    if (!bbox) return false
+    return editBlueprintSettings(player, this.assembly.getBlueprintSettings(), this.surface, bbox)
   }
 
   autoSetTiles(tiles: AutoSetTilesType): boolean {
@@ -315,7 +287,6 @@ class StageImpl implements Stage {
     ;(this as Mutable<Stage>).valid = false
     global.surfaceIndexToStage.delete(this.surfaceIndex)
     if (this.surface.valid) game.delete_surface(this.surface)
-    if (this.blueprintStack) this.blueprintStack.clear()
   }
 }
 
@@ -346,6 +317,22 @@ Migrations.to("0.8.0", () => {
     const bpBookSettings = assembly.blueprintBookSettings
     if (bpBookSettings.useNextStageTiles === nil) {
       bpBookSettings.useNextStageTiles = state(bpBookSettings.autoLandfill.get())
+    }
+    interface OldAssembly {
+      blueprintInventory?: LuaInventory
+    }
+    const asOld = assembly as unknown as OldAssembly
+
+    interface OldStage {
+      blueprintStack?: LuaItemStack
+    }
+
+    if (asOld.blueprintInventory) {
+      asOld.blueprintInventory.destroy()
+      asOld.blueprintInventory = nil
+      for (const stage of assembly.getAllStages() as StageImpl[]) {
+        ;(stage as unknown as OldStage).blueprintStack = nil
+      }
     }
   }
 })

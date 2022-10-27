@@ -9,29 +9,44 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Prototypes } from "../constants"
 import { Events, isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
 import { L_Interaction } from "../locale"
 
 export interface BlueprintSettings {
+  name: string
+  icons: BlueprintSignalIcon[] | nil
+
   /** Original position + offset = blueprint position */
   positionOffset: Position
-  snapToGrid: Position | nil
-  positionRelativeToGrid: Position | nil
+  snapToGrid?: Position
+  positionRelativeToGrid?: Position
   absoluteSnapping: boolean
 }
 export function getDefaultBlueprintSettings(): BlueprintSettings {
   return {
+    name: "",
+    icons: nil,
     positionOffset: { x: 0, y: 0 },
-    snapToGrid: nil,
-    positionRelativeToGrid: nil,
     absoluteSnapping: false,
   }
 }
-
 export function tryTakeBlueprintWithSettings(
-  stack: BlueprintItemStack,
+  stack: LuaItemStack,
+  settings: BlueprintSettings,
+  surface: LuaSurface,
+  bbox: BBox,
+): boolean {
+  return takeBlueprintWithSettings(stack, settings, surface, bbox, false)
+}
+
+const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
+/**
+ * If forEdit is true, sets the first entity's original position tag.
+ */
+function takeBlueprintWithSettings(
+  stack: LuaItemStack,
   settings: BlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
@@ -49,100 +64,130 @@ export function tryTakeBlueprintWithSettings(
     include_station_names: true,
     always_include_tiles: true,
   })
+
+  if (isEmpty(bpMapping)) {
+    stack.blueprint_icons = nil // bug workaround
+    return false
+  }
+
+  stack.label = settings.name
+  stack.blueprint_icons = settings.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
   stack.blueprint_snap_to_grid = settings.snapToGrid
   stack.blueprint_absolute_snapping = settings.absoluteSnapping
   stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
 
-  if (isEmpty(bpMapping)) return false
-
   const firstEntityOriginalPosition = bpMapping[1].position
-
-  const entities = stack.get_blueprint_entities()!
-  const firstEntityPosition = entities[0].position
-  const expectedPosition = Pos.plus(firstEntityOriginalPosition, settings.positionOffset)
-  const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
-  if (shouldAdjustPosition) {
-    const adjustment = Pos.minus(expectedPosition, firstEntityPosition)
-    for (const entity of entities) {
-      const pos = entity.position as Mutable<Position>
-      pos.x += adjustment.x
-      pos.y += adjustment.y
+  if (settings.snapToGrid !== nil) {
+    const entities = stack.get_blueprint_entities()!
+    const firstEntityPosition = entities[0].position
+    const expectedPosition = Pos.plus(firstEntityOriginalPosition, settings.positionOffset)
+    const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
+    if (shouldAdjustPosition) {
+      const { x, y } = Pos.minus(expectedPosition, firstEntityPosition)
+      for (const entity of entities) {
+        const pos = entity.position as Mutable<Position>
+        pos.x += x
+        pos.y += y
+      }
+      stack.set_blueprint_entities(entities)
     }
   }
-  // if forEdit, add grid-enforcer entity at original position [1, 1]
   if (forEdit) {
-    const gridEnforcerPosition = Pos.plus({ x: 1, y: 1 }, settings.positionOffset)
-    entities.push({
-      entity_number: entities.length + 1,
-      name: Prototypes.GridEnforcer,
-      position: gridEnforcerPosition,
-    })
+    stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, firstEntityOriginalPosition)
   }
-
-  if (forEdit || shouldAdjustPosition) stack.set_blueprint_entities(entities)
-
   return true
 }
-export interface OpenedBlueprintInfo {
-  blueprint: BlueprintItemStack
+
+interface BlueprintEditInfo {
+  blueprintInventory: LuaInventory
   settings: BlueprintSettings
 }
 declare global {
   interface PlayerData {
-    lastOpenedBlueprint?: OpenedBlueprintInfo
+    lastOpenedBlueprint?: unknown
+    blueprintEditInfo?: BlueprintEditInfo
   }
 }
 declare const global: GlobalWithPlayers
 
-/**
- * The blueprint should have been created with `tryTakeBlueprintWithSettings` with `forEdit = true`.
- * @param player
- * @param blueprint
- * @param settings
- */
+Migrations.to("0.8.0", () => {
+  for (const [, data] of pairs(global.players)) {
+    data.lastOpenedBlueprint = nil
+  }
+})
+
+function clearOpenedBlueprint(playerIndex: PlayerIndex): void {
+  const data = global.players[playerIndex]
+  if (data && data.blueprintEditInfo) {
+    const inventory = data.blueprintEditInfo.blueprintInventory
+    if (inventory && inventory.valid) inventory.destroy()
+    data.blueprintEditInfo = nil
+  }
+}
+
 export function editBlueprintSettings(
   player: LuaPlayer,
-  blueprint: BlueprintItemStack,
   settings: BlueprintSettings,
+  surface: LuaSurface,
+  bbox: BBox,
 ): boolean {
-  if (!blueprint.valid || !blueprint.valid_for_read || !blueprint.is_blueprint) return false
-  const numEntities = blueprint.get_blueprint_entity_count()
-  if (numEntities === 0) return false
+  clearOpenedBlueprint(player.index)
+  const inventory = game.create_inventory(1)
+  const blueprint = inventory[0]
 
-  global.players[player.index].lastOpenedBlueprint = { blueprint, settings }
-  player.opened = blueprint as LuaItemStack
+  const firstEntityPosition = takeBlueprintWithSettings(blueprint, settings, surface, bbox, true)
+  if (!firstEntityPosition) {
+    inventory.destroy()
+    return false
+  }
+
+  global.players[player.index].blueprintEditInfo = {
+    blueprintInventory: inventory,
+    settings,
+  }
+  player.opened = blueprint
 
   return true
 }
 function onBlueprintUpdated(playerIndex: PlayerIndex): void {
   const data = global.players[playerIndex]
-  const info = data.lastOpenedBlueprint
+  const info = data.blueprintEditInfo
   if (!info) return
-  delete data.lastOpenedBlueprint
+  delete data.blueprintEditInfo
 
-  const { blueprint, settings } = info
-  if (!blueprint.valid || !blueprint.valid_for_read || !blueprint.is_blueprint) return
-
-  const entities = blueprint.get_blueprint_entities()!
-  const gridEnforcer = entities[entities.length - 1]
-  if (!gridEnforcer || gridEnforcer.name !== Prototypes.GridEnforcer) {
-    const player = game.get_player(playerIndex)!
-    return player.create_local_flying_text({
-      text: [L_Interaction.GridEnforcerRemoved],
-      create_at_cursor: true,
-    })
-  }
-
-  const gridEnforcerPosition = gridEnforcer.position
-  // original position + offset = blueprint position
-  // offset = blueprint position - original position
-  const offset = Pos.minus(gridEnforcerPosition, { x: 1, y: 1 })
-
-  settings.positionOffset = offset
-  settings.absoluteSnapping = blueprint.blueprint_absolute_snapping
-  settings.snapToGrid = blueprint.blueprint_snap_to_grid
-  settings.positionRelativeToGrid = blueprint.blueprint_position_relative_to_grid
+  tryUpdateSettings(playerIndex, info)
+  const bpInventory = info.blueprintInventory
+  if (bpInventory.valid) bpInventory.destroy()
 }
-Events.on_gui_closed((e) => {
-  onBlueprintUpdated(e.player_index)
-})
+function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): void {
+  const inventory = info.blueprintInventory
+  if (!inventory.valid) return
+  const blueprint = inventory[0]
+  if (!blueprint.valid_for_read || !blueprint.is_blueprint) return
+
+  const settings = info.settings
+  settings.name = blueprint.label ?? ""
+  settings.icons = blueprint.blueprint_icons ?? []
+  settings.snapToGrid = blueprint.blueprint_snap_to_grid
+  settings.absoluteSnapping = blueprint.blueprint_absolute_snapping
+  settings.positionRelativeToGrid = blueprint.blueprint_position_relative_to_grid
+
+  if (settings.snapToGrid !== nil) {
+    const originalPosition = blueprint.get_blueprint_entity_tag(1, FirstEntityOriginalPositionTag) as Position | nil
+    if (!originalPosition) {
+      notifyFirstEntityRemoved(playerIndex)
+    } else {
+      const bpPosition = blueprint.get_blueprint_entities()![0].position
+      settings.positionOffset = Pos.minus(bpPosition, originalPosition)
+    }
+  }
+}
+function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {
+  const player = game.get_player(playerIndex)
+  if (player)
+    player.create_local_flying_text({
+      create_at_cursor: true,
+      text: [L_Interaction.BlueprintFirstEntityRemoved],
+    })
+}
+Events.on_gui_closed((e) => onBlueprintUpdated(e.player_index))

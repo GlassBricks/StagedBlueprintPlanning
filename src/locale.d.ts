@@ -12,8 +12,6 @@ export declare const enum L_ShortcutName {
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
   EntityMarker = "entity-name.bp100:entity-marker",
-  /** 2x2 grid enforcer */
-  BlueprintGridEnforcer = "entity-name.bp100:blueprint-grid-enforcer",
 }
 export declare const enum L_ItemGroupName {
   /** BP100 utility entities */
@@ -118,8 +116,8 @@ export declare const enum L_Interaction {
   BlueprintEmpty = "bp100.interaction.blueprint-empty",
   /** Blueprint book is empty */
   BlueprintBookEmpty = "bp100.interaction.blueprint-book-empty",
-  /** The 2x2 grid enforcer was removed from the blueprint. Try editing the blueprint again without removing entities. */
-  GridEnforcerRemoved = "bp100.interaction.grid-enforcer-removed",
+  /** The only entity you should not have removed was removed from the blueprint... snap to grid settings have not been saved properly. Try editing the blueprint again without removing entities. */
+  BlueprintFirstEntityRemoved = "bp100.interaction.blueprint-first-entity-removed",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** Assembly: */
