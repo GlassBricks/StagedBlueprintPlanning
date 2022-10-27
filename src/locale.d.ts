@@ -152,18 +152,16 @@ export declare const enum L_GuiAssemblySettings {
   Title = "bp100.gui.assembly-settings.title",
   /** Rename assembly */
   RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
+  /** Stages */
+  Stages = "bp100.gui.assembly-settings.stages",
   /** Rename stage */
   RenameStage = "bp100.gui.assembly-settings.rename-stage",
-  /** New stage: */
+  /** New stage */
   NewStage = "bp100.gui.assembly-settings.new-stage",
   /** After current */
   AfterCurrent = "bp100.gui.assembly-settings.after-current",
   /** At front */
   AtFront = "bp100.gui.assembly-settings.at-front",
-  /** Auto landfill */
-  AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
-  /** Automatically add landfill for both the current [font=default-bold]and[/font] next stage to each blueprint. */
-  AutoLandfillDescription = "bp100.gui.assembly-settings.auto-landfill-description",
   /** Delete assembly */
   DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
   /** Are you sure you want to delete assembly __1__? */
@@ -204,6 +202,12 @@ export declare const enum L_GuiAssemblySettings {
   LandfillAndLab = "bp100.gui.assembly-settings.landfill-and-lab",
   /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
   FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
+  /** BP book */
+  BpBook = "bp100.gui.assembly-settings.bp-book",
+  /** Auto landfill */
+  AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
+  /** Automatically add landfill for both the current [font=default-bold]and[/font] next stage to each blueprint. */
+  AutoLandfillDescription = "bp100.gui.assembly-settings.auto-landfill-description",
 }
 export declare const enum L_GuiEntityInfo {
   /** Assembly info */

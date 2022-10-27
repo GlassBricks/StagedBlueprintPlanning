@@ -9,14 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { UserAssembly } from "../assembly/AssemblyDef"
 import { createUserAssembly } from "../assembly/UserAssembly"
-import { WorldUpdater } from "../assembly/WorldUpdater"
-import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
-import { Pos } from "../lib/geometry"
-import { openAssemblySettings } from "../ui/AssemblySettings"
-import { teleportToStage } from "../ui/player-current-stage"
+import { openAssemblySettings, refreshCurrentAssembly } from "../ui/AssemblySettings"
 
 // better source map traceback
 declare const ____lualib: {
@@ -103,7 +98,7 @@ if (script.active_mods.testorio !== nil) {
         const assembly = createUserAssembly("Test", 5)
         openAssemblySettings(player, assembly)
 
-        setupManualTests(assembly)
+        // setupManualTests(assembly)
       }
     },
     log_passed_tests: false,
@@ -123,20 +118,27 @@ function isTestsRunning() {
   }
   return true
 }
-let shouldTryRerun = true
+let shouldTryRerun = false
+const shouldTryReload = true
 
 Events.on_tick(() => {
-  if (!shouldTryRerun) return
-  const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
-  const mod = game.ticks_played % ticks
-  if (isTestsRunning()) return
-  if (mod === 0) {
-    // tests not running or not ready
-    global.lastCompileTimestamp = lastCompileTime
-    game.reload_mods()
-  } else if (global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
-    game.print("Rerunning: " + lastCompileTime)
-    remote.call("testorio", "runTests")
+  if (shouldTryRerun || shouldTryReload) {
+    const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
+    const mod = game.ticks_played % ticks
+    if (isTestsRunning()) return
+    if (mod === 0) {
+      // tests not running or not ready
+      global.lastCompileTimestamp = lastCompileTime
+      game.reload_mods()
+    } else if (global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
+      global.lastCompileTimestamp = lastCompileTime
+      game.print("Reloaded: " + lastCompileTime)
+      if (shouldTryRerun) {
+        remote.call("testorio", "runTests")
+      } else {
+        refreshCurrentAssembly()
+      }
+    }
   }
 })
 commands.add_command("norerun", "", () => {
@@ -174,24 +176,24 @@ commands.add_command("norerun", "", () => {
   // shouldTryRerun = false
 }*/
 
-function setupManualTests(assembly: UserAssembly) {
-  const player = game.players[1]
-  function createEntityWithChanges() {
-    const entity = createAssemblyEntity(
-      { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
-      Pos(0.5, 0.5),
-      nil,
-      2,
-    )
-    entity.applyUpgradeAtStage(3, "assembling-machine-2")
-    entity._applyDiffAtStage(4, { recipe: "copper-cable" })
-
-    assembly.content.add(entity)
-    WorldUpdater.updateWorldEntities(assembly, entity, 1, nil)
-
-    teleportToStage(player, assembly.getStage(4)!)
-    player.opened = entity.getWorldEntity(4)
-  }
-
-  createEntityWithChanges()
-}
+// function setupManualTests(assembly: UserAssembly) {
+//   const player = game.players[1]
+//   function createEntityWithChanges() {
+//     const entity = createAssemblyEntity(
+//       { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
+//       Pos(0.5, 0.5),
+//       nil,
+//       2,
+//     )
+//     entity.applyUpgradeAtStage(3, "assembling-machine-2")
+//     entity._applyDiffAtStage(4, { recipe: "copper-cable" })
+//
+//     assembly.content.add(entity)
+//     WorldUpdater.updateWorldEntities(assembly, entity, 1, nil)
+//
+//     teleportToStage(player, assembly.getStage(4)!)
+//     player.opened = entity.getWorldEntity(4)
+//   }
+//
+//   createEntityWithChanges()
+// }

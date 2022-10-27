@@ -26,7 +26,6 @@ import {
 import {
   Fn,
   HorizontalPusher,
-  HorizontalSpacer,
   showDialog,
   SimpleTitleBar,
   TrashButton,
@@ -74,19 +73,26 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     const currentStage = playerCurrentStage(this.playerIndex)
 
     return (
-      <>
-        <frame style="inside_shallow_frame" direction="vertical">
-          <frame style="subheader_frame" direction="horizontal">
-            <ItemRename
-              name={this.assembly.name}
-              displayName={this.assembly.displayName}
-              renameTooltip={[L_GuiAssemblySettings.RenameAssembly]}
-            />
-            <HorizontalPusher />
-            <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
-          </frame>
-          <flow direction="vertical" styleMod={{ padding: [5, 10], vertical_spacing: 0 }}>
-            <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+      <frame style="inside_shallow_frame" direction="vertical">
+        <frame style="subheader_frame" direction="horizontal">
+          <ItemRename
+            name={this.assembly.name}
+            displayName={this.assembly.displayName}
+            renameTooltip={[L_GuiAssemblySettings.RenameAssembly]}
+          />
+          <HorizontalPusher />
+          <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
+        </frame>
+        <tabbed-pane style="tabbed_pane_with_no_side_padding">
+          <tab caption={[L_GuiAssemblySettings.Stages]} />
+          <flow direction="vertical">
+            <flow
+              direction="horizontal"
+              styleMod={{
+                vertical_align: "center",
+                padding: [5, 10],
+              }}
+            >
               <label style="caption_label" caption={[L_GuiAssemblySettings.NewStage]} />
               <HorizontalPusher />
               <button
@@ -100,54 +106,54 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
                 on_gui_click={funcOn(this.newStageAtFront)}
               />
             </flow>
-            <line direction="vertical" />
+            <flow
+              direction="horizontal"
+              styleMod={{
+                padding: 0,
+              }}
+            >
+              <StageSelector
+                uses="list-box"
+                styleMod={{
+                  height: stageListBoxHeight,
+                  width: stageListBoxWidth,
+                }}
+                assembly={this.assembly}
+              />
+              <Fn
+                uses="frame"
+                from={currentStage}
+                map={funcOn(this.renderStageSettings)}
+                direction="vertical"
+                style="inside_shallow_frame"
+                styleMod={{
+                  minimal_width: stageSettingsWidth,
+                  vertically_stretchable: true,
+                  horizontally_stretchable: true,
+                }}
+              />
+            </flow>
           </flow>
-        </frame>
-        <flow
-          direction="horizontal"
-          styleMod={{
-            top_margin: 3,
-            horizontal_spacing: 12,
-          }}
-        >
-          <StageSelector
-            uses="list-box"
-            styleMod={{
-              height: stageListBoxHeight,
-              width: stageListBoxWidth,
-            }}
-            assembly={this.assembly}
-          />
-
-          <Fn
-            uses="frame"
-            from={currentStage}
-            map={funcOn(this.renderStageSettings)}
+          <tab caption={[L_GuiAssemblySettings.BpBook]} />
+          <flow
             direction="vertical"
-            style="inside_shallow_frame"
             styleMod={{
-              minimal_width: stageSettingsWidth,
-              vertically_stretchable: true,
-              horizontally_stretchable: true,
+              padding: [5, 10],
             }}
-          />
-        </flow>
-        <frame style="inside_shallow_frame_with_padding" direction="horizontal">
-          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-            <button
-              caption={[L_GuiAssemblySettings.GetBlueprintBook]}
-              tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
-              on_gui_click={funcOn(this.getBlueprintBook)}
-            />
-            <HorizontalSpacer width={10} />
+          >
             <checkbox
               state={this.assembly.blueprintBookSettings.autoLandfill}
               caption={[L_GuiAssemblySettings.AutoLandfill]}
               tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
             />
+            <button
+              caption={[L_GuiAssemblySettings.GetBlueprintBook]}
+              tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
+              on_gui_click={funcOn(this.getBlueprintBook)}
+            />
           </flow>
-        </frame>
-      </>
+        </tabbed-pane>
+      </frame>
     )
   }
 
@@ -454,7 +460,7 @@ PlayerChangedStageEvent.addListener((player, stage) => {
     showAssemblySettings(player, stage.assembly)
   }
 })
-function refreshCurrentAssembly() {
+export function refreshCurrentAssembly(): void {
   for (const [, player] of game.players) {
     const currentAssembly = global.players[player.index].currentShownAssembly
     if (currentAssembly) {
