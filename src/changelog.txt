@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.1
-Date: ????
+Date: 2022-10-27
   Changes:
     - Allow creating entities if they can be blueprinted (even if not manually built)
     - Flexible offshore pump placement is now disabled by default
