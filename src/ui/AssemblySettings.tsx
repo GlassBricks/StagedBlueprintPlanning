@@ -85,7 +85,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           <HorizontalPusher />
           <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
         </frame>
-        <tabbed-pane style="tabbed_pane_with_no_side_padding">
+        <tabbed-pane style="tabbed_pane_with_no_side_padding" selected_tab_index={1}>
           <tab caption={[L_GuiAssemblySettings.Stages]} />
           <flow direction="vertical">
             <flow
@@ -168,23 +168,23 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
 
             <line direction="horizontal" />
 
-            <checkbox
-              state={this.assembly.assemblyBlueprintSettings.useNextStageTiles}
-              caption={[L_GuiAssemblySettings.UseNextStageTiles]}
-              tooltip={[L_GuiAssemblySettings.UseNextStageTilesDescription]}
+            <button
+              caption={[L_GuiAssemblySettings.SyncGridSettings]}
+              tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
+              on_gui_click={funcOn(this.syncGridSettings)}
             />
+
+            <line direction="horizontal" />
+
             <checkbox
               state={this.assembly.assemblyBlueprintSettings.autoLandfill}
               caption={[L_GuiAssemblySettings.AutoLandfill]}
               tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
             />
-
-            <line direction="horizontal" />
-
-            <button
-              caption={[L_GuiAssemblySettings.SyncGridSettings]}
-              tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
-              on_gui_click={funcOn(this.syncGridSettings)}
+            <checkbox
+              state={this.assembly.assemblyBlueprintSettings.useNextStageTiles}
+              caption={[L_GuiAssemblySettings.UseNextStageTiles]}
+              tooltip={[L_GuiAssemblySettings.UseNextStageTilesDescription]}
             />
 
             <line direction="horizontal" />
