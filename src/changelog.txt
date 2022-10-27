@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0
-Date: ????
+Date: 2022-10-27
   Changes:
     - New poles may now connect to poles in higher stages.
     - "Move to old stage" behavior has been removed
