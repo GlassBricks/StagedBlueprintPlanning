@@ -2,6 +2,16 @@
 Version: 0.8.0
 Date: ????
   Changes:
+    - New poles may now connect to poles in higher stages.
+    - "Move to old stage" behavior has been removed
+    - Many more blueprint creation options. See mod description for details.
+    - Each stage's blueprint now has individual grid size settings, with an option to sync all stages
+    - The 2x2 grid enforcer was removed; it is no longer necessary
+   Optimizations:
+    - Reduced save size/memory usage
+    - Note: deleting a large blueprint book from your inventory can save another 3MB+ of save size
+    - Slightly improved performance of adding new entities
+    - Slightly improved performance of taking blueprints
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.3
 Date: 2022-10-19
