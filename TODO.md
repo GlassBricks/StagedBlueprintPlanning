@@ -2,11 +2,7 @@
 
 ### Next
 
-- Separate blueprint landfill to "landfill before" and "tiles in previous"
-- Better solution for 2x2 grid enforcement
 - Move entity to stage tool
-
-- Performance improvements
 
 ### Editing
 
@@ -26,6 +22,11 @@
 
 - [ ] Option to move/edit in specific layer?
 - [ ] Teleport history
+
+### Blueprinting
+
+- Process blueprints before export:
+    - Infinity stuff->constant combinator
 
 ### UI
 
