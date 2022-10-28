@@ -2,11 +2,11 @@
 // noinspection JSUnusedGlobalSymbols
 
 export declare const enum L_ItemName {
-  /** Assembly cleanup tool */
+  /** Build cleanup tool */
   CleanupTool = "item-name.bp100:cleanup-tool",
 }
 export declare const enum L_ShortcutName {
-  /** Assembly cleanup tool */
+  /** Build cleanup tool */
   CleanupTool = "shortcut-name.bp100:cleanup-tool",
 }
 export declare const enum L_EntityName {
@@ -14,7 +14,7 @@ export declare const enum L_EntityName {
   EntityMarker = "entity-name.bp100:entity-marker",
 }
 export declare const enum L_ItemGroupName {
-  /** BP100 utility entities */
+  /** Staged blueprint planning utility entities */
   Utility = "item-group-name.bp100:utility",
 }
 export declare const enum L_ModSettingName {
@@ -22,7 +22,7 @@ export declare const enum L_ModSettingName {
   CyclicNavigation = "mod-setting-name.bp100:cyclic-navigation",
   /** Flexible offshore pump placement */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
-  /** Assembly info gui location */
+  /** Stage info gui location */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
 }
 export declare const enum L_ModSettingDescription {
@@ -68,13 +68,13 @@ export declare const enum L_Bp100 {
   PreviewEntity = "bp100.preview-entity",
   /** __1__ (selection proxy) */
   SelectionProxy = "bp100.selection-proxy",
-  /** <Unnamed assembly __1__> */
+  /** <Unnamed build __1__> */
   UnnamedAssembly = "bp100.unnamed-assembly",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp100.interaction.unexpected-error",
-  /** WARNING: pasting a blueprint from the blueprint [font=default-bold]library[/font] into an assembly is not supported.\nEntities that have settings changed from pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (book) first, then paste again. */
+  /** WARNING: pasting a blueprint from the blueprint [font=default-bold]library[/font] into a staged build is not supported.\nEntities that have settings changed from pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (book) first, then paste again. */
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
@@ -102,7 +102,7 @@ export declare const enum L_Interaction {
   EntitiesMissing = "bp100.interaction.entities-missing",
   /** Cannot move, power/circuit connected entities missing in another stage */
   ConnectedEntitiesMissing = "bp100.interaction.connected-entities-missing",
-  /** Not in an assembly */
+  /** Not in an staged build */
   NotInAnAssembly = "bp100.interaction.not-in-an-assembly",
   /** No next stage */
   NoNextStage = "bp100.interaction.no-next-stage",
@@ -120,21 +120,19 @@ export declare const enum L_Interaction {
   BlueprintFirstEntityRemoved = "bp100.interaction.blueprint-first-entity-removed",
 }
 export declare const enum L_GuiCurrentAssembly {
-  /** Assembly: */
-  Assembly = "bp100.gui.current-assembly.assembly",
-  /** (Not in an assembly) */
+  /** (Not in a staged build) */
   NoAssembly = "bp100.gui.current-assembly.no-assembly",
-  /** Open assembly settings */
+  /** Open staged build settings */
   OpenAssemblySettings = "bp100.gui.current-assembly.open-assembly-settings",
-  /** Show all assemblies */
+  /** Show all staged builds */
   ShowAllAssemblies = "bp100.gui.current-assembly.show-all-assemblies",
 }
 export declare const enum L_GuiAllAssemblies {
-  /** New assembly */
+  /** New staged build */
   NewAssembly = "bp100.gui.all-assemblies.new-assembly",
 }
 export declare const enum L_GuiNewAssembly {
-  /** New Assembly */
+  /** New staged build */
   Title = "bp100.gui.new-assembly.title",
   /** Name */
   Name = "bp100.gui.new-assembly.name",
@@ -146,9 +144,9 @@ export declare const enum L_GuiNewAssembly {
   Create = "bp100.gui.new-assembly.create",
 }
 export declare const enum L_GuiAssemblySettings {
-  /** Assembly */
+  /** Staged Build */
   Title = "bp100.gui.assembly-settings.title",
-  /** Rename assembly */
+  /** Rename */
   RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
   /** Stages */
   Stages = "bp100.gui.assembly-settings.stages",
@@ -160,9 +158,9 @@ export declare const enum L_GuiAssemblySettings {
   AfterCurrent = "bp100.gui.assembly-settings.after-current",
   /** At front */
   AtFront = "bp100.gui.assembly-settings.at-front",
-  /** Delete assembly */
+  /** Delete staged build */
   DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
-  /** Are you sure you want to delete assembly __1__? */
+  /** Are you sure you want to delete staged build __1__? */
   DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
   /** This action cannot be undone. */
   DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
@@ -216,7 +214,7 @@ export declare const enum L_GuiAssemblySettings {
   BpNameCustom = "bp100.gui.assembly-settings.bp-name-custom",
   /** BP book name: */
   BlueprintBookNaming = "bp100.gui.assembly-settings.blueprint-book-naming",
-  /** From assembly name */
+  /** From staged build name */
   BpNameFromAssembly = "bp100.gui.assembly-settings.bp-name-from-assembly",
   /** Sync grid settings [img=info] */
   SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
@@ -228,7 +226,7 @@ export declare const enum L_GuiAssemblySettings {
   GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
 }
 export declare const enum L_GuiEntityInfo {
-  /** Assembly info */
+  /** Stage info */
   Title = "bp100.gui.entity-info.title",
   /** First stage */
   FirstStage = "bp100.gui.entity-info.first-stage",
