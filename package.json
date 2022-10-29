@@ -27,6 +27,7 @@
     "luassert-tstl": "0.3.0-experimental.11",
     "nodemon": "^2.0.19",
     "prettier": "^2.7.1",
+    "semver": "^7.3.8",
     "testorio": "^1.5.0",
     "testorio-tools": "^0.3.4",
     "ts-jest": "^28.0.8",
@@ -41,11 +42,12 @@
     "build:gui-specs": "ts-node scripts/gen-gui-specs.ts",
     "build:scripts": "concurrently \"yarn build:locale\" \"yarn build:gui-specs\"",
     "build:release": "yarn build:scripts && tstl -p tsconfig-release.json",
-    "prepare-package": "yarn clean && yarn build:release",
     "build": "yarn build:scripts && tstl",
+    "prepare-package": "yarn clean && yarn build:release",
     "watch": "tstl --watch",
     "watch:locale": "nodemon scripts/gen-locale-defs.ts",
-    "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\""
+    "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\"",
+    "version-minor": "ts-node scripts/bump-version.ts minor"
   },
   "nodemonConfig": {
     "watch": [
