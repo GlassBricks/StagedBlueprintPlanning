@@ -46,6 +46,7 @@ export function createWhiteSprite(
 
   const size = bbox.size()
   const scale = ceil(max(size.x, size.y))
+  if (scale === 0) return emptySprite1
   const center = bbox.center()
 
   const { x, y } = bbox.scale(32 / scale).size()
@@ -72,8 +73,13 @@ export function createWhiteSprite(
   }
 }
 
-const emptySprite: BasicSprite = {
+const emptySprite16: BasicSprite = {
   filename: "__bp100__/graphics/empty16.png",
+  size: 1,
+  priority: "extra-high",
+}
+const emptySprite1: BasicSprite = {
+  filename: "__core__/graphics/empty.png",
   size: 1,
   priority: "extra-high",
 }
@@ -169,9 +175,9 @@ for (const type of types.sort()) {
 
 function spriteToRailPieceLayers(sprite: BasicSprite): RailPieceLayers {
   return {
-    metals: emptySprite,
-    backplates: emptySprite,
-    ties: emptySprite,
+    metals: emptySprite16,
+    backplates: emptySprite16,
+    ties: emptySprite16,
     stone_path: sprite,
   }
 }
@@ -228,7 +234,7 @@ function createRailPictures(color: Color): RailRemnantsPrototype["pictures"] {
     curved_rail_horizontal_right_bottom: getCurvedRailSprite([0, 12], [8, 4], tint),
     curved_rail_horizontal_left_bottom: getCurvedRailSprite([8, 12], [8, 4], tint),
     rail_endings: {
-      sheet: emptySprite,
+      sheet: emptySprite16,
     },
   }
 }
