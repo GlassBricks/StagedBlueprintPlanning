@@ -44,6 +44,8 @@ export const enum Prototypes {
   BlueprintSubgroup = "bp100:blueprint-utility",
 
   CleanupTool = "bp100:cleanup-tool",
+
+  MoveToStageTool = "bp100:move-to-stage-tool",
 }
 
 export const enum Sprites {

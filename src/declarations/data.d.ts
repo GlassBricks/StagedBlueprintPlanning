@@ -115,6 +115,9 @@ export interface ItemPrototype extends PrototypeBase {
 }
 export interface SelectionToolPrototype extends Omit<ItemPrototype, "type"> {
   type: "selection-tool"
+
+  draw_label_for_cursor_render?: boolean
+
   selection_color: Color | ColorArray
   alt_selection_color: Color | ColorArray
   selection_mode: SelectionMode[]

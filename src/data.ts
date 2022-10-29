@@ -43,15 +43,14 @@ const removePoleCablesInput: CustomInputPrototype = {
 
 data.extend([buildInput, removePoleCablesInput])
 
-const emptySprite: Sprite = empty_sprite() as Sprite
-
+// entity marker
 const entityMarker: SimpleEntityPrototype = {
   type: "simple-entity",
   name: Prototypes.EntityMarker,
   icon: "__core__/graphics/spawn-flag.png",
   icon_size: 64,
   subgroup: Prototypes.BlueprintSubgroup,
-  picture: emptySprite,
+  picture: empty_sprite() as Sprite,
   flags: ["hidden", "player-creation", "placeable-off-grid"],
   collision_mask: [],
 }
@@ -96,7 +95,7 @@ const blueprintSubgroup: ItemSubgroupPrototype = {
 
 data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup, blueprintSubgroup])
 
-// light yellow
+// Cleanup tool
 const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
 const cleanupReverseToolColor: ColorArray = [0.9, 0.5, 0.5]
 const cleanupTool: SelectionToolPrototype = {
@@ -114,7 +113,6 @@ const cleanupTool: SelectionToolPrototype = {
       scale: 0.4,
     },
   ],
-  icon_mipmaps: 4,
 
   flags: ["only-in-cursor", "spawnable", "not-stackable"],
   stack_size: 1,
@@ -174,7 +172,34 @@ data.extend([
   ),
   getCleanupToolInput,
 ])
+// Move to stage tool
+const moveToStageToolColor: ColorArray = [65, 200, 255]
+const moveToStageAltColor: ColorArray = [255, 155, 65]
+const moveToStageTool: SelectionToolPrototype = {
+  type: "selection-tool",
+  name: Prototypes.MoveToStageTool,
+  icon: "__bp100__/graphics/icons/move-to-stage.png",
+  icon_size: 64,
+  flags: ["spawnable", "not-stackable", "only-in-cursor"],
+  stack_size: 1,
 
+  draw_label_for_cursor_render: true,
+
+  subgroup: "tool",
+  order: "z[bp100]-a[move-to-stage]",
+
+  selection_color: moveToStageToolColor,
+  selection_cursor_box_type: "copy",
+  selection_mode: ["deconstruct"],
+
+  alt_selection_color: moveToStageAltColor,
+  alt_selection_cursor_box_type: "pair",
+  alt_selection_mode: ["deconstruct"],
+}
+
+data.extend([moveToStageTool])
+
+// Sprites
 function createSprite(
   name: string,
   filename: string,

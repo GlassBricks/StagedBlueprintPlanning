@@ -11,6 +11,7 @@
 
 import { Data } from "typed-factorio/data/types"
 import * as util from "util"
+import { empty_sprite } from "util"
 import { BuildableEntityType, Prototypes } from "./constants"
 import {
   BasicSprite,
@@ -45,7 +46,7 @@ export function createWhiteSprite(
 
   const size = bbox.size()
   const scale = ceil(max(size.x, size.y))
-  if (scale === 0) return emptySprite1
+  if (scale === 0) return empty_sprite() as Sprite
   const center = bbox.center()
 
   const { x, y } = bbox.scale(32 / scale).size()
@@ -74,11 +75,6 @@ export function createWhiteSprite(
 
 const emptySprite16: BasicSprite = {
   filename: "__bp100__/graphics/empty16.png",
-  size: 1,
-  priority: "extra-high",
-}
-const emptySprite1: BasicSprite = {
-  filename: "__core__/graphics/empty.png",
   size: 1,
   priority: "extra-high",
 }
