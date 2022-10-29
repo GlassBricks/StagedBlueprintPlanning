@@ -19,17 +19,19 @@ import {
   Mutable,
   MutableState,
   nilIfEmpty,
+  onPlayerRemoved,
   PRecord,
   RegisterClass,
   state,
   State,
 } from "../lib"
-import { BBox, Position } from "../lib/geometry"
+import { BBox } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import {
   AssemblyBlueprintSettings,
   AssemblyId,
+  AssemblyPlayerData,
   AutoSetTilesType,
   BlueprintNameMode,
   BookNameMode,
@@ -71,13 +73,7 @@ class UserAssemblyImpl implements UserAssembly {
   content = newEntityMap()
   localEvents = new Event<LocalAssemblyEvent>()
 
-  lastPlayerPosition: PRecord<
-    PlayerIndex,
-    {
-      stageNumber: StageNumber
-      position: Position
-    }
-  > = {}
+  playerData: PRecord<PlayerIndex, Partial<AssemblyPlayerData>> = {}
 
   assemblyBlueprintSettings: AssemblyBlueprintSettings = {
     autoLandfill: state(false),
@@ -165,17 +161,6 @@ class UserAssemblyImpl implements UserAssembly {
     this.raiseEvent({ type: "stage-deleted", assembly: this, stage })
   }
 
-  delete() {
-    if (!this.valid) return
-    global.assemblies.delete(this.id)
-    this.valid = false
-    for (const [, stage] of pairs(this.stages)) {
-      stage._doDelete()
-    }
-    this.raiseEvent({ type: "assembly-deleted", assembly: this })
-    this.localEvents.closeAll()
-  }
-
   public makeBlueprintBook(stack: LuaItemStack): boolean {
     const bbox = this.content.computeBoundingBox()
     if (!bbox) return false
@@ -210,7 +195,7 @@ class UserAssemblyImpl implements UserAssembly {
     return true
   }
 
-  public syncGridSettings(): void {
+  syncGridSettings(): void {
     const lastStageSettings = this.stages[this.maxStage()].getBlueprintSettings()
     for (const i of $range(1, this.maxStage() - 1)) {
       const stageSettings = this.stages[i].getBlueprintSettings()
@@ -219,6 +204,16 @@ class UserAssemblyImpl implements UserAssembly {
       stageSettings.positionRelativeToGrid = lastStageSettings.positionRelativeToGrid
       stageSettings.absoluteSnapping = lastStageSettings.absoluteSnapping
     }
+  }
+  delete() {
+    if (!this.valid) return
+    global.assemblies.delete(this.id)
+    this.valid = false
+    for (const [, stage] of pairs(this.stages)) {
+      stage._doDelete()
+    }
+    this.raiseEvent({ type: "assembly-deleted", assembly: this })
+    this.localEvents.closeAll()
   }
 
   private getNewStageName(): string {
@@ -341,10 +336,15 @@ Events.on_pre_surface_deleted((e) => {
   const stage = getStageAtSurface(e.surface_index)
   if (stage !== nil) stage.deleteInAssembly()
 })
+onPlayerRemoved((index) => {
+  for (const [, assembly] of global.assemblies) {
+    delete assembly.playerData[index]
+  }
+})
 
 Migrations.to("0.2.1", () => {
   for (const [, assembly] of global.assemblies) {
-    assembly.lastPlayerPosition = {}
+    assembly.playerData = {}
   }
 })
 Migrations.to("0.5.0", () => {

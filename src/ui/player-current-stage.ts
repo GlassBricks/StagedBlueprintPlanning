@@ -10,9 +10,7 @@
  */
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
-import { getAllAssemblies } from "../assembly/migrations"
 import { AssemblyEvents, getStageAtSurface } from "../assembly/UserAssembly"
-import { StageNumber } from "../entity/AssemblyEntity"
 import {
   assertNever,
   Events,
@@ -23,7 +21,8 @@ import {
   State,
   state,
 } from "../lib"
-import { Pos, Position } from "../lib/geometry"
+import { Pos } from "../lib/geometry"
+import { getAssemblyPlayerData } from "./player-assembly-data"
 
 declare global {
   interface PlayerData {
@@ -87,7 +86,7 @@ export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   if (currentStage) {
     recordPlayerAtStage(player, currentStage)
   }
-  const newPosition = stage.assembly.lastPlayerPosition[player.index]?.position ?? { x: 0, y: 0 }
+  const newPosition = getAssemblyPlayerData(player.index, stage.assembly)?.lastPosition ?? { x: 0, y: 0 }
   player.teleport(newPosition, stage.surface)
 }
 
@@ -99,10 +98,11 @@ export function teleportToAssembly(player: LuaPlayer, assembly: UserAssembly): v
   if (currentStage) {
     recordPlayerAtStage(player, currentStage)
   }
-  const newLocation = assembly.lastPlayerPosition[player.index]
-  if (newLocation && newLocation.stageNumber <= assembly.maxStage()) {
-    const stage = assembly.getStage(newLocation.stageNumber)!
-    player.teleport(newLocation.position, stage.surface)
+  const playerData = getAssemblyPlayerData(player.index, assembly)
+  if (!playerData) return
+  if (playerData.lastStage && playerData.lastStage <= assembly.maxStage()) {
+    const stage = assembly.getStage(playerData.lastStage)!
+    player.teleport(playerData.lastPosition ?? { x: 0, y: 0 }, stage.surface)
   } else {
     const stage = assembly.getStage(1)!
     player.teleport(Pos(0, 0), stage.surface)
@@ -117,19 +117,11 @@ export function recordLastStagePosition(player: LuaPlayer): void {
 }
 
 function recordPlayerAtStage(player: LuaPlayer, currentStage: Stage): void {
-  const lastPlayerPosition = (currentStage.assembly.lastPlayerPosition[player.index] ??= {} as {
-    stageNumber: StageNumber
-    position: Position
-  })
-  lastPlayerPosition.stageNumber = currentStage.stageNumber
-  lastPlayerPosition.position = player.position
+  const playerData = getAssemblyPlayerData(player.index, currentStage.assembly)
+  if (!playerData) return
+  playerData.lastStage = currentStage.stageNumber
+  playerData.lastPosition = player.position
 }
-
-onPlayerRemoved((index) => {
-  for (const [, assembly] of getAllAssemblies()) {
-    delete assembly.lastPlayerPosition[index]
-  }
-})
 
 export function teleportToSurface1(player: LuaPlayer): void {
   if (player.surface.index !== 1) {
