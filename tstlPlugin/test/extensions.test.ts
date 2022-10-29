@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2022 GlassBricks
- * This file is part of 100% Blueprint Planning.
+ * This file is part of Staged Blueprint Planning.
  *
- * 100% Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
- * 100% Blueprint Planning is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ * Staged Blueprint Planning is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along with 100% Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import { setupPluginTest } from "./plugin-test-util"
@@ -14,7 +14,6 @@ import { testExpression, testFunction, testModule } from "./tstl-test-util"
 
 test("testFiles", () => {
   testModule`
-    declare function __getTestFiles(): string[];
     export const result = __getTestFiles();
   `
     .setReturnExport("result")
@@ -75,4 +74,26 @@ test("access split", () => {
   `
     .tap(setupPluginTest)
     .expectToEqual([{ a: 1 }, "a"])
+})
+
+test("assume", () => {
+  testFunction`
+    const foo: unknown = { bar: "baz" };
+    assume<{ bar: string }>(foo);
+    return foo.bar;
+  `
+    .tap(setupPluginTest)
+    .expectToEqual("baz")
+})
+
+test("keys", () => {
+  testFunction`
+    interface Foo {
+      a: string;
+      b: number;
+    }
+    return keys<Foo>();
+  `
+    .tap(setupPluginTest)
+    .expectToEqual(["a", "b"])
 })
