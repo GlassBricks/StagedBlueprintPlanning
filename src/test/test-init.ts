@@ -35,7 +35,6 @@ interface SourceMap {
   }
 }
 
-declare function __getTestFiles(): string[]
 import lastCompileTime = require("last-compile-time")
 
 declare let global: {

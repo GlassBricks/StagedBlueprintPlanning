@@ -1650,7 +1650,6 @@ __metadata:
     testorio-tools: ^0.3.4
     ts-jest: ^28.0.8
     ts-node: ^10.9.1
-    ts-transformer-keys: ^0.4.3
     typed-factorio: ^1.8.1
     typescript: ~4.8.3
     typescript-to-lua: ^1.10.0
@@ -5826,15 +5825,6 @@ __metadata:
     ts-node-transpile-only: dist/bin-transpile.js
     ts-script: dist/bin-script-deprecated.js
   checksum: 090adff1302ab20bd3486e6b4799e90f97726ed39e02b39e566f8ab674fd5bd5f727f43615debbfc580d33c6d9d1c6b1b3ce7d8e3cca3e20530a145ffa232c35
-  languageName: node
-  linkType: hard
-
-"ts-transformer-keys@npm:^0.4.3":
-  version: 0.4.3
-  resolution: "ts-transformer-keys@npm:0.4.3"
-  peerDependencies:
-    typescript: ">=2.4.1"
-  checksum: 915155202544d2975c858419924c1a56483222328cd2f51268605bf1508154021b2604f34de2de1c2b8627fb43e96dd92cea4142eadb9e20a3b21445dbae56ee
   languageName: node
   linkType: hard
 

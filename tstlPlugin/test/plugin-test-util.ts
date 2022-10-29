@@ -29,22 +29,16 @@ function getDeclFileContents(): Record<string, string> {
   return declFileContents
 }
 
-let pluginFiles: string[] | undefined
-function getPluginFiles(): string[] {
-  if (!pluginFiles) {
-    pluginFiles = fs
-      .readdirSync(srcDir)
-      .filter((file) => file.endsWith("-plugin.ts"))
-      .map((file) => path.join(srcDir, file))
-  }
-  return pluginFiles
-}
-
 export const setupPluginTest: TapCallback = (builder: TestBuilder) => {
   builder.withLanguageExtensions().setOptions({
     strict: true,
     luaTarget: LuaTarget.Lua52,
-    luaPlugins: getPluginFiles().map((name) => ({ name })),
+    luaPlugins: [
+      {
+        name: path.join(srcDir, "extensions-plugin.ts"),
+        testPattern: "\\.test\\.tsx?$",
+      },
+    ],
   })
   for (const [name, content] of Object.entries(getDeclFileContents())) {
     builder.addExtraFile(name, content)

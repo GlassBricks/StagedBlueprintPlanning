@@ -23,7 +23,8 @@ import * as path from "path"
 import * as prettyFormat from "pretty-format"
 import * as ts from "typescript"
 import * as tstl from "typescript-to-lua"
-import { getEmitOutDir, transpileProject } from "typescript-to-lua"
+import { EmitHost, getEmitOutDir, transpileProject } from "typescript-to-lua"
+import { resolveLuaLibDir } from "typescript-to-lua/dist/LuaLib"
 import { createEmitOutputCollector } from "typescript-to-lua/dist/transpilation/output-collector"
 import { formatPathToLuaPath, normalizeSlashes } from "typescript-to-lua/dist/utils"
 import * as vm from "vm"
@@ -62,7 +63,9 @@ expect.extend({
         const message = this.isNot
           ? diagnosticMessages
           : expected
-          ? `Expected:\n${expected.join("\n")}\nReceived:\n${diagnostics.map((diag) => diag.code).join("\n")}\n`
+          ? `Expected:\n${expected.join("\n")}\nReceived:\n${diagnostics
+              .map((diag) => diag.code)
+              .join("\n")}\n\n${diagnosticMessages}\n`
           : `Received: ${this.utils.printReceived([])}\n`
 
         return matcherHint + "\n\n" + message
@@ -70,21 +73,29 @@ expect.extend({
     }
   },
 })
-
 declare module "typescript-to-lua/dist/transpilation/output-collector" {
   export interface TranspiledFile {
     js?: string
   }
 }
 
-const tstlDir = path.resolve(__dirname, "../../node_modules/typescript-to-lua")
-const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8")
-const luaLib = fs.readFileSync(path.join(tstlDir, "dist/lualib/lualib_bundle.lua"), "utf8")
+function readLuaLib(target: tstl.LuaTarget) {
+  return fs.readFileSync(path.join(resolveLuaLibDir(target), "lualib_bundle.lua"), "utf8")
+}
+
+function jsonLib(target: tstl.LuaTarget): string {
+  const fileName = target === tstl.LuaTarget.Lua50 ? "json.50.lua" : "json.lua"
+  return fs.readFileSync(path.join(__dirname, fileName), "utf8")
+}
 
 // Using `test` directly makes eslint-plugin-jest consider this file as a test
 const defineTest = test
 
 function getLuaBindingsForVersion(target: tstl.LuaTarget): { lauxlib: LauxLib; lua: Lua; lualib: LuaLib } {
+  if (target === tstl.LuaTarget.Lua50) {
+    const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.50")
+    return { lauxlib, lua, lualib }
+  }
   if (target === tstl.LuaTarget.Lua51) {
     const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.51")
     return { lauxlib, lua, lualib }
@@ -128,6 +139,20 @@ export function testEachVersion<T extends TestBuilder>(
         specialBuilder(builder)
       }
     })
+  }
+}
+
+export function expectEachVersionExceptJit<T>(
+  expectation: (builder: T) => void,
+): Record<tstl.LuaTarget, ((builder: T) => void) | boolean> {
+  return {
+    [tstl.LuaTarget.Universal]: expectation,
+    [tstl.LuaTarget.Lua50]: expectation,
+    [tstl.LuaTarget.Lua51]: expectation,
+    [tstl.LuaTarget.Lua52]: expectation,
+    [tstl.LuaTarget.Lua53]: expectation,
+    [tstl.LuaTarget.Lua54]: expectation,
+    [tstl.LuaTarget.LuaJIT]: false, // Exclude JIT
   }
 }
 
@@ -213,7 +238,9 @@ export abstract class TestBuilder {
   }
 
   public withLanguageExtensions(): this {
-    this.setOptions({ types: [path.resolve(tstlDir, "language-extensions")] })
+    this.setOptions({
+      types: [path.resolve(path.resolve(__dirname, "../../node_modules/@typescript-to-lua/language-extensions"))],
+    })
     // Polyfill lualib for JS
     this.setJsHeader(`
             function $multi(...args) { return args; }
@@ -265,7 +292,7 @@ export abstract class TestBuilder {
     )
   }
 
-  private getEmitHost(): tstl.EmitHost {
+  private getEmitHost(): EmitHost {
     return {
       fileExists: (path: string) => normalizeSlashes(path) in this.extraFiles,
       directoryExists: (path: string) => Object.keys(this.extraFiles).some((f) => f.startsWith(normalizeSlashes(path))),
@@ -278,6 +305,7 @@ export abstract class TestBuilder {
   @memoize
   public getLuaResult(): tstl.TranspileVirtualProjectResult {
     const program = this.getProgram()
+    const preEmitDiagnostics = ts.getPreEmitDiagnostics(program)
     const collector = createEmitOutputCollector()
     const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ emitHost: this.getEmitHost() }).emit({
       program,
@@ -285,10 +313,7 @@ export abstract class TestBuilder {
       writeFile: collector.writeFile,
     })
 
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([
-      ...ts.getPreEmitDiagnostics(program),
-      ...transpileDiagnostics,
-    ])
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([...preEmitDiagnostics, ...transpileDiagnostics])
 
     return { diagnostics: [...diagnostics], transpiledFiles: collector.files }
   }
@@ -308,8 +333,8 @@ export abstract class TestBuilder {
 
   @memoize
   public getMainLuaCodeChunk(): string {
-    const header = this.luaHeader ? `${this.luaHeader.trimEnd()}\n` : ""
-    return header + this.getMainLuaFileResult().lua.trimEnd()
+    const header = this.luaHeader ? `${this.luaHeader.trimRight()}\n` : ""
+    return header + this.getMainLuaFileResult().lua.trimRight()
   }
 
   @memoize
@@ -335,7 +360,7 @@ export abstract class TestBuilder {
     )?.js
     assert(code !== undefined)
 
-    const header = this.jsHeader ? `${this.jsHeader.trimEnd()}\n` : ""
+    const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : ""
     return header + code
   }
 
@@ -460,17 +485,18 @@ export abstract class TestBuilder {
     // Main file
     const mainFile = this.getMainLuaCodeChunk()
 
-    const { lauxlib, lua, lualib } = getLuaBindingsForVersion(this.options.luaTarget ?? tstl.LuaTarget.Lua54)
+    const luaTarget = this.options.luaTarget ?? tstl.LuaTarget.Lua54
+    const { lauxlib, lua, lualib } = getLuaBindingsForVersion(luaTarget)
 
     const L = lauxlib.luaL_newstate()
     lualib.luaL_openlibs(L)
 
     // Load modules
     // Json
-    this.packagePreloadLuaFile(L, lua, lauxlib, "json", jsonLib)
+    this.injectLuaFile(L, lua, lauxlib, "json", jsonLib(luaTarget))
     // Lua lib
     if (this.options.luaLibImport === tstl.LuaLibImportKind.Require || mainFile.includes('require("lualib_bundle")')) {
-      this.packagePreloadLuaFile(L, lua, lauxlib, "lualib_bundle", luaLib)
+      this.injectLuaFile(L, lua, lauxlib, "lualib_bundle", readLuaLib(luaTarget))
     }
 
     // Load all transpiled files into Lua's package cache
@@ -478,7 +504,7 @@ export abstract class TestBuilder {
     for (const transpiledFile of transpiledFiles) {
       if (transpiledFile.lua) {
         const filePath = path.relative(getEmitOutDir(this.getProgram()), transpiledFile.outPath)
-        this.packagePreloadLuaFile(L, lua, lauxlib, filePath, transpiledFile.lua)
+        this.injectLuaFile(L, lua, lauxlib, filePath, transpiledFile.lua)
       }
     }
 
@@ -503,18 +529,26 @@ end)());`
       }
     } else {
       const luaStackString = lua.lua_tostring(L, -1)
-      const message = luaStackString.replace(/^\[string "(--)?\.\.\."]:\d+: /, "")
+      const message = luaStackString.replace(/^\[string "(--)?\.\.\."\]:\d+: /, "")
       lua.lua_close(L)
       return new ExecutionError(message)
     }
   }
 
-  private packagePreloadLuaFile(state: LuaState, lua: Lua, lauxlib: LauxLib, fileName: string, fileContent: string) {
-    // Adding source Lua to the package.preload cache will allow require to find it
-    lua.lua_getglobal(state, "package")
-    lua.lua_getfield(state, -1, "preload")
-    lauxlib.luaL_loadstring(state, fileContent)
-    lua.lua_setfield(state, -2, formatPathToLuaPath(fileName.replace(".lua", "")))
+  private injectLuaFile(state: LuaState, lua: Lua, lauxlib: LauxLib, fileName: string, fileContent: string) {
+    const modName = formatPathToLuaPath(fileName.replace(".lua", ""))
+    if (this.options.luaTarget === tstl.LuaTarget.Lua50) {
+      // Adding source Lua to the _LOADED cache will allow require to find it
+      lua.lua_getglobal(state, "_LOADED")
+      lauxlib.luaL_dostring(state, fileContent)
+      lua.lua_setfield(state, -2, modName)
+    } else {
+      // Adding source Lua to the package.preload cache will allow require to find it
+      lua.lua_getglobal(state, "package")
+      lua.lua_getfield(state, -1, "preload")
+      lauxlib.luaL_loadstring(state, fileContent)
+      lua.lua_setfield(state, -2, modName)
+    }
   }
 
   private executeJs(): any {

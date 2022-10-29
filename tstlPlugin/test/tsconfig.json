@@ -9,5 +9,5 @@
     "strict": true,
     "sourceMap": true
   },
-  "include": [".", "../func-register.d.ts"]
+  "include": ["."]
 }

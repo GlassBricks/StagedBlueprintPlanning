@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { keys } from "ts-transformer-keys"
 import { Assembly } from "../../assembly/AssemblyDef"
 import {
   createHighlightCreator,

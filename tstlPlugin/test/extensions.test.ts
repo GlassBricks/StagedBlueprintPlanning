@@ -14,7 +14,6 @@ import { testExpression, testFunction, testModule } from "./tstl-test-util"
 
 test("testFiles", () => {
   testModule`
-    declare function __getTestFiles(): string[];
     export const result = __getTestFiles();
   `
     .setReturnExport("result")
@@ -75,4 +74,26 @@ test("access split", () => {
   `
     .tap(setupPluginTest)
     .expectToEqual([{ a: 1 }, "a"])
+})
+
+test("assume", () => {
+  testFunction`
+    const foo: unknown = { bar: "baz" };
+    assume<{ bar: string }>(foo);
+    return foo.bar;
+  `
+    .tap(setupPluginTest)
+    .expectToEqual("baz")
+})
+
+test("keys", () => {
+  testFunction`
+    interface Foo {
+      a: string;
+      b: number;
+    }
+    return keys<Foo>();
+  `
+    .tap(setupPluginTest)
+    .expectToEqual(["a", "b"])
 })

@@ -9,8 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { keys } from "ts-transformer-keys"
-
 type Getters = {
   [K in keyof LuaRendering as K extends `get_${infer P}`
     ? LuaRendering[K] extends (id: uint64) => any
@@ -91,9 +89,9 @@ export type AnyRender = { [K in RenderType]: RenderObj<K> }[RenderType]
 
 const rendering: LuaRendering = (_G as any).rendering
 
-const setterKeys = newLuaSet(...keys<Setters>())
-const getterKeys = newLuaSet(...keys<Getters>())
-const otherSetterKeys = newLuaSet(...keys<OtherSetters>())
+const setterKeys = keySet<Setters>()
+const getterKeys = keySet<Getters>()
+const otherSetterKeys = keySet<OtherSetters>()
 
 const setters: {
   [K in keyof Setters]: LuaRendering[`set_${K}`]

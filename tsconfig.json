@@ -21,12 +21,7 @@
     "noImplicitThis": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "noEmitOnError": true,
-    "plugins": [
-      {
-        "transform": "ts-transformer-keys/transformer"
-      }
-    ]
+    "noEmitOnError": true
   },
   "tstl": {
     "luaTarget": "5.2",

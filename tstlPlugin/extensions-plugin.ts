@@ -54,6 +54,13 @@ const invalidAccessSplitCall = createSerialDiagnosticFactory((node: ts.Node) => 
   messageText: "This must be called with either a property access or an element access.",
   category: ts.DiagnosticCategory.Error,
 }))
+const testPatternNotGiven = createSerialDiagnosticFactory((node: ts.Node) => ({
+  file: ts.getOriginalNode(node).getSourceFile(),
+  start: ts.getOriginalNode(node).getStart(),
+  length: ts.getOriginalNode(node).getWidth(),
+  messageText: "Test pattern not given.",
+  category: ts.DiagnosticCategory.Error,
+}))
 
 function transformLuaSetNewCall(context: TransformationContext, node: ts.CallExpression) {
   let args = node.arguments ?? []
@@ -84,6 +91,32 @@ function transformAccessSplitCall(context: TransformationContext, node: ts.CallE
   return luaCall
 }
 
+function transformKeysCall(context: TransformationContext, node: ts.CallExpression) {
+  const typeArgs = node.typeArguments
+  if (!typeArgs || typeArgs.length !== 1) {
+    return createTableExpression(undefined, node)
+  }
+  const type = context.checker.getTypeFromTypeNode(typeArgs[0])
+  const keys = context.checker.getPropertiesOfType(type)
+  return createTableExpression(
+    keys.map((k) => createTableFieldExpression(createStringLiteral(k.name))),
+    node,
+  )
+}
+
+function transformKeySetCall(context: TransformationContext, node: ts.CallExpression) {
+  const typeArgs = node.typeArguments
+  if (!typeArgs || typeArgs.length !== 1) {
+    return createTableExpression(undefined, node)
+  }
+  const type = context.checker.getTypeFromTypeNode(typeArgs[0])
+  const keys = context.checker.getPropertiesOfType(type)
+  return createTableExpression(
+    keys.map((k) => createTableFieldExpression(createBooleanLiteral(true), createStringLiteral(k.name))),
+    node,
+  )
+}
+
 function createPlugin(options: { testPattern?: string }): Plugin {
   const testPattern = options.testPattern ? RegExp(options.testPattern) : undefined
   function getTestFiles(context: TransformationContext) {
@@ -101,6 +134,35 @@ function createPlugin(options: { testPattern?: string }): Plugin {
       })
     return createTableExpression(fields)
   }
+
+  let newLuaSetSymbol: ts.Symbol | undefined
+  let getTestFilesSymbol: ts.Symbol | undefined
+  let nilSymbol: ts.Symbol | undefined
+  let assumeSymbol: ts.Symbol | undefined
+  let keysSymbol: ts.Symbol | undefined
+  let keySetSymbol: ts.Symbol | undefined
+  const beforeTransform: Plugin["beforeTransform"] = (program) => {
+    const checker = program.getTypeChecker()
+    const extensionsFile = program.getSourceFile(path.resolve(__dirname, "extensions.d.ts"))
+    if (!extensionsFile) return
+    const definedSymbolsByName = new Map<string, ts.Symbol>()
+    for (const f of extensionsFile.statements) {
+      if (ts.isFunctionDeclaration(f)) {
+        definedSymbolsByName.set(f.name!.getText(), checker.getSymbolAtLocation(f.name!)!)
+      } else if (ts.isVariableStatement(f)) {
+        for (const d of f.declarationList.declarations) {
+          definedSymbolsByName.set(d.name.getText(), checker.getSymbolAtLocation(d.name)!)
+        }
+      }
+    }
+    newLuaSetSymbol = definedSymbolsByName.get("newLuaSet")
+    getTestFilesSymbol = definedSymbolsByName.get("__getTestFiles")
+    nilSymbol = definedSymbolsByName.get("nil")
+    assumeSymbol = definedSymbolsByName.get("assume")
+    keysSymbol = definedSymbolsByName.get("keys")
+    keySetSymbol = definedSymbolsByName.get("keySet")
+  }
+
   const visitors: Visitors = {
     [ts.SyntaxKind.DeleteExpression](node: ts.DeleteExpression, context: TransformationContext) {
       if (ts.isOptionalChain(node.expression)) return context.superTransformExpression(node)
@@ -121,36 +183,35 @@ function createPlugin(options: { testPattern?: string }): Plugin {
     },
     [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       // handle special case when call = __getTestFiles(), replace with list of files
-      const type = context.checker.getTypeAtLocation(node.expression)
-      if (ts.isIdentifier(node.expression)) {
-        if (testPattern && node.expression.text === "__getTestFiles") {
+      const callSymbol = context.checker.getSymbolAtLocation(node.expression)
+      if (callSymbol === getTestFilesSymbol) {
+        if (!testPattern) {
+          context.diagnostics.push(testPatternNotGiven(node))
+        } else {
           return getTestFiles(context)
         }
-        if (node.expression.text === "newLuaSet") {
-          if (type.getProperty("__newLuaSetBrand")) {
-            return transformLuaSetNewCall(context, node)
-          }
-        }
       }
+      if (callSymbol === newLuaSetSymbol) {
+        return transformLuaSetNewCall(context, node)
+      }
+      if (callSymbol === assumeSymbol) {
+        return createNilLiteral()
+      }
+      if (callSymbol === keysSymbol) {
+        return transformKeysCall(context, node)
+      }
+      if (callSymbol === keySetSymbol) {
+        return transformKeySetCall(context, node)
+      }
+      const type = context.checker.getTypeAtLocation(node.expression)
       if (type.getProperty("__accessSplitBrand")) {
         return transformAccessSplitCall(context, node)
       }
       return context.superTransformExpression(node)
     },
     [ts.SyntaxKind.Identifier](node: ts.Identifier, context: TransformationContext) {
-      if (node.text === "nil") {
-        const declaration = context.checker.getSymbolAtLocation(node)?.valueDeclaration
-        // check if declaration matches `declare const nil: undefined`
-        if (
-          declaration &&
-          ts.isVariableDeclaration(declaration) &&
-          declaration.initializer === undefined &&
-          declaration.type !== undefined &&
-          context.checker.getTypeFromTypeNode(declaration.type).getFlags() === ts.TypeFlags.Undefined
-        ) {
-          return createNilLiteral(node)
-        }
-      }
+      const symbol = context.checker.getSymbolAtLocation(node)
+      if (symbol === nilSymbol) return createNilLiteral(node)
       if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
         context.diagnostics.push(useNilInstead(node))
       }
@@ -159,6 +220,7 @@ function createPlugin(options: { testPattern?: string }): Plugin {
   }
 
   const plugin: Plugin = {
+    beforeTransform,
     visitors,
     beforeEmit(program, __, ___, files) {
       if (files.length === 0) return // also if there are errors and noEmitOnError
