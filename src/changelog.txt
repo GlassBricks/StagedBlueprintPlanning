@@ -2,6 +2,8 @@
 Version: 0.9.0
 Date: ????
   Changes:
+    - The mod has been renamed to "Staged Blueprint Planning" to better reflect its more general usage.
+    - "Assemblies" have been renamed to "Staged Builds" (in locale, not in code).
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.2
 Date: 2022-10-29
