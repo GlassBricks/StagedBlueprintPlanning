@@ -3,6 +3,8 @@ Version: 0.10.0
 Date: ????
   Features:
     - Added the "Stage Move" tool. See the mod portal description for more info.
+  Changes:
+    - The "Move entity to current stage" shortcut now works on preview entities, and is ignored on settings remnants.
 ---------------------------------------------------------------------------------------------------
 Version: 0.9.1
 Date: 2022-10-29
