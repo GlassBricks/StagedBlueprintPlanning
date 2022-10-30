@@ -4,10 +4,14 @@
 export declare const enum L_ItemName {
   /** Build cleanup tool */
   CleanupTool = "item-name.bp100:cleanup-tool",
+  /** Stage move tool */
+  StageMoveTool = "item-name.bp100:stage-move-tool",
 }
 export declare const enum L_ShortcutName {
   /** Build cleanup tool */
   CleanupTool = "shortcut-name.bp100:cleanup-tool",
+  /** Stage move tool */
+  StageMoveTool = "shortcut-name.bp100:stage-move-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
@@ -52,9 +56,9 @@ export declare const enum L_StringModSettingDescription {
   FlexibleOffshorePumpPlacementAnywhere = "string-mod-setting-description.bp100:flexible-offshore-pump-placement-anywhere",
 }
 export declare const enum L_Controls {
-  /** Next stage */
+  /** Go to next stage */
   NextStage = "controls.bp100:next-stage",
-  /** Previous stage */
+  /** Go to previous stage */
   PreviousStage = "controls.bp100:previous-stage",
   /** Go to entity's first stage */
   GoToFirstStage = "controls.bp100:go-to-first-stage",
@@ -62,6 +66,10 @@ export declare const enum L_Controls {
   GoToNextNotableStage = "controls.bp100:go-to-next-notable-stage",
   /** Move entity to current stage */
   MoveToThisStage = "controls.bp100:move-to-this-stage",
+  /** Stage move tool: select next stage */
+  StageSelectNext = "controls.bp100:stage-select-next",
+  /** Stage move tool: select previous stage */
+  StageSelectPrevious = "controls.bp100:stage-select-previous",
 }
 export declare const enum L_Bp100 {
   /** __1__ (preview) */

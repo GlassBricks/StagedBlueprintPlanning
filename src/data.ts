@@ -140,7 +140,7 @@ const getCleanupToolInput: CustomInputPrototype = {
   key_sequence: "",
   item_to_spawn: Prototypes.CleanupTool,
   action: "spawn-item",
-  order: "a[tools]-[cleanup]",
+  order: "a[tools]-a[cleanup]",
 }
 
 data.extend([
@@ -189,7 +189,7 @@ const stageMoveToolInput: CustomInputPrototype = {
   key_sequence: "",
   item_to_spawn: Prototypes.StageMoveTool,
   action: "spawn-item",
-  order: "a[tools]-[stage-move-tool]",
+  order: "a[tools]-b[stage-move-tool]",
 }
 
 data.extend([
@@ -281,17 +281,21 @@ const moveToThisStage: CustomInputPrototype = {
   key_sequence: "CONTROL + ALT + mouse-button-3",
   order: "b[navigate]-e[move-to-this-stage]",
 }
-const blueprintBookNextInput: CustomInputPrototype = {
+const stageSelectNext: CustomInputPrototype = {
   name: CustomInputs.StageSelectNext,
   type: "custom-input",
 
+  action: "lua",
   key_sequence: "SHIFT + mouse-wheel-down",
+  order: "a[tools]-b[stage-move-tool]-a[next]",
 }
-const blueprintBookPreviousInput: CustomInputPrototype = {
+const stageSelectPrevious: CustomInputPrototype = {
   name: CustomInputs.StageSelectPrevious,
   type: "custom-input",
 
   key_sequence: "SHIFT + mouse-wheel-up",
+  action: "lua",
+  order: "a[tools]-b[stage-move-tool]-b[previous]",
 }
 
 data.extend([
@@ -300,6 +304,6 @@ data.extend([
   goToFirstStage,
   goToNextNotableStage,
   moveToThisStage,
-  blueprintBookNextInput,
-  blueprintBookPreviousInput,
+  stageSelectNext,
+  stageSelectPrevious,
 ])

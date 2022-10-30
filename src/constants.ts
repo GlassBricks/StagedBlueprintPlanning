@@ -52,8 +52,8 @@ export const enum CustomInputs {
 
   MoveToThisStage = "bp100:move-to-this-stage",
 
-  StageSelectNext = "bp100:blueprint-book-next",
-  StageSelectPrevious = "bp100:blueprint-book-previous",
+  StageSelectNext = "bp100:stage-select-next",
+  StageSelectPrevious = "bp100:stage-select-previous",
 }
 
 // noinspection JSUnusedGlobalSymbols
