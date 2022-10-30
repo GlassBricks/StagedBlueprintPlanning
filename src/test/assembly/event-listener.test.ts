@@ -399,7 +399,7 @@ describe("move to this stage", () => {
   })
 })
 
-describe("move to stage tool", () => {
+describe("stag-move tool", () => {
   test("send to stage", () => {
     const entity = surface.create_entity({
       name: "inserter",

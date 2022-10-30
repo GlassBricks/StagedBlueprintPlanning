@@ -159,7 +159,7 @@ data.extend([
 const stageMoveToolColor: ColorArray = [255, 155, 65]
 const stageMoveToolAltColor: ColorArray = [65, 200, 255]
 
-const moveToStageTool: SelectionToolPrototype = {
+const stageMoveTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.StageMoveTool,
   icon: "__bp100__/graphics/icons/stage-move-tool.png",
@@ -171,7 +171,7 @@ const moveToStageTool: SelectionToolPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-a[move-to-stage]",
+  order: "z[bp100]-a[stage-move-tool]",
 
   selection_color: stageMoveToolColor,
   selection_cursor_box_type: "copy",
@@ -182,20 +182,20 @@ const moveToStageTool: SelectionToolPrototype = {
   alt_selection_mode: ["entity-with-owner"],
 }
 
-const getMoveToStageToolInput: CustomInputPrototype = {
+const stageMoveToolInput: CustomInputPrototype = {
   type: "custom-input",
   name: Prototypes.StageMoveTool,
   localised_name: ["item-name." + Prototypes.StageMoveTool],
   key_sequence: "",
   item_to_spawn: Prototypes.StageMoveTool,
   action: "spawn-item",
-  order: "a[tools]-[move-to-stage]",
+  order: "a[tools]-[stage-move-tool]",
 }
 
 data.extend([
-  moveToStageTool,
+  stageMoveTool,
   selectionToolToShortcut(
-    moveToStageTool,
+    stageMoveTool,
     {
       filename: "__bp100__/graphics/icons/stage-move-tool-black.png",
       size: 32,
@@ -204,7 +204,7 @@ data.extend([
     Prototypes.StageMoveTool,
     "default",
   ),
-  getMoveToStageToolInput,
+  stageMoveToolInput,
 ])
 
 // Sprites

@@ -23,7 +23,7 @@ function updateItemLabel(cursor: LuaItemStack, stage: Stage): void {
 }
 export function updateMoveToolInCursor(playerIndex: PlayerIndex): void {
   const player = game.get_player(playerIndex)!
-  const cursor = playerIsHoldingMoveToStageTool(player)
+  const cursor = getCursorIfHoldingStageMoveTool(player)
   if (!cursor) return
 
   const stage = playerCurrentStage(playerIndex).get()
@@ -52,14 +52,14 @@ Events.on_player_cursor_stack_changed((e) => {
   updateMoveToolInCursor(playerIndex)
 })
 
-function playerIsHoldingMoveToStageTool(player: LuaPlayer): LuaItemStack | nil {
+function getCursorIfHoldingStageMoveTool(player: LuaPlayer): LuaItemStack | nil {
   const cursor = player.cursor_stack
   if (!cursor || !cursor.valid_for_read || cursor.name !== Prototypes.StageMoveTool) return
   return cursor
 }
 
 function getStageAndData(player: LuaPlayer): LuaMultiReturn<[LuaItemStack, Stage, AssemblyPlayerData] | [_?: nil]> {
-  const cursor = playerIsHoldingMoveToStageTool(player)
+  const cursor = getCursorIfHoldingStageMoveTool(player)
   if (!cursor) return $multi()
 
   const stage = playerCurrentStage(player.index).get()

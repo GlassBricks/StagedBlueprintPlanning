@@ -13,10 +13,10 @@ import { destroy } from "../lib/factoriojsx"
 import { Migrations } from "../lib/migration"
 import "./CurrentAssembly"
 import "./editor-fix"
-import "./move-to-stage-tool"
 import "./NewAssembly"
 import "./opened-entity"
 import "./player-navigation"
+import "./stage-move-tool"
 
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {

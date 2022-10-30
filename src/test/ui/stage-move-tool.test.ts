@@ -13,7 +13,7 @@ import { getAssemblyPlayerData } from "../../assembly/player-assembly-data"
 import { createUserAssembly } from "../../assembly/UserAssembly"
 import { CustomInputs, Prototypes } from "../../constants"
 import { Events } from "../../lib"
-import { updateMoveToolInCursor } from "../../ui/move-to-stage-tool"
+import { updateMoveToolInCursor } from "../../ui/stage-move-tool"
 
 let player: LuaPlayer
 before_each(() => {
