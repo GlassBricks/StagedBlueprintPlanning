@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.0
-Date: ????
+Date: 2022-10-30
   Features:
     - Added the "Stage Move" tool. See the mod portal description for more info.
   Changes:
