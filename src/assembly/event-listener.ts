@@ -664,9 +664,7 @@ Events.on_player_selected_area((e) => {
   if (!playerData) return
   const targetStage = playerData.moveTargetStage
   if (!targetStage) {
-    game
-      .get_player(playerIndex)!
-      .print("bp100: moveTargetStage was not set. This is a bug; please report this to the mod author!")
+    error("moveTargetStage was not set")
     return
   }
 
@@ -674,6 +672,17 @@ Events.on_player_selected_area((e) => {
   const { onSendToStage } = WorldListener
   for (const entity of e.entities) {
     onSendToStage(assembly, entity, stageNumber, targetStage, playerIndex)
+  }
+})
+Events.on_player_alt_selected_area((e) => {
+  if (e.item !== Prototypes.StageMoveTool) return
+  const stage = getStageAtSurface(e.surface.index)
+  if (!stage) return
+
+  const { stageNumber, assembly } = stage
+  const { onBringToStage } = WorldListener
+  for (const entity of e.entities) {
+    onBringToStage(assembly, entity, stageNumber, e.player_index)
   }
 })
 

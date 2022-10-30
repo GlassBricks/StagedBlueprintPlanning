@@ -399,7 +399,7 @@ describe("move to this stage", () => {
   })
 })
 
-describe("stag-move tool", () => {
+describe("stage-move tool", () => {
   test("send to stage", () => {
     const entity = surface.create_entity({
       name: "inserter",
@@ -418,6 +418,24 @@ describe("stag-move tool", () => {
       tiles: [],
     })
     assert.spy(updater.onSendToStage).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
+  })
+  test("move to this stage (alt)", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    assert.not_nil(entity, "entity found")
+    player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
+    Events.raiseFakeEventNamed("on_player_alt_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.StageMoveTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+    })
+    assert.spy(updater.onBringToStage).called_with(match.ref(assembly), match.ref(entity), 1, 1)
   })
 })
 

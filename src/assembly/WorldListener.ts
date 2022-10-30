@@ -81,9 +81,7 @@ export interface WorldListener {
   /** User activated. */
   onMoveEntityToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void
 
-  /*
-   * Only moves if stage matches the fromStage
-   */
+  /** Only moves if stage matches the fromStage */
   onSendToStage(
     assembly: Assembly,
     entity: LuaEntity,
@@ -91,6 +89,10 @@ export interface WorldListener {
     toStage: StageNumber,
     byPlayer: PlayerIndex,
   ): void
+
+  /** For alt-selecting with stage-move tool: does not move settings remnants, only notifies on error */
+  onBringToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void
+
   onEntityMoved(
     assembly: Assembly,
     entity: LuaEntity,
@@ -278,6 +280,9 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
   }
 
+  function createCannotMoveUpgradedUndergroundNotification(entity: AssemblyEntity, byPlayer: PlayerIndex): void {
+    createNotification(entity, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+  }
   return {
     onEntityCreated,
     onEntityDeleted(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void {
@@ -405,9 +410,22 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
         return
       }
       if (result === "cannot-move-upgraded-underground") {
-        createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+        createCannotMoveUpgradedUndergroundNotification(existing, byPlayer)
       } else if (result === "settings-remnant-revived") {
         error("Settings remnant revived should not happen here")
+      } else {
+        assertNever(result)
+      }
+    },
+    onBringToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void {
+      const existing = getEntityFromEntityOrPreview(entity, stage, assembly)
+      if (!existing || existing.isSettingsRemnant || existing.firstStage === stage) return
+      const result = moveEntityToStage(assembly, existing, stage)
+      if (result === "updated") return
+      if (result === "cannot-move-upgraded-underground") {
+        createCannotMoveUpgradedUndergroundNotification(existing, byPlayer)
+      } else if (result === "no-change" || result === "settings-remnant-revived") {
+        error(`Did not expect result ${result} from moveEntityToStage`)
       } else {
         assertNever(result)
       }
