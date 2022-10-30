@@ -118,6 +118,8 @@ export declare const enum L_Interaction {
   BlueprintBookEmpty = "bp100.interaction.blueprint-book-empty",
   /** The only entity you should not have removed was removed from the blueprint... snap to grid settings have not been saved properly. Try editing the blueprint again without removing entities. */
   BlueprintFirstEntityRemoved = "bp100.interaction.blueprint-first-entity-removed",
+  /** Cannot move to same stage */
+  CannotMoveToSameStage = "bp100.interaction.cannot-move-to-same-stage",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** (Not in a staged build) */

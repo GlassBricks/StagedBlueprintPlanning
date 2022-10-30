@@ -9,18 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const enum CustomInputs {
-  Build = "bp100:build",
-  RemovePoleCables = "bp100:remove-pole-cables",
-
-  NextStage = "bp100:next-stage",
-  PreviousStage = "bp100:previous-stage",
-  GoToFirstStage = "bp100:go-to-first-stage",
-  GoToNextNotableStage = "bp100:go-to-next-notable-stage",
-
-  MoveToThisStage = "bp100:move-to-this-stage",
-}
-
 export const enum Settings {
   CyclicNavigation = "bp100:cyclic-navigation",
   EntityInfoLocation = "bp100:entity-info-location",
@@ -51,6 +39,21 @@ export const enum Prototypes {
 export const enum Sprites {
   ExternalLinkWhite = "bp100:external-link-white",
   ExternalLinkBlack = "bp100:external-link-black",
+}
+
+export const enum CustomInputs {
+  Build = "bp100:build",
+  RemovePoleCables = "bp100:remove-pole-cables",
+
+  NextStage = "bp100:next-stage",
+  PreviousStage = "bp100:previous-stage",
+  GoToFirstStage = "bp100:go-to-first-stage",
+  GoToNextNotableStage = "bp100:go-to-next-notable-stage",
+
+  MoveToThisStage = "bp100:move-to-this-stage",
+
+  StageSelectNext = "bp100:blueprint-book-next",
+  StageSelectPrevious = "bp100:blueprint-book-previous",
 }
 
 // noinspection JSUnusedGlobalSymbols

@@ -26,23 +26,6 @@ import {
 
 declare const data: Data
 
-const buildInput: CustomInputPrototype = {
-  type: "custom-input",
-  name: CustomInputs.Build,
-
-  key_sequence: "",
-  linked_game_control: "build",
-}
-const removePoleCablesInput: CustomInputPrototype = {
-  name: CustomInputs.RemovePoleCables,
-  type: "custom-input",
-
-  key_sequence: "",
-  linked_game_control: "remove-pole-cables",
-}
-
-data.extend([buildInput, removePoleCablesInput])
-
 // entity marker
 const entityMarker: SimpleEntityPrototype = {
   type: "simple-entity",
@@ -173,8 +156,9 @@ data.extend([
   getCleanupToolInput,
 ])
 // Move to stage tool
-const moveToStageToolColor: ColorArray = [65, 200, 255]
-const moveToStageAltColor: ColorArray = [255, 155, 65]
+const moveToStageToolColor: ColorArray = [255, 155, 65]
+const moveToStageAltColor: ColorArray = [65, 200, 255]
+
 const moveToStageTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.MoveToStageTool,
@@ -190,7 +174,7 @@ const moveToStageTool: SelectionToolPrototype = {
 
   selection_color: moveToStageToolColor,
   selection_cursor_box_type: "copy",
-  selection_mode: ["deconstruct"],
+  selection_mode: ["blueprint"],
 
   alt_selection_color: moveToStageAltColor,
   alt_selection_cursor_box_type: "pair",
@@ -221,6 +205,22 @@ data.extend([
   createSprite(Sprites.ExternalLinkBlack, "__bp100__/graphics/icons/external-link-black.png", 32),
   createSprite(Sprites.ExternalLinkWhite, "__bp100__/graphics/icons/external-link-white.png", 32),
 ])
+
+const buildInput: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.Build,
+
+  key_sequence: "",
+  linked_game_control: "build",
+}
+const removePoleCablesInput: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.RemovePoleCables,
+
+  key_sequence: "",
+  linked_game_control: "remove-pole-cables",
+}
+data.extend([buildInput, removePoleCablesInput])
 
 const nextStage: CustomInputPrototype = {
   type: "custom-input",
@@ -257,5 +257,25 @@ const moveToThisStage: CustomInputPrototype = {
   key_sequence: "CONTROL + ALT + mouse-button-3",
   order: "b[navigate]-e[move-to-this-stage]",
 }
+const blueprintBookNextInput: CustomInputPrototype = {
+  name: CustomInputs.StageSelectNext,
+  type: "custom-input",
 
-data.extend([nextStage, previousStage, goToFirstStage, goToNextNotableStage, moveToThisStage])
+  key_sequence: "SHIFT + mouse-wheel-down",
+}
+const blueprintBookPreviousInput: CustomInputPrototype = {
+  name: CustomInputs.StageSelectPrevious,
+  type: "custom-input",
+
+  key_sequence: "SHIFT + mouse-wheel-up",
+}
+
+data.extend([
+  nextStage,
+  previousStage,
+  goToFirstStage,
+  goToNextNotableStage,
+  moveToThisStage,
+  blueprintBookNextInput,
+  blueprintBookPreviousInput,
+])

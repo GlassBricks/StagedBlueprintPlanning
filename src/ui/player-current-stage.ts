@@ -10,6 +10,7 @@
  */
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
+import { getAssemblyPlayerData } from "../assembly/player-assembly-data"
 import { AssemblyEvents, getStageAtSurface } from "../assembly/UserAssembly"
 import {
   assertNever,
@@ -22,7 +23,6 @@ import {
   state,
 } from "../lib"
 import { Pos } from "../lib/geometry"
-import { getAssemblyPlayerData } from "./player-assembly-data"
 
 declare global {
   interface PlayerData {

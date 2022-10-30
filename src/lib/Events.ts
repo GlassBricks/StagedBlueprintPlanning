@@ -11,7 +11,7 @@
 
 /** @noSelfInFile */
 
-import { PRecord } from "./util-types"
+import { Mutable, PRecord } from "./util-types"
 
 export interface ScriptEvents {
   on_init: nil
@@ -62,7 +62,7 @@ export interface EventsObj extends EventsRegistration {
   clearHandlers<E extends EventId<any, any> | string>(event: E): void
 
   raiseFakeEvent<E extends EventId<any, any>>(event: E, data: Omit<E["_eventData"], keyof EventData>): void
-  raiseFakeEvent<E extends string>(event: E, data: Omit<CustomInputEvent, keyof EventData>): void
+  raiseFakeEvent(event: string, data: Omit<CustomInputEvent, keyof EventData | "input_name">): void
   raiseFakeEvent<E extends EventId<any, any> | string>(event: E, data: Omit<EventDataOf<E>, keyof EventData>): void
   raiseFakeEventNamed<E extends keyof NamedEventTypes>(event: E, data: Omit<NamedEventTypes[E], keyof EventData>): void
 }
@@ -108,11 +108,15 @@ function registerInternal(id: keyof any, handler: AnyHandler) {
 function raiseFakeEvent(id: keyof any, data: any) {
   const handlers = registeredHandlers[id]
   if (!handlers) return
-  if (data)
+  if (data) {
     Object.assign(data, {
       tick: game.tick,
       name: typeof id !== "object" ? id : nil,
     })
+    if (typeof id === "string") {
+      ;(data as Mutable<CustomInputEvent>).input_name = id
+    }
+  }
   for (const handler of handlers) {
     handler(data)
   }

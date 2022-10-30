@@ -12,7 +12,6 @@
 import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableEntityMap } from "../entity/EntityMap"
 import { MutableState, Observable, State } from "../lib"
-import { Position } from "../lib/geometry"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface Assembly {
@@ -21,10 +20,6 @@ export interface Assembly {
   getStageName(stage: StageNumber): LocalisedString
   getSurface(stage: StageNumber): LuaSurface | nil
   readonly content: MutableEntityMap
-}
-interface AssemblyPlayerData {
-  lastStage: StageNumber
-  lastPosition: Position
 }
 export interface UserAssembly extends Assembly {
   readonly id: AssemblyId

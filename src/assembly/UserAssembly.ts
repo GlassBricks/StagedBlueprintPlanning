@@ -19,8 +19,6 @@ import {
   Mutable,
   MutableState,
   nilIfEmpty,
-  onPlayerRemoved,
-  PRecord,
   RegisterClass,
   state,
   State,
@@ -31,7 +29,6 @@ import { L_Bp100 } from "../locale"
 import {
   AssemblyBlueprintSettings,
   AssemblyId,
-  AssemblyPlayerData,
   AutoSetTilesType,
   BlueprintNameMode,
   BookNameMode,
@@ -72,8 +69,6 @@ class UserAssemblyImpl implements UserAssembly {
 
   content = newEntityMap()
   localEvents = new Event<LocalAssemblyEvent>()
-
-  playerData: PRecord<PlayerIndex, Partial<AssemblyPlayerData>> = {}
 
   assemblyBlueprintSettings: AssemblyBlueprintSettings = {
     autoLandfill: state(false),
@@ -336,17 +331,13 @@ Events.on_pre_surface_deleted((e) => {
   const stage = getStageAtSurface(e.surface_index)
   if (stage !== nil) stage.deleteInAssembly()
 })
-onPlayerRemoved((index) => {
-  for (const [, assembly] of global.assemblies) {
-    delete assembly.playerData[index]
-  }
-})
 
-Migrations.to("0.2.1", () => {
-  for (const [, assembly] of global.assemblies) {
-    assembly.playerData = {}
-  }
-})
+// Migrations.to("0.2.1", () => {
+//   for (const [, assembly] of global.assemblies) {
+//     assembly.playerData = {}
+//   }
+// })
+// removed in 0.9.0
 Migrations.to("0.5.0", () => {
   for (const [, assembly] of global.assemblies) {
     interface OldAssembly {
@@ -411,3 +402,4 @@ Migrations.to("0.8.0", () => {
     }
   }
 })
+// player data migrated in 0.9.0, from ui/player-assembly-data.ts

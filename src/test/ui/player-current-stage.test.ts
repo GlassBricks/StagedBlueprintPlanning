@@ -22,6 +22,7 @@ after_all(() => {
   const player = game.players[1]!
   player.teleport([0, 0], 1 as SurfaceIndex)
   _deleteAllAssemblies()
+  player.clear_cursor()
 })
 
 test("playerCurrentStage", () => {

@@ -763,10 +763,23 @@ export function createAssemblyEntity<E extends Entity>(
 }
 
 // vehicles and units
-const excludedTypes: ReadonlyLuaSet<string> = newLuaSet("unit", "car", "spider-vehicle")
+const excludedTypes: Record<string, true> = {
+  unit: true,
+  car: true,
+  "spider-vehicle": true,
+}
 
 export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
-  return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation") && !excludedTypes.has(luaEntity.type)
+  return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation") && !excludedTypes[luaEntity.type]
+}
+
+const excludedAndTrains = {
+  ...excludedTypes,
+  ...(rollingStockTypes as unknown as Record<string, true>),
+}
+
+export function isMultiStageAssemblyEntity(luaEntity: LuaEntity): boolean {
+  return luaEntity.is_entity_with_force && luaEntity.has_flag("player-creation") && !excludedAndTrains[luaEntity.type]
 }
 
 export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {

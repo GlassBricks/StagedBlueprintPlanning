@@ -9,17 +9,19 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyId, UserAssembly } from "../assembly/AssemblyDef"
-import { getAllAssemblies } from "../assembly/migrations"
-import { AssemblyEvents } from "../assembly/UserAssembly"
 import { StageNumber } from "../entity/AssemblyEntity"
 import { onPlayerInit, PRecord } from "../lib"
 import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+import { AssemblyId, UserAssembly } from "./AssemblyDef"
+import { getAllAssemblies } from "./migrations"
+import { AssemblyEvents } from "./UserAssembly"
 
-interface AssemblyPlayerData {
+export interface AssemblyPlayerData {
   lastStage?: StageNumber
   lastPosition?: Position
+
+  moveSelectedStage?: StageNumber
 }
 
 declare global {
