@@ -11,6 +11,7 @@
 
 import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _assertInValidState } from "../../assembly/event-listener"
+import { getAssemblyPlayerData } from "../../assembly/player-assembly-data"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { WorldListener } from "../../assembly/WorldListener"
 import { CustomInputs, Prototypes } from "../../constants"
@@ -395,6 +396,28 @@ describe("move to this stage", () => {
       force: "player",
     })
     testOnEntity(entity)
+  })
+})
+
+describe("move to stage tool", () => {
+  test("send to stage", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    assert.not_nil(entity, "entity found")
+    player.cursor_stack!.set_stack(Prototypes.MoveToStageTool)
+    getAssemblyPlayerData(player.index, assembly)!.moveTargetStage = 2
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.MoveToStageTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+    })
+    assert.spy(updater.onSendToStage).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
   })
 })
 

@@ -39,12 +39,12 @@ export function updateMoveToolInCursor(playerIndex: PlayerIndex): void {
 
   const assemblyPlayerData = getAssemblyPlayerData(playerIndex, assembly)
   if (!assemblyPlayerData) return
-  let selectedStage = assemblyPlayerData.moveSelectedStage
+  let selectedStage = assemblyPlayerData.moveTargetStage
   if (!selectedStage || selectedStage < 1 || selectedStage > assembly.maxStage()) {
     selectedStage = stage.stageNumber
   }
 
-  assemblyPlayerData.moveSelectedStage = selectedStage
+  assemblyPlayerData.moveTargetStage = selectedStage
   updateItemLabel(cursor, assembly.getStage(selectedStage)!)
 }
 Events.on_player_cursor_stack_changed((e) => {
@@ -76,13 +76,13 @@ function changeSelectedStage(player: LuaPlayer, delta: number) {
   const [cursor, stage, assemblyPlayerData] = getStageAndData(player)
   if (!cursor) return
 
-  let selectedStage = assemblyPlayerData.moveSelectedStage ?? stage.stageNumber
+  let selectedStage = assemblyPlayerData.moveTargetStage ?? stage.stageNumber
   selectedStage += delta
   if (selectedStage < 1) selectedStage = 1
   const maxStage = stage.assembly.maxStage()
   if (selectedStage > maxStage) selectedStage = maxStage
 
-  assemblyPlayerData.moveSelectedStage = selectedStage
+  assemblyPlayerData.moveTargetStage = selectedStage
   updateItemLabel(cursor, stage.assembly.getStage(selectedStage)!)
 }
 Events.on(CustomInputs.StageSelectNext, (e) => {

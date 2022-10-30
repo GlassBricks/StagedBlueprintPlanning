@@ -18,6 +18,7 @@ import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
+import { getAssemblyPlayerData } from "./player-assembly-data"
 import { getStageAtSurface } from "./UserAssembly"
 import { WorldListener } from "./WorldListener"
 
@@ -649,6 +650,30 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
       text: [L_Interaction.NotInAnAssembly],
       create_at_cursor: true,
     })
+  }
+})
+
+// Move to stage tool
+Events.on_player_selected_area((e) => {
+  if (e.item !== Prototypes.MoveToStageTool) return
+  const stage = getStageAtSurface(e.surface.index)
+  if (!stage) return
+
+  const playerIndex = e.player_index
+  const playerData = getAssemblyPlayerData(playerIndex, stage.assembly)
+  if (!playerData) return
+  const targetStage = playerData.moveTargetStage
+  if (!targetStage) {
+    game
+      .get_player(playerIndex)!
+      .print("bp100: moveTargetStage was not set. This is a bug; please report this to the mod author!")
+    return
+  }
+
+  const { stageNumber, assembly } = stage
+  const { onSendToStage } = WorldListener
+  for (const entity of e.entities) {
+    onSendToStage(assembly, entity, stageNumber, targetStage, playerIndex)
   }
 })
 

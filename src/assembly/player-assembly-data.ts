@@ -21,7 +21,7 @@ export interface AssemblyPlayerData {
   lastStage?: StageNumber
   lastPosition?: Position
 
-  moveSelectedStage?: StageNumber
+  moveTargetStage?: StageNumber
 }
 
 declare global {

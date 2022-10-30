@@ -117,8 +117,8 @@ function isTestsRunning() {
   }
   return true
 }
-let shouldTryRerun = false
-const shouldTryReload = true
+let shouldTryRerun = true
+const shouldTryReload = false
 
 Events.on_tick(() => {
   if (shouldTryRerun || shouldTryReload) {

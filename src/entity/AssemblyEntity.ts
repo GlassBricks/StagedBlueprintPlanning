@@ -773,15 +773,6 @@ export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
   return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation") && !excludedTypes[luaEntity.type]
 }
 
-const excludedAndTrains = {
-  ...excludedTypes,
-  ...(rollingStockTypes as unknown as Record<string, true>),
-}
-
-export function isMultiStageAssemblyEntity(luaEntity: LuaEntity): boolean {
-  return luaEntity.is_entity_with_force && luaEntity.has_flag("player-creation") && !excludedAndTrains[luaEntity.type]
-}
-
 export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
   return stageNumber >= entity.firstStage && entity.getWorldEntity(stageNumber) === nil
 }

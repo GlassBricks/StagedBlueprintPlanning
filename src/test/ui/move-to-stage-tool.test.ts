@@ -25,17 +25,17 @@ test("current selected stage starts out as current stage", () => {
   player.teleport([0, 0], assembly.getSurface(2))
 
   const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)!
-  assert.equal(nil, assemblyPlayerData.moveSelectedStage)
+  assert.equal(nil, assemblyPlayerData.moveTargetStage)
 
   player.cursor_stack!.set_stack(Prototypes.MoveToStageTool)
   updateMoveToolInCursor(player.index)
 
-  assert.equal(2, assemblyPlayerData.moveSelectedStage)
+  assert.equal(2, assemblyPlayerData.moveTargetStage)
   assert.equal("Move to <Stage 2>", player.cursor_stack!.label)
 
   player.teleport([0, 0], assembly.getSurface(1))
 
-  assert.equal(2, assemblyPlayerData.moveSelectedStage) // still same
+  assert.equal(2, assemblyPlayerData.moveTargetStage) // still same
   assert.equal("Move to <Stage 2>", player.cursor_stack!.label)
 })
 
@@ -47,31 +47,31 @@ test("changing selected stage", () => {
   player.cursor_stack!.set_stack(Prototypes.MoveToStageTool)
   updateMoveToolInCursor(player.index)
 
-  assert.equal(2, assemblyPlayerData.moveSelectedStage)
+  assert.equal(2, assemblyPlayerData.moveTargetStage)
   assert.equal("Move to <Stage 2>", player.cursor_stack!.label)
 
   Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  assert.equal(3, assemblyPlayerData.moveSelectedStage)
+  assert.equal(3, assemblyPlayerData.moveTargetStage)
   assert.equal("Move to <Stage 3>", player.cursor_stack!.label)
   Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  assert.equal(3, assemblyPlayerData.moveSelectedStage) // max stage
+  assert.equal(3, assemblyPlayerData.moveTargetStage) // max stage
 
   Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
     player_index: player.index,
     cursor_position: { x: 0, y: 0 },
   })
-  assert.equal(2, assemblyPlayerData.moveSelectedStage)
+  assert.equal(2, assemblyPlayerData.moveTargetStage)
   assert.equal("Move to <Stage 2>", player.cursor_stack!.label)
   Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
     player_index: player.index,
     cursor_position: { x: 0, y: 0 },
   })
-  assert.equal(1, assemblyPlayerData.moveSelectedStage)
+  assert.equal(1, assemblyPlayerData.moveTargetStage)
   assert.equal("Move to <Stage 1>", player.cursor_stack!.label)
   Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
     player_index: player.index,
     cursor_position: { x: 0, y: 0 },
   })
-  assert.equal(1, assemblyPlayerData.moveSelectedStage)
+  assert.equal(1, assemblyPlayerData.moveTargetStage)
   assert.equal("Move to <Stage 1>", player.cursor_stack!.label)
 })

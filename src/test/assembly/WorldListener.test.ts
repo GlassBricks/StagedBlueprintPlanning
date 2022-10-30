@@ -396,17 +396,20 @@ describe("sendEntityToStage", () => {
       totalAuCalls++
       return "updated"
     })
+    entity.replaceWorldEntity(2, luaEntity)
     worldListener.onSendToStage(assembly, luaEntity, 2, 3, playerIndex)
     assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 3)
   })
   test("ignores if not in current stage", () => {
-    const { luaEntity } = addEntity(2)
+    const { entity, luaEntity } = addEntity(2)
+    entity.replaceWorldEntity(2, luaEntity)
     assemblyUpdater.moveEntityToStage.invokes(() => {
       totalAuCalls++
       return "updated"
     })
     worldListener.onSendToStage(assembly, luaEntity, 3, 1, playerIndex)
     assert.spy(assemblyUpdater.moveEntityToStage).not_called()
+    expectedAuCalls = 0
   })
 })
 
