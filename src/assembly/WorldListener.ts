@@ -218,14 +218,10 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     if (!entityName.startsWith(Prototypes.PreviewEntityPrefix)) return nil
     const actualName = entityName.substring(Prototypes.PreviewEntityPrefix.length)
 
-    let result: AssemblyEntity | nil
     if (isRollingStockType(actualName)) {
-      result = assembly.content.findCompatibleAnyDirection(actualName, entity.position)
-    } else {
-      result = assembly.content.findCompatibleByName(actualName, entity.position, entity.direction)
+      return assembly.content.findCompatibleAnyDirection(actualName, entity.position)
     }
-    if (!result) return nil
-    if (stage >= result.firstStage || result.isSettingsRemnant) return result
+    return assembly.content.findCompatibleByName(actualName, entity.position, entity.direction)
   }
 
   function getEntityFromEntityOrPreview(
