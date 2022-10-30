@@ -45,6 +45,15 @@ Preview entities (map-view-like outlines) will be shown for each entity in lower
 
 If an entity cannot be created in any stage for any reason, an error indicator will be shown at all stages.
 
+### Stage move tool
+
+In the bottom right (shortcuts menu), you can access the stage move tool.
+
+Selecting entities will move entities in the _current_ stage to the target stage.
+Use (default keybinding) `Shift + Scroll wheel` to change the target stage.
+
+Alt-selecting with the tool will move entities from _any_ stage to the current stage.
+
 ### Changes between stages
 
 Changing the configuration of an entity between stages is supported. When this is done, the entity will be highlighted in blue, and a blueprint sprite indicator will appear in all lower stages.
@@ -53,6 +62,20 @@ Similarly, by using the _upgrade planner_ (not fast-replace), entities can be up
 Copper/circuit wire changes _between_ stages are not supported. Instead, they are always present in all stages.
 
 This is not relevant to trains, as they only appear in one stage.
+
+### Landfill/tiles
+
+Landfill/lab tiles can be automatically placed in your blueprints. See the Staged build settings gui for more info.
+
+As of now, this is the only way tiles are supported.
+
+Additionally, the "Flexible Offshore Pump Placement" startup setting enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
+
+### Blueprints
+
+Using the "Get Blueprint" button in the Stage settings gui will create a blueprint of the current stage. In the "Blueprints" tab, the "Make Blueprint Book" button will create a blueprint book of all staged.
+
+The Blueprints tab also has more options for creating blueprints, such as synchronizing grid-size settings, including the next stage's tiles in each blueprint (useful for landfill).
 
 ### Accidental data loss prevention
 
@@ -71,23 +94,9 @@ Due to limitations in implementation, if an underground can possibly connect wit
 
 ### Cleanup tool
 
-Using the staged build cleanup tool will remove "settings remnants", and attempt to revive any errored entities.
+Using the build cleanup tool will remove "settings remnants", and attempt to revive any errored entities.
 
 Reverse-selecting using the cleanup tool will **force-delete** errored entities.
-
-### Landfill/tiles
-
-Landfill/lab tiles can be automatically placed in your blueprints. See the Staged build settings gui for more info.
-
-As of now, this is the only way tiles are supported.
-
-Additionally, the "Flexible Offshore Pump Placement" startup setting enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
-
-### Blueprints
-
-Using the "Get Blueprint" button in the Stage settings gui will create a blueprint of the current stage. In the "Blueprints" tab, the "Make Blueprint Book" button will create a blueprint book of all staged.
-
-The Blueprints tab also has more options for creating blueprints, such as synchronizing grid-size settings, including the next stage's tiles in each blueprint (useful for landfill).
 
 ## Feedback
 
