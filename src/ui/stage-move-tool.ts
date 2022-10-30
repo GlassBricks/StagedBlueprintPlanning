@@ -11,22 +11,22 @@
 
 import { Stage } from "../assembly/AssemblyDef"
 import { AssemblyPlayerData, getAssemblyPlayerData } from "../assembly/player-assembly-data"
+import { getStageAtSurface } from "../assembly/UserAssembly"
 import { CustomInputs, Prototypes } from "../constants"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
-import { playerCurrentStage } from "./player-current-stage"
+import { PlayerChangedStageEvent, playerCurrentStage } from "./player-current-stage"
 
 const Events = ProtectedEvents
 
 function updateItemLabel(cursor: LuaItemStack, stage: Stage): void {
   cursor.label = "Send to " + stage.name.get()
 }
-export function updateMoveToolInCursor(playerIndex: PlayerIndex): void {
-  const player = game.get_player(playerIndex)!
+export function updateMoveToolInCursor(player: LuaPlayer): void {
   const cursor = getCursorIfHoldingStageMoveTool(player)
   if (!cursor) return
 
-  const stage = playerCurrentStage(playerIndex).get()
+  const stage = getStageAtSurface(player.surface.index)
   if (!stage) {
     player.create_local_flying_text({
       text: [L_Interaction.NotInAnAssembly],
@@ -37,7 +37,7 @@ export function updateMoveToolInCursor(playerIndex: PlayerIndex): void {
   }
   const assembly = stage.assembly
 
-  const assemblyPlayerData = getAssemblyPlayerData(playerIndex, assembly)
+  const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)
   if (!assemblyPlayerData) return
   let selectedStage = assemblyPlayerData.moveTargetStage
   if (!selectedStage || selectedStage < 1 || selectedStage > assembly.maxStage()) {
@@ -48,8 +48,10 @@ export function updateMoveToolInCursor(playerIndex: PlayerIndex): void {
   updateItemLabel(cursor, assembly.getStage(selectedStage)!)
 }
 Events.on_player_cursor_stack_changed((e) => {
-  const playerIndex = e.player_index
-  updateMoveToolInCursor(playerIndex)
+  updateMoveToolInCursor(game.get_player(e.player_index)!)
+})
+PlayerChangedStageEvent.addListener((player) => {
+  updateMoveToolInCursor(player)
 })
 
 function getCursorIfHoldingStageMoveTool(player: LuaPlayer): LuaItemStack | nil {

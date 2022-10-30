@@ -31,7 +31,7 @@ test("current selected stage starts out as current stage", () => {
   assert.equal(nil, assemblyPlayerData.moveTargetStage)
 
   player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
-  updateMoveToolInCursor(player.index)
+  updateMoveToolInCursor(player)
 
   assert.equal(2, assemblyPlayerData.moveTargetStage)
   assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
@@ -48,7 +48,7 @@ test("changing selected stage", () => {
 
   const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)!
   player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
-  updateMoveToolInCursor(player.index)
+  updateMoveToolInCursor(player)
 
   assert.equal(2, assemblyPlayerData.moveTargetStage)
   assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
