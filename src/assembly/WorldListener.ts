@@ -80,6 +80,17 @@ export interface WorldListener {
   onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void
   /** User activated. */
   onMoveEntityToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void
+
+  /*
+   * Only moves if stage matches the fromStage
+   */
+  onSendToStage(
+    assembly: Assembly,
+    entity: LuaEntity,
+    fromStage: StageNumber,
+    toStage: StageNumber,
+    byPlayer: PlayerIndex,
+  ): void
   onEntityMoved(
     assembly: Assembly,
     entity: LuaEntity,
@@ -380,6 +391,28 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       } else if (result === "cannot-move-upgraded-underground") {
         createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
       } else if (result !== "settings-remnant-revived") {
+        assertNever(result)
+      }
+    },
+    onSendToStage(
+      assembly: Assembly,
+      entity: LuaEntity,
+      fromStage: StageNumber,
+      toStage: StageNumber,
+      byPlayer: PlayerIndex,
+    ): void {
+      if (fromStage === toStage) return
+      const existing = assembly.content.findExactAtPosition(entity, fromStage, entity.position)
+      if (!existing || existing.firstStage !== fromStage || existing.isSettingsRemnant) return
+      const result = moveEntityToStage(assembly, existing, toStage)
+      if (result === "updated" || result === "no-change") {
+        return
+      }
+      if (result === "cannot-move-upgraded-underground") {
+        createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
+      } else if (result === "settings-remnant-revived") {
+        error("Settings remnant revived should not happen here")
+      } else {
         assertNever(result)
       }
     },

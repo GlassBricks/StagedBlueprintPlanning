@@ -11,7 +11,7 @@
 
 import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _assertInValidState } from "../../assembly/event-listener"
-import { createUserAssembly } from "../../assembly/UserAssembly"
+import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { WorldListener } from "../../assembly/WorldListener"
 import { CustomInputs, Prototypes } from "../../constants"
 import { getTempBpItemStack } from "../../entity/EntityHandler"
@@ -35,6 +35,7 @@ before_all(() => {
   player.teleport(pos, surface)
 })
 after_all(() => {
+  _deleteAllAssemblies()
   mock.revert(updater)
 })
 
