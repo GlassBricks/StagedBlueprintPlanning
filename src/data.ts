@@ -11,7 +11,7 @@
 
 import { Data } from "typed-factorio/data/types"
 import { empty_sprite } from "util"
-import { CustomInputs, Prototypes, Sprites } from "./constants"
+import { Colors, CustomInputs, Prototypes, Sprites } from "./constants"
 import {
   CustomInputPrototype,
   ItemGroupPrototype,
@@ -96,8 +96,8 @@ function selectionToolToShortcut(
   }
 }
 // Cleanup tool
-const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
-const cleanupReverseToolColor: ColorArray = [0.9, 0.5, 0.5]
+const cleanupToolColor = Colors.Green
+const cleanupReverseToolColor = Colors.Red
 const cleanupTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.CleanupTool,
@@ -156,8 +156,8 @@ data.extend([
   getCleanupToolInput,
 ])
 // Move to stage tool
-const stageMoveToolColor: ColorArray = [255, 155, 65]
-const stageMoveToolAltColor: ColorArray = [65, 200, 255]
+const stageMoveToolColor = Colors.Orange
+const stageMoveToolAltColor = Colors.Blueish
 
 const stageMoveTool: SelectionToolPrototype = {
   type: "selection-tool",

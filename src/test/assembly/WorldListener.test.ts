@@ -106,6 +106,11 @@ function assertNotified(entity: LuaEntity, message: LocalisedString, errorSound:
   assert.same(errorSound, cErrorSound, "notified error sound")
   notificationsAsserted = true
 }
+function assertIndicatorCreated(entity: LuaEntity, message: string) {
+  assert.spy(worldNotifier.createIndicator).called(1)
+  assert.spy(worldNotifier.createIndicator).called_with(match.ref(entity), playerIndex, message, match._)
+  notificationsAsserted = true
+}
 before_each(() => {
   notificationsAsserted = false
 })
@@ -384,13 +389,23 @@ describe("onMoveEntityToStage", () => {
       return result
     })
     worldListener.onMoveEntityToStage(assembly, luaEntity, 2, playerIndex)
-
     assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(luaEntity, message, result !== "updated")
   })
 })
-describe("sendEntityToStage", () => {
-  test("calls moveEntityToStage when moved", () => {
+describe("onSendToStage", () => {
+  test("calls moveEntityToStage and notifies if sent down", () => {
+    const { luaEntity, entity } = addEntity(2)
+    assemblyUpdater.moveEntityToStage.invokes(() => {
+      totalAuCalls++
+      return "updated"
+    })
+    entity.replaceWorldEntity(2, luaEntity)
+    worldListener.onSendToStage(assembly, luaEntity, 2, 1, playerIndex)
+    assertIndicatorCreated(luaEntity, "<<")
+    assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 1)
+  })
+  test("calls moveEntityToStage and does not notify if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.moveEntityToStage.invokes(() => {
       totalAuCalls++
@@ -398,6 +413,7 @@ describe("sendEntityToStage", () => {
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onSendToStage(assembly, luaEntity, 2, 3, playerIndex)
+    assert.spy(worldNotifier.createIndicator).not_called()
     assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 3)
   })
   test("ignores if not in current stage", () => {
@@ -410,6 +426,41 @@ describe("sendEntityToStage", () => {
     worldListener.onSendToStage(assembly, luaEntity, 3, 1, playerIndex)
     assert.spy(assemblyUpdater.moveEntityToStage).not_called()
     expectedAuCalls = 0
+  })
+  describe("onBringToStage", () => {
+    test("calls moveEntityToStage when moved, and notifies if sent up", () => {
+      const { luaEntity, entity } = addEntity(2)
+      assemblyUpdater.moveEntityToStage.invokes(() => {
+        totalAuCalls++
+        return "updated"
+      })
+      entity.replaceWorldEntity(2, luaEntity)
+      worldListener.onBringToStage(assembly, luaEntity, 3, playerIndex)
+      assertIndicatorCreated(luaEntity, ">>")
+      assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 3)
+    })
+    test("calls moveEntityToStage and does not notify if sent down", () => {
+      const { luaEntity, entity } = addEntity(2)
+      assemblyUpdater.moveEntityToStage.invokes(() => {
+        totalAuCalls++
+        return "updated"
+      })
+      entity.replaceWorldEntity(2, luaEntity)
+      worldListener.onBringToStage(assembly, luaEntity, 1, playerIndex)
+      assert.spy(worldNotifier.createIndicator).not_called()
+      assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 1)
+    })
+    test("ignores if called at same stage", () => {
+      const { entity, luaEntity } = addEntity(2)
+      entity.replaceWorldEntity(2, luaEntity)
+      assemblyUpdater.moveEntityToStage.invokes(() => {
+        totalAuCalls++
+        return "updated"
+      })
+      worldListener.onBringToStage(assembly, luaEntity, 2, playerIndex)
+      assert.spy(assemblyUpdater.moveEntityToStage).not_called()
+      expectedAuCalls = 0
+    })
   })
 })
 

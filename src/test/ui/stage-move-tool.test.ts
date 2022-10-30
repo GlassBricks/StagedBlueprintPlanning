@@ -19,6 +19,9 @@ let player: LuaPlayer
 before_each(() => {
   player = game.players[1]!
 })
+after_each(() => {
+  player.cursor_stack!.clear()
+})
 
 test("current selected stage starts out as current stage", () => {
   const assembly = createUserAssembly("Test", 3)

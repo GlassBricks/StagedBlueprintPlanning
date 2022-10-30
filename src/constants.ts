@@ -130,3 +130,10 @@ export type BuildableEntityType = keyof typeof BuildableEntityTypesDef
 export const enum L_Game {
   CantBeRotated = "cant-be-rotated",
 }
+
+export namespace Colors {
+  export const Orange: ColorArray = [255, 155, 65]
+  export const Blueish: ColorArray = [65, 200, 255]
+  export const Green: ColorArray = [0.5, 0.9, 0.5]
+  export const Red: ColorArray = [0.9, 0.5, 0.5]
+}

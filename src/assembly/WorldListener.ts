@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { L_Game, Prototypes } from "../constants"
+import { Colors, L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
@@ -107,10 +107,16 @@ export interface WorldListener {
  */
 export interface WorldNotifier {
   createNotification(
-    entity: { position: Position; surface?: LuaSurface } | nil,
+    entity: { position: Position; surface?: LuaSurface },
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
     errorSound: boolean,
+  ): void
+  createIndicator(
+    entity: { position: Position; surface?: LuaSurface },
+    playerIndex: PlayerIndex | nil,
+    text: string,
+    color: Color | ColorArray,
   ): void
 }
 
@@ -133,7 +139,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     updateWiresFromWorld,
   } = assemblyUpdater
   // ^ for refactoring purposes only
-  const { createNotification } = notifier
+  const { createNotification, createIndicator } = notifier
 
   function onEntityCreated(
     assembly: Assembly,
@@ -406,22 +412,28 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       const existing = assembly.content.findExactAtPosition(entity, fromStage, entity.position)
       if (!existing || existing.firstStage !== fromStage || existing.isSettingsRemnant) return
       const result = moveEntityToStage(assembly, existing, toStage)
-      if (result === "updated" || result === "no-change") {
+      if (result === "updated") {
+        if (toStage < fromStage) createIndicator(entity, byPlayer, "<<", Colors.Orange)
         return
       }
       if (result === "cannot-move-upgraded-underground") {
         createCannotMoveUpgradedUndergroundNotification(existing, byPlayer)
-      } else if (result === "settings-remnant-revived") {
-        error("Settings remnant revived should not happen here")
+      } else if (result === "settings-remnant-revived" || result === "no-change") {
+        error(`Did not expect result ${result} when sending entity to stage`)
       } else {
         assertNever(result)
       }
     },
     onBringToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void {
       const existing = getEntityFromEntityOrPreview(entity, stage, assembly)
-      if (!existing || existing.isSettingsRemnant || existing.firstStage === stage) return
+      if (!existing || existing.isSettingsRemnant) return
+      const oldStage = existing.firstStage
+      if (oldStage === stage) return
       const result = moveEntityToStage(assembly, existing, stage)
-      if (result === "updated") return
+      if (result === "updated") {
+        if (oldStage < stage) createIndicator(entity, byPlayer, ">>", Colors.Blueish)
+        return
+      }
       if (result === "cannot-move-upgraded-underground") {
         createCannotMoveUpgradedUndergroundNotification(existing, byPlayer)
       } else if (result === "no-change" || result === "settings-remnant-revived") {
@@ -451,37 +463,46 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
 const WorldNotifier: WorldNotifier = {
   createNotification(
-    at:
-      | {
-          position: Position
-          surface?: LuaSurface
-        }
-      | nil,
+    at: {
+      position: Position
+      surface?: LuaSurface
+    },
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
     playSound: boolean,
   ): void {
-    const player = playerIndex ? game.get_player(playerIndex) : nil
+    const player = playerIndex && game.get_player(playerIndex)
     if (player) {
-      if (at) {
-        player.create_local_flying_text({
-          text: message,
-          position: at.position,
-        })
-      } else {
-        player.create_local_flying_text({
-          text: message,
-          create_at_cursor: true,
-        })
-      }
+      player.create_local_flying_text({
+        text: message,
+        position: at.position,
+      })
       if (playSound) player.play_sound({ path: "utility/cannot_build" })
-    } else if (at && at.surface && at.surface.valid) {
+    } else if (at.surface && at.surface.valid) {
       at.surface.create_entity({
         name: "flying-text",
         position: at.position,
         text: message,
       })
     }
+  },
+  createIndicator(
+    entity: { position: Position; surface?: LuaSurface },
+    playerIndex: PlayerIndex | nil,
+    text: string,
+    color: Color | ColorArray,
+  ): void {
+    const player = playerIndex && game.get_player(playerIndex)
+    if (!player) return
+
+    const { x, y } = entity.position
+    player.create_local_flying_text({
+      text,
+      color,
+      position: { x, y: y - 0.5 },
+      speed: 0.2,
+      time_to_live: 60,
+    })
   },
 }
 
