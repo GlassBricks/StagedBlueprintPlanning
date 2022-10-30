@@ -78,6 +78,23 @@ const blueprintSubgroup: ItemSubgroupPrototype = {
 
 data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup, blueprintSubgroup])
 
+function selectionToolToShortcut(
+  prototype: SelectionToolPrototype,
+  icon: Sprite,
+  associatedControl: string | nil,
+  style: ShortcutPrototype["style"] = "blue",
+): ShortcutPrototype {
+  return {
+    type: "shortcut",
+    name: prototype.name,
+    order: prototype.order,
+    action: "spawn-item",
+    item_to_spawn: prototype.name,
+    icon,
+    style,
+    associated_control_input: associatedControl,
+  }
+}
 // Cleanup tool
 const cleanupToolColor: ColorArray = [0.5, 0.9, 0.5]
 const cleanupReverseToolColor: ColorArray = [0.9, 0.5, 0.5]
@@ -103,36 +120,19 @@ const cleanupTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-b[cleanup]",
 
-  selection_mode: ["any-entity"],
+  selection_mode: ["entity-with-owner"],
   selection_color: cleanupToolColor,
   selection_cursor_box_type: "entity",
 
-  alt_selection_mode: ["any-entity"],
+  alt_selection_mode: ["entity-with-owner"],
   alt_selection_color: cleanupToolColor,
   alt_selection_cursor_box_type: "entity",
 
-  reverse_selection_mode: ["any-entity"],
+  reverse_selection_mode: ["entity-with-owner"],
   reverse_selection_color: cleanupReverseToolColor,
   reverse_selection_cursor_box_type: "not-allowed",
 }
 
-function selectionToolToShortcut(
-  prototype: SelectionToolPrototype,
-  icon: Sprite,
-  associatedControl?: string,
-): ShortcutPrototype {
-  const value: ShortcutPrototype = {
-    type: "shortcut",
-    name: prototype.name,
-    order: prototype.order,
-    action: "spawn-item",
-    item_to_spawn: prototype.name,
-    icon,
-    style: "blue",
-    associated_control_input: associatedControl,
-  }
-  return value
-}
 const getCleanupToolInput: CustomInputPrototype = {
   type: "custom-input",
   name: Prototypes.CleanupTool,
@@ -156,14 +156,15 @@ data.extend([
   getCleanupToolInput,
 ])
 // Move to stage tool
-const moveToStageToolColor: ColorArray = [255, 155, 65]
-const moveToStageAltColor: ColorArray = [65, 200, 255]
+const stageMoveToolColor: ColorArray = [255, 155, 65]
+const stageMoveToolAltColor: ColorArray = [65, 200, 255]
 
 const moveToStageTool: SelectionToolPrototype = {
   type: "selection-tool",
-  name: Prototypes.MoveToStageTool,
-  icon: "__bp100__/graphics/icons/move-to-stage.png",
+  name: Prototypes.StageMoveTool,
+  icon: "__bp100__/graphics/icons/stage-move-tool.png",
   icon_size: 64,
+  icon_mipmaps: 4,
   flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
 
@@ -172,16 +173,39 @@ const moveToStageTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-a[move-to-stage]",
 
-  selection_color: moveToStageToolColor,
+  selection_color: stageMoveToolColor,
   selection_cursor_box_type: "copy",
-  selection_mode: ["blueprint"],
+  selection_mode: ["deconstruct"],
 
-  alt_selection_color: moveToStageAltColor,
-  alt_selection_cursor_box_type: "pair",
-  alt_selection_mode: ["deconstruct"],
+  alt_selection_color: stageMoveToolAltColor,
+  alt_selection_cursor_box_type: "electricity",
+  alt_selection_mode: ["entity-with-owner"],
 }
 
-data.extend([moveToStageTool])
+const getMoveToStageToolInput: CustomInputPrototype = {
+  type: "custom-input",
+  name: Prototypes.StageMoveTool,
+  localised_name: ["item-name." + Prototypes.StageMoveTool],
+  key_sequence: "",
+  item_to_spawn: Prototypes.StageMoveTool,
+  action: "spawn-item",
+  order: "a[tools]-[move-to-stage]",
+}
+
+data.extend([
+  moveToStageTool,
+  selectionToolToShortcut(
+    moveToStageTool,
+    {
+      filename: "__bp100__/graphics/icons/stage-move-tool-black.png",
+      size: 32,
+      mipmap_count: 2,
+    },
+    Prototypes.StageMoveTool,
+    "default",
+  ),
+  getMoveToStageToolInput,
+])
 
 // Sprites
 function createSprite(

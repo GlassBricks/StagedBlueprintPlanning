@@ -54,7 +54,7 @@ Events.on_player_cursor_stack_changed((e) => {
 
 function playerIsHoldingMoveToStageTool(player: LuaPlayer): LuaItemStack | nil {
   const cursor = player.cursor_stack
-  if (!cursor || !cursor.valid_for_read || cursor.name !== Prototypes.MoveToStageTool) return
+  if (!cursor || !cursor.valid_for_read || cursor.name !== Prototypes.StageMoveTool) return
   return cursor
 }
 

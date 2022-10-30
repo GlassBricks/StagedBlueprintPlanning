@@ -33,7 +33,7 @@ export const enum Prototypes {
 
   CleanupTool = "bp100:cleanup-tool",
 
-  MoveToStageTool = "bp100:move-to-stage-tool",
+  StageMoveTool = "bp100:move-to-stage-tool",
 }
 
 export const enum Sprites {

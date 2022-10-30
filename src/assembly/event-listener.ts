@@ -655,7 +655,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
 
 // Move to stage tool
 Events.on_player_selected_area((e) => {
-  if (e.item !== Prototypes.MoveToStageTool) return
+  if (e.item !== Prototypes.StageMoveTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
 

@@ -132,6 +132,10 @@ export interface SelectionToolPrototype extends Omit<ItemPrototype, "type"> {
   entity_filters?: string[]
   alt_entity_filters?: string[]
   reverse_entity_filters?: string[]
+
+  entity_filter_mode?: "whitelist" | "blacklist"
+  alt_entity_filter_mode?: "whitelist" | "blacklist"
+  reverse_entity_filter_mode?: "whitelist" | "blacklist"
 }
 type SelectionMode =
   | "blueprint"

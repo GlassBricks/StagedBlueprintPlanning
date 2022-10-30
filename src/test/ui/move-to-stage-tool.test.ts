@@ -27,7 +27,7 @@ test("current selected stage starts out as current stage", () => {
   const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)!
   assert.equal(nil, assemblyPlayerData.moveTargetStage)
 
-  player.cursor_stack!.set_stack(Prototypes.MoveToStageTool)
+  player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
   updateMoveToolInCursor(player.index)
 
   assert.equal(2, assemblyPlayerData.moveTargetStage)
@@ -44,7 +44,7 @@ test("changing selected stage", () => {
   player.teleport([0, 0], assembly.getSurface(2))
 
   const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)!
-  player.cursor_stack!.set_stack(Prototypes.MoveToStageTool)
+  player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
   updateMoveToolInCursor(player.index)
 
   assert.equal(2, assemblyPlayerData.moveTargetStage)

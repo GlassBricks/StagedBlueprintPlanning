@@ -96,10 +96,19 @@ function isBuildablePrototype(prototype: EntityPrototype): boolean {
   if (!flags || !flags.includes("player-creation")) return false
   return prototype.selection_box !== nil
 }
+const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
+  "artillery-wagon",
+  "cargo-wagon",
+  "fluid-wagon",
+  "locomotive",
+)
 
 const railPrototypes = newLuaSet("straight-rail", "curved-rail")
 const previews: EntityPrototype[] = []
 const types = keys<Record<BuildableEntityType, true>>()
+
+const buildableNonTrainNames: string[] = []
+
 for (const type of types.sort()) {
   const prototypes = data.raw[type]
   if (!prototypes) continue
@@ -165,6 +174,8 @@ for (const type of types.sort()) {
     } else {
       previews.push(createRailPreview(prototype, placeableBy, flags))
     }
+
+    if (!rollingStockTypes.has(type)) buildableNonTrainNames.push(name)
   }
 }
 
@@ -290,8 +301,9 @@ function createRailPreview(
 
 data.extend(previews)
 
+const previewNames = previews.map((proxy) => proxy.name)
 const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.CleanupTool]
-cleanupTool.entity_filters =
-  cleanupTool.alt_entity_filters =
-  cleanupTool.reverse_entity_filters =
-    previews.map((proxy) => proxy.name)
+cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
+
+const stageMoveTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.StageMoveTool]
+stageMoveTool.alt_entity_filters = [...previewNames, ...buildableNonTrainNames]

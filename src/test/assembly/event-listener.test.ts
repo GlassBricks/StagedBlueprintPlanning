@@ -407,11 +407,11 @@ describe("move to stage tool", () => {
       force: "player",
     })!
     assert.not_nil(entity, "entity found")
-    player.cursor_stack!.set_stack(Prototypes.MoveToStageTool)
+    player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
     getAssemblyPlayerData(player.index, assembly)!.moveTargetStage = 2
     Events.raiseFakeEventNamed("on_player_selected_area", {
       player_index: 1 as PlayerIndex,
-      item: Prototypes.MoveToStageTool,
+      item: Prototypes.StageMoveTool,
       surface,
       area: BBox.around(pos, 10),
       entities: [entity],
