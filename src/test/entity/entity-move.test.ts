@@ -13,7 +13,7 @@ import { forceMoveEntity, tryMoveAllEntities } from "../../entity/entity-move"
 import { Pos } from "../../lib/geometry"
 import { setupEntityMoveTest } from "./setup-entity-move-test"
 
-const { surfaces, entities, origDir, origPos } = setupEntityMoveTest(nil, nil, nil, false)
+const { surfaces, entities, origDir, origPos } = setupEntityMoveTest()
 
 const newPos = { x: 1.5, y: 2 }
 const newDir = defines.direction.south

@@ -9,33 +9,20 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createStageSurface, prepareArea } from "../../assembly/surfaces"
-import { BBox, Position } from "../../lib/geometry"
+import { Position } from "../../lib/geometry"
+import { setupTestSurfaces } from "../assembly/Assembly-mock"
 
 export function setupEntityMoveTest(
   numSurfaces = 3,
   origPos: Position = { x: 1, y: 0.5 },
   origDir = defines.direction.east,
-  doReset = true,
 ): {
   surfaces: LuaSurface[]
   entities: LuaEntity[]
   origPos: Position
   origDir: defines.direction
 } {
-  const surfaces: LuaSurface[] = []
-  before_all(() => {
-    for (let i = 0; i < numSurfaces; i++) {
-      const surface = createStageSurface()
-      prepareArea(surface, BBox.around({ x: 0, y: 0 }, 20))
-      surfaces[i] = surface
-    }
-  })
-
-  if (doReset)
-    after_all(() => {
-      surfaces.forEach((s) => game.delete_surface(s))
-    })
+  const surfaces = setupTestSurfaces(numSurfaces)
 
   const entities: LuaEntity[] = []
   before_each(() => {
