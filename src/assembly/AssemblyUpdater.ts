@@ -93,7 +93,7 @@ export type UpdateError =
 export type EntityRotateResult = UpdateSuccess | RotateError
 export type EntityUpdateResult = UpdateSuccess | UpdateError | RotateError
 export type WireUpdateResult = UpdateSuccess | "max-connections-exceeded"
-export type StageMoveResult = UpdateSuccess | "settings-remnant-revived" | "cannot-move-upgraded-underground"
+export type StageMoveResult = UpdateSuccess | "cannot-move-upgraded-underground"
 
 export function createAssemblyUpdater(
   worldUpdater: WorldUpdater,
@@ -431,10 +431,7 @@ export function createAssemblyUpdater(
       return "updated"
     },
     moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
-      if (entity.isSettingsRemnant) {
-        reviveSettingsRemnant(assembly, entity, stage)
-        return "settings-remnant-revived"
-      }
+      if (entity.isSettingsRemnant) return "no-change"
       const oldStage = entity.firstStage
       if (oldStage === stage) return "no-change"
 

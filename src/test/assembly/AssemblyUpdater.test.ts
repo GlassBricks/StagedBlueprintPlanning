@@ -512,13 +512,13 @@ describe("moveEntityToStage", () => {
     assertUpdateCalled(entity, 3, nil)
   })
 
-  test("can revive settings remnant", () => {
+  test("ignores settings remnants", () => {
     const { entity } = addEntity(1)
     entity.isSettingsRemnant = true
     assemblyUpdater.moveEntityToStage(assembly, entity, 2)
-    assert.equal(2, entity.firstStage)
+    assert.equal(1, entity.firstStage)
     assertOneEntity()
-    assertReviveSettingsRemnantCalled(entity)
+    assertWUNotCalled()
   })
 })
 

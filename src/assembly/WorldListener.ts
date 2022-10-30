@@ -383,7 +383,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       byPlayer: PlayerIndex,
     ): void {
       const existing = getEntityFromEntityOrPreview(entityOrPreviewEntity, stage, assembly)
-      if (!existing) return
+      if (!existing || existing.isSettingsRemnant) return
       const oldStage = existing.firstStage
       const result = moveEntityToStage(assembly, existing, stage)
       if (result === "updated") {
@@ -397,7 +397,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
         createNotification(existing, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
       } else if (result === "cannot-move-upgraded-underground") {
         createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
-      } else if (result !== "settings-remnant-revived") {
+      } else {
         assertNever(result)
       }
     },
@@ -418,7 +418,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       }
       if (result === "cannot-move-upgraded-underground") {
         createCannotMoveUpgradedUndergroundNotification(existing, byPlayer)
-      } else if (result === "settings-remnant-revived" || result === "no-change") {
+      } else if (result === "no-change") {
         error(`Did not expect result ${result} when sending entity to stage`)
       } else {
         assertNever(result)

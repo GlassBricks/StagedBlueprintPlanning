@@ -377,11 +377,16 @@ describe("onMoveEntityToStage", () => {
     worldListener.onMoveEntityToStage(assembly, luaEntity, 2, playerIndex)
     expectedAuCalls = 0
   })
+  test("if is settings remnant, does nothing", () => {
+    const { luaEntity, entity } = addEntity(2)
+    entity.isSettingsRemnant = true
+    worldListener.onMoveEntityToStage(assembly, createPreviewEntity(luaEntity), 2, playerIndex)
+    expectedAuCalls = 0
+  })
   test.each<[StageMoveResult, LocalisedString | false]>([
     ["updated", [L_Interaction.EntityMovedFromStage, "mock stage 3"]],
     ["no-change", [L_Interaction.AlreadyAtFirstStage]],
     ["cannot-move-upgraded-underground", [L_Interaction.CannotMoveUndergroundBeltWithUpgrade]],
-    ["settings-remnant-revived", false],
   ])('calls moveEntityToStage and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(3)
     assemblyUpdater.moveEntityToStage.invokes(() => {

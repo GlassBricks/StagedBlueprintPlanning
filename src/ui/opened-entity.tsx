@@ -140,7 +140,11 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (player) teleportToStage(player, stage)
   }
   private moveToThisStage() {
-    AssemblyUpdater.moveEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber)
+    if (this.entity.isSettingsRemnant) {
+      AssemblyUpdater.reviveSettingsRemnant(this.stage.assembly, this.entity, this.stage.stageNumber)
+    } else {
+      AssemblyUpdater.moveEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber)
+    }
     this.rerender(false)
   }
   private resetTrain() {
