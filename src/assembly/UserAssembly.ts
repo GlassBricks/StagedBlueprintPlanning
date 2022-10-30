@@ -248,7 +248,7 @@ export function _deleteAllAssemblies(): void {
   global.nextAssemblyId = 1 as AssemblyId
 }
 
-const initialPreparedArea = BBox.around({ x: 0, y: 0 }, 5 * 32)
+const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods.debugadapter !== nil ? 32 : 5 * 32)
 
 @RegisterClass("Stage")
 class StageImpl implements Stage {
