@@ -282,7 +282,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     "entities-missing": L_Interaction.EntitiesMissing,
     overlap: L_Interaction.NoRoomInAnotherStage,
     "could-not-teleport": L_Interaction.CantBeTeleportedInAnotherStage,
-    "not-first-stage": L_Interaction.CannotMove,
+    "cannot-move": L_Interaction.CannotMove,
     "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
   }
 

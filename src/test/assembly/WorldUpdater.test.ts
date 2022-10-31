@@ -270,7 +270,7 @@ describe("tryMoveEntity", () => {
   test("can't move entity if moved in later stage", () => {
     assert.true(forceMoveEntity(entities[1], newPos, newDir))
     const result = worldUpdater.tryDollyEntities(assembly, entity, 2)
-    assert.equal("not-first-stage", result)
+    assert.equal("cannot-move", result)
     assertNotMoved()
   })
 

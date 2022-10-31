@@ -180,11 +180,11 @@ class EntityMapImpl implements MutableEntityMap {
     const atPos = this.byPosition.get(oldPosition.x, oldPosition.y)
     if (!atPos) return
     if (isSingle(atPos)) {
-      if (atPos.getWorldEntity(expectedStage) === entity) return atPos
+      if (atPos.getWorldOrPreviewEntity(expectedStage) === entity) return atPos
       return nil
     }
     for (const candidate of atPos) {
-      if (candidate.getWorldEntity(expectedStage) === entity) return candidate
+      if (candidate.getWorldOrPreviewEntity(expectedStage) === entity) return candidate
     }
     return nil
   }

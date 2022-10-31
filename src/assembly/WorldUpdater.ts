@@ -63,7 +63,7 @@ export interface WorldUpdater {
 
 export type AssemblyEntityDollyResult =
   | EntityMoveResult
-  | "not-first-stage"
+  | "cannot-move"
   | "entities-missing"
   | "connected-entities-missing"
 
@@ -172,8 +172,6 @@ export function createWorldUpdater(
     stage: StageNumber,
     movedEntity: LuaEntity,
   ): AssemblyEntityDollyResult {
-    if (stage !== entity.firstStage) return "not-first-stage"
-
     // check all entities exist
 
     if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.maxStage()))
@@ -288,8 +286,8 @@ export function createWorldUpdater(
       refreshWorldEntityAtStage(assembly, entity, stage)
     },
     tryDollyEntities(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): AssemblyEntityDollyResult {
-      assert(!entity.isUndergroundBelt(), "can't move underground belts")
-      const movedEntity = entity.getWorldEntity(stage)
+      if (entity.isUndergroundBelt() || entity.firstStage !== stage) return "cannot-move"
+      const movedEntity = entity.getWorldOrPreviewEntity(stage)
       if (!movedEntity) return "entities-missing"
       const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
       if (moveResult !== "success") {
