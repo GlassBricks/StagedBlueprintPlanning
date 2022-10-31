@@ -12,10 +12,12 @@
 import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
 import { nameToType } from "./entity-info"
 
-const emptyBeltControlBehavior: BlueprintControlBehavior = {
+export const emptyBeltControlBehavior: BlueprintControlBehavior = {
   circuit_enable_disable: false,
+  circuit_read_hand_contents: false,
+  circuit_contents_read_mode: 0,
 }
-const emptyInserterControlBehavior: BlueprintControlBehavior = {
+export const emptyInserterControlBehavior: BlueprintControlBehavior = {
   circuit_mode_of_operation: defines.control_behavior.inserter.circuit_mode_of_operation.none,
 }
 

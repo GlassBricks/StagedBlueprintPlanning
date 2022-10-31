@@ -11,9 +11,11 @@
 
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../../assembly/AssemblyUpdater"
+import { WorldUpdater } from "../../assembly/WorldUpdater"
 import { Prototypes } from "../../constants"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
+import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { isPreviewEntity } from "../../entity/entity-info"
 import { EntityHandler } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
@@ -613,4 +615,42 @@ test("train entity error", () => {
 
   AssemblyUpdater.refreshEntityAllStages(assembly, entity)
   assertTrainEntityCorrect(entity, true)
+})
+
+test("adding wire in higher stage sets empty control behavior", () => {
+  const inserter = setupEntity(3) // is filter inserter
+  const belt = setupEntity(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
+  WorldUpdater.refreshWorldEntityAtStage(assembly, inserter, 4)
+  WorldUpdater.refreshWorldEntityAtStage(assembly, belt, 4)
+  const inserter4 = inserter.getWorldEntity(4)!
+  const belt4 = belt.getWorldEntity(4)!
+
+  inserter4.connect_neighbour({
+    wire: defines.wire_type.red,
+    target_entity: belt4,
+  })
+  AssemblyUpdater.updateWiresFromWorld(assembly, inserter, 4)
+
+  const connections = assembly.content.getCircuitConnections(inserter)
+  assert.not_nil(connections)
+  const connection = next(connections!.get(belt)!)[0] as AsmCircuitConnection
+  assert.not_nil(connection)
+  assert.true(
+    circuitConnectionEquals(connection, {
+      wire: defines.wire_type.red,
+      fromEntity: inserter,
+      toEntity: belt,
+      fromId: 1,
+      toId: 1,
+    }),
+  )
+
+  assert.equal(emptyInserterControlBehavior, inserter.firstValue.control_behavior)
+  assert.equal(emptyBeltControlBehavior, belt.firstValue.control_behavior)
+
+  assert.truthy(inserter.getStageDiff(4)!.control_behavior)
+  assert.truthy(belt.getStageDiff(4)!.control_behavior)
+
+  assertEntityCorrect(inserter, false)
+  assertEntityCorrect(belt, false)
 })

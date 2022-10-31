@@ -281,12 +281,12 @@ export function createAssemblyUpdater(
     return "updated"
   }
 
-  function checkDefaultControlBehavior(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
-    if (!hasControlBehaviorSet(entity, stage)) {
-      fixEmptyControlBehavior(entity)
-      const entitySource = assert(entity.getWorldEntity(stage), "Could not find circuit connected entity")[0]
-      doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
-    }
+  function checkDefaultControlBehavior(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
+    if (stage <= entity.firstStage || hasControlBehaviorSet(entity, stage)) return false
+    fixEmptyControlBehavior(entity)
+    const entitySource = assert(entity.getWorldEntity(stage), "Could not find circuit connected entity")[0]
+    doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
+    return true
   }
 
   return {
@@ -421,13 +421,15 @@ export function createAssemblyUpdater(
       if (!connectionsChanged) return "no-change"
 
       const circuitConnections = assembly.content.getCircuitConnections(entity)
+      if (circuitConnections) checkDefaultControlBehavior(assembly, entity, stage)
+      updateWorldEntities(assembly, entity, entity.firstStage)
       if (circuitConnections) {
-        checkDefaultControlBehavior(assembly, entity, stage)
         for (const [otherEntity] of circuitConnections) {
-          checkDefaultControlBehavior(assembly, otherEntity, stage)
+          if (checkDefaultControlBehavior(assembly, otherEntity, stage)) {
+            updateWorldEntities(assembly, otherEntity, otherEntity.firstStage)
+          }
         }
       }
-      updateWorldEntities(assembly, entity, entity.firstStage)
       return "updated"
     },
     moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
