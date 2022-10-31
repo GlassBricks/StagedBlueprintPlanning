@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.1
-Date: ????
+Date: 2022-10-31
   Bugfixes:
     - Fixed entities not updating after creating "empty" control behavior for belts and inserters.
     - Fixed allowing preview entities to be dollied.
