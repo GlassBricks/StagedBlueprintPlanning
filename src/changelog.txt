@@ -2,6 +2,10 @@
 Version: 0.10.2
 Date: ????
   Changes:
+    - The stage move tool's "Bring to current stage" can be activated with reverse-select as well as alt-select.
+  Bugfixes:
+    - Fixed error when building entities over a preview.
+    - Fixed incorrect handling of disallowed entity dollying.
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.1
 Date: 2022-10-31
