@@ -49,10 +49,10 @@ If an entity cannot be created in any stage for any reason, an error indicator w
 
 In the bottom right (shortcuts menu), you can access the stage move tool.
 
-Selecting entities will move entities in the _current_ stage to the target stage.
 Use (default keybinding) `Shift + Scroll wheel` to change the target stage.
 
-Alt-selecting with the tool will move entities from _any_ stage to the current stage.
+- Selecting entities will move entities in the _current_ stage to the target stage.
+- Alt/Reverse selecting with the tool will move entities from _any_ stage to the current stage.
 
 ### Changes between stages
 
