@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.2
-Date: ????
+Date: 2022-11-02
   Changes:
     - The stage move tool's "Bring to current stage" can be activated with reverse-select as well as alt-select.
   Bugfixes:
