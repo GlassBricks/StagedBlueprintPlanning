@@ -43,9 +43,9 @@ before_each(() => {
       totalAuCalls++
     })
   }
-  assemblyUpdater.moveEntityOnPreviewReplace.invokes((_: any, entity: AssemblyEntity) => {
+  assemblyUpdater.moveEntityOnPreviewReplace.invokes(() => {
     totalAuCalls++
-    return entity.firstStage
+    return true
   })
 
   worldListener = createWorldListener(assemblyUpdater, worldNotifier)
@@ -94,19 +94,19 @@ function addEntity(
 }
 
 let notificationsAsserted = false
-function assertNotified(entity: LuaEntity, message: LocalisedString, errorSound: boolean) {
+function assertNotified(entity: AssemblyEntity, message: LocalisedString, errorSound: boolean) {
   assert.spy(worldNotifier.createNotification).called(1)
   // assert.spy(worldNotifier.createNotification).called_with(match.ref(entity), playerIndex, message, errorSound)
   const [cEntity, cPlayerIndex, cMessage, cErrorSound] = table.unpack(
     worldNotifier.createNotification.calls[0]!.refs as any[],
   )
-  assert.same(entity.position, cEntity.position, "notified position")
+  assert.equal(entity, cEntity, "notified position")
   assert.same(playerIndex, cPlayerIndex, "notified player")
   assert.same(message, cMessage, "notified message")
   assert.same(errorSound, cErrorSound, "notified error sound")
   notificationsAsserted = true
 }
-function assertIndicatorCreated(entity: LuaEntity, message: string) {
+function assertIndicatorCreated(entity: AssemblyEntity, message: string) {
   assert.spy(worldNotifier.createIndicator).called(1)
   assert.spy(worldNotifier.createIndicator).called_with(match.ref(entity), playerIndex, message, match._)
   notificationsAsserted = true
@@ -140,7 +140,21 @@ describe("onEntityCreated", () => {
 
     assert.equal(luaEntity, entity.getWorldEntity(newStage))
     assert.spy(assemblyUpdater.moveEntityOnPreviewReplace).was.called_with(match.ref(assembly), entity, newStage)
-    assertNotified(luaEntity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
+    assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
+  })
+  test("create at lower stage can handle immediate upgrade", () => {
+    const { luaEntity, entity } = addEntity(3)
+    assemblyUpdater.moveEntityOnPreviewReplace.invokes(() => {
+      totalAuCalls++
+      luaEntity.destroy()
+      entity.replaceWorldEntity(1, createWorldEntity(1))
+      return true
+    })
+    worldListener.onEntityCreated(assembly, luaEntity, 1, playerIndex)
+
+    // assert.equal(luaEntity, entity.getWorldEntity(1))
+    assert.spy(assemblyUpdater.moveEntityOnPreviewReplace).was.called_with(match.ref(assembly), match.ref(entity), 1)
+    assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 
   test.each(
@@ -229,7 +243,7 @@ describe("onEntityPotentiallyUpdated", () => {
     worldListener.onEntityPotentiallyUpdated(assembly, luaEntity, 2, nil, playerIndex)
 
     assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), entity, 2)
-    if (message) assertNotified(luaEntity, [message], true)
+    if (message) assertNotified(entity, [message], true)
   })
 
   test("works with upgrade-compatible entity (fast-replace)", () => {
@@ -281,7 +295,7 @@ describe("onEntityRotated", () => {
     worldListener.onEntityRotated(assembly, luaEntity, 2, luaEntity.direction, playerIndex)
 
     assert.spy(assemblyUpdater.tryRotateEntityToMatchWorld).was.called_with(match.ref(assembly), entity, 2)
-    if (message) assertNotified(luaEntity, [message], true)
+    if (message) assertNotified(entity, [message], true)
   })
 })
 
@@ -301,7 +315,7 @@ describe("onEntityMarkedForUpgrade", () => {
     worldListener.onEntityMarkedForUpgrade(assembly, luaEntity, 2, playerIndex)
 
     assert.spy(assemblyUpdater.tryApplyUpgradeTarget).was.called_with(match.ref(assembly), entity, 2)
-    if (message) assertNotified(luaEntity, [message], true)
+    if (message) assertNotified(entity, [message], true)
   })
 })
 
@@ -324,7 +338,7 @@ describe("onCircuitWiresPotentiallyUpdated", () => {
     worldListener.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, 2, playerIndex)
 
     assert.spy(assemblyUpdater.updateWiresFromWorld).was.called_with(match.ref(assembly), entity, 2)
-    if (message) assertNotified(luaEntity, [message], true)
+    if (message) assertNotified(entity, [message], true)
   })
 })
 
@@ -395,7 +409,7 @@ describe("onMoveEntityToStage", () => {
     })
     worldListener.onMoveEntityToStage(assembly, luaEntity, 2, playerIndex)
     assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 2)
-    if (message) assertNotified(luaEntity, message, result !== "updated")
+    if (message) assertNotified(entity, message, result !== "updated")
   })
 })
 describe("onSendToStage", () => {
@@ -407,7 +421,7 @@ describe("onSendToStage", () => {
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onSendToStage(assembly, luaEntity, 2, 1, playerIndex)
-    assertIndicatorCreated(luaEntity, "<<")
+    assertIndicatorCreated(entity, "<<")
     assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 1)
   })
   test("calls moveEntityToStage and does not notify if sent up", () => {
@@ -441,7 +455,7 @@ describe("onSendToStage", () => {
       })
       entity.replaceWorldEntity(2, luaEntity)
       worldListener.onBringToStage(assembly, luaEntity, 3, playerIndex)
-      assertIndicatorCreated(luaEntity, ">>")
+      assertIndicatorCreated(entity, ">>")
       assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 3)
     })
     test("calls moveEntityToStage and does not notify if sent down", () => {
@@ -500,6 +514,6 @@ describe("onEntityMoved", () => {
     worldListener.onEntityMoved(assembly, luaEntity, 2, luaEntity.position, playerIndex)
 
     assert.spy(assemblyUpdater.tryDollyEntity).was.called_with(match.ref(assembly), entity, 2)
-    assertNotified(luaEntity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
+    assertNotified(entity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
   })
 })

@@ -107,17 +107,12 @@ export interface WorldListener {
  */
 export interface WorldNotifier {
   createNotification(
-    entity: { position: Position; surface?: LuaSurface },
+    entity: AssemblyEntity,
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
     errorSound: boolean,
   ): void
-  createIndicator(
-    entity: { position: Position; surface?: LuaSurface },
-    playerIndex: PlayerIndex | nil,
-    text: string,
-    color: Color | ColorArray,
-  ): void
+  createIndicator(entity: AssemblyEntity, playerIndex: PlayerIndex | nil, text: string, color: Color | ColorArray): void
 }
 
 export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: WorldNotifier): WorldListener {
@@ -165,7 +160,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     } else if (stage >= existing.firstStage) {
       refreshEntityAtStage(assembly, existing, stage)
     } else {
-      onPreviewReplaced(assembly, stage, existing, entity, byPlayer)
+      onPreviewReplaced(assembly, stage, existing, byPlayer)
     }
     return existing
   }
@@ -174,16 +169,11 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     assembly: Assembly,
     stage: StageNumber,
     entity: AssemblyEntity,
-    luaEntity: LuaEntity,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const oldStage = assert(moveEntityOnPreviewReplace(assembly, entity, stage))
-    createNotification(
-      luaEntity,
-      byPlayer,
-      [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
-      false,
-    )
+    const oldStage = entity.firstStage
+    createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
+    assert(moveEntityOnPreviewReplace(assembly, entity, stage))
   }
 
   /** Also asserts that stage > entity's first stage. */
@@ -204,7 +194,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     return compatible
   }
 
-  function notifyIfError(result: EntityUpdateResult, entity: LuaEntity, byPlayer: PlayerIndex | nil) {
+  function notifyIfError(result: EntityUpdateResult, entity: AssemblyEntity, byPlayer: PlayerIndex | nil) {
     if (result === "no-change" || result === "updated") return
     if (result === "cannot-rotate") {
       createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
@@ -317,7 +307,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       if (!existing) return false
 
       const result = tryUpdateEntityFromWorld(assembly, existing, stage)
-      notifyIfError(result, entity, byPlayer)
+      notifyIfError(result, existing, byPlayer)
     },
     onEntityRotated(
       assembly: Assembly,
@@ -329,7 +319,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
       if (!existing) return
       const result = tryRotateEntityToMatchWorld(assembly, existing, stage)
-      notifyIfError(result, entity, byPlayer)
+      notifyIfError(result, existing, byPlayer)
     },
     onCircuitWiresPotentiallyUpdated(
       assembly: Assembly,
@@ -341,7 +331,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       if (!existing) return
       const result = updateWiresFromWorld(assembly, existing, stage)
       if (result === "max-connections-exceeded") {
-        createNotification(entity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
+        createNotification(existing, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
       } else if (result !== "updated" && result !== "no-change") {
         assertNever(result)
       }
@@ -356,7 +346,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       if (!existing) return
 
       const result = tryApplyUpgradeTarget(assembly, existing, stage)
-      notifyIfError(result, entity, byPlayer)
+      notifyIfError(result, existing, byPlayer)
       if (entity.valid) entity.cancel_upgrade(entity.force)
     },
     onCleanupToolUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
@@ -413,7 +403,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       if (!existing || existing.firstStage !== fromStage || existing.isSettingsRemnant) return
       const result = moveEntityToStage(assembly, existing, toStage)
       if (result === "updated") {
-        if (toStage < fromStage) createIndicator(entity, byPlayer, "<<", Colors.Orange)
+        if (toStage < fromStage) createIndicator(existing, byPlayer, "<<", Colors.Orange)
         return
       }
       if (result === "cannot-move-upgraded-underground") {
@@ -431,7 +421,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       if (oldStage === stage) return
       const result = moveEntityToStage(assembly, existing, stage)
       if (result === "updated") {
-        if (oldStage < stage) createIndicator(entity, byPlayer, ">>", Colors.Blueish)
+        if (oldStage < stage) createIndicator(existing, byPlayer, ">>", Colors.Blueish)
         return
       }
       if (result === "cannot-move-upgraded-underground") {
@@ -455,7 +445,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       const result = tryDollyEntity(assembly, existing, stage)
       const message = moveResultMessage[result]
       if (message !== nil) {
-        createNotification(entity, byPlayer, [message, ["entity-name." + entity.name]], true)
+        createNotification(existing, byPlayer, [message, ["entity-name." + entity.name]], true)
       }
     },
   }
@@ -463,28 +453,18 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
 const WorldNotifier: WorldNotifier = {
   createNotification(
-    at: {
-      position: Position
-      surface?: LuaSurface
-    },
+    entity: AssemblyEntity,
     playerIndex: PlayerIndex | nil,
     message: LocalisedString,
-    playSound: boolean,
+    errorSound: boolean,
   ): void {
     const player = playerIndex && game.get_player(playerIndex)
-    if (player) {
-      player.create_local_flying_text({
-        text: message,
-        position: at.position,
-      })
-      if (playSound) player.play_sound({ path: "utility/cannot_build" })
-    } else if (at.surface && at.surface.valid) {
-      at.surface.create_entity({
-        name: "flying-text",
-        position: at.position,
-        text: message,
-      })
-    }
+    if (!player) return
+    player.create_local_flying_text({
+      text: message,
+      position: entity.position,
+    })
+    if (errorSound) player.play_sound({ path: "utility/cannot_build" })
   },
   createIndicator(
     entity: { position: Position; surface?: LuaSurface },

@@ -42,8 +42,7 @@ export interface AssemblyUpdater {
 
   refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void
 
-  /** Returns nil if not a lower stage number, else returns the old stage. */
-  moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageNumber | nil
+  moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
 
   forbidEntityDeletion(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
 
@@ -319,11 +318,11 @@ export function createAssemblyUpdater(
     refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
       return updateWorldEntities(assembly, entity, 1)
     },
-    moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageNumber | nil {
-      if (stage >= entity.firstStage) return nil
+    moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
+      if (stage >= entity.firstStage) return false
       const oldStage = entity.moveToStage(stage)
       updateWorldEntities(assembly, entity, stage, oldStage)
-      return oldStage
+      return true
     },
     tryDollyEntity: worldUpdater.tryDollyEntities,
     forbidEntityDeletion: replaceWorldEntityAtStage,
