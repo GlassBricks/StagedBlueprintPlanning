@@ -419,7 +419,7 @@ describe("stage-move tool", () => {
     })
     assert.spy(updater.onSendToStage).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
   })
-  test("move to this stage (alt)", () => {
+  test("bring to this stage (alt)", () => {
     const entity = surface.create_entity({
       name: "inserter",
       position: pos,
@@ -428,6 +428,24 @@ describe("stage-move tool", () => {
     assert.not_nil(entity, "entity found")
     player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
     Events.raiseFakeEventNamed("on_player_alt_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.StageMoveTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+    })
+    assert.spy(updater.onBringToStage).called_with(match.ref(assembly), match.ref(entity), 1, 1)
+  })
+  test("bring to this stage (reverse)", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    assert.not_nil(entity, "entity found")
+    player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
+    Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
       player_index: 1 as PlayerIndex,
       item: Prototypes.StageMoveTool,
       surface,

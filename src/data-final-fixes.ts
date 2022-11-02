@@ -306,4 +306,6 @@ const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototype
 cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
 
 const stageMoveTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.StageMoveTool]
-stageMoveTool.alt_entity_filters = [...previewNames, ...buildableNonTrainNames]
+const altFilters = [...previewNames, ...buildableNonTrainNames]
+stageMoveTool.alt_entity_filters = altFilters
+stageMoveTool.reverse_entity_filters = altFilters

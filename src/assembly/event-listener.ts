@@ -674,7 +674,7 @@ Events.on_player_selected_area((e) => {
     onSendToStage(assembly, entity, stageNumber, targetStage, playerIndex)
   }
 })
-Events.on_player_alt_selected_area((e) => {
+function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
   if (e.item !== Prototypes.StageMoveTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
@@ -684,7 +684,9 @@ Events.on_player_alt_selected_area((e) => {
   for (const entity of e.entities) {
     onBringToStage(assembly, entity, stageNumber, e.player_index)
   }
-})
+}
+Events.on_player_alt_selected_area(checkMoveToolAlt)
+Events.on_player_reverse_selected_area(checkMoveToolAlt)
 
 // PickerDollies
 if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
