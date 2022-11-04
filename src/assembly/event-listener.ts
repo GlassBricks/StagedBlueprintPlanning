@@ -16,6 +16,7 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { areUpgradeable } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
 import { getAssemblyPlayerData } from "./player-assembly-data"
@@ -111,6 +112,10 @@ Underground fast replace:
   on_pre_build
   on_player_mined_entity, 1+x
   on_built_entity
+
+Buggy Q-building:
+  on_pre_build (with belt)
+  on_player_cursor_stack_changed
 
 Blueprinting:
   on_pre_build
@@ -260,6 +265,9 @@ Events.on_pre_build((e) => {
     clearLastDeleted(e.player_index)
   }
 })
+Events.on_player_cursor_stack_changed(() => {
+  state.currentlyInBuild = nil
+})
 
 Events.on_pre_player_mined_item((e) => {
   const player = game.get_player(e.player_index)!
@@ -326,7 +334,7 @@ Events.on_built_entity((e) => {
 
   const stage = currentlyInBuild
   if (tryFastReplace(entity, stage, playerIndex)) {
-    // upgrade successful, clear currentlyInBuild if no lastDeleted (still has underground pair)
+    // upgrade successful, clear currentlyInBuild if no lastDeleted (still has underground paired)
     if (state.lastDeleted === nil) state.currentlyInBuild = nil
   } else {
     // can't upgrade, treat lastDeleted as delete instead of fast replace
@@ -742,3 +750,10 @@ export function entityPotentiallyUpdated(entity: LuaEntity, byPlayer: PlayerInde
     WorldListener.onEntityPotentiallyUpdated(stage.assembly, entity, stage.stageNumber, nil, byPlayer)
   }
 }
+
+Migrations.to("0.10.3", () => {
+  clearLastDeleted(nil)
+  for (const [key] of pairs(state)) {
+    state[key] = nil
+  }
+})

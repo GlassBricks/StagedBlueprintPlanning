@@ -622,3 +622,21 @@ describe("blueprint paste", () => {
 })
 
 // picker dollies only tested up to worldupdater
+
+test("Q-building", () => {
+  // this is technically a bug in the base game, but we are supporting it anyways
+  player.cursor_stack!.set_stack("transport-belt")
+  Events.raiseFakeEventNamed("on_pre_build", {
+    player_index: player.index,
+    position: Pos(0, 0),
+    shift_build: false,
+    direction: 0,
+    created_by_moving: false,
+    flip_vertical: false,
+    flip_horizontal: false,
+  })
+  Events.raiseFakeEventNamed("on_player_cursor_stack_changed", {
+    player_index: player.index,
+  })
+  _assertInValidState()
+})
