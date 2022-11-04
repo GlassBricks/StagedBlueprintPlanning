@@ -136,6 +136,12 @@ export interface SelectionToolPrototype extends Omit<ItemPrototype, "type"> {
   entity_filter_mode?: "whitelist" | "blacklist"
   alt_entity_filter_mode?: "whitelist" | "blacklist"
   reverse_entity_filter_mode?: "whitelist" | "blacklist"
+
+  alt_reverse_selection_color?: Color | ColorArray
+  alt_reverse_selection_mode?: SelectionMode[]
+  alt_reverse_selection_cursor_box_type?: CursorBoxRenderType
+  alt_reverse_entity_filters?: string[]
+  alt_reverse_entity_filter_mode?: "whitelist" | "blacklist"
 }
 type SelectionMode =
   | "blueprint"
@@ -206,6 +212,27 @@ export interface ItemSubgroupPrototype extends PrototypeBase {
 export interface SpritePrototype extends PrototypeBase, BasicSprite {
   type: "sprite"
   name: string
+}
+
+export interface SoundPrototype extends PrototypeBase {
+  type: "sound"
+  category?: "game-effect" | "gui-effect" | "ambient" | "environment" | "walking" | "alert" | "wind"
+  aggregation?: {
+    max_count: number
+    progress_threshold: number
+    remove: boolean
+    count_already_playing: boolean
+  }
+
+  allow_random_repeat?: boolean
+  audible_distance_modifier?: number
+  // variations
+  filename?: string
+  volume?: number
+  preload?: boolean
+  speed?: number
+  min_speed?: number
+  max_speed?: number
 }
 
 export interface BasicSprite {

@@ -20,6 +20,7 @@ import {
   SelectionToolPrototype,
   ShortcutPrototype,
   SimpleEntityPrototype,
+  SoundPrototype,
   Sprite,
   SpritePrototype,
 } from "./declarations/data"
@@ -311,3 +312,11 @@ data.extend([
   stageSelectNext,
   stageSelectPrevious,
 ])
+
+const banana: SoundPrototype = {
+  type: "sound",
+  name: Prototypes.BANANA,
+  filename: "__bp100__/sounds/banana.ogg",
+}
+
+data.extend([banana])

@@ -34,6 +34,8 @@ export const enum Prototypes {
   CleanupTool = "bp100:cleanup-tool",
 
   StageMoveTool = "bp100:stage-move-tool",
+
+  BANANA = "bp100:banana",
 }
 
 export const enum Sprites {

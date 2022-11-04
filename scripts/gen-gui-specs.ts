@@ -56,7 +56,7 @@ function error(msg: string): never {
   throw new Error(msg)
 }
 const classesFile =
-  program.getSourceFiles().find((f) => f.fileName.endsWith("typed-factorio/generated/classes.d.ts")) ??
+  program.getSourceFiles().find((f) => f.fileName.endsWith("typed-factorio/runtime/generated/classes.d.ts")) ??
   error("Could not find classes.d.ts")
 const guiEventsFile = program.getSourceFile(guiEventsFileName) ?? error("Could not find gui-events.ts")
 

@@ -695,6 +695,11 @@ function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
 }
 Events.on_player_alt_selected_area(checkMoveToolAlt)
 Events.on_player_reverse_selected_area(checkMoveToolAlt)
+Events.on_player_alt_reverse_selected_area((e) => {
+  if (e.item === Prototypes.StageMoveTool) {
+    game.get_player(e.player_index)!.play_sound({ path: Prototypes.BANANA })
+  }
+})
 
 // PickerDollies
 if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {

@@ -13,5 +13,5 @@
     "ignore": ["readme.md", "test/**/*", "**/*.xcf", "**/*.svg"],
     "removeZipAfterPackage": true
   },
-  "dependencies": ["base >= 1.1.62", "? PickerDollies >= 1.2.1"]
+  "dependencies": ["base >= 1.1.71", "? PickerDollies >= 1.2.1"]
 }
