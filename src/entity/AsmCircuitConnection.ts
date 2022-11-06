@@ -22,11 +22,11 @@ export interface AsmCircuitConnection {
 }
 
 export function circuitConnectionEquals(a: AsmCircuitConnection, b: AsmCircuitConnection): boolean {
-  if (a === b) return true
-  if (a.wire !== b.wire) return false
+  if (a == b) return true
+  if (a.wire != b.wire) return false
   return (
-    (a.fromEntity === b.fromEntity && a.fromId === b.fromId && a.toEntity === b.toEntity && a.toId === b.toId) ||
-    (a.fromEntity === b.toEntity && a.fromId === b.toId && a.toEntity === b.fromEntity && a.toId === b.fromId)
+    (a.fromEntity == b.fromEntity && a.fromId == b.fromId && a.toEntity == b.toEntity && a.toId == b.toId) ||
+    (a.fromEntity == b.toEntity && a.fromId == b.toId && a.toEntity == b.fromEntity && a.toId == b.fromId)
   )
 }
 
@@ -36,7 +36,7 @@ export function getDirectionalInfo(
 ): LuaMultiReturn<
   [otherEntity: AssemblyEntity, fromId: defines.circuit_connector_id, toId: defines.circuit_connector_id]
 > {
-  if (connection.fromEntity === fromEntity) return $multi(connection.toEntity, connection.fromId, connection.toId)
+  if (connection.fromEntity == fromEntity) return $multi(connection.toEntity, connection.fromId, connection.toId)
   return $multi(connection.fromEntity, connection.toId, connection.fromId)
 }
 
@@ -48,8 +48,8 @@ export function circuitConnectionMatches(
   toId: defines.circuit_connector_id,
 ): boolean {
   return (
-    connection.wire === wire &&
-    ((connection.toEntity === toEntity && connection.fromId === fromId && connection.toId === toId) ||
-      (connection.fromEntity === toEntity && connection.toId === fromId && connection.fromId === toId))
+    connection.wire == wire &&
+    ((connection.toEntity == toEntity && connection.fromId == fromId && connection.toId == toId) ||
+      (connection.fromEntity == toEntity && connection.toId == fromId && connection.fromId == toId))
   )
 }

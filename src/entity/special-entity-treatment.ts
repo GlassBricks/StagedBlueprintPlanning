@@ -51,7 +51,7 @@ function findUndergroundPairOneDirection(
     const underground = content.findCompatibleByName(name, curPos, otherDirection) as
       | UndergroundBeltAssemblyEntity
       | nil
-    if (underground && underground.firstValue.name === name) {
+    if (underground && underground.firstValue.name == name) {
       if (found) return $multi(found, true)
       found = underground
     }
@@ -60,9 +60,9 @@ function findUndergroundPairOneDirection(
 }
 
 export function unit(direction: defines.direction): PositionClass {
-  if (direction === defines.direction.north) return Pos(0, -1)
-  if (direction === defines.direction.south) return Pos(0, 1)
-  if (direction === defines.direction.west) return Pos(-1, 0)
-  if (direction === defines.direction.east) return Pos(1, 0)
+  if (direction == defines.direction.north) return Pos(0, -1)
+  if (direction == defines.direction.south) return Pos(0, 1)
+  if (direction == defines.direction.west) return Pos(-1, 0)
+  if (direction == defines.direction.east) return Pos(1, 0)
   error("Invalid direction: " + direction)
 }

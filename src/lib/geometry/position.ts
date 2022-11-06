@@ -72,16 +72,16 @@ namespace Pos {
     return sqrt(pos1.x * pos1.x + pos1.y * pos1.y)
   }
   export function equals(pos1: Position, pos2: Position): boolean {
-    return pos1.x === pos2.x && pos1.y === pos2.y
+    return pos1.x == pos2.x && pos1.y == pos2.y
   }
   export function isZero(pos1: Position): boolean {
-    return pos1.x === 0 && pos1.y === 0
+    return pos1.x == 0 && pos1.y == 0
   }
   export function rotateAboutOrigin(pos1: Position, direction: defines.direction | nil): PositionClass {
-    if (direction === nil || direction === defines.direction.north) return Pos.from(pos1)
-    if (direction === defines.direction.south) return Pos(-pos1.x, -pos1.y)
-    if (direction === defines.direction.west) return Pos(pos1.y, -pos1.x)
-    if (direction === defines.direction.east) return Pos(-pos1.y, pos1.x)
+    if (direction == nil || direction == defines.direction.north) return Pos.from(pos1)
+    if (direction == defines.direction.south) return Pos(-pos1.x, -pos1.y)
+    if (direction == defines.direction.west) return Pos(pos1.y, -pos1.x)
+    if (direction == defines.direction.east) return Pos(-pos1.y, pos1.x)
     error(`invalid direction: ${defines.direction[direction]}`)
   }
 }

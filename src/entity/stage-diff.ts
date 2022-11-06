@@ -44,13 +44,13 @@ export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<Sta
     }
   }
   for (const [key] of pairs(below)) {
-    if (!ignoredProps.has(key) && above[key] === nil) changes[key] = nilPlaceholder
+    if (!ignoredProps.has(key) && above[key] == nil) changes[key] = nilPlaceholder
   }
   return nilIfEmpty(changes)
 }
 export function getPropDiff<E>(below: E, above: E): DiffValue<E> | nil {
   if (deepCompare(below, above)) return nil
-  return (above === nil ? nilPlaceholder : above) as any
+  return (above == nil ? nilPlaceholder : above) as any
 }
 
 export function _applyDiffToDiffUnchecked<E extends Entity = Entity>(
@@ -63,7 +63,7 @@ export function _applyDiffToDiffUnchecked<E extends Entity = Entity>(
 }
 export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: StageDiff<E>): void {
   for (const [key, value] of pairs(diff as StageDiffInternal<E>)) {
-    if (value === nilPlaceholder) {
+    if (value == nilPlaceholder) {
       delete entity[key]
     } else {
       entity[key] = value as any
@@ -71,11 +71,11 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
   }
 }
 export function fromDiffValue<T>(value: DiffValue<T> | T): T {
-  if (value === nilPlaceholder) return nil!
+  if (value == nilPlaceholder) return nil!
   return value as T
 }
 export function toDiffValue<T>(value: T): DiffValue<T> {
-  return value === nil ? (nilPlaceholder as any) : (value as any)
+  return value == nil ? (nilPlaceholder as any) : (value as any)
 }
 
 export function getDiffDiff<T extends Entity>(
@@ -83,21 +83,21 @@ export function getDiffDiff<T extends Entity>(
   oldDiff: StageDiff<T> | nil,
   newDiff: StageDiff<T> | nil,
 ): StageDiff<T> | nil {
-  if (oldDiff === nil) return newDiff && shallowCopy(newDiff)
+  if (oldDiff == nil) return newDiff && shallowCopy(newDiff)
   const result: any = {}
-  if (newDiff === nil) {
+  if (newDiff == nil) {
     for (const [key] of pairs(oldDiff)) {
       const value = previousValue[key]
-      result[key] = value !== nil ? value : nilPlaceholder
+      result[key] = value != nil ? value : nilPlaceholder
     }
   } else {
     for (const [key, value] of pairs(newDiff)) {
       if (!deepCompare(value, oldDiff[key])) result[key] = value
     }
     for (const [key] of pairs(oldDiff)) {
-      if (newDiff[key] === nil) {
+      if (newDiff[key] == nil) {
         const value = previousValue[key]
-        result[key] = value !== nil ? value : nilPlaceholder
+        result[key] = value != nil ? value : nilPlaceholder
       }
     }
   }

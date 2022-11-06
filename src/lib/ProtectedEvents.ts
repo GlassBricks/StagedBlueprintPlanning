@@ -42,7 +42,7 @@ const ProtectedEvents = {
 setmetatable(ProtectedEvents, {
   __index(this: EventsRegistration, key: keyof any) {
     const id = scriptEventIds[key as keyof ScriptEvents] ?? defines.events[key as keyof typeof defines.events]
-    if (id !== nil) {
+    if (id != nil) {
       return (handler: AnyHandler) => {
         Events[key as keyof ShorthandRegister](wrapFunction(handler))
       }

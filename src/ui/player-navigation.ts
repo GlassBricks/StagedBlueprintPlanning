@@ -79,7 +79,7 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   }
   const firstStageNum = assemblyEntity.firstStage
   const currentStage = stage!.stageNumber
-  if (firstStageNum === currentStage) {
+  if (firstStageNum == currentStage) {
     return notifyError(player, [L_Interaction.AlreadyAtFirstStage], true)
   }
   const firstStage = stage!.assembly.getStage(firstStageNum)
@@ -96,7 +96,7 @@ Events.on(CustomInputs.GoToNextNotableStage, (e) => {
     return notifyError(player, [L_Interaction.NotInAnAssembly], true)
   }
   const nextNotableStageNum = getNextNotableStage(stage!.assembly, stage!.stageNumber, assemblyEntity)
-  if (nextNotableStageNum === stage!.stageNumber) {
+  if (nextNotableStageNum == stage!.stageNumber) {
     return notifyError(player, [L_Interaction.EntitySameInAllStages], true)
   }
 

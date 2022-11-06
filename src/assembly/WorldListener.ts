@@ -203,16 +203,16 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   }
 
   function notifyIfError(result: EntityUpdateResult, entity: AssemblyEntity, byPlayer: PlayerIndex | nil) {
-    if (result === "no-change" || result === "updated") return
-    if (result === "cannot-rotate") {
+    if (result == "no-change" || result == "updated") return
+    if (result == "cannot-rotate") {
       createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
-    } else if (result === "cannot-flip-multi-pair-underground") {
+    } else if (result == "cannot-flip-multi-pair-underground") {
       createNotification(entity, byPlayer, [L_Interaction.CannotFlipUndergroundDueToMultiplePairs], true)
-    } else if (result === "cannot-upgrade-multi-pair-underground") {
+    } else if (result == "cannot-upgrade-multi-pair-underground") {
       createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs], true)
-    } else if (result === "cannot-create-pair-upgrade") {
+    } else if (result == "cannot-create-pair-upgrade") {
       createNotification(entity, byPlayer, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
-    } else if (result === "cannot-upgrade-changed-pair") {
+    } else if (result == "cannot-upgrade-changed-pair") {
       createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundChangedPair], true)
     } else {
       assertNever(result)
@@ -294,7 +294,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       if (!existing) return
       const existingStage = existing.firstStage
 
-      if (existingStage !== stage) {
+      if (existingStage != stage) {
         if (existingStage < stage) {
           forbidEntityDeletion(assembly, existing, stage)
         }
@@ -341,7 +341,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
         assembly,
         existing,
         stage,
-        entity.belt_to_ground_type === "input" ? "output" : "input",
+        entity.belt_to_ground_type == "input" ? "output" : "input",
       )
       notifyIfError(result, existing, byPlayer)
     },
@@ -354,9 +354,9 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
       if (!existing) return
       const result = updateWiresFromWorld(assembly, existing, stage)
-      if (result === "max-connections-exceeded") {
+      if (result == "max-connections-exceeded") {
         createNotification(existing, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
-      } else if (result !== "updated" && result !== "no-change") {
+      } else if (result != "updated" && result != "no-change") {
         assertNever(result)
       }
     },
@@ -400,16 +400,16 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       if (!existing || existing.isSettingsRemnant) return
       const oldStage = existing.firstStage
       const result = moveEntityToStage(assembly, existing, stage)
-      if (result === "updated") {
+      if (result == "updated") {
         createNotification(
           existing,
           byPlayer,
           [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)],
           false,
         )
-      } else if (result === "no-change") {
+      } else if (result == "no-change") {
         createNotification(existing, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
-      } else if (result === "cannot-move-upgraded-underground") {
+      } else if (result == "cannot-move-upgraded-underground") {
         createNotification(existing, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
       } else {
         assertNever(result)
@@ -422,17 +422,17 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       toStage: StageNumber,
       byPlayer: PlayerIndex,
     ): void {
-      if (fromStage === toStage) return
+      if (fromStage == toStage) return
       const existing = assembly.content.findExactAtPosition(entity, fromStage, entity.position)
-      if (!existing || existing.firstStage !== fromStage || existing.isSettingsRemnant) return
+      if (!existing || existing.firstStage != fromStage || existing.isSettingsRemnant) return
       const result = moveEntityToStage(assembly, existing, toStage)
-      if (result === "updated") {
+      if (result == "updated") {
         if (toStage < fromStage) createIndicator(existing, byPlayer, "<<", Colors.Orange)
         return
       }
-      if (result === "cannot-move-upgraded-underground") {
+      if (result == "cannot-move-upgraded-underground") {
         createCannotMoveUpgradedUndergroundNotification(existing, byPlayer)
-      } else if (result === "no-change") {
+      } else if (result == "no-change") {
         error(`Did not expect result ${result} when sending entity to stage`)
       } else {
         assertNever(result)
@@ -442,15 +442,15 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       const existing = getEntityFromEntityOrPreview(entity, stage, assembly)
       if (!existing || existing.isSettingsRemnant) return
       const oldStage = existing.firstStage
-      if (oldStage === stage) return
+      if (oldStage == stage) return
       const result = moveEntityToStage(assembly, existing, stage)
-      if (result === "updated") {
+      if (result == "updated") {
         if (oldStage < stage) createIndicator(existing, byPlayer, ">>", Colors.Blueish)
         return
       }
-      if (result === "cannot-move-upgraded-underground") {
+      if (result == "cannot-move-upgraded-underground") {
         createCannotMoveUpgradedUndergroundNotification(existing, byPlayer)
-      } else if (result === "no-change" || result === "settings-remnant-revived") {
+      } else if (result == "no-change" || result == "settings-remnant-revived") {
         error(`Did not expect result ${result} from moveEntityToStage`)
       } else {
         assertNever(result)
@@ -468,7 +468,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
       const result = tryDollyEntity(assembly, existing, stage)
       const message = moveResultMessage[result]
-      if (message !== nil) {
+      if (message != nil) {
         createNotification(existing, byPlayer, [message, ["entity-name." + entity.name]], true)
       }
     },

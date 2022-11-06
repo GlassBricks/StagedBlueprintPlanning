@@ -14,18 +14,18 @@ import { BBox, Pos, Position } from "../lib/geometry"
 
 function canMoveEntity(entity: LuaEntity, position: Position, direction: defines.direction): boolean {
   return entity.surface.can_place_entity({
-    name: entity.name === "entity-ghost" ? entity.ghost_name : entity.name,
+    name: entity.name == "entity-ghost" ? entity.ghost_name : entity.name,
     position,
     direction,
     force: entity.force,
     build_check_type: defines.build_check_type.blueprint_ghost,
-    inner_name: entity.name === "entity-ghost" ? entity.ghost_name : nil,
+    inner_name: entity.name == "entity-ghost" ? entity.ghost_name : nil,
   })
 }
 
 function canWiresReach(entity: LuaEntity) {
   const wires =
-    entity.type === "electric-pole"
+    entity.type == "electric-pole"
       ? (entity.neighbours as Record<string, LuaEntity[]>)
       : entity.circuit_connected_entities
   if (!wires) return true
@@ -70,7 +70,7 @@ export function tryDollyAllEntities(
   position: Position,
   direction: defines.direction,
 ): EntityDollyResult {
-  entities = entities.filter((e) => e.valid && !(Pos.equals(e.position, position) && e.direction === direction))
+  entities = entities.filter((e) => e.valid && !(Pos.equals(e.position, position) && e.direction == direction))
   const oldPositions = entities.map((e) => e.position)
   const oldDirections = entities.map((e) => e.direction)
   function revertTeleport() {

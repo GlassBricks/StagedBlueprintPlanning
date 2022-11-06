@@ -74,7 +74,7 @@ class CurrentAssembly extends Component {
     )
   }
   private static mapStageToAssemblyTitle(this: void, stage: Stage | nil): MaybeState<LocalisedString> {
-    if (stage === nil) return [L_GuiCurrentAssembly.NoAssembly]
+    if (stage == nil) return [L_GuiCurrentAssembly.NoAssembly]
     return stage.assembly.displayName
   }
   private static mapAssemblyToContent(this: void, assembly: UserAssembly | nil) {
@@ -88,7 +88,7 @@ class CurrentAssembly extends Component {
   private openAssemblySettings(event: OnGuiClickEvent) {
     const { player_index } = event
     const currentStage = playerCurrentStage(player_index).get()
-    if (currentStage === nil) return
+    if (currentStage == nil) return
     const assembly = currentStage.assembly
     openAssemblySettings(game.get_player(player_index)!, assembly)
   }
@@ -160,7 +160,7 @@ class AllAssemblies extends Component {
 
   private assemblySelected(): void {
     const assembly = this.allAssemblies[this.listBox.selected_index - 1]
-    if (assembly !== nil) {
+    if (assembly != nil) {
       closeAllAssemblies(this.playerIndex)
       openAssemblySettings(game.get_player(this.playerIndex)!, assembly)
     } else {
@@ -176,7 +176,7 @@ class AllAssemblies extends Component {
 
 function getCurrentAssemblyGui(playerIndex: PlayerIndex): CurrentAssembly {
   const currentAssemblyGui = global.players[playerIndex].currentAssemblyGui
-  if (currentAssemblyGui !== nil) return currentAssemblyGui
+  if (currentAssemblyGui != nil) return currentAssemblyGui
 
   rerenderCurrentAssembly(game.get_player(playerIndex)!)
   return assert(global.players[playerIndex].currentAssemblyGui!)
@@ -211,7 +211,7 @@ function onOpenAllAssembliesClicked(event: OnGuiClickEvent) {
 registerFunctions("gui:CurrentAssembly", { onOpenAllAssembliesClicked })
 
 AssemblyEvents.addListener((e) => {
-  if (e.type === "assembly-created" || e.type === "assembly-deleted") {
+  if (e.type == "assembly-created" || e.type == "assembly-deleted") {
     for (const [, player] of game.players) {
       rerenderAllAssembliesIfOpen(player.index)
     }

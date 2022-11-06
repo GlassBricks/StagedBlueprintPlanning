@@ -210,7 +210,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
     this.position = position
-    this.direction = direction === 0 ? nil : direction
+    this.direction = direction == 0 ? nil : direction
     this.firstValue = shallowCopy(firstValue)
     this.firstStage = firstStage
   }
@@ -219,7 +219,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return (this.direction ?? 0) as SavedDirection
   }
   public setDirection(direction: SavedDirection): void {
-    if (direction === 0) {
+    if (direction == 0) {
       this.direction = nil
     } else {
       this.direction = direction
@@ -269,8 +269,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   hasStageDiff(stage?: StageNumber): boolean {
     const { stageDiffs } = this
     if (!stageDiffs) return false
-    if (stage) return stageDiffs[stage] !== nil
-    return next(stageDiffs)[0] !== nil
+    if (stage) return stageDiffs[stage] != nil
+    return next(stageDiffs)[0] != nil
   }
   getStageDiff(stage: StageNumber): StageDiff<T> | nil {
     const { stageDiffs } = this
@@ -285,7 +285,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     const stageDiff = stageDiffs[stage]
     if (!stageDiff) return $multi(false)
     const val = stageDiff[prop]
-    if (val === nil) return $multi(false)
+    if (val == nil) return $multi(false)
     return $multi(true, fromDiffValue(val))
   }
 
@@ -299,7 +299,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     let { stageDiffs } = this
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
-    if (stage === firstStage) {
+    if (stage == firstStage) {
       applyDiffToEntity(this.firstValue, diff)
       return
     }
@@ -338,7 +338,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     // assert(stage >= 1, "stage must be >= 1")
     const { firstStage } = this
     if (stage < firstStage) return nil
-    if (this.isRollingStock() && stage !== firstStage) return nil
+    if (this.isRollingStock() && stage != firstStage) return nil
     const value = mutableShallowCopy(this.firstValue)
     const { stageDiffs } = this
     if (stageDiffs) {
@@ -360,7 +360,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       for (const [changedStage, diff] of pairs(stageDiffs)) {
         if (changedStage > stage) break
         const propDiff = diff[prop]
-        if (propDiff !== nil) {
+        if (propDiff != nil) {
           resultStage = changedStage
           value = fromDiffValue(propDiff)
         }
@@ -385,7 +385,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       const nextStage = prevStage + 1
       if (nextStage < firstStage) return $multi(nextStage, nil)
       if (nextStage > end) return $multi()
-      if (nextStage === firstStage) {
+      if (nextStage == firstStage) {
         value = shallowCopy(firstValue)
       } else {
         const diff = stageValues && stageValues[nextStage]
@@ -402,7 +402,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     function next(_: any, prevStage: StageNumber) {
       const stage = prevStage + 1
       if (stage > end) return $multi()
-      if (stage === firstStage) return $multi(stage, firstValue)
+      if (stage == firstStage) return $multi(stage, firstValue)
       return $multi(stage, nil)
     }
     return $multi<any>(next, nil, start - 1)
@@ -414,14 +414,14 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
     if (this.isRollingStock()) return this.adjustValueRollingStock(stage, value)
 
-    if (stage === this.firstStage) return this.setValueAtFirstStage(value)
+    if (stage == this.firstStage) return this.setValueAtFirstStage(value)
 
     const valueAtPreviousStage = assert(this.getValueAtStage(stage - 1))
     const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
     return this.setDiffInternal(stage, newStageDiff, valueAtPreviousStage)
   }
   private adjustValueRollingStock(this: AssemblyEntityImpl<RollingStockEntity>, stage: StageNumber, value: T): boolean {
-    const canAdjust = stage === this.firstStage
+    const canAdjust = stage == this.firstStage
     if (!canAdjust) return false
     const diff = getEntityDiff(this.firstValue, value)
     if (!diff) return false
@@ -479,11 +479,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
     const newDiffValue = getPropDiff(propAtPreviousStage, newValue)
 
-    if (stage === this.firstStage) {
+    if (stage == this.firstStage) {
       this.firstValue[prop] = newValue
     } else {
       let { stageDiffs } = this
-      if (newDiffValue !== nil) {
+      if (newDiffValue != nil) {
         stageDiffs ??= this.stageDiffs = {}
         const stageDiff: MutableStageDiff<T> = stageDiffs[stage] ?? (stageDiffs[stage] = {})
         stageDiff[prop] = newDiffValue
@@ -559,7 +559,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     } else if (stage < firstStage) {
       this.firstStage = stage
     }
-    this.oldStage = recordOldStage && firstStage !== stage ? firstStage : nil
+    this.oldStage = recordOldStage && firstStage != stage ? firstStage : nil
     return firstStage
   }
   private moveUp(higherStage: StageNumber): void {
@@ -590,9 +590,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.replaceWorldOrPreviewEntity(stage, entity)
   }
   replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void {
-    if (entity === nil) return this.destroyWorldOrPreviewEntity(stage)
+    if (entity == nil) return this.destroyWorldOrPreviewEntity(stage)
     const existing = this[stage]
-    if (existing && existing.valid && existing !== entity) existing.destroy()
+    if (existing && existing.valid && existing != entity) existing.destroy()
     this[stage] = entity
     if (rollingStockTypes.has(entity.type)) {
       registerEntity(entity, this)
@@ -609,7 +609,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   destroyAllWorldOrPreviewEntities(): void {
     for (const [k, v] of pairs(this)) {
-      if (typeof k !== "number") break
+      if (typeof k != "number") break
       if ((v as LuaEntity).valid) {
         ;(v as LuaEntity).destroy()
       }
@@ -641,11 +641,11 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (isEmpty(byType)) delete stageProperties[type]
   }
   replaceExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber, entity: ExtraEntities[T] | nil): void {
-    if (entity === nil) return this.destroyExtraEntity(type, stage)
+    if (entity == nil) return this.destroyExtraEntity(type, stage)
     const stageProperties = this.stageProperties ?? (this.stageProperties = {})
     const byType = stageProperties[type] ?? ((stageProperties[type] = {}) as PRecord<StageNumber, ExtraEntities[T]>)
     const existing = byType[stage]
-    if (existing && existing.valid && existing !== entity) existing.destroy()
+    if (existing && existing.valid && existing != entity) existing.destroy()
     byType[stage] = entity
   }
   destroyExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber): void {
@@ -678,7 +678,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   public hasAnyExtraEntities(type: ExtraEntityType): boolean {
     const { stageProperties } = this
-    return stageProperties !== nil && stageProperties[type] !== nil
+    return stageProperties != nil && stageProperties[type] != nil
   }
 
   iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {
@@ -686,7 +686,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return (() => {
       while (true) {
         const nextKey = next(this, lastKey)[0]
-        if (typeof nextKey !== "number") return nil
+        if (typeof nextKey != "number") return nil
         lastKey = nextKey
         const entity = this[nextKey]
         if (entity && entity.valid) return $multi(nextKey, entity)
@@ -709,7 +709,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
   propertySetInAnyStage(key: keyof StageProperties): boolean {
     const stageProperties = this.stageProperties
-    return stageProperties !== nil && stageProperties[key] !== nil
+    return stageProperties != nil && stageProperties[key] != nil
   }
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void {
     const stageProperties = this.stageProperties
@@ -731,7 +731,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   deleteStage(stageNumber: StageNumber): void {
-    const stageToMerge = stageNumber === 1 ? 2 : stageNumber
+    const stageToMerge = stageNumber == 1 ? 2 : stageNumber
     this.mergeStageDiffWithBelow(stageToMerge)
 
     if (this.firstStage >= stageToMerge) this.firstStage--
@@ -774,19 +774,19 @@ export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
 }
 
 export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  return stageNumber >= entity.firstStage && entity.getWorldEntity(stageNumber) === nil
+  return stageNumber >= entity.firstStage && entity.getWorldEntity(stageNumber) == nil
 }
 
 /** Used by custom input */
 export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  return entity.firstStage === stageNumber || entity.hasStageDiff(stageNumber) || entityHasErrorAt(entity, stageNumber)
+  return entity.firstStage == stageNumber || entity.hasStageDiff(stageNumber) || entityHasErrorAt(entity, stageNumber)
 }
 
 /**
  * Gets the stage number this would merge with if this stage were to be deleted.
  */
 export function getStageToMerge(stageNumber: StageNumber): StageNumber {
-  if (stageNumber === 1) return 2
+  if (stageNumber == 1) return 2
   return stageNumber - 1
 }
 

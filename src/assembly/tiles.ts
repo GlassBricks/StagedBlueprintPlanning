@@ -52,18 +52,18 @@ function setLabTiles(surface: LuaSurface, area: BoundingBox): void {
 }
 
 function waterLandfillTilesExist(): boolean {
-  return game.tile_prototypes.water !== nil && game.tile_prototypes.landfill !== nil
+  return game.tile_prototypes.water != nil && game.tile_prototypes.landfill != nil
 }
 
 export function setTiles(surface: LuaSurface, area: BBox, type: AutoSetTilesType): boolean {
-  if (type === AutoSetTilesType.LabTiles) {
+  if (type == AutoSetTilesType.LabTiles) {
     setLabTiles(surface, area)
     return true
   }
-  if (type === AutoSetTilesType.LandfillAndWater) {
+  if (type == AutoSetTilesType.LandfillAndWater) {
     return autoLandfill(surface, area)
   }
-  if (type === AutoSetTilesType.LandfillAndLabTiles) {
+  if (type == AutoSetTilesType.LandfillAndLabTiles) {
     return autoSetLandfillAndLabTiles(surface, area)
   }
   error("Invalid AutoSetTilesType")

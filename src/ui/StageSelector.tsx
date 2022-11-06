@@ -62,9 +62,9 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   }
 
   private onAssemblyEvent(event: LocalAssemblyEvent) {
-    if (event.type === "stage-added" || event.type === "stage-deleted") {
+    if (event.type == "stage-added" || event.type == "stage-deleted") {
       this.setup()
-    } else if (event.type !== "assembly-deleted" && event.type !== "pre-stage-deleted") {
+    } else if (event.type != "assembly-deleted" && event.type != "pre-stage-deleted") {
       assertNever(event)
     }
   }
@@ -82,9 +82,9 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   }
 
   private playerStageChanged(stage: Stage | nil) {
-    if (stage && stage.assembly === this.assembly && stage.stageNumber <= this.element.items.length) {
+    if (stage && stage.assembly == this.assembly && stage.stageNumber <= this.element.items.length) {
       this.element.selected_index = stage.stageNumber
-      if (this.element.type === "list-box") this.element.scroll_to_item(stage.stageNumber)
+      if (this.element.type == "list-box") this.element.scroll_to_item(stage.stageNumber)
     } else {
       this.element.selected_index = 0
     }

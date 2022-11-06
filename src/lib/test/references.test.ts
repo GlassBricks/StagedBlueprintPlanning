@@ -118,7 +118,7 @@ describe("functions", () => {
   describe.each(["func", "funcRef"])("bound func ref with type %s", (type) => {
     test.each([0, 1, 2, 3, 4, 5, 10])("%d args", (n) => {
       const args = Array.from({ length: n }, (_, i) => i)
-      const fun = type === "func" ? func : funcRef(func)
+      const fun = type == "func" ? func : funcRef(func)
 
       const boundFn = bind(fun, ...args)
       assert.same([...args, 15, 16, 17], boundFn.invoke(15, 16, 17))

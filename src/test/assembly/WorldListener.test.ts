@@ -71,7 +71,7 @@ function createWorldEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEn
   }
   const entity = assert(surfaces[stageNum - 1].create_entity(params), "created entity")[0]
   const proto = game.entity_prototypes[params.name]
-  if (proto.type === "inserter") {
+  if (proto.type == "inserter") {
     entity.inserter_stack_size_override = 1
     entity.inserter_filter_mode = "whitelist"
   }
@@ -422,7 +422,7 @@ describe("onMoveEntityToStageCustomInput", () => {
     })
     worldListener.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
     assert.spy(assemblyUpdater.moveEntityToStage).called_with(match.ref(assembly), entity, 2)
-    if (message) assertNotified(entity, message, result !== "updated")
+    if (message) assertNotified(entity, message, result != "updated")
   })
 })
 describe("onSendToStageUsed", () => {

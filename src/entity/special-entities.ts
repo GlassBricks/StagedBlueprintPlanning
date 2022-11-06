@@ -24,8 +24,8 @@ export interface RollingStockEntity extends Entity {
 /** Inverts direction if is a output underground belt. */
 export function getSavedDirection(entity: LuaEntity): SavedDirection {
   const type = entity.type
-  if (type === "underground-belt") {
-    if (entity.belt_to_ground_type === "output") {
+  if (type == "underground-belt") {
+    if (entity.belt_to_ground_type == "output") {
       return oppositedirection(entity.direction) as SavedDirection
     }
   } else if (rollingStockTypes.has(type)) {
@@ -35,16 +35,16 @@ export function getSavedDirection(entity: LuaEntity): SavedDirection {
 }
 
 export function getPastedDirection(entity: BlueprintEntity, direction: defines.direction): defines.direction | nil {
-  if (entity.orientation !== nil) return nil
+  if (entity.orientation != nil) return nil
   const isUnderground = isUndergroundBeltType(entity.name)
-  if (isUnderground && entity.type === "output") {
+  if (isUnderground && entity.type == "output") {
     return oppositedirection(direction)
   }
   return direction
 }
 
 export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
-  if (orientation === nil) return 0
+  if (orientation == nil) return 0
   return floor(orientation * 8 + 0.5) % 8
 }
 
@@ -53,7 +53,7 @@ export function makePreviewIndestructible(entity: LuaEntity | nil): void {
   entity.destructible = false
   entity.minable = false
   entity.rotatable = false
-  if (entity.type === "rail-remnants") {
+  if (entity.type == "rail-remnants") {
     entity.corpse_expires = false
     entity.corpse_immune_to_entity_placement = true
   }

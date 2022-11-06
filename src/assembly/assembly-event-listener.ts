@@ -14,17 +14,17 @@ import { AssemblyUpdater } from "./AssemblyUpdater"
 import { AssemblyEvents } from "./UserAssembly"
 
 AssemblyEvents.addListener((e) => {
-  if (e.type === "assembly-created" || e.type === "assembly-deleted" || e.type === "pre-stage-deleted") {
+  if (e.type == "assembly-created" || e.type == "assembly-deleted" || e.type == "pre-stage-deleted") {
     return
   }
-  if (e.type === "stage-added") {
+  if (e.type == "stage-added") {
     AssemblyUpdater.resetStage(e.assembly, e.stage.stageNumber)
 
     return
   }
-  if (e.type === "stage-deleted") {
+  if (e.type == "stage-deleted") {
     const stageNumber = e.stage.stageNumber
-    const stageNumberToMerge = stageNumber === 1 ? 2 : stageNumber - 1
+    const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
     AssemblyUpdater.resetStage(e.assembly, stageNumberToMerge)
     return
   }

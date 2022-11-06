@@ -85,7 +85,7 @@ export function createWorldUpdater(
   ): void {
     const existing = entity.getWorldOrPreviewEntity(stage)
     const previewName = Prototypes.PreviewEntityPrefix + entityName
-    if (existing && isPreviewEntity(existing) && existing.name === previewName) {
+    if (existing && isPreviewEntity(existing) && existing.name == previewName) {
       existing.direction = direction
     } else {
       const previewEntity = createPreviewEntity(assembly.getSurface(stage)!, entity.position, direction, entityName)
@@ -106,7 +106,7 @@ export function createWorldUpdater(
       const surface = assembly.getSurface(stage)!
       const existing = entity.getWorldOrPreviewEntity(stage)
 
-      if (value !== nil) {
+      if (value != nil) {
         let luaEntity: LuaEntity | nil
         if (existing && !isPreviewEntity(existing)) {
           luaEntity = updateEntity(existing, value, direction)
@@ -115,7 +115,7 @@ export function createWorldUpdater(
         }
 
         if (luaEntity) {
-          if (stage !== firstStage) makeEntityIndestructible(luaEntity)
+          if (stage != firstStage) makeEntityIndestructible(luaEntity)
           else makeEntityDestructible(luaEntity)
 
           entity.replaceWorldOrPreviewEntity(stage, luaEntity)
@@ -172,7 +172,7 @@ export function createWorldUpdater(
     stage: StageNumber,
     movedEntity: LuaEntity,
   ): AssemblyEntityDollyResult {
-    if (entity.isUndergroundBelt() || entity.firstStage !== stage) return "cannot-move"
+    if (entity.isUndergroundBelt() || entity.firstStage != stage) return "cannot-move"
 
     if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.maxStage()))
       return "connected-entities-missing"
@@ -245,7 +245,7 @@ export function createWorldUpdater(
       if (firstStage < startStage || firstStage > endStage) return $multi()
       return $multi(firstStage, firstStage)
     }
-    if (startStage === entity.firstStage) {
+    if (startStage == entity.firstStage) {
       startStage = 1 // also update previews
     }
     return $multi(startStage, endStage)
@@ -289,7 +289,7 @@ export function createWorldUpdater(
       const movedEntity = entity.getWorldOrPreviewEntity(stage)
       if (!movedEntity) return "entities-missing"
       const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
-      if (moveResult !== "success") {
+      if (moveResult != "success") {
         forceDollyEntity(movedEntity, entity.position, entity.getDirection())
       } else {
         entity.setDirection(movedEntity.direction as SavedDirection)

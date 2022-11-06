@@ -18,7 +18,7 @@ export class Registry<T extends AnyNotNil> {
   constructor(protected itemName: string, protected getDebugDescription: (item: T) => string) {}
 
   registerRaw(name: string, item: T): void {
-    if (game !== nil) {
+    if (game != nil) {
       error("This operation must only be done during script load.")
     }
     const existingItem = this.nameToItem[name]

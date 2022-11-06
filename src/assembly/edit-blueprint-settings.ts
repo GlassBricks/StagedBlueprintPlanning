@@ -107,7 +107,7 @@ function updateBlueprintSettings(blueprint: LuaItemStack, settings: BlueprintSet
   settings.absoluteSnapping = blueprint.blueprint_absolute_snapping
   settings.positionRelativeToGrid = blueprint.blueprint_position_relative_to_grid
 
-  if (settings.snapToGrid !== nil) {
+  if (settings.snapToGrid != nil) {
     const originalPosition = blueprint.get_blueprint_entity_tag(1, FirstEntityOriginalPositionTag) as Position | nil
     if (!originalPosition) {
       notifyFirstEntityRemoved(playerIndex)
@@ -119,7 +119,7 @@ function updateBlueprintSettings(blueprint: LuaItemStack, settings: BlueprintSet
 }
 function updateBlueprintFilters(stack: LuaItemStack, transform: BlueprintTransformations): void {
   const filters = stack.entity_filters
-  if (filters !== nil) {
+  if (filters != nil) {
     transform.entityFilters = newLuaSet()
     for (const filter of filters) transform.entityFilters.add(filter)
     transform.entityFilterMode = stack.entity_filter_mode
@@ -139,7 +139,7 @@ function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): v
     if (!stack.is_blueprint) return
     updateBlueprintSettings(stack, info.settings, playerIndex)
   } else if (info.transformations) {
-    if (stack.name !== Prototypes.BlueprintFilters) return
+    if (stack.name != Prototypes.BlueprintFilters) return
     updateBlueprintFilters(stack, info.transformations)
   }
 }

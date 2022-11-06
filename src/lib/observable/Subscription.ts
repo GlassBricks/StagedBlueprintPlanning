@@ -37,11 +37,11 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   _parents: LuaSet<Subscription> | nil = new LuaSet()
 
   isClosed(): boolean {
-    return this._children === nil
+    return this._children == nil
   }
 
   add(subscription: Unsubscription): void {
-    if (subscription === this) return
+    if (subscription == this) return
     const { _children } = this
     if (!_children) {
       this.callUnsubscription(subscription)
@@ -55,7 +55,7 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   }
 
   hasActions(): boolean {
-    return this._children !== nil && next(this._children)[0] !== nil
+    return this._children != nil && next(this._children)[0] != nil
   }
 
   private removeChild(subscription: Unsubscribable): void {
@@ -63,7 +63,7 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   }
 
   private callUnsubscription(subscription: Unsubscription): void {
-    if ((subscription as Unsubscribable).close !== nil) {
+    if ((subscription as Unsubscribable).close != nil) {
       ;(subscription as Unsubscribable).close()
     } else {
       ;(subscription as Func).invoke()
@@ -102,5 +102,5 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
 
 const getMeta = getmetatable
 export function isSubscriptionContext(subscription: unknown): subscription is Subscription {
-  return getMeta(subscription) === Subscription.prototype
+  return getMeta(subscription) == Subscription.prototype
 }

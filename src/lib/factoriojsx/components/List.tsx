@@ -32,7 +32,7 @@ export class List<T extends AnyNotNil, U extends GuiElementType> extends Compone
     tracker.onMount((element) => {
       this.element = element
       const { of, map, ifEmpty } = props
-      if (of.length() === 0) {
+      if (of.length() == 0) {
         if (ifEmpty) {
           render(ifEmpty.invoke(), this.element)
         }
@@ -65,20 +65,20 @@ export class List<T extends AnyNotNil, U extends GuiElementType> extends Compone
     const array = change.list
 
     const changeType = change.type
-    if (changeType === "add") {
-      if (ifEmpty && array.length() === 1) {
+    if (changeType == "add") {
+      if (ifEmpty && array.length() == 1) {
         destroyChildren(element)
       }
       this.add(change.value, change.index)
-    } else if (changeType === "remove") {
+    } else if (changeType == "remove") {
       this.remove(change.index)
-      if (ifEmpty && array.length() === 0) {
+      if (ifEmpty && array.length() == 0) {
         render(ifEmpty.invoke(), element)
       }
-    } else if (changeType === "set") {
+    } else if (changeType == "set") {
       this.remove(change.index)
       this.add(change.value, change.index)
-    } else if (changeType === "swap") {
+    } else if (changeType == "swap") {
       this.element.swap_children(change.indexA + 1, change.indexB + 1)
     } else {
       assertNever(changeType)

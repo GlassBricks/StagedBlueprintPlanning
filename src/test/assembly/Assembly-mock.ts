@@ -16,7 +16,7 @@ import { BBox, Pos } from "../../lib/geometry"
 
 export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
   const surfaces: LuaSurface[] =
-    typeof stages === "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
+    typeof stages == "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
   return {
     getSurface: (stage) => surfaces[stage - 1],
     maxStage: () => surfaces.length,

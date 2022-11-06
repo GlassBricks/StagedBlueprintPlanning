@@ -43,7 +43,7 @@ export function getDescription(element: LuaGuiElement): string {
   let current: GuiElementMembers | nil = element
   while (current && !isRoot(current)) {
     const name = current.name
-    path.push(name === "" ? `[${current.get_index_in_parent()}, ${current.type}]` : name)
+    path.push(name == "" ? `[${current.get_index_in_parent()}, ${current.type}]` : name)
     current = current.parent
   }
   path.push("<root>")
@@ -84,7 +84,7 @@ export function findWithType<T extends GuiElementType>(
 ): Extract<LuaGuiElement, { type: T }> {
   const actualPredicate = predicate ?? (() => true)
   return (
-    (findElementSatisfying(parent, (element) => element.type === type && actualPredicate(element as any)) as any) ??
+    (findElementSatisfying(parent, (element) => element.type == type && actualPredicate(element as any)) as any) ??
     error(`Could not find element of type "${type}" in ${getDescription(parent)}`)
   )
 }
@@ -95,7 +95,7 @@ export function findAllWithType<T extends GuiElementType>(
   predicate?: (element: Extract<LuaGuiElement, { type: T }>) => boolean,
 ): Extract<LuaGuiElement, { type: T }>[] {
   const actualPredicate = predicate ?? (() => true)
-  return findAllElementsSatisfying(parent, (element) => element.type === type && actualPredicate(element as any)) as any
+  return findAllElementsSatisfying(parent, (element) => element.type == type && actualPredicate(element as any)) as any
 }
 
 export function simulateEvent<T extends GuiEvent>(
@@ -169,7 +169,7 @@ export class ElementWrapper<T extends GuiElementType = GuiElementType> {
 
   // noinspection JSUnusedGlobalSymbols
   __eq(other: unknown): boolean {
-    return other instanceof ElementWrapper && other.native === this.native
+    return other instanceof ElementWrapper && other.native == this.native
   }
 
   toString(): string {

@@ -39,7 +39,7 @@ const setmeta = setmetatable
 script.register_metatable("Map2D:array", arrayMeta)
 
 function isArray<T>(value: T | T[]): value is T[] {
-  return getmeta(value) === arrayMeta
+  return getmeta(value) == arrayMeta
 }
 
 @RegisterClass("Map2D")
@@ -52,7 +52,7 @@ class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
   add(x: number, y: number, value: T): void {
     const byX = this[x] ?? (this[x] = {})
     const existing = byX[y]
-    if (existing === nil) {
+    if (existing == nil) {
       byX[y] = value
     } else if (isArray(existing)) {
       existing.push(value)
@@ -62,16 +62,16 @@ class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
   }
   delete(x: number, y: number, value: T): void {
     const byX = this[x]
-    if (byX === nil) return
+    if (byX == nil) return
     const byY = byX[y]
-    if (byY === nil) return
+    if (byY == nil) return
     if (isArray(byY)) {
-      if (remove_from_list(byY, value) && byY.length === 1) {
+      if (remove_from_list(byY, value) && byY.length == 1) {
         byX[y] = byY[0]
       }
     } else {
       delete byX[y]
-      if (next(byX)[0] === nil) {
+      if (next(byX)[0] == nil) {
         delete this[x]
       }
     }
@@ -90,15 +90,15 @@ export function migrateMap2d060<T extends AnyNotNil>(map: MutableMap2D<T>): void
   for (const [x, byX] of pairs(oldMap)) {
     for (const [y, values] of pairs(byX)) {
       const valuesArray = Object.keys(values)
-      if (valuesArray.length === 0) {
+      if (valuesArray.length == 0) {
         delete byX[y]
-      } else if (valuesArray.length === 1) {
+      } else if (valuesArray.length == 1) {
         ;(byX as any)[y] = valuesArray[0]
       } else {
         ;(byX as any)[y] = valuesArray
       }
     }
-    if (next(byX)[0] === nil) {
+    if (next(byX)[0] == nil) {
       delete oldMap[x]
     }
   }

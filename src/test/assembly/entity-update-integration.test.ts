@@ -41,7 +41,7 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   }
   const entity: LuaEntity = assert(surfaces[stage - 1].create_entity(params), "created entity")[0]
   const proto = game.entity_prototypes[params.name]
-  if (proto.type === "inserter") {
+  if (proto.type == "inserter") {
     entity.inserter_stack_size_override = 1
     entity.inserter_filter_mode = "whitelist"
   }
@@ -59,7 +59,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
     assert(worldEntity, `entity exists at stage ${stage}`)
     const isPreview = isPreviewEntity(worldEntity)
     const value = entity.getValueAtStage(stage)
-    if (value === nil) {
+    if (value == nil) {
       assert(isPreview, `entity must be preview at stage ${stage}`)
     } else if (isPreview) {
       hasMissing = true
@@ -91,7 +91,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
 
   // cables
   const cableConnections = assembly.content.getCableConnections(entity)
-  const isElectricPole = game.entity_prototypes[entity.firstValue.name].type === "electric-pole"
+  const isElectricPole = game.entity_prototypes[entity.firstValue.name].type == "electric-pole"
   if (!cableConnections) {
     if (isElectricPole) {
       for (const stage of $range(entity.firstStage, assembly.maxStage())) {
@@ -128,7 +128,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
       if (!wireNeighbors) continue
       assert.same(
         [],
-        wireNeighbors.filter((x) => x.wire !== defines.wire_type.copper),
+        wireNeighbors.filter((x) => x.wire != defines.wire_type.copper),
         `no circuit neighbors at stage ${stage}`,
       )
     }
@@ -576,7 +576,7 @@ function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHa
   let hasError = false
   for (const stage of $range(1, assembly.maxStage())) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)
-    if (stage === entity.firstStage) {
+    if (stage == entity.firstStage) {
       assert.not_nil(worldEntity)
       if (isPreviewEntity(worldEntity!)) {
         hasError = true

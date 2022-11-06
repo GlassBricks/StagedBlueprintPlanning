@@ -54,7 +54,7 @@ describe("findSatisfying", () => {
         <flow caption="hi" />
       </flow>,
     )
-    const found = element.findSatisfying((x) => x.caption === "hi").native
+    const found = element.findSatisfying((x) => x.caption == "hi").native
     const flow = element.native.children[0]
     assert.equal(flow, found)
   })
@@ -70,7 +70,7 @@ describe("findSatisfying", () => {
         </frame>
       </flow>,
     )
-    const found = element.findSatisfying((x) => x.caption === "baz").native
+    const found = element.findSatisfying((x) => x.caption == "baz").native
     const flow = element.native.children[0].children[0].children[1]
     assert.equal(flow, found)
   })

@@ -63,7 +63,7 @@ export function takeBlueprintWithSettings(
   if (isEmpty(bpMapping)) return false
 
   const firstEntityOriginalPosition = bpMapping[1].position
-  if (settings.snapToGrid !== nil || transform.entityFilters) {
+  if (settings.snapToGrid != nil || transform.entityFilters) {
     const entities = stack.get_blueprint_entities()!
     const firstEntityPosition = entities[0].position
     const expectedPosition = Pos.plus(firstEntityOriginalPosition, settings.positionOffset)
@@ -79,10 +79,10 @@ export function takeBlueprintWithSettings(
     }
     const filters = transform.entityFilters
     if (filters) {
-      const isWhitelist = transform.entityFilterMode === defines.deconstruction_item.entity_filter_mode.whitelist
+      const isWhitelist = transform.entityFilterMode == defines.deconstruction_item.entity_filter_mode.whitelist
       for (const i of $range(1, entities.length)) {
         const entity = entities[i - 1]
-        const shouldRemove = isWhitelist !== filters.has(entity.name)
+        const shouldRemove = isWhitelist != filters.has(entity.name)
         if (shouldRemove) delete entities[i - 1]
       }
     }

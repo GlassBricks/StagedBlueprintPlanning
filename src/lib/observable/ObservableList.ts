@@ -91,7 +91,7 @@ class ObservableListImpl<T extends AnyNotNil> implements MutableObservableList<T
   public set(index: number, value: T): void {
     const { array } = this
     const oldValue = array[index]
-    if (oldValue !== value) {
+    if (oldValue != value) {
       array[index] = value
       this.event.raise({
         list: this,

@@ -127,17 +127,17 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   ): HighlightEntities[T] {
     const config = highlightConfigs[type]
     const existing = entity.getExtraEntity(type, stage)
-    if (existing && config.type === "sprite") return existing
+    if (existing && config.type == "sprite") return existing
     // always replace highlight box, in case of upgrade
 
     const prototypeName = entity.firstValue.name
     const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
     let result: LuaEntity | AnyRender | nil
-    if (config.type === "highlight") {
+    if (config.type == "highlight") {
       const { renderType } = config
       const entityTarget = entity.getWorldOrPreviewEntity(stage)
       result = entityTarget && createHighlightBox(entityTarget, renderType)
-    } else if (config.type === "sprite") {
+    } else if (config.type == "sprite") {
       const size = selectionBox.size()
       const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
       const worldPosition = relativePosition.plus(entity.position)
@@ -190,7 +190,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     if (entity.isRollingStock()) return
     let hasErrorAnywhere = false
     for (const i of $range(entity.firstStage, assembly.maxStage())) {
-      const hasError = entity.getWorldEntity(i) === nil
+      const hasError = entity.getWorldEntity(i) == nil
       if (hasError) {
         hasErrorAnywhere = true
         break
@@ -202,7 +202,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     }
 
     for (const stage of $range(1, assembly.maxStage())) {
-      const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) !== nil
+      const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) != nil
       updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
@@ -212,7 +212,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     let lastStageWithHighlights = firstStage
     for (const stage of $range(1, assembly.maxStage())) {
       const hasConfigChanged = entity.hasStageDiff(stage)
-      const isUpgrade = hasConfigChanged && entity.getStageDiff(stage)!.name !== nil
+      const isUpgrade = hasConfigChanged && entity.getStageDiff(stage)!.name != nil
       const highlight = updateHighlight(
         entity,
         stage,
@@ -240,7 +240,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
         highlight.sprite = sprite
       }
     }
-    if (lastStageWithHighlights === firstStage) {
+    if (lastStageWithHighlights == firstStage) {
       // remove later highlights for all stages
       removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
     } else {

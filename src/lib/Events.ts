@@ -91,7 +91,7 @@ function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
   if (handlers.length > 2) return
 
   let func
-  if (handlers.length === 1) {
+  if (handlers.length == 1) {
     func = handler
   } else {
     const theHandlers = handlers
@@ -101,7 +101,7 @@ function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
       }
     }
   }
-  if (type(id) === "table") {
+  if (type(id) == "table") {
     script[(id as symbol).description as keyof ScriptEvents](func)
   } else {
     script.on_event(id as any, func)
@@ -114,9 +114,9 @@ function raiseFakeEvent(id: keyof any, data: any) {
   if (data) {
     Object.assign(data, {
       tick: game.tick,
-      name: typeof id !== "object" ? id : nil,
+      name: typeof id != "object" ? id : nil,
     })
-    if (typeof id === "string") {
+    if (typeof id == "string") {
       ;(data as Mutable<CustomInputEvent>).input_name = id
     }
   }
@@ -127,7 +127,7 @@ function raiseFakeEvent(id: keyof any, data: any) {
 
 function clear(id: keyof any) {
   registeredHandlers[id] = nil
-  if (type(id) === "table") {
+  if (type(id) == "table") {
     script[(id as symbol).description as keyof ScriptEvents](nil)
   } else {
     script.on_event(id as any, nil)
@@ -176,7 +176,7 @@ const Events = {
 setmetatable(Events, {
   __index(this: EventsObj, key: keyof any) {
     const id = scriptEventIds[key as keyof ScriptEvents] ?? defines.events[key as keyof typeof defines.events]
-    if (id !== nil) {
+    if (id != nil) {
       return (handler: AnyHandler) => {
         registerInternal(id, handler)
       }

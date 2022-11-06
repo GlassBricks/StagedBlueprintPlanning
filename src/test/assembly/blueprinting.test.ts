@@ -121,7 +121,7 @@ test.each(["whitelist", "blacklist"])("blueprint settings applied", (mode) => {
   stack.clear()
   stack.set_stack("blueprint")
 
-  const whitelist = mode === "whitelist"
+  const whitelist = mode == "whitelist"
   const transform: BlueprintTransformations = {
     entityFilters: whitelist ? newLuaSet("iron-chest") : newLuaSet("transport-belt"),
     entityFilterMode: whitelist ? entity_filter_mode.whitelist : entity_filter_mode.blacklist,

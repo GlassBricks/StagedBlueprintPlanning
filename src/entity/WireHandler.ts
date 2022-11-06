@@ -80,7 +80,7 @@ function updateCableConnections(
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
 ): boolean {
-  if (luaEntity.type !== "electric-pole") return true
+  if (luaEntity.type != "electric-pole") return true
   const assemblyConnections = content.getCableConnections(entity)
 
   const matching = new Set<AssemblyEntity>()
@@ -166,7 +166,7 @@ function saveCableConnections(
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
 ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
-  if (luaEntity.type !== "electric-pole") return $multi(false)
+  if (luaEntity.type != "electric-pole") return $multi(false)
   const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
   const assemblyConnections = content.getCableConnections(entity)
 
@@ -185,7 +185,7 @@ function saveCableConnections(
     }
   }
 
-  let hasDiff = toAdd[0] !== nil
+  let hasDiff = toAdd[0] != nil
   // remove first, to not exceed max connections
   if (assemblyConnections) {
     for (const otherEntity of assemblyConnections) {
@@ -200,7 +200,7 @@ function saveCableConnections(
   let maxConnectionsExceeded: boolean | nil
   for (const add of toAdd) {
     const result = content.addCableConnection(entity, add)
-    if (result === CableAddResult.MaxConnectionsReached) maxConnectionsExceeded = true
+    if (result == CableAddResult.MaxConnectionsReached) maxConnectionsExceeded = true
   }
 
   return $multi(hasDiff, maxConnectionsExceeded)
@@ -213,10 +213,10 @@ function saveWireConnections(
   cableStage: StageNumber,
 ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
   const circuitStageEntity = entity.getWorldEntity(circuitStage)
-  const diff1 = circuitStageEntity !== nil && saveCircuitConnections(content, entity, circuitStage, circuitStageEntity)
+  const diff1 = circuitStageEntity != nil && saveCircuitConnections(content, entity, circuitStage, circuitStageEntity)
 
   const cableStageEntity = entity.getWorldEntity(cableStage)
-  if (cableStageEntity !== nil) {
+  if (cableStageEntity != nil) {
     const [diff2, maxConnectionsExceeded] = saveCableConnections(content, entity, cableStage, cableStageEntity)
     return $multi(diff1 || diff2, maxConnectionsExceeded)
   }
@@ -239,7 +239,7 @@ function analyzeExistingCircuitConnections(
 
   for (const existingConnection of existingConnections) {
     const otherLuaEntity = existingConnection.target_entity
-    if (luaEntity === otherLuaEntity && existingConnection.source_circuit_id > existingConnection.target_circuit_id)
+    if (luaEntity == otherLuaEntity && existingConnection.source_circuit_id > existingConnection.target_circuit_id)
       continue
     const otherEntity = content.findCompatible(otherLuaEntity, nil)
     if (!otherEntity) continue

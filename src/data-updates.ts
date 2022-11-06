@@ -14,7 +14,7 @@ import { FlexibleOffshorePumpPlacement, Settings } from "./constants"
 
 declare const data: Data
 const value = settings.startup[Settings.FlexibleOffshorePumpPlacement].value as FlexibleOffshorePumpPlacement
-if (value !== FlexibleOffshorePumpPlacement.Disabled) {
+if (value != FlexibleOffshorePumpPlacement.Disabled) {
   const offshorePump = data.raw["offshore-pump"]["offshore-pump"]
   if (!offshorePump)
     error("Flexible offshore pump placement is enabled, but the offshore pump prototype could not be found.")
@@ -23,13 +23,13 @@ if (value !== FlexibleOffshorePumpPlacement.Disabled) {
     [-0.05, -0.8],
     [0.05, -0.7],
   ]
-  if (value === FlexibleOffshorePumpPlacement.Anywhere) {
+  if (value == FlexibleOffshorePumpPlacement.Anywhere) {
     offshorePump.adjacent_tile_collision_test = []
     offshorePump.adjacent_tile_collision_mask = []
     offshorePump.check_bounding_box_collides_with_tiles = false
     offshorePump.placeable_position_visualization = nil
     offshorePump.flags = (offshorePump.flags as Array<keyof EntityPrototypeFlags>).filter(
-      (x) => x !== "filter-directions",
+      (x) => x != "filter-directions",
     )
   }
 }

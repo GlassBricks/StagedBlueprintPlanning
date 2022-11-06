@@ -129,12 +129,12 @@ otherProps.object_name = "_RenderObj"
 const metatable: LuaMetatable<BaseRenderObj<RenderType>, any> = {
   __index(this: BaseRenderObj<RenderType>, key: string) {
     const getter = getters[key as keyof Getters]
-    if (getter !== nil) return getter(this.id)
+    if (getter != nil) return getter(this.id)
     return otherProps[key as keyof OtherSetters]
   },
   __newindex(this: BaseRenderObj<RenderType>, key: string, value: any) {
     const setter = setters[key as keyof Setters]
-    if (setter !== nil) setter(this.id, value as never)
+    if (setter != nil) setter(this.id, value as never)
     else error(`${key} not in render object`)
   },
 }

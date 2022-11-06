@@ -25,7 +25,7 @@ export type CategoryName = string & {
 const categories = new LuaMap<string, CategoryName>()
 function processCategory(prototype: LuaEntityPrototype) {
   const { fast_replaceable_group, type, collision_box, name } = prototype
-  if (fast_replaceable_group === nil) return
+  if (fast_replaceable_group == nil) return
   const actualType = typeRemap[type] ?? type
   const { x: lx, y: ly } = collision_box.left_top
   const { x: rx, y: ry } = collision_box.right_bottom
@@ -98,10 +98,10 @@ export function getEntityCategory(entityName: string): CategoryName | nil {
 
 export function areUpgradeableTypes(a: string, b: string): boolean {
   if (!prototypesProcessed) processPrototypes()
-  if (a === b) return true
+  if (a == b) return true
   const aCategory = categories.get(a)
-  if (aCategory === nil) return false
-  return aCategory === categories.get(b)
+  if (aCategory == nil) return false
+  return aCategory == categories.get(b)
 }
 
 export function getSelectionBox(entityName: string): BBoxClass {
@@ -118,7 +118,7 @@ export function shouldCheckEntityExactlyForMatch(entityName: string): boolean {
 }
 export function isUndergroundBeltType(entityName: string): boolean {
   if (!prototypesProcessed) processPrototypes()
-  return nameToType.get(entityName) === "underground-belt"
+  return nameToType.get(entityName) == "underground-belt"
 }
 export function isRollingStockType(entityName: string): boolean {
   if (!prototypesProcessed) processPrototypes()

@@ -16,7 +16,7 @@ import { SpriteRender } from "../../lib"
 export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, maxStage: StageNumber): void {
   let i = entity.firstStage
   for (const [stageNumber, changes] of pairs(entity.getStageDiffs() ?? {})) {
-    const isUpgrade = changes.name !== nil
+    const isUpgrade = changes.name != nil
 
     const highlight = assert.not_nil(entity.getExtraEntity("configChangedHighlight", stageNumber)) as HighlightBoxEntity
     assert.equal(
@@ -27,7 +27,7 @@ export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, max
 
     const firstI = i
     for (; i < stageNumber; i++) {
-      if (i !== firstI)
+      if (i != firstI)
         assert.nil(entity.getExtraEntity("configChangedHighlight", i), "should not have highlight in stage " + i)
 
       const highlight = assert.not_nil(
@@ -38,7 +38,7 @@ export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, max
     }
   }
   for (let j = i; j <= maxStage; j++) {
-    if (j !== i)
+    if (j != i)
       assert.nil(entity.getExtraEntity("configChangedHighlight", j), "should not have highlight in stage " + j)
     assert.nil(entity.getExtraEntity("configChangedLaterHighlight", j), "should not have later highlight in stage " + j)
   }
@@ -47,7 +47,7 @@ export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, max
 export function assertErrorHighlightsCorrect(entity: AssemblyEntity, maxStage: StageNumber): void {
   let hasAnyMissing = false
   for (const stage of $range(entity.firstStage, maxStage)) {
-    if (entity.getWorldEntity(stage) === nil) {
+    if (entity.getWorldEntity(stage) == nil) {
       hasAnyMissing = true
       const highlight = assert.not_nil(entity.getExtraEntity("errorOutline", stage)) as HighlightBoxEntity
       assert.equal(HighlightValues.Error, highlight.highlight_box_type, "highlight type")
@@ -62,7 +62,7 @@ export function assertErrorHighlightsCorrect(entity: AssemblyEntity, maxStage: S
       assert.nil(entity.getExtraEntity("errorElsewhereIndicator", stage), `should not have highlight in stage ${stage}`)
     }
     for (const stage of $range(maxStage + 1, maxStage)) {
-      const hasError = entity.getWorldEntity(stage) === nil
+      const hasError = entity.getWorldEntity(stage) == nil
       if (hasError) {
         // no indicator
         assert.nil(

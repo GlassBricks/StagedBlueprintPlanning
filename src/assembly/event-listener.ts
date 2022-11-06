@@ -235,7 +235,7 @@ function clearToBeFastReplaced(player: PlayerIndex | nil): void {
 }
 
 function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerIndex | nil): void {
-  const isUnderground = entity.type === "underground-belt"
+  const isUnderground = entity.type == "underground-belt"
   const oldValue = state.toBeFastReplaced
   const newValue: ToBeFastReplacedEntity = {
     name: entity.name,
@@ -248,7 +248,7 @@ function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerInde
   }
 
   if (isUnderground) {
-    if (oldValue && oldValue.undergroundPair === entity) {
+    if (oldValue && oldValue.undergroundPair == entity) {
       oldValue.undergroundPair = nil
       oldValue.undergroundPairValue = newValue
       return
@@ -294,7 +294,7 @@ Events.on_pre_build((e) => {
   const stage = getStageAtSurface(surface.index)
   if (!stage) return
   const placeResult = item.place_result
-  if (!placeResult || placeResult.type !== "transport-belt") return
+  if (!placeResult || placeResult.type != "transport-belt") return
   const hoveredEntity = surface.find_entities_filtered({
     position: e.position,
     radius: 0,
@@ -302,7 +302,7 @@ Events.on_pre_build((e) => {
     direction: oppositedirection(e.direction),
     limit: 1,
   })[0]
-  if (hoveredEntity !== nil) {
+  if (hoveredEntity != nil) {
     WorldListener.onUndergroundBeltDragRotated(stage.assembly, hoveredEntity, stage.stageNumber, e.player_index)
   }
   // this triggers onMarkedForUpgrade event handler
@@ -321,9 +321,9 @@ function isFastReplaceCompatible(
   direction2: defines.direction,
 ): boolean {
   return (
-    pos1.x === pos2.x &&
-    pos1.y === pos2.y &&
-    ((item1 === item2 && direction1 !== direction2) || (item1 !== item2 && areUpgradeableTypes(item1, item2)))
+    pos1.x == pos2.x &&
+    pos1.y == pos2.y &&
+    ((item1 == item2 && direction1 != direction2) || (item1 != item2 && areUpgradeableTypes(item1, item2)))
   )
 }
 function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent) {
@@ -332,17 +332,17 @@ function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent) {
 
   const { entity } = mineEvent
   const toBeFastReplaced = state.toBeFastReplaced
-  if (toBeFastReplaced && toBeFastReplaced.undergroundPair === entity) {
+  if (toBeFastReplaced && toBeFastReplaced.undergroundPair == entity) {
     return true
   }
 
   const { event, item } = lastPreBuild
 
   if (
-    item === nil ||
-    event.tick !== mineEvent.tick ||
-    event.player_index !== mineEvent.player_index ||
-    entity.surface !== lastPreBuild.surface
+    item == nil ||
+    event.tick != mineEvent.tick ||
+    event.player_index != mineEvent.player_index ||
+    entity.surface != lastPreBuild.surface
   )
     return
 
@@ -350,7 +350,7 @@ function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent) {
   if (isFastReplaceCompatible(position, entity.position, item, entity.name, event.direction, entity.direction)) {
     return true
   }
-  if (entity.type === "underground-belt") {
+  if (entity.type == "underground-belt") {
     const pair = entity.neighbours as LuaEntity | nil
     if (pair && isFastReplaceCompatible(position, pair.position, item, pair.name, event.direction, pair.direction)) {
       return true
@@ -367,7 +367,7 @@ Events.on_player_mined_entity((e) => {
   const stage = getStageAtSurface(entitySurface.index)
   if (!stage || !isWorldEntityAssemblyEntity(entity)) return
 
-  if (preMinedItemCalled === nil) {
+  if (preMinedItemCalled == nil) {
     // this happens when using instant upgrade planner
     setToBeFastReplaced(entity, stage, e.player_index)
   }
@@ -405,7 +405,7 @@ Events.on_built_entity((e) => {
   // also handles instant upgrade planner
   if (tryFastReplace(entity, stage, playerIndex)) return
 
-  if (lastPreBuild === nil) {
+  if (lastPreBuild == nil) {
     // editor mode build, marker entity, or multiple-entities in one build
     WorldListener.onEntityCreated(stage.assembly, entity, stage.stageNumber, playerIndex)
     return
@@ -420,7 +420,7 @@ Events.on_built_entity((e) => {
 
 function checkNonAssemblyEntity(entity: LuaEntity, stage: Stage, byPlayer: PlayerIndex | nil): void {
   // always revive ghost undergrounds
-  if (entity.type === "entity-ghost" && entity.ghost_type === "underground-belt") {
+  if (entity.type == "entity-ghost" && entity.ghost_type == "underground-belt") {
     const [, newEntity] = entity.silent_revive()
     if (newEntity) {
       WorldListener.onEntityCreated(stage.assembly, newEntity, stage.stageNumber, byPlayer)
@@ -469,8 +469,8 @@ interface MarkerTags extends Tags {
 function getInnerBlueprint(stack: BaseItemStack | nil): BlueprintItemStack | nil {
   if (!stack || !stack.valid_for_read) return nil
   const type = stack.type
-  if (type === "blueprint") return stack as BlueprintItemStack
-  if (type === "blueprint-book") {
+  if (type == "blueprint") return stack as BlueprintItemStack
+  if (type == "blueprint-book") {
     const active = (stack as BlueprintBookItemStack).active_index
     if (!active) return nil
     const innerStack = stack.get_inventory(defines.inventory.item_main)
@@ -488,7 +488,7 @@ function blueprintNeedsPreparation(stack: BlueprintItemStack): boolean {
 
 function fixOldBlueprint(entities: BlueprintEntity[]): void {
   // old blueprint, remove old markers
-  const firstEntityMarker = entities.findIndex((e) => e.name === Prototypes.EntityMarker)
+  const firstEntityMarker = entities.findIndex((e) => e.name == Prototypes.EntityMarker)
   // remove all entities after the first entity marker
   for (const i of $range(firstEntityMarker + 1, entities.length)) {
     entities[i - 1] = nil!
@@ -504,7 +504,7 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
   const entities = stack.get_blueprint_entities()
   if (!entities) return $multi()
 
-  if (stack.cost_to_build[Prototypes.EntityMarker] !== nil) fixOldBlueprint(entities)
+  if (stack.cost_to_build[Prototypes.EntityMarker] != nil) fixOldBlueprint(entities)
 
   const numEntities = entities.length
   let nextIndex = numEntities + 1
@@ -525,7 +525,7 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
     }
     nextIndex++
   }
-  if (nextIndex === numEntities + 1) {
+  if (nextIndex == numEntities + 1) {
     // add one anyway
     entities[nextIndex - 1] = {
       entity_number: nextIndex,
@@ -563,7 +563,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
     return
   }
   const [entities, numEntities] = prepareBlueprintForStagePaste(blueprint)
-  if (entities !== nil) {
+  if (entities != nil) {
     state.currentlyInBlueprintPaste = stage
     state.blueprintEntities = entities
     state.blueprintOriginalNumEntities = numEntities!
@@ -574,9 +574,9 @@ function tryFixBlueprint(player: LuaPlayer): void {
   const blueprint = getInnerBlueprint(player.cursor_stack)
   if (!blueprint) return
   const entityCount = blueprint.get_blueprint_entity_count()
-  if (entityCount === 0) return
+  if (entityCount == 0) return
   const lastTags = blueprint.get_blueprint_entity_tag(entityCount, IsLastEntity)
-  if (lastTags !== nil) {
+  if (lastTags != nil) {
     const entities = blueprint.get_blueprint_entities()!
     fixOldBlueprint(entities)
     blueprint.set_blueprint_entities(entities)
@@ -604,16 +604,16 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
 
 function isMarkerEntity(entity: LuaEntity): boolean {
   return (
-    entity.name === Prototypes.EntityMarker ||
-    (entity.type === "entity-ghost" && entity.ghost_name === Prototypes.EntityMarker)
+    entity.name == Prototypes.EntityMarker ||
+    (entity.type == "entity-ghost" && entity.ghost_name == Prototypes.EntityMarker)
   )
 }
 
 function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
   const tags = (e.tags ?? entity.tags) as MarkerTags
-  if (tags !== nil) {
+  if (tags != nil) {
     handleEntityMarkerBuilt(e, entity, tags, stage)
-    if (tags[IsLastEntity] !== nil) onLastEntityMarkerBuilt(e)
+    if (tags[IsLastEntity] != nil) onLastEntityMarkerBuilt(e)
   }
   entity.destroy()
 }
@@ -630,7 +630,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     nil,
     e.player_index,
   )
-  if (result !== false && tags.hasCircuitWires) {
+  if (result != false && tags.hasCircuitWires) {
     WorldListener.onCircuitWiresPossiblyUpdated(stage.assembly, correspondingEntity, stage.stageNumber, e.player_index)
   }
 }
@@ -646,7 +646,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
 
   const data = global.players[player.index]
   const existingEntity = data.lastWireAffectedEntity
-  if (existingEntity && existingEntity !== entity) {
+  if (existingEntity && existingEntity != entity) {
     WorldListener.onCircuitWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, player.index)
   }
   data.lastWireAffectedEntity = entity
@@ -680,7 +680,7 @@ Events.on_selected_entity_changed((e) => {
 // Cleanup tool
 
 function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
-  if (e.item !== Prototypes.CleanupTool) return
+  if (e.item != Prototypes.CleanupTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const updateLater: LuaEntity[] = []
@@ -697,7 +697,7 @@ function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
   }
 }
 function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
-  if (e.item !== Prototypes.CleanupTool) return
+  if (e.item != Prototypes.CleanupTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const { stageNumber, assembly } = stage
@@ -730,7 +730,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
 
 // Stage move tool
 Events.on_player_selected_area((e) => {
-  if (e.item !== Prototypes.StageMoveTool) return
+  if (e.item != Prototypes.StageMoveTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
 
@@ -750,7 +750,7 @@ Events.on_player_selected_area((e) => {
   }
 })
 function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
-  if (e.item !== Prototypes.StageMoveTool) return
+  if (e.item != Prototypes.StageMoveTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
 
@@ -763,7 +763,7 @@ function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
 Events.on_player_alt_selected_area(checkMoveToolAlt)
 Events.on_player_reverse_selected_area(checkMoveToolAlt)
 Events.on_player_alt_reverse_selected_area((e) => {
-  if (e.item === Prototypes.StageMoveTool) {
+  if (e.item == Prototypes.StageMoveTool) {
     game.get_player(e.player_index)!.play_sound({ path: Prototypes.BANANA })
   }
 })
@@ -774,7 +774,7 @@ Events.on_marked_for_deconstruction((e) => {
   if (!playerIndex) return
   const player = game.get_player(playerIndex)!
   const cursorStack = player.cursor_stack
-  if (!cursorStack || !cursorStack.valid_for_read || cursorStack.name !== Prototypes.FilteredStageMoveTool) return
+  if (!cursorStack || !cursorStack.valid_for_read || cursorStack.name != Prototypes.FilteredStageMoveTool) return
 
   const entity = e.entity
   entity.cancel_deconstruction(entity.force)

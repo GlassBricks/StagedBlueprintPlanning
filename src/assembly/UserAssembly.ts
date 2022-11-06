@@ -88,7 +88,7 @@ class UserAssemblyImpl implements UserAssembly {
     }
   }
   private static getDisplayName(this: void, id: AssemblyId, name: string): LocalisedString {
-    return name !== "" ? name : [L_Bp100.UnnamedAssembly, id]
+    return name != "" ? name : [L_Bp100.UnnamedAssembly, id]
   }
 
   static create(name: string, initialNumStages: number): UserAssemblyImpl {
@@ -135,8 +135,8 @@ class UserAssemblyImpl implements UserAssembly {
   deleteStage(index: StageNumber): void {
     this.assertValid()
     const stage = this.stages[index]
-    assert(stage !== nil, "invalid stage number")
-    if (this.maxStage() === 1) {
+    assert(stage != nil, "invalid stage number")
+    if (this.maxStage() == 1) {
       this.delete()
       return
     }
@@ -161,7 +161,7 @@ class UserAssemblyImpl implements UserAssembly {
     stack.clear()
     stack.set_stack("blueprint-book")
     const { useNextStageTiles, bookNameMode } = this.assemblyBlueprintSettings
-    if (bookNameMode.get() === BookNameMode.FromAssembly) {
+    if (bookNameMode.get() == BookNameMode.FromAssembly) {
       stack.label = this.name.get()
     } else {
       stack.label = ""
@@ -172,7 +172,7 @@ class UserAssemblyImpl implements UserAssembly {
 
     for (const [, stage] of ipairs(this.stages)) {
       const nInserted = inventory.insert("blueprint")
-      assert(nInserted === 1, "Failed to insert blueprint into blueprint book")
+      assert(nInserted == 1, "Failed to insert blueprint into blueprint book")
       const stack = inventory[inventory.length - 1]!
       if (!stage.doTakeBlueprint(stack, bbox)) stack.clear()
     }
@@ -213,7 +213,7 @@ class UserAssemblyImpl implements UserAssembly {
     let subName = ""
     for (let i = 1; ; i++) {
       const name = `<New stage>${subName}`
-      if ((this.stages as unknown as Stage[]).some((stage) => stage.name.get() === name)) {
+      if ((this.stages as unknown as Stage[]).some((stage) => stage.name.get() == name)) {
         subName = ` (${i})`
       } else {
         return name
@@ -246,7 +246,7 @@ export function _deleteAllAssemblies(): void {
   global.nextAssemblyId = 1 as AssemblyId
 }
 
-const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods.debugadapter !== nil ? 32 : 5 * 32)
+const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods.debugadapter != nil ? 32 : 5 * 32)
 
 @RegisterClass("Stage")
 class StageImpl implements Stage {
@@ -264,7 +264,7 @@ class StageImpl implements Stage {
   ) {
     this.name = state(name)
     this.surfaceIndex = surface.index
-    if (assembly.id !== 0) global.surfaceIndexToStage.set(this.surfaceIndex, this)
+    if (assembly.id != 0) global.surfaceIndexToStage.set(this.surfaceIndex, this)
   }
 
   static create(assembly: UserAssemblyImpl, stageNumber: StageNumber, name: string): StageImpl {
@@ -294,9 +294,9 @@ class StageImpl implements Stage {
     )
     if (took) {
       const blueprintNameMode = this.assembly.assemblyBlueprintSettings.blueprintNameMode.get()
-      if (blueprintNameMode === BlueprintNameMode.Empty) {
+      if (blueprintNameMode == BlueprintNameMode.Empty) {
         stack.label = ""
-      } else if (blueprintNameMode === BlueprintNameMode.FromStage) {
+      } else if (blueprintNameMode == BlueprintNameMode.FromStage) {
         stack.label = this.name.get()
       }
       // else, use the custom name from tryTakeBlueprintWithSettings
@@ -314,7 +314,7 @@ class StageImpl implements Stage {
         this.assembly.assemblyBlueprintSettings.transformations,
         this.surface,
         bbox,
-      ) !== nil
+      ) != nil
     )
   }
 
@@ -342,7 +342,7 @@ export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
 
 Events.on_pre_surface_deleted((e) => {
   const stage = getStageAtSurface(e.surface_index)
-  if (stage !== nil) stage.deleteInAssembly()
+  if (stage != nil) stage.deleteInAssembly()
 })
 
 // Migrations.to("0.2.1", () => {

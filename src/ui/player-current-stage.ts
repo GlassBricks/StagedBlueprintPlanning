@@ -39,11 +39,11 @@ export { PlayerChangedStageEvent }
 
 function updatePlayer(player: LuaPlayer): void {
   const data = global.players[player.index]
-  if (data === nil) return
+  if (data == nil) return
 
   const curStage = data.currentStage
   const newStage = getStageAtSurface(player.surface.index)
-  if (curStage.get() !== newStage) {
+  if (curStage.get() != newStage) {
     curStage.set(newStage)
     PlayerChangedStageEvent.raise(player, newStage)
   }
@@ -78,8 +78,8 @@ AssemblyEvents.addListener((e) => {
 
 export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   const currentStage = getStageAtSurface(player.surface.index)
-  if (currentStage && currentStage.assembly === stage.assembly) {
-    if (currentStage !== stage) player.teleport(player.position, stage.surface)
+  if (currentStage && currentStage.assembly == stage.assembly) {
+    if (currentStage != stage) player.teleport(player.position, stage.surface)
     return
   }
 
@@ -92,7 +92,7 @@ export function teleportToStage(player: LuaPlayer, stage: Stage): void {
 
 export function teleportToAssembly(player: LuaPlayer, assembly: UserAssembly): void {
   const currentStage = getStageAtSurface(player.surface.index)
-  if (currentStage && currentStage.assembly === assembly) {
+  if (currentStage && currentStage.assembly == assembly) {
     return
   }
   if (currentStage) {
@@ -124,7 +124,7 @@ function recordPlayerAtStage(player: LuaPlayer, currentStage: Stage): void {
 }
 
 export function teleportToSurface1(player: LuaPlayer): void {
-  if (player.surface.index !== 1) {
+  if (player.surface.index != 1) {
     player.teleport(player.position, game.surfaces[1])
   }
 }

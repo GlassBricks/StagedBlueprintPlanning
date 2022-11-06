@@ -21,7 +21,7 @@ import "./stage-move-tool"
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {
     const opened = player.opened
-    if (opened && opened.object_name === "LuaGuiElement" && opened.get_mod() === script.mod_name) {
+    if (opened && opened.object_name == "LuaGuiElement" && opened.get_mod() == script.mod_name) {
       destroy(opened)
       player.opened = nil
     }

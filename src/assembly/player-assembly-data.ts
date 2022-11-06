@@ -34,7 +34,7 @@ onPlayerInit((index) => {
   global.players[index].assemblyPlayerData = new LuaMap()
 })
 AssemblyEvents.addListener((e) => {
-  if (e.type === "assembly-deleted") {
+  if (e.type == "assembly-deleted") {
     for (const [, player] of game.players) {
       global.players[player.index].assemblyPlayerData.delete(e.assembly.id)
     }

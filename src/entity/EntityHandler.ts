@@ -54,7 +54,7 @@ export function getTempBpItemStack(): BlueprintItemStack {
 
 function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | nil {
   for (const [index, mEntity] of pairs(mapping)) {
-    if (entity === mEntity) return index
+    if (entity == mEntity) return index
   }
 }
 
@@ -75,7 +75,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {
       return stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
-      // assert(bpEntity.entity_number === matchingIndex)
+      // assert(bpEntity.entity_number == matchingIndex)
     }
   }
 }
@@ -124,7 +124,7 @@ function tryCreateUndergroundEntity(
 ): LuaEntity | nil {
   // assert(isUndergroundBeltType(entity.name))
   const type = (entity as BlueprintEntity).type
-  if (type === "output") {
+  if (type == "output") {
     direction = oppositedirection(direction)
   }
   const params = {
@@ -136,7 +136,7 @@ function tryCreateUndergroundEntity(
   }
   if (!surface.can_place_entity(params)) return nil
   const luaEntity = surface.create_entity(params)
-  if (luaEntity && luaEntity.belt_to_ground_type !== type) {
+  if (luaEntity && luaEntity.belt_to_ground_type != type) {
     luaEntity.destroy()
     return nil
   }
@@ -174,11 +174,11 @@ function createNormalEntity(
 ): LuaEntity | nil {
   const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity as BlueprintEntity)
   if (!luaEntity) return nil
-  if (luaEntity.type === "underground-belt" && luaEntity.belt_to_ground_type !== (entity as BlueprintEntity).type) {
+  if (luaEntity.type == "underground-belt" && luaEntity.belt_to_ground_type != (entity as BlueprintEntity).type) {
     luaEntity.destroy()
     return nil
   }
-  if (luaEntity.type === "loader" || luaEntity.type === "loader-1x1") {
+  if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
     luaEntity.loader_type = (entity as BlueprintEntity).type ?? "output"
     luaEntity.direction = direction
   }
@@ -196,7 +196,7 @@ function createNormalEntity(
 
 function entityHasSettings(entity: Entity): boolean {
   for (const [key] of pairs(entity)) {
-    if (key !== "name" && key !== "items") return true
+    if (key != "name" && key != "items") return true
   }
   return false
 }
@@ -212,7 +212,7 @@ function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
     fast_replace: true,
     spill: false,
     create_build_effect_smoke: false,
-    type: entity.type === "underground-belt" ? entity.belt_to_ground_type : nil,
+    type: entity.type == "underground-belt" ? entity.belt_to_ground_type : nil,
   })
   if (!newEntity) return entity
   if (entity.valid) {
@@ -257,14 +257,14 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
 }
 
 function rotateUnderground(luaEntity: LuaEntity, mode: "input" | "output", direction: defines.direction): void {
-  if (luaEntity.belt_to_ground_type !== mode) {
+  if (luaEntity.belt_to_ground_type != mode) {
     const wasRotatable = luaEntity.rotatable
     luaEntity.rotatable = true
     luaEntity.rotate()
     luaEntity.rotatable = wasRotatable
   }
-  const expectedDirection = mode === "output" ? oppositedirection(direction) : direction
-  assert(luaEntity.direction === expectedDirection, "cannot rotate underground-belt")
+  const expectedDirection = mode == "output" ? oppositedirection(direction) : direction
+  assert(luaEntity.direction == expectedDirection, "cannot rotate underground-belt")
 }
 
 const BlueprintEntityHandler: EntityHandler = {
@@ -302,14 +302,14 @@ const BlueprintEntityHandler: EntityHandler = {
 
   updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity {
     if (rollingStockTypes.has(luaEntity.type)) return luaEntity
-    if (luaEntity.name !== value.name) {
+    if (luaEntity.name != value.name) {
       luaEntity = upgradeEntity(luaEntity, value.name)
     }
 
-    if (luaEntity.type === "underground-belt") {
+    if (luaEntity.type == "underground-belt") {
       rotateUnderground(luaEntity, value.type ?? "input", direction)
     } else {
-      if (luaEntity.type === "loader" || luaEntity.type === "loader-1x1") {
+      if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
         luaEntity.loader_type = value.type ?? "output"
       }
       luaEntity.direction = direction ?? 0

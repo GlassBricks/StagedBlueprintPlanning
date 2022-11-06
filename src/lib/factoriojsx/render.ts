@@ -29,7 +29,7 @@ interface ElementInstance {
 
 function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, value: any) {
   if (!elem.valid) {
-    if (elem.object_name === "LuaGuiElement") destroy(elem)
+    if (elem.object_name == "LuaGuiElement") destroy(elem)
     return
   }
   ;(elem as any)[key] = value
@@ -40,9 +40,9 @@ function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
     destroy(elem)
     return
   }
-  if (key === "slider_minimum") {
+  if (key == "slider_minimum") {
     ;(elem as SliderGuiElement).set_slider_minimum_maximum(value, (elem as SliderGuiElement).get_slider_maximum())
-  } else if (key === "slider_maximum") {
+  } else if (key == "slider_maximum") {
     ;(elem as SliderGuiElement).set_slider_minimum_maximum((elem as SliderGuiElement).get_slider_minimum(), value)
   } else {
     ;(elem as any as Record<any, SelflessFun>)[key](value)
@@ -93,7 +93,7 @@ function callOnMount(tracker: TrackerInternal, element: LuaGuiElement): void {
 }
 
 function isLuaGuiElement(element: unknown): element is LuaGuiElement {
-  return typeof element === "object" && (element as LuaGuiElement).object_name === "LuaGuiElement"
+  return typeof element == "object" && (element as LuaGuiElement).object_name == "LuaGuiElement"
 }
 
 declare global {
@@ -115,13 +115,13 @@ function renderInternal(
 ): LuaGuiElement | LuaGuiElement[] | nil {
   const elemType = element.type
   const elemTypeType = type(elemType)
-  if (elemTypeType === "string") {
+  if (elemTypeType == "string") {
     return renderElement(parent, element as ElementSpec | FragmentSpec, tracker)
   }
-  if (elemTypeType === "table") {
+  if (elemTypeType == "table") {
     return renderClassComponent(parent, element as ClassComponentSpec<any>, tracker)
   }
-  if (elemTypeType === "function") {
+  if (elemTypeType == "function") {
     return renderFunctionComponent(parent, element as FCSpec<any>, tracker)
   }
   error("Unknown spec type: " + serpent.block(element))
@@ -141,7 +141,7 @@ function renderFragment(parent: BaseGuiElement, spec: FragmentSpec, tracker: Tra
       elements.push(...childResult)
     }
   }
-  if (elements.length === 0) {
+  if (elements.length == 0) {
     tracker.subscriptionContext?.close()
     return
   }
@@ -153,7 +153,7 @@ function renderElement(
   spec: ElementSpec | FragmentSpec,
   tracker: TrackerInternal,
 ): LuaGuiElement | LuaGuiElement[] | nil {
-  if (spec.type === "fragment") {
+  if (spec.type == "fragment") {
     return renderFragment(parent, spec, tracker)
   }
 
@@ -165,8 +165,8 @@ function renderElement(
   for (let [key, value] of pairs(spec)) {
     const propProperties = propInfo[key]
     if (!propProperties) continue
-    if (typeof value === "function") value = funcRef(value as any)
-    if (propProperties === "event") {
+    if (typeof value == "function") value = funcRef(value as any)
+    if (propProperties == "event") {
       assert((value as Func).invoke, "Gui event handler must be a function")
       events[key as GuiEventName] = value as GuiEventHandler
       continue
@@ -182,7 +182,7 @@ function renderElement(
         // value is state
         error(`${key} cannot be a state value`)
       }
-      if (typeof isElemProp === "string") elemProps.set([isElemProp], value)
+      if (typeof isElemProp == "string") elemProps.set([isElemProp], value)
       else elemProps.set(key, value)
       if (stateEvent && value instanceof State) {
         if (isMutableState<any>(value)) {
@@ -209,7 +209,7 @@ function renderElement(
     if (value instanceof State) {
       let observer: Observer<unknown>
       let name: string
-      if (typeof key !== "object") {
+      if (typeof key != "object") {
         observer = bind(setValueObserver, element, key)
         name = key
       } else {
@@ -217,7 +217,7 @@ function renderElement(
         observer = bind(callSetterObserver, element, name)
       }
       value.subscribeAndFire(tracker.getSubscription(), observer)
-    } else if (typeof key !== "object") {
+    } else if (typeof key != "object") {
       // simple value
       ;(element as any)[key] = value
     } else {
@@ -246,7 +246,7 @@ function renderElement(
   }
 
   // setup tabbed pane
-  if (spec.type === "tabbed-pane") {
+  if (spec.type == "tabbed-pane") {
     // alternate indexes tab-content
     const children = element.children
     for (const i of $range(1, children.length, 2)) {
@@ -405,7 +405,7 @@ export function cleanGuiInstances(): number {
   return count
 }
 
-if (script.active_mods.debugadapter !== nil) {
+if (script.active_mods.debugadapter != nil) {
   commands.add_command("clean-gui-instances", "", () => {
     const count = cleanGuiInstances()
     if (count > 0) {

@@ -28,11 +28,11 @@ import relative_gui_type = defines.relative_gui_type
 
 PlayerChangedStageEvent.addListener((player, stage) => {
   const entity = player.opened
-  if (!entity || entity.object_name !== "LuaEntity") return
+  if (!entity || entity.object_name != "LuaEntity") return
 
   const [oldStage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
-  if (!oldStage || oldStage === stage) return
-  if (stage === nil || oldStage.assembly !== stage.assembly) {
+  if (!oldStage || oldStage == stage) return
+  if (stage == nil || oldStage.assembly != stage.assembly) {
     player.opened = nil
     return
   }
@@ -79,7 +79,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
         <button
           caption={buttonStage.name}
           styleMod={{ width: StageButtonWidth, height: StageButtonHeight }}
-          enabled={buttonStage !== stage}
+          enabled={buttonStage != stage}
           on_gui_click={bind(EntityAssemblyInfo.teleportToStageAction, buttonStage)}
         />
       )
@@ -114,7 +114,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiEntityInfo.MoveToThisStage]}
             on_gui_click={funcOn(this.moveToThisStage)}
-            enabled={firstStageNum !== currentStageNum}
+            enabled={firstStageNum != currentStageNum}
           />
           {isRollingStock && [
             <button
@@ -167,7 +167,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     )
   }
   private renderPropertyOptions(prop: keyof BlueprintEntity | true, nextLowerStageName: LocalisedString): Spec {
-    const caption: LocalisedString = prop === true ? [L_GuiEntityInfo.AllProps] : prop
+    const caption: LocalisedString = prop == true ? [L_GuiEntityInfo.AllProps] : prop
     return (
       <flow direction="horizontal">
         <label caption={caption} />
@@ -190,7 +190,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
 
   private resetProp(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
-    if (prop === true) {
+    if (prop == true) {
       AssemblyUpdater.resetAllProps(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
       AssemblyUpdater.resetProp(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
@@ -199,7 +199,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   }
   private applyToLowerStage(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
-    if (prop === true) {
+    if (prop == true) {
       AssemblyUpdater.moveAllPropsDown(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
       AssemblyUpdater.movePropDown(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
@@ -216,11 +216,11 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
       return
     }
     const currentOpened = player.opened
-    if (currentOpened === nil) {
+    if (currentOpened == nil) {
       player.opened = worldEntity
       return
     }
-    if (currentOpened !== worldEntity) return // opened another entity somehow, ignore
+    if (currentOpened != worldEntity) return // opened another entity somehow, ignore
     if (reopen) {
       reopenEntity(player)
     } else {
@@ -232,7 +232,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const opened = player.opened
-    if (opened && opened.object_name === "LuaEntity") {
+    if (opened && opened.object_name == "LuaEntity") {
       entityPossiblyUpdated(opened, this.playerIndex)
       tryRenderExtraStageInfo(player, opened)
     }
@@ -295,7 +295,7 @@ declare const global: GlobalWithPlayers
 const fakeRerenderTranslationId = script.mod_name + ":rerender-fake-translation"
 function reopenEntity(player: LuaPlayer) {
   const opened = player.opened
-  if (opened && opened.object_name === "LuaEntity") {
+  if (opened && opened.object_name == "LuaEntity") {
     global.players[player.index].entityToReopen = opened
     player.opened = nil
     player.request_translation([fakeRerenderTranslationId])
@@ -303,7 +303,7 @@ function reopenEntity(player: LuaPlayer) {
 }
 Events.on_string_translated((event) => {
   const str = event.localised_string
-  if (!Array.isArray(str) || str[0] !== fakeRerenderTranslationId) return
+  if (!Array.isArray(str) || str[0] != fakeRerenderTranslationId) return
   const playerData = global.players[event.player_index]
   const entity = playerData.entityToReopen
   delete playerData.entityToReopen
@@ -324,7 +324,7 @@ Events.on_gui_closed((e) => {
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {
     const opened = player.opened
-    if (opened && opened.object_name === "LuaEntity") {
+    if (opened && opened.object_name == "LuaEntity") {
       tryRenderExtraStageInfo(player, opened)
     }
   }

@@ -46,12 +46,12 @@ export function createWhiteSprite(
 
   const size = bbox.size()
   const scale = ceil(max(size.x, size.y))
-  if (scale === 0) return empty_sprite() as Sprite
+  if (scale == 0) return empty_sprite() as Sprite
   const center = bbox.center()
 
   const { x, y } = bbox.scale(32 / scale).size()
   function createRotated(dir: defines.direction | nil): Sprite {
-    const isRotated90 = dir === direction.east || dir === direction.west
+    const isRotated90 = dir == direction.east || dir == direction.west
     return {
       filename: whiteTile,
       width: isRotated90 ? y : x,
@@ -83,7 +83,7 @@ const entityToItemBuild = new LuaMap<string, string>()
 const itemTypes = ["item", "item-with-entity-data", "rail-planner"]
 for (const type of itemTypes) {
   const prototypes = data.raw[type]
-  if (prototypes === nil) continue
+  if (prototypes == nil) continue
   for (const [name, itemPrototype] of pairs(prototypes)) {
     if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)
   }
@@ -94,7 +94,7 @@ const flagsToTransfer = newLuaSet<keyof EntityPrototypeFlags>("placeable-off-gri
 function isBuildablePrototype(prototype: EntityPrototype): boolean {
   const flags = prototype.flags
   if (!flags || !flags.includes("player-creation")) return false
-  return prototype.selection_box !== nil
+  return prototype.selection_box != nil
 }
 const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
   "artillery-wagon",
@@ -250,7 +250,7 @@ function createRailPreview(
   placeableBy: ItemToPlace,
   flags: (keyof EntityPrototypeFlags)[],
 ): RailRemnantsPrototype {
-  const isCurved = prototype.type === "curved-rail"
+  const isCurved = prototype.type == "curved-rail"
   const color = prototype.friendly_map_color ?? prototype.map_color ?? utilityConstants.chart.rail_color
   if (!flags.includes("building-direction-8-way")) {
     flags.push("building-direction-8-way")

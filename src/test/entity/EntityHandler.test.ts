@@ -53,7 +53,7 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
   })!
 
   const [saved, savedDirection] = EntityHandler.saveEntity(entity)
-  if (direction === defines.direction.south || direction === defines.direction.west) {
+  if (direction == defines.direction.south || direction == defines.direction.west) {
     direction = oppositedirection(direction)
   }
   assert.same({ name: "straight-rail" }, saved)

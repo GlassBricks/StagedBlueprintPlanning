@@ -108,13 +108,13 @@ namespace BBox {
     return Pos((left_top.x + right_bottom.x) / 2, (left_top.y + right_bottom.y) / 2)
   }
   export function rotateAboutOrigin(box: BBox, direction: defines.direction | nil): BBoxClass {
-    if (direction === nil || direction === defines.direction.north) return BBox.from(box)
+    if (direction == nil || direction == defines.direction.north) return BBox.from(box)
     const { left_top, right_bottom } = box
     const { x: lx, y: ly } = left_top
     const { x: rx, y: ry } = right_bottom
-    if (direction === defines.direction.south) return BBox({ x: -rx, y: -ry }, { x: -lx, y: -ly })
-    if (direction === defines.direction.west) return BBox({ x: ly, y: -rx }, { x: ry, y: -lx })
-    if (direction === defines.direction.east) return BBox({ x: -ry, y: lx }, { x: -ly, y: rx })
+    if (direction == defines.direction.south) return BBox({ x: -rx, y: -ry }, { x: -lx, y: -ly })
+    if (direction == defines.direction.west) return BBox({ x: ly, y: -rx }, { x: ry, y: -lx })
+    if (direction == defines.direction.east) return BBox({ x: -ry, y: lx }, { x: -ly, y: rx })
 
     // diagonal, not yet supported, rotate -45 degrees
     return rotateAboutOrigin(box, (direction + 7) % 8)
@@ -151,15 +151,15 @@ namespace BBox {
   export function equals(box1: BBox, box2: BBox): boolean {
     const { left_top, right_bottom } = box1
     const { left_top: lt2, right_bottom: rb2 } = box2
-    return left_top.x === lt2.x && left_top.y === lt2.y && right_bottom.x === rb2.x && right_bottom.y === rb2.y
+    return left_top.x == lt2.x && left_top.y == lt2.y && right_bottom.x == rb2.x && right_bottom.y == rb2.y
   }
   export function isCenteredSquare(box: BBox): boolean {
     const { left_top, right_bottom } = box
-    return left_top.x === left_top.y && right_bottom.x === right_bottom.y && left_top.x === -right_bottom.x
+    return left_top.x == left_top.y && right_bottom.x == right_bottom.y && left_top.x == -right_bottom.x
   }
   export function isCenteredRectangle(box: BBox): boolean {
     const { left_top, right_bottom } = box
-    return left_top.x === -right_bottom.x && left_top.y === -right_bottom.y
+    return left_top.x == -right_bottom.x && left_top.y == -right_bottom.y
   }
   export function contains(box: BBox, point: Position): boolean {
     const { left_top, right_bottom } = box

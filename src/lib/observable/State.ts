@@ -117,7 +117,7 @@ class MutableStateImpl<T> extends State<T> implements MutableState<T> {
   public set(value: T): void {
     const oldValue = this.value
     this.value = value
-    if (oldValue !== value) {
+    if (oldValue != value) {
       this.event.raise(value, oldValue)
     }
   }
@@ -185,7 +185,7 @@ class MappedState<T, U> extends State<U> {
 
     const { curValue: oldValue, mapper } = this
     const mappedNewValue = mapper.invoke(sourceNewValue)
-    if (oldValue === mappedNewValue) return
+    if (oldValue == mappedNewValue) return
     this.curValue = mappedNewValue
     this.event.raise(mappedNewValue, oldValue!)
   }
@@ -238,14 +238,14 @@ class FlatMappedState<T, U> extends State<U> {
     const newMappedValue = mapper.invoke(sourceNewValue)
     this.receiveNewMappedValue(newMappedValue)
     const newValue = this.curValue
-    if (oldValue !== newValue) this.event.raise(newValue!, oldValue!)
+    if (oldValue != newValue) this.event.raise(newValue!, oldValue!)
   }
 
   nestedListener(nestedNewValue: U) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
     const oldValue = this.curValue
     this.curValue = nestedNewValue
-    if (oldValue !== nestedNewValue) this.event.raise(nestedNewValue, oldValue!)
+    if (oldValue != nestedNewValue) this.event.raise(nestedNewValue, oldValue!)
   }
 
   private unsubscribeFromSource() {

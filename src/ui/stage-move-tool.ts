@@ -30,7 +30,7 @@ export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
 
   const stage = getStageAtSurface(player.surface.index)
   if (!stage) {
-    if (cursor.name === Prototypes.FilteredStageMoveTool) {
+    if (cursor.name == Prototypes.FilteredStageMoveTool) {
       cursor.label = "<Not in a staged build>"
     } else {
       player.create_local_flying_text({
@@ -58,7 +58,7 @@ export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
 
 Events.on_player_cursor_stack_changed((e) => {
   const player = updateMoveToolInCursor(game.get_player(e.player_index)!)
-  if (player && player.cursor_stack!.name === Prototypes.FilteredStageMoveTool) {
+  if (player && player.cursor_stack!.name == Prototypes.FilteredStageMoveTool) {
     player.print([L_Interaction.FilteredStageMoveToolWarning])
   }
 })
@@ -71,7 +71,7 @@ function getCursorIfHoldingStageMoveTool(player: LuaPlayer): LuaItemStack | nil 
   if (
     !cursor ||
     !cursor.valid_for_read ||
-    (cursor.name !== Prototypes.StageMoveTool && cursor.name !== Prototypes.FilteredStageMoveTool)
+    (cursor.name != Prototypes.StageMoveTool && cursor.name != Prototypes.FilteredStageMoveTool)
   )
     return
   return cursor

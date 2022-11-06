@@ -50,7 +50,7 @@ export class Dialog extends Component<DialogueProps> {
           <label caption={line} />
         ))}
         <flow style="dialog_buttons_horizontal_flow">
-          {props.backCaption !== nil && (
+          {props.backCaption != nil && (
             <button style="back_button" caption={props.backCaption} on_gui_click={funcOn(this.onBack)} />
           )}
           <empty-widget
@@ -58,7 +58,7 @@ export class Dialog extends Component<DialogueProps> {
             styleMod={{ horizontally_stretchable: true }}
             onCreate={(e) => (e.drag_target = e.parent!.parent as FrameGuiElement)}
           />
-          {props.confirmCaption !== nil && (
+          {props.confirmCaption != nil && (
             <button
               style={props.redConfirm ? "red_confirm_button" : "confirm_button"}
               caption={props.confirmCaption}

@@ -35,7 +35,7 @@ for (const [name, key] of pairs(defines.events)) {
     if (!global.printEvents) return
     // if (isTestsRunning()) return
     const currentTick = game.tick
-    if (currentTick !== global.lastEventTick) {
+    if (currentTick != global.lastEventTick) {
       // game.print(currentTick)
       global.eventCount = 0
       if (!global.lastEventTick || currentTick - global.lastEventTick > 60) {
@@ -52,12 +52,12 @@ for (const [name, key] of pairs(defines.events)) {
 }
 
 commands.add_command("printev", "", (e) => {
-  global.printEvents = e.parameter === nil
+  global.printEvents = e.parameter == nil
   game.print("printEvents: " + global.printEvents)
 })
 
 for (const [k, v] of pairs(WorldListener)) {
-  if (typeof v === "function") {
+  if (typeof v == "function") {
     WorldListener[k] = function (...args: any[]) {
       if (global.printEvents) {
         global.lastEventTick = game.tick

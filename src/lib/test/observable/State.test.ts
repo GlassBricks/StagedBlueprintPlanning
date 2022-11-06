@@ -122,7 +122,7 @@ describe("flatMap", () => {
   test("listens to inner state and unsubscribes", () => {
     const val = state(1)
     const innerVal = state(4)
-    const mapped = val.flatMap({ invoke: (x) => (x === 1 ? innerVal : x) })
+    const mapped = val.flatMap({ invoke: (x) => (x == 1 ? innerVal : x) })
 
     const fn = spy()
     mapped.subscribeIndependentlyAndFire({ invoke: fn })

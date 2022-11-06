@@ -72,10 +72,10 @@ class ObservableMapImpl<K extends AnyNotNil, V> implements MutableObservableMap<
   public set(key: K, value: V | nil): void {
     const { _map } = this
     const oldValue = _map.get(key)
-    if (oldValue !== value) {
-      if (oldValue === nil) {
+    if (oldValue != value) {
+      if (oldValue == nil) {
         this._size++
-      } else if (value === nil) {
+      } else if (value == nil) {
         this._size--
       }
       _map.set(key, value)

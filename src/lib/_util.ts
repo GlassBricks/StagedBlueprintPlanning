@@ -24,8 +24,8 @@ export const mutableShallowCopy: <T extends object>(obj: T) => Mutable<T> = shal
 export function deepCopy<T extends object>(obj: T): T {
   const seen = new LuaMap()
   function copy(value: any): any {
-    if (type(value) !== "table") return value
-    if (type(value.__self) === "userdata") return value
+    if (type(value) != "table") return value
+    if (type(value.__self) == "userdata") return value
     if (seen.has(value)) return seen.get(value)
     const result: any = {}
     seen.set(value, result)
@@ -38,32 +38,32 @@ export function deepCopy<T extends object>(obj: T): T {
 }
 
 export function deepCompare<T>(a: T, b: T): boolean {
-  if (a === b) return true
-  if (typeof a !== "object" || typeof b !== "object") return false
+  if (a == b) return true
+  if (typeof a != "object" || typeof b != "object") return false
   // ignore null
   for (const [k, v] of pairs(a!)) {
     if (!deepCompare(v, b![k]!)) return false
   }
   for (const [k] of pairs(b!)) {
-    if (a![k] === nil) return false
+    if (a![k] == nil) return false
   }
   return true
 }
 
 export function shallowCompare<T>(a: T, b: T): boolean {
-  if (a === b) return true
-  if (typeof a !== "object" || typeof b !== "object") return false
+  if (a == b) return true
+  if (typeof a != "object" || typeof b != "object") return false
   for (const [k, v] of pairs(a!)) {
-    if (b![k] !== v) return false
+    if (b![k] != v) return false
   }
   for (const [k] of pairs(b!)) {
-    if (a![k] === nil) return false
+    if (a![k] == nil) return false
   }
   return true
 }
 
 export function isEmpty(obj: object): boolean {
-  return next(obj)[0] === nil
+  return next(obj)[0] == nil
 }
 export function nilIfEmpty<T extends object>(obj: T): T | nil {
   return next(obj)[0] && obj
@@ -76,7 +76,7 @@ export function assertNever(value: never): never {
 export function shiftNumberKeysUp(obj: PRecord<any, any>, number: number): void {
   const keysToChange: number[] = []
   for (const [changeStage] of pairs(obj)) {
-    if (typeof changeStage !== "number") break
+    if (typeof changeStage != "number") break
     if (changeStage >= number) keysToChange.push(changeStage)
   }
   for (let i = keysToChange.length - 1; i >= 0; i--) {
@@ -89,7 +89,7 @@ export function shiftNumberKeysUp(obj: PRecord<any, any>, number: number): void 
 export function shiftNumberKeysDown(obj: PRecord<any, any>, number: number): void {
   const keysToChange: number[] = []
   for (const [changeStage] of pairs(obj)) {
-    if (typeof changeStage !== "number") break
+    if (typeof changeStage != "number") break
     if (changeStage > number) keysToChange.push(changeStage)
   }
   delete obj[number]

@@ -164,7 +164,7 @@ test("iterateValues", () => {
   }
   const result = []
   for (const [stage, entity] of fooAssemblyEntity.iterateValues(1, 6)) {
-    result[stage] = entity === nil ? "nil" : shallowCopy(entity)
+    result[stage] = entity == nil ? "nil" : shallowCopy(entity)
   }
   assert.same(expected, result)
 })

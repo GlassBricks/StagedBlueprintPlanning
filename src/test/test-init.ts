@@ -27,7 +27,7 @@ interface SourceMap {
     if (fileName.endsWith("-test.lua")) {
       const newFileName = fileName.slice(0, -9) + ".test.ts"
       for (const [k, v] of pairs(sourceMap)) {
-        if (typeof v === "number") {
+        if (typeof v == "number") {
           sourceMap[k] = { file: newFileName, line: v }
         }
       }
@@ -45,23 +45,23 @@ declare let global: {
   rerunMode?: "rerun" | "reload" | "none"
 }
 
-if (script.active_mods.testorio !== nil) {
+if (script.active_mods.testorio != nil) {
   function reinit() {
     destroyAllRenders()
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
-    if (inventories !== nil) inventories.forEach((x) => x.destroy())
+    if (inventories != nil) inventories.forEach((x) => x.destroy())
     const oldGlobal = global
     global = {}
     for (const [, player] of game.players) {
       const { screen, left, top, center, relative } = player.gui
       for (const gui of [screen, left, top, center, relative]) {
         for (const child of gui.children) {
-          if (child.get_mod() === script.mod_name) child.destroy()
+          if (child.get_mod() == script.mod_name) child.destroy()
         }
       }
     }
     for (const [, surface] of game.surfaces) {
-      if (surface.index !== 1) game.delete_surface(surface)
+      if (surface.index != 1) game.delete_surface(surface)
     }
     Events.raiseFakeEventNamed("on_init", nil!)
     global.rerunMode = oldGlobal.rerunMode
@@ -91,12 +91,12 @@ if (script.active_mods.testorio !== nil) {
       force.research_all_technologies()
       force.enable_all_recipes()
       const player = game.players[1]
-      if (player.controller_type !== defines.controllers.editor) player.toggle_map_editor()
+      if (player.controller_type != defines.controllers.editor) player.toggle_map_editor()
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
       const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo"; skipped: number }
-      if (result.status === "passed" && result.skipped <= 1) {
+      if (result.status == "passed" && result.skipped <= 1) {
         game.surfaces[1].clear()
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()
@@ -120,25 +120,25 @@ if (script.active_mods.testorio !== nil) {
 
 function isTestsRunning() {
   if (remote.interfaces.testorio?.isRunning) {
-    return remote.call("testorio", "isRunning") || remote.call("testorio", "getTestStage") === "NotRun"
+    return remote.call("testorio", "isRunning") || remote.call("testorio", "getTestStage") == "NotRun"
   }
   return true
 }
 
 Events.on_tick(() => {
-  if (global.rerunMode === nil) global.rerunMode = "rerun"
-  if (global.rerunMode === "none" || isTestsRunning()) return
+  if (global.rerunMode == nil) global.rerunMode = "rerun"
+  if (global.rerunMode == "none" || isTestsRunning()) return
 
   const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
   const mod = game.ticks_played % ticks
-  if (mod === 0) {
+  if (mod == 0) {
     // tests not running or not ready
     global.lastCompileTimestamp = lastCompileTime
     game.reload_mods()
-  } else if (global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
+  } else if (global.lastCompileTimestamp != lastCompileTime && remote.interfaces.testorio?.runTests) {
     global.lastCompileTimestamp = lastCompileTime
     game.print("Reloaded: " + lastCompileTime)
-    if (global.rerunMode === "rerun") {
+    if (global.rerunMode == "rerun") {
       remote.call("testorio", "runTests")
     } else {
       refreshCurrentAssembly()

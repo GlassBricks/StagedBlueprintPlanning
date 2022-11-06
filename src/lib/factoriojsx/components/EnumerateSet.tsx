@@ -33,7 +33,7 @@ export class EnumerateSet<T extends AnyNotNil, U extends GuiElementType> extends
     tracker.onMount((element) => {
       this.element = element
       const { set, map, ifEmpty } = this
-      if (set.size() === 0) {
+      if (set.size() == 0) {
         if (ifEmpty) {
           render(ifEmpty.invoke(), this.element)
         }
@@ -58,7 +58,7 @@ export class EnumerateSet<T extends AnyNotNil, U extends GuiElementType> extends
     const { map, ifEmpty, associated, element } = this
     const { value, added } = change
     if (added) {
-      if (ifEmpty && change.set.size() === 1) {
+      if (ifEmpty && change.set.size() == 1) {
         destroyChildren(element)
       }
       const result = render(map.invoke(value), element)
@@ -68,7 +68,7 @@ export class EnumerateSet<T extends AnyNotNil, U extends GuiElementType> extends
     } else {
       const item = associated.get(value)
       destroy(item)
-      if (ifEmpty && change.set.size() === 0) {
+      if (ifEmpty && change.set.size() == 0) {
         render(ifEmpty.invoke(), element)
       }
     }

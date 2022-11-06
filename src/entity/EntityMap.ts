@@ -72,7 +72,7 @@ export type AsmEntityCircuitConnections = LuaMap<AssemblyEntity, LuaSet<AsmCircu
 export type AsmEntityCableConnections = LuaSet<AssemblyEntity>
 
 function isSingle(entity: AssemblyEntity | readonly AssemblyEntity[]): entity is AssemblyEntity {
-  return (entity as AssemblyEntity).firstStage !== nil
+  return (entity as AssemblyEntity).firstStage != nil
 }
 
 @RegisterClass("EntityMap")
@@ -90,28 +90,27 @@ class EntityMapImpl implements MutableEntityMap {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
-    if (direction === 0) direction = nil
+    if (direction == 0) direction = nil
     const category = getEntityCategory(entityName)
 
     if (isSingle(atPos)) {
-      if (atPos.direction !== direction) return nil
-      if (category === nil) {
-        if (atPos.firstValue.name === entityName) return atPos
+      if (atPos.direction != direction) return nil
+      if (category == nil) {
+        if (atPos.firstValue.name == entityName) return atPos
         return nil
       }
-      if (getEntityCategory(atPos.firstValue.name) === category) return atPos
+      if (getEntityCategory(atPos.firstValue.name) == category) return atPos
       return nil
     }
 
-    if (category === nil) {
+    if (category == nil) {
       for (const candidate of atPos) {
-        if (candidate.direction === direction && candidate.firstValue.name === entityName) return candidate
+        if (candidate.direction == direction && candidate.firstValue.name == entityName) return candidate
       }
       return nil
     }
     for (const candidate of atPos) {
-      if (candidate.direction === direction && getEntityCategory(candidate.firstValue.name) === category)
-        return candidate
+      if (candidate.direction == direction && getEntityCategory(candidate.firstValue.name) == category) return candidate
     }
     return nil
   }
@@ -122,23 +121,23 @@ class EntityMapImpl implements MutableEntityMap {
     const category = getEntityCategory(entityName)
     if (!atPos) return
     if (isSingle(atPos)) {
-      if (atPos.firstValue.name === entityName) return atPos
-      if (category === nil) {
-        if (atPos.firstValue.name === entityName) return atPos
+      if (atPos.firstValue.name == entityName) return atPos
+      if (category == nil) {
+        if (atPos.firstValue.name == entityName) return atPos
         return nil
       }
-      if (getEntityCategory(atPos.firstValue.name) === category) return atPos
+      if (getEntityCategory(atPos.firstValue.name) == category) return atPos
       return nil
     }
 
-    if (category === nil) {
+    if (category == nil) {
       for (const candidate of atPos) {
-        if (candidate.firstValue.name === entityName) return candidate
+        if (candidate.firstValue.name == entityName) return candidate
       }
       return nil
     }
     for (const candidate of atPos) {
-      if (getEntityCategory(candidate.firstValue.name) === category) return candidate
+      if (getEntityCategory(candidate.firstValue.name) == category) return candidate
     }
     return nil
   }
@@ -148,11 +147,11 @@ class EntityMapImpl implements MutableEntityMap {
     previousDirection?: defines.direction | nil,
   ): AssemblyEntity | nil {
     const type = entity.type
-    if (type === "underground-belt") {
-      const direction = entity.belt_to_ground_type === "output" ? oppositedirection(entity.direction) : entity.direction
+    if (type == "underground-belt") {
+      const direction = entity.belt_to_ground_type == "output" ? oppositedirection(entity.direction) : entity.direction
       return this.findCompatibleByName(type, entity.position, direction)
     } else if (rollingStockTypes.has(type)) {
-      if (entity.object_name === "LuaEntity") {
+      if (entity.object_name == "LuaEntity") {
         const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
         if (registered && this.entities.has(registered)) return registered
       }
@@ -160,13 +159,13 @@ class EntityMapImpl implements MutableEntityMap {
     }
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
-    if (pasteRotatableType === nil) {
+    if (pasteRotatableType == nil) {
       return this.findCompatibleByName(name, entity.position, previousDirection ?? entity.direction)
     }
-    if (pasteRotatableType === PasteRotatableType.Square) {
+    if (pasteRotatableType == PasteRotatableType.Square) {
       return this.findCompatibleAnyDirection(name, entity.position)
     }
-    if (pasteRotatableType === PasteRotatableType.Rectangular) {
+    if (pasteRotatableType == PasteRotatableType.Rectangular) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       return (
@@ -180,11 +179,11 @@ class EntityMapImpl implements MutableEntityMap {
     const atPos = this.byPosition.get(oldPosition.x, oldPosition.y)
     if (!atPos) return
     if (isSingle(atPos)) {
-      if (atPos.getWorldOrPreviewEntity(expectedStage) === entity) return atPos
+      if (atPos.getWorldOrPreviewEntity(expectedStage) == entity) return atPos
       return nil
     }
     for (const candidate of atPos) {
-      if (candidate.getWorldOrPreviewEntity(expectedStage) === entity) return candidate
+      if (candidate.getWorldOrPreviewEntity(expectedStage) == entity) return candidate
     }
     return nil
   }
@@ -235,7 +234,7 @@ class EntityMapImpl implements MutableEntityMap {
     if (!this.entities.has(entity)) return false
     const { x, y } = entity.position
     const { x: newX, y: newY } = position
-    if (x === newX && y === newY) return false
+    if (x == newX && y == newY) return false
     const { byPosition } = this
     byPosition.delete(x, y, entity)
     entity.setPositionUnchecked(position)
@@ -342,7 +341,7 @@ class EntityMapImpl implements MutableEntityMap {
   }
 
   addCableConnection(entity1: AssemblyEntity, entity2: AssemblyEntity): CableAddResult {
-    if (entity1 === entity2) return CableAddResult.Error
+    if (entity1 == entity2) return CableAddResult.Error
     const { entities, cableConnections } = this
     if (!entities.has(entity1) || !entities.has(entity2)) return CableAddResult.Error
     let data1 = cableConnections.get(entity1)

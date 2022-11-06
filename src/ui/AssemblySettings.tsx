@@ -212,7 +212,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   }
 
   private onAssemblyEvent(event: LocalAssemblyEvent) {
-    if (event.type === "assembly-deleted") {
+    if (event.type == "assembly-deleted") {
       hideAssemblySettings(game.get_player(this.playerIndex)!)
     }
   }
@@ -240,7 +240,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
 
   private newStageAfter() {
     const currentStage = playerCurrentStage(this.playerIndex).get()
-    if (!currentStage || currentStage.assembly !== this.assembly) return
+    if (!currentStage || currentStage.assembly != this.assembly) return
     this.insertStage(currentStage.stageNumber + 1)
   }
 
@@ -255,7 +255,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   }
 
   private renderStageSettings(stage: Stage | nil): Spec | nil {
-    if (stage && stage.assembly === this.assembly) {
+    if (stage && stage.assembly == this.assembly) {
       return <StageSettings stage={stage} />
     }
     return nil
@@ -427,7 +427,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
   }
   private getStageToMerge() {
     const stageNumber = this.stage.stageNumber
-    const isFirst = stageNumber === 1
+    const isFirst = stageNumber == 1
     const toMerge = this.stage.assembly.getStage(getStageToMerge(stageNumber))
     return { isFirst, toMerge }
   }
@@ -493,7 +493,7 @@ function showAssemblySettings(player: LuaPlayer, assembly: UserAssembly): FrameG
   frame.visible = true
   frame.bring_to_front()
   const currentAssembly = global.players[player.index].currentShownAssembly
-  if (currentAssembly === assembly) {
+  if (currentAssembly == assembly) {
     return frame
   }
   destroyChildren(frame.content!)
@@ -509,7 +509,7 @@ export function openAssemblySettings(player: LuaPlayer, assembly: UserAssembly):
 PlayerChangedStageEvent.addListener((player, stage) => {
   if (!stage) return
   const currentAssembly = global.players[player.index].currentShownAssembly
-  if (currentAssembly && currentAssembly !== stage.assembly) {
+  if (currentAssembly && currentAssembly != stage.assembly) {
     showAssemblySettings(player, stage.assembly)
   }
 })

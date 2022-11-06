@@ -27,7 +27,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     const underground = createAssemblyEntity<UndergroundBeltEntity>(
       { name: "underground-belt", type },
       unit(direction).times(location),
-      (type === "output" ? oppositedirection(direction) : direction) as SavedDirection,
+      (type == "output" ? oppositedirection(direction) : direction) as SavedDirection,
       1,
     )
     content.add(underground)
@@ -38,9 +38,9 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     const result: (UndergroundBeltAssemblyEntity | "none")[] = []
     for (let i = 0; i < str.length; i++) {
       const c = str[i]
-      if (c === "v") {
+      if (c == "v") {
         result.push(createUnderground(i, "input"))
-      } else if (c === "^") {
+      } else if (c == "^") {
         result.push(createUnderground(i, "output"))
       } else {
         result.push("none")
@@ -51,10 +51,10 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
 
   function testStr(input: string, probe: number, expected: number | nil, expectedMultiple: boolean) {
     const inputUndergrounds = strToUndergrounds(input)
-    const expectedUnderground = expected !== nil ? inputUndergrounds[expected] : nil
-    if (expectedUnderground === "none") error("expectedUnderground is none")
+    const expectedUnderground = expected != nil ? inputUndergrounds[expected] : nil
+    if (expectedUnderground == "none") error("expectedUnderground is none")
     const probeUnderground = inputUndergrounds[probe]
-    if (probeUnderground === "none") error("probeUnderground is none")
+    if (probeUnderground == "none") error("probeUnderground is none")
     const [underground, hasMultiple] = findUndergroundPair(content, probeUnderground)
     assert.same(expectedUnderground, underground)
     assert.same(expectedMultiple, hasMultiple)

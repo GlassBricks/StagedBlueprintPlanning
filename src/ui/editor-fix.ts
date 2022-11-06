@@ -14,7 +14,7 @@ import { Migrations } from "../lib/migration"
 
 const editorGuiWidth = 474
 function updatePlayer(player: LuaPlayer): void {
-  const isEditor = player.controller_type === defines.controllers.editor
+  const isEditor = player.controller_type == defines.controllers.editor
   if (isEditor) {
     player.gui.top.style.left_margin = editorGuiWidth
     player.gui.left.style.left_margin = editorGuiWidth
@@ -33,7 +33,7 @@ if (!script.active_mods.EditorExtensions) {
 }
 
 Migrations.since("0.4.0", () => {
-  if (script.active_mods.EditorExtensions !== nil) {
+  if (script.active_mods.EditorExtensions != nil) {
     for (const [, player] of game.players) {
       updatePlayer(player)
     }

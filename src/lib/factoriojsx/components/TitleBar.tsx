@@ -25,7 +25,7 @@ export function TitleBar(props: { children?: SpecChildren }): Spec {
       }}
       onCreate={(element) => {
         const parent = element.parent!
-        if (parent.type === "frame" && parent.parent === element.gui.screen) element.drag_target = parent
+        if (parent.type == "frame" && parent.parent == element.gui.screen) element.drag_target = parent
       }}
     >
       {props.children}
@@ -48,7 +48,7 @@ export function DraggableSpace(): Spec {
 
 export function closeParentParent(e: OnGuiClickEvent): void {
   const parent = e.element.parent!.parent!
-  if (parent.type === "frame") destroy(parent)
+  if (parent.type == "frame") destroy(parent)
 }
 export function closeSelf(e: GuiEvent): void {
   destroy(e.element)
@@ -64,7 +64,7 @@ export function SimpleTitleBar(props: {
   return (
     <TitleBar>
       <label caption={props.title} style="frame_title" ignored_by_interaction />
-      {props.useDraggableSpace !== false ? <DraggableSpace /> : <HorizontalPusher />}
+      {props.useDraggableSpace != false ? <DraggableSpace /> : <HorizontalPusher />}
       <CloseButton on_gui_click={props.onClose ?? funcRef(closeParentParent)} />
     </TitleBar>
   )

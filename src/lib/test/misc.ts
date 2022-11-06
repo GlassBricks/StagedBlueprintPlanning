@@ -33,7 +33,7 @@ function tryUseSourcemap(rawFile: string | nil, line: number | nil): Source | ni
   if (!fileSourceMap) return nil
   const data = fileSourceMap[tostring(line)]
   if (!data) return nil
-  return typeof data === "number" ? { file: fileName + ".ts", line: data } : data
+  return typeof data == "number" ? { file: fileName + ".ts", line: data } : data
 }
 
 // noinspection JSUnusedGlobalSymbols
@@ -43,7 +43,7 @@ export function debugPrint(...values: unknown[]): void {
   const sourceString = source ? `${source.file}:${source.line ?? 1}` : "<unknown source>"
   const output = values
     .map((value) =>
-      typeof value === "number" || typeof value === "string"
+      typeof value == "number" || typeof value == "string"
         ? value.toString()
         : serpent.block(value, {
             maxlevel: 3,

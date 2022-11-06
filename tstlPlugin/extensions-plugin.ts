@@ -40,6 +40,21 @@ const useNilInstead = createSerialDiagnosticFactory((node: ts.Node) => ({
   messageText: "Use nil instead of undefined.",
   category: ts.DiagnosticCategory.Warning,
 }))
+const useEqualsEquals = createSerialDiagnosticFactory((node: ts.Node) => ({
+  file: ts.getOriginalNode(node).getSourceFile(),
+  start: ts.getOriginalNode(node).getStart(),
+  length: ts.getOriginalNode(node).getWidth(),
+  messageText: "Use == instead of ===.",
+  category: ts.DiagnosticCategory.Warning,
+}))
+const useNotEquals = createSerialDiagnosticFactory((node: ts.Node) => ({
+  file: ts.getOriginalNode(node).getSourceFile(),
+  start: ts.getOriginalNode(node).getStart(),
+  length: ts.getOriginalNode(node).getWidth(),
+  messageText: "Use != instead of !==.",
+  category: ts.DiagnosticCategory.Warning,
+}))
+
 const spreadNotSupported = createSerialDiagnosticFactory((node: ts.Node) => ({
   file: ts.getOriginalNode(node).getSourceFile(),
   start: ts.getOriginalNode(node).getStart(),
@@ -214,6 +229,14 @@ function createPlugin(options: { testPattern?: string }): Plugin {
       if (symbol === nilSymbol) return createNilLiteral(node)
       if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
         context.diagnostics.push(useNilInstead(node))
+      }
+      return context.superTransformExpression(node)
+    },
+    [ts.SyntaxKind.BinaryExpression](node: ts.BinaryExpression, context: TransformationContext) {
+      if (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken) {
+        context.diagnostics.push(useEqualsEquals(node))
+      } else if (node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken) {
+        context.diagnostics.push(useNotEquals(node))
       }
       return context.superTransformExpression(node)
     },

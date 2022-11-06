@@ -95,7 +95,7 @@ describe("error highlights and selection proxy", () => {
     highlightCreator.updateHighlights(assembly, entity)
 
     for (let i = 1; i < 5; i++) {
-      if (i === 1 || stageSet.has(i)) {
+      if (i == 1 || stageSet.has(i)) {
         assert.nil(entity.getExtraEntity("errorElsewhereIndicator", i), `should not have indicator in stage ${i}`)
       } else {
         assert.not_nil(entity.getExtraEntity("errorElsewhereIndicator", i), `should have indicator in stage ${i}`)

@@ -38,7 +38,7 @@ function registerClass(name: string, item: Class<any>) {
   // register static functions
   for (const [key, value] of pairs(item)) {
     // noinspection SuspiciousTypeOfGuard
-    if (typeof value === "function" && typeof key === "string") {
+    if (typeof value == "function" && typeof key == "string") {
       Functions.registerRaw(name + "." + key, value)
     }
   }
@@ -69,7 +69,7 @@ export interface Func<F extends ContextualFun = ContextualFun> {
 export type Callback = Func<() => void>
 
 export const Functions = new Registry<AnyFunction>("function", (func: AnyFunction) =>
-  serpent.block(type(func) === "function" ? debug.getinfo(func) : func, { nocode: true }),
+  serpent.block(type(func) == "function" ? debug.getinfo(func) : func, { nocode: true }),
 )
 
 export type Functions = PRRecord<string, AnyFunction>
@@ -210,7 +210,7 @@ export function bind<AX, R>(func: FOrFunc<(...args: AX[]) => R>, ...args: AX[]):
 export function bind(func: FOrFunc<SelflessFun>, ...args: unknown[]): Func {
   const argCount = select("#", ...args)
   const Class = boundFuncClasses[argCount - 1] ?? BoundN
-  if (typeof func === "function") {
+  if (typeof func == "function") {
     func = funcRef(func)
   }
   return new Class(func, ...args)

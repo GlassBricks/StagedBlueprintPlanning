@@ -62,7 +62,7 @@ before_each(() => {
 })
 
 after_each(() => {
-  if (expectedWuCalls === worldUpdaterCalls) return
+  if (expectedWuCalls == worldUpdaterCalls) return
 
   let message = `expected ${expectedWuCalls} calls to worldUpdater, got ${worldUpdaterCalls}\n`
   for (const [key, spy] of pairs(worldUpdater)) {
@@ -81,7 +81,7 @@ function clearMocks(): void {
 }
 
 function assertWUNotCalled() {
-  if (worldUpdaterCalls !== 0) {
+  if (worldUpdaterCalls != 0) {
     for (const [key, spy] of pairs(worldUpdater)) {
       assert
         .message(`${key} called`)
@@ -92,7 +92,7 @@ function assertWUNotCalled() {
 }
 function assertUpdateCalled(entity: AssemblyEntity, startStage: StageNumber, endStage: StageNumber | nil, n?: number) {
   expectedWuCalls++
-  if (n === nil) assert.equal(1, worldUpdaterCalls, "wu called once")
+  if (n == nil) assert.equal(1, worldUpdaterCalls, "wu called once")
   const spy = worldUpdater.updateWorldEntities
   if (n) assert.spy(spy).called_at_least(n + 1)
   else assert.spy(spy).called(1)
@@ -151,7 +151,7 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   }
   const entity = assert(surfaces[stageNum - 1].create_entity(params), "created entity")[0]
   const proto = game.entity_prototypes[params.name]
-  if (proto.type === "inserter") {
+  if (proto.type == "inserter") {
     entity.inserter_stack_size_override = 1
     entity.inserter_filter_mode = "whitelist"
   }
@@ -611,7 +611,7 @@ describe("undergrounds", () => {
     test.each(["lower", "higher"])("%s underground in first stage rotates pair", (which) => {
       const { entity1, entity2 } = createUndergroundBeltPair(1, 2)
 
-      const entity = which === "lower" ? entity1 : entity2
+      const entity = which == "lower" ? entity1 : entity2
       const [rotated] = entity.getWorldEntity(entity.firstStage)!.rotate()
       assert(rotated)
 
@@ -624,8 +624,8 @@ describe("undergrounds", () => {
       assert.equal(direction.east, entity2.getDirection())
 
       assertNEntities(2)
-      assertUpdateCalled(entity1, 1, nil, which === "lower" ? 0 : 1)
-      assertUpdateCalled(entity2, 2, nil, which === "lower" ? 1 : 0)
+      assertUpdateCalled(entity1, 1, nil, which == "lower" ? 0 : 1)
+      assertUpdateCalled(entity2, 2, nil, which == "lower" ? 1 : 0)
     })
 
     test("cannot rotate if not in first stage", () => {
@@ -791,10 +791,10 @@ describe("undergrounds", () => {
     test.each(["lower", "pair in higher", "self in higher"])(
       "upgrading %s underground in first stage upgrades pair",
       (which) => {
-        const endStage = which === "lower" ? 1 : 2
+        const endStage = which == "lower" ? 1 : 2
         const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1, 2)
-        const entity = which === "pair in higher" ? entity2 : entity1
-        const luaEntity = which === "pair in higher" ? luaEntity2 : luaEntity1
+        const entity = which == "pair in higher" ? entity2 : entity1
+        const luaEntity = which == "pair in higher" ? luaEntity2 : luaEntity1
         luaEntity.order_upgrade({
           target: "fast-underground-belt",
           force: luaEntity.force,
@@ -811,8 +811,8 @@ describe("undergrounds", () => {
         assert.equal(direction.east, entity2.getDirection())
 
         assertNEntities(2)
-        assertUpdateCalled(entity1, 1, nil, luaEntity === luaEntity1 ? 0 : 1)
-        assertUpdateCalled(entity2, 2, nil, luaEntity === luaEntity1 ? 1 : 0)
+        assertUpdateCalled(entity1, 1, nil, luaEntity == luaEntity1 ? 0 : 1)
+        assertUpdateCalled(entity2, 2, nil, luaEntity == luaEntity1 ? 1 : 0)
       },
     )
 

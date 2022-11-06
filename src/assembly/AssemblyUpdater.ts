@@ -133,7 +133,7 @@ export function createAssemblyUpdater(
     if (!connections) return false
     const stage = entity.firstStage
     for (const [otherEntity] of connections) {
-      if (otherEntity.getWorldEntity(stage) === nil) {
+      if (otherEntity.getWorldEntity(stage) == nil) {
         // has a connection at first stage, but not one in the world
         return true
       }
@@ -151,7 +151,7 @@ export function createAssemblyUpdater(
     entity: AssemblyEntity,
     newDirection: SavedDirection,
   ): boolean {
-    const rotateAllowed = stage === entity.firstStage
+    const rotateAllowed = stage == entity.firstStage
     if (rotateAllowed) {
       entity.setDirection(newDirection)
     } else {
@@ -170,7 +170,7 @@ export function createAssemblyUpdater(
     const worldEntity = assert(entity.getWorldEntity(stage))
     const [newValue, newDirection] = saveEntity(worldEntity)
     if (!newValue) return false
-    assert(newDirection === entity.getDirection(), "direction mismatch on saved entity")
+    assert(newDirection == entity.getDirection(), "direction mismatch on saved entity")
     const hasDiff = entity.adjustValueAtStage(stage, newValue)
     return hasDiff
   }
@@ -188,10 +188,10 @@ export function createAssemblyUpdater(
   ): EntityUpdateResult {
     // only can upgrade via fast-replace
     const newType = entitySource.name
-    if (newType === entity.getNameAtStage(stage)) return "no-change"
+    if (newType == entity.getNameAtStage(stage)) return "no-change"
 
     const result = tryUpgradeUndergroundBelt(assembly, stage, entity as UndergroundBeltAssemblyEntity, newType)
-    if (result !== "no-change" && result !== "updated") {
+    if (result != "no-change" && result != "updated") {
       refreshWorldEntityAtStage(assembly, entity, stage)
     }
     return result
@@ -203,7 +203,7 @@ export function createAssemblyUpdater(
     stage: StageNumber,
     newDir: "input" | "output",
   ): EntityRotateResult {
-    if (entity.firstValue.type === newDir) return "no-change"
+    if (entity.firstValue.type == newDir) return "no-change"
 
     const [pair, hasMultiple] = findUndergroundPair(assembly.content, entity)
 
@@ -211,7 +211,7 @@ export function createAssemblyUpdater(
       undoRotate(assembly, stage, entity)
       return "cannot-flip-multi-pair-underground"
     }
-    const isFirstStage = entity.firstStage === stage || (pair && pair.firstStage === stage)
+    const isFirstStage = entity.firstStage == stage || (pair && pair.firstStage == stage)
     if (!isFirstStage) {
       undoRotate(assembly, stage, entity)
       return "cannot-rotate"
@@ -221,7 +221,7 @@ export function createAssemblyUpdater(
     entity.setUndergroundBeltDirection(newDir)
     updateWorldEntities(assembly, entity, entity.firstStage)
     if (pair) {
-      pair.setUndergroundBeltDirection(newDir === "output" ? "input" : "output")
+      pair.setUndergroundBeltDirection(newDir == "output" ? "input" : "output")
       updateWorldEntities(assembly, pair, pair.firstStage)
     }
     return "updated"
@@ -234,11 +234,11 @@ export function createAssemblyUpdater(
     entitySource: LuaEntity,
   ): EntityUpdateResult {
     const rotateDir = entitySource.get_upgrade_direction()
-    const rotated = rotateDir && rotateDir !== entitySource.direction
+    const rotated = rotateDir && rotateDir != entitySource.direction
     if (rotated) {
-      const newDir = rotateDir === entity.getDirection() ? "input" : "output"
+      const newDir = rotateDir == entity.getDirection() ? "input" : "output"
       const result = tryRotateUnderground(assembly, entity, stage, newDir)
-      if (result !== "updated") {
+      if (result != "updated") {
         return result
       }
     }
@@ -247,7 +247,7 @@ export function createAssemblyUpdater(
     if (upgradeType) {
       checkUpgradeType(entity, upgradeType)
       const result = tryUpgradeUndergroundBelt(assembly, stage, entity, upgradeType)
-      if (result === "no-change" && rotated) {
+      if (result == "no-change" && rotated) {
         return "updated"
       }
       return result
@@ -265,10 +265,10 @@ export function createAssemblyUpdater(
     if (hasMultiple) {
       return "cannot-upgrade-multi-pair-underground"
     }
-    let isFirstStage = entity.firstStage === stage
+    let isFirstStage = entity.firstStage == stage
     if (pair) {
-      isFirstStage ||= pair.firstStage === stage
-      if (!isFirstStage && entity.firstStage !== pair.firstStage) {
+      isFirstStage ||= pair.firstStage == stage
+      if (!isFirstStage && entity.firstStage != pair.firstStage) {
         // createNotification(entity, byPlayer, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
         return "cannot-create-pair-upgrade"
       }
@@ -285,7 +285,7 @@ export function createAssemblyUpdater(
       const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
       // check pair still correct
       const [newPair, newMultiple] = findUndergroundPair(assembly.content, entity)
-      if (newPair !== pair || newMultiple) {
+      if (newPair != pair || newMultiple) {
         entity.applyUpgradeAtStage(applyStage, oldName)
         pair.applyUpgradeAtStage(pairStage, oldName)
         return "cannot-upgrade-changed-pair"
@@ -314,13 +314,13 @@ export function createAssemblyUpdater(
       assemblyEntity.replaceWorldEntity(stage, entity)
       content.add(assemblyEntity)
 
-      if (entity.type === "underground-belt") {
+      if (entity.type == "underground-belt") {
         // match direction with underground pair
         const [pair] = findUndergroundPair(content, assemblyEntity as UndergroundBeltAssemblyEntity)
         if (pair) {
           const otherDir = pair.firstValue.type
           ;(assemblyEntity as UndergroundBeltAssemblyEntity).setUndergroundBeltDirection(
-            otherDir === "output" ? "input" : "output",
+            otherDir == "output" ? "input" : "output",
           )
         }
       }
@@ -361,12 +361,12 @@ export function createAssemblyUpdater(
     tryUpdateEntityFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
-      if (entitySource.type === "underground-belt") {
+      if (entitySource.type == "underground-belt") {
         return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
       }
 
       const newDirection = entitySource.direction as SavedDirection
-      const rotated = newDirection !== entity.getDirection()
+      const rotated = newDirection != entity.getDirection()
       if (rotated) {
         if (!setRotationOrUndo(assembly, stage, entity, newDirection)) {
           return "cannot-rotate"
@@ -382,9 +382,9 @@ export function createAssemblyUpdater(
     tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
-      if (entitySource.type === "underground-belt") {
+      if (entitySource.type == "underground-belt") {
         const actualDirection = getSavedDirection(entitySource)
-        assert(actualDirection === entity.getDirection(), "underground belt direction mismatch with saved direction")
+        assert(actualDirection == entity.getDirection(), "underground belt direction mismatch with saved direction")
         return tryRotateUnderground(
           assembly,
           entity as UndergroundBeltAssemblyEntity,
@@ -394,7 +394,7 @@ export function createAssemblyUpdater(
       }
 
       const newDirection = entitySource.direction as SavedDirection
-      const rotated = newDirection !== entity.getDirection()
+      const rotated = newDirection != entity.getDirection()
       if (!rotated) return "no-change"
       if (setRotationOrUndo(assembly, stage, entity, newDirection)) {
         updateWorldEntities(assembly, entity, stage)
@@ -406,12 +406,12 @@ export function createAssemblyUpdater(
     tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
-      if (entitySource.type === "underground-belt") {
+      if (entitySource.type == "underground-belt") {
         return tryApplyUndergroundUpdateTarget(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
       }
 
       const rotateDir = entitySource.get_upgrade_direction() as SavedDirection | nil
-      const rotated = rotateDir !== nil && rotateDir !== entity.getDirection()
+      const rotated = rotateDir != nil && rotateDir != entity.getDirection()
       if (rotated) {
         if (!setRotationOrUndo(assembly, stage, entity, rotateDir)) {
           // don't update other stuff if rotation failed
@@ -454,7 +454,7 @@ export function createAssemblyUpdater(
     moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
       if (entity.isSettingsRemnant) return "no-change"
       const oldStage = entity.firstStage
-      if (oldStage === stage) return "no-change"
+      if (oldStage == stage) return "no-change"
 
       if (entity.isUndergroundBelt() && entity.hasStageDiff()) {
         return "cannot-move-upgraded-underground"
