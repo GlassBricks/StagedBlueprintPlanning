@@ -81,10 +81,10 @@ const blueprintSubgroup: ItemSubgroupPrototype = {
 data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup, blueprintSubgroup])
 
 function selectionToolToShortcut(
-  prototype: SelectionToolPrototype,
+  prototype: Omit<SelectionToolPrototype, "type">,
   icon: Sprite,
   associatedControl: string | nil,
-  style: ShortcutPrototype["style"] = "blue",
+  style: ShortcutPrototype["style"],
 ): ShortcutPrototype {
   return {
     type: "shortcut",
@@ -147,6 +147,7 @@ const getCleanupToolInput: CustomInputPrototype = {
 
 data.extend([
   cleanupTool,
+  getCleanupToolInput,
   selectionToolToShortcut(
     cleanupTool,
     {
@@ -154,8 +155,8 @@ data.extend([
       size: 64,
     },
     Prototypes.CleanupTool,
+    "blue",
   ),
-  getCleanupToolInput,
 ])
 // Move to stage tool
 const stageMoveToolColor = Colors.Orange
@@ -208,6 +209,7 @@ data.extend([
       mipmap_count: 2,
     },
     Prototypes.StageMoveTool,
+    "blue",
   ),
   stageMoveToolInput,
 ])
@@ -259,7 +261,20 @@ const filteredStagedMoveToolInput: CustomInputPrototype = {
   order: "a[tools]-b[stage-move-tool-filtered]",
 }
 
-data.extend([filteredStagedMoveTool, filteredStagedMoveToolInput])
+data.extend([
+  filteredStagedMoveTool,
+  filteredStagedMoveToolInput,
+  selectionToolToShortcut(
+    filteredStagedMoveTool,
+    {
+      filename: "__bp100__/graphics/icons/stage-move-tool-white.png",
+      size: 32,
+      mipmap_count: 2,
+    },
+    Prototypes.FilteredStageMoveTool,
+    "red",
+  ),
+])
 
 // Sprites
 function createSprite(

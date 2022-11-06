@@ -14,7 +14,7 @@ export declare const enum L_ShortcutName {
   CleanupTool = "shortcut-name.bp100:cleanup-tool",
   /** Stage move tool */
   StageMoveTool = "shortcut-name.bp100:stage-move-tool",
-  /** Filtered stage move tool (experimental) */
+  /** Filtered stage move tool */
   FilteredStageMoveTool = "shortcut-name.bp100:filtered-stage-move-tool",
 }
 export declare const enum L_EntityName {
