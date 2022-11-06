@@ -58,6 +58,13 @@ export interface AssemblyUpdater {
 
   tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult
 
+  tryRotateUnderground(
+    assembly: Assembly,
+    entity: UndergroundBeltAssemblyEntity,
+    stage: StageNumber,
+    targetDir: "input" | "output",
+  ): EntityRotateResult
+
   /** Doesn't cancel upgrade */
   tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult
 
@@ -192,15 +199,11 @@ export function createAssemblyUpdater(
 
   function tryRotateUnderground(
     assembly: Assembly,
-    stage: StageNumber,
     entity: UndergroundBeltAssemblyEntity,
-    entitySource: LuaEntity,
+    stage: StageNumber,
+    newDir: "input" | "output",
   ): EntityRotateResult {
-    const actualDirection = getSavedDirection(entitySource)
-    assert(actualDirection === entity.getDirection(), "underground belt direction mismatch with saved direction")
-    const oldDir = entity.firstValue.type
-    const newDir = entitySource.belt_to_ground_type
-    if (oldDir === newDir) return "no-change"
+    if (entity.firstValue.type === newDir) return "no-change"
 
     const [pair, hasMultiple] = findUndergroundPair(assembly.content, entity)
 
@@ -224,18 +227,32 @@ export function createAssemblyUpdater(
     return "updated"
   }
 
-  function tryUpgradeUndergroundBeltFromWorld(
+  function tryApplyUndergroundUpdateTarget(
     assembly: Assembly,
     stage: StageNumber,
     entity: UndergroundBeltAssemblyEntity,
     entitySource: LuaEntity,
   ): EntityUpdateResult {
-    const upgradeType = entitySource.get_upgrade_target()?.name
-    if (!upgradeType) {
-      return "no-change"
+    const rotateDir = entitySource.get_upgrade_direction()
+    const rotated = rotateDir && rotateDir !== entitySource.direction
+    if (rotated) {
+      const newDir = rotateDir === entity.getDirection() ? "input" : "output"
+      const result = tryRotateUnderground(assembly, entity, stage, newDir)
+      if (result !== "updated") {
+        return result
+      }
     }
-    checkUpgradeType(entity, upgradeType)
-    return tryUpgradeUndergroundBelt(assembly, stage, entity, upgradeType)
+
+    const upgradeType = entitySource.get_upgrade_target()?.name
+    if (upgradeType) {
+      checkUpgradeType(entity, upgradeType)
+      const result = tryUpgradeUndergroundBelt(assembly, stage, entity, upgradeType)
+      if (result === "no-change" && rotated) {
+        return "updated"
+      }
+      return result
+    }
+    return rotated ? "updated" : "no-change"
   }
 
   function tryUpgradeUndergroundBelt(
@@ -366,7 +383,14 @@ export function createAssemblyUpdater(
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
-        return tryRotateUnderground(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
+        const actualDirection = getSavedDirection(entitySource)
+        assert(actualDirection === entity.getDirection(), "underground belt direction mismatch with saved direction")
+        return tryRotateUnderground(
+          assembly,
+          entity as UndergroundBeltAssemblyEntity,
+          stage,
+          entitySource.belt_to_ground_type,
+        )
       }
 
       const newDirection = entitySource.direction as SavedDirection
@@ -378,16 +402,12 @@ export function createAssemblyUpdater(
       }
       return "cannot-rotate"
     },
+    tryRotateUnderground,
     tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
       if (entitySource.type === "underground-belt") {
-        return tryUpgradeUndergroundBeltFromWorld(
-          assembly,
-          stage,
-          entity as UndergroundBeltAssemblyEntity,
-          entitySource,
-        )
+        return tryApplyUndergroundUpdateTarget(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
       }
 
       const rotateDir = entitySource.get_upgrade_direction() as SavedDirection | nil

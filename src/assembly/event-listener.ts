@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
 import { CustomInputs, Prototypes } from "../constants"
 import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
@@ -17,6 +18,7 @@ import { areUpgradeableTypes } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+import { debugPrint } from "../lib/test/misc"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
 import { getAssemblyPlayerData } from "./player-assembly-data"
@@ -261,28 +263,51 @@ function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerInde
 }
 
 Events.on_pre_build((e) => {
+  debugPrint(e.created_by_moving)
   const player = game.get_player(e.player_index)!
   state.currentlyInBlueprintPaste = nil
   state.blueprintEntities = nil
+
+  const surface = player.surface
   if (player.is_cursor_blueprint()) {
-    const stage = getStageAtSurface(player.surface.index)
+    const stage = getStageAtSurface(surface.index)
     onPreBlueprintPasted(player, stage)
-  } else {
-    let name: string | nil
-    const cursorStack = player.cursor_stack
-    if (cursorStack && cursorStack.valid_for_read) {
-      name = cursorStack.name
-    } else {
-      game.print("TODO: handle ghost")
-      return
-    }
-    state.lastPreBuild = {
-      surface: player.surface,
-      item: name,
-      event: e,
-    }
-    clearToBeFastReplaced(e.player_index)
+    return
   }
+
+  let item: LuaItemPrototype | nil
+  const cursorStack = player.cursor_stack
+  if (cursorStack && cursorStack.valid_for_read) {
+    item = cursorStack.prototype
+  } else {
+    item = player.cursor_ghost
+  }
+  if (!item) return
+  state.lastPreBuild = {
+    surface,
+    item: item.name,
+    event: e,
+  }
+  clearToBeFastReplaced(e.player_index)
+
+  // handle rotate underground via drag, very manually
+
+  if (!e.created_by_moving) return
+  const stage = getStageAtSurface(surface.index)
+  if (!stage) return
+  const placeResult = item.place_result
+  if (!placeResult || placeResult.type !== "transport-belt") return
+  const hoveredEntity = surface.find_entities_filtered({
+    position: e.position,
+    radius: 0,
+    type: "underground-belt",
+    direction: oppositedirection(e.direction),
+    limit: 1,
+  })[0]
+  if (hoveredEntity !== nil) {
+    WorldListener.onUndergroundBeltDragRotated(stage.assembly, hoveredEntity, stage.stageNumber, e.player_index)
+  }
+  // this triggers onMarkedForUpgrade event handler
 })
 
 Events.on_pre_player_mined_item(() => {

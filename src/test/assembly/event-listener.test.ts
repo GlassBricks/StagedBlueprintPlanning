@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
 import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _assertInValidState } from "../../assembly/event-listener"
 import { getAssemblyPlayerData } from "../../assembly/player-assembly-data"
@@ -25,7 +26,7 @@ let updater: mock.Stubbed<WorldListener>
 let assembly: UserAssembly
 let surface: LuaSurface
 let player: LuaPlayer
-const pos = Pos(0, 0)
+const pos = Pos(0.5, 0.5)
 before_all(() => {
   player = game.players[1]
 
@@ -654,7 +655,7 @@ describe("belt dragging", () => {
       player_index: player.index,
       position: belt.position,
       created_by_moving: true,
-      direction: 0,
+      direction: belt.direction,
       shift_build: false,
       flip_vertical: false,
       flip_horizontal: false,
@@ -680,6 +681,22 @@ describe("belt dragging", () => {
     assert.not_nil(newBelt)
 
     assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+  })
+
+  test("build in different direction calls onEntityPotentiallyUpdated", () => {
+    const belt = surface.create_entity({
+      name: "transport-belt",
+      position: pos,
+      force: "player",
+    })!
+    assert.not_nil(belt)
+    player.cursor_stack!.set_stack("transport-belt")
+
+    player.build_from_cursor({ position: pos, direction: direction.east })
+    const newBelt = surface.find_entity("transport-belt", pos)!
+    assert.not_nil(newBelt)
+
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, match.ref(newBelt), 1, 0, 1)
   })
 
   test("drag over existing followed by mine", () => {
@@ -767,5 +784,76 @@ describe("belt dragging", () => {
     assert.spy(updater.onEntityPotentiallyUpdated).was_not_called()
     assert.spy(updater.onEntityCreated).called_with(match._, match.ref(underground), 1, 1)
     assert.spy(updater.onEntityDeleted).called(5)
+  })
+
+  function fakeUndergroundDrag(u1: LuaEntity, direction: defines.direction) {
+    Events.raiseFakeEventNamed("on_pre_build", {
+      player_index: player.index,
+      position: u1.position,
+      created_by_moving: true,
+      direction,
+      shift_build: false,
+      flip_vertical: false,
+      flip_horizontal: false,
+    })
+  }
+  describe("rotate underground by dragging calls onUndergroundBeltDragRotated", () => {
+    let belt: LuaEntity
+    let u1: LuaEntity
+
+    before_each(() => {
+      belt = surface.create_entity({
+        name: "transport-belt",
+        position: Pos(0, 0.5),
+        force: "player",
+      })!
+      assert.not_nil(belt)
+
+      u1 = surface.create_entity({
+        name: "underground-belt",
+        position: Pos(0.5, 1.5),
+        direction: defines.direction.south,
+        type: "output",
+        force: "player",
+      })!
+      assert.not_nil(u1)
+      player.cursor_stack!.set_stack("transport-belt")
+    })
+
+    test("can rotate underground by dragging", () => {
+      fakeNoopDrag(belt)
+      fakeUndergroundDrag(u1, belt.direction)
+
+      assert.spy(updater.onUndergroundBeltDragRotated).called_with(match._, match.ref(u1), 1, 1)
+    })
+
+    test("does not count if wrong direction", () => {
+      fakeNoopDrag(belt)
+      fakeUndergroundDrag(u1, oppositedirection(belt.direction))
+
+      assert.spy(updater.onUndergroundBeltDragRotated).was_not_called()
+    })
+    test("does not count if replaced", () => {
+      const position = u1.position
+      player.build_from_cursor({
+        position,
+        direction: u1.direction,
+      })
+      assert.spy(updater.onUndergroundBeltDragRotated).was_not_called()
+      assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
+      const newBelt = surface.find_entity("transport-belt", position)!
+      assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+    })
+    test("does not count if replaced sideways", () => {
+      const position = u1.position
+      player.build_from_cursor({
+        position,
+        direction: belt.direction + 2,
+      })
+      assert.spy(updater.onUndergroundBeltDragRotated).was_not_called()
+      assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
+      const newBelt = surface.find_entity("transport-belt", position)!
+      assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+    })
   })
 })

@@ -117,7 +117,7 @@ function isTestsRunning() {
   }
   return true
 }
-let shouldTryRerun = true
+let shouldTryRerun = false
 const shouldTryReload = false
 
 Events.on_tick(() => {
@@ -143,7 +143,7 @@ Events.on_tick(() => {
 commands.add_command("norerun", "", () => {
   shouldTryRerun = false
 })
-/*{
+{
   let lastEventTick = 0
   let count = 0
   const eventBlacklist = newLuaSet<keyof typeof defines.events>(
@@ -177,7 +177,7 @@ commands.add_command("norerun", "", () => {
     })
   }
   // shouldTryRerun = false
-}*/
+}
 
 // function setupManualTests(assembly: UserAssembly) {
 //   const player = game.players[1]

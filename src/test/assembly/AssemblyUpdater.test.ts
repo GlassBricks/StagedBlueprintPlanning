@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, createAssemblyUpdater, StageMoveResult } from "../../assembly/AssemblyUpdater"
 import { WorldListener } from "../../assembly/WorldListener"
@@ -722,6 +723,69 @@ describe("undergrounds", () => {
 
       assertOneEntity()
       assertUpdateCalled(entity, 2, nil)
+    })
+
+    test("can apply rotate upgrade to underground in first stage", () => {
+      const { luaEntity, entity } = createUndergroundBelt(1)
+      luaEntity.order_upgrade({
+        target: "underground-belt",
+        force: luaEntity.force,
+        direction: oppositedirection(luaEntity.direction),
+      })
+      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
+      assert.equal("updated", ret)
+
+      assert.equal("underground-belt", entity.firstValue.name)
+      assert.equal("output", entity.firstValue.type)
+      assert.equal(direction.west, entity.getDirection())
+      assertOneEntity()
+      assertUpdateCalled(entity, 1, nil)
+    })
+
+    test("cannot apply rotate upgrade to underground in higher stage", () => {
+      const { luaEntity, entity } = createUndergroundBelt(1)
+      luaEntity.order_upgrade({
+        target: "underground-belt",
+        force: luaEntity.force,
+        direction: oppositedirection(luaEntity.direction),
+      })
+      entity.replaceWorldEntity(2, luaEntity)
+      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
+      assert.equal("cannot-rotate", ret)
+
+      assert.equal("underground-belt", entity.firstValue.name)
+      assert.equal("input", entity.firstValue.type)
+      assert.equal(direction.west, entity.getDirection())
+      assertOneEntity()
+      assertRefreshCalled(entity, 2)
+    })
+
+    test("can apply rotate upgrade to underground pair", () => {
+      const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1)
+      luaEntity1.order_upgrade({
+        target: "underground-belt",
+        force: luaEntity1.force,
+        direction: oppositedirection(luaEntity1.direction),
+      })
+      luaEntity2.order_upgrade({
+        target: "underground-belt",
+        force: luaEntity2.force,
+        direction: oppositedirection(luaEntity2.direction),
+      })
+      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity1, 1)
+      assert.equal("updated", ret)
+      const ret2 = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity2, 1)
+      assert.equal("no-change", ret2)
+
+      assert.equal("underground-belt", entity1.firstValue.name)
+      assert.equal("output", entity1.firstValue.type)
+      assert.equal(direction.west, entity1.getDirection())
+      assert.equal("underground-belt", entity2.firstValue.name)
+      assert.equal("input", entity2.firstValue.type)
+      assert.equal(direction.east, entity2.getDirection())
+      assertNEntities(2)
+      assertUpdateCalled(entity1, 1, nil, 0)
+      assertUpdateCalled(entity2, 1, nil, 1)
     })
 
     test.each(["lower", "pair in higher", "self in higher"])(

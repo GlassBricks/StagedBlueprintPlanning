@@ -13,8 +13,9 @@ import { Colors, L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
-import { assertNever } from "../lib"
+import { assertNever, SelflessFun } from "../lib"
 import { Position } from "../lib/geometry"
+import { debugPrint } from "../lib/test/misc"
 import { L_Interaction } from "../locale"
 import { Assembly } from "./AssemblyDef"
 import { AssemblyUpdater, EntityUpdateResult } from "./AssemblyUpdater"
@@ -53,6 +54,13 @@ export interface WorldListener {
     entity: LuaEntity,
     stage: StageNumber,
     previousDirection: defines.direction,
+    byPlayer: PlayerIndex | nil,
+  ): void
+
+  onUndergroundBeltDragRotated(
+    assembly: Assembly,
+    entity: LuaEntity,
+    stage: StageNumber,
     byPlayer: PlayerIndex | nil,
   ): void
 
@@ -129,6 +137,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     reviveSettingsRemnant,
     tryDollyEntity,
     tryRotateEntityToMatchWorld,
+    tryRotateUnderground,
     tryUpdateEntityFromWorld,
     tryApplyUpgradeTarget,
     updateWiresFromWorld,
@@ -321,6 +330,22 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       const result = tryRotateEntityToMatchWorld(assembly, existing, stage)
       notifyIfError(result, existing, byPlayer)
     },
+    onUndergroundBeltDragRotated(
+      assembly: Assembly,
+      entity: LuaEntity,
+      stage: StageNumber,
+      byPlayer: PlayerIndex | nil,
+    ): void {
+      const existing = assembly.content.findCompatible(entity, nil)
+      if (!existing || !existing.isUndergroundBelt()) return
+      const result = tryRotateUnderground(
+        assembly,
+        existing,
+        stage,
+        entity.belt_to_ground_type === "input" ? "output" : "input",
+      )
+      notifyIfError(result, existing, byPlayer)
+    },
     onCircuitWiresPotentiallyUpdated(
       assembly: Assembly,
       entity: LuaEntity,
@@ -487,11 +512,11 @@ const WorldNotifier: WorldNotifier = {
 }
 
 export const WorldListener: WorldListener = createWorldListener(AssemblyUpdater, WorldNotifier)
-// for (const [k, v] of pairs(WorldListener)) {
-//   if (typeof v === "function") {
-//     WorldListener[k] = function (...args: any[]) {
-//       debugPrint(k)
-//       return (v as SelflessFun)(...args)
-//     }
-//   }
-// }
+for (const [k, v] of pairs(WorldListener)) {
+  if (typeof v === "function") {
+    WorldListener[k] = function (...args: any[]) {
+      debugPrint(k)
+      return (v as SelflessFun)(...args)
+    }
+  }
+}

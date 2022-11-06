@@ -299,6 +299,19 @@ describe("onEntityRotated", () => {
   })
 })
 
+test("onUndergroundBeltDragRotated", () => {
+  const { luaEntity, entity } = addEntity(2, {
+    name: "underground-belt",
+    type: "input",
+  })
+  assemblyUpdater.tryRotateUnderground.invokes(() => {
+    totalAuCalls++
+    return "updated"
+  })
+  worldListener.onUndergroundBeltDragRotated(assembly, luaEntity, 2, playerIndex)
+  assert.spy(assemblyUpdater.tryRotateUnderground).was.called_with(match.ref(assembly), entity, 2, "output")
+})
+
 describe("onEntityMarkedForUpgrade", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
