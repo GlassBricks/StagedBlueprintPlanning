@@ -37,13 +37,9 @@ import {
   Stage,
   UserAssembly,
 } from "./AssemblyDef"
-import {
-  BlueprintSettings,
-  editBlueprintSettings,
-  getDefaultBlueprintSettings,
-  tryTakeBlueprintWithSettings,
-} from "./blueprint-take"
+import { editBlueprintSettings } from "./edit-blueprint-settings"
 import { createStageSurface, prepareArea } from "./surfaces"
+import { BlueprintSettings, getDefaultBlueprintSettings, tryTakeBlueprintWithSettings } from "./take-blueprint"
 import { setTiles } from "./tiles"
 
 declare const global: {
@@ -75,6 +71,8 @@ class UserAssemblyImpl implements UserAssembly {
     useNextStageTiles: state(false),
     blueprintNameMode: state(BlueprintNameMode.FromStage),
     bookNameMode: state(BookNameMode.FromAssembly),
+
+    transformations: {},
   }
 
   valid = true
@@ -286,7 +284,14 @@ class StageImpl implements Stage {
   }
 
   doTakeBlueprint(stack: LuaItemStack, bbox: BBox): boolean {
-    const took = tryTakeBlueprintWithSettings(stack, this.getBlueprintSettings(), this.surface, bbox)
+    const took = tryTakeBlueprintWithSettings(
+      stack,
+      this.getBlueprintSettings(),
+
+      this.assembly.assemblyBlueprintSettings.transformations,
+      this.surface,
+      bbox,
+    )
     if (took) {
       const blueprintNameMode = this.assembly.assemblyBlueprintSettings.blueprintNameMode.get()
       if (blueprintNameMode === BlueprintNameMode.Empty) {
@@ -302,7 +307,15 @@ class StageImpl implements Stage {
   editBlueprint(player: LuaPlayer): boolean {
     const bbox = this.assembly.content.computeBoundingBox()
     if (!bbox) return false
-    return editBlueprintSettings(player, this.getBlueprintSettings(), this.surface, bbox) !== nil
+    return (
+      editBlueprintSettings(
+        player,
+        this.getBlueprintSettings(),
+        this.assembly.assemblyBlueprintSettings.transformations,
+        this.surface,
+        bbox,
+      ) !== nil
+    )
   }
 
   autoSetTiles(tiles: AutoSetTilesType): boolean {
@@ -367,6 +380,7 @@ Migrations.to("0.8.0", () => {
       useNextStageTiles: state(bpBookSettings.autoLandfill.get()),
       blueprintNameMode: state(BlueprintNameMode.FromStage),
       bookNameMode: state(BookNameMode.FromAssembly),
+      transformations: {},
     }
 
     type OldBlueprintSettings = Pick<
@@ -403,3 +417,10 @@ Migrations.to("0.8.0", () => {
   }
 })
 // player data migrated in 0.9.0, from ui/player-assembly-data.ts
+
+Migrations.to("0.11.0", () => {
+  // blueprint filters added to assembly settings
+  for (const [, assembly] of global.assemblies) {
+    assembly.assemblyBlueprintSettings.transformations = {}
+  }
+})

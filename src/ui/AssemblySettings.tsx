@@ -11,6 +11,7 @@
 
 import { AutoSetTilesType, LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
+import { editBlueprintFilters } from "../assembly/edit-blueprint-settings"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
@@ -167,6 +168,12 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             </flow>
 
             <line direction="horizontal" />
+            <button
+              caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
+              tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
+              on_gui_click={funcOn(this.editBlueprintFilters)}
+            />
+            <line direction="horizontal" />
 
             <button
               caption={[L_GuiAssemblySettings.SyncGridSettings]}
@@ -265,6 +272,9 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
         create_at_cursor: true,
       })
     }
+  }
+  private editBlueprintFilters() {
+    editBlueprintFilters(game.get_player(this.playerIndex)!, this.assembly.assemblyBlueprintSettings.transformations)
   }
   private syncGridSettings() {
     this.assembly.syncGridSettings()

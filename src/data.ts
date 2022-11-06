@@ -10,7 +10,7 @@
  */
 
 import { Data } from "typed-factorio/data/types"
-import { empty_sprite } from "util"
+import { empty_sprite, table } from "util"
 import { Colors, CustomInputs, Prototypes, Sprites } from "./constants"
 import {
   CustomInputPrototype,
@@ -275,6 +275,20 @@ data.extend([
     "red",
   ),
 ])
+
+const deconstructionPlanner = table.deepcopy<DeconstructionItemPrototype>(
+  data.raw["deconstruction-item"]["deconstruction-planner"],
+)
+deconstructionPlanner.tile_filter_count = nil
+// blueprint filters
+const blueprintFilters: DeconstructionItemPrototype = {
+  ...deconstructionPlanner,
+  name: Prototypes.BlueprintFilters,
+  flags: ["hidden", "not-stackable", "spawnable"],
+  entity_filter_count: 80,
+}
+
+data.extend([blueprintFilters])
 
 // Sprites
 function createSprite(

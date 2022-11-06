@@ -34,8 +34,9 @@ export const enum Prototypes {
   CleanupTool = "bp100:cleanup-tool",
 
   StageMoveTool = "bp100:stage-move-tool",
-
   FilteredStageMoveTool = "bp100:filtered-stage-move-tool",
+
+  BlueprintFilters = "bp100:blueprint-filters",
 
   BANANA = "bp100:banana",
 }

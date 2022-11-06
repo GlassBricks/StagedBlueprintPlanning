@@ -9,14 +9,17 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { editBlueprintFilters, editBlueprintSettings } from "../../assembly/edit-blueprint-settings"
 import {
   BlueprintSettings,
-  editBlueprintSettings,
+  BlueprintTransformations,
   getDefaultBlueprintSettings,
   tryTakeBlueprintWithSettings,
-} from "../../assembly/blueprint-take"
+} from "../../assembly/take-blueprint"
+import { Prototypes } from "../../constants"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
+import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 let player: LuaPlayer
 let surface: LuaSurface
@@ -39,8 +42,9 @@ test("can edit blueprint settings", () => {
   })!
   assert.not_nil(theEntity)
 
-  const stack = editBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10))!
+  const stack = editBlueprintSettings(player, settings, {}, surface, BBox.around({ x: 0, y: 0 }, 10))!
   assert.not_nil(stack)
+  assert.true(stack.valid_for_read && stack.is_blueprint)
 
   stack.label = "test"
   const icons: BlueprintSignalIcon[] = [{ signal: { type: "item", name: "iron-plate" }, index: 1 }]
@@ -76,7 +80,22 @@ test("can edit blueprint settings", () => {
   assert.same({ x: 1, y: 2 }, settings.positionOffset)
 })
 
-test("settings applied", () => {
+test("can edit blueprint filters", () => {
+  const transform: BlueprintTransformations = {}
+  const stack = editBlueprintFilters(player, transform)!
+  assert.not_nil(stack)
+  assert.true(stack.valid_for_read)
+  assert.equal(Prototypes.BlueprintFilters, stack.name)
+
+  stack.entity_filters = ["iron-chest", "steel-chest"]
+  stack.entity_filter_mode = entity_filter_mode.whitelist
+
+  player.opened = nil
+  assert.same(newLuaSet("iron-chest", "steel-chest"), transform.entityFilters)
+  assert.equal(entity_filter_mode.whitelist, transform.entityFilterMode)
+})
+
+test.each(["whitelist", "blacklist"])("blueprint settings applied", (mode) => {
   const settings: BlueprintSettings = {
     name: "test",
     icons: [{ signal: { type: "item", name: "iron-plate" }, index: 1 }],
@@ -85,17 +104,29 @@ test("settings applied", () => {
     positionOffset: { x: 1, y: 2 },
     positionRelativeToGrid: { x: 4, y: 5 },
   }
-  const theEntity = surface.create_entity({
+  const chest = surface.create_entity({
     name: "iron-chest",
     position: [0.5, 0.5],
     force: "player",
   })!
+  assert.not_nil(chest)
+  const other = surface.create_entity({
+    name: "transport-belt",
+    position: [0.5, 1.5],
+    force: "player",
+  })!
+  assert.not_nil(other)
 
   const stack = player.cursor_stack!
   stack.clear()
   stack.set_stack("blueprint")
 
-  const res = tryTakeBlueprintWithSettings(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10))
+  const whitelist = mode === "whitelist"
+  const transform: BlueprintTransformations = {
+    entityFilters: whitelist ? newLuaSet("iron-chest") : newLuaSet("transport-belt"),
+    entityFilterMode: whitelist ? entity_filter_mode.whitelist : entity_filter_mode.blacklist,
+  }
+  const res = tryTakeBlueprintWithSettings(stack, settings, transform, surface, BBox.around({ x: 0, y: 0 }, 10))
   assert.true(res)
 
   assert.equal("test", stack.label)
@@ -103,7 +134,8 @@ test("settings applied", () => {
   assert.same(settings.snapToGrid, stack.blueprint_snap_to_grid)
   assert.equal(settings.absoluteSnapping, stack.blueprint_absolute_snapping)
   assert.same(settings.positionRelativeToGrid, stack.blueprint_position_relative_to_grid)
-  const entity = stack.get_blueprint_entities()![0]
-  assert.same({ x: 1.5, y: 2.5 }, entity.position)
-  assert.equal(theEntity.name, entity.name)
+  const entities = stack.get_blueprint_entities()!
+  assert.equal(1, entities.length)
+  assert.same(Pos.plus(chest.position, settings.positionOffset), entities[0].position)
+  assert.same(chest.name, entities[0].name)
 })

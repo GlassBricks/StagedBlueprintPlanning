@@ -12,6 +12,7 @@
 import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableEntityMap } from "../entity/EntityMap"
 import { MutableState, Observable, State } from "../lib"
+import { BlueprintTransformations } from "./take-blueprint"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface Assembly {
@@ -58,11 +59,12 @@ export const enum BookNameMode {
 }
 export interface AssemblyBlueprintSettings {
   readonly autoLandfill: MutableState<boolean>
-
   readonly useNextStageTiles: MutableState<boolean>
 
   readonly blueprintNameMode: MutableState<BlueprintNameMode>
   readonly bookNameMode: MutableState<BookNameMode>
+
+  transformations: BlueprintTransformations
 }
 
 export interface Stage {

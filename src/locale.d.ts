@@ -8,6 +8,8 @@ export declare const enum L_ItemName {
   StageMoveTool = "item-name.bp100:stage-move-tool",
   /** Filtered stage move tool */
   FilteredStageMoveTool = "item-name.bp100:filtered-stage-move-tool",
+  /** Blueprint filters */
+  BlueprintFilters = "item-name.bp100:blueprint-filters",
 }
 export declare const enum L_ShortcutName {
   /** Build cleanup tool */
@@ -222,6 +224,10 @@ export declare const enum L_GuiAssemblySettings {
   BlueprintBookNaming = "bp100.gui.assembly-settings.blueprint-book-naming",
   /** From staged build name */
   BpNameFromAssembly = "bp100.gui.assembly-settings.bp-name-from-assembly",
+  /** Edit blueprint filters [img=info] */
+  EditBlueprintFilters = "bp100.gui.assembly-settings.edit-blueprint-filters",
+  /** The set filters will be applied after taking the blueprint. */
+  EditBlueprintFiltersTooltip = "bp100.gui.assembly-settings.edit-blueprint-filters-tooltip",
   /** Sync grid settings [img=info] */
   SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
   /** Copies the grid settings of the [font=default-bold]last[/font] stage's blueprint to all other stages. */
