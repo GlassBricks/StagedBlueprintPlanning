@@ -702,7 +702,7 @@ function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   if (!stage) return
   const { stageNumber, assembly } = stage
   for (const entity of e.entities) {
-    WorldListener.onEntityForceDeleted(assembly, entity, stageNumber)
+    WorldListener.onEntityForceDeleteUsed(assembly, entity, stageNumber)
   }
 }
 
@@ -719,7 +719,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   if (!entity) return
   const stage = getStageAtEntityOrPreview(entity)
   if (stage) {
-    WorldListener.onMoveEntityToStage(stage.assembly, entity, stage.stageNumber, e.player_index)
+    WorldListener.onMoveEntityToStageCustomInput(stage.assembly, entity, stage.stageNumber, e.player_index)
   } else {
     player.create_local_flying_text({
       text: [L_Interaction.NotInAnAssembly],
@@ -744,9 +744,9 @@ Events.on_player_selected_area((e) => {
   }
 
   const { stageNumber, assembly } = stage
-  const { onSendToStage } = WorldListener
+  const { onSendToStageUsed } = WorldListener
   for (const entity of e.entities) {
-    onSendToStage(assembly, entity, stageNumber, targetStage, playerIndex)
+    onSendToStageUsed(assembly, entity, stageNumber, targetStage, playerIndex)
   }
 })
 function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
@@ -755,9 +755,9 @@ function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
   if (!stage) return
 
   const { stageNumber, assembly } = stage
-  const { onBringToStage } = WorldListener
+  const { onBringToStageUsed } = WorldListener
   for (const entity of e.entities) {
-    onBringToStage(assembly, entity, stageNumber, e.player_index)
+    onBringToStageUsed(assembly, entity, stageNumber, e.player_index)
   }
 }
 Events.on_player_alt_selected_area(checkMoveToolAlt)
@@ -775,7 +775,7 @@ if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_mov
     Events.on(event, (e) => {
       const stage = getStageAtEntityOrPreview(e.moved_entity)
       if (stage) {
-        WorldListener.onEntityMoved(stage.assembly, e.moved_entity, stage.stageNumber, e.start_pos, e.player_index)
+        WorldListener.onEntityDollied(stage.assembly, e.moved_entity, stage.stageNumber, e.start_pos, e.player_index)
       }
     })
   })

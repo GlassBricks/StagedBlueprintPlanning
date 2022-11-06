@@ -12,9 +12,9 @@
 import { Prototypes } from "../constants"
 import { AssemblyEntity, isWorldEntityAssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
-import { EntityMoveResult, forceMoveEntity, tryMoveAllEntities } from "../entity/entity-move"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
 import { EntityMap } from "../entity/EntityMap"
+import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import { EntityHighlighter } from "./EntityHighlighter"
@@ -62,7 +62,7 @@ export interface WorldUpdater {
 }
 
 export type AssemblyEntityDollyResult =
-  | EntityMoveResult
+  | EntityDollyResult
   | "cannot-move"
   | "entities-missing"
   | "connected-entities-missing"
@@ -187,7 +187,7 @@ export function createWorldUpdater(
       entities.push(worldEntity)
     }
 
-    return tryMoveAllEntities(entities, movedEntity.position, movedEntity.direction)
+    return tryDollyAllEntities(entities, movedEntity.position, movedEntity.direction)
   }
   function checkConnectionWorldEntityExists(
     content: EntityMap,
@@ -290,7 +290,7 @@ export function createWorldUpdater(
       if (!movedEntity) return "entities-missing"
       const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
       if (moveResult !== "success") {
-        forceMoveEntity(movedEntity, entity.position, entity.getDirection())
+        forceDollyEntity(movedEntity, entity.position, entity.getDirection())
       } else {
         entity.setDirection(movedEntity.direction as SavedDirection)
         deleteHighlights(entity)

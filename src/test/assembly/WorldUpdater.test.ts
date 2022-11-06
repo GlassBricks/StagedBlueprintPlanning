@@ -14,8 +14,8 @@ import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { forceMoveEntity } from "../../entity/entity-move"
 import { EntityHandler } from "../../entity/EntityHandler"
+import { forceDollyEntity } from "../../entity/picker-dollies"
 import { WireHandler, WireUpdater } from "../../entity/WireHandler"
 import { Pos } from "../../lib/geometry"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
@@ -261,21 +261,21 @@ describe("tryMoveEntity", () => {
   }
 
   test("can move entity if moved in first stage", () => {
-    assert.true(forceMoveEntity(entities[0], newPos, newDir))
+    assert.true(forceDollyEntity(entities[0], newPos, newDir))
     const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
     assert.equal("success", result)
     assertMoved()
   })
 
   test("can't move entity if moved in later stage", () => {
-    assert.true(forceMoveEntity(entities[1], newPos, newDir))
+    assert.true(forceDollyEntity(entities[1], newPos, newDir))
     const result = worldUpdater.tryDollyEntities(assembly, entity, 2)
     assert.equal("cannot-move", result)
     assertNotMoved()
   })
 
   test("can't move if world entities are missing in any stage", () => {
-    assert.true(forceMoveEntity(entities[0], newPos, newDir))
+    assert.true(forceDollyEntity(entities[0], newPos, newDir))
     entity.getWorldEntity(2)!.destroy()
     const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
     assert.equal("entities-missing", result)
@@ -297,7 +297,7 @@ describe("tryMoveEntity", () => {
     test("can't move if cable connected missing in all stages", () => {
       assembly.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
-      assert.true(forceMoveEntity(entities[0], newPos, newDir))
+      assert.true(forceDollyEntity(entities[0], newPos, newDir))
       const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
       assert.equal("connected-entities-missing", result)
     })
@@ -311,7 +311,7 @@ describe("tryMoveEntity", () => {
         wire: defines.wire_type.red,
       })
 
-      assert.true(forceMoveEntity(entities[0], newPos, newDir))
+      assert.true(forceDollyEntity(entities[0], newPos, newDir))
       const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
       assert.equal("connected-entities-missing", result)
     })
@@ -325,7 +325,7 @@ describe("tryMoveEntity", () => {
         toId: 1,
         wire: defines.wire_type.red,
       })
-      assert.true(forceMoveEntity(entities[0], newPos, newDir))
+      assert.true(forceDollyEntity(entities[0], newPos, newDir))
 
       otherEntity.replaceWorldEntity(
         2,

@@ -82,14 +82,14 @@ export interface WorldListener {
   /** Similar to above; does not remove settings remnants */
   tryFixEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void
 
-  onEntityForceDeleted(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void
+  onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void
   /** Either: entity died, or reverse select with cleanup tool */
   onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void
   /** User activated. */
-  onMoveEntityToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void
+  onMoveEntityToStageCustomInput(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void
 
   /** Only moves if stage matches the fromStage */
-  onSendToStage(
+  onSendToStageUsed(
     assembly: Assembly,
     entity: LuaEntity,
     fromStage: StageNumber,
@@ -98,9 +98,9 @@ export interface WorldListener {
   ): void
 
   /** For alt-selecting with stage-move tool: does not move settings remnants, only notifies on error */
-  onBringToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void
+  onBringToStageUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void
 
-  onEntityMoved(
+  onEntityDollied(
     assembly: Assembly,
     entity: LuaEntity,
     stage: StageNumber,
@@ -379,7 +379,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     tryFixEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
       tryFixEntity(assembly, stage, entity, false)
     },
-    onEntityForceDeleted(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
+    onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
       const existing = getEntityFromPreview(entity, stage, assembly)
       if (!existing) return
       forceDeleteEntity(assembly, existing)
@@ -390,7 +390,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
         clearEntityAtStage(assembly, existing, stage)
       }
     },
-    onMoveEntityToStage(
+    onMoveEntityToStageCustomInput(
       assembly: Assembly,
       entityOrPreviewEntity: LuaEntity,
       stage: StageNumber,
@@ -415,7 +415,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
         assertNever(result)
       }
     },
-    onSendToStage(
+    onSendToStageUsed(
       assembly: Assembly,
       entity: LuaEntity,
       fromStage: StageNumber,
@@ -438,7 +438,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
         assertNever(result)
       }
     },
-    onBringToStage(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void {
+    onBringToStageUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void {
       const existing = getEntityFromEntityOrPreview(entity, stage, assembly)
       if (!existing || existing.isSettingsRemnant) return
       const oldStage = existing.firstStage
@@ -456,7 +456,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
         assertNever(result)
       }
     },
-    onEntityMoved(
+    onEntityDollied(
       assembly: Assembly,
       entity: LuaEntity,
       stage: StageNumber,

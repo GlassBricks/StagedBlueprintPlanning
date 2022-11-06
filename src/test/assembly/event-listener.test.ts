@@ -373,7 +373,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onEntityForceDeleted).called_with(match.ref(assembly), match.ref(entity), 1)
+    assert.spy(updater.onEntityForceDeleteUsed).called_with(match.ref(assembly), match.ref(entity), 1)
   })
 })
 
@@ -387,7 +387,7 @@ describe("move to this stage", () => {
       input_name: CustomInputs.MoveToThisStage,
       cursor_position: player.position,
     })
-    assert.spy(updater.onMoveEntityToStage).called_with(match.ref(assembly), match.ref(entity!), 1, 1)
+    assert.spy(updater.onMoveEntityToStageCustomInput).called_with(match.ref(assembly), match.ref(entity!), 1, 1)
   }
   test("on normal entity", () => {
     const entity = surface.create_entity({
@@ -425,7 +425,7 @@ describe("stage-move tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onSendToStage).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
+    assert.spy(updater.onSendToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
   })
   test("bring to this stage (alt)", () => {
     const entity = surface.create_entity({
@@ -443,7 +443,7 @@ describe("stage-move tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onBringToStage).called_with(match.ref(assembly), match.ref(entity), 1, 1)
+    assert.spy(updater.onBringToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 1)
   })
   test("bring to this stage (reverse)", () => {
     const entity = surface.create_entity({
@@ -461,7 +461,7 @@ describe("stage-move tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onBringToStage).called_with(match.ref(assembly), match.ref(entity), 1, 1)
+    assert.spy(updater.onBringToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 1)
   })
 })
 

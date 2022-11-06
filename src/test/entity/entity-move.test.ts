@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { forceMoveEntity, tryMoveAllEntities } from "../../entity/entity-move"
+import { forceDollyEntity, tryDollyAllEntities } from "../../entity/picker-dollies"
 import { Pos } from "../../lib/geometry"
 import { setupEntityMoveTest } from "./setup-entity-move-test"
 
@@ -19,13 +19,13 @@ const newPos = { x: 1.5, y: 2 }
 const newDir = defines.direction.south
 test("forceMoveEntity moves entities", () => {
   const entity = entities[0]
-  forceMoveEntity(entity, newPos, newDir)
+  forceDollyEntity(entity, newPos, newDir)
   assert.same(newPos, entity.position)
   assert.same(newDir, entity.direction)
 })
 
 test("tryMoveAllEntities moves all entities", () => {
-  const result = tryMoveAllEntities(entities, newPos, newDir)
+  const result = tryDollyAllEntities(entities, newPos, newDir)
   assert.equal("success", result)
   for (const entity of entities) {
     assert.same(newPos, entity.position)
@@ -36,8 +36,8 @@ test("tryMoveAllEntities moves all entities", () => {
 test("can move to position overlapping with itself", () => {
   const newPos2 = Pos.plus(origPos, { x: 1, y: 0 })
   const entity = entities[0]
-  forceMoveEntity(entity, newPos2, origDir)
-  const result = tryMoveAllEntities(entities, newPos2, origDir)
+  forceDollyEntity(entity, newPos2, origDir)
+  const result = tryDollyAllEntities(entities, newPos2, origDir)
   assert.equal("success", result)
   for (const entity of entities) {
     assert.same(newPos2, entity.position)
@@ -51,7 +51,7 @@ test("does not move any entities if any would overlap", () => {
     position: newPos,
     direction: defines.direction.east,
   })
-  const result = tryMoveAllEntities(entities, newPos, newDir)
+  const result = tryDollyAllEntities(entities, newPos, newDir)
   assert.equal("overlap", result)
   for (const entity of entities) {
     assert.same(origPos, entity.position)
@@ -60,9 +60,9 @@ test("does not move any entities if any would overlap", () => {
 })
 
 test("ok if already at target position", () => {
-  forceMoveEntity(entities[0], newPos, newDir)
+  forceDollyEntity(entities[0], newPos, newDir)
 
-  const result = tryMoveAllEntities(entities, newPos, newDir)
+  const result = tryDollyAllEntities(entities, newPos, newDir)
   assert.equal("success", result)
   for (const entity of entities) {
     assert.same(newPos, entity.position)
@@ -83,7 +83,7 @@ test("does not move any if wires cannot reach", () => {
     }),
     "failed to connect",
   )
-  const result = tryMoveAllEntities(entities, newPos, newDir)
+  const result = tryDollyAllEntities(entities, newPos, newDir)
   assert.equal("wires-cannot-reach", result)
   for (const entity of entities) {
     assert.same(origDir, entity.direction)
