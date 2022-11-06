@@ -487,3 +487,11 @@ const WorldNotifier: WorldNotifier = {
 }
 
 export const WorldListener: WorldListener = createWorldListener(AssemblyUpdater, WorldNotifier)
+// for (const [k, v] of pairs(WorldListener)) {
+//   if (typeof v === "function") {
+//     WorldListener[k] = function (...args: any[]) {
+//       debugPrint(k)
+//       return (v as SelflessFun)(...args)
+//     }
+//   }
+// }

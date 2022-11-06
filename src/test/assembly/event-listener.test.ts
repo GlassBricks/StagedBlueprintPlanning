@@ -165,43 +165,50 @@ test.each([
   assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, newEntity, 1, match._, 1)
 })
 
-// this test doesn't work because build_from_cursor doesn't fast replace both undergrounds?
-// test.only("fast replace an underground runs onEntityPotentiallyUpdate on both", () => {
-//   const u1 = surface.create_entity({
-//     name: "underground-belt",
-//     direction: direction.east,
-//     type: "input",
-//     position: getStageCenter(1),
-//     force: "player",
-//   })!
-//   assert.not_nil(u1)
-//   const u2 = surface.create_entity({
-//     name: "underground-belt",
-//     direction: direction.east,
-//     type: "output",
-//     position: Pos.plus(u1.position, Pos(1, 0)),
-//   })!
-//   assert.not_nil(u2)
-//   const pos1 = u1.position
-//   const pos2 = u2.position
-//
-//   player.cursor_stack!.set_stack("fast-underground-belt")
-//   player.build_from_cursor({ position: u1.position, direction: direction.east })
-//   const newU1 = surface.find_entity("fast-underground-belt", pos1)!
-//   assert.not_nil(newU1)
-//   const newU2 = surface.find_entity("fast-underground-belt", pos2)!
-//   assert.not_nil(newU2)
-//
-//   assert
-//     .spy(updater.onEntityPotentiallyUpdated)
-//     .called_with(match.ref(assembly), match.ref(newU1), match.ref(assembly.getStage(1)!), match._)
-//   assert
-//     .spy(updater.onEntityPotentiallyUpdated)
-//     .called_with(match.ref(assembly), match.ref(newU2), match.ref(assembly.getStage(1)!), match._)
-//
-//   assert.spy(updater.onEntityCreated).not_called()
-//   assert.spy(updater.onEntityDeleted).not_called()
-// })
+test("fast replace an underground runs onEntityPotentiallyUpdate on both", () => {
+  const u1 = surface.create_entity({
+    name: "underground-belt",
+    direction: direction.east,
+    type: "input",
+    position: pos,
+    force: "player",
+  })!
+  assert.not_nil(u1)
+  const u2 = surface.create_entity({
+    name: "underground-belt",
+    direction: direction.east,
+    type: "output",
+    position: Pos.plus(u1.position, Pos(1, 0)),
+    force: "player",
+  })!
+  assert.not_nil(u2)
+  const pos1 = u1.position
+  const pos2 = u2.position
+
+  player.cursor_stack!.set_stack("fast-underground-belt")
+
+  player.build_from_cursor({
+    position: pos1,
+    direction: direction.east,
+  })
+
+  const newU1 = surface.find_entity("fast-underground-belt", pos1)!
+  assert.not_nil(newU1)
+  const newU2 = surface.find_entity("fast-underground-belt", pos2)!
+  assert.not_nil(newU2)
+
+  assert.spy(updater.onEntityCreated).not_called()
+  assert.spy(updater.onEntityDeleted).not_called()
+
+  assert
+    .message("called for u1")
+    .spy(updater.onEntityPotentiallyUpdated)
+    .called_with(match.ref(assembly), match.ref(newU1), 1, match._, 1)
+  assert
+    .message("called for u2")
+    .spy(updater.onEntityPotentiallyUpdated)
+    .called_with(match.ref(assembly), match.ref(newU2), 1, match._, 1)
+})
 
 describe("upgrade", () => {
   let entity: LuaEntity
@@ -639,4 +646,126 @@ test("Q-building", () => {
     player_index: player.index,
   })
   _assertInValidState()
+})
+
+describe("belt dragging", () => {
+  function fakeNoopDrag(belt: LuaEntity): void {
+    Events.raiseFakeEventNamed("on_pre_build", {
+      player_index: player.index,
+      position: belt.position,
+      created_by_moving: true,
+      direction: 0,
+      shift_build: false,
+      flip_vertical: false,
+      flip_horizontal: false,
+    })
+  }
+  test("building over existing belt does not call anything", () => {
+    const belt = surface.create_entity({
+      name: "transport-belt",
+      position: pos,
+      force: "player",
+    })!
+    player.cursor_stack!.set_stack("transport-belt")
+    const pos2 = Pos.plus(belt.position, Pos(0, 1))
+
+    fakeNoopDrag(belt)
+
+    assert.spy(updater.onEntityPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onEntityCreated).was_not_called()
+
+    player.build_from_cursor({ position: pos2, direction: belt.direction })
+    const newBelt = surface.find_entity("transport-belt", pos2)!
+    assert.not_nil(newBelt)
+
+    assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+  })
+
+  test("drag over existing followed by mine", () => {
+    const belt = surface.create_entity({
+      name: "transport-belt",
+      position: pos,
+      force: "player",
+    })!
+    player.cursor_stack!.set_stack("transport-belt")
+
+    fakeNoopDrag(belt)
+    player.mine_entity(belt)
+
+    assert.spy(updater.onEntityPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onEntityCreated).was_not_called()
+    assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
+  })
+
+  test("drag over existing followed by fast replace on same belt", () => {
+    const belt = surface.create_entity({
+      name: "transport-belt",
+      position: pos,
+      force: "player",
+    })!
+    const pos1 = belt.position
+    player.cursor_stack!.set_stack("transport-belt")
+    fakeNoopDrag(belt)
+    player.cursor_stack!.set_stack("fast-transport-belt")
+    player.build_from_cursor({ position: pos1, direction: belt.direction })
+    const newBelt = surface.find_entity("fast-transport-belt", pos1)!
+    assert.not_nil(newBelt)
+
+    assert.spy(updater.onEntityDeleted).was_not_called()
+    assert.spy(updater.onEntityCreated).was_not_called()
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
+  })
+
+  test("drag over existing followed by fast replace on different belt", () => {
+    const belt = surface.create_entity({
+      name: "transport-belt",
+      position: pos,
+      force: "player",
+    })!
+    const pos1 = belt.position
+    const pos2 = Pos.plus(pos1, Pos(0, 1))
+    surface.create_entity({
+      name: "fast-transport-belt",
+      position: pos2,
+      force: "player",
+    })
+    player.cursor_stack!.set_stack("transport-belt")
+    fakeNoopDrag(belt)
+    player.build_from_cursor({ position: pos2, direction: belt.direction })
+    const newBelt = surface.find_entity("transport-belt", pos2)!
+
+    assert.spy(updater.onEntityDeleted).was_not_called()
+    assert.spy(updater.onEntityCreated).was_not_called()
+    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
+  })
+
+  test("fast replacing with underground belt", () => {
+    for (const i of $range(1, 5)) {
+      surface.create_entity({
+        name: "transport-belt",
+        position: Pos(0, i),
+        force: "player",
+      })
+    }
+    const u1 = surface.create_entity({
+      name: "underground-belt",
+      position: Pos(0.5, 0.5),
+      direction: defines.direction.north,
+      type: "output",
+      force: "player",
+      fast_replace: true,
+    })
+    assert.not_nil(u1)
+    player.cursor_stack!.set_stack("underground-belt")
+    // build at 5th belt
+    player.build_from_cursor({ position: Pos(0.5, 5.5), direction: defines.direction.north })
+
+    const underground = surface.find_entity("underground-belt", Pos(0.5, 5.5))!
+
+    assert.spy(updater.onEntityPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onEntityCreated).called_with(match._, match.ref(underground), 1, 1)
+    assert.spy(updater.onEntityDeleted).called(5)
+  })
 })

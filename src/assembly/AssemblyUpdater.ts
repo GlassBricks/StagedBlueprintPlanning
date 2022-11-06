@@ -19,7 +19,7 @@ import {
 } from "../entity/AssemblyEntity"
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
-import { areUpgradeable } from "../entity/entity-info"
+import { areUpgradeableTypes } from "../entity/entity-info"
 import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { getSavedDirection } from "../entity/special-entities"
 import { findUndergroundPair } from "../entity/special-entity-treatment"
@@ -169,7 +169,7 @@ export function createAssemblyUpdater(
   }
 
   function checkUpgradeType(existing: AssemblyEntity, upgradeType: string): void {
-    if (!areUpgradeable(existing.firstValue.name, upgradeType))
+    if (!areUpgradeableTypes(existing.firstValue.name, upgradeType))
       error(` incompatible upgrade from ${existing.firstValue.name} to ${upgradeType}`)
   }
 

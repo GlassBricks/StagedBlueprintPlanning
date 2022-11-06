@@ -55,3 +55,9 @@ export function debugPrint(...values: unknown[]): void {
   game?.print(message)
   log(message)
 }
+
+export function pauseTest(): void {
+  game.tick_paused = true
+  game.speed = 1
+  async(1)
+}

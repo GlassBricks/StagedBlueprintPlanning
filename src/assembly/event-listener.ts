@@ -13,7 +13,7 @@ import { CustomInputs, Prototypes } from "../constants"
 import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { areUpgradeable } from "../entity/entity-info"
+import { areUpgradeableTypes } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
@@ -147,14 +147,17 @@ Start:
   on_pre_build: state = PreBuild
     (with blueprint in hand) -> blueprint
     on_built_entity -> build
-    on_player_mined_entity: state = PossibleFastReplace
-      on_player_mined_entity -> mine previous, stay in state
-      on_built_entity -> fast replace
+    on_player_mined_entity:
+      if is fast replace -> state = PossibleFastReplace
+        on_built_entity -> fast replace or mine + build, state = Start
+        on_player_mined_entity -> set underground pair, or destroy previous possibleFastReplace
+      else -> destroy, stay in state (other entity)
   script_raised_built -> build
   script_raised_destroy -> destroy
   on_player_mined_entity:
     on_built_entity -> fast replace
   on_built_entity -> build
+  on_player_changed_cursor, on_selected_entity_changed -> state = Start
 */
 
 // simple:
@@ -178,21 +181,26 @@ Events.on_marked_for_upgrade((e) => luaEntityMarkedForUpgrade(e.entity, e.player
 
 // building, mining, fast replacing: state machine
 
-interface AnnotatedEntity extends BasicEntityInfo {
+interface ToBeFastReplacedEntity extends BasicEntityInfo {
   readonly stage: Stage
+
   undergroundPair?: LuaEntity
-  undergroundPairValue?: AnnotatedEntity
+  undergroundPairValue?: ToBeFastReplacedEntity
 }
 // in global, so no desync in case of bugs
 let state: {
-  currentlyInBuild?: Stage | false // if not nil, then is in build. False if not in a stage
+  lastPreBuild?: {
+    event: OnPreBuildEvent
+    item: string | nil
+    surface: LuaSurface
+  }
+  toBeFastReplaced?: ToBeFastReplacedEntity
+
+  preMinedItemCalled?: boolean
 
   currentlyInBlueprintPaste?: Stage
   blueprintEntities?: BlueprintEntity[]
   blueprintOriginalNumEntities?: number
-
-  preMinedItemCalled?: Stage | false // if not nil, then is in build. False if not in a stage
-  lastDeleted?: AnnotatedEntity
 }
 declare global {
   interface PlayerData {
@@ -209,28 +217,26 @@ Events.on_load(() => {
   state = global.worldListenerState
 })
 
-// for optimization purposes, getStageAtSurface is cached and computed as late as possible
-
-function clearLastDeleted(player: PlayerIndex | nil): void {
-  const { lastDeleted } = state
-  if (lastDeleted) {
-    const { stage } = lastDeleted
+function clearToBeFastReplaced(player: PlayerIndex | nil): void {
+  const { toBeFastReplaced } = state
+  if (toBeFastReplaced) {
+    const { stage } = toBeFastReplaced
     if (stage.valid) {
       const { stageNumber, assembly } = stage
-      WorldListener.onEntityDeleted(assembly, lastDeleted, stageNumber, player)
-      const { undergroundPairValue } = lastDeleted
+      WorldListener.onEntityDeleted(assembly, toBeFastReplaced, stageNumber, player)
+      const { undergroundPairValue } = toBeFastReplaced
       if (undergroundPairValue) {
         WorldListener.onEntityDeleted(assembly, undergroundPairValue, stageNumber, player)
       }
     }
-    state.lastDeleted = nil
+    state.toBeFastReplaced = nil
   }
 }
 
-function setLastDeleted(entity: LuaEntity, stage: Stage, player: PlayerIndex | nil): void {
+function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerIndex | nil): void {
   const isUnderground = entity.type === "underground-belt"
-  const oldValue = state.lastDeleted
-  const newValue: AnnotatedEntity = {
+  const oldValue = state.toBeFastReplaced
+  const newValue: ToBeFastReplacedEntity = {
     name: entity.name,
     type: entity.type,
     position: entity.position,
@@ -246,56 +252,107 @@ function setLastDeleted(entity: LuaEntity, stage: Stage, player: PlayerIndex | n
       oldValue.undergroundPairValue = newValue
       return
     }
+    // else, is the first underground belt
     newValue.undergroundPair = entity.neighbours as LuaEntity | nil
   }
 
-  clearLastDeleted(player)
-  state.lastDeleted = newValue
+  clearToBeFastReplaced(player)
+  state.toBeFastReplaced = newValue
 }
 
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
-  const stage = getStageAtSurface(player.surface.index)
   state.currentlyInBlueprintPaste = nil
   state.blueprintEntities = nil
   if (player.is_cursor_blueprint()) {
+    const stage = getStageAtSurface(player.surface.index)
     onPreBlueprintPasted(player, stage)
   } else {
-    state.currentlyInBuild = stage ?? false
-    clearLastDeleted(e.player_index)
+    let name: string | nil
+    const cursorStack = player.cursor_stack
+    if (cursorStack && cursorStack.valid_for_read) {
+      name = cursorStack.name
+    } else {
+      game.print("TODO: handle ghost")
+      return
+    }
+    state.lastPreBuild = {
+      surface: player.surface,
+      item: name,
+      event: e,
+    }
+    clearToBeFastReplaced(e.player_index)
   }
 })
-Events.on_player_cursor_stack_changed(() => {
-  state.currentlyInBuild = nil
+
+Events.on_pre_player_mined_item(() => {
+  state.preMinedItemCalled = true
 })
 
-Events.on_pre_player_mined_item((e) => {
-  const player = game.get_player(e.player_index)!
-  const stage = getStageAtSurface(player.surface.index)
-  state.preMinedItemCalled = stage ?? false
-})
+function isFastReplaceCompatible(
+  pos1: MapPosition,
+  pos2: MapPosition,
+  item1: string,
+  item2: string,
+  direction1: defines.direction,
+  direction2: defines.direction,
+): boolean {
+  return (
+    pos1.x === pos2.x &&
+    pos1.y === pos2.y &&
+    ((item1 === item2 && direction1 !== direction2) || (item1 !== item2 && areUpgradeableTypes(item1, item2)))
+  )
+}
+function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent) {
+  const lastPreBuild = state.lastPreBuild
+  if (!lastPreBuild) return
+
+  const { entity } = mineEvent
+  const toBeFastReplaced = state.toBeFastReplaced
+  if (toBeFastReplaced && toBeFastReplaced.undergroundPair === entity) {
+    return true
+  }
+
+  const { event, item } = lastPreBuild
+
+  if (
+    item === nil ||
+    event.tick !== mineEvent.tick ||
+    event.player_index !== mineEvent.player_index ||
+    entity.surface !== lastPreBuild.surface
+  )
+    return
+
+  const { position } = event
+  if (isFastReplaceCompatible(position, entity.position, item, entity.name, event.direction, entity.direction)) {
+    return true
+  }
+  if (entity.type === "underground-belt") {
+    const pair = entity.neighbours as LuaEntity | nil
+    if (pair && isFastReplaceCompatible(position, pair.position, item, pair.name, event.direction, pair.direction)) {
+      return true
+    }
+  }
+}
 
 Events.on_player_mined_entity((e) => {
   const { entity } = e
+
   const preMinedItemCalled = state.preMinedItemCalled
   state.preMinedItemCalled = nil
-  if (preMinedItemCalled === false || !isWorldEntityAssemblyEntity(entity)) return
+  const entitySurface = entity.surface
+  const stage = getStageAtSurface(entitySurface.index)
+  if (!stage || !isWorldEntityAssemblyEntity(entity)) return
+
   if (preMinedItemCalled === nil) {
     // this happens when using instant upgrade planner
-    const stage = getStageAtSurface(entity.surface.index)
-    state.currentlyInBuild = stage ?? false
-    // fall through
+    setToBeFastReplaced(entity, stage, e.player_index)
   }
-  const currentlyInBuild = state.currentlyInBuild
 
-  if (currentlyInBuild === false) return // not in stage, do nothing
-  if (currentlyInBuild !== nil) {
-    // in a stage, set lastDeleted for fast replace
-    setLastDeleted(entity, currentlyInBuild, e.player_index)
+  if (isFastReplaceMine(e)) {
+    setToBeFastReplaced(entity, stage, e.player_index)
   } else {
-    // normal delete
-    const stage = getStageAtSurface(entity.surface.index)
-    if (stage) WorldListener.onEntityDeleted(stage.assembly, entity, stage.stageNumber, e.player_index)
+    WorldListener.onEntityDeleted(stage.assembly, entity, stage.stageNumber, e.player_index)
   }
 })
 
@@ -315,36 +372,26 @@ Events.on_built_entity((e) => {
     return
   }
 
+  const lastPreBuild = state.lastPreBuild
+  state.lastPreBuild = nil
+  const stage = getStageAtSurface(entity.surface.index)
+  if (!stage) return
+
   const playerIndex = e.player_index
 
-  const currentlyInBuild = state.currentlyInBuild
-  if (currentlyInBuild === false) {
-    // not in stage, do nothing
-    state.currentlyInBuild = nil
+  // also handles instant upgrade planner
+  if (tryFastReplace(entity, stage, playerIndex)) return
+
+  if (lastPreBuild === nil) {
+    // editor mode build, marker entity, or multiple-entities in one build
+    WorldListener.onEntityCreated(stage.assembly, entity, stage.stageNumber, playerIndex)
     return
   }
 
-  if (currentlyInBuild === nil) {
-    // editor mode build, or marker entity
-    const stage = getStageAtSurface(entity.surface.index)
-
-    if (stage) WorldListener.onEntityCreated(stage.assembly, entity, stage.stageNumber, playerIndex)
-    return
-  }
-
-  const stage = currentlyInBuild
-  if (tryFastReplace(entity, stage, playerIndex)) {
-    // upgrade successful, clear currentlyInBuild if no lastDeleted (still has underground paired)
-    if (state.lastDeleted === nil) state.currentlyInBuild = nil
+  if (isWorldEntityAssemblyEntity(entity)) {
+    WorldListener.onEntityCreated(stage.assembly, entity, stage.stageNumber, playerIndex)
   } else {
-    // can't upgrade, treat lastDeleted as delete instead of fast replace
-    clearLastDeleted(playerIndex)
-    state.currentlyInBuild = nil
-    if (!isWorldEntityAssemblyEntity(entity)) {
-      checkNonAssemblyEntity(entity, stage, playerIndex)
-    } else {
-      WorldListener.onEntityCreated(stage.assembly, entity, stage.stageNumber, playerIndex)
-    }
+    checkNonAssemblyEntity(entity, stage, playerIndex)
   }
 })
 
@@ -359,29 +406,40 @@ function checkNonAssemblyEntity(entity: LuaEntity, stage: Stage, byPlayer: Playe
 }
 
 function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex) {
-  const { lastDeleted } = state
-  if (!lastDeleted) return
-  if (isFastReplaceable(lastDeleted, entity)) {
-    WorldListener.onEntityPotentiallyUpdated(stage.assembly, entity, stage.stageNumber, lastDeleted.direction, player)
-    state.lastDeleted = lastDeleted.undergroundPairValue
-    return true
-  }
-  if (lastDeleted.undergroundPairValue && isFastReplaceable(lastDeleted.undergroundPairValue, entity)) {
+  const { toBeFastReplaced } = state
+  if (!toBeFastReplaced) return
+
+  const undergroundPairValue = toBeFastReplaced.undergroundPairValue
+
+  if (isFastReplaceable(toBeFastReplaced, entity)) {
     WorldListener.onEntityPotentiallyUpdated(
       stage.assembly,
       entity,
       stage.stageNumber,
-      lastDeleted.undergroundPairValue.direction,
+      toBeFastReplaced.direction,
       player,
     )
-    lastDeleted.undergroundPairValue = nil
+    state.toBeFastReplaced = undergroundPairValue // could be nil
     return true
   }
-  return false
+  // check the underground pair value instead
+  if (undergroundPairValue && isFastReplaceable(undergroundPairValue, entity)) {
+    WorldListener.onEntityPotentiallyUpdated(
+      stage.assembly,
+      entity,
+      stage.stageNumber,
+      toBeFastReplaced.direction,
+      player,
+    )
+    toBeFastReplaced.undergroundPairValue = nil
+    return true
+  }
+  // not fast replaceable, call delete on the stored value
+  clearToBeFastReplaced(player)
 }
 
 function isFastReplaceable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
-  return Pos.equals(old.position, next.position) && areUpgradeable(old.name, next.name)
+  return Pos.equals(old.position, next.position) && areUpgradeableTypes(old.name, next.name)
 }
 
 // Blueprinting
@@ -516,10 +574,12 @@ function tryFixBlueprint(player: LuaPlayer): void {
 
 Events.on_player_cursor_stack_changed((e) => {
   tryFixBlueprint(game.get_player(e.player_index)!)
+  state.lastPreBuild = nil
 })
 
 Events.on_player_changed_surface((e) => {
   tryFixBlueprint(game.get_player(e.player_index)!)
+  state.lastPreBuild = nil
 })
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
@@ -608,6 +668,7 @@ Events.on(CustomInputs.RemovePoleCables, (e) => {
 })
 Events.on_selected_entity_changed((e) => {
   clearPlayerAffectedWires(e.player_index)
+  state.lastPreBuild = nil
 })
 
 // Cleanup tool
@@ -743,6 +804,7 @@ Events.on_chunk_generated((e) => {
 })
 
 export const _assertInValidState = (): void => {
+  state.lastPreBuild = nil // can be set
   assert.same({}, state, "State is not empty")
 }
 
@@ -757,7 +819,7 @@ export function entityPotentiallyUpdated(entity: LuaEntity, byPlayer: PlayerInde
 }
 
 Migrations.to("0.10.3", () => {
-  clearLastDeleted(nil)
+  clearToBeFastReplaced(nil)
   for (const [key] of pairs(state)) {
     state[key] = nil
   }

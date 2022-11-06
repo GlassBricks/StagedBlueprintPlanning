@@ -96,7 +96,7 @@ export function getEntityCategory(entityName: string): CategoryName | nil {
   return categories.get(entityName)
 }
 
-export function areUpgradeable(a: string, b: string): boolean {
+export function areUpgradeableTypes(a: string, b: string): boolean {
   if (!prototypesProcessed) processPrototypes()
   if (a === b) return true
   const aCategory = categories.get(a)

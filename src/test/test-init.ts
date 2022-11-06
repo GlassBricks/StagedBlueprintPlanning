@@ -160,16 +160,20 @@ commands.add_command("norerun", "", () => {
   )
   for (const [name, key] of pairs(defines.events)) {
     if (eventBlacklist.has(name)) continue
-    Events.on(key, () => {
+    Events.on(key, (event) => {
       // if (isTestsRunning()) return
       const currentTick = game.tick
       if (currentTick !== lastEventTick) {
         // game.print(currentTick)
         count = 0
+        if (currentTick - lastEventTick > 60) {
+          game.print(lastEventTick + "\n")
+        }
       }
       lastEventTick = currentTick
       count++
       game.print(`(${(game.tick % 1000).toString().padStart(3, " ")}) ${count.toString().padStart(2, "0")}: ${name}`)
+      log(`${name} ${serpent.block(event)}`)
     })
   }
   // shouldTryRerun = false
