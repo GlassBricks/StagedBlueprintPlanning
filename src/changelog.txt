@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.5
-Date: ????
+Date: 2022-11-06
   Bugfixes:
     - Fixed interactions with dragging belt
   Changes:
