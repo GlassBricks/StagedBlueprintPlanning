@@ -178,6 +178,10 @@ function createNormalEntity(
     luaEntity.destroy()
     return nil
   }
+  if (luaEntity.type === "loader" || luaEntity.type === "loader-1x1") {
+    luaEntity.loader_type = (entity as BlueprintEntity).type ?? "output"
+    luaEntity.direction = direction
+  }
   if (entityHasSettings(entity)) {
     const ghost = pasteEntity(surface, position, direction, entity as BlueprintEntity)
     if (ghost) {
@@ -297,9 +301,7 @@ const BlueprintEntityHandler: EntityHandler = {
   },
 
   updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity {
-    if (rollingStockTypes.has(luaEntity.type)) {
-      return luaEntity
-    }
+    if (rollingStockTypes.has(luaEntity.type)) return luaEntity
     if (luaEntity.name !== value.name) {
       luaEntity = upgradeEntity(luaEntity, value.name)
     }
@@ -308,7 +310,7 @@ const BlueprintEntityHandler: EntityHandler = {
       rotateUnderground(luaEntity, value.type ?? "input", direction)
     } else {
       if (luaEntity.type === "loader" || luaEntity.type === "loader-1x1") {
-        luaEntity.loader_type = value.type ?? "input"
+        luaEntity.loader_type = value.type ?? "output"
       }
       luaEntity.direction = direction ?? 0
     }

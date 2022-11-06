@@ -215,6 +215,24 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 })
 
+test("can create loader", () => {
+  const entity = EntityHandler.createEntity(surface, { x: 12.5, y: 12 }, defines.direction.east, {
+    name: "loader",
+    type: "output",
+  } as Entity)!
+  assert.equal("loader", entity.name)
+  assert.equal(defines.direction.east, entity.direction)
+  assert.equal("output", entity.loader_type)
+
+  const entity2 = EntityHandler.createEntity(surface, { x: 14.5, y: 12 }, defines.direction.east, {
+    name: "loader",
+    type: "input",
+  } as Entity)!
+  assert.equal("loader", entity2.name)
+  assert.equal(defines.direction.east, entity2.direction)
+  assert.equal("input", entity2.loader_type)
+})
+
 test("can flip loader", () => {
   const entity = surface.create_entity({
     name: "loader",
