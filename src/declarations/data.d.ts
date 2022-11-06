@@ -166,6 +166,24 @@ type SelectionMode =
   | "entity-with-owner"
   | "avoid-rolling-stock"
 
+export interface DeconstructionItemPrototype extends Omit<SelectionToolPrototype, "type"> {
+  type: "deconstruction-item"
+
+  entity_filter_count?: number
+  tile_filter_count?: number
+
+  always_include_tiles?: never
+  entity_filters?: never
+  entity_type_filters?: never
+  tile_filters?: never
+  entity_filter_mode?: never
+  tile_filter_mode?: never
+  alt_entity_filters?: never
+  alt_entity_type_filters?: never
+  alt_tile_filters?: never
+  alt_entity_filter_mode?: never
+  alt_tile_filter_mode?: never
+}
 export interface CustomInputPrototype extends PrototypeBase {
   type: "custom-input"
 

@@ -42,6 +42,13 @@ test("current selected stage starts out as current stage", () => {
   assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
 })
 
+test("item removed if not in assembly", () => {
+  player.teleport([0, 0], 1 as SurfaceIndex)
+  player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
+  updateMoveToolInCursor(player)
+  assert.false(player.cursor_stack!.valid_for_read)
+})
+
 test("changing selected stage", () => {
   const assembly = createUserAssembly("Test", 3)
   player.teleport([0, 0], assembly.getSurface(2))
@@ -77,4 +84,28 @@ test("changing selected stage", () => {
   })
   assert.equal(1, assemblyPlayerData.moveTargetStage)
   assert.equal("Send to <Stage 1>", player.cursor_stack!.label)
+})
+
+test("filtered stage move tool name set to <Not in a staged build>", () => {
+  player.teleport([0, 0], 1 as SurfaceIndex)
+  player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
+  updateMoveToolInCursor(player)
+  assert.equal("<Not in a staged build>", player.cursor_stack!.label)
+})
+
+test("changing selected stage with filtered stage move tool", () => {
+  // only test 3 stages
+  const assembly = createUserAssembly("Test", 3)
+  player.teleport([0, 0], assembly.getSurface(2))
+
+  const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)!
+  player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
+  updateMoveToolInCursor(player)
+
+  assert.equal(2, assemblyPlayerData.moveTargetStage)
+  assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
+
+  Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
+  assert.equal(3, assemblyPlayerData.moveTargetStage)
+  assert.equal("Send to <Stage 3>", player.cursor_stack!.label)
 })

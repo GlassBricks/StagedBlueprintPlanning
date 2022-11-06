@@ -22,17 +22,23 @@ const Events = ProtectedEvents
 function updateItemLabel(cursor: LuaItemStack, stage: Stage): void {
   cursor.label = "Send to " + stage.name.get()
 }
-export function updateMoveToolInCursor(player: LuaPlayer): void {
+export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
   const cursor = getCursorIfHoldingStageMoveTool(player)
   if (!cursor) return
 
+  cursor.allow_manual_label_change = false
+
   const stage = getStageAtSurface(player.surface.index)
   if (!stage) {
-    player.create_local_flying_text({
-      text: [L_Interaction.NotInAnAssembly],
-      create_at_cursor: true,
-    })
-    cursor.clear()
+    if (cursor.name === Prototypes.FilteredStageMoveTool) {
+      cursor.label = "<Not in a staged build>"
+    } else {
+      player.create_local_flying_text({
+        text: [L_Interaction.NotInAnAssembly],
+        create_at_cursor: true,
+      })
+      cursor.clear()
+    }
     return
   }
   const assembly = stage.assembly
@@ -46,9 +52,15 @@ export function updateMoveToolInCursor(player: LuaPlayer): void {
 
   assemblyPlayerData.moveTargetStage = selectedStage
   updateItemLabel(cursor, assembly.getStage(selectedStage)!)
+
+  return player
 }
+
 Events.on_player_cursor_stack_changed((e) => {
-  updateMoveToolInCursor(game.get_player(e.player_index)!)
+  const player = updateMoveToolInCursor(game.get_player(e.player_index)!)
+  if (player && player.cursor_stack!.name === Prototypes.FilteredStageMoveTool) {
+    player.print([L_Interaction.FilteredStageMoveToolWarning])
+  }
 })
 PlayerChangedStageEvent.addListener((player) => {
   updateMoveToolInCursor(player)
@@ -56,7 +68,12 @@ PlayerChangedStageEvent.addListener((player) => {
 
 function getCursorIfHoldingStageMoveTool(player: LuaPlayer): LuaItemStack | nil {
   const cursor = player.cursor_stack
-  if (!cursor || !cursor.valid_for_read || cursor.name !== Prototypes.StageMoveTool) return
+  if (
+    !cursor ||
+    !cursor.valid_for_read ||
+    (cursor.name !== Prototypes.StageMoveTool && cursor.name !== Prototypes.FilteredStageMoveTool)
+  )
+    return
   return cursor
 }
 

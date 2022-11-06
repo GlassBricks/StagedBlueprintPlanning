@@ -728,7 +728,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   }
 })
 
-// Move to stage tool
+// Stage move tool
 Events.on_player_selected_area((e) => {
   if (e.item !== Prototypes.StageMoveTool) return
   const stage = getStageAtSurface(e.surface.index)
@@ -765,6 +765,26 @@ Events.on_player_reverse_selected_area(checkMoveToolAlt)
 Events.on_player_alt_reverse_selected_area((e) => {
   if (e.item === Prototypes.StageMoveTool) {
     game.get_player(e.player_index)!.play_sound({ path: Prototypes.BANANA })
+  }
+})
+
+// Filtered stage move tool
+Events.on_marked_for_deconstruction((e) => {
+  const playerIndex = e.player_index
+  if (!playerIndex) return
+  const player = game.get_player(playerIndex)!
+  const cursorStack = player.cursor_stack
+  if (!cursorStack || !cursorStack.valid_for_read || cursorStack.name !== Prototypes.FilteredStageMoveTool) return
+
+  const entity = e.entity
+  entity.cancel_deconstruction(entity.force)
+  const stage = getStageAtSurface(entity.surface.index)
+  if (!stage) return
+  const playerData = getAssemblyPlayerData(playerIndex, stage.assembly)
+  if (!playerData) return
+  const targetStage = playerData.moveTargetStage
+  if (targetStage) {
+    WorldListener.onSendToStageUsed(stage.assembly, entity, stage.stageNumber, targetStage, playerIndex)
   }
 })
 

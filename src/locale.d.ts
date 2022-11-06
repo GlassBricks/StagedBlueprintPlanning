@@ -6,12 +6,16 @@ export declare const enum L_ItemName {
   CleanupTool = "item-name.bp100:cleanup-tool",
   /** Stage move tool */
   StageMoveTool = "item-name.bp100:stage-move-tool",
+  /** Filtered stage move tool */
+  FilteredStageMoveTool = "item-name.bp100:filtered-stage-move-tool",
 }
 export declare const enum L_ShortcutName {
   /** Build cleanup tool */
   CleanupTool = "shortcut-name.bp100:cleanup-tool",
   /** Stage move tool */
   StageMoveTool = "shortcut-name.bp100:stage-move-tool",
+  /** Filtered stage move tool (experimental) */
+  FilteredStageMoveTool = "shortcut-name.bp100:filtered-stage-move-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
@@ -130,6 +134,8 @@ export declare const enum L_Interaction {
   BlueprintFirstEntityRemoved = "bp100.interaction.blueprint-first-entity-removed",
   /** Cannot move to same stage */
   CannotMoveToSameStage = "bp100.interaction.cannot-move-to-same-stage",
+  /** WARNING: The filtered stage move tool must be used with instant-deconstruction [font=default-large-bold]disabled[/font]. Otherwise, the tool will not work properly (it will act like a deconstruction planner). */
+  FilteredStageMoveToolWarning = "bp100.interaction.filtered-stage-move-tool-warning",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** (Not in a staged build) */

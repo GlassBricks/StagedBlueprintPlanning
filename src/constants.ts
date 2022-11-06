@@ -35,6 +35,8 @@ export const enum Prototypes {
 
   StageMoveTool = "bp100:stage-move-tool",
 
+  FilteredStageMoveTool = "bp100:filtered-stage-move-tool",
+
   BANANA = "bp100:banana",
 }
 

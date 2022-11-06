@@ -407,7 +407,7 @@ describe("move to this stage", () => {
   })
 })
 
-describe("stage-move tool", () => {
+describe("stage move tool", () => {
   test("send to stage", () => {
     const entity = surface.create_entity({
       name: "inserter",
@@ -462,6 +462,19 @@ describe("stage-move tool", () => {
       tiles: [],
     })
     assert.spy(updater.onBringToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 1)
+  })
+
+  test("filtered stage move tool, send to stage", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    assert.not_nil(entity, "entity found")
+    player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
+    getAssemblyPlayerData(player.index, assembly)!.moveTargetStage = 2
+    entity.order_deconstruction(player.force, player)
+    assert.spy(updater.onSendToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
   })
 })
 

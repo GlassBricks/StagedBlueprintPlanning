@@ -14,6 +14,7 @@ import { empty_sprite } from "util"
 import { Colors, CustomInputs, Prototypes, Sprites } from "./constants"
 import {
   CustomInputPrototype,
+  DeconstructionItemPrototype,
   ItemGroupPrototype,
   ItemPrototype,
   ItemSubgroupPrototype,
@@ -210,6 +211,55 @@ data.extend([
   ),
   stageMoveToolInput,
 ])
+
+const filteredStagedMoveTool: DeconstructionItemPrototype = {
+  type: "deconstruction-item",
+  name: Prototypes.FilteredStageMoveTool,
+  icons: [
+    {
+      icon: "__bp100__/graphics/icons/purple-blueprint.png",
+      icon_size: 64,
+      icon_mipmaps: 4,
+    },
+    {
+      icon: "__bp100__/graphics/icons/stage-move-tool-white.png",
+      icon_size: 32,
+      icon_mipmaps: 2,
+      scale: 0.5,
+    },
+  ],
+  flags: ["spawnable", "not-stackable"],
+  stack_size: 1,
+
+  entity_filter_count: 50,
+
+  draw_label_for_cursor_render: true,
+
+  subgroup: "tool",
+  order: "z[bp100]-a[stage-move-tool]",
+
+  selection_color: stageMoveToolColor,
+  selection_cursor_box_type: "copy",
+  selection_mode: ["deconstruct"],
+
+  alt_selection_color: [0, 0, 0],
+  alt_selection_cursor_box_type: "not-allowed",
+  alt_selection_mode: ["nothing"],
+
+  // can't do anything about alt or reverse selection mode
+}
+
+const filteredStagedMoveToolInput: CustomInputPrototype = {
+  type: "custom-input",
+  name: Prototypes.FilteredStageMoveTool,
+  localised_name: ["item-name." + Prototypes.FilteredStageMoveTool],
+  key_sequence: "",
+  item_to_spawn: Prototypes.FilteredStageMoveTool,
+  action: "spawn-item",
+  order: "a[tools]-b[stage-move-tool-filtered]",
+}
+
+data.extend([filteredStagedMoveTool, filteredStagedMoveToolInput])
 
 // Sprites
 function createSprite(
