@@ -5,7 +5,7 @@ Date: ????
     - Added a filtered stage move tool.
     - Added blueprint filters.
   Changes:
-    - The stage move tool icon is now white.
+    - The stage move tool shortcut icon is now blue.
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.6
 Date: 2022-11-06
