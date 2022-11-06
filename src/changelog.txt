@@ -1,7 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.5
 Date: ????
+  Bugfixes:
+    - Fixed interactions with dragging belt
   Changes:
+    - Removed new staged build gui
+    - Improved locale/descriptions
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.4
 Date: 2022-11-04
