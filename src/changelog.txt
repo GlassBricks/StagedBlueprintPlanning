@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.6
-Date: ????
+Date: 2022-11-06
   Bugfixes:
     - Fix loaders being in the wrong direction when created in other stages.
     - Minor issue fixed (remove obsolete saved info)
