@@ -18,7 +18,6 @@ import { areUpgradeableTypes } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
-import { debugPrint } from "../lib/test/misc"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
 import { getAssemblyPlayerData } from "./player-assembly-data"
@@ -263,7 +262,6 @@ function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerInde
 }
 
 Events.on_pre_build((e) => {
-  debugPrint(e.created_by_moving)
   const player = game.get_player(e.player_index)!
   state.currentlyInBlueprintPaste = nil
   state.blueprintEntities = nil

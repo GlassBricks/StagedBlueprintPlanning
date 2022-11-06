@@ -12,6 +12,7 @@
 import { createUserAssembly } from "../assembly/UserAssembly"
 import { destroyAllRenders, Events } from "../lib"
 import { openAssemblySettings, refreshCurrentAssembly } from "../ui/AssemblySettings"
+import "./_printEvents"
 
 // better source map traceback
 declare const ____lualib: {
@@ -39,6 +40,9 @@ import lastCompileTime = require("last-compile-time")
 
 declare let global: {
   lastCompileTimestamp?: string
+  printEvents?: boolean
+
+  rerunMode?: "rerun" | "reload" | "none"
 }
 
 if (script.active_mods.testorio !== nil) {
@@ -46,6 +50,7 @@ if (script.active_mods.testorio !== nil) {
     destroyAllRenders()
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories !== nil) inventories.forEach((x) => x.destroy())
+    const oldGlobal = global
     global = {}
     for (const [, player] of game.players) {
       const { screen, left, top, center, relative } = player.gui
@@ -59,6 +64,8 @@ if (script.active_mods.testorio !== nil) {
       if (surface.index !== 1) game.delete_surface(surface)
     }
     Events.raiseFakeEventNamed("on_init", nil!)
+    global.rerunMode = oldGlobal.rerunMode
+    global.printEvents = oldGlobal.printEvents
   }
 
   commands.add_command("reinit", "", reinit)
@@ -117,67 +124,39 @@ function isTestsRunning() {
   }
   return true
 }
-let shouldTryRerun = false
-const shouldTryReload = false
 
 Events.on_tick(() => {
-  if (shouldTryRerun || shouldTryReload) {
-    const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
-    const mod = game.ticks_played % ticks
-    if (isTestsRunning()) return
-    if (mod === 0) {
-      // tests not running or not ready
-      global.lastCompileTimestamp = lastCompileTime
-      game.reload_mods()
-    } else if (global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
-      global.lastCompileTimestamp = lastCompileTime
-      game.print("Reloaded: " + lastCompileTime)
-      if (shouldTryRerun) {
-        remote.call("testorio", "runTests")
-      } else {
-        refreshCurrentAssembly()
-      }
+  if (global.rerunMode === nil) global.rerunMode = "rerun"
+  if (global.rerunMode === "none" || isTestsRunning()) return
+
+  const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
+  const mod = game.ticks_played % ticks
+  if (mod === 0) {
+    // tests not running or not ready
+    global.lastCompileTimestamp = lastCompileTime
+    game.reload_mods()
+  } else if (global.lastCompileTimestamp !== lastCompileTime && remote.interfaces.testorio?.runTests) {
+    global.lastCompileTimestamp = lastCompileTime
+    game.print("Reloaded: " + lastCompileTime)
+    if (global.rerunMode === "rerun") {
+      remote.call("testorio", "runTests")
+    } else {
+      refreshCurrentAssembly()
     }
   }
 })
-commands.add_command("norerun", "", () => {
-  shouldTryRerun = false
+commands.add_command("rerun", "", () => {
+  global.rerunMode = "rerun"
 })
-{
-  let lastEventTick = 0
-  let count = 0
-  const eventBlacklist = newLuaSet<keyof typeof defines.events>(
-    "on_tick",
-    "on_player_changed_position",
-    // "on_selected_entity_changed",
-    "on_chunk_charted",
-    "on_chunk_generated",
-    "on_player_main_inventory_changed",
-    "on_gui_location_changed",
-    "on_gui_click",
-    "on_research_finished",
-    "script_raised_set_tiles",
-  )
-  for (const [name, key] of pairs(defines.events)) {
-    if (eventBlacklist.has(name)) continue
-    Events.on(key, (event) => {
-      // if (isTestsRunning()) return
-      const currentTick = game.tick
-      if (currentTick !== lastEventTick) {
-        // game.print(currentTick)
-        count = 0
-        if (currentTick - lastEventTick > 60) {
-          game.print(lastEventTick + "\n")
-        }
-      }
-      lastEventTick = currentTick
-      count++
-      game.print(`(${(game.tick % 1000).toString().padStart(3, " ")}) ${count.toString().padStart(2, "0")}: ${name}`)
-      log(`${name} ${serpent.block(event)}`)
-    })
-  }
-  // shouldTryRerun = false
-}
+commands.add_command("ronly", "", () => {
+  global.rerunMode = "reload"
+})
+commands.add_command("norerun", "", () => {
+  global.rerunMode = "none"
+})
+commands.add_command("rr", "", () => {
+  game.reload_mods()
+})
 
 // function setupManualTests(assembly: UserAssembly) {
 //   const player = game.players[1]

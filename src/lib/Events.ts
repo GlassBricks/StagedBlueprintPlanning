@@ -55,6 +55,8 @@ export interface EventsRegistration extends ShorthandRegister {
   onAll(handlers: EventHandlers): void
 
   onInitOrLoad(f: () => void): void
+
+  registerEarly<E extends EventId<any, any> | string>(event: E, f: (data: EventDataOf<E>) => void): void
 }
 
 /** @noSelf */
@@ -79,12 +81,13 @@ export type AnyHandler = (this: void, data?: any) => void
 // symbol -- script event
 const registeredHandlers: PRecord<keyof any, AnyHandler[]> = {}
 
-function registerInternal(id: keyof any, handler: AnyHandler) {
+function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
   let handlers = registeredHandlers[id]
   if (!handlers) {
     handlers = registeredHandlers[id] = []
   }
-  handlers.push(handler)
+  if (early) handlers.unshift(handler)
+  else handlers.push(handler)
   if (handlers.length > 2) return
 
   let func
@@ -149,6 +152,9 @@ const Events = {
         error(`"${event}" is not an event name. Use "register" to register a handler for a custom input event.`)
       registerInternal(id, handler)
     }
+  },
+  registerEarly(e, f) {
+    registerInternal(e, f, true)
   },
   onInitOrLoad(f: () => void): void {
     registerInternal(scriptEventIds.on_init, f)

@@ -13,9 +13,8 @@ import { Colors, L_Game, Prototypes } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
 import { isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
-import { assertNever, SelflessFun } from "../lib"
+import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
-import { debugPrint } from "../lib/test/misc"
 import { L_Interaction } from "../locale"
 import { Assembly } from "./AssemblyDef"
 import { AssemblyUpdater, EntityUpdateResult } from "./AssemblyUpdater"
@@ -512,11 +511,3 @@ const WorldNotifier: WorldNotifier = {
 }
 
 export const WorldListener: WorldListener = createWorldListener(AssemblyUpdater, WorldNotifier)
-for (const [k, v] of pairs(WorldListener)) {
-  if (typeof v === "function") {
-    WorldListener[k] = function (...args: any[]) {
-      debugPrint(k)
-      return (v as SelflessFun)(...args)
-    }
-  }
-}
