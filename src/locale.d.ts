@@ -26,10 +26,12 @@ export declare const enum L_ModSettingName {
   CyclicNavigation = "mod-setting-name.bp100:cyclic-navigation",
   /** Flexible offshore pump placement */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
-  /** Stage info gui location */
+  /** Location of entity stage info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
 }
 export declare const enum L_ModSettingDescription {
+  /** The move to previous/next stage controls will wrap around at the first/last stage. */
+  CyclicNavigation = "mod-setting-description.bp100:cyclic-navigation",
   /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
 }
@@ -228,7 +230,7 @@ export declare const enum L_GuiEntityInfo {
   Title = "bp100.gui.entity-info.title",
   /** First stage */
   FirstStage = "bp100.gui.entity-info.first-stage",
-  /** Stages w/ changes */
+  /** Updated */
   StagesWithChanges = "bp100.gui.entity-info.stages-with-changes",
   /** Move to this stage */
   MoveToThisStage = "bp100.gui.entity-info.move-to-this-stage",
