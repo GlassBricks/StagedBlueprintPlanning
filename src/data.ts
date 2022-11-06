@@ -202,12 +202,11 @@ data.extend([
   selectionToolToShortcut(
     stageMoveTool,
     {
-      filename: "__bp100__/graphics/icons/stage-move-tool-black.png",
+      filename: "__bp100__/graphics/icons/stage-move-tool-white.png",
       size: 32,
       mipmap_count: 2,
     },
     Prototypes.StageMoveTool,
-    "default",
   ),
   stageMoveToolInput,
 ])
