@@ -117,7 +117,7 @@ describe("update", () => {
     player.opened = nil
     player.opened = entity
     player.opened = nil
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match.ref(assembly), match.ref(entity), 1, nil, 1)
+    assert.spy(updater.onEntityPossiblyUpdated).called_with(match.ref(assembly), match.ref(entity), 1, nil, 1)
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -125,7 +125,7 @@ describe("update", () => {
       destination: entity,
       player_index: 1 as PlayerIndex,
     })
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, match.ref(entity), 1, nil, 1)
+    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(entity), 1, nil, 1)
   })
 
   test("rotate", () => {
@@ -163,10 +163,10 @@ test.each([
   assert.not_nil(newEntity)
 
   assert.false(entity.valid, "entity replaced")
-  assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, newEntity, 1, match._, 1)
+  assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, newEntity, 1, match._, 1)
 })
 
-test("fast replace an underground runs onEntityPotentiallyUpdate on both", () => {
+test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
   const u1 = surface.create_entity({
     name: "underground-belt",
     direction: direction.east,
@@ -203,11 +203,11 @@ test("fast replace an underground runs onEntityPotentiallyUpdate on both", () =>
 
   assert
     .message("called for u1")
-    .spy(updater.onEntityPotentiallyUpdated)
+    .spy(updater.onEntityPossiblyUpdated)
     .called_with(match.ref(assembly), match.ref(newU1), 1, match._, 1)
   assert
     .message("called for u2")
-    .spy(updater.onEntityPotentiallyUpdated)
+    .spy(updater.onEntityPossiblyUpdated)
     .called_with(match.ref(assembly), match.ref(newU2), 1, match._, 1)
 })
 
@@ -258,7 +258,7 @@ describe("upgrade", () => {
       stack: nil!,
     })
     assert
-      .spy(updater.onEntityPotentiallyUpdated)
+      .spy(updater.onEntityPossiblyUpdated)
       .called_with(match.ref(assembly), match.ref(newEntity), 1, oldDirection, 1)
   })
 })
@@ -527,7 +527,7 @@ describe("blueprint paste", () => {
     assert.not_nil(entity, "entity found")
     assert.same(pos, entity.position)
 
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match.ref(assembly), entity, 1, match._, 1)
+    assert.spy(updater.onEntityPossiblyUpdated).called_with(match.ref(assembly), entity, 1, match._, 1)
   }
 
   test("create entity", () => {
@@ -586,13 +586,13 @@ describe("blueprint paste", () => {
     })!
     // ignore second inserter
 
-    updater.onEntityPotentiallyUpdated.returns((alreadyPresent ? nil : false) as any)
+    updater.onEntityPossiblyUpdated.returns((alreadyPresent ? nil : false) as any)
     player.build_from_cursor({ position: pos })
     assertCorrect(inserter1)
     if (alreadyPresent) {
-      assert.spy(updater.onCircuitWiresPotentiallyUpdated).called_with(match._, match.ref(inserter1), 1, 1)
+      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(inserter1), 1, 1)
     } else {
-      assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+      assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
     }
   })
 
@@ -618,13 +618,13 @@ describe("blueprint paste", () => {
     })!
     // ignore second pole
 
-    updater.onEntityPotentiallyUpdated.returns((alreadyPresent ? nil : false) as any)
+    updater.onEntityPossiblyUpdated.returns((alreadyPresent ? nil : false) as any)
     player.build_from_cursor({ position: pos })
     assertCorrect(pole1)
     if (alreadyPresent) {
-      assert.spy(updater.onCircuitWiresPotentiallyUpdated).called_with(match._, match.ref(pole1), 1, 1)
+      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(pole1), 1, 1)
     } else {
-      assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+      assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
     }
   })
 })
@@ -672,8 +672,8 @@ describe("belt dragging", () => {
 
     fakeNoopDrag(belt)
 
-    assert.spy(updater.onEntityPotentiallyUpdated).was_not_called()
-    assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onEntityPossiblyUpdated).was_not_called()
+    assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
     assert.spy(updater.onEntityCreated).was_not_called()
 
     player.build_from_cursor({ position: pos2, direction: belt.direction })
@@ -683,7 +683,7 @@ describe("belt dragging", () => {
     assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
   })
 
-  test("build in different direction calls onEntityPotentiallyUpdated", () => {
+  test("build in different direction calls onEntityPossiblyUpdated", () => {
     const belt = surface.create_entity({
       name: "transport-belt",
       position: pos,
@@ -696,7 +696,7 @@ describe("belt dragging", () => {
     const newBelt = surface.find_entity("transport-belt", pos)!
     assert.not_nil(newBelt)
 
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, match.ref(newBelt), 1, 0, 1)
+    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(newBelt), 1, 0, 1)
   })
 
   test("drag over existing followed by mine", () => {
@@ -710,8 +710,8 @@ describe("belt dragging", () => {
     fakeNoopDrag(belt)
     player.mine_entity(belt)
 
-    assert.spy(updater.onEntityPotentiallyUpdated).was_not_called()
-    assert.spy(updater.onCircuitWiresPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onEntityPossiblyUpdated).was_not_called()
+    assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
     assert.spy(updater.onEntityCreated).was_not_called()
     assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
   })
@@ -732,7 +732,7 @@ describe("belt dragging", () => {
 
     assert.spy(updater.onEntityDeleted).was_not_called()
     assert.spy(updater.onEntityCreated).was_not_called()
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
+    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
   })
 
   test("drag over existing followed by fast replace on different belt", () => {
@@ -755,7 +755,7 @@ describe("belt dragging", () => {
 
     assert.spy(updater.onEntityDeleted).was_not_called()
     assert.spy(updater.onEntityCreated).was_not_called()
-    assert.spy(updater.onEntityPotentiallyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
+    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
   })
 
   test("fast replacing with underground belt", () => {
@@ -781,7 +781,7 @@ describe("belt dragging", () => {
 
     const underground = surface.find_entity("underground-belt", Pos(0.5, 5.5))!
 
-    assert.spy(updater.onEntityPotentiallyUpdated).was_not_called()
+    assert.spy(updater.onEntityPossiblyUpdated).was_not_called()
     assert.spy(updater.onEntityCreated).called_with(match._, match.ref(underground), 1, 1)
     assert.spy(updater.onEntityDeleted).called(5)
   })

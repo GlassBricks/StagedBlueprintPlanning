@@ -11,7 +11,7 @@
 
 import { Stage } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
-import { entityPotentiallyUpdated } from "../assembly/event-listener"
+import { entityPossiblyUpdated } from "../assembly/event-listener"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
@@ -233,7 +233,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (!player) return
     const opened = player.opened
     if (opened && opened.object_name === "LuaEntity") {
-      entityPotentiallyUpdated(opened, this.playerIndex)
+      entityPossiblyUpdated(opened, this.playerIndex)
       tryRenderExtraStageInfo(player, opened)
     }
   }

@@ -39,7 +39,7 @@ export interface WorldListener {
    *
    * Returns: `false` if a previous entity was not found (and may have been added).
    */
-  onEntityPotentiallyUpdated(
+  onEntityPossiblyUpdated(
     assembly: Assembly,
     entity: LuaEntity,
     stage: StageNumber,
@@ -64,7 +64,7 @@ export interface WorldListener {
   ): void
 
   /** Handles possible circuit wires changes of an entity. */
-  onCircuitWiresPotentiallyUpdated(
+  onCircuitWiresPossiblyUpdated(
     assembly: Assembly,
     entity: LuaEntity,
     stage: StageNumber,
@@ -304,7 +304,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
       deleteEntityOrCreateSettingsRemnant(assembly, existing)
     },
-    onEntityPotentiallyUpdated(
+    onEntityPossiblyUpdated(
       assembly: Assembly,
       entity: LuaEntity,
       stage: StageNumber,
@@ -345,7 +345,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       )
       notifyIfError(result, existing, byPlayer)
     },
-    onCircuitWiresPotentiallyUpdated(
+    onCircuitWiresPossiblyUpdated(
       assembly: Assembly,
       entity: LuaEntity,
       stage: StageNumber,

@@ -58,9 +58,9 @@ function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (stage) WorldListener.onEntityDeleted(stage.assembly, entity, stage.stageNumber, player)
 }
 
-function luaEntityPotentiallyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
+function luaEntityPossiblyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
-  if (stage) WorldListener.onEntityPotentiallyUpdated(stage.assembly, entity, stage.stageNumber, nil, player)
+  if (stage) WorldListener.onEntityPossiblyUpdated(stage.assembly, entity, stage.stageNumber, nil, player)
 }
 
 function luaEntityMarkedForUpgrade(entity: LuaEntity, player: PlayerIndex | nil): void {
@@ -170,11 +170,11 @@ Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
 
 Events.on_entity_died((e) => luaEntityDied(e.entity))
 
-Events.on_entity_settings_pasted((e) => luaEntityPotentiallyUpdated(e.destination, e.player_index))
+Events.on_entity_settings_pasted((e) => luaEntityPossiblyUpdated(e.destination, e.player_index))
 Events.on_gui_closed((e) => {
-  if (e.entity) luaEntityPotentiallyUpdated(e.entity, e.player_index)
+  if (e.entity) luaEntityPossiblyUpdated(e.entity, e.player_index)
 })
-Events.on_player_fast_transferred((e) => luaEntityPotentiallyUpdated(e.entity, e.player_index))
+Events.on_player_fast_transferred((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
 
 Events.on_player_rotated_entity((e) => luaEntityRotated(e.entity, e.previous_direction, e.player_index))
 
@@ -435,25 +435,13 @@ function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex) {
   const undergroundPairValue = toBeFastReplaced.undergroundPairValue
 
   if (isFastReplaceable(toBeFastReplaced, entity)) {
-    WorldListener.onEntityPotentiallyUpdated(
-      stage.assembly,
-      entity,
-      stage.stageNumber,
-      toBeFastReplaced.direction,
-      player,
-    )
+    WorldListener.onEntityPossiblyUpdated(stage.assembly, entity, stage.stageNumber, toBeFastReplaced.direction, player)
     state.toBeFastReplaced = undergroundPairValue // could be nil
     return true
   }
   // check the underground pair value instead
   if (undergroundPairValue && isFastReplaceable(undergroundPairValue, entity)) {
-    WorldListener.onEntityPotentiallyUpdated(
-      stage.assembly,
-      entity,
-      stage.stageNumber,
-      toBeFastReplaced.direction,
-      player,
-    )
+    WorldListener.onEntityPossiblyUpdated(stage.assembly, entity, stage.stageNumber, toBeFastReplaced.direction, player)
     toBeFastReplaced.undergroundPairValue = nil
     return true
   }
@@ -635,7 +623,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (!referencedName) return
   const correspondingEntity = entity.surface.find_entity(referencedName, entity.position)
   if (!correspondingEntity) return
-  const result = WorldListener.onEntityPotentiallyUpdated(
+  const result = WorldListener.onEntityPossiblyUpdated(
     stage.assembly,
     correspondingEntity,
     stage.stageNumber,
@@ -643,12 +631,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     e.player_index,
   )
   if (result !== false && tags.hasCircuitWires) {
-    WorldListener.onCircuitWiresPotentiallyUpdated(
-      stage.assembly,
-      correspondingEntity,
-      stage.stageNumber,
-      e.player_index,
-    )
+    WorldListener.onCircuitWiresPossiblyUpdated(stage.assembly, correspondingEntity, stage.stageNumber, e.player_index)
   }
 }
 
@@ -664,7 +647,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
   const data = global.players[player.index]
   const existingEntity = data.lastWireAffectedEntity
   if (existingEntity && existingEntity !== entity) {
-    WorldListener.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage.stageNumber, player.index)
+    WorldListener.onCircuitWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, player.index)
   }
   data.lastWireAffectedEntity = entity
 }
@@ -675,7 +658,7 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   if (entity) {
     data.lastWireAffectedEntity = nil
     const stage = getStageAtEntity(entity)
-    if (stage) WorldListener.onCircuitWiresPotentiallyUpdated(stage.assembly, entity, stage.stageNumber, index)
+    if (stage) WorldListener.onCircuitWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, index)
   }
 }
 
@@ -834,10 +817,10 @@ export const _assertInValidState = (): void => {
 /**
  * For manual calls from other parts of the code
  */
-export function entityPotentiallyUpdated(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
+export function entityPossiblyUpdated(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
   if (stage) {
-    WorldListener.onEntityPotentiallyUpdated(stage.assembly, entity, stage.stageNumber, nil, byPlayer)
+    WorldListener.onEntityPossiblyUpdated(stage.assembly, entity, stage.stageNumber, nil, byPlayer)
   }
 }
 

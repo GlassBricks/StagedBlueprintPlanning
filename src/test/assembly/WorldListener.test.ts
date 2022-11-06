@@ -227,10 +227,10 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
   ["cannot-upgrade-changed-pair", L_Interaction.CannotUpgradeUndergroundChangedPair],
 ]
 
-describe("onEntityPotentiallyUpdated", () => {
+describe("onEntityPossiblyUpdated", () => {
   test("if not in assembly, defaults to add behaviour", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity, 2, nil, playerIndex)
+    worldListener.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex)
     assert.spy(assemblyUpdater.addNewEntity).was.called_with(assembly, luaEntity, 2)
   })
 
@@ -240,7 +240,7 @@ describe("onEntityPotentiallyUpdated", () => {
       totalAuCalls++
       return result
     })
-    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity, 2, nil, playerIndex)
+    worldListener.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex)
 
     assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(entity, [message], true)
@@ -254,7 +254,7 @@ describe("onEntityPotentiallyUpdated", () => {
     })
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter" })
-    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity2, 2, nil, playerIndex)
+    worldListener.onEntityPossiblyUpdated(assembly, luaEntity2, 2, nil, playerIndex)
 
     assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), entity, 2)
   })
@@ -268,7 +268,7 @@ describe("onEntityPotentiallyUpdated", () => {
     const oldDirection = luaEntity.direction
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter", direction: defines.direction.south })
-    worldListener.onEntityPotentiallyUpdated(assembly, luaEntity2, 2, oldDirection, playerIndex)
+    worldListener.onEntityPossiblyUpdated(assembly, luaEntity2, 2, oldDirection, playerIndex)
 
     assert.spy(assemblyUpdater.tryUpdateEntityFromWorld).was.called_with(match.ref(assembly), entity, 2)
   })
@@ -332,10 +332,10 @@ describe("onEntityMarkedForUpgrade", () => {
   })
 })
 
-describe("onCircuitWiresPotentiallyUpdated", () => {
+describe("onCircuitWiresPossiblyUpdated", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, 2, playerIndex)
+    worldListener.onCircuitWiresPossiblyUpdated(assembly, luaEntity, 2, playerIndex)
   })
 
   test.each<[WireUpdateResult, string | false]>([
@@ -348,7 +348,7 @@ describe("onCircuitWiresPotentiallyUpdated", () => {
       totalAuCalls++
       return result
     })
-    worldListener.onCircuitWiresPotentiallyUpdated(assembly, luaEntity, 2, playerIndex)
+    worldListener.onCircuitWiresPossiblyUpdated(assembly, luaEntity, 2, playerIndex)
 
     assert.spy(assemblyUpdater.updateWiresFromWorld).was.called_with(match.ref(assembly), entity, 2)
     if (message) assertNotified(entity, [message], true)
