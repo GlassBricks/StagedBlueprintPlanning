@@ -141,18 +141,6 @@ export declare const enum L_GuiAllAssemblies {
   /** New staged build */
   NewAssembly = "bp100.gui.all-assemblies.new-assembly",
 }
-export declare const enum L_GuiNewAssembly {
-  /** New staged build */
-  Title = "bp100.gui.new-assembly.title",
-  /** Name */
-  Name = "bp100.gui.new-assembly.name",
-  /** Initial number of stages */
-  InitialNumStages = "bp100.gui.new-assembly.initial-num-stages",
-  /** Invalid specified number of stages */
-  InvalidNumStages = "bp100.gui.new-assembly.invalid-num-stages",
-  /** Create */
-  Create = "bp100.gui.new-assembly.create",
-}
 export declare const enum L_GuiAssemblySettings {
   /** Staged Build */
   Title = "bp100.gui.assembly-settings.title",

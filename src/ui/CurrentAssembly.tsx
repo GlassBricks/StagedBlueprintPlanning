@@ -19,7 +19,7 @@ import { Migrations } from "../lib/migration"
 import { L_GuiAllAssemblies, L_GuiCurrentAssembly } from "../locale"
 import { openAssemblySettings } from "./AssemblySettings"
 import { ExternalLinkButton } from "./buttons"
-import { openNewAssemblyGui } from "./NewAssembly"
+import { createNewAssembly } from "./new-assembly"
 import { playerCurrentStage } from "./player-current-stage"
 import { StageSelector } from "./StageSelector"
 
@@ -170,7 +170,7 @@ class AllAssemblies extends Component {
 
   private newAssembly(): void {
     closeAllAssemblies(this.playerIndex)
-    openNewAssemblyGui(game.get_player(this.playerIndex)!)
+    createNewAssembly(game.get_player(this.playerIndex)!)
   }
 }
 
