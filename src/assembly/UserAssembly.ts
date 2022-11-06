@@ -302,7 +302,7 @@ class StageImpl implements Stage {
   editBlueprint(player: LuaPlayer): boolean {
     const bbox = this.assembly.content.computeBoundingBox()
     if (!bbox) return false
-    return editBlueprintSettings(player, this.getBlueprintSettings(), this.surface, bbox)
+    return editBlueprintSettings(player, this.getBlueprintSettings(), this.surface, bbox) !== nil
   }
 
   autoSetTiles(tiles: AutoSetTilesType): boolean {

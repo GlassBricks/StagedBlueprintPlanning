@@ -128,7 +128,7 @@ export function editBlueprintSettings(
   settings: BlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
-): boolean {
+): LuaItemStack | nil {
   clearOpenedBlueprint(player.index)
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
@@ -136,7 +136,7 @@ export function editBlueprintSettings(
   const firstEntityPosition = takeBlueprintWithSettings(blueprint, settings, surface, bbox, true)
   if (!firstEntityPosition) {
     inventory.destroy()
-    return false
+    return
   }
 
   global.players[player.index].blueprintEditInfo = {
@@ -145,7 +145,7 @@ export function editBlueprintSettings(
   }
   player.opened = blueprint
 
-  return true
+  return blueprint
 }
 function onBlueprintUpdated(playerIndex: PlayerIndex): void {
   const data = global.players[playerIndex]
