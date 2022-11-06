@@ -824,8 +824,7 @@ export function entityPossiblyUpdated(entity: LuaEntity, byPlayer: PlayerIndex |
   }
 }
 
-Migrations.to("0.10.3", () => {
-  clearToBeFastReplaced(nil)
+Migrations.to("0.10.6", () => {
   for (const [key] of pairs(state)) {
     state[key] = nil
   }
