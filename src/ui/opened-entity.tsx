@@ -92,24 +92,23 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
           <RefreshButton on_gui_click={funcOn(this.refresh)} />
         </TitleBar>
         <frame style="inside_shallow_frame_with_padding" direction="vertical">
-          {!isRollingStock && [
-            <flow direction="horizontal">
+          {!isRollingStock && (
+            <table
+              column_count={2}
+              styleMod={{
+                vertical_spacing: 0,
+              }}
+            >
               <label caption={[L_GuiEntityInfo.FirstStage]} />
-              <HorizontalPusher />
               {StageButton(firstStage)}
-            </flow>,
-          ]}
-          {stageDiffs && [
-            <flow direction="horizontal">
-              <label caption={[L_GuiEntityInfo.StagesWithChanges]} />
-              <flow direction="vertical" styleMod={{ vertical_spacing: 0 }}>
-                {(Object.keys(stageDiffs) as unknown as StageNumber[]).map((stageNum) => {
+              {stageDiffs && <label caption={[L_GuiEntityInfo.StagesWithChanges]} />}
+              {stageDiffs &&
+                (Object.keys(stageDiffs) as unknown as StageNumber[]).flatMap((stageNum) => {
                   const stage = assembly.getStage(stageNum)!
-                  return StageButton(stage)
+                  return [StageButton(stage), <empty-widget />]
                 })}
-              </flow>
-            </flow>,
-          ]}
+            </table>
+          )}
           <button
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiEntityInfo.MoveToThisStage]}

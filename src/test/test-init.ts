@@ -9,9 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { UserAssembly } from "../assembly/AssemblyDef"
 import { createUserAssembly } from "../assembly/UserAssembly"
+import { WorldUpdater } from "../assembly/WorldUpdater"
+import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
+import { Pos } from "../lib/geometry"
 import { openAssemblySettings, refreshCurrentAssembly } from "../ui/AssemblySettings"
+import { teleportToStage } from "../ui/player-current-stage"
 import "./_printEvents"
 
 // better source map traceback
@@ -104,7 +109,7 @@ if (script.active_mods.testorio != nil) {
         const assembly = createUserAssembly("Test", 5)
         openAssemblySettings(player, assembly)
 
-        // setupManualTests(assembly)
+        setupManualTests(assembly)
       }
     },
     log_passed_tests: false,
@@ -158,24 +163,24 @@ commands.add_command("rr", "", () => {
   game.reload_mods()
 })
 
-// function setupManualTests(assembly: UserAssembly) {
-//   const player = game.players[1]
-//   function createEntityWithChanges() {
-//     const entity = createAssemblyEntity(
-//       { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
-//       Pos(0.5, 0.5),
-//       nil,
-//       2,
-//     )
-//     entity.applyUpgradeAtStage(3, "assembling-machine-2")
-//     entity._applyDiffAtStage(4, { recipe: "copper-cable" })
-//
-//     assembly.content.add(entity)
-//     WorldUpdater.updateWorldEntities(assembly, entity, 1, nil)
-//
-//     teleportToStage(player, assembly.getStage(4)!)
-//     player.opened = entity.getWorldEntity(4)
-//   }
-//
-//   createEntityWithChanges()
-// }
+function setupManualTests(assembly: UserAssembly) {
+  const player = game.players[1]
+  function createEntityWithChanges() {
+    const entity = createAssemblyEntity(
+      { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
+      Pos(0.5, 0.5),
+      nil,
+      2,
+    )
+    entity.applyUpgradeAtStage(3, "assembling-machine-2")
+    entity._applyDiffAtStage(4, { recipe: "copper-cable" })
+
+    assembly.content.add(entity)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1, nil)
+
+    teleportToStage(player, assembly.getStage(4)!)
+    player.opened = entity.getWorldEntity(4)
+  }
+
+  createEntityWithChanges()
+}
