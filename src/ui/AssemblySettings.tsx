@@ -443,6 +443,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
 
 const assemblySettingsHeight = stageListBoxHeight + 120
 const assemblySettingsWidth = stageListBoxWidth + stageSettingsWidth + 30
+const DefaultFrameLocation = { x: 0, y: 350 }
 function AssemblySettingsFrame() {
   return (
     <frame
@@ -451,7 +452,7 @@ function AssemblySettingsFrame() {
         minimal_width: assemblySettingsWidth,
         minimal_height: assemblySettingsHeight,
       }}
-      location={{ x: 0, y: 350 }}
+      location={DefaultFrameLocation}
       visible={false}
     >
       <SimpleTitleBar title={[L_GuiAssemblySettings.Title]} onClose={funcRef(closeAssemblySettingsClick)} />
@@ -492,6 +493,7 @@ function showAssemblySettings(player: LuaPlayer, assembly: UserAssembly): FrameG
   const frame = getOrCreateFrame(player)
   frame.visible = true
   frame.bring_to_front()
+  frame.auto_center = false
   const currentAssembly = global.players[player.index].currentShownAssembly
   if (currentAssembly == assembly) {
     return frame
@@ -502,7 +504,11 @@ function showAssemblySettings(player: LuaPlayer, assembly: UserAssembly): FrameG
 
 export function openAssemblySettings(player: LuaPlayer, assembly: UserAssembly): void {
   const frame = showAssemblySettings(player, assembly)
-  if (frame) frame.force_auto_center() // re-center if already open
+  if (frame) {
+    frame.location = DefaultFrameLocation
+    frame.auto_center = false
+  }
+
   teleportToAssembly(player, assembly)
 }
 
