@@ -10,6 +10,7 @@
  */
 
 import { WorldListener } from "../assembly/WorldListener"
+import { EntityHandler } from "../entity/EntityHandler"
 import { Events, SelflessFun } from "../lib"
 
 declare let global: {
@@ -51,11 +52,6 @@ for (const [name, key] of pairs(defines.events)) {
   })
 }
 
-commands.add_command("printev", "", (e) => {
-  global.printEvents = e.parameter == nil
-  game.print("printEvents: " + global.printEvents)
-})
-
 for (const [k, v] of pairs(WorldListener)) {
   if (typeof v == "function") {
     WorldListener[k] = function (...args: any[]) {
@@ -72,3 +68,19 @@ for (const [k, v] of pairs(WorldListener)) {
     }
   }
 }
+
+commands.add_command("printev", "", (e) => {
+  global.printEvents = e.parameter == nil
+  game.print("printEvents: " + global.printEvents)
+})
+
+commands.add_command("bpinfo", "", () => {
+  const entity = game.player!.selected
+  if (!entity) {
+    game.print("No entity selected")
+    return
+  }
+  const [value, dir] = EntityHandler.saveEntity(entity)
+  game.print(serpent.block(value))
+  game.print(serpent.block(dir))
+})

@@ -17,7 +17,7 @@ import { destroyAllRenders, Events } from "../lib"
 import { Pos } from "../lib/geometry"
 import { openAssemblySettings, refreshCurrentAssembly } from "../ui/AssemblySettings"
 import { teleportToStage } from "../ui/player-current-stage"
-import "./_printEvents"
+import "./in-world-test-util"
 
 // better source map traceback
 declare const ____lualib: {

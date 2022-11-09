@@ -173,6 +173,12 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
               on_gui_click={funcOn(this.editBlueprintFilters)}
             />
+            <checkbox
+              state={this.assembly.assemblyBlueprintSettings.transformations.replaceInfinityWithCombinators ?? false}
+              on_gui_checked_state_changed={funcOn(this.setReplaceInfinityWithCombinators)}
+              caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
+              tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
+            />
             <line direction="horizontal" />
 
             <button
@@ -275,6 +281,11 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   }
   private editBlueprintFilters() {
     editBlueprintFilters(game.get_player(this.playerIndex)!, this.assembly.assemblyBlueprintSettings.transformations)
+  }
+  private setReplaceInfinityWithCombinators(event: OnGuiCheckedStateChangedEvent) {
+    this.assembly.assemblyBlueprintSettings.transformations.replaceInfinityWithCombinators = (
+      event.element as CheckboxGuiElement
+    ).state
   }
   private syncGridSettings() {
     this.assembly.syncGridSettings()

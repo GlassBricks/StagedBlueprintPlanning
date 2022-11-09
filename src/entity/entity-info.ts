@@ -64,6 +64,9 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
 const checkExactlyForMatchTypes = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
 const rollingStockNames = new LuaSet<string>()
+const infinityChestNames = new LuaSet<string>()
+const infinityPipeNames = new LuaSet<string>()
+
 const checkExactlyNames = new LuaSet<string>()
 
 const nameToType = new LuaMap<string, string>()
@@ -73,8 +76,10 @@ function processPrototype(name: string, prototype: LuaEntityPrototype): void {
   processPasteRotatableType(prototype)
   selectionBoxes.set(name, BBox.from(prototype.selection_box))
   const type = prototype.type
-  if (rollingStockTypes.has(type)) rollingStockNames.add(name)
   if (checkExactlyForMatchTypes.has(type)) checkExactlyNames.add(name)
+  if (rollingStockTypes.has(type)) rollingStockNames.add(name)
+  if (type == "infinity-container") infinityChestNames.add(name)
+  if (type == "infinity-pipe") infinityPipeNames.add(name)
   nameToType.set(name, type)
 }
 
@@ -123,6 +128,10 @@ export function isUndergroundBeltType(entityName: string): boolean {
 export function isRollingStockType(entityName: string): boolean {
   if (!prototypesProcessed) processPrototypes()
   return rollingStockNames.has(entityName)
+}
+export function getInfinityTypes(): LuaMultiReturn<[chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]> {
+  if (!prototypesProcessed) processPrototypes()
+  return $multi(infinityChestNames, infinityPipeNames)
 }
 export { rollingStockTypes }
 

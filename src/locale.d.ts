@@ -228,6 +228,10 @@ export declare const enum L_GuiAssemblySettings {
   EditBlueprintFilters = "bp100.gui.assembly-settings.edit-blueprint-filters",
   /** The set filters will be applied after taking the blueprint. */
   EditBlueprintFiltersTooltip = "bp100.gui.assembly-settings.edit-blueprint-filters-tooltip",
+  /** Infinity chests/pipes to combinators [img=info] */
+  ReplaceInfinityWithCombinators = "bp100.gui.assembly-settings.replace-infinity-with-combinators",
+  /** In blueprints, replaces infinity chests/pipes with constant combinators having matching signals. */
+  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
   /** Sync grid settings [img=info] */
   SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
   /** Copies the grid settings of the [font=default-bold]last[/font] stage's blueprint to all other stages. */
