@@ -107,9 +107,7 @@ You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
 
 ## Possible future features
 
-- A "Move to stage" tool
 - Handle resource entities
-- "locking" properties in stages
 - Automatic analysis and basic optimization
 - Import/export to string
 
