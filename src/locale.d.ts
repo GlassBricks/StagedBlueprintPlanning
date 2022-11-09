@@ -180,9 +180,9 @@ export declare const enum L_GuiAssemblySettings {
   DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
   /** Stage contents will be merged with the next stage (__1__). */
   DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
-  /** Reset stage [img=info] */
+  /** Rebuild stage [img=info] */
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
-  /** Deletes and replaces all entities to match the stored state.\nThis can help resolve errors, or inconsistencies due to bugs. */
+  /** Deletes and replaces all entities to match the stored state.\nThis may help resolve inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
   /** Get blueprint [img=info] */
   GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
