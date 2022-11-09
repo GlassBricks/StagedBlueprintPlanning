@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0
 Date: ????
+  Features:
+    - Added option to replace infinity chests/pipes with constant combinators in blueprints.
   Changes:
+    - Updated locale.
 ---------------------------------------------------------------------------------------------------
 Version: 0.11.1
 Date: 2022-11-07
