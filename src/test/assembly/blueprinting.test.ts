@@ -104,6 +104,7 @@ test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (
     positionOffset: { x: 1, y: 2 },
     positionRelativeToGrid: { x: 4, y: 5 },
   }
+  surface.set_tiles([{ name: "landfill", position: [0, 0] }])
   const chest = surface.create_entity({
     name: "iron-chest",
     position: [0.5, 0.5],
@@ -138,6 +139,11 @@ test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (
   assert.equal(1, entities.length)
   assert.same(Pos.plus(chest.position, settings.positionOffset), entities[0].position)
   assert.same(chest.name, entities[0].name)
+
+  const tiles = stack.get_blueprint_tiles()!
+  assert.not_nil(tiles)
+  assert.equal(1, tiles.length)
+  assert.same(settings.positionOffset, tiles[0].position)
 })
 
 test("Replace infinity entities with constant combinators", () => {

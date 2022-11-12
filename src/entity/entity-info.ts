@@ -129,7 +129,9 @@ export function isRollingStockType(entityName: string): boolean {
   if (!prototypesProcessed) processPrototypes()
   return rollingStockNames.has(entityName)
 }
-export function getInfinityTypes(): LuaMultiReturn<[chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]> {
+export function getInfinityEntityNames(): LuaMultiReturn<
+  [chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]
+> {
   if (!prototypesProcessed) processPrototypes()
   return $multi(infinityChestNames, infinityPipeNames)
 }

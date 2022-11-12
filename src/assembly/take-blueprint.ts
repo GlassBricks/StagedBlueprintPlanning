@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getInfinityTypes } from "../entity/entity-info"
+import { getInfinityEntityNames } from "../entity/entity-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { debugPrint } from "../lib/test/misc"
 
 export interface BlueprintSettings {
   name: string
@@ -38,6 +39,74 @@ export function getDefaultBlueprintSettings(): BlueprintSettings {
   }
 }
 export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
+function adjustEntityPosition(
+  entities: BlueprintEntity[],
+  stack: LuaItemStack,
+  positionOffset: Position,
+  firstEntityOriginalPosition: MapPosition,
+): boolean {
+  const firstEntityPosition = entities[0].position
+  const expectedPosition = Pos.plus(firstEntityOriginalPosition, positionOffset)
+  const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
+  if (shouldAdjustPosition) {
+    const { x, y } = Pos.minus(expectedPosition, firstEntityPosition)
+    for (const i of $range(1, entities.length)) {
+      const pos = entities[i - 1].position as Mutable<Position>
+      pos.x += x
+      pos.y += y
+    }
+    const tiles = stack.get_blueprint_tiles()!
+    if (tiles && tiles.length > 0) {
+      for (const i of $range(1, tiles.length)) {
+        const pos = tiles[i - 1].position as Mutable<Position>
+        debugPrint(pos)
+        pos.x += x
+        pos.y += y
+      }
+      stack.set_blueprint_tiles(tiles)
+    }
+  }
+  return shouldAdjustPosition
+}
+function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): void {
+  const [chests, pipes] = getInfinityEntityNames()
+  for (const i of $range(1, entities.length)) {
+    const entity = entities[i - 1] as Mutable<BlueprintEntity>
+    const name = entity.name
+    if (chests.has(name)) {
+      const infinityFilters = (entity.infinity_settings as BlueprintInfinitySettings)?.filters
+      entity.name = "constant-combinator"
+      entity.control_behavior = {
+        filters:
+          infinityFilters &&
+          infinityFilters.map((f) => ({
+            index: f.index,
+            count: f.count ?? 1,
+            signal: { type: "item", name: f.name },
+          })),
+      }
+      entity.infinity_settings = nil
+    } else if (pipes.has(name)) {
+      const settings = entity.infinity_settings as InfinityPipeFilter | nil
+      entity.name = "constant-combinator"
+      entity.control_behavior = {
+        filters: settings && [
+          {
+            index: 1,
+            count: math.ceil((settings.percentage ?? 0.01) * 100),
+            signal: { type: "fluid", name: settings.name },
+          },
+        ],
+      }
+    }
+  }
+}
+function filterEntities(entities: BlueprintEntity[], isWhitelist: boolean, filters: LuaSet<string>): void {
+  for (const i of $range(1, entities.length)) {
+    const entity = entities[i - 1]
+    if (isWhitelist != filters.has(entity.name)) delete entities[i - 1]
+  }
+}
 /**
  * If forEdit is true, sets the first entity's original position tag.
  */
@@ -67,58 +136,20 @@ export function takeBlueprintWithSettings(
   const firstEntityOriginalPosition = bpMapping[1].position
   if (settings.snapToGrid != nil || transform.entityFilters || transform.replaceInfinityWithCombinators) {
     const entities = stack.get_blueprint_entities()!
-    const firstEntityPosition = entities[0].position
-    const expectedPosition = Pos.plus(firstEntityOriginalPosition, settings.positionOffset)
-    const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
-    if (shouldAdjustPosition) {
-      const { x, y } = Pos.minus(expectedPosition, firstEntityPosition)
-      for (const i of $range(1, entities.length)) {
-        const pos = entities[i - 1].position as Mutable<Position>
-        pos.x += x
-        pos.y += y
-      }
-    }
+    const shouldAdjustPosition = adjustEntityPosition(
+      entities,
+      stack,
+      settings.positionOffset,
+      firstEntityOriginalPosition,
+    )
     if (transform.replaceInfinityWithCombinators) {
-      const [chests, pipes] = getInfinityTypes()
-      for (const i of $range(1, entities.length)) {
-        const entity = entities[i - 1] as Mutable<BlueprintEntity>
-        const name = entity.name
-        if (chests.has(name)) {
-          const infinityFilters = (entity.infinity_settings as BlueprintInfinitySettings)?.filters
-          entity.name = "constant-combinator"
-          entity.control_behavior = {
-            filters:
-              infinityFilters &&
-              infinityFilters.map((f) => ({
-                index: f.index,
-                count: f.count ?? 1,
-                signal: { type: "item", name: f.name },
-              })),
-          }
-          entity.infinity_settings = nil
-        } else if (pipes.has(name)) {
-          const settings = entity.infinity_settings as InfinityPipeFilter | nil
-          entity.name = "constant-combinator"
-          entity.control_behavior = {
-            filters: settings && [
-              {
-                index: 1,
-                count: math.ceil((settings.percentage ?? 0.01) * 100),
-                signal: { type: "fluid", name: settings.name },
-              },
-            ],
-          }
-        }
-      }
+      replaceInfinityEntitiesWithCombinators(entities)
     }
 
     const filters = transform.entityFilters
     if (filters) {
       const isWhitelist = transform.entityFilterMode == defines.deconstruction_item.entity_filter_mode.whitelist
-      for (const i of $range(1, entities.length)) {
-        const entity = entities[i - 1]
-        if (isWhitelist != filters.has(entity.name)) delete entities[i - 1]
-      }
+      filterEntities(entities, isWhitelist, filters)
     }
 
     if (filters || transform.replaceInfinityWithCombinators || shouldAdjustPosition) {
