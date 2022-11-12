@@ -284,6 +284,9 @@ class StageImpl implements Stage {
   }
 
   doTakeBlueprint(stack: LuaItemStack, bbox: BBox): boolean {
+    if (this.assembly.assemblyBlueprintSettings.autoLandfill.get()) {
+      this.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
+    }
     const took = tryTakeBlueprintWithSettings(
       stack,
       this.getBlueprintSettings(),
