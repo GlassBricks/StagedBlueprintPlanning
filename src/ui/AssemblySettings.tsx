@@ -60,6 +60,7 @@ const stageSettingsWidth = 160
 const insertButtonWidth = 100
 
 const dropDownWidth = 180
+const blueprintSettingsButtonWidth = 180
 
 @RegisterClass("gui:AssemblySettings")
 export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
@@ -118,10 +119,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             >
               <StageSelector
                 uses="list-box"
-                styleMod={{
-                  height: stageListBoxHeight,
-                  width: stageListBoxWidth,
-                }}
+                styleMod={{ height: stageListBoxHeight, width: stageListBoxWidth }}
                 assembly={this.assembly}
               />
               <Fn
@@ -139,21 +137,12 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             </flow>
           </flow>
           <tab caption={[L_GuiAssemblySettings.Blueprints]} />
-          <flow
-            direction="vertical"
-            styleMod={{
-              padding: [5, 10],
-            }}
-          >
-            <flow direction="horizontal">
-              <label caption={[L_GuiAssemblySettings.BlueprintBookNaming]} />
-              <HorizontalPusher />
-              <drop-down
-                items={[[L_GuiAssemblySettings.BpNameEmpty], [L_GuiAssemblySettings.BpNameFromAssembly]]}
-                selected_index={this.assembly.assemblyBlueprintSettings.bookNameMode}
-                styleMod={{ width: dropDownWidth }}
-              />
-            </flow>
+          <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
+            <label
+              style="caption_label"
+              caption={[L_GuiAssemblySettings.BlueprintSettings]}
+              tooltip={[L_GuiAssemblySettings.BlueprintSettingsTooltip]}
+            />
             <flow direction="horizontal">
               <label caption={[L_GuiAssemblySettings.BlueprintNaming]} />
               <HorizontalPusher />
@@ -167,52 +156,58 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
                 styleMod={{ width: dropDownWidth }}
               />
             </flow>
-
-            <line direction="horizontal" />
-            <button
-              caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
-              tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
-              on_gui_click={funcOn(this.editBlueprintFilters)}
-            />
             <checkbox
               state={this.assembly.assemblyBlueprintSettings.transformations.replaceInfinityWithCombinators ?? false}
               on_gui_checked_state_changed={funcOn(this.setReplaceInfinityWithCombinators)}
               caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
               tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
             />
-            <line direction="horizontal" />
-
-            <button
-              caption={[L_GuiAssemblySettings.SyncGridSettings]}
-              tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
-              on_gui_click={funcOn(this.syncGridSettings)}
-            />
-
-            <line direction="horizontal" />
-
             <checkbox
               state={this.assembly.assemblyBlueprintSettings.autoLandfill}
               caption={[L_GuiAssemblySettings.AutoLandfill]}
               tooltip={[L_GuiAssemblySettings.AutoLandfillDescription]}
             />
+            <button
+              caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
+              tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
+              on_gui_click={funcOn(this.editBlueprintFilters)}
+              styleMod={{ width: blueprintSettingsButtonWidth }}
+            />
+            <button
+              caption={[L_GuiAssemblySettings.SyncGridSettings]}
+              tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
+              on_gui_click={funcOn(this.syncGridSettings)}
+              styleMod={{ width: blueprintSettingsButtonWidth }}
+            />
+
+            <line direction="horizontal" />
+
+            <label style="caption_label" caption={[L_GuiAssemblySettings.BlueprintBookSettings]} />
+
+            <flow direction="horizontal">
+              <label caption={[L_GuiAssemblySettings.BlueprintBookNaming]} />
+              <HorizontalPusher />
+              <drop-down
+                items={[[L_GuiAssemblySettings.BpNameEmpty], [L_GuiAssemblySettings.BpNameFromAssembly]]}
+                selected_index={this.assembly.assemblyBlueprintSettings.bookNameMode}
+                styleMod={{ width: dropDownWidth }}
+              />
+            </flow>
             <checkbox
               state={this.assembly.assemblyBlueprintSettings.useNextStageTiles}
               caption={[L_GuiAssemblySettings.UseNextStageTiles]}
               tooltip={[L_GuiAssemblySettings.UseNextStageTilesDescription]}
             />
-
-            <line direction="horizontal" />
-
             <button
               caption={[L_GuiAssemblySettings.GetBlueprintBook]}
-              tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
               on_gui_click={funcOn(this.getBlueprintBook)}
+              styleMod={{ width: blueprintSettingsButtonWidth }}
             />
-
             <button
               caption={[L_GuiAssemblySettings.ExportBlueprintBookStringToFile]}
               tooltip={[L_GuiAssemblySettings.ExportBlueprintBookStringToFileTooltip]}
               on_gui_click={funcOn(this.exportBlueprintBookStringToFile)}
+              styleMod={{ width: blueprintSettingsButtonWidth }}
             />
           </flow>
         </tabbed-pane>

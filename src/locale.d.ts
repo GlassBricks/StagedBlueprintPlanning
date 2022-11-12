@@ -206,8 +206,10 @@ export declare const enum L_GuiAssemblySettings {
   FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
   /** Blueprints */
   Blueprints = "bp100.gui.assembly-settings.blueprints",
-  /** Blueprint settings */
+  /** Blueprint settings [img=info] */
   BlueprintSettings = "bp100.gui.assembly-settings.blueprint-settings",
+  /** These settings apply to all stages. For stage-specific blueprint settings, see the "Stages" tab. */
+  BlueprintSettingsTooltip = "bp100.gui.assembly-settings.blueprint-settings-tooltip",
   /** Blueprint book settings */
   BlueprintBookSettings = "bp100.gui.assembly-settings.blueprint-book-settings",
   /** Auto-landfill [img=info] */
@@ -244,9 +246,7 @@ export declare const enum L_GuiAssemblySettings {
   SyncGridSettingsDescription = "bp100.gui.assembly-settings.sync-grid-settings-description",
   /** Make blueprint book */
   GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
-  /** You can configure individual blueprints in the stage settings. */
-  GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
-  /** Export blueprint string to file */
+  /** Export book to file [img=info] */
   ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
   /** Makes a blueprint book, and exports the blueprint string to a file (located in the <user-data-directory>/script-output folder). */
   ExportBlueprintBookStringToFileTooltip = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file-tooltip",
