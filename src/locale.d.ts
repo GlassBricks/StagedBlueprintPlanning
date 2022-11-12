@@ -215,11 +215,11 @@ export declare const enum L_GuiAssemblySettings {
   /** Auto-landfill [img=info] */
   AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
   /** Automatically set landfill tiles before taking a blueprint. */
-  AutoLandfillDescription = "bp100.gui.assembly-settings.auto-landfill-description",
+  AutoLandfillTooltip = "bp100.gui.assembly-settings.auto-landfill-tooltip",
   /** Use next stage's tiles [img=info] */
   UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
   /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
-  UseNextStageTilesDescription = "bp100.gui.assembly-settings.use-next-stage-tiles-description",
+  UseNextStageTilesTooltip = "bp100.gui.assembly-settings.use-next-stage-tiles-tooltip",
   /** Blueprint names: */
   BlueprintNaming = "bp100.gui.assembly-settings.blueprint-naming",
   /** Empty */
