@@ -164,6 +164,8 @@ class UserAssemblyImpl implements UserAssembly {
     const bbox = this.content.computeBoundingBox()
     if (!bbox) return false
 
+    log(["", "Making blueprint book for assembly: ", this.displayName.get()])
+
     stack.clear()
     stack.set_stack("blueprint-book")
     const { useNextStageTiles, bookNameMode } = this.assemblyBlueprintSettings
@@ -184,6 +186,7 @@ class UserAssemblyImpl implements UserAssembly {
     }
 
     if (useNextStageTiles.get()) {
+      log("Shifting blueprint tiles")
       for (const i of $range(1, inventory.length - 1)) {
         const blueprint = inventory[i - 1]
         const nextBlueprint = inventory[i]
@@ -290,8 +293,11 @@ class StageImpl implements Stage {
   }
 
   doTakeBlueprint(stack: LuaItemStack, bbox: BBox): boolean {
+    log("Taking blueprint for stage: " + this.name.get())
     if (this.assembly.assemblyBlueprintSettings.autoLandfill.get()) {
+      log("  Setting landfill")
       this.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
+      log("  Done setting landfill")
     }
     const took = tryTakeBlueprintWithSettings(
       stack,
@@ -352,6 +358,7 @@ export function exportBlueprintBookToFile(player: LuaPlayer, assembly: UserAssem
     inventory.destroy()
     return nil
   }
+  log("Exporting blueprint book to file")
   const data = stack.export_stack()
   const filename = `staged-builds/${assembly.name.get() ?? "Unnamed-Assembly-" + assembly.id}.txt`
   game.write_file(filename, data, false, player.index)
