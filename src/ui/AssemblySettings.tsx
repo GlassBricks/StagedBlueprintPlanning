@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AutoSetTilesType, LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
+import { LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { editBlueprintFilters } from "../assembly/edit-blueprint-settings"
+import { AutoSetTilesType } from "../assembly/tiles"
 import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
@@ -157,8 +158,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               />
             </flow>
             <checkbox
-              state={this.assembly.assemblyBlueprintSettings.transformations.replaceInfinityWithCombinators ?? false}
-              on_gui_checked_state_changed={funcOn(this.setReplaceInfinityWithCombinators)}
+              state={this.assembly.assemblyBlueprintSettings.replaceInfinityWithCombinators}
               caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
               tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
             />
@@ -298,12 +298,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     }
   }
   private editBlueprintFilters() {
-    editBlueprintFilters(game.get_player(this.playerIndex)!, this.assembly.assemblyBlueprintSettings.transformations)
-  }
-  private setReplaceInfinityWithCombinators(event: OnGuiCheckedStateChangedEvent) {
-    this.assembly.assemblyBlueprintSettings.transformations.replaceInfinityWithCombinators = (
-      event.element as CheckboxGuiElement
-    ).state
+    editBlueprintFilters(game.get_player(this.playerIndex)!, this.assembly.assemblyBlueprintSettings)
   }
   private syncGridSettings() {
     this.assembly.syncGridSettings()

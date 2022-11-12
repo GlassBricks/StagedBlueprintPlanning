@@ -10,8 +10,9 @@
  */
 
 import { getInfinityEntityNames } from "../entity/entity-info"
-import { isEmpty, Mutable } from "../lib"
+import { isEmpty, Mutable, MutableState, state } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 export interface BlueprintSettings {
   name: string
@@ -24,9 +25,20 @@ export interface BlueprintSettings {
   absoluteSnapping: boolean
 }
 export interface BlueprintTransformations {
-  entityFilters?: LuaSet<string>
-  entityFilterMode?: defines.deconstruction_item.entity_filter_mode
-  replaceInfinityWithCombinators?: boolean
+  readonly entityFilters: MutableState<LuaSet<string> | nil>
+  readonly entityFilterMode: MutableState<defines.deconstruction_item.entity_filter_mode | nil>
+  readonly replaceInfinityWithCombinators: MutableState<boolean>
+}
+export function makeSimpleBlueprintTransformations(
+  entityFilters?: LuaSet<string>,
+  entityFilterMode?: defines.deconstruction_item.entity_filter_mode,
+  replaceInfinityWithCombinators: boolean = false,
+): BlueprintTransformations {
+  return {
+    entityFilters: state(entityFilters),
+    entityFilterMode: state(entityFilterMode),
+    replaceInfinityWithCombinators: state(replaceInfinityWithCombinators),
+  }
 }
 
 export function getDefaultBlueprintSettings(): BlueprintSettings {
@@ -99,7 +111,12 @@ function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): vo
     }
   }
 }
-function filterEntities(entities: BlueprintEntity[], isWhitelist: boolean, filters: LuaSet<string>): void {
+function filterEntities(
+  entities: BlueprintEntity[],
+  filters: LuaSet<string>,
+  mode: defines.deconstruction_item.entity_filter_mode | nil,
+): void {
+  const isWhitelist = mode != entity_filter_mode.blacklist
   for (const i of $range(1, entities.length)) {
     const entity = entities[i - 1]
     if (isWhitelist != filters.has(entity.name)) delete entities[i - 1]
@@ -131,26 +148,21 @@ export function takeBlueprintWithSettings(
 
   if (isEmpty(bpMapping)) return false
 
-  const firstEntityOriginalPosition = bpMapping[1].position
-  if (settings.snapToGrid != nil || transform.entityFilters || transform.replaceInfinityWithCombinators) {
+  const replaceInfinityWithCombinators = transform.replaceInfinityWithCombinators.get()
+  const entityFilters = transform.entityFilters.get()
+
+  if (settings.snapToGrid != nil || entityFilters || replaceInfinityWithCombinators) {
     const entities = stack.get_blueprint_entities()!
-    const shouldAdjustPosition = adjustEntityPosition(
-      entities,
-      stack,
-      settings.positionOffset,
-      firstEntityOriginalPosition,
-    )
-    if (transform.replaceInfinityWithCombinators) {
+    const shouldAdjustPosition = adjustEntityPosition(entities, stack, settings.positionOffset, bpMapping[1].position)
+    if (replaceInfinityWithCombinators) {
       replaceInfinityEntitiesWithCombinators(entities)
     }
 
-    const filters = transform.entityFilters
-    if (filters) {
-      const isWhitelist = transform.entityFilterMode == defines.deconstruction_item.entity_filter_mode.whitelist
-      filterEntities(entities, isWhitelist, filters)
+    if (entityFilters) {
+      filterEntities(entities, entityFilters, transform.entityFilterMode.get())
     }
 
-    if (filters || transform.replaceInfinityWithCombinators || shouldAdjustPosition) {
+    if (entityFilters || replaceInfinityWithCombinators || shouldAdjustPosition) {
       stack.set_blueprint_entities(entities)
     }
   }
@@ -162,7 +174,7 @@ export function takeBlueprintWithSettings(
   stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
 
   if (forEdit) {
-    stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, firstEntityOriginalPosition)
+    stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, bpMapping[1].position)
   }
   return true
 }

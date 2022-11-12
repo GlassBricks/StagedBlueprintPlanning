@@ -11,7 +11,6 @@
 
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
-import { AutoSetTilesType } from "./AssemblyDef"
 
 function autoLandfill(surface: LuaSurface, area: BoundingBox): boolean {
   if (!waterLandfillTilesExist()) return false
@@ -55,6 +54,11 @@ function waterLandfillTilesExist(): boolean {
   return game.tile_prototypes.water != nil && game.tile_prototypes.landfill != nil
 }
 
+export const enum AutoSetTilesType {
+  LabTiles,
+  LandfillAndWater,
+  LandfillAndLabTiles,
+}
 export function setTiles(surface: LuaSurface, area: BBox, type: AutoSetTilesType): boolean {
   if (type == AutoSetTilesType.LabTiles) {
     setLabTiles(surface, area)

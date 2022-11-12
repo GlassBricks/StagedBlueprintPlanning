@@ -74,11 +74,13 @@ export function editBlueprintFilters(player: LuaPlayer, transform: BlueprintTran
 
   stack.set_stack(Prototypes.BlueprintFilters)
 
-  if (transform.entityFilters) {
-    stack.entity_filters = Object.keys(transform.entityFilters)
+  const filters = transform.entityFilters.get()
+  if (filters) {
+    stack.entity_filters = Object.keys(filters)
   }
-  if (transform.entityFilterMode) {
-    stack.entity_filter_mode = transform.entityFilterMode
+  const entityFilterMode = transform.entityFilterMode.get()
+  if (entityFilterMode) {
+    stack.entity_filter_mode = entityFilterMode
   }
 
   global.players[player.index].blueprintEditInfo = {
@@ -120,12 +122,13 @@ function updateBlueprintSettings(blueprint: LuaItemStack, settings: BlueprintSet
 function updateBlueprintFilters(stack: LuaItemStack, transform: BlueprintTransformations): void {
   const filters = stack.entity_filters
   if (filters != nil) {
-    transform.entityFilters = newLuaSet()
-    for (const filter of filters) transform.entityFilters.add(filter)
-    transform.entityFilterMode = stack.entity_filter_mode
+    const result = new LuaSet<string>()
+    for (const filter of filters) result.add(filter)
+    transform.entityFilters.set(result)
+    transform.entityFilterMode.set(stack.entity_filter_mode)
   } else {
-    transform.entityFilters = nil
-    transform.entityFilterMode = nil
+    transform.entityFilters.set(nil)
+    transform.entityFilterMode.set(nil)
   }
 }
 

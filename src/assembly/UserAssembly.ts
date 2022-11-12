@@ -29,7 +29,6 @@ import { L_Bp100 } from "../locale"
 import {
   AssemblyBlueprintSettings,
   AssemblyId,
-  AutoSetTilesType,
   BlueprintNameMode,
   BookNameMode,
   GlobalAssemblyEvent,
@@ -39,8 +38,13 @@ import {
 } from "./AssemblyDef"
 import { editBlueprintSettings } from "./edit-blueprint-settings"
 import { createStageSurface, prepareArea } from "./surfaces"
-import { BlueprintSettings, getDefaultBlueprintSettings, tryTakeBlueprintWithSettings } from "./take-blueprint"
-import { setTiles } from "./tiles"
+import {
+  BlueprintSettings,
+  BlueprintTransformations,
+  getDefaultBlueprintSettings,
+  tryTakeBlueprintWithSettings,
+} from "./take-blueprint"
+import { AutoSetTilesType, setTiles } from "./tiles"
 
 declare const global: {
   nextAssemblyId: AssemblyId
@@ -72,7 +76,9 @@ class UserAssemblyImpl implements UserAssembly {
     blueprintNameMode: state(BlueprintNameMode.FromStage),
     bookNameMode: state(BookNameMode.FromAssembly),
 
-    transformations: {},
+    entityFilters: state(nil),
+    entityFilterMode: state(nil),
+    replaceInfinityWithCombinators: state(false),
   }
 
   valid = true
@@ -291,7 +297,7 @@ class StageImpl implements Stage {
       stack,
       this.getBlueprintSettings(),
 
-      this.assembly.assemblyBlueprintSettings.transformations,
+      this.assembly.assemblyBlueprintSettings,
       this.surface,
       bbox,
     )
@@ -314,7 +320,7 @@ class StageImpl implements Stage {
       editBlueprintSettings(
         player,
         this.getBlueprintSettings(),
-        this.assembly.assemblyBlueprintSettings.transformations,
+        this.assembly.assemblyBlueprintSettings,
         this.surface,
         bbox,
       ) != nil
@@ -397,8 +403,7 @@ Migrations.to("0.8.0", () => {
       useNextStageTiles: state(bpBookSettings.autoLandfill.get()),
       blueprintNameMode: state(BlueprintNameMode.FromStage),
       bookNameMode: state(BookNameMode.FromAssembly),
-      transformations: {},
-    }
+    } as AssemblyBlueprintSettings
 
     type OldBlueprintSettings = Pick<
       BlueprintSettings,
@@ -435,9 +440,34 @@ Migrations.to("0.8.0", () => {
 })
 // player data migrated in 0.9.0, from ui/player-assembly-data.ts
 
-Migrations.to("0.11.0", () => {
-  // blueprint filters added to assembly settings
+// new format in 0.12.0
+// Migrations.to("0.11.0", () => {
+//   blueprint filters added to assembly settings
+//   for (const [, assembly] of global.assemblies) {
+//      assembly.assemblyBlueprintSettings.transformations = {}
+//   }
+// })
+
+Migrations.to("0.12.0", () => {
+  interface OldAssemblySettings {
+    transformations?: {
+      readonly entityFilters?: LuaSet<string>
+      readonly entityFilterMode?: defines.deconstruction_item.entity_filter_mode
+      readonly replaceInfinityWithCombinators?: boolean
+    }
+  }
   for (const [, assembly] of global.assemblies) {
-    assembly.assemblyBlueprintSettings.transformations = {}
+    const settings = assembly.assemblyBlueprintSettings as OldAssemblySettings & Mutable<BlueprintTransformations>
+    if (settings.transformations) {
+      const { entityFilters, entityFilterMode, replaceInfinityWithCombinators } = settings.transformations
+      settings.entityFilters = state(entityFilters)
+      settings.entityFilterMode = state(entityFilterMode)
+      settings.replaceInfinityWithCombinators = state(replaceInfinityWithCombinators ?? false)
+      delete settings.transformations
+    } else {
+      settings.entityFilters = state(nil)
+      settings.entityFilterMode = state(nil)
+      settings.replaceInfinityWithCombinators = state(false)
+    }
   }
 })

@@ -13,6 +13,7 @@ import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableEntityMap } from "../entity/EntityMap"
 import { MutableState, Observable, State } from "../lib"
 import { BlueprintTransformations } from "./take-blueprint"
+import { AutoSetTilesType } from "./tiles"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface Assembly {
@@ -57,14 +58,12 @@ export const enum BookNameMode {
   Empty = 1,
   FromAssembly = 2,
 }
-export interface AssemblyBlueprintSettings {
+export interface AssemblyBlueprintSettings extends BlueprintTransformations {
   readonly autoLandfill: MutableState<boolean>
   readonly useNextStageTiles: MutableState<boolean>
 
   readonly blueprintNameMode: MutableState<BlueprintNameMode>
   readonly bookNameMode: MutableState<BookNameMode>
-
-  transformations: BlueprintTransformations
 }
 
 export interface Stage {
@@ -84,12 +83,6 @@ export interface Stage {
 
   readonly valid: boolean
   deleteInAssembly(): void
-}
-
-export const enum AutoSetTilesType {
-  LabTiles,
-  LandfillAndWater,
-  LandfillAndLabTiles,
 }
 
 export interface AssemblyCreatedEvent {

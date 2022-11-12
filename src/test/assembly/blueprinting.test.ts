@@ -12,8 +12,8 @@
 import { editBlueprintFilters, editBlueprintSettings } from "../../assembly/edit-blueprint-settings"
 import {
   BlueprintSettings,
-  BlueprintTransformations,
   getDefaultBlueprintSettings,
+  makeSimpleBlueprintTransformations,
   tryTakeBlueprintWithSettings,
 } from "../../assembly/take-blueprint"
 import { Prototypes } from "../../constants"
@@ -42,7 +42,19 @@ test("can edit blueprint settings", () => {
   })!
   assert.not_nil(theEntity)
 
-  const stack = editBlueprintSettings(player, settings, {}, surface, BBox.around({ x: 0, y: 0 }, 10))!
+  const stack = editBlueprintSettings(
+    player,
+    settings,
+    makeSimpleBlueprintTransformations(),
+    surface,
+    BBox.around(
+      {
+        x: 0,
+        y: 0,
+      },
+      10,
+    ),
+  )!
   assert.not_nil(stack)
   assert.true(stack.valid_for_read && stack.is_blueprint)
 
@@ -81,18 +93,18 @@ test("can edit blueprint settings", () => {
 })
 
 test("can edit blueprint filters", () => {
-  const transform: BlueprintTransformations = {}
+  const transform = makeSimpleBlueprintTransformations()
   const stack = editBlueprintFilters(player, transform)!
   assert.not_nil(stack)
   assert.true(stack.valid_for_read)
   assert.equal(Prototypes.BlueprintFilters, stack.name)
 
   stack.entity_filters = ["iron-chest", "steel-chest"]
-  stack.entity_filter_mode = entity_filter_mode.whitelist
+  stack.entity_filter_mode = entity_filter_mode.blacklist
 
   player.opened = nil
-  assert.same(newLuaSet("iron-chest", "steel-chest"), transform.entityFilters)
-  assert.equal(entity_filter_mode.whitelist, transform.entityFilterMode)
+  assert.same(newLuaSet("iron-chest", "steel-chest"), transform.entityFilters.get())
+  assert.equal(entity_filter_mode.blacklist, transform.entityFilterMode.get())
 })
 
 test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (mode) => {
@@ -123,10 +135,10 @@ test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (
   stack.set_stack("blueprint")
 
   const whitelist = mode == "whitelist"
-  const transform: BlueprintTransformations = {
-    entityFilters: whitelist ? newLuaSet("iron-chest") : newLuaSet("transport-belt"),
-    entityFilterMode: whitelist ? entity_filter_mode.whitelist : entity_filter_mode.blacklist,
-  }
+  const transform = makeSimpleBlueprintTransformations(
+    whitelist ? newLuaSet("iron-chest") : newLuaSet("transport-belt"),
+    whitelist ? entity_filter_mode.whitelist : entity_filter_mode.blacklist,
+  )
   const res = tryTakeBlueprintWithSettings(stack, settings, transform, surface, BBox.around({ x: 0, y: 0 }, 10))
   assert.true(res)
 
@@ -189,9 +201,7 @@ test("Replace infinity entities with constant combinators", () => {
   stack.clear()
   stack.set_stack("blueprint")
 
-  const transform: BlueprintTransformations = {
-    replaceInfinityWithCombinators: true,
-  }
+  const transform = makeSimpleBlueprintTransformations(nil, nil, true)
 
   const res = tryTakeBlueprintWithSettings(
     stack,
