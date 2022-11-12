@@ -10,7 +10,13 @@
  */
 
 import { Prototypes } from "../constants"
-import { AssemblyEntity, isWorldEntityAssemblyEntity, SavedDirection, StageNumber } from "../entity/AssemblyEntity"
+import {
+  AssemblyEntity,
+  isWorldEntityAssemblyEntity,
+  RollingStockAssemblyEntity,
+  SavedDirection,
+  StageNumber,
+} from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
 import { EntityMap } from "../entity/EntityMap"
@@ -58,7 +64,10 @@ export interface WorldUpdater {
   makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
 
-  clearStage(surface: LuaSurface): void
+  resetStage(assembly: Assembly, stage: StageNumber): void
+
+  disableAllEntities(assembly: Assembly, stage: StageNumber): void
+  enableAllEntities(assembly: Assembly, stage: StageNumber): void
 }
 
 export type AssemblyEntityDollyResult =
@@ -311,15 +320,43 @@ export function createWorldUpdater(
     },
     makeSettingsRemnant,
     reviveSettingsRemnant,
-    clearStage(surface: LuaSurface) {
+    resetStage(assembly: Assembly, stage: StageNumber) {
+      const surface = assembly.getSurface(stage)
+      if (!surface) return
       for (const entity of surface.find_entities()) {
         if (isWorldEntityAssemblyEntity(entity)) entity.destroy()
       }
       for (const entity of surface.find_entities_filtered({
         type: ["simple-entity-with-owner", "rail-remnants"],
       })) {
-        const name = entity.name
-        if (name.startsWith(Prototypes.PreviewEntityPrefix)) entity.destroy()
+        if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) entity.destroy()
+      }
+      const updateLater: RollingStockAssemblyEntity[] = []
+      for (const entity of assembly.content.iterateAllEntities()) {
+        if (entity.isRollingStock()) {
+          updateLater.push(entity)
+        } else {
+          refreshWorldEntityAtStage(assembly, entity, stage)
+        }
+      }
+      for (const entity of updateLater) {
+        refreshWorldEntityAtStage(assembly, entity, stage)
+      }
+    },
+    disableAllEntities(assembly: Assembly, stage: StageNumber): void {
+      const surface = assembly.getSurface(stage)
+      if (!surface) return
+      const arr = surface.find_entities()
+      for (const i of $range(1, arr.length)) {
+        arr[i - 1].active = false
+      }
+    },
+    enableAllEntities(assembly: Assembly, stage: StageNumber): void {
+      const surface = assembly.getSurface(stage)
+      if (!surface) return
+      const arr = surface.find_entities()
+      for (const i of $range(1, arr.length)) {
+        arr[i - 1].active = true
       }
     },
   }

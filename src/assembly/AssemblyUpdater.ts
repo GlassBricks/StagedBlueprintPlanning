@@ -73,8 +73,6 @@ export interface AssemblyUpdater {
   tryDollyEntity(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): AssemblyEntityDollyResult
   moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult
 
-  resetStage(assembly: Assembly, stage: StageNumber): void
-
   resetProp<T extends Entity>(assembly: Assembly, entity: AssemblyEntity<T>, stage: StageNumber, prop: keyof T): boolean
   movePropDown<T extends Entity>(
     assembly: Assembly,
@@ -464,22 +462,6 @@ export function createAssemblyUpdater(
       entity.moveToStage(stage)
       updateWorldEntities(assembly, entity, min(oldStage, stage))
       return "updated"
-    },
-    resetStage(assembly: Assembly, stage: StageNumber) {
-      const surface = assembly.getSurface(stage)
-      if (!surface) return
-      worldUpdater.clearStage(surface)
-      const updateLater: RollingStockAssemblyEntity[] = []
-      for (const entity of assembly.content.iterateAllEntities()) {
-        if (entity.isRollingStock()) {
-          updateLater.push(entity)
-        } else {
-          refreshWorldEntityAtStage(assembly, entity, stage)
-        }
-      }
-      for (const entity of updateLater) {
-        refreshWorldEntityAtStage(assembly, entity, stage)
-      }
     },
     resetProp<T extends Entity>(
       assembly: Assembly,

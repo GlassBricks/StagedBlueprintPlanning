@@ -10,10 +10,10 @@
  */
 
 import { LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
-import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { editBlueprintFilters } from "../assembly/edit-blueprint-settings"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
+import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
@@ -58,6 +58,7 @@ const stageListBoxHeight = 28 * 12
 const stageListBoxWidth = 140
 const stageSettingsWidth = 160
 
+const newStageHeight = 38
 const insertButtonWidth = 100
 
 const dropDownWidth = 180
@@ -76,8 +77,6 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     tracker.getSubscription().add(funcOn(this.onDestroyed))
 
     this.assembly.localEvents.subscribe(tracker.getSubscription(), funcOn(this.onAssemblyEvent))
-    const currentStage = playerCurrentStage(this.playerIndex)
-
     return (
       <frame style="inside_shallow_frame" direction="vertical">
         <frame style="subheader_frame" direction="horizontal">
@@ -91,60 +90,126 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
         </frame>
         <tabbed-pane style="tabbed_pane_with_no_side_padding" selected_tab_index={1}>
           <tab caption={[L_GuiAssemblySettings.Stages]} />
-          <flow direction="vertical">
-            <flow
-              direction="horizontal"
-              styleMod={{
-                vertical_align: "center",
-                padding: [5, 10],
-              }}
-            >
-              <label style="caption_label" caption={[L_GuiAssemblySettings.NewStage]} />
-              <HorizontalPusher />
-              <button
-                styleMod={{ width: insertButtonWidth }}
-                caption={[L_GuiAssemblySettings.AfterCurrent]}
-                on_gui_click={funcOn(this.newStageAfter)}
-              />
-              <button
-                styleMod={{ width: insertButtonWidth }}
-                caption={[L_GuiAssemblySettings.AtFront]}
-                on_gui_click={funcOn(this.newStageAtFront)}
-              />
-            </flow>
-            <flow
-              direction="horizontal"
-              styleMod={{
-                padding: 0,
-              }}
-            >
-              <StageSelector
-                uses="list-box"
-                styleMod={{ height: stageListBoxHeight, width: stageListBoxWidth }}
-                assembly={this.assembly}
-              />
-              <Fn
-                uses="frame"
-                from={currentStage}
-                map={funcOn(this.renderStageSettings)}
-                direction="vertical"
-                style="inside_shallow_frame"
-                styleMod={{
-                  minimal_width: stageSettingsWidth,
-                  vertically_stretchable: true,
-                  horizontally_stretchable: true,
-                }}
-              />
-            </flow>
-          </flow>
+          {this.StageSettingsTab()}
+          <tab caption={[L_GuiAssemblySettings.Editing]} />
+          {this.EditingTab()}
           <tab caption={[L_GuiAssemblySettings.Blueprints]} />
-          {this.BlueprintSettings()}
+          {this.BlueprintSettingsTab()}
         </tabbed-pane>
       </frame>
     )
   }
 
-  private BlueprintSettings() {
+  private StageSettingsTab() {
+    const currentStage = playerCurrentStage(this.playerIndex)
+    return (
+      <flow direction="vertical" styleMod={{ vertical_spacing: 0, top_margin: -5 }}>
+        <flow
+          direction="horizontal"
+          styleMod={{
+            vertical_align: "center",
+            padding: [5, 10],
+            height: newStageHeight,
+          }}
+        >
+          <label style="caption_label" caption={[L_GuiAssemblySettings.NewStage]} />
+          <HorizontalPusher />
+          <button
+            styleMod={{ width: insertButtonWidth }}
+            caption={[L_GuiAssemblySettings.AfterCurrent]}
+            on_gui_click={funcOn(this.newStageAfter)}
+          />
+          <button
+            styleMod={{ width: insertButtonWidth }}
+            caption={[L_GuiAssemblySettings.AtFront]}
+            on_gui_click={funcOn(this.newStageAtFront)}
+          />
+        </flow>
+        <flow direction="horizontal" styleMod={{ padding: 0 }}>
+          <StageSelector
+            uses="list-box"
+            styleMod={{ height: stageListBoxHeight, width: stageListBoxWidth }}
+            assembly={this.assembly}
+          />
+          <Fn
+            uses="frame"
+            from={currentStage}
+            map={funcOn(this.renderStageSettings)}
+            direction="vertical"
+            style="inside_shallow_frame"
+            styleMod={{
+              minimal_width: stageSettingsWidth,
+              vertically_stretchable: true,
+              horizontally_stretchable: true,
+            }}
+          />
+        </flow>
+      </flow>
+    )
+  }
+  private renderStageSettings(stage: Stage | nil): Spec | nil {
+    if (stage && stage.assembly == this.assembly) {
+      return <StageSettings stage={stage} />
+    }
+    return nil
+  }
+  private EditingTab() {
+    return (
+      <flow direction="horizontal" styleMod={{ top_margin: -5, top_padding: newStageHeight }}>
+        <StageSelector
+          uses="list-box"
+          styleMod={{ height: stageListBoxHeight, width: stageListBoxWidth }}
+          assembly={this.assembly}
+        />
+        <frame
+          direction="vertical"
+          style="inside_shallow_frame_with_padding"
+          styleMod={{ vertically_stretchable: true }}
+        >
+          <flow direction="vertical" styleMod={{ vertical_spacing: 5 }}>
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiAssemblySettings.ResetStage]}
+              tooltip={[L_GuiAssemblySettings.ResetStageTooltip]}
+              on_gui_click={funcOn(this.resetStage)}
+            />
+
+            <line direction="horizontal" />
+            <label style="caption_label" caption={[L_GuiAssemblySettings.SetTiles]} />
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiAssemblySettings.LabTiles]}
+              on_gui_click={funcOn(this.setLabTiles)}
+            />
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiAssemblySettings.LandfillAndWater]}
+              on_gui_click={funcOn(this.setLandfillAndWater)}
+            />
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiAssemblySettings.LandfillAndLab]}
+              on_gui_click={funcOn(this.setLandfillAndLabTiles)}
+            />
+            <line direction="horizontal" />
+
+            <label style="caption_label" caption={[L_GuiAssemblySettings.Entities]} />
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiAssemblySettings.DisableAllEntities]}
+              on_gui_click={funcOn(this.disableAllEntities)}
+            />
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiAssemblySettings.EnableAllEntities]}
+              on_gui_click={funcOn(this.enableAllEntities)}
+            />
+          </flow>
+        </frame>
+      </flow>
+    )
+  }
+  private BlueprintSettingsTab() {
     const assemblyBlueprintSettings = this.assembly.assemblyBlueprintSettings
     return (
       <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
@@ -268,12 +333,6 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private renderStageSettings(stage: Stage | nil): Spec | nil {
-    if (stage && stage.assembly == this.assembly) {
-      return <StageSettings stage={stage} />
-    }
-    return nil
-  }
   private getBlueprintBook() {
     const player = game.get_player(this.playerIndex)
     if (!player || !player.clear_cursor()) return
@@ -292,10 +351,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     if (!player) return
     const fileName = exportBlueprintBookToFile(player, this.assembly)
     if (fileName) {
-      player.create_local_flying_text({
-        text: [L_Interaction.BlueprintBookExported, fileName],
-        create_at_cursor: true,
-      })
+      player.print([L_Interaction.BlueprintBookExported, fileName])
     } else {
       player.create_local_flying_text({
         text: [L_Interaction.BlueprintBookEmpty],
@@ -308,6 +364,47 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   }
   private syncGridSettings() {
     this.assembly.syncGridSettings()
+  }
+  private resetStage() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || stage.assembly != this.assembly) return
+    WorldUpdater.resetStage(stage.assembly, stage.stageNumber)
+  }
+
+  private setLabTiles() {
+    this.trySetTiles(AutoSetTilesType.LabTiles)
+  }
+
+  private setLandfillAndWater() {
+    this.trySetTiles(AutoSetTilesType.LandfillAndWater)
+  }
+
+  private setLandfillAndLabTiles() {
+    this.trySetTiles(AutoSetTilesType.LandfillAndLabTiles)
+  }
+
+  private trySetTiles(type: AutoSetTilesType) {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || stage.assembly != this.assembly) return
+    const success = stage.autoSetTiles(type)
+    if (!success) {
+      game.get_player(this.playerIndex)?.create_local_flying_text({
+        text: [L_GuiAssemblySettings.FailedToSetTiles],
+        create_at_cursor: true,
+      })
+    }
+  }
+
+  private disableAllEntities() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || stage.assembly != this.assembly) return
+    WorldUpdater.disableAllEntities(stage.assembly, stage.stageNumber)
+  }
+
+  private enableAllEntities() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || stage.assembly != this.assembly) return
+    WorldUpdater.enableAllEntities(stage.assembly, stage.stageNumber)
   }
 }
 
@@ -333,13 +430,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
         <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
           <button
             styleMod={{ horizontally_stretchable: true }}
-            caption={[L_GuiAssemblySettings.ResetStage]}
-            tooltip={[L_GuiAssemblySettings.ResetStageTooltip]}
-            on_gui_click={funcOn(this.resetStage)}
-          />
-          <line direction="horizontal" />
-          <button
-            styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.GetBlueprint]}
             tooltip={[L_GuiAssemblySettings.GetBlueprintTooltip]}
             on_gui_click={funcOn(this.getBlueprint)}
@@ -349,23 +439,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
             caption={[L_GuiAssemblySettings.EditBlueprint]}
             tooltip={[L_GuiAssemblySettings.EditBlueprintTooltip]}
             on_gui_click={funcOn(this.editBlueprint)}
-          />
-          <line direction="horizontal" />
-          <label style="caption_label" caption={[L_GuiAssemblySettings.SetTiles]} />
-          <button
-            styleMod={{ horizontally_stretchable: true }}
-            caption={[L_GuiAssemblySettings.LabTiles]}
-            on_gui_click={funcOn(this.setLabTiles)}
-          />
-          <button
-            styleMod={{ horizontally_stretchable: true }}
-            caption={[L_GuiAssemblySettings.LandfillAndWater]}
-            on_gui_click={funcOn(this.setLandfillAndWater)}
-          />
-          <button
-            styleMod={{ horizontally_stretchable: true }}
-            caption={[L_GuiAssemblySettings.LandfillAndLab]}
-            on_gui_click={funcOn(this.setLandfillAndLabTiles)}
           />
           <line direction="horizontal" />
           <VerticalPusher />
@@ -379,10 +452,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
         </flow>
       </>
     )
-  }
-
-  private resetStage() {
-    AssemblyUpdater.resetStage(this.stage.assembly, this.stage.stageNumber)
   }
 
   private getBlueprint() {
@@ -410,29 +479,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
       })
     }
   }
-
-  private setLabTiles() {
-    this.trySetTiles(AutoSetTilesType.LabTiles)
-  }
-
-  private setLandfillAndWater() {
-    this.trySetTiles(AutoSetTilesType.LandfillAndWater)
-  }
-
-  private setLandfillAndLabTiles() {
-    this.trySetTiles(AutoSetTilesType.LandfillAndLabTiles)
-  }
-
-  private trySetTiles(type: AutoSetTilesType) {
-    const success = this.stage.autoSetTiles(type)
-    if (!success) {
-      game.get_player(this.playerIndex)?.create_local_flying_text({
-        text: [L_GuiAssemblySettings.FailedToSetTiles],
-        create_at_cursor: true,
-      })
-    }
-  }
-
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
     if (!player) return

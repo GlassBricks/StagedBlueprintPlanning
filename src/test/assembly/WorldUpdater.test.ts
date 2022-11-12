@@ -418,6 +418,25 @@ test("reviveSettingsRemnant revives correct entities and calls highlighter.reviv
   assert.spy(highlighter.reviveSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
 })
 
+test("resetStage", () => {
+  const entity1 = createAssemblyEntity({ name: "transport-belt" }, Pos(0, 0), nil, 1)
+  const entity2 = createAssemblyEntity({ name: "iron-chest" }, Pos(1, 1), nil, 2)
+  assembly.content.add(entity1)
+  assembly.content.add(entity2)
+
+  const surface = assembly.getSurface(2)!
+  const chest = surface.create_entity({
+    name: "iron-chest",
+    position: Pos(0, 0),
+  })!
+
+  worldUpdater.resetStage(assembly, 2)
+
+  assert.false(chest.valid)
+  assert.not_nil(entity1.getWorldEntity(2))
+  assert.not_nil(entity2.getWorldEntity(2))
+})
+
 // this duplicates WireHandler test a bit
 // let's call it an integration test
 describe("circuit wires", () => {

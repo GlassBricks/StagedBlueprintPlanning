@@ -10,7 +10,7 @@
  */
 
 import { getAssemblyPlayerData } from "../../assembly/player-assembly-data"
-import { createUserAssembly } from "../../assembly/UserAssembly"
+import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { CustomInputs, Prototypes } from "../../constants"
 import { Events } from "../../lib"
 import { updateMoveToolInCursor } from "../../ui/stage-move-tool"
@@ -21,6 +21,7 @@ before_each(() => {
 })
 after_each(() => {
   player.cursor_stack!.clear()
+  _deleteAllAssemblies()
 })
 
 test("current selected stage starts out as current stage", () => {

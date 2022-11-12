@@ -158,22 +158,22 @@ export declare const enum L_GuiAssemblySettings {
   Title = "bp100.gui.assembly-settings.title",
   /** Rename */
   RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
+  /** Delete staged build */
+  DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
+  /** Are you sure you want to delete staged build __1__? */
+  DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
+  /** This cannot be undone. */
+  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
   /** Stages */
   Stages = "bp100.gui.assembly-settings.stages",
-  /** Rename stage */
-  RenameStage = "bp100.gui.assembly-settings.rename-stage",
   /** New stage */
   NewStage = "bp100.gui.assembly-settings.new-stage",
   /** After current */
   AfterCurrent = "bp100.gui.assembly-settings.after-current",
   /** At front */
   AtFront = "bp100.gui.assembly-settings.at-front",
-  /** Delete staged build */
-  DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
-  /** Are you sure you want to delete staged build __1__? */
-  DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
-  /** This action cannot be undone. */
-  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
+  /** Rename stage */
+  RenameStage = "bp100.gui.assembly-settings.rename-stage",
   /** Delete stage */
   DeleteStage = "bp100.gui.assembly-settings.delete-stage",
   /** Are you sure you want to delete stage __1__? */
@@ -194,16 +194,6 @@ export declare const enum L_GuiAssemblySettings {
   EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
   /** Edits the blueprint of the current stage.\nChanges (icons, grid settings, etc.) [font=default-bold]will[/font] be saved. */
   EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
-  /** Set tiles */
-  SetTiles = "bp100.gui.assembly-settings.set-tiles",
-  /** Lab tiles */
-  LabTiles = "bp100.gui.assembly-settings.lab-tiles",
-  /** Landfill and water */
-  LandfillAndWater = "bp100.gui.assembly-settings.landfill-and-water",
-  /** Landfill and lab tiles */
-  LandfillAndLab = "bp100.gui.assembly-settings.landfill-and-lab",
-  /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
-  FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
   /** Blueprints */
   Blueprints = "bp100.gui.assembly-settings.blueprints",
   /** Blueprint settings [img=info] */
@@ -242,14 +232,32 @@ export declare const enum L_GuiAssemblySettings {
   ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
   /** Sync grid settings [img=info] */
   SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
-  /** Copies the grid settings of the [font=default-bold]last[/font] stage's blueprint to all other stages. */
+  /** Copies the grid settings from the [font=default-bold]last[/font] stage to all other stages. */
   SyncGridSettingsDescription = "bp100.gui.assembly-settings.sync-grid-settings-description",
   /** Make blueprint book */
   GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
   /** Export book to file [img=info] */
   ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
-  /** Makes a blueprint book, and exports the blueprint string to a file (located in the <user-data-directory>/script-output folder). */
+  /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
   ExportBlueprintBookStringToFileTooltip = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file-tooltip",
+  /** Editing */
+  Editing = "bp100.gui.assembly-settings.Editing",
+  /** Set tiles */
+  SetTiles = "bp100.gui.assembly-settings.set-tiles",
+  /** Lab tiles */
+  LabTiles = "bp100.gui.assembly-settings.lab-tiles",
+  /** Landfill and water */
+  LandfillAndWater = "bp100.gui.assembly-settings.landfill-and-water",
+  /** Landfill and lab tiles */
+  LandfillAndLab = "bp100.gui.assembly-settings.landfill-and-lab",
+  /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
+  FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
+  /** Entities */
+  Entities = "bp100.gui.assembly-settings.entities",
+  /** Disable all entities */
+  DisableAllEntities = "bp100.gui.assembly-settings.disable-all-entities",
+  /** Enable all entities */
+  EnableAllEntities = "bp100.gui.assembly-settings.enable-all-entities",
 }
 export declare const enum L_GuiEntityInfo {
   /** Stage info */

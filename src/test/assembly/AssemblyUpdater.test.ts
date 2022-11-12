@@ -967,23 +967,6 @@ describe("rolling stock", () => {
   })
 })
 
-test("resetStage", () => {
-  const entity1 = createAssemblyEntity({ name: "test" }, Pos(0, 0), nil, 1)
-  const entity2 = createAssemblyEntity({ name: "test2" }, Pos(0, 0), nil, 2)
-  assembly.content.add(entity1)
-  assembly.content.add(entity2)
-
-  const surface = assembly.getSurface(2)!
-  assemblyUpdater.resetStage(assembly, 2)
-
-  assert.spy(worldUpdater.clearStage).called_with(match.ref(surface))
-  expectedWuCalls++
-
-  assertRefreshCalled(entity1, 2)
-  assertRefreshCalled(entity2, 2)
-  assertNEntities(2)
-})
-
 describe("trains", () => {
   let entities: LuaEntity[]
   let assemblyEntities: RollingStockAssemblyEntity[]
