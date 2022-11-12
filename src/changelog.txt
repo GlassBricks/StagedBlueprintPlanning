@@ -1,7 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.0
 Date: ????
-  Changes:
+  Features:
+    - Added feature to export blueprint book to a file (in script-output).
+    - Added feature to enable/disable all entities in a stage.
+  Bugfixes:
+    - Fixed tiles in blueprints being offset when grid position is set.
+    - Fixed auto-landfill option not doing anything
+  GUI:
+    - Reorganized staged build settings gui.
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0
 Date: 2022-11-09
