@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.0
-Date: ????
+Date: 2022-11-12
   Features:
     - Added feature to export blueprint book to a file (in script-output).
     - Added feature to enable/disable all entities in a stage.
