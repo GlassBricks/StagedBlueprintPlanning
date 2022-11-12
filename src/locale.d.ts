@@ -138,6 +138,8 @@ export declare const enum L_Interaction {
   CannotMoveToSameStage = "bp100.interaction.cannot-move-to-same-stage",
   /** WARNING: The filtered stage move tool must be used with instant-deconstruction [font=default-large-bold]disabled[/font]. Otherwise, the tool will not work properly (it will act like a deconstruction planner). */
   FilteredStageMoveToolWarning = "bp100.interaction.filtered-stage-move-tool-warning",
+  /** Blueprint book exported to __1__ */
+  BlueprintBookExported = "bp100.interaction.blueprint-book-exported",
 }
 export declare const enum L_GuiCurrentAssembly {
   /** (Not in a staged build) */
@@ -204,6 +206,10 @@ export declare const enum L_GuiAssemblySettings {
   FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
   /** Blueprints */
   Blueprints = "bp100.gui.assembly-settings.blueprints",
+  /** Blueprint settings */
+  BlueprintSettings = "bp100.gui.assembly-settings.blueprint-settings",
+  /** Blueprint book settings */
+  BlueprintBookSettings = "bp100.gui.assembly-settings.blueprint-book-settings",
   /** Auto-landfill [img=info] */
   AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
   /** Automatically set landfill tiles before taking a blueprint. */
@@ -240,6 +246,10 @@ export declare const enum L_GuiAssemblySettings {
   GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
   /** You can configure individual blueprints in the stage settings. */
   GetBlueprintBookTooltip = "bp100.gui.assembly-settings.get-blueprint-book-tooltip",
+  /** Export blueprint string to file */
+  ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
+  /** Makes a blueprint book, and exports the blueprint string to a file (located in the <user-data-directory>/script-output folder). */
+  ExportBlueprintBookStringToFileTooltip = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file-tooltip",
 }
 export declare const enum L_GuiEntityInfo {
   /** Stage info */

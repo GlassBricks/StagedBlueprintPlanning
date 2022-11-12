@@ -336,6 +336,20 @@ class StageImpl implements Stage {
   }
 }
 
+export function exportBlueprintBookToFile(player: LuaPlayer, assembly: UserAssembly): string | nil {
+  const inventory = game.create_inventory(1)
+  const stack = inventory[0]!
+  if (!assembly.makeBlueprintBook(stack)) {
+    inventory.destroy()
+    return nil
+  }
+  const data = stack.export_stack()
+  const filename = `staged-builds/${assembly.name.get() ?? "Unnamed-Assembly-" + assembly.id}.txt`
+  game.write_file(filename, data, false, player.index)
+  inventory.destroy()
+  return filename
+}
+
 export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
   return global.surfaceIndexToStage.get(surfaceIndex)
 }

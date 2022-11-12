@@ -12,6 +12,7 @@
 import { AutoSetTilesType, LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { editBlueprintFilters } from "../assembly/edit-blueprint-settings"
+import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
@@ -207,6 +208,12 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               tooltip={[L_GuiAssemblySettings.GetBlueprintBookTooltip]}
               on_gui_click={funcOn(this.getBlueprintBook)}
             />
+
+            <button
+              caption={[L_GuiAssemblySettings.ExportBlueprintBookStringToFile]}
+              tooltip={[L_GuiAssemblySettings.ExportBlueprintBookStringToFileTooltip]}
+              on_gui_click={funcOn(this.exportBlueprintBookStringToFile)}
+            />
           </flow>
         </tabbed-pane>
       </frame>
@@ -273,6 +280,22 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     if (!cursor || !player.is_cursor_empty()) return
     if (!this.assembly.makeBlueprintBook(cursor)) {
       cursor.clear()
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintBookEmpty],
+        create_at_cursor: true,
+      })
+    }
+  }
+  private exportBlueprintBookStringToFile() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    const fileName = exportBlueprintBookToFile(player, this.assembly)
+    if (fileName) {
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintBookExported, fileName],
+        create_at_cursor: true,
+      })
+    } else {
       player.create_local_flying_text({
         text: [L_Interaction.BlueprintBookEmpty],
         create_at_cursor: true,

@@ -12,7 +12,6 @@
 import { getInfinityEntityNames } from "../entity/entity-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { debugPrint } from "../lib/test/misc"
 
 export interface BlueprintSettings {
   name: string
@@ -59,7 +58,6 @@ function adjustEntityPosition(
     if (tiles && tiles.length > 0) {
       for (const i of $range(1, tiles.length)) {
         const pos = tiles[i - 1].position as Mutable<Position>
-        debugPrint(pos)
         pos.x += x
         pos.y += y
       }

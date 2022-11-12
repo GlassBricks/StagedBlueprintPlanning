@@ -41,7 +41,7 @@ export interface UserAssembly extends Assembly {
 
   // note: old name preserved to aid in migrations
   readonly assemblyBlueprintSettings: AssemblyBlueprintSettings
-  makeBlueprintBook(stackToSet: LuaItemStack): boolean
+  makeBlueprintBook(stack: LuaItemStack): boolean
 
   readonly valid: boolean
   delete(): void
