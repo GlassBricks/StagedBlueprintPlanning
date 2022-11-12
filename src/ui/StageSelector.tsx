@@ -11,7 +11,7 @@
 
 import { LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { StageNumber } from "../entity/AssemblyEntity"
-import { assertNever, bind, funcOn, MutableState, RegisterClass, Subscription } from "../lib"
+import { assertNever, bind, ibind, MutableState, RegisterClass, Subscription } from "../lib"
 import { Component, ElemProps, FactorioJsx, Spec, Tracker } from "../lib/factoriojsx"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 
@@ -41,7 +41,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
       <props.uses
         {...props}
         onCreate={(e) => (this.element = e)}
-        on_gui_selection_state_changed={funcOn(this.onSelectedIndexChanged)}
+        on_gui_selection_state_changed={ibind(this.onSelectedIndexChanged)}
       />
     )
   }
@@ -54,11 +54,11 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     const stages = this.assembly.getAllStages()
     this.element.items = stages.map((l) => l.name.get())
     for (const stage of stages) {
-      stage.name.subscribe(subscription, bind(funcOn(this.setDropDownItem), stage.stageNumber))
+      stage.name.subscribe(subscription, bind(ibind(this.setDropDownItem), stage.stageNumber))
     }
-    playerCurrentStage(this.playerIndex).subscribeAndFire(subscription, funcOn(this.playerStageChanged))
+    playerCurrentStage(this.playerIndex).subscribeAndFire(subscription, ibind(this.playerStageChanged))
 
-    this.assembly.localEvents.subscribe(subscription, funcOn(this.onAssemblyEvent))
+    this.assembly.localEvents.subscribe(subscription, ibind(this.onAssemblyEvent))
   }
 
   private onAssemblyEvent(event: LocalAssemblyEvent) {

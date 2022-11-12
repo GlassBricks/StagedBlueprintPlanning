@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Func, funcOn, RegisterClass } from "../../index"
+import { Func, ibind, RegisterClass } from "../../index"
 import { ObservableSet, ObservableSetChange } from "../../observable"
 import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
 
@@ -46,7 +46,7 @@ export class EnumerateSet<T extends AnyNotNil, U extends GuiElementType> extends
           }
         }
       }
-      set.subscribe(tracker.getSubscription(), funcOn(this.onChange))
+      set.subscribe(tracker.getSubscription(), ibind(this.onChange))
     })
     return <props.uses {...(props as any)} />
   }

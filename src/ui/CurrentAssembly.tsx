@@ -12,7 +12,7 @@
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { getAllAssemblies } from "../assembly/migrations"
 import { AssemblyEvents } from "../assembly/UserAssembly"
-import { bind, funcOn, funcRef, MaybeState, onPlayerInit, RegisterClass, registerFunctions, Subscription } from "../lib"
+import { bind, funcRef, ibind, MaybeState, onPlayerInit, RegisterClass, registerFunctions, Subscription } from "../lib"
 import { Component, destroy, EmptyProps, FactorioJsx, render, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import { DotDotDotButton, Fn, HorizontalPusher, HorizontalSpacer, TitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
@@ -57,7 +57,7 @@ class CurrentAssembly extends Component {
             <ExternalLinkButton
               tooltip={[L_GuiCurrentAssembly.OpenAssemblySettings]}
               enabled={currentStage.truthy()}
-              on_gui_click={funcOn(this.openAssemblySettings)}
+              on_gui_click={ibind(this.openAssemblySettings)}
             />
             <DotDotDotButton
               tooltip={[L_GuiCurrentAssembly.ShowAllAssemblies]}
@@ -132,9 +132,9 @@ class AllAssemblies extends Component {
             this.listBox = e
             this.setup(subscription)
           }}
-          on_gui_selection_state_changed={funcOn(this.assemblySelected)}
+          on_gui_selection_state_changed={ibind(this.assemblySelected)}
         />
-        <button caption={[L_GuiAllAssemblies.NewAssembly]} on_gui_click={funcOn(this.newAssembly)} />
+        <button caption={[L_GuiAllAssemblies.NewAssembly]} on_gui_click={ibind(this.newAssembly)} />
       </frame>
     )
   }

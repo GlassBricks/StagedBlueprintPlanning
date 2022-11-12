@@ -61,7 +61,6 @@ export type AnyFunction = Function
 export type ContextualFun = (this: any, ...args: any) => any
 export type SelflessFun = (this: void, ...args: any) => any
 
-// export type RegisteredFunc = { _registeredBrand: true }
 export interface Func<F extends ContextualFun = ContextualFun> {
   invoke: F extends (...args: infer A) => infer R ? (this: this, ...args: A) => R : never
 }
@@ -234,8 +233,13 @@ class NoSelfKeyFunc implements Func {
   }
 }
 
-export const funcOn: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
+/**
+ * Instance bind. The single parameter passed must be a property/element access call, and a registered func that calls the instance/key will be returned.
+ *
+ * E.g. ibind(this.foo) stores (this, "foo") and returns a func that calls this.foo().
+ */
+export const ibind: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
   new KeyFunc(obj, key)) as any
 
-export const noSelfFuncOn: AccessSplit<<F extends SelflessFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
+export const ibindNoSelf: AccessSplit<<F extends SelflessFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
   new NoSelfKeyFunc(obj, key)) as any

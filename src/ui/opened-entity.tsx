@@ -16,7 +16,7 @@ import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { StageDiff } from "../entity/stage-diff"
-import { bind, funcOn, ProtectedEvents, RegisterClass } from "../lib"
+import { bind, ibind, ProtectedEvents, RegisterClass } from "../lib"
 import { Component, destroy, ElemProps, FactorioJsx, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
@@ -89,7 +89,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
         <TitleBar>
           <label style="frame_title" caption={[L_GuiEntityInfo.Title]} />
           <DraggableSpace />
-          <RefreshButton on_gui_click={funcOn(this.refresh)} />
+          <RefreshButton on_gui_click={ibind(this.refresh)} />
         </TitleBar>
         <frame style="inside_shallow_frame_with_padding" direction="vertical">
           {!isRollingStock && (
@@ -112,19 +112,19 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
           <button
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiEntityInfo.MoveToThisStage]}
-            on_gui_click={funcOn(this.moveToThisStage)}
+            on_gui_click={ibind(this.moveToThisStage)}
             enabled={firstStageNum != currentStageNum}
           />
           {isRollingStock && [
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiEntityInfo.ResetTrain]}
-              on_gui_click={funcOn(this.resetTrain)}
+              on_gui_click={ibind(this.resetTrain)}
             />,
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiEntityInfo.SetTrainLocationHere]}
-              on_gui_click={funcOn(this.setTrainLocationHere)}
+              on_gui_click={ibind(this.setTrainLocationHere)}
             />,
           ]}
           {currentStageDiff && <line direction="horizontal" style="control_behavior_window_line" />}
@@ -175,13 +175,13 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
           sprite="utility/reset"
           tooltip={[L_GuiEntityInfo.ResetProp]}
           tags={{ prop }}
-          on_gui_click={funcOn(this.resetProp)}
+          on_gui_click={ibind(this.resetProp)}
         />
         <SmallToolButton
           sprite="utility/speed_down"
           tooltip={[L_GuiEntityInfo.ApplyToLowerStage, nextLowerStageName]}
           tags={{ prop }}
-          on_gui_click={funcOn(this.applyToLowerStage)}
+          on_gui_click={ibind(this.applyToLowerStage)}
         />
       </flow>
     )

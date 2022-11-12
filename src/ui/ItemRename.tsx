@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { funcOn, MutableState, RegisterClass, State, state } from "../lib"
+import { ibind, MutableState, RegisterClass, State, state } from "../lib"
 import { Component, FactorioJsx, Spec } from "../lib/factoriojsx"
 import { Fn, RenameButton } from "../lib/factoriojsx/components"
 
@@ -35,7 +35,7 @@ export class ItemRename extends Component<ItemRenameProps> {
           horizontal_spacing: 5,
         }}
       >
-        <Fn uses="flow" from={this.isRenaming} map={funcOn(this.nameDisplay)} />
+        <Fn uses="flow" from={this.isRenaming} map={ibind(this.nameDisplay)} />
         <RenameButton tooltip={props.renameTooltip} on_gui_click={this.isRenaming.toggleFn()} />
       </flow>
     )

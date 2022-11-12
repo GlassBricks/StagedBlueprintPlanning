@@ -15,7 +15,7 @@ import { AutoSetTilesType } from "../assembly/tiles"
 import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
-import { funcOn, funcRef, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
+import { funcRef, ibind, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
 import {
   Component,
   destroy,
@@ -74,9 +74,9 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     this.playerIndex = tracker.playerIndex
 
     global.players[this.playerIndex].currentShownAssembly = this.assembly
-    tracker.getSubscription().add(funcOn(this.onDestroyed))
+    tracker.getSubscription().add(ibind(this.onDestroyed))
 
-    this.assembly.localEvents.subscribe(tracker.getSubscription(), funcOn(this.onAssemblyEvent))
+    this.assembly.localEvents.subscribe(tracker.getSubscription(), ibind(this.onAssemblyEvent))
     return (
       <frame style="inside_shallow_frame" direction="vertical">
         <frame style="subheader_frame" direction="horizontal">
@@ -86,7 +86,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             renameTooltip={[L_GuiAssemblySettings.RenameAssembly]}
           />
           <HorizontalPusher />
-          <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={funcOn(this.beginDelete)} />
+          <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={ibind(this.beginDelete)} />
         </frame>
         <tabbed-pane style="tabbed_pane_with_no_side_padding" selected_tab_index={1}>
           <tab caption={[L_GuiAssemblySettings.Stages]} />
@@ -117,12 +117,12 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           <button
             styleMod={{ width: insertButtonWidth }}
             caption={[L_GuiAssemblySettings.AfterCurrent]}
-            on_gui_click={funcOn(this.newStageAfter)}
+            on_gui_click={ibind(this.newStageAfter)}
           />
           <button
             styleMod={{ width: insertButtonWidth }}
             caption={[L_GuiAssemblySettings.AtFront]}
-            on_gui_click={funcOn(this.newStageAtFront)}
+            on_gui_click={ibind(this.newStageAtFront)}
           />
         </flow>
         <flow direction="horizontal" styleMod={{ padding: 0 }}>
@@ -134,7 +134,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           <Fn
             uses="frame"
             from={currentStage}
-            map={funcOn(this.renderStageSettings)}
+            map={ibind(this.renderStageSettings)}
             direction="vertical"
             style="inside_shallow_frame"
             styleMod={{
@@ -171,7 +171,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiAssemblySettings.ResetStage]}
               tooltip={[L_GuiAssemblySettings.ResetStageTooltip]}
-              on_gui_click={funcOn(this.resetStage)}
+              on_gui_click={ibind(this.resetStage)}
             />
 
             <line direction="horizontal" />
@@ -179,17 +179,17 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiAssemblySettings.LabTiles]}
-              on_gui_click={funcOn(this.setLabTiles)}
+              on_gui_click={ibind(this.setLabTiles)}
             />
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiAssemblySettings.LandfillAndWater]}
-              on_gui_click={funcOn(this.setLandfillAndWater)}
+              on_gui_click={ibind(this.setLandfillAndWater)}
             />
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiAssemblySettings.LandfillAndLab]}
-              on_gui_click={funcOn(this.setLandfillAndLabTiles)}
+              on_gui_click={ibind(this.setLandfillAndLabTiles)}
             />
             <line direction="horizontal" />
 
@@ -197,12 +197,12 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiAssemblySettings.DisableAllEntities]}
-              on_gui_click={funcOn(this.disableAllEntities)}
+              on_gui_click={ibind(this.disableAllEntities)}
             />
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiAssemblySettings.EnableAllEntities]}
-              on_gui_click={funcOn(this.enableAllEntities)}
+              on_gui_click={ibind(this.enableAllEntities)}
             />
           </flow>
         </frame>
@@ -244,13 +244,13 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
         <button
           caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
           tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
-          on_gui_click={funcOn(this.editBlueprintFilters)}
+          on_gui_click={ibind(this.editBlueprintFilters)}
           styleMod={{ width: blueprintSettingsButtonWidth }}
         />
         <button
           caption={[L_GuiAssemblySettings.SyncGridSettings]}
           tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
-          on_gui_click={funcOn(this.syncGridSettings)}
+          on_gui_click={ibind(this.syncGridSettings)}
           styleMod={{ width: blueprintSettingsButtonWidth }}
         />
 
@@ -274,13 +274,13 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
         />
         <button
           caption={[L_GuiAssemblySettings.GetBlueprintBook]}
-          on_gui_click={funcOn(this.getBlueprintBook)}
+          on_gui_click={ibind(this.getBlueprintBook)}
           styleMod={{ width: blueprintSettingsButtonWidth }}
         />
         <button
           caption={[L_GuiAssemblySettings.ExportBlueprintBookStringToFile]}
           tooltip={[L_GuiAssemblySettings.ExportBlueprintBookStringToFileTooltip]}
-          on_gui_click={funcOn(this.exportBlueprintBookStringToFile)}
+          on_gui_click={ibind(this.exportBlueprintBookStringToFile)}
           styleMod={{ width: blueprintSettingsButtonWidth }}
         />
       </flow>
@@ -308,7 +308,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
       redConfirm: true,
       backCaption: ["gui.cancel"],
       confirmCaption: ["gui.delete"],
-      onConfirm: funcOn(this.deleteAssembly),
+      onConfirm: ibind(this.deleteAssembly),
     })
   }
 
@@ -432,13 +432,13 @@ export class StageSettings extends Component<{ stage: Stage }> {
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.GetBlueprint]}
             tooltip={[L_GuiAssemblySettings.GetBlueprintTooltip]}
-            on_gui_click={funcOn(this.getBlueprint)}
+            on_gui_click={ibind(this.getBlueprint)}
           />
           <button
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.EditBlueprint]}
             tooltip={[L_GuiAssemblySettings.EditBlueprintTooltip]}
-            on_gui_click={funcOn(this.editBlueprint)}
+            on_gui_click={ibind(this.editBlueprint)}
           />
           <line direction="horizontal" />
           <VerticalPusher />
@@ -447,7 +447,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiAssemblySettings.DeleteStage]}
             enabled={this.stage.assembly.maxStage() > 1}
-            on_gui_click={funcOn(this.beginDelete)}
+            on_gui_click={ibind(this.beginDelete)}
           />
         </flow>
       </>
@@ -498,7 +498,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
       redConfirm: true,
       backCaption: ["gui.cancel"],
       confirmCaption: ["gui.delete"],
-      onConfirm: funcOn(this.deleteStage),
+      onConfirm: ibind(this.deleteStage),
     })
   }
   private getStageToMerge() {

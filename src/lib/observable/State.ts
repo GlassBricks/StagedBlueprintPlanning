@@ -10,7 +10,7 @@
  */
 
 import { isEmpty } from "../_util"
-import { bind, Callback, cfuncRef, Func, funcOn, funcRef, RegisterClass } from "../references"
+import { bind, Callback, cfuncRef, Func, funcRef, ibind, RegisterClass } from "../references"
 import { MultiObservable, MultiObserver, ObserverList } from "./Observable"
 import { Subscription } from "./Subscription"
 
@@ -170,7 +170,7 @@ class MappedState<T, U> extends State<U> {
   private subscribeToSource() {
     const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(funcOn(this.sourceListener))
+    this.sourceSubscription = source.subscribeIndependently(ibind(this.sourceListener))
     this.curValue = mapper.invoke(source.get())
   }
 
@@ -216,14 +216,14 @@ class FlatMappedState<T, U> extends State<U> {
   private subscribeToSource() {
     const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(funcOn(this.sourceListener))
+    this.sourceSubscription = source.subscribeIndependently(ibind(this.sourceListener))
     this.receiveNewMappedValue(mapper.invoke(source.get()))
   }
 
   private receiveNewMappedValue(newValue: MaybeState<U>) {
     this.nestedSubscription?.close()
     if (newValue instanceof State) {
-      this.nestedSubscription = newValue.subscribeIndependently(funcOn(this.nestedListener))
+      this.nestedSubscription = newValue.subscribeIndependently(ibind(this.nestedListener))
       this.curValue = newValue.get()
     } else {
       this.nestedSubscription = nil

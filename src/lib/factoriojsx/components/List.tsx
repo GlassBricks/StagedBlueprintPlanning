@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { assertNever, Func, funcOn, RegisterClass } from "../../index"
+import { assertNever, Func, ibind, RegisterClass } from "../../index"
 import { ObservableList, ObservableListChange } from "../../observable"
 import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
 
@@ -45,7 +45,7 @@ export class List<T extends AnyNotNil, U extends GuiElementType> extends Compone
           }
         }
       }
-      of.subscribe(tracker.getSubscription(), funcOn(this.onChange))
+      of.subscribe(tracker.getSubscription(), ibind(this.onChange))
     })
 
     return <props.uses {...(props as any)} />

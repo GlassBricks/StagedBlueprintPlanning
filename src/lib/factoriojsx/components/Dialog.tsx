@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Func, funcOn, RegisterClass } from "../../references"
+import { Func, ibind, RegisterClass } from "../../references"
 import { destroy, FactorioJsx, GuiEvent, renderOpened } from "../index"
 import { Component, Spec } from "../spec"
 
@@ -44,14 +44,14 @@ export class Dialog extends Component<DialogueProps> {
         caption={props.title}
         direction={"vertical"}
         onCreate={(e) => (this.element = e)}
-        on_gui_closed={funcOn(this.onClose)}
+        on_gui_closed={ibind(this.onClose)}
       >
         {props.message.map((line) => (
           <label caption={line} />
         ))}
         <flow style="dialog_buttons_horizontal_flow">
           {props.backCaption != nil && (
-            <button style="back_button" caption={props.backCaption} on_gui_click={funcOn(this.onBack)} />
+            <button style="back_button" caption={props.backCaption} on_gui_click={ibind(this.onBack)} />
           )}
           <empty-widget
             style="draggable_space"
@@ -62,7 +62,7 @@ export class Dialog extends Component<DialogueProps> {
             <button
               style={props.redConfirm ? "red_confirm_button" : "confirm_button"}
               caption={props.confirmCaption}
-              on_gui_click={funcOn(this.onConfirm)}
+              on_gui_click={ibind(this.onConfirm)}
             />
           )}
         </flow>
