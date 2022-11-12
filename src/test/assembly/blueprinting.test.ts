@@ -107,6 +107,24 @@ test("can edit blueprint filters", () => {
   assert.equal(entity_filter_mode.blacklist, transform.entityFilterMode.get())
 })
 
+test("can clear blueprint filters", () => {
+  const transform = makeSimpleBlueprintTransformations(
+    newLuaSet("iron-chest", "steel-chest"),
+    entity_filter_mode.whitelist,
+  )
+  const stack = editBlueprintFilters(player, transform)!
+  assert.not_nil(stack)
+  assert.true(stack.valid_for_read)
+  assert.equal(Prototypes.BlueprintFilters, stack.name)
+
+  stack.entity_filters = []
+  stack.entity_filter_mode = entity_filter_mode.whitelist
+
+  player.opened = nil
+  assert.nil(transform.entityFilters.get())
+  assert.equal(entity_filter_mode.whitelist, transform.entityFilterMode.get())
+})
+
 test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (mode) => {
   const settings: BlueprintSettings = {
     name: "test",

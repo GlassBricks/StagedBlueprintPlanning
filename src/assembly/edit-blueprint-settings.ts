@@ -10,7 +10,7 @@
  */
 
 import { Prototypes } from "../constants"
-import { Events } from "../lib"
+import { Events, isEmpty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Interaction } from "../locale"
@@ -121,7 +121,7 @@ function updateBlueprintSettings(blueprint: LuaItemStack, settings: BlueprintSet
 }
 function updateBlueprintFilters(stack: LuaItemStack, transform: BlueprintTransformations): void {
   const filters = stack.entity_filters
-  if (filters != nil) {
+  if (filters != nil && filters[0] != nil) {
     const result = new LuaSet<string>()
     for (const filter of filters) result.add(filter)
     transform.entityFilters.set(result)
@@ -163,3 +163,11 @@ Migrations.to("0.8.0", () => {
     ;(data as any).lastOpenedBlueprint = nil
   }
 })
+
+export function _migrate0131(transform: BlueprintTransformations): void {
+  const filters = transform.entityFilters.get()
+  if (filters && isEmpty(filters)) {
+    transform.entityFilters.set(nil)
+    transform.entityFilterMode.set(nil)
+  }
+}

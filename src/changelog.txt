@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed crash on empty blueprint filters (no set filters now means no filtering, even in whitelist mode).
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.0
 Date: 2022-11-12

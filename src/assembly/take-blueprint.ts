@@ -10,7 +10,7 @@
  */
 
 import { getInfinityEntityNames } from "../entity/entity-info"
-import { isEmpty, Mutable, MutableState, state } from "../lib"
+import { isEmpty, Mutable, MutableState, nilIfEmpty, state } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
@@ -149,7 +149,8 @@ export function takeBlueprintWithSettings(
   if (isEmpty(bpMapping)) return false
 
   const replaceInfinityWithCombinators = transform.replaceInfinityWithCombinators.get()
-  const entityFilters = transform.entityFilters.get()
+  let entityFilters: LuaSet<string> | nil = transform.entityFilters.get()
+  entityFilters = entityFilters && nilIfEmpty(entityFilters)
 
   if (settings.snapToGrid != nil || entityFilters || replaceInfinityWithCombinators) {
     const entities = stack.get_blueprint_entities()!
@@ -160,6 +161,10 @@ export function takeBlueprintWithSettings(
 
     if (entityFilters) {
       filterEntities(entities, entityFilters, transform.entityFilterMode.get())
+    }
+    if (isEmpty(entities)) {
+      stack.clear_blueprint()
+      return false
     }
 
     if (entityFilters || replaceInfinityWithCombinators || shouldAdjustPosition) {

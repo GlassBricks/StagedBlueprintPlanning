@@ -13,6 +13,7 @@ import { _migrate031, _migrate060, StageNumber } from "../entity/AssemblyEntity"
 import { migrateMap030, migrateMap060 } from "../entity/EntityMap"
 import { Migrations } from "../lib/migration"
 import { AssemblyId, UserAssembly } from "./AssemblyDef"
+import { _migrate0131 } from "./edit-blueprint-settings"
 
 declare const global: {
   assemblies: LuaMap<AssemblyId, UserAssembly>
@@ -57,5 +58,10 @@ Migrations.to("0.8.0", () => {
       }
       delete (entity as unknown as OldAssemblyEntity).oldStage
     }
+  }
+})
+Migrations.to("0.13.0", () => {
+  for (const [, assembly] of getAllAssemblies()) {
+    _migrate0131(assembly.assemblyBlueprintSettings)
   }
 })
