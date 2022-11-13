@@ -3,6 +3,7 @@ Version: 0.14.3
 Date: ????
   Bugfixes:
     - Fix rotating loader entities
+    - Fix migration of previews for rolling stock from previous versions
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.2
 Date: 2022-11-13

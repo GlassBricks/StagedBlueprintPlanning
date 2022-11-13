@@ -12,6 +12,7 @@
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
 import { getAllAssemblies } from "../assembly/migrations"
+import { WorldUpdater } from "../assembly/WorldUpdater"
 import { rollingStockTypes } from "../entity/entity-info"
 import { WireHandler } from "../entity/WireHandler"
 import { Events } from "../lib"
@@ -85,5 +86,16 @@ Migrations.to("0.4.0", () => {
     game.print(
       "100% Blueprint Planning: Train entities are supported since v0.4.0. Trains were found and added to your assemblies.",
     )
+  }
+})
+
+Migrations.to("0.14.3", () => {
+  for (const [, assembly] of getAllAssemblies()) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      // re-generate previews, if not existing
+      if (entity.isRollingStock()) {
+        WorldUpdater.updateWorldEntities(assembly, entity, 1)
+      }
+    }
   }
 })
