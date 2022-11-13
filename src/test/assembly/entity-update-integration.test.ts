@@ -575,23 +575,24 @@ test("connect and disconnect circuit wires", () => {
 function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHasError: boolean) {
   let hasError = false
   for (const stage of $range(1, assembly.maxStage())) {
-    const worldEntity = entity.getWorldOrPreviewEntity(stage)
-    if (stage == entity.firstStage) {
-      assert.not_nil(worldEntity)
-      if (isPreviewEntity(worldEntity!)) {
-        hasError = true
-        assert.equal(Prototypes.PreviewEntityPrefix + entity.firstValue.name, worldEntity!.name)
-        assert.not_nil(entity.getExtraEntity("errorOutline", entity.firstStage))
-        assert.equal(entity.getApparentDirection(), worldEntity!.direction, "direction")
-      } else {
-        assert.equal(entity.firstValue.name, worldEntity!.name)
-        assert.nil(entity.getExtraEntity("errorOutline", entity.firstStage))
-        assert.equal(entity.firstValue.orientation, worldEntity!.orientation)
-      }
-      assert.same(entity.position, worldEntity!.position)
-    } else {
-      assert.nil(worldEntity, "train should only be present in first stage")
+    const worldEntity = entity.getWorldOrPreviewEntity(stage)!
+    if (stage != entity.firstStage) {
+      assert.not_nil(worldEntity, "preview entity not found")
+      assert.true(isPreviewEntity(worldEntity), "Should only have preview entities in other stages")
       assert.nil(entity.getExtraEntity("errorOutline", stage))
+    } else {
+      assert.not_nil(worldEntity)
+      if (isPreviewEntity(worldEntity)) {
+        hasError = true
+        assert.equal(Prototypes.PreviewEntityPrefix + entity.firstValue.name, worldEntity.name)
+        assert.not_nil(entity.getExtraEntity("errorOutline", entity.firstStage))
+        assert.equal(entity.getApparentDirection(), worldEntity.direction, "direction")
+      } else {
+        assert.equal(entity.firstValue.name, worldEntity.name)
+        assert.nil(entity.getExtraEntity("errorOutline", entity.firstStage))
+        assert.equal(entity.firstValue.orientation, worldEntity.orientation)
+      }
+      assert.same(entity.position, worldEntity.position)
     }
   }
   assert.equal(expectedHasError, hasError, "hasError")

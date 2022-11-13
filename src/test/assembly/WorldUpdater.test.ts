@@ -18,6 +18,7 @@ import { EntityHandler } from "../../entity/EntityHandler"
 import { forceDollyEntity } from "../../entity/picker-dollies"
 import { WireHandler, WireUpdater } from "../../entity/WireHandler"
 import { Pos } from "../../lib/geometry"
+import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { makeMocked, makeStubbed } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
@@ -203,13 +204,19 @@ describe("updateWorldEntities", () => {
     assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, assembly.maxStage())
   })
 
-  test("entity preview not created if is rolling stock", () => {
-    entity.applyUpgradeAtStage(1, "cargo-wagon")
-    entity.moveToStage(2)
+  test("entity preview in all other stages if is rolling stock", () => {
+    const rollingStock = createRollingStock(surfaces[2 - 1])
+    const [value, dir] = EntityHandler.saveEntity(rollingStock)
+    entity = createAssemblyEntity(value, rollingStock.position, dir, 2) as any
+    rollingStock.destroy()
+
     worldUpdater.updateWorldEntities(assembly, entity, 1)
-    assertNothingPresent(1)
-    assertHasPreview(2) // no rail, can't create
-    assertNothingPresent(3)
+
+    assertHasPreview(1)
+    const worldEntity = assert.not_nil(findMainEntity(2))
+    const [foundValue] = EntityHandler.saveEntity(worldEntity)
+    assert.same(value, foundValue)
+    assertHasPreview(3)
   })
 })
 
