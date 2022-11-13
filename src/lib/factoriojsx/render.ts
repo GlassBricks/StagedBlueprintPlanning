@@ -11,6 +11,7 @@
 
 import { isEmpty } from "../_util"
 import { Events } from "../Events"
+import { Migrations } from "../migration"
 import { isMutableState, MutableState, Observer, State, Subscription } from "../observable"
 import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
@@ -25,21 +26,31 @@ interface ElementInstance {
   readonly element: BaseGuiElement
   readonly subscription: Subscription | nil
   readonly events: PRecord<GuiEventName, Func<any>>
+  isUpdatingState?: true
 }
 
+function setStateFunc(state: MutableState<unknown>, key: string, event: GuiEvent) {
+  const instance = getInstance(event.element!)!
+  instance.isUpdatingState = true
+  try {
+    state.set((event as any)[key] || event.element![key])
+  } finally {
+    instance.isUpdatingState = nil
+  }
+}
 function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, value: any) {
-  if (!elem.valid) {
-    if (elem.object_name == "LuaGuiElement") destroy(elem)
-    return
+  if (!elem.valid) return
+  if (elem.object_name == "LuaGuiElement") {
+    const instance = getInstance(elem)
+    if (instance && instance.isUpdatingState) return
   }
   ;(elem as any)[key] = value
 }
 
 function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
-  if (!elem.valid) {
-    destroy(elem)
-    return
-  }
+  if (!elem.valid) return
+  const instance = getInstance(elem)
+  if (instance && instance.isUpdatingState) return
   if (key == "slider_minimum") {
     ;(elem as SliderGuiElement).set_slider_minimum_maximum(value, (elem as SliderGuiElement).get_slider_maximum())
   } else if (key == "slider_maximum") {
@@ -47,10 +58,6 @@ function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
   } else {
     ;(elem as any as Record<any, SelflessFun>)[key](value)
   }
-}
-
-function setStateFunc(state: MutableState<unknown>, key: string, event: GuiEvent) {
-  state.set((event as any)[key] || event.element![key])
 }
 
 registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc })
@@ -158,7 +165,7 @@ function renderElement(
   }
 
   const guiSpec: Record<string, any> = {}
-  const elemProps = new LuaTable<string | [string], unknown>()
+  const elemProps = new LuaMap<string | [string], unknown>()
   const events: ElementInstance["events"] = {}
 
   // eslint-disable-next-line prefer-const
@@ -205,7 +212,7 @@ function renderElement(
 
   const element = parent.add(guiSpec as GuiSpec)
 
-  for (const [key, value] of pairs(elemProps)) {
+  for (const [key, value] of elemProps) {
     if (value instanceof State) {
       let observer: Observer<unknown>
       let name: string
@@ -324,7 +331,8 @@ export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | nil
 }
 
 function getInstance(element: BaseGuiElement): ElementInstance | nil {
-  return !element.valid ? nil : global.players[element.player_index].guiElements[element.index]
+  if (!element.valid) return nil
+  return global.players[element.player_index].guiElements[element.index]
 }
 
 export function destroy(element: BaseGuiElement | nil, destroyElement = true): void {
@@ -416,3 +424,10 @@ if (script.active_mods.debugadapter != nil) {
     }
   })
 }
+Migrations.to("0.14.2", () => {
+  for (const [, data] of pairs(global.players)) {
+    for (const [, instance] of pairs(data.guiElements)) {
+      instance.events
+    }
+  }
+})

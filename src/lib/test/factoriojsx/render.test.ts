@@ -293,16 +293,18 @@ test("observable value", () => {
   assert.same("one", element.text)
 
   element.text = "two"
+  element.text = "should not change"
   const fakeEvent: OnGuiTextChangedEvent = {
     element: element as LuaGuiElement,
     name: defines.events.on_gui_text_changed,
     player_index: element.player_index,
     tick: game.tick,
-    text: element.text,
+    text: "two",
   }
   script.get_event_handler(defines.events.on_gui_text_changed)(fakeEvent)
 
   assert.same("two", val.get())
+  assert.equal("should not change", element.text) // so cursor doesn't jump around when typing
 
   val.set("three")
   assert.same("three", element.text)
