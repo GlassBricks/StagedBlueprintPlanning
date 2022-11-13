@@ -50,7 +50,15 @@ Migrations.to("0.6.0", () => {
   }
 })
 
-Migrations.to("0.8.0", () => {
+// migration 0.8.0, same as 0.14.0 (remove oldStage), done again
+
+Migrations.to("0.13.0", () => {
+  for (const [, assembly] of getAllAssemblies()) {
+    _migrate0131(assembly.assemblyBlueprintSettings)
+  }
+})
+
+Migrations.to("0.14.0", () => {
   for (const [, assembly] of getAllAssemblies()) {
     for (const entity of assembly.content.iterateAllEntities()) {
       interface OldAssemblyEntity {
@@ -58,10 +66,5 @@ Migrations.to("0.8.0", () => {
       }
       delete (entity as unknown as OldAssemblyEntity).oldStage
     }
-  }
-})
-Migrations.to("0.13.0", () => {
-  for (const [, assembly] of getAllAssemblies()) {
-    _migrate0131(assembly.assemblyBlueprintSettings)
   }
 })

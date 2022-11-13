@@ -201,8 +201,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   firstStage: StageNumber
   readonly firstValue: Mutable<T>
-  stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
-  private oldStage: StageNumber | nil;
+  stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>;
+
   [stage: StageNumber]: LuaEntity | nil // world entities and preview entities are stored in the same table
   stageProperties?: {
     [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
@@ -235,20 +235,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   setPositionUnchecked(position: Position): void {
     this.position = position
-  }
-
-  getStageRange(): LuaMultiReturn<[number, number | nil]> {
-    if (this.isRollingStock()) {
-      const firstStage = this.firstStage
-      return $multi(firstStage, firstStage)
-    }
-    return $multi(this.firstStage, nil)
-  }
-  getPreviewStageRange(): LuaMultiReturn<[number | nil, number | nil]> {
-    if (this.isRollingStock()) {
-      return $multi(this.firstStage, this.firstStage)
-    }
-    return $multi(nil, nil)
   }
 
   isRollingStock(): this is AssemblyEntityImpl<RollingStockEntity> {
@@ -501,7 +487,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   private trimDiffs(stage: StageNumber, diff: StageDiff<T>): void {
-    this.oldStage = nil
     // trim diffs in higher stages, remove those that are ineffectual
     const { stageDiffs } = this
     if (!stageDiffs) return
@@ -552,14 +537,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return nil
   }
 
-  moveToStage(stage: StageNumber, recordOldStage?: boolean): StageNumber {
+  moveToStage(stage: StageNumber): StageNumber {
     const { firstStage } = this
     if (stage > firstStage) {
       this.moveUp(stage)
     } else if (stage < firstStage) {
       this.firstStage = stage
     }
-    this.oldStage = recordOldStage && firstStage != stage ? firstStage : nil
     return firstStage
   }
   private moveUp(higherStage: StageNumber): void {
@@ -719,7 +703,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   insertStage(stageNumber: StageNumber): void {
     if (this.firstStage >= stageNumber) this.firstStage++
-    if (this.oldStage && this.oldStage >= stageNumber) this.oldStage++
 
     shiftNumberKeysUp(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
@@ -735,7 +718,6 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.mergeStageDiffWithBelow(stageToMerge)
 
     if (this.firstStage >= stageToMerge) this.firstStage--
-    if (this.oldStage && this.oldStage >= stageToMerge) this.oldStage--
 
     shiftNumberKeysDown(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)
@@ -829,4 +811,11 @@ export function _migrate060(entity: AssemblyEntity): void {
     delete stageProperties.mainEntity
   }
   if (isEmpty(stageProperties)) delete asNew.stageProperties
+}
+
+export function _migrate0140(entity: AssemblyEntity): void {
+  interface OldAssemblyEntity {
+    oldStage?: StageNumber
+  }
+  delete (entity as unknown as OldAssemblyEntity).oldStage
 }
