@@ -368,12 +368,8 @@ Events.on_player_mined_entity((e) => {
   const stage = getStageAtSurface(entitySurface.index)
   if (!stage || !isWorldEntityAssemblyEntity(entity)) return
 
-  if (preMinedItemCalled == nil) {
+  if (preMinedItemCalled == nil || isFastReplaceMine(e)) {
     // this happens when using instant upgrade planner
-    setToBeFastReplaced(entity, stage, e.player_index)
-  }
-
-  if (isFastReplaceMine(e)) {
     setToBeFastReplaced(entity, stage, e.player_index)
   } else {
     WorldListener.onEntityDeleted(stage.assembly, entity, stage.stageNumber, e.player_index)

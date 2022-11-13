@@ -18,7 +18,7 @@ import { WorldListener } from "../../assembly/WorldListener"
 import { CustomInputs, Prototypes } from "../../constants"
 import { getTempBpItemStack } from "../../entity/EntityHandler"
 import { Events, Mutable } from "../../lib"
-import { BBox, Pos, PositionClass } from "../../lib/geometry"
+import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { reviveGhost } from "../reviveGhost"
 import direction = defines.direction
 
@@ -41,13 +41,31 @@ after_all(() => {
   mock.revert(updater)
 })
 
+let expectedNumCalls = 1
 before_each(() => {
+  expectedNumCalls = 1
   surface.find_entities().forEach((e) => e.destroy())
   mock.clear(updater)
 })
 after_each(() => {
   _assertInValidState()
   player?.cursor_stack?.clear()
+
+  let totalCalls = 0
+  const calls = new LuaMap<string, number>()
+  for (const [key, value] of pairs(updater)) {
+    totalCalls += value.calls.length
+    calls.set(key, value.calls.length)
+  }
+  if (totalCalls != expectedNumCalls) {
+    error(
+      `Expected ${expectedNumCalls} calls, got ${totalCalls} calls.\n` +
+        Object.entries(calls)
+          .filter(([, v]) => v > 0)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("\n"),
+    )
+  }
 })
 
 describe("add", () => {
@@ -86,7 +104,9 @@ describe("delete", () => {
       name: "iron-chest",
       position,
       raise_built: true,
+      force: "player",
     })!
+    mock.clear(updater)
   })
   test("player mined entity", () => {
     player.mine_entity(entity, true)
@@ -112,6 +132,7 @@ describe("update", () => {
       raise_built: true,
       force: "player",
     })!
+    mock.clear(updater)
   })
   test("gui", () => {
     player.opened = nil
@@ -146,6 +167,7 @@ test.each([
     raise_built: true,
     force: "player",
   })!
+  mock.clear(updater)
   const newType = upgrade ? "fast-inserter" : "inserter"
   assert(
     surface.can_fast_replace({
@@ -209,6 +231,7 @@ test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
     .message("called for u2")
     .spy(updater.onEntityPossiblyUpdated)
     .called_with(match.ref(assembly), match.ref(newU2), 1, match._, 1)
+  expectedNumCalls = 2
 })
 
 describe("upgrade", () => {
@@ -221,6 +244,7 @@ describe("upgrade", () => {
       raise_built: true,
       force: "player",
     })!
+    mock.clear(updater)
   })
 
   test("marked for upgrade", () => {
@@ -260,6 +284,7 @@ describe("upgrade", () => {
     assert
       .spy(updater.onEntityPossiblyUpdated)
       .called_with(match.ref(assembly), match.ref(newEntity), 1, oldDirection, 1)
+    assert.spy(updater.onEntityDeleted).not_called()
   })
 })
 
@@ -276,7 +301,6 @@ describe("robot actions", () => {
       position: pos,
       force: "player",
     })
-    assert(ghosts[0], "blueprint pasted")
     ghosts.forEach((x) => reviveGhost(x))
     const roboport = surface.find_entities_filtered({
       type: "roboport",
@@ -536,9 +560,9 @@ describe("blueprint paste", () => {
     cursor.set_blueprint_entities([entity])
   }
   before_each(setBlueprint)
-  function assertCorrect(entity: LuaEntity): void {
+  function assertCorrect(entity: LuaEntity, position: Position = pos): void {
     assert.not_nil(entity, "entity found")
-    assert.same(pos, entity.position)
+    assert.same(position, entity.position)
 
     assert.spy(updater.onEntityPossiblyUpdated).called_with(match.ref(assembly), entity, 1, match._, 1)
   }
@@ -557,6 +581,7 @@ describe("blueprint paste", () => {
     after_test(() => player.toggle_map_editor())
     setBlueprint()
     player.build_from_cursor({ position: pos, alt: true })
+    expectedNumCalls = 0
   })
 
   test("update existing entity", () => {
@@ -597,15 +622,26 @@ describe("blueprint paste", () => {
       force: "player",
       direction: direction.west,
     })!
-    // ignore second inserter
 
     updater.onEntityPossiblyUpdated.returns((alreadyPresent ? nil : false) as any)
     player.build_from_cursor({ position: pos })
+
+    const inserter2 = surface.find_entities_filtered({
+      name: "inserter",
+      direction: direction.east,
+      limit: 1,
+    })[0]
+    assert.not_nil(inserter2, "other inserter found")
+
     assertCorrect(inserter1)
+    assertCorrect(inserter2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
       assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(inserter1), 1, 1)
+      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(inserter2), 1, 1)
+      expectedNumCalls = 4
     } else {
       assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
+      expectedNumCalls = 2
     }
   })
 
@@ -629,15 +665,22 @@ describe("blueprint paste", () => {
       position: pos,
       force: "player",
     })!
-    // ignore second pole
 
     updater.onEntityPossiblyUpdated.returns((alreadyPresent ? nil : false) as any)
     player.build_from_cursor({ position: pos })
+
+    const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!
+    assert.not_nil(pole2, "other pole found")
+
     assertCorrect(pole1)
+    assertCorrect(pole2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
       assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(pole1), 1, 1)
+      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(pole2), 1, 1)
+      expectedNumCalls = 4
     } else {
       assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
+      expectedNumCalls = 2
     }
   })
 })
@@ -659,6 +702,7 @@ test("Q-building", () => {
   Events.raiseFakeEventNamed("on_player_cursor_stack_changed", {
     player_index: player.index,
   })
+  expectedNumCalls = 0
   _assertInValidState()
 })
 
@@ -797,6 +841,7 @@ describe("belt dragging", () => {
     assert.spy(updater.onEntityPossiblyUpdated).was_not_called()
     assert.spy(updater.onEntityCreated).called_with(match._, match.ref(underground), 1, 1)
     assert.spy(updater.onEntityDeleted).called(5)
+    expectedNumCalls = 6
   })
 
   function fakeUndergroundDrag(u1: LuaEntity, direction: defines.direction) {
@@ -845,6 +890,7 @@ describe("belt dragging", () => {
       fakeUndergroundDrag(u1, oppositedirection(belt.direction))
 
       assert.spy(updater.onUndergroundBeltDragRotated).was_not_called()
+      expectedNumCalls = 0
     })
     test("does not count if replaced", () => {
       const position = u1.position
@@ -856,6 +902,7 @@ describe("belt dragging", () => {
       assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
       assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+      expectedNumCalls = 2
     })
     test("does not count if replaced sideways", () => {
       const position = u1.position
@@ -867,6 +914,7 @@ describe("belt dragging", () => {
       assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
       assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+      expectedNumCalls = 2
     })
   })
 })
