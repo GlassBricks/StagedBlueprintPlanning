@@ -355,6 +355,7 @@ export function destroy(element: BaseGuiElement | nil, destroyElement = true): v
 }
 
 export function destroyChildren(element: BaseGuiElement): void {
+  if (!element.valid) return
   for (const child of element.children) {
     destroy(child, false)
   }
