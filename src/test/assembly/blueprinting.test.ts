@@ -117,12 +117,14 @@ test("can clear blueprint filters", () => {
   assert.true(stack.valid_for_read)
   assert.equal(Prototypes.BlueprintFilters, stack.name)
 
-  stack.entity_filters = []
+  stack.set_entity_filter(1, nil)
+  stack.set_entity_filter(2, nil)
   stack.entity_filter_mode = entity_filter_mode.whitelist
 
   player.opened = nil
+
   assert.nil(transform.entityFilters.get())
-  assert.equal(entity_filter_mode.whitelist, transform.entityFilterMode.get())
+  assert.equal(nil, transform.entityFilterMode.get())
 })
 
 test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (mode) => {
