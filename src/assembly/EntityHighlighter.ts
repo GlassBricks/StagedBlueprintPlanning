@@ -176,38 +176,33 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     return nil
   }
 
-  function updateAssociatedEntitiesAndErrorHighlight(assembly: Assembly, entity: AssemblyEntity): void {
+  function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
+    let hasErrorAnywhere = false
     for (const stage of $range(
       entity.firstStage,
       entity.inFirstStageOnly() ? entity.firstStage : assembly.maxStage(),
     )) {
       const hasError = entityHasErrorAt(entity, stage)
       updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorOutline", hasError)
+      hasErrorAnywhere ||= hasError
     }
-  }
 
-  function updateErrorIndicators(assembly: Assembly, entity: AssemblyEntity): void {
-    if (entity.isRollingStock()) return
-    let hasErrorAnywhere = false
-    for (const i of $range(entity.firstStage, assembly.maxStage())) {
-      const hasError = entity.getWorldEntity(i) == nil
-      if (hasError) {
-        hasErrorAnywhere = true
-        break
-      }
-    }
     if (!hasErrorAnywhere) {
       entity.destroyAllExtraEntities("errorElsewhereIndicator")
-      return
-    }
-
-    for (const stage of $range(1, assembly.maxStage())) {
-      const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) != nil
-      updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorElsewhereIndicator", shouldHaveIndicator)
+    } else {
+      for (const stage of $range(1, assembly.maxStage())) {
+        const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) != nil
+        updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorElsewhereIndicator", shouldHaveIndicator)
+      }
     }
   }
 
-  function updateAllConfigChangedHighlights(assembly: Assembly, entity: AssemblyEntity): void {
+  function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): void {
+    if (!entity.hasStageDiff()) {
+      entity.destroyAllExtraEntities("configChangedHighlight")
+      entity.destroyAllExtraEntities("configChangedLaterHighlight")
+      return
+    }
     const firstStage = entity.firstStage
     let lastStageWithHighlights = firstStage
     for (const stage of $range(1, assembly.maxStage())) {
@@ -254,10 +249,9 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
   function updateHighlights(assembly: Assembly, entity: AssemblyEntity): void {
     // ignore start and end stage for now
-    updateAssociatedEntitiesAndErrorHighlight(assembly, entity)
-    if (!entity.isRollingStock()) {
-      updateErrorIndicators(assembly, entity)
-      updateAllConfigChangedHighlights(assembly, entity)
+    updateErrorOutlines(assembly, entity)
+    if (!entity.inFirstStageOnly()) {
+      updateStageDiffHighlights(assembly, entity)
     }
   }
 
