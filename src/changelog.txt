@@ -2,6 +2,9 @@
 Version: 0.14.0
 Date: ????
   Changes:
+    - Rolling stock entities now have previews on all stages (that is not the first).
+  Bugfixes:
+    - Fix crash on loading a user scenario.
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.1
 Date: 2022-11-12
