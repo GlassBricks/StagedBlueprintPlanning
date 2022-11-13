@@ -18,6 +18,7 @@ import floor = math.floor
 export interface UndergroundBeltEntity extends Entity {
   type: "input" | "output"
 }
+export type LoaderEntity = UndergroundBeltEntity
 export interface RollingStockEntity extends Entity {
   orientation?: RealOrientation
 }

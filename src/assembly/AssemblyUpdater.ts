@@ -12,6 +12,7 @@
 import {
   AssemblyEntity,
   createAssemblyEntity,
+  LoaderAssemblyEntity,
   RollingStockAssemblyEntity,
   SavedDirection,
   StageNumber,
@@ -380,7 +381,8 @@ export function createAssemblyUpdater(
     tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
-      if (entitySource.type == "underground-belt") {
+      const type = entitySource.type
+      if (type == "underground-belt") {
         const actualDirection = getSavedDirection(entitySource)
         assert(actualDirection == entity.getDirection(), "underground belt direction mismatch with saved direction")
         return tryRotateUnderground(
@@ -395,6 +397,9 @@ export function createAssemblyUpdater(
       const rotated = newDirection != entity.getDirection()
       if (!rotated) return "no-change"
       if (setRotationOrUndo(assembly, stage, entity, newDirection)) {
+        if (type == "loader" || type == "loader-1x1") {
+          ;(entity as LoaderAssemblyEntity).setPropAtStage(entity.firstStage, "type", entitySource.loader_type)
+        }
         updateWorldEntities(assembly, entity, stage)
         return "updated"
       }

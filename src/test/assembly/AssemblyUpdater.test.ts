@@ -399,7 +399,7 @@ describe("tryRotateEntityToMatchWorld", () => {
   test("in first stage rotates all entities", () => {
     const { luaEntity, entity } = addEntity(2)
     luaEntity.direction = direction.west
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
+    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 2)
     assert.equal("updated", ret)
     assert.equal(direction.west, entity.getDirection())
     assertOneEntity()
@@ -411,11 +411,22 @@ describe("tryRotateEntityToMatchWorld", () => {
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
+    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 2)
     assert.equal("cannot-rotate", ret)
     assert.equal(oldDirection, entity.getDirection())
     assertOneEntity()
     assertRefreshCalled(entity, 2)
+  })
+
+  test("rotating loader also sets loader type", () => {
+    const { luaEntity, entity } = addEntity(1, { name: "loader", direction: direction.north, type: "input" })
+    luaEntity.rotate()
+    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 1)
+    assert.equal("updated", ret)
+    assert.equal(direction.south, entity.getDirection())
+    assert.equal("output", entity.firstValue.type)
+    assertOneEntity()
+    assertUpdateCalled(entity, 1, nil)
   })
 })
 

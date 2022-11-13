@@ -186,6 +186,7 @@ export interface StageProperties {
 
 export type RollingStockAssemblyEntity = AssemblyEntity<RollingStockEntity>
 export type UndergroundBeltAssemblyEntity = AssemblyEntity<UndergroundBeltEntity>
+export type LoaderAssemblyEntity = AssemblyEntity<LoaderEntity>
 
 type StageData = ExtraEntities & StageProperties
 
