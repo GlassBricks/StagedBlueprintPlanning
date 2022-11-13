@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.1
 Date: ????
+  Bugfixes:
+    - Fixed using instant upgrade planner on an entity with stage changes.
   Changes:
+    - Poles will now respect connections in the current stage first, before connections to future stages.
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.0
 Date: 2022-11-13
