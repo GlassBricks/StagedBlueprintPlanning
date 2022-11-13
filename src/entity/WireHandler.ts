@@ -29,8 +29,8 @@ export interface WireSaver {
   saveWireConnections(
     content: MutableEntityMap,
     entity: AssemblyEntity,
-    circuitStageNumber: StageNumber,
-    cableStageNumber: StageNumber,
+    stage: StageNumber,
+    higherStageForMerging?: StageNumber,
   ): LuaMultiReturn<[hasAnyDiff: boolean, maxCableConnectionsExceeded?: boolean]>
 }
 
@@ -160,37 +160,61 @@ function saveCircuitConnections(
   return hasDiff
 }
 
+/**
+ * mergeStage should be the 'lower' stage. only new connections at this stage (not in the other stage) will be added.
+ */
 function saveCableConnections(
   content: MutableEntityMap,
   entity: AssemblyEntity,
-  stageNumber: StageNumber,
-  luaEntity: LuaEntity,
+  stage: StageNumber,
+  higherStageForMerging: StageNumber | nil,
 ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
-  if (luaEntity.type != "electric-pole") return $multi(false)
-  const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
-  const assemblyConnections = content.getCableConnections(entity)
+  const luaEntity = entity.getWorldEntity(stage)
+  if (!luaEntity || luaEntity.type != "electric-pole") return $multi(false)
+  const worldConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
+  const savedConnections = content.getCableConnections(entity)
 
-  const matching = new LuaSet<AssemblyEntity>()
-  const toAdd: AssemblyEntity[] = []
+  const matchingConnections = new LuaSet<AssemblyEntity>()
+  const newConnections = new LuaSet<AssemblyEntity>()
 
-  if (existingConnections) {
-    for (const otherLuaEntity of existingConnections) {
+  if (worldConnections) {
+    for (const otherLuaEntity of worldConnections) {
       const otherEntity = content.findCompatible(otherLuaEntity, nil)
       if (!otherEntity) continue
-      if (!assemblyConnections || !assemblyConnections.has(otherEntity)) {
-        toAdd.push(otherEntity)
+      if (!savedConnections || !savedConnections.has(otherEntity)) {
+        newConnections.add(otherEntity)
       } else {
-        matching.add(otherEntity)
+        matchingConnections.add(otherEntity)
       }
     }
   }
 
-  let hasDiff = toAdd[0] != nil
+  if (higherStageForMerging) {
+    // only add connections to entities higher than this stage
+    const higherEntity = entity.getWorldEntity(higherStageForMerging)
+    if (higherEntity) {
+      const higherConnections = (higherEntity.neighbours as { copper?: LuaEntity[] }).copper
+      if (higherConnections) {
+        for (const otherLuaEntity of higherConnections) {
+          const otherEntity = content.findCompatible(otherLuaEntity, nil)
+          if (
+            otherEntity &&
+            otherEntity.firstStage > stage &&
+            !(savedConnections && savedConnections.has(otherEntity))
+          ) {
+            newConnections.add(otherEntity)
+          }
+        }
+      }
+    }
+  }
+
+  let hasDiff = !isEmpty(newConnections)
   // remove first, to not exceed max connections
-  if (assemblyConnections) {
-    for (const otherEntity of assemblyConnections) {
-      const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
-      if (otherLuaEntity && !matching.has(otherEntity)) {
+  if (savedConnections) {
+    for (const otherEntity of savedConnections) {
+      // check other lua entity exists; if not, don't remove
+      if (!matchingConnections.has(otherEntity) && otherEntity.getWorldEntity(stage)) {
         content.removeCableConnection(entity, otherEntity)
         hasDiff = true
       }
@@ -198,7 +222,7 @@ function saveCableConnections(
   }
 
   let maxConnectionsExceeded: boolean | nil
-  for (const add of toAdd) {
+  for (const add of newConnections) {
     const result = content.addCableConnection(entity, add)
     if (result == CableAddResult.MaxConnectionsReached) maxConnectionsExceeded = true
   }
@@ -209,18 +233,14 @@ function saveCableConnections(
 function saveWireConnections(
   content: MutableEntityMap,
   entity: AssemblyEntity,
-  circuitStage: StageNumber,
-  cableStage: StageNumber,
+  stage: StageNumber,
+  higherStageForMerging: StageNumber | nil,
 ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
-  const circuitStageEntity = entity.getWorldEntity(circuitStage)
-  const diff1 = circuitStageEntity != nil && saveCircuitConnections(content, entity, circuitStage, circuitStageEntity)
+  const circuitStageEntity = entity.getWorldEntity(stage)
+  const diff1 = circuitStageEntity != nil && saveCircuitConnections(content, entity, stage, circuitStageEntity)
 
-  const cableStageEntity = entity.getWorldEntity(cableStage)
-  if (cableStageEntity != nil) {
-    const [diff2, maxConnectionsExceeded] = saveCableConnections(content, entity, cableStage, cableStageEntity)
-    return $multi(diff1 || diff2, maxConnectionsExceeded)
-  }
-  return $multi(diff1)
+  const [diff2, maxConnectionsExceeded] = saveCableConnections(content, entity, stage, higherStageForMerging)
+  return $multi(diff1 || diff2, maxConnectionsExceeded)
 }
 
 function analyzeExistingCircuitConnections(

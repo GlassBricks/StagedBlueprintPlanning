@@ -14,13 +14,15 @@ import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntit
 import { CableAddResult, MutableEntityMap, newEntityMap } from "../../entity/EntityMap"
 import { WireHandler } from "../../entity/WireHandler"
 import { shallowCompare } from "../../lib"
+import { setupTestSurfaces } from "../assembly/Assembly-mock"
 
 let content: MutableEntityMap
+const surfaces = setupTestSurfaces(2)
 let surface: LuaSurface
 
 before_each(() => {
   content = newEntityMap()
-  surface = game.surfaces[1]
+  surface = surfaces[0]
   surface.find_entities().forEach((e) => e.destroy())
 })
 
@@ -182,7 +184,7 @@ describe("circuit wires", () => {
       for (const number of existing) content.addCircuitConnection(wires[number - 1])
       for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1, 1)
+      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
       assert.equal(!shallowCompare(existing, world), hasDiff)
       assert.nil(maxConnectionsReached) // not relevant for circuit wires
 
@@ -263,7 +265,7 @@ describe("cable connections", () => {
       if (world.includes(1)) luaEntity1.connect_neighbour(luaEntity2)
       if (world.includes(2)) luaEntity2.connect_neighbour(luaEntity3)
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1, 1)
+      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
       assert.equal(!shallowCompare(existing, world), hasDiff)
       assert.nil(maxConnectionsReached)
 
@@ -272,6 +274,21 @@ describe("cable connections", () => {
         world.map((number) => [entity1, entity3][number - 1]),
         Object.keys(connections ?? {}),
       )
+    })
+
+    test("can add cables in multiple stages", () => {
+      const otherLuaEntity3 = surfaces[1].create_entity({ name: "medium-electric-pole", position: entity3.position })!
+      const otherLuaEntity2 = surfaces[1].create_entity({ name: "medium-electric-pole", position: entity2.position })!
+      entity2.replaceWorldEntity(2, otherLuaEntity2)
+      entity3.replaceWorldEntity(2, otherLuaEntity3)
+      entity3.moveToStage(2)
+      otherLuaEntity2.connect_neighbour(otherLuaEntity3)
+      luaEntity2.connect_neighbour(luaEntity1)
+      // should connect both 1-2 and 2-3
+      handler.saveWireConnections(content, entity2, 1, 2)
+
+      const connections = content.getCableConnections(entity2)
+      assert.same([entity1, entity3], Object.keys(connections ?? {}))
     })
 
     test("max connections reached", () => {
@@ -294,14 +311,14 @@ describe("cable connections", () => {
       luaEntity1.connect_neighbour(luaEntity2)
       // saving should fail
       {
-        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1, 1)
+        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
         assert.true(hasDiff)
         assert.true(maxConnectionsReached)
         assert.nil(content.getCableConnections(entity2))
         assert.false(content.getCableConnections(entity1)!.has(entity2))
       }
       {
-        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1, 1)
+        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
         assert.true(hasDiff)
         assert.true(maxConnectionsReached)
         assert.nil(content.getCableConnections(entity2))
