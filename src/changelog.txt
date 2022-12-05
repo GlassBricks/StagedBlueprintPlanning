@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.4
 Date: ????
+  Features:
+    - Added a force-delete entity button to error entities.
   Bugfixes:
     - Fix creating entities when there are items on the ground.
 ---------------------------------------------------------------------------------------------------

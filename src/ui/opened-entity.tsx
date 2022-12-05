@@ -74,6 +74,8 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     const stageDiffs = entity.getStageDiffs()
     const currentStageDiff = stageDiffs && stageDiffs[currentStageNum]
 
+    const isErrorEntity = entity.isInStage(currentStageNum) && entity.getWorldEntity(currentStageNum) == nil
+
     function StageButton(buttonStage: Stage): Spec {
       return (
         <button
@@ -84,6 +86,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
         />
       )
     }
+
     return (
       <frame anchor={props.anchor} style="inner_frame_in_outer_frame" direction="vertical">
         <TitleBar>
@@ -127,8 +130,19 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
               on_gui_click={ibind(this.setTrainLocationHere)}
             />,
           ]}
-          {currentStageDiff && <line direction="horizontal" style="control_behavior_window_line" />}
-          {currentStageDiff && this.renderStageDiffSettings(currentStageDiff)}
+          {currentStageDiff && [
+            <line direction="horizontal" style="control_behavior_window_line" />,
+            this.renderStageDiffSettings(currentStageDiff),
+          ]}
+          {isErrorEntity && [
+            <line direction="horizontal" styleMod={{ margin: [8, -12] }} />,
+            <button
+              style="red_button"
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiEntityInfo.DeleteEntity]}
+              on_gui_click={ibind(this.deleteEntity)}
+            />,
+          ]}
         </frame>
       </frame>
     )
@@ -151,6 +165,10 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   }
   private setTrainLocationHere() {
     AssemblyUpdater.setTrainLocationToCurrent(this.stage.assembly, this.entity)
+  }
+
+  private deleteEntity() {
+    AssemblyUpdater.forceDeleteEntity(this.stage.assembly, this.entity)
   }
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Spec {

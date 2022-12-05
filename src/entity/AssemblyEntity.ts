@@ -72,6 +72,8 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 
   inFirstStageOnly(): boolean
 
+  isInStage(stage: StageNumber): boolean
+
   setUndergroundBeltDirection(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
@@ -247,6 +249,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   public inFirstStageOnly(): boolean {
     // return this.isRollingStock()
     return isRollingStockType(this.firstValue.name)
+  }
+
+  public isInStage(stage: StageNumber): boolean {
+    if (this.inFirstStageOnly()) {
+      return stage == this.firstStage
+    }
+    return stage >= this.firstStage
   }
   setUndergroundBeltDirection(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
     // assume compiler asserts this is correct

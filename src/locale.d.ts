@@ -272,6 +272,8 @@ export declare const enum L_GuiEntityInfo {
   ResetTrain = "bp100.gui.entity-info.reset-train",
   /** Set train location here */
   SetTrainLocationHere = "bp100.gui.entity-info.set-train-location-here",
+  /** Force delete entity */
+  DeleteEntity = "bp100.gui.entity-info.delete-entity",
   /** Stage changes */
   StageDiff = "bp100.gui.entity-info.stage-diff",
   /** Reset */
