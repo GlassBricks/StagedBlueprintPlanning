@@ -143,6 +143,11 @@ function tryCreateUndergroundEntity(
   return luaEntity
 }
 
+function removeIntersectingItemsOnGround(surface: LuaSurface, area: BoundingBox) {
+  const items = surface.find_entities_filtered({ type: "item-entity", area })
+  for (const item of items) item.destroy()
+}
+
 function tryCreateUnconfiguredEntity(
   surface: LuaSurface,
   position: Position,
@@ -161,9 +166,18 @@ function tryCreateUnconfiguredEntity(
     force: "player",
     create_build_effect_smoke: false,
   }
-  if (surface.can_place_entity(params)) {
+  const canPlace = surface.can_place_entity(params)
+  if (canPlace) {
     return surface.create_entity(params)
   }
+  params.build_check_type = defines.build_check_type.manual
+  if (!surface.can_place_entity(params)) return
+  const createdEntity = surface.create_entity(params)
+  if (!createdEntity) return
+  removeIntersectingItemsOnGround(surface, createdEntity.bounding_box)
+  if (createdEntity.secondary_bounding_box)
+    removeIntersectingItemsOnGround(surface, createdEntity.secondary_bounding_box)
+  return createdEntity
 }
 
 function createNormalEntity(

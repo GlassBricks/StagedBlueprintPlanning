@@ -71,6 +71,31 @@ test("can create an entity", () => {
   assert.equal(3, luaEntity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
 })
 
+test("can create an offshore pump anywhere", () => {
+  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, 0, {
+    name: "offshore-pump",
+  })!
+  assert.not_nil(luaEntity, "entity created")
+  assert.equal("offshore-pump", luaEntity.name)
+  assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
+})
+
+test("can still place if there are items on the ground", () => {
+  const item = surface.create_entity({
+    name: "item-on-ground",
+    position: { x: 0.5, y: 0.5 },
+    stack: "iron-plate",
+  })
+  assert.not_nil(item, "item created")
+
+  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, 0, {
+    name: "assembling-machine-1",
+  })!
+  assert.not_nil(luaEntity, "entity created")
+  assert.equal("assembling-machine-1", luaEntity.name)
+  assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
+})
+
 test("can update an entity", () => {
   const entity = surface.create_entity({
     name: "iron-chest",
