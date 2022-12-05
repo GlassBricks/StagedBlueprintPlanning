@@ -3,6 +3,8 @@ Version: 0.14.4
 Date: ????
   Features:
     - Added a force-delete entity button to error entities.
+  Changes:
+    - Increased size of train-previews to make them easier to select.
   Bugfixes:
     - Fix creating entities when there are items on the ground.
 ---------------------------------------------------------------------------------------------------

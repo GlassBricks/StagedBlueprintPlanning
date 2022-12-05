@@ -107,7 +107,7 @@ const railPrototypes = newLuaSet("straight-rail", "curved-rail")
 const previews: EntityPrototype[] = []
 const types = keys<Record<BuildableEntityType, true>>()
 
-const buildableNonTrainNames: string[] = []
+const buildableNonRollingStockNames: string[] = []
 
 for (const type of types.sort()) {
   const prototypes = data.raw[type]
@@ -126,13 +126,21 @@ for (const type of types.sort()) {
     flags.push("hidden")
     flags.push("not-on-map")
 
-    const selectionBox = prototype.selection_box ?? [
+    let selectionBox = prototype.selection_box ?? [
       [-0.5, -0.5],
       [0.5, 0.5],
     ]
 
+    if (rollingStockTypes.has(type)) {
+      selectionBox = BBox.expand(BBox.normalize(selectionBox), 0.3)
+    } else {
+      buildableNonRollingStockNames.push(name)
+    }
+
     const isRail = railPrototypes.has(type)
-    if (!isRail) {
+    if (isRail) {
+      previews.push(createRailPreview(prototype, placeableBy, flags))
+    } else {
       const color =
         prototype.friendly_map_color ??
         prototype.map_color ??
@@ -171,11 +179,7 @@ for (const type of types.sort()) {
         create_ghost_on_death: false,
       }
       previews.push(preview)
-    } else {
-      previews.push(createRailPreview(prototype, placeableBy, flags))
     }
-
-    if (!rollingStockTypes.has(type)) buildableNonTrainNames.push(name)
   }
 }
 
@@ -306,6 +310,6 @@ const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototype
 cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
 
 const stageMoveTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.StageMoveTool]
-const altFilters = [...previewNames, ...buildableNonTrainNames]
+const altFilters = [...previewNames, ...buildableNonRollingStockNames]
 stageMoveTool.alt_entity_filters = altFilters
 stageMoveTool.reverse_entity_filters = altFilters
