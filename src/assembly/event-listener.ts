@@ -175,7 +175,16 @@ Events.on_entity_settings_pasted((e) => luaEntityPossiblyUpdated(e.destination, 
 Events.on_gui_closed((e) => {
   if (e.entity) luaEntityPossiblyUpdated(e.entity, e.player_index)
 })
-Events.on_player_fast_transferred((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
+// Events.on_player_fast_transferred((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
+Events.on_player_cursor_stack_changed((e) => {
+  const player = game.get_player(e.player_index)!
+  const stage = getStageAtSurface(player.surface.index)
+  if (!stage) return
+  const selected = player.selected
+  if (selected && isWorldEntityAssemblyEntity(selected) && selected.get_module_inventory() != nil) {
+    luaEntityPossiblyUpdated(selected, e.player_index)
+  }
+})
 
 Events.on_player_rotated_entity((e) => luaEntityRotated(e.entity, e.previous_direction, e.player_index))
 
