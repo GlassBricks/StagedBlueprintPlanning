@@ -706,9 +706,9 @@ function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   if (e.item != Prototypes.CleanupTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
-  const { stageNumber, assembly } = stage
+  const { assembly } = stage
   for (const entity of e.entities) {
-    WorldListener.onEntityForceDeleteUsed(assembly, entity, stageNumber)
+    WorldListener.onEntityForceDeleteUsed(assembly, entity)
   }
 }
 

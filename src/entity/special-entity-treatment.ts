@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { oppositedirection } from "util"
 import { Mutable } from "../lib"
 import { Pos, Position, PositionClass } from "../lib/geometry"
 import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
 import { MutableEntityMap } from "./EntityMap"
+import { oppositeSavedDirection } from "./direction"
 
 /**
  * Finds an underground pair. If there are multiple possible pairs, returns the first one, and true as the second return value.
@@ -38,10 +38,10 @@ function findUndergroundPairOneDirection(
   if (!reach) return $multi(nil, false)
 
   const direction = member.getDirection()
-  const otherDirection = oppositedirection(direction)
+  const otherDirection = oppositeSavedDirection(direction)
 
   const { x, y } = member.position
-  const { x: dx, y: dy } = unit(direction)
+  const { x: dx, y: dy } = unit(direction as defines.direction)
 
   let found: UndergroundBeltAssemblyEntity | nil
   const curPos = {} as Mutable<Position>

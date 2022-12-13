@@ -12,6 +12,7 @@
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
 import { EntityHandler } from "../../entity/EntityHandler"
+import { EAST, NORTH, SOUTH, WEST } from "../../entity/direction"
 
 let surface: LuaSurface
 before_each(() => {
@@ -61,7 +62,7 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
 })
 
 test("can create an entity", () => {
-  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, 0, {
+  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, NORTH, {
     name: "iron-chest",
     bar: 3,
   } as Entity)!
@@ -72,7 +73,7 @@ test("can create an entity", () => {
 })
 
 test("can create an offshore pump anywhere", () => {
-  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, 0, {
+  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, NORTH, {
     name: "offshore-pump",
   })!
   assert.not_nil(luaEntity, "entity created")
@@ -88,7 +89,7 @@ test("can still place if there are items on the ground", () => {
   })
   assert.not_nil(item, "item created")
 
-  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, 0, {
+  const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, NORTH, {
     name: "assembling-machine-1",
   })!
   assert.not_nil(luaEntity, "entity created")
@@ -103,7 +104,7 @@ test("can update an entity", () => {
     force: "player",
     bar: 3,
   })!
-  const newEntity = EntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, 0)
+  const newEntity = EntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, NORTH)
   assert.equal(entity, newEntity)
   assert.equal(4, entity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
 })
@@ -116,7 +117,7 @@ test("can upgrade an entity", () => {
   })!
   entity.minable = false
   entity.destructible = false
-  const newEntity = EntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, 0)
+  const newEntity = EntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, NORTH)
   assert.equal("steel-chest", newEntity.name)
   assert.false(entity.valid)
 })
@@ -128,7 +129,19 @@ test("can rotate entity", () => {
     force: "player",
     direction: defines.direction.east,
   })!
-  const newEntity = EntityHandler.updateEntity(entity, { name: "inserter" } as Entity, defines.direction.south)
+  const newEntity = EntityHandler.updateEntity(entity, { name: "inserter" } as Entity, SOUTH)
+  assert.equal(newEntity, entity)
+  assert.equal(defines.direction.south, entity.direction)
+})
+
+test("can rotate an assembler with no fluid recipe", () => {
+  const entity = surface.create_entity({
+    name: "assembling-machine-1",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.east,
+  })!
+  const newEntity = EntityHandler.updateEntity(entity, { name: "assembling-machine-1" } as Entity, SOUTH)
   assert.equal(newEntity, entity)
   assert.equal(defines.direction.south, entity.direction)
 })
@@ -153,7 +166,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("creating an underground belt in output direction flips direction", () => {
-    const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.south, {
+    const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, SOUTH, {
       name: "underground-belt",
       type: inOut,
     } as Entity)!
@@ -179,7 +192,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     assert.not_nil(westUnderground, "entity created")
     // try pasting east output underground at 1.5, 0.5
     // if west underground is output, the created entity will be flipped
-    const eastUnderground = EntityHandler.createEntity(surface, { x: 1.5, y: 0.5 }, defines.direction.west, {
+    const eastUnderground = EntityHandler.createEntity(surface, { x: 1.5, y: 0.5 }, WEST, {
       name: "underground-belt",
       type: "output",
     } as Entity)!
@@ -209,7 +222,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "underground-belt",
         type: otherDir,
       } as Entity,
-      defines.direction.east,
+      EAST,
     )
     assert.equal(entity, updated)
     assert.equal(otherDir, updated.belt_to_ground_type)
@@ -231,7 +244,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "fast-underground-belt",
         type: inOut,
       } as Entity,
-      defines.direction.west,
+      WEST,
     )
     assert.not_nil(updated, "entity updated")
     assert.equal("fast-underground-belt", updated.name)
@@ -241,7 +254,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
 })
 
 test("can create loader", () => {
-  const entity = EntityHandler.createEntity(surface, { x: 12.5, y: 12 }, defines.direction.east, {
+  const entity = EntityHandler.createEntity(surface, { x: 12.5, y: 12 }, EAST, {
     name: "loader",
     type: "output",
   } as Entity)!
@@ -249,7 +262,7 @@ test("can create loader", () => {
   assert.equal(defines.direction.east, entity.direction)
   assert.equal("output", entity.loader_type)
 
-  const entity2 = EntityHandler.createEntity(surface, { x: 14.5, y: 12 }, defines.direction.east, {
+  const entity2 = EntityHandler.createEntity(surface, { x: 14.5, y: 12 }, EAST, {
     name: "loader",
     type: "input",
   } as Entity)!
@@ -273,7 +286,7 @@ test("can flip loader", () => {
       name: "loader",
       type: "output",
     } as Entity,
-    defines.direction.east,
+    EAST,
   )
   assert.equal(entity, updated)
   assert.equal("output", updated.loader_type)
@@ -297,7 +310,7 @@ test("can handle item changes", () => {
       name: "assembling-machine-3",
       items: newContents,
     } as Entity,
-    0,
+    NORTH,
   )
   assert.equal(newEntity, entity)
   assert.same(newContents, entity.get_module_inventory()!.get_contents())

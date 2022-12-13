@@ -14,7 +14,6 @@ import {
   AssemblyEntity,
   isWorldEntityAssemblyEntity,
   RollingStockAssemblyEntity,
-  SavedDirection,
   StageNumber,
 } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
@@ -24,6 +23,7 @@ import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../ent
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import { EntityHighlighter } from "./EntityHighlighter"
+import { SavedDirection } from "../entity/direction"
 
 /**
  * Updates entities in the world in response to changes in the assembly.
@@ -89,8 +89,8 @@ export function createWorldUpdater(
     assembly: Assembly,
     stage: StageNumber,
     entity: AssemblyEntity,
-    entityName: string = entity.getNameAtStage(stage),
-    direction: defines.direction = entity.getApparentDirection(),
+    entityName: string,
+    direction: defines.direction,
   ): void {
     const existing = entity.getWorldOrPreviewEntity(stage)
     const previewName = Prototypes.PreviewEntityPrefix + entityName
@@ -109,7 +109,8 @@ export function createWorldUpdater(
     endStage: StageNumber,
   ): void {
     const firstStage = entity.firstStage
-    const direction = entity.getApparentDirection()
+    const direction = entity.getDirection()
+    const previewDirection = entity.getPreviewDirection()
 
     for (const [stage, value] of entity.iterateValues(startStage, endStage)) {
       const surface = assembly.getSurface(stage)!
@@ -136,7 +137,7 @@ export function createWorldUpdater(
 
       // preview
       const entityName = (value ?? entity.firstValue).name
-      makePreviewEntity(assembly, stage, entity, entityName, direction)
+      makePreviewEntity(assembly, stage, entity, entityName, previewDirection)
     }
   }
 
@@ -226,7 +227,7 @@ export function createWorldUpdater(
   function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
     assert(entity.isSettingsRemnant && !entity.inFirstStageOnly())
     entity.destroyAllWorldOrPreviewEntities()
-    const direction = entity.getApparentDirection()
+    const direction = entity.getPreviewDirection()
     for (const stage of $range(1, assembly.maxStage())) {
       makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), direction)
     }
@@ -290,7 +291,7 @@ export function createWorldUpdater(
       if (!movedEntity) return "entities-missing"
       const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
       if (moveResult != "success") {
-        forceDollyEntity(movedEntity, entity.position, entity.getDirection())
+        forceDollyEntity(movedEntity, entity.position, entity.getWorldDirection())
       } else {
         entity.setDirection(movedEntity.direction as SavedDirection)
         deleteHighlights(entity)
@@ -302,7 +303,7 @@ export function createWorldUpdater(
       return moveResult
     },
     clearWorldEntity(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
-      makePreviewEntity(assembly, stage, entity)
+      makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
       updateHighlights(assembly, entity, stage, stage)
     },
     deleteAllEntities(entity: AssemblyEntity): void {

@@ -12,7 +12,7 @@
 import { Assembly } from "../../assembly/AssemblyDef"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
-import { AssemblyEntity, createAssemblyEntity, SavedDirection, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { EntityHandler } from "../../entity/EntityHandler"
 import { forceDollyEntity } from "../../entity/picker-dollies"
@@ -22,6 +22,7 @@ import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { makeMocked, makeStubbed } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
+import { SavedDirection } from "../../entity/direction"
 
 interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter"
@@ -35,7 +36,7 @@ let wireUpdater: mock.Stubbed<WireUpdater>
 let worldUpdater: WorldUpdater
 
 const origPos = { x: 0.5, y: 0.5 }
-const origDir = defines.direction.east as SavedDirection
+const origDir = defines.direction.east as SavedDirection & defines.direction
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
 before_each(() => {
   assembly = createMockAssembly(surfaces)
@@ -239,7 +240,7 @@ describe("tryMoveEntity", () => {
     assembly.content.changePosition(entity, origPos)
   })
   const newPos = Pos(1.5, 2)
-  const newDir = defines.direction.north
+  const newDir = defines.direction.north as SavedDirection & defines.direction
 
   function assertMoved() {
     for (let i = 0; i < 4; i++) {

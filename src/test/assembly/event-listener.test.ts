@@ -397,7 +397,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onEntityForceDeleteUsed).called_with(match.ref(assembly), match.ref(entity), 1)
+    assert.spy(updater.onEntityForceDeleteUsed).called_with(match.ref(assembly), match.ref(entity))
   })
 })
 

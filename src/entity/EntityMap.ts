@@ -9,15 +9,22 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { oppositedirection } from "util"
 import { isEmpty, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { AsmCircuitConnection, circuitConnectionEquals } from "./AsmCircuitConnection"
-import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
+import { AssemblyEntity, InternalSavedDirection, StageNumber } from "./AssemblyEntity"
 import { BasicEntityInfo } from "./Entity"
-import { getEntityCategory, getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "./entity-info"
+import {
+  getEntityCategory,
+  getPasteRotatableType,
+  isRollingStockType,
+  PasteRotatableType,
+  rollingStockTypes,
+} from "./entity-info"
 import { getRegisteredAssemblyEntity } from "./entity-registration"
 import { migrateMap2d060, MutableMap2D, newMap2D } from "./map2d"
+import { getSavedDirection, oppositeSavedDirection, SavedDirection, WorldDirection } from "./direction"
+import { Prototypes } from "../constants"
 
 /**
  * A collection of assembly entities: the actual data of an assembly.
@@ -25,10 +32,14 @@ import { migrateMap2d060, MutableMap2D, newMap2D } from "./map2d"
  * Also keeps tracks of wires and circuit connections.
  */
 export interface EntityMap {
-  findCompatibleByName(entityName: string, position: Position, direction: defines.direction | nil): AssemblyEntity | nil
-  findCompatible(entity: BasicEntityInfo, previousDirection: defines.direction | nil): AssemblyEntity | nil
+  findCompatibleByName(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil
+  findCompatible(entity: BasicEntityInfo, previousDirection: WorldDirection | nil): AssemblyEntity | nil
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil
+
+  findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil
+
+  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil
 
   getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil
   getCableConnections(entity: AssemblyEntity): AsmEntityCableConnections | nil
@@ -82,19 +93,16 @@ class EntityMapImpl implements MutableEntityMap {
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
-  findCompatibleByName(
-    entityName: string,
-    position: Position,
-    direction: defines.direction | nil,
-  ): AssemblyEntity | nil {
+  findCompatibleByName(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
-    if (direction == 0) direction = nil
+    let internalDir = direction as unknown as InternalSavedDirection | nil
+    if (internalDir == (0 as any)) internalDir = nil
     const category = getEntityCategory(entityName)
 
     if (isSingle(atPos)) {
-      if (atPos.direction != direction) return nil
+      if (atPos.direction != internalDir) return nil
       if (category == nil) {
         if (atPos.firstValue.name == entityName) return atPos
         return nil
@@ -105,12 +113,13 @@ class EntityMapImpl implements MutableEntityMap {
 
     if (category == nil) {
       for (const candidate of atPos) {
-        if (candidate.direction == direction && candidate.firstValue.name == entityName) return candidate
+        if (candidate.direction == internalDir && candidate.firstValue.name == entityName) return candidate
       }
       return nil
     }
     for (const candidate of atPos) {
-      if (candidate.direction == direction && getEntityCategory(candidate.firstValue.name) == category) return candidate
+      if (candidate.direction == internalDir && getEntityCategory(candidate.firstValue.name) == category)
+        return candidate
     }
     return nil
   }
@@ -142,14 +151,10 @@ class EntityMapImpl implements MutableEntityMap {
     return nil
   }
 
-  findCompatible(
-    entity: BasicEntityInfo | LuaEntity,
-    previousDirection?: defines.direction | nil,
-  ): AssemblyEntity | nil {
+  findCompatible(entity: BasicEntityInfo | LuaEntity, previousDirection: WorldDirection | nil): AssemblyEntity | nil {
     const type = entity.type
     if (type == "underground-belt") {
-      const direction = entity.belt_to_ground_type == "output" ? oppositedirection(entity.direction) : entity.direction
-      return this.findCompatibleByName(type, entity.position, direction)
+      return this.findCompatibleByName(type, entity.position, getSavedDirection(entity))
     } else if (rollingStockTypes.has(type)) {
       if (entity.object_name == "LuaEntity") {
         const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
@@ -157,22 +162,40 @@ class EntityMapImpl implements MutableEntityMap {
       }
       return nil
     }
+    // now, worldDirection == savedDirection
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType == nil) {
-      return this.findCompatibleByName(name, entity.position, previousDirection ?? entity.direction)
+      return this.findCompatibleByName(name, entity.position, (previousDirection ?? entity.direction) as SavedDirection)
     }
     if (pasteRotatableType == PasteRotatableType.Square) {
       return this.findCompatibleAnyDirection(name, entity.position)
     }
     if (pasteRotatableType == PasteRotatableType.Rectangular) {
-      const direction = previousDirection ?? entity.direction
+      const direction = (previousDirection ?? entity.direction) as SavedDirection
       const position = entity.position
       return (
         this.findCompatibleByName(name, position, direction) ??
-        this.findCompatibleByName(name, position, oppositedirection(direction))
+        this.findCompatibleByName(name, position, oppositeSavedDirection(direction))
       )
     }
+  }
+
+  findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil {
+    const actualName = previewEntity.name.substring(Prototypes.PreviewEntityPrefix.length)
+    if (isRollingStockType(actualName)) {
+      return this.findCompatibleAnyDirection(actualName, previewEntity.position)
+    }
+    // todo: migrate asms to be correct direction, and underground previews too
+    return this.findCompatibleByName(actualName, previewEntity.position, previewEntity.direction as SavedDirection)
+  }
+
+  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil {
+    const name = entity.name
+    if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
+      return this.findCompatibleFromPreview(entity)
+    }
+    return this.findCompatible(entity, nil)
   }
 
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {

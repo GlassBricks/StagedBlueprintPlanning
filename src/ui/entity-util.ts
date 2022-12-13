@@ -11,24 +11,13 @@
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { getStageAtSurface } from "../assembly/UserAssembly"
-import { Prototypes } from "../constants"
 import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
 
 export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return $multi()
-  const name = entity.name
-  const content = stage.assembly.content
-  let assemblyEntity: AssemblyEntity | nil
-  if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
-    const actualName = name.substring(Prototypes.PreviewEntityPrefix.length)
-    assemblyEntity =
-      content.findCompatibleByName(actualName, entity.position, entity.direction) ??
-      content.findCompatibleAnyDirection(actualName, entity.position)
-  } else {
-    assemblyEntity = content.findCompatible(entity, nil)
-  }
-  if (assemblyEntity) return $multi(stage, assemblyEntity)
+  const found = stage.assembly.content.findCompatibleFromLuaEntityOrPreview(entity)
+  if (found) return $multi(stage, found)
   return $multi()
 }
 

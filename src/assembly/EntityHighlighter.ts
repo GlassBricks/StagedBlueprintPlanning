@@ -131,7 +131,7 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
     // always replace highlight box, in case of upgrade
 
     const prototypeName = entity.firstValue.name
-    const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.direction)
+    const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.getWorldDirection())
     let result: LuaEntity | AnyRender | nil
     if (config.type == "highlight") {
       const { renderType } = config

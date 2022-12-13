@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Colors, L_Game, Prototypes } from "../constants"
+import { Colors, L_Game } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { isRollingStockType, shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
+import { shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -82,7 +82,7 @@ export interface WorldListener {
   /** Similar to above; does not remove settings remnants */
   tryFixEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void
 
-  onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void
+  onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity): void
   /** Either: entity died, or reverse select with cleanup tool */
   onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void
   /** User activated. */
@@ -219,35 +219,13 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     }
   }
 
-  function getEntityFromPreview(entity: LuaEntity, stage: StageNumber, assembly: Assembly): AssemblyEntity | nil {
-    const entityName = entity.name
-    if (!entityName.startsWith(Prototypes.PreviewEntityPrefix)) return nil
-    const actualName = entityName.substring(Prototypes.PreviewEntityPrefix.length)
-
-    if (isRollingStockType(actualName)) {
-      return assembly.content.findCompatibleAnyDirection(actualName, entity.position)
-    }
-    return assembly.content.findCompatibleByName(actualName, entity.position, entity.direction)
-  }
-
-  function getEntityFromEntityOrPreview(
-    entityOrPreviewEntity: LuaEntity,
-    stage: StageNumber,
-    assembly: Assembly,
-  ): AssemblyEntity | nil {
-    return (
-      getEntityFromPreview(entityOrPreviewEntity, stage, assembly) ??
-      assembly.content.findCompatible(entityOrPreviewEntity, nil)
-    )
-  }
-
   function tryFixEntity(
     assembly: Assembly,
     stage: StageNumber,
     previewEntity: LuaEntity,
     deleteSettingsRemnants: boolean,
   ) {
-    const existing = getEntityFromPreview(previewEntity, stage, assembly)
+    const existing = assembly.content.findCompatibleFromPreview(previewEntity)
     if (!existing) return
     if (existing.isSettingsRemnant) {
       if (deleteSettingsRemnants) {
@@ -379,8 +357,8 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     tryFixEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
       tryFixEntity(assembly, stage, entity, false)
     },
-    onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
-      const existing = getEntityFromPreview(entity, stage, assembly)
+    onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity): void {
+      const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity)
       if (!existing) return
       forceDeleteEntity(assembly, existing)
     },
@@ -396,7 +374,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       stage: StageNumber,
       byPlayer: PlayerIndex,
     ): void {
-      const existing = getEntityFromEntityOrPreview(entityOrPreviewEntity, stage, assembly)
+      const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity)
       if (!existing || existing.isSettingsRemnant) return
       const oldStage = existing.firstStage
       const result = moveEntityToStage(assembly, existing, stage)
@@ -439,7 +417,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       }
     },
     onBringToStageUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): void {
-      const existing = getEntityFromEntityOrPreview(entity, stage, assembly)
+      const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity)
       if (!existing || existing.isSettingsRemnant) return
       const oldStage = existing.firstStage
       if (oldStage == stage) return

@@ -9,11 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { oppositedirection } from "util"
-import { SavedDirection } from "./AssemblyEntity"
 import { Entity } from "./Entity"
-import { isUndergroundBeltType, rollingStockTypes } from "./entity-info"
-import floor = math.floor
 
 export interface UndergroundBeltEntity extends Entity {
   type: "input" | "output"
@@ -21,32 +17,6 @@ export interface UndergroundBeltEntity extends Entity {
 export type LoaderEntity = UndergroundBeltEntity
 export interface RollingStockEntity extends Entity {
   orientation?: RealOrientation
-}
-/** Inverts direction if is a output underground belt. */
-export function getSavedDirection(entity: LuaEntity): SavedDirection {
-  const type = entity.type
-  if (type == "underground-belt") {
-    if (entity.belt_to_ground_type == "output") {
-      return oppositedirection(entity.direction) as SavedDirection
-    }
-  } else if (rollingStockTypes.has(type)) {
-    return 0 as SavedDirection
-  }
-  return entity.direction as SavedDirection
-}
-
-export function getPastedDirection(entity: BlueprintEntity, direction: defines.direction): defines.direction | nil {
-  if (entity.orientation != nil) return nil
-  const isUnderground = isUndergroundBeltType(entity.name)
-  if (isUnderground && entity.type == "output") {
-    return oppositedirection(direction)
-  }
-  return direction
-}
-
-export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
-  if (orientation == nil) return 0
-  return floor(orientation * 8 + 0.5) % 8
 }
 
 export function makePreviewIndestructible(entity: LuaEntity | nil): void {

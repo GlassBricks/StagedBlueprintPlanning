@@ -388,7 +388,7 @@ describe("onCleanupToolUsed", () => {
 
 test("onEntityForceDeleted calls forceDeleteEntity", () => {
   const { luaEntity, entity } = addEntity(2)
-  worldListener.onEntityForceDeleteUsed(assembly, createPreviewEntity(luaEntity), 2)
+  worldListener.onEntityForceDeleteUsed(assembly, createPreviewEntity(luaEntity))
   assert.spy(assemblyUpdater.forceDeleteEntity).was.called_with(match.ref(assembly), entity)
 })
 

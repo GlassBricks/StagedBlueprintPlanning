@@ -25,7 +25,7 @@ import { Position } from "../lib/geometry"
 import { Entity } from "./Entity"
 import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import { registerEntity } from "./entity-registration"
-import { orientationToDirection, RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
+import { RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import {
   _applyDiffToDiffUnchecked,
   applyDiffToEntity,
@@ -38,27 +38,27 @@ import {
   StageDiffInternal,
   toDiffValue,
 } from "./stage-diff"
+import { getWorldDirection, orientationToDirection, SavedDirection, WorldDirection } from "./direction"
 
 /** 1 indexed */
 export type StageNumber = number
 
-/** Is only different for underground belts */
-export type SavedDirection = defines.direction & {
-  _savedDirectionBrand: never
-}
+export type InternalSavedDirection = { _internalSavedDirection: never }
 /**
  * All the data about one entity in an assembly, across all stages.
  */
 export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly position: Position
-  readonly direction: defines.direction | nil
+  readonly direction: InternalSavedDirection | nil
   getDirection(): SavedDirection
   setDirection(direction: SavedDirection): void
+
+  getWorldDirection(): WorldDirection
 
   /**
    * If is rolling stock, direction is based off of orientation instead.
    */
-  getApparentDirection(): defines.direction
+  getPreviewDirection(): WorldDirection
 
   setPositionUnchecked(position: Position): void
 
@@ -197,7 +197,7 @@ type MutableStageDiff<T extends Entity> = Partial<Mutable<StageDiff<T>>>
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
   public position: Position
-  public direction: defines.direction | nil
+  public direction: InternalSavedDirection | nil
 
   public isSettingsRemnant: true | nil
 
@@ -210,9 +210,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
   }
 
-  constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
+  constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: SavedDirection | nil) {
     this.position = position
-    this.direction = direction == 0 ? nil : direction
+    this.direction = (direction == 0 ? nil : direction) as InternalSavedDirection | nil
     this.firstValue = shallowCopy(firstValue)
     this.firstStage = firstStage
   }
@@ -224,15 +224,20 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (direction == 0) {
       this.direction = nil
     } else {
-      this.direction = direction
+      this.direction = direction as unknown as InternalSavedDirection
     }
   }
 
-  public getApparentDirection(): defines.direction {
+  getWorldDirection(): WorldDirection {
+    return getWorldDirection(this.firstValue as unknown as BlueprintEntity, (this.direction ?? 0) as SavedDirection)
+  }
+
+  public getPreviewDirection(): WorldDirection {
     if (this.isRollingStock()) {
       return orientationToDirection((this.firstValue as RollingStockEntity).orientation)
     }
-    return this.direction ?? 0
+    // matches saved direction if underground belt
+    return (this.direction ?? 0) as WorldDirection
   }
 
   setPositionUnchecked(position: Position): void {

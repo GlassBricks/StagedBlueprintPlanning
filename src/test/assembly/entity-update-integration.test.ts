@@ -50,7 +50,7 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 
 function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean) {
   assert.falsy(entity.isSettingsRemnant, "should not be settingsRemnant")
-  const found = assembly.content.findCompatibleByName(entity.firstValue.name, entity.position, entity.direction)
+  const found = assembly.content.findCompatibleByName(entity.firstValue.name, entity.position, entity.getDirection())
   assert.equal(entity, found, "found in content")
 
   let hasMissing = false
@@ -156,7 +156,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
 }
 
 function assertEntityNotPresent(entity: AssemblyEntity) {
-  const found = assembly.content.findCompatibleByName(entity.firstValue.name, entity.position, entity.direction)
+  const found = assembly.content.findCompatibleByName(entity.firstValue.name, entity.position, entity.getDirection())
   assert.nil(found, "not found in content")
 
   for (const stage of $range(1, assembly.maxStage())) {
@@ -586,7 +586,7 @@ function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHa
         hasError = true
         assert.equal(Prototypes.PreviewEntityPrefix + entity.firstValue.name, worldEntity.name)
         assert.not_nil(entity.getExtraEntity("errorOutline", entity.firstStage))
-        assert.equal(entity.getApparentDirection(), worldEntity.direction, "direction")
+        assert.equal(entity.getPreviewDirection(), worldEntity.direction, "direction")
       } else {
         assert.equal(entity.firstValue.name, worldEntity.name)
         assert.nil(entity.getExtraEntity("errorOutline", entity.firstStage))

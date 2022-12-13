@@ -14,7 +14,6 @@ import {
   createAssemblyEntity,
   LoaderAssemblyEntity,
   RollingStockAssemblyEntity,
-  SavedDirection,
   StageNumber,
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
@@ -22,11 +21,11 @@ import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
 import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
-import { getSavedDirection } from "../entity/special-entities"
 import { findUndergroundPair } from "../entity/special-entity-treatment"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import { AssemblyEntityDollyResult, WorldUpdater } from "./WorldUpdater"
+import { getSavedDirection, SavedDirection } from "../entity/direction"
 import min = math.min
 
 /**
@@ -170,8 +169,7 @@ export function createAssemblyUpdater(
     const [newValue, newDirection] = saveEntity(worldEntity)
     if (!newValue) return false
     assert(newDirection == entity.getDirection(), "direction mismatch on saved entity")
-    const hasDiff = entity.adjustValueAtStage(stage, newValue)
-    return hasDiff
+    return entity.adjustValueAtStage(stage, newValue)
   }
 
   function checkUpgradeType(existing: AssemblyEntity, upgradeType: string): void {
@@ -396,14 +394,12 @@ export function createAssemblyUpdater(
       const newDirection = entitySource.direction as SavedDirection
       const rotated = newDirection != entity.getDirection()
       if (!rotated) return "no-change"
-      if (setRotationOrUndo(assembly, stage, entity, newDirection)) {
-        if (type == "loader" || type == "loader-1x1") {
-          ;(entity as LoaderAssemblyEntity).setPropAtStage(entity.firstStage, "type", entitySource.loader_type)
-        }
-        updateWorldEntities(assembly, entity, stage)
-        return "updated"
+      if (!setRotationOrUndo(assembly, stage, entity, newDirection)) return "cannot-rotate"
+      if (type == "loader" || type == "loader-1x1") {
+        ;(entity as LoaderAssemblyEntity).setPropAtStage(entity.firstStage, "type", entitySource.loader_type)
       }
-      return "cannot-rotate"
+      updateWorldEntities(assembly, entity, stage)
+      return "updated"
     },
     tryRotateUnderground,
     tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {

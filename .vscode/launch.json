@@ -26,10 +26,9 @@
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio/config.ini",
-        "-mod-directory",
-        "${workspaceRoot}/factorio"
+        "${workspaceRoot}/factorio/config.ini"
       ],
+      "modsPath": "${workspaceRoot}/factorio",
       "checkGlobals": false,
       "hookControl": false
     },
@@ -56,12 +55,12 @@
         "low",
         "-c",
         "${workspaceRoot}/factorio/config.ini",
-        "-mod-directory",
-        "${workspaceRoot}/factorio"
       ],
+      "modsPath": "${workspaceRoot}/factorio",
       "checkGlobals": false,
       "hookControl": true
-    }, {
+    },
+    {
       "type": "factoriomod",
       "request": "launch",
       "name": "debug data",
@@ -82,13 +81,13 @@
         "low",
         "-c",
         "${workspaceRoot}/factorio/config.ini",
-        "-mod-directory",
-        "${workspaceRoot}/factorio"
       ],
+      "modsPath": "${workspaceRoot}/factorio"",
       "checkGlobals": false,
       "hookData": true,
       "hookControl": false
-    }, {
+    },
+    {
       "type": "factoriomod",
       "request": "launch",
       "name": "debug only",
