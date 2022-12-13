@@ -17,12 +17,12 @@ import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
 import { getPasteRotatableType, isUndergroundBeltType, PasteRotatableType, rollingStockTypes } from "./entity-info"
 import { makePreviewIndestructible } from "./special-entities"
-import { getSavedDirection, getUndergroundWorldDirection, SavedDirection, WorldDirection } from "./direction"
+import { getSavedDirection, SavedDirection, WorldDirection } from "./direction"
 
 /** @noSelf */
 export interface EntityCreator {
   createEntity(surface: LuaSurface, position: Position, direction: SavedDirection, entity: Entity): LuaEntity | nil
-  updateEntity(luaEntity: LuaEntity, value: Entity, direction: SavedDirection): LuaEntity
+  updateEntity(luaEntity: LuaEntity, value: Entity, direction: SavedDirection): LuaEntity | nil
   createPreviewEntity(
     surface: LuaSurface,
     position: Position,
@@ -270,15 +270,23 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
   moduleInventory.sort_and_merge()
 }
 
-function updateUndergroundRotation(luaEntity: LuaEntity, mode: "input" | "output", direction: SavedDirection): void {
+function updateUndergroundRotation(
+  luaEntity: LuaEntity,
+  value: BlueprintEntity,
+  direction: SavedDirection,
+): LuaEntity | nil {
+  if (getSavedDirection(luaEntity) != direction) {
+    luaEntity.destroy()
+    return tryCreateUndergroundEntity(luaEntity.surface, luaEntity.position, direction, value)
+  }
+  const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
     const wasRotatable = luaEntity.rotatable
     luaEntity.rotatable = true
     luaEntity.rotate()
     luaEntity.rotatable = wasRotatable
   }
-  const worldDirection = getUndergroundWorldDirection(direction, mode)
-  assert(luaEntity.direction == worldDirection, "cannot rotate underground-belt")
+  return luaEntity
 }
 
 const BlueprintEntityHandler: EntityHandler = {
@@ -315,7 +323,7 @@ const BlueprintEntityHandler: EntityHandler = {
     return entity
   },
 
-  updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: SavedDirection): LuaEntity {
+  updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: SavedDirection): LuaEntity | nil {
     if (rollingStockTypes.has(luaEntity.type)) return luaEntity
 
     if (luaEntity.name != value.name) {
@@ -323,9 +331,8 @@ const BlueprintEntityHandler: EntityHandler = {
     }
 
     if (luaEntity.type == "underground-belt") {
-      updateUndergroundRotation(luaEntity, value.type ?? "input", direction)
       // underground belts don't have other settings.
-      return luaEntity
+      return updateUndergroundRotation(luaEntity, value, direction)
     }
 
     assume<WorldDirection>(direction) // not rolling stock or underground belt, so direction is world direction
