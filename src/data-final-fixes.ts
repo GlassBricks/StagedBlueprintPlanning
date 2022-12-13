@@ -42,14 +42,30 @@ export function createWhiteSprite(
   rawBBox: BoundingBoxWrite | BoundingBoxArray,
   color: Color | nil,
 ): Sprite | Sprite4Way {
-  const bbox = BBox.normalize(rawBBox)
+  let bbox = BBox.normalize(rawBBox)
 
-  const size = bbox.size()
-  const scale = ceil(max(size.x, size.y))
+  let size = bbox.size()
+  let scale = ceil(max(size.x, size.y))
   if (scale == 0) return empty_sprite() as Sprite
-  const center = bbox.center()
+
+  if (scale > 32) {
+    // scale dimensions so it fits in 32x32
+    let scaleX = 1
+    let scaleY = 1
+    if (ceil(size.x) > 32) {
+      scaleX = 32 / ceil(size.x)
+    }
+    if (ceil(size.y) > 32) {
+      scaleY = 32 / ceil(size.y)
+    }
+    bbox = bbox.scaleXY(scaleX, scaleY)
+    size = bbox.size()
+    scale = ceil(max(size.x, size.y))
+  }
 
   const { x, y } = bbox.scale(32 / scale).size()
+  const center = bbox.center()
+
   function createRotated(dir: defines.direction | nil): Sprite {
     const isRotated90 = dir == direction.east || dir == direction.west
     return {

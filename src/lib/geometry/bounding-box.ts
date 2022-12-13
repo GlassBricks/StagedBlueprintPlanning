@@ -96,6 +96,14 @@ namespace BBox {
       { x: right_bottom.x * factor, y: right_bottom.y * factor },
     )
   }
+
+  export function scaleXY(box: BBox, factorX: number, factorY: number): BBoxClass {
+    const { left_top, right_bottom } = box
+    return BBox(
+      { x: left_top.x * factorX, y: left_top.y * factorY },
+      { x: right_bottom.x * factorX, y: right_bottom.y * factorY },
+    )
+  }
   export function expand(box: BBox, amount: number): BBoxClass {
     const { left_top, right_bottom } = box
     return BBox(
