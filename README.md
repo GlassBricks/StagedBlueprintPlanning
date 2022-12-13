@@ -1,8 +1,8 @@
-# 100% Blueprint planning
+# Staged blueprint planning.
 
-A factorio mod for designing staged blueprints for 100% speedrunning.
+A factorio mod for designing staged blueprints, e.g. for 100% speedruns.
 
-For more info, see the mod portal.
+For more info, see the mod portal (https://mods.factorio.com/mod/bp100).
 
 This uses:
 
