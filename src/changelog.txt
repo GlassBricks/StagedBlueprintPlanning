@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.6
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fix issues with assembling machines being rotated via blueprint pasting.
+    - Fix crash with modded entities having very large selection boxes.
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.5
 Date: 2022-12-09
