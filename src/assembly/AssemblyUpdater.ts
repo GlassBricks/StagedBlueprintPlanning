@@ -20,7 +20,7 @@ import {
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
-import { EntityHandler, EntitySaver } from "../entity/EntityHandler"
+import { EntityHandler, EntitySaver, canBeAnyDirection } from "../entity/EntityHandler"
 import { findUndergroundPair } from "../entity/special-entity-treatment"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
@@ -168,7 +168,9 @@ export function createAssemblyUpdater(
     const worldEntity = assert(entity.getWorldEntity(stage))
     const [newValue, newDirection] = saveEntity(worldEntity)
     if (!newValue) return false
-    assert(newDirection == entity.getDirection(), "direction mismatch on saved entity")
+    if (!canBeAnyDirection(worldEntity)) {
+      assert(newDirection == entity.getDirection(), "direction mismatch on saved entity")
+    }
     return entity.adjustValueAtStage(stage, newValue)
   }
 
@@ -302,6 +304,12 @@ export function createAssemblyUpdater(
     return true
   }
 
+  function getCoercedEntityDirection(luaEntity: LuaEntity, entity: AssemblyEntity): SavedDirection {
+    // not underground belt or rolling stock
+    if (canBeAnyDirection(luaEntity)) return entity.getDirection()
+    return luaEntity.direction as SavedDirection
+  }
+
   return {
     addNewEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): AssemblyEntity<any> | nil {
       const [saved, savedDir] = saveEntity(entity)
@@ -362,7 +370,7 @@ export function createAssemblyUpdater(
         return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
       }
 
-      const newDirection = entitySource.direction as SavedDirection
+      const newDirection = getCoercedEntityDirection(entitySource, entity)
       const rotated = newDirection != entity.getDirection()
       if (rotated) {
         if (!setRotationOrUndo(assembly, stage, entity, newDirection)) {
@@ -391,7 +399,7 @@ export function createAssemblyUpdater(
         )
       }
 
-      const newDirection = entitySource.direction as SavedDirection
+      const newDirection = getCoercedEntityDirection(entitySource, entity)
       const rotated = newDirection != entity.getDirection()
       if (!rotated) return "no-change"
       if (!setRotationOrUndo(assembly, stage, entity, newDirection)) return "cannot-rotate"

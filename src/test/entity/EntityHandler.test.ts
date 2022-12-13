@@ -11,7 +11,7 @@
 
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
-import { EntityHandler } from "../../entity/EntityHandler"
+import { canBeAnyDirection, EntityHandler } from "../../entity/EntityHandler"
 import { EAST, NORTH, SOUTH, WEST } from "../../entity/direction"
 
 let surface: LuaSurface
@@ -314,4 +314,23 @@ test("can handle item changes", () => {
   )
   assert.equal(newEntity, entity)
   assert.same(newContents, entity.get_module_inventory()!.get_contents())
+})
+
+test("can be any direction", () => {
+  // only true if assembling machine with no fluid inputs
+  const entity = surface.create_entity({
+    name: "assembling-machine-3",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+  })!
+  assert.true(canBeAnyDirection(entity))
+  entity.set_recipe("rocket-fuel")
+  assert.false(canBeAnyDirection(entity))
+
+  const entity2 = surface.create_entity({
+    name: "iron-chest",
+    position: { x: 0.5, y: 0.5 },
+    force: "player",
+  })!
+  assert.false(canBeAnyDirection(entity2))
 })

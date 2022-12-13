@@ -430,6 +430,64 @@ describe("tryRotateEntityToMatchWorld", () => {
   })
 })
 
+describe("ignores assembling machine rotation if no fluid inputs", () => {
+  let luaEntity: LuaEntity, entity: AssemblyEntity<BlueprintEntity>
+  before_each(() => {
+    ;({ luaEntity, entity } = addEntity(2, {
+      name: "assembling-machine-2",
+      direction: defines.direction.east,
+    }))
+
+    entity.replaceWorldEntity(3, luaEntity)
+    // hacky way to rotate
+    luaEntity.set_recipe("express-transport-belt")
+    luaEntity.direction = defines.direction.south
+    luaEntity.set_recipe(nil)
+    assert.equal(defines.direction.south, luaEntity.direction)
+  })
+  test("using update", () => {
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
+    assert.equal("no-change", ret)
+    assert.equal(0, entity.getDirection())
+
+    assertOneEntity()
+    assertWUNotCalled()
+  })
+  test("using rotate", () => {
+    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 3)
+    assert.equal("no-change", ret)
+    assert.equal(0, entity.getDirection())
+
+    assertOneEntity()
+    assertWUNotCalled()
+  })
+  test("can change recipe and rotate", () => {
+    luaEntity.set_recipe("iron-gear-wheel")
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
+    assert.equal("updated", ret)
+    assert.equal("iron-gear-wheel", entity.getValueAtStage(3)!.recipe)
+
+    assertOneEntity()
+    assertUpdateCalled(entity, 3, nil)
+  })
+  test("disallows if has fluid inputs", () => {
+    luaEntity.set_recipe("express-transport-belt")
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
+    assert.equal("cannot-rotate", ret)
+
+    assertOneEntity()
+    assertRefreshCalled(entity, 3)
+  })
+  test("disallows if has fluid inputs", () => {
+    luaEntity.set_recipe("express-transport-belt")
+    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 3)
+    assert.equal("cannot-rotate", ret)
+
+    assertOneEntity()
+    assertRefreshCalled(entity, 3)
+  })
+})
+
 describe("tryApplyUpgradeTarget", () => {
   test("can apply upgrade", () => {
     const { luaEntity, entity } = addEntity(1)

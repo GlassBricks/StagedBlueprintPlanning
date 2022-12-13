@@ -15,7 +15,7 @@ import { Events, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
-import { isUndergroundBeltType, rollingStockTypes } from "./entity-info"
+import { getPasteRotatableType, isUndergroundBeltType, PasteRotatableType, rollingStockTypes } from "./entity-info"
 import { makePreviewIndestructible } from "./special-entities"
 import { getSavedDirection, getUndergroundWorldDirection, SavedDirection, WorldDirection } from "./direction"
 
@@ -23,7 +23,6 @@ import { getSavedDirection, getUndergroundWorldDirection, SavedDirection, WorldD
 export interface EntityCreator {
   createEntity(surface: LuaSurface, position: Position, direction: SavedDirection, entity: Entity): LuaEntity | nil
   updateEntity(luaEntity: LuaEntity, value: Entity, direction: SavedDirection): LuaEntity
-
   createPreviewEntity(
     surface: LuaSurface,
     position: Position,
@@ -366,3 +365,12 @@ Migrations.to("0.6.0", () => {
     }
   }
 })
+
+/** Currently only true if is a square assembling machine with no fluid inputs. */
+export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
+  return (
+    luaEntity.type == "assembling-machine" &&
+    getPasteRotatableType(luaEntity.name) == PasteRotatableType.Square &&
+    luaEntity.fluidbox.length == 0
+  )
+}
