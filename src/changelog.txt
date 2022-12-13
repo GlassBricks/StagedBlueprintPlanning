@@ -1,14 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.7
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fix error when overbuilding an underground preview entity.
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.6
 Date: 2022-12-13
   Bugfixes:
     - Fix issues with assembling machines being rotated via blueprint pasting.
     - Fix startup crash with modded entities having very large selection boxes.
-    - Fix error when overbuilding an underground preview entity.
 ---------------------------------------------------------------------------------------------------
 Version: 0.14.5
 Date: 2022-12-09
