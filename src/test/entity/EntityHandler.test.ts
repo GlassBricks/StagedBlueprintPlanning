@@ -117,7 +117,7 @@ test("can upgrade an entity", () => {
   })!
   entity.minable = false
   entity.destructible = false
-  const newEntity = EntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, NORTH)
+  const newEntity = EntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, NORTH)!
   assert.equal("steel-chest", newEntity.name)
   assert.false(entity.valid)
 })
@@ -223,7 +223,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type: otherDir,
       } as Entity,
       EAST,
-    )
+    )!
     assert.equal(entity, updated)
     assert.equal(otherDir, updated.belt_to_ground_type)
     assert.false(updated.rotatable)
@@ -245,11 +245,33 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type: inOut,
       } as Entity,
       WEST,
-    )
+    )!
     assert.not_nil(updated, "entity updated")
     assert.equal("fast-underground-belt", updated.name)
     assert.equal(!flipped ? defines.direction.west : defines.direction.east, updated.direction)
     assert.equal(inOut, updated.belt_to_ground_type)
+  })
+
+  test("can rotate underground", () => {
+    const entity = surface.create_entity({
+      name: "underground-belt",
+      position: { x: 12.5, y: 12.5 },
+      force: "player",
+      type: inOut,
+      direction: !flipped ? defines.direction.west : defines.direction.east, // actual is west
+    })!
+    assert.not_nil(entity, "entity created")
+    const updated = EntityHandler.updateEntity(
+      entity,
+      {
+        name: "underground-belt",
+        type: inOut,
+      } as Entity,
+      SOUTH,
+    )!
+    assert.not_nil(updated, "entity updated")
+    assert.equal("underground-belt", updated.name)
+    assert.equal(!flipped ? defines.direction.south : defines.direction.north, updated.direction)
   })
 })
 
@@ -287,7 +309,7 @@ test("can flip loader", () => {
       type: "output",
     } as Entity,
     EAST,
-  )
+  )!
   assert.equal(entity, updated)
   assert.equal("output", updated.loader_type)
   assert.false(updated.rotatable)

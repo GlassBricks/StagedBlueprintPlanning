@@ -276,8 +276,10 @@ function updateUndergroundRotation(
   direction: SavedDirection,
 ): LuaEntity | nil {
   if (getSavedDirection(luaEntity) != direction) {
+    const surface = luaEntity.surface
+    const position = luaEntity.position
     luaEntity.destroy()
-    return tryCreateUndergroundEntity(luaEntity.surface, luaEntity.position, direction, value)
+    return tryCreateUndergroundEntity(surface, position, direction, value)
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
