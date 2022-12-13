@@ -10,7 +10,7 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { newEntityMap } from "../entity/EntityMap"
+import { newAssemblyContent } from "../entity/AssemblyContent"
 import {
   bind,
   Event,
@@ -67,7 +67,7 @@ class UserAssemblyImpl implements UserAssembly {
   name: MutableState<string>
   displayName: State<LocalisedString>
 
-  content = newEntityMap()
+  content = newAssemblyContent()
   localEvents = new Event<LocalAssemblyEvent>()
 
   assemblyBlueprintSettings: AssemblyBlueprintSettings = {
@@ -238,6 +238,11 @@ class UserAssemblyImpl implements UserAssembly {
   private assertValid(): void {
     if (!this.valid) error("Assembly is invalid")
   }
+
+  __tostring(): string {
+    return `<Assembly ${this.id}, ${this.name.get()}>`
+  }
+
   static onAssemblyCreated(assembly: UserAssemblyImpl): void {
     global.assemblies.set(assembly.id, assembly)
     GlobalAssemblyEvents.raise({ type: "assembly-created", assembly })
@@ -348,6 +353,10 @@ class StageImpl implements Stage {
     ;(this as Mutable<Stage>).valid = false
     global.surfaceIndexToStage.delete(this.surfaceIndex)
     if (this.surface.valid) game.delete_surface(this.surface)
+  }
+
+  __tostring() {
+    return `<Stage ${this.stageNumber} of ${this.assembly.name.get()}, ${this.name.get()}>`
   }
 }
 

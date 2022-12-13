@@ -11,16 +11,16 @@
 
 import { oppositedirection } from "util"
 import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
-import { MutableEntityMap, newEntityMap } from "../../entity/EntityMap"
+import { MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import { findUndergroundPair, unit } from "../../entity/special-entity-treatment"
 import direction = defines.direction
 import { SavedDirection } from "../../entity/direction"
 
-let content: MutableEntityMap
+let content: MutableAssemblyContent
 
 before_each(() => {
-  content = newEntityMap()
+  content = newAssemblyContent()
 })
 // describe.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
 describe.each([direction.north, direction.west])("findUndergroundPair, direction %s", (direction) => {

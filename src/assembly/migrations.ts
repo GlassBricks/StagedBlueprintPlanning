@@ -10,7 +10,7 @@
  */
 
 import { _migrate031, _migrate060, StageNumber } from "../entity/AssemblyEntity"
-import { migrateMap030, migrateMap060 } from "../entity/EntityMap"
+import { migrateMap030, migrateMap060 } from "../entity/AssemblyContent"
 import { Migrations } from "../lib/migration"
 import { AssemblyId, UserAssembly } from "./AssemblyDef"
 import { _migrate0131 } from "./edit-blueprint-settings"

@@ -12,7 +12,7 @@
 import { isEmpty } from "../lib"
 import { AsmCircuitConnection, circuitConnectionMatches, getDirectionalInfo } from "./AsmCircuitConnection"
 import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
-import { AsmEntityCircuitConnections, CableAddResult, EntityMap, MutableEntityMap } from "./EntityMap"
+import { AsmEntityCircuitConnections, CableAddResult, AssemblyContent, MutableAssemblyContent } from "./AssemblyContent"
 
 /** @noSelf */
 export interface WireUpdater {
@@ -21,13 +21,13 @@ export interface WireUpdater {
    *
    * Returns true if connections succeeded (false if max connections exceeded).
    */
-  updateWireConnections(content: MutableEntityMap, entity: AssemblyEntity, stageNumber: StageNumber): boolean
+  updateWireConnections(content: MutableAssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
 }
 
 /** @noSelf */
 export interface WireSaver {
   saveWireConnections(
-    content: MutableEntityMap,
+    content: MutableAssemblyContent,
     entity: AssemblyEntity,
     stage: StageNumber,
     higherStageForMerging?: StageNumber,
@@ -38,7 +38,7 @@ export interface WireSaver {
 export interface WireHandler extends WireUpdater, WireSaver {}
 
 function updateCircuitConnections(
-  content: MutableEntityMap,
+  content: MutableAssemblyContent,
   entity: AssemblyEntity,
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
@@ -75,7 +75,7 @@ function updateCircuitConnections(
 }
 
 function updateCableConnections(
-  content: MutableEntityMap,
+  content: MutableAssemblyContent,
   entity: AssemblyEntity,
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
@@ -87,7 +87,7 @@ function updateCableConnections(
   const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
   if (existingConnections) {
     for (const otherLuaEntity of existingConnections) {
-      const otherEntity = content.findCompatible(otherLuaEntity, nil)
+      const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
       if (!otherEntity) continue
       if (assemblyConnections && assemblyConnections.has(otherEntity)) {
         matching.add(otherEntity)
@@ -108,7 +108,11 @@ function updateCableConnections(
   return true
 }
 
-function updateWireConnections(content: MutableEntityMap, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+function updateWireConnections(
+  content: MutableAssemblyContent,
+  entity: AssemblyEntity,
+  stageNumber: StageNumber,
+): boolean {
   const luaEntity = entity.getWorldEntity(stageNumber)
   if (!luaEntity) return false
   updateCircuitConnections(content, entity, stageNumber, luaEntity)
@@ -116,7 +120,7 @@ function updateWireConnections(content: MutableEntityMap, entity: AssemblyEntity
 }
 
 function saveCircuitConnections(
-  content: MutableEntityMap,
+  content: MutableAssemblyContent,
   entity: AssemblyEntity,
   stageNumber: StageNumber,
   luaEntity: LuaEntity,
@@ -164,7 +168,7 @@ function saveCircuitConnections(
  * mergeStage should be the 'lower' stage. only new connections at this stage (not in the other stage) will be added.
  */
 function saveCableConnections(
-  content: MutableEntityMap,
+  content: MutableAssemblyContent,
   entity: AssemblyEntity,
   stage: StageNumber,
   higherStageForMerging: StageNumber | nil,
@@ -179,7 +183,7 @@ function saveCableConnections(
 
   if (worldConnections) {
     for (const otherLuaEntity of worldConnections) {
-      const otherEntity = content.findCompatible(otherLuaEntity, nil)
+      const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
       if (!otherEntity) continue
       if (!savedConnections || !savedConnections.has(otherEntity)) {
         newConnections.add(otherEntity)
@@ -196,7 +200,7 @@ function saveCableConnections(
       const higherConnections = (higherEntity.neighbours as { copper?: LuaEntity[] }).copper
       if (higherConnections) {
         for (const otherLuaEntity of higherConnections) {
-          const otherEntity = content.findCompatible(otherLuaEntity, nil)
+          const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
           if (
             otherEntity &&
             otherEntity.firstStage > stage &&
@@ -231,7 +235,7 @@ function saveCableConnections(
 }
 
 function saveWireConnections(
-  content: MutableEntityMap,
+  content: MutableAssemblyContent,
   entity: AssemblyEntity,
   stage: StageNumber,
   higherStageForMerging: StageNumber | nil,
@@ -247,7 +251,7 @@ function analyzeExistingCircuitConnections(
   assemblyConnections: AsmEntityCircuitConnections | nil,
   luaEntity: LuaEntity,
   existingConnections: readonly CircuitConnectionDefinition[],
-  content: EntityMap,
+  content: AssemblyContent,
 ): LuaMultiReturn<
   [
     matchingConnections: LuaMap<AsmCircuitConnection, CircuitConnectionDefinition>,
@@ -261,7 +265,7 @@ function analyzeExistingCircuitConnections(
     const otherLuaEntity = existingConnection.target_entity
     if (luaEntity == otherLuaEntity && existingConnection.source_circuit_id > existingConnection.target_circuit_id)
       continue
-    const otherEntity = content.findCompatible(otherLuaEntity, nil)
+    const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
     if (!otherEntity) continue
     let matchingConnection: AsmCircuitConnection | nil
     if (assemblyConnections) {

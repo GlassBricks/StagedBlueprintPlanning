@@ -12,14 +12,14 @@
 import { Mutable } from "../lib"
 import { Pos, Position, PositionClass } from "../lib/geometry"
 import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
-import { MutableEntityMap } from "./EntityMap"
+import { MutableAssemblyContent } from "./AssemblyContent"
 import { oppositeSavedDirection } from "./direction"
 
 /**
  * Finds an underground pair. If there are multiple possible pairs, returns the first one, and true as the second return value.
  */
 export function findUndergroundPair(
-  content: MutableEntityMap,
+  content: MutableAssemblyContent,
   member: AssemblyEntity,
 ): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
   const [pair, hasMultiple] = findUndergroundPairOneDirection(content, member)
@@ -30,7 +30,7 @@ export function findUndergroundPair(
 }
 
 function findUndergroundPairOneDirection(
-  content: MutableEntityMap,
+  content: MutableAssemblyContent,
   member: AssemblyEntity,
 ): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
   const name = member.firstValue.name
@@ -48,7 +48,7 @@ function findUndergroundPairOneDirection(
   for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
-    const underground = content.findCompatibleByName(name, curPos, otherDirection) as
+    const underground = content.findCompatibleByTraits(name, curPos, otherDirection) as
       | UndergroundBeltAssemblyEntity
       | nil
     if (underground && underground.firstValue.name == name) {

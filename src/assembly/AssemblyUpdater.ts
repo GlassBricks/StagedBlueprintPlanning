@@ -514,7 +514,7 @@ export function createAssemblyUpdater(
       const entities = train.carriages
 
       const content = assembly.content
-      const assemblyEntities = entities.map((e) => content.findCompatible(e, nil)!)
+      const assemblyEntities = entities.map((e) => content.findCompatibleWithLuaEntity(e, nil)!)
       for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
       for (const entity of assemblyEntities) replaceWorldEntityAtStage(assembly, entity, stage)
     },
@@ -530,7 +530,7 @@ export function createAssemblyUpdater(
       const content = assembly.content
 
       for (const luaEntity of entities) {
-        const assemblyEntity = content.findCompatible(luaEntity, nil)
+        const assemblyEntity = content.findCompatibleWithLuaEntity(luaEntity, nil)
         if (assemblyEntity) {
           content.changePosition(assemblyEntity, luaEntity.position)
           replaceWorldEntityAtStage(assembly, assemblyEntity, stage)

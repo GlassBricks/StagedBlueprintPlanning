@@ -171,7 +171,7 @@ test("addNewEntity", () => {
   assert.same(pos, entity.position)
   assert.equal(0, entity.getDirection())
 
-  const found = assembly.content.findCompatible(luaEntity, nil) as AssemblyEntity<BlueprintEntity>
+  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil) as AssemblyEntity<BlueprintEntity>
   assert.equal(entity, found, "added to content")
 
   assert.equal(luaEntity, entity.getWorldEntity(2))
@@ -961,7 +961,7 @@ describe("rolling stock", () => {
     assert.not_nil(found, "found any direction")
     assert.equal(result, found)
 
-    const foundDirectly = assembly.content.findCompatible(rollingStock, nil)
+    const foundDirectly = assembly.content.findCompatibleWithLuaEntity(rollingStock, nil)
     assert.not_nil(foundDirectly, "found directly")
     assert.equal(found, foundDirectly, "found same entity")
 

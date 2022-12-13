@@ -10,7 +10,7 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { MutableEntityMap } from "../entity/EntityMap"
+import { MutableAssemblyContent } from "../entity/AssemblyContent"
 import { MutableState, Observable, State } from "../lib"
 import { BlueprintTransformations } from "./take-blueprint"
 import { AutoSetTilesType } from "./tiles"
@@ -21,7 +21,7 @@ export interface Assembly {
 
   getStageName(stage: StageNumber): LocalisedString
   getSurface(stage: StageNumber): LuaSurface | nil
-  readonly content: MutableEntityMap
+  readonly content: MutableAssemblyContent
 }
 export interface UserAssembly extends Assembly {
   readonly id: AssemblyId
@@ -29,7 +29,7 @@ export interface UserAssembly extends Assembly {
   readonly name: MutableState<string>
   readonly displayName: State<LocalisedString>
 
-  readonly content: MutableEntityMap
+  readonly content: MutableAssemblyContent
 
   readonly localEvents: Observable<LocalAssemblyEvent>
 

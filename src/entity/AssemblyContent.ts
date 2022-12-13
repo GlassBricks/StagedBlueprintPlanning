@@ -29,16 +29,14 @@ import { Prototypes } from "../constants"
 /**
  * A collection of assembly entities: the actual data of an assembly.
  *
- * Also keeps tracks of wires and circuit connections.
+ * Also keeps tracks of info spanning multiple entities (wire/circuit connections).
  */
-export interface EntityMap {
-  findCompatibleByName(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil
-  findCompatible(entity: BasicEntityInfo, previousDirection: WorldDirection | nil): AssemblyEntity | nil
+export interface AssemblyContent {
+  findCompatibleByTraits(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
+  findCompatibleWithLuaEntity(entity: BasicEntityInfo, previousDirection: WorldDirection | nil): AssemblyEntity | nil
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil
-
   findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil
-
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil
 
   getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil
@@ -61,7 +59,7 @@ export const enum CableAddResult {
 }
 const MaxCableConnections = 5 // hard-coded in game
 
-export interface MutableEntityMap extends EntityMap {
+export interface MutableAssemblyContent extends AssemblyContent {
   add(entity: AssemblyEntity): void
   delete(entity: AssemblyEntity): void
 
@@ -87,13 +85,13 @@ function isSingle(entity: AssemblyEntity | readonly AssemblyEntity[]): entity is
 }
 
 @RegisterClass("EntityMap")
-class EntityMapImpl implements MutableEntityMap {
+class AssemblyContentImpl implements MutableAssemblyContent {
   readonly byPosition: MutableMap2D<AssemblyEntity> = newMap2D()
   entities = new LuaSet<AssemblyEntity>()
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
-  findCompatibleByName(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil {
+  findCompatibleByTraits(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
@@ -151,10 +149,13 @@ class EntityMapImpl implements MutableEntityMap {
     return nil
   }
 
-  findCompatible(entity: BasicEntityInfo | LuaEntity, previousDirection: WorldDirection | nil): AssemblyEntity | nil {
+  findCompatibleWithLuaEntity(
+    entity: BasicEntityInfo | LuaEntity,
+    previousDirection: WorldDirection | nil,
+  ): AssemblyEntity | nil {
     const type = entity.type
     if (type == "underground-belt") {
-      return this.findCompatibleByName(type, entity.position, getSavedDirection(entity))
+      return this.findCompatibleByTraits(type, entity.position, getSavedDirection(entity))
     } else if (rollingStockTypes.has(type)) {
       if (entity.object_name == "LuaEntity") {
         const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
@@ -166,7 +167,11 @@ class EntityMapImpl implements MutableEntityMap {
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType == nil) {
-      return this.findCompatibleByName(name, entity.position, (previousDirection ?? entity.direction) as SavedDirection)
+      return this.findCompatibleByTraits(
+        name,
+        entity.position,
+        (previousDirection ?? entity.direction) as SavedDirection,
+      )
     }
     if (pasteRotatableType == PasteRotatableType.Square) {
       return this.findCompatibleAnyDirection(name, entity.position)
@@ -175,8 +180,8 @@ class EntityMapImpl implements MutableEntityMap {
       const direction = (previousDirection ?? entity.direction) as SavedDirection
       const position = entity.position
       return (
-        this.findCompatibleByName(name, position, direction) ??
-        this.findCompatibleByName(name, position, oppositeSavedDirection(direction))
+        this.findCompatibleByTraits(name, position, direction) ??
+        this.findCompatibleByTraits(name, position, oppositeSavedDirection(direction))
       )
     }
   }
@@ -187,7 +192,7 @@ class EntityMapImpl implements MutableEntityMap {
       return this.findCompatibleAnyDirection(actualName, previewEntity.position)
     }
     // todo: migrate asms to be correct direction, and underground previews too
-    return this.findCompatibleByName(actualName, previewEntity.position, previewEntity.direction as SavedDirection)
+    return this.findCompatibleByTraits(actualName, previewEntity.position, previewEntity.direction as SavedDirection)
   }
 
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil {
@@ -195,7 +200,7 @@ class EntityMapImpl implements MutableEntityMap {
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
       return this.findCompatibleFromPreview(entity)
     }
-    return this.findCompatible(entity, nil)
+    return this.findCompatibleWithLuaEntity(entity, nil)
   }
 
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {
@@ -424,17 +429,21 @@ class EntityMapImpl implements MutableEntityMap {
       entity.deleteStage(stageNumber)
     }
   }
+
+  __tostring(): string {
+    return `AssemblyContent(${tostring(this.entities)}`
+  }
 }
 
-export function newEntityMap(): MutableEntityMap {
-  return new EntityMapImpl()
+export function newAssemblyContent(): MutableAssemblyContent {
+  return new AssemblyContentImpl()
 }
 
-export function migrateMap030(_content: MutableEntityMap): void {
+export function migrateMap030(_content: MutableAssemblyContent): void {
   interface OldEntityMap {
     entities: LuaMap<AssemblyEntity, AsmEntityCircuitConnections>
   }
-  const content = _content as EntityMapImpl
+  const content = _content as AssemblyContentImpl
 
   const oldEntities = (content as unknown as OldEntityMap).entities
   content.circuitConnections = oldEntities
@@ -445,6 +454,6 @@ export function migrateMap030(_content: MutableEntityMap): void {
   content.cableConnections = new LuaMap()
 }
 
-export function migrateMap060(content: MutableEntityMap): void {
-  migrateMap2d060((content as EntityMapImpl).byPosition)
+export function migrateMap060(content: MutableAssemblyContent): void {
+  migrateMap2d060((content as AssemblyContentImpl).byPosition)
 }

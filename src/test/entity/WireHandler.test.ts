@@ -11,17 +11,17 @@
 
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { CableAddResult, MutableEntityMap, newEntityMap } from "../../entity/EntityMap"
+import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { WireHandler } from "../../entity/WireHandler"
 import { shallowCompare } from "../../lib"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 
-let content: MutableEntityMap
+let content: MutableAssemblyContent
 const surfaces = setupTestSurfaces(2)
 let surface: LuaSurface
 
 before_each(() => {
-  content = newEntityMap()
+  content = newAssemblyContent()
   surface = surfaces[0]
   surface.find_entities().forEach((e) => e.destroy())
 })

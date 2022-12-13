@@ -154,7 +154,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
     const entityName = entity.name
     const existing = shouldCheckEntityExactlyForMatch(entityName)
-      ? content.findCompatible(entity, nil)
+      ? content.findCompatibleWithLuaEntity(entity, nil)
       : content.findCompatibleAnyDirection(entityName, entity.position) // if it doesn't overlap, find in any direction to avoid issues
 
     if (!existing) {
@@ -192,7 +192,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     previousDirection: defines.direction | nil,
     byPlayer: PlayerIndex | nil,
   ): AssemblyEntity | nil {
-    const compatible = assembly.content.findCompatible(entity, previousDirection)
+    const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection)
     if (compatible && stage >= compatible.firstStage) {
       compatible.replaceWorldEntity(stage, entity) // just in case
     } else {
@@ -268,7 +268,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   return {
     onEntityCreated,
     onEntityDeleted(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void {
-      const existing = assembly.content.findCompatible(entity, nil)
+      const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
       if (!existing) return
       const existingStage = existing.firstStage
 
@@ -313,7 +313,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       stage: StageNumber,
       byPlayer: PlayerIndex | nil,
     ): void {
-      const existing = assembly.content.findCompatible(entity, nil)
+      const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
       if (!existing || !existing.isUndergroundBelt()) return
       const result = tryRotateUnderground(
         assembly,
@@ -363,7 +363,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       forceDeleteEntity(assembly, existing)
     },
     onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void {
-      const existing = assembly.content.findCompatible(entity, nil)
+      const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
       if (existing) {
         clearEntityAtStage(assembly, existing, stage)
       }

@@ -11,7 +11,7 @@
 
 import { Assembly } from "../../assembly/AssemblyDef"
 import { createStageSurface, prepareArea } from "../../assembly/surfaces"
-import { newEntityMap } from "../../entity/EntityMap"
+import { newAssemblyContent } from "../../entity/AssemblyContent"
 import { BBox, Pos } from "../../lib/geometry"
 
 export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
@@ -20,7 +20,7 @@ export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
   return {
     getSurface: (stage) => surfaces[stage - 1],
     maxStage: () => surfaces.length,
-    content: newEntityMap(),
+    content: newAssemblyContent(),
     getStageName: (n) => "mock stage " + n,
   }
 }

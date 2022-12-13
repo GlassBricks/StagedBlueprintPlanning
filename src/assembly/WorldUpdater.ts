@@ -18,7 +18,7 @@ import {
 } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
-import { EntityMap } from "../entity/EntityMap"
+import { AssemblyContent } from "../entity/AssemblyContent"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
@@ -204,7 +204,7 @@ export function createWorldUpdater(
     return tryDollyAllEntities(entities, movedEntity.position, movedEntity.direction)
   }
   function checkConnectionWorldEntityExists(
-    content: EntityMap,
+    content: AssemblyContent,
     entity: AssemblyEntity,
     startStage: StageNumber,
     endStage: StageNumber,

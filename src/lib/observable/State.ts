@@ -132,6 +132,10 @@ class MutableStateImpl<T> extends State<T> implements MutableState<T> {
     this.event.closeAll()
   }
 
+  __tostring(): string {
+    return "MutableState(" + this.value + ")"
+  }
+
   private static setValueFn(this: MutableStateImpl<any>, value: unknown) {
     this.set(value)
   }
@@ -193,6 +197,10 @@ class MappedState<T, U> extends State<U> {
   override subscribeIndependently(observer: ChangeListener<U>): Subscription {
     if (!this.sourceSubscription) this.subscribeToSource()
     return super.subscribeIndependently(observer)
+  }
+
+  __tostring(): string {
+    return "MappedState(" + this.source + ")"
   }
 }
 
@@ -264,5 +272,9 @@ class FlatMappedState<T, U> extends State<U> {
   override subscribeIndependently(observer: ChangeListener<U>): Subscription {
     if (!this.sourceSubscription) this.subscribeToSource()
     return super.subscribeIndependently(observer)
+  }
+
+  __tostring(): string {
+    return "FlatMappedState(" + this.source + ")"
   }
 }

@@ -50,7 +50,7 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 
 function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean) {
   assert.falsy(entity.isSettingsRemnant, "should not be settingsRemnant")
-  const found = assembly.content.findCompatibleByName(entity.firstValue.name, entity.position, entity.getDirection())
+  const found = assembly.content.findCompatibleByTraits(entity.firstValue.name, entity.position, entity.getDirection())
   assert.equal(entity, found, "found in content")
 
   let hasMissing = false
@@ -156,7 +156,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
 }
 
 function assertEntityNotPresent(entity: AssemblyEntity) {
-  const found = assembly.content.findCompatibleByName(entity.firstValue.name, entity.position, entity.getDirection())
+  const found = assembly.content.findCompatibleByTraits(entity.firstValue.name, entity.position, entity.getDirection())
   assert.nil(found, "not found in content")
 
   for (const stage of $range(1, assembly.maxStage())) {
@@ -632,9 +632,9 @@ test("adding wire in higher stage sets empty control behavior", () => {
   })
   AssemblyUpdater.updateWiresFromWorld(assembly, inserter, 4)
 
-  const connections = assembly.content.getCircuitConnections(inserter)
+  const connections = assembly.content.getCircuitConnections(inserter)!
   assert.not_nil(connections)
-  const connection = next(connections!.get(belt)!)[0] as AsmCircuitConnection
+  const connection = next(connections.get(belt)!)[0] as AsmCircuitConnection
   assert.not_nil(connection)
   assert.true(
     circuitConnectionEquals(connection, {
