@@ -4,7 +4,7 @@
     "moduleResolution": "node",
     "module": "CommonJS",
     "types": [
-      "luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio"
+      "luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio", "gb-tstl-utils"
     ],
     "lib": ["esnext"],
     "skipDefaultLibCheck": true,
@@ -30,8 +30,13 @@
     "sourceMapTraceback": true,
     "luaPlugins": [
       {
-        "name": "./tstlPlugin/extensions-plugin.ts",
-        "testPattern": "\\.test\\.tsx?$"
+        "name": "./tstlPlugin/plugin.ts",
+        "hasTests": true
+      }, {
+        "name": "gb-tstl-utils/plugin",
+        "simplifyDelete": true,
+        "warnUseNil": true,
+        "warnUseDoubleEquals": true
       }
     ]
   },

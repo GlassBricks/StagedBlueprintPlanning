@@ -56,7 +56,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   getWorldDirection(): WorldDirection
 
   /**
-   * If is rolling stock, direction is based off of orientation instead.
+   * If this is rolling stock, direction is based off of orientation instead.
    */
   getPreviewDirection(): WorldDirection
 
@@ -620,9 +620,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   destroyAllWorldOrPreviewEntities(): void {
     for (const [k, v] of pairs(this)) {
       if (typeof k != "number") break
-      if ((v as LuaEntity).valid) {
-        ;(v as LuaEntity).destroy()
-      }
+      assume<LuaEntity>(v)
+      if (v.valid) v.destroy()
       delete this[k]
     }
   }

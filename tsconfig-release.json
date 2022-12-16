@@ -6,13 +6,18 @@
   "exclude": ["src/**/test/**", "src/**/*-mock.ts"],
   "tstl": {
     "luaTarget": "5.2",
-    "noResolvePaths": ["__testorio__/init"],
     "noImplicitSelf": true,
-    //    "sourceMapTraceback": true,
+    "sourceMapTraceback": false,
     "luaPlugins": [
       {
-        "name": "./tstlPlugin/extensions-plugin.ts"
+        "name": "./tstlPlugin/plugin.ts",
+        "hasTests": false
+      }, {
+        "name": "gb-tstl-utils/plugin",
+        "simplifyDelete": true,
+        "warnUseNil": true,
+        "warnUseDoubleEquals": true
       }
     ]
-  }
+  },
 }

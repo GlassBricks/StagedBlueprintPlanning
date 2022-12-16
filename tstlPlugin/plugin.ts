@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2022 GlassBricks
+ * This file is part of Staged Blueprint Planning.
+ *
+ * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * Staged Blueprint Planning is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import * as path from "path"
+import * as ts from "typescript"
+import {
+  getEmitOutDir,
+  isCallExpression,
+  isTableIndexExpression,
+  Plugin,
+  TransformationContext,
+  Visitors,
+} from "typescript-to-lua"
+import { createSerialDiagnosticFactory } from "typescript-to-lua/dist/utils"
+
+const invalidAccessSplitCall = createSerialDiagnosticFactory((node: ts.Node) => ({
+  file: ts.getOriginalNode(node).getSourceFile(),
+  start: ts.getOriginalNode(node).getStart(),
+  length: ts.getOriginalNode(node).getWidth(),
+  messageText: "This must be called with either a property access or an element access.",
+  category: ts.DiagnosticCategory.Error,
+}))
+// func(a[b]) -> func(a, b)
+function transformAccessSplitCall(context: TransformationContext, node: ts.CallExpression) {
+  const luaCall = context.superTransformExpression(node)
+  if (!isCallExpression(luaCall) || luaCall.params.length !== 1 || !isTableIndexExpression(luaCall.params[0])) {
+    context.diagnostics.push(invalidAccessSplitCall(node))
+    return luaCall
+  }
+  const param = luaCall.params[0]
+  luaCall.params = [param.table, param.index]
+
+  return luaCall
+}
+function createPlugin(options: { hasTests: boolean }): Plugin {
+  const visitors: Visitors = {
+    [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
+      // handle special case when call = __getTestFiles(), replace with list of files
+      const type = context.checker.getTypeAtLocation(node.expression)
+      if (type.getProperty("__accessSplitBrand")) {
+        return transformAccessSplitCall(context, node)
+      }
+      return context.superTransformExpression(node)
+    },
+  }
+
+  return {
+    visitors,
+    beforeEmit(program, __, ___, files) {
+      if (files.length === 0) return // also if there are errors and noEmitOnError
+      for (const file of files) {
+        const outPath = file.outputPath
+        if (!outPath.endsWith(".lua")) continue
+        const fileName = path.basename(outPath, ".lua")
+        // replace . with - in file name
+        const newFileName = fileName.replace(/\./g, "-")
+        if (fileName === newFileName) continue
+        file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
+        if (!options.hasTests) {
+          console.warn(`Replaced ${fileName} with ${newFileName}, but tests are disabled.`)
+        }
+      }
+
+      if (options.hasTests) {
+        const currentTimestampString = new Date().toLocaleString()
+        const outDir = getEmitOutDir(program)
+        files.push({
+          outputPath: path.join(outDir, "last-compile-time.lua"),
+          code: `return ${JSON.stringify(currentTimestampString)}`,
+        })
+      }
+    },
+  }
+}
+// noinspection JSUnusedGlobalSymbols
+export default createPlugin
