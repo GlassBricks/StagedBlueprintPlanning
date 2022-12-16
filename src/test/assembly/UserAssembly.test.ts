@@ -23,11 +23,11 @@ import {
   createUserAssembly,
   getStageAtSurface,
 } from "../../assembly/UserAssembly"
-import { SelflessFun } from "../../lib"
+import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 
-let eventListener: spy.Spy<SelflessFun>
+let eventListener: MockNoSelf<AnySelflessFun>
 before_each(() => {
-  eventListener = spy()
+  eventListener = mock.fnNoSelf()
   AssemblyEvents.addListener(eventListener)
 })
 after_each(() => {
@@ -37,7 +37,7 @@ after_each(() => {
 
 test("assembly created calls event", () => {
   const asm = createUserAssembly("Mock", 0)
-  assert.spy(eventListener).called_with({
+  expect(eventListener).calledWith({
     type: "assembly-created",
     assembly: asm,
   } as AssemblyCreatedEvent)
@@ -47,34 +47,34 @@ test("getStageAtSurface", () => {
   const asm = createUserAssembly("Mock", 2)
   const stage1 = asm.getStage(1)!,
     stage2 = asm.getStage(2)!
-  assert.equal(stage1, getStageAtSurface(stage1.surface.index))
-  assert.equal(stage2, getStageAtSurface(stage2.surface.index))
+  expect(getStageAtSurface(stage1.surface.index)).to.be(stage1)
+  expect(getStageAtSurface(stage2.surface.index)).to.be(stage2)
 })
 
 describe("deletion", () => {
   test("sets to invalid", () => {
     const asm = createUserAssembly("Test", 0)
     asm.delete()
-    assert.false(asm.valid)
+    expect(asm.valid).to.be(false)
   })
   test("sets stages to invalid", () => {
     const asm = createUserAssembly("Test", 1)
     const stage = asm.getStage(1)!
-    assert.true(stage.valid)
+    expect(stage.valid).to.be(true)
     asm.delete()
-    assert.false(stage.valid)
+    expect(stage.valid).to.be(false)
   })
   test("calls event", () => {
     const asm = createUserAssembly("Mock", 0)
-    const sp2 = spy()
+    const sp2 = mock.fn()
     asm.localEvents.subscribeIndependently({ invoke: sp2 })
     asm.delete()
     let call = eventListener.calls[1].refs[0] as AssemblyDeletedEvent
-    assert.same("assembly-deleted", call.type)
-    assert.same(asm, call.assembly)
-    call = sp2.calls[0].refs[1] as AssemblyDeletedEvent
-    assert.same("assembly-deleted", call.type)
-    assert.same(asm, call.assembly)
+    expect(call.type).to.equal("assembly-deleted")
+    expect(call.assembly).to.equal(asm)
+    call = sp2.calls[0][1] as AssemblyDeletedEvent
+    expect(call.type).to.equal("assembly-deleted")
+    expect(call.assembly).to.equal(asm)
   })
 })
 
@@ -84,17 +84,17 @@ describe("Stages", () => {
     asm = createUserAssembly("Test", 2)
   })
   test("stageNumber is correct", () => {
-    assert.equals(1, asm.getStage(1)!.stageNumber)
-    assert.equals(2, asm.getStage(2)!.stageNumber)
+    expect(asm.getStage(1)!.stageNumber).to.equal(1)
+    expect(asm.getStage(2)!.stageNumber).to.equal(2)
   })
   test("initial name is correct", () => {
     const stage = asm.getStage(1)!
-    assert.same("<Stage 1>", stage.name.get())
+    expect(stage.name.get()).to.equal("<Stage 1>")
   })
 })
 
 test("insert stage", () => {
-  const sp = spy()
+  const sp = mock.fn()
   const asm = createUserAssembly("Mock", 2)
   const oldStage = asm.getStage(1)!
   asm.localEvents.subscribeIndependently({ invoke: sp })
@@ -102,46 +102,46 @@ test("insert stage", () => {
 
   const stage = asm.insertStage(1)
 
-  assert.not_equal(stage.surface.index, oldStage.surface.index)
+  expect(oldStage.surface.index).not.to.equal(stage.surface.index)
 
-  assert.equals(1, stage.stageNumber)
-  assert.equals(2, oldStage.stageNumber)
+  expect(stage.stageNumber).to.equal(1)
+  expect(oldStage.stageNumber).to.equal(2)
 
-  assert.equal(stage, getStageAtSurface(stage.surface.index))
-  assert.equal(oldStage, getStageAtSurface(oldStage.surface.index))
+  expect(getStageAtSurface(stage.surface.index)).to.be(stage)
+  expect(getStageAtSurface(oldStage.surface.index)).to.be(oldStage)
 
-  assert.equals("<New stage>", stage.name.get())
+  expect(stage.name.get()).to.equal("<New stage>")
 
-  assert.equals(stage, asm.getStage(1)!)
-  assert.equals(oldStage, asm.getStage(2)!)
+  expect(asm.getStage(1)!).to.equal(stage)
+  expect(asm.getStage(2)!).to.equal(oldStage)
 
   let call = eventListener.calls[0].refs[0] as StageAddedEvent
-  assert.equals("stage-added", call.type)
-  assert.equals(asm, call.assembly)
-  assert.equals(stage, call.stage)
-  call = sp.calls[0].refs[1] as StageAddedEvent
-  assert.equals("stage-added", call.type)
-  assert.equals(asm, call.assembly)
-  assert.equals(stage, call.stage)
+  expect(call.type).to.equal("stage-added")
+  expect(call.assembly).to.equal(asm)
+  expect(call.stage).to.equal(stage)
+  call = sp.calls[0][1] as StageAddedEvent
+  expect(call.type).to.equal("stage-added")
+  expect(call.assembly).to.equal(asm)
+  expect(call.stage).to.equal(stage)
 
   const anotherInserted = asm.insertStage(1)
-  assert.not_same(anotherInserted, stage)
-  assert.equals(anotherInserted, getStageAtSurface(anotherInserted.surface.index))
-  assert.equals(stage, getStageAtSurface(stage.surface.index))
-  assert.equals(oldStage, getStageAtSurface(oldStage.surface.index))
-  assert.equals("<New stage> (1)", anotherInserted.name.get())
+  expect(anotherInserted).not.to.be(stage)
+  expect(getStageAtSurface(anotherInserted.surface.index)).to.equal(anotherInserted)
+  expect(getStageAtSurface(stage.surface.index)).to.equal(stage)
+  expect(getStageAtSurface(oldStage.surface.index)).to.equal(oldStage)
+  expect(anotherInserted.name.get()).to.equal("<New stage> (1)")
 
-  assert.equals(1, anotherInserted.stageNumber)
-  assert.equals(2, stage.stageNumber)
-  assert.equals(3, oldStage.stageNumber)
+  expect(anotherInserted.stageNumber).to.equal(1)
+  expect(stage.stageNumber).to.equal(2)
+  expect(oldStage.stageNumber).to.equal(3)
 
-  assert.equals(anotherInserted, asm.getStage(1)!)
-  assert.equals(stage, asm.getStage(2)!)
-  assert.equals(oldStage, asm.getStage(3)!)
+  expect(asm.getStage(1)!).to.equal(anotherInserted)
+  expect(asm.getStage(2)!).to.equal(stage)
+  expect(asm.getStage(3)!).to.equal(oldStage)
 })
 
 test("delete stage", () => {
-  const sp = spy()
+  const sp = mock.fn()
   const asm = createUserAssembly("Test", 3)
   asm.localEvents.subscribeIndependently({ invoke: sp })
   eventListener.clear()
@@ -153,26 +153,26 @@ test("delete stage", () => {
   asm.deleteStage(2)
 
   const stage2Surface = stage2.surface.index
-  assert.false(stage2.valid)
+  expect(stage2.valid).to.be(false)
 
-  assert.equals(1, stage1.stageNumber)
-  assert.equals(2, stage3.stageNumber)
+  expect(stage1.stageNumber).to.equal(1)
+  expect(stage3.stageNumber).to.equal(2)
 
-  assert.equal(stage1, getStageAtSurface(stage1.surface.index))
-  assert.equal(stage3, getStageAtSurface(stage3.surface.index))
-  assert.nil(getStageAtSurface(stage2Surface))
+  expect(getStageAtSurface(stage1.surface.index)).to.be(stage1)
+  expect(getStageAtSurface(stage3.surface.index)).to.be(stage3)
+  expect(getStageAtSurface(stage2Surface)).to.be.nil()
 
-  assert.equals(stage1, asm.getStage(1)!)
-  assert.equals(stage3, asm.getStage(2)!)
+  expect(asm.getStage(1)!).to.equal(stage1)
+  expect(asm.getStage(2)!).to.equal(stage3)
 
   const call1 = eventListener.calls[0].refs[0] as PreStageDeletedEvent
-  assert.equals("pre-stage-deleted", call1.type)
-  assert.equals(asm, call1.assembly)
-  assert.equals(stage2, call1.stage)
+  expect(call1.type).to.equal("pre-stage-deleted")
+  expect(call1.assembly).to.equal(asm)
+  expect(call1.stage).to.equal(stage2)
   const call2 = eventListener.calls[1].refs[0] as StageDeletedEvent
-  assert.equals("stage-deleted", call2.type)
-  assert.equals(asm, call2.assembly)
-  assert.equals(stage2, call2.stage)
+  expect(call2.type).to.equal("stage-deleted")
+  expect(call2.assembly).to.equal(asm)
+  expect(call2.stage).to.equal(stage2)
 })
 
 test("delete stage by deleting surface", () => {
@@ -181,7 +181,7 @@ test("delete stage by deleting surface", () => {
   game.delete_surface(stage.surface)
   async()
   after_ticks(1, () => {
-    assert.false(stage.valid)
+    expect(stage.valid).to.be(false)
     done()
   })
 })
@@ -190,5 +190,5 @@ test("deleting last stage deletes assembly", () => {
   const asm = createUserAssembly("Test", 1)
   const stage = asm.getStage(1)!
   stage.deleteInAssembly()
-  assert.false(asm.valid)
+  expect(asm.valid).to.be(false)
 })

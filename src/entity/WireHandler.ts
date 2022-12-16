@@ -12,7 +12,7 @@
 import { isEmpty } from "../lib"
 import { AsmCircuitConnection, circuitConnectionMatches, getDirectionalInfo } from "./AsmCircuitConnection"
 import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
-import { AsmEntityCircuitConnections, CableAddResult, AssemblyContent, MutableAssemblyContent } from "./AssemblyContent"
+import { AsmEntityCircuitConnections, AssemblyContent, CableAddResult, MutableAssemblyContent } from "./AssemblyContent"
 
 /** @noSelf */
 export interface WireUpdater {

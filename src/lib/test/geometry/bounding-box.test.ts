@@ -10,29 +10,30 @@
  */
 
 import { BBox } from "../../geometry"
+import expect from "tstl-expect"
 
 test("create", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
-  assert.same({ x: 1, y: 2 }, box.left_top)
-  assert.same({ x: 3, y: 4 }, box.right_bottom)
+  expect(box.left_top).to.equal({ x: 1, y: 2 })
+  expect(box.right_bottom).to.equal({ x: 3, y: 4 })
 })
 
 test("from", () => {
   const box = BBox.from({ left_top: { x: 1, y: 2 }, right_bottom: { x: 3, y: 4 } })
-  assert.same({ x: 1, y: 2 }, box.left_top)
-  assert.same({ x: 3, y: 4 }, box.right_bottom)
+  expect(box.left_top).to.equal({ x: 1, y: 2 })
+  expect(box.right_bottom).to.equal({ x: 3, y: 4 })
 })
 
 test("fromCoords", () => {
   const box = BBox.coords(1, 2, 3, 4)
-  assert.same({ x: 1, y: 2 }, box.left_top)
-  assert.same({ x: 3, y: 4 }, box.right_bottom)
+  expect(box.left_top).to.equal({ x: 1, y: 2 })
+  expect(box.right_bottom).to.equal({ x: 3, y: 4 })
 })
 
 test("around", () => {
   const box = BBox.around({ x: 1, y: 1 }, 1)
-  assert.same({ x: 0, y: 0 }, box.left_top)
-  assert.same({ x: 2, y: 2 }, box.right_bottom)
+  expect(box.left_top).to.equal({ x: 0, y: 0 })
+  expect(box.right_bottom).to.equal({ x: 2, y: 2 })
 })
 
 test("normalize", () => {
@@ -40,88 +41,88 @@ test("normalize", () => {
     [1, 2],
     [3, 4],
   ])
-  assert.same({ x: 1, y: 2 }, box.left_top)
-  assert.same({ x: 3, y: 4 }, box.right_bottom)
+  expect(box.left_top).to.equal({ x: 1, y: 2 })
+  expect(box.right_bottom).to.equal({ x: 3, y: 4 })
 })
 
 test("shift", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box2 = box.translate({ x: 1, y: 1 })
-  assert.same({ x: 2, y: 3 }, box2.left_top)
-  assert.same({ x: 4, y: 5 }, box2.right_bottom)
+  expect(box2.left_top).to.equal({ x: 2, y: 3 })
+  expect(box2.right_bottom).to.equal({ x: 4, y: 5 })
 })
 test("shiftNegative", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box2 = box.translateNegative({ x: 1, y: 1 })
-  assert.same({ x: 0, y: 1 }, box2.left_top)
-  assert.same({ x: 2, y: 3 }, box2.right_bottom)
+  expect(box2.left_top).to.equal({ x: 0, y: 1 })
+  expect(box2.right_bottom).to.equal({ x: 2, y: 3 })
 })
 
 test("size", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
-  assert.same({ x: 2, y: 2 }, box.size())
+  expect(box.size()).to.equal({ x: 2, y: 2 })
 })
 
 test("roundTile", () => {
   const box = BBox({ x: 1.5, y: 2.5 }, { x: 3.5, y: 4.5 })
   const box2 = box.roundTile()
-  assert.same({ x: 1, y: 2 }, box2.left_top)
-  assert.same({ x: 4, y: 5 }, box2.right_bottom)
+  expect(box2.left_top).to.equal({ x: 1, y: 2 })
+  expect(box2.right_bottom).to.equal({ x: 4, y: 5 })
 })
 test("roundChunk", () => {
   const box = BBox({ x: 1.5, y: 32 }, { x: 33.5, y: 65 })
   const box2 = box.roundChunk()
-  assert.same({ x: 0, y: 32 }, box2.left_top)
-  assert.same({ x: 64, y: 32 * 3 }, box2.right_bottom)
+  expect(box2.left_top).to.equal({ x: 0, y: 32 })
+  expect(box2.right_bottom).to.equal({ x: 64, y: 32 * 3 })
 })
 
 test("scale", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box2 = box.scale(2)
-  assert.same({ x: 2, y: 4 }, box2.left_top)
-  assert.same({ x: 6, y: 8 }, box2.right_bottom)
+  expect(box2.left_top).to.equal({ x: 2, y: 4 })
+  expect(box2.right_bottom).to.equal({ x: 6, y: 8 })
 })
 
 test("expand", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box2 = box.expand(1)
-  assert.same({ x: 0, y: 1 }, box2.left_top)
-  assert.same({ x: 4, y: 5 }, box2.right_bottom)
+  expect(box2.left_top).to.equal({ x: 0, y: 1 })
+  expect(box2.right_bottom).to.equal({ x: 4, y: 5 })
 })
 
 test("center", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box2 = box.center()
-  assert.same({ x: 2, y: 3 }, box2)
+  expect(box2).to.equal({ x: 2, y: 3 })
 })
 
 describe("rotateAboutOrigin", () => {
   test("north", () => {
     const box = BBox({ x: -1, y: -2 }, { x: 3, y: 4 })
     const box2 = box.rotateAboutOrigin(defines.direction.north)
-    assert.same({ x: -1, y: -2 }, box2.left_top)
-    assert.same({ x: 3, y: 4 }, box2.right_bottom)
+    expect(box2.left_top).to.equal({ x: -1, y: -2 })
+    expect(box2.right_bottom).to.equal({ x: 3, y: 4 })
   })
 
   test("south", () => {
     const box = BBox({ x: -1, y: -2 }, { x: 3, y: 4 })
     const box2 = box.rotateAboutOrigin(defines.direction.south)
-    assert.same({ x: -3, y: -4 }, box2.left_top)
-    assert.same({ x: 1, y: 2 }, box2.right_bottom)
+    expect(box2.left_top).to.equal({ x: -3, y: -4 })
+    expect(box2.right_bottom).to.equal({ x: 1, y: 2 })
   })
 
   test("west", () => {
     const box = BBox({ x: -1, y: -2 }, { x: 3, y: 4 })
     const box2 = box.rotateAboutOrigin(defines.direction.west)
-    assert.same({ x: -2, y: -3 }, box2.left_top)
-    assert.same({ x: 4, y: 1 }, box2.right_bottom)
+    expect(box2.left_top).to.equal({ x: -2, y: -3 })
+    expect(box2.right_bottom).to.equal({ x: 4, y: 1 })
   })
 
   test("east", () => {
     const box = BBox({ x: -1, y: -2 }, { x: 3, y: 4 })
     const box2 = box.rotateAboutOrigin(defines.direction.east)
-    assert.same({ x: -4, y: -1 }, box2.left_top)
-    assert.same({ x: 2, y: 3 }, box2.right_bottom)
+    expect(box2.left_top).to.equal({ x: -4, y: -1 })
+    expect(box2.right_bottom).to.equal({ x: 2, y: 3 })
   })
 })
 
@@ -131,57 +132,54 @@ test("iterateTiles", () => {
   for (const [x, y] of box.iterateTiles()) {
     result.push([x, y])
   }
-  assert.same(
-    [
-      [1, 2],
-      [2, 2],
-      [1, 3],
-      [2, 3],
-    ],
-    result,
-  )
+  expect(result).to.equal([
+    [1, 2],
+    [2, 2],
+    [1, 3],
+    [2, 3],
+  ])
 })
 
 test("intersect", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box2 = BBox({ x: 2, y: 3 }, { x: 4, y: 5 })
   const box3 = box.intersect(box2)
-  assert.same({ x: 2, y: 3 }, box3.left_top)
-  assert.same({ x: 3, y: 4 }, box3.right_bottom)
+  expect(box3.left_top).to.equal({ x: 2, y: 3 })
+  expect(box3.right_bottom).to.equal({ x: 3, y: 4 })
 })
 
 test("equals", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box2 = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
   const box3 = BBox({ x: 1, y: 2 }, { x: 3, y: 5 })
-  assert.true(box.equals(box2))
-  assert.false(box.equals(box3))
+  expect(box.equals(box2)).to.be(true)
+  expect(box.equals(box3)).to.be(false)
 })
 
 test("isCenteredSquare", () => {
   const box = BBox({ x: 2, y: 3 }, { x: -2, y: -3 })
-  assert.is_false(box.isCenteredSquare())
+  expect(box.isCenteredSquare()).to.be(false)
   const box2 = BBox({ x: 2, y: 2 }, { x: -2, y: -2 })
-  assert.is_true(box2.isCenteredSquare())
+  expect(box2.isCenteredSquare()).to.be(true)
 })
 
 test("isCenteredRectangle", () => {
   const box = BBox({ x: 2, y: 4 }, { x: -2, y: -3 })
-  assert.is_false(box.isCenteredRectangle())
+  expect(box.isCenteredRectangle()).to.be(false)
   const box3 = BBox({ x: 2, y: 3 }, { x: -2, y: -3 })
-  assert.is_true(box3.isCenteredRectangle())
+  expect(box3.isCenteredRectangle()).to.be(true)
 })
 
 test("contains", () => {
   const box = BBox({ x: 1, y: 1 }, { x: 4, y: 4 })
-  assert.is_true(box.contains({ x: 2, y: 3 }))
-  assert.is_false(box.contains({ x: 2, y: 5 }))
+  expect(box.contains({ x: 2, y: 3 })).to.be(true)
+  expect(box.contains({ x: 2, y: 5 })).to.be(false)
 })
 
 test("intersectsNonZeroArea", () => {
   const box = BBox({ x: 1, y: 1 }, { x: 4, y: 4 })
-  assert.is_true(box.intersectsFully(BBox({ x: 2, y: 3 }, { x: 3, y: 4 })))
-  assert.is_false(box.intersectsFully(BBox({ x: 2, y: 5 }, { x: 3, y: 6 })))
+  expect(box.intersectsFully(BBox({ x: 2, y: 3 }, { x: 3, y: 4 }))).to.be(true)
+  expect(box.intersectsFully(BBox({ x: 2, y: 5 }, { x: 3, y: 6 }))).to.be(false)
   // only touches
-  assert.is_false(box.intersectsFully(BBox({ x: 2, y: 4 }, { x: 3, y: 5 })))
+  expect(box.intersectsFully(BBox({ x: 2, y: 4 }, { x: 3, y: 5 }))).to.be(false)
 })

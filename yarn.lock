@@ -657,13 +657,13 @@ __metadata:
     eslint-plugin-prettier: ^4.2.1
     gb-tstl-utils: ^1.0.2
     lua-types: ^2.13.1
-    luassert-tstl: 0.3.0-experimental.11
     nodemon: ^2.0.20
     prettier: ^2.8.1
     semver: ^7.3.8
-    testorio: ^1.6.0
+    testorio: ^1.6.1
     testorio-tools: ^0.3.4
     ts-node: ^10.9.1
+    tstl-expect: ^0.2.1
     typed-factorio: ^1.12.0
     typescript: ~4.9.4
     typescript-to-lua: ^1.11.1
@@ -2417,12 +2417,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"luassert-tstl@npm:0.3.0-experimental.11":
-  version: 0.3.0-experimental.11
-  resolution: "luassert-tstl@npm:0.3.0-experimental.11"
+"luassert-tstl@npm:>=0.2.3":
+  version: 0.3.0
+  resolution: "luassert-tstl@npm:0.3.0"
   peerDependencies:
     typescript-to-lua: ^1.10.0
-  checksum: 6752df620836ab1bfb4fb6523be6c8821d295fbb7b582c19f7a09b0612e4ef5a06ba5d866e6accdead4db760c23e30caa7d1e1b9448a63a9f558e341d0f50bb9
+  checksum: 85d915f44221f5d2bff7198f1b2c07e99cab7f8c4b3a465485f226e89d1da665c19193adde18e3da97448ec905415b01fa02420a3d8ab076296be5b73831e95a
   languageName: node
   linkType: hard
 
@@ -3604,13 +3604,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"testorio@npm:^1.6.0":
-  version: 1.6.0
-  resolution: "testorio@npm:1.6.0"
-  peerDependencies:
+"testorio@npm:^1.6.1":
+  version: 1.6.1
+  resolution: "testorio@npm:1.6.1"
+  dependencies:
     luassert-tstl: ">=0.2.3"
+  peerDependencies:
     typed-factorio: ^1.7.3
-  checksum: 0ff9093e4fa5a0e879c2ce668fba088262556a673d1f65b20da77be61831eaf7878b6d06f53c65bfcdfaa3043959ac57a3bde49e61989656a6fdb951109dda8d
+  dependenciesMeta:
+    luassert-tstl:
+      optional: true
+  checksum: 435e82f26ac7e08b2cedd86a79647871d239b468c0ea751dcbe271ba2ac8a100597ad6c33a41ae3dfea7f8f4ade630e2502e9cb9d5c38ee57846eda8152fc0ad
   languageName: node
   linkType: hard
 
@@ -3728,6 +3732,16 @@ __metadata:
   version: 2.4.0
   resolution: "tslib@npm:2.4.0"
   checksum: 8c4aa6a3c5a754bf76aefc38026134180c053b7bd2f81338cb5e5ebf96fefa0f417bff221592bf801077f5bf990562f6264fecbc42cd3309b33872cb6fc3b113
+  languageName: node
+  linkType: hard
+
+"tstl-expect@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "tstl-expect@npm:0.2.1"
+  peerDependencies:
+    lua-types: ^2.13.1
+    typescript-to-lua: ^1.11.1
+  checksum: 0354ac0b3943276c48e3897d19b7cc76461a05e8731c10b859461cc0a38305cd63ad1bf53b8230536c6e1d723db7aa11b514229decadea24e4be2090d00d0547
   languageName: node
   linkType: hard
 

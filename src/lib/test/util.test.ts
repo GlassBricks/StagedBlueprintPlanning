@@ -10,6 +10,7 @@
  */
 
 import { deepCompare, isEmpty, shallowCopy } from "../_util"
+import expect from "tstl-expect"
 
 test("shallowCopy", () => {
   const obj = {
@@ -20,8 +21,8 @@ test("shallowCopy", () => {
     },
   }
   const copy = shallowCopy(obj)
-  assert.equal(copy.a, 1)
-  assert.equal(copy.b, obj.b)
+  expect(1).to.be(copy.a)
+  expect(obj.b).to.be(copy.b)
 })
 
 test("compare", () => {
@@ -39,7 +40,7 @@ test("compare", () => {
       d: 3,
     },
   }
-  assert.is_true(deepCompare(a, b))
+  expect(deepCompare(a, b)).to.be(true)
   const c = {
     a: 1,
     b: {
@@ -47,10 +48,10 @@ test("compare", () => {
       d: 4,
     },
   }
-  assert.is_false(deepCompare(a, c))
+  expect(deepCompare(a, c)).to.be(false)
 })
 
 test("isEmpty", () => {
-  assert.is_true(isEmpty({}))
-  assert.is_false(isEmpty({ a: 1 }))
+  expect(isEmpty({})).to.be(true)
+  expect(isEmpty({ a: 1 })).to.be(false)
 })

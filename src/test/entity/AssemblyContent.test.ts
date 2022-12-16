@@ -15,6 +15,7 @@ import { BasicEntityInfo } from "../../entity/Entity"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 import { NORTH, SavedDirection, SOUTH } from "../../entity/direction"
+import expect from "tstl-expect"
 
 let content: MutableAssemblyContent
 before_each(() => {
@@ -24,11 +25,11 @@ const surfaces = setupTestSurfaces(1)
 
 test("countNumEntities", () => {
   const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-  assert.equal(0, content.countNumEntities())
+  expect(content.countNumEntities()).to.be(0)
   content.add(entity)
-  assert.equal(1, content.countNumEntities())
+  expect(content.countNumEntities()).to.be(1)
   content.delete(entity)
-  assert.equal(0, content.countNumEntities())
+  expect(content.countNumEntities()).to.be(0)
 })
 
 describe("findCompatible", () => {
@@ -36,7 +37,7 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    assert.equal(entity, content.findCompatibleByTraits("foo", { x: 0, y: 0 }, NORTH))
+    expect(content.findCompatibleByTraits("foo", { x: 0, y: 0 }, NORTH)).to.be(entity)
   })
 
   test("findCompatibleAnyDirection finds compatible if same name and any direction", () => {
@@ -48,14 +49,14 @@ describe("findCompatible", () => {
     )
     content.add(entity)
 
-    assert.equal(entity, content.findCompatibleAnyDirection("foo", { x: 0, y: 0 }))
+    expect(content.findCompatibleAnyDirection("foo", { x: 0, y: 0 })).to.be(entity)
   })
 
   test("finds compatible if same category", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    assert.equal(entity, content.findCompatibleByTraits("assembling-machine-2", { x: 0, y: 0 }, NORTH))
+    expect(content.findCompatibleByTraits("assembling-machine-2", { x: 0, y: 0 }, NORTH)).to.be(entity)
   })
 
   test("findCompatibleAnyDirection finds compatible if same category and any direction", () => {
@@ -67,13 +68,13 @@ describe("findCompatible", () => {
     )
     content.add(entity)
 
-    assert.equal(entity, content.findCompatibleAnyDirection("assembling-machine-2", { x: 0, y: 0 }))
+    expect(content.findCompatibleAnyDirection("assembling-machine-2", { x: 0, y: 0 })).to.be(entity)
   })
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    assert.nil(content.findCompatibleByTraits("test2", entity.position, NORTH))
-    assert.nil(content.findCompatibleByTraits("foo", entity.position, SOUTH))
+    expect(content.findCompatibleByTraits("test2", entity.position, NORTH)).to.be.nil()
+    expect(content.findCompatibleByTraits("foo", entity.position, SOUTH)).to.be.nil()
   })
 
   test("find compatible not basic returns same entity if is flipped underground", () => {
@@ -104,8 +105,8 @@ describe("findCompatible", () => {
     )
     content.add(assemblyEntity)
 
-    assert.equal(assemblyEntity, content.findCompatibleWithLuaEntity(same, nil))
-    assert.equal(assemblyEntity, content.findCompatibleWithLuaEntity(flipped, nil))
+    expect(content.findCompatibleWithLuaEntity(same, nil)).to.be(assemblyEntity)
+    expect(content.findCompatibleWithLuaEntity(flipped, nil)).to.be(assemblyEntity)
   })
 
   test("findExactAtPosition", () => {
@@ -113,9 +114,9 @@ describe("findCompatible", () => {
     const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
     content.add(entity)
     entity.replaceWorldEntity(2, luaEntity)
-    assert.equal(entity, content.findExactAtPosition(luaEntity, 2, luaEntity.position))
+    expect(content.findExactAtPosition(luaEntity, 2, luaEntity.position)).to.be(entity)
     luaEntity.teleport(1, 1)
-    assert.equal(entity, content.findExactAtPosition(luaEntity, 2, { x: 0, y: 0 }))
+    expect(content.findExactAtPosition(luaEntity, 2, { x: 0, y: 0 })).to.be(entity)
   })
 })
 
@@ -123,9 +124,9 @@ test("changePosition", () => {
   const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
   content.add(entity)
   content.changePosition(entity, { x: 1, y: 1 })
-  assert.equal(1, entity.position.x)
-  assert.equal(1, entity.position.y)
-  assert.equal(entity, content.findCompatibleByTraits("foo", { x: 1, y: 1 }, NORTH))
+  expect(entity.position.x).to.be(1)
+  expect(entity.position.y).to.be(1)
+  expect(content.findCompatibleByTraits("foo", { x: 1, y: 1 }, NORTH)).to.be(entity)
 })
 
 describe("connections", () => {
@@ -156,18 +157,18 @@ describe("connections", () => {
     }
 
     test("getCircuitConnections initially empty", () => {
-      assert.nil(content.getCircuitConnections(entity1))
+      expect(content.getCircuitConnections(entity1)).to.be.nil()
     })
 
     test("addCircuitConnection shows up in getCircuitConnections", () => {
       const connection = createCircuitConnection(entity1, entity2)
       content.addCircuitConnection(connection)
-      assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
-      assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
+      expect(content.getCircuitConnections(entity1)!.get(entity2)).to.equal(newLuaSet(connection))
+      expect(content.getCircuitConnections(entity2)!.get(entity1)).to.equal(newLuaSet(connection))
       const connection2 = createCircuitConnection(entity1, entity2, defines.wire_type.green)
       content.addCircuitConnection(connection2)
-      assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity1)!.get(entity2))
-      assert.same(newLuaSet(connection, connection2), content.getCircuitConnections(entity2)!.get(entity1))
+      expect(content.getCircuitConnections(entity1)!.get(entity2)).to.equal(newLuaSet(connection, connection2))
+      expect(content.getCircuitConnections(entity2)!.get(entity1)).to.equal(newLuaSet(connection, connection2))
     })
 
     test("does not add if identical connection is already present", () => {
@@ -175,8 +176,8 @@ describe("connections", () => {
       const connection2 = createCircuitConnection(entity2, entity1)
       content.addCircuitConnection(connection)
       content.addCircuitConnection(connection2)
-      assert.same(newLuaSet(connection), content.getCircuitConnections(entity1)!.get(entity2))
-      assert.same(newLuaSet(connection), content.getCircuitConnections(entity2)!.get(entity1))
+      expect(content.getCircuitConnections(entity1)!.get(entity2)).to.equal(newLuaSet(connection))
+      expect(content.getCircuitConnections(entity2)!.get(entity1)).to.equal(newLuaSet(connection))
     })
 
     test("removeCircuitConnection removes connection", () => {
@@ -184,60 +185,60 @@ describe("connections", () => {
       content.addCircuitConnection(connection)
       content.removeCircuitConnection(connection)
 
-      assert.nil(content.getCircuitConnections(entity1))
-      assert.nil(content.getCircuitConnections(entity2))
+      expect(content.getCircuitConnections(entity1)).to.be.nil()
+      expect(content.getCircuitConnections(entity2)).to.be.nil()
     })
 
     test("deleting entity removes its connections", () => {
       content.addCircuitConnection(createCircuitConnection(entity1, entity2))
       content.delete(entity1)
-      assert.same(nil, content.getCircuitConnections(entity1) ?? nil)
-      assert.same(nil, content.getCircuitConnections(entity2) ?? nil)
+      expect(content.getCircuitConnections(entity1) ?? nil).to.equal(nil)
+      expect(content.getCircuitConnections(entity2) ?? nil).to.equal(nil)
     })
   })
 
   describe("cable connections", () => {
     test("getCableConnections initially empty", () => {
-      assert.nil(content.getCableConnections(entity1))
+      expect(content.getCableConnections(entity1)).to.be.nil()
     })
 
     test("addCableConnection shows up in getCableConnections", () => {
-      assert.equal(CableAddResult.Added, content.addCableConnection(entity1, entity2))
-      assert.same(newLuaSet(entity2), content.getCableConnections(entity1)!)
-      assert.same(newLuaSet(entity1), content.getCableConnections(entity2)!)
+      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.Added)
+      expect(content.getCableConnections(entity1)!).to.equal(newLuaSet(entity2))
+      expect(content.getCableConnections(entity2)!).to.equal(newLuaSet(entity1))
     })
 
     test("removeCableConnection removes connection", () => {
       content.addCableConnection(entity1, entity2)
       content.removeCableConnection(entity1, entity2)
 
-      assert.same(nil, content.getCableConnections(entity1) ?? nil)
-      assert.same(nil, content.getCableConnections(entity2) ?? nil)
+      expect(content.getCableConnections(entity1) ?? nil).to.equal(nil)
+      expect(content.getCableConnections(entity2) ?? nil).to.equal(nil)
     })
 
     test("deleting entity removes its connections", () => {
       content.addCableConnection(entity1, entity2)
       content.delete(entity1)
-      assert.same(nil, content.getCableConnections(entity1) ?? nil)
-      assert.same(nil, content.getCableConnections(entity2) ?? nil)
+      expect(content.getCableConnections(entity1) ?? nil).to.equal(nil)
+      expect(content.getCableConnections(entity2) ?? nil).to.equal(nil)
     })
 
     test("can't add cable to itself", () => {
-      assert.equal(CableAddResult.Error, content.addCableConnection(entity1, entity1))
+      expect(content.addCableConnection(entity1, entity1)).to.be(CableAddResult.Error)
     })
 
     test("adding same cable twice does nothing", () => {
-      assert.equal(CableAddResult.Added, content.addCableConnection(entity1, entity2))
-      assert.equal(CableAddResult.AlreadyExists, content.addCableConnection(entity1, entity2))
+      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.Added)
+      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.AlreadyExists)
     })
 
     test("won't add if max connections is reached", () => {
       for (let i = 3; i < 3 + 5; i++) {
         const entity = makeAssemblyEntity(i)
         content.add(entity)
-        assert.equal(CableAddResult.Added, content.addCableConnection(entity1, entity))
+        expect(content.addCableConnection(entity1, entity)).to.be(CableAddResult.Added)
       }
-      assert.equal(CableAddResult.MaxConnectionsReached, content.addCableConnection(entity1, entity2))
+      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.MaxConnectionsReached)
     })
   })
 })

@@ -10,6 +10,7 @@
  */
 
 import { MutableMap2D, newMap2D } from "../../entity/map2d"
+import expect from "tstl-expect"
 
 let map2d: MutableMap2D<string>
 
@@ -19,33 +20,33 @@ before_each(() => {
 
 test("add and get", () => {
   map2d.add(1, 1, "a")
-  assert.same("a", map2d.get(1, 1))
+  expect(map2d.get(1, 1)).to.equal("a")
 })
 
 test("add and get multiple", () => {
   map2d.add(1, 1, "a")
   map2d.add(1, 1, "b")
-  assert.same(["a", "b"], map2d.get(1, 1))
+  expect(map2d.get(1, 1)).to.equal(["a", "b"])
 })
 
 test("add in multiple coords", () => {
   map2d.add(1, 1, "a")
   map2d.add(2, 2, "b")
-  assert.same("a", map2d.get(1, 1))
-  assert.same("b", map2d.get(2, 2))
+  expect(map2d.get(1, 1)).to.equal("a")
+  expect(map2d.get(2, 2)).to.equal("b")
 })
 
 test("remove and get", () => {
   map2d.add(1, 1, "a")
   map2d.add(1, 1, "b")
   map2d.delete(1, 1, "a")
-  assert.same("b", map2d.get(1, 1))
+  expect(map2d.get(1, 1)).to.equal("b")
 })
 
 test("removes empty entries", () => {
   map2d.add(1, 1, "a")
   map2d.delete(1, 1, "a")
-  assert.same({}, map2d)
+  expect(map2d).to.equal({})
 })
 
 test("removes empty from multiple values", () => {
@@ -53,5 +54,5 @@ test("removes empty from multiple values", () => {
   map2d.add(1, 1, "b")
   map2d.delete(1, 1, "a")
   map2d.delete(1, 1, "b")
-  assert.same({}, map2d)
+  expect(map2d).to.equal({})
 })

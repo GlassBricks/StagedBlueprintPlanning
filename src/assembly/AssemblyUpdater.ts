@@ -20,7 +20,7 @@ import {
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
-import { EntityHandler, EntitySaver, canBeAnyDirection } from "../entity/EntityHandler"
+import { canBeAnyDirection, EntityHandler, EntitySaver } from "../entity/EntityHandler"
 import { findUndergroundPair } from "../entity/special-entity-treatment"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
@@ -32,11 +32,7 @@ import min = math.min
  * @noSelf
  */
 export interface AssemblyUpdater {
-  addNewEntity<T extends Entity = Entity>(
-    assembly: Assembly,
-    entitySource: LuaEntity,
-    stage: StageNumber,
-  ): AssemblyEntity<T> | nil
+  addNewEntity(assembly: Assembly, entitySource: LuaEntity, stage: StageNumber): AssemblyEntity | nil
 
   refreshEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
 

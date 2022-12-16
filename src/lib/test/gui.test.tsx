@@ -12,16 +12,17 @@
 import { FactorioJsx, GuiEventHandler } from "../factoriojsx"
 import { getDescription, isRoot, makeWrapper, testRender } from "./gui"
 import { getPlayer } from "./misc"
+import expect, { mock } from "tstl-expect"
 
 describe("makeWrapper", () => {
   let element: BaseGuiElement
   test("create", () => {
     element = makeWrapper()
-    assert.true(isRoot(element))
-    assert.equal(element.parent, getPlayer().gui.screen)
+    expect(isRoot(element)).to.be(true)
+    expect(getPlayer().gui.screen).to.be(element.parent)
   })
   test("after create", () => {
-    assert.false(element.valid)
+    expect(element.valid).to.be(false)
   })
 })
 
@@ -31,20 +32,20 @@ describe("getDescription", () => {
       type: "label",
       name: "test-label",
     })
-    assert.same("<root>.test-label", getDescription(element))
+    expect(getDescription(element)).to.equal("<root>.test-label")
   })
   it("without name", () => {
     const element = makeWrapper().add({
       type: "label",
     })
-    assert.same("<root>.[1, label]", getDescription(element))
+    expect(getDescription(element)).to.equal("<root>.[1, label]")
   })
 })
 
 test("testRender", () => {
   const element = testRender(<flow name="test-flow" />)
-  assert.true(element.isRoot())
-  assert.equal(element.native.parent, getPlayer().gui.screen)
+  expect(element.isRoot()).to.be(true)
+  expect(getPlayer().gui.screen).to.be(element.native.parent)
 })
 
 describe("findSatisfying", () => {
@@ -56,7 +57,7 @@ describe("findSatisfying", () => {
     )
     const found = element.findSatisfying((x) => x.caption == "hi").native
     const flow = element.native.children[0]
-    assert.equal(flow, found)
+    expect(found).to.be(flow)
   })
 
   it("finds deep element", () => {
@@ -72,14 +73,14 @@ describe("findSatisfying", () => {
     )
     const found = element.findSatisfying((x) => x.caption == "baz").native
     const flow = element.native.children[0].children[0].children[1]
-    assert.equal(flow, found)
+    expect(found).to.be(flow)
   })
 })
 
 test("simulateEvent", () => {
-  const fn = spy<GuiEventHandler["invoke"]>()
+  const fn = mock.fn<GuiEventHandler["invoke"]>()
   const button = testRender(<button on_gui_click={{ invoke: fn }} />)
-  assert.spy(fn).not_called()
+  expect(fn).not.called()
   button.simulateClick()
-  assert.spy(fn).called(1)
+  expect(fn).calledTimes(1)
 })

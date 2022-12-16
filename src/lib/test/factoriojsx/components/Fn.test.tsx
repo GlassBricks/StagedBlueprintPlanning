@@ -13,6 +13,7 @@ import { FactorioJsx } from "../../../factoriojsx"
 import { Fn } from "../../../factoriojsx/components"
 import { state } from "../../../observable"
 import { testRender } from "../../gui"
+import expect from "tstl-expect"
 
 test("fn", () => {
   const val = state("one")
@@ -21,7 +22,7 @@ test("fn", () => {
     return wrapper.findAll("label").map((x) => x.native.caption)
   }
 
-  assert.same(["one"], findLabels())
+  expect(findLabels()).to.equal(["one"])
   val.set("two")
-  assert.same(["two"], findLabels())
+  expect(findLabels()).to.equal(["two"])
 })

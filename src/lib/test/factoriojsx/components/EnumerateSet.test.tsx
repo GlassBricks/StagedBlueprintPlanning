@@ -13,6 +13,7 @@ import { FactorioJsx, Spec } from "../../../factoriojsx"
 import { EnumerateSet } from "../../../factoriojsx/components"
 import { MutableObservableSet, observableSet } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
+import expect from "tstl-expect"
 
 function presentElements(wrapper: ElementWrapper) {
   return wrapper.findAll("label").map((x) => x.native.caption)
@@ -26,24 +27,21 @@ before_each(() => {
 
 it("starts empty with no elements", () => {
   const wrapper = testRender(spec)
-  assert.same([], presentElements(wrapper))
+  expect(presentElements(wrapper)).to.equal([])
 })
 
 it("creates with initial contents", () => {
   set.add("a")
   set.add("b")
   const wrapper = testRender(spec)
-  assert.same(["a", "b"], presentElements(wrapper))
+  expect(presentElements(wrapper)).to.equal(["a", "b"])
 })
 
 it("adds elements", () => {
   const wrapper = testRender(spec)
   set.add("a")
   set.add("b")
-  assert.same(
-    ["a", "b"],
-    wrapper.findAll("label").map((x) => x.native.caption),
-  )
+  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["a", "b"])
 })
 
 it("removes elements", () => {
@@ -51,7 +49,7 @@ it("removes elements", () => {
   set.add("a")
   set.add("b")
   set.delete("a")
-  assert.same(["b"], presentElements(wrapper))
+  expect(presentElements(wrapper)).to.equal(["b"])
 })
 
 describe("ifEmpty", () => {
@@ -84,25 +82,25 @@ describe("ifEmpty", () => {
         }}
       />,
     )
-    assert.same(["empty"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["empty"])
   })
 
   test("is not present if not empty", () => {
     set.add("a")
     const wrapper = testRender(spec)
-    assert.same(["a"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["a"])
   })
 
   test("is present if made empty", () => {
     set.add("a")
     const wrapper = testRender(spec)
     set.delete("a")
-    assert.same(["empty"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["empty"])
   })
 
   test("is not present if made non-empty", () => {
     const wrapper = testRender(spec)
     set.add("a")
-    assert.same(["a"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["a"])
   })
 })

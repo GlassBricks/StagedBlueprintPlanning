@@ -14,6 +14,7 @@ import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAss
 import { CustomInputs, Prototypes } from "../../constants"
 import { Events } from "../../lib"
 import { updateMoveToolInCursor } from "../../ui/stage-move-tool"
+import expect from "tstl-expect"
 
 let player: LuaPlayer
 before_each(() => {
@@ -29,25 +30,25 @@ test("current selected stage starts out as current stage", () => {
   player.teleport([0, 0], assembly.getSurface(2))
 
   const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)!
-  assert.equal(nil, assemblyPlayerData.moveTargetStage)
+  expect(assemblyPlayerData.moveTargetStage).to.be(nil)
 
   player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
   updateMoveToolInCursor(player)
 
-  assert.equal(2, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(2)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 2>")
 
   player.teleport([0, 0], assembly.getSurface(1))
 
-  assert.equal(2, assemblyPlayerData.moveTargetStage) // still same
-  assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(2) // still same
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 2>")
 })
 
 test("item removed if not in assembly", () => {
   player.teleport([0, 0], 1 as SurfaceIndex)
   player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
   updateMoveToolInCursor(player)
-  assert.false(player.cursor_stack!.valid_for_read)
+  expect(player.cursor_stack!.valid_for_read).to.be(false)
 })
 
 test("changing selected stage", () => {
@@ -58,40 +59,40 @@ test("changing selected stage", () => {
   player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
   updateMoveToolInCursor(player)
 
-  assert.equal(2, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(2)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 2>")
 
   Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  assert.equal(3, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 3>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(3)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 3>")
   Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  assert.equal(3, assemblyPlayerData.moveTargetStage) // max stage
+  expect(assemblyPlayerData.moveTargetStage).to.be(3) // max stage
 
   Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
     player_index: player.index,
     cursor_position: { x: 0, y: 0 },
   })
-  assert.equal(2, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(2)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 2>")
   Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
     player_index: player.index,
     cursor_position: { x: 0, y: 0 },
   })
-  assert.equal(1, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 1>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(1)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 1>")
   Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
     player_index: player.index,
     cursor_position: { x: 0, y: 0 },
   })
-  assert.equal(1, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 1>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(1)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 1>")
 })
 
 test("filtered stage move tool name set to <Not in a staged build>", () => {
   player.teleport([0, 0], 1 as SurfaceIndex)
   player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
   updateMoveToolInCursor(player)
-  assert.equal("<Not in a staged build>", player.cursor_stack!.label)
+  expect(player.cursor_stack!.label).to.be("<Not in a staged build>")
 })
 
 test("changing selected stage with filtered stage move tool", () => {
@@ -103,10 +104,10 @@ test("changing selected stage with filtered stage move tool", () => {
   player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
   updateMoveToolInCursor(player)
 
-  assert.equal(2, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 2>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(2)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 2>")
 
   Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  assert.equal(3, assemblyPlayerData.moveTargetStage)
-  assert.equal("Send to <Stage 3>", player.cursor_stack!.label)
+  expect(assemblyPlayerData.moveTargetStage).to.be(3)
+  expect(player.cursor_stack!.label).to.be("Send to <Stage 3>")
 })

@@ -10,10 +10,7 @@
  */
 
 import { MutableState, State, state } from "../../observable"
-
-function spy() {
-  return globalThis.spy<(this: any) => void>()
-}
+import expect, { mock } from "tstl-expect"
 
 describe("state", () => {
   let s: MutableState<string>
@@ -22,33 +19,33 @@ describe("state", () => {
   })
 
   it("can be constructed with initial value", () => {
-    assert.equal(s.get(), "begin")
+    expect("begin").to.be(s.get())
   })
 
   it("can be set", () => {
     s.set("end")
-    assert.equal(s.get(), "end")
+    expect("end").to.be(s.get())
   })
 
   test("subscribeAndFire", () => {
-    const fn = spy()
+    const fn = mock.fn()
     s.subscribeIndependentlyAndFire({ invoke: fn })
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, "begin", nil)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, "begin", nil)
   })
 
   it("notifies subscribers of value when value changed", () => {
-    const fn = spy()
+    const fn = mock.fn()
     s.subscribeIndependently({ invoke: fn })
     s.set("end")
-    assert.spy(fn).called_with(match._, "end", "begin")
+    expect(fn).calledWith(expect._, "end", "begin")
   })
 
   test("setValueFn", () => {
     const fn = s.setValueFn("end")
-    assert.equal(s.get(), "begin")
+    expect("begin").to.be(s.get())
     fn.invoke()
-    assert.equal(s.get(), "end")
+    expect("end").to.be(s.get())
   })
 })
 
@@ -56,35 +53,35 @@ describe("map", () => {
   test("maps correct values to observers", () => {
     const val = state(3)
     const mapped = val.map({ invoke: (x) => x * 2 })
-    const fn = spy()
+    const fn = mock.fn()
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, 6, nil)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, 6, nil)
 
     val.set(4)
 
-    assert.spy(fn).called(2)
-    assert.spy(fn).called_with(match._, 8, 6)
+    expect(fn).calledTimes(2)
+    expect(fn).calledWith(expect._, 8, 6)
   })
 
   test("gives correct value for get()", () => {
     const val = state(3)
     const mapped = val.map({ invoke: (x) => x * 2 })
-    assert.same(6, mapped.get())
+    expect(mapped.get()).to.equal(6)
   })
 
   test("choice", () => {
     const val = state(false)
     const choice = val.switch("yes", "no")
 
-    const fn = spy()
+    const fn = mock.fn()
     choice.subscribeIndependentlyAndFire({ invoke: fn })
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, "no", nil)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, "no", nil)
     val.set(true)
-    assert.spy(fn).called(2)
-    assert.spy(fn).called_with(match._, "yes", "no")
+    expect(fn).calledTimes(2)
+    expect(fn).calledWith(expect._, "yes", "no")
   })
 })
 
@@ -92,31 +89,31 @@ describe("flatMap", () => {
   test("maps non-state values", () => {
     const val = state(3)
     const mapped = val.flatMap({ invoke: (x) => x * 2 })
-    const fn = spy()
+    const fn = mock.fn()
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, 6, nil)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, 6, nil)
 
     val.set(4)
 
-    assert.spy(fn).called(2)
-    assert.spy(fn).called_with(match._, 8, 6)
+    expect(fn).calledTimes(2)
+    expect(fn).calledWith(expect._, 8, 6)
   })
 
   test("maps state values", () => {
     const val = state(3)
     const mapped = val.flatMap({ invoke: (x) => state(x * 2) })
-    const fn = spy()
+    const fn = mock.fn()
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, 6, nil)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, 6, nil)
 
     val.set(4)
 
-    assert.spy(fn).called(2)
-    assert.spy(fn).called_with(match._, 8, 6)
+    expect(fn).calledTimes(2)
+    expect(fn).calledWith(expect._, 8, 6)
   })
 
   test("listens to inner state and unsubscribes", () => {
@@ -124,35 +121,35 @@ describe("flatMap", () => {
     const innerVal = state(4)
     const mapped = val.flatMap({ invoke: (x) => (x == 1 ? innerVal : x) })
 
-    const fn = spy()
+    const fn = mock.fn()
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, 4, nil)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, 4, nil)
 
     innerVal.set(5)
-    assert.spy(fn).called(2)
-    assert.spy(fn).called_with(match._, 5, 4)
+    expect(fn).calledTimes(2)
+    expect(fn).calledWith(expect._, 5, 4)
 
     val.set(2)
 
-    assert.spy(fn).called(3)
-    assert.spy(fn).called_with(match._, 2, 5)
-    assert.equal(0, State._numObservers(innerVal))
+    expect(fn).calledTimes(3)
+    expect(fn).calledWith(expect._, 2, 5)
+    expect(State._numObservers(innerVal)).to.be(0)
 
     val.set(1)
 
-    assert.spy(fn).called(4)
-    assert.spy(fn).called_with(match._, 5, 2)
+    expect(fn).calledTimes(4)
+    expect(fn).calledWith(expect._, 5, 2)
   })
 
   test("gives correct value for get()", () => {
     const val = state(3)
     const mapped = val.flatMap({ invoke: (x) => state(x * 2) })
-    assert.same(6, mapped.get())
+    expect(mapped.get()).to.equal(6)
 
     val.set(4)
 
-    assert.same(8, mapped.get())
+    expect(mapped.get()).to.equal(8)
   })
 })

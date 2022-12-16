@@ -23,6 +23,7 @@ import { Pos } from "../../lib/geometry"
 import { simpleMock } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
+import expect from "tstl-expect"
 
 interface FooEntity extends Entity {
   foo?: number
@@ -75,7 +76,7 @@ describe("error highlights and selection proxy", () => {
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
-    assert.not_nil(entity.getExtraEntity("errorOutline", 2)!, "has error highlight")
+    expect(entity.getExtraEntity("errorOutline", 2)!).to.be.any()
   })
 
   test("deletes highlight when entity revived", () => {
@@ -83,7 +84,7 @@ describe("error highlights and selection proxy", () => {
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
     addInStage(2)
     highlightCreator.updateHighlights(assembly, entity, 2, 2)
-    assert.nil(entity.getExtraEntity("errorOutline", 2))
+    expect(entity.getExtraEntity("errorOutline", 2)).to.be.nil()
   })
 
   test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other stages, %s", (stages) => {
@@ -96,9 +97,9 @@ describe("error highlights and selection proxy", () => {
 
     for (let i = 1; i < 5; i++) {
       if (i == 1 || stageSet.has(i)) {
-        assert.nil(entity.getExtraEntity("errorElsewhereIndicator", i), `should not have indicator in stage ${i}`)
+        expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.nil()
       } else {
-        assert.not_nil(entity.getExtraEntity("errorElsewhereIndicator", i), `should have indicator in stage ${i}`)
+        expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
       }
     }
   })
@@ -107,18 +108,18 @@ describe("error highlights and selection proxy", () => {
     removeInStage(2)
     removeInStage(3)
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 4; i <= 5; i++) assert.not_nil(entity.getExtraEntity("errorElsewhereIndicator", i), `stage ${i}`)
+    for (let i = 4; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
     addInStage(3)
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 3; i <= 5; i++) assert.not_nil(entity.getExtraEntity("errorElsewhereIndicator", i), `stage ${i}`)
+    for (let i = 3; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
     addInStage(2)
     highlightCreator.updateHighlights(assembly, entity)
-    for (let i = 1; i <= 5; i++) assert.nil(entity.getExtraEntity("errorElsewhereIndicator", i), `stage ${i}`)
+    for (let i = 1; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.nil()
   })
 
   test("does nothing if created in lower than first stage", () => {
     highlightCreator.updateHighlights(assembly, entity)
-    assert.nil(entity.getExtraEntity("errorOutline", 1))
+    expect(entity.getExtraEntity("errorOutline", 1)).to.be.nil()
   })
 })
 
@@ -181,7 +182,7 @@ describe("config changed highlight", () => {
     assertCorrect()
     entity.moveToStage(2)
     assertCorrect()
-    assert.nil(entity.getExtraEntity("configChangedLaterHighlight", 1))
+    expect(entity.getExtraEntity("configChangedLaterHighlight", 1)).to.be.nil()
   })
 })
 describe("settings remnants", () => {
@@ -197,7 +198,7 @@ describe("settings remnants", () => {
     createSettingsRemnant()
     highlightCreator.makeSettingsRemnant(assembly, entity)
     for (let i = 1; i <= 5; i++) {
-      assert.not_nil(entity.getExtraEntity("settingsRemnantHighlight", i))
+      expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.any()
     }
   })
   test("reviveSettingsRemnant removes highlights and sets entities correct", () => {
@@ -206,7 +207,7 @@ describe("settings remnants", () => {
     reviveSettingsRemnant()
     highlightCreator.reviveSettingsRemnant(assembly, entity)
     for (let i = 1; i <= 5; i++) {
-      assert.nil(entity.getExtraEntity("settingsRemnantHighlight", i))
+      expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.nil()
     }
   })
 })
@@ -218,7 +219,7 @@ test("deleteErrorHighlights deletes all highlights", () => {
   highlightCreator.deleteHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
-      assert.nil(entity.getExtraEntity(type, i), `stage ${i}`)
+      expect(entity.getExtraEntity(type, i)).to.be.nil()
     }
   }
 })

@@ -19,6 +19,7 @@ import {
 import { Prototypes } from "../../constants"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
+import expect from "tstl-expect"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 let player: LuaPlayer
@@ -40,7 +41,7 @@ test("can edit blueprint settings", () => {
     position: [0.5, 0.5],
     force: "player",
   })!
-  assert.not_nil(theEntity)
+  expect(theEntity).to.be.any()
 
   const stack = editBlueprintSettings(
     player,
@@ -55,8 +56,8 @@ test("can edit blueprint settings", () => {
       10,
     ),
   )!
-  assert.not_nil(stack)
-  assert.true(stack.valid_for_read && stack.is_blueprint)
+  expect(stack).to.be.any()
+  expect(stack.valid_for_read && stack.is_blueprint).to.be(true)
 
   stack.label = "test"
   const icons: BlueprintSignalIcon[] = [{ signal: { type: "item", name: "iron-plate" }, index: 1 }]
@@ -65,12 +66,12 @@ test("can edit blueprint settings", () => {
   stack.blueprint_absolute_snapping = true
   stack.blueprint_position_relative_to_grid = [4, 5]
   const entities = stack.get_blueprint_entities()!
-  assert.not_nil(entities)
-  assert.equal(1, entities.length)
+  expect(entities).to.be.any()
+  expect(entities.length).to.be(1)
 
   const entity = entities[0]
-  assert.equal(theEntity.name, entity.name)
-  assert.same(theEntity.position, entity.position)
+  expect(entity.name).to.be(theEntity.name)
+  expect(entity.position).to.equal(theEntity.position)
 
   stack.set_blueprint_entities([
     {
@@ -81,30 +82,30 @@ test("can edit blueprint settings", () => {
 
   player.opened = nil
 
-  assert.false(stack.valid)
+  expect(stack.valid).to.be(false)
 
-  assert.equal("test", settings.name)
-  assert.same(icons, settings.icons)
+  expect(settings.name).to.be("test")
+  expect(settings.icons).to.equal(icons)
 
-  assert.same({ x: 2, y: 3 }, settings.snapToGrid)
-  assert.true(settings.absoluteSnapping)
-  assert.same({ x: 4, y: 5 }, settings.positionRelativeToGrid)
-  assert.same({ x: 1, y: 2 }, settings.positionOffset)
+  expect(settings.snapToGrid).to.equal({ x: 2, y: 3 })
+  expect(settings.absoluteSnapping).to.be(true)
+  expect(settings.positionRelativeToGrid).to.equal({ x: 4, y: 5 })
+  expect(settings.positionOffset).to.equal({ x: 1, y: 2 })
 })
 
 test("can edit blueprint filters", () => {
   const transform = makeSimpleBlueprintTransformations()
   const stack = editBlueprintFilters(player, transform)!
-  assert.not_nil(stack)
-  assert.true(stack.valid_for_read)
-  assert.equal(Prototypes.BlueprintFilters, stack.name)
+  expect(stack).to.be.any()
+  expect(stack.valid_for_read).to.be(true)
+  expect(stack.name).to.be(Prototypes.BlueprintFilters)
 
   stack.entity_filters = ["iron-chest", "steel-chest"]
   stack.entity_filter_mode = entity_filter_mode.blacklist
 
   player.opened = nil
-  assert.same(newLuaSet("iron-chest", "steel-chest"), transform.entityFilters.get())
-  assert.equal(entity_filter_mode.blacklist, transform.entityFilterMode.get())
+  expect(transform.entityFilters.get()).to.equal(newLuaSet("iron-chest", "steel-chest"))
+  expect(transform.entityFilterMode.get()).to.be(entity_filter_mode.blacklist)
 })
 
 test("can clear blueprint filters", () => {
@@ -113,9 +114,9 @@ test("can clear blueprint filters", () => {
     entity_filter_mode.whitelist,
   )
   const stack = editBlueprintFilters(player, transform)!
-  assert.not_nil(stack)
-  assert.true(stack.valid_for_read)
-  assert.equal(Prototypes.BlueprintFilters, stack.name)
+  expect(stack).to.be.any()
+  expect(stack.valid_for_read).to.be(true)
+  expect(stack.name).to.be(Prototypes.BlueprintFilters)
 
   stack.set_entity_filter(1, nil)
   stack.set_entity_filter(2, nil)
@@ -123,8 +124,8 @@ test("can clear blueprint filters", () => {
 
   player.opened = nil
 
-  assert.nil(transform.entityFilters.get())
-  assert.equal(nil, transform.entityFilterMode.get())
+  expect(transform.entityFilters.get()).to.be.nil()
+  expect(transform.entityFilterMode.get()).to.be(nil)
 })
 
 test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (mode) => {
@@ -142,13 +143,13 @@ test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (
     position: [0.5, 0.5],
     force: "player",
   })!
-  assert.not_nil(chest)
+  expect(chest).to.be.any()
   const other = surface.create_entity({
     name: "transport-belt",
     position: [0.5, 1.5],
     force: "player",
   })!
-  assert.not_nil(other)
+  expect(other).to.be.any()
 
   const stack = player.cursor_stack!
   stack.clear()
@@ -160,22 +161,22 @@ test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (
     whitelist ? entity_filter_mode.whitelist : entity_filter_mode.blacklist,
   )
   const res = tryTakeBlueprintWithSettings(stack, settings, transform, surface, BBox.around({ x: 0, y: 0 }, 10))
-  assert.true(res)
+  expect(res).to.be(true)
 
-  assert.equal("test", stack.label)
-  assert.same(settings.icons, stack.blueprint_icons)
-  assert.same(settings.snapToGrid, stack.blueprint_snap_to_grid)
-  assert.equal(settings.absoluteSnapping, stack.blueprint_absolute_snapping)
-  assert.same(settings.positionRelativeToGrid, stack.blueprint_position_relative_to_grid)
+  expect(stack.label).to.be("test")
+  expect(stack.blueprint_icons).to.equal(settings.icons)
+  expect(stack.blueprint_snap_to_grid).to.equal(settings.snapToGrid)
+  expect(stack.blueprint_absolute_snapping).to.be(settings.absoluteSnapping)
+  expect(stack.blueprint_position_relative_to_grid).to.equal(settings.positionRelativeToGrid)
   const entities = stack.get_blueprint_entities()!
-  assert.equal(1, entities.length)
-  assert.same(Pos.plus(chest.position, settings.positionOffset), entities[0].position)
-  assert.same(chest.name, entities[0].name)
+  expect(entities.length).to.be(1)
+  expect(entities[0].position).to.equal(Pos.plus(chest.position, settings.positionOffset))
+  expect(entities[0].name).to.equal(chest.name)
 
   const tiles = stack.get_blueprint_tiles()!
-  assert.not_nil(tiles)
-  assert.equal(1, tiles.length)
-  assert.same(settings.positionOffset, tiles[0].position)
+  expect(tiles).to.be.any()
+  expect(tiles.length).to.be(1)
+  expect(tiles[0].position).to.equal(settings.positionOffset)
 })
 
 test("Replace infinity entities with constant combinators", () => {
@@ -185,7 +186,7 @@ test("Replace infinity entities with constant combinators", () => {
     position: [0.5, 0.5],
     force: "player",
   })!
-  assert.not_nil(chest)
+  expect(chest).to.be.any()
   chest.infinity_container_filters = [
     {
       index: 1,
@@ -204,7 +205,7 @@ test("Replace infinity entities with constant combinators", () => {
     position: [1.5, 0.5],
     force: "player",
   })!
-  assert.not_nil(belt)
+  expect(belt).to.be.any()
   belt.connect_neighbour({ wire: defines.wire_type.red, target_entity: chest })
   // infinity pipe
   const pipe = surface.create_entity({
@@ -230,50 +231,41 @@ test("Replace infinity entities with constant combinators", () => {
     surface,
     BBox.around({ x: 0, y: 0 }, 10),
   )
-  assert.true(res)
+  expect(res).to.be(true)
 
   const entities = stack.get_blueprint_entities()!
-  assert.equal(3, entities.length)
+  expect(entities.length).to.be(3)
 
-  assert.same(pipe.position, entities[0].position)
-  assert.same("constant-combinator", entities[0].name)
-  assert.same(
-    {
-      filters: [
-        {
-          index: 1,
-          count: 40,
-          signal: { type: "fluid", name: "water" },
-        },
-      ],
-    },
-    entities[0].control_behavior,
-  )
+  expect(entities[0].position).to.equal(pipe.position)
+  expect(entities[0].name).to.equal("constant-combinator")
+  expect(entities[0].control_behavior).to.equal({
+    filters: [
+      {
+        index: 1,
+        count: 40,
+        signal: { type: "fluid", name: "water" },
+      },
+    ],
+  })
 
-  assert.same(belt.position, entities[1].position)
-  assert.same("transport-belt", entities[1].name)
+  expect(entities[1].position).to.equal(belt.position)
+  expect(entities[1].name).to.equal("transport-belt")
 
-  assert.same(chest.position, entities[2].position)
-  assert.same("constant-combinator", entities[2].name)
-  assert.same(
-    {
-      filters: [
-        { index: 1, count: 60, signal: { type: "item", name: "iron-plate" } },
-        { index: 2, count: 80, signal: { type: "item", name: "copper-plate" } },
-      ],
-    } as BlueprintControlBehavior,
-    entities[2].control_behavior,
-  )
+  expect(entities[2].position).to.equal(chest.position)
+  expect(entities[2].name).to.equal("constant-combinator")
+  expect(entities[2].control_behavior).to.equal({
+    filters: [
+      { index: 1, count: 60, signal: { type: "item", name: "iron-plate" } },
+      { index: 2, count: 80, signal: { type: "item", name: "copper-plate" } },
+    ],
+  } as BlueprintControlBehavior)
   // assert.same(
   //   {
   //     "1": { red: [{ entity_id: 1, circuit_id: 1 }] },
   //   } as BlueprintCircuitConnection,
   //   entities[2].connections,
   // )
-  assert.same(
-    {
-      red: [{ entity_id: 2 }],
-    },
-    entities[2].connections!["1"],
-  )
+  expect(entities[2].connections!["1"]).to.equal({
+    red: [{ entity_id: 2 }],
+  })
 })

@@ -13,6 +13,7 @@ import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { Pos } from "../../lib/geometry"
 import { playerCurrentStage, teleportToAssembly, teleportToStage } from "../../ui/player-current-stage"
+import expect from "tstl-expect"
 
 before_each(() => {
   const player = game.players[1]!
@@ -30,21 +31,21 @@ test("playerCurrentStage", () => {
   const player = game.players[1]!
   player.teleport([0, 0], 1 as SurfaceIndex)
   const currentStage = playerCurrentStage(1 as PlayerIndex)
-  assert.nil(currentStage.get())
+  expect(currentStage.get()).to.be.nil()
 
   for (const stage of assembly.getAllStages()) {
     player.teleport(player.position, stage.surface)
-    assert.equal(currentStage.get(), stage)
+    expect(stage).to.be(currentStage.get())
   }
 
   assembly.deleteStage(assembly.maxStage())
-  assert.nil(currentStage.get())
+  expect(currentStage.get()).to.be.nil()
 
   player.teleport(player.position, assembly.getStage(1)!.surface)
-  assert.equal(currentStage.get(), assembly.getStage(1)!)
+  expect(assembly.getStage(1)!).to.be(currentStage.get())
 
   assembly.delete()
-  assert.nil(currentStage.get())
+  expect(currentStage.get()).to.be.nil()
 })
 
 describe("teleporting to stage/assembly", () => {
@@ -58,15 +59,15 @@ describe("teleporting to stage/assembly", () => {
   })
   test("can teleport to stage", () => {
     teleportToStage(player, assembly1.getStage(1)!)
-    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly1.getStage(1)!)
+    expect(assembly1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
     teleportToStage(player, assembly1.getStage(2)!)
-    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly1.getStage(2)!)
+    expect(assembly1.getStage(2)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
   })
   test("keeps players position when teleporting from same assembly", () => {
     teleportToStage(player, assembly1.getStage(1)!)
     player.teleport(Pos(5, 10))
     teleportToStage(player, assembly1.getStage(2)!)
-    assert.same(Pos(5, 10), player.position)
+    expect(player.position).to.equal(Pos(5, 10))
   })
 
   test("remembers last position when teleporting from different assembly", () => {
@@ -74,14 +75,14 @@ describe("teleporting to stage/assembly", () => {
     player.teleport(Pos(5, 10))
     teleportToStage(player, assembly2.getStage(1)!)
     teleportToStage(player, assembly1.getStage(1)!)
-    assert.same(Pos(5, 10), player.position)
+    expect(player.position).to.equal(Pos(5, 10))
   })
 
   test("can teleport to assembly", () => {
     teleportToAssembly(player, assembly1)
-    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly1.getStage(1)!)
+    expect(assembly1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
     teleportToAssembly(player, assembly2)
-    assert.equal(playerCurrentStage(1 as PlayerIndex).get(), assembly2.getStage(1)!)
+    expect(assembly2.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
   })
 
   test("teleport to assembly remembers last stage and position", () => {
@@ -91,7 +92,7 @@ describe("teleporting to stage/assembly", () => {
     teleportToStage(player, assembly2.getStage(1)!)
 
     teleportToAssembly(player, assembly1)
-    assert.same(Pos(5, 10), player.position)
-    assert.equal(assembly1.getStage(2), playerCurrentStage(player.index).get())
+    expect(player.position).to.equal(Pos(5, 10))
+    expect(playerCurrentStage(player.index).get()).to.be(assembly1.getStage(2))
   })
 })

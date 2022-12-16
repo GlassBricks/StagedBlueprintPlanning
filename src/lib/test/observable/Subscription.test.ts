@@ -10,119 +10,121 @@
  */
 
 import { Subscription, UnsubscriptionError } from "../../observable"
+import expect, { AnyContextualFun, mock, MockWithContext } from "tstl-expect"
 
 let a: Subscription
 let b: Subscription
 
-let sp: spy.Spy<() => void>
+let sp: MockWithContext<AnyContextualFun>
 
 before_each(() => {
   a = new Subscription()
   b = new Subscription()
-  sp = spy()
+  sp = mock.fn()
 })
 
 test("isClosed", () => {
-  assert.false(a.isClosed())
+  expect(a.isClosed()).to.be(false)
   a.close()
-  assert.true(a.isClosed())
+  expect(a.isClosed()).to.be(true)
 })
 
 test("calls added subscriptions when closed", () => {
   a.add({ close: sp })
-  assert.spy(sp).not_called()
+  expect(sp).not.called()
   a.close()
-  assert.spy(sp).called()
+  expect(sp).called()
 })
 
 test("calls subscription immediately if already closed", () => {
   a.close()
   a.add({ close: sp })
-  assert.spy(sp).called()
+  expect(sp).called()
 })
 
 test("calls func subscriptions when closed", () => {
   a.add({ invoke: sp })
-  assert.spy(sp).not_called()
+  expect(sp).not.called()
   a.close()
-  assert.spy(sp).called()
+  expect(sp).called()
 })
 
 test("calls func subscriptions immediately if already closed", () => {
   a.close()
   a.add({ invoke: sp })
-  assert.spy(sp).called()
+  expect(sp).called()
 })
 
 test("sets fields to nil when closed", () => {
   a.add({ close: sp })
   a.close()
-  assert.nil(a._children)
-  assert.nil(a._parents)
+  expect(a._children).to.be.nil()
+  expect(a._parents).to.be.nil()
 })
 
 describe("child SubscriptionContext", () => {
   test("can add child", () => {
     a.add(b)
-    assert.true(b._parents?.has(a))
-    assert.true(a._children?.has(b))
+    expect(b._parents?.has(a)).to.be(true)
+    expect(a._children?.has(b)).to.be(true)
   })
 
   test("cannot add self", () => {
     a.add(a)
-    assert.false(a._parents?.has(a))
-    assert.false(a._children?.has(a))
+    expect(a._parents?.has(a)).to.be(false)
+    expect(a._children?.has(a)).to.be(false)
   })
 
   test("cannot add closed child", () => {
     b.close()
     a.add(b)
-    assert.false(a._children?.has(b))
+    expect(a._children?.has(b)).to.be(false)
   })
 
   test("calls close on child when closed", () => {
-    const sp = spy.on(b, "close")
+    const sp = mock.on(b, "close")
     a.add(b)
-    assert.spy(sp).not_called()
+    expect(sp).not.called()
     a.close()
-    assert.spy(sp).called()
+    expect(sp).called()
   })
 
   test("calls grandchildren subscriptions when closed", () => {
     b.add({ close: sp })
     a.add(b)
-    assert.spy(sp).not_called()
+    expect(sp).not.called()
     a.close()
-    assert.spy(sp).called()
+    expect(sp).called()
   })
 
   test("removes self from parent when closed", () => {
     a.add(b)
     b.close()
-    assert.false(a._children?.has(b))
+    expect(a._children?.has(b)).to.be(false)
   })
 })
 
 describe("errors", () => {
   function checkErr(err: unknown, expected: string[]) {
-    assert.true(err instanceof UnsubscriptionError)
+    expect(err instanceof UnsubscriptionError).to.be(true)
     const errors = (err as UnsubscriptionError).errors
-    assert.equal(expected.length, errors.length)
+    expect(errors.length).to.be(expected.length)
     for (let i = 0; i < expected.length; i++) {
-      assert.string(errors[i])
-      assert.true((assert.string(errors[i]) as string).includes(expected[i]))
+      // assert.string(errors[i])
+      expect(errors[i]).to.be.a("string")
+      expect(errors[i]).to.include(expected[i])
     }
   }
   test("rethrows errors", () => {
     a.add({ close: () => error("err1") })
-    const err = assert.error(() => a.close())
+    const err = expect(() => a.close()).to.error()
     checkErr(err, ["err1"])
   })
 
   test("closes all subscriptions even if has errors", () => {
     a.add({ close: () => error("err1") })
     a.add({ close: sp })
-    const err = assert.error(() => a.close())
+    const err = expect(() => a.close()).to.error()
     checkErr(err, ["err1"])
   })
 
@@ -130,8 +132,8 @@ describe("errors", () => {
     a.add({ close: () => error("err1") })
     a.add({ close: () => error("err2") })
     a.add({ close: () => error("err3") })
-    const err = assert.error(() => a.close())
-    assert.true(err instanceof UnsubscriptionError)
+    const err = expect(() => a.close()).to.error()
+    expect(err).to.be.a(UnsubscriptionError)
     checkErr(err, ["err1", "err2", "err3"])
   })
 
@@ -140,8 +142,8 @@ describe("errors", () => {
     b.add({ close: () => error("err2") })
     b.add({ close: () => error("err3") })
     a.add(b)
-    const err = assert.error(() => a.close())
-    assert.true(err instanceof UnsubscriptionError)
+    const err = expect(() => a.close()).to.error()
+    expect(err).to.be.a(UnsubscriptionError)
     checkErr(err, ["err1", "err2", "err3"])
   })
 })

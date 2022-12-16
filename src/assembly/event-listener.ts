@@ -837,7 +837,9 @@ Events.on_chunk_generated((e) => {
 
 export const _assertInValidState = (): void => {
   state.lastPreBuild = nil // can be set
-  assert.same({}, state, "State is not empty")
+  for (const [k, v] of pairs(state)) {
+    assert(!v, `${k} was not cleaned up`)
+  }
 }
 
 /**

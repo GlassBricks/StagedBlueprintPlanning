@@ -10,6 +10,7 @@
  */
 
 import { MutableObservableList, observableList, ObservableListChange } from "../../observable"
+import expect, { mock } from "tstl-expect"
 
 let list: MutableObservableList<string>
 before_each(() => {
@@ -17,95 +18,95 @@ before_each(() => {
 })
 
 it("can be constructed", () => {
-  assert.equal(list.length(), 0)
+  expect(0).to.be(list.length())
 })
 
 it("keeps track of length", () => {
   list.push("a")
-  assert.equal(list.length(), 1)
+  expect(1).to.be(list.length())
   list.push("b")
-  assert.equal(list.length(), 2)
+  expect(2).to.be(list.length())
   list.pop()
-  assert.equal(list.length(), 1)
+  expect(1).to.be(list.length())
 })
 
 it("allows to inspect value", () => {
   list.push("a")
   list.push("b")
-  assert.same(["a", "b"], list.value())
+  expect(list.value()).to.equal(["a", "b"])
 })
 
 test("notifies subscribers of pushed items", () => {
-  const fn = spy()
+  const fn = mock.fn()
   list.subscribeIndependently({ invoke: fn })
   list.push("a")
-  assert.same(["a"], list.value())
+  expect(list.value()).to.equal(["a"])
   const change: ObservableListChange<string> = {
     list,
     type: "add",
     index: 0,
     value: "a",
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })
 
 it("notifies subscribers of inserted items", () => {
   list.push("a")
-  const fn = spy()
+  const fn = mock.fn()
   list.subscribeIndependently({ invoke: fn })
   list.insert(0, "b")
-  assert.same(["b", "a"], list.value())
+  expect(list.value()).to.equal(["b", "a"])
   const change: ObservableListChange<string> = {
     list,
     type: "add",
     index: 0,
     value: "b",
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })
 
 it("notifies subscribers of popped items", () => {
   list.push("a")
-  const fn = spy()
+  const fn = mock.fn()
   list.subscribeIndependently({ invoke: fn })
   list.pop()
-  assert.same([], list.value())
+  expect(list.value()).to.equal([])
   const change: ObservableListChange<string> = {
     list,
     type: "remove",
     index: 0,
     value: "a",
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })
 
 it("notifies subscribers of removed items", () => {
   list.push("a")
   list.push("b")
-  const fn = spy()
+  const fn = mock.fn()
   list.subscribeIndependently({ invoke: fn })
   list.remove(0)
-  assert.same(["b"], list.value())
+  expect(list.value()).to.equal(["b"])
   const change: ObservableListChange<string> = {
     list,
     type: "remove",
     index: 0,
     value: "a",
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })
 
 it("notifies subscribers of changed items", () => {
   list.push("a")
   list.push("b")
-  const fn = spy()
+  const fn = mock.fn()
   list.subscribeIndependently({ invoke: fn })
   list.set(0, "c")
-  assert.same(["c", "b"], list.value())
+  expect(list.value()).to.equal(["c", "b"])
   const change: ObservableListChange<string> = {
     list,
     type: "set",
@@ -113,27 +114,27 @@ it("notifies subscribers of changed items", () => {
     oldValue: "a",
     value: "c",
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })
 
 it("does not notify subscribers of changed items when value is not changed", () => {
   list.push("a")
   list.push("b")
-  const fn = spy()
+  const fn = mock.fn()
   list.subscribeIndependently({ invoke: fn })
   list.set(0, "a")
-  assert.same(["a", "b"], list.value())
-  assert.spy(fn).not_called()
+  expect(list.value()).to.equal(["a", "b"])
+  expect(fn).not.called()
 })
 
 test("it notifies subscribers of swapped items", () => {
   list.push("a")
   list.push("b")
-  const fn = spy()
+  const fn = mock.fn()
   list.subscribeIndependently({ invoke: fn })
   list.swap(0, 1)
-  assert.same(["b", "a"], list.value())
+  expect(list.value()).to.equal(["b", "a"])
   const change: ObservableListChange<string> = {
     list,
     type: "swap",
@@ -142,6 +143,6 @@ test("it notifies subscribers of swapped items", () => {
     newValueA: "b",
     newValueB: "a",
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })

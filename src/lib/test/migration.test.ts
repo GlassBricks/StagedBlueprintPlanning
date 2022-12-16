@@ -10,10 +10,11 @@
  */
 
 import { formatVersion, Migrations } from "../migration"
+import expect from "tstl-expect"
 
 test("formatVersion", () => {
-  assert.same("01.02.03", formatVersion("1.2.3"))
-  assert.same("01.02.03", formatVersion("01.02.03"))
+  expect(formatVersion("1.2.3")).to.equal("01.02.03")
+  expect(formatVersion("01.02.03")).to.equal("01.02.03")
 })
 
 test.each<[string, string, boolean]>([
@@ -24,7 +25,7 @@ test.each<[string, string, boolean]>([
   ["1.2.3", "2.1.0", true],
   ["2.1.0", "1.2.3", false],
 ])("versionStrLess: %s < %s => %s", (a, b, expected) => {
-  assert.equal(expected, formatVersion(a) < formatVersion(b))
+  expect(formatVersion(a) < formatVersion(b)).to.be(expected)
 })
 
 describe("Migrations", () => {
@@ -37,6 +38,6 @@ describe("Migrations", () => {
   test("runs later migrations, in sorted order", () => {
     for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.to(version, () => run.push(version))
     Migrations.doMigrations("1.2.3")
-    assert.same(["1.2.4", "1.2.5"], run)
+    expect(run).to.equal(["1.2.4", "1.2.5"])
   })
 })

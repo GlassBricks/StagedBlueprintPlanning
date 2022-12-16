@@ -15,6 +15,7 @@ import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../.
 import { WireHandler } from "../../entity/WireHandler"
 import { shallowCompare } from "../../lib"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
+import expect from "tstl-expect"
 
 let content: MutableAssemblyContent
 const surfaces = setupTestSurfaces(2)
@@ -102,21 +103,18 @@ describe("circuit wires", () => {
       addWire1()
       addWire2()
       handler.updateWireConnections(content, entity1, 1)
-      assert.same([], luaEntity1.circuit_connection_definitions ?? [])
-      assert.same([], luaEntity2.circuit_connection_definitions ?? [])
+      expect(luaEntity1.circuit_connection_definitions ?? []).to.equal([])
+      expect(luaEntity2.circuit_connection_definitions ?? []).to.equal([])
     })
     function assertWire1Matches(): void {
-      assert.same(
-        [
-          {
-            target_entity: luaEntity2,
-            wire: defines.wire_type.red,
-            source_circuit_id: defines.circuit_connector_id.combinator_input,
-            target_circuit_id: defines.circuit_connector_id.combinator_output,
-          } as CircuitConnectionDefinition,
-        ],
-        luaEntity1.circuit_connection_definitions,
-      )
+      expect(luaEntity1.circuit_connection_definitions).to.equal([
+        {
+          target_entity: luaEntity2,
+          wire: defines.wire_type.red,
+          source_circuit_id: defines.circuit_connector_id.combinator_input,
+          target_circuit_id: defines.circuit_connector_id.combinator_output,
+        } as CircuitConnectionDefinition,
+      ])
     }
     test("can add wires", () => {
       content.addCircuitConnection(getExpectedWire1())
@@ -149,23 +147,20 @@ describe("circuit wires", () => {
       content.addCircuitConnection(wire1)
       handler.updateWireConnections(content, entity1, 1)
 
-      assert.same(
-        [
-          {
-            target_entity: luaEntity1,
-            wire: defines.wire_type.red,
-            source_circuit_id: defines.circuit_connector_id.combinator_input,
-            target_circuit_id: defines.circuit_connector_id.combinator_output,
-          } as CircuitConnectionDefinition,
-          {
-            target_entity: luaEntity1,
-            wire: defines.wire_type.red,
-            source_circuit_id: defines.circuit_connector_id.combinator_output,
-            target_circuit_id: defines.circuit_connector_id.combinator_input,
-          } as CircuitConnectionDefinition,
-        ],
-        luaEntity1.circuit_connection_definitions,
-      )
+      expect(luaEntity1.circuit_connection_definitions).to.equal([
+        {
+          target_entity: luaEntity1,
+          wire: defines.wire_type.red,
+          source_circuit_id: defines.circuit_connector_id.combinator_input,
+          target_circuit_id: defines.circuit_connector_id.combinator_output,
+        } as CircuitConnectionDefinition,
+        {
+          target_entity: luaEntity1,
+          wire: defines.wire_type.red,
+          source_circuit_id: defines.circuit_connector_id.combinator_output,
+          target_circuit_id: defines.circuit_connector_id.combinator_input,
+        } as CircuitConnectionDefinition,
+      ])
     })
   })
 
@@ -185,14 +180,11 @@ describe("circuit wires", () => {
       for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
 
       const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
-      assert.equal(!shallowCompare(existing, world), hasDiff)
-      assert.nil(maxConnectionsReached) // not relevant for circuit wires
+      expect(hasDiff).to.be(!shallowCompare(existing, world))
+      expect(maxConnectionsReached).to.be.nil() // not relevant for circuit wires
 
       const connections = content.getCircuitConnections(entity1)?.get(entity2)
-      assert.same(
-        world.map((number) => wires[number - 1]),
-        Object.keys(connections ?? {}),
-      )
+      expect(Object.keys(connections ?? {})).to.equal(world.map((number) => wires[number - 1]))
     })
   })
 })
@@ -222,15 +214,15 @@ describe("cable connections", () => {
   test("can add cables", () => {
     content.addCableConnection(entity1, entity2)
     handler.updateWireConnections(content, entity1, 1)
-    assert.same([luaEntity2], (luaEntity1.neighbours as { copper: LuaEntity[] }).copper)
-    assert.same([luaEntity1], (luaEntity2.neighbours as { copper: LuaEntity[] }).copper)
+    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
+    expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity1])
   })
 
   test("can remove cables", () => {
     luaEntity1.connect_neighbour(luaEntity2)
     handler.updateWireConnections(content, entity1, 1)
-    assert.same([], (luaEntity1.neighbours as { copper: LuaEntity[] }).copper)
-    assert.same([], (luaEntity2.neighbours as { copper: LuaEntity[] }).copper)
+    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
+    expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
   })
 
   test("can update cables", () => {
@@ -238,9 +230,9 @@ describe("cable connections", () => {
     luaEntity2.connect_neighbour(luaEntity3)
     handler.updateWireConnections(content, entity2, 1)
     // should now only have 1-2
-    assert.same([luaEntity2], (luaEntity1.neighbours as { copper: LuaEntity[] }).copper)
-    assert.same([luaEntity1], (luaEntity2.neighbours as { copper: LuaEntity[] }).copper)
-    assert.same([], (luaEntity3.neighbours as { copper: LuaEntity[] }).copper)
+    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
+    expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity1])
+    expect((luaEntity3.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
   })
 
   test("ignores entities not in the assembly", () => {
@@ -248,7 +240,7 @@ describe("cable connections", () => {
     content.delete(entity2)
     handler.updateWireConnections(content, entity1, 1)
     // cable should still be there
-    assert.same([luaEntity2], (luaEntity1.neighbours as { copper: LuaEntity[] }).copper)
+    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
   })
 
   describe("saving cables", () => {
@@ -266,14 +258,11 @@ describe("cable connections", () => {
       if (world.includes(2)) luaEntity2.connect_neighbour(luaEntity3)
 
       const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
-      assert.equal(!shallowCompare(existing, world), hasDiff)
-      assert.nil(maxConnectionsReached)
+      expect(hasDiff).to.be(!shallowCompare(existing, world))
+      expect(maxConnectionsReached).to.be.nil()
 
       const connections = content.getCableConnections(entity2)
-      assert.same(
-        world.map((number) => [entity1, entity3][number - 1]),
-        Object.keys(connections ?? {}),
-      )
+      expect(Object.keys(connections ?? {})).to.equal(world.map((number) => [entity1, entity3][number - 1]))
     })
 
     test("can add cables in multiple stages", () => {
@@ -288,7 +277,7 @@ describe("cable connections", () => {
       handler.saveWireConnections(content, entity2, 1, 2)
 
       const connections = content.getCableConnections(entity2)
-      assert.same([entity1, entity3], Object.keys(connections ?? {}))
+      expect(Object.keys(connections ?? {})).to.equal([entity1, entity3])
     })
 
     test("max connections reached", () => {
@@ -306,23 +295,23 @@ describe("cable connections", () => {
         // no lua entity
         content.add(entity)
         const result = content.addCableConnection(entity1, entity)
-        assert.equal(CableAddResult.Added, result)
+        expect(result).to.be(CableAddResult.Added)
       }
       luaEntity1.connect_neighbour(luaEntity2)
       // saving should fail
       {
         const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
-        assert.true(hasDiff)
-        assert.true(maxConnectionsReached)
-        assert.nil(content.getCableConnections(entity2))
-        assert.false(content.getCableConnections(entity1)!.has(entity2))
+        expect(hasDiff).to.be(true)
+        expect(maxConnectionsReached).to.be(true)
+        expect(content.getCableConnections(entity2)).to.be.nil()
+        expect(content.getCableConnections(entity1)!.has(entity2)).to.be(false)
       }
       {
         const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
-        assert.true(hasDiff)
-        assert.true(maxConnectionsReached)
-        assert.nil(content.getCableConnections(entity2))
-        assert.false(content.getCableConnections(entity1)!.has(entity2))
+        expect(hasDiff).to.be(true)
+        expect(maxConnectionsReached).to.be(true)
+        expect(content.getCableConnections(entity2)).to.be.nil()
+        expect(content.getCableConnections(entity1)!.has(entity2)).to.be(false)
       }
     })
   })

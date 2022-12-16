@@ -10,6 +10,7 @@
  */
 
 import { Registry } from "../registry"
+import expect from "tstl-expect"
 
 let registry: Registry<string>
 before_each(() => {
@@ -29,29 +30,29 @@ describe("registering", () => {
   test("Can register function", () => {
     const testFuncName = "foo"
     registry.registerRaw(testFuncName, "foo")
-    assert.same("foo", registry.get(testFuncName))
-    assert.same(testFuncName, registry.nameOf("foo"))
+    expect(registry.get(testFuncName)).to.equal("foo")
+    expect(registry.nameOf("foo")).to.equal(testFuncName)
   })
 
   test("error on duplicate name", () => {
-    assert.error(() => {
+    expect(() => {
       registry.registerRaw("foo", "bar")
       registry.registerRaw("foo", "baz")
-    })
+    }).to.error()
   })
 
   test("error on nonexistent func", () => {
-    assert.error(() => {
+    expect(() => {
       registry.get("foo22")
-    })
-    assert.error(() => {
+    }).to.error()
+    expect(() => {
       registry.nameOf("foo22")
-    })
+    }).to.error()
   })
 })
 test("Error when registering after load", () => {
-  assert.error(() => {
+  expect(() => {
     const registry = new Registry<string>("string", (x) => x)
     registry.registerRaw("foo", "bar")
-  })
+  }).to.error()
 })

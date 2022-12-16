@@ -11,36 +11,27 @@
 
 import { HighlightValues } from "../../assembly/EntityHighlighter"
 import { AssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
-import { SpriteRender } from "../../lib"
+import expect from "tstl-expect"
 
 export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, maxStage: StageNumber): void {
   let i = entity.firstStage
   for (const [stageNumber, changes] of pairs(entity.getStageDiffs() ?? {})) {
     const isUpgrade = changes.name != nil
 
-    const highlight = assert.not_nil(entity.getExtraEntity("configChangedHighlight", stageNumber)) as HighlightBoxEntity
-    assert.equal(
-      isUpgrade ? HighlightValues.Upgraded : HighlightValues.ConfigChanged,
-      highlight.highlight_box_type,
-      "highlight type",
-    )
+    const highlight = expect(entity.getExtraEntity("configChangedHighlight", stageNumber)).to.be.any().getValue()!
+    expect(highlight.highlight_box_type).to.be(isUpgrade ? HighlightValues.Upgraded : HighlightValues.ConfigChanged)
 
     const firstI = i
     for (; i < stageNumber; i++) {
-      if (i != firstI)
-        assert.nil(entity.getExtraEntity("configChangedHighlight", i), "should not have highlight in stage " + i)
+      if (i != firstI) expect(entity.getExtraEntity("configChangedHighlight", i)).to.be.nil()
 
-      const highlight = assert.not_nil(
-        entity.getExtraEntity("configChangedLaterHighlight", i),
-        `stage ${i}`,
-      ) as SpriteRender
-      assert.equal(isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater, highlight.sprite)
+      const highlight = expect(entity.getExtraEntity("configChangedLaterHighlight", i)).to.be.any().getValue()!
+      expect(highlight.sprite).to.be(isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater)
     }
   }
   for (let j = i; j <= maxStage; j++) {
-    if (j != i)
-      assert.nil(entity.getExtraEntity("configChangedHighlight", j), "should not have highlight in stage " + j)
-    assert.nil(entity.getExtraEntity("configChangedLaterHighlight", j), "should not have later highlight in stage " + j)
+    if (j != i) expect(entity.getExtraEntity("configChangedHighlight", j)).to.be.nil()
+    expect(entity.getExtraEntity("configChangedLaterHighlight", j)).to.be.nil()
   }
 }
 
@@ -49,31 +40,25 @@ export function assertErrorHighlightsCorrect(entity: AssemblyEntity, maxStage: S
   for (const stage of $range(entity.firstStage, maxStage)) {
     if (entity.getWorldEntity(stage) == nil) {
       hasAnyMissing = true
-      const highlight = assert.not_nil(entity.getExtraEntity("errorOutline", stage)) as HighlightBoxEntity
-      assert.equal(HighlightValues.Error, highlight.highlight_box_type, "highlight type")
+      const highlight = expect(entity.getExtraEntity("errorOutline", stage)).to.be.any().getValue()!
+      expect(highlight.highlight_box_type).to.be(HighlightValues.Error)
     } else {
-      assert.nil(entity.getExtraEntity("errorOutline", stage), `should not have highlight in stage ${stage}`)
+      expect(entity.getExtraEntity("errorOutline", stage)).to.be.nil()
     }
   }
   if (!hasAnyMissing) {
-    assert.false(entity.hasAnyExtraEntities("errorElsewhereIndicator"), "should not have error elsewhere indicator")
+    expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
   } else {
     for (const stage of $range(1, entity.firstStage - 1)) {
-      assert.nil(entity.getExtraEntity("errorElsewhereIndicator", stage), `should not have highlight in stage ${stage}`)
+      expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.nil()
     }
     for (const stage of $range(maxStage + 1, maxStage)) {
       const hasError = entity.getWorldEntity(stage) == nil
       if (hasError) {
         // no indicator
-        assert.nil(
-          entity.getExtraEntity("errorElsewhereIndicator", stage),
-          `should not have error elsewhere indicator in stage ${stage}`,
-        )
+        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.nil()
       } else {
-        assert.not_nil(
-          entity.getExtraEntity("errorElsewhereIndicator", stage),
-          `should have error elsewhere indicator in stage ${stage}`,
-        )
+        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.any()
       }
     }
   }

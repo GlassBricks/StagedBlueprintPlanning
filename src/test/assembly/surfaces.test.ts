@@ -11,13 +11,14 @@
 
 import { createStageSurface, prepareArea } from "../../assembly/surfaces"
 import { BBox } from "../../lib/geometry"
+import expect from "tstl-expect"
 
 test("generateStageSurface", () => {
   const surface = createStageSurface()
   after_test(() => game.delete_surface(surface))
-  assert.not_equal(1, surface.index)
-  assert.true(surface.always_day)
-  assert.true(surface.generate_with_lab_tiles)
+  expect(surface.index).not.to.equal(1)
+  expect(surface.always_day).to.be(true)
+  expect(surface.generate_with_lab_tiles).to.be(true)
 })
 
 test('prepareArea() "generates" chunks', () => {
@@ -28,6 +29,6 @@ test('prepareArea() "generates" chunks', () => {
   prepareArea(surface, area.scale(32))
   for (const [x, y] of area.iterateTiles()) {
     const pos = { x, y }
-    assert.true(surface.is_chunk_generated(pos))
+    expect(surface.is_chunk_generated(pos)).to.be(true)
   }
 })

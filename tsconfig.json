@@ -4,11 +4,10 @@
     "moduleResolution": "node",
     "module": "CommonJS",
     "types": [
-      "luassert-tstl", "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio", "gb-tstl-utils"
+      "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio", "gb-tstl-utils"
     ],
     "lib": ["esnext"],
     "skipDefaultLibCheck": true,
-    "skipLibCheck": true,
     "strict": true,
     "experimentalDecorators": true,
     "rootDir": "src",

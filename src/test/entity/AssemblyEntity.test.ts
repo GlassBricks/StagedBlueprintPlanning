@@ -20,6 +20,7 @@ import { Pos } from "../../lib/geometry"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 import { simpleMock } from "../simple-mock"
 import { createRollingStock } from "./createRollingStock"
+import expect from "tstl-expect"
 
 interface InserterEntity extends Entity {
   name: "filter-inserter" | "stack-filter-inserter"
@@ -41,82 +42,82 @@ before_each(() => {
 })
 
 test("getters", () => {
-  assert.same(2, fooAssemblyEntity.firstStage)
-  assert.same(entity, fooAssemblyEntity.firstValue)
-  assert.same(0, fooAssemblyEntity.getDirection()) // nil <=> 0
+  expect(fooAssemblyEntity.firstStage).to.equal(2)
+  expect(fooAssemblyEntity.firstValue).to.equal(entity)
+  expect(fooAssemblyEntity.getDirection()).to.equal(0) // nil <=> 0
 })
 
 test("isRollingStock", () => {
-  assert.false(fooAssemblyEntity.isRollingStock())
+  expect(fooAssemblyEntity.isRollingStock()).to.be(false)
   const assemblyEntity2 = createAssemblyEntity({ name: "locomotive" }, Pos(0, 0), nil, 2)
-  assert.true(assemblyEntity2.isRollingStock())
+  expect(assemblyEntity2.isRollingStock()).to.be(true)
 })
 
 test("isUndergroundBelt", () => {
-  assert.false(fooAssemblyEntity.isUndergroundBelt())
+  expect(fooAssemblyEntity.isUndergroundBelt()).to.be(false)
   const assemblyEntity2 = createAssemblyEntity({ name: "underground-belt" }, Pos(0, 0), nil, 2)
-  assert.true(assemblyEntity2.isUndergroundBelt())
+  expect(assemblyEntity2.isUndergroundBelt()).to.be(true)
 })
 
 test("hasStageDiff", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.false(assemblyEntity.hasStageDiff())
+  expect(assemblyEntity.hasStageDiff()).to.be(false)
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-  assert.true(assemblyEntity.hasStageDiff())
-  assert.true(assemblyEntity.hasStageDiff(3))
-  assert.false(assemblyEntity.hasStageDiff(2))
+  expect(assemblyEntity.hasStageDiff()).to.be(true)
+  expect(assemblyEntity.hasStageDiff(3)).to.be(true)
+  expect(assemblyEntity.hasStageDiff(2)).to.be(false)
 })
 
 test("getStageDiff", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.nil(assemblyEntity.getStageDiff(3))
+  expect(assemblyEntity.getStageDiff(3)).to.be.nil()
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-  assert.same({ override_stack_size: 3 }, assemblyEntity.getStageDiff(3))
+  expect(assemblyEntity.getStageDiff(3)).to.equal({ override_stack_size: 3 })
 })
 
 test("nextStageWithDiff", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   assemblyEntity._applyDiffAtStage(5, { override_stack_size: 5 })
-  assert.equal(3, assemblyEntity.nextStageWithDiff(2))
-  assert.equal(5, assemblyEntity.nextStageWithDiff(3))
-  assert.equal(5, assemblyEntity.nextStageWithDiff(4))
-  assert.equal(nil, assemblyEntity.nextStageWithDiff(5))
+  expect(assemblyEntity.nextStageWithDiff(2)).to.be(3)
+  expect(assemblyEntity.nextStageWithDiff(3)).to.be(5)
+  expect(assemblyEntity.nextStageWithDiff(4)).to.be(5)
+  expect(assemblyEntity.nextStageWithDiff(5)).to.be(nil)
 })
 
 test("prevStageWithDiff", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   assemblyEntity._applyDiffAtStage(5, { override_stack_size: 5 })
-  assert.equal(5, assemblyEntity.prevStageWithDiff(6))
-  assert.equal(3, assemblyEntity.prevStageWithDiff(5))
-  assert.equal(3, assemblyEntity.prevStageWithDiff(4))
-  assert.equal(nil, assemblyEntity.prevStageWithDiff(3))
-  assert.equal(nil, assemblyEntity.prevStageWithDiff(2))
+  expect(assemblyEntity.prevStageWithDiff(6)).to.be(5)
+  expect(assemblyEntity.prevStageWithDiff(5)).to.be(3)
+  expect(assemblyEntity.prevStageWithDiff(4)).to.be(3)
+  expect(assemblyEntity.prevStageWithDiff(3)).to.be(nil)
+  expect(assemblyEntity.prevStageWithDiff(2)).to.be(nil)
 })
 
 test("inFirstStageOnly generally false", () => {
   const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  assert.false(assemblyEntity.inFirstStageOnly())
+  expect(assemblyEntity.inFirstStageOnly()).to.be(false)
 })
 
 describe("getValueAtStage", () => {
   test("nil if lower than stage", () => {
-    assert.nil(fooAssemblyEntity.getValueAtStage(1))
+    expect(fooAssemblyEntity.getValueAtStage(1)).to.be.nil()
   })
 
   test("getValueAtStage returns same entity if no stageDiffs", () => {
-    assert.same(entity, fooAssemblyEntity.getValueAtStage(2))
+    expect(fooAssemblyEntity.getValueAtStage(2)).to.equal(entity)
   })
 
   test("applies changes from one stage", () => {
     const result = fooAssemblyEntity.getValueAtStage(3)
-    assert.same({ ...entity, override_stack_size: 2, filter_mode: "blacklist" }, result)
+    expect(result).to.equal({ ...entity, override_stack_size: 2, filter_mode: "blacklist" })
   })
 
   test("applies changes from multiple stages", () => {
     const result = fooAssemblyEntity.getValueAtStage(5)
-    assert.same({ ...entity, override_stack_size: 3, filter_mode: "blacklist" }, result)
+    expect(result).to.equal({ ...entity, override_stack_size: 3, filter_mode: "blacklist" })
   })
 
   test("replaces nilPlaceholder with nil", () => {
@@ -124,36 +125,36 @@ describe("getValueAtStage", () => {
     const expected = { ...entity, override_stack_size: 3 }
     delete expected.filter_mode
 
-    assert.same(expected, result)
+    expect(result).to.equal(expected)
   })
 
   test("getPropAtStage", () => {
-    assert.same([1, 2], fooAssemblyEntity.getPropAtStage(2, "override_stack_size"))
-    assert.same([2, 3], fooAssemblyEntity.getPropAtStage(3, "override_stack_size"))
-    assert.same([2, 3], fooAssemblyEntity.getPropAtStage(4, "override_stack_size"))
-    assert.same([3, 5], fooAssemblyEntity.getPropAtStage(5, "override_stack_size"))
-    assert.same([3, 5], fooAssemblyEntity.getPropAtStage(6, "override_stack_size"))
+    expect(fooAssemblyEntity.getPropAtStage(2, "override_stack_size")).to.equal([1, 2])
+    expect(fooAssemblyEntity.getPropAtStage(3, "override_stack_size")).to.equal([2, 3])
+    expect(fooAssemblyEntity.getPropAtStage(4, "override_stack_size")).to.equal([2, 3])
+    expect(fooAssemblyEntity.getPropAtStage(5, "override_stack_size")).to.equal([3, 5])
+    expect(fooAssemblyEntity.getPropAtStage(6, "override_stack_size")).to.equal([3, 5])
 
-    assert.same([1, 2], fooAssemblyEntity.getPropAtStage(1, "override_stack_size"))
+    expect(fooAssemblyEntity.getPropAtStage(1, "override_stack_size")).to.equal([1, 2])
 
-    assert.same([nil, 2], fooAssemblyEntity.getPropAtStage(2, "filter_mode"))
-    assert.same(["blacklist", 3], fooAssemblyEntity.getPropAtStage(3, "filter_mode"))
-    assert.same(["blacklist", 3], fooAssemblyEntity.getPropAtStage(4, "filter_mode"))
-    assert.same(["blacklist", 3], fooAssemblyEntity.getPropAtStage(5, "filter_mode"))
-    assert.same(["blacklist", 3], fooAssemblyEntity.getPropAtStage(6, "filter_mode"))
-    assert.same([nil, 7], fooAssemblyEntity.getPropAtStage(7, "filter_mode"))
-    assert.same([nil, 7], fooAssemblyEntity.getPropAtStage(8, "filter_mode"))
+    expect(fooAssemblyEntity.getPropAtStage(2, "filter_mode")).to.equal([nil, 2])
+    expect(fooAssemblyEntity.getPropAtStage(3, "filter_mode")).to.equal(["blacklist", 3])
+    expect(fooAssemblyEntity.getPropAtStage(4, "filter_mode")).to.equal(["blacklist", 3])
+    expect(fooAssemblyEntity.getPropAtStage(5, "filter_mode")).to.equal(["blacklist", 3])
+    expect(fooAssemblyEntity.getPropAtStage(6, "filter_mode")).to.equal(["blacklist", 3])
+    expect(fooAssemblyEntity.getPropAtStage(7, "filter_mode")).to.equal([nil, 7])
+    expect(fooAssemblyEntity.getPropAtStage(8, "filter_mode")).to.equal([nil, 7])
 
-    assert.same([nil, 2], fooAssemblyEntity.getPropAtStage(1, "filter_mode"))
+    expect(fooAssemblyEntity.getPropAtStage(1, "filter_mode")).to.equal([nil, 2])
   })
 
   test("getNameAtStage ", () => {
     fooAssemblyEntity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-    assert.same("filter-inserter", fooAssemblyEntity.getNameAtStage(1))
-    assert.same("filter-inserter", fooAssemblyEntity.getNameAtStage(2))
-    assert.same("filter-inserter", fooAssemblyEntity.getNameAtStage(3))
-    assert.same("stack-filter-inserter", fooAssemblyEntity.getNameAtStage(4))
-    assert.same("stack-filter-inserter", fooAssemblyEntity.getNameAtStage(5))
+    expect(fooAssemblyEntity.getNameAtStage(1)).to.equal("filter-inserter")
+    expect(fooAssemblyEntity.getNameAtStage(2)).to.equal("filter-inserter")
+    expect(fooAssemblyEntity.getNameAtStage(3)).to.equal("filter-inserter")
+    expect(fooAssemblyEntity.getNameAtStage(4)).to.equal("stack-filter-inserter")
+    expect(fooAssemblyEntity.getNameAtStage(5)).to.equal("stack-filter-inserter")
   })
 })
 
@@ -166,36 +167,36 @@ test("iterateValues", () => {
   for (const [stage, entity] of fooAssemblyEntity.iterateValues(1, 6)) {
     result[stage] = entity == nil ? "nil" : shallowCopy(entity)
   }
-  assert.same(expected, result)
+  expect(result).to.equal(expected)
 })
 
 describe("adjustValueAtStage", () => {
   test("can set first value", () => {
     const newEntity = { ...entity, override_stack_size: 3 }
     fooAssemblyEntity.adjustValueAtStage(2, newEntity)
-    assert.same(newEntity, fooAssemblyEntity.firstValue)
+    expect(fooAssemblyEntity.firstValue).to.equal(newEntity)
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity.adjustValueAtStage(1, { ...entity, override_stack_size: 3 })
-    assert.same({ ...entity, override_stack_size: 3 }, assemblyEntity.firstValue)
-    assert.false(assemblyEntity.hasStageDiff())
+    expect(assemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
+    expect(assemblyEntity.hasStageDiff()).to.be(false)
   })
 
   test("creates diff if set at higher stage", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity.adjustValueAtStage(2, { ...entity, override_stack_size: 3 })
-    assert.same(entity, assemblyEntity.firstValue)
-    assert.true(assemblyEntity.hasStageDiff())
-    assert.same({ ...entity, override_stack_size: 3 }, assemblyEntity.getValueAtStage(2))
+    expect(assemblyEntity.firstValue).to.equal(entity)
+    expect(assemblyEntity.hasStageDiff()).to.be(true)
+    expect(assemblyEntity.getValueAtStage(2)).to.equal({ ...entity, override_stack_size: 3 })
   })
 
   test("removes diff entirely if matches lower stage", () => {
-    assert.true(fooAssemblyEntity.hasStageDiff(3))
+    expect(fooAssemblyEntity.hasStageDiff(3)).to.be(true)
     fooAssemblyEntity.adjustValueAtStage(3, fooAssemblyEntity.firstValue)
-    assert.false(fooAssemblyEntity.hasStageDiff(3))
+    expect(fooAssemblyEntity.hasStageDiff(3)).to.be(false)
   })
 
   test("complex case", () => {
@@ -205,46 +206,46 @@ describe("adjustValueAtStage", () => {
     const value3 = { ...firstValue, a: 2, b: 2, c: 5 }
     const assemblyEntity = createAssemblyEntity(firstValue, Pos(0, 0), nil, 1)
     assemblyEntity.adjustValueAtStage(2, value2)
-    assert.same(firstValue, assemblyEntity.firstValue)
-    assert.same(value2, assemblyEntity.getValueAtStage(2))
+    expect(assemblyEntity.firstValue).to.equal(firstValue)
+    expect(assemblyEntity.getValueAtStage(2)).to.equal(value2)
     assemblyEntity.adjustValueAtStage(3, value3)
-    assert.same(firstValue, assemblyEntity.firstValue)
-    assert.same(value2, assemblyEntity.getValueAtStage(2))
-    assert.same(value3, assemblyEntity.getValueAtStage(3))
+    expect(assemblyEntity.firstValue).to.equal(firstValue)
+    expect(assemblyEntity.getValueAtStage(2)).to.equal(value2)
+    expect(assemblyEntity.getValueAtStage(3)).to.equal(value3)
     assemblyEntity.adjustValueAtStage(2, newValue2)
-    assert.same(firstValue, assemblyEntity.firstValue)
-    assert.same(newValue2, assemblyEntity.getValueAtStage(2))
+    expect(assemblyEntity.firstValue).to.equal(firstValue)
+    expect(assemblyEntity.getValueAtStage(2)).to.equal(newValue2)
     const newValue3 = { ...value3, b: 1 } // due to change in newValue2
-    assert.same(newValue3, assemblyEntity.getValueAtStage(3))
-    assert.same(getEntityDiff(newValue2, newValue3), assemblyEntity.getStageDiff(3), "diff trimmed")
+    expect(assemblyEntity.getValueAtStage(3)).to.equal(newValue3)
+    expect(assemblyEntity.getStageDiff(3)).to.equal(getEntityDiff(newValue2, newValue3))
   })
 })
 
 describe("setPropAtStage", () => {
   test("can set first value", () => {
-    assert.true(fooAssemblyEntity.setPropAtStage(2, "override_stack_size", 3))
-    assert.same({ ...entity, override_stack_size: 3 }, fooAssemblyEntity.firstValue)
+    expect(fooAssemblyEntity.setPropAtStage(2, "override_stack_size", 3)).to.be(true)
+    expect(fooAssemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
   })
 
   test("returns false if no change", () => {
-    assert.false(fooAssemblyEntity.setPropAtStage(2, "override_stack_size", 1))
+    expect(fooAssemblyEntity.setPropAtStage(2, "override_stack_size", 1)).to.be(false)
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
-    assert.true(assemblyEntity.setPropAtStage(1, "override_stack_size", 3))
-    assert.same({ ...entity, override_stack_size: 3 }, assemblyEntity.firstValue)
-    assert.false(assemblyEntity.hasStageDiff(3))
+    expect(assemblyEntity.setPropAtStage(1, "override_stack_size", 3)).to.be(true)
+    expect(assemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
+    expect(assemblyEntity.hasStageDiff(3)).to.be(false)
   })
 
   test("creates diff if set at higher stage", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
-    assert.true(assemblyEntity.setPropAtStage(3, "override_stack_size", 3))
-    assert.same(entity, assemblyEntity.firstValue)
-    assert.true(assemblyEntity.hasStageDiff(3))
-    assert.same({ ...entity, override_stack_size: 3 }, assemblyEntity.getValueAtStage(3))
+    expect(assemblyEntity.setPropAtStage(3, "override_stack_size", 3)).to.be(true)
+    expect(assemblyEntity.firstValue).to.equal(entity)
+    expect(assemblyEntity.hasStageDiff(3)).to.be(true)
+    expect(assemblyEntity.getValueAtStage(3)).to.equal({ ...entity, override_stack_size: 3 })
   })
 })
 
@@ -252,36 +253,36 @@ describe("moving stage diff props", () => {
   test("resetValue removes stage diff", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-    assert.true(assemblyEntity.resetValue(3))
-    assert.same(entity, assemblyEntity.getValueAtStage(3))
-    assert.false(assemblyEntity.hasStageDiff())
+    expect(assemblyEntity.resetValue(3)).to.be(true)
+    expect(assemblyEntity.getValueAtStage(3)).to.equal(entity)
+    expect(assemblyEntity.hasStageDiff()).to.be(false)
   })
   test("returns false if no diff", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 3 })
-    assert.false(assemblyEntity.resetValue(3))
+    expect(assemblyEntity.resetValue(3)).to.be(false)
   })
 
   test("moveDiffDown can apply to first value", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-    assert.equal(1, assemblyEntity.moveValueDown(3))
-    assert.same({ ...entity, override_stack_size: 3 }, assemblyEntity.firstValue)
-    assert.false(assemblyEntity.hasStageDiff())
+    expect(assemblyEntity.moveValueDown(3)).to.be(1)
+    expect(assemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
+    expect(assemblyEntity.hasStageDiff()).to.be(false)
   })
   test("moveDiffDown can apply to next lower stage with diff", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
-    assert.equal(3, assemblyEntity.moveValueDown(4))
-    assert.same({ ...entity, override_stack_size: 4 }, assemblyEntity.getValueAtStage(3))
-    assert.false(assemblyEntity.hasStageDiff(4))
+    expect(assemblyEntity.moveValueDown(4)).to.be(3)
+    expect(assemblyEntity.getValueAtStage(3)).to.equal({ ...entity, override_stack_size: 4 })
+    expect(assemblyEntity.hasStageDiff(4)).to.be(false)
   })
 
   test("moveDiffDown returns nil if no diff", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 3 })
-    assert.nil(assemblyEntity.moveValueDown(3))
+    expect(assemblyEntity.moveValueDown(3)).to.be.nil()
   })
 
   test("resetProp removes prop from stage diff", () => {
@@ -289,15 +290,15 @@ describe("moving stage diff props", () => {
     // is override_stack_size at stage 2
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity.resetProp(3, "override_stack_size")
-    assert.same(entity, assemblyEntity.getValueAtStage(3))
-    assert.false(assemblyEntity.hasStageDiff())
+    expect(assemblyEntity.getValueAtStage(3)).to.equal(entity)
+    expect(assemblyEntity.hasStageDiff()).to.be(false)
   })
 
   test("resetProp returns false if no diff", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { filter_mode: "whitelist" })
-    assert.false(assemblyEntity.resetProp(3, "override_stack_size"))
-    assert.same({ ...entity, filter_mode: "whitelist" }, assemblyEntity.getValueAtStage(3))
+    expect(assemblyEntity.resetProp(3, "override_stack_size")).to.be(false)
+    expect(assemblyEntity.getValueAtStage(3)).to.equal({ ...entity, filter_mode: "whitelist" })
   })
 
   test("resetProp can get from next lower stage with diff", () => {
@@ -305,41 +306,41 @@ describe("moving stage diff props", () => {
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     assemblyEntity.resetProp(4, "override_stack_size")
-    assert.same({ ...entity, override_stack_size: 3 }, assemblyEntity.getValueAtStage(4))
-    assert.true(assemblyEntity.hasStageDiff(3))
-    assert.false(assemblyEntity.hasStageDiff(4))
+    expect(assemblyEntity.getValueAtStage(4)).to.equal({ ...entity, override_stack_size: 3 })
+    expect(assemblyEntity.hasStageDiff(3)).to.be(true)
+    expect(assemblyEntity.hasStageDiff(4)).to.be(false)
   })
 
   test("movePropDown can apply a diff to first stage", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-    assert.equal(2, assemblyEntity.movePropDown(3, "override_stack_size"))
-    assert.same({ ...entity, override_stack_size: 3 }, assemblyEntity.getValueAtStage(2))
-    assert.false(assemblyEntity.hasStageDiff())
+    expect(assemblyEntity.movePropDown(3, "override_stack_size")).to.be(2)
+    expect(assemblyEntity.getValueAtStage(2)).to.equal({ ...entity, override_stack_size: 3 })
+    expect(assemblyEntity.hasStageDiff()).to.be(false)
   })
 
   test("movePropDown can apply a diff to next lower stage with diff", () => {
     const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
-    assert.equal(3, assemblyEntity.movePropDown(4, "override_stack_size"))
-    assert.same({ ...entity, override_stack_size: 4 }, assemblyEntity.getValueAtStage(3))
-    assert.true(assemblyEntity.hasStageDiff(3))
-    assert.false(assemblyEntity.hasStageDiff(4))
+    expect(assemblyEntity.movePropDown(4, "override_stack_size")).to.be(3)
+    expect(assemblyEntity.getValueAtStage(3)).to.equal({ ...entity, override_stack_size: 4 })
+    expect(assemblyEntity.hasStageDiff(3)).to.be(true)
+    expect(assemblyEntity.hasStageDiff(4)).to.be(false)
   })
 })
 
 describe("move to stage", () => {
   test("move down", () => {
     fooAssemblyEntity.moveToStage(1)
-    assert.same(entity, fooAssemblyEntity.firstValue)
-    assert.equal(1, fooAssemblyEntity.firstStage)
+    expect(fooAssemblyEntity.firstValue).to.equal(entity)
+    expect(fooAssemblyEntity.firstStage).to.be(1)
   })
 
   test("moving up", () => {
     const valueAt5 = fooAssemblyEntity.getValueAtStage(5)
     fooAssemblyEntity.moveToStage(5)
-    assert.same(valueAt5, fooAssemblyEntity.firstValue)
+    expect(fooAssemblyEntity.firstValue).to.equal(valueAt5)
   })
 })
 
@@ -356,75 +357,75 @@ describe("Get/set world entities", () => {
   })
 
   test("get after replace returns the correct entity", () => {
-    assert.nil(assemblyEntity.getWorldEntity(1))
-    assert.nil(assemblyEntity.getWorldEntity(2))
+    expect(assemblyEntity.getWorldEntity(1)).to.be.nil()
+    expect(assemblyEntity.getWorldEntity(2)).to.be.nil()
     assemblyEntity.replaceWorldEntity(1, entity)
-    assert.same(entity, assemblyEntity.getWorldEntity(1))
-    assert.nil(assemblyEntity.getWorldEntity(2))
+    expect(assemblyEntity.getWorldEntity(1)).to.equal(entity)
+    expect(assemblyEntity.getWorldEntity(2)).to.be.nil()
     assemblyEntity.replaceWorldEntity(2, entity)
-    assert.same(entity, assemblyEntity.getWorldEntity(1))
-    assert.same(entity, assemblyEntity.getWorldEntity(2))
+    expect(assemblyEntity.getWorldEntity(1)).to.equal(entity)
+    expect(assemblyEntity.getWorldEntity(2)).to.equal(entity)
   })
 
   test("getWorldEntity returns nil if is a preview entity", () => {
     assemblyEntity.replaceWorldOrPreviewEntity(1, previewEntity)
-    assert.nil(assemblyEntity.getWorldEntity(1))
-    assert.equal(previewEntity, assemblyEntity.getWorldOrPreviewEntity(1))
+    expect(assemblyEntity.getWorldEntity(1)).to.be.nil()
+    expect(assemblyEntity.getWorldOrPreviewEntity(1)).to.be(previewEntity)
   })
 
   test("destroyWorldOrPreviewEntity", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
     assemblyEntity.destroyWorldOrPreviewEntity(1)
-    assert.false(entity.valid)
-    assert.nil(assemblyEntity.getWorldEntity(1))
+    expect(entity.valid).to.be(false)
+    expect(assemblyEntity.getWorldEntity(1)).to.be.nil()
   })
 
   test("replace with nil destroys the entity", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
     assemblyEntity.replaceWorldEntity(1, nil)
-    assert.false(entity.valid)
-    assert.nil(assemblyEntity.getWorldEntity(1))
+    expect(entity.valid).to.be(false)
+    expect(assemblyEntity.getWorldEntity(1)).to.be.nil()
   })
 
   test("replace world entity deletes old entity", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
     const newEntity = surfaces[0].create_entity({ name: "iron-chest", position: Pos(1.5, 1.5) })!
     assemblyEntity.replaceWorldEntity(1, newEntity)
-    assert.false(entity.valid)
-    assert.same(newEntity, assemblyEntity.getWorldEntity(1))
+    expect(entity.valid).to.be(false)
+    expect(assemblyEntity.getWorldEntity(1)).to.equal(newEntity)
   })
 
   test("replace world entity does not delete if same entity", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
     assemblyEntity.replaceWorldEntity(1, entity)
-    assert.true(entity.valid)
-    assert.same(entity, assemblyEntity.getWorldEntity(1))
+    expect(entity.valid).to.be(true)
+    expect(assemblyEntity.getWorldEntity(1)).to.equal(entity)
   })
 
   test("get world entity returns nil if entity becomes invalid", () => {
     assemblyEntity.replaceWorldEntity(1, entity)
     entity.destroy()
-    assert.nil(assemblyEntity.getWorldEntity(1))
+    expect(assemblyEntity.getWorldEntity(1)).to.be.nil()
   })
 
   test("destroyAllWorldOrPreviewEntities", () => {
     assemblyEntity.replaceWorldOrPreviewEntity(1, entity)
     assemblyEntity.replaceWorldOrPreviewEntity(2, previewEntity)
     assemblyEntity.destroyAllWorldOrPreviewEntities()
-    assert.false(entity.valid)
-    assert.false(previewEntity.valid)
-    assert.nil(assemblyEntity.getWorldEntity(1))
-    assert.nil(assemblyEntity.getWorldEntity(2))
+    expect(entity.valid).to.be(false)
+    expect(previewEntity.valid).to.be(false)
+    expect(assemblyEntity.getWorldEntity(1)).to.be.nil()
+    expect(assemblyEntity.getWorldEntity(2)).to.be.nil()
   })
 
   test("hasWorldEntityInRange", () => {
-    assert.false(assemblyEntity.hasWorldEntityInRange(1, 2))
+    expect(assemblyEntity.hasWorldEntityInRange(1, 2)).to.be(false)
     assemblyEntity.replaceWorldEntity(2, entity)
     assemblyEntity.replaceWorldEntity(5, entity)
-    assert.false(assemblyEntity.hasWorldEntityInRange(1, 1))
-    assert.true(assemblyEntity.hasWorldEntityInRange(1, 3))
-    assert.false(assemblyEntity.hasWorldEntityInRange(3, 4))
-    assert.true(assemblyEntity.hasWorldEntityInRange(3, 5))
+    expect(assemblyEntity.hasWorldEntityInRange(1, 1)).to.be(false)
+    expect(assemblyEntity.hasWorldEntityInRange(1, 3)).to.be(true)
+    expect(assemblyEntity.hasWorldEntityInRange(3, 4)).to.be(false)
+    expect(assemblyEntity.hasWorldEntityInRange(3, 5)).to.be(true)
   })
 })
 
@@ -443,94 +444,94 @@ describe("get/set extra entities", () => {
   })
 
   test("get after replace returns the correct entity", () => {
-    assert.nil(assemblyEntity.getExtraEntity(type, 1))
-    assert.nil(assemblyEntity.getExtraEntity(type, 2))
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.be.nil()
+    expect(assemblyEntity.getExtraEntity(type, 2)).to.be.nil()
     assemblyEntity.replaceExtraEntity(type, 1, entity)
-    assert.same(entity, assemblyEntity.getExtraEntity(type, 1))
-    assert.nil(assemblyEntity.getExtraEntity(type, 2))
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.equal(entity)
+    expect(assemblyEntity.getExtraEntity(type, 2)).to.be.nil()
     assemblyEntity.replaceExtraEntity(type, 2, entity)
-    assert.same(entity, assemblyEntity.getExtraEntity(type, 1))
-    assert.same(entity, assemblyEntity.getExtraEntity(type, 2))
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.equal(entity)
+    expect(assemblyEntity.getExtraEntity(type, 2)).to.equal(entity)
   })
 
   test("destroyExtraEntity", () => {
     assemblyEntity.replaceExtraEntity(type, 1, entity)
     assemblyEntity.destroyExtraEntity(type, 1)
-    assert.false(entity.valid)
-    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+    expect(entity.valid).to.be(false)
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.be.nil()
   })
 
   test("replace with nil destroys the entity", () => {
     assemblyEntity.replaceExtraEntity(type, 1, entity)
     assemblyEntity.replaceExtraEntity(type, 1, nil)
-    assert.false(entity.valid)
-    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+    expect(entity.valid).to.be(false)
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.be.nil()
   })
 
   test("replace extra entity deletes old entity", () => {
     assemblyEntity.replaceExtraEntity(type, 1, entity)
     const newEntity = simpleMock<LuaEntity>({ name: "test", position: Pos(0, 0) })
     assemblyEntity.replaceExtraEntity(type, 1, newEntity)
-    assert.false(entity.valid)
-    assert.same(newEntity, assemblyEntity.getExtraEntity(type, 1))
+    expect(entity.valid).to.be(false)
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.equal(newEntity)
   })
 
   test("replace extra entity does not delete if same entity", () => {
     assemblyEntity.replaceExtraEntity(type, 1, entity)
     assemblyEntity.replaceExtraEntity(type, 1, entity)
-    assert.true(entity.valid)
-    assert.same(entity, assemblyEntity.getExtraEntity(type, 1))
+    expect(entity.valid).to.be(true)
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.equal(entity)
   })
 
   test("get extra entity returns nil if entity becomes invalid", () => {
     assemblyEntity.replaceExtraEntity(type, 1, entity)
     entity.destroy()
-    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.be.nil()
   })
 
   test("destroyAllExtraEntities", () => {
     assemblyEntity.replaceExtraEntity(type, 1, entity)
     assemblyEntity.destroyAllExtraEntities(type)
-    assert.false(entity.valid)
-    assert.nil(assemblyEntity.getExtraEntity(type, 1))
+    expect(entity.valid).to.be(false)
+    expect(assemblyEntity.getExtraEntity(type, 1)).to.be.nil()
   })
 })
 
 describe("rolling stock", () => {
   test("rolling stock only appears in its first stage", () => {
     const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" }, Pos(0, 0), nil, 2)
-    assert.nil(assemblyEntity.getValueAtStage(1))
-    assert.same(assemblyEntity.firstValue, assemblyEntity.getValueAtStage(2))
-    assert.nil(assemblyEntity.getValueAtStage(3))
+    expect(assemblyEntity.getValueAtStage(1)).to.be.nil()
+    expect(assemblyEntity.getValueAtStage(2)).to.equal(assemblyEntity.firstValue)
+    expect(assemblyEntity.getValueAtStage(3)).to.be.nil()
 
-    assert.true(assemblyEntity.inFirstStageOnly())
+    expect(assemblyEntity.inFirstStageOnly()).to.be(true)
   })
   test("cannot apply stage diffs to rolling stock beyond first stage", () => {
     const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" } as RollingStockEntity, Pos(0, 0), nil, 1)
     const adjusted = assemblyEntity.adjustValueAtStage(1, { name: "cargo-wagon", items: { foo: 1 } })
-    assert.true(adjusted)
+    expect(adjusted).to.be(true)
     const adjusted2 = assemblyEntity.adjustValueAtStage(2, { name: "cargo-wagon", items: { foo: 2 } })
-    assert.false(adjusted2)
-    assert.same(assemblyEntity.firstValue, assemblyEntity.getValueAtStage(1))
+    expect(adjusted2).to.be(false)
+    expect(assemblyEntity.getValueAtStage(1)).to.equal(assemblyEntity.firstValue)
   })
   test("apply stage diff ignores orientation changes", () => {
     const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon", orientation: 0.25 }, Pos(0, 0), nil, 1)
     const adjusted = assemblyEntity.adjustValueAtStage(1, { ...assemblyEntity.firstValue, orientation: 0.5 })
-    assert.false(adjusted)
-    assert.equal(0.25, assemblyEntity.firstValue.orientation)
+    expect(adjusted).to.be(false)
+    expect(assemblyEntity.firstValue.orientation).to.be(0.25)
   })
   test("cannot apply upgrade to rolling stock", () => {
     const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" }, Pos(0, 0), nil, 1)
     const adjusted = assemblyEntity.applyUpgradeAtStage(1, "cargo-wagon-2")
-    assert.false(adjusted)
-    assert.equal("cargo-wagon", assemblyEntity.getNameAtStage(1))
+    expect(adjusted).to.be(false)
+    expect(assemblyEntity.getNameAtStage(1)).to.be("cargo-wagon")
   })
   test("setting a rolling stock world entity will register it in entity-registration", () => {
     const rollingStock = createRollingStock()
 
     fooAssemblyEntity.replaceWorldEntity(1, rollingStock)
     const found = getRegisteredAssemblyEntity(rollingStock)
-    assert.same(fooAssemblyEntity, found)
+    expect(found).to.equal(fooAssemblyEntity)
   })
 })
 
@@ -542,28 +543,28 @@ declare module "../../entity/AssemblyEntity" {
 }
 describe("get/set properties", () => {
   test("get property when not set is nil", () => {
-    assert.nil(fooAssemblyEntity.getProperty("foo", 2))
+    expect(fooAssemblyEntity.getProperty("foo", 2)).to.be.nil()
   })
   test("get and set property", () => {
     fooAssemblyEntity.setProperty("foo", 2, "bar")
-    assert.equal("bar", fooAssemblyEntity.getProperty("foo", 2))
+    expect(fooAssemblyEntity.getProperty("foo", 2)).to.be("bar")
   })
   test("propertyIsSetAnywhere", () => {
-    assert.false(fooAssemblyEntity.propertySetInAnyStage("foo"))
+    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(false)
     fooAssemblyEntity.setProperty("foo", 2, "bar")
-    assert.true(fooAssemblyEntity.propertySetInAnyStage("foo"))
+    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(true)
     fooAssemblyEntity.setProperty("foo", 3, "bar")
     fooAssemblyEntity.setProperty("foo", 2, nil)
-    assert.true(fooAssemblyEntity.propertySetInAnyStage("foo"))
+    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(true)
     fooAssemblyEntity.setProperty("foo", 3, nil)
-    assert.false(fooAssemblyEntity.propertySetInAnyStage("foo"))
+    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(false)
   })
   test("clear property", () => {
     fooAssemblyEntity.setProperty("foo", 2, "bar")
     fooAssemblyEntity.setProperty("foo", 3, "bar")
     fooAssemblyEntity.clearPropertyInAllStages("foo")
-    assert.nil(fooAssemblyEntity.getProperty("foo", 2))
-    assert.nil(fooAssemblyEntity.getProperty("foo", 3))
+    expect(fooAssemblyEntity.getProperty("foo", 2)).to.be.nil()
+    expect(fooAssemblyEntity.getProperty("foo", 3)).to.be.nil()
   })
 })
 
@@ -584,26 +585,23 @@ describe("insert/deleting stages", () => {
 
     // all keys at 3 and above are shifted up
 
-    assert.equal(entity.firstStage, 1)
+    expect(1).to.be(entity.firstStage)
 
-    assert.not_nil(entity.getWorldEntity(2))
-    assert.nil(entity.getWorldEntity(3))
-    assert.not_nil(entity.getWorldEntity(4))
+    expect(entity.getWorldEntity(2)).to.be.any()
+    expect(entity.getWorldEntity(3)).to.be.nil()
+    expect(entity.getWorldEntity(4)).to.be.any()
 
-    assert.equal("bar2", entity.getProperty("foo", 2))
-    assert.nil(entity.getProperty("foo", 3))
-    assert.equal("bar3", entity.getProperty("foo", 4))
-    assert.equal("bar4", entity.getProperty("foo", 5))
+    expect(entity.getProperty("foo", 2)).to.be("bar2")
+    expect(entity.getProperty("foo", 3)).to.be.nil()
+    expect(entity.getProperty("foo", 4)).to.be("bar3")
+    expect(entity.getProperty("foo", 5)).to.be("bar4")
 
-    assert.same(
-      {
-        2: { override_stack_size: 2 },
-        3: nil,
-        4: { override_stack_size: 3 },
-        5: { override_stack_size: 4 },
-      },
-      entity.getStageDiffs(),
-    )
+    expect(entity.getStageDiffs()).to.equal({
+      2: { override_stack_size: 2 },
+      3: nil,
+      4: { override_stack_size: 3 },
+      5: { override_stack_size: 4 },
+    })
   })
 
   test("insert stage before base", () => {
@@ -618,7 +616,7 @@ describe("insert/deleting stages", () => {
     )
 
     entity.insertStage(1)
-    assert.equal(3, entity.firstStage)
+    expect(entity.firstStage).to.be(3)
   })
 
   test("delete stage after base", () => {
@@ -646,23 +644,20 @@ describe("insert/deleting stages", () => {
 
     // key 3 is deleted, all keys above it are shifted down
 
-    assert.equal(entity.firstStage, 1)
+    expect(1).to.be(entity.firstStage)
 
-    assert.not_nil(entity.getWorldEntity(2))
-    assert.not_nil(entity.getWorldEntity(3))
-    assert.nil(entity.getWorldEntity(4))
+    expect(entity.getWorldEntity(2)).to.be.any()
+    expect(entity.getWorldEntity(3)).to.be.any()
+    expect(entity.getWorldEntity(4)).to.be.nil()
 
-    assert.equal("bar2", entity.getProperty("foo", 2))
-    assert.equal("bar4", entity.getProperty("foo", 3))
-    assert.nil(entity.getProperty("foo", 4))
+    expect(entity.getProperty("foo", 2)).to.be("bar2")
+    expect(entity.getProperty("foo", 3)).to.be("bar4")
+    expect(entity.getProperty("foo", 4)).to.be.nil()
 
-    assert.same(
-      {
-        2: { override_stack_size: 3, filter_mode: "blacklist" }, // merge of 2 and 3
-        3: { override_stack_size: 4 },
-      },
-      entity.getStageDiffs(),
-    )
+    expect(entity.getStageDiffs()).to.equal({
+      2: { override_stack_size: 3, filter_mode: "blacklist" }, // merge of 2 and 3
+      3: { override_stack_size: 4 },
+    })
   })
 
   test("delete stage before base", () => {
@@ -677,7 +672,7 @@ describe("insert/deleting stages", () => {
     )
 
     entity.deleteStage(2)
-    assert.equal(2, entity.firstStage)
+    expect(entity.firstStage).to.be(2)
   })
 
   test("delete stage right after base applies stage diffs to first entity", () => {
@@ -694,7 +689,7 @@ describe("insert/deleting stages", () => {
     const value = entity.getValueAtStage(2)
 
     entity.deleteStage(2)
-    assert.same(value, entity.getValueAtStage(1))
+    expect(entity.getValueAtStage(1)).to.equal(value)
   })
 
   test("delete stage 1 merges with stage 2 instead", () => {
@@ -712,7 +707,7 @@ describe("insert/deleting stages", () => {
 
     const value = entity.getValueAtStage(2)
     entity.deleteStage(2)
-    assert.same(value, entity.getValueAtStage(1))
+    expect(entity.getValueAtStage(1)).to.equal(value)
   })
 
   test("delete stage 1 sets stage 1 properties to stage 2 properties", () => {
@@ -730,7 +725,7 @@ describe("insert/deleting stages", () => {
     entity.setProperty("foo", 3, "bar3")
 
     entity.deleteStage(1)
-    assert.equal("bar2", entity.getProperty("foo", 1))
-    assert.equal("bar3", entity.getProperty("foo", 2))
+    expect(entity.getProperty("foo", 1)).to.be("bar2")
+    expect(entity.getProperty("foo", 2)).to.be("bar3")
   })
 })

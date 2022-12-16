@@ -14,8 +14,9 @@ import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entit
 import { MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import { findUndergroundPair, unit } from "../../entity/special-entity-treatment"
-import direction = defines.direction
 import { SavedDirection } from "../../entity/direction"
+import expect from "tstl-expect"
+import direction = defines.direction
 
 let content: MutableAssemblyContent
 
@@ -57,8 +58,8 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     const probeUnderground = inputUndergrounds[probe]
     if (probeUnderground == "none") error("probeUnderground is none")
     const [underground, hasMultiple] = findUndergroundPair(content, probeUnderground)
-    assert.same(expectedUnderground, underground)
-    assert.same(expectedMultiple, hasMultiple)
+    expect(underground).to.equal(expectedUnderground)
+    expect(hasMultiple).to.equal(expectedMultiple)
   }
 
   test("simple", () => {
@@ -81,7 +82,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     const undergrounds = strToUndergrounds("v^") as UndergroundBeltAssemblyEntity[]
     undergrounds[0].applyUpgradeAtStage(1, "fast-underground-belt")
     const [pair, hasMultiple] = findUndergroundPair(content, undergrounds[1])
-    assert.nil(pair)
-    assert.false(hasMultiple)
+    expect(pair).to.be.nil()
+    expect(hasMultiple).to.be(false)
   })
 })

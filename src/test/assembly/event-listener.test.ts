@@ -20,9 +20,10 @@ import { getTempBpItemStack } from "../../entity/EntityHandler"
 import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { reviveGhost } from "../reviveGhost"
+import expect, { mock } from "tstl-expect"
 import direction = defines.direction
 
-let updater: mock.Stubbed<WorldListener>
+let updater: mock.MockedObjectNoSelf<WorldListener>
 let assembly: UserAssembly
 let surface: LuaSurface
 let player: LuaPlayer
@@ -30,7 +31,7 @@ const pos = Pos(0.5, 0.5)
 before_all(() => {
   player = game.players[1]
 
-  updater = mock(WorldListener, true)
+  updater = mock.allNoSelf(WorldListener)
   assembly = createUserAssembly("Test", 2)
   surface = assembly.getStage(1)!.surface
 
@@ -38,7 +39,7 @@ before_all(() => {
 })
 after_all(() => {
   _deleteAllAssemblies()
-  mock.revert(updater)
+  mock.reset(updater)
 })
 
 let expectedNumCalls = 1
@@ -80,8 +81,8 @@ describe("add", () => {
       limit: 1,
       name: "iron-chest",
     })[0]
-    assert.not_nil(entity)
-    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), match.ref(entity), 1, 1)
+    expect(entity).to.be.any()
+    expect(updater.onEntityCreated).calledWith(assembly, entity, 1, 1)
   })
 
   test("script raise built", () => {
@@ -91,8 +92,8 @@ describe("add", () => {
       position,
       raise_built: true,
     })!
-    assert.not_nil(entity)
-    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), match.ref(entity), 1, nil)
+    expect(entity).to.be.any()
+    expect(updater.onEntityCreated).calledWith(assembly, entity, 1, nil)
   })
 })
 
@@ -110,15 +111,15 @@ describe("delete", () => {
   })
   test("player mined entity", () => {
     player.mine_entity(entity, true)
-    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, 1, 1)
+    expect(updater.onEntityDeleted).calledWith(assembly, expect._, 1, 1)
   })
   test("script raised destroy", () => {
     entity.destroy({ raise_destroy: true })
-    assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, 1, nil)
+    expect(updater.onEntityDeleted).calledWith(assembly, expect._, 1, nil)
   })
   test("die", () => {
     entity.die()
-    assert.spy(updater.onEntityDied).called_with(match.ref(assembly), match._, 1)
+    expect(updater.onEntityDied).calledWith(assembly, expect._, 1)
   })
 })
 
@@ -138,7 +139,7 @@ describe("update", () => {
     player.opened = nil
     player.opened = entity
     player.opened = nil
-    assert.spy(updater.onEntityPossiblyUpdated).called_with(match.ref(assembly), match.ref(entity), 1, nil, 1)
+    expect(updater.onEntityPossiblyUpdated).calledWith(assembly, entity, 1, nil, 1)
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -146,13 +147,13 @@ describe("update", () => {
       destination: entity,
       player_index: 1 as PlayerIndex,
     })
-    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(entity), 1, nil, 1)
+    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, entity, 1, nil, 1)
   })
 
   test("rotate", () => {
     const oldDirection = entity.direction
     entity.rotate({ by_player: 1 as PlayerIndex })
-    assert.spy(updater.onEntityRotated).called_with(match._, match.ref(entity), 1, oldDirection, 1)
+    expect(updater.onEntityRotated).calledWith(expect._, entity, 1, oldDirection, 1)
   })
 })
 
@@ -182,10 +183,10 @@ test.each([
   player.cursor_stack!.set_stack(newType)
   player.build_from_cursor({ position, direction: rotate ? direction.east : nil })
   const newEntity = surface.find_entity(newType, position)!
-  assert.not_nil(newEntity)
+  expect(newEntity).to.be.any()
 
-  assert.false(entity.valid, "entity replaced")
-  assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, newEntity, 1, match._, 1)
+  expect(entity.valid).to.be(false)
+  expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newEntity, 1, expect._, 1)
 })
 
 test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
@@ -196,7 +197,7 @@ test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
     position: pos,
     force: "player",
   })!
-  assert.not_nil(u1)
+  expect(u1).to.be.any()
   const u2 = surface.create_entity({
     name: "underground-belt",
     direction: direction.east,
@@ -204,7 +205,7 @@ test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
     position: Pos.plus(u1.position, Pos(1, 0)),
     force: "player",
   })!
-  assert.not_nil(u2)
+  expect(u2).to.be.any()
   const pos1 = u1.position
   const pos2 = u2.position
 
@@ -216,21 +217,15 @@ test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
   })
 
   const newU1 = surface.find_entity("fast-underground-belt", pos1)!
-  assert.not_nil(newU1)
+  expect(newU1).to.be.any()
   const newU2 = surface.find_entity("fast-underground-belt", pos2)!
-  assert.not_nil(newU2)
+  expect(newU2).to.be.any()
 
-  assert.spy(updater.onEntityCreated).not_called()
-  assert.spy(updater.onEntityDeleted).not_called()
+  expect(updater.onEntityCreated).not.called()
+  expect(updater.onEntityDeleted).not.called()
 
-  assert
-    .message("called for u1")
-    .spy(updater.onEntityPossiblyUpdated)
-    .called_with(match.ref(assembly), match.ref(newU1), 1, match._, 1)
-  assert
-    .message("called for u2")
-    .spy(updater.onEntityPossiblyUpdated)
-    .called_with(match.ref(assembly), match.ref(newU2), 1, match._, 1)
+  expect(updater.onEntityPossiblyUpdated).calledWith(assembly, newU1, 1, expect._, 1)
+  expect(updater.onEntityPossiblyUpdated).calledWith(assembly, newU2, 1, expect._, 1)
   expectedNumCalls = 2
 })
 
@@ -252,7 +247,7 @@ describe("upgrade", () => {
       force: "player",
       target: "fast-inserter",
     })
-    assert.spy(updater.onEntityMarkedForUpgrade).called_with(match.ref(assembly), match.ref(entity), 1, nil)
+    expect(updater.onEntityMarkedForUpgrade).calledWith(assembly, entity, 1, nil)
   })
   test("marked to rotate", () => {
     entity.order_upgrade({
@@ -260,7 +255,7 @@ describe("upgrade", () => {
       target: "inserter",
       direction: defines.direction.east,
     })
-    assert.spy(updater.onEntityMarkedForUpgrade).called_with(match.ref(assembly), match.ref(entity), 1, nil)
+    expect(updater.onEntityMarkedForUpgrade).calledWith(assembly, entity, 1, nil)
   })
 
   test("instant upgrade planner", () => {
@@ -281,10 +276,8 @@ describe("upgrade", () => {
       created_entity: newEntity,
       stack: nil!,
     })
-    assert
-      .spy(updater.onEntityPossiblyUpdated)
-      .called_with(match.ref(assembly), match.ref(newEntity), 1, oldDirection, 1)
-    assert.spy(updater.onEntityDeleted).not_called()
+    expect(updater.onEntityPossiblyUpdated).calledWith(assembly, newEntity, 1, oldDirection, 1)
+    expect(updater.onEntityDeleted).not.called()
   })
 })
 
@@ -306,13 +299,13 @@ describe("robot actions", () => {
       type: "roboport",
       limit: 1,
     })[0]
-    assert.not_nil(roboport, "roboport found")
+    expect(roboport).to.be.any()
     roboport.insert("construction-robot")
     const storageChest = surface.find_entities_filtered({
       name: "logistic-chest-storage",
       limit: 1,
     })[0]
-    assert.not_nil(storageChest, "storage chest found")
+    expect(storageChest).to.be.any()
     storageChest.insert("iron-chest")
   })
   test("build", () => {
@@ -328,8 +321,8 @@ describe("robot actions", () => {
         name: "iron-chest",
         limit: 1,
       })[0]
-      assert.not_nil(chest, "chest created")
-      assert.spy(updater.onEntityCreated).called_with(match._, match.ref(chest), 1, nil)
+      expect(chest).to.be.any()
+      expect(updater.onEntityCreated).calledWith(expect._, chest, 1, nil)
     })
   })
 
@@ -343,7 +336,7 @@ describe("robot actions", () => {
     assert(chest, "chest created")
     chest.order_deconstruction("player")
     after_ticks(120, () => {
-      assert.spy(updater.onEntityDeleted).called_with(match.ref(assembly), match._, 1, nil)
+      expect(updater.onEntityDeleted).calledWith(assembly, expect._, 1, nil)
     })
   })
 })
@@ -363,7 +356,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onCleanupToolUsed).called_with(match.ref(assembly), match.ref(entity), 1)
+    expect(updater.onCleanupToolUsed).calledWith(assembly, entity, 1)
   })
   test("delete settings remnant", () => {
     const entity = surface.create_entity({
@@ -380,7 +373,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onCleanupToolUsed).called_with(match.ref(assembly), match.ref(entity), 1)
+    expect(updater.onCleanupToolUsed).calledWith(assembly, entity, 1)
   })
   test("force-delete", () => {
     const entity = surface.create_entity({
@@ -397,21 +390,21 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onEntityForceDeleteUsed).called_with(match.ref(assembly), match.ref(entity))
+    expect(updater.onEntityForceDeleteUsed).calledWith(assembly, entity)
   })
 })
 
 describe("move to this stage", () => {
   function testOnEntity(entity: LuaEntity | nil): void {
-    assert.not_nil(entity, "entity found")
+    expect(entity).to.be.any()
     player.selected = entity
-    assert.equal(entity, player.selected)
+    expect(player.selected).to.be(entity)
     Events.raiseFakeEvent(CustomInputs.MoveToThisStage, {
       player_index: player.index,
       input_name: CustomInputs.MoveToThisStage,
       cursor_position: player.position,
     })
-    assert.spy(updater.onMoveEntityToStageCustomInput).called_with(match.ref(assembly), match.ref(entity!), 1, 1)
+    expect(updater.onMoveEntityToStageCustomInput).calledWith(assembly, entity!, 1, 1)
   }
   test("on normal entity", () => {
     const entity = surface.create_entity({
@@ -438,7 +431,7 @@ describe("stage move tool", () => {
       position: pos,
       force: "player",
     })!
-    assert.not_nil(entity, "entity found")
+    expect(entity).to.be.any()
     player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
     getAssemblyPlayerData(player.index, assembly)!.moveTargetStage = 2
     Events.raiseFakeEventNamed("on_player_selected_area", {
@@ -449,7 +442,7 @@ describe("stage move tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onSendToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
+    expect(updater.onSendToStageUsed).calledWith(assembly, entity, 1, 2, 1)
   })
   test("bring to this stage (alt)", () => {
     const entity = surface.create_entity({
@@ -457,7 +450,7 @@ describe("stage move tool", () => {
       position: pos,
       force: "player",
     })!
-    assert.not_nil(entity, "entity found")
+    expect(entity).to.be.any()
     player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
     Events.raiseFakeEventNamed("on_player_alt_selected_area", {
       player_index: 1 as PlayerIndex,
@@ -467,7 +460,7 @@ describe("stage move tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onBringToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 1)
+    expect(updater.onBringToStageUsed).calledWith(assembly, entity, 1, 1)
   })
   test("bring to this stage (reverse)", () => {
     const entity = surface.create_entity({
@@ -475,7 +468,7 @@ describe("stage move tool", () => {
       position: pos,
       force: "player",
     })!
-    assert.not_nil(entity, "entity found")
+    expect(entity).to.be.any()
     player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
     Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
       player_index: 1 as PlayerIndex,
@@ -485,7 +478,7 @@ describe("stage move tool", () => {
       entities: [entity],
       tiles: [],
     })
-    assert.spy(updater.onBringToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 1)
+    expect(updater.onBringToStageUsed).calledWith(assembly, entity, 1, 1)
   })
 
   test.skip("filtered stage move tool, send to stage", () => {
@@ -494,11 +487,11 @@ describe("stage move tool", () => {
       position: pos,
       force: "player",
     })!
-    assert.not_nil(entity, "entity found")
+    expect(entity).to.be.any()
     player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
     getAssemblyPlayerData(player.index, assembly)!.moveTargetStage = 2
     entity.order_deconstruction(player.force, player)
-    assert.spy(updater.onSendToStageUsed).called_with(match.ref(assembly), match.ref(entity), 1, 2, 1)
+    expect(updater.onSendToStageUsed).calledWith(assembly, entity, 1, 2, 1)
   })
 })
 
@@ -514,15 +507,15 @@ describe("revives ghost undergrounds", () => {
       name: "underground-belt",
       limit: 1,
     })[0]
-    assert.not_nil(underground, "underground found")
-    assert.same(pos, underground.position)
+    expect(underground).to.be.any()
+    expect(underground.position).to.equal(pos)
     const ghosts = surface.find_entities_filtered({
       type: "entity-ghost",
       limit: 1,
     })[0]
-    assert.nil(ghosts, "no ghosts found")
+    expect(ghosts).to.be.nil()
 
-    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), match.ref(underground), 1, 1)
+    expect(updater.onEntityCreated).calledWith(assembly, underground, 1, 1)
   })
   test("by script", () => {
     const pos = Pos(4.5, 0.5)
@@ -533,14 +526,14 @@ describe("revives ghost undergrounds", () => {
       force: "player",
       raise_built: true,
     })
-    assert.falsy(undergroundGhost?.valid, "ghost replaced")
+    expect(undergroundGhost?.valid).to.be.falsy()
     const underground = surface.find_entities_filtered({
       name: "underground-belt",
       limit: 1,
     })[0]
-    assert.not_nil(underground, "underground found")
-    assert.same(pos, underground.position)
-    assert.spy(updater.onEntityCreated).called_with(match.ref(assembly), match.ref(underground), 1, nil)
+    expect(underground).to.be.any()
+    expect(underground.position).to.equal(pos)
+    expect(updater.onEntityCreated).calledWith(assembly, underground, 1, nil)
   })
 })
 
@@ -561,10 +554,10 @@ describe("blueprint paste", () => {
   }
   before_each(setBlueprint)
   function assertCorrect(entity: LuaEntity, position: Position = pos): void {
-    assert.not_nil(entity, "entity found")
-    assert.same(position, entity.position)
+    expect(entity).to.be.any()
+    expect(entity.position).to.equal(position)
 
-    assert.spy(updater.onEntityPossiblyUpdated).called_with(match.ref(assembly), entity, 1, match._, 1)
+    expect(updater.onEntityPossiblyUpdated).calledWith(assembly, entity, 1, expect._, 1)
   }
 
   test("create entity", () => {
@@ -623,7 +616,7 @@ describe("blueprint paste", () => {
       direction: direction.west,
     })!
 
-    updater.onEntityPossiblyUpdated.returns((alreadyPresent ? nil : false) as any)
+    updater.onEntityPossiblyUpdated.returns(alreadyPresent ? nil : false)
     player.build_from_cursor({ position: pos })
 
     const inserter2 = surface.find_entities_filtered({
@@ -631,16 +624,16 @@ describe("blueprint paste", () => {
       direction: direction.east,
       limit: 1,
     })[0]
-    assert.not_nil(inserter2, "other inserter found")
+    expect(inserter2).to.be.any()
 
     assertCorrect(inserter1)
     assertCorrect(inserter2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
-      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(inserter1), 1, 1)
-      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(inserter2), 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, inserter1, 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, inserter2, 1, 1)
       expectedNumCalls = 4
     } else {
-      assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
+      expect(updater.onCircuitWiresPossiblyUpdated).not.called()
       expectedNumCalls = 2
     }
   })
@@ -666,20 +659,20 @@ describe("blueprint paste", () => {
       force: "player",
     })!
 
-    updater.onEntityPossiblyUpdated.returns((alreadyPresent ? nil : false) as any)
+    updater.onEntityPossiblyUpdated.returns(alreadyPresent ? nil : false)
     player.build_from_cursor({ position: pos })
 
     const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!
-    assert.not_nil(pole2, "other pole found")
+    expect(pole2).to.be.any()
 
     assertCorrect(pole1)
     assertCorrect(pole2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
-      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(pole1), 1, 1)
-      assert.spy(updater.onCircuitWiresPossiblyUpdated).called_with(match._, match.ref(pole2), 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, pole1, 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, pole2, 1, 1)
       expectedNumCalls = 4
     } else {
-      assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
+      expect(updater.onCircuitWiresPossiblyUpdated).not.called()
       expectedNumCalls = 2
     }
   })
@@ -729,15 +722,15 @@ describe("belt dragging", () => {
 
     fakeNoopDrag(belt)
 
-    assert.spy(updater.onEntityPossiblyUpdated).was_not_called()
-    assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
-    assert.spy(updater.onEntityCreated).was_not_called()
+    expect(updater.onEntityPossiblyUpdated).not.called()
+    expect(updater.onCircuitWiresPossiblyUpdated).not.called()
+    expect(updater.onEntityCreated).not.called()
 
     player.build_from_cursor({ position: pos2, direction: belt.direction })
     const newBelt = surface.find_entity("transport-belt", pos2)!
-    assert.not_nil(newBelt)
+    expect(newBelt).to.be.any()
 
-    assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+    expect(updater.onEntityCreated).calledWith(expect._, newBelt, 1, 1)
   })
 
   test("build in different direction calls onEntityPossiblyUpdated", () => {
@@ -746,14 +739,14 @@ describe("belt dragging", () => {
       position: pos,
       force: "player",
     })!
-    assert.not_nil(belt)
+    expect(belt).to.be.any()
     player.cursor_stack!.set_stack("transport-belt")
 
     player.build_from_cursor({ position: pos, direction: direction.east })
     const newBelt = surface.find_entity("transport-belt", pos)!
-    assert.not_nil(newBelt)
+    expect(newBelt).to.be.any()
 
-    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(newBelt), 1, 0, 1)
+    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newBelt, 1, 0, 1)
   })
 
   test("drag over existing followed by mine", () => {
@@ -767,10 +760,10 @@ describe("belt dragging", () => {
     fakeNoopDrag(belt)
     player.mine_entity(belt)
 
-    assert.spy(updater.onEntityPossiblyUpdated).was_not_called()
-    assert.spy(updater.onCircuitWiresPossiblyUpdated).was_not_called()
-    assert.spy(updater.onEntityCreated).was_not_called()
-    assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
+    expect(updater.onEntityPossiblyUpdated).not.called()
+    expect(updater.onCircuitWiresPossiblyUpdated).not.called()
+    expect(updater.onEntityCreated).not.called()
+    expect(updater.onEntityDeleted).calledWith(expect._, expect._, 1, 1)
   })
 
   test("drag over existing followed by fast replace on same belt", () => {
@@ -785,11 +778,11 @@ describe("belt dragging", () => {
     player.cursor_stack!.set_stack("fast-transport-belt")
     player.build_from_cursor({ position: pos1, direction: belt.direction })
     const newBelt = surface.find_entity("fast-transport-belt", pos1)!
-    assert.not_nil(newBelt)
+    expect(newBelt).to.be.any()
 
-    assert.spy(updater.onEntityDeleted).was_not_called()
-    assert.spy(updater.onEntityCreated).was_not_called()
-    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
+    expect(updater.onEntityDeleted).not.called()
+    expect(updater.onEntityCreated).not.called()
+    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newBelt, 1, expect._, 1)
   })
 
   test("drag over existing followed by fast replace on different belt", () => {
@@ -810,9 +803,9 @@ describe("belt dragging", () => {
     player.build_from_cursor({ position: pos2, direction: belt.direction })
     const newBelt = surface.find_entity("transport-belt", pos2)!
 
-    assert.spy(updater.onEntityDeleted).was_not_called()
-    assert.spy(updater.onEntityCreated).was_not_called()
-    assert.spy(updater.onEntityPossiblyUpdated).called_with(match._, match.ref(newBelt), 1, match._, 1)
+    expect(updater.onEntityDeleted).not.called()
+    expect(updater.onEntityCreated).not.called()
+    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newBelt, 1, expect._, 1)
   })
 
   test("fast replacing with underground belt", () => {
@@ -831,16 +824,16 @@ describe("belt dragging", () => {
       force: "player",
       fast_replace: true,
     })
-    assert.not_nil(u1)
+    expect(u1).to.be.any()
     player.cursor_stack!.set_stack("underground-belt")
     // build at 5th belt
     player.build_from_cursor({ position: Pos(0.5, 5.5), direction: defines.direction.north })
 
     const underground = surface.find_entity("underground-belt", Pos(0.5, 5.5))!
 
-    assert.spy(updater.onEntityPossiblyUpdated).was_not_called()
-    assert.spy(updater.onEntityCreated).called_with(match._, match.ref(underground), 1, 1)
-    assert.spy(updater.onEntityDeleted).called(5)
+    expect(updater.onEntityPossiblyUpdated).not.called()
+    expect(updater.onEntityCreated).calledWith(expect._, underground, 1, 1)
+    expect(updater.onEntityDeleted).calledTimes(5)
     expectedNumCalls = 6
   })
 
@@ -865,7 +858,7 @@ describe("belt dragging", () => {
         position: Pos(0, 0.5),
         force: "player",
       })!
-      assert.not_nil(belt)
+      expect(belt).to.be.any()
 
       u1 = surface.create_entity({
         name: "underground-belt",
@@ -874,7 +867,7 @@ describe("belt dragging", () => {
         type: "output",
         force: "player",
       })!
-      assert.not_nil(u1)
+      expect(u1).to.be.any()
       player.cursor_stack!.set_stack("transport-belt")
     })
 
@@ -882,14 +875,14 @@ describe("belt dragging", () => {
       fakeNoopDrag(belt)
       fakeUndergroundDrag(u1, belt.direction)
 
-      assert.spy(updater.onUndergroundBeltDragRotated).called_with(match._, match.ref(u1), 1, 1)
+      expect(updater.onUndergroundBeltDragRotated).calledWith(expect._, u1, 1, 1)
     })
 
     test("does not count if wrong direction", () => {
       fakeNoopDrag(belt)
       fakeUndergroundDrag(u1, oppositedirection(belt.direction))
 
-      assert.spy(updater.onUndergroundBeltDragRotated).was_not_called()
+      expect(updater.onUndergroundBeltDragRotated).not.called()
       expectedNumCalls = 0
     })
     test("does not count if replaced", () => {
@@ -898,10 +891,10 @@ describe("belt dragging", () => {
         position,
         direction: u1.direction,
       })
-      assert.spy(updater.onUndergroundBeltDragRotated).was_not_called()
-      assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
+      expect(updater.onUndergroundBeltDragRotated).not.called()
+      expect(updater.onEntityDeleted).calledWith(expect._, expect._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
-      assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+      expect(updater.onEntityCreated).calledWith(expect._, newBelt, 1, 1)
       expectedNumCalls = 2
     })
     test("does not count if replaced sideways", () => {
@@ -910,10 +903,10 @@ describe("belt dragging", () => {
         position,
         direction: belt.direction + 2,
       })
-      assert.spy(updater.onUndergroundBeltDragRotated).was_not_called()
-      assert.spy(updater.onEntityDeleted).called_with(match._, match._, 1, 1)
+      expect(updater.onUndergroundBeltDragRotated).not.called()
+      expect(updater.onEntityDeleted).calledWith(expect._, expect._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
-      assert.spy(updater.onEntityCreated).called_with(match._, match.ref(newBelt), 1, 1)
+      expect(updater.onEntityCreated).calledWith(expect._, newBelt, 1, 1)
       expectedNumCalls = 2
     })
   })

@@ -13,6 +13,7 @@ import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
 import { canBeAnyDirection, EntityHandler } from "../../entity/EntityHandler"
 import { EAST, NORTH, SOUTH, WEST } from "../../entity/direction"
+import expect from "tstl-expect"
 
 let surface: LuaSurface
 before_each(() => {
@@ -28,8 +29,8 @@ test("can save an entity", () => {
   })!
   entity.inserter_stack_size_override = 2
   const [saved, direction] = EntityHandler.saveEntity(entity)
-  assert.same({ name: "inserter", override_stack_size: 2 }, saved)
-  assert.equal(defines.direction.east, direction)
+  expect(saved).to.equal({ name: "inserter", override_stack_size: 2 })
+  expect(direction).to.be(defines.direction.east)
 })
 const directions = Object.values(defines.direction) as defines.direction[]
 test.each(directions)("can saved a curved rail in all directions", (direction) => {
@@ -41,8 +42,8 @@ test.each(directions)("can saved a curved rail in all directions", (direction) =
   })!
 
   const [saved, savedDirection] = EntityHandler.saveEntity(entity)
-  assert.same({ name: "curved-rail" }, saved)
-  assert.equal(direction, savedDirection)
+  expect(saved).to.equal({ name: "curved-rail" })
+  expect(savedDirection).to.be(direction)
 })
 
 test.each(directions)("can saved a straight rail in all directions", (direction) => {
@@ -57,8 +58,8 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
   if (direction == defines.direction.south || direction == defines.direction.west) {
     direction = oppositedirection(direction)
   }
-  assert.same({ name: "straight-rail" }, saved)
-  assert.equal(direction, savedDirection)
+  expect(saved).to.equal({ name: "straight-rail" })
+  expect(savedDirection).to.be(direction)
 })
 
 test("can create an entity", () => {
@@ -66,19 +67,19 @@ test("can create an entity", () => {
     name: "iron-chest",
     bar: 3,
   } as Entity)!
-  assert.not_nil(luaEntity, "entity created")
-  assert.equal("iron-chest", luaEntity.name)
-  assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
-  assert.equal(3, luaEntity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
+  expect(luaEntity).to.be.any()
+  expect(luaEntity.name).to.be("iron-chest")
+  expect(luaEntity.position).to.equal({ x: 0.5, y: 0.5 })
+  expect(luaEntity.get_inventory(defines.inventory.chest)!.get_bar() - 1).to.be(3)
 })
 
 test("can create an offshore pump anywhere", () => {
   const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, NORTH, {
     name: "offshore-pump",
   })!
-  assert.not_nil(luaEntity, "entity created")
-  assert.equal("offshore-pump", luaEntity.name)
-  assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
+  expect(luaEntity).to.be.any()
+  expect(luaEntity.name).to.be("offshore-pump")
+  expect(luaEntity.position).to.equal({ x: 0.5, y: 0.5 })
 })
 
 test("can still place if there are items on the ground", () => {
@@ -87,14 +88,14 @@ test("can still place if there are items on the ground", () => {
     position: { x: 0.5, y: 0.5 },
     stack: "iron-plate",
   })
-  assert.not_nil(item, "item created")
+  expect(item).to.be.any()
 
   const luaEntity = EntityHandler.createEntity(surface, { x: 0.5, y: 0.5 }, NORTH, {
     name: "assembling-machine-1",
   })!
-  assert.not_nil(luaEntity, "entity created")
-  assert.equal("assembling-machine-1", luaEntity.name)
-  assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
+  expect(luaEntity).to.be.any()
+  expect(luaEntity.name).to.be("assembling-machine-1")
+  expect(luaEntity.position).to.equal({ x: 0.5, y: 0.5 })
 })
 
 test("can update an entity", () => {
@@ -105,8 +106,8 @@ test("can update an entity", () => {
     bar: 3,
   })!
   const newEntity = EntityHandler.updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, NORTH)
-  assert.equal(entity, newEntity)
-  assert.equal(4, entity.get_inventory(defines.inventory.chest)!.get_bar() - 1)
+  expect(newEntity).to.be(entity)
+  expect(entity.get_inventory(defines.inventory.chest)!.get_bar() - 1).to.be(4)
 })
 
 test("can upgrade an entity", () => {
@@ -118,8 +119,8 @@ test("can upgrade an entity", () => {
   entity.minable = false
   entity.destructible = false
   const newEntity = EntityHandler.updateEntity(entity, { name: "steel-chest" } as Entity, NORTH)!
-  assert.equal("steel-chest", newEntity.name)
-  assert.false(entity.valid)
+  expect(newEntity.name).to.be("steel-chest")
+  expect(entity.valid).to.be(false)
 })
 
 test("can rotate entity", () => {
@@ -130,8 +131,8 @@ test("can rotate entity", () => {
     direction: defines.direction.east,
   })!
   const newEntity = EntityHandler.updateEntity(entity, { name: "inserter" } as Entity, SOUTH)
-  assert.equal(newEntity, entity)
-  assert.equal(defines.direction.south, entity.direction)
+  expect(entity).to.be(newEntity)
+  expect(entity.direction).to.be(defines.direction.south)
 })
 
 test("can rotate an assembler with no fluid recipe", () => {
@@ -142,8 +143,8 @@ test("can rotate an assembler with no fluid recipe", () => {
     direction: defines.direction.east,
   })!
   const newEntity = EntityHandler.updateEntity(entity, { name: "assembling-machine-1" } as Entity, SOUTH)
-  assert.equal(newEntity, entity)
-  assert.equal(defines.direction.south, entity.direction)
+  expect(entity).to.be(newEntity)
+  expect(entity.direction).to.be(defines.direction.south)
 })
 
 describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
@@ -157,11 +158,11 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       type: inOut,
     })!
     const [saved, direction] = EntityHandler.saveEntity(entity)
-    assert.same({ name: "underground-belt", type: inOut }, saved)
+    expect(saved).to.equal({ name: "underground-belt", type: inOut })
     if (flipped) {
-      assert.equal(defines.direction.north, direction)
+      expect(direction).to.be(defines.direction.north)
     } else {
-      assert.equal(defines.direction.south, direction)
+      expect(direction).to.be(defines.direction.south)
     }
   })
 
@@ -170,13 +171,13 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       name: "underground-belt",
       type: inOut,
     } as Entity)!
-    assert.not_nil(luaEntity, "entity created")
-    assert.equal("underground-belt", luaEntity.name)
-    assert.same({ x: 0.5, y: 0.5 }, luaEntity.position)
+    expect(luaEntity).to.be.any()
+    expect(luaEntity.name).to.be("underground-belt")
+    expect(luaEntity.position).to.equal({ x: 0.5, y: 0.5 })
     if (flipped) {
-      assert.equal(defines.direction.north, luaEntity.direction)
+      expect(luaEntity.direction).to.be(defines.direction.north)
     } else {
-      assert.equal(defines.direction.south, luaEntity.direction)
+      expect(luaEntity.direction).to.be(defines.direction.south)
     }
   })
 
@@ -189,7 +190,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       direction: !flipped ? defines.direction.east : defines.direction.west,
       type: inOut,
     })
-    assert.not_nil(westUnderground, "entity created")
+    expect(westUnderground).to.be.any()
     // try pasting east output underground at 1.5, 0.5
     // if west underground is output, the created entity will be flipped
     const eastUnderground = EntityHandler.createEntity(surface, { x: 1.5, y: 0.5 }, WEST, {
@@ -197,12 +198,12 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       type: "output",
     } as Entity)!
     if (flipped) {
-      assert.nil(eastUnderground)
-      assert.nil(surface.find_entity("underground-belt", { x: 1.5, y: 0.5 }))
+      expect(eastUnderground).to.be.nil()
+      expect(surface.find_entity("underground-belt", { x: 1.5, y: 0.5 })).to.be.nil()
     } else {
-      assert.not_nil(eastUnderground)
-      assert.equal("underground-belt", eastUnderground.name)
-      assert.equal(defines.direction.east, eastUnderground.direction) // flipped as is output
+      expect(eastUnderground).to.be.any()
+      expect(eastUnderground.name).to.be("underground-belt")
+      expect(eastUnderground.direction).to.be(defines.direction.east) // flipped as is output
     }
   })
 
@@ -224,9 +225,9 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       } as Entity,
       EAST,
     )!
-    assert.equal(entity, updated)
-    assert.equal(otherDir, updated.belt_to_ground_type)
-    assert.false(updated.rotatable)
+    expect(updated).to.be(entity)
+    expect(updated.belt_to_ground_type).to.be(otherDir)
+    expect(updated.rotatable).to.be(false)
   })
 
   test("can upgrade underground", () => {
@@ -237,7 +238,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       type: inOut,
       direction: !flipped ? defines.direction.west : defines.direction.east, // actual is west
     })!
-    assert.not_nil(entity, "entity created")
+    expect(entity).to.be.any()
     const updated = EntityHandler.updateEntity(
       entity,
       {
@@ -246,10 +247,10 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       } as Entity,
       WEST,
     )!
-    assert.not_nil(updated, "entity updated")
-    assert.equal("fast-underground-belt", updated.name)
-    assert.equal(!flipped ? defines.direction.west : defines.direction.east, updated.direction)
-    assert.equal(inOut, updated.belt_to_ground_type)
+    expect(updated).to.be.any()
+    expect(updated.name).to.be("fast-underground-belt")
+    expect(updated.direction).to.be(!flipped ? defines.direction.west : defines.direction.east)
+    expect(updated.belt_to_ground_type).to.be(inOut)
   })
 
   test("can rotate underground", () => {
@@ -260,7 +261,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       type: inOut,
       direction: !flipped ? defines.direction.west : defines.direction.east, // actual is west
     })!
-    assert.not_nil(entity, "entity created")
+    expect(entity).to.be.any()
     const updated = EntityHandler.updateEntity(
       entity,
       {
@@ -269,9 +270,9 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       } as Entity,
       SOUTH,
     )!
-    assert.not_nil(updated, "entity updated")
-    assert.equal("underground-belt", updated.name)
-    assert.equal(!flipped ? defines.direction.south : defines.direction.north, updated.direction)
+    expect(updated).to.be.any()
+    expect(updated.name).to.be("underground-belt")
+    expect(updated.direction).to.be(!flipped ? defines.direction.south : defines.direction.north)
   })
 })
 
@@ -280,17 +281,17 @@ test("can create loader", () => {
     name: "loader",
     type: "output",
   } as Entity)!
-  assert.equal("loader", entity.name)
-  assert.equal(defines.direction.east, entity.direction)
-  assert.equal("output", entity.loader_type)
+  expect(entity.name).to.be("loader")
+  expect(entity.direction).to.be(defines.direction.east)
+  expect(entity.loader_type).to.be("output")
 
   const entity2 = EntityHandler.createEntity(surface, { x: 14.5, y: 12 }, EAST, {
     name: "loader",
     type: "input",
   } as Entity)!
-  assert.equal("loader", entity2.name)
-  assert.equal(defines.direction.east, entity2.direction)
-  assert.equal("input", entity2.loader_type)
+  expect(entity2.name).to.be("loader")
+  expect(entity2.direction).to.be(defines.direction.east)
+  expect(entity2.loader_type).to.be("input")
 })
 
 test("can flip loader", () => {
@@ -310,9 +311,9 @@ test("can flip loader", () => {
     } as Entity,
     EAST,
   )!
-  assert.equal(entity, updated)
-  assert.equal("output", updated.loader_type)
-  assert.false(updated.rotatable)
+  expect(updated).to.be(entity)
+  expect(updated.loader_type).to.be("output")
+  expect(updated.rotatable).to.be(false)
 })
 
 test("can handle item changes", () => {
@@ -334,8 +335,8 @@ test("can handle item changes", () => {
     } as Entity,
     NORTH,
   )
-  assert.equal(newEntity, entity)
-  assert.same(newContents, entity.get_module_inventory()!.get_contents())
+  expect(entity).to.be(newEntity)
+  expect(entity.get_module_inventory()!.get_contents()).to.equal(newContents)
 })
 
 test("can be any direction", () => {
@@ -345,14 +346,14 @@ test("can be any direction", () => {
     position: { x: 12.5, y: 12.5 },
     force: "player",
   })!
-  assert.true(canBeAnyDirection(entity))
+  expect(canBeAnyDirection(entity)).to.be(true)
   entity.set_recipe("rocket-fuel")
-  assert.false(canBeAnyDirection(entity))
+  expect(canBeAnyDirection(entity)).to.be(false)
 
   const entity2 = surface.create_entity({
     name: "iron-chest",
     position: { x: 0.5, y: 0.5 },
     force: "player",
   })!
-  assert.false(canBeAnyDirection(entity2))
+  expect(canBeAnyDirection(entity2)).to.be(false)
 })

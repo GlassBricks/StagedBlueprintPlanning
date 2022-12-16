@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { mock } from "tstl-expect"
+
 /** @noSelf */
 interface LuaObjectLike {
   readonly valid: boolean
@@ -37,17 +39,10 @@ export function simpleMock<T extends LuaObjectLike | LuaObject>(value?: Partial<
   return setmetatable(base, metatable) as T
 }
 
-export function makeMocked<T>(keys: (keyof T)[]): mock.Mocked<T> {
-  const result = {} as mock.Mocked<T>
+export function makeMocked<T>(keys: (keyof T)[]): mock.MockedObjectNoSelf<T> {
+  const result = {} as any
   for (const key of keys) {
-    result[key] = spy<any>()
-  }
-  return result
-}
-export function makeStubbed<T>(keys: (keyof T)[]): mock.Stubbed<T> {
-  const result = {} as mock.Stubbed<T>
-  for (const key of keys) {
-    result[key] = stub<any>()
+    result[key] = mock.fnNoSelf()
   }
   return result
 }

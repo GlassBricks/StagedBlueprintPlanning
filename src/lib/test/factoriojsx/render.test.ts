@@ -27,6 +27,7 @@ import {
 import { State, state } from "../../observable"
 import { RegisterClass } from "../../references"
 import { testRender } from "../gui"
+import expect, { mock } from "tstl-expect"
 
 describe("create", () => {
   test("Sets spec property", () => {
@@ -34,8 +35,7 @@ describe("create", () => {
       type: "flow",
       direction: "vertical",
     }
-    const element = testRender(spec).native
-    assert.same("vertical", element.direction)
+    expect(testRender(spec).native.direction).to.equal("vertical")
   })
 
   test("Sets element property", () => {
@@ -44,8 +44,7 @@ describe("create", () => {
       elem_type: "item",
       locked: true,
     }
-    const element = testRender(spec).native
-    assert.is_true(element.locked)
+    expect(testRender(spec).native.locked).to.be(true)
   })
 
   test("Listens to source property", () => {
@@ -55,9 +54,9 @@ describe("create", () => {
       caption: v,
     }
     const element = testRender(spec).native
-    assert.equal("one", element.caption)
+    expect(element.caption).to.be("one")
     v.set("two")
-    assert.equal("two", element.caption)
+    expect(element.caption).to.be("two")
   })
 
   test("Call method property", () => {
@@ -67,9 +66,9 @@ describe("create", () => {
       value_step: value,
     }
     const element = testRender(spec).native
-    assert.equal(1, element.get_slider_value_step())
+    expect(element.get_slider_value_step()).to.be(1)
     value.set(2)
-    assert.equal(2, element.get_slider_value_step())
+    expect(element.get_slider_value_step()).to.be(2)
   })
 
   test("Slider minimum", () => {
@@ -80,11 +79,11 @@ describe("create", () => {
       maximum_value: 5,
     }
     const element = testRender(spec).native
-    assert.equal(1, element.get_slider_minimum())
-    assert.equal(5, element.get_slider_maximum())
+    expect(element.get_slider_minimum()).to.be(1)
+    expect(element.get_slider_maximum()).to.be(5)
     value.set(2)
-    assert.equal(2, element.get_slider_minimum())
-    assert.equal(5, element.get_slider_maximum())
+    expect(element.get_slider_minimum()).to.be(2)
+    expect(element.get_slider_maximum()).to.be(5)
   })
 
   test("Slider maximum", () => {
@@ -95,11 +94,11 @@ describe("create", () => {
       maximum_value: value,
     }
     const element = testRender(spec).native
-    assert.equal(1, element.get_slider_minimum())
-    assert.equal(5, element.get_slider_maximum())
+    expect(element.get_slider_minimum()).to.be(1)
+    expect(element.get_slider_maximum()).to.be(5)
     value.set(6)
-    assert.equal(1, element.get_slider_minimum())
-    assert.equal(6, element.get_slider_maximum())
+    expect(element.get_slider_minimum()).to.be(1)
+    expect(element.get_slider_maximum()).to.be(6)
   })
 
   test("Does not allow source on create-only property", () => {
@@ -108,9 +107,9 @@ describe("create", () => {
       type: "flow",
       direction: v as any,
     }
-    assert.error(() => {
+    expect(() => {
       testRender(spec)
-    })
+    }).to.error()
   })
 
   test("can specify children", () => {
@@ -124,8 +123,8 @@ describe("create", () => {
       ],
     }
     const element = testRender(spec).native
-    assert.equal("button", element.children[0].type)
-    assert.equal("hi", element.children[0].caption)
+    expect(element.children[0].type).to.be("button")
+    expect(element.children[0].caption).to.be("hi")
   })
 
   test("can specify multiple children", () => {
@@ -143,10 +142,10 @@ describe("create", () => {
       ],
     }
     const element = testRender(spec).native
-    assert.equal("button", element.children[0].type)
-    assert.equal("hi", element.children[0].caption)
-    assert.equal("button", element.children[1].type)
-    assert.equal("bye", element.children[1].caption)
+    expect(element.children[0].type).to.be("button")
+    expect(element.children[0].caption).to.be("hi")
+    expect(element.children[1].type).to.be("button")
+    expect(element.children[1].caption).to.be("bye")
   })
 })
 
@@ -158,8 +157,7 @@ describe("styleMod", () => {
         left_padding: 3,
       },
     }
-    const element = testRender(spec).native
-    assert.equals(3, element.style.left_padding)
+    expect(testRender(spec).native.style.left_padding).to.equal(3)
   })
 
   test("sets setter property", () => {
@@ -169,8 +167,7 @@ describe("styleMod", () => {
         padding: [3, 3],
       },
     }
-    const element = testRender(spec).native
-    assert.equals(3, element.style.left_padding)
+    expect(testRender(spec).native.style.left_padding).to.equal(3)
   })
 
   test("listens to source property", () => {
@@ -182,9 +179,9 @@ describe("styleMod", () => {
       },
     }
     const element = testRender(spec).native
-    assert.equals(1, element.style.left_padding)
+    expect(element.style.left_padding).to.equal(1)
     value.set(2)
-    assert.equals(2, element.style.left_padding)
+    expect(element.style.left_padding).to.equal(2)
   })
 })
 
@@ -196,7 +193,7 @@ describe("destroy", () => {
     }
     const element = testRender(spec).native
     destroy(element)
-    assert.is_false(element.valid)
+    expect(element.valid).to.be(false)
   })
 
   test("calling destroy ends subscriptions", () => {
@@ -206,9 +203,9 @@ describe("destroy", () => {
       caption: source,
     }
     const element = testRender(spec).native
-    assert.equals(1, State._numObservers(source))
+    expect(State._numObservers(source)).to.equal(1)
     destroy(element)
-    assert.equals(0, State._numObservers(source))
+    expect(State._numObservers(source)).to.equal(0)
   })
 
   test("calling destroy ends child subscriptions", () => {
@@ -229,14 +226,14 @@ describe("destroy", () => {
     }
     const element = testRender(spec).native
 
-    assert.equals(1, State._numObservers(source))
+    expect(State._numObservers(source)).to.equal(1)
     destroy(element)
-    assert.equals(0, State._numObservers(source))
+    expect(State._numObservers(source)).to.equal(0)
   })
 })
 
 test("events", () => {
-  const func = spy<GuiEventHandler["invoke"]>()
+  const func = mock.fn<GuiEventHandler["invoke"]>()
   const spec: TextFieldElementSpec = {
     type: "textfield",
     on_gui_click: { invoke: func },
@@ -245,7 +242,7 @@ test("events", () => {
   }
   const element = testRender(spec).native
 
-  assert.spy(func).not_called()
+  expect(func).not.called()
 
   const fakeClickEvent: OnGuiClickEvent = {
     element: element as LuaGuiElement,
@@ -258,7 +255,7 @@ test("events", () => {
     shift: false,
   }
   script.get_event_handler(defines.events.on_gui_click)(fakeClickEvent)
-  assert.spy(func).called_with(match._, fakeClickEvent)
+  expect(func).calledWith(expect._, fakeClickEvent)
 
   const fakeOpenEvent: OnGuiOpenedEvent = {
     element: element as LuaGuiElement,
@@ -268,7 +265,7 @@ test("events", () => {
     gui_type: defines.gui_type.custom,
   }
   script.get_event_handler(defines.events.on_gui_opened)(fakeOpenEvent)
-  assert.spy(func).called_with(match._, fakeOpenEvent)
+  expect(func).calledWith(expect._, fakeOpenEvent)
 
   const fakeTextChangeEvent: OnGuiTextChangedEvent = {
     element: element as LuaGuiElement,
@@ -278,7 +275,7 @@ test("events", () => {
     text: "hi",
   }
   script.get_event_handler(defines.events.on_gui_text_changed)(fakeTextChangeEvent)
-  assert.spy(func).called_with(match._, fakeTextChangeEvent)
+  expect(func).calledWith(expect._, fakeTextChangeEvent)
 })
 
 test("observable value", () => {
@@ -289,8 +286,8 @@ test("observable value", () => {
   }
   const element = testRender(spec).native
 
-  assert.same("one", val.get())
-  assert.same("one", element.text)
+  expect(val.get()).to.equal("one")
+  expect(element.text).to.equal("one")
 
   element.text = "two"
   element.text = "should not change"
@@ -303,11 +300,11 @@ test("observable value", () => {
   }
   script.get_event_handler(defines.events.on_gui_text_changed)(fakeEvent)
 
-  assert.same("two", val.get())
-  assert.equal("should not change", element.text) // so cursor doesn't jump around when typing
+  expect(val.get()).to.equal("two")
+  expect(element.text).to.be("should not change") // so cursor doesn't jump around when typing
 
   val.set("three")
-  assert.same("three", element.text)
+  expect(element.text).to.equal("three")
 })
 
 test("onCreate", () => {
@@ -319,12 +316,11 @@ test("onCreate", () => {
     },
   }
 
-  const element = testRender(spec).native
-  assert.equal(element1, element)
+  expect(testRender(spec).native).to.be(element1)
 })
 
 test("tracker onMount", () => {
-  const fn = spy<(this: unknown) => void>()
+  const fn = mock.fn<(this: unknown) => void>()
   const spec: FCSpec<any> = {
     type(props, tracker) {
       tracker.onMount(fn)
@@ -333,12 +329,12 @@ test("tracker onMount", () => {
     props: {},
   }
   const element = testRender(spec).native
-  assert.spy(fn).called()
-  assert.same(fn.calls[0].refs[1], element)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(element)
 })
 
 test("tracker onDestroy", () => {
-  const fn = spy()
+  const fn = mock.fn()
   const spec: FCSpec<any> = {
     type(props, tracker) {
       tracker.getSubscription().add({ invoke: fn })
@@ -349,9 +345,9 @@ test("tracker onDestroy", () => {
   }
 
   const element = testRender(spec).native
-  assert.spy(fn).not_called()
+  expect(fn).not.called()
   destroy(element)
-  assert.spy(fn).called()
+  expect(fn).called()
 })
 
 describe("Class component", () => {
@@ -373,7 +369,7 @@ describe("Class component", () => {
 
     render(props: Props, tracker: Tracker): Spec {
       tracker.onMount((element) => {
-        assert.equal("flow", element.type)
+        expect(element.type).to.be("flow")
         results.push("onMount")
       })
       tracker.getSubscription().add({ invoke: () => results.push("destroyed") })
@@ -394,7 +390,7 @@ describe("Class component", () => {
 
     render(props: Props, tracker: Tracker): Spec {
       tracker.onMount((element) => {
-        assert.equal("flow", element.type)
+        expect(element.type).to.be("flow")
         results.push("onMount2")
       })
       tracker.getSubscription().add({ invoke: () => results.push("destroyed2") })
@@ -417,11 +413,11 @@ describe("Class component", () => {
     }
     const element = testRender(spec).native
 
-    assert.equal("flow", element.type)
-    assert.same(["constructed", "render", "cb flow", "onMount"], results)
+    expect(element.type).to.be("flow")
+    expect(results).to.equal(["constructed", "render", "cb flow", "onMount"])
     results.length = 0
     destroy(element)
-    assert.same(["destroyed"], results)
+    expect(results).to.equal(["destroyed"])
   })
 
   test("create2", () => {
@@ -431,11 +427,11 @@ describe("Class component", () => {
     }
     const element = testRender(spec).native
 
-    assert.equal("flow", element.type)
-    assert.same(["constructed2", "render2", "constructed", "render", "cb flow", "onMount", "onMount2"], results)
+    expect(element.type).to.be("flow")
+    expect(results).to.equal(["constructed2", "render2", "constructed", "render", "cb flow", "onMount", "onMount2"])
     results.length = 0
     destroy(element)
-    assert.same(["destroyed2", "destroyed"], results)
+    expect(results).to.equal(["destroyed2", "destroyed"])
   })
 
   test("unregistered components give error", () => {
@@ -448,7 +444,7 @@ describe("Class component", () => {
       type: C,
       props: {},
     }
-    assert.error(() => testRender(spec))
+    expect(() => testRender(spec)).to.error()
   })
 })
 
@@ -491,11 +487,11 @@ describe("function component", () => {
     }
     const element = testRender(spec).native
 
-    assert.equal("flow", element.type)
-    assert.same(["render", "flow", "mountA", "mountB"], results)
+    expect(element.type).to.be("flow")
+    expect(results).to.equal(["render", "flow", "mountA", "mountB"])
     results.length = 0
     destroy(element)
-    assert.same(["destroyed"], results)
+    expect(results).to.equal(["destroyed"])
   })
 
   test("render 2", () => {
@@ -505,11 +501,11 @@ describe("function component", () => {
     }
     const element = testRender(spec).native
 
-    assert.equal("flow", element.type)
-    assert.same(["render2", "render", "flow", "mount2A", "mount2B", "mountA", "mountB"], results)
+    expect(element.type).to.be("flow")
+    expect(results).to.equal(["render2", "render", "flow", "mount2A", "mount2B", "mountA", "mountB"])
     results.length = 0
     destroy(element)
-    assert.same(["destroyed2", "destroyed"], results)
+    expect(results).to.equal(["destroyed2", "destroyed"])
   })
 })
 
@@ -519,7 +515,7 @@ describe("Fragments", () => {
       type: "fragment",
       children: [{ type: "flow" }, { type: "flow" }],
     }
-    assert.error(() => testRender(spec as any))
+    expect(() => testRender(spec as any)).to.error()
   })
 
   test("Fragment with multiple children inside another element is ok", () => {
@@ -528,10 +524,10 @@ describe("Fragments", () => {
       children: [{ type: "fragment", children: [{ type: "flow" }, { type: "flow" }] }],
     }
     const element = testRender(spec).native
-    assert.equal("flow", element.type)
-    assert.equal(2, element.children.length)
-    assert.equal("flow", element.children[0].type)
-    assert.equal("flow", element.children[1].type)
+    expect(element.type).to.be("flow")
+    expect(element.children.length).to.be(2)
+    expect(element.children[0].type).to.be("flow")
+    expect(element.children[1].type).to.be("flow")
   })
 
   test("fragment with multiple children as result of functional component", () => {
@@ -541,17 +537,17 @@ describe("Fragments", () => {
         children: [{ type: "flow" }, { type: "flow" }],
       }
     }
-    assert.error(() => testRender({ type: Comp, props: {} }))
+    expect(() => testRender({ type: Comp, props: {} })).to.error()
 
     const spec2: Spec = {
       type: "flow",
       children: [{ type: Comp, props: {} }],
     }
     const element = testRender(spec2).native
-    assert.equal("flow", element.type)
-    assert.equal(2, element.children.length)
-    assert.equal("flow", element.children[0].type)
-    assert.equal("flow", element.children[1].type)
+    expect(element.type).to.be("flow")
+    expect(element.children.length).to.be(2)
+    expect(element.children[0].type).to.be("flow")
+    expect(element.children[1].type).to.be("flow")
   })
 })
 
@@ -566,9 +562,9 @@ test("tabbed-pane", () => {
     ],
   }
   const element = testRender(spec).native
-  assert.equal(2, element.tabs.length)
-  assert.equal("one", element.tabs[0].tab.caption)
-  assert.equal("one content", element.tabs[0].content.caption)
-  assert.equal("two", element.tabs[1].tab.caption)
-  assert.equal("two content", element.tabs[1].content.caption)
+  expect(element.tabs.length).to.be(2)
+  expect(element.tabs[0].tab.caption).to.be("one")
+  expect(element.tabs[0].content.caption).to.be("one content")
+  expect(element.tabs[1].tab.caption).to.be("two")
+  expect(element.tabs[1].content.caption).to.be("two content")
 })

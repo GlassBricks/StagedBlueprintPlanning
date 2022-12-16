@@ -10,6 +10,7 @@
  */
 
 import { bind, Func, funcRef, Functions, ibind, RegisterClass, registerFunctions } from "../references"
+import expect from "tstl-expect"
 
 declare const global: {
   __tbl1: object
@@ -57,32 +58,32 @@ describe("classes", () => {
   }
 
   test("Static function registered correctly", () => {
-    assert.same("Test Class.foo2", Functions.nameOf(TestClass.foo2))
+    expect(Functions.nameOf(TestClass.foo2)).to.equal("Test Class.foo2")
   })
 
   test("overridden static function registered correctly", () => {
-    assert.same("Test Subclass.foo2", Functions.nameOf(TestSubclass.foo2))
+    expect(Functions.nameOf(TestSubclass.foo2)).to.equal("Test Subclass.foo2")
   })
 
   test("Error when registering after load", () => {
-    assert.error(() => {
+    expect(() => {
       @RegisterClass("Test Class 2")
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestClass2 {}
-    })
+    }).to.error()
   })
 
   function assertRefsCorrect() {
-    assert.true(global.__tbl1 instanceof TestClass)
-    assert.false(global.__tbl1 instanceof TestSubclass)
+    expect(global.__tbl1 instanceof TestClass).to.be(true)
+    expect(global.__tbl1 instanceof TestSubclass).to.be(false)
 
-    assert.true(global.__tbl2 instanceof TestSubclass)
+    expect(global.__tbl2 instanceof TestSubclass).to.be(true)
 
-    assert.true(global.__tbl3 instanceof TestSubclass2)
+    expect(global.__tbl3 instanceof TestSubclass2).to.be(true)
 
-    assert.equal("12", global.__ref1.invoke())
-    assert.equal("23", global.__ref2.invoke())
-    assert.equal("35", global.__ref3.invoke())
+    expect(global.__ref1.invoke()).to.be("12")
+    expect(global.__ref2.invoke()).to.be("23")
+    expect(global.__ref3.invoke()).to.be("35")
   }
   test("class and boundMethod survives reload", () => {
     const instance = new TestClass("1")
@@ -110,8 +111,8 @@ describe("functions", () => {
 
   test("funcRef", () => {
     const ref = funcRef(func)
-    assert.not_function(ref)
-    assert.same(["hi"], ref.invoke("hi"))
+    expect(ref).to.not.be.a("function")
+    expect(ref.invoke("hi")).to.equal(["hi"])
   })
 
   describe.each(["func", "funcRef"])("bound func ref with type %s", (type) => {
@@ -120,17 +121,17 @@ describe("functions", () => {
       const fun = type == "func" ? func : funcRef(func)
 
       const boundFn = bind(fun, ...args)
-      assert.same([...args, 15, 16, 17], boundFn.invoke(15, 16, 17))
+      expect(boundFn.invoke(15, 16, 17)).to.equal([...args, 15, 16, 17])
     })
   })
 
   test("func ref survives reload", () => {
     global.__ref1 = funcRef(func)
     global.__ref2 = bind(func, 2)
-    assert.same(["foo"], global.__ref1.invoke("foo"))
-    assert.same([2, "foo"], global.__ref2.invoke("foo"))
+    expect(global.__ref1.invoke("foo")).to.equal(["foo"])
+    expect(global.__ref2.invoke("foo")).to.equal([2, "foo"])
   }).after_mod_reload(() => {
-    assert.same(["foo"], global.__ref1.invoke("foo"), "after reload")
-    assert.same([2, "foo"], global.__ref2.invoke("foo"), "after reload")
+    expect(global.__ref1.invoke("foo")).to.equal(["foo"])
+    expect(global.__ref2.invoke("foo")).to.equal([2, "foo"])
   })
 })

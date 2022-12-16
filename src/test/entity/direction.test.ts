@@ -1,5 +1,6 @@
 import { createRollingStock } from "./createRollingStock"
 import { getSavedDirection } from "../../entity/direction"
+import expect from "tstl-expect"
 
 describe("getSavedDirection", () => {
   let surface: LuaSurface
@@ -16,10 +17,10 @@ describe("getSavedDirection", () => {
       direction: defines.direction.north,
     })!
     assert(entity)
-    assert.equal(getSavedDirection(entity), defines.direction.north)
+    expect(defines.direction.north).to.be(getSavedDirection(entity))
 
     entity.direction = defines.direction.east
-    assert.equal(getSavedDirection(entity), defines.direction.east)
+    expect(defines.direction.east).to.be(getSavedDirection(entity))
   })
 
   test("opposite direction for output underground belts", () => {
@@ -30,7 +31,7 @@ describe("getSavedDirection", () => {
       type: "input",
     })!
     assert(entity)
-    assert.equal(getSavedDirection(entity), defines.direction.east)
+    expect(defines.direction.east).to.be(getSavedDirection(entity))
     entity.destroy()
     const entity2 = surface.create_entity({
       name: "underground-belt",
@@ -39,13 +40,13 @@ describe("getSavedDirection", () => {
       type: "output",
     })
     assert(entity2)
-    assert.equal(getSavedDirection(entity2!), defines.direction.west)
+    expect(defines.direction.west).to.be(getSavedDirection(entity2!))
   })
 
   test("always north for rolling stock", () => {
     const rollingStock = createRollingStock()
     assert(rollingStock)
-    assert.equal(getSavedDirection(rollingStock), defines.direction.north)
+    expect(defines.direction.north).to.be(getSavedDirection(rollingStock))
   })
 
   test("same for assembling machine with no fluid inputs", () => {
@@ -56,11 +57,11 @@ describe("getSavedDirection", () => {
       direction: defines.direction.east,
     })!
     assert(asm)
-    assert.equal(defines.direction.east, asm.direction)
-    assert.equal(defines.direction.east, getSavedDirection(asm))
+    expect(asm.direction).to.be(defines.direction.east)
+    expect(getSavedDirection(asm)).to.be(defines.direction.east)
 
     asm.set_recipe(nil)
-    assert.equal(defines.direction.east, asm.direction)
-    assert.equal(defines.direction.east, getSavedDirection(asm))
+    expect(asm.direction).to.be(defines.direction.east)
+    expect(getSavedDirection(asm)).to.be(defines.direction.east)
   })
 })

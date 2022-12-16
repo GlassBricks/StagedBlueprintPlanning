@@ -10,6 +10,7 @@
  */
 
 import { MutableObservableSet, observableSet, ObservableSetChange } from "../../observable"
+import expect, { mock } from "tstl-expect"
 
 let set: MutableObservableSet<string>
 before_each(() => {
@@ -17,31 +18,31 @@ before_each(() => {
 })
 
 it("can be constructed", () => {
-  assert.equal(set.size(), 0)
+  expect(0).to.be(set.size())
 })
 
 it("keeps track of size", () => {
   set.add("a")
-  assert.equal(set.size(), 1)
+  expect(1).to.be(set.size())
   set.add("b")
-  assert.equal(set.size(), 2)
+  expect(2).to.be(set.size())
   set.delete("a")
-  assert.equal(set.size(), 1)
+  expect(1).to.be(set.size())
 })
 
 it("keeps track of added items", () => {
   set.add("a")
-  assert.true(set.has("a"))
+  expect(set.has("a")).to.be(true)
   set.add("b")
-  assert.true(set.has("b"))
+  expect(set.has("b")).to.be(true)
   set.delete("a")
-  assert.false(set.has("a"))
+  expect(set.has("a")).to.be(false)
 })
 
 it("allows to inspect value", () => {
   set.add("a")
   set.add("b")
-  assert.same(newLuaSet("a", "b"), set.value())
+  expect(set.value()).to.equal(newLuaSet("a", "b"))
 })
 
 it("can be iterated", () => {
@@ -51,11 +52,11 @@ it("can be iterated", () => {
   for (const value of set) {
     values.push(value)
   }
-  assert.same(["a", "b"], values)
+  expect(values).to.equal(["a", "b"])
 })
 
 it("notifies subscribers of added items", () => {
-  const fn = spy()
+  const fn = mock.fn()
   set.subscribeIndependently({ invoke: fn })
   set.add("a")
   const change: ObservableSetChange<string> = {
@@ -63,34 +64,34 @@ it("notifies subscribers of added items", () => {
     value: "a",
     added: true,
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })
 
 it("does not notify subscribers of already present items", () => {
   set.add("a")
-  const fn = spy()
+  const fn = mock.fn()
   set.subscribeIndependently({ invoke: fn })
   set.add("a")
-  assert.spy(fn).not_called()
+  expect(fn).not.called()
 })
 
 it("notifies subscribers of deleted items", () => {
   set.add("a")
-  const fn = spy()
+  const fn = mock.fn()
   set.subscribeIndependently({ invoke: fn })
   set.delete("a")
   const change: ObservableSetChange<string> = {
     set,
     value: "a",
   }
-  assert.spy(fn).called(1)
-  assert.spy(fn).called_with(match._, change)
+  expect(fn).calledTimes(1)
+  expect(fn).calledWith(expect._, change)
 })
 
 it("does not notify subscribers of deleting not present items", () => {
-  const fn = spy()
+  const fn = mock.fn()
   set.subscribeIndependently({ invoke: fn })
   set.delete("a")
-  assert.spy(fn).not_called()
+  expect(fn).not.called()
 })

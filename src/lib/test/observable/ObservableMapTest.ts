@@ -10,6 +10,7 @@
  */
 
 import { MutableObservableMap, observableMap, ObservableMapChange } from "../../observable"
+import expect, { mock } from "tstl-expect"
 
 describe("ObservableMap", () => {
   let map: MutableObservableMap<string, number>
@@ -18,37 +19,34 @@ describe("ObservableMap", () => {
   })
 
   it("can be constructed", () => {
-    assert.equal(map.size(), 0)
+    expect(0).to.be(map.size())
   })
 
   it("keeps track of size", () => {
     map.set("a", 1)
-    assert.equal(map.size(), 1)
+    expect(1).to.be(map.size())
     map.set("b", 2)
-    assert.equal(map.size(), 2)
+    expect(2).to.be(map.size())
     map.delete("a")
-    assert.equal(map.size(), 1)
+    expect(1).to.be(map.size())
   })
 
   it("keeps track of added items", () => {
     map.set("a", 1)
-    assert.true(map.has("a"))
+    expect(map.has("a")).to.be(true)
     map.set("b", 2)
-    assert.true(map.has("b"))
+    expect(map.has("b")).to.be(true)
     map.delete("a")
-    assert.false(map.has("a"))
+    expect(map.has("a")).to.be(false)
   })
 
   it("allows to inspect value", () => {
     map.set("a", 1)
     map.set("b", 2)
-    assert.same(
-      {
-        a: 1,
-        b: 2,
-      },
-      map.value(),
-    )
+    expect(map.value()).to.equal({
+      a: 1,
+      b: 2,
+    })
   })
 
   it("can be iterated", () => {
@@ -58,11 +56,11 @@ describe("ObservableMap", () => {
     for (const [key, value] of map) {
       values[key] = value
     }
-    assert.same({ a: 1, b: 2 }, values)
+    expect(values).to.equal({ a: 1, b: 2 })
   })
 
   it("notifies subscribers of added items", () => {
-    const fn = spy()
+    const fn = mock.fn()
     map.subscribeIndependently({ invoke: fn })
     map.set("a", 1)
     const change: ObservableMapChange<string, number> = {
@@ -71,21 +69,21 @@ describe("ObservableMap", () => {
       oldValue: nil,
       value: 1,
     }
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, change)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, change)
   })
 
   it("does not notify subscribers of unchanged items", () => {
     map.set("a", 1)
-    const fn = spy()
+    const fn = mock.fn()
     map.subscribeIndependently({ invoke: fn })
     map.set("a", 1)
-    assert.spy(fn).not_called()
+    expect(fn).not.called()
   })
 
   it("notifies subscribers of changed items", () => {
     map.set("a", 1)
-    const fn = spy()
+    const fn = mock.fn()
     map.subscribeIndependently({ invoke: fn })
     map.set("a", 2)
     const change: ObservableMapChange<string, number> = {
@@ -94,13 +92,13 @@ describe("ObservableMap", () => {
       oldValue: 1,
       value: 2,
     }
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, change)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, change)
   })
 
   it("notifies subscribers of deleted items", () => {
     map.set("a", 1)
-    const fn = spy()
+    const fn = mock.fn()
     map.subscribeIndependently({ invoke: fn })
     map.delete("a")
     const change: ObservableMapChange<string, number> = {
@@ -109,14 +107,14 @@ describe("ObservableMap", () => {
       oldValue: 1,
       value: nil,
     }
-    assert.spy(fn).called(1)
-    assert.spy(fn).called_with(match._, change)
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(expect._, change)
   })
 
   it("does not notify subscribers of deleting not present items", () => {
-    const fn = spy()
+    const fn = mock.fn()
     map.subscribeIndependently({ invoke: fn })
     map.delete("a")
-    assert.spy(fn).not_called()
+    expect(fn).not.called()
   })
 })

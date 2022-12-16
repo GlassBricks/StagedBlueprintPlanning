@@ -16,6 +16,7 @@ import {
   getDirectionalInfo,
 } from "../../entity/AsmCircuitConnection"
 import { shallowCopy } from "../../lib"
+import expect from "tstl-expect"
 
 test("circuitConnectionEquals", () => {
   const entityA = {} as any
@@ -36,8 +37,8 @@ test("circuitConnectionEquals", () => {
     fromId: defines.circuit_connector_id.constant_combinator,
     wire: defines.wire_type.red,
   }
-  assert.true(circuitConnectionEquals(circuitConnectionA, identical))
-  assert.true(circuitConnectionEquals(circuitConnectionA, circuitConnectionB))
+  expect(circuitConnectionEquals(circuitConnectionA, identical)).to.be(true)
+  expect(circuitConnectionEquals(circuitConnectionA, circuitConnectionB)).to.be(true)
 
   const different: AsmCircuitConnection = {
     toEntity: entityA,
@@ -46,8 +47,8 @@ test("circuitConnectionEquals", () => {
     fromId: defines.circuit_connector_id.accumulator,
     wire: defines.wire_type.red,
   }
-  assert.false(circuitConnectionEquals(circuitConnectionA, different))
-  assert.false(circuitConnectionEquals(circuitConnectionB, different))
+  expect(circuitConnectionEquals(circuitConnectionA, different)).to.be(false)
+  expect(circuitConnectionEquals(circuitConnectionB, different)).to.be(false)
 })
 
 test("getDirectionalInfo", () => {
@@ -61,14 +62,16 @@ test("getDirectionalInfo", () => {
     toId: defines.circuit_connector_id.constant_combinator,
     wire: defines.wire_type.red,
   }
-  assert.same(
-    [entityB, defines.circuit_connector_id.accumulator, defines.circuit_connector_id.constant_combinator],
-    getDirectionalInfo(circuitConnectionA, entityA),
-  )
-  assert.same(
-    [entityA, defines.circuit_connector_id.constant_combinator, defines.circuit_connector_id.accumulator],
-    getDirectionalInfo(circuitConnectionA, entityB),
-  )
+  expect(getDirectionalInfo(circuitConnectionA, entityA)).to.equal([
+    entityB,
+    defines.circuit_connector_id.accumulator,
+    defines.circuit_connector_id.constant_combinator,
+  ])
+  expect(getDirectionalInfo(circuitConnectionA, entityB)).to.equal([
+    entityA,
+    defines.circuit_connector_id.constant_combinator,
+    defines.circuit_connector_id.accumulator,
+  ])
 })
 test("circuitConnectionMatches", () => {
   const entityA = {} as any
@@ -81,8 +84,8 @@ test("circuitConnectionMatches", () => {
     toId: 1,
     wire: defines.wire_type.red,
   }
-  assert.true(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 1, 0))
-  assert.true(circuitConnectionMatches(connection, defines.wire_type.red, entityB, 0, 1))
-  assert.false(circuitConnectionMatches(connection, defines.wire_type.green, entityA, 1, 0))
-  assert.false(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 0, 1))
+  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 1, 0)).to.be(true)
+  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityB, 0, 1)).to.be(true)
+  expect(circuitConnectionMatches(connection, defines.wire_type.green, entityA, 1, 0)).to.be(false)
+  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 0, 1)).to.be(false)
 })

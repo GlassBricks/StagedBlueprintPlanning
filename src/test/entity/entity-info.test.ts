@@ -10,18 +10,19 @@
  */
 
 import { getEntityCategory } from "../../entity/entity-info"
+import expect from "tstl-expect"
 
 describe("getCategoryName", () => {
   test("same type", () => {
-    assert.equal(getEntityCategory("inserter"), getEntityCategory("inserter"))
+    expect(getEntityCategory("inserter")).to.be(getEntityCategory("inserter"))
   })
   test("same category", () => {
-    assert.equal(getEntityCategory("inserter"), getEntityCategory("fast-inserter"))
+    expect(getEntityCategory("fast-inserter")).to.be(getEntityCategory("inserter"))
   })
   test("same type, not same category", () => {
-    assert.not_equal(getEntityCategory("inserter"), getEntityCategory("long-handed-inserter"))
+    expect(getEntityCategory("inserter")).not.to.be(getEntityCategory("long-handed-inserter"))
   })
   test("logistic-container is same as container", () => {
-    assert.equal(getEntityCategory("iron-chest"), getEntityCategory("logistic-chest-passive-provider"))
+    expect(getEntityCategory("logistic-chest-passive-provider")).to.be(getEntityCategory("iron-chest"))
   })
 })

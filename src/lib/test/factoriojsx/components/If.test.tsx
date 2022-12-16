@@ -13,6 +13,7 @@ import { FactorioJsx } from "../../../factoriojsx"
 import { If } from "../../../factoriojsx/components"
 import { MutableState, state } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
+import expect from "tstl-expect"
 
 let condition: MutableState<boolean>
 
@@ -25,10 +26,10 @@ function findAllLabels(root: ElementWrapper): LocalisedString[] {
 }
 test("single then", () => {
   const component = testRender(<If condition={condition} then={{ invoke: () => <label caption="true" /> }} />)
-  assert.same(["true"], findAllLabels(component))
+  expect(findAllLabels(component)).to.equal(["true"])
 
   condition.set(false)
-  assert.same([], findAllLabels(component))
+  expect(findAllLabels(component)).to.equal([])
 })
 
 test("then and else", () => {
@@ -39,11 +40,11 @@ test("then and else", () => {
       else={{ invoke: () => <label caption="false" /> }}
     />,
   )
-  assert.same(["true"], findAllLabels(component))
+  expect(findAllLabels(component)).to.equal(["true"])
 
   condition.set(false)
-  assert.same(["false"], findAllLabels(component))
+  expect(findAllLabels(component)).to.equal(["false"])
 
   condition.set(true)
-  assert.same(["true"], findAllLabels(component))
+  expect(findAllLabels(component)).to.equal(["true"])
 })

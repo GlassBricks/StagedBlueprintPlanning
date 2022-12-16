@@ -20,9 +20,10 @@ import { WireHandler, WireUpdater } from "../../entity/WireHandler"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
-import { makeMocked, makeStubbed } from "../simple-mock"
+import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import { SavedDirection } from "../../entity/direction"
+import expect, { mock } from "tstl-expect"
 
 interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter"
@@ -31,8 +32,8 @@ interface TestEntity extends Entity {
 let assembly: Assembly
 let entity: AssemblyEntity<TestEntity>
 
-let highlighter: mock.Mocked<EntityHighlighter>
-let wireUpdater: mock.Stubbed<WireUpdater>
+let highlighter: mock.MockedObjectNoSelf<EntityHighlighter>
+let wireUpdater: mock.MockedObjectNoSelf<WireUpdater>
 let worldUpdater: WorldUpdater
 
 const origPos = { x: 0.5, y: 0.5 }
@@ -50,9 +51,9 @@ before_each(() => {
     1,
   )
 
-  wireUpdater = makeStubbed(keys<WireUpdater>())
+  wireUpdater = makeMocked(keys<WireUpdater>())
   highlighter = makeMocked(keys<EntityHighlighter>())
-  worldUpdater = createWorldUpdater(EntityHandler, wireUpdater, highlighter)
+  worldUpdater = createWorldUpdater(EntityHandler, wireUpdater, highlighter as unknown as EntityHighlighter)
 })
 
 function findPreviewEntity(i: StageNumber) {
@@ -76,22 +77,22 @@ function findAnyEntity(i: StageNumber): LuaEntity | nil {
 
 function assertNothingPresent(i: StageNumber): void {
   if (i <= 0 || i > surfaces.length) return
-  assert.nil(findAnyEntity(i))
-  assert.is_nil(entity.getWorldOrPreviewEntity(i))
+  expect(findAnyEntity(i)).to.be.nil()
+  expect(entity.getWorldOrPreviewEntity(i)).to.be.nil()
 }
 function assertHasPreview(i: StageNumber): void {
-  const preview = assert.not_nil(findPreviewEntity(i))
+  const preview = expect(findPreviewEntity(i)).to.be.any()
   const e = entity.getWorldOrPreviewEntity(i)
-  assert.nil(findMainEntity(i))
-  assert.equal(e, preview)
+  expect(findMainEntity(i)).to.be.nil()
+  expect(preview).to.be(e)
 }
 
 function assertEntityCorrect(i: StageNumber): LuaEntity {
-  const worldEntity = assert.not_nil(findMainEntity(i))
+  const worldEntity = expect(findMainEntity(i)).to.be.any().getValue()
   const [value, direction] = EntityHandler.saveEntity(worldEntity)
-  assert.equal(direction, entity.getDirection())
+  expect(entity.getDirection()).to.be(direction)
   const valueAtStage = entity.getValueAtStage(i)
-  assert.same(value, valueAtStage)
+  expect(valueAtStage).to.equal(value)
   return worldEntity
 }
 
@@ -120,7 +121,7 @@ describe("updateWorldEntities", () => {
       entity.replaceWorldEntity(2, replaced)
       worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
       const val = assertEntityCorrect(2)
-      assert.equal(val, replaced)
+      expect(replaced).to.be(val)
     })
 
     test("replaces deleted entity", () => {
@@ -149,14 +150,13 @@ describe("updateWorldEntities", () => {
 
   test("calls wireUpdater", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1)
-    for (let i = 1; i <= 3; i++)
-      assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly.content), match.ref(entity), i)
+    for (let i = 1; i <= 3; i++) expect(wireUpdater.updateWireConnections).calledWith(assembly.content, entity, i)
   })
 
   function assertDestructible(luaEntity: LuaEntity, value: boolean) {
-    assert.equal(value, luaEntity.minable, `minable not ${value}`)
-    assert.equal(value, luaEntity.rotatable, `rotatable not ${value}`)
-    assert.false(luaEntity.destructible, "destructible always false")
+    expect(luaEntity.minable).to.be(value)
+    expect(luaEntity.rotatable).to.be(value)
+    expect(luaEntity.destructible).to.be(false)
   }
 
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
@@ -180,7 +180,7 @@ describe("updateWorldEntities", () => {
     entity.moveToStage(2)
     worldUpdater.updateWorldEntities(assembly, entity, 1)
 
-    assert.nil(findMainEntity(1))
+    expect(findMainEntity(1)).to.be.nil()
     assertHasPreview(1)
     assertDestructible(assertEntityCorrect(2), true)
     assertDestructible(assertEntityCorrect(3), false)
@@ -202,7 +202,7 @@ describe("updateWorldEntities", () => {
 
   test("calls updateHighlights", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1)
-    assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, assembly.maxStage())
+    expect(highlighter.updateHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
   })
 
   test("entity preview in all other stages if is rolling stock", () => {
@@ -214,9 +214,9 @@ describe("updateWorldEntities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1)
 
     assertHasPreview(1)
-    const worldEntity = assert.not_nil(findMainEntity(2))
+    const worldEntity = expect(findMainEntity(2)).to.be.any().getValue()
     const [foundValue] = EntityHandler.saveEntity(worldEntity)
-    assert.same(value, foundValue)
+    expect(foundValue).to.equal(value)
     assertHasPreview(3)
   })
 })
@@ -225,7 +225,7 @@ test("replaceWorldEntityAtStage replaces old value", () => {
   worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
   const value = assertEntityCorrect(2)
   worldUpdater.replaceWorldEntityAtStage(assembly, entity, 2)
-  assert.false(value.valid)
+  expect(value.valid).to.be(false)
   assertEntityCorrect(2)
 })
 
@@ -246,47 +246,47 @@ describe("tryMoveEntity", () => {
     for (let i = 0; i < 4; i++) {
       const luaEntity = entities[i]
       if (!luaEntity.valid) continue
-      assert.same(newPos, luaEntity.position)
-      assert.equal(newDir, luaEntity.direction)
+      expect(luaEntity.position).to.equal(newPos)
+      expect(luaEntity.direction).to.be(newDir)
     }
-    assert.same(newPos, entity.position)
-    assert.equal(newDir, entity.getDirection())
+    expect(entity.position).to.equal(newPos)
+    expect(entity.getDirection()).to.be(newDir)
 
-    assert.equal(entity, assembly.content.findCompatibleByTraits(entity.getNameAtStage(1), newPos, newDir))
+    expect(assembly.content.findCompatibleByTraits(entity.getNameAtStage(1), newPos, newDir)).to.be(entity)
   }
 
   function assertNotMoved() {
     for (let i = 0; i < 4; i++) {
       const luaEntity = entities[i]
       if (!luaEntity.valid) continue
-      assert.same(origPos, luaEntity.position)
-      assert.equal(origDir, luaEntity.direction)
+      expect(luaEntity.position).to.equal(origPos)
+      expect(luaEntity.direction).to.be(origDir)
     }
-    assert.same(origPos, entity.position)
-    assert.equal(origDir, entity.getDirection())
+    expect(entity.position).to.equal(origPos)
+    expect(entity.getDirection()).to.be(origDir)
 
-    assert.equal(entity, assembly.content.findCompatibleByTraits(entity.getNameAtStage(1), origPos, origDir))
+    expect(assembly.content.findCompatibleByTraits(entity.getNameAtStage(1), origPos, origDir)).to.be(entity)
   }
 
   test("can move entity if moved in first stage", () => {
-    assert.true(forceDollyEntity(entities[0], newPos, newDir))
+    expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
     const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
-    assert.equal("success", result)
+    expect(result).to.be("success")
     assertMoved()
   })
 
   test("can't move entity if moved in later stage", () => {
-    assert.true(forceDollyEntity(entities[1], newPos, newDir))
+    expect(forceDollyEntity(entities[1], newPos, newDir)).to.be(true)
     const result = worldUpdater.tryDollyEntities(assembly, entity, 2)
-    assert.equal("cannot-move", result)
+    expect(result).to.be("cannot-move")
     assertNotMoved()
   })
 
   test("can't move if world entities are missing in any stage", () => {
-    assert.true(forceDollyEntity(entities[0], newPos, newDir))
+    expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
     entity.getWorldEntity(2)!.destroy()
     const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
-    assert.equal("entities-missing", result)
+    expect(result).to.be("entities-missing")
     assertNotMoved()
   })
 
@@ -305,9 +305,9 @@ describe("tryMoveEntity", () => {
     test("can't move if cable connected missing in all stages", () => {
       assembly.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
-      assert.true(forceDollyEntity(entities[0], newPos, newDir))
+      expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
       const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
-      assert.equal("connected-entities-missing", result)
+      expect(result).to.be("connected-entities-missing")
     })
 
     test("can't move if circuit connected missing in all stages", () => {
@@ -319,9 +319,9 @@ describe("tryMoveEntity", () => {
         wire: defines.wire_type.red,
       })
 
-      assert.true(forceDollyEntity(entities[0], newPos, newDir))
+      expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
       const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
-      assert.equal("connected-entities-missing", result)
+      expect(result).to.be("connected-entities-missing")
     })
 
     test("can move if entity present in at least one stage", () => {
@@ -333,7 +333,7 @@ describe("tryMoveEntity", () => {
         toId: 1,
         wire: defines.wire_type.red,
       })
-      assert.true(forceDollyEntity(entities[0], newPos, newDir))
+      expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
 
       otherEntity.replaceWorldEntity(
         2,
@@ -345,7 +345,7 @@ describe("tryMoveEntity", () => {
       )
 
       const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
-      assert.equal("success", result)
+      expect(result).to.be("success")
       assertMoved()
     })
   })
@@ -355,8 +355,8 @@ test("updateNewEntityWithoutWires", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as SavedDirection, 2)
   assembly.content.add(entity)
   worldUpdater.updateNewEntityWithoutWires(assembly, entity)
-  assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 1, assembly.maxStage())
-  assert.spy(wireUpdater.updateWireConnections).not_called()
+  expect(highlighter.updateHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
+  expect(wireUpdater.updateWireConnections).not.called()
 })
 
 test("updateWireConnections", () => {
@@ -365,22 +365,22 @@ test("updateWireConnections", () => {
   worldUpdater.updateNewEntityWithoutWires(assembly, entity)
   worldUpdater.updateWireConnections(assembly, entity)
   for (const i of $range(2, assembly.maxStage())) {
-    assert.spy(wireUpdater.updateWireConnections).called_with(match.ref(assembly.content), match.ref(entity), i)
+    expect(wireUpdater.updateWireConnections).calledWith(assembly.content, entity, i)
   }
 })
 
 test("clearWorldEntity", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1)
   worldUpdater.clearWorldEntity(assembly, entity, 2)
-  assert.spy(highlighter.updateHighlights).called_with(match.ref(assembly), match.ref(entity), 2, 2)
-  assert.nil(findMainEntity(2))
+  expect(highlighter.updateHighlights).calledWith(assembly, entity, 2, 2)
+  expect(findMainEntity(2)).to.be.nil()
   assertEntityCorrect(1)
   assertEntityCorrect(3)
 })
 
 describe("invalid stages", () => {
   test("out of range is ignored", () => {
-    assert.no_errors(() => worldUpdater.updateWorldEntities(assembly, entity, -1))
+    expect(() => worldUpdater.updateWorldEntities(assembly, entity, -1)).not.to.error()
     for (let i = -1; i <= 5; i++) {
       if (i >= 1 && i <= 4) assertEntityCorrect(i)
       else assertNothingPresent(i)
@@ -396,21 +396,21 @@ test("deleteWorldEntities", () => {
   worldUpdater.updateWorldEntities(assembly, entity, 1)
   worldUpdater.deleteAllEntities(entity)
   for (let i = 1; i <= 3; i++) assertNothingPresent(i)
-  assert.spy(highlighter.deleteHighlights).called_with(match.ref(entity))
+  expect(highlighter.deleteHighlights).calledWith(entity)
 })
 
 test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
   worldUpdater.makeSettingsRemnant(assembly, entity)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  assert.spy(highlighter.makeSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
+  expect(highlighter.makeSettingsRemnant).calledWith(assembly, entity)
 })
 
 test("updateWorldEntities calls makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
   worldUpdater.updateWorldEntities(assembly, entity, 1)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  assert.spy(highlighter.makeSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
+  expect(highlighter.makeSettingsRemnant).calledWith(assembly, entity)
 })
 
 test("reviveSettingsRemnant revives correct entities and calls highlighter.reviveSettingsRemnant", () => {
@@ -423,7 +423,7 @@ test("reviveSettingsRemnant revives correct entities and calls highlighter.reviv
   assertHasPreview(1)
   assertEntityCorrect(2)
   assertEntityCorrect(3)
-  assert.spy(highlighter.reviveSettingsRemnant).called_with(match.ref(assembly), match.ref(entity))
+  expect(highlighter.reviveSettingsRemnant).calledWith(assembly, entity)
 })
 
 test("resetStage", () => {
@@ -440,9 +440,9 @@ test("resetStage", () => {
 
   worldUpdater.resetStage(assembly, 2)
 
-  assert.false(chest.valid)
-  assert.not_nil(entity1.getWorldEntity(2))
-  assert.not_nil(entity2.getWorldEntity(2))
+  expect(chest.valid).to.be(false)
+  expect(entity1.getWorldEntity(2)).to.be.any()
+  expect(entity2.getWorldEntity(2)).to.be.any()
 })
 
 // this duplicates WireHandler test a bit
@@ -452,7 +452,7 @@ describe("circuit wires", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   before_each(() => {
-    worldUpdater = createWorldUpdater(EntityHandler, WireHandler, highlighter) // real entity handler
+    worldUpdater = createWorldUpdater(EntityHandler, WireHandler, highlighter as unknown as EntityHighlighter) // real entity handler
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
     entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
@@ -494,25 +494,22 @@ describe("circuit wires", () => {
   }
 
   function assertSingleWire({ luaEntity1, luaEntity2 }: { luaEntity1: LuaEntity; luaEntity2: LuaEntity }): void {
-    assert.same(
-      [
-        {
-          target_entity: luaEntity2,
-          wire: defines.wire_type.red,
-          source_circuit_id: defines.circuit_connector_id.combinator_input,
-          target_circuit_id: defines.circuit_connector_id.combinator_output,
-        } as CircuitConnectionDefinition,
-      ],
-      luaEntity1.circuit_connection_definitions,
-    )
+    expect(luaEntity1.circuit_connection_definitions).to.equal([
+      {
+        target_entity: luaEntity2,
+        wire: defines.wire_type.red,
+        source_circuit_id: defines.circuit_connector_id.combinator_input,
+        target_circuit_id: defines.circuit_connector_id.combinator_output,
+      } as CircuitConnectionDefinition,
+    ])
   }
 
   test("can remove circuit wires", () => {
     const { luaEntity1, luaEntity2 } = doAdd()
     addExtraWires({ luaEntity1, luaEntity2 })
     worldUpdater.refreshWorldEntityAtStage(assembly, entity1, 1)
-    assert.same([], luaEntity1.circuit_connection_definitions ?? [])
-    assert.same([], luaEntity2.circuit_connection_definitions ?? [])
+    expect(luaEntity1.circuit_connection_definitions ?? []).to.equal([])
+    expect(luaEntity2.circuit_connection_definitions ?? []).to.equal([])
   })
   test("can add circuit wires", () => {
     addWireToAssembly()

@@ -10,6 +10,7 @@
  */
 
 import draw from "../rendering"
+import expect from "tstl-expect"
 
 describe("line", () => {
   test("draws a line", () => {
@@ -20,16 +21,16 @@ describe("line", () => {
       color: [],
       width: 1,
     })
-    assert.true(obj.valid)
-    assert.equal("_RenderObj", obj.object_name)
-    assert.equal(game.surfaces[1], obj.surface)
-    assert.same({ x: 1, y: 1 }, obj.from.position)
+    expect(obj.valid).to.be(true)
+    expect(obj.object_name).to.be("_RenderObj")
+    expect(obj.surface).to.be(game.surfaces[1])
+    expect(obj.from.position).to.equal({ x: 1, y: 1 })
     obj.set_from({ x: 1, y: 2 })
-    assert.same({ x: 1, y: 2 }, obj.from.position)
-    assert.same({ x: 2, y: 2 }, obj.to.position)
+    expect(obj.from.position).to.equal({ x: 1, y: 2 })
+    expect(obj.to.position).to.equal({ x: 2, y: 2 })
     obj.visible = false
-    assert.false(obj.visible)
+    expect(obj.visible).to.be(false)
     obj.destroy()
-    assert.false(obj.valid)
+    expect(obj.valid).to.be(false)
   })
 })

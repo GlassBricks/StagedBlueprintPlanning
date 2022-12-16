@@ -10,6 +10,7 @@
  */
 
 import { applyDiffToEntity, getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
+import expect from "tstl-expect"
 
 const entity1 = {
   name: "1",
@@ -26,18 +27,15 @@ const entity2 = {
 }
 test("getEntityDiff", () => {
   const diff = getEntityDiff(entity1, entity2)
-  assert.same(
-    {
-      name: "2",
-      changedProp: { x: 2, y: 2 },
-      setToNil: getNilPlaceholder(),
-    },
-    diff,
-  )
+  expect(diff).to.equal({
+    name: "2",
+    changedProp: { x: 2, y: 2 },
+    setToNil: getNilPlaceholder(),
+  })
 })
 test("applyDiffToEntity", () => {
   const diff = getEntityDiff(entity1, entity2)!
   const entity = { ...entity1 }
   applyDiffToEntity(entity, diff)
-  assert.same(entity2, entity)
+  expect(entity).to.equal(entity2)
 })

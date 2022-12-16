@@ -13,6 +13,7 @@ import { FactorioJsx, Spec } from "../../../factoriojsx"
 import { List } from "../../../factoriojsx/components"
 import { MutableObservableList, observableList } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
+import expect from "tstl-expect"
 
 function presentElements(wrapper: ElementWrapper) {
   return wrapper.findAll("label").map((x) => x.native.caption)
@@ -34,24 +35,21 @@ before_each(() => {
 
 it("starts empty with no elements", () => {
   const wrapper = testRender(spec)
-  assert.same([], presentElements(wrapper))
+  expect(presentElements(wrapper)).to.equal([])
 })
 
 it("creates with initial contents", () => {
   array.push("a")
   array.push("b")
   const wrapper = testRender(spec)
-  assert.same(["a", "b"], presentElements(wrapper))
+  expect(presentElements(wrapper)).to.equal(["a", "b"])
 })
 
 it("adds elements", () => {
   const wrapper = testRender(spec)
   array.push("a")
   array.push("b")
-  assert.same(
-    ["a", "b"],
-    wrapper.findAll("label").map((x) => x.native.caption),
-  )
+  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["a", "b"])
 })
 
 it("inserts elements", () => {
@@ -59,10 +57,7 @@ it("inserts elements", () => {
   array.push("a")
   array.push("b")
   array.insert(1, "c")
-  assert.same(
-    ["a", "c", "b"],
-    wrapper.findAll("label").map((x) => x.native.caption),
-  )
+  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["a", "c", "b"])
 })
 
 it("removes elements", () => {
@@ -70,7 +65,7 @@ it("removes elements", () => {
   array.push("a")
   array.push("b")
   array.remove(0)
-  assert.same(["b"], presentElements(wrapper))
+  expect(presentElements(wrapper)).to.equal(["b"])
 })
 
 it("swaps elements", () => {
@@ -78,10 +73,7 @@ it("swaps elements", () => {
   array.push("a")
   array.push("b")
   array.swap(0, 1)
-  assert.same(
-    ["b", "a"],
-    wrapper.findAll("label").map((x) => x.native.caption),
-  )
+  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["b", "a"])
 })
 
 it("changes elements", () => {
@@ -89,10 +81,7 @@ it("changes elements", () => {
   array.push("a")
   array.push("b")
   array.set(0, "c")
-  assert.same(
-    ["c", "b"],
-    wrapper.findAll("label").map((x) => x.native.caption),
-  )
+  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["c", "b"])
 })
 
 describe("ifEmpty", () => {
@@ -114,25 +103,25 @@ describe("ifEmpty", () => {
 
   it("is present if empty", () => {
     const wrapper = testRender(spec)
-    assert.same(["empty"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["empty"])
   })
 
   it("is not present if not empty", () => {
     array.push("a")
     const wrapper = testRender(spec)
-    assert.same(["a"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["a"])
   })
 
   it("is present if made empty", () => {
     array.push("a")
     const wrapper = testRender(spec)
     array.remove(0)
-    assert.same(["empty"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["empty"])
   })
 
   it("is not present if made non-empty", () => {
     const wrapper = testRender(spec)
     array.push("a")
-    assert.same(["a"], presentElements(wrapper))
+    expect(presentElements(wrapper)).to.equal(["a"])
   })
 })

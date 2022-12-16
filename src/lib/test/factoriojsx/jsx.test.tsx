@@ -11,21 +11,19 @@
 
 import { Component, FactorioJsx, FCSpec, FlowElementSpec, Spec, SpecChildren } from "../../factoriojsx"
 import { RegisterClass } from "../../references"
+import expect from "tstl-expect"
 
 test("Basic element", () => {
   const el = <flow />
-  assert.same(
-    {
-      type: "flow",
-    },
-    el,
-  )
+  expect(el).to.equal({
+    type: "flow",
+  })
 })
 
 test("Basic element with props", () => {
   const el = <flow caption="foo" />
 
-  assert.same({ type: "flow", caption: "foo" }, el)
+  expect(el).to.equal({ type: "flow", caption: "foo" })
 })
 
 test("Basic element with children", () => {
@@ -35,7 +33,7 @@ test("Basic element with children", () => {
     </flow>
   )
 
-  assert.same({ type: "flow", children: [{ type: "flow", name: "bob" }] }, el)
+  expect(el).to.equal({ type: "flow", children: [{ type: "flow", name: "bob" }] })
 })
 
 test("basic element with multiple children", () => {
@@ -46,36 +44,30 @@ test("basic element with multiple children", () => {
     </flow>
   )
 
-  assert.same(
-    {
-      type: "flow",
-      children: [
-        { type: "flow", name: "bob" },
-        { type: "flow", name: "joe" },
-      ],
-    },
-    el,
-  )
+  expect(el).to.equal({
+    type: "flow",
+    children: [
+      { type: "flow", name: "bob" },
+      { type: "flow", name: "joe" },
+    ],
+  })
 })
 
 test("basic element with nil children", () => {
   const el = <flow>{nil}</flow>
-  assert.same({ type: "flow" }, el)
+  expect(el).to.equal({ type: "flow" })
 })
 
 test("basic element with array children", () => {
   const array = [<flow name="bob" />, <flow name="joe" />]
   const el = <flow>{array}</flow>
-  assert.same(
-    {
-      type: "flow",
-      children: [
-        { type: "flow", name: "bob" },
-        { type: "flow", name: "joe" },
-      ],
-    },
-    el,
-  )
+  expect(el).to.equal({
+    type: "flow",
+    children: [
+      { type: "flow", name: "bob" },
+      { type: "flow", name: "joe" },
+    ],
+  })
 })
 
 type TestProps = { me?: string; children?: SpecChildren }
@@ -85,12 +77,12 @@ function Foo(props: TestProps) {
 
 test("Function component", () => {
   const el = <Foo />
-  assert.same({ type: Foo, props: {} }, el)
+  expect(el).to.equal({ type: Foo, props: {} })
 })
 
 test("Function component with props", () => {
   const el = <Foo me="bob" />
-  assert.same({ type: Foo, props: { me: "bob" } }, el)
+  expect(el).to.equal({ type: Foo, props: { me: "bob" } })
 })
 
 test("Function component with children", () => {
@@ -99,15 +91,12 @@ test("Function component with children", () => {
       <flow name="bob" />
     </Foo>
   )
-  assert.same(
-    {
-      type: Foo,
-      props: {
-        children: { type: "flow", name: "bob" },
-      },
+  expect(el).to.equal({
+    type: Foo,
+    props: {
+      children: { type: "flow", name: "bob" },
     },
-    el,
-  )
+  })
 })
 
 test("Function component with multiple children", () => {
@@ -117,23 +106,20 @@ test("Function component with multiple children", () => {
       <flow name="joe" />
     </Foo>
   )
-  assert.same(
-    {
-      type: Foo,
-      props: {
-        children: [
-          { type: "flow", name: "bob" },
-          { type: "flow", name: "joe" },
-        ],
-      },
+  expect(el).to.equal({
+    type: Foo,
+    props: {
+      children: [
+        { type: "flow", name: "bob" },
+        { type: "flow", name: "joe" },
+      ],
     },
-    el,
-  )
+  })
 })
 
 test("Function component with nil children", () => {
   const el = <Foo>{nil}</Foo>
-  assert.same({ type: Foo, props: {} }, el)
+  expect(el).to.equal({ type: Foo, props: {} })
 })
 
 @RegisterClass("Test component: jsx Foo")
@@ -145,12 +131,12 @@ class FooClass extends Component<TestProps> {
 
 test("Class component", () => {
   const el = <FooClass />
-  assert.same({ type: FooClass, props: {} }, el)
+  expect(el).to.equal({ type: FooClass, props: {} })
 })
 
 test("Class component with props", () => {
   const el = <FooClass me="bob" />
-  assert.same({ type: FooClass, props: { me: "bob" } }, el)
+  expect(el).to.equal({ type: FooClass, props: { me: "bob" } })
 })
 
 test("Class component with children", () => {
@@ -159,15 +145,12 @@ test("Class component with children", () => {
       <flow name="bob" />
     </FooClass>
   )
-  assert.same(
-    {
-      type: FooClass,
-      props: {
-        children: { type: "flow", name: "bob" },
-      },
+  expect(el).to.equal({
+    type: FooClass,
+    props: {
+      children: { type: "flow", name: "bob" },
     },
-    el,
-  )
+  })
 })
 
 test("Class component with multiple children", () => {
@@ -177,23 +160,20 @@ test("Class component with multiple children", () => {
       <flow name="joe" />
     </FooClass>
   )
-  assert.same(
-    {
-      type: FooClass,
-      props: {
-        children: [
-          { type: "flow", name: "bob" },
-          { type: "flow", name: "joe" },
-        ],
-      },
+  expect(el).to.equal({
+    type: FooClass,
+    props: {
+      children: [
+        { type: "flow", name: "bob" },
+        { type: "flow", name: "joe" },
+      ],
     },
-    el,
-  )
+  })
 })
 
 test("Class component with nil children", () => {
   const el = <FooClass>{nil}</FooClass>
-  assert.same({ type: FooClass, props: {} }, el)
+  expect(el).to.equal({ type: FooClass, props: {} })
 })
 
 describe("fragment", () => {
@@ -204,36 +184,30 @@ describe("fragment", () => {
         <flow name="joe" />
       </>
     )
-    assert.same(
-      {
-        type: "fragment",
-        children: [
-          { type: "flow", name: "bob" },
-          { type: "flow", name: "joe" },
-        ],
-      },
-      el,
-    )
+    expect(el).to.equal({
+      type: "fragment",
+      children: [
+        { type: "flow", name: "bob" },
+        { type: "flow", name: "joe" },
+      ],
+    })
   })
 
   test("basic fragment with nil children", () => {
     const el = <>{nil}</>
-    assert.same({ type: "fragment", children: nil }, el)
+    expect(el).to.equal({ type: "fragment", children: nil })
   })
 
   test("basic fragment with array children", () => {
     const array = [<flow name="bob" />, <flow name="joe" />]
     const el = <>{array}</>
-    assert.same(
-      {
-        type: "fragment",
-        children: [
-          { type: "flow", name: "bob" },
-          { type: "flow", name: "joe" },
-        ],
-      },
-      el,
-    )
+    expect(el).to.equal({
+      type: "fragment",
+      children: [
+        { type: "flow", name: "bob" },
+        { type: "flow", name: "joe" },
+      ],
+    })
   })
 
   test("fragment is spread in parent in normal element", () => {
@@ -247,15 +221,12 @@ describe("fragment", () => {
         <flow name="4" />
       </flow>
     )
-    assert.same(
-      [
-        { type: "flow", name: "1" },
-        { type: "flow", name: "2" },
-        { type: "flow", name: "3" },
-        { type: "flow", name: "4" },
-      ],
-      (el as FlowElementSpec).children,
-    )
+    expect((el as FlowElementSpec).children).to.equal([
+      { type: "flow", name: "1" },
+      { type: "flow", name: "2" },
+      { type: "flow", name: "3" },
+      { type: "flow", name: "4" },
+    ])
   })
 
   test("fragment only is spread in parent in function component", () => {
@@ -267,13 +238,10 @@ describe("fragment", () => {
         </>
       </Foo>
     )
-    assert.same(
-      [
-        { type: "flow", name: "2" },
-        { type: "flow", name: "3" },
-      ],
-      (el as FCSpec<any>).props.children,
-    )
+    expect((el as FCSpec<any>).props.children).to.equal([
+      { type: "flow", name: "2" },
+      { type: "flow", name: "3" },
+    ])
   })
 
   test("fragment with neighbors is spread in parent in function component", () => {
@@ -287,14 +255,11 @@ describe("fragment", () => {
         <flow name="4" />
       </Foo>
     )
-    assert.same(
-      [
-        { type: "flow", name: "1" },
-        { type: "flow", name: "2" },
-        { type: "flow", name: "3" },
-        { type: "flow", name: "4" },
-      ],
-      (el as FCSpec<any>).props.children,
-    )
+    expect((el as FCSpec<any>).props.children).to.equal([
+      { type: "flow", name: "1" },
+      { type: "flow", name: "2" },
+      { type: "flow", name: "3" },
+      { type: "flow", name: "4" },
+    ])
   })
 })

@@ -12,6 +12,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /** @noSelfInFile */
 import { Events } from "../Events"
+import expect from "tstl-expect"
 
 const eventId = defines.events.script_raised_set_tiles
 after_each(() => {
@@ -22,7 +23,7 @@ test("Can register directly", () => {
   const func = () => {}
   Events.on(eventId, func)
 
-  assert.equal(func, script.get_event_handler(eventId))
+  expect(script.get_event_handler(eventId)).to.be(func)
 })
 
 test("Can register multiple", () => {
@@ -37,13 +38,13 @@ test("Can register multiple", () => {
     actions.push(3)
   })
   script.raise_script_set_tiles({ surface_index: 1 as SurfaceIndex, tiles: [] })
-  assert.same([1, 2, 3], actions)
+  expect(actions).to.equal([1, 2, 3])
 })
 
 test("Shorthand register", () => {
   const func = () => {}
   Events.script_raised_set_tiles(func)
-  assert.equal(func, script.get_event_handler(eventId))
+  expect(script.get_event_handler(eventId)).to.be(func)
 })
 
 test("Object register", () => {
@@ -51,5 +52,5 @@ test("Object register", () => {
   Events.onAll({
     script_raised_set_tiles: func,
   })
-  assert.equal(func, script.get_event_handler(eventId))
+  expect(script.get_event_handler(eventId)).to.be(func)
 })

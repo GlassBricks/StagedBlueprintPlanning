@@ -179,7 +179,7 @@ function getCurrentAssemblyGui(playerIndex: PlayerIndex): CurrentAssembly {
   if (currentAssemblyGui != nil) return currentAssemblyGui
 
   rerenderCurrentAssembly(game.get_player(playerIndex)!)
-  return assert(global.players[playerIndex].currentAssemblyGui!)
+  return assert(global.players[playerIndex].currentAssemblyGui)
 }
 
 export function closeAllAssemblies(playerIndex: PlayerIndex): void {
