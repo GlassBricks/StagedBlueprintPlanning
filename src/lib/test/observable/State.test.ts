@@ -31,14 +31,14 @@ describe("state", () => {
     const fn = mock.fn()
     s.subscribeIndependentlyAndFire({ invoke: fn })
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, "begin", nil)
+    expect(fn).calledWith("begin", nil)
   })
 
   it("notifies subscribers of value when value changed", () => {
     const fn = mock.fn()
     s.subscribeIndependently({ invoke: fn })
     s.set("end")
-    expect(fn).calledWith(expect._, "end", "begin")
+    expect(fn).calledWith("end", "begin")
   })
 
   test("setValueFn", () => {
@@ -57,12 +57,12 @@ describe("map", () => {
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, 6, nil)
+    expect(fn).calledWith(6, nil)
 
     val.set(4)
 
     expect(fn).calledTimes(2)
-    expect(fn).calledWith(expect._, 8, 6)
+    expect(fn).calledWith(8, 6)
   })
 
   test("gives correct value for get()", () => {
@@ -78,10 +78,10 @@ describe("map", () => {
     const fn = mock.fn()
     choice.subscribeIndependentlyAndFire({ invoke: fn })
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, "no", nil)
+    expect(fn).calledWith("no", nil)
     val.set(true)
     expect(fn).calledTimes(2)
-    expect(fn).calledWith(expect._, "yes", "no")
+    expect(fn).calledWith("yes", "no")
   })
 })
 
@@ -93,12 +93,12 @@ describe("flatMap", () => {
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, 6, nil)
+    expect(fn).calledWith(6, nil)
 
     val.set(4)
 
     expect(fn).calledTimes(2)
-    expect(fn).calledWith(expect._, 8, 6)
+    expect(fn).calledWith(8, 6)
   })
 
   test("maps state values", () => {
@@ -108,12 +108,12 @@ describe("flatMap", () => {
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, 6, nil)
+    expect(fn).calledWith(6, nil)
 
     val.set(4)
 
     expect(fn).calledTimes(2)
-    expect(fn).calledWith(expect._, 8, 6)
+    expect(fn).calledWith(8, 6)
   })
 
   test("listens to inner state and unsubscribes", () => {
@@ -125,22 +125,22 @@ describe("flatMap", () => {
     mapped.subscribeIndependentlyAndFire({ invoke: fn })
 
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, 4, nil)
+    expect(fn).calledWith(4, nil)
 
     innerVal.set(5)
     expect(fn).calledTimes(2)
-    expect(fn).calledWith(expect._, 5, 4)
+    expect(fn).calledWith(5, 4)
 
     val.set(2)
 
     expect(fn).calledTimes(3)
-    expect(fn).calledWith(expect._, 2, 5)
+    expect(fn).calledWith(2, 5)
     expect(State._numObservers(innerVal)).to.be(0)
 
     val.set(1)
 
     expect(fn).calledTimes(4)
-    expect(fn).calledWith(expect._, 5, 2)
+    expect(fn).calledWith(5, 2)
   })
 
   test("gives correct value for get()", () => {

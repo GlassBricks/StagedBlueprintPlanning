@@ -31,7 +31,7 @@ const pos = Pos(0.5, 0.5)
 before_all(() => {
   player = game.players[1]
 
-  updater = mock.allNoSelf(WorldListener)
+  updater = mock.allNoSelf(WorldListener, true)
   assembly = createUserAssembly("Test", 2)
   surface = assembly.getStage(1)!.surface
 
@@ -147,13 +147,14 @@ describe("update", () => {
       destination: entity,
       player_index: 1 as PlayerIndex,
     })
-    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, entity, 1, nil, 1)
+
+    expect(updater.onEntityPossiblyUpdated).calledWith(assembly, entity, 1, nil, 1)
   })
 
   test("rotate", () => {
     const oldDirection = entity.direction
     entity.rotate({ by_player: 1 as PlayerIndex })
-    expect(updater.onEntityRotated).calledWith(expect._, entity, 1, oldDirection, 1)
+    expect(updater.onEntityRotated).calledWith(assembly, entity, 1, oldDirection, 1)
   })
 })
 
@@ -186,7 +187,7 @@ test.each([
   expect(newEntity).to.be.any()
 
   expect(entity.valid).to.be(false)
-  expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newEntity, 1, expect._, 1)
+  expect(updater.onEntityPossiblyUpdated).calledWith(assembly, newEntity, 1, expect._, 1)
 })
 
 test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
@@ -322,7 +323,7 @@ describe("robot actions", () => {
         limit: 1,
       })[0]
       expect(chest).to.be.any()
-      expect(updater.onEntityCreated).calledWith(expect._, chest, 1, nil)
+      expect(updater.onEntityCreated).calledWith(assembly, chest, 1, nil)
     })
   })
 
@@ -396,9 +397,9 @@ describe("Cleanup tool", () => {
 
 describe("move to this stage", () => {
   function testOnEntity(entity: LuaEntity | nil): void {
-    expect(entity).to.be.any()
+    expect(entity).not.toBeNil()
     player.selected = entity
-    expect(player.selected).to.be(entity)
+    expect(player.selected).to.equal(entity)
     Events.raiseFakeEvent(CustomInputs.MoveToThisStage, {
       player_index: player.index,
       input_name: CustomInputs.MoveToThisStage,
@@ -481,7 +482,8 @@ describe("stage move tool", () => {
     expect(updater.onBringToStageUsed).calledWith(assembly, entity, 1, 1)
   })
 
-  test.skip("filtered stage move tool, send to stage", () => {
+  test("filtered stage move tool, send to stage", () => {
+    // requires instant deconstruction to be FALSE
     const entity = surface.create_entity({
       name: "inserter",
       position: pos,
@@ -490,7 +492,11 @@ describe("stage move tool", () => {
     expect(entity).to.be.any()
     player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
     getAssemblyPlayerData(player.index, assembly)!.moveTargetStage = 2
-    entity.order_deconstruction(player.force, player)
+    Events.raiseFakeEventNamed("on_marked_for_deconstruction", {
+      entity,
+      player_index: player.index,
+    })
+
     expect(updater.onSendToStageUsed).calledWith(assembly, entity, 1, 2, 1)
   })
 })
@@ -629,8 +635,8 @@ describe("blueprint paste", () => {
     assertCorrect(inserter1)
     assertCorrect(inserter2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
-      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, inserter1, 1, 1)
-      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, inserter2, 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(assembly, inserter1, 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(assembly, inserter2, 1, 1)
       expectedNumCalls = 4
     } else {
       expect(updater.onCircuitWiresPossiblyUpdated).not.called()
@@ -668,8 +674,8 @@ describe("blueprint paste", () => {
     assertCorrect(pole1)
     assertCorrect(pole2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
-      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, pole1, 1, 1)
-      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(expect._, pole2, 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(assembly, pole1, 1, 1)
+      expect(updater.onCircuitWiresPossiblyUpdated).calledWith(assembly, pole2, 1, 1)
       expectedNumCalls = 4
     } else {
       expect(updater.onCircuitWiresPossiblyUpdated).not.called()
@@ -730,7 +736,7 @@ describe("belt dragging", () => {
     const newBelt = surface.find_entity("transport-belt", pos2)!
     expect(newBelt).to.be.any()
 
-    expect(updater.onEntityCreated).calledWith(expect._, newBelt, 1, 1)
+    expect(updater.onEntityCreated).calledWith(assembly, newBelt, 1, 1)
   })
 
   test("build in different direction calls onEntityPossiblyUpdated", () => {
@@ -746,7 +752,7 @@ describe("belt dragging", () => {
     const newBelt = surface.find_entity("transport-belt", pos)!
     expect(newBelt).to.be.any()
 
-    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newBelt, 1, 0, 1)
+    expect(updater.onEntityPossiblyUpdated).calledWith(assembly, newBelt, 1, 0, 1)
   })
 
   test("drag over existing followed by mine", () => {
@@ -763,7 +769,7 @@ describe("belt dragging", () => {
     expect(updater.onEntityPossiblyUpdated).not.called()
     expect(updater.onCircuitWiresPossiblyUpdated).not.called()
     expect(updater.onEntityCreated).not.called()
-    expect(updater.onEntityDeleted).calledWith(expect._, expect._, 1, 1)
+    expect(updater.onEntityDeleted).calledWith(assembly, expect._, 1, 1)
   })
 
   test("drag over existing followed by fast replace on same belt", () => {
@@ -782,7 +788,7 @@ describe("belt dragging", () => {
 
     expect(updater.onEntityDeleted).not.called()
     expect(updater.onEntityCreated).not.called()
-    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newBelt, 1, expect._, 1)
+    expect(updater.onEntityPossiblyUpdated).calledWith(assembly, newBelt, 1, expect._, 1)
   })
 
   test("drag over existing followed by fast replace on different belt", () => {
@@ -805,7 +811,7 @@ describe("belt dragging", () => {
 
     expect(updater.onEntityDeleted).not.called()
     expect(updater.onEntityCreated).not.called()
-    expect(updater.onEntityPossiblyUpdated).calledWith(expect._, newBelt, 1, expect._, 1)
+    expect(updater.onEntityPossiblyUpdated).calledWith(assembly, newBelt, 1, expect._, 1)
   })
 
   test("fast replacing with underground belt", () => {
@@ -832,7 +838,7 @@ describe("belt dragging", () => {
     const underground = surface.find_entity("underground-belt", Pos(0.5, 5.5))!
 
     expect(updater.onEntityPossiblyUpdated).not.called()
-    expect(updater.onEntityCreated).calledWith(expect._, underground, 1, 1)
+    expect(updater.onEntityCreated).calledWith(assembly, underground, 1, 1)
     expect(updater.onEntityDeleted).calledTimes(5)
     expectedNumCalls = 6
   })
@@ -875,7 +881,7 @@ describe("belt dragging", () => {
       fakeNoopDrag(belt)
       fakeUndergroundDrag(u1, belt.direction)
 
-      expect(updater.onUndergroundBeltDragRotated).calledWith(expect._, u1, 1, 1)
+      expect(updater.onUndergroundBeltDragRotated).calledWith(assembly, u1, 1, 1)
     })
 
     test("does not count if wrong direction", () => {
@@ -892,9 +898,9 @@ describe("belt dragging", () => {
         direction: u1.direction,
       })
       expect(updater.onUndergroundBeltDragRotated).not.called()
-      expect(updater.onEntityDeleted).calledWith(expect._, expect._, 1, 1)
+      expect(updater.onEntityDeleted).calledWith(assembly, expect._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
-      expect(updater.onEntityCreated).calledWith(expect._, newBelt, 1, 1)
+      expect(updater.onEntityCreated).calledWith(assembly, newBelt, 1, 1)
       expectedNumCalls = 2
     })
     test("does not count if replaced sideways", () => {
@@ -904,9 +910,9 @@ describe("belt dragging", () => {
         direction: belt.direction + 2,
       })
       expect(updater.onUndergroundBeltDragRotated).not.called()
-      expect(updater.onEntityDeleted).calledWith(expect._, expect._, 1, 1)
+      expect(updater.onEntityDeleted).calledWith(assembly, expect._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
-      expect(updater.onEntityCreated).calledWith(expect._, newBelt, 1, 1)
+      expect(updater.onEntityCreated).calledWith(assembly, newBelt, 1, 1)
       expectedNumCalls = 2
     })
   })

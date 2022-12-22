@@ -48,7 +48,7 @@ test("notifies subscribers of pushed items", () => {
     value: "a",
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })
 
 it("notifies subscribers of inserted items", () => {
@@ -64,7 +64,7 @@ it("notifies subscribers of inserted items", () => {
     value: "b",
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })
 
 it("notifies subscribers of popped items", () => {
@@ -80,7 +80,7 @@ it("notifies subscribers of popped items", () => {
     value: "a",
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })
 
 it("notifies subscribers of removed items", () => {
@@ -97,7 +97,7 @@ it("notifies subscribers of removed items", () => {
     value: "a",
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })
 
 it("notifies subscribers of changed items", () => {
@@ -115,7 +115,7 @@ it("notifies subscribers of changed items", () => {
     value: "c",
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })
 
 it("does not notify subscribers of changed items when value is not changed", () => {
@@ -144,5 +144,5 @@ test("it notifies subscribers of swapped items", () => {
     newValueB: "a",
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })

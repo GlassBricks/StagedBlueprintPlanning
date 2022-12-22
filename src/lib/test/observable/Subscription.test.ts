@@ -106,7 +106,7 @@ describe("child SubscriptionContext", () => {
 
 describe("errors", () => {
   function checkErr(err: unknown, expected: string[]) {
-    expect(err instanceof UnsubscriptionError).to.be(true)
+    expect(err).toBeA(UnsubscriptionError)
     const errors = (err as UnsubscriptionError).errors
     expect(errors.length).to.be(expected.length)
     for (let i = 0; i < expected.length; i++) {
@@ -117,14 +117,18 @@ describe("errors", () => {
   }
   test("rethrows errors", () => {
     a.add({ close: () => error("err1") })
-    const err = expect(() => a.close()).to.error()
+    const err = expect(() => a.close())
+      .to.error()
+      .getValue()
     checkErr(err, ["err1"])
   })
 
   test("closes all subscriptions even if has errors", () => {
     a.add({ close: () => error("err1") })
     a.add({ close: sp })
-    const err = expect(() => a.close()).to.error()
+    const err = expect(() => a.close())
+      .to.error()
+      .getValue()
     checkErr(err, ["err1"])
   })
 
@@ -132,8 +136,9 @@ describe("errors", () => {
     a.add({ close: () => error("err1") })
     a.add({ close: () => error("err2") })
     a.add({ close: () => error("err3") })
-    const err = expect(() => a.close()).to.error()
-    expect(err).to.be.a(UnsubscriptionError)
+    const err = expect(() => a.close())
+      .to.error()
+      .getValue()
     checkErr(err, ["err1", "err2", "err3"])
   })
 
@@ -142,8 +147,9 @@ describe("errors", () => {
     b.add({ close: () => error("err2") })
     b.add({ close: () => error("err3") })
     a.add(b)
-    const err = expect(() => a.close()).to.error()
-    expect(err).to.be.a(UnsubscriptionError)
+    const err = expect(() => a.close())
+      .to.error()
+      .getValue()
     checkErr(err, ["err1", "err2", "err3"])
   })
 })

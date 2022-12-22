@@ -23,7 +23,7 @@ describe("line", () => {
     })
     expect(obj.valid).to.be(true)
     expect(obj.object_name).to.be("_RenderObj")
-    expect(obj.surface).to.be(game.surfaces[1])
+    expect(obj.surface).to.equal(game.surfaces[1])
     expect(obj.from.position).to.equal({ x: 1, y: 1 })
     obj.set_from({ x: 1, y: 2 })
     expect(obj.from.position).to.equal({ x: 1, y: 2 })

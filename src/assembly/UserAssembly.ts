@@ -240,7 +240,7 @@ class UserAssemblyImpl implements UserAssembly {
   }
 
   __tostring(): string {
-    return `<Assembly ${this.id}, ${this.name.get()}>`
+    return `<Assembly ${this.id} "${this.name.get()}">`
   }
 
   static onAssemblyCreated(assembly: UserAssemblyImpl): void {
@@ -356,7 +356,7 @@ class StageImpl implements Stage {
   }
 
   __tostring() {
-    return `<Stage ${this.stageNumber} of ${this.assembly.name.get()}, ${this.name.get()}>`
+    return `<Stage ${this.stageNumber} "${this.name.get()}" of "${this.assembly.name.get()}">`
   }
 }
 

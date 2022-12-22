@@ -9,14 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  AssemblyCreatedEvent,
-  AssemblyDeletedEvent,
-  PreStageDeletedEvent,
-  StageAddedEvent,
-  StageDeletedEvent,
-  UserAssembly,
-} from "../../assembly/AssemblyDef"
+import { AssemblyCreatedEvent, PreStageDeletedEvent, StageAddedEvent, UserAssembly } from "../../assembly/AssemblyDef"
 import {
   _deleteAllAssemblies,
   AssemblyEvents,
@@ -69,12 +62,14 @@ describe("deletion", () => {
     const sp2 = mock.fn()
     asm.localEvents.subscribeIndependently({ invoke: sp2 })
     asm.delete()
-    let call = eventListener.calls[1].refs[0] as AssemblyDeletedEvent
-    expect(call.type).to.equal("assembly-deleted")
-    expect(call.assembly).to.equal(asm)
-    call = sp2.calls[0][1] as AssemblyDeletedEvent
-    expect(call.type).to.equal("assembly-deleted")
-    expect(call.assembly).to.equal(asm)
+    expect(eventListener).calledWith({
+      type: "assembly-deleted",
+      assembly: asm,
+    })
+    expect(sp2).calledWith({
+      type: "assembly-deleted",
+      assembly: asm,
+    })
   })
 })
 
@@ -115,14 +110,13 @@ test("insert stage", () => {
   expect(asm.getStage(1)!).to.equal(stage)
   expect(asm.getStage(2)!).to.equal(oldStage)
 
-  let call = eventListener.calls[0].refs[0] as StageAddedEvent
-  expect(call.type).to.equal("stage-added")
-  expect(call.assembly).to.equal(asm)
-  expect(call.stage).to.equal(stage)
-  call = sp.calls[0][1] as StageAddedEvent
-  expect(call.type).to.equal("stage-added")
-  expect(call.assembly).to.equal(asm)
-  expect(call.stage).to.equal(stage)
+  const expected: StageAddedEvent = {
+    type: "stage-added",
+    assembly: asm,
+    stage,
+  }
+  expect(eventListener).calledWith(expected)
+  expect(sp).calledWith(expected)
 
   const anotherInserted = asm.insertStage(1)
   expect(anotherInserted).not.to.be(stage)
@@ -165,14 +159,13 @@ test("delete stage", () => {
   expect(asm.getStage(1)!).to.equal(stage1)
   expect(asm.getStage(2)!).to.equal(stage3)
 
-  const call1 = eventListener.calls[0].refs[0] as PreStageDeletedEvent
-  expect(call1.type).to.equal("pre-stage-deleted")
-  expect(call1.assembly).to.equal(asm)
-  expect(call1.stage).to.equal(stage2)
-  const call2 = eventListener.calls[1].refs[0] as StageDeletedEvent
-  expect(call2.type).to.equal("stage-deleted")
-  expect(call2.assembly).to.equal(asm)
-  expect(call2.stage).to.equal(stage2)
+  const expected: PreStageDeletedEvent = {
+    type: "pre-stage-deleted",
+    assembly: asm,
+    stage: stage2,
+  }
+  expect(eventListener).calledWith(expected)
+  expect(sp).calledWith(expected)
 })
 
 test("delete stage by deleting surface", () => {

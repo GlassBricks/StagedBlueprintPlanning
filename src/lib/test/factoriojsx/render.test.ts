@@ -255,7 +255,7 @@ test("events", () => {
     shift: false,
   }
   script.get_event_handler(defines.events.on_gui_click)(fakeClickEvent)
-  expect(func).calledWith(expect._, fakeClickEvent)
+  expect(func).calledWith(fakeClickEvent)
 
   const fakeOpenEvent: OnGuiOpenedEvent = {
     element: element as LuaGuiElement,
@@ -265,7 +265,7 @@ test("events", () => {
     gui_type: defines.gui_type.custom,
   }
   script.get_event_handler(defines.events.on_gui_opened)(fakeOpenEvent)
-  expect(func).calledWith(expect._, fakeOpenEvent)
+  expect(func).calledWith(fakeOpenEvent)
 
   const fakeTextChangeEvent: OnGuiTextChangedEvent = {
     element: element as LuaGuiElement,
@@ -275,7 +275,7 @@ test("events", () => {
     text: "hi",
   }
   script.get_event_handler(defines.events.on_gui_text_changed)(fakeTextChangeEvent)
-  expect(func).calledWith(expect._, fakeTextChangeEvent)
+  expect(func).calledWith(fakeTextChangeEvent)
 })
 
 test("observable value", () => {

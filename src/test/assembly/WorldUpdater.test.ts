@@ -81,10 +81,8 @@ function assertNothingPresent(i: StageNumber): void {
   expect(entity.getWorldOrPreviewEntity(i)).to.be.nil()
 }
 function assertHasPreview(i: StageNumber): void {
-  const preview = expect(findPreviewEntity(i)).to.be.any()
-  const e = entity.getWorldOrPreviewEntity(i)
   expect(findMainEntity(i)).to.be.nil()
-  expect(preview).to.be(e)
+  expect(findPreviewEntity(i)).to.be.any().and.to.equal(entity.getWorldOrPreviewEntity(i))
 }
 
 function assertEntityCorrect(i: StageNumber): LuaEntity {
@@ -121,7 +119,7 @@ describe("updateWorldEntities", () => {
       entity.replaceWorldEntity(2, replaced)
       worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
       const val = assertEntityCorrect(2)
-      expect(replaced).to.be(val)
+      expect(replaced).to.equal(val)
     })
 
     test("replaces deleted entity", () => {

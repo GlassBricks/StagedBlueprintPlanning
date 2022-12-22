@@ -18,11 +18,11 @@ describe("makeWrapper", () => {
   let element: BaseGuiElement
   test("create", () => {
     element = makeWrapper()
-    expect(isRoot(element)).to.be(true)
-    expect(getPlayer().gui.screen).to.be(element.parent)
+    expect(isRoot(element)).to.equal(true)
+    expect(getPlayer().gui.screen).to.equal(element.parent)
   })
   test("after create", () => {
-    expect(element.valid).to.be(false)
+    expect(element.valid).to.equal(false)
   })
 })
 
@@ -44,8 +44,8 @@ describe("getDescription", () => {
 
 test("testRender", () => {
   const element = testRender(<flow name="test-flow" />)
-  expect(element.isRoot()).to.be(true)
-  expect(getPlayer().gui.screen).to.be(element.native.parent)
+  expect(element.isRoot()).to.equal(true)
+  expect(getPlayer().gui.screen).to.equal(element.native.parent)
 })
 
 describe("findSatisfying", () => {
@@ -57,7 +57,7 @@ describe("findSatisfying", () => {
     )
     const found = element.findSatisfying((x) => x.caption == "hi").native
     const flow = element.native.children[0]
-    expect(found).to.be(flow)
+    expect(found).to.equal(flow)
   })
 
   it("finds deep element", () => {
@@ -73,7 +73,7 @@ describe("findSatisfying", () => {
     )
     const found = element.findSatisfying((x) => x.caption == "baz").native
     const flow = element.native.children[0].children[0].children[1]
-    expect(found).to.be(flow)
+    expect(found).to.equal(flow)
   })
 })
 

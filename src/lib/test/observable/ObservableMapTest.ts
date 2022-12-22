@@ -70,7 +70,7 @@ describe("ObservableMap", () => {
       value: 1,
     }
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, change)
+    expect(fn).calledWith(change)
   })
 
   it("does not notify subscribers of unchanged items", () => {
@@ -93,7 +93,7 @@ describe("ObservableMap", () => {
       value: 2,
     }
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, change)
+    expect(fn).calledWith(change)
   })
 
   it("notifies subscribers of deleted items", () => {
@@ -108,7 +108,7 @@ describe("ObservableMap", () => {
       value: nil,
     }
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, change)
+    expect(fn).calledWith(change)
   })
 
   it("does not notify subscribers of deleting not present items", () => {

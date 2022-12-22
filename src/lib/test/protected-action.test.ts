@@ -19,11 +19,11 @@ test("Protected action with no error", () => {
 })
 
 test("Protected action with unexpected error", () => {
-  const sp = mock.fn()
+  const sp = mock.fnNoSelf()
   rawset(game, "print", sp)
   after_test(() => rawset(game, "print", nil!))
 
   const result = protectedAction(() => error("test1231"))
   expect(result).to.be.nil()
-  expect(sp).to.be.calledWith([L_Interaction.UnexpectedError], expect.stringMatching("test1231"))
+  expect(sp).to.be.calledWith([L_Interaction.UnexpectedError, expect.stringMatching("test1231")])
 })

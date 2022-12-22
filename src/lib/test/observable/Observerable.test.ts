@@ -31,7 +31,7 @@ describe("subscribe", () => {
     event.subscribeIndependently({ invoke: fn })
     event.raise("hello")
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, "hello")
+    expect(fn).calledWith("hello")
   })
 
   it("can fire events multiple times", () => {
@@ -40,8 +40,8 @@ describe("subscribe", () => {
     event.raise("1")
     event.raise("2")
     expect(fn).calledTimes(2)
-    expect(fn).calledWith(expect._, "1")
-    expect(fn).calledWith(expect._, "2")
+    expect(fn).calledWith("1")
+    expect(fn).calledWith("2")
   })
 
   it("broadcasts to multiple subscribers", () => {
@@ -77,8 +77,8 @@ describe("unsubscribe", () => {
     subscription.close()
     event.raise("after")
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, "before")
-    expect(fn).not.calledWith(expect._, "after")
+    expect(fn).calledWith("before")
+    expect(fn).not.calledWith("after")
   })
 
   it("can be unsubscribed via context", () => {
@@ -89,7 +89,7 @@ describe("unsubscribe", () => {
     context.close()
     event.raise("after")
     expect(fn).calledTimes(1)
-    expect(fn).calledWith(expect._, "before")
-    expect(fn).not.calledWith(expect._, "after")
+    expect(fn).calledWith("before")
+    expect(fn).not.calledWith("after")
   })
 })

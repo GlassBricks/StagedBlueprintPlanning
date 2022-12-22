@@ -65,7 +65,7 @@ it("notifies subscribers of added items", () => {
     added: true,
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })
 
 it("does not notify subscribers of already present items", () => {
@@ -86,7 +86,7 @@ it("notifies subscribers of deleted items", () => {
     value: "a",
   }
   expect(fn).calledTimes(1)
-  expect(fn).calledWith(expect._, change)
+  expect(fn).calledWith(change)
 })
 
 it("does not notify subscribers of deleting not present items", () => {
