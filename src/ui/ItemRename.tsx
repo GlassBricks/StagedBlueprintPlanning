@@ -55,6 +55,7 @@ export class ItemRename extends Component<ItemRenameProps> {
         style="subheader_caption_label"
         caption={this.item.displayName}
         styleMod={{ maximal_width: this.item.maximalWidth ?? 200 }}
+        ignored_by_interaction
       />
     )
   }

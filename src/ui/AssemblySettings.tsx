@@ -112,7 +112,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             name={this.assembly.name}
             displayName={this.assembly.displayName}
             renameTooltip={[L_GuiAssemblySettings.RenameAssembly]}
-            maximalWidth={AssemblySettingsTabWidth}
+            maximalWidth={240}
           />
           <DraggableSpace />
           <CollapseButton on_gui_click={funcRef(collapseSettings)} tooltip={[L_GuiAssemblySettings.HideFullSettings]} />
