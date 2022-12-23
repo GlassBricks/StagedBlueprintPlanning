@@ -18,15 +18,15 @@ import { Migrations } from "../lib/migration"
 import * as mod_gui from "mod-gui"
 import { L_GuiAssemblySelector } from "../locale"
 import { teleportToAssembly } from "./player-current-stage"
+import { Sprites } from "../constants"
 
-declare global {}
 declare const global: GlobalWithPlayers
 
 function ModButton() {
   return (
-    <button
+    <sprite-button
       style={mod_gui.button_style}
-      caption="TEMP"
+      sprite={Sprites.BlueprintStages}
       tooltip={[L_GuiAssemblySelector.ShowAllAssemblies]}
       on_gui_click={funcRef(onModButtonClick)}
     />

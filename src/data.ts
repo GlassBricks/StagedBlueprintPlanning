@@ -13,11 +13,13 @@ import { Data } from "typed-factorio/data/types"
 import { empty_sprite, table } from "util"
 import { Colors, CustomInputs, Prototypes, Sprites } from "./constants"
 import {
+  BasicSprite,
   CustomInputPrototype,
   DeconstructionItemPrototype,
   ItemGroupPrototype,
   ItemPrototype,
   ItemSubgroupPrototype,
+  LayeredSpritePrototype,
   SelectionToolPrototype,
   ShortcutPrototype,
   SimpleEntityPrototype,
@@ -312,6 +314,32 @@ data.extend([
   createSprite(Sprites.ExternalLinkBlack, "__bp100__/graphics/icons/external-link-black.png", 32),
   createSprite(Sprites.ExternalLinkWhite, "__bp100__/graphics/icons/external-link-white.png", 32),
 ])
+
+function shiftedBlueprintSprite(shift: MapPositionArray): BasicSprite {
+  return {
+    filename: "__base__/graphics/icons/blueprint.png",
+    size: 64,
+    mipmap_count: 4,
+    shift,
+    scale: 0.75,
+  }
+}
+const blueprintStages: LayeredSpritePrototype = {
+  type: "sprite",
+  name: Sprites.BlueprintStages,
+  layers: [
+    {
+      filename: "__base__/graphics/icons/blueprint.png",
+      size: 64,
+      mipmap_count: 4,
+      tint: [0, 0, 0, 0],
+    },
+    shiftedBlueprintSprite([-6, -6]),
+    shiftedBlueprintSprite([0, 0]),
+    shiftedBlueprintSprite([6, 6]),
+  ],
+}
+data.extend([blueprintStages])
 
 const buildInput: CustomInputPrototype = {
   type: "custom-input",

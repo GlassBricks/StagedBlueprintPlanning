@@ -227,10 +227,14 @@ export interface ItemSubgroupPrototype extends PrototypeBase {
   group: string
 }
 
-export interface SpritePrototype extends PrototypeBase, BasicSprite {
+export interface SpritePrototypeBase extends PrototypeBase {
   type: "sprite"
   name: string
 }
+export interface BasicSpritePrototype extends SpritePrototypeBase, BasicSprite {}
+export interface LayeredSpritePrototype extends SpritePrototypeBase, LayeredSprite {}
+
+export type SpritePrototype = BasicSpritePrototype | LayeredSpritePrototype
 
 export interface SoundPrototype extends PrototypeBase {
   type: "sound"
@@ -270,10 +274,10 @@ export interface BasicSprite {
 
   flags?: SpriteFlag[]
 }
-export interface SpriteWithLayers {
+export interface LayeredSprite {
   layers: Sprite[]
 }
-export type Sprite = BasicSprite | SpriteWithLayers
+export type Sprite = BasicSprite | LayeredSprite
 export type SpritePriority = "extra-high-no-scale" | "extra-high" | "high" | "medium" | "low" | "very-low" | "no-atlas"
 export type SpriteFlag = "terrain-effect-map" | "terrain" | "icon" | "group=none"
 export interface Sprite4Way {

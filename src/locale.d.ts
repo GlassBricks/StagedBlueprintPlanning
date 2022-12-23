@@ -142,10 +142,10 @@ export declare const enum L_Interaction {
   BlueprintBookExported = "bp100.interaction.blueprint-book-exported",
 }
 export declare const enum L_GuiAssemblySelector {
-  /** All staged builds */
-  AllAssemblies = "bp100.gui.assembly-selector.all-assemblies",
-  /** Show staged builds */
+  /** Staged builds */
   ShowAllAssemblies = "bp100.gui.assembly-selector.show-all-assemblies",
+  /** Staged builds */
+  AllAssemblies = "bp100.gui.assembly-selector.all-assemblies",
   /** New staged build */
   NewAssembly = "bp100.gui.assembly-selector.new-assembly",
 }

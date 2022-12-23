@@ -44,6 +44,8 @@ export const enum Prototypes {
 export const enum Sprites {
   ExternalLinkWhite = "bp100:external-link-white",
   ExternalLinkBlack = "bp100:external-link-black",
+
+  BlueprintStages = "bp100:blueprint-stages",
 }
 
 export const enum CustomInputs {

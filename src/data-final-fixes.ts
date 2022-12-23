@@ -27,6 +27,7 @@ import {
 } from "./declarations/data"
 import { BBox } from "./lib/geometry"
 import { L_Bp100 } from "./locale"
+import { emptySprite16 } from "./data-util"
 import direction = defines.direction
 import ceil = math.ceil
 import max = math.max
@@ -87,12 +88,6 @@ export function createWhiteSprite(
     south: createRotated(direction.south),
     west: createRotated(direction.west),
   }
-}
-
-const emptySprite16: BasicSprite = {
-  filename: "__bp100__/graphics/empty16.png",
-  size: 1,
-  priority: "extra-high",
 }
 
 const entityToItemBuild = new LuaMap<string, string>()
@@ -276,7 +271,7 @@ function createRailPreview(
     flags.push("building-direction-8-way")
   }
 
-  const result: RailRemnantsPrototype = {
+  return {
     name: Prototypes.PreviewEntityPrefix + prototype.name,
     type: "rail-remnants",
     localised_name: [L_Bp100.PreviewEntity, ["entity-name." + prototype.name]],
@@ -315,8 +310,6 @@ function createRailPreview(
     final_render_layer: "ground-patch-higher2",
     subgroup: Prototypes.PreviewEntitySubgroup,
   }
-
-  return result
 }
 
 data.extend(previews)
