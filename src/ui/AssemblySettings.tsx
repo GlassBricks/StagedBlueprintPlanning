@@ -15,7 +15,7 @@ import { AutoSetTilesType } from "../assembly/tiles"
 import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
-import { funcRef, ibind, RegisterClass, registerFunctions } from "../lib"
+import { funcRef, ibind, PRecord, RegisterClass, registerFunctions } from "../lib"
 import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import {
   CollapseButton,
@@ -38,6 +38,7 @@ import {
   teleportToSurface1,
 } from "./player-current-stage"
 import { StageSelector } from "./StageSelector"
+import { Prototypes } from "../constants"
 
 declare global {
   interface PlayerData {
@@ -278,6 +279,8 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           caption={[L_GuiAssemblySettings.DeleteAssembly]}
           on_gui_click={ibind(this.beginDelete)}
         />
+        <VerticalPusher />
+        <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
       </flow>
     )
   }
@@ -380,6 +383,32 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   }
   private syncGridSettings() {
     this.assembly.syncGridSettings()
+  }
+
+  private sssCount = 0
+  private static sssText: PRecord<number, string> = {
+    6: "banana",
+    9: "BANANA",
+    12: "BANANANA",
+    15: "AAAAAAAAAAAAAAAAAA",
+    18: "A".repeat(50),
+  }
+  private sss() {
+    this.sssCount++
+    if (this.sssCount % 3 != 0 && this.sssCount < 12) return
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    player.play_sound({ path: Prototypes.BANANA })
+    const text = AssemblySettings.sssText[this.sssCount]
+    if (text)
+      player.create_local_flying_text({
+        text,
+        create_at_cursor: true,
+      })
+    if (this.sssCount == 21) {
+      this.sssCount = 0
+      error("BANANA OVERLOAD")
+    }
   }
 }
 
