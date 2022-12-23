@@ -39,6 +39,7 @@
     "build": "yarn build:scripts && tstl",
     "prepare-package": "yarn clean && yarn build:release",
     "watch": "tstl --watch",
+    "watch:release-build": "tstl --watch -p tsconfig-release.json",
     "watch:locale": "nodemon scripts/gen-locale-defs.ts",
     "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\"",
     "version-minor": "ts-node scripts/bump-version.ts minor"

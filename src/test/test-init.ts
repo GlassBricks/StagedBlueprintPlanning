@@ -126,8 +126,6 @@ if (script.active_mods.testorio != nil) {
   if (__DebugAdapter) {
     tagBlacklist.push("after_mod_reload")
   }
-} else {
-  require("__debugadapter__/debugadapter.lua")
 }
 
 // auto test rerunning
