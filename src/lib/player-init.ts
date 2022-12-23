@@ -11,6 +11,7 @@
 
 import { Events } from "./Events"
 import { Mutable } from "./util-types"
+import { Migrations } from "./migration"
 
 declare const global: Mutable<GlobalWithPlayers>
 /**
@@ -26,6 +27,17 @@ export function onPlayerInit(action: (player: PlayerIndex) => void): void {
     on_player_created(e): void {
       action(e.player_index)
     },
+  })
+}
+
+export function onPlayerInitSince(version: string, action: (player: PlayerIndex) => void): void {
+  Migrations.since(version, () => {
+    for (const [, player] of game.players) {
+      action(player.index)
+    }
+  })
+  Events.on_player_created((e) => {
+    action(e.player_index)
   })
 }
 Events.on_init(() => {

@@ -19,8 +19,6 @@
       "factorioArgs": [
         "--load-scenario",
         "bp100Test",
-        "--window-size",
-        "1440,1200",
         "--cache-sprite-atlas",
         "true",
         "--graphics-quality",
@@ -47,14 +45,12 @@
       "factorioArgs": [
         "--load-scenario",
         "bp100Test",
-        "--window-size",
-        "1440,1200",
         "--cache-sprite-atlas",
         "true",
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio/config.ini",
+        "${workspaceRoot}/factorio/config.ini"
       ],
       "modsPath": "${workspaceRoot}/factorio",
       "checkGlobals": false,
@@ -73,8 +69,6 @@
       "factorioArgs": [
         "--load-scenario",
         "bp100Test",
-        "--window-size",
-        "1440,1200",
         "--cache-sprite-atlas",
         "true",
         "--graphics-quality",
@@ -82,7 +76,7 @@
         "-c",
         "${workspaceRoot}/factorio/config.ini",
       ],
-      "modsPath": "${workspaceRoot}/factorio"",
+      "modsPath": "${workspaceRoot}/factorio",
       "checkGlobals": false,
       "hookData": true,
       "hookControl": false

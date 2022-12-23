@@ -63,14 +63,14 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   }
 
   private callUnsubscription(subscription: Unsubscription): void {
-    if ((subscription as Unsubscribable).close != nil) {
-      ;(subscription as Unsubscribable).close()
+    if ("close" in subscription) {
+      subscription.close()
     } else {
-      ;(subscription as Func).invoke()
+      subscription.invoke()
     }
   }
 
-  close(): void {
+  public tryClose(): UnsubscriptionError | nil {
     const { _children } = this
     if (!_children) return
 
@@ -95,8 +95,12 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
       }
     }
     if (errors) {
-      throw new UnsubscriptionError(errors)
+      return new UnsubscriptionError(errors)
     }
+  }
+  close(): void {
+    const error = this.tryClose()
+    if (error) throw error
   }
 }
 

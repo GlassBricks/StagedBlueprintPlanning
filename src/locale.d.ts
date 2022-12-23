@@ -150,100 +150,38 @@ export declare const enum L_GuiAssemblySelector {
   NewAssembly = "bp100.gui.assembly-selector.new-assembly",
 }
 export declare const enum L_GuiAssemblySettings {
-  /** __1__ */
-  AssemblyCaption = "bp100.gui.assembly-settings.assembly-caption",
   /** Show settings */
   ShowFullSettings = "bp100.gui.assembly-settings.show-full-settings",
   /** Hide settings */
   HideFullSettings = "bp100.gui.assembly-settings.hide-full-settings",
-  /** Staged build */
-  Title = "bp100.gui.assembly-settings.title",
-  /** Rename */
-  RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
-  /** Delete staged build */
-  DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
-  /** Are you sure you want to delete staged build __1__? */
-  DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
-  /** This cannot be undone. */
-  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
-  /** Stages */
-  Stages = "bp100.gui.assembly-settings.stages",
+  /** Staged build: */
+  TitleCaption = "bp100.gui.assembly-settings.title-caption",
   /** New stage */
   NewStage = "bp100.gui.assembly-settings.new-stage",
   /** After current */
   AfterCurrent = "bp100.gui.assembly-settings.after-current",
   /** At front */
   AtFront = "bp100.gui.assembly-settings.at-front",
+  /** Rename */
+  RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
+  /** Stage */
+  Stage = "bp100.gui.assembly-settings.stage",
+  /** Blueprints */
+  Blueprints = "bp100.gui.assembly-settings.blueprints",
+  /** Other */
+  Other = "bp100.gui.assembly-settings.other",
   /** Rename stage */
   RenameStage = "bp100.gui.assembly-settings.rename-stage",
-  /** Delete stage */
-  DeleteStage = "bp100.gui.assembly-settings.delete-stage",
-  /** Are you sure you want to delete stage __1__? */
-  DeleteStageConfirmation1 = "bp100.gui.assembly-settings.delete-stage-confirmation1",
-  /** Stage contents will be merged with the previous stage (__1__). */
-  DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
-  /** Stage contents will be merged with the next stage (__1__). */
-  DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
+  /** Entities */
+  Entities = "bp100.gui.assembly-settings.entities",
   /** Rebuild stage [img=info] */
   ResetStage = "bp100.gui.assembly-settings.reset-stage",
   /** Deletes and replaces all entities to match the stored state.\nThis may help resolve inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
-  /** Get blueprint [img=info] */
-  GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
-  /** Gets a blueprint of the current stage.\nChanges to the given blueprint will [font=default-bold]not[/font] be saved. */
-  GetBlueprintTooltip = "bp100.gui.assembly-settings.get-blueprint-tooltip",
-  /** Edit blueprint [img=info] */
-  EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
-  /** Edits the blueprint of the current stage.\nChanges (icons, grid settings, etc.) [font=default-bold]will[/font] be saved. */
-  EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
-  /** Blueprints */
-  Blueprints = "bp100.gui.assembly-settings.blueprints",
-  /** Blueprint settings [img=info] */
-  BlueprintSettings = "bp100.gui.assembly-settings.blueprint-settings",
-  /** These settings apply to all stages. For stage-specific blueprint settings, see the "Stages" tab. */
-  BlueprintSettingsTooltip = "bp100.gui.assembly-settings.blueprint-settings-tooltip",
-  /** Blueprint book settings */
-  BlueprintBookSettings = "bp100.gui.assembly-settings.blueprint-book-settings",
-  /** Auto-landfill [img=info] */
-  AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
-  /** Automatically set landfill tiles before taking a blueprint. */
-  AutoLandfillTooltip = "bp100.gui.assembly-settings.auto-landfill-tooltip",
-  /** Use next stage's tiles [img=info] */
-  UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
-  /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
-  UseNextStageTilesTooltip = "bp100.gui.assembly-settings.use-next-stage-tiles-tooltip",
-  /** Blueprint names: */
-  BlueprintNaming = "bp100.gui.assembly-settings.blueprint-naming",
-  /** Empty */
-  BpNameEmpty = "bp100.gui.assembly-settings.bp-name-empty",
-  /** From stage name */
-  BpNameFromStage = "bp100.gui.assembly-settings.bp-name-from-stage",
-  /** Manually editable */
-  BpNameCustom = "bp100.gui.assembly-settings.bp-name-custom",
-  /** BP book name: */
-  BlueprintBookNaming = "bp100.gui.assembly-settings.blueprint-book-naming",
-  /** From staged build name */
-  BpNameFromAssembly = "bp100.gui.assembly-settings.bp-name-from-assembly",
-  /** Edit blueprint filters [img=info] */
-  EditBlueprintFilters = "bp100.gui.assembly-settings.edit-blueprint-filters",
-  /** The set filters will be applied after taking the blueprint. */
-  EditBlueprintFiltersTooltip = "bp100.gui.assembly-settings.edit-blueprint-filters-tooltip",
-  /** Infinity chests/pipes to combinators [img=info] */
-  ReplaceInfinityWithCombinators = "bp100.gui.assembly-settings.replace-infinity-with-combinators",
-  /** In blueprints, replaces infinity chests/pipes with constant combinators having matching signals. */
-  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
-  /** Sync grid settings [img=info] */
-  SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
-  /** Copies the grid settings from the [font=default-bold]last[/font] stage to all other stages. */
-  SyncGridSettingsDescription = "bp100.gui.assembly-settings.sync-grid-settings-description",
-  /** Make blueprint book */
-  GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
-  /** Export book to file [img=info] */
-  ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
-  /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
-  ExportBlueprintBookStringToFileTooltip = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file-tooltip",
-  /** Editing */
-  Editing = "bp100.gui.assembly-settings.Editing",
+  /** Disable all entities */
+  DisableAllEntities = "bp100.gui.assembly-settings.disable-all-entities",
+  /** Enable all entities */
+  EnableAllEntities = "bp100.gui.assembly-settings.enable-all-entities",
   /** Set tiles */
   SetTiles = "bp100.gui.assembly-settings.set-tiles",
   /** Lab tiles */
@@ -254,12 +192,74 @@ export declare const enum L_GuiAssemblySettings {
   LandfillAndLab = "bp100.gui.assembly-settings.landfill-and-lab",
   /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
   FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
-  /** Entities */
-  Entities = "bp100.gui.assembly-settings.entities",
-  /** Disable all entities */
-  DisableAllEntities = "bp100.gui.assembly-settings.disable-all-entities",
-  /** Enable all entities */
-  EnableAllEntities = "bp100.gui.assembly-settings.enable-all-entities",
+  /** Delete stage */
+  DeleteStage = "bp100.gui.assembly-settings.delete-stage",
+  /** Are you sure you want to delete stage __1__? */
+  DeleteStageConfirmation1 = "bp100.gui.assembly-settings.delete-stage-confirmation1",
+  /** Stage contents will be merged with the next stage (__1__). */
+  DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
+  /** Stage contents will be merged with the previous stage (__1__). */
+  DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
+  /** Current stage */
+  CurrentStage = "bp100.gui.assembly-settings.current-stage",
+  /** Get blueprint [img=info] */
+  GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
+  /** Changes to the given blueprint will [font=default-bold]not[/font] be saved. */
+  GetBlueprintTooltip = "bp100.gui.assembly-settings.get-blueprint-tooltip",
+  /** Edit blueprint [img=info] */
+  EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
+  /** Changes (icons, grid settings, etc.) [font=default-bold]will[/font] be saved. */
+  EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
+  /** Blueprint settings [img=info] */
+  BlueprintSettings = "bp100.gui.assembly-settings.blueprint-settings",
+  /** These settings apply to all stages. For stage-specific blueprint settings, click "Edit blueprint" above. */
+  BlueprintSettingsTooltip = "bp100.gui.assembly-settings.blueprint-settings-tooltip",
+  /** Blueprint names: */
+  BlueprintNaming = "bp100.gui.assembly-settings.blueprint-naming",
+  /** Empty */
+  BpNameEmpty = "bp100.gui.assembly-settings.bp-name-empty",
+  /** From stage name */
+  BpNameFromStage = "bp100.gui.assembly-settings.bp-name-from-stage",
+  /** Manually editable */
+  BpNameCustom = "bp100.gui.assembly-settings.bp-name-custom",
+  /** Infinity chests/pipes to combinators [img=info] */
+  ReplaceInfinityWithCombinators = "bp100.gui.assembly-settings.replace-infinity-with-combinators",
+  /** In blueprints, replaces infinity chests/pipes with constant combinators having matching signals. */
+  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
+  /** Auto-landfill [img=info] */
+  AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
+  /** Automatically set landfill tiles before taking a blueprint. */
+  AutoLandfillTooltip = "bp100.gui.assembly-settings.auto-landfill-tooltip",
+  /** Edit blueprint filters [img=info] */
+  EditBlueprintFilters = "bp100.gui.assembly-settings.edit-blueprint-filters",
+  /** The set filters will be applied after taking the blueprint. */
+  EditBlueprintFiltersTooltip = "bp100.gui.assembly-settings.edit-blueprint-filters-tooltip",
+  /** Sync grid settings [img=info] */
+  SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
+  /** Copies the grid settings from the [font=default-bold]last[/font] stage to all other stages. */
+  SyncGridSettingsDescription = "bp100.gui.assembly-settings.sync-grid-settings-description",
+  /** Blueprint book settings */
+  BlueprintBookSettings = "bp100.gui.assembly-settings.blueprint-book-settings",
+  /** BP book name: */
+  BlueprintBookNaming = "bp100.gui.assembly-settings.blueprint-book-naming",
+  /** From staged build name */
+  BpNameFromAssembly = "bp100.gui.assembly-settings.bp-name-from-assembly",
+  /** Use next stage's tiles [img=info] */
+  UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
+  /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
+  UseNextStageTilesTooltip = "bp100.gui.assembly-settings.use-next-stage-tiles-tooltip",
+  /** Make blueprint book */
+  GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
+  /** Export book to file [img=info] */
+  ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
+  /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
+  ExportBlueprintBookStringToFileTooltip = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file-tooltip",
+  /** Delete staged build */
+  DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
+  /** Are you sure you want to delete staged build __1__? */
+  DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
+  /** This cannot be undone. */
+  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
 }
 export declare const enum L_GuiEntityInfo {
   /** Stage info */

@@ -357,7 +357,7 @@ export function destroy(element: BaseGuiElement | nil, destroyElement = true): v
       destroy(child, false)
     }
   }
-  subscription?.close()
+  subscription?.tryClose()
   if (destroyElement && element.valid) element.destroy()
   guiElements[index] = nil!
 }

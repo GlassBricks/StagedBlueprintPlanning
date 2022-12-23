@@ -18,6 +18,7 @@ import { Pos } from "../lib/geometry"
 import { refreshCurrentAssembly } from "../ui/AssemblySettings"
 import { teleportToAssembly, teleportToStage } from "../ui/player-current-stage"
 import "./in-world-test-util"
+import { Migrations } from "../lib/migration"
 
 // better source map traceback
 declare const ____lualib: {
@@ -46,6 +47,7 @@ import lastCompileTime = require("last-compile-time")
 declare let global: {
   lastCompileTimestamp?: string
   printEvents?: boolean
+  migrateNextTick?: boolean
 
   rerunMode?: "rerun" | "reload" | "none"
 }
@@ -124,6 +126,8 @@ if (script.active_mods.testorio != nil) {
   if (__DebugAdapter) {
     tagBlacklist.push("after_mod_reload")
   }
+} else {
+  require("__debugadapter__/debugadapter.lua")
 }
 
 // auto test rerunning
@@ -139,10 +143,16 @@ Events.on_tick(() => {
   if (global.rerunMode == nil) global.rerunMode = "rerun"
   if (global.rerunMode == "none" || isTestsRunning()) return
 
+  if (global.migrateNextTick) {
+    global.migrateNextTick = nil
+    Migrations.doMigrations(script.active_mods[script.mod_name])
+  }
+
   const ticks = math.ceil((__DebugAdapter ? 20 : 5) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod == 0) {
     global.lastCompileTimestamp = lastCompileTime
+    global.migrateNextTick = true
     game.reload_mods()
   } else if (global.lastCompileTimestamp != lastCompileTime && remote.interfaces.testorio?.runTests) {
     global.lastCompileTimestamp = lastCompileTime

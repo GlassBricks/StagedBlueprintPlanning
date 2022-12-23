@@ -12,7 +12,7 @@
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { getAllAssemblies } from "../assembly/migrations"
 import { AssemblyEvents, createUserAssembly } from "../assembly/UserAssembly"
-import { bind, funcRef, ibind, onPlayerInit, RegisterClass, registerFunctions, Subscription } from "../lib"
+import { bind, funcRef, ibind, onPlayerInitSince, RegisterClass, registerFunctions, Subscription } from "../lib"
 import { Component, destroy, EmptyProps, FactorioJsx, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import { Migrations } from "../lib/migration"
 import * as mod_gui from "mod-gui"
@@ -23,7 +23,6 @@ declare global {}
 declare const global: GlobalWithPlayers
 
 function ModButton() {
-  // mod
   return (
     <button
       style={mod_gui.button_style}
@@ -35,11 +34,10 @@ function ModButton() {
 }
 
 const ModButtonName = script.mod_name + ":assembly-selector"
-Migrations.since("0.15.0", () => {
-  onPlayerInit((playerIndex) => {
-    const player = game.get_player(playerIndex)!
-    renderNamed(<ModButton />, mod_gui.get_button_flow(player), ModButtonName)
-  })
+onPlayerInitSince("0.15.0", (playerIndex) => {
+  const player = game.get_player(playerIndex)!
+  game.print("Rendering mod button")
+  renderNamed(<ModButton />, mod_gui.get_button_flow(player), ModButtonName)
 })
 
 const AllAssembliesName = script.mod_name + ":all-assemblies"
