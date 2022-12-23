@@ -117,7 +117,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           <DraggableSpace />
           <CollapseButton on_gui_click={funcRef(collapseSettings)} tooltip={[L_GuiAssemblySettings.HideFullSettings]} />
         </TitleBar>
-        <flow direction="horizontal" styleMod={{ horizontal_spacing: 8 }}>
+        <flow direction="horizontal" styleMod={{ horizontal_spacing: 12 }}>
           <flow direction="vertical" styleMod={{ vertical_spacing: 0 }}>
             {StageListBox(this.assembly)}
             {this.NewStageBox()}
