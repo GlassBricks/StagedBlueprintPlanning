@@ -214,14 +214,8 @@ export declare const enum L_GuiAssemblySettings {
   BlueprintSettings = "bp100.gui.assembly-settings.blueprint-settings",
   /** These settings apply to all stages. For stage-specific blueprint settings, click "Edit blueprint" above. */
   BlueprintSettingsTooltip = "bp100.gui.assembly-settings.blueprint-settings-tooltip",
-  /** Blueprint names: */
-  BlueprintNaming = "bp100.gui.assembly-settings.blueprint-naming",
-  /** Empty */
-  BpNameEmpty = "bp100.gui.assembly-settings.bp-name-empty",
-  /** From stage name */
-  BpNameFromStage = "bp100.gui.assembly-settings.bp-name-from-stage",
-  /** Manually editable */
-  BpNameCustom = "bp100.gui.assembly-settings.bp-name-custom",
+  /** Empty blueprint names */
+  EmptyBlueprintNames = "bp100.gui.assembly-settings.empty-blueprint-names",
   /** Infinity chests/pipes to combinators [img=info] */
   ReplaceInfinityWithCombinators = "bp100.gui.assembly-settings.replace-infinity-with-combinators",
   /** In blueprints, replaces infinity chests/pipes with constant combinators having matching signals. */
@@ -240,10 +234,8 @@ export declare const enum L_GuiAssemblySettings {
   SyncGridSettingsDescription = "bp100.gui.assembly-settings.sync-grid-settings-description",
   /** Blueprint book settings */
   BlueprintBookSettings = "bp100.gui.assembly-settings.blueprint-book-settings",
-  /** BP book name: */
-  BlueprintBookNaming = "bp100.gui.assembly-settings.blueprint-book-naming",
-  /** From staged build name */
-  BpNameFromAssembly = "bp100.gui.assembly-settings.bp-name-from-assembly",
+  /** Empty blueprint book name */
+  EmptyBlueprintBookName = "bp100.gui.assembly-settings.empty-blueprint-book-name",
   /** Use next stage's tiles [img=info] */
   UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
   /** Each blueprint will contain the next stage's tiles. Useful for landfill. */

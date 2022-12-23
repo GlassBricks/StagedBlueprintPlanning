@@ -53,7 +53,6 @@ const NewStageBarHeight = 100
 
 const StageSettingsButtonWidth = 140
 
-const DropDownWidth = 180
 const BpSettingsButtonWidth = 180
 
 const AssemblySettingsTabWidth = 600
@@ -216,28 +215,20 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           caption={[L_GuiAssemblySettings.BlueprintSettings]}
           tooltip={[L_GuiAssemblySettings.BlueprintSettingsTooltip]}
         />
-        <flow direction="horizontal">
-          <label caption={[L_GuiAssemblySettings.BlueprintNaming]} />
-          <HorizontalPusher />
-          <drop-down
-            items={[
-              [L_GuiAssemblySettings.BpNameEmpty],
-              [L_GuiAssemblySettings.BpNameFromStage],
-              [L_GuiAssemblySettings.BpNameCustom],
-            ]}
-            selected_index={assemblyBlueprintSettings.blueprintNameMode}
-            styleMod={{ width: DropDownWidth }}
-          />
-        </flow>
         <checkbox
-          state={assemblyBlueprintSettings.replaceInfinityWithCombinators}
-          caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
-          tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
+          state={assemblyBlueprintSettings.emptyBlueprintNames}
+          caption={[L_GuiAssemblySettings.EmptyBlueprintNames]}
         />
+        <line />
         <checkbox
           state={assemblyBlueprintSettings.autoLandfill}
           caption={[L_GuiAssemblySettings.AutoLandfill]}
           tooltip={[L_GuiAssemblySettings.AutoLandfillTooltip]}
+        />
+        <checkbox
+          state={assemblyBlueprintSettings.replaceInfinityWithCombinators}
+          caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
+          tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
         />
         <button
           caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
@@ -245,6 +236,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           on_gui_click={ibind(this.editBlueprintFilters)}
           styleMod={{ width: BpSettingsButtonWidth }}
         />
+        <line />
         <button
           caption={[L_GuiAssemblySettings.SyncGridSettings]}
           tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
@@ -252,19 +244,12 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           styleMod={{ width: BpSettingsButtonWidth }}
         />
 
-        <line direction="horizontal" />
-
         <label style="caption_label" caption={[L_GuiAssemblySettings.BlueprintBookSettings]} />
 
-        <flow direction="horizontal">
-          <label caption={[L_GuiAssemblySettings.BlueprintBookNaming]} />
-          <HorizontalPusher />
-          <drop-down
-            items={[[L_GuiAssemblySettings.BpNameEmpty], [L_GuiAssemblySettings.BpNameFromAssembly]]}
-            selected_index={assemblyBlueprintSettings.bookNameMode}
-            styleMod={{ width: DropDownWidth }}
-          />
-        </flow>
+        <checkbox
+          state={assemblyBlueprintSettings.emptyBlueprintBookName}
+          caption={[L_GuiAssemblySettings.EmptyBlueprintBookName]}
+        />
         <checkbox
           state={assemblyBlueprintSettings.useNextStageTiles}
           caption={[L_GuiAssemblySettings.UseNextStageTiles]}

@@ -29,8 +29,6 @@ import { L_Bp100 } from "../locale"
 import {
   AssemblyBlueprintSettings,
   AssemblyId,
-  BlueprintNameMode,
-  BookNameMode,
   GlobalAssemblyEvent,
   LocalAssemblyEvent,
   Stage,
@@ -73,8 +71,8 @@ class UserAssemblyImpl implements UserAssembly {
   assemblyBlueprintSettings: AssemblyBlueprintSettings = {
     autoLandfill: state(false),
     useNextStageTiles: state(false),
-    blueprintNameMode: state(BlueprintNameMode.FromStage),
-    bookNameMode: state(BookNameMode.FromAssembly),
+    emptyBlueprintNames: state(false),
+    emptyBlueprintBookName: state(false),
 
     entityFilters: state(nil),
     entityFilterMode: state(nil),
@@ -168,11 +166,11 @@ class UserAssemblyImpl implements UserAssembly {
 
     stack.clear()
     stack.set_stack("blueprint-book")
-    const { useNextStageTiles, bookNameMode } = this.assemblyBlueprintSettings
-    if (bookNameMode.get() == BookNameMode.FromAssembly) {
-      stack.label = this.name.get()
-    } else {
+    const { useNextStageTiles, emptyBlueprintBookName } = this.assemblyBlueprintSettings
+    if (emptyBlueprintBookName.get()) {
       stack.label = ""
+    } else {
+      stack.label = this.name.get()
     }
 
     const inventory = stack.get_inventory(defines.inventory.item_main)!
@@ -313,13 +311,12 @@ class StageImpl implements Stage {
       bbox,
     )
     if (took) {
-      const blueprintNameMode = this.assembly.assemblyBlueprintSettings.blueprintNameMode.get()
-      if (blueprintNameMode == BlueprintNameMode.Empty) {
+      const emptyBlueprintNames = this.assembly.assemblyBlueprintSettings.emptyBlueprintNames.get()
+      if (emptyBlueprintNames) {
         stack.label = ""
-      } else if (blueprintNameMode == BlueprintNameMode.FromStage) {
+      } else {
         stack.label = this.name.get()
       }
-      // else, use the custom name from tryTakeBlueprintWithSettings
     }
     return took
   }
@@ -414,12 +411,13 @@ Migrations.to("0.8.0", () => {
     log("Migrating assembly")
     const bpBookSettings = (assembly as unknown as OldAssembly).blueprintBookSettings!
     delete (assembly as unknown as OldAssembly).blueprintBookSettings
+
     assembly.assemblyBlueprintSettings = {
       autoLandfill: bpBookSettings.autoLandfill,
       useNextStageTiles: state(bpBookSettings.autoLandfill.get()),
-      blueprintNameMode: state(BlueprintNameMode.FromStage),
-      bookNameMode: state(BookNameMode.FromAssembly),
-    } as AssemblyBlueprintSettings
+      blueprintNameMode: state(2),
+      bookNameMode: state(2),
+    } as any
 
     type OldBlueprintSettings = Pick<
       BlueprintSettings,
@@ -485,5 +483,30 @@ Migrations.to("0.12.0", () => {
       settings.entityFilterMode = state(nil)
       settings.replaceInfinityWithCombinators = state(false)
     }
+  }
+})
+
+Migrations.to("0.15.0", () => {
+  const enum BlueprintNameMode {
+    Empty = 1,
+    FromStage = 2,
+    Custom = 3,
+  }
+  const enum BookNameMode {
+    Empty = 1,
+    FromAssembly = 2,
+  }
+  interface OldAssemblySettings {
+    blueprintNameMode?: MutableState<BlueprintNameMode>
+    bookNameMode?: MutableState<BookNameMode>
+  }
+  for (const [, assembly] of global.assemblies) {
+    const oldSettings = assembly.assemblyBlueprintSettings as OldAssemblySettings
+    const newSettings = assembly.assemblyBlueprintSettings as Mutable<AssemblyBlueprintSettings>
+
+    newSettings.emptyBlueprintNames = state(oldSettings.blueprintNameMode?.get() == BlueprintNameMode.Empty)
+    newSettings.emptyBlueprintBookName = state(oldSettings.bookNameMode?.get() == BookNameMode.Empty)
+    delete oldSettings.blueprintNameMode
+    delete oldSettings.bookNameMode
   }
 })

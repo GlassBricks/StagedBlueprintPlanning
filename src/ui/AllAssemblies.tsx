@@ -33,10 +33,9 @@ function ModButton() {
   )
 }
 
-const ModButtonName = script.mod_name + ":assembly-selector"
+const ModButtonName = script.mod_name + ":all-assemblies"
 onPlayerInitSince("0.15.0", (playerIndex) => {
   const player = game.get_player(playerIndex)!
-  game.print("Rendering mod button")
   renderNamed(<ModButton />, mod_gui.get_button_flow(player), ModButtonName)
 })
 

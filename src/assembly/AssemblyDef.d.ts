@@ -49,21 +49,12 @@ export interface UserAssembly extends Assembly {
   syncGridSettings(): void
 }
 
-export const enum BlueprintNameMode {
-  Empty = 1,
-  FromStage = 2,
-  Custom = 3,
-}
-export const enum BookNameMode {
-  Empty = 1,
-  FromAssembly = 2,
-}
 export interface AssemblyBlueprintSettings extends BlueprintTransformations {
   readonly autoLandfill: MutableState<boolean>
   readonly useNextStageTiles: MutableState<boolean>
 
-  readonly blueprintNameMode: MutableState<BlueprintNameMode>
-  readonly bookNameMode: MutableState<BookNameMode>
+  readonly emptyBlueprintNames: MutableState<boolean>
+  readonly emptyBlueprintBookName: MutableState<boolean>
 }
 
 export interface Stage {
