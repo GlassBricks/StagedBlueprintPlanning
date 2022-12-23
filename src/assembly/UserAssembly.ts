@@ -486,7 +486,7 @@ Migrations.to("0.12.0", () => {
   }
 })
 
-Migrations.to("0.15.0", () => {
+Migrations.to("0.15.1", () => {
   const enum BlueprintNameMode {
     Empty = 1,
     FromStage = 2,

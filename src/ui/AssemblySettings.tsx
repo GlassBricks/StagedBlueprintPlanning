@@ -647,7 +647,7 @@ export function refreshCurrentAssembly(): void {
 }
 Migrations.fromAny(refreshCurrentAssembly)
 
-Migrations.to("0.15.0", () => {
+Migrations.to("0.15.1", () => {
   const AssemblySettingsFlowName = "gui:AssemblySettingsFrame"
   for (const [, player] of game.players) {
     destroy(player.gui.screen[AssemblySettingsFlowName])

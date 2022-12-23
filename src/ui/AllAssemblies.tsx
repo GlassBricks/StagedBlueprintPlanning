@@ -34,7 +34,7 @@ function ModButton() {
 }
 
 const ModButtonName = script.mod_name + ":all-assemblies"
-onPlayerInitSince("0.15.0", (playerIndex) => {
+onPlayerInitSince("0.15.1", (playerIndex) => {
   const player = game.get_player(playerIndex)!
   renderNamed(<ModButton />, mod_gui.get_button_flow(player), ModButtonName)
 })
@@ -145,7 +145,7 @@ function createNewAssembly(player: LuaPlayer): void {
   teleportToAssembly(player, assembly)
 }
 
-Migrations.to("0.15.0", () => {
+Migrations.to("0.15.1", () => {
   interface OldPlayerData {
     currentAssemblyGui?: {
       mainFlow?: LuaGuiElement
