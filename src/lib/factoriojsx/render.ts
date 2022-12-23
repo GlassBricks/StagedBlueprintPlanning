@@ -11,7 +11,6 @@
 
 import { isEmpty } from "../_util"
 import { Events } from "../Events"
-import { Migrations } from "../migration"
 import { isMutableState, MutableState, Observer, State, Subscription } from "../observable"
 import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
@@ -19,6 +18,7 @@ import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, Selfle
 import { PRecord } from "../util-types"
 import * as propInfo from "./propInfo.json"
 import { ClassComponentSpec, ElementSpec, FCSpec, FragmentSpec, GuiEvent, GuiEventHandler, Spec, Tracker } from "./spec"
+import { Migrations } from "../migration"
 
 type GuiEventName = Extract<keyof typeof defines.events, `on_gui_${string}`>
 
@@ -424,10 +424,5 @@ if (script.active_mods.debugadapter != nil) {
     }
   })
 }
-Migrations.to("0.14.2", () => {
-  for (const [, data] of pairs(global.players)) {
-    for (const [, instance] of pairs(data.guiElements)) {
-      instance.events
-    }
-  }
-})
+
+Migrations.fromAny(cleanGuiInstances)

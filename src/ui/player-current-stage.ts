@@ -34,7 +34,7 @@ declare const global: GlobalWithPlayers
 export function playerCurrentStage(index: PlayerIndex): State<Stage | nil> {
   return global.players[index].currentStage
 }
-const PlayerChangedStageEvent = globalEventMulti<[player: LuaPlayer, stage: Stage | nil]>()
+const PlayerChangedStageEvent = globalEventMulti<[player: LuaPlayer, stage: Stage | nil, oldStage: Stage | nil]>()
 export { PlayerChangedStageEvent }
 
 function updatePlayer(player: LuaPlayer): void {
@@ -43,10 +43,10 @@ function updatePlayer(player: LuaPlayer): void {
 
   const curStage = data.currentStage
   const newStage = getStageAtSurface(player.surface.index)
-  if (curStage.get() != newStage) {
-    curStage.set(newStage)
-    PlayerChangedStageEvent.raise(player, newStage)
-  }
+  const oldStage = curStage.get()
+  if (newStage == oldStage) return
+  curStage.set(newStage)
+  PlayerChangedStageEvent.raise(player, newStage, oldStage)
 }
 onPlayerInit((index) => {
   global.players[index].currentStage = state(nil)
@@ -54,7 +54,6 @@ onPlayerInit((index) => {
 
 onPlayerRemoved((index) => {
   const currentStage = global.players[index].currentStage
-  currentStage.set(nil)
   currentStage.closeAll()
 })
 

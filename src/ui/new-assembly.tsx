@@ -9,11 +9,4 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { createUserAssembly } from "../assembly/UserAssembly"
 import { FactorioJsx } from "../lib/factoriojsx"
-import { openAssemblySettings } from "./AssemblySettings"
-
-export function createNewAssembly(player: LuaPlayer): void {
-  const assembly = createUserAssembly("", 5)
-  openAssemblySettings(player, assembly)
-}

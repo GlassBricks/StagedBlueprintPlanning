@@ -544,18 +544,18 @@ describe("updateWiresFromWorld", () => {
     assertOneEntity()
     assertWUNotCalled()
   })
-  test.todo(
-    "if max connections exceeded, notifies and calls update",
-    // , () => {
-    // const { entity } = addEntity(1)
-    // wireSaver.saveWireConnections.returnsOnce(true as any)
-    // const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
-    // expect(ret).to.be("max-connections-exceeded")
-    //
-    // assertOneEntity()
-    // assertUpdateCalled(entity, 1, nil)
-    // }
-  )
+  // test.todo(
+  //   "if max connections exceeded, notifies and calls update",
+  //   // , () => {
+  //   // const { entity } = addEntity(1)
+  //   // wireSaver.saveWireConnections.returnsOnce(true as any)
+  //   // const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
+  //   // expect(ret).to.be("max-connections-exceeded")
+  //   //
+  //   // assertOneEntity()
+  //   // assertUpdateCalled(entity, 1, nil)
+  //   // }
+  // )
 })
 
 describe("moveEntityToStage", () => {

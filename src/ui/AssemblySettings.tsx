@@ -9,28 +9,22 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
+import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { editBlueprintFilters } from "../assembly/edit-blueprint-settings"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
-import { funcRef, ibind, onPlayerInit, RegisterClass, registerFunctions } from "../lib"
+import { funcRef, ibind, RegisterClass, registerFunctions } from "../lib"
+import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
 import {
-  Component,
-  destroy,
-  destroyChildren,
-  FactorioJsx,
-  renderMultiple,
-  renderNamed,
-  Spec,
-  Tracker,
-} from "../lib/factoriojsx"
-import {
+  CollapseButton,
+  DraggableSpace,
+  ExpandButton,
   Fn,
   HorizontalPusher,
   showDialog,
-  SimpleTitleBar,
+  TitleBar,
   TrashButton,
   VerticalPusher,
 } from "../lib/factoriojsx/components"
@@ -41,7 +35,6 @@ import {
   PlayerChangedStageEvent,
   playerCurrentStage,
   recordLastStagePosition,
-  teleportToAssembly,
   teleportToStage,
   teleportToSurface1,
 } from "./player-current-stage"
@@ -49,10 +42,46 @@ import { StageSelector } from "./StageSelector"
 
 declare global {
   interface PlayerData {
-    currentShownAssembly?: UserAssembly
+    compactAssemblySettings?: true
   }
 }
 declare const global: GlobalWithPlayers
+
+function SettingsStageSelector(assembly: UserAssembly) {
+  return (
+    <StageSelector
+      uses="list-box"
+      styleMod={{ height: stageListBoxHeight, width: stageListBoxWidth }}
+      assembly={assembly}
+    />
+  )
+}
+@RegisterClass("gui:CompactAssemblySettings")
+class CompactAssemblySettings extends Component<{ assembly: UserAssembly }> {
+  assembly!: UserAssembly
+  override render({ assembly }: { assembly: UserAssembly }): Spec {
+    const captionedAssemblyName = assembly.displayName.map(funcRef(CompactAssemblySettings.captionedAssemblyName))
+
+    return (
+      <frame direction="vertical">
+        <TitleBar>
+          <label
+            caption={captionedAssemblyName}
+            style="caption_label"
+            styleMod={{ maximal_width: stageListBoxWidth - 50 }}
+            ignored_by_interaction
+          />
+          <DraggableSpace />
+          <ExpandButton on_gui_click={funcRef(expandSettings)} tooltip={[L_GuiAssemblySettings.ShowFullSettings]} />
+        </TitleBar>
+        {SettingsStageSelector(assembly)}
+      </frame>
+    )
+  }
+  private static captionedAssemblyName(this: void, displayName: LocalisedString): LocalisedString {
+    return [L_GuiAssemblySettings.AssemblyCaption, displayName]
+  }
+}
 
 const stageListBoxHeight = 28 * 12
 const stageListBoxWidth = 140
@@ -65,7 +94,7 @@ const dropDownWidth = 180
 const blueprintSettingsButtonWidth = 180
 
 @RegisterClass("gui:AssemblySettings")
-export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
+class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   assembly!: UserAssembly
   playerIndex!: PlayerIndex
 
@@ -73,29 +102,32 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     this.assembly = props.assembly
     this.playerIndex = tracker.playerIndex
 
-    global.players[this.playerIndex].currentShownAssembly = this.assembly
-    tracker.getSubscription().add(ibind(this.onDestroyed))
-
-    this.assembly.localEvents.subscribe(tracker.getSubscription(), ibind(this.onAssemblyEvent))
     return (
-      <frame style="inside_shallow_frame" direction="vertical">
-        <frame style="subheader_frame" direction="horizontal">
-          <ItemRename
-            name={this.assembly.name}
-            displayName={this.assembly.displayName}
-            renameTooltip={[L_GuiAssemblySettings.RenameAssembly]}
-          />
-          <HorizontalPusher />
-          <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={ibind(this.beginDelete)} />
+      <frame direction="vertical">
+        <TitleBar>
+          <label caption={[L_GuiAssemblySettings.Title]} style="frame_title" />
+          <DraggableSpace />
+          <CollapseButton on_gui_click={funcRef(collapseSettings)} tooltip={[L_GuiAssemblySettings.HideFullSettings]} />
+        </TitleBar>
+        <frame style="inside_shallow_frame" direction="vertical">
+          <frame style="subheader_frame" direction="horizontal">
+            <ItemRename
+              name={this.assembly.name}
+              displayName={this.assembly.displayName}
+              renameTooltip={[L_GuiAssemblySettings.RenameAssembly]}
+            />
+            <HorizontalPusher />
+            <TrashButton tooltip={[L_GuiAssemblySettings.DeleteAssembly]} on_gui_click={ibind(this.beginDelete)} />
+          </frame>
+          <tabbed-pane style="tabbed_pane_with_no_side_padding" selected_tab_index={1}>
+            <tab caption={[L_GuiAssemblySettings.Stages]} />
+            {this.StageSettingsTab()}
+            <tab caption={[L_GuiAssemblySettings.Editing]} />
+            {this.EditingTab()}
+            <tab caption={[L_GuiAssemblySettings.Blueprints]} />
+            {this.BlueprintSettingsTab()}
+          </tabbed-pane>
         </frame>
-        <tabbed-pane style="tabbed_pane_with_no_side_padding" selected_tab_index={1}>
-          <tab caption={[L_GuiAssemblySettings.Stages]} />
-          {this.StageSettingsTab()}
-          <tab caption={[L_GuiAssemblySettings.Editing]} />
-          {this.EditingTab()}
-          <tab caption={[L_GuiAssemblySettings.Blueprints]} />
-          {this.BlueprintSettingsTab()}
-        </tabbed-pane>
       </frame>
     )
   }
@@ -126,11 +158,7 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           />
         </flow>
         <flow direction="horizontal" styleMod={{ padding: 0 }}>
-          <StageSelector
-            uses="list-box"
-            styleMod={{ height: stageListBoxHeight, width: stageListBoxWidth }}
-            assembly={this.assembly}
-          />
+          {SettingsStageSelector(this.assembly)}
           <Fn
             uses="frame"
             from={currentStage}
@@ -285,15 +313,6 @@ export class AssemblySettings extends Component<{ assembly: UserAssembly }> {
         />
       </flow>
     )
-  }
-  private onDestroyed() {
-    delete global.players[this.playerIndex].currentShownAssembly
-  }
-
-  private onAssemblyEvent(event: LocalAssemblyEvent) {
-    if (event.type == "assembly-deleted") {
-      hideAssemblySettings(game.get_player(this.playerIndex)!)
-    }
   }
 
   private beginDelete() {
@@ -519,89 +538,93 @@ export class StageSettings extends Component<{ stage: Stage }> {
 
 const assemblySettingsHeight = stageListBoxHeight + 120
 const assemblySettingsWidth = stageListBoxWidth + stageSettingsWidth + 30
-const DefaultFrameLocation = { x: 0, y: 350 }
-function AssemblySettingsFrame() {
-  return (
-    <frame
+
+const AssemblySettingsName = `${script.mod_name}:assembly-settings`
+const DefaultAssemblySettingsLoc = { x: 0, y: 350 }
+function renderAtAssemblySettingsLoc(player: LuaPlayer, spec: Spec): void {
+  const existing = player.gui.screen[AssemblySettingsName]
+  const loc = existing?.location ?? DefaultAssemblySettingsLoc
+  const element = renderNamed(spec, player.gui.screen, AssemblySettingsName)!
+  element.location = loc
+}
+
+function renderPlaceholder(player: LuaPlayer) {
+  renderAtAssemblySettingsLoc(
+    player,
+    <flow
       direction="vertical"
       styleMod={{
         minimal_width: assemblySettingsWidth,
         minimal_height: assemblySettingsHeight,
       }}
-      location={DefaultFrameLocation}
       visible={false}
-    >
-      <SimpleTitleBar title={[L_GuiAssemblySettings.Title]} onClose={funcRef(closeAssemblySettingsClick)} />
-      <flow direction="vertical" name="content" />
-    </frame>
+    />,
   )
 }
 
-const AssemblySettingsFrameName = "gui:AssemblySettingsFrame"
-onPlayerInit((index) => {
-  const player = game.get_player(index)!
-  getOrCreateFrame(player)
+function renderCompactSettings(player: LuaPlayer, assembly: UserAssembly) {
+  renderAtAssemblySettingsLoc(player, <CompactAssemblySettings assembly={assembly} />)
+}
+
+function renderFullSettings(player: LuaPlayer, assembly: UserAssembly) {
+  renderAtAssemblySettingsLoc(player, <AssemblySettings assembly={assembly} />)
+}
+
+function renderGuiForAssembly(player: LuaPlayer, currentAssembly: UserAssembly | nil): void {
+  if (!currentAssembly) {
+    return renderPlaceholder(player)
+  }
+  const useCompactSettings = global.players[player.index].compactAssemblySettings
+  if (useCompactSettings) {
+    renderCompactSettings(player, currentAssembly)
+  } else {
+    renderFullSettings(player, currentAssembly)
+  }
+}
+
+function updateGui(player: LuaPlayer) {
+  const currentAssembly = playerCurrentStage(player.index).get()?.assembly
+  renderGuiForAssembly(player, currentAssembly)
+}
+
+function expandSettings({ player_index }: OnGuiClickEvent) {
+  global.players[player_index].compactAssemblySettings = nil
+  updateGui(game.get_player(player_index)!)
+}
+
+function collapseSettings({ player_index }: OnGuiClickEvent) {
+  global.players[player_index].compactAssemblySettings = true
+  updateGui(game.get_player(player_index)!)
+}
+
+registerFunctions("gui:assembly-settings", {
+  expandSettings,
+  collapseSettings,
 })
-function getOrCreateFrame(player: LuaPlayer): FrameGuiElement {
-  const screen = player.gui.screen
-  const existing = screen[AssemblySettingsFrameName]
-  if (existing) return existing as FrameGuiElement
-  return renderNamed(<AssemblySettingsFrame />, screen, AssemblySettingsFrameName) as FrameGuiElement
-}
-function destroyFrame(player: LuaPlayer) {
-  destroy(player.gui.screen[AssemblySettingsFrameName])
-}
 
-function closeAssemblySettingsClick(event: OnGuiClickEvent) {
-  const player = game.get_player(event.player_index)
-  if (player) hideAssemblySettings(player)
-}
-registerFunctions("AssemblySettings", { closeAssemblySettingsClick })
-
-function hideAssemblySettings(player: LuaPlayer): void {
-  const frame = getOrCreateFrame(player)
-  frame.visible = false
-  destroyChildren(frame.content!)
-}
-
-/** Returns the frame if same assembly already open */
-function showAssemblySettings(player: LuaPlayer, assembly: UserAssembly): FrameGuiElement | nil {
-  const frame = getOrCreateFrame(player)
-  frame.visible = true
-  frame.bring_to_front()
-  frame.auto_center = false
-  const currentAssembly = global.players[player.index].currentShownAssembly
-  if (currentAssembly == assembly) {
-    return frame
-  }
-  destroyChildren(frame.content!)
-  renderMultiple(<AssemblySettings assembly={assembly} />, frame.content!)
-}
-
-export function openAssemblySettings(player: LuaPlayer, assembly: UserAssembly): void {
-  const frame = showAssemblySettings(player, assembly)
-  if (frame) {
-    frame.location = DefaultFrameLocation
-    frame.auto_center = false
-  }
-
-  teleportToAssembly(player, assembly)
-}
-
-PlayerChangedStageEvent.addListener((player, stage) => {
-  if (!stage) return
-  const currentAssembly = global.players[player.index].currentShownAssembly
-  if (currentAssembly && currentAssembly != stage.assembly) {
-    showAssemblySettings(player, stage.assembly)
+PlayerChangedStageEvent.addListener((player, newStage, oldStage) => {
+  const newAssembly = newStage?.assembly
+  const oldAssembly = oldStage?.assembly
+  if (newAssembly != oldAssembly) {
+    renderGuiForAssembly(player, newAssembly)
   }
 })
 export function refreshCurrentAssembly(): void {
   for (const [, player] of game.players) {
-    const currentAssembly = global.players[player.index].currentShownAssembly
-    if (currentAssembly) {
-      destroyFrame(player)
-      showAssemblySettings(player, currentAssembly)
-    }
+    const currentStage = playerCurrentStage(player.index).get()
+    renderGuiForAssembly(player, currentStage?.assembly)
   }
 }
 Migrations.fromAny(refreshCurrentAssembly)
+
+Migrations.to("0.15.0", () => {
+  const AssemblySettingsFlowName = "gui:AssemblySettingsFrame"
+  for (const [, player] of game.players) {
+    destroy(player.gui.screen[AssemblySettingsFlowName])
+    interface OldPlayerData {
+      currentShownAssembly?: UserAssembly
+    }
+    const playerData = global.players[player.index] as OldPlayerData | nil
+    delete playerData?.currentShownAssembly
+  }
+})

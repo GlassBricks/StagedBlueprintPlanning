@@ -25,6 +25,31 @@ export function CloseButton(props: Partial<ElemProps<"sprite-button">>): Spec {
   )
 }
 
+export function ExpandButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+  return (
+    <sprite-button
+      style="frame_action_button"
+      sprite="utility/expand"
+      hovered_sprite="utility/expand_dark"
+      clicked_sprite="utility/expand_dark"
+      mouse_button_filter={["left"]}
+      {...props}
+    />
+  )
+}
+export function CollapseButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+  return (
+    <sprite-button
+      style="frame_action_button"
+      sprite="utility/collapse"
+      hovered_sprite="utility/collapse_dark"
+      clicked_sprite="utility/collapse_dark"
+      mouse_button_filter={["left"]}
+      {...props}
+    />
+  )
+}
+
 export function RenameButton(props: Partial<ElemProps<"sprite-button">>): Spec {
   return (
     <sprite-button

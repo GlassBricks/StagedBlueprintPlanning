@@ -11,7 +11,7 @@
 
 import { destroy } from "../lib/factoriojsx"
 import { Migrations } from "../lib/migration"
-import "./CurrentAssembly"
+import "./AllAssemblies"
 import "./editor-fix"
 import "./new-assembly"
 import "./opened-entity"

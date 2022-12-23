@@ -15,8 +15,8 @@ import { WorldUpdater } from "../assembly/WorldUpdater"
 import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
 import { Pos } from "../lib/geometry"
-import { openAssemblySettings, refreshCurrentAssembly } from "../ui/AssemblySettings"
-import { teleportToStage } from "../ui/player-current-stage"
+import { refreshCurrentAssembly } from "../ui/AssemblySettings"
+import { teleportToAssembly, teleportToStage } from "../ui/player-current-stage"
 import "./in-world-test-util"
 
 // better source map traceback
@@ -104,21 +104,23 @@ if (script.active_mods.testorio != nil) {
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
       const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo"; skipped: number }
-      if (result.status == "passed" && result.skipped <= 1) {
+      if (result.status == "passed" && result.skipped == 0) {
         game.surfaces[1].clear()
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()
 
         const assembly = createUserAssembly("Test", 5)
-        openAssemblySettings(player, assembly)
+        teleportToAssembly(player, assembly)
 
         setupManualTests(assembly)
+
+        player.play_sound({ path: "utility/game_won" })
       }
     },
     log_passed_tests: false,
     sound_effects: true,
     // test_pattern: "integration%-test",
-  } as Testorio.Config)
+  } satisfies Partial<Testorio.Config>)
   if (__DebugAdapter) {
     tagBlacklist.push("after_mod_reload")
   }
@@ -137,10 +139,9 @@ Events.on_tick(() => {
   if (global.rerunMode == nil) global.rerunMode = "rerun"
   if (global.rerunMode == "none" || isTestsRunning()) return
 
-  const ticks = math.ceil((__DebugAdapter ? 12 : 3) * 60 * game.speed)
+  const ticks = math.ceil((__DebugAdapter ? 20 : 5) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod == 0) {
-    // tests not running or not ready
     global.lastCompileTimestamp = lastCompileTime
     game.reload_mods()
   } else if (global.lastCompileTimestamp != lastCompileTime && remote.interfaces.testorio?.runTests) {

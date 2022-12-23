@@ -141,20 +141,22 @@ export declare const enum L_Interaction {
   /** Blueprint book exported to __1__ */
   BlueprintBookExported = "bp100.interaction.blueprint-book-exported",
 }
-export declare const enum L_GuiCurrentAssembly {
-  /** (Not in a staged build) */
-  NoAssembly = "bp100.gui.current-assembly.no-assembly",
-  /** Open staged build settings */
-  OpenAssemblySettings = "bp100.gui.current-assembly.open-assembly-settings",
-  /** Show all staged builds */
-  ShowAllAssemblies = "bp100.gui.current-assembly.show-all-assemblies",
-}
-export declare const enum L_GuiAllAssemblies {
+export declare const enum L_GuiAssemblySelector {
+  /** All staged builds */
+  AllAssemblies = "bp100.gui.assembly-selector.all-assemblies",
+  /** Show staged builds */
+  ShowAllAssemblies = "bp100.gui.assembly-selector.show-all-assemblies",
   /** New staged build */
-  NewAssembly = "bp100.gui.all-assemblies.new-assembly",
+  NewAssembly = "bp100.gui.assembly-selector.new-assembly",
 }
 export declare const enum L_GuiAssemblySettings {
-  /** Staged Build */
+  /** __1__ */
+  AssemblyCaption = "bp100.gui.assembly-settings.assembly-caption",
+  /** Show settings */
+  ShowFullSettings = "bp100.gui.assembly-settings.show-full-settings",
+  /** Hide settings */
+  HideFullSettings = "bp100.gui.assembly-settings.hide-full-settings",
+  /** Staged build */
   Title = "bp100.gui.assembly-settings.title",
   /** Rename */
   RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
