@@ -14,8 +14,7 @@ import { Events } from "./lib"
 import "./migrations-custom"
 import "./ui"
 
-// pcall(require, "test.test-init")
-import "./test/test-init"
+pcall(require, "test.test-init")
 
 Events.on_init(() => {
   const force = game.forces.player
