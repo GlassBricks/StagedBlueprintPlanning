@@ -15,10 +15,12 @@ import * as fs from "fs"
 import * as path from "path"
 import * as prettier from "prettier"
 import * as semver from "semver"
+import { ReleaseType } from "semver"
 
 const args = process.argv.slice(2)
 
-if (args.length !== 1) {
+const arg = args[0]
+if (!arg || !["major", "minor", "patch"].includes(arg)) {
   console.log("Usage: bump-version.ts <major|minor|patch>")
   process.exit(0)
 }
@@ -32,21 +34,7 @@ const infoJson: InfoJson = JSON.parse(fs.readFileSync(infoJsonPath, "utf8"))
 const oldVersion = infoJson.version
 const version = semver.parse(oldVersion)
 assert(version !== null, "Invalid version in info.json")
-
-switch (args[0]) {
-  case "major":
-    version.inc("major")
-    break
-  case "minor":
-    version.inc("minor")
-    break
-  case "patch":
-    version.inc("patch")
-    break
-  default:
-    console.log("Usage: bump-version.ts <major|minor|patch>")
-    process.exit(0)
-}
+version.inc(arg as ReleaseType)
 
 const changelogPath = path.join(__dirname, "..", "src/changelog.txt")
 // split lines
@@ -66,6 +54,6 @@ fs.writeFileSync(changelogPath, changelog.join("\n"))
 // git commit -m "move to version ${version.format()}"
 
 child_process.execSync(`git add ${infoJsonPath} ${changelogPath}`)
-child_process.execSync(`git commit -m "move to version ${version.format()}"`)
+child_process.execSync(`git commit -m "moved to version ${version.format()}"`)
 
 console.log(`Bumped version to ${version.format()}`)
