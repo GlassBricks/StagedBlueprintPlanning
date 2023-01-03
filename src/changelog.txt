@@ -2,6 +2,7 @@
 Version: 0.15.2
 Date: ????
   Changes:
+    - The Staged build settings window is brought to the "front" of the gui when opened.
 ---------------------------------------------------------------------------------------------------
 Version: 0.15.1
 Date: 2022-12-23

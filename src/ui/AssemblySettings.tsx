@@ -576,6 +576,8 @@ function renderAtAssemblySettingsLoc(player: LuaPlayer, spec: Spec): void {
   const loc = existing?.location ?? DefaultAssemblySettingsLoc
   const element = renderNamed(spec, player.gui.screen, AssemblySettingsName)!
   element.location = loc
+
+  element.bring_to_front()
 }
 
 function renderPlaceholder(player: LuaPlayer) {
@@ -646,6 +648,10 @@ export function refreshCurrentAssembly(): void {
   }
 }
 Migrations.fromAny(refreshCurrentAssembly)
+export function bringSettingsWindowToFront(player: LuaPlayer): void {
+  const element = player.gui.screen[AssemblySettingsName]
+  if (element) element.bring_to_front()
+}
 
 Migrations.to("0.15.1", () => {
   const AssemblySettingsFlowName = "gui:AssemblySettingsFrame"

@@ -19,6 +19,7 @@ import * as mod_gui from "mod-gui"
 import { L_GuiAssemblySelector } from "../locale"
 import { teleportToAssembly } from "./player-current-stage"
 import { Sprites } from "../constants"
+import { bringSettingsWindowToFront } from "./AssemblySettings"
 
 declare const global: GlobalWithPlayers
 
@@ -95,7 +96,9 @@ class AllAssemblies extends Component {
     const assembly = this.allAssemblies[this.listBox.selected_index - 1]
     if (assembly != nil) {
       closeAllAssemblies(this.playerIndex)
-      teleportToAssembly(game.get_player(this.playerIndex)!, assembly)
+      const player = game.get_player(this.playerIndex)!
+      teleportToAssembly(player, assembly)
+      bringSettingsWindowToFront(player)
     } else {
       this.listBox.selected_index = 0
     }
