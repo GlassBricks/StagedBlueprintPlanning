@@ -24,7 +24,7 @@ import {
   TextBoxElement,
   TextFieldElement,
 } from "../../factoriojsx"
-import { State, state } from "../../observable"
+import { _numObservers, state, State } from "../../observable"
 import { RegisterClass } from "../../references"
 import { testRender } from "../gui"
 import expect, { mock } from "tstl-expect"
@@ -203,9 +203,9 @@ describe("destroy", () => {
       caption: source,
     }
     const element = testRender(spec).element
-    expect(State._numObservers(source)).to.equal(1)
+    expect(_numObservers(source)).to.equal(1)
     destroy(element)
-    expect(State._numObservers(source)).to.equal(0)
+    expect(_numObservers(source)).to.equal(0)
   })
 
   test("calling destroy ends child subscriptions", () => {
@@ -226,9 +226,9 @@ describe("destroy", () => {
     }
     const element = testRender(spec).element
 
-    expect(State._numObservers(source)).to.equal(1)
+    expect(_numObservers(source)).to.equal(1)
     destroy(element)
-    expect(State._numObservers(source)).to.equal(0)
+    expect(_numObservers(source)).to.equal(0)
   })
 })
 

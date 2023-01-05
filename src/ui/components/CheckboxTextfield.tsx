@@ -1,5 +1,5 @@
 import { Component, Element, FactorioJsx, RenderContext } from "../../lib/factoriojsx"
-import { ibind, MutableState, RegisterClass } from "../../lib"
+import { ibind, MutableState, RegisterClass, State } from "../../lib"
 import { getDefaultValueIfIsOverriden, highlightIfOverriden } from "../PropWithOverride"
 
 export interface CheckboxTextfieldProps {
@@ -18,6 +18,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
     const { captionBefore, captionAfter, value } = props
     this.value = value
 
+    const isTruthy = this.value.truthy()
     return (
       <flow
         direction="horizontal"
@@ -26,7 +27,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
         }}
       >
         <checkbox
-          state={this.value.truthy()}
+          state={isTruthy}
           caption={captionBefore}
           styleMod={highlightIfOverriden(value)}
           on_gui_checked_state_changed={ibind(this.onCheckboxChanged)}
@@ -39,7 +40,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
           allow_decimal={false}
           allow_negative={false}
           text={this.value.map(ibind(this.valueToText))}
-          enabled={this.value.truthy()}
+          enabled={isTruthy}
           on_gui_text_changed={ibind(this.onTextChanged)}
           onCreate={(e) => (this.textfield = e)}
           styleMod={{ width: 50 }}

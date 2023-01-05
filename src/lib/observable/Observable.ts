@@ -33,7 +33,7 @@ export interface MultiObservable<A extends any[]> {
 
 type AsMap<A extends any[]> = LuaMap<ObserverSubscription, MultiObserver<A>>
 @RegisterClass("ObserverList")
-export class ObserverList<A extends any[]> implements MultiObservable<A> {
+export class MultiEvent<A extends any[]> implements MultiObservable<A> {
   subscribeIndependently(observer: MultiObserver<A>): Subscription {
     const thisAsMap = this as unknown as AsMap<A>
     const subscription = new ObserverSubscription(thisAsMap)
@@ -74,9 +74,5 @@ class ObserverSubscription extends Subscription {
   }
 }
 
-export type Event<T> = ObserverList<[T]>
-export const Event: new <T>() => Event<T> = ObserverList
-
-export type MultiEvent<A extends any[]> = ObserverList<A>
-// noinspection JSUnusedGlobalSymbols
-export const MultiEvent: new <A extends any[]>() => MultiEvent<A> = ObserverList
+export type Event<T> = MultiEvent<[T]>
+export const Event: new <T>() => Event<T> = MultiEvent

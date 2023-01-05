@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MutableState, setValueFn, State, state } from "../../observable"
+import { _numObservers, MutableState, state, States } from "../../observable"
 import expect, { mock } from "tstl-expect"
 
 describe("state", () => {
@@ -19,12 +19,12 @@ describe("state", () => {
   })
 
   it("can be constructed with initial value", () => {
-    expect("begin").to.be(s.get())
+    expect(s.get()).to.be("begin")
   })
 
   it("can be set", () => {
     s.set("end")
-    expect("end").to.be(s.get())
+    expect(s.get()).to.be("end")
   })
 
   test("subscribeAndFire", () => {
@@ -41,11 +41,37 @@ describe("state", () => {
     expect(fn).calledWith("end", "begin")
   })
 
+  test("truthy", () => {
+    const val = state(false)
+    const res = val.truthy()
+
+    const fn = mock.fn()
+    res.subscribeIndependentlyAndFire({ invoke: fn })
+    expect(fn).calledTimes(1)
+    expect(fn).calledWith(false, nil)
+    val.set(true)
+    expect(fn).calledTimes(2)
+    expect(fn).calledWith(true, false)
+  })
+})
+
+describe("State utils", () => {
   test("setValueFn", () => {
-    const fn = setValueFn(s, "end")
-    expect("begin").to.be(s.get())
+    const s = state("begin")
+    const fn = States.setValueFn(s, "end")
+    expect(s.get()).to.be("begin")
     fn.invoke()
-    expect("end").to.be(s.get())
+    expect(s.get()).to.be("end")
+  })
+
+  test("toggleFn", () => {
+    const s = state(false)
+    const fn = States.toggleFn(s)
+    expect(s.get()).to.be(false)
+    fn.invoke()
+    expect(s.get()).to.be(true)
+    fn.invoke()
+    expect(s.get()).to.be(false)
   })
 })
 
@@ -69,19 +95,6 @@ describe("map", () => {
     const val = state(3)
     const mapped = val.map({ invoke: (x) => x * 2 })
     expect(mapped.get()).to.equal(6)
-  })
-
-  test("choice", () => {
-    const val = state(false)
-    const choice = val.switch("yes", "no")
-
-    const fn = mock.fn()
-    choice.subscribeIndependentlyAndFire({ invoke: fn })
-    expect(fn).calledTimes(1)
-    expect(fn).calledWith("no", nil)
-    val.set(true)
-    expect(fn).calledTimes(2)
-    expect(fn).calledWith("yes", "no")
   })
 })
 
@@ -135,7 +148,7 @@ describe("flatMap", () => {
 
     expect(fn).calledTimes(3)
     expect(fn).calledWith(2, 5)
-    expect(State._numObservers(innerVal)).to.be(0)
+    expect(_numObservers(innerVal)).to.be(0)
 
     val.set(1)
 

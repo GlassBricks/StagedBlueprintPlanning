@@ -48,6 +48,17 @@ export function RegisterClass(name: string): (this: unknown, _class: Class<any>)
   return (_class: Class<any>) => registerClass(name, _class)
 }
 
+export function RegisterClassFunctionsOnly(name: string): (this: unknown, _class: Class<any>) => void {
+  return (_class: Class<any>) => {
+    for (const [key, value] of pairs(_class)) {
+      // noinspection SuspiciousTypeOfGuard
+      if (typeof value == "function" && typeof key == "string") {
+        Functions.registerRaw(name + "." + key, value)
+      }
+    }
+  }
+}
+
 export function assertIsRegisteredClass(item: Class<any>): void {
   if (!registeredClasses.has(item)) {
     error(`Class ${item.name} is not registered: ` + serpent.block(item))
@@ -73,7 +84,9 @@ export const Functions = new Registry<AnyFunction>("function", (func: AnyFunctio
 
 export type Functions = PRRecord<string, AnyFunction>
 export function registerFunctions(prefix: string, functions: Functions): void {
-  prefix += ":"
+  registerFunctionsCustomPrefix(prefix + ":", functions)
+}
+export function registerFunctionsCustomPrefix(prefix: string, functions: Functions): void {
   for (const [name, func] of pairs(functions)) {
     Functions.registerRaw(prefix + name, func)
   }

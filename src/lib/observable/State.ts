@@ -10,8 +10,17 @@
  */
 
 import { isEmpty } from "../_util"
-import { bind, Callback, cfuncRef, Func, funcRef, ibind, RegisterClass } from "../references"
-import { MultiObservable, MultiObserver, ObserverList } from "./Observable"
+import {
+  bind,
+  Callback,
+  Func,
+  funcRef,
+  ibind,
+  RegisterClass,
+  RegisterClassFunctionsOnly,
+  registerFunctions,
+} from "../references"
+import { MultiObservable, MultiObserver, MultiEvent } from "./Observable"
 import { Subscription } from "./Subscription"
 
 type ChangeParams<T> = [value: T, oldValue: T]
@@ -21,25 +30,24 @@ export type PartialChangeListener<T> = MultiObserver<[value: T, oldValue: T | ni
 export type MaybeState<T> = State<T> | T
 export type MaybeMutableState<T> = State<T> | MutableState<T> | T
 
-@RegisterClass("State")
+export type Mapper<T, U> = Func<(value: T) => U>
+
+@RegisterClassFunctionsOnly("State")
 export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
   abstract get(): T
-  protected event = new ObserverList<ChangeParams<T>>()
-  subscribeIndependently(observer: ChangeListener<T>): Subscription {
-    return this.event.subscribeIndependently(observer)
-  }
-
+  abstract subscribeIndependently(observer: MultiObserver<ChangeParams<T>>): Subscription
   subscribe(context: Subscription, observer: ChangeListener<T>): Subscription {
     const subscription = this.subscribeIndependently(observer)
     context.add(subscription)
     return subscription
   }
-
-  private static subFn(this: void, key: keyof any, value: any): any {
-    return value && value[key]
-  }
   subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {
     const subscription = this.subscribeIndependently(observer)
+    observer.invoke(this.get(), nil)
+    return subscription
+  }
+  subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
+    const subscription = this.subscribe(context, observer)
     observer.invoke(this.get(), nil)
     return subscription
   }
@@ -47,60 +55,38 @@ export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
   map<V>(mapper: Mapper<T, V>): State<V> {
     return new MappedState(this, mapper)
   }
-
   flatMap<V>(mapper: Mapper<T, MaybeState<V>>): State<V> {
     return new FlatMappedState(this, mapper)
   }
 
-  switch<V>(whenTruthy: V, whenFalsy: V): State<V> {
-    return this.map(bind(State.switchFn, whenTruthy, whenFalsy)) as State<V>
-  }
-  static switchFn<V>(this: void, whenTrue: V, whenFalse: V, value: unknown): V {
-    return value ? whenTrue : whenFalse
+  // utils
+  static truthyFn<V>(this: void, value: V): boolean {
+    return !!value
   }
   truthy(): State<boolean> {
     return this.map(funcRef(State.truthyFn))
   }
-  static truthyFn<V>(this: void, value: V): boolean {
-    return !!value
-  }
-
-  static gtFn(this: void, value: number, value2: number): boolean {
-    return value2 > value
-  }
-  gt(this: State<number>, value: number): State<boolean> {
-    return this.map(bind(State.gtFn, value))
-  }
-
-  subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
-    const subscription = this.subscribe(context, observer)
-    observer.invoke(this.get(), nil)
-    return subscription
-  }
-  sub<K extends keyof T>(key: K): State<T[K]> {
-    return this.map(bind(State.subFn, key)) as State<T[K]>
-  }
-  nullableSub<T, K extends keyof T>(this: State<T | nil>, key: K): State<T[K] | nil> {
-    return this.map(bind(State.subFn, key)) as State<T[K]>
-  }
-
-  static _numObservers(state: State<any>): number {
-    return table_size(state.event)
-  }
 }
 
-export type Mapper<T, U> = Func<(value: T) => U>
+export abstract class BasicState<T> extends State<T> {
+  protected event = new MultiEvent<ChangeParams<T>>()
+
+  subscribeIndependently(observer: ChangeListener<T>): Subscription {
+    return this.event.subscribeIndependently(observer)
+  }
+}
+export function _numObservers(state: State<unknown>): number {
+  return table_size((state as unknown as { event: MultiEvent<any> }).event)
+}
 
 export interface MutableState<T> extends State<T> {
   set(value: T): void
-
   forceNotify(): void
-
   closeAll(): void
 }
 
 @RegisterClass("MutableState")
-class MutableStateImpl<T> extends State<T> implements MutableState<T> {
+class MutableStateImpl<T> extends BasicState<T> implements MutableState<T> {
   public constructor(private value: T) {
     super()
   }
@@ -128,24 +114,17 @@ class MutableStateImpl<T> extends State<T> implements MutableState<T> {
   __tostring(): string {
     return "MutableState(" + this.get() + ")"
   }
-
-  static setValueFn(this: MutableState<any>, value: unknown) {
-    this.set(value)
-  }
-  static toggleFn(this: MutableState<boolean>) {
-    this.set(!this.get())
-  }
 }
 export function state<T>(value: T): MutableState<T> {
   return new MutableStateImpl(value)
 }
 
 export function isMutableState<T>(state: State<T>): state is MutableState<T> {
-  return state instanceof MutableStateImpl
+  return typeof (state as MutableState<T>).set == "function"
 }
 
 @RegisterClass("MappedState")
-class MappedState<T, U> extends State<U> {
+class MappedState<T, U> extends BasicState<U> {
   private sourceSubscription: Subscription | nil
   private curValue: U | nil
 
@@ -192,7 +171,7 @@ class MappedState<T, U> extends State<U> {
 }
 
 @RegisterClass("FlatMappedState")
-export class FlatMappedState<T, U> extends State<U> {
+export class FlatMappedState<T, U> extends BasicState<U> {
   private sourceSubscription: Subscription | nil
   private nestedSubscription: Subscription | nil
   private curValue: U | nil
@@ -266,9 +245,24 @@ export class FlatMappedState<T, U> extends State<U> {
   }
 }
 
-export function setValueFn<T>(state: MutableState<T>, value: T): Callback {
-  return bind(cfuncRef(MutableStateImpl.setValueFn), state, value)
-}
-export function toggleFn(state: MutableState<boolean>): Callback {
-  return bind(MutableStateImpl.toggleFn, state)
+export namespace States {
+  function setValue(state: MutableState<unknown>, value: unknown) {
+    state.set(value)
+  }
+  function toggle(state: MutableState<boolean>) {
+    state.set(!state.get())
+  }
+
+  registerFunctions("States", {
+    setValue,
+    toggle,
+  })
+
+  export function setValueFn(state: MutableState<unknown>, value: unknown): Callback {
+    return bind(setValue, state, value)
+  }
+
+  export function toggleFn(state: MutableState<boolean>): Callback {
+    return bind(toggle, state)
+  }
 }
