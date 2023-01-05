@@ -35,7 +35,7 @@ describe("create", () => {
       type: "flow",
       direction: "vertical",
     }
-    expect(testRender(spec).native.direction).to.equal("vertical")
+    expect(testRender(spec).element.direction).to.equal("vertical")
   })
 
   test("Sets element property", () => {
@@ -44,7 +44,7 @@ describe("create", () => {
       elem_type: "item",
       locked: true,
     }
-    expect(testRender(spec).native.locked).to.be(true)
+    expect(testRender(spec).element.locked).to.be(true)
   })
 
   test("Listens to source property", () => {
@@ -53,7 +53,7 @@ describe("create", () => {
       type: "flow",
       caption: v,
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.caption).to.be("one")
     v.set("two")
     expect(element.caption).to.be("two")
@@ -65,7 +65,7 @@ describe("create", () => {
       type: "slider",
       value_step: value,
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.get_slider_value_step()).to.be(1)
     value.set(2)
     expect(element.get_slider_value_step()).to.be(2)
@@ -78,7 +78,7 @@ describe("create", () => {
       minimum_value: value,
       maximum_value: 5,
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.get_slider_minimum()).to.be(1)
     expect(element.get_slider_maximum()).to.be(5)
     value.set(2)
@@ -93,7 +93,7 @@ describe("create", () => {
       minimum_value: 1,
       maximum_value: value,
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.get_slider_minimum()).to.be(1)
     expect(element.get_slider_maximum()).to.be(5)
     value.set(6)
@@ -122,7 +122,7 @@ describe("create", () => {
         },
       ],
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.children[0].type).to.be("button")
     expect(element.children[0].caption).to.be("hi")
   })
@@ -141,7 +141,7 @@ describe("create", () => {
         },
       ],
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.children[0].type).to.be("button")
     expect(element.children[0].caption).to.be("hi")
     expect(element.children[1].type).to.be("button")
@@ -157,7 +157,7 @@ describe("styleMod", () => {
         left_padding: 3,
       },
     }
-    expect(testRender(spec).native.style.left_padding).to.equal(3)
+    expect(testRender(spec).element.style.left_padding).to.equal(3)
   })
 
   test("sets setter property", () => {
@@ -167,7 +167,7 @@ describe("styleMod", () => {
         padding: [3, 3],
       },
     }
-    expect(testRender(spec).native.style.left_padding).to.equal(3)
+    expect(testRender(spec).element.style.left_padding).to.equal(3)
   })
 
   test("listens to source property", () => {
@@ -178,7 +178,7 @@ describe("styleMod", () => {
         padding: value,
       },
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.style.left_padding).to.equal(1)
     value.set(2)
     expect(element.style.left_padding).to.equal(2)
@@ -191,7 +191,7 @@ describe("destroy", () => {
       type: "flow",
       direction: "vertical",
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     destroy(element)
     expect(element.valid).to.be(false)
   })
@@ -202,7 +202,7 @@ describe("destroy", () => {
       type: "flow",
       caption: source,
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(State._numObservers(source)).to.equal(1)
     destroy(element)
     expect(State._numObservers(source)).to.equal(0)
@@ -224,7 +224,7 @@ describe("destroy", () => {
         },
       ],
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
 
     expect(State._numObservers(source)).to.equal(1)
     destroy(element)
@@ -240,7 +240,7 @@ test("events", () => {
     on_gui_opened: { invoke: func },
     on_gui_text_changed: { invoke: func },
   }
-  const element = testRender(spec).native
+  const element = testRender(spec).element
 
   expect(func).not.called()
 
@@ -284,7 +284,7 @@ test("observable value", () => {
     type: "text-box",
     text: val,
   }
-  const element = testRender(spec).native
+  const element = testRender(spec).element
 
   expect(val.get()).to.equal("one")
   expect(element.text).to.equal("one")
@@ -316,7 +316,7 @@ test("onCreate", () => {
     },
   }
 
-  expect(testRender(spec).native).to.be(element1)
+  expect(testRender(spec).element).to.be(element1)
 })
 
 test("tracker onMount", () => {
@@ -328,7 +328,7 @@ test("tracker onMount", () => {
     },
     props: {},
   }
-  const element = testRender(spec).native
+  const element = testRender(spec).element
   expect(fn).calledTimes(1)
   expect(fn).calledWith(element)
 })
@@ -344,7 +344,7 @@ test("tracker onDestroy", () => {
     props: {},
   }
 
-  const element = testRender(spec).native
+  const element = testRender(spec).element
   expect(fn).not.called()
   destroy(element)
   expect(fn).called()
@@ -411,7 +411,7 @@ describe("Class component", () => {
       type: Foo,
       props: { cb },
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
 
     expect(element.type).to.be("flow")
     expect(results).to.equal(["constructed", "render", "cb flow", "onMount"])
@@ -425,7 +425,7 @@ describe("Class component", () => {
       type: Foo2,
       props: { cb },
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
 
     expect(element.type).to.be("flow")
     expect(results).to.equal(["constructed2", "render2", "constructed", "render", "cb flow", "onMount", "onMount2"])
@@ -485,7 +485,7 @@ describe("function component", () => {
       type: Component,
       props: { cb },
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
 
     expect(element.type).to.be("flow")
     expect(results).to.equal(["render", "flow", "mountA", "mountB"])
@@ -499,7 +499,7 @@ describe("function component", () => {
       type: Component2,
       props: { cb },
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
 
     expect(element.type).to.be("flow")
     expect(results).to.equal(["render2", "render", "flow", "mount2A", "mount2B", "mountA", "mountB"])
@@ -523,7 +523,7 @@ describe("Fragments", () => {
       type: "flow",
       children: [{ type: "fragment", children: [{ type: "flow" }, { type: "flow" }] }],
     }
-    const element = testRender(spec).native
+    const element = testRender(spec).element
     expect(element.type).to.be("flow")
     expect(element.children.length).to.be(2)
     expect(element.children[0].type).to.be("flow")
@@ -543,7 +543,7 @@ describe("Fragments", () => {
       type: "flow",
       children: [{ type: Comp, props: {} }],
     }
-    const element = testRender(spec2).native
+    const element = testRender(spec2).element
     expect(element.type).to.be("flow")
     expect(element.children.length).to.be(2)
     expect(element.children[0].type).to.be("flow")
@@ -561,7 +561,7 @@ test("tabbed-pane", () => {
       { type: "label", caption: "two content" },
     ],
   }
-  const element = testRender(spec).native
+  const element = testRender(spec).element
   expect(element.tabs.length).to.be(2)
   expect(element.tabs[0].tab.caption).to.be("one")
   expect(element.tabs[0].content.caption).to.be("one content")

@@ -26,7 +26,7 @@ const eventBlacklist = newLuaSet<keyof typeof defines.events>(
   "on_chunk_generated",
   "on_player_main_inventory_changed",
   "on_gui_location_changed",
-  "on_gui_click",
+  // "on_gui_click",
   "on_research_finished",
   "script_raised_set_tiles",
 )

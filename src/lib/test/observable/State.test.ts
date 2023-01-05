@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MutableState, State, state } from "../../observable"
+import { MutableState, setValueFn, State, state } from "../../observable"
 import expect, { mock } from "tstl-expect"
 
 describe("state", () => {
@@ -42,7 +42,7 @@ describe("state", () => {
   })
 
   test("setValueFn", () => {
-    const fn = s.setValueFn("end")
+    const fn = setValueFn(s, "end")
     expect("begin").to.be(s.get())
     fn.invoke()
     expect("end").to.be(s.get())

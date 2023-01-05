@@ -22,7 +22,7 @@ before_each(() => {
 })
 
 function findAllLabels(root: ElementWrapper): LocalisedString[] {
-  return root.findAllSatisfying((x) => x.type == "label").map((x) => x.native.caption)
+  return root.findAllSatisfying((x) => x.type == "label").map((x) => x.element.caption)
 }
 test("single then", () => {
   const component = testRender(<If condition={condition} then={{ invoke: () => <label caption="true" /> }} />)

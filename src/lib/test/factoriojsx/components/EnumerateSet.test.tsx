@@ -16,7 +16,7 @@ import { ElementWrapper, testRender } from "../../gui"
 import expect from "tstl-expect"
 
 function presentElements(wrapper: ElementWrapper) {
-  return wrapper.findAll("label").map((x) => x.native.caption)
+  return wrapper.findAll("label").map((x) => x.element.caption)
 }
 let set: MutableObservableSet<string>
 let spec: Spec
@@ -41,7 +41,7 @@ it("adds elements", () => {
   const wrapper = testRender(spec)
   set.add("a")
   set.add("b")
-  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["a", "b"])
+  expect(wrapper.findAll("label").map((x) => x.element.caption)).to.equal(["a", "b"])
 })
 
 it("removes elements", () => {

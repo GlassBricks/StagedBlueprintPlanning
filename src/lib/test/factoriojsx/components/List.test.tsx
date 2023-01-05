@@ -16,7 +16,7 @@ import { ElementWrapper, testRender } from "../../gui"
 import expect from "tstl-expect"
 
 function presentElements(wrapper: ElementWrapper) {
-  return wrapper.findAll("label").map((x) => x.native.caption)
+  return wrapper.findAll("label").map((x) => x.element.caption)
 }
 let array: MutableObservableList<string>
 let spec: Spec
@@ -49,7 +49,7 @@ it("adds elements", () => {
   const wrapper = testRender(spec)
   array.push("a")
   array.push("b")
-  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["a", "b"])
+  expect(wrapper.findAll("label").map((x) => x.element.caption)).to.equal(["a", "b"])
 })
 
 it("inserts elements", () => {
@@ -57,7 +57,7 @@ it("inserts elements", () => {
   array.push("a")
   array.push("b")
   array.insert(1, "c")
-  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["a", "c", "b"])
+  expect(wrapper.findAll("label").map((x) => x.element.caption)).to.equal(["a", "c", "b"])
 })
 
 it("removes elements", () => {
@@ -73,7 +73,7 @@ it("swaps elements", () => {
   array.push("a")
   array.push("b")
   array.swap(0, 1)
-  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["b", "a"])
+  expect(wrapper.findAll("label").map((x) => x.element.caption)).to.equal(["b", "a"])
 })
 
 it("changes elements", () => {
@@ -81,7 +81,7 @@ it("changes elements", () => {
   array.push("a")
   array.push("b")
   array.set(0, "c")
-  expect(wrapper.findAll("label").map((x) => x.native.caption)).to.equal(["c", "b"])
+  expect(wrapper.findAll("label").map((x) => x.element.caption)).to.equal(["c", "b"])
 })
 
 describe("ifEmpty", () => {

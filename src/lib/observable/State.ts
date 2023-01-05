@@ -19,12 +19,11 @@ export type ChangeListener<T> = MultiObserver<ChangeParams<T>>
 export type PartialChangeListener<T> = MultiObserver<[value: T, oldValue: T | nil]>
 
 export type MaybeState<T> = State<T> | T
-export type MaybeMutableState<T> = MutableState<T> | T
+export type MaybeMutableState<T> = State<T> | MutableState<T> | T
 
 @RegisterClass("State")
 export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
   abstract get(): T
-
   protected event = new ObserverList<ChangeParams<T>>()
   subscribeIndependently(observer: ChangeListener<T>): Subscription {
     return this.event.subscribeIndependently(observer)
@@ -66,6 +65,13 @@ export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
     return !!value
   }
 
+  notNil(): State<boolean> {
+    return this.map(funcRef(State.notNilFn))
+  }
+  static notNilFn<T>(this: void, value: T | nil): value is T {
+    return value != nil
+  }
+
   static gtFn(this: void, value: number, value2: number): boolean {
     return value2 > value
   }
@@ -93,27 +99,21 @@ export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
 export type Mapper<T, U> = Func<(value: T) => U>
 
 export interface MutableState<T> extends State<T> {
-  readonly value: T
   set(value: T): void
 
   forceNotify(): void
 
   closeAll(): void
-
-  setValueFn(value: T): Callback
-  toggleFn(this: MutableState<boolean>): Callback
 }
 
 @RegisterClass("MutableState")
 class MutableStateImpl<T> extends State<T> implements MutableState<T> {
-  public constructor(public value: T) {
+  public constructor(private value: T) {
     super()
   }
-
   get(): T {
     return this.value
   }
-
   public set(value: T): void {
     const oldValue = this.value
     this.value = value
@@ -133,20 +133,14 @@ class MutableStateImpl<T> extends State<T> implements MutableState<T> {
   }
 
   __tostring(): string {
-    return "MutableState(" + this.value + ")"
+    return "MutableState(" + this.get() + ")"
   }
 
-  private static setValueFn(this: MutableStateImpl<any>, value: unknown) {
+  static setValueFn(this: MutableState<any>, value: unknown) {
     this.set(value)
   }
-  setValueFn(value: T): Callback {
-    return bind(cfuncRef(MutableStateImpl.setValueFn), this, value)
-  }
-  private static toggleFn(this: MutableState<boolean>) {
-    this.set(!this.value)
-  }
-  toggleFn(this: MutableState<boolean>): Callback {
-    return bind(MutableStateImpl.toggleFn, this)
+  static toggleFn(this: MutableState<boolean>) {
+    this.set(!this.get())
   }
 }
 export function state<T>(value: T): MutableState<T> {
@@ -205,7 +199,7 @@ class MappedState<T, U> extends State<U> {
 }
 
 @RegisterClass("FlatMappedState")
-class FlatMappedState<T, U> extends State<U> {
+export class FlatMappedState<T, U> extends State<U> {
   private sourceSubscription: Subscription | nil
   private nestedSubscription: Subscription | nil
   private curValue: U | nil
@@ -239,7 +233,7 @@ class FlatMappedState<T, U> extends State<U> {
     }
   }
 
-  sourceListener(sourceNewValue: T) {
+  private sourceListener(sourceNewValue: T) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
@@ -249,7 +243,7 @@ class FlatMappedState<T, U> extends State<U> {
     if (oldValue != newValue) this.event.raise(newValue!, oldValue!)
   }
 
-  nestedListener(nestedNewValue: U) {
+  private nestedListener(nestedNewValue: U) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
     const oldValue = this.curValue
     this.curValue = nestedNewValue
@@ -277,4 +271,11 @@ class FlatMappedState<T, U> extends State<U> {
   __tostring(): string {
     return "FlatMappedState(" + this.source + ")"
   }
+}
+
+export function setValueFn<T>(state: MutableState<T>, value: T): Callback {
+  return bind(cfuncRef(MutableStateImpl.setValueFn), state, value)
+}
+export function toggleFn(state: MutableState<boolean>): Callback {
+  return bind(MutableStateImpl.toggleFn, state)
 }

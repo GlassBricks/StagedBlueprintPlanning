@@ -112,10 +112,10 @@ export function simulateEvent<T extends GuiEvent>(
 
 // fluent API of above
 export class ElementWrapper<T extends GuiElementType = GuiElementType> {
-  constructor(public readonly native: Extract<LuaGuiElement, { type: T }>) {}
+  constructor(public readonly element: Extract<LuaGuiElement, { type: T }>) {}
 
   simulateEvent<T extends GuiEvent>(event: Omit<T, "element" | "tick" | "player_index">): void {
-    simulateEvent(this.native, event)
+    simulateEvent(this.element, event)
   }
 
   simulateClick(
@@ -135,52 +135,63 @@ export class ElementWrapper<T extends GuiElementType = GuiElementType> {
     })
   }
 
+  simulateToggleState(this: ElementWrapper<"checkbox"> | ElementWrapper<"radiobutton">): void {
+    this.element.state = !this.element.state
+    this.simulateEvent<OnGuiCheckedStateChangedEvent>({
+      name: defines.events.on_gui_checked_state_changed,
+    })
+  }
+  setState(this: ElementWrapper<"checkbox"> | ElementWrapper<"radiobutton">, state: boolean): void {
+    if (this.element.state != state) {
+      this.simulateToggleState()
+    }
+  }
   find<T extends GuiElementType>(
     type: T,
     predicate?: (element: Extract<LuaGuiElement, { type: T }>) => boolean,
   ): ElementWrapper<T> {
-    return new ElementWrapper(findWithType(this.native, type, predicate))
+    return new ElementWrapper(findWithType(this.element, type, predicate))
   }
 
   findAll<T extends GuiElementType>(
     type: T,
     predicate?: (element: Extract<LuaGuiElement, { type: T }>) => boolean,
   ): ElementWrapper<T>[] {
-    return findAllWithType(this.native, type, predicate).map((element) => new ElementWrapper(element))
+    return findAllWithType(this.element, type, predicate).map((element) => new ElementWrapper(element))
   }
 
   findSatisfying(predicate: (element: LuaGuiElement) => boolean): ElementWrapper {
     return new ElementWrapper(
-      findElementSatisfying(this.native, predicate) ?? error(`Could not find element satisfying predicate`),
+      findElementSatisfying(this.element, predicate) ?? error(`Could not find element satisfying predicate`),
     )
   }
 
   findAllSatisfying(predicate: (element: LuaGuiElement) => boolean): ElementWrapper[] {
-    return findAllElementsSatisfying(this.native, predicate).map((element) => new ElementWrapper(element))
+    return findAllElementsSatisfying(this.element, predicate).map((element) => new ElementWrapper(element))
   }
 
   isRoot(): boolean {
-    return isRoot(this.native)
+    return isRoot(this.element)
   }
 
   isValid(): boolean {
-    return this.native.valid
+    return this.element.valid
   }
 
   // noinspection JSUnusedGlobalSymbols
   __eq(other: unknown): boolean {
-    return other instanceof ElementWrapper && other.native == this.native
+    return other instanceof ElementWrapper && other.element == this.element
   }
 
   toString(): string {
-    return getDescription(this.native)
+    return getDescription(this.element)
   }
 }
 
 // jsx
 
 export function testRender<T extends GuiElementType>(spec: ElementSpec & { type: T }): ElementWrapper<T>
-export function testRender(spec: Spec): ElementWrapper
+export function testRender<T extends GuiElementType = GuiElementType>(spec: Spec): ElementWrapper<T>
 export function testRender(spec: Spec): ElementWrapper {
   const element = render(spec, getPlayer().gui.screen)
   if (!element) error("no elements rendered")

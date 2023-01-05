@@ -45,7 +45,7 @@ describe("getDescription", () => {
 test("testRender", () => {
   const element = testRender(<flow name="test-flow" />)
   expect(element.isRoot()).to.equal(true)
-  expect(getPlayer().gui.screen).to.equal(element.native.parent)
+  expect(getPlayer().gui.screen).to.equal(element.element.parent)
 })
 
 describe("findSatisfying", () => {
@@ -55,8 +55,8 @@ describe("findSatisfying", () => {
         <flow caption="hi" />
       </flow>,
     )
-    const found = element.findSatisfying((x) => x.caption == "hi").native
-    const flow = element.native.children[0]
+    const found = element.findSatisfying((x) => x.caption == "hi").element
+    const flow = element.element.children[0]
     expect(found).to.equal(flow)
   })
 
@@ -71,8 +71,8 @@ describe("findSatisfying", () => {
         </frame>
       </flow>,
     )
-    const found = element.findSatisfying((x) => x.caption == "baz").native
-    const flow = element.native.children[0].children[0].children[1]
+    const found = element.findSatisfying((x) => x.caption == "baz").element
+    const flow = element.element.children[0].children[0].children[1]
     expect(found).to.equal(flow)
   })
 })

@@ -19,7 +19,7 @@ test("fn", () => {
   const val = state("one")
   const wrapper = testRender(<Fn from={val} uses="flow" map={{ invoke: (x) => <label caption={x} /> }} />)
   function findLabels() {
-    return wrapper.findAll("label").map((x) => x.native.caption)
+    return wrapper.findAll("label").map((x) => x.element.caption)
   }
 
   expect(findLabels()).to.equal(["one"])
