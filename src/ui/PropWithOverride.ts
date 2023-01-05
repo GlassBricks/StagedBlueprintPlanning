@@ -53,10 +53,9 @@ registerFunctions("prop-possibly-overriden", {
 
 export function highlightIfOverriden<T>(prop: MutableState<T>): BaseStyleMod {
   if (!(prop instanceof PropWithOverride)) return {}
-  const isOverriden = prop.overrideValue.notNil()
   return {
-    font_color: isOverriden.map(funcRef(blueIfNotNil)),
-    font: isOverriden.map(funcRef(boldIfNotNil)),
+    font_color: prop.overrideValue.map(funcRef(blueIfNotNil)),
+    font: prop.overrideValue.map(funcRef(boldIfNotNil)),
   }
 }
 

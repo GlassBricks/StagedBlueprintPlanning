@@ -290,7 +290,6 @@ test("observable value", () => {
   expect(element.text).to.equal("one")
 
   element.text = "two"
-  element.text = "should not change"
   const fakeEvent: OnGuiTextChangedEvent = {
     element: element as LuaGuiElement,
     name: defines.events.on_gui_text_changed,
@@ -301,7 +300,6 @@ test("observable value", () => {
   script.get_event_handler(defines.events.on_gui_text_changed)(fakeEvent)
 
   expect(val.get()).to.equal("two")
-  expect(element.text).to.be("should not change") // so cursor doesn't jump around when typing
 
   val.set("three")
   expect(element.text).to.equal("three")

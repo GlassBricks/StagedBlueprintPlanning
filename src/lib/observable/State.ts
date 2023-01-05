@@ -65,13 +65,6 @@ export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
     return !!value
   }
 
-  notNil(): State<boolean> {
-    return this.map(funcRef(State.notNilFn))
-  }
-  static notNilFn<T>(this: void, value: T | nil): value is T {
-    return value != nil
-  }
-
   static gtFn(this: void, value: number, value2: number): boolean {
     return value2 > value
   }

@@ -26,31 +26,22 @@ interface ElementInstance {
   readonly element: BaseGuiElement
   readonly subscription: Subscription | nil
   readonly events: PRecord<GuiEventName, Func<any>>
-  isUpdatingState?: true
 }
 
 function setStateFunc(state: MutableState<unknown>, key: string, event: GuiEvent) {
-  const instance = getInstance(event.element!)!
-  instance.isUpdatingState = true
-  try {
-    state.set((event as any)[key] || event.element![key])
-  } finally {
-    instance.isUpdatingState = nil
-  }
+  state.set((event as any)[key] || event.element![key])
 }
 function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, value: any) {
   if (!elem.valid) return
   if (elem.object_name == "LuaGuiElement") {
-    const instance = getInstance(elem)
-    if (instance && instance.isUpdatingState) return
+    const info = propInfo[key as keyof typeof propInfo]
+    if (info && info[2] && (elem as any)[key] == value) return
   }
   ;(elem as any)[key] = value
 }
 
 function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
   if (!elem.valid) return
-  const instance = getInstance(elem)
-  if (instance && instance.isUpdatingState) return
   if (key == "slider_minimum") {
     ;(elem as SliderGuiElement).set_slider_minimum_maximum(value, (elem as SliderGuiElement).get_slider_maximum())
   } else if (key == "slider_maximum") {
