@@ -13,21 +13,21 @@
 
 import { Func, ibind, RegisterClass } from "../../index"
 import { State } from "../../observable"
-import { Component, destroyChildren, ElemProps, FactorioJsx, RenderContext, renderMultiple, Spec } from "../index"
+import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderContext, renderMultiple } from "../index"
 
 export type IfProps = {
   condition: State<boolean>
-  then: Func<() => Spec | undefined>
-  else?: Func<() => Spec | undefined>
+  then: Func<() => Element | undefined>
+  else?: Func<() => Element | undefined>
 } & ElemProps<"flow">
 
 @RegisterClass("gui:If")
 export class If extends Component<IfProps> {
-  then!: Func<() => Spec | undefined>
-  else?: Func<() => Spec | undefined>
+  then!: Func<() => Element | undefined>
+  else?: Func<() => Element | undefined>
   element!: FlowGuiElementMembers
 
-  render(props: IfProps, context: RenderContext): Spec {
+  render(props: IfProps, context: RenderContext): Element {
     this.then = props.then
     this.else = props.else
     return (

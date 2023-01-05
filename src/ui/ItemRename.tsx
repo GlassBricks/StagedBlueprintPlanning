@@ -10,7 +10,7 @@
  */
 
 import { ibind, MutableState, RegisterClass, setValueFn, State, state, toggleFn } from "../lib"
-import { Component, FactorioJsx, Spec } from "../lib/factoriojsx"
+import { Component, Element, FactorioJsx } from "../lib/factoriojsx"
 import { Fn, RenameButton } from "../lib/factoriojsx/components"
 
 export interface ItemRenameProps {
@@ -25,7 +25,7 @@ export class ItemRename extends Component<ItemRenameProps> {
   isRenaming = state(false)
   item!: ItemRenameProps
 
-  override render(props: ItemRenameProps): Spec {
+  override render(props: ItemRenameProps): Element {
     this.item = props
     return (
       <flow
@@ -41,7 +41,7 @@ export class ItemRename extends Component<ItemRenameProps> {
     )
   }
 
-  nameDisplay(isRenaming: boolean): Spec {
+  nameDisplay(isRenaming: boolean): Element {
     return isRenaming ? (
       <textfield
         text={this.item.name}

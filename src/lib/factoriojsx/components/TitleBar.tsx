@@ -11,11 +11,11 @@
 
 import { funcRef, registerFunctions } from "../../index"
 import { MaybeState } from "../../observable"
-import { ClickEventHandler, destroy, FactorioJsx, GuiEvent, Spec, SpecChildren } from "../index"
+import { ClickEventHandler, destroy, Element, ElementChildren, FactorioJsx, GuiEvent } from "../index"
 import { CloseButton } from "./buttons"
 import { HorizontalPusher } from "./misc"
 
-export function TitleBar(props: { children?: SpecChildren }): Spec {
+export function TitleBar(props: { children?: ElementChildren }): Element {
   return (
     <flow
       direction="horizontal"
@@ -33,7 +33,7 @@ export function TitleBar(props: { children?: SpecChildren }): Spec {
   )
 }
 
-export function DraggableSpace(): Spec {
+export function DraggableSpace(): Element {
   return (
     <empty-widget
       ignored_by_interaction
@@ -60,7 +60,7 @@ export function SimpleTitleBar(props: {
   title: MaybeState<LocalisedString>
   onClose?: ClickEventHandler
   useDraggableSpace?: boolean // default true
-}): Spec {
+}): Element {
   return (
     <TitleBar>
       <label caption={props.title} style="frame_title" ignored_by_interaction />

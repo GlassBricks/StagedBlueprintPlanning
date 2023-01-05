@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { FactorioJsx, Spec } from "../../../factoriojsx"
+import { Element, FactorioJsx } from "../../../factoriojsx"
 import { List } from "../../../factoriojsx/components"
 import { MutableObservableList, observableList } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
@@ -19,7 +19,7 @@ function presentElements(wrapper: ElementWrapper) {
   return wrapper.findAll("label").map((x) => x.element.caption)
 }
 let array: MutableObservableList<string>
-let spec: Spec
+let spec: Element
 before_each(() => {
   array = observableList()
   spec = (
@@ -86,7 +86,7 @@ it("changes elements", () => {
 
 describe("ifEmpty", () => {
   let array: MutableObservableList<string>
-  let spec: Spec
+  let spec: Element
   before_each(() => {
     array = observableList()
     spec = (

@@ -1,4 +1,4 @@
-import { Component, FactorioJsx, RenderContext, Spec } from "../../lib/factoriojsx"
+import { Component, Element, FactorioJsx, RenderContext } from "../../lib/factoriojsx"
 import { ibind, MutableState, RegisterClass } from "../../lib"
 import { getDefaultValueIfIsOverriden, highlightIfOverriden } from "../PropWithOverride"
 
@@ -14,7 +14,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
   private textfield!: TextFieldGuiElement
   private value!: MutableState<number | false>
 
-  override render(props: CheckboxTextfieldProps, context: RenderContext): Spec {
+  override render(props: CheckboxTextfieldProps, context: RenderContext): Element {
     const { captionBefore, captionAfter, value } = props
     this.value = value
 

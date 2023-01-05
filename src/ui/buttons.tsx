@@ -11,13 +11,13 @@
 
 import { Sprites } from "../constants"
 import { MaybeState } from "../lib"
-import { ClickEventHandler, FactorioJsx, Spec } from "../lib/factoriojsx"
+import { ClickEventHandler, Element, FactorioJsx } from "../lib/factoriojsx"
 
 export function ExternalLinkButton(props: {
   on_gui_click?: ClickEventHandler
   tooltip?: MaybeState<LocalisedString>
   enabled?: MaybeState<boolean>
-}): Spec {
+}): Element {
   return (
     <sprite-button
       style="frame_action_button"

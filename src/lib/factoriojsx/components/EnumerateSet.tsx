@@ -11,21 +11,21 @@
 
 import { Func, ibind, RegisterClass } from "../../index"
 import { ObservableSet, ObservableSetChange } from "../../observable"
-import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, RenderContext, Spec } from "../index"
+import { Component, destroy, destroyChildren, Element, ElemProps, FactorioJsx, render, RenderContext } from "../index"
 
 export type EnumerateSetProps<T extends AnyNotNil, U extends GuiElementType> = {
   uses: U
   of: ObservableSet<T>
-  map: Func<(value: T) => Spec>
-  ifEmpty?: Func<() => Spec>
+  map: Func<(value: T) => Element>
+  ifEmpty?: Func<() => Element>
 } & ElemProps<U>
 
 @RegisterClass("gui:EnumerateSet")
 export class EnumerateSet<T extends AnyNotNil, U extends GuiElementType> extends Component<EnumerateSetProps<T, U>> {
   set!: ObservableSet<T>
-  map!: Func<(value: T) => Spec>
-  ifEmpty?: Func<() => Spec>
-  render(props: EnumerateSetProps<T, U>, context: RenderContext): Spec {
+  map!: Func<(value: T) => Element>
+  ifEmpty?: Func<() => Element>
+  render(props: EnumerateSetProps<T, U>, context: RenderContext): Element {
     this.set = props.of
     this.map = props.map
     this.ifEmpty = props.ifEmpty

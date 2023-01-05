@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { FactorioJsx, Spec } from "../../../factoriojsx"
+import { Element, FactorioJsx } from "../../../factoriojsx"
 import { EnumerateSet } from "../../../factoriojsx/components"
 import { MutableObservableSet, observableSet } from "../../../observable"
 import { ElementWrapper, testRender } from "../../gui"
@@ -19,7 +19,7 @@ function presentElements(wrapper: ElementWrapper) {
   return wrapper.findAll("label").map((x) => x.element.caption)
 }
 let set: MutableObservableSet<string>
-let spec: Spec
+let spec: Element
 before_each(() => {
   set = observableSet()
   spec = <EnumerateSet uses="flow" of={set} map={{ invoke: (v) => <label caption={v} /> }} />
@@ -54,7 +54,7 @@ it("removes elements", () => {
 
 describe("ifEmpty", () => {
   let set: MutableObservableSet<string>
-  let spec: Spec
+  let spec: Element
   before_each(() => {
     set = observableSet()
     spec = (

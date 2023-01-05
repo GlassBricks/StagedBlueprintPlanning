@@ -12,7 +12,7 @@
 import { LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { StageNumber } from "../entity/AssemblyEntity"
 import { assertNever, bind, ibind, MutableState, RegisterClass, Subscription } from "../lib"
-import { Component, ElemProps, FactorioJsx, RenderContext, Spec } from "../lib/factoriojsx"
+import { Component, Element, ElemProps, FactorioJsx, RenderContext } from "../lib/factoriojsx"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 
 export type StageSelectorProps<T extends "drop-down" | "list-box"> = {
@@ -29,7 +29,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   private elementsSubscription?: Subscription
   private element!: DropDownGuiElement | ListBoxGuiElement
 
-  public override render(props: StageSelectorProps<T>, context: RenderContext): Spec {
+  public override render(props: StageSelectorProps<T>, context: RenderContext): Element {
     this.assembly = props.assembly
 
     this.trackerSubscription = context.getSubscription()

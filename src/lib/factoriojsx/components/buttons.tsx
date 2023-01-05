@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { ElemProps, FactorioJsx, Spec } from "../index"
+import { Element, ElemProps, FactorioJsx } from "../index"
 
-export function CloseButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+export function CloseButton(props: Partial<ElemProps<"sprite-button">>): Element {
   return (
     <sprite-button
       style="frame_action_button"
@@ -25,7 +25,7 @@ export function CloseButton(props: Partial<ElemProps<"sprite-button">>): Spec {
   )
 }
 
-export function ExpandButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+export function ExpandButton(props: Partial<ElemProps<"sprite-button">>): Element {
   return (
     <sprite-button
       style="frame_action_button"
@@ -37,7 +37,7 @@ export function ExpandButton(props: Partial<ElemProps<"sprite-button">>): Spec {
     />
   )
 }
-export function CollapseButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+export function CollapseButton(props: Partial<ElemProps<"sprite-button">>): Element {
   return (
     <sprite-button
       style="frame_action_button"
@@ -50,7 +50,7 @@ export function CollapseButton(props: Partial<ElemProps<"sprite-button">>): Spec
   )
 }
 
-export function RenameButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+export function RenameButton(props: Partial<ElemProps<"sprite-button">>): Element {
   return (
     <sprite-button
       style="mini_button_aligned_to_text_vertically_when_centered"
@@ -61,11 +61,11 @@ export function RenameButton(props: Partial<ElemProps<"sprite-button">>): Spec {
   )
 }
 
-export function TrashButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+export function TrashButton(props: Partial<ElemProps<"sprite-button">>): Element {
   return <sprite-button style="tool_button_red" sprite="utility/trash" mouse_button_filter={["left"]} {...props} />
 }
 
-export function RefreshButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+export function RefreshButton(props: Partial<ElemProps<"sprite-button">>): Element {
   return (
     <sprite-button
       style="tool_button"
@@ -77,7 +77,7 @@ export function RefreshButton(props: Partial<ElemProps<"sprite-button">>): Spec 
   )
 }
 
-export function DotDotDotButton(props: Partial<ElemProps<"sprite-button">>): Spec {
+export function DotDotDotButton(props: Partial<ElemProps<"sprite-button">>): Element {
   return (
     <sprite-button
       style="frame_action_button"

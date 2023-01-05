@@ -11,7 +11,7 @@
 
 import _createElement from "./createElement"
 
-export * from "./spec"
+export * from "./element"
 export * from "./render"
 export * from "./util"
 

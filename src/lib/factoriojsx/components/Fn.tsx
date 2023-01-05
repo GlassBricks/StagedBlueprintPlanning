@@ -11,21 +11,21 @@
 
 import { Func, ibind, RegisterClass } from "../../index"
 import { State } from "../../observable"
-import { Component, destroyChildren, ElemProps, FactorioJsx, RenderContext, renderMultiple, Spec } from "../index"
+import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderContext, renderMultiple } from "../index"
 
 export type FuncProps<T, U extends GuiElementType> = {
   uses: U
   from: State<T>
-  map: Func<(value: T) => Spec | false | nil>
+  map: Func<(value: T) => Element | false | nil>
 } & ElemProps<U>
 
 @RegisterClass("gui:Fn")
 export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> {
-  map!: Func<(value: T) => Spec | false | nil>
+  map!: Func<(value: T) => Element | false | nil>
 
   element!: LuaGuiElement
 
-  render(props: FuncProps<T, U>, context: RenderContext): Spec {
+  render(props: FuncProps<T, U>, context: RenderContext): Element {
     const { from, map } = props
     this.map = map
     context.onMount((element) => {

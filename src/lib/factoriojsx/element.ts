@@ -13,9 +13,9 @@
 
 import { Subscription } from "../observable"
 import { Func, RegisterClass } from "../references"
-import { ElementSpec } from "./element-specs"
+import { FactorioElement } from "./factorio-elements"
 
-export * from "./element-specs"
+export * from "./factorio-elements"
 
 export interface RenderContext {
   /**
@@ -31,41 +31,41 @@ export interface RenderContext {
   readonly playerIndex: PlayerIndex
 }
 
-export type FunctionComponent<T> = (props: T, context: RenderContext) => Spec
+export type FunctionComponent<T> = (props: T, context: RenderContext) => Element
 
 @RegisterClass("FactorioJsxComponent")
 export abstract class Component<P = EmptyProps> {
-  abstract render(props: P, context: RenderContext): Spec
+  abstract render(props: P, context: RenderContext): Element
   // noinspection JSUnusedGlobalSymbols
   declare _props: P
 }
 
-export type EmptyProps = Record<any, never>
+export type EmptyProps = { _?: never }
 
 export interface ComponentClass<P> {
   name: string
   new (): Component<P>
 }
 
-export interface FCSpec<T> {
-  type: FunctionComponent<T>
-  props: T
-}
-
-export interface ClassComponentSpec<T> {
+export interface ClassComponent<T> {
   type: ComponentClass<T>
   props: T
 }
 
-export interface FragmentSpec {
-  type: "fragment"
-  children?: Spec[]
+export interface FunctionalComponent<T> {
+  type: FunctionComponent<T>
+  props: T
 }
 
-export type Spec = ElementSpec | FragmentSpec | FCSpec<any> | ClassComponentSpec<any>
-export type SingleChild = Spec | false | nil
+export interface FragmentElement {
+  type: "fragment"
+  children?: Element[]
+}
+
+export type Element = FactorioElement | FragmentElement | FunctionalComponent<any> | ClassComponent<any>
+export type SingleChild = Element | false | nil
 export type OneOrMoreChildren = SingleChild | SingleChild[]
-export type SpecChildren = SingleChild | Array<OneOrMoreChildren>
+export type ElementChildren = SingleChild | Array<OneOrMoreChildren>
 
 export type GuiEvent =
   | OnGuiCheckedStateChangedEvent

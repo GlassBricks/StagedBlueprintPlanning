@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { cleanGuiInstances, destroy, ElementSpec, GuiEvent, render, Spec } from "../factoriojsx"
+import { cleanGuiInstances, destroy, Element, FactorioElement, GuiEvent, render } from "../factoriojsx"
 import { getPlayer } from "./misc"
 
 const ROOT_TAG = "test-root-element"
@@ -190,9 +190,9 @@ export class ElementWrapper<T extends GuiElementType = GuiElementType> {
 
 // jsx
 
-export function testRender<T extends GuiElementType>(spec: ElementSpec & { type: T }): ElementWrapper<T>
-export function testRender<T extends GuiElementType = GuiElementType>(spec: Spec): ElementWrapper<T>
-export function testRender(spec: Spec): ElementWrapper {
+export function testRender<T extends GuiElementType>(spec: FactorioElement & { type: T }): ElementWrapper<T>
+export function testRender<T extends GuiElementType = GuiElementType>(spec: Element): ElementWrapper<T>
+export function testRender(spec: Element): ElementWrapper {
   const element = render(spec, getPlayer().gui.screen)
   if (!element) error("no elements rendered")
   makeTestRoot(element)

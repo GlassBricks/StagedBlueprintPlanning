@@ -10,19 +10,19 @@
  */
 
 import {
-  ChooseElemButtonElementSpec,
-  ClassComponentSpec,
+  ChooseElemButtonElement,
+  ClassComponent,
   Component,
   destroy,
-  FCSpec,
-  FlowElementSpec,
+  Element,
+  FlowElement,
+  FunctionalComponent,
   GuiEventHandler,
   RenderContext,
-  SliderElementSpec,
-  Spec,
-  TabbedPaneElementSpec,
-  TextBoxElementSpec,
-  TextFieldElementSpec,
+  SliderElement,
+  TabbedPaneElement,
+  TextBoxElement,
+  TextFieldElement,
 } from "../../factoriojsx"
 import { State, state } from "../../observable"
 import { RegisterClass } from "../../references"
@@ -31,7 +31,7 @@ import expect, { mock } from "tstl-expect"
 
 describe("create", () => {
   test("Sets spec property", () => {
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       direction: "vertical",
     }
@@ -39,7 +39,7 @@ describe("create", () => {
   })
 
   test("Sets element property", () => {
-    const spec: ChooseElemButtonElementSpec = {
+    const spec: ChooseElemButtonElement = {
       type: "choose-elem-button",
       elem_type: "item",
       locked: true,
@@ -49,7 +49,7 @@ describe("create", () => {
 
   test("Listens to source property", () => {
     const v = state<LocalisedString>("one")
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       caption: v,
     }
@@ -61,7 +61,7 @@ describe("create", () => {
 
   test("Call method property", () => {
     const value = state(1)
-    const spec: SliderElementSpec = {
+    const spec: SliderElement = {
       type: "slider",
       value_step: value,
     }
@@ -73,7 +73,7 @@ describe("create", () => {
 
   test("Slider minimum", () => {
     const value = state(1)
-    const spec: SliderElementSpec = {
+    const spec: SliderElement = {
       type: "slider",
       minimum_value: value,
       maximum_value: 5,
@@ -88,7 +88,7 @@ describe("create", () => {
 
   test("Slider maximum", () => {
     const value = state(5)
-    const spec: SliderElementSpec = {
+    const spec: SliderElement = {
       type: "slider",
       minimum_value: 1,
       maximum_value: value,
@@ -103,7 +103,7 @@ describe("create", () => {
 
   test("Does not allow source on create-only property", () => {
     const v = state<"vertical" | "horizontal">("vertical")
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       direction: v as any,
     }
@@ -113,7 +113,7 @@ describe("create", () => {
   })
 
   test("can specify children", () => {
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       children: [
         {
@@ -128,7 +128,7 @@ describe("create", () => {
   })
 
   test("can specify multiple children", () => {
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       children: [
         {
@@ -151,7 +151,7 @@ describe("create", () => {
 
 describe("styleMod", () => {
   test("sets property", () => {
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       styleMod: {
         left_padding: 3,
@@ -161,7 +161,7 @@ describe("styleMod", () => {
   })
 
   test("sets setter property", () => {
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       styleMod: {
         padding: [3, 3],
@@ -172,7 +172,7 @@ describe("styleMod", () => {
 
   test("listens to source property", () => {
     const value = state(1)
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       styleMod: {
         padding: value,
@@ -187,7 +187,7 @@ describe("styleMod", () => {
 
 describe("destroy", () => {
   test("calling destroy sets invalid to false", () => {
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       direction: "vertical",
     }
@@ -198,7 +198,7 @@ describe("destroy", () => {
 
   test("calling destroy ends subscriptions", () => {
     const source = state("hi")
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       caption: source,
     }
@@ -210,7 +210,7 @@ describe("destroy", () => {
 
   test("calling destroy ends child subscriptions", () => {
     const source = state("hi")
-    const spec: FlowElementSpec = {
+    const spec: FlowElement = {
       type: "flow",
       children: [
         {
@@ -234,7 +234,7 @@ describe("destroy", () => {
 
 test("events", () => {
   const func = mock.fn<GuiEventHandler["invoke"]>()
-  const spec: TextFieldElementSpec = {
+  const spec: TextFieldElement = {
     type: "textfield",
     on_gui_click: { invoke: func },
     on_gui_opened: { invoke: func },
@@ -280,7 +280,7 @@ test("events", () => {
 
 test("observable value", () => {
   const val = state("one")
-  const spec: TextBoxElementSpec = {
+  const spec: TextBoxElement = {
     type: "text-box",
     text: val,
   }
@@ -307,7 +307,7 @@ test("observable value", () => {
 
 test("onCreate", () => {
   let element1: unknown
-  const spec: FlowElementSpec = {
+  const spec: FlowElement = {
     type: "flow",
     onCreate(e) {
       element1 = e
@@ -319,7 +319,7 @@ test("onCreate", () => {
 
 test("context onMount", () => {
   const fn = mock.fn<(this: unknown) => void>()
-  const spec: FCSpec<any> = {
+  const spec: FunctionalComponent<any> = {
     type(props, context) {
       context.onMount(fn)
       return { type: "flow" }
@@ -333,7 +333,7 @@ test("context onMount", () => {
 
 test("context onDestroy", () => {
   const fn = mock.fn()
-  const spec: FCSpec<any> = {
+  const spec: FunctionalComponent<any> = {
     type(props, context) {
       context.getSubscription().add({ invoke: fn })
 
@@ -365,7 +365,7 @@ describe("Class component", () => {
       results.push("constructed")
     }
 
-    render(props: Props, context: RenderContext): Spec {
+    render(props: Props, context: RenderContext): Element {
       context.onMount((element) => {
         expect(element.type).to.be("flow")
         results.push("onMount")
@@ -386,7 +386,7 @@ describe("Class component", () => {
       results.push("constructed2")
     }
 
-    render(props: Props, context: RenderContext): Spec {
+    render(props: Props, context: RenderContext): Element {
       context.onMount((element) => {
         expect(element.type).to.be("flow")
         results.push("onMount2")
@@ -405,7 +405,7 @@ describe("Class component", () => {
   }
 
   test("create1", () => {
-    const spec: ClassComponentSpec<any> = {
+    const spec: ClassComponent<any> = {
       type: Foo,
       props: { cb },
     }
@@ -419,7 +419,7 @@ describe("Class component", () => {
   })
 
   test("create2", () => {
-    const spec: ClassComponentSpec<any> = {
+    const spec: ClassComponent<any> = {
       type: Foo2,
       props: { cb },
     }
@@ -434,11 +434,11 @@ describe("Class component", () => {
 
   test("unregistered components give error", () => {
     class C extends Component {
-      render(): Spec {
+      render(): Element {
         return { type: "flow" }
       }
     }
-    const spec: ClassComponentSpec<any> = {
+    const spec: ClassComponent<any> = {
       type: C,
       props: {},
     }
@@ -452,7 +452,7 @@ describe("function component", () => {
     results.length = 0
   })
 
-  function Component(props: { cb: (element: BaseGuiElement) => void }, context: RenderContext): FlowElementSpec {
+  function Component(props: { cb: (element: BaseGuiElement) => void }, context: RenderContext): FlowElement {
     results.push("render")
     context.onMount(() => results.push("mountA"))
     context.onMount(() => results.push("mountB"))
@@ -463,7 +463,7 @@ describe("function component", () => {
     }
   }
 
-  function Component2(props: { cb: (element: BaseGuiElement) => void }, context: RenderContext): Spec {
+  function Component2(props: { cb: (element: BaseGuiElement) => void }, context: RenderContext): Element {
     results.push("render2")
     context.onMount(() => results.push("mount2A"))
     context.onMount(() => results.push("mount2B"))
@@ -479,7 +479,7 @@ describe("function component", () => {
   }
 
   test("render 1", () => {
-    const spec: FCSpec<any> = {
+    const spec: FunctionalComponent<any> = {
       type: Component,
       props: { cb },
     }
@@ -493,7 +493,7 @@ describe("function component", () => {
   })
 
   test("render 2", () => {
-    const spec: FCSpec<any> = {
+    const spec: FunctionalComponent<any> = {
       type: Component2,
       props: { cb },
     }
@@ -509,7 +509,7 @@ describe("function component", () => {
 
 describe("Fragments", () => {
   test("rendering fragment with multiple children at root is error", () => {
-    const spec: Spec = {
+    const spec: Element = {
       type: "fragment",
       children: [{ type: "flow" }, { type: "flow" }],
     }
@@ -517,7 +517,7 @@ describe("Fragments", () => {
   })
 
   test("Fragment with multiple children inside another element is ok", () => {
-    const spec: Spec = {
+    const spec: Element = {
       type: "flow",
       children: [{ type: "fragment", children: [{ type: "flow" }, { type: "flow" }] }],
     }
@@ -529,7 +529,7 @@ describe("Fragments", () => {
   })
 
   test("fragment with multiple children as result of functional component", () => {
-    function Comp(): Spec {
+    function Comp(): Element {
       return {
         type: "fragment",
         children: [{ type: "flow" }, { type: "flow" }],
@@ -537,7 +537,7 @@ describe("Fragments", () => {
     }
     expect(() => testRender({ type: Comp, props: {} })).to.error()
 
-    const spec2: Spec = {
+    const spec2: Element = {
       type: "flow",
       children: [{ type: Comp, props: {} }],
     }
@@ -550,7 +550,7 @@ describe("Fragments", () => {
 })
 
 test("tabbed-pane", () => {
-  const spec: TabbedPaneElementSpec = {
+  const spec: TabbedPaneElement = {
     type: "tabbed-pane",
     children: [
       { type: "tab", caption: "one" },

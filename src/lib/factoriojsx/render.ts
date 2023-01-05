@@ -18,15 +18,15 @@ import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, Selfle
 import { PRecord } from "../util-types"
 import * as propInfo from "./propInfo.json"
 import {
-  ClassComponentSpec,
-  ElementSpec,
-  FCSpec,
-  FragmentSpec,
+  ClassComponent,
+  Element,
+  FactorioElement,
+  FragmentElement,
+  FunctionalComponent,
   GuiEvent,
   GuiEventHandler,
   RenderContext,
-  Spec,
-} from "./spec"
+} from "./element"
 import { Migrations } from "../migration"
 
 type GuiEventName = Extract<keyof typeof defines.events, `on_gui_${string}`>
@@ -121,26 +121,26 @@ const type = _G.type
 
 function renderInternal(
   parent: BaseGuiElement,
-  element: Spec,
+  element: Element,
   context: InternalRenderContext,
 ): LuaGuiElement | LuaGuiElement[] | nil {
   const elemType = element.type
   const elemTypeType = type(elemType)
   if (elemTypeType == "string") {
-    return renderElement(parent, element as ElementSpec | FragmentSpec, context)
+    return renderElement(parent, element as FactorioElement | FragmentElement, context)
   }
   if (elemTypeType == "table") {
-    return renderClassComponent(parent, element as ClassComponentSpec<any>, context)
+    return renderClassComponent(parent, element as ClassComponent<any>, context)
   }
   if (elemTypeType == "function") {
-    return renderFunctionComponent(parent, element as FCSpec<any>, context)
+    return renderFunctionComponent(parent, element as FunctionalComponent<any>, context)
   }
   error("Unknown spec type: " + serpent.block(element))
 }
 
 function renderFragment(
   parent: BaseGuiElement,
-  spec: FragmentSpec,
+  spec: FragmentElement,
   context: InternalRenderContext,
 ): LuaGuiElement[] | nil {
   const children = spec.children || []
@@ -165,7 +165,7 @@ function renderFragment(
 
 function renderElement(
   parent: BaseGuiElement,
-  spec: ElementSpec | FragmentSpec,
+  spec: FactorioElement | FragmentElement,
   context: InternalRenderContext,
 ): LuaGuiElement | LuaGuiElement[] | nil {
   if (spec.type == "fragment") {
@@ -285,11 +285,15 @@ function renderElement(
   return element
 }
 
-function renderFunctionComponent<T>(parent: BaseGuiElement, spec: FCSpec<T>, context: InternalRenderContext) {
+function renderFunctionComponent<T>(
+  parent: BaseGuiElement,
+  spec: FunctionalComponent<T>,
+  context: InternalRenderContext,
+) {
   return renderInternal(parent, spec.type(spec.props, context), context)
 }
 
-function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponentSpec<T>, context: InternalRenderContext) {
+function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponent<T>, context: InternalRenderContext) {
   const childTracker = newTracker(context, context.firstIndex)
 
   const Component = spec.type
@@ -301,12 +305,12 @@ function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponentSpe
 }
 
 export function render<T extends GuiElementType>(
-  spec: ElementSpec & { type: T },
+  spec: FactorioElement & { type: T },
   parent: BaseGuiElement,
   index?: number,
 ): Extract<LuaGuiElement, { type: T }>
-export function render(element: Spec, parent: BaseGuiElement, index?: number): LuaGuiElement | nil
-export function render(element: Spec, parent: BaseGuiElement, index?: number): LuaGuiElement | nil {
+export function render(element: Element, parent: BaseGuiElement, index?: number): LuaGuiElement | nil
+export function render(element: Element, parent: BaseGuiElement, index?: number): LuaGuiElement | nil {
   const result = renderInternal(parent, element, newRootTracker(parent.player_index, index))
   if (!result || isLuaGuiElement(result)) return result
   if (result.length > 1) {
@@ -315,7 +319,7 @@ export function render(element: Spec, parent: BaseGuiElement, index?: number): L
   return result[0]
 }
 
-export function renderMultiple(elements: Spec, parent: BaseGuiElement): LuaGuiElement[] | nil {
+export function renderMultiple(elements: Element, parent: BaseGuiElement): LuaGuiElement[] | nil {
   const result = renderInternal(parent, elements, newRootTracker(parent.player_index, nil))
   return !result || isLuaGuiElement(result) ? [result as LuaGuiElement] : result
 }
@@ -323,14 +327,14 @@ export function renderMultiple(elements: Spec, parent: BaseGuiElement): LuaGuiEl
 /**
  * Replaces if another element with the same name already exists.
  */
-export function renderNamed(element: Spec, parent: LuaGuiElement, name: string): LuaGuiElement | nil {
+export function renderNamed(element: Element, parent: LuaGuiElement, name: string): LuaGuiElement | nil {
   destroy(parent[name])
   const result = render(element, parent)
   if (result) result.name = name
   return result
 }
 
-export function renderOpened(player: LuaPlayer, spec: Spec): LuaGuiElement | nil {
+export function renderOpened(player: LuaPlayer, spec: Element): LuaGuiElement | nil {
   const element = render(spec, player.gui.screen)
   if (element) {
     player.opened = element

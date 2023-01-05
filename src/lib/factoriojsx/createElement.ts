@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BaseElementSpec, ComponentClass, ElementSpec, FunctionComponent, Spec } from "./spec"
+import { BaseElement, ComponentClass, Element, FactorioElement, FunctionComponent } from "./element"
 
 const _select = select
 
-function flattenChildren(...children: Array<false | nil | Spec | Array<false | nil | Spec>>): Spec[] | nil {
+function flattenChildren(...children: Array<false | nil | Element | Array<false | nil | Element>>): Element[] | nil {
   let childrenLen = _select("#", ...children)
   if (childrenLen == 0) return nil
   let childArray: typeof children
@@ -32,8 +32,8 @@ function flattenChildren(...children: Array<false | nil | Spec | Array<false | n
     childArray = [...children]
   }
 
-  const result: Spec[] = []
-  function pushSingleChild(child: Spec | false | nil) {
+  const result: Element[] = []
+  function pushSingleChild(child: Element | false | nil) {
     if (child) {
       if (child.type == "fragment") {
         const children = child.children
@@ -58,7 +58,7 @@ function flattenChildren(...children: Array<false | nil | Spec | Array<false | n
   return result
 }
 
-function flattenChildrenToProp(...children: Array<false | nil | Spec>): unknown {
+function flattenChildrenToProp(...children: Array<false | nil | Element>): unknown {
   const childrenLen = _select("#", ...children)
   if (childrenLen == 0) return nil
   if (childrenLen == 1) {
@@ -86,13 +86,13 @@ export default function createElement(
   type: string | FunctionComponent<any> | ComponentClass<any>,
   props?: unknown,
   ...children: any[]
-): Spec {
+): Element {
   const typeofType = _type(type)
   if (typeofType == "string") {
-    const result = (props || {}) as BaseElementSpec
+    const result = (props || {}) as BaseElement
     result.type = type as GuiElementType
     result.children = flattenChildren(...children)
-    return result as ElementSpec
+    return result as FactorioElement
   }
   props ||= {}
   ;(props as any).children ??= flattenChildrenToProp(...children)

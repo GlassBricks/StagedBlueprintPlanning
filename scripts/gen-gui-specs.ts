@@ -55,12 +55,13 @@ const program = ts.createProgram({
 function error(msg: string): never {
   throw new Error(msg)
 }
-const classesFile =
+
+const classesDtsFile =
   program.getSourceFiles().find((f) => f.fileName.endsWith("typed-factorio/runtime/generated/classes.d.ts")) ??
   error("Could not find classes.d.ts")
 const guiEventsFile = program.getSourceFile(guiEventsFileName) ?? error("Could not find gui-events.ts")
 
-const guiElementTypes: (GuiElementType | "base")[] = [
+const GuiElementTypes: (GuiElementType | "base")[] = [
   "base",
   "choose-elem-button",
   "drop-down",
@@ -88,27 +89,28 @@ const guiElementTypes: (GuiElementType | "base")[] = [
   "table",
   "textfield",
 ]
-const capitalized: Record<string, string> = {}
-function normalizeName(name: string): string {
+
+const knownCapitalization: Record<string, string> = {}
+function normalizeTypeName(name: string): string {
   return name.replace(/-/g, "").toLowerCase()
 }
 
-const normElemTypeNames: Record<string, GuiElementType | "base" | "other"> = {}
-for (const type of guiElementTypes) {
-  normElemTypeNames[normalizeName(type)] = type
+const normalizedTypeNames: Record<string, GuiElementType | "base" | "other"> = {}
+for (const type of GuiElementTypes) {
+  normalizedTypeNames[normalizeTypeName(type)] = type
 }
-normElemTypeNames.base = "base"
-normElemTypeNames.other = "other"
+normalizedTypeNames.base = "base"
+normalizedTypeNames.other = "other"
 
-interface TypePropDef {
+interface InterfaceProp {
   setter?: string
   type: string
   optional: boolean
 }
 
-type TypeDef = Record<string, TypePropDef>
+type TypedFactorioInterface = Record<string, InterfaceProp>
 
-interface SpecProp {
+interface ElementProp {
   name: string
   type: string
   optional: boolean
@@ -116,27 +118,30 @@ interface SpecProp {
   element?: boolean | string
 }
 
-type SpecDef = Record<string, SpecProp>
+type ElementDefinition = Record<string, ElementProp>
 
-const elementSpecs = {} as Record<GuiElementType | "base", SpecDef>
-const styleMods = {} as Record<GuiElementType | "base", SpecDef>
+const elementDefs = {} as Record<GuiElementType | "base", ElementDefinition>
+const styleMods = {} as Record<GuiElementType | "base", ElementDefinition>
 const events = {} as Record<GuiElementType | "base", Record<string, true | string>>
 const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
 
 // read and process types
 {
   // from gui.d.ts
-  function mapDef(def: ts.InterfaceDeclaration, elem: string, skipReadonly: boolean): TypeDef {
-    const result: TypeDef = {}
-    for (const member of def.members) {
+  function processInterface(
+    intf: ts.InterfaceDeclaration,
+    guiType: GuiElementType | "base",
+    skipReadonly: boolean,
+  ): TypedFactorioInterface {
+    const result: TypedFactorioInterface = {}
+    for (const member of intf.members) {
       if (!(ts.isPropertySignature(member) || ts.isSetAccessorDeclaration(member))) continue
       const name = (member.name as ts.Identifier).text
       if (ts.isSetAccessorDeclaration(member) && name === "style") continue
       if (skipReadonly && member.modifiers?.some((x) => x.kind === ts.SyntaxKind.ReadonlyKeyword)) continue
-      let type = (ts.isPropertySignature(member) ? member.type : member.parameters[0].type)!.getText(classesFile)
+      let type = (ts.isPropertySignature(member) ? member.type : member.parameters[0].type)!.getText(classesDtsFile)
       if (name === "type" && type.includes("|")) {
-        // replace with elem
-        type = `"${elem}"`
+        type = `"${guiType}"`
       }
       const optional = member.questionToken !== undefined
       result[name] = {
@@ -147,17 +152,17 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
     return result
   }
 
-  const specs = {} as Record<GuiElementType | "base", TypeDef>
-  const elements = {} as Record<GuiElementType | "base", TypeDef>
-  const styles = {} as Partial<Record<GuiElementType | "base", TypeDef>>
+  const specs = {} as Record<GuiElementType | "base", TypedFactorioInterface>
+  const elements = {} as Record<GuiElementType | "base", TypedFactorioInterface>
+  const styles = {} as Partial<Record<GuiElementType | "base", TypedFactorioInterface>>
 
-  for (const def of classesFile.statements) {
+  for (const def of classesDtsFile.statements) {
     if (!ts.isInterfaceDeclaration(def)) continue
     const name = def.name.text
 
     const tryMatch = (
       regExp: RegExp,
-      results: Partial<Record<GuiElementType | "base", TypeDef>>,
+      results: Partial<Record<GuiElementType | "base", TypedFactorioInterface>>,
       skipReadonly: boolean,
     ) => {
       const match = name.match(regExp)
@@ -165,19 +170,19 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
       let matchName = match[1] || match[2]
       if (matchName === "HorizontalFlow" || matchName === "VerticalFlow") return
       if (matchName === "Image") matchName = "Sprite"
-      const elemType = normElemTypeNames[normalizeName(matchName)]
+      const elemType = normalizedTypeNames[normalizeTypeName(matchName)]
       let elemTypes: (GuiElementType | "base")[]
       if (elemType === "other") {
         elemTypes = ["empty-widget", "entity-preview", "tabbed-pane", "label"]
-          .map(normalizeName)
-          .map((x) => normElemTypeNames[x]) as (GuiElementType | "base")[]
+          .map(normalizeTypeName)
+          .map((x) => normalizedTypeNames[x]) as (GuiElementType | "base")[]
       } else {
         if (!elemType) throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
-        if (elemType !== "base") capitalized[elemType] = matchName
+        if (elemType !== "base") knownCapitalization[elemType] = matchName
         elemTypes = [elemType]
       }
       for (const elem of elemTypes) {
-        results[elem] = mapDef(def, elem, skipReadonly)
+        results[elem] = processInterface(def, elem, skipReadonly)
       }
     }
     tryMatch(/^(.+?)GuiSpec|^Base(ChooseElemButton)Spec/, specs, false)
@@ -218,7 +223,7 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
 
   // gui events
 
-  for (const elemType of guiElementTypes) {
+  for (const elemType of GuiElementTypes) {
     events[elemType] = {}
     stateProps[elemType] = {}
   }
@@ -229,41 +234,40 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
     const match = name.match(/^(.+?)Events/)
     if (!match) continue
     const matchName = match[1]
-    const elemType = normElemTypeNames[normalizeName(matchName)]
+    const elemType = normalizedTypeNames[normalizeTypeName(matchName)]
     if (!elemType || elemType === "other") throw new Error(`not recognized spec: ${match[0]} (${matchName})`)
 
-    const evs = events[elemType]
-    const evProps = stateProps[elemType]
+    const eventRecord = events[elemType]
+    const stateProp = stateProps[elemType]
     for (const member of def.members) {
       assert(ts.isPropertySignature(member))
       assert(ts.isLiteralTypeNode(member.type!))
       const name = (member.name as ts.Identifier).text
       if (ts.isStringLiteral(member.type.literal)) {
         const text = member.type.literal.text
-        evs[name] = text
-        evProps[text] = name
+        eventRecord[name] = text
+        stateProp[text] = name
       } else {
-        evs[name] = true
+        eventRecord[name] = true
       }
     }
   }
 
   // merge spec and element definitions
-  for (const type of guiElementTypes) {
+  for (const type of GuiElementTypes) {
     const spec = specs[type]
     const element = elements[type]
     if (!spec) throw new Error(`Spec def for ${type} not found`)
     if (!elements) throw new Error(`Element def for ${type} not found`)
 
-    const result: SpecDef = {}
+    const result: ElementDefinition = {}
 
-    function merge(name: string, prop: SpecProp) {
+    function mergeProp(name: string, prop: ElementProp) {
       result[name] = Object.assign(result[name] || {}, prop)
     }
 
-    // spec only
     for (const [name, attr] of Object.entries(spec)) {
-      merge(name, {
+      mergeProp(name, {
         type: attr.type,
         optional: attr.optional,
         name,
@@ -278,31 +282,31 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
         attrType += " | nil"
       }
       const typeName = stateProps[type][name] ? `MaybeMutableState<${attrType}>` : `MaybeState<${attrType}>`
-      merge(name, {
+      mergeProp(name, {
         name,
         type: typeName,
         optional: !specAttr || specAttr.optional,
         element: attr.setter ?? true,
       })
     }
-    elementSpecs[type] = result
+    elementDefs[type] = result
 
     const style = styles[type]
     if (!style) continue
 
-    const styleResult: SpecDef = {}
+    const styleMod: ElementDefinition = {}
     for (const [name, attr] of Object.entries(style)) {
-      styleResult[name] = {
+      styleMod[name] = {
         name,
         type: `MaybeState<${attr.type}>`,
         optional: true,
       }
     }
-    styleMods[type] = styleResult
+    styleMods[type] = styleMod
   }
-  elementSpecs.base.children = {
+  elementDefs.base.children = {
     name: "children",
-    type: "Spec[]",
+    type: "Element[]",
     optional: true,
   }
 }
@@ -333,7 +337,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
     newLine: ts.NewLineKind.LineFeed,
   })
   for (const statement of statements) {
-    content += printer.printNode(ts.EmitHint.Unspecified, statement, classesFile)
+    content += printer.printNode(ts.EmitHint.Unspecified, statement, classesDtsFile)
     content += "\n\n"
   }
   writeFile(filename, content, "typescript")
@@ -357,8 +361,8 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
     }
   }
 
-  for (const type of guiElementTypes) {
-    for (const [name, attr] of Object.entries(elementSpecs[type])) {
+  for (const type of GuiElementTypes) {
+    for (const [name, attr] of Object.entries(elementDefs[type])) {
       const value = [attr.add, attr.element]
       if (!attr.add && !attr.element) {
         set(name, null)
@@ -386,7 +390,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
 {
   function toPascalCase(str: string): string {
     return (
-      capitalized[str] ??
+      knownCapitalization[str] ??
       str
         .split(/[-_ ]/g)
         .map((str) => str[0].toUpperCase() + str.slice(1))
@@ -397,10 +401,10 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
   const statements: ts.Statement[] = []
 
   // element spec
-  function createMembers(
+  function createDefinitions(
     name: string,
-    from: typeof elementSpecs,
-    manualFill: (type: GuiElementType, def: SpecDef) => ts.TypeElement[],
+    from: typeof elementDefs,
+    manualFill: (type: GuiElementType, def: ElementDefinition) => ts.TypeElement[],
     events?: Record<GuiElementType, Record<string, string | true>>,
     // genHeritageClause?: (type: GuiElementType | "base", def: SpecDef) => ts.ExpressionWithTypeArguments[] | undefined,
   ) {
@@ -434,7 +438,7 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
         }
       if (type !== "base") members.push(...manualFill(type as GuiElementType, def))
 
-      // extends BaseElementSpec
+      // extends BaseElement
       const superTypes = [
         ts.factory.createExpressionWithTypeArguments(ts.factory.createIdentifier("Base" + name), undefined),
       ]
@@ -457,9 +461,9 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
       )
     }
   }
-  createMembers(
-    "ElementSpec",
-    elementSpecs,
+  createDefinitions(
+    "Element",
+    elementDefs,
     (type) => [
       ts.factory.createPropertySignature(
         undefined,
@@ -481,19 +485,19 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
   statements.push(
     ts.factory.createTypeAliasDeclaration(
       [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
-      "ElementSpec",
+      "FactorioElement",
       undefined,
       ts.factory.createUnionTypeNode(
-        guiElementTypes.slice(1).map((type) => ts.factory.createTypeReferenceNode(`${toPascalCase(type)}ElementSpec`)),
+        GuiElementTypes.slice(1).map((type) => ts.factory.createTypeReferenceNode(`${toPascalCase(type)}Element`)),
       ),
     ),
   )
-  createMembers("StyleMod", styleMods, () => [])
+  createDefinitions("StyleMod", styleMods, () => [])
 
   const header = `
-  import { MaybeMutableState, MaybeState } from "../observable"
-  import { GuiEventHandler, OnCreateHandler, Spec } from "./spec"
+import { MaybeMutableState, MaybeState } from "../observable"
+import { GuiEventHandler, OnCreateHandler, Element } from "./element"
 
 `
-  printFile("element-specs.d.ts", header, statements)
+  printFile("factorio-elements.d.ts", header, statements)
 }

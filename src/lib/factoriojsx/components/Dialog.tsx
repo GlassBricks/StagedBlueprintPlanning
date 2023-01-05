@@ -11,7 +11,7 @@
 
 import { Func, ibind, RegisterClass } from "../../references"
 import { destroy, FactorioJsx, GuiEvent, renderOpened } from "../index"
-import { Component, Spec } from "../spec"
+import { Component, Element } from "../element"
 
 export interface DialogueProps {
   title: LocalisedString
@@ -31,7 +31,7 @@ export class Dialog extends Component<DialogueProps> {
   private onBackFn?: Func<(player: LuaPlayer) => void>
   private onConfirmFn?: Func<(player: LuaPlayer) => void>
   private redConfirm?: boolean
-  public override render(props: DialogueProps): Spec {
+  public override render(props: DialogueProps): Element {
     assert(props.backCaption || props.confirmCaption, "Dialog requires at least one button")
 
     this.onBackFn = props.onBack

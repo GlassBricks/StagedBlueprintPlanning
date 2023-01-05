@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { FactorioJsx, Spec } from "../index"
+import { Element, FactorioJsx } from "../index"
 
-export const HorizontalPusher = (): Spec => (
+export const HorizontalPusher = (): Element => (
   <empty-widget
     styleMod={{
       horizontally_stretchable: true,
@@ -20,7 +20,7 @@ export const HorizontalPusher = (): Spec => (
   />
 )
 
-export const VerticalPusher = (): Spec => (
+export const VerticalPusher = (): Element => (
   <empty-widget
     styleMod={{
       vertically_stretchable: true,
@@ -29,7 +29,7 @@ export const VerticalPusher = (): Spec => (
   />
 )
 
-export const HorizontalSpacer = (props: { width: number }): Spec => (
+export const HorizontalSpacer = (props: { width: number }): Element => (
   <empty-widget
     styleMod={{
       natural_width: props.width,

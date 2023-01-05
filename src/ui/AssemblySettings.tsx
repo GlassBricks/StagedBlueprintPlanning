@@ -16,7 +16,7 @@ import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcRef, ibind, PRecord, RegisterClass, registerFunctions } from "../lib"
-import { Component, destroy, FactorioJsx, RenderContext, renderNamed, Spec } from "../lib/factoriojsx"
+import { Component, destroy, Element, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
 import {
   CollapseButton,
   DraggableSpace,
@@ -70,7 +70,7 @@ function StageListBox(assembly: UserAssembly) {
 @RegisterClass("gui:CompactAssemblySettings")
 class CompactAssemblySettings extends Component<{ assembly: UserAssembly }> {
   assembly!: UserAssembly
-  override render({ assembly }: { assembly: UserAssembly }): Spec {
+  override render({ assembly }: { assembly: UserAssembly }): Element {
     return (
       <frame direction="vertical">
         <TitleBar>
@@ -94,7 +94,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   assembly!: UserAssembly
   playerIndex!: PlayerIndex
 
-  public override render(props: { assembly: UserAssembly }, context: RenderContext): Spec {
+  public override render(props: { assembly: UserAssembly }, context: RenderContext): Element {
     this.assembly = props.assembly
     this.playerIndex = context.playerIndex
 
@@ -185,7 +185,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
       </frame>
     )
   }
-  private renderStageSettings(stage: Stage | nil): Spec | nil {
+  private renderStageSettings(stage: Stage | nil): Element | nil {
     if (stage && stage.assembly == this.assembly) {
       return <StageSettings stage={stage} />
     }
@@ -416,7 +416,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
 export class StageSettings extends Component<{ stage: Stage }> {
   playerIndex!: PlayerIndex
   stage!: Stage
-  public override render(props: { stage: Stage }, context: RenderContext): Spec {
+  public override render(props: { stage: Stage }, context: RenderContext): Element {
     this.stage = props.stage
     this.playerIndex = context.playerIndex
 
@@ -571,7 +571,7 @@ const AssemblySettingsWidth = StageListBoxWidth + AssemblySettingsTabWidth + 30
 
 const AssemblySettingsName = `${script.mod_name}:assembly-settings`
 const DefaultAssemblySettingsLoc = { x: 0, y: 350 }
-function renderAtAssemblySettingsLoc(player: LuaPlayer, spec: Spec): void {
+function renderAtAssemblySettingsLoc(player: LuaPlayer, spec: Element): void {
   const existing = player.gui.screen[AssemblySettingsName]
   const loc = existing?.location ?? DefaultAssemblySettingsLoc
   const element = renderNamed(spec, player.gui.screen, AssemblySettingsName)!

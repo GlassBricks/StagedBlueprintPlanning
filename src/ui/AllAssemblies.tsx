@@ -13,7 +13,7 @@ import { UserAssembly } from "../assembly/AssemblyDef"
 import { getAllAssemblies } from "../assembly/migrations"
 import { AssemblyEvents, createUserAssembly } from "../assembly/UserAssembly"
 import { bind, funcRef, ibind, onPlayerInitSince, RegisterClass, registerFunctions, Subscription } from "../lib"
-import { Component, destroy, EmptyProps, FactorioJsx, RenderContext, renderNamed, Spec } from "../lib/factoriojsx"
+import { Component, destroy, Element, EmptyProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
 import { Migrations } from "../lib/migration"
 import * as mod_gui from "mod-gui"
 import { L_GuiAssemblySelector } from "../locale"
@@ -50,7 +50,7 @@ class AllAssemblies extends Component {
   listBox!: ListBoxGuiElement
   allAssemblies!: UserAssembly[]
 
-  public override render(_: EmptyProps, context: RenderContext): Spec {
+  public override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
     const subscription = context.getSubscription()
     return (

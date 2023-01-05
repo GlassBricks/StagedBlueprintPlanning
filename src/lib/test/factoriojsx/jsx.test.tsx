@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Component, FactorioJsx, FCSpec, FlowElementSpec, Spec, SpecChildren } from "../../factoriojsx"
+import { Component, Element, ElementChildren, FactorioJsx, FlowElement, FunctionalComponent } from "../../factoriojsx"
 import { RegisterClass } from "../../references"
 import expect from "tstl-expect"
 
@@ -70,7 +70,7 @@ test("basic element with array children", () => {
   })
 })
 
-type TestProps = { me?: string; children?: SpecChildren }
+type TestProps = { me?: string; children?: ElementChildren }
 function Foo(props: TestProps) {
   return <flow caption={props.me}>{props.children}</flow>
 }
@@ -124,7 +124,7 @@ test("Function component with nil children", () => {
 
 @RegisterClass("Test component: jsx Foo")
 class FooClass extends Component<TestProps> {
-  render(props: TestProps): Spec {
+  render(props: TestProps): Element {
     return <flow caption={props.me}>{props.children}</flow>
   }
 }
@@ -221,7 +221,7 @@ describe("fragment", () => {
         <flow name="4" />
       </flow>
     )
-    expect((el as FlowElementSpec).children).to.equal([
+    expect((el as FlowElement).children).to.equal([
       { type: "flow", name: "1" },
       { type: "flow", name: "2" },
       { type: "flow", name: "3" },
@@ -238,7 +238,7 @@ describe("fragment", () => {
         </>
       </Foo>
     )
-    expect((el as FCSpec<any>).props.children).to.equal([
+    expect((el as FunctionalComponent<any>).props.children).to.equal([
       { type: "flow", name: "2" },
       { type: "flow", name: "3" },
     ])
@@ -255,7 +255,7 @@ describe("fragment", () => {
         <flow name="4" />
       </Foo>
     )
-    expect((el as FCSpec<any>).props.children).to.equal([
+    expect((el as FunctionalComponent<any>).props.children).to.equal([
       { type: "flow", name: "1" },
       { type: "flow", name: "2" },
       { type: "flow", name: "3" },

@@ -17,7 +17,7 @@ import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { StageDiff } from "../entity/stage-diff"
 import { bind, ibind, ProtectedEvents, RegisterClass } from "../lib"
-import { Component, destroy, ElemProps, FactorioJsx, RenderContext, renderNamed, Spec } from "../lib/factoriojsx"
+import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
 import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
@@ -58,7 +58,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   stage!: Stage
   entity!: AssemblyEntity
 
-  public override render(props: EntityStageInfoProps, context: RenderContext): Spec {
+  public override render(props: EntityStageInfoProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
     const { stage, assemblyEntity: entity } = props
     this.stage = stage
@@ -75,7 +75,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
 
     const isErrorEntity = entity.isInStage(currentStageNum) && entity.getWorldEntity(currentStageNum) == nil
 
-    function StageButton(buttonStage: Stage): Spec {
+    function StageButton(buttonStage: Stage): Element {
       return (
         <button
           caption={buttonStage.name}
@@ -170,7 +170,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     AssemblyUpdater.forceDeleteEntity(this.stage.assembly, this.entity)
   }
 
-  private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Spec {
+  private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Element {
     const diffEntries = Object.keys(stageDiff).sort() as Array<keyof BlueprintEntity>
     const nextLowerStageNum = this.entity.prevStageWithDiff(this.stage.stageNumber) ?? this.entity.firstStage
     const nextLowerStageName = this.stage.assembly.getStage(nextLowerStageNum)!.name.get()
@@ -182,7 +182,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
       </>
     )
   }
-  private renderPropertyOptions(prop: keyof BlueprintEntity | true, nextLowerStageName: LocalisedString): Spec {
+  private renderPropertyOptions(prop: keyof BlueprintEntity | true, nextLowerStageName: LocalisedString): Element {
     const caption: LocalisedString = prop == true ? [L_GuiEntityInfo.AllProps] : prop
     return (
       <flow direction="horizontal">
