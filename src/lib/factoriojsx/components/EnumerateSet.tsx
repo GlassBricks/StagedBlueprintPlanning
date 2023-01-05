@@ -11,7 +11,7 @@
 
 import { Func, ibind, RegisterClass } from "../../index"
 import { ObservableSet, ObservableSetChange } from "../../observable"
-import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
+import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, RenderContext, Spec } from "../index"
 
 export type EnumerateSetProps<T extends AnyNotNil, U extends GuiElementType> = {
   uses: U
@@ -25,12 +25,12 @@ export class EnumerateSet<T extends AnyNotNil, U extends GuiElementType> extends
   set!: ObservableSet<T>
   map!: Func<(value: T) => Spec>
   ifEmpty?: Func<() => Spec>
-  render(props: EnumerateSetProps<T, U>, tracker: Tracker): Spec {
+  render(props: EnumerateSetProps<T, U>, context: RenderContext): Spec {
     this.set = props.of
     this.map = props.map
     this.ifEmpty = props.ifEmpty
 
-    tracker.onMount((element) => {
+    context.onMount((element) => {
       this.element = element
       const { set, map, ifEmpty } = this
       if (set.size() == 0) {
@@ -46,7 +46,7 @@ export class EnumerateSet<T extends AnyNotNil, U extends GuiElementType> extends
           }
         }
       }
-      set.subscribe(tracker.getSubscription(), ibind(this.onChange))
+      set.subscribe(context.getSubscription(), ibind(this.onChange))
     })
     return <props.uses {...(props as any)} />
   }

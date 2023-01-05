@@ -16,7 +16,7 @@ import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcRef, ibind, PRecord, RegisterClass, registerFunctions } from "../lib"
-import { Component, destroy, FactorioJsx, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
+import { Component, destroy, FactorioJsx, RenderContext, renderNamed, Spec } from "../lib/factoriojsx"
 import {
   CollapseButton,
   DraggableSpace,
@@ -94,9 +94,9 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   assembly!: UserAssembly
   playerIndex!: PlayerIndex
 
-  public override render(props: { assembly: UserAssembly }, tracker: Tracker): Spec {
+  public override render(props: { assembly: UserAssembly }, context: RenderContext): Spec {
     this.assembly = props.assembly
-    this.playerIndex = tracker.playerIndex
+    this.playerIndex = context.playerIndex
 
     return (
       <frame direction="vertical">
@@ -416,9 +416,9 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
 export class StageSettings extends Component<{ stage: Stage }> {
   playerIndex!: PlayerIndex
   stage!: Stage
-  public override render(props: { stage: Stage }, tracker: Tracker): Spec {
+  public override render(props: { stage: Stage }, context: RenderContext): Spec {
     this.stage = props.stage
-    this.playerIndex = tracker.playerIndex
+    this.playerIndex = context.playerIndex
 
     return (
       <>

@@ -17,12 +17,12 @@ import {
   FCSpec,
   FlowElementSpec,
   GuiEventHandler,
+  RenderContext,
   SliderElementSpec,
   Spec,
   TabbedPaneElementSpec,
   TextBoxElementSpec,
   TextFieldElementSpec,
-  Tracker,
 } from "../../factoriojsx"
 import { State, state } from "../../observable"
 import { RegisterClass } from "../../references"
@@ -317,11 +317,11 @@ test("onCreate", () => {
   expect(testRender(spec).element).to.be(element1)
 })
 
-test("tracker onMount", () => {
+test("context onMount", () => {
   const fn = mock.fn<(this: unknown) => void>()
   const spec: FCSpec<any> = {
-    type(props, tracker) {
-      tracker.onMount(fn)
+    type(props, context) {
+      context.onMount(fn)
       return { type: "flow" }
     },
     props: {},
@@ -331,11 +331,11 @@ test("tracker onMount", () => {
   expect(fn).calledWith(element)
 })
 
-test("tracker onDestroy", () => {
+test("context onDestroy", () => {
   const fn = mock.fn()
   const spec: FCSpec<any> = {
-    type(props, tracker) {
-      tracker.getSubscription().add({ invoke: fn })
+    type(props, context) {
+      context.getSubscription().add({ invoke: fn })
 
       return { type: "flow" }
     },
@@ -365,12 +365,12 @@ describe("Class component", () => {
       results.push("constructed")
     }
 
-    render(props: Props, tracker: Tracker): Spec {
-      tracker.onMount((element) => {
+    render(props: Props, context: RenderContext): Spec {
+      context.onMount((element) => {
         expect(element.type).to.be("flow")
         results.push("onMount")
       })
-      tracker.getSubscription().add({ invoke: () => results.push("destroyed") })
+      context.getSubscription().add({ invoke: () => results.push("destroyed") })
       results.push("render")
       return {
         type: "flow",
@@ -386,12 +386,12 @@ describe("Class component", () => {
       results.push("constructed2")
     }
 
-    render(props: Props, tracker: Tracker): Spec {
-      tracker.onMount((element) => {
+    render(props: Props, context: RenderContext): Spec {
+      context.onMount((element) => {
         expect(element.type).to.be("flow")
         results.push("onMount2")
       })
-      tracker.getSubscription().add({ invoke: () => results.push("destroyed2") })
+      context.getSubscription().add({ invoke: () => results.push("destroyed2") })
       results.push("render2")
       return {
         type: Foo,
@@ -452,22 +452,22 @@ describe("function component", () => {
     results.length = 0
   })
 
-  function Component(props: { cb: (element: BaseGuiElement) => void }, tracker: Tracker): FlowElementSpec {
+  function Component(props: { cb: (element: BaseGuiElement) => void }, context: RenderContext): FlowElementSpec {
     results.push("render")
-    tracker.onMount(() => results.push("mountA"))
-    tracker.onMount(() => results.push("mountB"))
-    tracker.getSubscription().add({ invoke: () => results.push("destroyed") })
+    context.onMount(() => results.push("mountA"))
+    context.onMount(() => results.push("mountB"))
+    context.getSubscription().add({ invoke: () => results.push("destroyed") })
     return {
       type: "flow",
       onCreate: props.cb,
     }
   }
 
-  function Component2(props: { cb: (element: BaseGuiElement) => void }, tracker: Tracker): Spec {
+  function Component2(props: { cb: (element: BaseGuiElement) => void }, context: RenderContext): Spec {
     results.push("render2")
-    tracker.onMount(() => results.push("mount2A"))
-    tracker.onMount(() => results.push("mount2B"))
-    tracker.getSubscription().add({ invoke: () => results.push("destroyed2") })
+    context.onMount(() => results.push("mount2A"))
+    context.onMount(() => results.push("mount2B"))
+    context.getSubscription().add({ invoke: () => results.push("destroyed2") })
     return {
       type: Component,
       props: { cb: props.cb },

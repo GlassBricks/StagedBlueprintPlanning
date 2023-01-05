@@ -17,7 +17,7 @@ import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
 import { StageDiff } from "../entity/stage-diff"
 import { bind, ibind, ProtectedEvents, RegisterClass } from "../lib"
-import { Component, destroy, ElemProps, FactorioJsx, renderNamed, Spec, Tracker } from "../lib/factoriojsx"
+import { Component, destroy, ElemProps, FactorioJsx, RenderContext, renderNamed, Spec } from "../lib/factoriojsx"
 import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
@@ -37,8 +37,7 @@ PlayerChangedStageEvent.addListener((player, stage) => {
     return
   }
 
-  const otherEntity = assemblyEntity.getWorldOrPreviewEntity(stage.stageNumber)
-  player.opened = otherEntity
+  player.opened = assemblyEntity.getWorldOrPreviewEntity(stage.stageNumber)
 })
 
 const StageButtonWidth = 100
@@ -59,8 +58,8 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   stage!: Stage
   entity!: AssemblyEntity
 
-  public override render(props: EntityStageInfoProps, tracker: Tracker): Spec {
-    this.playerIndex = tracker.playerIndex
+  public override render(props: EntityStageInfoProps, context: RenderContext): Spec {
+    this.playerIndex = context.playerIndex
     const { stage, assemblyEntity: entity } = props
     this.stage = stage
     this.entity = entity

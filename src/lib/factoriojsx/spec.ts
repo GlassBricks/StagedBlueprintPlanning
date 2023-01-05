@@ -17,7 +17,7 @@ import { ElementSpec } from "./element-specs"
 
 export * from "./element-specs"
 
-export interface Tracker {
+export interface RenderContext {
   /**
    * This does not have to be a registered func.
    */
@@ -31,11 +31,11 @@ export interface Tracker {
   readonly playerIndex: PlayerIndex
 }
 
-export type FunctionComponent<T> = (props: T, tracker: Tracker) => Spec
+export type FunctionComponent<T> = (props: T, context: RenderContext) => Spec
 
 @RegisterClass("FactorioJsxComponent")
 export abstract class Component<P = EmptyProps> {
-  abstract render(props: P, tracker: Tracker): Spec
+  abstract render(props: P, context: RenderContext): Spec
   // noinspection JSUnusedGlobalSymbols
   declare _props: P
 }

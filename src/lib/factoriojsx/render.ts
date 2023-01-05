@@ -17,7 +17,16 @@ import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
 import { PRecord } from "../util-types"
 import * as propInfo from "./propInfo.json"
-import { ClassComponentSpec, ElementSpec, FCSpec, FragmentSpec, GuiEvent, GuiEventHandler, Spec, Tracker } from "./spec"
+import {
+  ClassComponentSpec,
+  ElementSpec,
+  FCSpec,
+  FragmentSpec,
+  GuiEvent,
+  GuiEventHandler,
+  RenderContext,
+  Spec,
+} from "./spec"
 import { Migrations } from "../migration"
 
 type GuiEventName = Extract<keyof typeof defines.events, `on_gui_${string}`>
@@ -53,15 +62,19 @@ function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
 
 registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc })
 
-interface TrackerInternal extends Tracker {
-  parent: TrackerInternal | nil
+interface InternalRenderContext extends RenderContext {
+  parent: InternalRenderContext | nil
   firstIndex: number | nil
 
   subscriptionContext?: Subscription
   onMountCallbacks: ((this: unknown, element: LuaGuiElement) => void)[]
 }
 
-function _newTracker(parent: TrackerInternal | nil, playerIndex: PlayerIndex, firstIndex?: number): TrackerInternal {
+function _newTracker(
+  parent: InternalRenderContext | nil,
+  playerIndex: PlayerIndex,
+  firstIndex?: number,
+): InternalRenderContext {
   return {
     playerIndex,
     firstIndex,
@@ -78,16 +91,16 @@ function _newTracker(parent: TrackerInternal | nil, playerIndex: PlayerIndex, fi
     },
   }
 }
-function newRootTracker(playerIndex: PlayerIndex, firstIndex: number | nil): TrackerInternal {
+function newRootTracker(playerIndex: PlayerIndex, firstIndex: number | nil): InternalRenderContext {
   return _newTracker(nil, playerIndex, firstIndex)
 }
-function newTracker(parent: TrackerInternal, firstIndex: number | nil): TrackerInternal {
+function newTracker(parent: InternalRenderContext, firstIndex: number | nil): InternalRenderContext {
   return _newTracker(parent, parent.playerIndex, firstIndex)
 }
 
-function callOnMount(tracker: TrackerInternal, element: LuaGuiElement): void {
-  for (const callback of tracker.onMountCallbacks) callback(element)
-  if (tracker.parent) return callOnMount(tracker.parent, element)
+function callOnMount(context: InternalRenderContext, element: LuaGuiElement): void {
+  for (const callback of context.onMountCallbacks) callback(element)
+  if (context.parent) return callOnMount(context.parent, element)
 }
 
 function isLuaGuiElement(element: unknown): element is LuaGuiElement {
@@ -109,25 +122,29 @@ const type = _G.type
 function renderInternal(
   parent: BaseGuiElement,
   element: Spec,
-  tracker: TrackerInternal,
+  context: InternalRenderContext,
 ): LuaGuiElement | LuaGuiElement[] | nil {
   const elemType = element.type
   const elemTypeType = type(elemType)
   if (elemTypeType == "string") {
-    return renderElement(parent, element as ElementSpec | FragmentSpec, tracker)
+    return renderElement(parent, element as ElementSpec | FragmentSpec, context)
   }
   if (elemTypeType == "table") {
-    return renderClassComponent(parent, element as ClassComponentSpec<any>, tracker)
+    return renderClassComponent(parent, element as ClassComponentSpec<any>, context)
   }
   if (elemTypeType == "function") {
-    return renderFunctionComponent(parent, element as FCSpec<any>, tracker)
+    return renderFunctionComponent(parent, element as FCSpec<any>, context)
   }
   error("Unknown spec type: " + serpent.block(element))
 }
 
-function renderFragment(parent: BaseGuiElement, spec: FragmentSpec, tracker: TrackerInternal): LuaGuiElement[] | nil {
+function renderFragment(
+  parent: BaseGuiElement,
+  spec: FragmentSpec,
+  context: InternalRenderContext,
+): LuaGuiElement[] | nil {
   const children = spec.children || []
-  let usedTracker: TrackerInternal = tracker
+  let usedTracker: InternalRenderContext = context
   const elements: LuaGuiElement[] = []
   for (const child of children) {
     const childResult = renderInternal(parent, child, usedTracker)
@@ -140,7 +157,7 @@ function renderFragment(parent: BaseGuiElement, spec: FragmentSpec, tracker: Tra
     }
   }
   if (elements.length == 0) {
-    tracker.subscriptionContext?.close()
+    context.subscriptionContext?.close()
     return
   }
   return elements
@@ -149,10 +166,10 @@ function renderFragment(parent: BaseGuiElement, spec: FragmentSpec, tracker: Tra
 function renderElement(
   parent: BaseGuiElement,
   spec: ElementSpec | FragmentSpec,
-  tracker: TrackerInternal,
+  context: InternalRenderContext,
 ): LuaGuiElement | LuaGuiElement[] | nil {
   if (spec.type == "fragment") {
-    return renderFragment(parent, spec, tracker)
+    return renderFragment(parent, spec, context)
   }
 
   const guiSpec: Record<string, any> = {}
@@ -197,8 +214,8 @@ function renderElement(
       guiSpec[key] = value
     }
   }
-  if (tracker.firstIndex) {
-    guiSpec.index = tracker.firstIndex
+  if (context.firstIndex) {
+    guiSpec.index = context.firstIndex
   }
 
   const element = parent.add(guiSpec as GuiSpec)
@@ -214,7 +231,7 @@ function renderElement(
         name = key[0]
         observer = bind(callSetterObserver, element, name)
       }
-      value.subscribeAndFire(tracker.getSubscription(), observer)
+      value.subscribeAndFire(context.getSubscription(), observer)
     } else if (typeof key != "object") {
       // simple value
       ;(element as any)[key] = value
@@ -229,7 +246,7 @@ function renderElement(
     const style = element.style
     for (const [key, value] of pairs(styleMod)) {
       if (value instanceof State) {
-        value.subscribeAndFire(tracker.getSubscription(), bind(setValueObserver, style, key))
+        value.subscribeAndFire(context.getSubscription(), bind(setValueObserver, style, key))
       } else {
         ;(style as any)[key] = value
       }
@@ -239,7 +256,7 @@ function renderElement(
   const children = spec.children
   if (children) {
     for (const child of children) {
-      renderInternal(element, child, newRootTracker(tracker.playerIndex, nil))
+      renderInternal(element, child, newRootTracker(context.playerIndex, nil))
     }
   }
 
@@ -255,9 +272,9 @@ function renderElement(
   }
 
   spec.onCreate?.(element as any)
-  callOnMount(tracker, element)
+  callOnMount(context, element)
 
-  const subscription = tracker.subscriptionContext
+  const subscription = context.subscriptionContext
   if ((subscription && subscription.hasActions()) || !isEmpty(events)) {
     global.players[element.player_index].guiElements[element.index] = {
       element,
@@ -268,12 +285,12 @@ function renderElement(
   return element
 }
 
-function renderFunctionComponent<T>(parent: BaseGuiElement, spec: FCSpec<T>, tracker: TrackerInternal) {
-  return renderInternal(parent, spec.type(spec.props, tracker), tracker)
+function renderFunctionComponent<T>(parent: BaseGuiElement, spec: FCSpec<T>, context: InternalRenderContext) {
+  return renderInternal(parent, spec.type(spec.props, context), context)
 }
 
-function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponentSpec<T>, tracker: TrackerInternal) {
-  const childTracker = newTracker(tracker, tracker.firstIndex)
+function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponentSpec<T>, context: InternalRenderContext) {
+  const childTracker = newTracker(context, context.firstIndex)
 
   const Component = spec.type
   assertIsRegisteredClass(Component)

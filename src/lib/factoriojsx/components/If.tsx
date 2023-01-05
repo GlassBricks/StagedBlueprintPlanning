@@ -13,7 +13,7 @@
 
 import { Func, ibind, RegisterClass } from "../../index"
 import { State } from "../../observable"
-import { Component, destroyChildren, ElemProps, FactorioJsx, renderMultiple, Spec, Tracker } from "../index"
+import { Component, destroyChildren, ElemProps, FactorioJsx, RenderContext, renderMultiple, Spec } from "../index"
 
 export type IfProps = {
   condition: State<boolean>
@@ -27,7 +27,7 @@ export class If extends Component<IfProps> {
   else?: Func<() => Spec | undefined>
   element!: FlowGuiElementMembers
 
-  render(props: IfProps, tracker: Tracker): Spec {
+  render(props: IfProps, context: RenderContext): Spec {
     this.then = props.then
     this.else = props.else
     return (
@@ -35,7 +35,7 @@ export class If extends Component<IfProps> {
         {...props}
         onCreate={(element) => {
           this.element = element
-          props.condition.subscribeAndFire(tracker.getSubscription(), ibind(this.onChange))
+          props.condition.subscribeAndFire(context.getSubscription(), ibind(this.onChange))
         }}
       />
     )

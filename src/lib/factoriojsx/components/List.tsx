@@ -11,7 +11,7 @@
 
 import { assertNever, Func, ibind, RegisterClass } from "../../index"
 import { ObservableList, ObservableListChange } from "../../observable"
-import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, Spec, Tracker } from "../index"
+import { Component, destroy, destroyChildren, ElemProps, FactorioJsx, render, RenderContext, Spec } from "../index"
 
 export type ListProps<T extends AnyNotNil, U extends GuiElementType> = {
   uses: U
@@ -26,10 +26,10 @@ export class List<T extends AnyNotNil, U extends GuiElementType> extends Compone
 
   element!: BaseGuiElement
 
-  render(props: ListProps<T, U>, tracker: Tracker): Spec {
+  render(props: ListProps<T, U>, context: RenderContext): Spec {
     this.map = props.map
     this.ifEmpty = props.ifEmpty
-    tracker.onMount((element) => {
+    context.onMount((element) => {
       this.element = element
       const { of, map, ifEmpty } = props
       if (of.length() == 0) {
@@ -45,7 +45,7 @@ export class List<T extends AnyNotNil, U extends GuiElementType> extends Compone
           }
         }
       }
-      of.subscribe(tracker.getSubscription(), ibind(this.onChange))
+      of.subscribe(context.getSubscription(), ibind(this.onChange))
     })
 
     return <props.uses {...(props as any)} />

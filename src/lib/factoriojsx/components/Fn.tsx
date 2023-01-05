@@ -11,7 +11,7 @@
 
 import { Func, ibind, RegisterClass } from "../../index"
 import { State } from "../../observable"
-import { Component, destroyChildren, ElemProps, FactorioJsx, renderMultiple, Spec, Tracker } from "../index"
+import { Component, destroyChildren, ElemProps, FactorioJsx, RenderContext, renderMultiple, Spec } from "../index"
 
 export type FuncProps<T, U extends GuiElementType> = {
   uses: U
@@ -25,12 +25,12 @@ export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> 
 
   element!: LuaGuiElement
 
-  render(props: FuncProps<T, U>, tracker: Tracker): Spec {
+  render(props: FuncProps<T, U>, context: RenderContext): Spec {
     const { from, map } = props
     this.map = map
-    tracker.onMount((element) => {
+    context.onMount((element) => {
       this.element = element
-      from.subscribeAndFire(tracker.getSubscription(), ibind(this.onChange))
+      from.subscribeAndFire(context.getSubscription(), ibind(this.onChange))
     })
 
     return <props.uses {...(props as any)} />
