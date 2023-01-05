@@ -11,9 +11,7 @@
 
 export * from "./buttons"
 export * from "./Dialog"
-export * from "./EnumerateSet"
 export * from "./Fn"
 export * from "./If"
-export * from "./List"
 export * from "./misc"
 export * from "./TitleBar"
