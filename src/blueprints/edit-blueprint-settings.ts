@@ -14,13 +14,12 @@ import { Events, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { FirstEntityOriginalPositionTag, takeBlueprintWithSettings } from "./take-blueprint"
-import { EditableStageBlueprintSettings, InBlueprintItemSettings } from "./blueprint-settings"
-import { AsProperties, getCurrentObjValue } from "../utils/settings-obj"
+import { BlueprintItemSettings, EditableStageBlueprintSettings } from "./blueprint-settings"
+import { getCurrentValues, PropertiesTable } from "../utils/settings-obj"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
   settings: EditableStageBlueprintSettings
-
   editType: "blueprint-item" | "additionalWhitelist" | "blacklist"
 }
 declare global {
@@ -49,7 +48,7 @@ export function editInItemBlueprintSettings(
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
 
-  const took = takeBlueprintWithSettings(blueprint, getCurrentObjValue(settings), surface, bbox, true)
+  const took = takeBlueprintWithSettings(blueprint, getCurrentValues(settings), surface, bbox, true)
   if (!took) {
     inventory.destroy()
     return
@@ -101,7 +100,7 @@ function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {
 }
 function updateBlueprintItemSettings(
   blueprint: BlueprintItemStack,
-  settings: AsProperties<InBlueprintItemSettings>,
+  settings: PropertiesTable<BlueprintItemSettings>,
   playerIndex: PlayerIndex,
 ): void {
   const icons = blueprint.blueprint_icons

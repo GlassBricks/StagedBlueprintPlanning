@@ -133,6 +133,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               {this.StagesTab()}
               <tab caption={[L_GuiAssemblySettings.Blueprints]} />
               {/*todo: {this.BlueprintSettingsTab()}*/}
+              <empty-widget />
               <tab caption={[L_GuiAssemblySettings.Other]} />
               {this.OtherTab()}
             </tabbed-pane>

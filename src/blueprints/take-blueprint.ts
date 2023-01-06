@@ -13,39 +13,39 @@ import { getInfinityEntityNames } from "../entity/entity-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { StageBlueprintSettings } from "./blueprint-settings"
-import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(
   stack: LuaItemStack,
   entities: BlueprintEntity[],
-  positionOffset: Position | nil,
+  positionOffset: Position,
   firstEntityOriginalPosition: MapPosition,
 ): boolean {
   if (!positionOffset) return false
   const firstEntityPosition = entities[0].position
   const expectedPosition = Pos.plus(firstEntityOriginalPosition, positionOffset)
   const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
-  if (shouldAdjustPosition) {
-    const { x, y } = Pos.minus(expectedPosition, firstEntityPosition)
-    for (const i of $range(1, entities.length)) {
-      const pos = entities[i - 1].position as Mutable<Position>
+  if (!shouldAdjustPosition) return false
+
+  const { x, y } = Pos.minus(expectedPosition, firstEntityPosition)
+  for (const i of $range(1, entities.length)) {
+    const pos = entities[i - 1].position as Mutable<Position>
+    pos.x += x
+    pos.y += y
+  }
+  const tiles = stack.get_blueprint_tiles()
+  if (tiles) {
+    for (const i of $range(1, tiles.length)) {
+      const pos = tiles[i - 1].position as Mutable<Position>
       pos.x += x
       pos.y += y
     }
-    const tiles = stack.get_blueprint_tiles()!
-    if (tiles && tiles.length > 0) {
-      for (const i of $range(1, tiles.length)) {
-        const pos = tiles[i - 1].position as Mutable<Position>
-        pos.x += x
-        pos.y += y
-      }
-      stack.set_blueprint_tiles(tiles)
-    }
+    stack.set_blueprint_tiles(tiles)
   }
-  return shouldAdjustPosition
+  return true
 }
-function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): void {
+function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): boolean {
+  let anyReplaced = false
   const [chests, pipes] = getInfinityEntityNames()
   for (const i of $range(1, entities.length)) {
     const entity = entities[i - 1] as Mutable<BlueprintEntity>
@@ -63,6 +63,7 @@ function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): vo
           })),
       }
       entity.infinity_settings = nil
+      anyReplaced = true
     } else if (pipes.has(name)) {
       const settings = entity.infinity_settings as InfinityPipeFilter | nil
       entity.name = "constant-combinator"
@@ -76,18 +77,19 @@ function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): vo
         ],
       }
     }
+    anyReplaced = true
   }
+  return anyReplaced
 }
-function filterEntities(
-  entities: BlueprintEntity[],
-  filters: LuaSet<string>,
-  mode: defines.deconstruction_item.entity_filter_mode | nil,
-): void {
-  const isWhitelist = mode != entity_filter_mode.blacklist
+function filterEntities(entities: BlueprintEntity[], filters: ReadonlyLuaSet<string>): boolean {
+  let anyDeleted = false
   for (const i of $range(1, entities.length)) {
-    const entity = entities[i - 1]
-    if (isWhitelist != filters.has(entity.name)) delete entities[i - 1]
+    if (filters.has(entities[i - 1].name)) {
+      anyDeleted = true
+      delete entities[i - 1]
+    }
   }
+  return anyDeleted
 }
 
 /**
@@ -114,26 +116,43 @@ export function takeBlueprintWithSettings(
 
   if (isEmpty(bpMapping)) return false
 
-  const { additionalWhitelist } = settings
-  const entitiesPossiblyAltered = additionalWhitelist != nil
+  const {
+    snapToGrid,
+    positionOffset,
+    blacklist,
+    replaceInfinityEntitiesWithCombinators: shouldReplaceInfinity,
+  } = settings
 
-  if (settings.snapToGrid != nil || entitiesPossiblyAltered) {
-    const entities = stack.get_blueprint_entities()!
-    const shouldAdjustPosition = adjustEntitiesToMatchPositionOffset(
-      stack,
-      entities,
-      settings.positionOffset,
-      bpMapping[1].position,
-    )
+  let entities: BlueprintEntity[] | nil
 
-    if (isEmpty(entities)) {
-      stack.clear_blueprint()
-      return false
-    }
+  function getEntities() {
+    return (entities ??= stack.get_blueprint_entities()!)
+  }
 
-    if (entitiesPossiblyAltered || shouldAdjustPosition) {
-      stack.set_blueprint_entities(entities)
-    }
+  let entitiesAdjusted = false
+  if (
+    snapToGrid &&
+    positionOffset &&
+    adjustEntitiesToMatchPositionOffset(stack, getEntities(), positionOffset, bpMapping[1].position)
+  ) {
+    entitiesAdjusted = true
+  }
+
+  if (blacklist && !isEmpty(blacklist) && filterEntities(getEntities(), blacklist)) {
+    entitiesAdjusted = true
+  }
+
+  if (shouldReplaceInfinity && replaceInfinityEntitiesWithCombinators(getEntities())) {
+    entitiesAdjusted = true
+  }
+
+  if (entities && isEmpty(entities)) {
+    stack.clear_blueprint()
+    return false
+  }
+
+  if (entities && entitiesAdjusted) {
+    stack.set_blueprint_entities(entities)
   }
 
   stack.blueprint_icons = settings.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])

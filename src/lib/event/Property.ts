@@ -35,7 +35,7 @@ export type MaybeMutableProperty<T> = Property<T> | MutableProperty<T> | T
 export type Mapper<T, U> = Func<(value: T) => U>
 
 @RegisterClassFunctionsOnly("Property")
-export abstract class Property<out T> implements Subscribable<ChangeObserver<T>> {
+export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   abstract get(): T
 
   abstract _subscribeIndependently(observer: ChangeObserver<T>): Subscription
@@ -93,7 +93,7 @@ export function _numObservers(state: Property<unknown>): number {
   return table_size((state as unknown as { event: Event<any> }).event)
 }
 
-export interface MutableProperty<in out T> extends Property<T> {
+export interface MutableProperty<T> extends Property<T> {
   set(value: T): void
 }
 

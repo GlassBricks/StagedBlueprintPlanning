@@ -1,9 +1,9 @@
 import expect from "tstl-expect"
 import {
   fromDiffValue,
-  getActualValue,
   getDiff,
   getNilPlaceholder,
+  getResultValue,
   NilPlaceholder,
   toDiffValue,
 } from "../../utils/diff-value"
@@ -22,10 +22,10 @@ test("fromDiffValue", () => {
   expect(fromDiffValue(nilPlaceholder)).to.be(nil)
 })
 
-test("getActualValue", () => {
-  expect(getActualValue(1, 2)).to.be(2)
-  expect(getActualValue(1, nil)).to.be(1)
-  expect(getActualValue(1, nilPlaceholder)).to.be(nil)
+test("getResultValue", () => {
+  expect(getResultValue(1, 2)).to.be(2)
+  expect(getResultValue(1, nil)).to.be(1)
+  expect(getResultValue(1, nilPlaceholder)).to.be(nil)
 })
 
 test("getDiff", () => {

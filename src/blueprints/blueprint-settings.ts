@@ -1,7 +1,6 @@
 import { Position } from "../lib/geometry"
-import { AsProperties } from "../utils/settings-obj"
+import { PropertiesTable } from "../utils/settings-obj"
 
-// embrace immutability!!
 export interface BuildBlueprintSettings {
   readonly emptyBlueprintNames: boolean
   readonly emptyBlueprintBookName: boolean
@@ -13,12 +12,8 @@ export interface BlueprintGridSettings {
   readonly positionRelativeToGrid: Position | nil
   readonly absoluteSnapping: boolean
 }
-export interface OverridableStageBlueprintSettings extends BlueprintGridSettings {
-  // before taking blueprint
-  readonly autoLandfill: boolean
 
-  // filtering entities
-
+export interface BlueprintTakeSettings extends BlueprintGridSettings {
   /** If not nil, only include entities changed in the last x stages */
   readonly stageLimit: number | nil
 
@@ -30,8 +25,11 @@ export interface OverridableStageBlueprintSettings extends BlueprintGridSettings
 
   // (transformations)
   readonly replaceInfinityEntitiesWithCombinators: boolean
+}
 
-  // after taking blueprint
+export interface OverridableStageBlueprintSettings extends BlueprintTakeSettings {
+  readonly autoLandfill: boolean
+
   readonly useNextStageTiles: boolean
 }
 
@@ -39,14 +37,11 @@ export interface PerStageBlueprintSettings {
   readonly icons: BlueprintSignalIcon[] | nil
 }
 
-export interface InBlueprintItemSettings extends PerStageBlueprintSettings, BlueprintGridSettings {}
+export interface BlueprintItemSettings extends PerStageBlueprintSettings, BlueprintGridSettings {}
 
-export interface StageBlueprintSettings
-  extends OverridableStageBlueprintSettings,
-    PerStageBlueprintSettings,
-    InBlueprintItemSettings {}
+export interface StageBlueprintSettings extends OverridableStageBlueprintSettings, PerStageBlueprintSettings {}
 
-export type EditableStageBlueprintSettings = AsProperties<StageBlueprintSettings>
+export type EditableStageBlueprintSettings = PropertiesTable<StageBlueprintSettings>
 
 export function getDefaultBlueprintSettings(): OverridableStageBlueprintSettings {
   return {
