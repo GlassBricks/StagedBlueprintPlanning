@@ -11,31 +11,20 @@
 
 import { deepCompare, Events, Mutable, nilIfEmpty, shallowCopy } from "../lib"
 import { Entity } from "./Entity"
+import { DiffValue, getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 
-declare const NilPlaceholder: unique symbol
-export type NilPlaceholder = typeof NilPlaceholder
-export type DiffValue<T> = { __diffedValue: T }
 export type StageDiff<E extends Entity> = {
   readonly [P in keyof E]?: DiffValue<E[P]>
 }
 export type StageDiffInternal<E extends Entity> = {
   readonly [P in keyof E]?: E[P] | NilPlaceholder
 }
-declare const global: {
-  nilPlaceholder: NilPlaceholder
-}
-let nilPlaceholder: NilPlaceholder
-Events.on_init(() => {
-  nilPlaceholder = global.nilPlaceholder = {} as any
-})
-Events.on_load(() => {
-  nilPlaceholder = global.nilPlaceholder
-})
-export function getNilPlaceholder(): NilPlaceholder {
-  return assert(nilPlaceholder)
-}
 
 const ignoredProps = newLuaSet<keyof any>("position", "direction")
+let nilPlaceholder: NilPlaceholder | undefined
+Events.onInitOrLoad(() => {
+  nilPlaceholder = getNilPlaceholder()
+})
 export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<StageDiff<E>> | nil {
   const changes: any = {}
   for (const [key, value] of pairs(above)) {
@@ -47,10 +36,6 @@ export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<Sta
     if (!ignoredProps.has(key) && above[key] == nil) changes[key] = nilPlaceholder
   }
   return nilIfEmpty(changes)
-}
-export function getPropDiff<E>(below: E, above: E): DiffValue<E> | nil {
-  if (deepCompare(below, above)) return nil
-  return (above == nil ? nilPlaceholder : above) as any
 }
 
 export function _applyDiffToDiffUnchecked<E extends Entity = Entity>(
@@ -69,13 +54,6 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
       entity[key] = value as any
     }
   }
-}
-export function fromDiffValue<T>(value: DiffValue<T> | T): T {
-  if (value == nilPlaceholder) return nil!
-  return value as T
-}
-export function toDiffValue<T>(value: T): DiffValue<T> {
-  return value == nil ? (nilPlaceholder as any) : (value as any)
 }
 
 export function getDiffDiff<T extends Entity>(

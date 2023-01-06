@@ -1,6 +1,6 @@
 import { Component, Element, FactorioJsx, RenderContext } from "../../lib/factoriojsx"
 import { ibind, MutableProperty, RegisterClass } from "../../lib"
-import { getDefaultValueIfIsOverridenProp, highlightIfOverriden } from "../OverrideResultProperty"
+import { getDefaultValueIfIsOverridenProp, highlightIfOverriden } from "../../utils/DiffedProperty"
 
 export interface CheckboxTextfieldProps {
   captionBefore: LocalisedString

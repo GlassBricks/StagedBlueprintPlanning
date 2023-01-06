@@ -14,13 +14,14 @@ import { AssemblyEntity, createAssemblyEntity, ExtraEntityType } from "../../ent
 import { Entity } from "../../entity/Entity"
 import { getRegisteredAssemblyEntity } from "../../entity/entity-registration"
 import { RollingStockEntity } from "../../entity/special-entities"
-import { getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
+import { getEntityDiff } from "../../entity/stage-diff"
 import { shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 import { simpleMock } from "../simple-mock"
 import { createRollingStock } from "./createRollingStock"
 import expect from "tstl-expect"
+import { getNilPlaceholder } from "../../utils/diff-value"
 
 interface InserterEntity extends Entity {
   name: "filter-inserter" | "stack-filter-inserter"

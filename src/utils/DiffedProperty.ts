@@ -1,8 +1,8 @@
 import {
+  bind,
   ChangeObserver,
-  deepCompare,
   funcRef,
-  ibind,
+  MaybeProperty,
   MutableProperty,
   Property,
   RegisterClass,
@@ -10,17 +10,15 @@ import {
   Subscription,
 } from "../lib"
 import { BaseStyleMod } from "../lib/factoriojsx"
+import { DiffValue, getDiff, getResultValue } from "./diff-value"
 
-@RegisterClass("OverrideResultProperty")
-export class OverrideResultProperty<T> extends Property<T> implements MutableProperty<T> {
+@RegisterClass("DiffedProperty")
+export class DiffedProperty<T> extends Property<T> implements MutableProperty<T> {
   private resultValue: Property<T>
-  constructor(readonly overrideValue: MutableProperty<T | nil>, readonly defaultValue: Property<T>) {
+  constructor(readonly overrideValue: MutableProperty<DiffValue<T> | nil>, readonly defaultValue: Property<T>) {
     super()
-    this.resultValue = overrideValue.flatMap(ibind(this.defaultIfNil))
-  }
-
-  private defaultIfNil<T>(value: T | nil) {
-    return value ?? this.defaultValue
+    // prettier-ignore
+    this.resultValue = overrideValue.flatMap(bind((getResultValue<MaybeProperty<T>>), defaultValue))
   }
 
   _subscribeIndependently(observer: ChangeObserver<T>): Subscription {
@@ -31,11 +29,7 @@ export class OverrideResultProperty<T> extends Property<T> implements MutablePro
   }
 
   set(value: T): void {
-    if (deepCompare(this.defaultValue.get(), value)) {
-      this.overrideValue.set(nil)
-    } else {
-      this.overrideValue.set(value)
-    }
+    this.overrideValue.set(getDiff(this.defaultValue.get(), value))
   }
 
   forceNotify(): void {
@@ -60,7 +54,7 @@ registerFunctions("prop-possibly-overriden", {
 })
 
 export function highlightIfOverriden<T>(prop: MutableProperty<T>): BaseStyleMod {
-  if (!(prop instanceof OverrideResultProperty)) return {}
+  if (!(prop instanceof DiffedProperty)) return {}
   return {
     font_color: prop.overrideValue.map(funcRef(blueIfNotNil)),
     font: prop.overrideValue.map(funcRef(boldIfNotNil)),
@@ -68,7 +62,7 @@ export function highlightIfOverriden<T>(prop: MutableProperty<T>): BaseStyleMod 
 }
 
 export function getDefaultValueIfIsOverridenProp<T>(prop: MutableProperty<T>): T | nil {
-  if (prop instanceof OverrideResultProperty) {
+  if (prop instanceof DiffedProperty) {
     return prop.defaultValue.get()
   }
 }

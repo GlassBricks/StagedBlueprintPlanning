@@ -9,8 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { applyDiffToEntity, getEntityDiff, getNilPlaceholder } from "../../entity/stage-diff"
+import { applyDiffToEntity, getEntityDiff } from "../../entity/stage-diff"
 import expect from "tstl-expect"
+import { getNilPlaceholder } from "../../utils/diff-value"
 
 const entity1 = {
   name: "1",

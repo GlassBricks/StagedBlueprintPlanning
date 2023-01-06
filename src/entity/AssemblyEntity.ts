@@ -29,16 +29,13 @@ import { RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import {
   _applyDiffToDiffUnchecked,
   applyDiffToEntity,
-  DiffValue,
-  fromDiffValue,
   getDiffDiff,
   getEntityDiff,
-  getPropDiff,
   StageDiff,
   StageDiffInternal,
-  toDiffValue,
 } from "./stage-diff"
 import { getWorldDirection, orientationToDirection, SavedDirection, WorldDirection } from "./direction"
+import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
 
 /** 1 indexed */
 export type StageNumber = number
@@ -287,7 +284,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (!stageDiff) return $multi(false)
     const val = stageDiff[prop]
     if (val == nil) return $multi(false)
-    return $multi(true, fromDiffValue(val))
+    return $multi(true, fromDiffValue<T[K]>(val))
   }
 
   getStageDiffs(): StageDiffs<T> | nil {
@@ -352,7 +349,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]> {
-    let value: T[K] | nil = this.firstValue[prop]
+    let value: T[K] = this.firstValue[prop]
     const firstStage = this.firstStage
     if (stage <= firstStage) return $multi(value, firstStage)
     const { stageDiffs } = this
@@ -363,7 +360,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
         const propDiff = diff[prop]
         if (propDiff != nil) {
           resultStage = changedStage
-          value = fromDiffValue(propDiff)
+          value = fromDiffValue<T[K]>(propDiff)
         }
       }
     }
@@ -489,7 +486,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
     if (deepCompare(oldValue, newValue)) return false
 
-    const newDiffValue = getPropDiff(propAtPreviousStage, newValue)
+    const newDiffValue = getDiff(propAtPreviousStage, newValue)
 
     if (stage == this.firstStage) {
       this.firstValue[prop] = newValue
