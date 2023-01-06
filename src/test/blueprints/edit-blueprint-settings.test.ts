@@ -14,8 +14,8 @@ import { Prototypes } from "../../constants"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import expect from "tstl-expect"
-import { EditableStageBlueprintSettings, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
-import { createPropertiesTable, getCurrentValues } from "../../utils/settings-obj"
+import { getDefaultBlueprintSettings, StageBlueprintSettingsView } from "../../blueprints/blueprint-settings"
+import { createPropertiesTable, getCurrentValues } from "../../utils/properties-obj"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 let player: LuaPlayer
@@ -28,15 +28,15 @@ before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
 })
 
-function createStageBlueprintSettings(): EditableStageBlueprintSettings {
-  return createPropertiesTable(keys<EditableStageBlueprintSettings>(), {
+function createStageBlueprintSettings(): StageBlueprintSettingsView {
+  return createPropertiesTable(keys<StageBlueprintSettingsView>(), {
     ...getDefaultBlueprintSettings(),
     icons: nil,
   })
 }
 
 describe("in-item blueprint settings", () => {
-  let settings: EditableStageBlueprintSettings
+  let settings: StageBlueprintSettingsView
   let entity1: LuaEntity
   let entity2: LuaEntity
   before_each(() => {

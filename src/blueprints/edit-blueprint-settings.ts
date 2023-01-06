@@ -14,12 +14,12 @@ import { Events, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { FirstEntityOriginalPositionTag, takeBlueprintWithSettings } from "./take-blueprint"
-import { BlueprintItemSettings, EditableStageBlueprintSettings } from "./blueprint-settings"
-import { getCurrentValues, PropertiesTable } from "../utils/settings-obj"
+import { BlueprintItemSettings, StageBlueprintSettingsView } from "./blueprint-settings"
+import { getCurrentValues, PropertiesTable } from "../utils/properties-obj"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
-  settings: EditableStageBlueprintSettings
+  settings: StageBlueprintSettingsView
   editType: "blueprint-item" | "additionalWhitelist" | "blacklist"
 }
 declare global {
@@ -40,7 +40,7 @@ function clearOpenedItem(playerIndex: PlayerIndex): void {
 
 export function editInItemBlueprintSettings(
   player: LuaPlayer,
-  settings: EditableStageBlueprintSettings,
+  settings: StageBlueprintSettingsView,
   surface: LuaSurface,
   bbox: BBox,
 ): LuaItemStack | nil {
@@ -66,7 +66,7 @@ export function editInItemBlueprintSettings(
 
 export function editBlueprintFilters(
   player: LuaPlayer,
-  settings: EditableStageBlueprintSettings,
+  settings: StageBlueprintSettingsView,
   type: "additionalWhitelist" | "blacklist",
 ): LuaItemStack {
   clearOpenedItem(player.index)

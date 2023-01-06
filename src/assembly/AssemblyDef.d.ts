@@ -13,22 +13,26 @@ import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableAssemblyContent } from "../entity/AssemblyContent"
 import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { AutoSetTilesType } from "./tiles"
+import {
+  OverrideableBlueprintSettings,
+  StageBlueprintSettingsTable,
+  StageBlueprintSettingsView,
+} from "../blueprints/blueprint-settings"
+import { PropertiesTable } from "../utils/properties-obj"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface Assembly {
   maxStage(): StageNumber
-
   getStageName(stage: StageNumber): LocalisedString
   getSurface(stage: StageNumber): LuaSurface | nil
   readonly content: MutableAssemblyContent
 }
 export interface UserAssembly extends Assembly {
   readonly id: AssemblyId
-
   readonly name: MutableProperty<string>
   readonly displayName: Property<LocalisedString>
-
   readonly content: MutableAssemblyContent
+  readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
 
   readonly localEvents: SimpleSubscribable<LocalAssemblyEvent>
 
@@ -38,7 +42,6 @@ export interface UserAssembly extends Assembly {
   insertStage(index: StageNumber): Stage
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
-  // readonly assemblyBlueprintSettings: BuildBlueprintSettings
   makeBlueprintBook(stack: LuaItemStack): boolean
 
   readonly valid: boolean
@@ -47,11 +50,14 @@ export interface UserAssembly extends Assembly {
 
 export interface Stage {
   readonly surface: LuaSurface
-
   readonly name: MutableProperty<string>
 
   readonly stageNumber: StageNumber
   readonly assembly: UserAssembly
+
+  readonly stageBlueprintSettings: StageBlueprintSettingsTable
+
+  getBlueprintSettingsView(): StageBlueprintSettingsView
 
   takeBlueprint(stack: LuaItemStack): boolean
 

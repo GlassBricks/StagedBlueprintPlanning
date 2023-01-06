@@ -1,5 +1,5 @@
 import { Position } from "../lib/geometry"
-import { PropertiesTable } from "../utils/settings-obj"
+import { createPropertiesTable, PropertiesTable, PropertyOverrideTable } from "../utils/properties-obj"
 
 export interface BuildBlueprintSettings {
   readonly emptyBlueprintNames: boolean
@@ -27,7 +27,7 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
   readonly replaceInfinityEntitiesWithCombinators: boolean
 }
 
-export interface OverridableStageBlueprintSettings extends BlueprintTakeSettings {
+export interface OverrideableBlueprintSettings extends BlueprintTakeSettings {
   readonly autoLandfill: boolean
 
   readonly useNextStageTiles: boolean
@@ -37,13 +37,20 @@ export interface PerStageBlueprintSettings {
   readonly icons: BlueprintSignalIcon[] | nil
 }
 
-export interface BlueprintItemSettings extends PerStageBlueprintSettings, BlueprintGridSettings {}
+export interface BlueprintItemSettings extends BlueprintGridSettings, PerStageBlueprintSettings {}
 
-export interface StageBlueprintSettings extends OverridableStageBlueprintSettings, PerStageBlueprintSettings {}
+/** The stored information about a stage's blueprint settings, in property (possibly overrides) form */
+export interface StageBlueprintSettingsTable
+  extends PropertyOverrideTable<OverrideableBlueprintSettings>,
+    PropertiesTable<PerStageBlueprintSettings> {}
 
-export type EditableStageBlueprintSettings = PropertiesTable<StageBlueprintSettings>
+/** The actual values of a stage's blueprint settings. */
+export interface StageBlueprintSettings extends OverrideableBlueprintSettings, PerStageBlueprintSettings {}
 
-export function getDefaultBlueprintSettings(): OverridableStageBlueprintSettings {
+/** Blueprint settings for a stage, with overrides applied, as a properties table. */
+export type StageBlueprintSettingsView = PropertiesTable<StageBlueprintSettings>
+
+export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
   return {
     autoLandfill: false,
     positionOffset: nil,
@@ -56,4 +63,8 @@ export function getDefaultBlueprintSettings(): OverridableStageBlueprintSettings
     replaceInfinityEntitiesWithCombinators: false,
     stageLimit: nil,
   }
+}
+
+export function createNewBlueprintSettings(): PropertiesTable<OverrideableBlueprintSettings> {
+  return createPropertiesTable(keys<OverrideableBlueprintSettings>(), getDefaultBlueprintSettings())
 }

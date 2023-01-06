@@ -22,11 +22,24 @@ import {
   RegisterClass,
   SimpleEvent,
 } from "../lib"
-import { BBox } from "../lib/geometry"
+import { BBox, Position } from "../lib/geometry"
 import { L_Bp100 } from "../locale"
 import { AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage, UserAssembly } from "./AssemblyDef"
 import { createStageSurface, prepareArea } from "./surfaces"
 import { AutoSetTilesType, setTiles } from "./tiles"
+import { Migrations } from "../lib/migration"
+import {
+  createNewBlueprintSettings,
+  OverrideableBlueprintSettings,
+  StageBlueprintSettingsTable,
+  StageBlueprintSettingsView,
+} from "../blueprints/blueprint-settings"
+import {
+  createdDiffedPropertyTableView,
+  createEmptyPropertyOverrideTable,
+  PropertiesTable,
+} from "../utils/properties-obj"
+import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 declare const global: {
   nextAssemblyId: AssemblyId
@@ -52,6 +65,7 @@ class UserAssemblyImpl implements UserAssembly {
   content = newAssemblyContent()
   localEvents = new SimpleEvent<LocalAssemblyEvent>()
 
+  defaultBlueprintSettings = createNewBlueprintSettings()
   // todo
   // assemblyBlueprintSettings: BuildBlueprintSettings = {
   //   autoLandfill: property(false),
@@ -98,8 +112,8 @@ class UserAssemblyImpl implements UserAssembly {
     return luaLength(this.stages)
   }
 
-  getAllStages(): readonly Stage[] {
-    return this.stages as unknown as readonly Stage[]
+  getAllStages(): readonly StageImpl[] {
+    return this.stages as unknown as readonly StageImpl[]
   }
   getStageName(stageNumber: StageNumber): LocalisedString {
     return this.stages[stageNumber].name.get()
@@ -235,6 +249,13 @@ export function _deleteAllAssemblies(): void {
 
 const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods.debugadapter != nil ? 32 : 5 * 32)
 
+function createEmptyStageBlueprintSettings(): StageBlueprintSettingsTable {
+  return {
+    ...createEmptyPropertyOverrideTable<OverrideableBlueprintSettings>(keys<OverrideableBlueprintSettings>()),
+    icons: property(nil),
+  }
+}
+
 @RegisterClass("Stage")
 class StageImpl implements Stage {
   name: MutableProperty<string>
@@ -242,6 +263,14 @@ class StageImpl implements Stage {
 
   readonly surfaceIndex: SurfaceIndex
 
+  stageBlueprintSettings = createEmptyStageBlueprintSettings()
+
+  getBlueprintSettingsView(): StageBlueprintSettingsView {
+    return {
+      ...createdDiffedPropertyTableView(this.assembly.defaultBlueprintSettings, this.stageBlueprintSettings),
+      icons: this.stageBlueprintSettings.icons,
+    }
+  }
   // todo
   // public blueprintSettings: BlueprintSettings = getDefaultBlueprintSettings()
   public constructor(
@@ -358,4 +387,80 @@ export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
 Events.on_pre_surface_deleted((e) => {
   const stage = getStageAtSurface(e.surface_index)
   if (stage != nil) stage.deleteInAssembly()
+})
+
+Migrations.to("0.16.0", () => {
+  interface OldAssembly {
+    assemblyBlueprintSettings?: {
+      autoLandfill: MutableProperty<boolean>
+      useNextStageTiles: MutableProperty<boolean>
+
+      emptyBlueprintNames: MutableProperty<boolean>
+      emptyBlueprintBookName: MutableProperty<boolean>
+
+      entityFilters: MutableProperty<LuaSet<string> | nil>
+      entityFilterMode: MutableProperty<defines.deconstruction_item.entity_filter_mode | nil>
+      replaceInfinityWithCombinators: MutableProperty<boolean>
+    }
+  }
+
+  interface OldStage {
+    blueprintSettings?: {
+      name: string
+      icons: BlueprintSignalIcon[] | nil
+
+      /** Original position + offset = blueprint position */
+      positionOffset: Position
+      snapToGrid?: Position
+      positionRelativeToGrid?: Position
+      absoluteSnapping: boolean
+    }
+  }
+
+  function copyFromOldStageSettings(
+    newSettings: PropertiesTable<OverrideableBlueprintSettings>,
+    oldSettings: OldStage["blueprintSettings"] & AnyNotNil,
+  ) {
+    newSettings.positionOffset.set(oldSettings.positionOffset)
+    newSettings.snapToGrid.set(oldSettings.snapToGrid)
+    newSettings.positionRelativeToGrid.set(oldSettings.positionRelativeToGrid)
+    newSettings.absoluteSnapping.set(oldSettings.absoluteSnapping)
+  }
+
+  for (const [, assembly] of global.assemblies) {
+    assume<Mutable<UserAssemblyImpl>>(assembly)
+    assume<OldAssembly>(assembly)
+
+    const oldSettings = assembly.assemblyBlueprintSettings!
+    delete assembly.assemblyBlueprintSettings
+
+    const newSettings = createNewBlueprintSettings()
+    assembly.defaultBlueprintSettings = newSettings
+
+    newSettings.autoLandfill.set(oldSettings.autoLandfill.get())
+    newSettings.useNextStageTiles.set(oldSettings.useNextStageTiles.get())
+    newSettings.replaceInfinityEntitiesWithCombinators.set(oldSettings.replaceInfinityWithCombinators.get())
+
+    const entityFilterMode = oldSettings.entityFilterMode.get()
+    if (entityFilterMode == entity_filter_mode.whitelist) {
+      newSettings.additionalWhitelist.set(oldSettings.entityFilters.get())
+    } else if (entityFilterMode == entity_filter_mode.blacklist) {
+      newSettings.blacklist.set(oldSettings.entityFilters.get())
+    }
+
+    const lastStageSettings = (assembly.getStage(assembly.maxStage())! as OldStage).blueprintSettings!
+    copyFromOldStageSettings(newSettings, lastStageSettings)
+
+    for (const stage of assembly.getAllStages()) {
+      assume<OldStage>(stage)
+      const oldSettings = stage.blueprintSettings!
+      delete stage.blueprintSettings
+
+      stage.stageBlueprintSettings = createEmptyStageBlueprintSettings()
+
+      const view = stage.getBlueprintSettingsView()
+      copyFromOldStageSettings(view, oldSettings)
+      stage.stageBlueprintSettings.icons.set(oldSettings.icons)
+    }
+  }
 })
