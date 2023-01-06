@@ -10,7 +10,7 @@
  */
 
 import { funcRef, registerFunctions } from "../../index"
-import { MaybeState } from "../../observable"
+import { MaybeProperty } from "../../event"
 import { ClickEventHandler, destroy, Element, ElementChildren, FactorioJsx, GuiEvent } from "../index"
 import { CloseButton } from "./buttons"
 import { HorizontalPusher } from "./misc"
@@ -57,7 +57,7 @@ export function closeSelf(e: GuiEvent): void {
 registerFunctions("gui:TitleBar", { closeParentParent, closeSelf })
 
 export function SimpleTitleBar(props: {
-  title: MaybeState<LocalisedString>
+  title: MaybeProperty<LocalisedString>
   onClose?: ClickEventHandler
   useDraggableSpace?: boolean // default true
 }): Element {

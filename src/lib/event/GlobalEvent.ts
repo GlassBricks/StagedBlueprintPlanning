@@ -8,26 +8,26 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
+export interface GlobalEvent<A extends any[]> {
+  addListener(listener: (...args: A) => void): void
+  removeListener(listener: (...args: A) => void): void
+  raise(...args: A): void
+}
 
-import { Sprites } from "../constants"
-import { MaybeState } from "../lib"
-import { ClickEventHandler, Element, FactorioJsx } from "../lib/factoriojsx"
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface GlobalEventImpl<A extends any[]> extends LuaSet<(...args: A) => void> {}
+class GlobalEventImpl<A extends any[]> implements GlobalEvent<A> {
+  addListener(listener: (...args: A) => void) {
+    this.add(listener)
+  }
+  removeListener(listener: (...args: A) => void) {
+    this.delete(listener)
+  }
+  raise(...args: A) {
+    for (const listener of this) listener(...args)
+  }
+}
 
-export function ExternalLinkButton(props: {
-  on_gui_click?: ClickEventHandler
-  tooltip?: MaybeState<LocalisedString>
-  enabled?: MaybeState<boolean>
-}): Element {
-  return (
-    <sprite-button
-      style="frame_action_button"
-      sprite={Sprites.ExternalLinkWhite}
-      hovered_sprite={Sprites.ExternalLinkBlack}
-      clicked_sprite={Sprites.ExternalLinkBlack}
-      mouse_button_filter={["left"]}
-      on_gui_click={props.on_gui_click}
-      enabled={props.enabled}
-      tooltip={props.tooltip}
-    />
-  )
+export function globalEvent<A extends any[]>(): GlobalEvent<A> {
+  return new GlobalEventImpl<A>()
 }

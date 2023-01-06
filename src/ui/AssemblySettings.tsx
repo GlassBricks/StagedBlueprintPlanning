@@ -647,12 +647,6 @@ export function refreshCurrentAssembly(): void {
     renderGuiForAssembly(player, currentStage?.assembly)
   }
 }
-Migrations.fromAny(refreshCurrentAssembly)
-export function bringSettingsWindowToFront(player: LuaPlayer): void {
-  const element = player.gui.screen[AssemblySettingsName]
-  if (element) element.bring_to_front()
-}
-
 Migrations.to("0.15.1", () => {
   const AssemblySettingsFlowName = "gui:AssemblySettingsFrame"
   for (const [, player] of game.players) {
@@ -664,3 +658,5 @@ Migrations.to("0.15.1", () => {
     delete playerData?.currentShownAssembly
   }
 })
+
+Migrations.fromAny(refreshCurrentAssembly)

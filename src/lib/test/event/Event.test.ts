@@ -9,12 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Event, Subscription } from "../../observable"
+import { SimpleEvent, Subscription } from "../../event"
 import expect, { mock } from "tstl-expect"
 
-let event: Event<string>
+let event: SimpleEvent<string>
 before_each(() => {
-  event = new Event<string>()
+  event = new SimpleEvent<string>()
 })
 it("can be constructed", () => {
   expect(event).to.be.any()
@@ -23,12 +23,12 @@ it("can be constructed", () => {
 describe("subscribe", () => {
   it("can be subscribed to", () => {
     const fn = mock.fn()
-    event.subscribeIndependently({ invoke: fn })
+    event._subscribeIndependently({ invoke: fn })
     expect(fn).not.called()
   })
   it("calls the subscriber with the value", () => {
     const fn = mock.fn()
-    event.subscribeIndependently({ invoke: fn })
+    event._subscribeIndependently({ invoke: fn })
     event.raise("hello")
     expect(fn).calledTimes(1)
     expect(fn).calledWith("hello")
@@ -36,7 +36,7 @@ describe("subscribe", () => {
 
   it("can fire events multiple times", () => {
     const fn = mock.fn()
-    event.subscribeIndependently({ invoke: fn })
+    event._subscribeIndependently({ invoke: fn })
     event.raise("1")
     event.raise("2")
     expect(fn).calledTimes(2)
@@ -47,8 +47,8 @@ describe("subscribe", () => {
   it("broadcasts to multiple subscribers", () => {
     const fn = mock.fn()
     const fn2 = mock.fn()
-    event.subscribeIndependently({ invoke: fn })
-    event.subscribeIndependently({ invoke: fn2 })
+    event._subscribeIndependently({ invoke: fn })
+    event._subscribeIndependently({ invoke: fn2 })
     event.raise("hello")
     expect(fn).calledTimes(1)
     expect(fn2).calledTimes(1)
@@ -57,8 +57,8 @@ describe("subscribe", () => {
   it("allows the same observer to be subscribed multiple times", () => {
     const fn = mock.fn()
     const observer = { invoke: fn }
-    event.subscribeIndependently(observer)
-    event.subscribeIndependently(observer)
+    event._subscribeIndependently(observer)
+    event._subscribeIndependently(observer)
     event.raise("1")
     expect(fn).calledTimes(2)
   })
@@ -67,12 +67,12 @@ describe("subscribe", () => {
 describe("unsubscribe", () => {
   it("returns subscription object", () => {
     const fn = mock.fn()
-    const subscription = event.subscribeIndependently({ invoke: fn })
+    const subscription = event._subscribeIndependently({ invoke: fn })
     expect(subscription).to.be.any()
   })
   it("can be unsubscribed", () => {
     const fn = mock.fn()
-    const subscription = event.subscribeIndependently({ invoke: fn })
+    const subscription = event._subscribeIndependently({ invoke: fn })
     event.raise("before")
     subscription.close()
     event.raise("after")

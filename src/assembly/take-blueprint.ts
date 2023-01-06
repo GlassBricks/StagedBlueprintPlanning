@@ -10,7 +10,7 @@
  */
 
 import { getInfinityEntityNames } from "../entity/entity-info"
-import { isEmpty, Mutable, MutableState, nilIfEmpty, state } from "../lib"
+import { isEmpty, Mutable, MutableProperty, nilIfEmpty, property } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
@@ -25,9 +25,9 @@ export interface BlueprintSettings {
   absoluteSnapping: boolean
 }
 export interface BlueprintTransformations {
-  readonly entityFilters: MutableState<LuaSet<string> | nil>
-  readonly entityFilterMode: MutableState<defines.deconstruction_item.entity_filter_mode | nil>
-  readonly replaceInfinityWithCombinators: MutableState<boolean>
+  readonly entityFilters: MutableProperty<LuaSet<string> | nil>
+  readonly entityFilterMode: MutableProperty<defines.deconstruction_item.entity_filter_mode | nil>
+  readonly replaceInfinityWithCombinators: MutableProperty<boolean>
 }
 export function makeSimpleBlueprintTransformations(
   entityFilters?: LuaSet<string>,
@@ -35,9 +35,9 @@ export function makeSimpleBlueprintTransformations(
   replaceInfinityWithCombinators: boolean = false,
 ): BlueprintTransformations {
   return {
-    entityFilters: state(entityFilters),
-    entityFilterMode: state(entityFilterMode),
-    replaceInfinityWithCombinators: state(replaceInfinityWithCombinators),
+    entityFilters: property(entityFilters),
+    entityFilterMode: property(entityFilterMode),
+    replaceInfinityWithCombinators: property(replaceInfinityWithCombinators),
   }
 }
 

@@ -22,32 +22,32 @@ export class UnsubscriptionError extends Error {
   }
 }
 
-export type Unsubscription = Unsubscribable | Func<() => void>
+export type UnsubscribeAction = Unsubscribable | Func<() => void>
 
 export interface ObserveOnlySubscription {
   isClosed(): boolean
-  add(subscription: Unsubscription): void
+  add(action: UnsubscribeAction): void
   hasActions(): boolean
 }
 
 @RegisterClass("Subscription")
 export class Subscription implements Unsubscribable, ObserveOnlySubscription {
   // if nil, is closed
-  _children: LuaSet<Unsubscription> | nil = new LuaSet()
+  _children: LuaSet<UnsubscribeAction> | nil = new LuaSet()
   _parents: LuaSet<Subscription> | nil = new LuaSet()
 
   isClosed(): boolean {
     return this._children == nil
   }
 
-  add(subscription: Unsubscription): void {
+  add(subscription: UnsubscribeAction): void {
     if (subscription == this) return
     const { _children } = this
     if (!_children) {
       this.callUnsubscription(subscription)
       return
     }
-    if (isSubscriptionContext(subscription)) {
+    if (isSubscription(subscription)) {
       if (subscription.isClosed()) return
       subscription._parents!.add(this)
     }
@@ -62,7 +62,7 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
     this._children?.delete(subscription)
   }
 
-  private callUnsubscription(subscription: Unsubscription): void {
+  private callUnsubscription(subscription: UnsubscribeAction): void {
     if ("close" in subscription) {
       subscription.close()
     } else {
@@ -105,6 +105,6 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
 }
 
 const getMeta = getmetatable
-export function isSubscriptionContext(subscription: unknown): subscription is Subscription {
+export function isSubscription(subscription: unknown): subscription is Subscription {
   return getMeta(subscription) == Subscription.prototype
 }

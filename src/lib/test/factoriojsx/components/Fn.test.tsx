@@ -11,12 +11,12 @@
 
 import { FactorioJsx } from "../../../factoriojsx"
 import { Fn } from "../../../factoriojsx/components"
-import { state } from "../../../observable"
+import { property } from "../../../event"
 import { testRender } from "../../gui"
 import expect from "tstl-expect"
 
 test("fn", () => {
-  const val = state("one")
+  const val = property("one")
   const wrapper = testRender(<Fn from={val} uses="flow" map={{ invoke: (x) => <label caption={x} /> }} />)
   function findLabels() {
     return wrapper.findAll("label").map((x) => x.element.caption)

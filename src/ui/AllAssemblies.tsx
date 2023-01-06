@@ -19,7 +19,6 @@ import * as mod_gui from "mod-gui"
 import { L_GuiAssemblySelector } from "../locale"
 import { teleportToAssembly } from "./player-current-stage"
 import { Sprites } from "../constants"
-import { bringSettingsWindowToFront } from "./AssemblySettings"
 
 declare const global: GlobalWithPlayers
 
@@ -98,7 +97,6 @@ class AllAssemblies extends Component {
       closeAllAssemblies(this.playerIndex)
       const player = game.get_player(this.playerIndex)!
       teleportToAssembly(player, assembly)
-      bringSettingsWindowToFront(player)
     } else {
       this.listBox.selected_index = 0
     }
@@ -108,6 +106,10 @@ class AllAssemblies extends Component {
     closeAllAssemblies(this.playerIndex)
     createNewAssembly(game.get_player(this.playerIndex)!)
   }
+}
+function createNewAssembly(player: LuaPlayer): void {
+  const assembly = createUserAssembly("", 5)
+  teleportToAssembly(player, assembly)
 }
 
 function getFrameFlow(playerIndex: PlayerIndex) {
@@ -143,11 +145,6 @@ AssemblyEvents.addListener((e) => {
   }
 })
 
-function createNewAssembly(player: LuaPlayer): void {
-  const assembly = createUserAssembly("", 5)
-  teleportToAssembly(player, assembly)
-}
-
 Migrations.to("0.15.1", () => {
   interface OldPlayerData {
     currentAssemblyGui?: {
@@ -157,5 +154,10 @@ Migrations.to("0.15.1", () => {
   for (const [, playerData] of pairs(global.players)) {
     const oldPlayerData = playerData as OldPlayerData
     destroy(oldPlayerData?.currentAssemblyGui?.mainFlow)
+  }
+})
+Migrations.fromAny(() => {
+  for (const [, player] of game.players) {
+    closeAllAssemblies(player.index)
   }
 })

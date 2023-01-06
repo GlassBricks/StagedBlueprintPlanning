@@ -1,14 +1,14 @@
-import { MutableState, state } from "../../lib"
-import { PropWithOverride } from "../../ui/PropWithOverride"
+import { MutableProperty, property } from "../../lib"
+import { OverrideResultProperty } from "../../ui/OverrideResultProperty"
 import expect from "tstl-expect"
 
-let override: MutableState<undefined>
-let defaultValue: MutableState<boolean>
-let prop: PropWithOverride<boolean>
+let override: MutableProperty<undefined>
+let defaultValue: MutableProperty<boolean>
+let prop: OverrideResultProperty<boolean>
 before_each(() => {
-  override = state(nil)
-  defaultValue = state(false)
-  prop = new PropWithOverride(override, defaultValue)
+  override = property(nil)
+  defaultValue = property(false)
+  prop = new OverrideResultProperty(override, defaultValue)
 })
 test("sets the override property when not equal to default", () => {
   expect(prop.get()).to.be(false)

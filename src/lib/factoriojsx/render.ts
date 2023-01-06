@@ -11,7 +11,7 @@
 
 import { isEmpty } from "../_util"
 import { Events } from "../Events"
-import { isMutableState, MutableState, Observer, State, Subscription } from "../observable"
+import { isMutableProperty, MutableProperty, Property, SimpleObserver, Subscription } from "../event"
 import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
@@ -37,7 +37,7 @@ interface ElementInstance {
   readonly events: PRecord<GuiEventName, Func<any>>
 }
 
-function setStateFunc(state: MutableState<unknown>, key: string, event: GuiEvent) {
+function setStateFunc(state: MutableProperty<unknown>, key: string, event: GuiEvent) {
   state.set((event as any)[key] || event.element![key])
 }
 function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, value: any) {
@@ -140,10 +140,10 @@ function renderInternal(
 
 function renderFragment(
   parent: BaseGuiElement,
-  spec: FragmentElement,
+  element: FragmentElement,
   context: InternalRenderContext,
 ): LuaGuiElement[] | nil {
-  const children = spec.children || []
+  const children = element.children || []
   let usedTracker: InternalRenderContext = context
   const elements: LuaGuiElement[] = []
   for (const child of children) {
@@ -165,11 +165,11 @@ function renderFragment(
 
 function renderElement(
   parent: BaseGuiElement,
-  spec: FactorioElement | FragmentElement,
+  element: FactorioElement | FragmentElement,
   context: InternalRenderContext,
 ): LuaGuiElement | LuaGuiElement[] | nil {
-  if (spec.type == "fragment") {
-    return renderFragment(parent, spec, context)
+  if (element.type == "fragment") {
+    return renderFragment(parent, element, context)
   }
 
   const guiSpec: Record<string, any> = {}
@@ -177,10 +177,10 @@ function renderElement(
   const events: ElementInstance["events"] = {}
 
   // eslint-disable-next-line prefer-const
-  for (let [key, value] of pairs(spec)) {
+  for (let [key, value] of pairs(element)) {
     const propProperties = propInfo[key]
     if (!propProperties) continue
-    if (typeof value == "function") value = funcRef(value as any)
+    if (typeof value == "function") value = funcRef(value) as any
     if (propProperties == "event") {
       assert((value as Func).invoke, "Gui event handler must be a function")
       events[key as GuiEventName] = value as GuiEventHandler
@@ -190,7 +190,7 @@ function renderElement(
     const isElemProp: string | boolean | null = propProperties[1]
     const stateEvent = propProperties[2] as GuiEventName | null
 
-    const isState = value instanceof State
+    const isState = value instanceof Property
     const shouldSetElemProp = !isSpecProp || isState
     if (shouldSetElemProp) {
       if (!isElemProp) {
@@ -199,8 +199,8 @@ function renderElement(
       }
       if (typeof isElemProp == "string") elemProps.set([isElemProp], value)
       else elemProps.set(key, value)
-      if (stateEvent && value instanceof State) {
-        if (isMutableState<any>(value)) {
+      if (stateEvent && value instanceof Property) {
+        if (isMutableProperty<any>(value)) {
           if (events[stateEvent]) {
             error(`Cannot specify both state and gui event for ${stateEvent}`)
           }
@@ -218,71 +218,71 @@ function renderElement(
     guiSpec.index = context.firstIndex
   }
 
-  const element = parent.add(guiSpec as GuiSpec)
+  const factorioElement = parent.add(guiSpec as GuiSpec)
 
   for (const [key, value] of elemProps) {
-    if (value instanceof State) {
-      let observer: Observer<unknown>
+    if (value instanceof Property) {
+      let observer: SimpleObserver<unknown>
       let name: string
       if (typeof key != "object") {
-        observer = bind(setValueObserver, element, key)
+        observer = bind(setValueObserver, factorioElement, key)
         name = key
       } else {
         name = key[0]
-        observer = bind(callSetterObserver, element, name)
+        observer = bind(callSetterObserver, factorioElement, name)
       }
-      value.subscribeAndFire(context.getSubscription(), observer)
+      value.subscribeAndRaise(context.getSubscription(), observer)
     } else if (typeof key != "object") {
       // simple value
-      ;(element as any)[key] = value
+      ;(factorioElement as any)[key] = value
     } else {
       // setter value
-      ;((element as any)[key[0]] as (this: void, value: unknown) => void)(value)
+      ;((factorioElement as any)[key[0]] as (this: void, value: unknown) => void)(value)
     }
   }
 
-  const styleMod = spec.styleMod
+  const styleMod = element.styleMod
   if (styleMod) {
-    const style = element.style
+    const style = factorioElement.style
     for (const [key, value] of pairs(styleMod)) {
-      if (value instanceof State) {
-        value.subscribeAndFire(context.getSubscription(), bind(setValueObserver, style, key))
+      if (value instanceof Property) {
+        value.subscribeAndRaise(context.getSubscription(), bind(setValueObserver, style, key))
       } else {
         ;(style as any)[key] = value
       }
     }
   }
 
-  const children = spec.children
+  const children = element.children
   if (children) {
     for (const child of children) {
-      renderInternal(element, child, newRootTracker(context.playerIndex, nil))
+      renderInternal(factorioElement, child, newRootTracker(context.playerIndex, nil))
     }
   }
 
   // setup tabbed pane
-  if (spec.type == "tabbed-pane") {
+  if (element.type == "tabbed-pane") {
     // alternate indexes tab-content
-    const children = element.children
+    const children = factorioElement.children
     for (const i of $range(1, children.length, 2)) {
       const tab = children[i - 1]
       const content = children[i]
-      ;(element as TabbedPaneGuiElement).add_tab(tab, content)
+      ;(factorioElement as TabbedPaneGuiElement).add_tab(tab, content)
     }
   }
 
-  spec.onCreate?.(element as any)
-  callOnMount(context, element)
+  element.onCreate?.(factorioElement as any)
+  callOnMount(context, factorioElement)
 
   const subscription = context.subscriptionContext
   if ((subscription && subscription.hasActions()) || !isEmpty(events)) {
-    global.players[element.player_index].guiElements[element.index] = {
-      element,
+    global.players[factorioElement.player_index].guiElements[factorioElement.index] = {
+      element: factorioElement,
       events,
       subscription,
     }
   }
-  return element
+  return factorioElement
 }
 
 function renderFunctionComponent<T>(

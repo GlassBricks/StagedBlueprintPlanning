@@ -12,29 +12,20 @@
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { getAssemblyPlayerData } from "../assembly/player-assembly-data"
 import { AssemblyEvents, getStageAtSurface } from "../assembly/UserAssembly"
-import {
-  assertNever,
-  Events,
-  globalEventMulti,
-  MutableState,
-  onPlayerInit,
-  onPlayerRemoved,
-  State,
-  state,
-} from "../lib"
+import { assertNever, Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
 import { Pos } from "../lib/geometry"
 
 declare global {
   interface PlayerData {
-    currentStage: MutableState<Stage | nil>
+    currentStage: MutableProperty<Stage | nil>
   }
 }
 declare const global: GlobalWithPlayers
 
-export function playerCurrentStage(index: PlayerIndex): State<Stage | nil> {
+export function playerCurrentStage(index: PlayerIndex): Property<Stage | nil> {
   return global.players[index].currentStage
 }
-const PlayerChangedStageEvent = globalEventMulti<[player: LuaPlayer, stage: Stage | nil, oldStage: Stage | nil]>()
+const PlayerChangedStageEvent = globalEvent<[player: LuaPlayer, stage: Stage | nil, oldStage: Stage | nil]>()
 export { PlayerChangedStageEvent }
 
 function updatePlayer(player: LuaPlayer): void {
@@ -49,12 +40,7 @@ function updatePlayer(player: LuaPlayer): void {
   PlayerChangedStageEvent.raise(player, newStage, oldStage)
 }
 onPlayerInit((index) => {
-  global.players[index].currentStage = state(nil)
-})
-
-onPlayerRemoved((index) => {
-  const currentStage = global.players[index].currentStage
-  currentStage.closeAll()
+  global.players[index].currentStage = property(nil)
 })
 
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))

@@ -11,14 +11,14 @@
 
 import { FactorioJsx } from "../../../factoriojsx"
 import { If } from "../../../factoriojsx/components"
-import { MutableState, state } from "../../../observable"
+import { MutableProperty, property } from "../../../event"
 import { ElementWrapper, testRender } from "../../gui"
 import expect from "tstl-expect"
 
-let condition: MutableState<boolean>
+let condition: MutableProperty<boolean>
 
 before_each(() => {
-  condition = state(true)
+  condition = property(true)
 })
 
 function findAllLabels(root: ElementWrapper): LocalisedString[] {

@@ -11,7 +11,7 @@
 
 import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableAssemblyContent } from "../entity/AssemblyContent"
-import { MutableState, Observable, State } from "../lib"
+import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BlueprintTransformations } from "./take-blueprint"
 import { AutoSetTilesType } from "./tiles"
 
@@ -26,12 +26,12 @@ export interface Assembly {
 export interface UserAssembly extends Assembly {
   readonly id: AssemblyId
 
-  readonly name: MutableState<string>
-  readonly displayName: State<LocalisedString>
+  readonly name: MutableProperty<string>
+  readonly displayName: Property<LocalisedString>
 
   readonly content: MutableAssemblyContent
 
-  readonly localEvents: Observable<LocalAssemblyEvent>
+  readonly localEvents: SimpleSubscribable<LocalAssemblyEvent>
 
   getStage(stageNumber: StageNumber): Stage | nil
   getAllStages(): readonly Stage[]
@@ -50,17 +50,17 @@ export interface UserAssembly extends Assembly {
 }
 
 export interface AssemblyBlueprintSettings extends BlueprintTransformations {
-  readonly autoLandfill: MutableState<boolean>
-  readonly useNextStageTiles: MutableState<boolean>
+  readonly autoLandfill: MutableProperty<boolean>
+  readonly useNextStageTiles: MutableProperty<boolean>
 
-  readonly emptyBlueprintNames: MutableState<boolean>
-  readonly emptyBlueprintBookName: MutableState<boolean>
+  readonly emptyBlueprintNames: MutableProperty<boolean>
+  readonly emptyBlueprintBookName: MutableProperty<boolean>
 }
 
 export interface Stage {
   readonly surface: LuaSurface
 
-  readonly name: MutableState<string>
+  readonly name: MutableProperty<string>
 
   readonly stageNumber: StageNumber
   readonly assembly: UserAssembly

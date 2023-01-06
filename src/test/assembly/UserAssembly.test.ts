@@ -60,7 +60,7 @@ describe("deletion", () => {
   test("calls event", () => {
     const asm = createUserAssembly("Mock", 0)
     const sp2 = mock.fn()
-    asm.localEvents.subscribeIndependently({ invoke: sp2 })
+    asm.localEvents._subscribeIndependently({ invoke: sp2 })
     asm.delete()
     expect(eventListener).calledWith({
       type: "assembly-deleted",
@@ -92,7 +92,7 @@ test("insert stage", () => {
   const sp = mock.fn()
   const asm = createUserAssembly("Mock", 2)
   const oldStage = asm.getStage(1)!
-  asm.localEvents.subscribeIndependently({ invoke: sp })
+  asm.localEvents._subscribeIndependently({ invoke: sp })
   eventListener.clear()
 
   const stage = asm.insertStage(1)
@@ -137,7 +137,7 @@ test("insert stage", () => {
 test("delete stage", () => {
   const sp = mock.fn()
   const asm = createUserAssembly("Test", 3)
-  asm.localEvents.subscribeIndependently({ invoke: sp })
+  asm.localEvents._subscribeIndependently({ invoke: sp })
   eventListener.clear()
 
   const stage1 = asm.getStage(1)!

@@ -12,11 +12,11 @@
 // this could maybe be moved to shared lib in the future
 
 import { Func, ibind, RegisterClass } from "../../index"
-import { State } from "../../observable"
+import { Property } from "../../event"
 import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderContext, renderMultiple } from "../index"
 
 export type IfProps = {
-  condition: State<boolean>
+  condition: Property<boolean>
   then: Func<() => Element | undefined>
   else?: Func<() => Element | undefined>
 } & ElemProps<"flow">
@@ -35,7 +35,7 @@ export class If extends Component<IfProps> {
         {...props}
         onCreate={(element) => {
           this.element = element
-          props.condition.subscribeAndFire(context.getSubscription(), ibind(this.onChange))
+          props.condition.subscribeAndRaise(context.getSubscription(), ibind(this.onChange))
         }}
       />
     )

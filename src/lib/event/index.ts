@@ -10,6 +10,6 @@
  */
 
 export * from "./Subscription"
-export * from "./Observable"
-export * from "./State"
+export * from "./Event"
+export * from "./Property"
 export * from "./GlobalEvent"

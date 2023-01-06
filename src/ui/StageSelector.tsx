@@ -11,14 +11,14 @@
 
 import { LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { StageNumber } from "../entity/AssemblyEntity"
-import { assertNever, bind, ibind, MutableState, RegisterClass, Subscription } from "../lib"
+import { assertNever, bind, ibind, MutableProperty, RegisterClass, Subscription } from "../lib"
 import { Component, Element, ElemProps, FactorioJsx, RenderContext } from "../lib/factoriojsx"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 
 export type StageSelectorProps<T extends "drop-down" | "list-box"> = {
   uses: T
   assembly: UserAssembly
-  selectedIndex?: MutableState<StageNumber>
+  selectedIndex?: MutableProperty<StageNumber>
 } & ElemProps<T>
 @RegisterClass("gui:CurrentStage")
 export class StageSelector<T extends "drop-down" | "list-box"> extends Component<StageSelectorProps<T>> {
@@ -56,7 +56,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     for (const stage of stages) {
       stage.name.subscribe(subscription, bind(ibind(this.setDropDownItem), stage.stageNumber))
     }
-    playerCurrentStage(this.playerIndex).subscribeAndFire(subscription, ibind(this.playerStageChanged))
+    playerCurrentStage(this.playerIndex).subscribeAndRaise(subscription, ibind(this.playerStageChanged))
 
     this.assembly.localEvents.subscribe(subscription, ibind(this.onAssemblyEvent))
   }

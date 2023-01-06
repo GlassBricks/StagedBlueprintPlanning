@@ -13,15 +13,15 @@ import { StageNumber } from "../entity/AssemblyEntity"
 import { newAssemblyContent } from "../entity/AssemblyContent"
 import {
   bind,
-  Event,
   Events,
   globalEvent,
   Mutable,
-  MutableState,
+  MutableProperty,
   nilIfEmpty,
+  property,
+  Property,
   RegisterClass,
-  state,
-  State,
+  SimpleEvent,
 } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
@@ -55,28 +55,28 @@ Events.on_init(() => {
   global.surfaceIndexToStage = new LuaMap()
 })
 
-const GlobalAssemblyEvents = globalEvent<GlobalAssemblyEvent>()
+const GlobalAssemblyEvents = globalEvent<[GlobalAssemblyEvent]>()
 export { GlobalAssemblyEvents as AssemblyEvents }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
 @RegisterClass("Assembly")
 class UserAssemblyImpl implements UserAssembly {
-  name: MutableState<string>
-  displayName: State<LocalisedString>
+  name: MutableProperty<string>
+  displayName: Property<LocalisedString>
 
   content = newAssemblyContent()
-  localEvents = new Event<LocalAssemblyEvent>()
+  localEvents = new SimpleEvent<LocalAssemblyEvent>()
 
   assemblyBlueprintSettings: AssemblyBlueprintSettings = {
-    autoLandfill: state(false),
-    useNextStageTiles: state(false),
-    emptyBlueprintNames: state(false),
-    emptyBlueprintBookName: state(false),
+    autoLandfill: property(false),
+    useNextStageTiles: property(false),
+    emptyBlueprintNames: property(false),
+    emptyBlueprintBookName: property(false),
 
-    entityFilters: state(nil),
-    entityFilterMode: state(nil),
-    replaceInfinityWithCombinators: state(false),
+    entityFilters: property(nil),
+    entityFilterMode: property(nil),
+    replaceInfinityWithCombinators: property(false),
   }
 
   valid = true
@@ -84,7 +84,7 @@ class UserAssemblyImpl implements UserAssembly {
   private readonly stages: Record<number, StageImpl> = {}
 
   constructor(readonly id: AssemblyId, name: string, initialNumStages: number) {
-    this.name = state(name)
+    this.name = property(name)
     this.displayName = this.name.map(bind(UserAssemblyImpl.getDisplayName, id))
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
@@ -262,7 +262,7 @@ const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods.debug
 
 @RegisterClass("Stage")
 class StageImpl implements Stage {
-  name: MutableState<string>
+  name: MutableProperty<string>
   readonly valid = true
 
   readonly surfaceIndex: SurfaceIndex
@@ -274,7 +274,7 @@ class StageImpl implements Stage {
     public stageNumber: StageNumber,
     name: string,
   ) {
-    this.name = state(name)
+    this.name = property(name)
     this.surfaceIndex = surface.index
     if (assembly.id != 0) global.surfaceIndexToStage.set(this.surfaceIndex, this)
   }
@@ -391,12 +391,12 @@ Migrations.to("0.5.0", () => {
   for (const [, assembly] of global.assemblies) {
     interface OldAssembly {
       blueprintBookSettings: {
-        autoLandfill: MutableState<boolean>
+        autoLandfill: MutableProperty<boolean>
       }
     }
 
     ;(assembly as unknown as OldAssembly).blueprintBookSettings = {
-      autoLandfill: state(false),
+      autoLandfill: property(false),
       // useNextStageTiles: state(false),
     }
   }
@@ -405,7 +405,7 @@ Migrations.to("0.8.0", () => {
   for (const [, assembly] of global.assemblies) {
     interface OldAssembly {
       blueprintBookSettings?: {
-        autoLandfill: MutableState<boolean>
+        autoLandfill: MutableProperty<boolean>
       }
     }
     log("Migrating assembly")
@@ -414,9 +414,9 @@ Migrations.to("0.8.0", () => {
 
     assembly.assemblyBlueprintSettings = {
       autoLandfill: bpBookSettings.autoLandfill,
-      useNextStageTiles: state(bpBookSettings.autoLandfill.get()),
-      blueprintNameMode: state(2),
-      bookNameMode: state(2),
+      useNextStageTiles: property(bpBookSettings.autoLandfill.get()),
+      blueprintNameMode: property(2),
+      bookNameMode: property(2),
     } as any
 
     type OldBlueprintSettings = Pick<
@@ -474,14 +474,14 @@ Migrations.to("0.12.0", () => {
     const settings = assembly.assemblyBlueprintSettings as OldAssemblySettings & Mutable<BlueprintTransformations>
     if (settings.transformations) {
       const { entityFilters, entityFilterMode, replaceInfinityWithCombinators } = settings.transformations
-      settings.entityFilters = state(entityFilters)
-      settings.entityFilterMode = state(entityFilterMode)
-      settings.replaceInfinityWithCombinators = state(replaceInfinityWithCombinators ?? false)
+      settings.entityFilters = property(entityFilters)
+      settings.entityFilterMode = property(entityFilterMode)
+      settings.replaceInfinityWithCombinators = property(replaceInfinityWithCombinators ?? false)
       delete settings.transformations
     } else {
-      settings.entityFilters = state(nil)
-      settings.entityFilterMode = state(nil)
-      settings.replaceInfinityWithCombinators = state(false)
+      settings.entityFilters = property(nil)
+      settings.entityFilterMode = property(nil)
+      settings.replaceInfinityWithCombinators = property(false)
     }
   }
 })
@@ -497,15 +497,15 @@ Migrations.to("0.15.1", () => {
     FromAssembly = 2,
   }
   interface OldAssemblySettings {
-    blueprintNameMode?: MutableState<BlueprintNameMode>
-    bookNameMode?: MutableState<BookNameMode>
+    blueprintNameMode?: MutableProperty<BlueprintNameMode>
+    bookNameMode?: MutableProperty<BookNameMode>
   }
   for (const [, assembly] of global.assemblies) {
     const oldSettings = assembly.assemblyBlueprintSettings as OldAssemblySettings
     const newSettings = assembly.assemblyBlueprintSettings as Mutable<AssemblyBlueprintSettings>
 
-    newSettings.emptyBlueprintNames = state(oldSettings.blueprintNameMode?.get() == BlueprintNameMode.Empty)
-    newSettings.emptyBlueprintBookName = state(oldSettings.bookNameMode?.get() == BookNameMode.Empty)
+    newSettings.emptyBlueprintNames = property(oldSettings.blueprintNameMode?.get() == BlueprintNameMode.Empty)
+    newSettings.emptyBlueprintBookName = property(oldSettings.bookNameMode?.get() == BookNameMode.Empty)
     delete oldSettings.blueprintNameMode
     delete oldSettings.bookNameMode
   }

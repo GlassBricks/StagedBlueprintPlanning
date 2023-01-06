@@ -20,73 +20,85 @@ import {
   RegisterClassFunctionsOnly,
   registerFunctions,
 } from "../references"
-import { MultiObservable, MultiObserver, MultiEvent } from "./Observable"
+import { Event, Subscribable } from "./Event"
 import { Subscription } from "./Subscription"
 
-type ChangeParams<T> = [value: T, oldValue: T]
-export type ChangeListener<T> = MultiObserver<ChangeParams<T>>
-export type PartialChangeListener<T> = MultiObserver<[value: T, oldValue: T | nil]>
+export interface ChangeObserver<T> {
+  invoke(value: T, oldValue: T): void
+}
+export interface PartialChangeObserver<T> {
+  invoke(value: T, oldValue: T | nil): void
+}
 
-export type MaybeState<T> = State<T> | T
-export type MaybeMutableState<T> = State<T> | MutableState<T> | T
-
+export type MaybeProperty<T> = Property<T> | T
+export type MaybeMutableProperty<T> = Property<T> | MutableProperty<T> | T
 export type Mapper<T, U> = Func<(value: T) => U>
 
-@RegisterClassFunctionsOnly("State")
-export abstract class State<T> implements MultiObservable<ChangeParams<T>> {
+@RegisterClassFunctionsOnly("Property")
+export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   abstract get(): T
-  abstract subscribeIndependently(observer: MultiObserver<ChangeParams<T>>): Subscription
-  subscribe(context: Subscription, observer: ChangeListener<T>): Subscription {
-    const subscription = this.subscribeIndependently(observer)
+
+  abstract _subscribeIndependently(observer: ChangeObserver<T>): Subscription
+  abstract forceNotify(): void
+  abstract closeAll(): void
+
+  subscribe(context: Subscription, observer: ChangeObserver<T>): Subscription {
+    const subscription = this._subscribeIndependently(observer)
     context.add(subscription)
     return subscription
   }
-  subscribeIndependentlyAndFire(observer: PartialChangeListener<T>): Subscription {
-    const subscription = this.subscribeIndependently(observer)
+  _subscribeIndependentlyAndRaise(observer: PartialChangeObserver<T>): Subscription {
+    const subscription = this._subscribeIndependently(observer)
     observer.invoke(this.get(), nil)
     return subscription
   }
-  subscribeAndFire(context: Subscription, observer: PartialChangeListener<T>): Subscription {
+  subscribeAndRaise(context: Subscription, observer: PartialChangeObserver<T>): Subscription {
     const subscription = this.subscribe(context, observer)
     observer.invoke(this.get(), nil)
     return subscription
   }
 
-  map<V>(mapper: Mapper<T, V>): State<V> {
-    return new MappedState(this, mapper)
+  map<V>(mapper: Mapper<T, V>): Property<V> {
+    return new MappedProperty(this, mapper)
   }
-  flatMap<V>(mapper: Mapper<T, MaybeState<V>>): State<V> {
-    return new FlatMappedState(this, mapper)
+  flatMap<V>(mapper: Mapper<T, MaybeProperty<V>>): Property<V> {
+    return new FlatMappedProperty(this, mapper)
   }
 
   // utils
   static truthyFn<V>(this: void, value: V): boolean {
     return !!value
   }
-  truthy(): State<boolean> {
-    return this.map(funcRef(State.truthyFn))
+  truthy(): Property<boolean> {
+    return this.map(funcRef(Property.truthyFn))
   }
 }
 
-export abstract class BasicState<T> extends State<T> {
-  protected event = new MultiEvent<ChangeParams<T>>()
+export abstract class BasicProperty<T> extends Property<T> {
+  protected event = new Event<ChangeObserver<T>>()
 
-  subscribeIndependently(observer: ChangeListener<T>): Subscription {
-    return this.event.subscribeIndependently(observer)
+  _subscribeIndependently(observer: ChangeObserver<T>): Subscription {
+    return this.event._subscribeIndependently(observer)
+  }
+
+  override forceNotify(): void {
+    const value = this.get()
+    this.event.raise(value, value)
+  }
+  override closeAll(): void {
+    this.event.closeAll()
   }
 }
-export function _numObservers(state: State<unknown>): number {
-  return table_size((state as unknown as { event: MultiEvent<any> }).event)
+export function _numObservers(state: Property<unknown>): number {
+  return table_size((state as unknown as { event: Event<any> }).event)
 }
 
-export interface MutableState<T> extends State<T> {
+export interface MutableProperty<T> extends Property<T> {
   set(value: T): void
-  forceNotify(): void
-  closeAll(): void
 }
 
-@RegisterClass("MutableState")
-class MutableStateImpl<T> extends BasicState<T> implements MutableState<T> {
+@RegisterClass("MutablePropertyImpl")
+class MutablePropertyImpl<T> extends BasicProperty<T> implements MutableProperty<T> {
   public constructor(private value: T) {
     super()
   }
@@ -101,34 +113,24 @@ class MutableStateImpl<T> extends BasicState<T> implements MutableState<T> {
     }
   }
 
-  public forceNotify(value: T = this.value): void {
-    const oldValue = this.value
-    this.value = value
-    this.event.raise(value, oldValue)
-  }
-
-  public closeAll(): void {
-    this.event.closeAll()
-  }
-
   __tostring(): string {
     return "MutableState(" + this.get() + ")"
   }
 }
-export function state<T>(value: T): MutableState<T> {
-  return new MutableStateImpl(value)
+export function property<T>(value: T): MutableProperty<T> {
+  return new MutablePropertyImpl(value)
 }
 
-export function isMutableState<T>(state: State<T>): state is MutableState<T> {
-  return typeof (state as MutableState<T>).set == "function"
+export function isMutableProperty<T>(property: Property<T>): property is MutableProperty<T> {
+  return typeof (property as MutableProperty<T>).set == "function"
 }
 
-@RegisterClass("MappedState")
-class MappedState<T, U> extends BasicState<U> {
+@RegisterClass("MappedProperty")
+class MappedProperty<T, U> extends BasicProperty<U> {
   private sourceSubscription: Subscription | nil
   private curValue: U | nil
 
-  public constructor(private readonly source: State<T>, private readonly mapper: Mapper<T, U>) {
+  public constructor(private readonly source: Property<T>, private readonly mapper: Mapper<T, U>) {
     super()
   }
 
@@ -140,7 +142,7 @@ class MappedState<T, U> extends BasicState<U> {
   private subscribeToSource() {
     const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(ibind(this.sourceListener))
+    this.sourceSubscription = source._subscribeIndependently(ibind(this.sourceListener))
     this.curValue = mapper.invoke(source.get())
   }
 
@@ -160,9 +162,9 @@ class MappedState<T, U> extends BasicState<U> {
     this.event.raise(mappedNewValue, oldValue!)
   }
 
-  override subscribeIndependently(observer: ChangeListener<U>): Subscription {
+  override _subscribeIndependently(observer: ChangeObserver<U>): Subscription {
     if (!this.sourceSubscription) this.subscribeToSource()
-    return super.subscribeIndependently(observer)
+    return super._subscribeIndependently(observer)
   }
 
   __tostring(): string {
@@ -170,13 +172,13 @@ class MappedState<T, U> extends BasicState<U> {
   }
 }
 
-@RegisterClass("FlatMappedState")
-export class FlatMappedState<T, U> extends BasicState<U> {
+@RegisterClass("FlatMappedProperty")
+export class FlatMappedProperty<T, U> extends BasicProperty<U> {
   private sourceSubscription: Subscription | nil
   private nestedSubscription: Subscription | nil
   private curValue: U | nil
 
-  public constructor(private readonly source: State<T>, private readonly mapper: Mapper<T, MaybeState<U>>) {
+  public constructor(private readonly source: Property<T>, private readonly mapper: Mapper<T, MaybeProperty<U>>) {
     super()
   }
 
@@ -184,20 +186,20 @@ export class FlatMappedState<T, U> extends BasicState<U> {
     if (this.sourceSubscription) return this.curValue!
 
     const mappedValue = this.mapper.invoke(this.source.get())
-    return mappedValue instanceof State ? mappedValue.get() : mappedValue
+    return mappedValue instanceof Property ? mappedValue.get() : mappedValue
   }
 
   private subscribeToSource() {
     const { source, mapper } = this
     this.sourceSubscription?.close()
-    this.sourceSubscription = source.subscribeIndependently(ibind(this.sourceListener))
+    this.sourceSubscription = source._subscribeIndependently(ibind(this.sourceListener))
     this.receiveNewMappedValue(mapper.invoke(source.get()))
   }
 
-  private receiveNewMappedValue(newValue: MaybeState<U>) {
+  private receiveNewMappedValue(newValue: MaybeProperty<U>) {
     this.nestedSubscription?.close()
-    if (newValue instanceof State) {
-      this.nestedSubscription = newValue.subscribeIndependently(ibind(this.nestedListener))
+    if (newValue instanceof Property) {
+      this.nestedSubscription = newValue._subscribeIndependently(ibind(this.nestedListener))
       this.curValue = newValue.get()
     } else {
       this.nestedSubscription = nil
@@ -235,9 +237,9 @@ export class FlatMappedState<T, U> extends BasicState<U> {
     this.curValue = nil
   }
 
-  override subscribeIndependently(observer: ChangeListener<U>): Subscription {
+  override _subscribeIndependently(observer: ChangeObserver<U>): Subscription {
     if (!this.sourceSubscription) this.subscribeToSource()
-    return super.subscribeIndependently(observer)
+    return super._subscribeIndependently(observer)
   }
 
   __tostring(): string {
@@ -245,11 +247,11 @@ export class FlatMappedState<T, U> extends BasicState<U> {
   }
 }
 
-export namespace States {
-  function setValue(state: MutableState<unknown>, value: unknown) {
+export namespace Props {
+  function setValue(state: MutableProperty<unknown>, value: unknown) {
     state.set(value)
   }
-  function toggle(state: MutableState<boolean>) {
+  function toggle(state: MutableProperty<boolean>) {
     state.set(!state.get())
   }
 
@@ -258,11 +260,11 @@ export namespace States {
     toggle,
   })
 
-  export function setValueFn(state: MutableState<unknown>, value: unknown): Callback {
+  export function setValueFn(state: MutableProperty<unknown>, value: unknown): Callback {
     return bind(setValue, state, value)
   }
 
-  export function toggleFn(state: MutableState<boolean>): Callback {
+  export function toggleFn(state: MutableProperty<boolean>): Callback {
     return bind(toggle, state)
   }
 }

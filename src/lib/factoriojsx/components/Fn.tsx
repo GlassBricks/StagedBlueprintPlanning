@@ -10,12 +10,12 @@
  */
 
 import { Func, ibind, RegisterClass } from "../../index"
-import { State } from "../../observable"
+import { Property } from "../../event"
 import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderContext, renderMultiple } from "../index"
 
 export type FuncProps<T, U extends GuiElementType> = {
   uses: U
-  from: State<T>
+  from: Property<T>
   map: Func<(value: T) => Element | false | nil>
 } & ElemProps<U>
 
@@ -30,7 +30,7 @@ export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> 
     this.map = map
     context.onMount((element) => {
       this.element = element
-      from.subscribeAndFire(context.getSubscription(), ibind(this.onChange))
+      from.subscribeAndRaise(context.getSubscription(), ibind(this.onChange))
     })
 
     return <props.uses {...(props as any)} />

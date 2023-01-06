@@ -11,7 +11,7 @@
 
 // noinspection JSUnusedGlobalSymbols
 
-import { Subscription } from "../observable"
+import { Subscription } from "../event"
 import { Func, RegisterClass } from "../references"
 import { FactorioElement } from "./factorio-elements"
 

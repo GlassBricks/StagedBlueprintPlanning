@@ -24,7 +24,7 @@ import {
   TextBoxElement,
   TextFieldElement,
 } from "../../factoriojsx"
-import { _numObservers, state, State } from "../../observable"
+import { _numObservers, property } from "../../event"
 import { RegisterClass } from "../../references"
 import { testRender } from "../gui"
 import expect, { mock } from "tstl-expect"
@@ -48,7 +48,7 @@ describe("create", () => {
   })
 
   test("Listens to source property", () => {
-    const v = state<LocalisedString>("one")
+    const v = property<LocalisedString>("one")
     const spec: FlowElement = {
       type: "flow",
       caption: v,
@@ -60,7 +60,7 @@ describe("create", () => {
   })
 
   test("Call method property", () => {
-    const value = state(1)
+    const value = property(1)
     const spec: SliderElement = {
       type: "slider",
       value_step: value,
@@ -72,7 +72,7 @@ describe("create", () => {
   })
 
   test("Slider minimum", () => {
-    const value = state(1)
+    const value = property(1)
     const spec: SliderElement = {
       type: "slider",
       minimum_value: value,
@@ -87,7 +87,7 @@ describe("create", () => {
   })
 
   test("Slider maximum", () => {
-    const value = state(5)
+    const value = property(5)
     const spec: SliderElement = {
       type: "slider",
       minimum_value: 1,
@@ -102,7 +102,7 @@ describe("create", () => {
   })
 
   test("Does not allow source on create-only property", () => {
-    const v = state<"vertical" | "horizontal">("vertical")
+    const v = property<"vertical" | "horizontal">("vertical")
     const spec: FlowElement = {
       type: "flow",
       direction: v as any,
@@ -171,7 +171,7 @@ describe("styleMod", () => {
   })
 
   test("listens to source property", () => {
-    const value = state(1)
+    const value = property(1)
     const spec: FlowElement = {
       type: "flow",
       styleMod: {
@@ -197,7 +197,7 @@ describe("destroy", () => {
   })
 
   test("calling destroy ends subscriptions", () => {
-    const source = state("hi")
+    const source = property("hi")
     const spec: FlowElement = {
       type: "flow",
       caption: source,
@@ -209,7 +209,7 @@ describe("destroy", () => {
   })
 
   test("calling destroy ends child subscriptions", () => {
-    const source = state("hi")
+    const source = property("hi")
     const spec: FlowElement = {
       type: "flow",
       children: [
@@ -279,7 +279,7 @@ test("events", () => {
 })
 
 test("observable value", () => {
-  const val = state("one")
+  const val = property("one")
   const spec: TextBoxElement = {
     type: "text-box",
     text: val,

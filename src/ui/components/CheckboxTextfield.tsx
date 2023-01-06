@@ -1,18 +1,18 @@
 import { Component, Element, FactorioJsx, RenderContext } from "../../lib/factoriojsx"
-import { ibind, MutableState, RegisterClass, State } from "../../lib"
-import { getDefaultValueIfIsOverriden, highlightIfOverriden } from "../PropWithOverride"
+import { ibind, MutableProperty, RegisterClass } from "../../lib"
+import { getDefaultValueIfIsOverridenProp, highlightIfOverriden } from "../OverrideResultProperty"
 
 export interface CheckboxTextfieldProps {
   captionBefore: LocalisedString
   captionAfter: LocalisedString
 
-  value: MutableState<number | false>
+  value: MutableProperty<number | false>
 }
 @RegisterClass("gui:CheckboxTextfield")
 export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
   private checkbox!: CheckboxGuiElement
   private textfield!: TextFieldGuiElement
-  private value!: MutableState<number | false>
+  private value!: MutableProperty<number | false>
 
   override render(props: CheckboxTextfieldProps, context: RenderContext): Element {
     const { captionBefore, captionAfter, value } = props
@@ -58,7 +58,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
   private onCheckboxChanged(e: OnGuiCheckedStateChangedEvent) {
     const newState = (e.element as CheckboxGuiElement).state
     if (newState) {
-      this.value.set(getDefaultValueIfIsOverriden(this.value) ?? 1)
+      this.value.set(getDefaultValueIfIsOverridenProp(this.value) ?? 1)
     } else {
       this.value.set(false)
     }
