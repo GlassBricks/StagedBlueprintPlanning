@@ -49,8 +49,11 @@ export namespace Migrations {
   function getMigrationsToRun(oldVersion: string): (() => void)[] {
     const formattedOldVersion = formatVersion(oldVersion)
     const versions = (Object.keys(migrations) as VersionString[]).filter((v) => formattedOldVersion < v).sort()
-    log("Running migrations for versions: " + versions.join(", "))
-    return versions.flatMap((v) => migrations[v])
+    if (versions.length > 0) {
+      log("Running migrations for versions: " + versions.join(", "))
+      return versions.flatMap((v) => migrations[v])
+    }
+    return []
   }
   export function doMigrations(oldVersion: string): void {
     const migrations = getMigrationsToRun(oldVersion)
