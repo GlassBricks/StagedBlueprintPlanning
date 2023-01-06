@@ -11,7 +11,6 @@
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
-import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { funcRef, ibind, PRecord, RegisterClass, registerFunctions } from "../lib"
@@ -27,7 +26,7 @@ import {
   VerticalPusher,
 } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
-import { L_GuiAssemblySettings, L_Interaction } from "../locale"
+import { L_GuiAssemblySettings } from "../locale"
 import { ItemRename } from "./ItemRename"
 import {
   PlayerChangedStageEvent,
@@ -286,35 +285,36 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     )
   }
 
-  private getBlueprint() {
-    const stage = playerCurrentStage(this.playerIndex).get()
-    if (!stage || stage.assembly != this.assembly) return
-    const player = game.get_player(this.playerIndex)
-    if (!player) return
-    const cursorStack = player.cursor_stack
-    if (!cursorStack || !player.clear_cursor()) return
-    const took = stage.takeBlueprint(cursorStack)
-    if (!took) {
-      cursorStack.clear()
-      return player.create_local_flying_text({
-        text: [L_Interaction.BlueprintEmpty],
-        create_at_cursor: true,
-      })
-    }
-  }
-
-  private editBlueprint() {
-    const stage = playerCurrentStage(this.playerIndex).get()
-    if (!stage || stage.assembly != this.assembly) return
-    const player = game.get_player(this.playerIndex)
-    if (!player) return
-    if (!stage.editBlueprint(player)) {
-      return player.create_local_flying_text({
-        text: [L_Interaction.BlueprintEmpty],
-        create_at_cursor: true,
-      })
-    }
-  }
+  // todo
+  // private getBlueprint() {
+  //   const stage = playerCurrentStage(this.playerIndex).get()
+  //   if (!stage || stage.assembly != this.assembly) return
+  //   const player = game.get_player(this.playerIndex)
+  //   if (!player) return
+  //   const cursorStack = player.cursor_stack
+  //   if (!cursorStack || !player.clear_cursor()) return
+  //   const took = stage.takeBlueprint(cursorStack)
+  //   if (!took) {
+  //     cursorStack.clear()
+  //     return player.create_local_flying_text({
+  //       text: [L_Interaction.BlueprintEmpty],
+  //       create_at_cursor: true,
+  //     })
+  //   }
+  // }
+  //
+  // private editBlueprint() {
+  //   const stage = playerCurrentStage(this.playerIndex).get()
+  //   if (!stage || stage.assembly != this.assembly) return
+  //   const player = game.get_player(this.playerIndex)
+  //   if (!player) return
+  //   if (!stage.editBlueprint(player)) {
+  //     return player.create_local_flying_text({
+  //       text: [L_Interaction.BlueprintEmpty],
+  //       create_at_cursor: true,
+  //     })
+  //   }
+  // }
 
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
@@ -353,32 +353,33 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private getBlueprintBook() {
-    const player = game.get_player(this.playerIndex)
-    if (!player || !player.clear_cursor()) return
-    const cursor = player.cursor_stack
-    if (!cursor || !player.is_cursor_empty()) return
-    if (!this.assembly.makeBlueprintBook(cursor)) {
-      cursor.clear()
-      player.create_local_flying_text({
-        text: [L_Interaction.BlueprintBookEmpty],
-        create_at_cursor: true,
-      })
-    }
-  }
-  private exportBlueprintBookStringToFile() {
-    const player = game.get_player(this.playerIndex)
-    if (!player) return
-    const fileName = exportBlueprintBookToFile(player, this.assembly)
-    if (fileName) {
-      player.print([L_Interaction.BlueprintBookExported, fileName])
-    } else {
-      player.create_local_flying_text({
-        text: [L_Interaction.BlueprintBookEmpty],
-        create_at_cursor: true,
-      })
-    }
-  }
+  // todo
+  // private getBlueprintBook() {
+  //   const player = game.get_player(this.playerIndex)
+  //   if (!player || !player.clear_cursor()) return
+  //   const cursor = player.cursor_stack
+  //   if (!cursor || !player.is_cursor_empty()) return
+  //   if (!this.assembly.makeBlueprintBook(cursor)) {
+  //     cursor.clear()
+  //     player.create_local_flying_text({
+  //       text: [L_Interaction.BlueprintBookEmpty],
+  //       create_at_cursor: true,
+  //     })
+  //   }
+  // }
+  // private exportBlueprintBookStringToFile() {
+  //   const player = game.get_player(this.playerIndex)
+  //   if (!player) return
+  //   const fileName = exportBlueprintBookToFile(player, this.assembly)
+  //   if (fileName) {
+  //     player.print([L_Interaction.BlueprintBookExported, fileName])
+  //   } else {
+  //     player.create_local_flying_text({
+  //       text: [L_Interaction.BlueprintBookEmpty],
+  //       create_at_cursor: true,
+  //     })
+  //   }
+  // }
 
   private sssCount = 0
   private static sssText: PRecord<number, string> = {

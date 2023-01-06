@@ -15,10 +15,11 @@ import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { AutoSetTilesType } from "./tiles"
 import {
   OverrideableBlueprintSettings,
+  StageBlueprintSettings,
   StageBlueprintSettingsTable,
-  StageBlueprintSettingsView,
 } from "../blueprints/blueprint-settings"
 import { PropertiesTable } from "../utils/properties-obj"
+import { BBox } from "../lib/geometry"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface Assembly {
@@ -42,8 +43,8 @@ export interface UserAssembly extends Assembly {
   insertStage(index: StageNumber): Stage
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
-  makeBlueprintBook(stack: LuaItemStack): boolean
 
+  getBlueprintBBox(): BBox
   readonly valid: boolean
   delete(): void
 }
@@ -56,16 +57,8 @@ export interface Stage {
   readonly assembly: UserAssembly
 
   readonly stageBlueprintSettings: StageBlueprintSettingsTable
-
-  getBlueprintSettingsView(): StageBlueprintSettingsView
-
-  takeBlueprint(stack: LuaItemStack): boolean
-
-  /** Opens blueprint edit gui for player. Returns if successful. */
-  editBlueprint(player: LuaPlayer): boolean
-
+  getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings>
   autoSetTiles(tiles: AutoSetTilesType): boolean
-
   readonly valid: boolean
   deleteInAssembly(): void
 }

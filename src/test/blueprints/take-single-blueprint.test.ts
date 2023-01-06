@@ -1,6 +1,6 @@
 import { BBox, Pos } from "../../lib/geometry"
 import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
-import { tryTakeBlueprintWithSettings } from "../../blueprints/take-blueprint"
+import { tryTakeSingleBlueprint } from "../../blueprints/take-single-blueprint"
 import expect from "tstl-expect"
 
 let surface: LuaSurface
@@ -45,7 +45,7 @@ test("can take blueprint and settings applied", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = tryTakeBlueprintWithSettings(stack, settings, surface, bbox)
+  const ret = tryTakeSingleBlueprint(stack, settings, surface, bbox)
   expect(ret).to.be(true)
 
   expect(stack.blueprint_icons).to.equal(settings.icons)
@@ -74,7 +74,7 @@ test("applies blacklist", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = tryTakeBlueprintWithSettings(stack, settings, surface, bbox)
+  const ret = tryTakeSingleBlueprint(stack, settings, surface, bbox)
   expect(ret).to.be(true)
 
   const entities = stack.get_blueprint_entities()!
@@ -130,7 +130,7 @@ test("Replace infinity entities with constant combinators", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const res = tryTakeBlueprintWithSettings(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10))
+  const res = tryTakeSingleBlueprint(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10))
   expect(res).to.be(true)
 
   const entities = stack.get_blueprint_entities()!

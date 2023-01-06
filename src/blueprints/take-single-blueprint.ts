@@ -12,7 +12,7 @@
 import { getInfinityEntityNames } from "../entity/entity-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { StageBlueprintSettings } from "./blueprint-settings"
+import { BlueprintTakeParameters, StageBlueprintSettings } from "./blueprint-settings"
 
 export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(
@@ -95,9 +95,9 @@ function filterEntities(entities: BlueprintEntity[], filters: ReadonlyLuaSet<str
 /**
  * If forEdit is true, sets the first entity's original position tag.
  */
-export function takeBlueprintWithSettings(
+export function takeSingleBlueprint(
   stack: LuaItemStack,
-  settings: StageBlueprintSettings,
+  params: BlueprintTakeParameters,
   surface: LuaSurface,
   bbox: BBox,
   forEdit: boolean,
@@ -121,7 +121,7 @@ export function takeBlueprintWithSettings(
     positionOffset,
     blacklist,
     replaceInfinityEntitiesWithCombinators: shouldReplaceInfinity,
-  } = settings
+  } = params
 
   let entities: BlueprintEntity[] | nil
 
@@ -155,10 +155,10 @@ export function takeBlueprintWithSettings(
     stack.set_blueprint_entities(entities)
   }
 
-  stack.blueprint_icons = settings.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
-  stack.blueprint_snap_to_grid = settings.snapToGrid
-  stack.blueprint_absolute_snapping = settings.absoluteSnapping
-  stack.blueprint_position_relative_to_grid = settings.positionRelativeToGrid
+  stack.blueprint_icons = params.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
+  stack.blueprint_snap_to_grid = params.snapToGrid
+  stack.blueprint_absolute_snapping = params.absoluteSnapping
+  stack.blueprint_position_relative_to_grid = params.positionRelativeToGrid
 
   if (forEdit) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, bpMapping[1].position)
@@ -166,11 +166,11 @@ export function takeBlueprintWithSettings(
   return true
 }
 
-export function tryTakeBlueprintWithSettings(
+export function tryTakeSingleBlueprint(
   stack: LuaItemStack,
   settings: StageBlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
 ): boolean {
-  return takeBlueprintWithSettings(stack, settings, surface, bbox, false)
+  return takeSingleBlueprint(stack, settings, surface, bbox, false)
 }

@@ -31,8 +31,8 @@ import { Migrations } from "../lib/migration"
 import {
   createNewBlueprintSettings,
   OverrideableBlueprintSettings,
+  StageBlueprintSettings,
   StageBlueprintSettingsTable,
-  StageBlueprintSettingsView,
 } from "../blueprints/blueprint-settings"
 import {
   createdDiffedPropertyTableView,
@@ -157,41 +157,8 @@ class UserAssemblyImpl implements UserAssembly {
     this.raiseEvent({ type: "stage-deleted", assembly: this, stage })
   }
 
-  public makeBlueprintBook(stack: LuaItemStack): boolean {
-    // const bbox = this.content.computeBoundingBox()
-    // if (!bbox) return false
-    //
-    // log(["", "Making blueprint book for assembly: ", this.displayName.get()])
-    //
-    // stack.clear()
-    // stack.set_stack("blueprint-book")
-    // const { useNextStageTiles, emptyBlueprintBookName } = this.assemblyBlueprintSettings
-    // if (emptyBlueprintBookName.get()) {
-    //   stack.label = ""
-    // } else {
-    //   stack.label = this.name.get()
-    // }
-    //
-    // const inventory = stack.get_inventory(defines.inventory.item_main)!
-    // assert(inventory, "Failed to get blueprint book inventory")
-    //
-    // for (const [, stage] of ipairs(this.stages)) {
-    //   const nInserted = inventory.insert("blueprint")
-    //   assert(nInserted == 1, "Failed to insert blueprint into blueprint book")
-    //   const stack = inventory[inventory.length - 1]!
-    //   if (!stage.doTakeBlueprint(stack, bbox)) stack.clear()
-    // }
-    //
-    // if (useNextStageTiles.get()) {
-    //   log("Shifting blueprint tiles")
-    //   for (const i of $range(1, inventory.length - 1)) {
-    //     const blueprint = inventory[i - 1]
-    //     const nextBlueprint = inventory[i]
-    //     blueprint.set_blueprint_tiles(nextBlueprint.get_blueprint_tiles()!)
-    //   }
-    // }
-
-    return true
+  getBlueprintBBox(): BBox {
+    return this.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
   }
 
   delete() {
@@ -265,7 +232,7 @@ class StageImpl implements Stage {
 
   stageBlueprintSettings = createEmptyStageBlueprintSettings()
 
-  getBlueprintSettingsView(): StageBlueprintSettingsView {
+  getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings> {
     return {
       ...createdDiffedPropertyTableView(this.assembly.defaultBlueprintSettings, this.stageBlueprintSettings),
       icons: this.stageBlueprintSettings.icons,
@@ -288,59 +255,6 @@ class StageImpl implements Stage {
     const surface = createStageSurface()
     prepareArea(surface, initialPreparedArea)
     return new StageImpl(assembly, surface, stageNumber, name)
-  }
-
-  // public getBlueprintSettings(): BlueprintSettings {
-  //   return this.blueprintSettings
-  // }
-
-  takeBlueprint(stack: LuaItemStack): boolean {
-    const bbox = this.assembly.content.computeBoundingBox()
-    if (!bbox) return false
-    return this.doTakeBlueprint(stack, bbox)
-  }
-
-  doTakeBlueprint(stack: LuaItemStack, bbox: BBox): boolean {
-    // todo
-    // log("Taking blueprint for stage: " + this.name.get())
-    // if (this.assembly.assemblyBlueprintSettings.autoLandfill.get()) {
-    //   log("  Setting landfill")
-    //   this.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
-    //   log("  Done setting landfill")
-    // }
-    // const took = tryTakeBlueprintWithSettings(
-    //   stack,
-    //   this.getBlueprintSettings(),
-    //
-    //   this.assembly.assemblyBlueprintSettings,
-    //   this.surface,
-    //   bbox,
-    // )
-    // if (took) {
-    //   const emptyBlueprintNames = this.assembly.assemblyBlueprintSettings.emptyBlueprintNames.get()
-    //   if (emptyBlueprintNames) {
-    //     stack.label = ""
-    //   } else {
-    //     stack.label = this.name.get()
-    //   }
-    // }
-    // return took
-    return false
-  }
-
-  editBlueprint(player: LuaPlayer): boolean {
-    return true
-    // const bbox = this.assembly.content.computeBoundingBox()
-    // if (!bbox) return false
-    // return (
-    //   editBlueprintSettings(
-    //     player,
-    //     this.getBlueprintSettings(),
-    //     this.assembly.assemblyBlueprintSettings,
-    //     this.surface,
-    //     bbox,
-    //   ) != nil
-    // )
   }
 
   autoSetTiles(tiles: AutoSetTilesType): boolean {
@@ -366,18 +280,20 @@ class StageImpl implements Stage {
 }
 
 export function exportBlueprintBookToFile(player: LuaPlayer, assembly: UserAssembly): string | nil {
-  const inventory = game.create_inventory(1)
-  const stack = inventory[0]!
-  if (!assembly.makeBlueprintBook(stack)) {
-    inventory.destroy()
-    return nil
-  }
-  log("Exporting blueprint book to file")
-  const data = stack.export_stack()
-  const filename = `staged-builds/${assembly.name.get() ?? "Unnamed-Assembly-" + assembly.id}.txt`
-  game.write_file(filename, data, false, player.index)
-  inventory.destroy()
-  return filename
+  //todo
+  return nil
+  // const inventory = game.create_inventory(1)
+  // const stack = inventory[0]!
+  // if (!assembly.makeBlueprintBook(stack)) {
+  //   inventory.destroy()
+  //   return nil
+  // }
+  // log("Exporting blueprint book to file")
+  // const data = stack.export_stack()
+  // const filename = `staged-builds/${assembly.name.get() ?? "Unnamed-Assembly-" + assembly.id}.txt`
+  // game.write_file(filename, data, false, player.index)
+  // inventory.destroy()
+  // return filename
 }
 
 export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {

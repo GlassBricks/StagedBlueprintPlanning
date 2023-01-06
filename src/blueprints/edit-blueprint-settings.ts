@@ -13,13 +13,13 @@ import { Prototypes } from "../constants"
 import { Events, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { FirstEntityOriginalPositionTag, takeBlueprintWithSettings } from "./take-blueprint"
-import { BlueprintItemSettings, StageBlueprintSettingsView } from "./blueprint-settings"
+import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "./take-single-blueprint"
+import { AssemblyOrStageBlueprintSettings, StageBlueprintSettings } from "./blueprint-settings"
 import { getCurrentValues, PropertiesTable } from "../utils/properties-obj"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
-  settings: StageBlueprintSettingsView
+  settings: AssemblyOrStageBlueprintSettings
   editType: "blueprint-item" | "additionalWhitelist" | "blacklist"
 }
 declare global {
@@ -40,7 +40,7 @@ function clearOpenedItem(playerIndex: PlayerIndex): void {
 
 export function editInItemBlueprintSettings(
   player: LuaPlayer,
-  settings: StageBlueprintSettingsView,
+  settings: AssemblyOrStageBlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
 ): LuaItemStack | nil {
@@ -48,7 +48,9 @@ export function editInItemBlueprintSettings(
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
 
-  const took = takeBlueprintWithSettings(blueprint, getCurrentValues(settings), surface, bbox, true)
+  const takeValues = getCurrentValues(settings)
+
+  const took = takeSingleBlueprint(blueprint, takeValues, surface, bbox, true)
   if (!took) {
     inventory.destroy()
     return
@@ -66,7 +68,7 @@ export function editInItemBlueprintSettings(
 
 export function editBlueprintFilters(
   player: LuaPlayer,
-  settings: StageBlueprintSettingsView,
+  settings: AssemblyOrStageBlueprintSettings,
   type: "additionalWhitelist" | "blacklist",
 ): LuaItemStack {
   clearOpenedItem(player.index)
@@ -100,12 +102,13 @@ function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {
 }
 function updateBlueprintItemSettings(
   blueprint: BlueprintItemStack,
-  settings: PropertiesTable<BlueprintItemSettings>,
+  settings: AssemblyOrStageBlueprintSettings,
   playerIndex: PlayerIndex,
 ): void {
-  const icons = blueprint.blueprint_icons
-  if (icons && icons[0]) settings.icons.set(icons)
-  else settings.icons.set(nil)
+  if (settings.icons) {
+    const icons = blueprint.blueprint_icons
+    settings.icons.set(icons && icons[0] ? icons : nil)
+  }
 
   const snapToGrid = blueprint.blueprint_snap_to_grid
   if (snapToGrid == nil) {
@@ -144,6 +147,7 @@ function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): v
     if (!stack.is_blueprint) return
     updateBlueprintItemSettings(stack, info.settings, playerIndex)
   } else if (info.editType == "additionalWhitelist" || info.editType == "blacklist") {
+    assume<PropertiesTable<StageBlueprintSettings>>(info.settings)
     updateBlueprintFilters(stack, info.settings[info.editType])
   }
 }

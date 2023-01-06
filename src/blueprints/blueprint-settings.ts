@@ -33,22 +33,23 @@ export interface OverrideableBlueprintSettings extends BlueprintTakeSettings {
   readonly useNextStageTiles: boolean
 }
 
-export interface PerStageBlueprintSettings {
+export interface AdditionalBlueprintItemSettings {
   readonly icons: BlueprintSignalIcon[] | nil
 }
 
-export interface BlueprintItemSettings extends BlueprintGridSettings, PerStageBlueprintSettings {}
+export interface BlueprintTakeParameters extends BlueprintTakeSettings, Partial<AdditionalBlueprintItemSettings> {}
+
+/** The actual values of a stage's blueprint settings. */
+export interface StageBlueprintSettings extends OverrideableBlueprintSettings, AdditionalBlueprintItemSettings {}
 
 /** The stored information about a stage's blueprint settings, in property (possibly overrides) form */
 export interface StageBlueprintSettingsTable
   extends PropertyOverrideTable<OverrideableBlueprintSettings>,
-    PropertiesTable<PerStageBlueprintSettings> {}
+    PropertiesTable<AdditionalBlueprintItemSettings> {}
 
-/** The actual values of a stage's blueprint settings. */
-export interface StageBlueprintSettings extends OverrideableBlueprintSettings, PerStageBlueprintSettings {}
-
-/** Blueprint settings for a stage, with overrides applied, as a properties table. */
-export type StageBlueprintSettingsView = PropertiesTable<StageBlueprintSettings>
+export interface AssemblyOrStageBlueprintSettings
+  extends PropertiesTable<OverrideableBlueprintSettings>,
+    Partial<PropertiesTable<AdditionalBlueprintItemSettings>> {}
 
 export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
   return {
