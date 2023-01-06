@@ -10,9 +10,8 @@
  */
 
 import { Prototypes } from "../constants"
-import { Events, isEmpty, MutableProperty } from "../lib"
+import { Events, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
 import { L_Interaction } from "../locale"
 import { FirstEntityOriginalPositionTag, takeBlueprintWithSettings } from "./take-blueprint"
 import { EditableStageBlueprintSettings, InBlueprintItemSettings } from "./blueprint-settings"
@@ -160,17 +159,3 @@ Events.on_gui_closed((e) => {
   const bpInventory = info.blueprintInventory
   if (bpInventory.valid) bpInventory.destroy()
 })
-
-Migrations.to("0.8.0", () => {
-  for (const [, data] of pairs(global.players)) {
-    ;(data as any).lastOpenedBlueprint = nil
-  }
-})
-
-export function _migrate0131(transform: BlueprintTransformations): void {
-  const filters = transform.entityFilters.get()
-  if (filters && isEmpty(filters)) {
-    transform.entityFilters.set(nil)
-    transform.entityFilterMode.set(nil)
-  }
-}

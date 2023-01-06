@@ -10,14 +10,13 @@
  */
 
 import { Events } from "../lib"
-import { Migrations } from "../lib/migration"
 import type { AssemblyEntity } from "./AssemblyEntity"
 
 declare const global: {
   entityByUnitNumber: LuaMap<UnitNumber, AssemblyEntity>
 }
 
-Migrations.since("0.4.0", () => {
+Events.on_init(() => {
   global.entityByUnitNumber = new LuaMap()
 })
 

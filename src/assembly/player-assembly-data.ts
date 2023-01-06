@@ -10,11 +10,9 @@
  */
 
 import { StageNumber } from "../entity/AssemblyEntity"
-import { onPlayerInit, PRecord } from "../lib"
+import { onPlayerInit } from "../lib"
 import { Position } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
 import { AssemblyId, UserAssembly } from "./AssemblyDef"
-import { getAllAssemblies } from "./migrations"
 import { AssemblyEvents } from "./UserAssembly"
 
 export interface AssemblyPlayerData {
@@ -47,30 +45,3 @@ export function getAssemblyPlayerData(player: PlayerIndex, assembly: UserAssembl
   if (!map.has(id)) map.set(id, {})
   return map.get(id)
 }
-
-Migrations.to("0.9.0", () => {
-  for (const [, player] of game.players) {
-    const playerData = global.players[player.index]
-    playerData.assemblyPlayerData = new LuaMap()
-  }
-  for (const [, assembly] of getAllAssemblies()) {
-    interface OldAssembly {
-      lastPlayerPosition?: PRecord<
-        PlayerIndex,
-        {
-          stageNumber: StageNumber
-          position: Position
-        }
-      >
-    }
-    const oldAssembly = assembly as unknown as OldAssembly
-    for (const [playerIndex, { stageNumber, position }] of pairs(oldAssembly.lastPlayerPosition!)) {
-      const playerData = getAssemblyPlayerData(playerIndex, assembly)
-      if (playerData) {
-        playerData.lastStage = stageNumber
-        playerData.lastPosition = position
-      }
-    }
-    delete oldAssembly.lastPlayerPosition
-  }
-})

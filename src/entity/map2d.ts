@@ -81,25 +81,3 @@ class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
 export function newMap2D<T extends AnyNotNil>(): MutableMap2D<T> {
   return new Map2DImpl<T>()
 }
-
-export function migrateMap2d060<T extends AnyNotNil>(map: MutableMap2D<T>): void {
-  interface OldMap2D {
-    [x: number]: PRecord<number, LuaSet<T>>
-  }
-  const oldMap = map as OldMap2D
-  for (const [x, byX] of pairs(oldMap)) {
-    for (const [y, values] of pairs(byX)) {
-      const valuesArray = Object.keys(values)
-      if (valuesArray.length == 0) {
-        delete byX[y]
-      } else if (valuesArray.length == 1) {
-        ;(byX as any)[y] = valuesArray[0]
-      } else {
-        ;(byX as any)[y] = valuesArray
-      }
-    }
-    if (next(byX)[0] == nil) {
-      delete oldMap[x]
-    }
-  }
-}

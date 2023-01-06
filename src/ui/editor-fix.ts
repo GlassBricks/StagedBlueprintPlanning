@@ -10,7 +10,6 @@
  */
 
 import { Events, onPlayerInit } from "../lib"
-import { Migrations } from "../lib/migration"
 
 const editorGuiWidth = 474
 function updatePlayer(player: LuaPlayer): void {
@@ -23,7 +22,7 @@ function updatePlayer(player: LuaPlayer): void {
     player.gui.left.style.left_margin = 0
   }
 }
-if (!script.active_mods.EditorExtensions) {
+if (script.active_mods.EditorExtensions == nil) {
   function update(index: PlayerIndex): void {
     const player = game.get_player(index)!
     updatePlayer(player)
@@ -32,8 +31,8 @@ if (!script.active_mods.EditorExtensions) {
   onPlayerInit(update)
 }
 
-Migrations.since("0.4.0", () => {
-  if (script.active_mods.EditorExtensions != nil) {
+Events.on_init(() => {
+  if (script.active_mods.EditorExtensions == nil) {
     for (const [, player] of game.players) {
       updatePlayer(player)
     }

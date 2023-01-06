@@ -22,7 +22,7 @@ import {
   rollingStockTypes,
 } from "./entity-info"
 import { getRegisteredAssemblyEntity } from "./entity-registration"
-import { migrateMap2d060, MutableMap2D, newMap2D } from "./map2d"
+import { MutableMap2D, newMap2D } from "./map2d"
 import { getSavedDirection, oppositeSavedDirection, SavedDirection, WorldDirection } from "./direction"
 import { Prototypes } from "../constants"
 
@@ -437,23 +437,4 @@ class AssemblyContentImpl implements MutableAssemblyContent {
 
 export function newAssemblyContent(): MutableAssemblyContent {
   return new AssemblyContentImpl()
-}
-
-export function migrateMap030(_content: MutableAssemblyContent): void {
-  interface OldEntityMap {
-    entities: LuaMap<AssemblyEntity, AsmEntityCircuitConnections>
-  }
-  const content = _content as AssemblyContentImpl
-
-  const oldEntities = (content as unknown as OldEntityMap).entities
-  content.circuitConnections = oldEntities
-  const entities = (content.entities = new LuaSet<AssemblyEntity>())
-  for (const [entity] of oldEntities) {
-    entities.add(entity)
-  }
-  content.cableConnections = new LuaMap()
-}
-
-export function migrateMap060(content: MutableAssemblyContent): void {
-  migrateMap2d060((content as AssemblyContentImpl).byPosition)
 }

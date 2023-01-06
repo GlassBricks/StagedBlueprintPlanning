@@ -17,7 +17,6 @@ import { BasicEntityInfo } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
 import { getAssemblyPlayerData } from "./player-assembly-data"
@@ -845,9 +844,3 @@ export function entityPossiblyUpdated(entity: LuaEntity, byPlayer: PlayerIndex |
     WorldListener.onEntityPossiblyUpdated(stage.assembly, entity, stage.stageNumber, nil, byPlayer)
   }
 }
-
-Migrations.to("0.10.6", () => {
-  for (const [key] of pairs(state)) {
-    state[key] = nil
-  }
-})

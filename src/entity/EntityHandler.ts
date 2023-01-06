@@ -13,7 +13,6 @@ import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
 import { Events, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
 import { getPasteRotatableType, isUndergroundBeltType, PasteRotatableType, rollingStockTypes } from "./entity-info"
 import { makePreviewIndestructible } from "./special-entities"
@@ -353,27 +352,6 @@ const BlueprintEntityHandler: EntityHandler = {
   },
 }
 export const EntityHandler: EntityHandler = BlueprintEntityHandler
-
-Migrations.to("0.6.0", () => {
-  const railPreviews: string[] = []
-  for (const [name] of game.get_filtered_entity_prototypes([
-    {
-      filter: "type",
-      type: "rail-remnants",
-    },
-  ])) {
-    if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
-      railPreviews.push(name)
-    }
-  }
-
-  for (const [, surface] of game.surfaces) {
-    for (const entity of surface.find_entities_filtered({ name: railPreviews })) {
-      entity.corpse_expires = false
-      entity.corpse_immune_to_entity_placement = true
-    }
-  }
-})
 
 /** Currently only true if is a square assembling machine with no fluid inputs. */
 export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
