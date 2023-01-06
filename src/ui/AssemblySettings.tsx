@@ -635,6 +635,11 @@ PlayerChangedStageEvent.addListener((player, newStage, oldStage) => {
     renderGuiForAssembly(player, newAssembly)
   }
 })
+
+export function bringSettingsWindowToFront(player: LuaPlayer): void {
+  const element = player.gui.screen[AssemblySettingsName]
+  if (element) element.bring_to_front()
+}
 export function refreshCurrentAssembly(): void {
   for (const [, player] of game.players) {
     const currentStage = playerCurrentStage(player.index).get()
