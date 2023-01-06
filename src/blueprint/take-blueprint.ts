@@ -10,52 +10,19 @@
  */
 
 import { getInfinityEntityNames } from "../entity/entity-info"
-import { isEmpty, Mutable, MutableProperty, nilIfEmpty, property } from "../lib"
+import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { StageBlueprintSettings } from "./blueprint-settings"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
-export interface BlueprintSettings {
-  name: string
-  icons: BlueprintSignalIcon[] | nil
-
-  /** Original position + offset = blueprint position */
-  positionOffset: Position
-  snapToGrid?: Position
-  positionRelativeToGrid?: Position
-  absoluteSnapping: boolean
-}
-export interface BlueprintTransformations {
-  readonly entityFilters: MutableProperty<LuaSet<string> | nil>
-  readonly entityFilterMode: MutableProperty<defines.deconstruction_item.entity_filter_mode | nil>
-  readonly replaceInfinityWithCombinators: MutableProperty<boolean>
-}
-export function makeSimpleBlueprintTransformations(
-  entityFilters?: LuaSet<string>,
-  entityFilterMode?: defines.deconstruction_item.entity_filter_mode,
-  replaceInfinityWithCombinators: boolean = false,
-): BlueprintTransformations {
-  return {
-    entityFilters: property(entityFilters),
-    entityFilterMode: property(entityFilterMode),
-    replaceInfinityWithCombinators: property(replaceInfinityWithCombinators),
-  }
-}
-
-export function getDefaultBlueprintSettings(): BlueprintSettings {
-  return {
-    name: "",
-    icons: nil,
-    positionOffset: { x: 0, y: 0 },
-    absoluteSnapping: false,
-  }
-}
 export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
-function adjustEntityPosition(
-  entities: BlueprintEntity[],
+function adjustEntitiesToMatchPositionOffset(
   stack: LuaItemStack,
-  positionOffset: Position,
+  entities: BlueprintEntity[],
+  positionOffset: Position | nil,
   firstEntityOriginalPosition: MapPosition,
 ): boolean {
+  if (!positionOffset) return false
   const firstEntityPosition = entities[0].position
   const expectedPosition = Pos.plus(firstEntityOriginalPosition, positionOffset)
   const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
@@ -122,13 +89,13 @@ function filterEntities(
     if (isWhitelist != filters.has(entity.name)) delete entities[i - 1]
   }
 }
+
 /**
  * If forEdit is true, sets the first entity's original position tag.
  */
 export function takeBlueprintWithSettings(
   stack: LuaItemStack,
-  settings: BlueprintSettings,
-  transform: BlueprintTransformations,
+  settings: StageBlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
   forEdit: boolean,
@@ -136,7 +103,6 @@ export function takeBlueprintWithSettings(
   if (!stack.is_blueprint) {
     stack.set_stack("blueprint")
   }
-
   const bpMapping = stack.create_blueprint({
     surface,
     force: "player",
@@ -148,31 +114,28 @@ export function takeBlueprintWithSettings(
 
   if (isEmpty(bpMapping)) return false
 
-  const replaceInfinityWithCombinators = transform.replaceInfinityWithCombinators.get()
-  let entityFilters: LuaSet<string> | nil = transform.entityFilters.get()
-  entityFilters = entityFilters && nilIfEmpty(entityFilters)
+  const { additionalWhitelist } = settings
+  const entitiesPossiblyAltered = additionalWhitelist != nil
 
-  if (settings.snapToGrid != nil || entityFilters || replaceInfinityWithCombinators) {
+  if (settings.snapToGrid != nil || entitiesPossiblyAltered) {
     const entities = stack.get_blueprint_entities()!
-    const shouldAdjustPosition = adjustEntityPosition(entities, stack, settings.positionOffset, bpMapping[1].position)
-    if (replaceInfinityWithCombinators) {
-      replaceInfinityEntitiesWithCombinators(entities)
-    }
+    const shouldAdjustPosition = adjustEntitiesToMatchPositionOffset(
+      stack,
+      entities,
+      settings.positionOffset,
+      bpMapping[1].position,
+    )
 
-    if (entityFilters) {
-      filterEntities(entities, entityFilters, transform.entityFilterMode.get())
-    }
     if (isEmpty(entities)) {
       stack.clear_blueprint()
       return false
     }
 
-    if (entityFilters || replaceInfinityWithCombinators || shouldAdjustPosition) {
+    if (entitiesPossiblyAltered || shouldAdjustPosition) {
       stack.set_blueprint_entities(entities)
     }
   }
 
-  stack.label = settings.name
   stack.blueprint_icons = settings.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
   stack.blueprint_snap_to_grid = settings.snapToGrid
   stack.blueprint_absolute_snapping = settings.absoluteSnapping
@@ -186,10 +149,9 @@ export function takeBlueprintWithSettings(
 
 export function tryTakeBlueprintWithSettings(
   stack: LuaItemStack,
-  settings: BlueprintSettings,
-  transform: BlueprintTransformations,
+  settings: StageBlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
 ): boolean {
-  return takeBlueprintWithSettings(stack, settings, transform, surface, bbox, false)
+  return takeBlueprintWithSettings(stack, settings, surface, bbox, false)
 }

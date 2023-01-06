@@ -9,17 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { editBlueprintFilters, editBlueprintSettings } from "../../assembly/edit-blueprint-settings"
-import {
-  BlueprintSettings,
-  getDefaultBlueprintSettings,
-  makeSimpleBlueprintTransformations,
-  tryTakeBlueprintWithSettings,
-} from "../../assembly/take-blueprint"
+import { editBlueprintFilters, editInItemBlueprintSettings } from "../../blueprint/edit-blueprint-settings"
+import { tryTakeBlueprintWithSettings } from "../../blueprint/take-blueprint"
 import { Prototypes } from "../../constants"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import expect from "tstl-expect"
+import { getDefaultBlueprintSettings } from "../../blueprint/blueprint-settings"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 let player: LuaPlayer
@@ -33,7 +29,7 @@ before_each(() => {
 })
 
 test("can edit blueprint settings", () => {
-  const settings: BlueprintSettings = getDefaultBlueprintSettings()
+  const settings = getDefaultBlueprintSettings()
   player.teleport({ x: 0, y: 0 }, 1 as SurfaceIndex)
 
   const theEntity = surface.create_entity({
@@ -43,10 +39,9 @@ test("can edit blueprint settings", () => {
   })!
   expect(theEntity).to.be.any()
 
-  const stack = editBlueprintSettings(
+  const stack = editInItemBlueprintSettings(
     player,
     settings,
-    makeSimpleBlueprintTransformations(),
     surface,
     BBox.around(
       {
@@ -94,7 +89,7 @@ test("can edit blueprint settings", () => {
 })
 
 test("can edit blueprint filters", () => {
-  const transform = makeSimpleBlueprintTransformations()
+  const transform = makesSimpleBlueprintSettings()
   const stack = editBlueprintFilters(player, transform)!
   expect(stack).to.be.any()
   expect(stack.valid_for_read).to.be(true)
@@ -109,10 +104,7 @@ test("can edit blueprint filters", () => {
 })
 
 test("can clear blueprint filters", () => {
-  const transform = makeSimpleBlueprintTransformations(
-    newLuaSet("iron-chest", "steel-chest"),
-    entity_filter_mode.whitelist,
-  )
+  const transform = makesSimpleBlueprintSettings(newLuaSet("iron-chest", "steel-chest"), entity_filter_mode.whitelist)
   const stack = editBlueprintFilters(player, transform)!
   expect(stack).to.be.any()
   expect(stack.valid_for_read).to.be(true)
@@ -156,7 +148,7 @@ test.each(["whitelist", "blacklist"])("blueprint settings and filter applied", (
   stack.set_stack("blueprint")
 
   const whitelist = mode == "whitelist"
-  const transform = makeSimpleBlueprintTransformations(
+  const transform = makesSimpleBlueprintSettings(
     whitelist ? newLuaSet("iron-chest") : newLuaSet("transport-belt"),
     whitelist ? entity_filter_mode.whitelist : entity_filter_mode.blacklist,
   )
@@ -222,7 +214,7 @@ test("Replace infinity entities with constant combinators", () => {
   stack.clear()
   stack.set_stack("blueprint")
 
-  const transform = makeSimpleBlueprintTransformations(nil, nil, true)
+  const transform = makesSimpleBlueprintSettings(nil, nil, true)
 
   const res = tryTakeBlueprintWithSettings(
     stack,

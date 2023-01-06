@@ -12,7 +12,6 @@
 import { StageNumber } from "../entity/AssemblyEntity"
 import { MutableAssemblyContent } from "../entity/AssemblyContent"
 import { MutableProperty, Property, SimpleSubscribable } from "../lib"
-import { BlueprintTransformations } from "./take-blueprint"
 import { AutoSetTilesType } from "./tiles"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
@@ -39,22 +38,11 @@ export interface UserAssembly extends Assembly {
   insertStage(index: StageNumber): Stage
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
-
-  // note: old name preserved to aid in migrations
-  readonly assemblyBlueprintSettings: AssemblyBlueprintSettings
+  // readonly assemblyBlueprintSettings: BuildBlueprintSettings
   makeBlueprintBook(stack: LuaItemStack): boolean
 
   readonly valid: boolean
   delete(): void
-  syncGridSettings(): void
-}
-
-export interface AssemblyBlueprintSettings extends BlueprintTransformations {
-  readonly autoLandfill: MutableProperty<boolean>
-  readonly useNextStageTiles: MutableProperty<boolean>
-
-  readonly emptyBlueprintNames: MutableProperty<boolean>
-  readonly emptyBlueprintBookName: MutableProperty<boolean>
 }
 
 export interface Stage {

@@ -10,7 +10,6 @@
  */
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
-import { editBlueprintFilters } from "../assembly/edit-blueprint-settings"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { exportBlueprintBookToFile } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
@@ -133,7 +132,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               <tab caption={[L_GuiAssemblySettings.Stage]} />
               {this.StagesTab()}
               <tab caption={[L_GuiAssemblySettings.Blueprints]} />
-              {this.BlueprintSettingsTab()}
+              {/*todo: {this.BlueprintSettingsTab()}*/}
               <tab caption={[L_GuiAssemblySettings.Other]} />
               {this.OtherTab()}
             </tabbed-pane>
@@ -193,82 +192,83 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   }
 
   private BlueprintSettingsTab() {
-    const assemblyBlueprintSettings = this.assembly.assemblyBlueprintSettings
-    return (
-      <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
-        <label style="caption_label" caption={[L_GuiAssemblySettings.CurrentStage]} />
-        <flow>
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiAssemblySettings.EditBlueprint]}
-            tooltip={[L_GuiAssemblySettings.EditBlueprintTooltip]}
-            on_gui_click={ibind(this.editBlueprint)}
-          />
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiAssemblySettings.GetBlueprint]}
-            tooltip={[L_GuiAssemblySettings.GetBlueprintTooltip]}
-            on_gui_click={ibind(this.getBlueprint)}
-          />
-        </flow>
-        <label
-          style="caption_label"
-          caption={[L_GuiAssemblySettings.BlueprintSettings]}
-          tooltip={[L_GuiAssemblySettings.BlueprintSettingsTooltip]}
-        />
-        <checkbox
-          state={assemblyBlueprintSettings.emptyBlueprintNames}
-          caption={[L_GuiAssemblySettings.EmptyBlueprintNames]}
-        />
-        <line />
-        <checkbox
-          state={assemblyBlueprintSettings.autoLandfill}
-          caption={[L_GuiAssemblySettings.AutoLandfill]}
-          tooltip={[L_GuiAssemblySettings.AutoLandfillTooltip]}
-        />
-        <checkbox
-          state={assemblyBlueprintSettings.replaceInfinityWithCombinators}
-          caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
-          tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
-        />
-        <button
-          caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
-          tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
-          on_gui_click={ibind(this.editBlueprintFilters)}
-          styleMod={{ width: BpSettingsButtonWidth }}
-        />
-        <line />
-        <button
-          caption={[L_GuiAssemblySettings.SyncGridSettings]}
-          tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
-          on_gui_click={ibind(this.syncGridSettings)}
-          styleMod={{ width: BpSettingsButtonWidth }}
-        />
-
-        <label style="caption_label" caption={[L_GuiAssemblySettings.BlueprintBookSettings]} />
-
-        <checkbox
-          state={assemblyBlueprintSettings.emptyBlueprintBookName}
-          caption={[L_GuiAssemblySettings.EmptyBlueprintBookName]}
-        />
-        <checkbox
-          state={assemblyBlueprintSettings.useNextStageTiles}
-          caption={[L_GuiAssemblySettings.UseNextStageTiles]}
-          tooltip={[L_GuiAssemblySettings.UseNextStageTilesTooltip]}
-        />
-        <button
-          caption={[L_GuiAssemblySettings.GetBlueprintBook]}
-          on_gui_click={ibind(this.getBlueprintBook)}
-          styleMod={{ width: BpSettingsButtonWidth }}
-        />
-        <button
-          caption={[L_GuiAssemblySettings.ExportBlueprintBookStringToFile]}
-          tooltip={[L_GuiAssemblySettings.ExportBlueprintBookStringToFileTooltip]}
-          on_gui_click={ibind(this.exportBlueprintBookStringToFile)}
-          styleMod={{ width: BpSettingsButtonWidth }}
-        />
-      </flow>
-    )
+    // todo
+    // const assemblyBlueprintSettings = this.assembly.assemblyBlueprintSettings
+    // return (
+    //   <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
+    //     <label style="caption_label" caption={[L_GuiAssemblySettings.CurrentStage]} />
+    //     <flow>
+    //       <button
+    //         styleMod={{ width: StageSettingsButtonWidth }}
+    //         caption={[L_GuiAssemblySettings.EditBlueprint]}
+    //         tooltip={[L_GuiAssemblySettings.EditBlueprintTooltip]}
+    //         on_gui_click={ibind(this.editBlueprint)}
+    //       />
+    //       <button
+    //         styleMod={{ width: StageSettingsButtonWidth }}
+    //         caption={[L_GuiAssemblySettings.GetBlueprint]}
+    //         tooltip={[L_GuiAssemblySettings.GetBlueprintTooltip]}
+    //         on_gui_click={ibind(this.getBlueprint)}
+    //       />
+    //     </flow>
+    //     <label
+    //       style="caption_label"
+    //       caption={[L_GuiAssemblySettings.BlueprintSettings]}
+    //       tooltip={[L_GuiAssemblySettings.BlueprintSettingsTooltip]}
+    //     />
+    //     <checkbox
+    //       state={assemblyBlueprintSettings.emptyBlueprintNames}
+    //       caption={[L_GuiAssemblySettings.EmptyBlueprintNames]}
+    //     />
+    //     <line />
+    //     <checkbox
+    //       state={assemblyBlueprintSettings.autoLandfill}
+    //       caption={[L_GuiAssemblySettings.AutoLandfill]}
+    //       tooltip={[L_GuiAssemblySettings.AutoLandfillTooltip]}
+    //     />
+    //     <checkbox
+    //       state={assemblyBlueprintSettings.replaceInfinityWithCombinators}
+    //       caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
+    //       tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
+    //     />
+    //     <button
+    //       caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
+    //       tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
+    //       on_gui_click={ibind(this.editBlueprintFilters)}
+    //       styleMod={{ width: BpSettingsButtonWidth }}
+    //     />
+    //     <line />
+    //     <button
+    //       caption={[L_GuiAssemblySettings.SyncGridSettings]}
+    //       tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
+    //       on_gui_click={ibind(this.syncGridSettings)}
+    //       styleMod={{ width: BpSettingsButtonWidth }}
+    //     />
+    //
+    //     <label style="caption_label" caption={[L_GuiAssemblySettings.BlueprintBookSettings]} />
+    //
+    //     <checkbox
+    //       state={assemblyBlueprintSettings.emptyBlueprintBookName}
+    //       caption={[L_GuiAssemblySettings.EmptyBlueprintBookName]}
+    //     />
+    //     <checkbox
+    //       state={assemblyBlueprintSettings.useNextStageTiles}
+    //       caption={[L_GuiAssemblySettings.UseNextStageTiles]}
+    //       tooltip={[L_GuiAssemblySettings.UseNextStageTilesTooltip]}
+    //     />
+    //     <button
+    //       caption={[L_GuiAssemblySettings.GetBlueprintBook]}
+    //       on_gui_click={ibind(this.getBlueprintBook)}
+    //       styleMod={{ width: BpSettingsButtonWidth }}
+    //     />
+    //     <button
+    //       caption={[L_GuiAssemblySettings.ExportBlueprintBookStringToFile]}
+    //       tooltip={[L_GuiAssemblySettings.ExportBlueprintBookStringToFileTooltip]}
+    //       on_gui_click={ibind(this.exportBlueprintBookStringToFile)}
+    //       styleMod={{ width: BpSettingsButtonWidth }}
+    //     />
+    //   </flow>
+    // )
   }
 
   private OtherTab() {
@@ -377,12 +377,6 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
         create_at_cursor: true,
       })
     }
-  }
-  private editBlueprintFilters() {
-    editBlueprintFilters(game.get_player(this.playerIndex)!, this.assembly.assemblyBlueprintSettings)
-  }
-  private syncGridSettings() {
-    this.assembly.syncGridSettings()
   }
 
   private sssCount = 0

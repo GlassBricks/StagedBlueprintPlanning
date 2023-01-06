@@ -10,21 +10,19 @@
  */
 
 import { Prototypes } from "../constants"
-import { Events, isEmpty } from "../lib"
+import { Events, isEmpty, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { L_Interaction } from "../locale"
-import {
-  BlueprintSettings,
-  BlueprintTransformations,
-  FirstEntityOriginalPositionTag,
-  takeBlueprintWithSettings,
-} from "./take-blueprint"
+import { FirstEntityOriginalPositionTag, takeBlueprintWithSettings } from "./take-blueprint"
+import { EditableStageBlueprintSettings, InBlueprintItemSettings } from "./blueprint-settings"
+import { AsProperties, getCurrentObjValue } from "../utils/settings-obj"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
-  settings?: BlueprintSettings
-  transformations?: BlueprintTransformations
+  settings: EditableStageBlueprintSettings
+
+  editType: "blueprint-item" | "additionalWhitelist" | "blacklist"
 }
 declare global {
   interface PlayerData {
@@ -41,10 +39,10 @@ function clearOpenedItem(playerIndex: PlayerIndex): void {
     data.blueprintEditInfo = nil
   }
 }
-export function editBlueprintSettings(
+
+export function editInItemBlueprintSettings(
   player: LuaPlayer,
-  settings: BlueprintSettings,
-  transform: BlueprintTransformations,
+  settings: EditableStageBlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
 ): LuaItemStack | nil {
@@ -52,7 +50,7 @@ export function editBlueprintSettings(
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
 
-  const took = takeBlueprintWithSettings(blueprint, settings, transform, surface, bbox, true)
+  const took = takeBlueprintWithSettings(blueprint, getCurrentObjValue(settings), surface, bbox, true)
   if (!took) {
     inventory.destroy()
     return
@@ -61,31 +59,33 @@ export function editBlueprintSettings(
   global.players[player.index].blueprintEditInfo = {
     blueprintInventory: inventory,
     settings,
+    editType: "blueprint-item",
   }
   player.opened = blueprint
 
   return blueprint
 }
 
-export function editBlueprintFilters(player: LuaPlayer, transform: BlueprintTransformations): LuaItemStack | nil {
+export function editBlueprintFilters(
+  player: LuaPlayer,
+  settings: EditableStageBlueprintSettings,
+  type: "additionalWhitelist" | "blacklist",
+): LuaItemStack {
   clearOpenedItem(player.index)
   const inventory = game.create_inventory(1)
   const stack = inventory[0]
-
   stack.set_stack(Prototypes.BlueprintFilters)
 
-  const filters = transform.entityFilters.get()
-  if (filters) {
-    stack.entity_filters = Object.keys(filters)
-  }
-  const entityFilterMode = transform.entityFilterMode.get()
-  if (entityFilterMode) {
-    stack.entity_filter_mode = entityFilterMode
+  const property: MutableProperty<ReadonlyLuaSet<string> | nil> = settings[type]
+  const currentFilters = property.get()
+  if (currentFilters) {
+    stack.entity_filters = Object.keys(currentFilters)
   }
 
   global.players[player.index].blueprintEditInfo = {
     blueprintInventory: inventory,
-    transformations: transform,
+    settings,
+    editType: type,
   }
   player.opened = stack
 
@@ -100,36 +100,40 @@ function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {
       text: [L_Interaction.BlueprintFirstEntityRemoved],
     })
 }
-function updateBlueprintSettings(blueprint: LuaItemStack, settings: BlueprintSettings, playerIndex: PlayerIndex): void {
-  settings.name = blueprint.label ?? ""
+function updateBlueprintItemSettings(
+  blueprint: BlueprintItemStack,
+  settings: AsProperties<InBlueprintItemSettings>,
+  playerIndex: PlayerIndex,
+): void {
   const icons = blueprint.blueprint_icons
-  if (icons && icons[0]) settings.icons = icons
-  else settings.icons = nil
-  settings.snapToGrid = blueprint.blueprint_snap_to_grid
-  settings.absoluteSnapping = blueprint.blueprint_absolute_snapping
-  settings.positionRelativeToGrid = blueprint.blueprint_position_relative_to_grid
+  if (icons && icons[0]) settings.icons.set(icons)
+  else settings.icons.set(nil)
 
-  if (settings.snapToGrid != nil) {
-    const originalPosition = blueprint.get_blueprint_entity_tag(1, FirstEntityOriginalPositionTag) as Position | nil
-    if (!originalPosition) {
-      notifyFirstEntityRemoved(playerIndex)
-    } else {
-      const bpPosition = blueprint.get_blueprint_entities()![0].position
-      settings.positionOffset = Pos.minus(bpPosition, originalPosition)
-    }
+  const snapToGrid = blueprint.blueprint_snap_to_grid
+  if (snapToGrid == nil) {
+    settings.snapToGrid.set(nil)
+    return
   }
+
+  const originalPosition = blueprint.get_blueprint_entity_tag(1, FirstEntityOriginalPositionTag) as Position | nil
+  if (!originalPosition) return notifyFirstEntityRemoved(playerIndex)
+
+  const bpPosition = blueprint.get_blueprint_entities()![0].position
+  settings.snapToGrid.set(snapToGrid)
+  settings.absoluteSnapping.set(blueprint.blueprint_absolute_snapping)
+  settings.positionRelativeToGrid.set(blueprint.blueprint_position_relative_to_grid)
+  settings.positionOffset.set(Pos.minus(bpPosition, originalPosition))
 }
-function updateBlueprintFilters(stack: LuaItemStack, transform: BlueprintTransformations): void {
+function updateBlueprintFilters(stack: LuaItemStack, property: MutableProperty<ReadonlyLuaSet<string> | nil>): void {
   const filters = stack.entity_filters
-  if (filters != nil && filters[0] != nil) {
-    const result = new LuaSet<string>()
-    for (const filter of filters) result.add(filter)
-    transform.entityFilters.set(result)
-    transform.entityFilterMode.set(stack.entity_filter_mode)
-  } else {
-    transform.entityFilters.set(nil)
-    transform.entityFilterMode.set(nil)
+  if (filters == nil || filters[0] == nil) {
+    property.set(nil)
+    return
   }
+
+  const result = new LuaSet<string>()
+  for (const filter of filters) result.add(filter)
+  property.set(result)
 }
 
 function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): void {
@@ -138,12 +142,11 @@ function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): v
   const stack = inventory[0]
   if (!stack.valid_for_read) return
 
-  if (info.settings) {
+  if (info.editType == "blueprint-item") {
     if (!stack.is_blueprint) return
-    updateBlueprintSettings(stack, info.settings, playerIndex)
-  } else if (info.transformations) {
-    if (stack.name != Prototypes.BlueprintFilters) return
-    updateBlueprintFilters(stack, info.transformations)
+    updateBlueprintItemSettings(stack, info.settings, playerIndex)
+  } else if (info.editType == "additionalWhitelist" || info.editType == "blacklist") {
+    updateBlueprintFilters(stack, info.settings[info.editType])
   }
 }
 Events.on_gui_closed((e) => {
