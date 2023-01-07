@@ -50,7 +50,8 @@ export function editInItemBlueprintSettings(
 
   const takeValues = getCurrentValues(settings)
 
-  const took = takeSingleBlueprint(blueprint, takeValues, surface, bbox, true)
+  // todo: replace with full take blueprint
+  const took = takeSingleBlueprint(blueprint, takeValues, surface, bbox, nil, true)
   if (!took) {
     inventory.destroy()
     return

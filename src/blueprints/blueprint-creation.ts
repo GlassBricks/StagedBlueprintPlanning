@@ -4,16 +4,20 @@ import {
   StageBlueprintSettings,
 } from "./blueprint-settings"
 import { Assembly, Stage } from "../assembly/AssemblyDef"
-import { StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getCurrentValues } from "../utils/properties-obj"
 import { BlueprintTakeResult, takeSingleBlueprint } from "./take-single-blueprint"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { Mutable } from "../lib"
+import max = math.max
 
 interface AssemblyBlueprintPlan {
+  assembly: Assembly
   // other stuff will go here eventually
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
+
+  changedEntities?: LuaMap<StageNumber, LuaSet<AssemblyEntity>>
 }
 
 interface StageBlueprintPlan {
@@ -39,9 +43,31 @@ export class BlueprintCreation {
 
   private getPlanForAssembly(assembly: Assembly): AssemblyBlueprintPlan {
     if (!this.assemblyPlans.has(assembly)) {
-      this.assemblyPlans.set(assembly, { stagePlans: new LuaMap() })
+      this.assemblyPlans.set(assembly, { assembly, stagePlans: new LuaMap() })
     }
     return this.assemblyPlans.get(assembly)!
+  }
+
+  private getChangedEntities(assemblyInfo: AssemblyBlueprintPlan): LuaMap<StageNumber, LuaSet<AssemblyEntity>> {
+    return (assemblyInfo.changedEntities ??= this.computeChangedEntities(assemblyInfo.assembly))
+  }
+
+  private computeChangedEntities(assembly: Assembly): LuaMap<StageNumber, LuaSet<AssemblyEntity>> {
+    const result = new LuaMap<StageNumber, LuaSet<AssemblyEntity>>()
+    for (const i of $range(1, assembly.maxStage())) {
+      result.set(i, new LuaSet())
+    }
+    for (const entity of assembly.content.iterateAllEntities()) {
+      result.get(entity.firstStage)!.add(entity)
+
+      const diffs = entity.getStageDiffs()
+      if (!diffs) continue
+      for (const [stage] of pairs(diffs)) {
+        result.get(stage)!.add(entity)
+      }
+    }
+
+    return result
   }
 
   private addNewPlan(
@@ -95,7 +121,7 @@ export class BlueprintCreation {
   public takeAllBlueprints(): void {
     for (const [, assemblyPlan] of this.assemblyPlans) {
       for (const [, stagePlan] of assemblyPlan.stagePlans) {
-        this.takeBlueprint(stagePlan)
+        this.takeBlueprint(assemblyPlan, stagePlan)
       }
       this.setNextStageTiles(assemblyPlan.stagePlans)
     }
@@ -128,7 +154,7 @@ export class BlueprintCreation {
     }
   }
 
-  private takeBlueprint(stagePlan: StageBlueprintPlan): void {
+  private takeBlueprint(assemblyPlan: AssemblyBlueprintPlan, stagePlan: StageBlueprintPlan): void {
     const { stack, stage, bbox } = stagePlan
     let settings: OverrideableBlueprintSettings = stagePlan.settings
 
@@ -144,7 +170,34 @@ export class BlueprintCreation {
       stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
     }
 
-    stagePlan.result = takeSingleBlueprint(actualStack, settings, stage.surface, bbox, false)
+    let unitNumberFilter: LuaSet<UnitNumber> | nil
+    if (settings.stageLimit != nil) {
+      unitNumberFilter = this.getUnitNumberFilter(assemblyPlan, stage, settings.stageLimit)
+    }
+
+    stagePlan.result = takeSingleBlueprint(actualStack, settings, stage.surface, bbox, unitNumberFilter, false)
+    actualStack.label = stage.name.get()
+  }
+
+  private getUnitNumberFilter(
+    assemblyPlan: AssemblyBlueprintPlan,
+    stage: Stage,
+    stageLimit: number,
+  ): LuaSet<UnitNumber> {
+    const result = new LuaSet<UnitNumber>()
+    const stageNumber = stage.stageNumber
+    const minStage = max(stageNumber - stageLimit + 1)
+    const maxStage = stageNumber
+    const changedEntities = this.getChangedEntities(assemblyPlan)
+    for (const stage of $range(minStage, maxStage)) {
+      for (const entity of changedEntities.get(stage)!) {
+        const luaEntity = entity.getWorldOrPreviewEntity(stageNumber)
+        if (!luaEntity) continue
+        const unitNumber = luaEntity.unit_number
+        if (unitNumber) result.add(unitNumber)
+      }
+    }
+    return result
   }
 
   private getNewTempStack(): LuaItemStack {

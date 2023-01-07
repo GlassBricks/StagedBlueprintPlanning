@@ -45,7 +45,7 @@ test("can take blueprint and settings applied", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, false)
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, false)
   expect(ret).toBeTruthy()
 
   expect(stack.blueprint_icons).to.equal(settings.icons)
@@ -74,7 +74,48 @@ test("applies blacklist", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, false)
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, false)
+  expect(ret).toBeTruthy()
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities.length).to.be(1)
+  expect(entities[0].name).to.equal(belt.name)
+})
+
+test("applies unit number filter", () => {
+  const { chest } = createSampleEntities()
+  const filter = newLuaSet(chest.unit_number!)
+
+  const settings: StageBlueprintSettings = {
+    ...getDefaultBlueprintSettings(),
+    icons: nil,
+  }
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, filter, false)
+  expect(ret).toBeTruthy()
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities.length).to.be(1)
+  expect(entities[0].name).to.equal(chest.name)
+})
+
+test("applies unit number filter as well as whitelist", () => {
+  const { belt } = createSampleEntities()
+  const filter = newLuaSet(-1 as UnitNumber)
+
+  const settings: StageBlueprintSettings = {
+    ...getDefaultBlueprintSettings(),
+    icons: nil,
+    additionalWhitelist: newLuaSet(belt.name),
+  }
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, filter, false)
   expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
@@ -130,7 +171,7 @@ test("replace infinity entities with constant combinators", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const res = takeSingleBlueprint(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10), false)
+  const res = takeSingleBlueprint(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10), nil, false)
   expect(res).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!

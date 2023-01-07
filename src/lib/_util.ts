@@ -98,3 +98,11 @@ export function shiftNumberKeysDown(obj: PRecord<any, any>, number: number): voi
     delete obj[stage]
   }
 }
+
+export function toSet<T extends AnyNotNil>(array: T[]): LuaSet<T> {
+  const set = new LuaSet<T>()
+  for (const value of array) {
+    set.add(value)
+  }
+  return set
+}

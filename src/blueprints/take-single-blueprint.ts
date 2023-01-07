@@ -48,11 +48,35 @@ function getEffectivePositionOffset(entities: BlueprintEntity[], firstEntityOrig
   return Pos.minus(entities[0].position, firstEntityOriginalPosition)
 }
 
-function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): boolean {
+function filterEntities(
+  entities: BlueprintEntity[],
+  unitNumbers: ReadonlyLuaSet<UnitNumber> | nil,
+  bpMapping: Record<number, LuaEntity>,
+  additionalWhitelist: ReadonlyLuaSet<string>,
+  blacklist: ReadonlyLuaSet<string>,
+): boolean {
+  let anyDeleted = false
+  for (const i of $range(1, entities.length)) {
+    const entity = entities[i - 1]
+
+    // not blacklist, and (no unitNumbers or (in whitelist or in unitNumbers))
+    const name = entity.name
+    if (!blacklist.has(name)) {
+      if (!unitNumbers || additionalWhitelist.has(name)) continue
+      const unitNumber = bpMapping[i].unit_number
+      if (unitNumber && unitNumbers.has(unitNumber)) continue
+    }
+
+    delete entities[i - 1]
+    anyDeleted = true
+  }
+  return anyDeleted
+}
+
+function replaceInfinityEntitiesWithCombinators(entities: Record<number, Mutable<BlueprintEntity>>): boolean {
   let anyReplaced = false
   const [chests, pipes] = getInfinityEntityNames()
-  for (const i of $range(1, entities.length)) {
-    const entity = entities[i - 1] as Mutable<BlueprintEntity>
+  for (const [, entity] of pairs(entities)) {
     const name = entity.name
     if (chests.has(name)) {
       const infinityFilters = (entity.infinity_settings as BlueprintInfinitySettings)?.filters
@@ -85,16 +109,6 @@ function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): bo
   }
   return anyReplaced
 }
-function filterEntities(entities: BlueprintEntity[], filters: ReadonlyLuaSet<string>): boolean {
-  let anyDeleted = false
-  for (const i of $range(1, entities.length)) {
-    if (filters.has(entities[i - 1].name)) {
-      anyDeleted = true
-      delete entities[i - 1]
-    }
-  }
-  return anyDeleted
-}
 
 export interface BlueprintTakeResult {
   effectivePositionOffset: Position
@@ -108,6 +122,7 @@ export function takeSingleBlueprint(
   params: BlueprintTakeParameters,
   surface: LuaSurface,
   bbox: BBox,
+  unitNumberFilter: ReadonlyLuaSet<UnitNumber> | nil,
   forEdit: boolean,
 ): BlueprintTakeResult | nil {
   if (!stack.is_blueprint) {
@@ -127,6 +142,7 @@ export function takeSingleBlueprint(
   const {
     snapToGrid,
     positionOffset,
+    additionalWhitelist,
     blacklist,
     replaceInfinityEntitiesWithCombinators: shouldReplaceInfinity,
   } = params
@@ -136,6 +152,7 @@ export function takeSingleBlueprint(
   let effectivePositionOffset: Position | nil
   let entitiesAdjusted = false
   const firstEntityOriginalPosition = bpMapping[1].position
+
   if (snapToGrid && positionOffset) {
     if (adjustEntitiesToMatchPositionOffset(stack, entities, positionOffset, firstEntityOriginalPosition))
       entitiesAdjusted = true
@@ -144,20 +161,30 @@ export function takeSingleBlueprint(
     effectivePositionOffset = getEffectivePositionOffset(entities, firstEntityOriginalPosition)
   }
 
-  if (blacklist && !isEmpty(blacklist) && filterEntities(entities, blacklist)) {
-    entitiesAdjusted = true
+  if (unitNumberFilter || blacklist) {
+    if (
+      filterEntities(
+        entities,
+        unitNumberFilter,
+        bpMapping,
+        additionalWhitelist ?? newLuaSet(),
+        blacklist ?? newLuaSet(),
+      )
+    ) {
+      entitiesAdjusted = true
+    }
   }
 
   if (shouldReplaceInfinity && replaceInfinityEntitiesWithCombinators(entities)) {
     entitiesAdjusted = true
   }
 
-  if (entities && isEmpty(entities)) {
+  if (isEmpty(entities)) {
     stack.clear_blueprint()
     return nil
   }
 
-  if (entities && entitiesAdjusted) {
+  if (entitiesAdjusted) {
     stack.set_blueprint_entities(entities)
   }
 

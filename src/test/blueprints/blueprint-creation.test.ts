@@ -4,11 +4,12 @@ import { Pos } from "../../lib/geometry"
 import { takeSingleStageBlueprint } from "../../blueprints/blueprint-creation"
 import expect, { mock } from "tstl-expect"
 import { AutoSetTilesType } from "../../assembly/tiles"
+import { entityPossiblyUpdated } from "../../assembly/event-listener"
 
 let assembly: UserAssembly
 let player: LuaPlayer
 before_each(() => {
-  assembly = createUserAssembly("test", 3)
+  assembly = createUserAssembly("test", 4)
   player = game.players[1]
 })
 
@@ -17,11 +18,11 @@ after_each(() => {
   player.cursor_stack?.clear()
 })
 
-function createEntity(stage: Stage): LuaEntity {
+function createEntity(stage: Stage, pos: MapPositionArray = [0.5, 0.5], name: string = "iron-chest"): LuaEntity {
   return assert(
     stage.surface.create_entity({
-      name: "iron-chest",
-      position: [0.5, 0.5],
+      name,
+      position: pos,
       force: "player",
       raise_built: true,
     }),
@@ -45,6 +46,8 @@ test("can take single blueprint using stage settings", () => {
 
   expect(stack.blueprint_snap_to_grid).toEqual(Pos(2, 3))
   expect(stack.blueprint_position_relative_to_grid).toEqual(Pos(4, 5))
+
+  expect(stack.label).toEqual(stage.name.get())
 
   const entities = stack.get_blueprint_entities()!
   expect(entities).toHaveLength(1)
@@ -97,4 +100,37 @@ test.each([false, true])("can use next stage tiles, with next staging having gri
       position: Pos(4, 5).plus(Pos(1, 1)),
     },
   ])
+})
+
+test("stageLimit: only entities present in last x stages or in additionalWhitelist", () => {
+  const [stage1, stage2, stage3, stage4] = assembly.getAllStages()
+
+  createEntity(stage1) // not included
+  const e1 = createEntity(stage1, [1.5, 1.5]) // included, as has change in stage 3
+  const e1Stage2 = assembly.content.findCompatibleWithLuaEntity(e1, nil)!.getWorldEntity(2)!
+  e1Stage2.get_inventory(defines.inventory.chest)!.set_bar(3)
+  entityPossiblyUpdated(e1Stage2, nil)
+  const e2 = createEntity(stage2, [2.5, 2.5]) // included
+  const e3 = createEntity(stage3, [3.5, 3.5]) // included
+  createEntity(stage4, [4.5, 4.5]) // not included
+
+  const e4 = createEntity(stage1, [5.5, 5.5], "steel-chest") // included, in additional whitelist
+
+  const includedEntities = [e1, e2, e3, e4]
+
+  const stack = player.cursor_stack!
+  const stageBlueprintSettings = stage3.stageBlueprintSettings
+  stageBlueprintSettings.stageLimit.set(2)
+  stageBlueprintSettings.snapToGrid.set(Pos(2, 2))
+  stageBlueprintSettings.positionOffset.set(Pos(0, 0))
+  stageBlueprintSettings.additionalWhitelist.set(newLuaSet("steel-chest"))
+
+  const ret = takeSingleStageBlueprint(stage3, stack)
+  expect(ret).toBe(true)
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities).toHaveLength(includedEntities.length)
+  expect(entities.map((e) => e.position).sort((a, b) => a.x - b.x)).toEqual(
+    includedEntities.map((e) => e.position).sort((a, b) => a.x - b.x),
+  )
 })
