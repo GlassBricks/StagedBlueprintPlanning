@@ -71,6 +71,12 @@ export interface AssemblyDeletedEvent {
   readonly type: "assembly-deleted"
   readonly assembly: UserAssembly
 }
+
+export interface AssembliesReorderedEvent {
+  readonly type: "assemblies-reordered"
+  readonly assembly1: UserAssembly
+  readonly assembly2: UserAssembly
+}
 export interface StageAddedEvent {
   readonly type: "stage-added"
   readonly assembly: UserAssembly
@@ -89,6 +95,7 @@ export interface StageDeletedEvent {
 export type GlobalAssemblyEvent =
   | AssemblyCreatedEvent
   | AssemblyDeletedEvent
+  | AssembliesReorderedEvent
   | StageAddedEvent
   | PreStageDeletedEvent
   | StageDeletedEvent

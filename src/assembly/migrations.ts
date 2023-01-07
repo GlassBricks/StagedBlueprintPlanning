@@ -11,20 +11,20 @@
 
 import { StageNumber } from "../entity/AssemblyEntity"
 import { Migrations } from "../lib/migration"
-import { AssemblyId, UserAssembly } from "./AssemblyDef"
+import { UserAssembly } from "./AssemblyDef"
 
 declare const global: {
-  assemblies: LuaMap<AssemblyId, UserAssembly>
+  assemblies: LuaMap<number, UserAssembly>
 }
 
-export function getAllAssemblies(): ReadonlyLuaMap<AssemblyId, UserAssembly> {
+export function getAssembliesForMigration(): ReadonlyLuaMap<number, UserAssembly> {
   return global.assemblies
 }
 
 // Many classes don't know about where they are used; so this file is needed to call their migrations, from global
 
 Migrations.to("0.14.0", () => {
-  for (const [, assembly] of getAllAssemblies()) {
+  for (const [, assembly] of getAssembliesForMigration()) {
     for (const entity of assembly.content.iterateAllEntities()) {
       interface OldAssemblyEntity {
         oldStage?: StageNumber

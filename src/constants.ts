@@ -41,6 +41,12 @@ export const enum Prototypes {
   BANANA = "bp100:banana",
 }
 
+export const enum Styles {
+  FakeListBox = "bp100:fake-list-box",
+  FakeListBoxItem = "bp100:fake-list-box-item",
+  FakeListBoxItemActive = "bp100:fake-list-box-item-active",
+}
+
 export const enum Sprites {
   ExternalLinkWhite = "bp100:external-link-white",
   ExternalLinkBlack = "bp100:external-link-black",

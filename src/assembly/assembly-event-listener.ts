@@ -14,19 +14,21 @@ import { AssemblyEvents } from "./UserAssembly"
 import { WorldUpdater } from "./WorldUpdater"
 
 AssemblyEvents.addListener((e) => {
-  if (e.type == "assembly-created" || e.type == "assembly-deleted" || e.type == "pre-stage-deleted") {
-    return
-  }
-  if (e.type == "stage-added") {
-    WorldUpdater.resetStage(e.assembly, e.stage.stageNumber)
-
-    return
-  }
-  if (e.type == "stage-deleted") {
-    const stageNumber = e.stage.stageNumber
-    const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
-    WorldUpdater.resetStage(e.assembly, stageNumberToMerge)
-    return
+  switch (e.type) {
+    case "stage-added":
+      WorldUpdater.resetStage(e.assembly, e.stage.stageNumber)
+      return
+    case "stage-deleted": {
+      const stageNumber = e.stage.stageNumber
+      const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
+      WorldUpdater.resetStage(e.assembly, stageNumberToMerge)
+      return
+    }
+    case "assembly-created":
+    case "assembly-deleted":
+    case "pre-stage-deleted":
+    case "assemblies-reordered":
+      return
   }
   assertNever(e)
 })

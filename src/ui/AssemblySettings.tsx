@@ -120,9 +120,8 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           <label
             caption={[L_GuiAssemblySettings.TitleCaption]}
             style="frame_title"
-            styleMod={{
-              right_margin: 5,
-            }}
+            styleMod={{ right_margin: 5 }}
+            ignored_by_interaction
           />
           <ItemRename
             name={this.assembly.name}

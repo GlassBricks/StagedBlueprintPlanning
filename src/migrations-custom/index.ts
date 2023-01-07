@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getAllAssemblies } from "../assembly/migrations"
+import { getAssembliesForMigration } from "../assembly/migrations"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { Events } from "../lib"
 import { formatVersion, Migrations } from "../lib/migration"
@@ -29,7 +29,7 @@ Events.on_configuration_changed((data) => {
 })
 
 Migrations.to("0.14.3", () => {
-  for (const [, assembly] of getAllAssemblies()) {
+  for (const [, assembly] of getAssembliesForMigration()) {
     for (const entity of assembly.content.iterateAllEntities()) {
       // re-generate previews, if not existing
       if (entity.isRollingStock()) {

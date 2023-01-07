@@ -55,6 +55,7 @@ AssemblyEvents.addListener((e) => {
     case "assembly-created":
     case "pre-stage-deleted":
     case "stage-added":
+    case "assemblies-reordered":
       return
     default:
       assertNever(e)

@@ -39,17 +39,23 @@ import {
   createEmptyPropertyOverrideTable,
   PropertiesTable,
 } from "../utils/properties-obj"
+import { remove_from_list } from "util"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 declare const global: {
   nextAssemblyId: AssemblyId
-  assemblies: LuaMap<AssemblyId, UserAssemblyImpl>
+  // assemblies: LuaMap<AssemblyId, UserAssemblyImpl>
+  assemblies: UserAssemblyImpl[]
   surfaceIndexToStage: LuaMap<SurfaceIndex, StageImpl>
 }
 Events.on_init(() => {
   global.nextAssemblyId = 1 as AssemblyId
-  global.assemblies = new LuaMap()
+  global.assemblies = []
   global.surfaceIndexToStage = new LuaMap()
+})
+Migrations.to("0.16.0", () => {
+  const oldAssemblies = global.assemblies as unknown as LuaMap<AssemblyId, UserAssemblyImpl>
+  global.assemblies = Object.values(oldAssemblies)
 })
 
 const GlobalAssemblyEvents = globalEvent<[GlobalAssemblyEvent]>()
@@ -146,7 +152,7 @@ class UserAssemblyImpl implements UserAssembly {
   }
   delete() {
     if (!this.valid) return
-    global.assemblies.delete(this.id)
+    remove_from_list(global.assemblies, this)
     this.valid = false
     for (const [, stage] of pairs(this.stages)) {
       stage._doDelete()
@@ -181,7 +187,7 @@ class UserAssemblyImpl implements UserAssembly {
   }
 
   static onAssemblyCreated(assembly: UserAssemblyImpl): void {
-    global.assemblies.set(assembly.id, assembly)
+    global.assemblies.push(assembly)
     GlobalAssemblyEvents.raise({ type: "assembly-created", assembly })
   }
 }
@@ -191,10 +197,40 @@ export function createUserAssembly(name: string, initialNumStages: number): User
 }
 
 export function _deleteAllAssemblies(): void {
-  for (const [, assembly] of global.assemblies) {
+  for (const assembly of global.assemblies) {
     assembly.delete()
   }
   global.nextAssemblyId = 1 as AssemblyId
+}
+export function getAllAssemblies(): readonly UserAssembly[] {
+  return global.assemblies
+}
+
+function swapAssemblies(index1: number, index2: number): void {
+  const assemblies = global.assemblies
+  const temp = assemblies[index1]
+  assemblies[index1] = assemblies[index2]
+  assemblies[index2] = temp
+  GlobalAssemblyEvents.raise({
+    type: "assemblies-reordered",
+    assembly1: assemblies[index1],
+    assembly2: assemblies[index2],
+  })
+}
+export function moveAssemblyUp(assembly: UserAssembly): boolean {
+  // up means lower index
+  const index = global.assemblies.indexOf(assembly as UserAssemblyImpl)
+  if (index <= 0) return false
+  swapAssemblies(index - 1, index)
+  return true
+}
+
+export function moveAssemblyDown(assembly: UserAssembly): boolean {
+  // down means higher index
+  const index = global.assemblies.indexOf(assembly as UserAssemblyImpl)
+  if (index < 0 || index >= global.assemblies.length - 1) return false
+  swapAssemblies(index, index + 1)
+  return true
 }
 
 const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods.debugadapter != nil ? 32 : 5 * 32)
@@ -311,7 +347,7 @@ Migrations.to("0.16.0", () => {
     newSettings.absoluteSnapping.set(oldSettings.absoluteSnapping)
   }
 
-  for (const [, assembly] of global.assemblies) {
+  for (const assembly of global.assemblies) {
     assume<Mutable<UserAssemblyImpl>>(assembly)
     assume<OldAssembly>(assembly)
 

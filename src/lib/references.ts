@@ -182,41 +182,33 @@ class BoundN {
   }
 }
 
-const boundFuncClasses = [Bound1, Bound2, Bound3, Bound4, Bound5] as {
+const boundFuncClasses = [Bound1, Bound2, Bound3, Bound4] as {
   new (func: Func, ...args: unknown[]): Func
 }[]
 
 type FOrFunc<F extends SelflessFun> = F | Func<F>
 
 export function bind<A1, A extends any[], R>(
-  func: FOrFunc<(arg1: A1, ...args: A) => R>,
+  func: FOrFunc<(this: void, arg1: A1, ...args: A) => R>,
   arg1: A1,
 ): Func<(...args: A) => R>
 export function bind<A1, A2, A extends any[], R>(
-  func: FOrFunc<(arg1: A1, arg2: A2, ...args: A) => R>,
+  func: FOrFunc<(this: void, arg1: A1, arg2: A2, ...args: A) => R>,
   arg1: A1,
   arg2: A2,
 ): Func<(...args: A) => R>
 export function bind<A1, A2, A3, A extends any[], R>(
-  func: FOrFunc<(arg1: A1, arg2: A2, arg3: A3, ...args: A) => R>,
+  func: FOrFunc<(this: void, arg1: A1, arg2: A2, arg3: A3, ...args: A) => R>,
   arg1: A1,
   arg2: A2,
   arg3: A3,
 ): Func<(...args: A) => R>
 export function bind<A1, A2, A3, A4, A extends any[], R>(
-  func: FOrFunc<(arg1: A1, arg2: A2, arg3: A3, arg4: A4, ...args: A) => R>,
+  func: FOrFunc<(this: void, arg1: A1, arg2: A2, arg3: A3, arg4: A4, ...args: A) => R>,
   arg1: A1,
   arg2: A2,
   arg3: A3,
   arg4: A4,
-): Func<(...args: A) => R>
-export function bind<A1, A2, A3, A4, A5, A extends any[], R>(
-  func: FOrFunc<(arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5, ...args: A) => R>,
-  arg1: A1,
-  arg2: A2,
-  arg3: A3,
-  arg4: A4,
-  arg5: A5,
 ): Func<(...args: A) => R>
 export function bind<AX, R>(func: FOrFunc<(...args: AX[]) => R>, ...args: AX[]): Func<(...args: AX[]) => R>
 export function bind(func: FOrFunc<SelflessFun>, ...args: unknown[]): Func {

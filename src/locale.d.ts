@@ -148,6 +148,8 @@ export declare const enum L_GuiAssemblySelector {
   AllAssemblies = "bp100.gui.assembly-selector.all-assemblies",
   /** New staged build */
   NewAssembly = "bp100.gui.assembly-selector.new-assembly",
+  /** [font]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
+  ButtonTooltip = "bp100.gui.assembly-selector.button-tooltip",
 }
 export declare const enum L_GuiAssemblySettings {
   /** Show settings */
@@ -218,7 +220,7 @@ export declare const enum L_GuiAssemblySettings {
   Edit = "bp100.gui.assembly-settings.edit",
   /** Entities */
   FilteringEntities = "bp100.gui.assembly-settings.filtering-entities",
-  /** Only include entities changed in the previous */
+  /** Only include entities changed in the last */
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-1",
   /** stages */
   IncludeEntitiesInTheNextNStages2 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-2",

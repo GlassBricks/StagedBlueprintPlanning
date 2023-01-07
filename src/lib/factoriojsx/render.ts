@@ -19,6 +19,7 @@ import { PRecord } from "../util-types"
 import * as propInfo from "./propInfo.json"
 import {
   ClassComponent,
+  Component,
   Element,
   FactorioElement,
   FragmentElement,
@@ -35,6 +36,8 @@ interface ElementInstance {
   readonly element: BaseGuiElement
   readonly subscription: Subscription | nil
   readonly events: PRecord<GuiEventName, Func<any>>
+
+  readonly componentInstance?: Component<any>
 }
 
 function setStateFunc(state: MutableProperty<unknown>, key: string, event: GuiEvent) {
@@ -63,6 +66,7 @@ function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
 registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc })
 
 interface InternalRenderContext extends RenderContext {
+  componentInstance?: Component<any>
   parent: InternalRenderContext | nil
   firstIndex: number | nil
 
@@ -81,6 +85,7 @@ function _newTracker(
     parent,
     onMountCallbacks: [],
     subscriptionContext: parent && parent.subscriptionContext,
+    componentInstance: parent && parent.componentInstance,
     onMount(callback: (this: unknown, firstElement: LuaGuiElement) => void) {
       this.onMountCallbacks.push(callback)
     },
@@ -91,10 +96,10 @@ function _newTracker(
     },
   }
 }
-function newRootTracker(playerIndex: PlayerIndex, firstIndex: number | nil): InternalRenderContext {
+function newRootContext(playerIndex: PlayerIndex, firstIndex: number | nil): InternalRenderContext {
   return _newTracker(nil, playerIndex, firstIndex)
 }
-function newTracker(parent: InternalRenderContext, firstIndex: number | nil): InternalRenderContext {
+function newChildContext(parent: InternalRenderContext, firstIndex: number | nil): InternalRenderContext {
   return _newTracker(parent, parent.playerIndex, firstIndex)
 }
 
@@ -149,7 +154,7 @@ function renderFragment(
   for (const child of children) {
     const childResult = renderInternal(parent, child, usedTracker)
     if (!childResult || isEmpty(childResult)) continue
-    usedTracker = newRootTracker(usedTracker.playerIndex, nil)
+    usedTracker = newRootContext(usedTracker.playerIndex, nil)
     if (isLuaGuiElement(childResult)) {
       elements.push(childResult)
     } else {
@@ -256,7 +261,7 @@ function renderElement(
   const children = element.children
   if (children) {
     for (const child of children) {
-      renderInternal(factorioElement, child, newRootTracker(context.playerIndex, nil))
+      renderInternal(factorioElement, child, newRootContext(context.playerIndex, nil))
     }
   }
 
@@ -280,13 +285,13 @@ function renderElement(
 
   element.onCreate?.(factorioElement as any)
   callOnMount(context, factorioElement)
-
-  const subscription = context.subscriptionContext
-  if ((subscription && subscription.hasActions()) || !isEmpty(events)) {
+  const { subscriptionContext: subscription, componentInstance } = context
+  if (componentInstance || (subscription && subscription.hasActions()) || !isEmpty(events)) {
     global.players[factorioElement.player_index].guiElements[factorioElement.index] = {
       element: factorioElement,
       events,
       subscription,
+      componentInstance,
     }
   }
   return factorioElement
@@ -301,11 +306,13 @@ function renderFunctionComponent<T>(
 }
 
 function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponent<T>, context: InternalRenderContext) {
-  const childTracker = newTracker(context, context.firstIndex)
+  const childTracker = newChildContext(context, context.firstIndex)
 
   const Component = spec.type
   assertIsRegisteredClass(Component)
   const instance = new Component()
+
+  childTracker.componentInstance ??= instance
 
   const resultSpec = instance.render(spec.props, childTracker)
   return renderInternal(parent, resultSpec, childTracker)
@@ -318,7 +325,7 @@ export function render<T extends GuiElementType>(
 ): Extract<LuaGuiElement, { type: T }>
 export function render(element: Element, parent: BaseGuiElement, index?: number): LuaGuiElement | nil
 export function render(element: Element, parent: BaseGuiElement, index?: number): LuaGuiElement | nil {
-  const result = renderInternal(parent, element, newRootTracker(parent.player_index, index))
+  const result = renderInternal(parent, element, newRootContext(parent.player_index, index))
   if (!result || isLuaGuiElement(result)) return result
   if (result.length > 1) {
     error("cannot render multiple elements at root. Try wrapping them in another element.")
@@ -327,7 +334,7 @@ export function render(element: Element, parent: BaseGuiElement, index?: number)
 }
 
 export function renderMultiple(elements: Element, parent: BaseGuiElement): LuaGuiElement[] | nil {
-  const result = renderInternal(parent, elements, newRootTracker(parent.player_index, nil))
+  const result = renderInternal(parent, elements, newRootContext(parent.player_index, nil))
   return !result || isLuaGuiElement(result) ? [result as LuaGuiElement] : result
 }
 
@@ -347,6 +354,18 @@ export function renderOpened(player: LuaPlayer, spec: Element): LuaGuiElement | 
     player.opened = element
   }
   return element
+}
+
+/**
+ * Only gets the outermost component, if it exists (if a component renders with another component, the inner component is not returned)
+ * @param element
+ */
+export function getComponentInstance<T extends Component<any>>(element: LuaGuiElement): T | nil {
+  const guiElement = global.players[element.player_index].guiElements[element.index]
+  if (guiElement) {
+    return guiElement.componentInstance as T
+  }
+  return nil
 }
 
 function getInstance(element: BaseGuiElement): ElementInstance | nil {

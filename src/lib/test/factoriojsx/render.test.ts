@@ -17,6 +17,7 @@ import {
   Element,
   FlowElement,
   FunctionalComponent,
+  getComponentInstance,
   GuiEventHandler,
   RenderContext,
   SliderElement,
@@ -443,6 +444,25 @@ describe("Class component", () => {
       props: {},
     }
     expect(() => testRender(spec)).to.error()
+  })
+
+  describe("getComponentInstance", () => {
+    test("returns component instance", () => {
+      const spec: ClassComponent<any> = {
+        type: Foo,
+        props: {},
+      }
+      const instance = getComponentInstance(testRender(spec).element)
+      expect(instance).to.be.a(Foo)
+    })
+    test("returns outer component if nested", () => {
+      const spec: ClassComponent<any> = {
+        type: Foo2,
+        props: {},
+      }
+      const instance = getComponentInstance(testRender(spec).element)
+      expect(instance).to.be.a(Foo2)
+    })
   })
 })
 
