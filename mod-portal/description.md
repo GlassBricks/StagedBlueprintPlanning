@@ -12,12 +12,10 @@ Create a new staged build by clicking the "Staged Builds" button in the top left
 
 Move between stages using the settings window, or the navigation shortcuts (see below).
 
-When you make a change, that change will be applied to the current and _later_ stages.
+When you make any change, that change will be applied to the current and _later_ stages.
 Every game interaction should be handled. (If this is not the case, please submit a bug report!)
 
-You can automatically create blueprints/a blueprint book via the "Blueprints" tab of the settings window.
-
-See below for complete details.
+You can automatically create blueprints via the "Blueprints" tab of the settings window.
 
 Use the navigation controls! These are (with default keybindings):
 
@@ -26,7 +24,7 @@ Use the navigation controls! These are (with default keybindings):
 - `[CTRL+SHIFT+Middle mouse button]` to teleport to the first stage of the hovered entity (or preview)
 - `[CTRL+ALT+Middle mouse button]` to move an entity to the current stage
 
-## Full details
+## More details!
 
 ### Editing
 
@@ -35,55 +33,58 @@ Building, mining, rotating, fast-replacing, copper/circuit wires, configuration 
 Deleting or rotating an entity is only allowed in the _first stage_ (as those changes cannot be blueprinted between stages).
 
 Trains are treated specially; they are only present in one stage (as you usually do not re-paste trains).
-Trains can move from their original position, use the entity stage info gui to reset or update their position.
+Trains can move from their original position. Open the train's gui to reset or update their position.
 
-Preview entities will be shown for each entity in lower stages. If you are in editor mode, you can open them to view the stage info gui.
+Preview entities will be shown for each entity in lower stages. If you are in editor mode, you can open them to view the entity's stage info.
 
 If an entity cannot be created in a stage for any reason, an error indicator will be shown at all stages.
 
 ### Stage move tool
 
-In the bottom right (shortcuts menu), you can access the stage move tool.
+In the bottom right (shortcuts menu, right of the quick-bar), you can access the stage move tool.
 
-Use (default keybinding) `Shift + Scroll wheel` to change the target stage.
+Use (default keybinding) `Shift + scroll wheel` to change the target stage.
 
 - Selecting entities will move entities in the _current_ stage to the target stage.
 - Alt/Reverse selecting with the tool will move entities from _any_ stage to the current stage.
 
-### Changes between stages
+### Changes/upgrades between stages
 
-Changing the configuration of an entity between stages is supported. When this is done, the entity will be highlighted in blue, and a blueprint sprite indicator will appear in lower stages.
-Similarly, by using the _upgrade planner_, entities can be upgraded. A green highlight and upgrade planner sprite will appear in all lower stages.
+Changing the configuration of an entity between stages is supported. When this is done, the entity will be highlighted in blue, and an indicator sprite will appear at lower stages.
 
-Copper/circuit wire changes _between_ stages are not supported; instead they are always present in all stages.
+Similarly, by using the _upgrade planner_, entities can be upgraded.
+
+Copper/circuit wire changes between stages are not supported; instead, they are always present in all stages.
 
 ### Landfill/tiles
 
 Landfill can be automatically placed in your blueprints. See the settings gui for more details.
-As of now, this is the only way tiles are supported.
 
-Additionally, the "Flexible Offshore Pump Placement" startup setting enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
+Additionally, the "Flexible Offshore Pump Placement" _startup setting_ enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
 
 ### Blueprints
 
-The "Blueprints" tab provides several options for creating blueprints. Read the tooltips for more details.
+The "Blueprints" tab provides many options for blueprint exporting.
 
-The "Make Blueprint Book" button will create a blueprint book of all stages in the current build.
+Editing the "default" settings will affect all stages in the build, but settings can be overridden for individual stages.
+Overriden settings are highlighted in green.
 
 ### Accidental data loss prevention
 
-If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline). If you undo the deletion, those settings will be restored. This is so you don't lose data if you accidentally deleted it.
+If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline). If you undo the deletion, those settings will be restored. This is so you don't lose data if you accidentally deleted it and undo.
 To remove settings remnants, use the `Staged Build Cleanup Tool` (shortcut, in the bottom right).
+
+Note: experimentation is planned that may make this obsolete in a future version!
 
 ### Footgun removal
 
 If an entity overlaps with another in a higher stage, a red outline will appear where the entity should be, and a warning indicator will appear in all other stages. Use the `Staged Build Cleanup Tool` to attempt to revive these.
 
-Rotating/upgrading an underground will also affect its paired underground, in any stage.
+Rotating/upgrading an underground will affect its paired underground, in any stage.
 
 It is not possible to upgrade an underground if that will change which underground it pairs with (breaking belt weaving, etc.). If this is intentional, mine and replace the underground.
 
-Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. an underground "cuts" another underground), it cannot be rotated/upgraded _after_ being built.
+Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. an underground "cuts" another underground in a later stage), it cannot be rotated/upgraded _after_ being built.
 
 ### Cleanup tool
 
@@ -94,13 +95,11 @@ Reverse-selecting using the cleanup tool will **force-delete** errored entities.
 ## Feedback
 
 Any comments, criticisms, and suggestions are greatly appreciated!
-Please submit these in mod portal forums.
 
-You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
+You can contact me (GlassBricks) on the AntiElitz speedrunning discord, or use the mod portal forums.
 
 ## Possible future features
 
-- More flexible blueprint book creation
 - Handle resource entities
 - Automatic analysis and basic optimization
 - Import/export to string
@@ -109,7 +108,7 @@ You can also try to find me (GlassBricks) on the AntiElitz speedrunning discord.
 
 Gallery images from Nefrums's recent 100% run blueprints (on speedrun.com).
 
-Thanks to the [AntiElitz factorio speedrunning community](https://discord.gg/AntiElitz), and [Warger](https://discord.com/invite/nfkbu6qSCj), who does plenty of 100% speedrunning, for providing inspiration and feedback for this mod.
+Thanks to the [AntiElitz factorio speedrunning community](https://discord.gg/AntiElitz) and [Warger](https://discord.com/invite/nfkbu6qSCj) for providing inspiration and feedback for this mod.
 
 This mod was inspired by [Blueprint Stages](https://mods.factorio.com/mod/blueprint-stages).
 
