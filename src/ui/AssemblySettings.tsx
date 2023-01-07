@@ -13,7 +13,7 @@ import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
-import { bind, funcRef, ibind, multiMap, PRecord, Property, property, RegisterClass, registerFunctions } from "../lib"
+import { bind, funcRef, ibind, multiMap, Property, property, RegisterClass, registerFunctions } from "../lib"
 import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
 import {
   CollapseButton,
@@ -433,37 +433,6 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
       </flow>
     )
   }
-
-  // private getBlueprint() {
-  //   const stage = playerCurrentStage(this.playerIndex).get()
-  //   if (!stage || stage.assembly != this.assembly) return
-  //   const player = game.get_player(this.playerIndex)
-  //   if (!player) return
-  //   const cursorStack = player.cursor_stack
-  //   if (!cursorStack || !player.clear_cursor()) return
-  //   const took = takeStageBlueprint(stage, cursorStack)
-  //   if (!took) {
-  //     cursorStack.clear()
-  //     return player.create_local_flying_text({
-  //       text: [L_Interaction.BlueprintEmpty],
-  //       create_at_cursor: true,
-  //     })
-  //   }
-  // }
-  //
-  // private editBlueprint() {
-  //   const stage = playerCurrentStage(this.playerIndex).get()
-  //   if (!stage || stage.assembly != this.assembly) return
-  //   const player = game.get_player(this.playerIndex)
-  //   if (!player) return
-  //   if (!stage.editBlueprint(player)) {
-  //     return player.create_local_flying_text({
-  //       text: [L_Interaction.BlueprintEmpty],
-  //       create_at_cursor: true,
-  //     })
-  //   }
-  // }
-
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
     if (!player) return
@@ -501,57 +470,15 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  // todo
-  // private getBlueprintBook() {
-  //   const player = game.get_player(this.playerIndex)
-  //   if (!player || !player.clear_cursor()) return
-  //   const cursor = player.cursor_stack
-  //   if (!cursor || !player.is_cursor_empty()) return
-  //   if (!this.assembly.makeBlueprintBook(cursor)) {
-  //     cursor.clear()
-  //     player.create_local_flying_text({
-  //       text: [L_Interaction.BlueprintBookEmpty],
-  //       create_at_cursor: true,
-  //     })
-  //   }
-  // }
-  // private exportBlueprintBookStringToFile() {
-  //   const player = game.get_player(this.playerIndex)
-  //   if (!player) return
-  //   const fileName = exportBlueprintBookToFile(player, this.assembly)
-  //   if (fileName) {
-  //     player.print([L_Interaction.BlueprintBookExported, fileName])
-  //   } else {
-  //     player.create_local_flying_text({
-  //       text: [L_Interaction.BlueprintBookEmpty],
-  //       create_at_cursor: true,
-  //     })
-  //   }
-  // }
-
   private sssCount = 0
-  private static sssText: PRecord<number, string> = {
-    6: "banana",
-    9: "BANANA",
-    12: "BANANANA",
-    15: "AAAAAAAAAAAAAAAAAA",
-    18: "A".repeat(50),
-  }
+
   private sss() {
     this.sssCount++
-    if (this.sssCount % 3 != 0 && this.sssCount < 12) return
-    const player = game.get_player(this.playerIndex)
-    if (!player) return
-    player.play_sound({ path: Prototypes.BANANA })
-    const text = AssemblySettings.sssText[this.sssCount]
-    if (text)
-      player.create_local_flying_text({
-        text,
-        create_at_cursor: true,
-      })
-    if (this.sssCount == 21) {
+    if (this.sssCount >= 3) {
+      const player = game.get_player(this.playerIndex)
+      if (!player) return
+      player.play_sound({ path: Prototypes.BANANA })
       this.sssCount = 0
-      error("BANANA OVERLOAD")
     }
   }
 }
