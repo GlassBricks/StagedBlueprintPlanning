@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.0
-Date: ????
+Date: 2023-01-07
   Features:
     - More flexible blueprint settings
     - Blueprints: added option to only include entities changed in the last <n> stages
