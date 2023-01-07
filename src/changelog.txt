@@ -3,7 +3,8 @@ Version: 0.16.0
 Date: ????
   Features:
     - More flexible blueprint settings
-    - Added ability to only include entities changed in the last n stages
+    - Blueprints: added option to only include entities changed in the last <n> stages
+    - Added ability to reorder staged builds in the staged-builds list
 ---------------------------------------------------------------------------------------------------
 Version: 0.15.2
 Date: 2023-01-03
@@ -184,7 +185,7 @@ Date: 2022-10-27
     - Many more blueprint creation options. See mod description for details.
     - Each stage's blueprint now has individual grid size settings, with an option to sync all stages
     - The 2x2 grid enforcer was removed; it is no longer necessary
-   Optimizations:
+  Optimizations:
     - Reduced save size/memory usage
     - Note: deleting a large blueprint book from your inventory can save another 3MB+ of save size
     - Slightly improved performance of adding new entities
