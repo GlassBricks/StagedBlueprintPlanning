@@ -178,17 +178,17 @@ function renderElement(
 
   // eslint-disable-next-line prefer-const
   for (let [key, value] of pairs(element)) {
-    const propProperties = propInfo[key]
-    if (!propProperties) continue
+    const propInfoElement = propInfo[key]
+    if (!propInfoElement) continue
     if (typeof value == "function") value = funcRef(value as any)
-    if (propProperties == "event") {
+    if (propInfoElement == "event") {
       assert((value as Func).invoke, "Gui event handler must be a function")
       events[key as GuiEventName] = value as GuiEventHandler
       continue
     }
-    const isSpecProp = propProperties[0]
-    const isElemProp: string | boolean | null = propProperties[1]
-    const stateEvent = propProperties[2] as GuiEventName | null
+    const isSpecProp = propInfoElement[0]
+    const isElemProp: string | boolean | null = propInfoElement[1]
+    const stateEvent = propInfoElement[2] as GuiEventName | null
 
     const isState = value instanceof Property
     const shouldSetElemProp = !isSpecProp || isState
