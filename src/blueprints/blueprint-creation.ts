@@ -1,9 +1,10 @@
 import {
+  AssemblyOrStageBlueprintSettings,
   getDefaultBlueprintSettings,
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
 } from "./blueprint-settings"
-import { Assembly, Stage } from "../assembly/AssemblyDef"
+import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getCurrentValues } from "../utils/properties-obj"
@@ -13,7 +14,7 @@ import { Mutable } from "../lib"
 import max = math.max
 
 interface AssemblyBlueprintPlan {
-  assembly: Assembly
+  assembly: UserAssembly
   // other stuff will go here eventually
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
 
@@ -39,9 +40,9 @@ function getCurrentBpSettings(stage: Stage): StageBlueprintSettings {
  */
 export class BlueprintCreation {
   private inventory?: LuaInventory
-  private assemblyPlans = new LuaMap<Assembly, AssemblyBlueprintPlan>()
+  private assemblyPlans = new LuaMap<UserAssembly, AssemblyBlueprintPlan>()
 
-  private getPlanForAssembly(assembly: Assembly): AssemblyBlueprintPlan {
+  private getPlanForAssembly(assembly: UserAssembly): AssemblyBlueprintPlan {
     if (!this.assemblyPlans.has(assembly)) {
       this.assemblyPlans.set(assembly, { assembly, stagePlans: new LuaMap() })
     }
@@ -52,7 +53,8 @@ export class BlueprintCreation {
     return (assemblyInfo.changedEntities ??= this.computeChangedEntities(assemblyInfo.assembly))
   }
 
-  private computeChangedEntities(assembly: Assembly): LuaMap<StageNumber, LuaSet<AssemblyEntity>> {
+  private computeChangedEntities(assembly: UserAssembly): LuaMap<StageNumber, LuaSet<AssemblyEntity>> {
+    log(["", "Collecting changed entity info for assembly: ", assembly.displayName.get()])
     const result = new LuaMap<StageNumber, LuaSet<AssemblyEntity>>()
     for (const i of $range(1, assembly.maxStage())) {
       result.set(i, new LuaSet())
@@ -97,11 +99,8 @@ export class BlueprintCreation {
   public addBlueprint(
     stage: Stage,
     stack: LuaItemStack,
-  ):
-    | {
-        result: BlueprintTakeResult | nil
-      }
-    | nil {
+    settingsOverride?: StageBlueprintSettings,
+  ): { result: BlueprintTakeResult | nil } | nil {
     const assemblyPlan = this.getPlanForAssembly(stage.assembly)
     const existingStagePlan = assemblyPlan.stagePlans.get(stage.stageNumber)
     if (existingStagePlan) {
@@ -109,7 +108,7 @@ export class BlueprintCreation {
       existingStagePlan.stack = stack
     }
 
-    const settings = existingStagePlan?.settings ?? getCurrentBpSettings(stage)
+    const settings = existingStagePlan?.settings ?? settingsOverride ?? getCurrentBpSettings(stage)
     if (settings.useNextStageTiles) {
       const nextStage = stage.assembly.getStage(stage.stageNumber + 1)
       if (nextStage) this.ensureTilesTaken(assemblyPlan, nextStage)
@@ -120,6 +119,7 @@ export class BlueprintCreation {
 
   public takeAllBlueprints(): void {
     for (const [, assemblyPlan] of this.assemblyPlans) {
+      log(["", "Taking blueprints for assembly: ", assemblyPlan.assembly.displayName.get()])
       for (const [, stagePlan] of assemblyPlan.stagePlans) {
         this.takeBlueprint(assemblyPlan, stagePlan)
       }
@@ -155,6 +155,8 @@ export class BlueprintCreation {
   }
 
   private takeBlueprint(assemblyPlan: AssemblyBlueprintPlan, stagePlan: StageBlueprintPlan): void {
+    log(`  stage: ${stagePlan.stage.name.get()}`)
+
     const { stack, stage, bbox } = stagePlan
     let settings: OverrideableBlueprintSettings = stagePlan.settings
 
@@ -167,11 +169,13 @@ export class BlueprintCreation {
       actualStack = stack
     }
     if (settings.autoLandfill) {
+      log("    setting landfill")
       stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
     }
 
     let unitNumberFilter: LuaSet<UnitNumber> | nil
     if (settings.stageLimit != nil) {
+      log("    getting unit number filter")
       unitNumberFilter = this.getUnitNumberFilter(assemblyPlan, stage, settings.stageLimit)
     }
 
@@ -229,10 +233,67 @@ export function withBlueprintCreator<T>(action: (creator: BlueprintCreation) => 
   error(result)
 }
 
-export function takeSingleStageBlueprint(stage: Stage, stack: LuaItemStack): boolean {
+export function takeStageBlueprint(
+  stage: Stage,
+  stack: LuaItemStack,
+  settingsOverride?: AssemblyOrStageBlueprintSettings,
+): boolean {
   return withBlueprintCreator((creator) => {
-    const plan = creator.addBlueprint(stage, stack)!
+    const settings =
+      settingsOverride &&
+      ({
+        icons: nil,
+        ...getCurrentValues(settingsOverride),
+      } satisfies StageBlueprintSettings)
+    const plan = creator.addBlueprint(stage, stack, settings)!
     creator.takeAllBlueprints()
     return plan.result != nil
   })
+}
+
+export function makeBlueprintBook(assembly: UserAssembly, stack: LuaItemStack): boolean {
+  return withBlueprintCreator((creator) => {
+    stack.set_stack("blueprint-book")
+    const bookInventory = stack.get_inventory(defines.inventory.item_main)!
+
+    for (const stage of assembly.getAllStages()) {
+      bookInventory.insert("blueprint")
+      const bpStack = bookInventory[bookInventory.length - 1]
+      creator.addBlueprint(stage, bpStack)
+    }
+    creator.takeAllBlueprints()
+    for (const i of $range(1, bookInventory.length)) {
+      const bpStack = bookInventory[i - 1]
+      if (!bpStack.is_blueprint_setup()) {
+        bpStack.clear()
+      }
+    }
+    bookInventory.sort_and_merge()
+    if (bookInventory.length == 0) {
+      stack.clear()
+      return false
+    }
+
+    stack.label = assembly.name.get()
+    return true
+  })
+}
+
+export function exportBlueprintBookToFile(player: LuaPlayer, assembly: UserAssembly): string | nil {
+  const inventory = game.create_inventory(1)
+  const stack = inventory[0]!
+  if (!makeBlueprintBook(assembly, stack)) {
+    inventory.destroy()
+    return nil
+  }
+  log("Exporting blueprint book to file")
+  const data = stack.export_stack()
+  inventory.destroy()
+  // replace not allowed characters with _
+  let name = assembly.name.get()
+  if (name == "") name = `Unnamed-build-${assembly.id}`
+  const [assemblyFileName] = string.gsub(name, "[^%w%-%_%.]", "_")
+  const filename = `staged-builds/${assemblyFileName}.txt`
+  game.write_file(filename, data, false, player.index)
+  return filename
 }

@@ -66,18 +66,6 @@ class UserAssemblyImpl implements UserAssembly {
   localEvents = new SimpleEvent<LocalAssemblyEvent>()
 
   defaultBlueprintSettings = createNewBlueprintSettings()
-  // todo
-  // assemblyBlueprintSettings: BuildBlueprintSettings = {
-  //   autoLandfill: property(false),
-  //   useNextStageTiles: property(false),
-  //   emptyBlueprintNames: property(false),
-  //   emptyBlueprintBookName: property(false),
-  //
-  //   entityFilters: property(nil),
-  //   entityFilterMode: property(nil),
-  //   replaceInfinityWithCombinators: property(false),
-  // }
-
   valid = true
 
   private readonly stages: Record<number, StageImpl> = {}
@@ -237,8 +225,6 @@ class StageImpl implements Stage {
   getBlueprintBBox(): BBox {
     return this.assembly.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
   }
-  // todo
-  // public blueprintSettings: BlueprintSettings = getDefaultBlueprintSettings()
   public constructor(
     public readonly assembly: UserAssemblyImpl,
     public readonly surface: LuaSurface,
@@ -276,23 +262,6 @@ class StageImpl implements Stage {
   __tostring() {
     return `<Stage ${this.stageNumber} "${this.name.get()}" of "${this.assembly.name.get()}">`
   }
-}
-
-export function exportBlueprintBookToFile(player: LuaPlayer, assembly: UserAssembly): string | nil {
-  //todo
-  return nil
-  // const inventory = game.create_inventory(1)
-  // const stack = inventory[0]!
-  // if (!assembly.makeBlueprintBook(stack)) {
-  //   inventory.destroy()
-  //   return nil
-  // }
-  // log("Exporting blueprint book to file")
-  // const data = stack.export_stack()
-  // const filename = `staged-builds/${assembly.name.get() ?? "Unnamed-Assembly-" + assembly.id}.txt`
-  // game.write_file(filename, data, false, player.index)
-  // inventory.destroy()
-  // return filename
 }
 
 export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {

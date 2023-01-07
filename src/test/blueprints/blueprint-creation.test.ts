@@ -1,7 +1,7 @@
 import { Stage, UserAssembly } from "../../assembly/AssemblyDef"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { Pos } from "../../lib/geometry"
-import { takeSingleStageBlueprint } from "../../blueprints/blueprint-creation"
+import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../../blueprints/blueprint-creation"
 import expect, { mock } from "tstl-expect"
 import { AutoSetTilesType } from "../../assembly/tiles"
 import { entityPossiblyUpdated } from "../../assembly/event-listener"
@@ -36,12 +36,12 @@ test("can take single blueprint using stage settings", () => {
   const stage = assembly.getStage(1)!
   const stack = player.cursor_stack!
 
-  const ret = takeSingleStageBlueprint(stage, stack)
+  const ret = takeStageBlueprint(stage, stack)
   expect(ret).toBe(false)
 
   createEntity(stage)
 
-  const ret2 = takeSingleStageBlueprint(stage, stack)
+  const ret2 = takeStageBlueprint(stage, stack)
   expect(ret2).toBe(true)
 
   expect(stack.blueprint_snap_to_grid).toEqual(Pos(2, 3))
@@ -61,13 +61,13 @@ test("calls setTiles if autoLandfill is true", () => {
   const stack = player.cursor_stack!
   createEntity(stage)
 
-  let ret = takeSingleStageBlueprint(stage, stack)
+  let ret = takeStageBlueprint(stage, stack)
   expect(ret).toBe(true)
   expect(stage.autoSetTiles).not.toHaveBeenCalled()
 
   stage.stageBlueprintSettings.autoLandfill.set(true)
 
-  ret = takeSingleStageBlueprint(stage, stack)
+  ret = takeStageBlueprint(stage, stack)
   expect(ret).toBe(true)
   expect(stage.autoSetTiles).toHaveBeenCalledWith(AutoSetTilesType.LandfillAndLabTiles)
 })
@@ -90,7 +90,7 @@ test.each([false, true])("can use next stage tiles, with next staging having gri
   const stack = player.cursor_stack!
   createEntity(stage1)
 
-  const ret = takeSingleStageBlueprint(stage1, stack)
+  const ret = takeStageBlueprint(stage1, stack)
   expect(ret).toBe(true)
 
   const tiles = stack.get_blueprint_tiles()!
@@ -125,7 +125,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   stageBlueprintSettings.positionOffset.set(Pos(0, 0))
   stageBlueprintSettings.additionalWhitelist.set(newLuaSet("steel-chest"))
 
-  const ret = takeSingleStageBlueprint(stage3, stack)
+  const ret = takeStageBlueprint(stage3, stack)
   expect(ret).toBe(true)
 
   const entities = stack.get_blueprint_entities()!
@@ -133,4 +133,28 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   expect(entities.map((e) => e.position).sort((a, b) => a.x - b.x)).toEqual(
     includedEntities.map((e) => e.position).sort((a, b) => a.x - b.x),
   )
+})
+
+test("make blueprint book", () => {
+  for (const i of $range(1, assembly.maxStage())) {
+    createEntity(assembly.getStage(i)!, [i + 0.5, i + 0.5])
+  }
+
+  const stack = player.cursor_stack!
+  const ret = makeBlueprintBook(assembly, stack)
+  expect(ret).toBe(true)
+  expect(stack.is_blueprint_book).toBe(true)
+  expect(stack.label).toBe(assembly.name.get())
+  const inventory = stack.get_inventory(defines.inventory.item_main)!
+  expect(inventory).toHaveLength(4)
+  for (const i of $range(1, assembly.maxStage())) {
+    expect(inventory[i - 1].is_blueprint).toBe(true)
+    expect(inventory[i - 1].label).toBe(assembly.getStage(i)!.name.get())
+    const entities = inventory[i - 1].get_blueprint_entities()!
+    expect(entities).toHaveLength(i)
+    expect(entities[0].name).toBe("iron-chest")
+  }
+
+  const fileName = exportBlueprintBookToFile(player, assembly) // just check no errors
+  expect(fileName).to.equal("staged-builds/test.txt")
 })
