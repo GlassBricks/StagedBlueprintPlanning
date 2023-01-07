@@ -1,6 +1,6 @@
 import { BBox, Pos } from "../../lib/geometry"
 import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
-import { tryTakeSingleBlueprint } from "../../blueprints/take-single-blueprint"
+import { takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
 import expect from "tstl-expect"
 
 let surface: LuaSurface
@@ -45,8 +45,8 @@ test("can take blueprint and settings applied", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = tryTakeSingleBlueprint(stack, settings, surface, bbox)
-  expect(ret).to.be(true)
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, false)
+  expect(ret).toBeTruthy()
 
   expect(stack.blueprint_icons).to.equal(settings.icons)
   expect(stack.blueprint_snap_to_grid).to.equal(settings.snapToGrid)
@@ -74,15 +74,15 @@ test("applies blacklist", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = tryTakeSingleBlueprint(stack, settings, surface, bbox)
-  expect(ret).to.be(true)
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, false)
+  expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
   expect(entities.length).to.be(1)
   expect(entities[0].name).to.equal(belt.name)
 })
 
-test("Replace infinity entities with constant combinators", () => {
+test("replace infinity entities with constant combinators", () => {
   // chest
   const chest = surface.create_entity({
     name: "infinity-chest",
@@ -130,8 +130,8 @@ test("Replace infinity entities with constant combinators", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const res = tryTakeSingleBlueprint(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10))
-  expect(res).to.be(true)
+  const res = takeSingleBlueprint(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10), false)
+  expect(res).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
   expect(entities.length).to.be(3)

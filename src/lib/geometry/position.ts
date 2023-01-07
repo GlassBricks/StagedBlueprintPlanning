@@ -21,7 +21,9 @@ const _floor = math.floor
 const _ceil = math.ceil
 
 export type Position = MapPosition
-export type PositionClass = WithMetatable<Position, typeof Pos>
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface PositionClass extends WithMetatable<Position, typeof Pos> {}
 
 function Pos(x: number, y: number): PositionClass {
   return setmetatable({ x, y }, meta)

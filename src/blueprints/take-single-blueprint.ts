@@ -12,7 +12,7 @@
 import { getInfinityEntityNames } from "../entity/entity-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { BlueprintTakeParameters, StageBlueprintSettings } from "./blueprint-settings"
+import { BlueprintTakeParameters } from "./blueprint-settings"
 
 export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(
@@ -21,7 +21,6 @@ function adjustEntitiesToMatchPositionOffset(
   positionOffset: Position,
   firstEntityOriginalPosition: MapPosition,
 ): boolean {
-  if (!positionOffset) return false
   const firstEntityPosition = entities[0].position
   const expectedPosition = Pos.plus(firstEntityOriginalPosition, positionOffset)
   const shouldAdjustPosition = !Pos.equals(firstEntityPosition, expectedPosition)
@@ -44,6 +43,11 @@ function adjustEntitiesToMatchPositionOffset(
   }
   return true
 }
+
+function getEffectivePositionOffset(entities: BlueprintEntity[], firstEntityOriginalPosition: MapPosition): Position {
+  return Pos.minus(entities[0].position, firstEntityOriginalPosition)
+}
+
 function replaceInfinityEntitiesWithCombinators(entities: BlueprintEntity[]): boolean {
   let anyReplaced = false
   const [chests, pipes] = getInfinityEntityNames()
@@ -92,6 +96,10 @@ function filterEntities(entities: BlueprintEntity[], filters: ReadonlyLuaSet<str
   return anyDeleted
 }
 
+export interface BlueprintTakeResult {
+  effectivePositionOffset: Position
+}
+
 /**
  * If forEdit is true, sets the first entity's original position tag.
  */
@@ -101,7 +109,7 @@ export function takeSingleBlueprint(
   surface: LuaSurface,
   bbox: BBox,
   forEdit: boolean,
-): boolean {
+): BlueprintTakeResult | nil {
   if (!stack.is_blueprint) {
     stack.set_stack("blueprint")
   }
@@ -114,7 +122,7 @@ export function takeSingleBlueprint(
     always_include_tiles: true,
   })
 
-  if (isEmpty(bpMapping)) return false
+  if (isEmpty(bpMapping)) return nil
 
   const {
     snapToGrid,
@@ -123,32 +131,30 @@ export function takeSingleBlueprint(
     replaceInfinityEntitiesWithCombinators: shouldReplaceInfinity,
   } = params
 
-  let entities: BlueprintEntity[] | nil
+  const entities: BlueprintEntity[] = stack.get_blueprint_entities()!
 
-  function getEntities() {
-    return (entities ??= stack.get_blueprint_entities()!)
-  }
-
+  let effectivePositionOffset: Position | nil
   let entitiesAdjusted = false
-  if (
-    snapToGrid &&
-    positionOffset &&
-    adjustEntitiesToMatchPositionOffset(stack, getEntities(), positionOffset, bpMapping[1].position)
-  ) {
+  const firstEntityOriginalPosition = bpMapping[1].position
+  if (snapToGrid && positionOffset) {
+    if (adjustEntitiesToMatchPositionOffset(stack, entities, positionOffset, firstEntityOriginalPosition))
+      entitiesAdjusted = true
+    effectivePositionOffset = positionOffset
+  } else {
+    effectivePositionOffset = getEffectivePositionOffset(entities, firstEntityOriginalPosition)
+  }
+
+  if (blacklist && !isEmpty(blacklist) && filterEntities(entities, blacklist)) {
     entitiesAdjusted = true
   }
 
-  if (blacklist && !isEmpty(blacklist) && filterEntities(getEntities(), blacklist)) {
-    entitiesAdjusted = true
-  }
-
-  if (shouldReplaceInfinity && replaceInfinityEntitiesWithCombinators(getEntities())) {
+  if (shouldReplaceInfinity && replaceInfinityEntitiesWithCombinators(entities)) {
     entitiesAdjusted = true
   }
 
   if (entities && isEmpty(entities)) {
     stack.clear_blueprint()
-    return false
+    return nil
   }
 
   if (entities && entitiesAdjusted) {
@@ -161,16 +167,9 @@ export function takeSingleBlueprint(
   stack.blueprint_position_relative_to_grid = params.positionRelativeToGrid
 
   if (forEdit) {
-    stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, bpMapping[1].position)
+    stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, firstEntityOriginalPosition)
   }
-  return true
-}
-
-export function tryTakeSingleBlueprint(
-  stack: LuaItemStack,
-  settings: StageBlueprintSettings,
-  surface: LuaSurface,
-  bbox: BBox,
-): boolean {
-  return takeSingleBlueprint(stack, settings, surface, bbox, false)
+  return {
+    effectivePositionOffset,
+  }
 }

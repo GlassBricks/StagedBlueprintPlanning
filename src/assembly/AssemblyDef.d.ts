@@ -44,7 +44,6 @@ export interface UserAssembly extends Assembly {
   /** Cannot be first stage, contents will be merged with previous stage. */
   deleteStage(index: StageNumber): void
 
-  getBlueprintBBox(): BBox
   readonly valid: boolean
   delete(): void
 }
@@ -58,6 +57,8 @@ export interface Stage {
 
   readonly stageBlueprintSettings: StageBlueprintSettingsTable
   getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings>
+
+  getBlueprintBBox(): BBox
   autoSetTiles(tiles: AutoSetTilesType): boolean
   readonly valid: boolean
   deleteInAssembly(): void

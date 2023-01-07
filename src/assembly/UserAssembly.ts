@@ -156,11 +156,6 @@ class UserAssemblyImpl implements UserAssembly {
 
     this.raiseEvent({ type: "stage-deleted", assembly: this, stage })
   }
-
-  getBlueprintBBox(): BBox {
-    return this.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
-  }
-
   delete() {
     if (!this.valid) return
     global.assemblies.delete(this.id)
@@ -237,6 +232,10 @@ class StageImpl implements Stage {
       ...createdDiffedPropertyTableView(this.assembly.defaultBlueprintSettings, this.stageBlueprintSettings),
       icons: this.stageBlueprintSettings.icons,
     }
+  }
+
+  getBlueprintBBox(): BBox {
+    return this.assembly.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
   }
   // todo
   // public blueprintSettings: BlueprintSettings = getDefaultBlueprintSettings()

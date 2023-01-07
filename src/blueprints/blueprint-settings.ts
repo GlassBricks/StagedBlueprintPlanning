@@ -1,10 +1,6 @@
 import { Position } from "../lib/geometry"
 import { createPropertiesTable, PropertiesTable, PropertyOverrideTable } from "../utils/properties-obj"
 
-export interface BuildBlueprintSettings {
-  readonly emptyBlueprintNames: boolean
-  readonly emptyBlueprintBookName: boolean
-}
 export interface BlueprintGridSettings {
   // blueprint grid settings
   readonly positionOffset: Position | nil

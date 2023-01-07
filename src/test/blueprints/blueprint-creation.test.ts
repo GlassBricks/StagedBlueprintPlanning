@@ -68,3 +68,33 @@ test("calls setTiles if autoLandfill is true", () => {
   expect(ret).toBe(true)
   expect(stage.autoSetTiles).toHaveBeenCalledWith(AutoSetTilesType.LandfillAndLabTiles)
 })
+
+test.each([false, true])("can use next stage tiles, with next staging having grid %s", (stage2HasGrid) => {
+  const stage2 = assembly.getStage(2)!
+  const stage1 = assembly.getStage(1)!
+
+  stage1.stageBlueprintSettings.positionOffset.set(Pos(1, 1))
+  stage1.stageBlueprintSettings.snapToGrid.set(Pos(2, 2))
+  stage1.stageBlueprintSettings.useNextStageTiles.set(true)
+
+  if (stage2HasGrid) {
+    stage1.stageBlueprintSettings.snapToGrid.set(Pos(1, 5))
+    stage2.stageBlueprintSettings.positionOffset.set(Pos(2, 3))
+  }
+
+  stage2.surface.set_tiles([{ name: "landfill", position: [4, 5] }])
+
+  const stack = player.cursor_stack!
+  createEntity(stage1)
+
+  const ret = takeSingleStageBlueprint(stage1, stack)
+  expect(ret).toBe(true)
+
+  const tiles = stack.get_blueprint_tiles()!
+  expect(tiles).to.matchTable([
+    {
+      name: "landfill",
+      position: Pos(4, 5).plus(Pos(1, 1)),
+    },
+  ])
+})
