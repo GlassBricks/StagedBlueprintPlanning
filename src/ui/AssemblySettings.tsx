@@ -23,6 +23,7 @@ import {
   HorizontalPusher,
   showDialog,
   TitleBar,
+  TrashButton,
   VerticalPusher,
 } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
@@ -501,6 +502,11 @@ export class StageSettings extends Component<{ stage: Stage }> {
             maximalWidth={AssemblySettingsTabWidth}
           />
           <HorizontalPusher />
+          <TrashButton
+            tooltip={[L_GuiAssemblySettings.DeleteStage]}
+            enabled={this.stage.assembly.maxStage() > 1}
+            on_gui_click={ibind(this.beginDelete)}
+          />
         </frame>
         <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
           <label style="caption_label" caption={[L_GuiAssemblySettings.Entities]} />
@@ -543,17 +549,6 @@ export class StageSettings extends Component<{ stage: Stage }> {
               on_gui_click={ibind(this.setLandfillAndLabTiles)}
             />
           </flow>
-
-          <line />
-
-          <VerticalPusher />
-          <button
-            style="red_button"
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiAssemblySettings.DeleteStage]}
-            enabled={this.stage.assembly.maxStage() > 1}
-            on_gui_click={ibind(this.beginDelete)}
-          />
         </flow>
       </>
     )
