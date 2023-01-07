@@ -281,7 +281,7 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
       if (attr.optional) {
         attrType += " | nil"
       }
-      const typeName = stateProps[type][name] ? `MaybeMutableState<${attrType}>` : `MaybeState<${attrType}>`
+      const typeName = stateProps[type][name] ? `MaybeMutableProperty<${attrType}>` : `MaybeProperty<${attrType}>`
       mergeProp(name, {
         name,
         type: typeName,
@@ -298,7 +298,7 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
     for (const [name, attr] of Object.entries(style)) {
       styleMod[name] = {
         name,
-        type: `MaybeState<${attr.type}>`,
+        type: `MaybeProperty<${attr.type}>`,
         optional: true,
       }
     }
@@ -495,8 +495,8 @@ function printFile(filename: string, header: string, statements: ts.Statement[])
   createDefinitions("StyleMod", styleMods, () => [])
 
   const header = `
-import { MaybeMutableState, MaybeState } from "../observable"
-import { GuiEventHandler, OnCreateHandler, Element } from "./element"
+import { MaybeMutableProperty, MaybeProperty } from "../event"
+import { Element, GuiEventHandler, OnCreateHandler } from "./element"
 
 `
   printFile("factorio-elements.d.ts", header, statements)
