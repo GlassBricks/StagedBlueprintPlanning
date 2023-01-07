@@ -9,17 +9,40 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { UserAssembly } from "../assembly/AssemblyDef"
-import { getAllAssemblies } from "../assembly/migrations"
-import { AssemblyEvents, createUserAssembly } from "../assembly/UserAssembly"
-import { bind, funcRef, ibind, onPlayerInitSince, RegisterClass, registerFunctions, Subscription } from "../lib"
-import { Component, destroy, Element, EmptyProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
+import {
+  AssembliesReorderedEvent,
+  AssemblyCreatedEvent,
+  AssemblyDeletedEvent,
+  UserAssembly,
+} from "../assembly/AssemblyDef"
+import {
+  AssemblyEvents,
+  createUserAssembly,
+  getAllAssemblies,
+  moveAssemblyDown,
+  moveAssemblyUp,
+} from "../assembly/UserAssembly"
+import { bind, funcRef, ibind, onPlayerInitSince, RegisterClass, registerFunctions } from "../lib"
+import {
+  Component,
+  destroy,
+  destroyChildren,
+  Element,
+  EmptyProps,
+  FactorioJsx,
+  getComponentInstance,
+  render,
+  RenderContext,
+  renderNamed,
+} from "../lib/factoriojsx"
 import { Migrations } from "../lib/migration"
 import * as mod_gui from "mod-gui"
 import { L_GuiAssemblySelector } from "../locale"
-import { teleportToAssembly } from "./player-current-stage"
-import { Sprites } from "../constants"
+import { PlayerChangedStageEvent, playerCurrentStage, teleportToAssembly } from "./player-current-stage"
+import { Sprites, Styles } from "../constants"
 import { bringSettingsWindowToFront } from "./AssemblySettings"
+import { SimpleTitleBar } from "../lib/factoriojsx/components"
+import mouse_button_type = defines.mouse_button_type
 
 declare const global: GlobalWithPlayers
 
@@ -46,67 +69,115 @@ const AllAssembliesHeight = 28 * 10
 @RegisterClass("gui:AllAssemblies")
 class AllAssemblies extends Component {
   playerIndex!: PlayerIndex
-
-  listBox!: ListBoxGuiElement
-  allAssemblies!: UserAssembly[]
+  element!: ScrollPaneGuiElement
 
   public override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
-    const subscription = context.getSubscription()
     return (
-      <frame direction="vertical" caption={[L_GuiAssemblySelector.AllAssemblies]}>
-        <list-box
-          name="assemblies"
-          style="list_box"
+      <frame direction="vertical">
+        <SimpleTitleBar title={[L_GuiAssemblySelector.AllAssemblies]} />
+        <scroll-pane
+          style={Styles.FakeListBox}
           styleMod={{
             width: AllAssembliesWidth,
             height: AllAssembliesHeight,
           }}
           onCreate={(e) => {
-            this.listBox = e
-            this.setup(subscription)
+            this.element = e
+            this.scrollToCurrentAssembly()
           }}
-          on_gui_selection_state_changed={ibind(this.assemblySelected)}
-        />
+        >
+          {getAllAssemblies().map((assembly) => this.assemblyButtonFlow(assembly))}
+        </scroll-pane>
         <button caption={[L_GuiAssemblySelector.NewAssembly]} on_gui_click={ibind(this.newAssembly)} />
       </frame>
     )
   }
 
-  private setup(subscription: Subscription): void {
-    const listBox = this.listBox
-    this.allAssemblies = Object.values(getAllAssemblies())
-    listBox.items = this.allAssemblies.map((a) => a.displayName.get())
-
-    for (const [i, assembly] of ipairs(this.allAssemblies)) {
-      assembly.displayName.subscribe(subscription, bind(AllAssemblies.onAssemblyNameChange, this, i))
-    }
-  }
-  private static onAssemblyNameChange(
-    this: void,
-    self: AllAssemblies,
-    index: number,
-    _: any,
-    name: LocalisedString,
-  ): void {
-    self.listBox.set_item(index, name)
+  private assemblyButtonFlow(assembly: UserAssembly) {
+    return <flow tags={{ assemblyId: assembly.id }}>{this.assemblyButton(assembly)}</flow>
   }
 
-  private assemblySelected(): void {
-    const assembly = this.allAssemblies[this.listBox.selected_index - 1]
-    if (assembly != nil) {
-      closeAllAssemblies(this.playerIndex)
-      const player = game.get_player(this.playerIndex)!
-      teleportToAssembly(player, assembly)
-      bringSettingsWindowToFront(player)
-    } else {
-      this.listBox.selected_index = 0
+  private assemblyButton(assembly: UserAssembly) {
+    const currentAssembly = playerCurrentStage(this.playerIndex).get()?.assembly
+    return (
+      <button
+        style={assembly == currentAssembly ? Styles.FakeListBoxItemActive : Styles.FakeListBoxItem}
+        caption={assembly.displayName}
+        tooltip={[L_GuiAssemblySelector.ButtonTooltip]}
+        on_gui_click={bind(AllAssemblies.onButtonClick, assembly)}
+      />
+    )
+  }
+
+  private scrollToCurrentAssembly() {
+    const currentAssembly = playerCurrentStage(this.playerIndex).get()?.assembly
+    if (!currentAssembly) return
+    const element = this.element
+    if (!element || !element.valid) return
+    const flow = this.element.children.find((c) => c.tags?.assemblyId == currentAssembly.id)
+    if (flow) {
+      element.scroll_to_element(flow)
     }
+  }
+
+  private static onButtonClick(this: void, assembly: UserAssembly, event: OnGuiClickEvent): void {
+    // control left click: move up
+    // control right click: move down
+    // normal click: teleport
+    if (event.control) {
+      if (event.button == mouse_button_type.left) {
+        moveAssemblyUp(assembly)
+      } else if (event.button == mouse_button_type.right) {
+        moveAssemblyDown(assembly)
+      }
+      return
+    }
+    const playerIndex = event.player_index
+    const player = game.get_player(playerIndex)!
+    // closeAllAssemblies(playerIndex)
+    teleportToAssembly(player, assembly)
+    bringSettingsWindowToFront(player)
   }
 
   private newAssembly(): void {
     closeAllAssemblies(this.playerIndex)
     createNewAssembly(game.get_player(this.playerIndex)!)
+  }
+
+  assemblyChangedEvent(e: AssemblyCreatedEvent | AssemblyDeletedEvent | AssembliesReorderedEvent) {
+    const element = this.element
+    if (!element || !element.valid) return
+    if (e.type == "assembly-created") {
+      render(this.assemblyButtonFlow(e.assembly), element)
+      this.scrollToCurrentAssembly()
+    } else if (e.type == "assembly-deleted") {
+      const flow = element.children.find((c) => c.tags.assemblyId == e.assembly.id)
+      if (flow) destroy(flow)
+    } else if (e.type == "assemblies-reordered") {
+      const children = element.children
+      const index1 = children.findIndex((c) => c.tags.assemblyId == e.assembly1.id)
+      const index2 = children.findIndex((c) => c.tags.assemblyId == e.assembly2.id)
+      if (index1 == -1 || index2 == -1) return
+      element.swap_children(index1 + 1, index2 + 1)
+      this.scrollToCurrentAssembly()
+    }
+  }
+
+  private rerenderAssembly(assembly: UserAssembly) {
+    const element = this.element
+    if (!element || !element.valid) return
+    const flow = element.children.find((c) => c.tags.assemblyId == assembly.id)
+    if (flow) {
+      destroyChildren(flow)
+      render(this.assemblyButton(assembly), flow)
+    }
+  }
+
+  playerAssemblyChanged(oldAssembly: UserAssembly | nil, newAssembly: UserAssembly | nil) {
+    if (oldAssembly) this.rerenderAssembly(oldAssembly)
+    if (newAssembly) this.rerenderAssembly(newAssembly)
+    this.scrollToCurrentAssembly()
   }
 }
 function createNewAssembly(player: LuaPlayer): void {
@@ -129,21 +200,29 @@ function toggleAllAssemblies(playerIndex: PlayerIndex): void {
     renderNamed(<AllAssemblies />, flow, AllAssembliesName)
   }
 }
-function rerenderAllAssembliesIfOpen(playerIndex: PlayerIndex): void {
-  const flow = getFrameFlow(playerIndex)
-  if (flow[AllAssembliesName]) renderNamed(<AllAssemblies />, flow, AllAssembliesName)
-}
-
 function onModButtonClick(event: OnGuiClickEvent) {
   toggleAllAssemblies(event.player_index)
 }
 registerFunctions("gui:assembly-selector", { onModButtonClick })
 
 AssemblyEvents.addListener((e) => {
-  if (e.type == "assembly-created" || e.type == "assembly-deleted") {
+  if (e.type == "assembly-created" || e.type == "assembly-deleted" || e.type == "assemblies-reordered") {
     for (const [, player] of game.players) {
-      rerenderAllAssembliesIfOpen(player.index)
+      const element = getFrameFlow(player.index)[AllAssembliesName]
+      if (!element) continue
+      const component = getComponentInstance<AllAssemblies>(element)
+      if (component) component.assemblyChangedEvent(e)
     }
+  }
+})
+PlayerChangedStageEvent.addListener((player, oldStage, newStage) => {
+  const oldAssembly = oldStage?.assembly
+  const newAssembly = newStage?.assembly
+  if (oldAssembly != newAssembly) {
+    const element = getFrameFlow(player.index)[AllAssembliesName]
+    if (!element) return
+    const component = getComponentInstance<AllAssemblies>(element)
+    if (component) component.playerAssemblyChanged(oldAssembly, newAssembly)
   }
 })
 
