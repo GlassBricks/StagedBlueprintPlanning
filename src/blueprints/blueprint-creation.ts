@@ -133,8 +133,7 @@ export class BlueprintCreation {
       if (!(curStage.result && curStage.settings.useNextStageTiles)) continue
 
       const nextStagePlan = stagePlans.get(stageNumber + 1)!
-      assert(nextStagePlan, "Next stage plan should exist if useNextStageTiles is true")
-      if (!nextStagePlan.result) continue
+      if (!nextStagePlan || !nextStagePlan.result) continue
 
       const nextStageTiles = nextStagePlan.stack!.get_blueprint_tiles()
       if (!nextStageTiles) {
@@ -190,7 +189,7 @@ export class BlueprintCreation {
   ): LuaSet<UnitNumber> {
     const result = new LuaSet<UnitNumber>()
     const stageNumber = stage.stageNumber
-    const minStage = max(stageNumber - stageLimit + 1)
+    const minStage = max(1, stageNumber - stageLimit + 1)
     const maxStage = stageNumber
     const changedEntities = this.getChangedEntities(assemblyPlan)
     for (const stage of $range(minStage, maxStage)) {
@@ -268,7 +267,6 @@ export function makeBlueprintBook(assembly: UserAssembly, stack: LuaItemStack): 
         bpStack.clear()
       }
     }
-    bookInventory.sort_and_merge()
     if (bookInventory.length == 0) {
       stack.clear()
       return false
@@ -279,7 +277,7 @@ export function makeBlueprintBook(assembly: UserAssembly, stack: LuaItemStack): 
   })
 }
 
-export function exportBlueprintBookToFile(player: LuaPlayer, assembly: UserAssembly): string | nil {
+export function exportBlueprintBookToFile(assembly: UserAssembly, player: LuaPlayer): string | nil {
   const inventory = game.create_inventory(1)
   const stack = inventory[0]!
   if (!makeBlueprintBook(assembly, stack)) {

@@ -155,6 +155,6 @@ test("make blueprint book", () => {
     expect(entities[0].name).toBe("iron-chest")
   }
 
-  const fileName = exportBlueprintBookToFile(player, assembly) // just check no errors
+  const fileName = exportBlueprintBookToFile(assembly, player) // just check no errors
   expect(fileName).to.equal("staged-builds/test.txt")
 })

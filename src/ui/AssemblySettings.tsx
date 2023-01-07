@@ -13,8 +13,8 @@ import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { getStageToMerge } from "../entity/AssemblyEntity"
-import { funcRef, ibind, PRecord, RegisterClass, registerFunctions } from "../lib"
-import { Component, destroy, Element, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
+import { bind, funcRef, ibind, multiMap, PRecord, Property, property, RegisterClass, registerFunctions } from "../lib"
+import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
 import {
   CollapseButton,
   DraggableSpace,
@@ -26,7 +26,7 @@ import {
   VerticalPusher,
 } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
-import { L_GuiAssemblySettings } from "../locale"
+import { L_GuiAssemblySettings, L_Interaction } from "../locale"
 import { ItemRename } from "./ItemRename"
 import {
   PlayerChangedStageEvent,
@@ -36,7 +36,12 @@ import {
   teleportToSurface1,
 } from "./player-current-stage"
 import { StageSelector } from "./StageSelector"
-import { Prototypes } from "../constants"
+import { Colors, Prototypes } from "../constants"
+import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
+import { CheckboxTextfield } from "./components/CheckboxTextfield"
+import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
+import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
+import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
 
 declare global {
   interface PlayerData {
@@ -54,7 +59,19 @@ const StageSettingsButtonWidth = 140
 
 const BpSettingsButtonWidth = 180
 
-const AssemblySettingsTabWidth = 600
+const AssemblySettingsTabWidth = 420
+
+function EditButton(props: ElemProps<"button">) {
+  return (
+    <button
+      caption={[L_GuiAssemblySettings.Edit]}
+      {...props}
+      styleMod={{
+        width: 48,
+      }}
+    />
+  )
+}
 
 function StageListBox(assembly: UserAssembly) {
   return (
@@ -126,13 +143,14 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
               selected_tab_index={1}
               styleMod={{
                 vertically_stretchable: true,
+                minimal_width: AssemblySettingsTabWidth,
               }}
+              onCreate={(e) => (e.selected_tab_index = 2)}
             >
               <tab caption={[L_GuiAssemblySettings.Stage]} />
               {this.StagesTab()}
               <tab caption={[L_GuiAssemblySettings.Blueprints]} />
-              {/*todo: {this.BlueprintSettingsTab()}*/}
-              <empty-widget />
+              {this.BlueprintSettingsTab()}
               <tab caption={[L_GuiAssemblySettings.Other]} />
               {this.OtherTab()}
             </tabbed-pane>
@@ -192,83 +210,214 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   }
 
   private BlueprintSettingsTab() {
-    // todo
-    // const assemblyBlueprintSettings = this.assembly.assemblyBlueprintSettings
-    // return (
-    //   <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
-    //     <label style="caption_label" caption={[L_GuiAssemblySettings.CurrentStage]} />
-    //     <flow>
-    //       <button
-    //         styleMod={{ width: StageSettingsButtonWidth }}
-    //         caption={[L_GuiAssemblySettings.EditBlueprint]}
-    //         tooltip={[L_GuiAssemblySettings.EditBlueprintTooltip]}
-    //         on_gui_click={ibind(this.editBlueprint)}
-    //       />
-    //       <button
-    //         styleMod={{ width: StageSettingsButtonWidth }}
-    //         caption={[L_GuiAssemblySettings.GetBlueprint]}
-    //         tooltip={[L_GuiAssemblySettings.GetBlueprintTooltip]}
-    //         on_gui_click={ibind(this.getBlueprint)}
-    //       />
-    //     </flow>
-    //     <label
-    //       style="caption_label"
-    //       caption={[L_GuiAssemblySettings.BlueprintSettings]}
-    //       tooltip={[L_GuiAssemblySettings.BlueprintSettingsTooltip]}
-    //     />
-    //     <checkbox
-    //       state={assemblyBlueprintSettings.emptyBlueprintNames}
-    //       caption={[L_GuiAssemblySettings.EmptyBlueprintNames]}
-    //     />
-    //     <line />
-    //     <checkbox
-    //       state={assemblyBlueprintSettings.autoLandfill}
-    //       caption={[L_GuiAssemblySettings.AutoLandfill]}
-    //       tooltip={[L_GuiAssemblySettings.AutoLandfillTooltip]}
-    //     />
-    //     <checkbox
-    //       state={assemblyBlueprintSettings.replaceInfinityWithCombinators}
-    //       caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
-    //       tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
-    //     />
-    //     <button
-    //       caption={[L_GuiAssemblySettings.EditBlueprintFilters]}
-    //       tooltip={[L_GuiAssemblySettings.EditBlueprintFiltersTooltip]}
-    //       on_gui_click={ibind(this.editBlueprintFilters)}
-    //       styleMod={{ width: BpSettingsButtonWidth }}
-    //     />
-    //     <line />
-    //     <button
-    //       caption={[L_GuiAssemblySettings.SyncGridSettings]}
-    //       tooltip={[L_GuiAssemblySettings.SyncGridSettingsDescription]}
-    //       on_gui_click={ibind(this.syncGridSettings)}
-    //       styleMod={{ width: BpSettingsButtonWidth }}
-    //     />
-    //
-    //     <label style="caption_label" caption={[L_GuiAssemblySettings.BlueprintBookSettings]} />
-    //
-    //     <checkbox
-    //       state={assemblyBlueprintSettings.emptyBlueprintBookName}
-    //       caption={[L_GuiAssemblySettings.EmptyBlueprintBookName]}
-    //     />
-    //     <checkbox
-    //       state={assemblyBlueprintSettings.useNextStageTiles}
-    //       caption={[L_GuiAssemblySettings.UseNextStageTiles]}
-    //       tooltip={[L_GuiAssemblySettings.UseNextStageTilesTooltip]}
-    //     />
-    //     <button
-    //       caption={[L_GuiAssemblySettings.GetBlueprintBook]}
-    //       on_gui_click={ibind(this.getBlueprintBook)}
-    //       styleMod={{ width: BpSettingsButtonWidth }}
-    //     />
-    //     <button
-    //       caption={[L_GuiAssemblySettings.ExportBlueprintBookStringToFile]}
-    //       tooltip={[L_GuiAssemblySettings.ExportBlueprintBookStringToFileTooltip]}
-    //       on_gui_click={ibind(this.exportBlueprintBookStringToFile)}
-    //       styleMod={{ width: BpSettingsButtonWidth }}
-    //     />
-    //   </flow>
-    // )
+    const selectedIndex = property(1)
+    return (
+      <flow
+        direction="vertical"
+        styleMod={{
+          vertical_spacing: 0,
+        }}
+      >
+        <tabbed-pane
+          style="tabbed_pane_with_no_side_padding"
+          selected_tab_index={selectedIndex}
+          styleMod={{
+            horizontally_stretchable: true,
+            bottom_margin: -10,
+          }}
+        >
+          <tab caption={[L_GuiAssemblySettings.Defaults]} />
+          {this.BpSettings(nil)}
+          <tab caption={[L_GuiAssemblySettings.CurrentStage]} tooltip={[L_GuiAssemblySettings.CurrentStageTooltip]} />
+          <Fn uses="flow" from={playerCurrentStage(this.playerIndex)} map={ibind(this.BpSettings)} />
+          <tab caption={[L_GuiAssemblySettings.BpExport]} />
+          {this.BpExportTab()}
+        </tabbed-pane>
+      </flow>
+    )
+  }
+
+  private BpSettings(stage: Stage | nil): Element {
+    const settings: AssemblyOrStageBlueprintSettings =
+      stage == nil ? this.assembly.defaultBlueprintSettings : stage.getBlueprintSettingsView()
+
+    return (
+      <flow direction="vertical" styleMod={{ padding: 10 }}>
+        <label
+          caption={
+            stage == nil
+              ? [L_GuiAssemblySettings.EditingDefaults]
+              : stage.name.map(funcRef(AssemblySettings.editingForStage))
+          }
+          styleMod={{
+            font: "heading-2",
+            font_color: stage == nil ? [1, 1, 1] : Colors.OverrideHighlight,
+          }}
+        />
+        <line />
+
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <label
+            caption={stage == nil ? [L_GuiAssemblySettings.GridSettings] : [L_GuiAssemblySettings.GridSettingsAndIcons]}
+            styleMod={stage && highlightIfNotNil(this.anyGridSettingsChanged(stage))}
+          />
+          <EditButton on_gui_click={bind(ibind(this.editGridSettings), settings, stage)} />
+        </flow>
+
+        <label caption={[L_GuiAssemblySettings.FilteringEntities]} style="caption_label" />
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <label caption={[L_GuiAssemblySettings.Blacklist]} styleMod={highlightIfOverriden(settings.blacklist)} />
+          <EditButton on_gui_click={bind(ibind(this.editFilter), settings, "blacklist")} />
+        </flow>
+        <flow direction="vertical" styleMod={{ vertical_spacing: 0 }}>
+          <CheckboxTextfield
+            captionBefore={[L_GuiAssemblySettings.IncludeEntitiesInTheNextNStages1]}
+            captionAfter={[L_GuiAssemblySettings.IncludeEntitiesInTheNextNStages2]}
+            value={settings.stageLimit}
+          />
+          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+            <label
+              caption={[L_GuiAssemblySettings.OrInWhitelist]}
+              styleMod={{
+                left_margin: 28,
+                ...highlightIfOverriden(settings.additionalWhitelist),
+              }}
+              enabled={settings.stageLimit.truthy()}
+            />
+            <EditButton
+              on_gui_click={bind(ibind(this.editFilter), settings, "additionalWhitelist")}
+              enabled={settings.stageLimit.truthy()}
+            />
+          </flow>
+        </flow>
+
+        <label caption={[L_GuiAssemblySettings.Tiles]} style="caption_label" />
+        <checkbox
+          state={settings.autoLandfill}
+          caption={[L_GuiAssemblySettings.AutoLandfill]}
+          tooltip={[L_GuiAssemblySettings.AutoLandfillTooltip]}
+          styleMod={highlightIfOverriden(settings.autoLandfill)}
+        />
+        <checkbox
+          state={settings.useNextStageTiles}
+          caption={[L_GuiAssemblySettings.UseNextStageTiles]}
+          tooltip={[L_GuiAssemblySettings.UseNextStageTilesTooltip]}
+          styleMod={highlightIfOverriden(settings.useNextStageTiles)}
+        />
+
+        <label caption={[L_GuiAssemblySettings.Other]} style="caption_label" />
+
+        <checkbox
+          state={settings.replaceInfinityEntitiesWithCombinators}
+          caption={[L_GuiAssemblySettings.ReplaceInfinityWithCombinators]}
+          tooltip={[L_GuiAssemblySettings.ReplaceInfinityWithCombinatorsTooltip]}
+          styleMod={highlightIfOverriden(settings.replaceInfinityEntitiesWithCombinators)}
+        />
+      </flow>
+    )
+  }
+
+  private static editingForStage(this: void, name: string): LocalisedString {
+    return [L_GuiAssemblySettings.EditingForStage, name]
+  }
+
+  private editGridSettings(settings: AssemblyOrStageBlueprintSettings, stage: Stage | nil) {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    const stageToUse = stage ?? this.assembly.getStage(this.assembly.maxStage())!
+    editInItemBlueprintSettings(player, settings, stageToUse.surface, stageToUse.getBlueprintBBox())
+  }
+
+  private editFilter(settings: AssemblyOrStageBlueprintSettings, type: "additionalWhitelist" | "blacklist") {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    editBlueprintFilters(player, settings, type)
+  }
+
+  private anyGridSettingsChanged(stage: Stage): Property<unknown> {
+    const stageSettings = stage.stageBlueprintSettings
+    return multiMap(
+      funcRef(AssemblySettings.anyNotNil),
+      stageSettings.snapToGrid,
+      stageSettings.positionOffset,
+      stageSettings.absoluteSnapping,
+      stageSettings.positionRelativeToGrid,
+    )
+  }
+  private static anyNotNil(this: void, a: unknown, b: unknown, c: unknown, d: unknown) {
+    return a || b || c || d
+  }
+
+  private BpExportTab(): Element {
+    return (
+      <flow direction="vertical" styleMod={{ padding: 10 }}>
+        <label caption={[L_GuiAssemblySettings.CurrentStage]} style="caption_label" />
+        <button
+          caption={[L_GuiAssemblySettings.GetBlueprint]}
+          styleMod={{ width: BpSettingsButtonWidth }}
+          on_gui_click={ibind(this.getBlueprint)}
+        />
+        <line />
+        <button
+          caption={[L_GuiAssemblySettings.MakeBlueprintBook]}
+          tooltip={[L_GuiAssemblySettings.MakeBlueprintBookTooltip]}
+          styleMod={{ width: BpSettingsButtonWidth }}
+          on_gui_click={ibind(this.makeBlueprintBook)}
+        />
+        <button
+          caption={[L_GuiAssemblySettings.ExportBlueprintBookStringToFile]}
+          tooltip={[L_GuiAssemblySettings.ExportBlueprintBookStringToFileTooltip]}
+          styleMod={{ width: BpSettingsButtonWidth }}
+          on_gui_click={ibind(this.exportBlueprintBookStringToFile)}
+        />
+      </flow>
+    )
+  }
+
+  private getBlueprint() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || stage.assembly != this.assembly) return
+    const player = game.get_player(this.playerIndex)
+    if (!player || !player.clear_cursor()) return
+    const stack = player.cursor_stack
+    if (!stack) return
+    const successful = takeStageBlueprint(stage, stack)
+    if (!successful) {
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintEmpty],
+        create_at_cursor: true,
+      })
+      return
+    }
+  }
+
+  private makeBlueprintBook() {
+    const player = game.get_player(this.playerIndex)
+    if (!player || !player.clear_cursor()) return
+    const stack = player.cursor_stack
+    if (!stack) return
+    const successful = makeBlueprintBook(this.assembly, stack)
+    if (!successful) {
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintBookEmpty],
+        create_at_cursor: true,
+      })
+      return
+    }
+  }
+
+  private exportBlueprintBookStringToFile() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    const fileName = exportBlueprintBookToFile(this.assembly, player)
+    if (fileName == nil) {
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintBookEmpty],
+        create_at_cursor: true,
+      })
+    } else {
+      player.print([L_Interaction.BlueprintBookExported, fileName])
+    }
   }
 
   private OtherTab() {
@@ -285,7 +434,6 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     )
   }
 
-  // todo
   // private getBlueprint() {
   //   const stage = playerCurrentStage(this.playerIndex).get()
   //   if (!stage || stage.assembly != this.assembly) return
@@ -293,7 +441,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   //   if (!player) return
   //   const cursorStack = player.cursor_stack
   //   if (!cursorStack || !player.clear_cursor()) return
-  //   const took = stage.takeBlueprint(cursorStack)
+  //   const took = takeStageBlueprint(stage, cursorStack)
   //   if (!took) {
   //     cursorStack.clear()
   //     return player.create_local_flying_text({

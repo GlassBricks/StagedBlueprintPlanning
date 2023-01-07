@@ -138,7 +138,7 @@ export declare const enum L_Interaction {
   CannotMoveToSameStage = "bp100.interaction.cannot-move-to-same-stage",
   /** WARNING: The filtered stage move tool must be used with instant-deconstruction [font=default-large-bold]disabled[/font]. Otherwise, the tool will not work properly (it will act like a deconstruction planner). */
   FilteredStageMoveToolWarning = "bp100.interaction.filtered-stage-move-tool-warning",
-  /** Blueprint book exported to __1__ */
+  /** Blueprint book exported to script-output/__1__ */
   BlueprintBookExported = "bp100.interaction.blueprint-book-exported",
 }
 export declare const enum L_GuiAssemblySelector {
@@ -200,48 +200,54 @@ export declare const enum L_GuiAssemblySettings {
   DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
   /** Stage contents will be merged with the previous stage (__1__). */
   DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
-  /** Current stage */
+  /** Defaults */
+  Defaults = "bp100.gui.assembly-settings.defaults",
+  /** Current stage [img=info] */
   CurrentStage = "bp100.gui.assembly-settings.current-stage",
-  /** Get blueprint [img=info] */
-  GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
-  /** Changes to the given blueprint will [font=default-bold]not[/font] be saved. */
-  GetBlueprintTooltip = "bp100.gui.assembly-settings.get-blueprint-tooltip",
-  /** Edit blueprint [img=info] */
-  EditBlueprint = "bp100.gui.assembly-settings.edit-blueprint",
-  /** Changes (icons, grid settings, etc.) [font=default-bold]will[/font] be saved. */
-  EditBlueprintTooltip = "bp100.gui.assembly-settings.edit-blueprint-tooltip",
-  /** Blueprint settings [img=info] */
-  BlueprintSettings = "bp100.gui.assembly-settings.blueprint-settings",
-  /** These settings apply to all stages. For stage-specific blueprint settings, click "Edit blueprint" above. */
-  BlueprintSettingsTooltip = "bp100.gui.assembly-settings.blueprint-settings-tooltip",
-  /** Empty blueprint names */
-  EmptyBlueprintNames = "bp100.gui.assembly-settings.empty-blueprint-names",
-  /** Infinity chests/pipes to combinators [img=info] */
-  ReplaceInfinityWithCombinators = "bp100.gui.assembly-settings.replace-infinity-with-combinators",
-  /** In blueprints, replaces infinity chests/pipes with constant combinators having matching signals. */
-  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
+  /** These settings override the default settings for the current stage. Overriden settings are highlighted. */
+  CurrentStageTooltip = "bp100.gui.assembly-settings.current-stage-tooltip",
+  /** Defaults */
+  EditingDefaults = "bp100.gui.assembly-settings.editing-defaults",
+  /** Overrides for stage: __1__ */
+  EditingForStage = "bp100.gui.assembly-settings.editing-for-stage",
+  /** Grid settings: */
+  GridSettings = "bp100.gui.assembly-settings.grid-settings",
+  /** Icons and grid settings: */
+  GridSettingsAndIcons = "bp100.gui.assembly-settings.grid-settings-and-icons",
+  /** Edit */
+  Edit = "bp100.gui.assembly-settings.edit",
+  /** Entities */
+  FilteringEntities = "bp100.gui.assembly-settings.filtering-entities",
+  /** Only include entities changed in the previous */
+  IncludeEntitiesInTheNextNStages1 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-1",
+  /** stages */
+  IncludeEntitiesInTheNextNStages2 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-2",
+  /** or in whitelist: */
+  OrInWhitelist = "bp100.gui.assembly-settings.or-in-whitelist",
+  /** Blacklist: */
+  Blacklist = "bp100.gui.assembly-settings.blacklist",
+  /** Tiles */
+  Tiles = "bp100.gui.assembly-settings.tiles",
   /** Auto-landfill [img=info] */
   AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
   /** Automatically set landfill tiles before taking a blueprint. */
   AutoLandfillTooltip = "bp100.gui.assembly-settings.auto-landfill-tooltip",
-  /** Edit blueprint filters [img=info] */
-  EditBlueprintFilters = "bp100.gui.assembly-settings.edit-blueprint-filters",
-  /** The set filters will be applied after taking the blueprint. */
-  EditBlueprintFiltersTooltip = "bp100.gui.assembly-settings.edit-blueprint-filters-tooltip",
-  /** Sync grid settings [img=info] */
-  SyncGridSettings = "bp100.gui.assembly-settings.sync-grid-settings",
-  /** Copies the grid settings from the [font=default-bold]last[/font] stage to all other stages. */
-  SyncGridSettingsDescription = "bp100.gui.assembly-settings.sync-grid-settings-description",
-  /** Blueprint book settings */
-  BlueprintBookSettings = "bp100.gui.assembly-settings.blueprint-book-settings",
-  /** Empty blueprint book name */
-  EmptyBlueprintBookName = "bp100.gui.assembly-settings.empty-blueprint-book-name",
   /** Use next stage's tiles [img=info] */
   UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
   /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
   UseNextStageTilesTooltip = "bp100.gui.assembly-settings.use-next-stage-tiles-tooltip",
-  /** Make blueprint book */
-  GetBlueprintBook = "bp100.gui.assembly-settings.get-blueprint-book",
+  /** Replace infinity chests/pipes with combinators [img=info] */
+  ReplaceInfinityWithCombinators = "bp100.gui.assembly-settings.replace-infinity-with-combinators",
+  /** In blueprints, replaces infinity chests/pipes with constant combinators having the same icons when viewed in alt-mode. */
+  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
+  /** Export */
+  BpExport = "bp100.gui.assembly-settings.bp-export",
+  /** Get blueprint */
+  GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
+  /** Make blueprint book [img=info] */
+  MakeBlueprintBook = "bp100.gui.assembly-settings.make-blueprint-book",
+  /** Creates a blueprint book containing all stages. */
+  MakeBlueprintBookTooltip = "bp100.gui.assembly-settings.make-blueprint-book-tooltip",
   /** Export book to file [img=info] */
   ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
   /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */

@@ -141,6 +141,8 @@ export const enum L_Game {
 export namespace Colors {
   export const Orange: ColorArray = [255, 155, 65]
   export const Blueish: ColorArray = [65, 200, 255]
+
+  export const OverrideHighlight: ColorArray = [0.4, 1, 0.5]
   export const Green: ColorArray = [0.5, 0.9, 0.5]
   export const Red: ColorArray = [0.9, 0.5, 0.5]
 }

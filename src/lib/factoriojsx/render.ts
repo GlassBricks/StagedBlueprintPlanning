@@ -180,7 +180,6 @@ function renderElement(
   for (let [key, value] of pairs(element)) {
     const propProperties = propInfo[key]
     if (!propProperties) continue
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     if (typeof value == "function") value = funcRef(value as any)
     if (propProperties == "event") {
       assert((value as Func).invoke, "Gui event handler must be a function")
@@ -268,6 +267,13 @@ function renderElement(
     for (const i of $range(1, children.length, 2)) {
       const tab = children[i - 1]
       const content = children[i]
+      if (tab.type != "tab") {
+        error(
+          `Tabbed pane must have alternating tab-content children, got types: ${children
+            .map((c) => c.type)
+            .join(", ")}`,
+        )
+      }
       ;(factorioElement as TabbedPaneGuiElement).add_tab(tab, content)
     }
   }

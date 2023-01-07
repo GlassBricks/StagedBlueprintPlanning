@@ -10,16 +10,7 @@
  */
 
 import { isEmpty } from "../_util"
-import {
-  bind,
-  Callback,
-  Func,
-  funcRef,
-  ibind,
-  RegisterClass,
-  RegisterClassFunctionsOnly,
-  registerFunctions,
-} from "../references"
+import { bind, Callback, Func, funcRef, ibind, RegisterClass, registerFunctions } from "../references"
 import { Event, Subscribable } from "./Event"
 import { Subscription } from "./Subscription"
 
@@ -34,7 +25,7 @@ export type MaybeProperty<T> = Property<T> | T
 export type MaybeMutableProperty<T> = Property<T> | MutableProperty<T> | T
 export type Mapper<T, U> = Func<(value: T) => U>
 
-@RegisterClassFunctionsOnly("Property")
+@RegisterClass("State")
 export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   abstract get(): T
 
@@ -97,7 +88,7 @@ export interface MutableProperty<T> extends Property<T> {
   set(value: T): void
 }
 
-@RegisterClass("MutablePropertyImpl")
+@RegisterClass("MutableState")
 class MutablePropertyImpl<T> extends BasicProperty<T> implements MutableProperty<T> {
   public constructor(private value: T) {
     super()
@@ -114,7 +105,7 @@ class MutablePropertyImpl<T> extends BasicProperty<T> implements MutableProperty
   }
 
   __tostring(): string {
-    return "MutableState(" + this.get() + ")"
+    return `MutablePropertyImpl(${this.get()})`
   }
 }
 export function property<T>(value: T): MutableProperty<T> {
@@ -125,7 +116,7 @@ export function isMutableProperty<T>(property: Property<T>): property is Mutable
   return typeof (property as MutableProperty<T>).set == "function"
 }
 
-@RegisterClass("MappedProperty")
+@RegisterClass("MappedState")
 class MappedProperty<T, U> extends BasicProperty<U> {
   private sourceSubscription: Subscription | nil
   private curValue: U | nil
@@ -152,7 +143,7 @@ class MappedProperty<T, U> extends BasicProperty<U> {
     this.curValue = nil
   }
 
-  sourceListener(sourceNewValue: T) {
+  private sourceListener(sourceNewValue: T) {
     if (isEmpty(this.event)) return this.unsubscribeFromSource()
 
     const { curValue: oldValue, mapper } = this
@@ -168,11 +159,77 @@ class MappedProperty<T, U> extends BasicProperty<U> {
   }
 
   __tostring(): string {
-    return "MappedState(" + this.source + ")"
+    return `MappedState(${this.source})`
   }
 }
 
-@RegisterClass("FlatMappedProperty")
+@RegisterClass("CustomProperty")
+class CustomProperty<U> extends BasicProperty<U> {
+  private subscriptions: Subscription[] | nil
+  private curValue: U | nil
+
+  public constructor(private readonly sources: Property<unknown>[], private readonly func: Func<() => U>) {
+    super()
+  }
+  get(): U {
+    if (this.subscriptions) return this.curValue!
+    return this.func.invoke()
+  }
+
+  private subscribeToSources() {
+    this.subscriptions = this.sources.map((source) => source._subscribeIndependently(ibind(this.sourceListener)))
+    this.curValue = this.func.invoke()
+  }
+
+  private unsubscribeFromSources() {
+    for (const sub of this.subscriptions!) sub.close()
+    this.subscriptions = nil
+    this.curValue = nil
+  }
+
+  private sourceListener() {
+    if (isEmpty(this.event)) return this.unsubscribeFromSources()
+
+    const { curValue: oldValue } = this
+    const mappedNewValue = this.func.invoke()
+    if (oldValue == mappedNewValue) return
+    this.curValue = mappedNewValue
+    this.event.raise(mappedNewValue, oldValue!)
+  }
+
+  override _subscribeIndependently(observer: ChangeObserver<U>): Subscription {
+    if (!this.subscriptions) this.subscribeToSources()
+    return super._subscribeIndependently(observer)
+  }
+
+  __tostring(): string {
+    return `CustomProperty(${this.sources})`
+  }
+}
+
+export function customMap<U>(func: Func<() => U>, ...sources: Property<unknown>[]): Property<U> {
+  return new CustomProperty<U>(sources, func)
+}
+function unwrapValuesAndCall(sources: Property<any>[], func: Func): any {
+  const values = []
+  for (const i of $range(1, sources.length)) {
+    values[i - 1] = sources[i - 1].get()
+  }
+  return func.invoke(...values)
+}
+
+type ToProperties<T> = {
+  [K in keyof T]: Property<T[K]>
+}
+registerFunctions("multiMap", {
+  unwrapValuesAndCall,
+})
+export function multiMap<A extends any[], U>(func: Func<(...args: A) => U>, ...sources: ToProperties<A>): Property<U> {
+  const fn = bind(func)
+  return new CustomProperty<U>(sources, bind(unwrapValuesAndCall, sources, fn))
+}
+
+@RegisterClass("FlatMappedState")
 export class FlatMappedProperty<T, U> extends BasicProperty<U> {
   private sourceSubscription: Subscription | nil
   private nestedSubscription: Subscription | nil

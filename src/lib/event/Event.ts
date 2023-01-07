@@ -20,7 +20,7 @@ export interface Subscribable<O extends AnyObserver> {
 }
 
 type AsMap = LuaMap<EventSubscription, AnyObserver>
-@RegisterClass("Event")
+@RegisterClass("ObserverList") // old name so migrations work
 export class Event<O extends AnyObserver> implements Subscribable<O> {
   _subscribeIndependently(observer: O): Subscription {
     const thisAsMap = this as unknown as AsMap
@@ -51,7 +51,7 @@ export class Event<O extends AnyObserver> implements Subscribable<O> {
   }
 }
 
-@RegisterClass("EventSubscription")
+@RegisterClass("ObserverSubscription")
 class EventSubscription extends Subscription {
   constructor(private readonly observers: LuaMap<EventSubscription>) {
     super()

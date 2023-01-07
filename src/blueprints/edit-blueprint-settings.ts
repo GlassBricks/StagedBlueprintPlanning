@@ -10,12 +10,12 @@
  */
 
 import { Prototypes } from "../constants"
-import { Events, MutableProperty } from "../lib"
+import { Events, isEmpty, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "./take-single-blueprint"
-import { AssemblyOrStageBlueprintSettings, StageBlueprintSettings } from "./blueprint-settings"
-import { getCurrentValues, PropertiesTable } from "../utils/properties-obj"
+import { AssemblyOrStageBlueprintSettings, BlueprintTakeParameters, StageBlueprintSettings } from "./blueprint-settings"
+import { PropertiesTable } from "../utils/properties-obj"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
@@ -38,6 +38,19 @@ function clearOpenedItem(playerIndex: PlayerIndex): void {
   }
 }
 
+function extractBasicBlueprintTakeParameters(settings: AssemblyOrStageBlueprintSettings): BlueprintTakeParameters {
+  return {
+    positionOffset: settings.positionOffset.get(),
+    snapToGrid: settings.snapToGrid.get(),
+    positionRelativeToGrid: settings.positionRelativeToGrid.get(),
+    absoluteSnapping: settings.absoluteSnapping.get(),
+    stageLimit: nil,
+    additionalWhitelist: nil,
+    blacklist: settings.blacklist.get(),
+    replaceInfinityEntitiesWithCombinators: false,
+  }
+}
+
 export function editInItemBlueprintSettings(
   player: LuaPlayer,
   settings: AssemblyOrStageBlueprintSettings,
@@ -48,10 +61,7 @@ export function editInItemBlueprintSettings(
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
 
-  const takeValues = getCurrentValues(settings)
-
-  // todo: replace with full take blueprint
-  const took = takeSingleBlueprint(blueprint, takeValues, surface, bbox, nil, true)
+  const took = takeSingleBlueprint(blueprint, extractBasicBlueprintTakeParameters(settings), surface, bbox, nil, true)
   if (!took) {
     inventory.destroy()
     return
@@ -124,17 +134,17 @@ function updateBlueprintItemSettings(
   settings.snapToGrid.set(snapToGrid)
   settings.absoluteSnapping.set(blueprint.blueprint_absolute_snapping)
   settings.positionRelativeToGrid.set(blueprint.blueprint_position_relative_to_grid)
-  settings.positionOffset.set(Pos.minus(bpPosition, originalPosition))
+  settings.positionOffset.set(snapToGrid && Pos.minus(bpPosition, originalPosition))
 }
 function updateBlueprintFilters(stack: LuaItemStack, property: MutableProperty<ReadonlyLuaSet<string> | nil>): void {
   const filters = stack.entity_filters
-  if (filters == nil || filters[0] == nil) {
+  if (isEmpty(filters)) {
     property.set(nil)
     return
   }
 
   const result = new LuaSet<string>()
-  for (const filter of filters) result.add(filter)
+  for (const [, filter] of pairs(filters as Record<number, string>)) result.add(filter)
   property.set(result)
 }
 

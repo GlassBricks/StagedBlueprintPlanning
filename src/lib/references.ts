@@ -233,7 +233,16 @@ class KeyFunc implements Func {
   constructor(private readonly instance: Record<keyof any, ContextualFun>, private readonly key: keyof any) {}
 
   invoke(...args: unknown[]) {
-    return this.instance[this.key](...args)
+    const instance = this.instance
+    const fn = instance[this.key]
+    if (fn == nil) {
+      error(
+        `Function with name ${tostring(this.key)} does not exist on ${this.instance}\n` +
+          `Block: ${serpent.block(this.instance, { maxlevel: 1 })}\n` +
+          `Metatable: ${serpent.block(getmetatable(this.instance), { maxlevel: 1 })}`,
+      )
+    }
+    return fn.call(instance, ...args)
   }
 }
 

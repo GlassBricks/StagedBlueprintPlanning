@@ -11,6 +11,7 @@ import {
 } from "../lib"
 import { BaseStyleMod } from "../lib/factoriojsx"
 import { DiffValue, getDiff, getResultValue } from "./diff-value"
+import { Colors } from "../constants"
 
 @RegisterClass("DiffedProperty")
 export class DiffedProperty<T> extends Property<T> implements MutableProperty<T> {
@@ -40,8 +41,8 @@ export class DiffedProperty<T> extends Property<T> implements MutableProperty<T>
     this.resultValue.closeAll()
   }
 }
-function blueIfNotNil(value: unknown | nil): Color | ColorArray {
-  return value != nil ? [0.6, 0.8, 1] : [1, 1, 1]
+function coloredIfNotNil(value: unknown | nil): Color | ColorArray {
+  return value != nil ? Colors.OverrideHighlight : [1, 1, 1]
 }
 
 function boldIfNotNil(value: unknown | nil): string {
@@ -49,16 +50,20 @@ function boldIfNotNil(value: unknown | nil): string {
 }
 
 registerFunctions("prop-possibly-overriden", {
-  blueIfNotNil,
+  coloredIfNotNil,
   boldIfNotNil,
 })
 
-export function highlightIfOverriden<T>(prop: MutableProperty<T>): BaseStyleMod {
-  if (!(prop instanceof DiffedProperty)) return {}
+export function highlightIfNotNil(prop: Property<unknown | nil>): BaseStyleMod {
   return {
-    font_color: prop.overrideValue.map(funcRef(blueIfNotNil)),
-    font: prop.overrideValue.map(funcRef(boldIfNotNil)),
+    font_color: prop.map(funcRef(coloredIfNotNil)),
+    font: prop.map(funcRef(boldIfNotNil)),
   }
+}
+
+export function highlightIfOverriden(prop: MutableProperty<any>): BaseStyleMod {
+  if (!(prop instanceof DiffedProperty)) return {}
+  return highlightIfNotNil(prop.overrideValue)
 }
 
 export function getDefaultValueIfIsOverridenProp<T>(prop: MutableProperty<T>): T | nil {

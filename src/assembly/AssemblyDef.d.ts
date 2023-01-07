@@ -34,7 +34,6 @@ export interface UserAssembly extends Assembly {
   readonly displayName: Property<LocalisedString>
   readonly content: MutableAssemblyContent
   readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
-
   readonly localEvents: SimpleSubscribable<LocalAssemblyEvent>
 
   getStage(stageNumber: StageNumber): Stage | nil

@@ -6,19 +6,20 @@ export interface CheckboxTextfieldProps {
   captionBefore: LocalisedString
   captionAfter: LocalisedString
 
-  value: MutableProperty<number | false>
+  value: MutableProperty<number | nil>
 }
 @RegisterClass("gui:CheckboxTextfield")
 export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
   private checkbox!: CheckboxGuiElement
   private textfield!: TextFieldGuiElement
-  private value!: MutableProperty<number | false>
+  private value!: MutableProperty<number | nil>
 
   override render(props: CheckboxTextfieldProps, context: RenderContext): Element {
     const { captionBefore, captionAfter, value } = props
     this.value = value
 
     const isTruthy = this.value.truthy()
+    const highlightStyleMod = highlightIfOverriden(value)
     return (
       <flow
         direction="horizontal"
@@ -29,7 +30,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
         <checkbox
           state={isTruthy}
           caption={captionBefore}
-          styleMod={highlightIfOverriden(value)}
+          styleMod={highlightStyleMod}
           on_gui_checked_state_changed={ibind(this.onCheckboxChanged)}
           onCreate={(e) => (this.checkbox = e)}
         />
@@ -45,13 +46,13 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
           onCreate={(e) => (this.textfield = e)}
           styleMod={{ width: 50 }}
         />
-        <label caption={captionAfter} styleMod={highlightIfOverriden(value)} />
+        <label caption={captionAfter} styleMod={highlightStyleMod} />
       </flow>
     )
   }
 
-  private valueToText(value: number | false) {
-    if (value == false) return ""
+  private valueToText(value: number | nil) {
+    if (value == nil) return ""
     return tostring(value)
   }
 
@@ -60,7 +61,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
     if (newState) {
       this.value.set(getDefaultValueIfIsOverridenProp(this.value) ?? 1)
     } else {
-      this.value.set(false)
+      this.value.set(nil)
     }
   }
 
