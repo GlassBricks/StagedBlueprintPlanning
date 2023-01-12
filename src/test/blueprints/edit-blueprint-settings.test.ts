@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,12 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
+import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../../blueprints/edit-blueprint-settings"
 import { Prototypes } from "../../constants"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
-import expect from "tstl-expect"
-import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { createPropertiesTable, getCurrentValues, PropertiesTable } from "../../utils/properties-obj"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
@@ -55,8 +55,24 @@ describe("in-item blueprint settings", () => {
     })!
     assert(entity2)
   })
+
+  test("loads icons settings", () => {
+    const icons: BlueprintSignalIcon[] = [
+      {
+        index: 1,
+        signal: { type: "item", name: "iron-chest" },
+      },
+    ]
+    settings.icons.set(icons)
+    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
+    expect(stack).to.be.any()
+    expect(stack.label).to.equal("Test")
+    expect(stack.valid_for_read && stack.is_blueprint).to.be(true)
+    expect(stack.blueprint_icons).toEqual(icons)
+  })
+
   test("can edit settings", () => {
-    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10))!
+    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
     expect(stack).to.be.any()
     expect(stack.valid_for_read && stack.is_blueprint).to.be(true)
 
@@ -94,7 +110,7 @@ describe("in-item blueprint settings", () => {
   })
 
   test("doesn't update grid settings if entities removed", () => {
-    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10))!
+    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
     expect(stack).toMatchTable({
       valid_for_read: true,
       is_blueprint: true,

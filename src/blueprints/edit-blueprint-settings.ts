@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -13,9 +13,9 @@ import { Prototypes } from "../constants"
 import { Events, isEmpty, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "./take-single-blueprint"
-import { AssemblyOrStageBlueprintSettings, BlueprintTakeParameters, StageBlueprintSettings } from "./blueprint-settings"
 import { PropertiesTable } from "../utils/properties-obj"
+import { AssemblyOrStageBlueprintSettings, BlueprintTakeParameters, StageBlueprintSettings } from "./blueprint-settings"
+import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "./take-single-blueprint"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
@@ -38,7 +38,7 @@ function clearOpenedItem(playerIndex: PlayerIndex): void {
   }
 }
 
-function extractBasicBlueprintTakeParameters(settings: AssemblyOrStageBlueprintSettings): BlueprintTakeParameters {
+function getBasicBlueprintTakeParams(settings: AssemblyOrStageBlueprintSettings): BlueprintTakeParameters {
   return {
     positionOffset: settings.positionOffset.get(),
     snapToGrid: settings.snapToGrid.get(),
@@ -47,7 +47,8 @@ function extractBasicBlueprintTakeParameters(settings: AssemblyOrStageBlueprintS
     stageLimit: nil,
     additionalWhitelist: nil,
     blacklist: settings.blacklist.get(),
-    replaceInfinityEntitiesWithCombinators: false,
+    replaceInfinityEntitiesWithCombinators: settings.replaceInfinityEntitiesWithCombinators.get(),
+    icons: settings.icons?.get(),
   }
 }
 
@@ -56,16 +57,18 @@ export function editInItemBlueprintSettings(
   settings: AssemblyOrStageBlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
+  bpName: string,
 ): LuaItemStack | nil {
   clearOpenedItem(player.index)
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
 
-  const took = takeSingleBlueprint(blueprint, extractBasicBlueprintTakeParameters(settings), surface, bbox, nil, true)
+  const took = takeSingleBlueprint(blueprint, getBasicBlueprintTakeParams(settings), surface, bbox, nil, true)
   if (!took) {
     inventory.destroy()
     return
   }
+  blueprint.label = bpName
 
   global.players[player.index].blueprintEditInfo = {
     blueprintInventory: inventory,

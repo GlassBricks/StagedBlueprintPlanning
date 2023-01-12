@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -12,6 +12,10 @@
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { WorldUpdater } from "../assembly/WorldUpdater"
+import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
+import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
+import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
+import { Colors, Prototypes } from "../constants"
 import { getStageToMerge } from "../entity/AssemblyEntity"
 import { bind, funcRef, ibind, multiMap, Property, property, RegisterClass, registerFunctions } from "../lib"
 import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
@@ -28,6 +32,8 @@ import {
 } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiAssemblySettings, L_Interaction } from "../locale"
+import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
+import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { ItemRename } from "./ItemRename"
 import {
   PlayerChangedStageEvent,
@@ -37,12 +43,6 @@ import {
   teleportToSurface1,
 } from "./player-current-stage"
 import { StageSelector } from "./StageSelector"
-import { Colors, Prototypes } from "../constants"
-import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
-import { CheckboxTextfield } from "./components/CheckboxTextfield"
-import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
-import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
-import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
 
 declare global {
   interface PlayerData {
@@ -325,7 +325,8 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const stageToUse = stage ?? this.assembly.getStage(this.assembly.maxStage())!
-    editInItemBlueprintSettings(player, settings, stageToUse.surface, stageToUse.getBlueprintBBox())
+    const name = stage ? stage.name.get() : "Defaults (only grid settings saved)"
+    editInItemBlueprintSettings(player, settings, stageToUse.surface, stageToUse.getBlueprintBBox(), name)
   }
 
   private editFilter(settings: AssemblyOrStageBlueprintSettings, type: "additionalWhitelist" | "blacklist") {
