@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.1
-Date: ????
+Date: 2023-01-12
   Bugfixes:
     - Fixed icons not loaded when editing blueprint grid/icon settings
     - Added stage name when editing blueprint item settings
