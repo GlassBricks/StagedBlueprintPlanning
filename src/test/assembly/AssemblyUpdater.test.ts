@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, createAssemblyUpdater, StageMoveResult } from "../../assembly/AssemblyUpdater"
@@ -30,7 +31,6 @@ import { Pos } from "../../lib/geometry"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
-import expect, { mock } from "tstl-expect"
 import direction = defines.direction
 import wire_type = defines.wire_type
 
@@ -544,12 +544,34 @@ describe("updateWiresFromWorld", () => {
     assertOneEntity()
     assertWUNotCalled()
   })
+  test("doesn't crash if neighbor in previous stage doesn't exist", () => {
+    const { entity: entity1 } = addEntity(2)
+    const { entity: entity2, luaEntity: luaEntity2 } = addEntity(1, {
+      position: pos.plus({ x: 1, y: 0 }),
+    })
+    assembly.content.addCircuitConnection({
+      fromEntity: entity1,
+      toEntity: entity2,
+      fromId: 1,
+      toId: 1,
+      wire: defines.wire_type.green,
+    })
+    wireSaver.saveWireConnections.returnsOnce(true as any)
+    luaEntity2.destroy()
+
+    const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity1, 2)
+    expect(ret).to.be("updated")
+
+    assertNEntities(2)
+    assertUpdateCalled(entity1, 2, nil, 1)
+    assertUpdateCalled(entity2, 1, nil, 2)
+  })
   // test.todo(
   //   "if max connections exceeded, notifies and calls update",
   //   // , () => {
   //   // const { entity } = addEntity(1)
   //   // wireSaver.saveWireConnections.returnsOnce(true as any)
-  //   // const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
+  //   // const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 2)
   //   // expect(ret).to.be("max-connections-exceeded")
   //   //
   //   // assertOneEntity()

@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.4
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fix error on when connecting circuit wires to an entity without its entity present in the first stage.
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.3
 Date: 2023-01-20

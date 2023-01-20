@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -17,6 +17,7 @@ import {
   StageNumber,
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
+import { getSavedDirection, SavedDirection } from "../entity/direction"
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
@@ -25,7 +26,6 @@ import { findUndergroundPair } from "../entity/special-entity-treatment"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import { AssemblyEntityDollyResult, WorldUpdater } from "./WorldUpdater"
-import { getSavedDirection, SavedDirection } from "../entity/direction"
 import min = math.min
 
 /**
@@ -295,8 +295,8 @@ export function createAssemblyUpdater(
   function checkDefaultControlBehavior(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
     if (stage <= entity.firstStage || hasControlBehaviorSet(entity, stage)) return false
     fixEmptyControlBehavior(entity)
-    const entitySource = assert(entity.getWorldEntity(stage), "Could not find circuit connected entity")[0]
-    doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
+    const luaEntity = entity.getWorldEntity(stage)
+    if (luaEntity) doUpdateEntityFromWorld(assembly, stage, entity, luaEntity)
     return true
   }
 
