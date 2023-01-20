@@ -68,6 +68,10 @@ export declare const enum L_Controls {
   NextStage = "controls.bp100:next-stage",
   /** Go to previous stage */
   PreviousStage = "controls.bp100:previous-stage",
+  /** Go to next staged build */
+  NextAssembly = "controls.bp100:next-assembly",
+  /** Go to previous staged build */
+  PreviousAssembly = "controls.bp100:previous-assembly",
   /** Go to entity's first stage */
   GoToFirstStage = "controls.bp100:go-to-first-stage",
   /** Go to entity's next notable stage */
@@ -124,6 +128,10 @@ export declare const enum L_Interaction {
   NoNextStage = "bp100.interaction.no-next-stage",
   /** No previous stage */
   NoPreviousStage = "bp100.interaction.no-previous-stage",
+  /** No next staged build */
+  NoNextAssembly = "bp100.interaction.no-next-assembly",
+  /** No previous staged build */
+  NoPreviousAssembly = "bp100.interaction.no-previous-assembly",
   /** Already at entity first stage */
   AlreadyAtFirstStage = "bp100.interaction.already-at-first-stage",
   /** Entity is the same in all stages */

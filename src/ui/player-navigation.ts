@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -14,11 +14,12 @@
  * For assembly editing, see assembly/event-listener.ts.
  */
 
-import { CustomInputs, Settings } from "../constants"
+import { getAllAssemblies } from "../assembly/UserAssembly"
+import { CustomInputs } from "../constants"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
 import { getAssemblyEntityOfEntity, getNextNotableStage } from "./entity-util"
-import { playerCurrentStage, teleportToStage } from "./player-current-stage"
+import { playerCurrentStage, teleportToAssembly, teleportToStage } from "./player-current-stage"
 
 const Events = ProtectedEvents
 
@@ -33,40 +34,26 @@ function notifyError(player: LuaPlayer, message: LocalisedString, playSound: boo
   })
 }
 
-Events.on(CustomInputs.NextStage, (e) => {
-  const player = game.get_player(e.player_index)!
-  const stage = playerCurrentStage(e.player_index).get()
+function goToStageRelative(event: CustomInputEvent, diff: number, ErrorLocale: string) {
+  const player = game.get_player(event.player_index)!
+  const stage = playerCurrentStage(event.player_index).get()
   if (!stage) {
-    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
+    return notifyError(player, [L_Interaction.NotInAnAssembly], false)
   }
-  const nextStageNum = stage.stageNumber + 1
-  let toStage = stage.assembly.getStage(nextStageNum)
+  const nextStageNum = stage.stageNumber + diff
+  const toStage = stage.assembly.getStage(nextStageNum)
   if (!toStage) {
-    if (player.mod_settings[Settings.CyclicNavigation].value) {
-      toStage = stage.assembly.getStage(1)!
-    } else {
-      return notifyError(player, [L_Interaction.NoNextStage], false)
-    }
+    return notifyError(player, [ErrorLocale], false)
   }
   teleportToStage(player, toStage)
+}
+
+Events.on(CustomInputs.NextStage, (e) => {
+  goToStageRelative(e, 1, L_Interaction.NoNextStage)
 })
 
 Events.on(CustomInputs.PreviousStage, (e) => {
-  const player = game.get_player(e.player_index)!
-  const stage = playerCurrentStage(e.player_index).get()
-  if (!stage) {
-    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
-  }
-  const prevStageNum = stage.stageNumber - 1
-  let toStage = stage.assembly.getStage(prevStageNum)
-  if (!toStage) {
-    if (player.mod_settings[Settings.CyclicNavigation].value) {
-      toStage = stage.assembly.getStage(stage.assembly.maxStage())!
-    } else {
-      return notifyError(player, [L_Interaction.NoPreviousStage], false)
-    }
-  }
-  teleportToStage(player, toStage)
+  goToStageRelative(e, -1, L_Interaction.NoPreviousStage)
 })
 
 Events.on(CustomInputs.GoToFirstStage, (e) => {
@@ -103,4 +90,36 @@ Events.on(CustomInputs.GoToNextNotableStage, (e) => {
   const nextNotableStage = stage!.assembly.getStage(nextNotableStageNum)
   assert(nextNotableStage, "stage not found")
   teleportToStage(player, nextNotableStage!)
+})
+
+function goToBuildRelative(event: CustomInputEvent, diff: number, ErrorLocale: string) {
+  const assemblies = getAllAssemblies()
+  if (assemblies.length == 0) return
+  let targetIndex: number
+
+  const currentAssembly = playerCurrentStage(event.player_index).get()?.assembly
+  if (!currentAssembly) {
+    targetIndex = 0
+  } else {
+    const curIndex = assemblies.indexOf(currentAssembly)
+    if (curIndex == -1) {
+      targetIndex = 0
+    } else {
+      targetIndex = curIndex + diff
+    }
+  }
+
+  if (targetIndex < 0 || targetIndex >= assemblies.length) {
+    return notifyError(game.get_player(event.player_index)!, [ErrorLocale], false)
+  }
+  const nextAssembly = assemblies[targetIndex]
+  teleportToAssembly(game.get_player(event.player_index)!, nextAssembly)
+}
+
+Events.on(CustomInputs.NextAssembly, (e) => {
+  goToBuildRelative(e, 1, L_Interaction.NoNextAssembly)
+})
+
+Events.on(CustomInputs.PreviousAssembly, (e) => {
+  goToBuildRelative(e, -1, L_Interaction.NoPreviousAssembly)
 })

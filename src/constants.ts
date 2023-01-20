@@ -10,7 +10,6 @@
  */
 
 export const enum Settings {
-  CyclicNavigation = "bp100:cyclic-navigation",
   EntityInfoLocation = "bp100:entity-info-location",
   FlexibleOffshorePumpPlacement = "bp100:flexible-offshore-pump-placement",
 }
@@ -66,6 +65,9 @@ export const enum CustomInputs {
 
   StageSelectNext = "bp100:stage-select-next",
   StageSelectPrevious = "bp100:stage-select-previous",
+
+  NextAssembly = "bp100:next-assembly",
+  PreviousAssembly = "bp100:previous-assembly",
 }
 
 // noinspection JSUnusedGlobalSymbols

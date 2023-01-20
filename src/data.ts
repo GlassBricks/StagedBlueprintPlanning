@@ -240,7 +240,7 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-a[stage-move-tool]",
+  order: "z[bp100]-c[filtered-stage-move-tool]",
 
   selection_color: stageMoveToolColor,
   selection_cursor_box_type: "copy",
@@ -260,7 +260,7 @@ const filteredStagedMoveToolInput: CustomInputPrototype = {
   key_sequence: "",
   item_to_spawn: Prototypes.FilteredStageMoveTool,
   action: "spawn-item",
-  order: "a[tools]-b[stage-move-tool-filtered]",
+  order: "a[tools]-c[stage-move-tool-filtered]",
 }
 
 data.extend([
@@ -392,13 +392,30 @@ const moveToThisStage: CustomInputPrototype = {
   key_sequence: "CONTROL + ALT + mouse-button-3",
   order: "b[navigate]-e[move-to-this-stage]",
 }
+const nextAssembly: CustomInputPrototype = {
+  name: CustomInputs.NextAssembly,
+  type: "custom-input",
+
+  key_sequence: "",
+  action: "lua",
+  order: "b[navigate]-f[next-assembly]",
+}
+const previousAssembly: CustomInputPrototype = {
+  name: CustomInputs.PreviousAssembly,
+  type: "custom-input",
+
+  key_sequence: "",
+  action: "lua",
+  order: "b[navigate]-g[previous-assembly]",
+}
+
 const stageSelectNext: CustomInputPrototype = {
   name: CustomInputs.StageSelectNext,
   type: "custom-input",
 
   action: "lua",
   key_sequence: "SHIFT + mouse-wheel-down",
-  order: "a[tools]-b[stage-move-tool]-a[next]",
+  order: "a[tools]-g[stage-move-tool]-a[next]",
 }
 const stageSelectPrevious: CustomInputPrototype = {
   name: CustomInputs.StageSelectPrevious,
@@ -406,12 +423,14 @@ const stageSelectPrevious: CustomInputPrototype = {
 
   key_sequence: "SHIFT + mouse-wheel-up",
   action: "lua",
-  order: "a[tools]-b[stage-move-tool]-b[previous]",
+  order: "a[tools]-g[stage-move-tool]-b[previous]",
 }
 
 data.extend([
   nextStage,
   previousStage,
+  nextAssembly,
+  previousAssembly,
   goToFirstStage,
   goToNextNotableStage,
   moveToThisStage,
