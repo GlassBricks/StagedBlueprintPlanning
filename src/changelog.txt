@@ -1,13 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.6
 Date: ????
-  Changes:
+  Minor features:
+    - Added shortcut to move between staged builds.
+  Gui:
+    - The "Hide settings" button now faces left instead of down.
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.5
 Date: 2023-01-20
   Bugfixes:
     - Fix being unable to upgrade rotated assembling machines.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.4
 Date: 2023-01-20
@@ -119,7 +121,7 @@ Date: 2022-11-12
   Bugfixes:
     - Fixed tiles in blueprints being offset when grid position is set.
     - Fixed auto-landfill option not doing anything
-  GUI:
+  Gui:
     - Reorganized staged build settings gui.
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0
