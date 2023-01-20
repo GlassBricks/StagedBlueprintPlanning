@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -144,35 +144,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
   // ^ for refactoring purposes only
   const { createNotification, createIndicator } = notifier
 
-  function onEntityCreated(
-    assembly: Assembly,
-    entity: LuaEntity,
-    stage: StageNumber,
-    byPlayer: PlayerIndex | nil,
-  ): AssemblyEntity | nil {
-    const { content } = assembly
-
-    const entityName = entity.name
-    const existing = shouldCheckEntityExactlyForMatch(entityName)
-      ? content.findCompatibleWithLuaEntity(entity, nil)
-      : content.findCompatibleAnyDirection(entityName, entity.position) // if it doesn't overlap, find in any direction to avoid issues
-
-    if (!existing) {
-      return addNewEntity(assembly, entity, stage)
-    }
-
-    existing.replaceWorldEntity(stage, entity)
-
-    if (existing.isSettingsRemnant) {
-      reviveSettingsRemnant(assembly, existing, stage)
-    } else if (stage >= existing.firstStage) {
-      refreshEntityAtStage(assembly, existing, stage)
-    } else {
-      onPreviewReplaced(assembly, stage, existing, byPlayer)
-    }
-    return existing
-  }
-
   function onPreviewReplaced(
     assembly: Assembly,
     stage: StageNumber,
@@ -182,6 +153,61 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     const oldStage = entity.firstStage
     createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
     assert(moveEntityOnPreviewReplace(assembly, entity, stage))
+  }
+  function onEntityOverbuilt(
+    existingMatch: AssemblyEntity,
+    stage: number,
+    entity: LuaEntity,
+    assembly: Assembly,
+    byPlayer: PlayerIndex | nil,
+  ) {
+    existingMatch.replaceWorldEntity(stage, entity)
+    if (existingMatch.isSettingsRemnant) {
+      reviveSettingsRemnant(assembly, existingMatch, stage)
+    } else if (stage >= existingMatch.firstStage) {
+      refreshEntityAtStage(assembly, existingMatch, stage)
+    } else {
+      onPreviewReplaced(assembly, stage, existingMatch, byPlayer)
+    }
+  }
+
+  function disallowOverbuildDifferentDirection(
+    existingMatch: AssemblyEntity,
+    entity: LuaEntity,
+    assembly: Assembly,
+    byPlayer: PlayerIndex | nil,
+  ) {
+    entity.destroy()
+    if (byPlayer) {
+      createNotification(existingMatch, byPlayer, [L_Interaction.CannotBuildDifferentDirection], false)
+    }
+  }
+
+  function onEntityCreated(
+    assembly: Assembly,
+    entity: LuaEntity,
+    stage: StageNumber,
+    byPlayer: PlayerIndex | nil,
+  ): AssemblyEntity | nil {
+    const { content } = assembly
+
+    const existing = content.findCompatibleWithLuaEntity(entity, nil)
+
+    if (existing) {
+      onEntityOverbuilt(existing, stage, entity, assembly, byPlayer)
+      return existing
+    }
+
+    const entityName = entity.name
+    if (!shouldCheckEntityExactlyForMatch(entityName)) {
+      const existingDifferentDirection = content.findCompatibleAnyDirection(entityName, entity.position)
+      if (existingDifferentDirection) {
+        disallowOverbuildDifferentDirection(existingDifferentDirection, entity, assembly, byPlayer)
+        return nil
+      }
+    }
+
+    return addNewEntity(assembly, entity, stage)
   }
 
   /** Also asserts that stage > entity's first stage. */
@@ -257,7 +283,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     "connected-entities-missing": L_Interaction.ConnectedEntitiesMissing,
     "entities-missing": L_Interaction.EntitiesMissing,
     overlap: L_Interaction.NoRoomInAnotherStage,
-    "could-not-teleport": L_Interaction.CantBeTeleportedInAnotherStage,
+    "could-not-teleport": L_Interaction.CannotBeTeleportedInAnotherStage,
     "cannot-move": L_Interaction.CannotMove,
     "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
   }

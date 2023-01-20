@@ -111,7 +111,7 @@ export declare const enum L_Interaction {
   /** Max of 5 connections reached (in another stage). */
   MaxConnectionsReachedInAnotherStage = "bp100.interaction.max-connections-reached-in-another-stage",
   /** __1__ does not support moving (in another stage). */
-  CantBeTeleportedInAnotherStage = "bp100.interaction.cant-be-teleported-in-another-stage",
+  CannotBeTeleportedInAnotherStage = "bp100.interaction.cannot-be-teleported-in-another-stage",
   /** The wires can not be stretched any longer (in another stage). */
   WiresMaxedInAnotherStage = "bp100.interaction.wires-maxed-in-another-stage",
   /** __1__ will not fit (in another stage). */
@@ -122,6 +122,8 @@ export declare const enum L_Interaction {
   EntitiesMissing = "bp100.interaction.entities-missing",
   /** Cannot move, power/circuit connected entities missing in another stage */
   ConnectedEntitiesMissing = "bp100.interaction.connected-entities-missing",
+  /** Cannot overbuild existing entity in a different direction */
+  CannotBuildDifferentDirection = "bp100.interaction.cannot-build-different-direction",
   /** Not in an staged build */
   NotInAnAssembly = "bp100.interaction.not-in-an-assembly",
   /** No next stage */

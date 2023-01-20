@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect, { mock } from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
 import {
   AssemblyUpdater,
@@ -25,7 +26,6 @@ import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
 import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
-import expect, { mock } from "tstl-expect"
 
 let worldNotifier: mock.MockedObjectNoSelf<WorldNotifier>
 let assemblyUpdater: mock.MockedObjectNoSelf<AssemblyUpdater>
@@ -163,7 +163,7 @@ describe("onEntityCreated", () => {
     },
   )
 
-  test("if entity can overlap with existing, adding lower at a new direction creates new entity instead of updating old", () => {
+  test("if entity can overlap with self, adding lower at a new direction creates new entity instead of updating old", () => {
     addEntity(2, {
       name: "straight-rail",
       direction: defines.direction.east,
@@ -174,6 +174,21 @@ describe("onEntityCreated", () => {
     })
     worldListener.onEntityCreated(assembly, luaEntity2, 2, playerIndex)
     expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity2, 2)
+  })
+
+  test("disallows building at earlier stage with different direction", () => {
+    const entity1 = addEntity(2, {
+      name: "transport-belt",
+      direction: defines.direction.east,
+    })
+    const luaEntity2 = createWorldEntity(1, {
+      name: "transport-belt",
+      direction: defines.direction.north,
+    })
+    worldListener.onEntityCreated(assembly, luaEntity2, 1, playerIndex)
+    assertNotified(entity1.entity, [L_Interaction.CannotBuildDifferentDirection], false)
+
+    expectedAuCalls = 0
   })
 })
 
