@@ -523,6 +523,24 @@ describe("tryApplyUpgradeTarget", () => {
     assertOneEntity()
     assertRefreshCalled(entity, 2)
   })
+  test("upgrade to rotation allowed if is assembling machine with no fluid inputs", () => {
+    const { luaEntity, entity } = addEntity(1, {
+      name: "assembling-machine-2",
+      direction: defines.direction.east,
+      recipe: "express-transport-belt",
+    })
+    luaEntity.set_recipe(nil)
+    luaEntity.order_upgrade({
+      force: luaEntity.force,
+      target: "assembling-machine-3",
+      direction: direction.north,
+    })
+    entity.replaceWorldEntity(2, luaEntity)
+    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
+    expect(ret).to.be("updated")
+    assertOneEntity()
+    assertUpdateCalled(entity, 2, nil)
+  })
 })
 
 describe("updateWiresFromWorld", () => {
