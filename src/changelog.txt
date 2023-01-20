@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.3
-Date: ????
+Date: 2023-01-20
   Locale:
     - Added additional tooltip to "only include entities in last x stage" option.
   Bugfixes:
