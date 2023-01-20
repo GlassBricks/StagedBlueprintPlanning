@@ -222,8 +222,10 @@ export declare const enum L_GuiAssemblySettings {
   FilteringEntities = "bp100.gui.assembly-settings.filtering-entities",
   /** Only include entities changed in the last */
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-1",
-  /** stages */
+  /** stages [img=info] */
   IncludeEntitiesInTheNextNStages2 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-2",
+  /** Only new entities, or entities with configuration changes in the last "n" stages will be included.\n[font=default-bold]Notes:[/font]\n  Consider adding assembling machines to the "additional whitelist" below, so that previously unresearched recipes can still be pasted by later blueprints.\n  It may be helpful to include entities such as rails and roboports to the "additional whitelist", to help align blueprints with each other. */
+  IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-tooltip",
   /** or in whitelist: */
   OrInWhitelist = "bp100.gui.assembly-settings.or-in-whitelist",
   /** Blacklist: */

@@ -273,6 +273,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           <CheckboxTextfield
             captionBefore={[L_GuiAssemblySettings.IncludeEntitiesInTheNextNStages1]}
             captionAfter={[L_GuiAssemblySettings.IncludeEntitiesInTheNextNStages2]}
+            tooltip={[L_GuiAssemblySettings.IncludeEntitiesInTheNextNStagesTooltip]}
             value={settings.stageLimit}
           />
           <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
