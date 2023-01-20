@@ -6,7 +6,7 @@ Date: ????
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.6
 Date: 2023-01-20
-  Minor features:
+  Minor Features:
     - Added shortcut to move between staged builds.
   Gui:
     - The "Hide settings" button now faces left instead of down.
