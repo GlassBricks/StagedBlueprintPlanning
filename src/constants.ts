@@ -48,6 +48,8 @@ export const enum Styles {
 }
 
 export const enum Sprites {
+  CollapseLeft = "bp100:collapse-left",
+  CollapseLeftDark = "bp100:collapse-left-dark",
   BlueprintStages = "bp100:blueprint-stages",
 }
 

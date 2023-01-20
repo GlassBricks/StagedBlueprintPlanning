@@ -310,6 +310,11 @@ function createSprite(
   }
 }
 
+data.extend([
+  createSprite(Sprites.CollapseLeft, "__bp100__/graphics/icons/collapse-left.png", 32, nil, 2),
+  createSprite(Sprites.CollapseLeftDark, "__bp100__/graphics/icons/collapse-left-dark.png", 32, nil, 2),
+])
+
 function shiftedBlueprintSprite(shift: MapPositionArray): BasicSprite {
   return {
     filename: "__base__/graphics/icons/blueprint.png",

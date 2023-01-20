@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Sprites } from "../../../constants"
 import { Element, ElemProps, FactorioJsx } from "../index"
 
 export function CloseButton(props: Partial<ElemProps<"sprite-button">>): Element {
@@ -41,9 +42,9 @@ export function CollapseButton(props: Partial<ElemProps<"sprite-button">>): Elem
   return (
     <sprite-button
       style="frame_action_button"
-      sprite="utility/collapse"
-      hovered_sprite="utility/collapse_dark"
-      clicked_sprite="utility/collapse_dark"
+      sprite={Sprites.CollapseLeft}
+      hovered_sprite={Sprites.CollapseLeftDark}
+      clicked_sprite={Sprites.CollapseLeftDark}
       mouse_button_filter={["left"]}
       {...props}
     />
