@@ -1,16 +1,27 @@
+/*
+ * Copyright (c) 2023 GlassBricks
+ * This file is part of Staged Blueprint Planning.
+ *
+ * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * Staged Blueprint Planning is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import { Stage, UserAssembly } from "../assembly/AssemblyDef"
+import { AutoSetTilesType } from "../assembly/tiles"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { Mutable } from "../lib"
+import { BBox, Pos, Position } from "../lib/geometry"
+import { getCurrentValues } from "../utils/properties-obj"
 import {
   AssemblyOrStageBlueprintSettings,
   getDefaultBlueprintSettings,
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
 } from "./blueprint-settings"
-import { Stage, UserAssembly } from "../assembly/AssemblyDef"
-import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { BBox, Pos, Position } from "../lib/geometry"
-import { getCurrentValues } from "../utils/properties-obj"
 import { BlueprintTakeResult, takeSingleBlueprint } from "./take-single-blueprint"
-import { AutoSetTilesType } from "../assembly/tiles"
-import { Mutable } from "../lib"
 import max = math.max
 
 interface AssemblyBlueprintPlan {
@@ -59,13 +70,22 @@ export class BlueprintCreation {
     for (const i of $range(1, assembly.maxStage())) {
       result.set(i, new LuaSet())
     }
-    for (const entity of assembly.content.iterateAllEntities()) {
-      result.get(entity.firstStage)!.add(entity)
+    const content = assembly.content
+    for (const entity of content.iterateAllEntities()) {
+      const firstStageMap = result.get(entity.firstStage)!
+      firstStageMap.add(entity)
 
       const diffs = entity.getStageDiffs()
-      if (!diffs) continue
-      for (const [stage] of pairs(diffs)) {
-        result.get(stage)!.add(entity)
+      if (diffs) {
+        for (const [stage] of pairs(diffs)) {
+          result.get(stage)!.add(entity)
+        }
+      }
+      const circuitConnections = content.getCircuitConnections(entity)
+      if (circuitConnections) {
+        for (const [otherEntity] of circuitConnections) {
+          firstStageMap.add(otherEntity)
+        }
       }
     }
 

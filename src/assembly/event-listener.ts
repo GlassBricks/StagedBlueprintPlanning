@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -838,9 +838,16 @@ export const _assertInValidState = (): void => {
 /**
  * For manual calls from other parts of the code
  */
-export function entityPossiblyUpdated(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
+export function checkForEntityUpdates(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
   if (stage) {
     WorldListener.onEntityPossiblyUpdated(stage.assembly, entity, stage.stageNumber, nil, byPlayer)
+  }
+}
+
+export function checkForCircuitWireUpdates(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
+  const stage = getStageAtEntity(entity)
+  if (stage) {
+    WorldListener.onCircuitWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, byPlayer)
   }
 }

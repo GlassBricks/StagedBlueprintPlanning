@@ -1,10 +1,21 @@
-import { Stage, UserAssembly } from "../../assembly/AssemblyDef"
-import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
-import { Pos } from "../../lib/geometry"
-import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../../blueprints/blueprint-creation"
+/*
+ * Copyright (c) 2023 GlassBricks
+ * This file is part of Staged Blueprint Planning.
+ *
+ * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * Staged Blueprint Planning is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import expect, { mock } from "tstl-expect"
+import { Stage, UserAssembly } from "../../assembly/AssemblyDef"
+import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../assembly/event-listener"
 import { AutoSetTilesType } from "../../assembly/tiles"
-import { entityPossiblyUpdated } from "../../assembly/event-listener"
+import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
+import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../../blueprints/blueprint-creation"
+import { Pos } from "../../lib/geometry"
 
 let assembly: UserAssembly
 let player: LuaPlayer
@@ -106,17 +117,22 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   const [stage1, stage2, stage3, stage4] = assembly.getAllStages()
 
   createEntity(stage1) // not included
-  const e1 = createEntity(stage1, [1.5, 1.5]) // included, as has change in stage 3
+  const e1 = createEntity(stage1, [1.5, 1.5]) // included, as has change in stage 2
   const e1Stage2 = assembly.content.findCompatibleWithLuaEntity(e1, nil)!.getWorldEntity(2)!
   e1Stage2.get_inventory(defines.inventory.chest)!.set_bar(3)
-  entityPossiblyUpdated(e1Stage2, nil)
+  checkForEntityUpdates(e1Stage2, nil)
   const e2 = createEntity(stage2, [2.5, 2.5]) // included
   const e3 = createEntity(stage3, [3.5, 3.5]) // included
   createEntity(stage4, [4.5, 4.5]) // not included
 
   const e4 = createEntity(stage1, [5.5, 5.5], "steel-chest") // included, in additional whitelist
 
-  const includedEntities = [e1, e2, e3, e4]
+  const e5 = createEntity(stage1, [6.5, 6.5], "iron-chest") // included, has wire connection with e3
+  const e5stage3 = assembly.content.findCompatibleWithLuaEntity(e5, nil)!.getWorldEntity(3)!
+  e5stage3.connect_neighbour({ wire: defines.wire_type.red, target_entity: e3 })
+  checkForCircuitWireUpdates(e5stage3, nil)
+
+  const includedEntities = [e1, e2, e3, e4, e5]
 
   const stack = player.cursor_stack!
   const stageBlueprintSettings = stage3.stageBlueprintSettings

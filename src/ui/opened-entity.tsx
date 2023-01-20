@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,7 +11,7 @@
 
 import { Stage } from "../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
-import { entityPossiblyUpdated } from "../assembly/event-listener"
+import { checkForEntityUpdates } from "../assembly/event-listener"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
@@ -249,7 +249,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (!player) return
     const opened = player.opened
     if (opened && opened.object_name == "LuaEntity") {
-      entityPossiblyUpdated(opened, this.playerIndex)
+      checkForEntityUpdates(opened, this.playerIndex)
       tryRenderExtraStageInfo(player, opened)
     }
   }
