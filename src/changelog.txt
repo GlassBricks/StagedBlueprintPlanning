@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.3
 Date: ????
-  Changes:
+  Locale:
+    - Added additional tooltip to "only include entities in last x stage" option.
+  Bugfixes:
+    - When using "only include entities in last x stages", circuit connections are now properly included.
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.2
 Date: 2023-01-12
