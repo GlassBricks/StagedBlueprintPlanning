@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -22,6 +22,8 @@ import {
   shiftNumberKeysUp,
 } from "../lib"
 import { Position } from "../lib/geometry"
+import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
+import { getWorldDirection, orientationToDirection, SavedDirection, WorldDirection } from "./direction"
 import { Entity } from "./Entity"
 import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import { registerEntity } from "./entity-registration"
@@ -34,8 +36,6 @@ import {
   StageDiff,
   StageDiffInternal,
 } from "./stage-diff"
-import { getWorldDirection, orientationToDirection, SavedDirection, WorldDirection } from "./direction"
-import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
 
 /** 1 indexed */
 export type StageNumber = number
@@ -771,6 +771,7 @@ const excludedTypes: Record<string, true> = {
   unit: true,
   car: true,
   "spider-vehicle": true,
+  "entity-ghost": true,
 }
 
 export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {

@@ -3,6 +3,7 @@ Version: 0.17.0
 Date: ????
   Changes:
     - Disallow overbuilding preview entities in a different direction (instead of moving entity).
+    - Build ghosts will no longer be instantly revived (in some cases).
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.6
 Date: 2023-01-20
