@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,13 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { oppositedirection } from "util"
-import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
-import { MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
-import { UndergroundBeltEntity } from "../../entity/special-entities"
-import { findUndergroundPair, unit } from "../../entity/special-entity-treatment"
-import { SavedDirection } from "../../entity/direction"
 import expect from "tstl-expect"
+import { MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
+import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
+import { UndergroundBeltEntity } from "../../entity/special-entities"
+import { findUndergroundPair, unit } from "../../entity/underground-belt"
 import direction = defines.direction
 
 let content: MutableAssemblyContent
@@ -29,7 +27,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     const underground = createAssemblyEntity<UndergroundBeltEntity>(
       { name: "underground-belt", type },
       unit(direction).times(location),
-      (type == "output" ? oppositedirection(direction) : direction) as SavedDirection,
+      direction,
       1,
     )
     content.add(underground)

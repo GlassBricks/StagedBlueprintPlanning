@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,10 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
+import { Prototypes } from "../constants"
 import { isEmpty, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { AsmCircuitConnection, circuitConnectionEquals } from "./AsmCircuitConnection"
-import { AssemblyEntity, InternalSavedDirection, StageNumber } from "./AssemblyEntity"
+import { AssemblyEntity, InternalSavedDirection, StageNumber, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
 import { BasicEntityInfo } from "./Entity"
 import {
   getEntityCategory,
@@ -23,8 +25,7 @@ import {
 } from "./entity-info"
 import { getRegisteredAssemblyEntity } from "./entity-registration"
 import { MutableMap2D, newMap2D } from "./map2d"
-import { getSavedDirection, oppositeSavedDirection, SavedDirection, WorldDirection } from "./direction"
-import { Prototypes } from "../constants"
+import { getUndergroundDirection } from "./underground-belt"
 
 /**
  * A collection of assembly entities: the actual data of an assembly.
@@ -32,9 +33,9 @@ import { Prototypes } from "../constants"
  * Also keeps tracks of info spanning multiple entities (wire/circuit connections).
  */
 export interface AssemblyContent {
-  findCompatibleByTraits(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil
+  findCompatibleByTraits(entityName: string, position: Position, direction: defines.direction): AssemblyEntity | nil
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
-  findCompatibleWithLuaEntity(entity: BasicEntityInfo, previousDirection: WorldDirection | nil): AssemblyEntity | nil
+  findCompatibleWithLuaEntity(entity: BasicEntityInfo, previousDirection: defines.direction | nil): AssemblyEntity | nil
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil
   findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil
@@ -91,7 +92,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
-  findCompatibleByTraits(entityName: string, position: Position, direction: SavedDirection): AssemblyEntity | nil {
+  findCompatibleByTraits(entityName: string, position: Position, direction: defines.direction): AssemblyEntity | nil {
     const { x, y } = position
     const atPos = this.byPosition.get(x, y)
     if (!atPos) return
@@ -151,11 +152,18 @@ class AssemblyContentImpl implements MutableAssemblyContent {
 
   findCompatibleWithLuaEntity(
     entity: BasicEntityInfo | LuaEntity,
-    previousDirection: WorldDirection | nil,
+    previousDirection: defines.direction | nil,
   ): AssemblyEntity | nil {
     const type = entity.type
     if (type == "underground-belt") {
-      return this.findCompatibleByTraits(type, entity.position, getSavedDirection(entity))
+      const found = this.findCompatibleAnyDirection(type, entity.position)
+      if (
+        found &&
+        getUndergroundDirection(found.getDirection(), (found as UndergroundBeltAssemblyEntity).firstValue.type) ==
+          getUndergroundDirection(entity.direction, entity.belt_to_ground_type)
+      )
+        return found
+      return nil
     } else if (rollingStockTypes.has(type)) {
       if (entity.object_name == "LuaEntity") {
         const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
@@ -167,21 +175,17 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType == nil) {
-      return this.findCompatibleByTraits(
-        name,
-        entity.position,
-        (previousDirection ?? entity.direction) as SavedDirection,
-      )
+      return this.findCompatibleByTraits(name, entity.position, previousDirection ?? entity.direction)
     }
     if (pasteRotatableType == PasteRotatableType.Square) {
       return this.findCompatibleAnyDirection(name, entity.position)
     }
     if (pasteRotatableType == PasteRotatableType.Rectangular) {
-      const direction = (previousDirection ?? entity.direction) as SavedDirection
+      const direction = previousDirection ?? entity.direction
       const position = entity.position
       return (
         this.findCompatibleByTraits(name, position, direction) ??
-        this.findCompatibleByTraits(name, position, oppositeSavedDirection(direction))
+        this.findCompatibleByTraits(name, position, oppositedirection(direction))
       )
     }
   }
@@ -191,8 +195,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     if (isRollingStockType(actualName)) {
       return this.findCompatibleAnyDirection(actualName, previewEntity.position)
     }
-    // todo: migrate asms to be correct direction, and underground previews too
-    return this.findCompatibleByTraits(actualName, previewEntity.position, previewEntity.direction as SavedDirection)
+    return this.findCompatibleByTraits(actualName, previewEntity.position, previewEntity.direction)
   }
 
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil {

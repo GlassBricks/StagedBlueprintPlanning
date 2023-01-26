@@ -136,7 +136,6 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     reviveSettingsRemnant,
     tryDollyEntity,
     tryRotateEntityToMatchWorld,
-    tryRotateUnderground,
     tryUpdateEntityFromWorld,
     tryApplyUpgradeTarget,
     updateWiresFromWorld,
@@ -341,12 +340,8 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     ): void {
       const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
       if (!existing || !existing.isUndergroundBelt()) return
-      const result = tryRotateUnderground(
-        assembly,
-        existing,
-        stage,
-        entity.belt_to_ground_type == "input" ? "output" : "input",
-      )
+      assert(entity.rotate())
+      const result = tryRotateEntityToMatchWorld(assembly, existing, stage)
       notifyIfError(result, existing, byPlayer)
     },
     onCircuitWiresPossiblyUpdated(

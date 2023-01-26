@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,6 +10,7 @@
  */
 
 import { Prototypes } from "../constants"
+import { AssemblyContent } from "../entity/AssemblyContent"
 import {
   AssemblyEntity,
   isWorldEntityAssemblyEntity,
@@ -18,12 +19,10 @@ import {
 } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
 import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
-import { AssemblyContent } from "../entity/AssemblyContent"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import { EntityHighlighter } from "./EntityHighlighter"
-import { SavedDirection } from "../entity/direction"
 
 /**
  * Updates entities in the world in response to changes in the assembly.
@@ -293,7 +292,7 @@ export function createWorldUpdater(
       if (moveResult != "success") {
         forceDollyEntity(movedEntity, entity.position, entity.getWorldDirection())
       } else {
-        entity.setDirection(movedEntity.direction as SavedDirection)
+        entity.setDirection(movedEntity.direction)
         deleteHighlights(entity)
         updateHighlights(assembly, entity, entity.firstStage, assembly.maxStage())
         const posChanged = assembly.content.changePosition(entity, movedEntity.position)

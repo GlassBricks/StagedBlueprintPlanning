@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect, { mock } from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
@@ -22,8 +23,6 @@ import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
-import { SavedDirection } from "../../entity/direction"
-import expect, { mock } from "tstl-expect"
 
 interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter"
@@ -37,7 +36,7 @@ let wireUpdater: mock.MockedObjectNoSelf<WireUpdater>
 let worldUpdater: WorldUpdater
 
 const origPos = { x: 0.5, y: 0.5 }
-const origDir = defines.direction.east as SavedDirection & defines.direction
+const origDir = defines.direction.east
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
 before_each(() => {
   assembly = createMockAssembly(surfaces)
@@ -186,7 +185,7 @@ describe("updateWorldEntities", () => {
 
   test("can rotate entities", () => {
     worldUpdater.updateWorldEntities(assembly, entity, 1)
-    entity.setDirection(defines.direction.west as SavedDirection)
+    entity.setDirection(defines.direction.west as defines.direction)
     worldUpdater.updateWorldEntities(assembly, entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
@@ -238,7 +237,7 @@ describe("tryMoveEntity", () => {
     assembly.content.changePosition(entity, origPos)
   })
   const newPos = Pos(1.5, 2)
-  const newDir = defines.direction.north as SavedDirection & defines.direction
+  const newDir = defines.direction.north
 
   function assertMoved() {
     for (let i = 0; i < 4; i++) {
@@ -294,7 +293,7 @@ describe("tryMoveEntity", () => {
       otherEntity = createAssemblyEntity(
         { name: "small-electric-pole" },
         Pos(-0.5, 0.5),
-        defines.direction.north as SavedDirection,
+        defines.direction.north as defines.direction,
         1,
       )
       assembly.content.add(otherEntity)
@@ -350,7 +349,7 @@ describe("tryMoveEntity", () => {
 })
 
 test("updateNewEntityWithoutWires", () => {
-  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as SavedDirection, 2)
+  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
   worldUpdater.updateNewEntityWithoutWires(assembly, entity)
   expect(highlighter.updateHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
@@ -358,7 +357,7 @@ test("updateNewEntityWithoutWires", () => {
 })
 
 test("updateWireConnections", () => {
-  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as SavedDirection, 2)
+  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
   worldUpdater.updateNewEntityWithoutWires(assembly, entity)
   worldUpdater.updateWireConnections(assembly, entity)

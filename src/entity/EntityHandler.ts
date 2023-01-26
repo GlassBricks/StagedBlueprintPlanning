@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,19 +9,18 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
 import { Events, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Entity } from "./Entity"
-import { getPasteRotatableType, isUndergroundBeltType, PasteRotatableType, rollingStockTypes } from "./entity-info"
+import { getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "./entity-info"
 import { makePreviewIndestructible } from "./special-entities"
-import { getSavedDirection, SavedDirection, WorldDirection } from "./direction"
+import { getUndergroundDirection } from "./underground-belt"
 
 /** @noSelf */
 export interface EntityCreator {
-  createEntity(surface: LuaSurface, position: Position, direction: SavedDirection, entity: Entity): LuaEntity | nil
-  updateEntity(luaEntity: LuaEntity, value: Entity, direction: SavedDirection): LuaEntity | nil
+  createEntity(surface: LuaSurface, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil
+  updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity | nil
   createPreviewEntity(
     surface: LuaSurface,
     position: Position,
@@ -32,7 +31,7 @@ export interface EntityCreator {
 
 /** @noSelf */
 export interface EntitySaver {
-  saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, SavedDirection] | []>
+  saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, defines.direction] | []>
 }
 
 export interface EntityHandler extends EntityCreator, EntitySaver {}
@@ -81,7 +80,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
 function pasteEntity(
   surface: LuaSurface,
   position: MapPosition,
-  direction: WorldDirection,
+  direction: defines.direction,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
   const stack = getTempBpItemStack()
@@ -102,7 +101,7 @@ function setBlueprintEntity(
   stack: BlueprintItemStack,
   entity: Mutable<BlueprintEntity>,
   position: Position,
-  direction: WorldDirection,
+  direction: defines.direction,
 ): void {
   // reuse the same table to avoid several allocations
   entity.position = position
@@ -114,36 +113,6 @@ function setBlueprintEntity(
   entity.entity_number = nil!
 }
 
-function tryCreateUndergroundEntity(
-  surface: LuaSurface,
-  position: Position,
-  direction: SavedDirection,
-  entity: BlueprintEntity,
-): LuaEntity | nil {
-  // assert(isUndergroundBeltType(entity.name))
-  const type = entity.type
-
-  let worldDirection = direction as WorldDirection
-  if (type == "output") {
-    worldDirection = oppositedirection(worldDirection)
-  }
-
-  const params = {
-    name: entity.name,
-    position,
-    direction: worldDirection,
-    force: "player",
-    type,
-  }
-  if (!surface.can_place_entity(params)) return nil
-  const luaEntity = surface.create_entity(params)
-  if (luaEntity && luaEntity.belt_to_ground_type != type) {
-    luaEntity.destroy()
-    return nil
-  }
-  return luaEntity
-}
-
 function removeIntersectingItemsOnGround(surface: LuaSurface, area: BoundingBox) {
   const items = surface.find_entities_filtered({ type: "item-entity", area })
   for (const item of items) item.destroy()
@@ -152,7 +121,7 @@ function removeIntersectingItemsOnGround(surface: LuaSurface, area: BoundingBox)
 function tryCreateUnconfiguredEntity(
   surface: LuaSurface,
   position: Position,
-  direction: WorldDirection,
+  direction: defines.direction,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
   // assert(!isUndergroundBeltType(entity.name))
@@ -163,9 +132,10 @@ function tryCreateUnconfiguredEntity(
     position,
     direction,
     orientation: entity.orientation,
-    build_check_type: defines.build_check_type.ghost_revive,
+    type: entity.type,
     force: "player",
     create_build_effect_smoke: false,
+    build_check_type: defines.build_check_type.ghost_revive,
   }
   const canPlace = surface.can_place_entity(params)
   if (canPlace) {
@@ -181,22 +151,27 @@ function tryCreateUnconfiguredEntity(
   return createdEntity
 }
 
-function createNormalEntity(
+function tryCreateEntity(
   surface: LuaSurface,
   position: MapPosition,
-  direction: SavedDirection,
+  direction: defines.direction,
   entity: Entity,
 ): LuaEntity | nil {
+  assume<BlueprintEntity>(entity)
   // assert(!isUndergroundBeltType(entity.name))
-  assume<WorldDirection>(direction)
-  const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity as BlueprintEntity)
+  const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity)
   if (!luaEntity) return nil
-  if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
-    luaEntity.loader_type = (entity as BlueprintEntity).type ?? "output"
+  if (luaEntity.type == "underground-belt") {
+    if (luaEntity.belt_to_ground_type != entity.type) {
+      luaEntity.destroy()
+      return nil
+    }
+  } else if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
+    luaEntity.loader_type = entity.type ?? "output"
     luaEntity.direction = direction
   }
   if (entityHasSettings(entity)) {
-    const ghost = pasteEntity(surface, position, direction, entity as BlueprintEntity)
+    const ghost = pasteEntity(surface, position, direction, entity)
     if (ghost) {
       luaEntity.destroy()
       ghost.destroy()
@@ -207,9 +182,9 @@ function createNormalEntity(
   return luaEntity
 }
 
-function entityHasSettings(entity: Entity): boolean {
+function entityHasSettings(entity: BlueprintEntity): boolean {
   for (const [key] of pairs(entity)) {
-    if (key != "name" && key != "items") return true
+    if (key != "name" && key != "items" && key != "type") return true
   }
   return false
 }
@@ -272,13 +247,16 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
 function updateUndergroundRotation(
   luaEntity: LuaEntity,
   value: BlueprintEntity,
-  direction: SavedDirection,
+  direction: defines.direction,
 ): LuaEntity | nil {
-  if (getSavedDirection(luaEntity) != direction) {
+  if (
+    getUndergroundDirection(direction, value.type) !=
+    getUndergroundDirection(luaEntity.direction, luaEntity.belt_to_ground_type)
+  ) {
     const surface = luaEntity.surface
     const position = luaEntity.position
     luaEntity.destroy()
-    return tryCreateUndergroundEntity(surface, position, direction, value)
+    return tryCreateEntity(surface, position, direction, value)
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
@@ -291,7 +269,7 @@ function updateUndergroundRotation(
 }
 
 const BlueprintEntityHandler: EntityHandler = {
-  saveEntity(entity: LuaEntity): LuaMultiReturn<[Entity, SavedDirection] | []> {
+  saveEntity(entity: LuaEntity): LuaMultiReturn<[Entity, defines.direction] | []> {
     const bpEntity = blueprintEntity(entity)
     if (!bpEntity) return $multi()
     bpEntity.entity_number = nil!
@@ -299,13 +277,11 @@ const BlueprintEntityHandler: EntityHandler = {
     bpEntity.direction = nil
     bpEntity.neighbours = nil
     bpEntity.connections = nil
-    return $multi(bpEntity, getSavedDirection(entity))
+    return $multi(bpEntity, entity.direction)
   },
 
-  createEntity(surface: LuaSurface, position: Position, direction: SavedDirection, entity: Entity): LuaEntity | nil {
-    assume<BlueprintEntity>(entity)
-    if (isUndergroundBeltType(entity.name)) return tryCreateUndergroundEntity(surface, position, direction, entity)
-    return createNormalEntity(surface, position, direction, entity)
+  createEntity(surface: LuaSurface, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil {
+    return tryCreateEntity(surface, position, direction, entity)
   },
 
   createPreviewEntity(
@@ -324,7 +300,7 @@ const BlueprintEntityHandler: EntityHandler = {
     return entity
   },
 
-  updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: SavedDirection): LuaEntity | nil {
+  updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity | nil {
     if (rollingStockTypes.has(luaEntity.type)) return luaEntity
 
     if (luaEntity.name != value.name) {
@@ -335,8 +311,6 @@ const BlueprintEntityHandler: EntityHandler = {
       // underground belts don't have other settings.
       return updateUndergroundRotation(luaEntity, value, direction)
     }
-
-    assume<WorldDirection>(direction) // not rolling stock or underground belt, so direction is world direction
 
     if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
       luaEntity.loader_type = value.type ?? "output"

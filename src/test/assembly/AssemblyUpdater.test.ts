@@ -24,7 +24,7 @@ import {
 } from "../../entity/AssemblyEntity"
 import { EntityHandler } from "../../entity/EntityHandler"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
-import { findUndergroundPair } from "../../entity/special-entity-treatment"
+import { findUndergroundPair } from "../../entity/underground-belt"
 import { WireSaver } from "../../entity/WireHandler"
 import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
@@ -688,7 +688,7 @@ describe("undergrounds", () => {
       expect(ret).to.be("updated")
 
       expect(entity.firstValue.type).to.be("output")
-      expect(entity.getDirection()).to.be(direction.west)
+      expect(entity.getDirection()).to.be(direction.east)
 
       assertOneEntity()
       assertUpdateCalled(entity, 1, nil)
@@ -721,10 +721,14 @@ describe("undergrounds", () => {
       const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, entity.firstStage)
       expect(ret).to.be("updated")
 
-      expect(entity1.firstValue.type).to.be("output")
-      expect(entity1.getDirection()).to.be(direction.west)
-      expect(entity2.firstValue.type).to.be("input")
-      expect(entity2.getDirection()).to.be(direction.east)
+      expect(entity1).toMatchTable({
+        firstValue: { type: "output" },
+        direction: direction.east,
+      })
+      expect(entity2).toMatchTable({
+        firstValue: { type: "input" },
+        direction: direction.east,
+      })
 
       assertNEntities(2)
       assertUpdateCalled(entity1, 1, nil, which == "lower" ? 1 : 2)
@@ -747,7 +751,7 @@ describe("undergrounds", () => {
       })
       expect(entity2).toMatchTable({
         firstValue: { type: "output" },
-        direction: direction.east,
+        direction: direction.west,
       })
 
       assertNEntities(2)
@@ -774,12 +778,18 @@ describe("undergrounds", () => {
         const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 1)
         expect(ret).to.be("cannot-flip-multi-pair-underground")
 
-        expect(entity1.firstValue.type).to.be("input")
-        expect(entity1.getDirection()).to.be(direction.west)
-        expect(entity2.firstValue.type).to.be("output")
-        expect(entity2.getDirection()).to.be(direction.east)
-        expect(entity3.firstValue.type).to.be("input")
-        expect(entity3.getDirection()).to.be(direction.west)
+        expect(entity1).toMatchTable({
+          firstValue: { type: "input" },
+          direction: direction.west,
+        })
+        expect(entity2).toMatchTable({
+          firstValue: { type: "output" },
+          direction: direction.west,
+        })
+        expect(entity3).toMatchTable({
+          firstValue: { type: "input" },
+          direction: direction.west,
+        })
 
         assertNEntities(3)
         assertRefreshCalled(entity, 1)
@@ -832,7 +842,7 @@ describe("undergrounds", () => {
       assertUpdateCalled(entity, 2, nil)
     })
 
-    test("can apply rotate upgrade to underground in first stage", () => {
+    test("cannot apply rotate upgrade to underground belt (not expected)", () => {
       const { luaEntity, entity } = createUndergroundBelt(1)
       luaEntity.order_upgrade({
         target: "underground-belt",
@@ -840,67 +850,17 @@ describe("undergrounds", () => {
         direction: oppositedirection(luaEntity.direction),
       })
       const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
-      expect(ret).to.be("updated")
+      expect(ret).to.be("no-change")
 
-      expect(entity.firstValue.name).to.be("underground-belt")
-      expect(entity.firstValue.type).to.be("output")
-      expect(entity.getDirection()).to.be(direction.west)
-      assertOneEntity()
-      assertUpdateCalled(entity, 1, nil)
-    })
-
-    test("cannot apply rotate upgrade to underground in higher stage", () => {
-      const { luaEntity, entity } = createUndergroundBelt(1)
-      luaEntity.order_upgrade({
-        target: "underground-belt",
-        force: luaEntity.force,
-        direction: oppositedirection(luaEntity.direction),
-      })
-      entity.replaceWorldEntity(2, luaEntity)
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
-      expect(ret).to.be("cannot-rotate")
-
-      expect(entity.firstValue.name).to.be("underground-belt")
-      expect(entity.firstValue.type).to.be("input")
-      expect(entity.getDirection()).to.be(direction.west)
-      assertOneEntity()
-      assertRefreshCalled(entity, 2)
-    })
-
-    test("can apply rotate upgrade to underground pair", () => {
-      const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1)
-      luaEntity1.order_upgrade({
-        target: "underground-belt",
-        force: luaEntity1.force,
-        direction: oppositedirection(luaEntity1.direction),
-      })
-      luaEntity2.order_upgrade({
-        target: "underground-belt",
-        force: luaEntity2.force,
-        direction: oppositedirection(luaEntity2.direction),
-      })
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity1, 1)
-      expect(ret).to.be("updated")
-      const ret2 = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity2, 1)
-      expect(ret2).to.be("no-change")
-
-      // expect(entity1.firstValue.name).to.be("underground-belt")
-      // expect(entity1.firstValue.type).to.be("output")
-      // expect(entity1.getDirection()).to.be(direction.west)
-      // expect(entity2.firstValue.name).to.be("underground-belt")
-      // expect(entity2.firstValue.type).to.be("input")
-      // expect(entity2.getDirection()).to.be(direction.east)
-      expect(entity1).toMatchTable({
-        firstValue: { name: "underground-belt", type: "output" },
+      expect(entity).toMatchTable({
+        firstValue: {
+          name: "underground-belt",
+          type: "input",
+        },
         direction: direction.west,
       })
-      expect(entity2).toMatchTable({
-        firstValue: { name: "underground-belt", type: "input" },
-        direction: direction.east,
-      })
-      assertNEntities(2)
-      assertUpdateCalled(entity1, 1, nil, 1)
-      assertUpdateCalled(entity2, 1, nil, 2)
+      assertOneEntity()
+      assertWUNotCalled()
     })
 
     test.each(["lower", "pair in higher", "self in higher"])(
@@ -924,7 +884,7 @@ describe("undergrounds", () => {
         })
         expect(entity2).toMatchTable({
           firstValue: { name: "fast-underground-belt", type: "output" },
-          direction: direction.east,
+          direction: direction.west,
         })
 
         assertNEntities(2)
@@ -1022,7 +982,7 @@ describe("undergrounds", () => {
     })
     expect(entity2).toMatchTable({
       firstValue: { name: "fast-underground-belt", type: "output" },
-      direction: direction.east,
+      direction: direction.west,
     })
 
     assertNEntities(2)

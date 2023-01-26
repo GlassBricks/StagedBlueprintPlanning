@@ -17,12 +17,11 @@ import {
   StageNumber,
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
-import { getSavedDirection, SavedDirection } from "../entity/direction"
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
 import { canBeAnyDirection, EntityHandler, EntitySaver } from "../entity/EntityHandler"
-import { findUndergroundPair } from "../entity/special-entity-treatment"
+import { findUndergroundPair } from "../entity/underground-belt"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import { AssemblyEntityDollyResult, WorldUpdater } from "./WorldUpdater"
@@ -53,13 +52,6 @@ export interface AssemblyUpdater {
   tryUpdateEntityFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult
 
   tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult
-
-  tryRotateUnderground(
-    assembly: Assembly,
-    entity: UndergroundBeltAssemblyEntity,
-    stage: StageNumber,
-    targetDir: "input" | "output",
-  ): EntityRotateResult
 
   /** Doesn't cancel upgrade */
   tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult
@@ -143,7 +135,7 @@ export function createAssemblyUpdater(
     assembly: Assembly,
     stage: StageNumber,
     entity: AssemblyEntity,
-    newDirection: SavedDirection,
+    newDirection: defines.direction,
   ): boolean {
     const rotateAllowed = stage == entity.firstStage
     if (rotateAllowed) {
@@ -192,62 +184,16 @@ export function createAssemblyUpdater(
     return result
   }
 
-  function tryRotateUnderground(
-    assembly: Assembly,
-    entity: UndergroundBeltAssemblyEntity,
-    stage: StageNumber,
-    newDir: "input" | "output",
-  ): EntityRotateResult {
-    if (entity.firstValue.type == newDir) return "no-change"
-
-    const [pair, hasMultiple] = findUndergroundPair(assembly.content, entity)
-
-    if (hasMultiple) {
-      undoRotate(assembly, stage, entity)
-      return "cannot-flip-multi-pair-underground"
-    }
-    const isFirstStage = entity.firstStage == stage || (pair && pair.firstStage == stage)
-    if (!isFirstStage) {
-      undoRotate(assembly, stage, entity)
-      return "cannot-rotate"
-    }
-
-    // do rotate
-    entity.setUndergroundBeltDirection(newDir)
-    updateWorldEntities(assembly, entity, entity.firstStage)
-    if (pair) {
-      pair.setUndergroundBeltDirection(newDir == "output" ? "input" : "output")
-      updateWorldEntities(assembly, pair, pair.firstStage)
-    }
-    return "updated"
-  }
-
   function tryApplyUndergroundUpdateTarget(
     assembly: Assembly,
     stage: StageNumber,
     entity: UndergroundBeltAssemblyEntity,
     entitySource: LuaEntity,
   ): EntityUpdateResult {
-    const rotateDir = entitySource.get_upgrade_direction()
-    const rotated = rotateDir && rotateDir != entitySource.direction
-    if (rotated) {
-      const newDir = rotateDir == entity.getDirection() ? "input" : "output"
-      const result = tryRotateUnderground(assembly, entity, stage, newDir)
-      if (result != "updated") {
-        return result
-      }
-    }
-
     const upgradeType = entitySource.get_upgrade_target()?.name
-    if (upgradeType) {
-      checkUpgradeType(entity, upgradeType)
-      const result = tryUpgradeUndergroundBelt(assembly, stage, entity, upgradeType)
-      if (result == "no-change" && rotated) {
-        return "updated"
-      }
-      return result
-    }
-    return rotated ? "updated" : "no-change"
+    if (!upgradeType) return "no-change"
+    checkUpgradeType(entity, upgradeType)
+    return tryUpgradeUndergroundBelt(assembly, stage, entity, upgradeType)
   }
 
   function tryUpgradeUndergroundBelt(
@@ -314,9 +260,7 @@ export function createAssemblyUpdater(
         const [pair] = findUndergroundPair(content, assemblyEntity as UndergroundBeltAssemblyEntity)
         if (pair) {
           const otherDir = pair.firstValue.type
-          ;(assemblyEntity as UndergroundBeltAssemblyEntity).setUndergroundBeltDirection(
-            otherDir == "output" ? "input" : "output",
-          )
+          ;(assemblyEntity as UndergroundBeltAssemblyEntity).setTypeProperty(otherDir == "output" ? "input" : "output")
         }
       }
 
@@ -362,7 +306,7 @@ export function createAssemblyUpdater(
 
       const rotated = !canBeAnyDirection(entitySource) && entitySource.direction != entity.getDirection()
       if (rotated) {
-        if (!setRotationOrUndo(assembly, stage, entity, entitySource.direction as SavedDirection)) {
+        if (!setRotationOrUndo(assembly, stage, entity, entitySource.direction)) {
           return "cannot-rotate"
         }
       }
@@ -379,30 +323,41 @@ export function createAssemblyUpdater(
       if (!entitySource || canBeAnyDirection(entitySource)) return "no-change"
 
       const type = entitySource.type
+
+      let pair: UndergroundBeltAssemblyEntity | nil
       if (type == "underground-belt") {
-        const actualDirection = getSavedDirection(entitySource)
-        assert(actualDirection == entity.getDirection(), "underground belt direction mismatch with saved direction")
-        return tryRotateUnderground(
-          assembly,
-          entity as UndergroundBeltAssemblyEntity,
-          stage,
-          entitySource.belt_to_ground_type,
-        )
+        const [thePair, hasMultiple] = findUndergroundPair(assembly.content, entity as UndergroundBeltAssemblyEntity)
+        if (hasMultiple) {
+          undoRotate(assembly, stage, entity)
+          return "cannot-flip-multi-pair-underground"
+        }
+        pair = thePair
       }
 
       // canBeAnyDirection(entitySource) is false
 
-      const newDirection = entitySource.direction as SavedDirection
+      const newDirection = entitySource.direction
       const rotated = newDirection != entity.getDirection()
       if (!rotated) return "no-change"
-      if (!setRotationOrUndo(assembly, stage, entity, newDirection)) return "cannot-rotate"
-      if (type == "loader" || type == "loader-1x1") {
-        ;(entity as LoaderAssemblyEntity).setPropAtStage(entity.firstStage, "type", entitySource.loader_type)
+      const rotateAllowed = stage == entity.firstStage || (pair && pair.firstStage == stage)
+      if (!rotateAllowed) {
+        undoRotate(assembly, stage, entity)
+        return "cannot-rotate"
       }
-      updateWorldEntities(assembly, entity, stage)
+      entity.setDirection(newDirection)
+      if (type == "loader" || type == "loader-1x1") {
+        ;(entity as LoaderAssemblyEntity).setTypeProperty(entitySource.loader_type)
+      } else if (type == "underground-belt") {
+        ;(entity as UndergroundBeltAssemblyEntity).setTypeProperty(entitySource.belt_to_ground_type)
+      }
+      updateWorldEntities(assembly, entity, entity.firstStage)
+      if (pair) {
+        pair.setDirection(newDirection)
+        pair.setTypeProperty(entitySource.belt_to_ground_type == "input" ? "output" : "input")
+        updateWorldEntities(assembly, pair, pair.firstStage)
+      }
       return "updated"
     },
-    tryRotateUnderground,
     tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
@@ -410,7 +365,7 @@ export function createAssemblyUpdater(
         return tryApplyUndergroundUpdateTarget(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
       }
 
-      const rotateDir = entitySource.get_upgrade_direction() as SavedDirection | nil
+      const rotateDir = entitySource.get_upgrade_direction()
       const rotated = rotateDir != nil && rotateDir != entity.getDirection() && !canBeAnyDirection(entitySource)
       if (rotated) {
         if (!setRotationOrUndo(assembly, stage, entity, rotateDir)) {

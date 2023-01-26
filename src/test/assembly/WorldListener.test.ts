@@ -312,12 +312,13 @@ test("onUndergroundBeltDragRotated", () => {
     name: "underground-belt",
     type: "input",
   })
-  assemblyUpdater.tryRotateUnderground.invokes(() => {
+  assemblyUpdater.tryRotateEntityToMatchWorld.invokes(() => {
     totalAuCalls++
     return "updated"
   })
   worldListener.onUndergroundBeltDragRotated(assembly, luaEntity, 2, playerIndex)
-  expect(assemblyUpdater.tryRotateUnderground).calledWith(assembly, entity, 2, "output")
+  expect(luaEntity.direction).toBe(defines.direction.south)
+  expect(assemblyUpdater.tryRotateEntityToMatchWorld).calledWith(assembly, entity, 2)
 })
 
 describe("onEntityMarkedForUpgrade", () => {

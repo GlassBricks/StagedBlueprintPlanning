@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { oppositedirection } from "util"
 import {
   deepCompare,
   isEmpty,
@@ -23,11 +24,10 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
-import { getWorldDirection, orientationToDirection, SavedDirection, WorldDirection } from "./direction"
 import { Entity } from "./Entity"
 import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import { registerEntity } from "./entity-registration"
-import { RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
+import { LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import {
   _applyDiffToDiffUnchecked,
   applyDiffToEntity,
@@ -36,6 +36,7 @@ import {
   StageDiff,
   StageDiffInternal,
 } from "./stage-diff"
+import floor = math.floor
 
 /** 1 indexed */
 export type StageNumber = number
@@ -47,15 +48,15 @@ export type InternalSavedDirection = { _internalSavedDirection: never }
 export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly position: Position
   readonly direction: InternalSavedDirection | nil
-  getDirection(): SavedDirection
-  setDirection(direction: SavedDirection): void
+  getDirection(): defines.direction
+  setDirection(direction: defines.direction): void
 
-  getWorldDirection(): WorldDirection
+  getWorldDirection(): defines.direction
 
   /**
    * If this is rolling stock, direction is based off of orientation instead.
    */
-  getPreviewDirection(): WorldDirection
+  getPreviewDirection(): defines.direction
 
   setPositionUnchecked(position: Position): void
 
@@ -71,7 +72,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 
   isInStage(stage: StageNumber): boolean
 
-  setUndergroundBeltDirection(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
+  setTypeProperty(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
@@ -191,6 +192,11 @@ type StageData = ExtraEntities & StageProperties
 
 type MutableStageDiff<T extends Entity> = Partial<Mutable<StageDiff<T>>>
 
+export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
+  if (orientation == nil) return 0
+  return floor(orientation * 8 + 0.5) % 8
+}
+
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
   public position: Position
@@ -207,17 +213,17 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
   }
 
-  constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: SavedDirection | nil) {
+  constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
     this.position = position
     this.direction = (direction == 0 ? nil : direction) as InternalSavedDirection | nil
     this.firstValue = shallowCopy(firstValue)
     this.firstStage = firstStage
   }
 
-  public getDirection(): SavedDirection {
-    return (this.direction ?? 0) as SavedDirection
+  public getDirection(): defines.direction {
+    return (this.direction ?? 0) as defines.direction
   }
-  public setDirection(direction: SavedDirection): void {
+  public setDirection(direction: defines.direction): void {
     if (direction == 0) {
       this.direction = nil
     } else {
@@ -225,16 +231,16 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
   }
 
-  getWorldDirection(): WorldDirection {
-    return getWorldDirection(this.firstValue as unknown as BlueprintEntity, (this.direction ?? 0) as SavedDirection)
+  getWorldDirection(): defines.direction {
+    return (this.direction ?? 0) as defines.direction
   }
 
-  public getPreviewDirection(): WorldDirection {
+  public getPreviewDirection(): defines.direction {
     if (this.isRollingStock()) {
       return orientationToDirection((this.firstValue as RollingStockEntity).orientation)
     }
     // matches saved direction if underground belt
-    return (this.direction ?? 0) as WorldDirection
+    return (this.direction ?? 0) as defines.direction
   }
 
   setPositionUnchecked(position: Position): void {
@@ -259,7 +265,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     return stage >= this.firstStage
   }
-  setUndergroundBeltDirection(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
+  setTypeProperty(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
     // assume compiler asserts this is correct
     this.firstValue.type = direction
   }
@@ -760,7 +766,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 export function createAssemblyEntity<E extends Entity>(
   entity: E,
   position: Position,
-  direction: SavedDirection | nil,
+  direction: defines.direction | nil,
   stageNumber: StageNumber,
 ): AssemblyEntity<E> {
   return new AssemblyEntityImpl(stageNumber, entity, position, direction)
@@ -793,4 +799,10 @@ export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber)
 export function getStageToMerge(stageNumber: StageNumber): StageNumber {
   if (stageNumber == 1) return 2
   return stageNumber - 1
+}
+
+export function migrateEntity_0_17_0(entity: AssemblyEntity): void {
+  if (entity.isUndergroundBelt() && entity.firstValue.type == "output") {
+    entity.setDirection(oppositedirection(entity.getDirection()))
+  }
 }

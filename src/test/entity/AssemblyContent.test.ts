@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,13 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
+import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../../entity/Entity"
-import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
-import { NORTH, SavedDirection, SOUTH } from "../../entity/direction"
-import expect from "tstl-expect"
 
 let content: MutableAssemblyContent
 before_each(() => {
@@ -37,14 +36,14 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByTraits("foo", { x: 0, y: 0 }, NORTH)).to.be(entity)
+    expect(content.findCompatibleByTraits("foo", { x: 0, y: 0 }, defines.direction.north)).to.be(entity)
   })
 
   test("findCompatibleAnyDirection finds compatible if same name and any direction", () => {
     const entity: AssemblyEntity = createAssemblyEntity(
       { name: "foo" },
       { x: 0, y: 0 },
-      defines.direction.east as SavedDirection,
+      defines.direction.east as defines.direction,
       1,
     )
     content.add(entity)
@@ -56,14 +55,16 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByTraits("assembling-machine-2", { x: 0, y: 0 }, NORTH)).to.be(entity)
+    expect(content.findCompatibleByTraits("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north)).to.be(
+      entity,
+    )
   })
 
   test("findCompatibleAnyDirection finds compatible if same category and any direction", () => {
     const entity: AssemblyEntity = createAssemblyEntity(
       { name: "assembling-machine-1" },
       { x: 0, y: 0 },
-      defines.direction.east as SavedDirection,
+      defines.direction.east as defines.direction,
       1,
     )
     content.add(entity)
@@ -73,11 +74,11 @@ describe("findCompatible", () => {
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    expect(content.findCompatibleByTraits("test2", entity.position, NORTH)).to.be.nil()
-    expect(content.findCompatibleByTraits("foo", entity.position, SOUTH)).to.be.nil()
+    expect(content.findCompatibleByTraits("test2", entity.position, defines.direction.north)).to.be.nil()
+    expect(content.findCompatibleByTraits("foo", entity.position, defines.direction.south)).to.be.nil()
   })
 
-  test("find compatible not basic returns same entity if is flipped underground", () => {
+  test("find compatible returns same entity if is flipped underground", () => {
     const same: BasicEntityInfo = {
       name: "underground-belt",
       type: "underground-belt",
@@ -100,7 +101,7 @@ describe("findCompatible", () => {
         x: 0,
         y: 0,
       },
-      defines.direction.west as SavedDirection,
+      defines.direction.west as defines.direction,
       1,
     )
     content.add(assemblyEntity)
@@ -126,7 +127,7 @@ test("changePosition", () => {
   content.changePosition(entity, { x: 1, y: 1 })
   expect(entity.position.x).to.be(1)
   expect(entity.position.y).to.be(1)
-  expect(content.findCompatibleByTraits("foo", { x: 1, y: 1 }, NORTH)).to.be(entity)
+  expect(content.findCompatibleByTraits("foo", { x: 1, y: 1 }, defines.direction.north)).to.be(entity)
 })
 
 describe("connections", () => {
