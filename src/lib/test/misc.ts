@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -37,17 +37,19 @@ export function debugPrint(...values: unknown[]): void {
   const info = debug.getinfo(2, "Sl")!
   const source = tryUseSourcemap(info.source, info.currentline)
   const sourceString = source ? `${source.file}:${source.line ?? 1}` : "<unknown source>"
-  const output = values
-    .map((value) =>
+  const valueStrs = []
+  for (const i of $range(1, select("#", ...values))) {
+    const value = values[i - 1]
+    valueStrs[i - 1] =
       typeof value == "number" || typeof value == "string"
         ? value.toString()
         : serpent.block(value, {
             maxlevel: 3,
             nocode: true,
-          }),
-    )
-    .join(" ")
-  const message: LocalisedString = ["", sourceString, ": ", output]
+          })
+  }
+
+  const message: LocalisedString = ["", sourceString, ": ", valueStrs.join(", ")]
   game?.print(message)
   log(message)
 }

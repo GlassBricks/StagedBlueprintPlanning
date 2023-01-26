@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,15 +10,16 @@
  */
 
 import { UserAssembly } from "../assembly/AssemblyDef"
+import { UndoHandler } from "../assembly/undo"
 import { createUserAssembly } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
 import { Pos } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
 import { refreshCurrentAssembly } from "../ui/AssemblySettings"
 import { teleportToAssembly, teleportToStage } from "../ui/player-current-stage"
 import "./in-world-test-util"
-import { Migrations } from "../lib/migration"
 
 // better source map traceback
 declare const ____lualib: {
@@ -196,3 +197,14 @@ function setupManualTests(assembly: UserAssembly) {
 
   createEntityWithChanges()
 }
+
+const registerUndo = UndoHandler<string>("in-world-test", (player, data) => {
+  player.print(`Test undo: ${data}`)
+})
+
+commands.add_command("test-undo", "", (e) => {
+  const player = game.player!
+  const param = e.parameter ?? "no param"
+  registerUndo(player, param)
+  player.print(`Setup undo with: ${param}`)
+})

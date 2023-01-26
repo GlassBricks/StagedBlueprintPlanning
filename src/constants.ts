@@ -24,6 +24,7 @@ export const enum Prototypes {
   // used to handle blueprints
   EntityMarker = "bp100:entity-marker",
   PreviewEntityPrefix = "bp100:preview-entity-",
+  UndoReference = "bp100:undo-reference",
 
   UtilityGroup = "bp100:utility",
   PreviewEntitySubgroup = "bp100:preview-entity",
@@ -38,6 +39,10 @@ export const enum Prototypes {
   BlueprintFilters = "bp100:blueprint-filters",
 
   BANANA = "bp100:banana",
+}
+
+export const enum Constants {
+  MAX_UNDO_ENTRIES = 100,
 }
 
 export const enum Styles {

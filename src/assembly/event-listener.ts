@@ -20,6 +20,7 @@ import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
 import { getAssemblyPlayerData } from "./player-assembly-data"
+import { onUndoReferenceBuilt } from "./undo"
 import { getStageAtSurface } from "./UserAssembly"
 import { WorldListener } from "./WorldListener"
 
@@ -43,7 +44,7 @@ function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
 
 function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (!entity.valid) return
-  if (isMarkerEntity(entity)) entity.destroy() // only handle in on_built_entity; see below
+  if (getInnerName(entity) == Prototypes.EntityMarker) entity.destroy() // only handle in on_built_entity; see below
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
   if (!isWorldEntityAssemblyEntity(entity)) {
@@ -388,13 +389,18 @@ Events.on_built_entity((e) => {
   const { created_entity: entity } = e
   if (!entity.valid) return
 
+  const innerName = getInnerName(entity)
+  if (innerName == Prototypes.UndoReference) {
+    return onUndoReferenceBuilt(e.player_index, entity)
+  }
+
   const currentlyInBlueprintPaste = state.currentlyInBlueprintPaste
   if (currentlyInBlueprintPaste) {
-    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity, currentlyInBlueprintPaste)
+    if (innerName == Prototypes.EntityMarker) onEntityMarkerBuilt(e, entity, currentlyInBlueprintPaste)
     return
   }
   // just in case
-  if (isMarkerEntity(entity)) {
+  if (innerName == Prototypes.EntityMarker) {
     entity.destroy()
     game.print("Marker entity was not supposed to be built")
     return
@@ -607,11 +613,9 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   state.blueprintOriginalNumEntities = nil
 }
 
-function isMarkerEntity(entity: LuaEntity): boolean {
-  return (
-    entity.name == Prototypes.EntityMarker ||
-    (entity.type == "entity-ghost" && entity.ghost_name == Prototypes.EntityMarker)
-  )
+function getInnerName(entity: LuaEntity): string {
+  if (entity.type == "entity-ghost") return entity.ghost_name
+  return entity.name
 }
 
 function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
