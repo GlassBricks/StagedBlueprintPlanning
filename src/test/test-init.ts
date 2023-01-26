@@ -11,6 +11,7 @@
 
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { deleteAllFreeSurfaces } from "../assembly/surfaces"
+import { UndoHandler } from "../assembly/undo"
 import { createUserAssembly } from "../assembly/UserAssembly"
 import { destroyAllRenders, Events } from "../lib"
 import { Migrations } from "../lib/migration"
@@ -199,3 +200,14 @@ function setupManualTests(_assembly: UserAssembly) {
   //
   // createEntityWithChanges()
 }
+
+const registerUndo = UndoHandler<string>("in-world-test", (player, data) => {
+  player.print(`Test undo: ${data}`)
+})
+
+commands.add_command("test-undo", "", (e) => {
+  const player = game.player!
+  const param = e.parameter ?? "no param"
+  registerUndo(player, param)
+  player.print(`Setup undo with: ${param}`)
+})

@@ -38,3 +38,27 @@ const entityMarkerItem: ItemPrototype = {
 }
 
 data.extend([entityMarker, entityMarkerItem])
+
+// undo reference
+const undoReference: SimpleEntityWithOwnerPrototype = {
+  type: "simple-entity-with-owner",
+  name: Prototypes.UndoReference,
+  icon: "__core__/graphics/spawn-flag.png",
+  icon_size: 64,
+  subgroup: Prototypes.BlueprintSubgroup,
+  picture: empty_sprite() as Sprite,
+  flags: ["hidden", "player-creation", "placeable-off-grid"],
+  collision_mask: [],
+}
+
+const undoReferenceItem: ItemPrototype = {
+  type: "item",
+  name: Prototypes.UndoReference,
+  icon: "__core__/graphics/spawn-flag.png",
+  icon_size: 64,
+  stack_size: 1,
+  flags: ["hidden"],
+  place_result: Prototypes.UndoReference,
+}
+
+data.extend([undoReference, undoReferenceItem])

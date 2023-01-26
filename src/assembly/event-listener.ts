@@ -44,6 +44,7 @@ import {
   onUndergroundBeltDragRotated,
 } from "./on-world-event"
 import { getAssemblyPlayerData } from "./player-assembly-data"
+import { onUndoReferenceBuilt } from "./undo"
 import { getStageAtSurface } from "./UserAssembly"
 
 const Events = ProtectedEvents
@@ -416,6 +417,11 @@ Events.on_built_entity((e) => {
   const { created_entity: entity } = e
   if (!entity.valid) return
 
+  const innerName = getInnerName(entity)
+  if (innerName == Prototypes.UndoReference) {
+    return onUndoReferenceBuilt(e.player_index, entity)
+  }
+
   const currentBlueprintPaste = state.currentBlueprintPaste
   if (currentBlueprintPaste) {
     if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity)
@@ -629,11 +635,12 @@ Events.on_player_changed_surface((e) => {
   state.lastPreBuild = nil
 })
 
+function getInnerName(entity: LuaEntity): string {
+  if (entity.type == "entity-ghost") return entity.ghost_name
+  return entity.name
+}
 function isMarkerEntity(entity: LuaEntity): boolean {
-  return (
-    entity.name == Prototypes.EntityMarker ||
-    (entity.type == "entity-ghost" && entity.ghost_name == Prototypes.EntityMarker)
-  )
+  return getInnerName(entity) == Prototypes.EntityMarker
 }
 
 function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity): void {
