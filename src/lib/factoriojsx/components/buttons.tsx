@@ -77,16 +77,3 @@ export function RefreshButton(props: Partial<ElemProps<"sprite-button">>): Eleme
     />
   )
 }
-
-export function DotDotDotButton(props: Partial<ElemProps<"sprite-button">>): Element {
-  return (
-    <sprite-button
-      style="frame_action_button"
-      sprite="utility/expand_dots_white"
-      hovered_sprite="utility/expand_dots"
-      clicked_sprite="utility/expand_dots"
-      mouse_button_filter={["left"]}
-      {...props}
-    />
-  )
-}

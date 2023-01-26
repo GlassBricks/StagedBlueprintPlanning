@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _assertInValidState } from "../../assembly/event-listener"
@@ -20,7 +21,6 @@ import { getTempBpItemStack } from "../../entity/EntityHandler"
 import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { reviveGhost } from "../reviveGhost"
-import expect, { mock } from "tstl-expect"
 import direction = defines.direction
 
 let updater: mock.MockedObjectNoSelf<WorldListener>
@@ -684,10 +684,10 @@ describe("blueprint paste", () => {
   })
 })
 
-// picker dollies only tested up to worldupdater
+// picker dollies only tested up to WorldUpdater
 
 test("Q-building", () => {
-  // this is technically a bug in the base game, but we are supporting it anyways
+  // this is technically a bug in the base game, but we are supporting it anyway
   player.cursor_stack!.set_stack("transport-belt")
   Events.raiseFakeEventNamed("on_pre_build", {
     player_index: player.index,

@@ -14,6 +14,7 @@ export const enum Settings {
   FlexibleOffshorePumpPlacement = "bp100:flexible-offshore-pump-placement",
 }
 
+// noinspection JSUnusedGlobalSymbols
 export enum FlexibleOffshorePumpPlacement {
   Disabled = "disabled",
   OneWaterTile = "one-water-tile",

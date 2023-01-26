@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -33,13 +33,13 @@ interface Map2DImpl<T extends AnyNotNil> extends LuaPairsIterable<number, PRecor
 }
 
 const arrayMeta: LuaMetatable<any[]> = {}
-const getmeta = getmetatable
-const setmeta = setmetatable
+const getmetatable = _G.getmetatable
+const setmetatable = _G.setmetatable
 
 script.register_metatable("Map2D:array", arrayMeta)
 
 function isArray<T>(value: T | T[]): value is T[] {
-  return getmeta(value) == arrayMeta
+  return getmetatable(value) == arrayMeta
 }
 
 @RegisterClass("Map2D")
@@ -57,7 +57,7 @@ class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
     } else if (isArray(existing)) {
       existing.push(value)
     } else {
-      byX[y] = setmeta([existing, value], arrayMeta)
+      byX[y] = setmetatable([existing, value], arrayMeta)
     }
   }
   delete(x: number, y: number, value: T): void {

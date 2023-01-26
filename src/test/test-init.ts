@@ -166,6 +166,7 @@ Events.on_tick(() => {
 commands.add_command("rerun", "", () => {
   global.rerunMode = "rerun"
 })
+// noinspection SpellCheckingInspection
 commands.add_command("ronly", "", () => {
   global.rerunMode = "reload"
 })

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -46,17 +46,6 @@ function registerClass(name: string, item: Class<any>) {
 
 export function RegisterClass(name: string): (this: unknown, _class: Class<any>) => void {
   return (_class: Class<any>) => registerClass(name, _class)
-}
-
-export function RegisterClassFunctionsOnly(name: string): (this: unknown, _class: Class<any>) => void {
-  return (_class: Class<any>) => {
-    for (const [key, value] of pairs(_class)) {
-      // noinspection SuspiciousTypeOfGuard
-      if (typeof value == "function" && typeof key == "string") {
-        Functions.registerRaw(name + "." + key, value)
-      }
-    }
-  }
 }
 
 export function assertIsRegisteredClass(item: Class<any>): void {
@@ -111,13 +100,6 @@ export function funcRef<F extends SelflessFun>(func: F): Func<F> {
   return new FuncRef(func) as any
 }
 
-type AddContextParameter<F extends ContextualFun> = F extends (this: infer T, ...args: infer A) => infer R
-  ? (self: T, ...args: A) => R
-  : never
-export function cfuncRef<F extends ContextualFun>(func: F): Func<AddContextParameter<F>> {
-  return new FuncRef(func as any) as any
-}
-
 @RegisterClass("FuncBound1")
 class Bound1 {
   constructor(public func: Func, public arg1: unknown) {}
@@ -153,21 +135,6 @@ class Bound4 {
   ) {}
   invoke(...args: any[]): any {
     return this.func.invoke(this.arg1, this.arg2, this.arg3, this.arg4, ...args)
-  }
-}
-
-@RegisterClass("FuncBound5")
-class Bound5 {
-  constructor(
-    public func: Func,
-    public arg1: unknown,
-    public arg2: unknown,
-    public arg3: unknown,
-    public arg4: unknown,
-    public arg5: unknown,
-  ) {}
-  invoke(...args: any[]): any {
-    return this.func.invoke(this.arg1, this.arg2, this.arg3, this.arg4, this.arg5, ...args)
   }
 }
 
@@ -255,5 +222,6 @@ class NoSelfKeyFunc implements Func {
 export const ibind: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
   new KeyFunc(obj, key)) as any
 
+// noinspection JSUnusedGlobalSymbols
 export const ibindNoSelf: AccessSplit<<F extends SelflessFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
   new NoSelfKeyFunc(obj, key)) as any

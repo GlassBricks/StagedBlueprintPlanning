@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -20,10 +20,6 @@ export type PRRecord<K extends keyof any, V> = {
 
 export type Mutable<T> = {
   -readonly [P in keyof T]: T[P]
-}
-
-export type Building<T> = {
-  -readonly [P in keyof T]?: T[keyof T]
 }
 
 export type WithMetatable<T, M> = T & {

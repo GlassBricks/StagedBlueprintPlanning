@@ -37,10 +37,10 @@ export function debugPrint(...values: unknown[]): void {
   const info = debug.getinfo(2, "Sl")!
   const source = tryUseSourcemap(info.source, info.currentline)
   const sourceString = source ? `${source.file}:${source.line ?? 1}` : "<unknown source>"
-  const valueStrs = []
+  const valueStrings = []
   for (const i of $range(1, select("#", ...values))) {
     const value = values[i - 1]
-    valueStrs[i - 1] =
+    valueStrings[i - 1] =
       typeof value == "number" || typeof value == "string"
         ? value.toString()
         : serpent.block(value, {
@@ -49,11 +49,12 @@ export function debugPrint(...values: unknown[]): void {
           })
   }
 
-  const message: LocalisedString = ["", sourceString, ": ", valueStrs.join(", ")]
+  const message: LocalisedString = ["", sourceString, ": ", valueStrings.join(", ")]
   game?.print(message)
   log(message)
 }
 
+// noinspection JSUnusedGlobalSymbols
 export function pauseTest(): void {
   game.tick_paused = true
   game.speed = 1

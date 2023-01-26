@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -14,9 +14,9 @@ export interface GlobalEvent<A extends any[]> {
   raise(...args: A): void
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface GlobalEventImpl<A extends any[]> extends LuaSet<(...args: A) => void> {}
 class GlobalEventImpl<A extends any[]> implements GlobalEvent<A> {
+  declare add: LuaTableAddKeyMethod<any>
+  declare delete: LuaTableDeleteMethod<any>
   addListener(listener: (...args: A) => void) {
     this.add(listener)
   }
@@ -24,7 +24,7 @@ class GlobalEventImpl<A extends any[]> implements GlobalEvent<A> {
     this.delete(listener)
   }
   raise(...args: A) {
-    for (const listener of this) listener(...args)
+    for (const listener of this as unknown as LuaSet<(...args: A) => void>) listener(...args)
   }
 }
 

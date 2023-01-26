@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -60,6 +60,7 @@ export namespace Migrations {
     for (const fn of migrations) fn()
   }
 
+  // noinspection JSUnusedGlobalSymbols
   export function setMigrationsHook(): void {
     Events.on_configuration_changed((data) => {
       const thisChange = data.mod_changes[script.mod_name]

@@ -10,7 +10,7 @@
  */
 
 import { ibind, MutableProperty, RegisterClass } from "../../lib"
-import { Component, Element, FactorioJsx, RenderContext } from "../../lib/factoriojsx"
+import { Component, Element, FactorioJsx } from "../../lib/factoriojsx"
 import { getDefaultValueIfIsOverridenProp, highlightIfOverriden } from "../../utils/DiffedProperty"
 
 export interface CheckboxTextfieldProps {
@@ -26,7 +26,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
   private textfield!: TextFieldGuiElement
   private value!: MutableProperty<number | nil>
 
-  override render(props: CheckboxTextfieldProps, context: RenderContext): Element {
+  override render(props: CheckboxTextfieldProps): Element {
     const { captionBefore, captionAfter, value } = props
     this.value = value
 

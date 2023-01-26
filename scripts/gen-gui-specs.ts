@@ -129,12 +129,12 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
 {
   // from gui.d.ts
   function processInterface(
-    intf: ts.InterfaceDeclaration,
+    _interface: ts.InterfaceDeclaration,
     guiType: GuiElementType | "base",
     skipReadonly: boolean,
   ): TypedFactorioInterface {
     const result: TypedFactorioInterface = {}
-    for (const member of intf.members) {
+    for (const member of _interface.members) {
       if (!(ts.isPropertySignature(member) || ts.isSetAccessorDeclaration(member))) continue
       const name = (member.name as ts.Identifier).text
       if (ts.isSetAccessorDeclaration(member) && name === "style") continue

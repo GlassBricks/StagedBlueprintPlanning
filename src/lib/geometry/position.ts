@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -66,9 +66,6 @@ namespace Pos {
   }
   export function ceil(pos1: Position): PositionClass {
     return Pos(_ceil(pos1.x), _ceil(pos1.y))
-  }
-  export function round(pos1: Position): PositionClass {
-    return Pos(_floor(pos1.x + 0.5), _floor(pos1.y + 0.5))
   }
   export function length(pos1: Position): number {
     return sqrt(pos1.x * pos1.x + pos1.y * pos1.y)

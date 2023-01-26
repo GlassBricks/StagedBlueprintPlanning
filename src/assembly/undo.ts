@@ -13,7 +13,6 @@ import { Constants, Prototypes } from "../constants"
 import { onPlayerInitSince } from "../lib"
 import floor = math.floor
 
-// should be greater than factorio's max undos
 export interface UndoEntry {
   handlerName: string
   data: unknown
