@@ -55,8 +55,6 @@ describe("getSavedDirection", () => {
 
   test("always north for rolling stock", () => {
     const rollingStock = createRollingStock()
-    game.print(rollingStock.direction)
-    game.print(rollingStock.supports_direction)
     assert(rollingStock)
     expect(defines.direction.north).to.be(rollingStock.direction)
   })
