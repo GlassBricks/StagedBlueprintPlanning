@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,8 +9,15 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { StageNumber } from "../entity/AssemblyEntity"
+import { remove_from_list } from "util"
+import {
+  createNewBlueprintSettings,
+  OverrideableBlueprintSettings,
+  StageBlueprintSettings,
+  StageBlueprintSettingsTable,
+} from "../blueprints/blueprint-settings"
 import { newAssemblyContent } from "../entity/AssemblyContent"
+import { StageNumber } from "../entity/AssemblyEntity"
 import {
   bind,
   Events,
@@ -23,23 +30,16 @@ import {
   SimpleEvent,
 } from "../lib"
 import { BBox, Position } from "../lib/geometry"
-import { L_Bp100 } from "../locale"
-import { AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage, UserAssembly } from "./AssemblyDef"
-import { createStageSurface, prepareArea } from "./surfaces"
-import { AutoSetTilesType, setTiles } from "./tiles"
 import { Migrations } from "../lib/migration"
-import {
-  createNewBlueprintSettings,
-  OverrideableBlueprintSettings,
-  StageBlueprintSettings,
-  StageBlueprintSettingsTable,
-} from "../blueprints/blueprint-settings"
+import { L_Bp100 } from "../locale"
 import {
   createdDiffedPropertyTableView,
   createEmptyPropertyOverrideTable,
   PropertiesTable,
 } from "../utils/properties-obj"
-import { remove_from_list } from "util"
+import { AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage, UserAssembly } from "./AssemblyDef"
+import { createStageSurface, destroySurface, prepareArea } from "./surfaces"
+import { AutoSetTilesType, setTiles } from "./tiles"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 declare const global: {
@@ -292,7 +292,7 @@ class StageImpl implements Stage {
     if (!this.valid) return
     ;(this as Mutable<Stage>).valid = false
     global.surfaceIndexToStage.delete(this.surfaceIndex)
-    if (this.surface.valid) game.delete_surface(this.surface)
+    if (this.surface.valid) destroySurface(this.surface)
   }
 
   __tostring() {

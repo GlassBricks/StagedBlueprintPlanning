@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,7 +11,7 @@
 
 import { BBox } from "../lib/geometry"
 
-export function createStageSurface(): LuaSurface {
+function createNewStageSurface(this: unknown): LuaSurface {
   const result = game.create_surface("bp100-stage-temp", {
     width: 10000,
     height: 10000,
@@ -38,3 +38,43 @@ export function prepareArea(surface: LuaSurface, area: BBox): void {
   const actualArea = chunkArea.scale(32)
   surface.build_checkerboard(actualArea)
 }
+
+export interface SurfaceCreator {
+  createSurface(): LuaSurface
+  destroySurface(surface: LuaSurface): void
+}
+
+declare const global: {
+  freeSurfaces?: LuaSurface[]
+}
+
+let surfaceCreator: SurfaceCreator
+if (!script.active_mods.debugadapter) {
+  surfaceCreator = {
+    createSurface: createNewStageSurface,
+    destroySurface: (surface) => game.delete_surface(surface),
+  }
+} else {
+  surfaceCreator = {
+    createSurface: () => {
+      if (!global.freeSurfaces) {
+        global.freeSurfaces = []
+      }
+      while (global.freeSurfaces.length > 0) {
+        const surface = global.freeSurfaces.pop()!
+        if (surface.valid) return surface
+      }
+      return createNewStageSurface()
+    },
+    destroySurface: (surface) => {
+      surface.find_entities().forEach((entity) => entity.destroy())
+      if (!global.freeSurfaces) {
+        global.freeSurfaces = []
+      }
+      global.freeSurfaces.push(surface)
+    },
+  }
+}
+
+export const createStageSurface = surfaceCreator.createSurface
+export const destroySurface = surfaceCreator.destroySurface
