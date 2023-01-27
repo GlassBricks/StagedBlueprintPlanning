@@ -10,7 +10,6 @@
  */
 
 import { UserAssembly } from "../assembly/AssemblyDef"
-import { UndoHandler } from "../assembly/undo"
 import { createUserAssembly } from "../assembly/UserAssembly"
 import { WorldUpdater } from "../assembly/WorldUpdater"
 import { createAssemblyEntity } from "../entity/AssemblyEntity"
@@ -198,14 +197,3 @@ function setupManualTests(assembly: UserAssembly) {
 
   createEntityWithChanges()
 }
-
-const registerUndo = UndoHandler<string>("in-world-test", (player, data) => {
-  player.print(`Test undo: ${data}`)
-})
-
-commands.add_command("test-undo", "", (e) => {
-  const player = game.player!
-  const param = e.parameter ?? "no param"
-  registerUndo(player, param)
-  player.print(`Setup undo with: ${param}`)
-})
