@@ -10,7 +10,7 @@
  */
 
 import { WorldListener } from "../assembly/WorldListener"
-import { EntityHandler } from "../entity/EntityHandler"
+import { saveEntity } from "../entity/EntityHandler"
 import { Events, SelflessFun } from "../lib"
 
 declare let global: {
@@ -82,7 +82,7 @@ commands.add_command("bpinfo", "", () => {
     game.print("No entity selected")
     return
   }
-  const [value, dir] = EntityHandler.saveEntity(entity)
+  const [value, dir] = saveEntity(entity)
   game.print(serpent.block(value))
   game.print(serpent.block(dir))
 })

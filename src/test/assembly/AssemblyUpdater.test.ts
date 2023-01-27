@@ -22,7 +22,6 @@ import {
   StageDiffsInternal,
   StageNumber,
 } from "../../entity/AssemblyEntity"
-import { EntityHandler } from "../../entity/EntityHandler"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { WireSaver } from "../../entity/WireHandler"
@@ -57,7 +56,7 @@ before_each(() => {
   }
   wireSaver = { saveWireConnections: mock.fnNoSelf() }
   wireSaver.saveWireConnections.returns(false as any)
-  assemblyUpdater = createAssemblyUpdater(worldUpdater, EntityHandler, wireSaver)
+  assemblyUpdater = createAssemblyUpdater(worldUpdater, wireSaver)
 
   game.surfaces[1].find_entities().forEach((e) => e.destroy())
 })

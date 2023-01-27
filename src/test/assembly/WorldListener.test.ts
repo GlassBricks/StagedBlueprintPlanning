@@ -21,7 +21,7 @@ import {
 import { createWorldListener, WorldListener, WorldNotifier } from "../../assembly/WorldListener"
 import { L_Game } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
-import { EntityHandler } from "../../entity/EntityHandler"
+import { createPreviewEntity, saveEntity } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
 import { makeMocked } from "../simple-mock"
@@ -88,7 +88,7 @@ function addEntity(
   entity: AssemblyEntity
 } {
   const luaEntity = createWorldEntity(stage, args)
-  const [value, dir] = EntityHandler.saveEntity(luaEntity)
+  const [value, dir] = saveEntity(luaEntity)
   const assemblyEntity = createAssemblyEntity(value, luaEntity.position, dir, stage)
   assembly.content.add(assemblyEntity)
   return { luaEntity, entity: assemblyEntity }
@@ -364,8 +364,8 @@ describe("onCircuitWiresPossiblyUpdated", () => {
   })
 })
 
-function createPreviewEntity(luaEntity: LuaEntity) {
-  return EntityHandler.createPreviewEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, luaEntity.name)!
+function createPreview(luaEntity: LuaEntity) {
+  return createPreviewEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, luaEntity.name)!
 }
 
 describe("onCleanupToolUsed", () => {
@@ -378,7 +378,7 @@ describe("onCleanupToolUsed", () => {
   test("if is settings remnant, calls forceDeleteEntity", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.isSettingsRemnant = true
-    worldListener.onCleanupToolUsed(assembly, createPreviewEntity(luaEntity), 2)
+    worldListener.onCleanupToolUsed(assembly, createPreview(luaEntity), 2)
     expect(assemblyUpdater.forceDeleteEntity).calledWith(assembly, entity)
   })
 
@@ -390,14 +390,14 @@ describe("onCleanupToolUsed", () => {
 
   test.each([2, 3])("if is in stage %s, calls refreshEntityAllStages", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
-    worldListener.onCleanupToolUsed(assembly, createPreviewEntity(luaEntity), atStage)
+    worldListener.onCleanupToolUsed(assembly, createPreview(luaEntity), atStage)
     expect(assemblyUpdater.refreshEntityAllStages).calledWith(assembly, entity)
   })
 })
 
 test("onEntityForceDeleted calls forceDeleteEntity", () => {
   const { luaEntity, entity } = addEntity(2)
-  worldListener.onEntityForceDeleteUsed(assembly, createPreviewEntity(luaEntity))
+  worldListener.onEntityForceDeleteUsed(assembly, createPreview(luaEntity))
   expect(assemblyUpdater.forceDeleteEntity).calledWith(assembly, entity)
 })
 
@@ -416,7 +416,7 @@ describe("onMoveEntityToStageCustomInput", () => {
   test("if is settings remnant, does nothing", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.isSettingsRemnant = true
-    worldListener.onMoveEntityToStageCustomInput(assembly, createPreviewEntity(luaEntity), 2, playerIndex)
+    worldListener.onMoveEntityToStageCustomInput(assembly, createPreview(luaEntity), 2, playerIndex)
     expectedAuCalls = 0
   })
   test.each<[StageMoveResult, LocalisedString | false]>([

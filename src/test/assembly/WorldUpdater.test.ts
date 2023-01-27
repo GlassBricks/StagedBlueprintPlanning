@@ -15,7 +15,7 @@ import { EntityHighlighter } from "../../assembly/EntityHighlighter"
 import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { EntityHandler } from "../../entity/EntityHandler"
+import { createEntity, saveEntity } from "../../entity/EntityHandler"
 import { forceDollyEntity } from "../../entity/picker-dollies"
 import { WireHandler, WireUpdater } from "../../entity/WireHandler"
 import { Pos } from "../../lib/geometry"
@@ -52,7 +52,7 @@ before_each(() => {
 
   wireUpdater = makeMocked(keys<WireUpdater>())
   highlighter = makeMocked(keys<EntityHighlighter>())
-  worldUpdater = createWorldUpdater(EntityHandler, wireUpdater, highlighter as unknown as EntityHighlighter)
+  worldUpdater = createWorldUpdater(wireUpdater, highlighter as unknown as EntityHighlighter)
 })
 
 function findPreviewEntity(i: StageNumber) {
@@ -86,7 +86,7 @@ function assertHasPreview(i: StageNumber): void {
 
 function assertEntityCorrect(i: StageNumber): LuaEntity {
   const worldEntity = expect(findMainEntity(i)).to.be.any().getValue()
-  const [value, direction] = EntityHandler.saveEntity(worldEntity)
+  const [value, direction] = saveEntity(worldEntity)
   expect(entity.getDirection()).to.be(direction)
   const valueAtStage = entity.getValueAtStage(i)
   expect(valueAtStage).to.equal(value)
@@ -111,7 +111,7 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = EntityHandler.createEntity(assembly.getSurface(2)!, entity.position, entity.getDirection(), {
+      const replaced = createEntity(assembly.getSurface(2)!, entity.position, entity.getDirection(), {
         name: "inserter",
         override_stack_size: 3,
       } as TestEntity)!
@@ -159,7 +159,7 @@ describe("updateWorldEntities", () => {
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
     entity.moveToStage(2)
     if (withExisting) {
-      const luaEntity = EntityHandler.createEntity(assembly.getSurface(3)!, entity.position, entity.getDirection(), {
+      const luaEntity = createEntity(assembly.getSurface(3)!, entity.position, entity.getDirection(), {
         name: "inserter",
         override_stack_size: 3,
       } as TestEntity)!
@@ -204,7 +204,7 @@ describe("updateWorldEntities", () => {
 
   test("entity preview in all other stages if is rolling stock", () => {
     const rollingStock = createRollingStock(surfaces[2 - 1])
-    const [value, dir] = EntityHandler.saveEntity(rollingStock)
+    const [value, dir] = saveEntity(rollingStock)
     entity = createAssemblyEntity(value, rollingStock.position, dir, 2) as any
     rollingStock.destroy()
 
@@ -212,7 +212,7 @@ describe("updateWorldEntities", () => {
 
     assertHasPreview(1)
     const worldEntity = expect(findMainEntity(2)).to.be.any().getValue()
-    const [foundValue] = EntityHandler.saveEntity(worldEntity)
+    const [foundValue] = saveEntity(worldEntity)
     expect(foundValue).to.equal(value)
     assertHasPreview(3)
   })
@@ -449,7 +449,7 @@ describe("circuit wires", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   before_each(() => {
-    worldUpdater = createWorldUpdater(EntityHandler, WireHandler, highlighter as unknown as EntityHighlighter) // real entity handler
+    worldUpdater = createWorldUpdater(WireHandler, highlighter as unknown as EntityHighlighter) // real entity handler
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
     entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)

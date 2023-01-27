@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../../assembly/AssemblyUpdater"
 import { WorldUpdater } from "../../assembly/WorldUpdater"
@@ -17,12 +18,11 @@ import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmC
 import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { isPreviewEntity } from "../../entity/entity-info"
-import { EntityHandler } from "../../entity/EntityHandler"
+import { saveEntity } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
-import expect from "tstl-expect"
 
 const surfaces = setupTestSurfaces(6)
 let assembly: Assembly
@@ -65,7 +65,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
     } else if (isPreview) {
       hasMissing = true
     } else {
-      const [savedValue, dir] = EntityHandler.saveEntity(worldEntity)
+      const [savedValue, dir] = saveEntity(worldEntity)
       expect(dir).to.be(entity.getDirection())
       expect(savedValue).to.equal(value)
     }

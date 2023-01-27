@@ -17,25 +17,6 @@ import { getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "./
 import { makePreviewIndestructible } from "./special-entities"
 import { getUndergroundDirection } from "./underground-belt"
 
-/** @noSelf */
-export interface EntityCreator {
-  createEntity(surface: LuaSurface, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil
-  updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity | nil
-  createPreviewEntity(
-    surface: LuaSurface,
-    position: Position,
-    apparentDirection: defines.direction,
-    entityName: string,
-  ): LuaEntity | nil
-}
-
-/** @noSelf */
-export interface EntitySaver {
-  saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, defines.direction] | []>
-}
-
-export interface EntityHandler extends EntityCreator, EntitySaver {}
-
 declare const global: {
   tempBPInventory: LuaInventory
 }
@@ -151,7 +132,7 @@ function tryCreateUnconfiguredEntity(
   return createdEntity
 }
 
-function tryCreateEntity(
+function createEntity(
   surface: LuaSurface,
   position: MapPosition,
   direction: defines.direction,
@@ -256,7 +237,7 @@ function updateUndergroundRotation(
     const surface = luaEntity.surface
     const position = luaEntity.position
     luaEntity.destroy()
-    return tryCreateEntity(surface, position, direction, value)
+    return createEntity(surface, position, direction, value)
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
@@ -268,64 +249,65 @@ function updateUndergroundRotation(
   return luaEntity
 }
 
-const BlueprintEntityHandler: EntityHandler = {
-  saveEntity(entity: LuaEntity): LuaMultiReturn<[Entity, defines.direction] | []> {
-    const bpEntity = blueprintEntity(entity)
-    if (!bpEntity) return $multi()
-    bpEntity.entity_number = nil!
-    bpEntity.position = nil!
-    bpEntity.direction = nil
-    bpEntity.neighbours = nil
-    bpEntity.connections = nil
-    return $multi(bpEntity, entity.direction)
-  },
+// export interface EntityHandler extends EntityCreator, EntitySaver {}
 
-  createEntity(surface: LuaSurface, position: Position, direction: defines.direction, entity: Entity): LuaEntity | nil {
-    return tryCreateEntity(surface, position, direction, entity)
-  },
-
-  createPreviewEntity(
-    surface: LuaSurface,
-    position: Position,
-    apparentDirection: defines.direction,
-    entityName: string,
-  ): LuaEntity | nil {
-    const entity = surface.create_entity({
-      name: Prototypes.PreviewEntityPrefix + entityName,
-      position,
-      direction: apparentDirection,
-      force: "player",
-    })
-    makePreviewIndestructible(entity)
-    return entity
-  },
-
-  updateEntity(luaEntity: LuaEntity, value: BlueprintEntity, direction: defines.direction): LuaEntity | nil {
-    if (rollingStockTypes.has(luaEntity.type)) return luaEntity
-
-    if (luaEntity.name != value.name) {
-      luaEntity = upgradeEntity(luaEntity, value.name)
-    }
-
-    if (luaEntity.type == "underground-belt") {
-      // underground belts don't have other settings.
-      return updateUndergroundRotation(luaEntity, value, direction)
-    }
-
-    if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
-      luaEntity.loader_type = value.type ?? "output"
-    }
-    luaEntity.direction = direction
-
-    // don't paste at luaEntity.direction, because it might fail to rotate if this is an assembling machine
-    const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value)
-    if (ghost) ghost.destroy() // should not happen?
-    matchItems(luaEntity, value)
-
-    return luaEntity
-  },
+function saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, defines.direction] | []> {
+  const bpEntity = blueprintEntity(entity)
+  if (!bpEntity) return $multi()
+  bpEntity.entity_number = nil!
+  bpEntity.position = nil!
+  bpEntity.direction = nil
+  bpEntity.neighbours = nil
+  bpEntity.connections = nil
+  return $multi(bpEntity, entity.direction)
 }
-export const EntityHandler: EntityHandler = BlueprintEntityHandler
+
+function updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity | nil {
+  assume<BlueprintEntity>(value)
+  if (rollingStockTypes.has(luaEntity.type)) return luaEntity
+
+  if (luaEntity.name != value.name) {
+    luaEntity = upgradeEntity(luaEntity, value.name)
+  }
+
+  if (luaEntity.type == "underground-belt") {
+    // underground belts don't have other settings.
+    return updateUndergroundRotation(luaEntity, value, direction)
+  }
+
+  if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
+    luaEntity.loader_type = value.type ?? "output"
+  }
+  luaEntity.direction = direction
+
+  // don't paste at luaEntity.direction, because it might fail to rotate if this is an assembling machine
+  const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value)
+  if (ghost) ghost.destroy() // should not happen?
+  matchItems(luaEntity, value)
+
+  return luaEntity
+}
+
+function createPreviewEntity(
+  surface: LuaSurface,
+  position: Position,
+  apparentDirection: defines.direction,
+  entityName: string,
+): LuaEntity | nil {
+  const entity = surface.create_entity({
+    name: Prototypes.PreviewEntityPrefix + entityName,
+    position,
+    direction: apparentDirection,
+    force: "player",
+  })
+  makePreviewIndestructible(entity)
+  return entity
+}
+
+export { createEntity, updateEntity, createPreviewEntity, saveEntity }
+
+// noinspection JSUnusedGlobalSymbols
+export const _mockable = true
 
 /** Currently only true if is a square assembling machine with no fluid inputs. */
 export function canBeAnyDirection(luaEntity: LuaEntity): boolean {

@@ -18,7 +18,7 @@ import {
   StageNumber,
 } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
-import { EntityCreator, EntityHandler } from "../entity/EntityHandler"
+import { createEntity, createPreviewEntity, updateEntity } from "../entity/EntityHandler"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { WireHandler, WireUpdater } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
@@ -75,12 +75,7 @@ export type AssemblyEntityDollyResult =
   | "entities-missing"
   | "connected-entities-missing"
 
-export function createWorldUpdater(
-  entityCreator: EntityCreator,
-  wireHandler: WireUpdater,
-  highlighter: EntityHighlighter,
-): WorldUpdater {
-  const { createEntity, createPreviewEntity, updateEntity } = entityCreator
+export function createWorldUpdater(wireHandler: WireUpdater, highlighter: EntityHighlighter): WorldUpdater {
   const { updateWireConnections } = wireHandler
   const { updateHighlights, deleteHighlights } = highlighter
 
@@ -353,4 +348,4 @@ export function createWorldUpdater(
   }
 }
 
-export const WorldUpdater = createWorldUpdater(EntityHandler, WireHandler, EntityHighlighter)
+export const WorldUpdater = createWorldUpdater(WireHandler, EntityHighlighter)

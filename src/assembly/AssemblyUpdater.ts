@@ -20,7 +20,7 @@ import {
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
-import { canBeAnyDirection, EntityHandler, EntitySaver } from "../entity/EntityHandler"
+import { canBeAnyDirection, saveEntity } from "../entity/EntityHandler"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { WireHandler, WireSaver } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
@@ -87,11 +87,7 @@ export type EntityUpdateResult = UpdateSuccess | UpdateError | RotateError
 export type WireUpdateResult = UpdateSuccess | "max-connections-exceeded"
 export type StageMoveResult = UpdateSuccess | "cannot-move-upgraded-underground"
 
-export function createAssemblyUpdater(
-  worldUpdater: WorldUpdater,
-  entitySaver: EntitySaver,
-  wireSaver: WireSaver,
-): AssemblyUpdater {
+export function createAssemblyUpdater(worldUpdater: WorldUpdater, wireSaver: WireSaver): AssemblyUpdater {
   const {
     updateWorldEntities,
     refreshWorldEntityAtStage,
@@ -101,7 +97,6 @@ export function createAssemblyUpdater(
     updateNewEntityWithoutWires,
     updateWireConnections,
   } = worldUpdater
-  const { saveEntity } = entitySaver
   const { saveWireConnections } = wireSaver
 
   function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
@@ -499,4 +494,4 @@ export function createAssemblyUpdater(
   }
 }
 
-export const AssemblyUpdater = createAssemblyUpdater(WorldUpdater, EntityHandler, WireHandler)
+export const AssemblyUpdater = createAssemblyUpdater(WorldUpdater, WireHandler)
