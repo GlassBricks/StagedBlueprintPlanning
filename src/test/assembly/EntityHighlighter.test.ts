@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,37 +9,34 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
-import {
-  createHighlightCreator,
-  EntityHighlighter,
-  HighlightCreator,
-  HighlightEntities,
-} from "../../assembly/EntityHighlighter"
+import { createHighlightCreator, EntityHighlighter, HighlightEntities } from "../../assembly/EntityHighlighter"
 import { Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { Pos } from "../../lib/geometry"
+import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
-import expect from "tstl-expect"
 
 interface FooEntity extends Entity {
   foo?: number
 }
 let entity: AssemblyEntity<FooEntity>
 let assembly: Assembly
-let highlightCreator: EntityHighlighter
+let entityHighlighter: EntityHighlighter
+
+import _highlightCreator = require("../../assembly/HighlightCreator")
+
+const highlightCreator = moduleMock(_highlightCreator, false)
 
 const surfaces = setupTestSurfaces(5)
 before_each(() => {
   assembly = createMockAssembly(surfaces)
-  const entityCreator: HighlightCreator = {
-    createHighlightBox: HighlightCreator.createHighlightBox,
-    createSprite: (params) => simpleMock(params as any),
-  }
-  highlightCreator = createHighlightCreator(entityCreator)
+  highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
+  entityHighlighter = createHighlightCreator()
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
 
@@ -75,15 +72,15 @@ describe("error highlights and selection proxy", () => {
   })
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
-    highlightCreator.updateHighlights(assembly, entity, 2, 2)
+    entityHighlighter.updateHighlights(assembly, entity, 2, 2)
     expect(entity.getExtraEntity("errorOutline", 2)!).to.be.any()
   })
 
   test("deletes highlight when entity revived", () => {
     removeInStage(2)
-    highlightCreator.updateHighlights(assembly, entity, 2, 2)
+    entityHighlighter.updateHighlights(assembly, entity, 2, 2)
     addInStage(2)
-    highlightCreator.updateHighlights(assembly, entity, 2, 2)
+    entityHighlighter.updateHighlights(assembly, entity, 2, 2)
     expect(entity.getExtraEntity("errorOutline", 2)).to.be.nil()
   })
 
@@ -93,7 +90,7 @@ describe("error highlights and selection proxy", () => {
       removeInStage(stage)
       stageSet.add(stage)
     }
-    highlightCreator.updateHighlights(assembly, entity)
+    entityHighlighter.updateHighlights(assembly, entity)
 
     for (let i = 1; i < 5; i++) {
       if (i == 1 || stageSet.has(i)) {
@@ -107,18 +104,18 @@ describe("error highlights and selection proxy", () => {
   test("deletes indicators only when all highlights removed", () => {
     removeInStage(2)
     removeInStage(3)
-    highlightCreator.updateHighlights(assembly, entity)
+    entityHighlighter.updateHighlights(assembly, entity)
     for (let i = 4; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
     addInStage(3)
-    highlightCreator.updateHighlights(assembly, entity)
+    entityHighlighter.updateHighlights(assembly, entity)
     for (let i = 3; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
     addInStage(2)
-    highlightCreator.updateHighlights(assembly, entity)
+    entityHighlighter.updateHighlights(assembly, entity)
     for (let i = 1; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.nil()
   })
 
   test("does nothing if created in lower than first stage", () => {
-    highlightCreator.updateHighlights(assembly, entity)
+    entityHighlighter.updateHighlights(assembly, entity)
     expect(entity.getExtraEntity("errorOutline", 1)).to.be.nil()
   })
 })
@@ -142,7 +139,7 @@ describe("config changed highlight", () => {
     entity.adjustValueAtStage(stage, entity.getValueAtStage(stage - 1)!)
   }
   function assertCorrect() {
-    highlightCreator.updateHighlights(assembly, entity)
+    entityHighlighter.updateHighlights(assembly, entity)
     assertConfigChangedHighlightsCorrect(entity, 5)
   }
   test("single", () => {
@@ -196,16 +193,16 @@ describe("settings remnants", () => {
   }
   test("makeSettingsRemnant creates highlights", () => {
     createSettingsRemnant()
-    highlightCreator.makeSettingsRemnant(assembly, entity)
+    entityHighlighter.makeSettingsRemnant(assembly, entity)
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.any()
     }
   })
   test("reviveSettingsRemnant removes highlights and sets entities correct", () => {
     createSettingsRemnant()
-    highlightCreator.makeSettingsRemnant(assembly, entity)
+    entityHighlighter.makeSettingsRemnant(assembly, entity)
     reviveSettingsRemnant()
-    highlightCreator.reviveSettingsRemnant(assembly, entity)
+    entityHighlighter.reviveSettingsRemnant(assembly, entity)
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.nil()
     }
@@ -215,8 +212,8 @@ describe("settings remnants", () => {
 test("deleteErrorHighlights deletes all highlights", () => {
   entity.destroyWorldOrPreviewEntity(2)
   entity.destroyWorldOrPreviewEntity(3)
-  highlightCreator.updateHighlights(assembly, entity)
-  highlightCreator.deleteHighlights(entity)
+  entityHighlighter.updateHighlights(assembly, entity)
+  entityHighlighter.deleteHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
       expect(entity.getExtraEntity(type, i)).to.be.nil()

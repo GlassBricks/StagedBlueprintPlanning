@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,10 +11,10 @@
 
 import { AssemblyEntity, entityHasErrorAt, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
 import { getSelectionBox } from "../entity/entity-info"
-import { assertNever } from "../lib"
+import { AnyRender, assertNever, SpriteRender } from "../lib"
 import { Position } from "../lib/geometry"
-import draw, { AnyRender, DrawParams, SpriteRender } from "../lib/rendering"
 import { Assembly } from "./AssemblyDef"
+import { createHighlightBox, createSprite } from "./HighlightCreator"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {
@@ -52,13 +52,6 @@ export interface EntityHighlighter {
 
   makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
   reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
-}
-
-/** @noSelf */
-export interface HighlightCreator {
-  createHighlightBox(target: LuaEntity | nil, type: CursorBoxRenderType): LuaEntity | nil
-
-  createSprite(params: DrawParams["sprite"]): SpriteRender
 }
 
 interface HighlightConfig {
@@ -116,9 +109,7 @@ const highlightConfigs: {
   },
 }
 
-export function createHighlightCreator(entityCreator: HighlightCreator): EntityHighlighter {
-  const { createHighlightBox, createSprite } = entityCreator
-
+export function createHighlightCreator(): EntityHighlighter {
   function createHighlight<T extends keyof HighlightEntities>(
     entity: AssemblyEntity,
     stage: StageNumber,
@@ -278,20 +269,4 @@ export function createHighlightCreator(entityCreator: HighlightCreator): EntityH
   }
 }
 
-export const HighlightCreator: HighlightCreator = {
-  createHighlightBox(target: LuaEntity | nil, type: CursorBoxRenderType): LuaEntity | nil {
-    if (!target) return nil
-    return target.surface.create_entity({
-      name: "highlight-box",
-      position: target.position,
-      source: target,
-      box_type: type,
-      force: target.force,
-    })
-  },
-  createSprite(params: DrawParams["sprite"]): SpriteRender {
-    return draw("sprite", params)
-  },
-}
-
-export const EntityHighlighter = createHighlightCreator(HighlightCreator)
+export const EntityHighlighter = createHighlightCreator()
