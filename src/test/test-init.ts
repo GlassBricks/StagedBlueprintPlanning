@@ -19,6 +19,7 @@ import { Migrations } from "../lib/migration"
 import { refreshCurrentAssembly } from "../ui/AssemblySettings"
 import { teleportToAssembly, teleportToStage } from "../ui/player-current-stage"
 import "./in-world-test-util"
+import "./module-mock"
 
 // better source map traceback
 declare const ____lualib: {

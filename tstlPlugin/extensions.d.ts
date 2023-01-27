@@ -9,20 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/** @beforeImports */
-{
-  pcall(require, "test.module-mock")
+/**
+ * Calls to this function must be in the form (a.b) or (a[b]), and will be split into 2 arguments.
+ */
+type AccessSplit<T extends (this: void, value: any) => any> = T & {
+  __accessSplitBrand: any
 }
-
-import "./assembly"
-import { Events } from "./lib"
-import "./migrations-custom"
-import "./ui"
-
-pcall(require, "test.test-init")
-
-Events.on_init(() => {
-  const force = game.forces.player
-  force.research_all_technologies()
-  force.enable_all_recipes()
-})

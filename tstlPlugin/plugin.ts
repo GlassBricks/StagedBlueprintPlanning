@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,6 +11,7 @@
 
 import * as path from "path"
 import * as ts from "typescript"
+import * as tstl from "typescript-to-lua"
 import {
   getEmitOutDir,
   isCallExpression,
@@ -50,34 +51,54 @@ function createPlugin(options: { hasTests: boolean }): Plugin {
       }
       return context.superTransformExpression(node)
     },
+    [ts.SyntaxKind.SourceFile](node: ts.SourceFile, context: TransformationContext) {
+      const firstStatement = node.statements[0]
+      if (
+        !(
+          context.isModule &&
+          firstStatement &&
+          ts.isBlock(firstStatement) &&
+          (firstStatement as any)?.jsDoc?.[0]?.getText()?.includes("@beforeImports")
+        )
+      ) {
+        return (context.superTransformNode(node) as [tstl.File])[0]
+      }
+      const [superResult] = context.superTransformNode(ts.factory.updateSourceFile(node, node.statements.slice(1))) as [
+        tstl.File,
+      ]
+      const [block] = context.transformNode(firstStatement) as [tstl.DoStatement]
+      superResult.statements.unshift(block)
+      return superResult
+    },
   }
 
+  const beforeEmit: Plugin["beforeEmit"] = function beforeEmit(program, __, ___, files) {
+    if (files.length === 0) return // also if there are errors and noEmitOnError
+    for (const file of files) {
+      const outPath = file.outputPath
+      if (!outPath.endsWith(".lua")) continue
+      const fileName = path.basename(outPath, ".lua")
+      // replace . with - in file name
+      const newFileName = fileName.replace(/\./g, "-")
+      if (fileName === newFileName) continue
+      file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
+      if (!options.hasTests) {
+        console.warn(`Replaced ${fileName} with ${newFileName}, but tests are disabled.`)
+      }
+    }
+
+    if (options.hasTests) {
+      const currentTimestampString = new Date().toLocaleString()
+      const outDir = getEmitOutDir(program)
+      files.push({
+        outputPath: path.join(outDir, "last-compile-time.lua"),
+        code: `return ${JSON.stringify(currentTimestampString)}`,
+      })
+    }
+  }
   return {
     visitors,
-    beforeEmit(program, __, ___, files) {
-      if (files.length === 0) return // also if there are errors and noEmitOnError
-      for (const file of files) {
-        const outPath = file.outputPath
-        if (!outPath.endsWith(".lua")) continue
-        const fileName = path.basename(outPath, ".lua")
-        // replace . with - in file name
-        const newFileName = fileName.replace(/\./g, "-")
-        if (fileName === newFileName) continue
-        file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
-        if (!options.hasTests) {
-          console.warn(`Replaced ${fileName} with ${newFileName}, but tests are disabled.`)
-        }
-      }
-
-      if (options.hasTests) {
-        const currentTimestampString = new Date().toLocaleString()
-        const outDir = getEmitOutDir(program)
-        files.push({
-          outputPath: path.join(outDir, "last-compile-time.lua"),
-          code: `return ${JSON.stringify(currentTimestampString)}`,
-        })
-      }
-    },
+    beforeEmit,
   }
 }
 // noinspection JSUnusedGlobalSymbols

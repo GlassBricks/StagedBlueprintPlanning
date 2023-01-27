@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,20 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/** @beforeImports */
-{
-  pcall(require, "test.module-mock")
+export function foo(): string {
+  return "foo"
 }
 
-import "./assembly"
-import { Events } from "./lib"
-import "./migrations-custom"
-import "./ui"
-
-pcall(require, "test.test-init")
-
-Events.on_init(() => {
-  const force = game.forces.player
-  force.research_all_technologies()
-  force.enable_all_recipes()
-})
+// noinspection JSUnusedGlobalSymbols
+export const _mockable = true
