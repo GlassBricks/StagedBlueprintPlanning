@@ -73,7 +73,7 @@ function mockModuleToResult<T extends object>(module: T, stub: boolean, result: 
     }
   }
 }
-export function doMockModule<T extends object>(module: T, stub = true): MockedObjectNoSelf<T> {
+export function doModuleMock<T extends object>(module: T, stub = true): MockedObjectNoSelf<T> {
   checkIsMockable(module)
   const result: any = {}
   mockModuleToResult(module, stub, result)

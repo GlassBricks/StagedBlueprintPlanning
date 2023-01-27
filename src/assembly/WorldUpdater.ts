@@ -20,7 +20,7 @@ import {
 import { isPreviewEntity } from "../entity/entity-info"
 import { createEntity, createPreviewEntity, updateEntity } from "../entity/EntityHandler"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
-import { WireHandler, WireUpdater } from "../entity/WireHandler"
+import { updateWireConnections } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import { EntityHighlighter } from "./EntityHighlighter"
 
@@ -75,8 +75,7 @@ export type AssemblyEntityDollyResult =
   | "entities-missing"
   | "connected-entities-missing"
 
-export function createWorldUpdater(wireHandler: WireUpdater, highlighter: EntityHighlighter): WorldUpdater {
-  const { updateWireConnections } = wireHandler
+export function createWorldUpdater(highlighter: EntityHighlighter): WorldUpdater {
   const { updateHighlights, deleteHighlights } = highlighter
 
   function makePreviewEntity(
@@ -348,4 +347,4 @@ export function createWorldUpdater(wireHandler: WireUpdater, highlighter: Entity
   }
 }
 
-export const WorldUpdater = createWorldUpdater(WireHandler, EntityHighlighter)
+export const WorldUpdater = createWorldUpdater(EntityHighlighter)

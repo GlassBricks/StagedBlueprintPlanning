@@ -24,12 +24,13 @@ import {
 } from "../../entity/AssemblyEntity"
 import { UndergroundBeltEntity } from "../../entity/special-entities"
 import { findUndergroundPair } from "../../entity/underground-belt"
-import { WireSaver } from "../../entity/WireHandler"
 import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
+import { moduleMock } from "../module-mock"
 import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
+import _wireHandler = require("../../entity/WireHandler")
 import direction = defines.direction
 import wire_type = defines.wire_type
 
@@ -40,7 +41,8 @@ const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
 let assemblyUpdater: AssemblyUpdater
 let worldUpdater: mock.MockedObjectNoSelf<WorldUpdater>
-let wireSaver: mock.MockedObjectNoSelf<WireSaver>
+
+const wireSaver = moduleMock(_wireHandler, true)
 
 let worldUpdaterCalls: number
 let expectedWuCalls: number
@@ -54,9 +56,8 @@ before_each(() => {
       worldUpdaterCalls++
     }) as ContextualFun)
   }
-  wireSaver = { saveWireConnections: mock.fnNoSelf() }
   wireSaver.saveWireConnections.returns(false as any)
-  assemblyUpdater = createAssemblyUpdater(worldUpdater, wireSaver)
+  assemblyUpdater = createAssemblyUpdater(worldUpdater)
 
   game.surfaces[1].find_entities().forEach((e) => e.destroy())
 })

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,13 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
-import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
-import { WireHandler } from "../../entity/WireHandler"
+import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { shallowCompare } from "../../lib"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
-import expect from "tstl-expect"
 
 let content: MutableAssemblyContent
 const surfaces = setupTestSurfaces(2)
@@ -27,7 +26,7 @@ before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
 })
 
-const handler: WireHandler = WireHandler
+import handler = require("../../entity/WireHandler")
 
 describe("circuit wires", () => {
   let luaEntity1: LuaEntity

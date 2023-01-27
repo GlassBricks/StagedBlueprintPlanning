@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,31 +11,8 @@
 
 import { isEmpty } from "../lib"
 import { AsmCircuitConnection, circuitConnectionMatches, getDirectionalInfo } from "./AsmCircuitConnection"
-import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
 import { AsmEntityCircuitConnections, AssemblyContent, CableAddResult, MutableAssemblyContent } from "./AssemblyContent"
-
-/** @noSelf */
-export interface WireUpdater {
-  /**
-   * Handles both cable and circuit connections.
-   *
-   * Returns true if connections succeeded (false if max connections exceeded).
-   */
-  updateWireConnections(content: MutableAssemblyContent, entity: AssemblyEntity, stageNumber: StageNumber): boolean
-}
-
-/** @noSelf */
-export interface WireSaver {
-  saveWireConnections(
-    content: MutableAssemblyContent,
-    entity: AssemblyEntity,
-    stage: StageNumber,
-    higherStageForMerging?: StageNumber,
-  ): LuaMultiReturn<[hasAnyDiff: boolean, maxCableConnectionsExceeded?: boolean]>
-}
-
-/** @noSelf */
-export interface WireHandler extends WireUpdater, WireSaver {}
+import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
 
 function updateCircuitConnections(
   content: MutableAssemblyContent,
@@ -108,6 +85,11 @@ function updateCableConnections(
   return true
 }
 
+/**
+ * Handles both cable and circuit connections.
+ *
+ * Returns true if connections succeeded (false if max connections exceeded).
+ */
 function updateWireConnections(
   content: MutableAssemblyContent,
   entity: AssemblyEntity,
@@ -238,7 +220,7 @@ function saveWireConnections(
   content: MutableAssemblyContent,
   entity: AssemblyEntity,
   stage: StageNumber,
-  higherStageForMerging: StageNumber | nil,
+  higherStageForMerging?: StageNumber,
 ): LuaMultiReturn<[hasAnyDiff: boolean, maxConnectionsExceeded?: boolean]> {
   const circuitStageEntity = entity.getWorldEntity(stage)
   const diff1 = circuitStageEntity != nil && saveCircuitConnections(content, entity, stage, circuitStageEntity)
@@ -294,7 +276,7 @@ function findMatchingCircuitConnection(
   }
 }
 
-export const WireHandler: WireHandler = {
-  updateWireConnections,
-  saveWireConnections,
-}
+export { updateWireConnections, saveWireConnections }
+
+// noinspection JSUnusedGlobalSymbols
+export const _mockable = true

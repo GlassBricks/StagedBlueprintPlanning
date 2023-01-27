@@ -17,10 +17,10 @@ import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/
 import { Entity } from "../../entity/Entity"
 import { createEntity, saveEntity } from "../../entity/EntityHandler"
 import { forceDollyEntity } from "../../entity/picker-dollies"
-import { WireHandler, WireUpdater } from "../../entity/WireHandler"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
+import { doModuleMock, moduleMock } from "../module-mock"
 import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 
@@ -32,7 +32,11 @@ let assembly: Assembly
 let entity: AssemblyEntity<TestEntity>
 
 let highlighter: mock.MockedObjectNoSelf<EntityHighlighter>
-let wireUpdater: mock.MockedObjectNoSelf<WireUpdater>
+
+import _wireHandler = require("../../entity/WireHandler")
+
+const wireUpdater = moduleMock(_wireHandler, true)
+
 let worldUpdater: WorldUpdater
 
 const origPos = { x: 0.5, y: 0.5 }
@@ -50,9 +54,8 @@ before_each(() => {
     1,
   )
 
-  wireUpdater = makeMocked(keys<WireUpdater>())
   highlighter = makeMocked(keys<EntityHighlighter>())
-  worldUpdater = createWorldUpdater(wireUpdater, highlighter as unknown as EntityHighlighter)
+  worldUpdater = createWorldUpdater(highlighter as unknown as EntityHighlighter)
 })
 
 function findPreviewEntity(i: StageNumber) {
@@ -449,7 +452,8 @@ describe("circuit wires", () => {
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   before_each(() => {
-    worldUpdater = createWorldUpdater(WireHandler, highlighter as unknown as EntityHighlighter) // real entity handler
+    doModuleMock(_wireHandler, false) // real wire handler
+    worldUpdater = createWorldUpdater(highlighter as unknown as EntityHighlighter) // real entity handle
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
     entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
