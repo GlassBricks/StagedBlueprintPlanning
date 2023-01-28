@@ -11,17 +11,17 @@
 
 import { assertNever } from "../lib"
 import { AssemblyEvents } from "./UserAssembly"
-import { resetStage } from "./world-entities"
+import { rebuildStage } from "./world-entities"
 
 AssemblyEvents.addListener((e) => {
   switch (e.type) {
     case "stage-added":
-      resetStage(e.assembly, e.stage.stageNumber)
+      rebuildStage(e.assembly, e.stage.stageNumber)
       return
     case "stage-deleted": {
       const stageNumber = e.stage.stageNumber
       const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
-      resetStage(e.assembly, stageNumberToMerge)
+      rebuildStage(e.assembly, stageNumberToMerge)
       return
     }
     case "assembly-created":

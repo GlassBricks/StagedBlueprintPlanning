@@ -218,7 +218,7 @@ describe("updateWorldEntities", () => {
 test("replaceWorldEntityAtStage replaces old value", () => {
   WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
   const value = assertEntityCorrect(2)
-  WorldUpdater.replaceWorldEntityAtStage(assembly, entity, 2)
+  WorldUpdater.rebuildWorldEntityAtStage(assembly, entity, 2)
   expect(value.valid).to.be(false)
   assertEntityCorrect(2)
 })
@@ -348,7 +348,7 @@ describe("tryMoveEntity", () => {
 test("updateNewEntityWithoutWires", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
-  WorldUpdater.updateNewEntityWithoutWires(assembly, entity)
+  WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity)
   expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
   expect(wireUpdater.updateWireConnectionsAtStage).not.called()
 })
@@ -356,7 +356,7 @@ test("updateNewEntityWithoutWires", () => {
 test("updateWireConnections", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
-  WorldUpdater.updateNewEntityWithoutWires(assembly, entity)
+  WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity)
   WorldUpdater.updateWireConnections(assembly, entity)
   for (const i of $range(2, assembly.maxStage())) {
     expect(wireUpdater.updateWireConnectionsAtStage).calledWith(assembly.content, entity, i)
@@ -365,7 +365,7 @@ test("updateWireConnections", () => {
 
 test("clearWorldEntity", () => {
   WorldUpdater.updateWorldEntities(assembly, entity, 1)
-  WorldUpdater.clearWorldEntity(assembly, entity, 2)
+  WorldUpdater.clearWorldEntityAtStage(assembly, entity, 2)
   expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 2, 2)
   expect(findMainEntity(2)).to.be.nil()
   assertEntityCorrect(1)
@@ -432,7 +432,7 @@ test("resetStage", () => {
     position: Pos(0, 0),
   })!
 
-  WorldUpdater.resetStage(assembly, 2)
+  WorldUpdater.rebuildStage(assembly, 2)
 
   expect(chest.valid).to.be(false)
   expect(entity1.getWorldEntity(2)).to.be.any()

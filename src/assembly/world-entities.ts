@@ -52,6 +52,21 @@ function makePreviewEntity(
   }
 }
 
+export function clearWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
+  makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
+  updateAllHighlights(assembly, entity, stage, stage)
+}
+
+function makeEntityUneditable(entity: LuaEntity) {
+  entity.minable = false
+  entity.rotatable = false
+  entity.destructible = false
+}
+function makeEntityEditable(entity: LuaEntity) {
+  entity.minable = true
+  entity.rotatable = true
+  entity.destructible = false
+}
 function updateWorldEntitiesOnlyUnchecked(
   assembly: Assembly,
   entity: AssemblyEntity,
@@ -75,8 +90,8 @@ function updateWorldEntitiesOnlyUnchecked(
       }
 
       if (luaEntity) {
-        if (stage != firstStage) makeEntityIndestructible(luaEntity)
-        else makeEntityDestructible(luaEntity)
+        if (stage != firstStage) makeEntityUneditable(luaEntity)
+        else makeEntityEditable(luaEntity)
 
         entity.replaceWorldOrPreviewEntity(stage, luaEntity)
 
@@ -91,7 +106,7 @@ function updateWorldEntitiesOnlyUnchecked(
   }
 }
 
-function updateWiresInStages(
+function updateWiresInStageRange(
   assembly: Assembly,
   entity: AssemblyEntity,
   startStage: StageNumber,
@@ -106,6 +121,23 @@ function updateWiresInStages(
   }
 }
 
+function getActualStageRange(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  startStage: StageNumber,
+  endStage: StageNumber | nil,
+): LuaMultiReturn<[StageNumber, StageNumber] | [_?: nil]> {
+  if (startStage < 1) startStage = 1
+  const maxStage = assembly.maxStage()
+  if (!endStage || endStage > maxStage) endStage = maxStage
+  if (startStage > endStage) return $multi()
+
+  if (startStage == entity.firstStage) {
+    startStage = 1 // also update previews
+  }
+  return $multi(startStage, endStage)
+}
+
 function updateEntitiesAndWires(
   assembly: Assembly,
   entity: AssemblyEntity,
@@ -116,20 +148,90 @@ function updateEntitiesAndWires(
   if (!start) return $multi()
 
   updateWorldEntitiesOnlyUnchecked(assembly, entity, start, end)
-  updateWiresInStages(assembly, entity, start, end)
+  updateWiresInStageRange(assembly, entity, start, end)
   return $multi(start, end)
 }
 
-function makeEntityIndestructible(entity: LuaEntity) {
-  entity.minable = false
-  entity.rotatable = false
-  entity.destructible = false
+export function updateWorldEntities(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  startStage: StageNumber,
+  endStage?: StageNumber | nil,
+): void {
+  if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+  const [actualStart, actualEnd] = updateEntitiesAndWires(assembly, entity, startStage, endStage)
+  if (actualStart) updateAllHighlights(assembly, entity, actualStart, actualEnd)
 }
-function makeEntityDestructible(entity: LuaEntity) {
-  entity.minable = true
-  entity.rotatable = true
-  entity.destructible = false
+
+export function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
+  const [updated] = updateEntitiesAndWires(assembly, entity, stage, stage)
+  if (updated) updateAllHighlights(assembly, entity, stage, stage)
 }
+
+export function rebuildWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
+  entity.destroyWorldOrPreviewEntity(stage)
+  refreshWorldEntityAtStage(assembly, entity, stage)
+}
+
+export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {
+  if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
+  const [actualStart, actualEnd] = getActualStageRange(assembly, entity, 1, nil)
+  if (!actualStart) return
+  updateWorldEntitiesOnlyUnchecked(assembly, entity, actualStart, actualEnd)
+  updateAllHighlights(assembly, entity, actualStart, actualEnd)
+}
+
+export function updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void {
+  updateWiresInStageRange(assembly, entity, entity.firstStage, assembly.maxStage())
+}
+
+export function refreshWorldEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
+  return updateWorldEntities(assembly, entity, 1)
+}
+
+export function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
+  assert(entity.isSettingsRemnant && !entity.inFirstStageOnly())
+  entity.destroyAllWorldOrPreviewEntities()
+  const direction = entity.getPreviewDirection()
+  for (const stage of $range(1, assembly.maxStage())) {
+    makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), direction)
+  }
+  makeSettingsRemnantHighlights(assembly, entity)
+}
+
+export function updateEntitiesOnSettingsRemnantRevived(assembly: Assembly, entity: AssemblyEntity): void {
+  assert(!entity.isSettingsRemnant)
+  const [updated] = updateEntitiesAndWires(assembly, entity, 1, nil)
+  if (!updated) return
+  updateHighlightsOnSettingsRemnantRevived(assembly, entity)
+}
+
+export function deleteAllEntities(entity: AssemblyEntity): void {
+  entity.destroyAllWorldOrPreviewEntities()
+  deleteAllHighlights(entity)
+}
+
+function checkConnectionWorldEntityExists(
+  content: AssemblyContent,
+  entity: AssemblyEntity,
+  startStage: StageNumber,
+  endStage: StageNumber,
+): boolean {
+  const cableConnected = content.getCableConnections(entity)
+  if (cableConnected) {
+    for (const other of cableConnected) {
+      if (!other.hasWorldEntityInRange(startStage, endStage)) return false
+    }
+  }
+  const circuitConnections = content.getCircuitConnections(entity)
+  if (circuitConnections) {
+    for (const [other] of circuitConnections) {
+      if (!other.hasWorldEntityInRange(startStage, endStage)) return false
+    }
+  }
+  return true
+}
+
 function tryMoveOtherEntities(
   assembly: Assembly,
   entity: AssemblyEntity,
@@ -153,90 +255,6 @@ function tryMoveOtherEntities(
 
   return tryDollyAllEntities(entities, movedEntity.position, movedEntity.direction)
 }
-function checkConnectionWorldEntityExists(
-  content: AssemblyContent,
-  entity: AssemblyEntity,
-  startStage: StageNumber,
-  endStage: StageNumber,
-): boolean {
-  const cableConnected = content.getCableConnections(entity)
-  if (cableConnected) {
-    for (const other of cableConnected) {
-      if (!other.hasWorldEntityInRange(startStage, endStage)) return false
-    }
-  }
-  const circuitConnections = content.getCircuitConnections(entity)
-  if (circuitConnections) {
-    for (const [other] of circuitConnections) {
-      if (!other.hasWorldEntityInRange(startStage, endStage)) return false
-    }
-  }
-  return true
-}
-
-export function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
-  assert(entity.isSettingsRemnant && !entity.inFirstStageOnly())
-  entity.destroyAllWorldOrPreviewEntities()
-  const direction = entity.getPreviewDirection()
-  for (const stage of $range(1, assembly.maxStage())) {
-    makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), direction)
-  }
-  makeSettingsRemnantHighlights(assembly, entity)
-}
-
-export function updateEntitiesOnSettingsRemnantRevived(assembly: Assembly, entity: AssemblyEntity): void {
-  assert(!entity.isSettingsRemnant)
-  const [updated] = updateEntitiesAndWires(assembly, entity, 1, nil)
-  if (!updated) return
-  updateHighlightsOnSettingsRemnantRevived(assembly, entity)
-}
-
-export function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
-  const [updated] = updateEntitiesAndWires(assembly, entity, stage, stage)
-  if (updated) updateAllHighlights(assembly, entity, stage, stage)
-}
-
-function getActualStageRange(
-  assembly: Assembly,
-  entity: AssemblyEntity,
-  startStage: StageNumber,
-  endStage: StageNumber | nil,
-): LuaMultiReturn<[StageNumber, StageNumber] | [_?: nil]> {
-  if (startStage < 1) startStage = 1
-  const maxStage = assembly.maxStage()
-  if (!endStage || endStage > maxStage) endStage = maxStage
-  if (startStage > endStage) return $multi()
-
-  if (startStage == entity.firstStage) {
-    startStage = 1 // also update previews
-  }
-  return $multi(startStage, endStage)
-}
-export function updateWorldEntities(
-  assembly: Assembly,
-  entity: AssemblyEntity,
-  startStage: StageNumber,
-  endStage?: StageNumber | nil,
-): void {
-  if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
-  const [actualStart, actualEnd] = updateEntitiesAndWires(assembly, entity, startStage, endStage)
-  if (actualStart) updateAllHighlights(assembly, entity, actualStart, actualEnd)
-}
-export function updateNewEntityWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {
-  if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
-  const [actualStart, actualEnd] = getActualStageRange(assembly, entity, 1, nil)
-  if (!actualStart) return
-  updateWorldEntitiesOnlyUnchecked(assembly, entity, actualStart, actualEnd)
-  updateAllHighlights(assembly, entity, actualStart, actualEnd)
-}
-export function updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void {
-  updateWiresInStages(assembly, entity, entity.firstStage, assembly.maxStage())
-}
-
-export function replaceWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
-  entity.destroyWorldOrPreviewEntity(stage)
-  refreshWorldEntityAtStage(assembly, entity, stage)
-}
 
 export function tryDollyEntities(
   assembly: Assembly,
@@ -258,15 +276,8 @@ export function tryDollyEntities(
 
   return moveResult
 }
-export function clearWorldEntity(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
-  makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
-  updateAllHighlights(assembly, entity, stage, stage)
-}
-export function deleteAllEntities(entity: AssemblyEntity): void {
-  entity.destroyAllWorldOrPreviewEntities()
-  deleteAllHighlights(entity)
-}
-export function resetStage(assembly: Assembly, stage: StageNumber): void {
+
+export function rebuildStage(assembly: Assembly, stage: StageNumber): void {
   const surface = assembly.getSurface(stage)
   if (!surface) return
   for (const entity of surface.find_entities()) {
@@ -304,9 +315,6 @@ export function enableAllEntitiesInStage(assembly: Assembly, stage: StageNumber)
   for (const i of $range(1, arr.length)) {
     arr[i - 1].active = true
   }
-}
-export function refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
-  return updateWorldEntities(assembly, entity, 1)
 }
 
 export const _mockable = true

@@ -814,7 +814,7 @@ Events.on_chunk_generated((e) => {
   })
   const { stageNumber, assembly } = stage
   for (const entity of entities) {
-    if (entity.valid) onTryFixEntity(assembly, stageNumber, entity)
+    if (entity.valid) onTryFixEntity(assembly, entity, stageNumber)
   }
 
   const status = defines.chunk_generated_status.entities

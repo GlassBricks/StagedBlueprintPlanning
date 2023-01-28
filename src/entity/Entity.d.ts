@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -24,4 +24,11 @@ export interface BasicEntityInfo {
   readonly direction: defines.direction
   readonly belt_to_ground_type?: "input" | "output"
   readonly object_name?: string
+}
+export interface UndergroundBeltEntity extends Entity {
+  type: "input" | "output"
+}
+export type LoaderEntity = UndergroundBeltEntity
+export interface RollingStockEntity extends Entity {
+  orientation?: RealOrientation
 }

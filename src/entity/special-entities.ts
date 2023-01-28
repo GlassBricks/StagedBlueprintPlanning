@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -8,24 +8,3 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
-
-import { Entity } from "./Entity"
-
-export interface UndergroundBeltEntity extends Entity {
-  type: "input" | "output"
-}
-export type LoaderEntity = UndergroundBeltEntity
-export interface RollingStockEntity extends Entity {
-  orientation?: RealOrientation
-}
-
-export function makePreviewIndestructible(entity: LuaEntity | nil): void {
-  if (!entity) return
-  entity.destructible = false
-  entity.minable = false
-  entity.rotatable = false
-  if (entity.type == "rail-remnants") {
-    entity.corpse_expires = false
-    entity.corpse_immune_to_entity_placement = true
-  }
-}

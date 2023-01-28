@@ -12,7 +12,7 @@
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { replaceWorldEntityAtStage } from "../../assembly/world-entities"
+import { rebuildWorldEntityAtStage } from "../../assembly/world-entities"
 import {
   AssemblyEntity,
   createAssemblyEntity,
@@ -20,7 +20,7 @@ import {
   StageDiffsInternal,
   StageNumber,
 } from "../../entity/AssemblyEntity"
-import { UndergroundBeltEntity } from "../../entity/special-entities"
+import { UndergroundBeltEntity } from "../../entity/Entity"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
@@ -99,7 +99,7 @@ function assertRefreshCalled(entity: AssemblyEntity, stage: StageNumber) {
 }
 function assertReplaceCalled(entity: AssemblyEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldUpdater.replaceWorldEntityAtStage).calledWith(assembly, entity, stage)
+  expect(worldUpdater.rebuildWorldEntityAtStage).calledWith(assembly, entity, stage)
 }
 function assertDeleteAllEntitiesCalled(entity: AssemblyEntity) {
   expectedWuCalls++
@@ -147,7 +147,7 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   return entity
 }
 function assertNewUpdated(entity: AssemblyEntity) {
-  expect(worldUpdater.updateNewEntityWithoutWires).calledWith(assembly, entity)
+  expect(worldUpdater.updateNewWorldEntitiesWithoutWires).calledWith(assembly, entity)
   expect(worldUpdater.updateWireConnections).calledWith(assembly, entity)
   expectedWuCalls = 2
 }
@@ -179,7 +179,7 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 }
 
 test("forbidEntityDeletion", () => {
-  expect(replaceWorldEntityAtStage).to.be(_worldUpdater.replaceWorldEntityAtStage)
+  expect(rebuildWorldEntityAtStage).to.be(_worldUpdater.rebuildWorldEntityAtStage)
   expectedWuCalls = 0
 })
 

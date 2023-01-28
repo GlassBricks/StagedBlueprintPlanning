@@ -11,7 +11,7 @@
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
-import { disableAllEntitiesInStage, enableAllEntitiesInStage, resetStage } from "../assembly/world-entities"
+import { disableAllEntitiesInStage, enableAllEntitiesInStage, rebuildStage } from "../assembly/world-entities"
 import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
 import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
@@ -556,7 +556,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
   }
   private resetStage() {
     const stage = this.stage
-    if (stage.valid) resetStage(stage.assembly, stage.stageNumber)
+    if (stage.valid) rebuildStage(stage.assembly, stage.stageNumber)
   }
 
   private setLabTiles() {

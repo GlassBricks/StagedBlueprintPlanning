@@ -12,7 +12,7 @@
 import expect from "tstl-expect"
 import { MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
-import { UndergroundBeltEntity } from "../../entity/special-entities"
+import { UndergroundBeltEntity } from "../../entity/Entity"
 import { findUndergroundPair, unit } from "../../entity/underground-belt"
 import direction = defines.direction
 

@@ -215,7 +215,7 @@ describe("onEntityDeleted", () => {
   test("in a higher stage calls disallowEntityDeletion", () => {
     const { luaEntity, entity } = addEntity(2)
     worldListener.onEntityDeleted(assembly, luaEntity, 3, playerIndex)
-    expect(worldUpdater.replaceWorldEntityAtStage).calledWith(assembly, entity, 3)
+    expect(worldUpdater.rebuildWorldEntityAtStage).calledWith(assembly, entity, 3)
   })
 
   test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
@@ -228,7 +228,7 @@ describe("onEntityDeleted", () => {
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
   worldListener.onEntityDied(assembly, luaEntity, 2)
-  expect(worldUpdater.clearWorldEntity).calledWith(assembly, entity, 2)
+  expect(worldUpdater.clearWorldEntityAtStage).calledWith(assembly, entity, 2)
 })
 
 const resultMessages: Array<[EntityUpdateResult, string | false]> = [
@@ -397,7 +397,7 @@ describe("onCleanupToolUsed", () => {
   test.each([2, 3])("if is in stage %s, calls refreshEntityAllStages", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
     worldListener.onCleanupToolUsed(assembly, createPreview(luaEntity), atStage)
-    expect(worldUpdater.refreshEntityAllStages).calledWith(assembly, entity)
+    expect(worldUpdater.refreshWorldEntityAllStages).calledWith(assembly, entity)
   })
 })
 
@@ -410,7 +410,7 @@ test("onEntityForceDeleted calls forceDeleteEntity", () => {
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
   worldListener.onEntityDied(assembly, luaEntity, 2)
-  expect(worldUpdater.clearWorldEntity).calledWith(assembly, entity, 2)
+  expect(worldUpdater.clearWorldEntityAtStage).calledWith(assembly, entity, 2)
 })
 
 describe("onMoveEntityToStageCustomInput", () => {

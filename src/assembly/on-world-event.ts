@@ -33,44 +33,45 @@ import { Assembly } from "./AssemblyDef"
 import { createIndicator, createNotification } from "./notifications"
 import {
   AssemblyEntityDollyResult,
-  clearWorldEntity,
-  refreshEntityAllStages,
+  clearWorldEntityAtStage,
+  rebuildWorldEntityAtStage,
+  refreshWorldEntityAllStages,
   refreshWorldEntityAtStage,
-  replaceWorldEntityAtStage,
   tryDollyEntities,
 } from "./world-entities"
 
 function onPreviewReplaced(
   assembly: Assembly,
-  stage: StageNumber,
   entity: AssemblyEntity,
+  stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ): void {
   const oldStage = entity.firstStage
   createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
   assert(moveEntityOnPreviewReplace(assembly, entity, stage))
 }
+
 function onEntityOverbuilt(
-  existingMatch: AssemblyEntity,
-  stage: number,
-  entity: LuaEntity,
   assembly: Assembly,
+  existingMatch: AssemblyEntity,
+  luaEntity: LuaEntity,
+  stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ) {
-  existingMatch.replaceWorldEntity(stage, entity)
+  existingMatch.replaceWorldEntity(stage, luaEntity)
   if (existingMatch.isSettingsRemnant) {
     reviveSettingsRemnant(assembly, existingMatch, stage)
   } else if (stage >= existingMatch.firstStage) {
     refreshWorldEntityAtStage(assembly, existingMatch, stage)
   } else {
-    onPreviewReplaced(assembly, stage, existingMatch, byPlayer)
+    onPreviewReplaced(assembly, existingMatch, stage, byPlayer)
   }
 }
 
 function disallowOverbuildDifferentDirection(
+  assembly: Assembly,
   existingMatch: AssemblyEntity,
   entity: LuaEntity,
-  assembly: Assembly,
   byPlayer: PlayerIndex | nil,
 ) {
   entity.destroy()
@@ -90,7 +91,7 @@ export function onEntityCreated(
   const existing = content.findCompatibleWithLuaEntity(entity, nil)
 
   if (existing) {
-    onEntityOverbuilt(existing, stage, entity, assembly, byPlayer)
+    onEntityOverbuilt(assembly, existing, entity, stage, byPlayer)
     return existing
   }
 
@@ -98,7 +99,7 @@ export function onEntityCreated(
   if (!shouldCheckEntityExactlyForMatch(entityName)) {
     const existingDifferentDirection = content.findCompatibleAnyDirection(entityName, entity.position)
     if (existingDifferentDirection) {
-      disallowOverbuildDifferentDirection(existingDifferentDirection, entity, assembly, byPlayer)
+      disallowOverbuildDifferentDirection(assembly, existingDifferentDirection, entity, byPlayer)
       return nil
     }
   }
@@ -143,8 +144,8 @@ function notifyIfError(result: EntityUpdateResult, entity: AssemblyEntity, byPla
 
 export function onTryFixEntity(
   assembly: Assembly,
-  stage: StageNumber,
   previewEntity: LuaEntity,
+  stage: StageNumber,
   deleteSettingsRemnants?: boolean,
 ): void {
   const existing = assembly.content.findCompatibleFromPreview(previewEntity)
@@ -157,14 +158,14 @@ export function onTryFixEntity(
   } else {
     // this is an error entity, try fix
     if (stage < existing.firstStage) return
-    refreshEntityAllStages(assembly, existing)
+    refreshWorldEntityAllStages(assembly, existing)
   }
 }
 
 function getCompatibleAtPositionOrAdd(
   assembly: Assembly,
-  stage: StageNumber,
   entity: LuaEntity,
+  stage: StageNumber,
   oldPosition: Position,
   byPlayer: PlayerIndex | nil,
 ): AssemblyEntity | nil {
@@ -200,7 +201,7 @@ export function onEntityDeleted(
 
   if (existingStage != stage) {
     if (existingStage < stage) {
-      replaceWorldEntityAtStage(assembly, existing, stage)
+      rebuildWorldEntityAtStage(assembly, existing, stage)
     }
     // else: stage > existingStage; bug, ignore
     return
@@ -282,7 +283,7 @@ export function onEntityMarkedForUpgrade(
   if (entity.valid) entity.cancel_upgrade(entity.force)
 }
 export function onCleanupToolUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
-  onTryFixEntity(assembly, stage, entity, true)
+  onTryFixEntity(assembly, entity, stage, true)
 }
 export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity): void {
   const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity)
@@ -292,7 +293,7 @@ export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity): 
 export function onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void {
   const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
   if (existing) {
-    clearWorldEntity(assembly, existing, stage)
+    clearWorldEntityAtStage(assembly, existing, stage)
   }
 }
 export function onMoveEntityToStageCustomInput(
@@ -368,7 +369,7 @@ export function onEntityDollied(
   oldPosition: Position,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const existing = getCompatibleAtPositionOrAdd(assembly, stage, entity, oldPosition, byPlayer)
+  const existing = getCompatibleAtPositionOrAdd(assembly, entity, stage, oldPosition, byPlayer)
   if (!existing) return
   assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
   const result = tryDollyEntities(assembly, existing, stage)

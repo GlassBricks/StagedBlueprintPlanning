@@ -28,10 +28,10 @@ import {
 } from "../../assembly/assembly-updates"
 import { Assembly } from "../../assembly/AssemblyDef"
 import {
-  clearWorldEntity,
-  refreshEntityAllStages,
+  clearWorldEntityAtStage,
+  rebuildWorldEntityAtStage,
+  refreshWorldEntityAllStages,
   refreshWorldEntityAtStage,
-  replaceWorldEntityAtStage,
   tryDollyEntities,
 } from "../../assembly/world-entities"
 import { Prototypes } from "../../constants"
@@ -204,7 +204,7 @@ test("creating an entity", () => {
 
 test("clear entity at stage", () => {
   const entity = setupEntity(3)
-  clearWorldEntity(assembly, entity, 4)
+  clearWorldEntityAtStage(assembly, entity, 4)
   assertEntityCorrect(entity, true)
 })
 
@@ -218,7 +218,7 @@ test("entity can not be placed at stage", () => {
 test("refresh missing entity", () => {
   const blocker = createEntity(4, { name: "stone-wall" })
   const entity = setupEntity(3)
-  clearWorldEntity(assembly, entity, 4)
+  clearWorldEntityAtStage(assembly, entity, 4)
   blocker.destroy()
   refreshWorldEntityAtStage(assembly, entity, 4)
   assertEntityCorrect(entity, false)
@@ -245,7 +245,7 @@ test("move via preview replace", () => {
 test("disallowing entity deletion", () => {
   const entity = setupEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
-  replaceWorldEntityAtStage(assembly, entity, 4)
+  rebuildWorldEntityAtStage(assembly, entity, 4)
   expect(worldEntity.valid).to.be(false) // replaced
   assertEntityCorrect(entity, false)
 })
@@ -391,7 +391,7 @@ test("creating upgrade via fast replace", () => {
 test("update with upgrade", () => {
   const entity = setupEntity(3)
   entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-  refreshEntityAllStages(assembly, entity)
+  refreshWorldEntityAllStages(assembly, entity)
   assertEntityCorrect(entity, false)
 })
 
@@ -406,7 +406,7 @@ test("update with upgrade and blocker", () => {
   assertEntityCorrect(entity, true)
 
   entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-  refreshEntityAllStages(assembly, entity)
+  refreshWorldEntityAllStages(assembly, entity)
 
   preview = entity.getWorldOrPreviewEntity(5)!
   expect(isPreviewEntity(preview)).to.be(true)
@@ -622,7 +622,7 @@ test("train entity error", () => {
   train.destroy()
   surfaces[3 - 1].find_entities().forEach((e) => e.destroy()) // destroys rails too, so train cannot be re-created
 
-  refreshEntityAllStages(assembly, entity)
+  refreshWorldEntityAllStages(assembly, entity)
   assertTrainEntityCorrect(entity, true)
 })
 
