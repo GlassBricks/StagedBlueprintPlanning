@@ -30,6 +30,7 @@ import {
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
 } from "./AssemblyUpdater"
+import { createIndicator, createNotification } from "./WorldNotifier"
 import {
   AssemblyEntityDollyResult,
   clearWorldEntity,
@@ -128,23 +129,7 @@ export interface WorldListener {
   ): void
 }
 
-/**
- * @noSelf
- */
-export interface WorldNotifier {
-  createNotification(
-    entity: AssemblyEntity,
-    playerIndex: PlayerIndex | nil,
-    message: LocalisedString,
-    errorSound: boolean,
-  ): void
-  createIndicator(entity: AssemblyEntity, playerIndex: PlayerIndex | nil, text: string, color: Color | ColorArray): void
-}
-
-export function createWorldListener(notifier: WorldNotifier): WorldListener {
-  // ^ for refactoring purposes only
-  const { createNotification, createIndicator } = notifier
-
+export function createWorldListener(): WorldListener {
   function onPreviewReplaced(
     assembly: Assembly,
     stage: StageNumber,
@@ -476,39 +461,4 @@ export function createWorldListener(notifier: WorldNotifier): WorldListener {
   }
 }
 
-const WorldNotifier: WorldNotifier = {
-  createNotification(
-    entity: AssemblyEntity,
-    playerIndex: PlayerIndex | nil,
-    message: LocalisedString,
-    errorSound: boolean,
-  ): void {
-    const player = playerIndex && game.get_player(playerIndex)
-    if (!player) return
-    player.create_local_flying_text({
-      text: message,
-      position: entity.position,
-    })
-    if (errorSound) player.play_sound({ path: "utility/cannot_build" })
-  },
-  createIndicator(
-    entity: { position: Position; surface?: LuaSurface },
-    playerIndex: PlayerIndex | nil,
-    text: string,
-    color: Color | ColorArray,
-  ): void {
-    const player = playerIndex && game.get_player(playerIndex)
-    if (!player) return
-
-    const { x, y } = entity.position
-    player.create_local_flying_text({
-      text,
-      color,
-      position: { x, y: y - 0.5 },
-      speed: 0.2,
-      time_to_live: 60,
-    })
-  },
-}
-
-export const WorldListener: WorldListener = createWorldListener(WorldNotifier)
+export const WorldListener: WorldListener = createWorldListener()

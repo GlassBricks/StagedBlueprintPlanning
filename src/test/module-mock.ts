@@ -86,9 +86,6 @@ export function moduleMock<T extends object>(module: T, stub: boolean): MockedOb
     mockModuleToResult(module, stub, result)
   })
   after_each(() => {
-    for (const [k] of pairs(result)) {
-      delete result[k]
-    }
     resetModuleMock(module)
   })
   return result as any

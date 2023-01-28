@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import expect, { mock } from "tstl-expect"
+import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
 import {
   EntityRotateResult,
@@ -17,22 +17,22 @@ import {
   StageMoveResult,
   WireUpdateResult,
 } from "../../assembly/AssemblyUpdater"
-import { createWorldListener, WorldListener, WorldNotifier } from "../../assembly/WorldListener"
+import { createWorldListener, WorldListener } from "../../assembly/WorldListener"
 import { L_Game } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { createPreviewEntity, saveEntity } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
 import { moduleMock } from "../module-mock"
-import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
+import _assemblyUpdater = require("../../assembly/AssemblyUpdater")
 
-let worldNotifier: mock.MockedObjectNoSelf<WorldNotifier>
+import _worldNotifier = require("../../assembly/WorldNotifier")
+import _worldUpdater = require("../../assembly/WorldUpdater")
+
+const worldNotifier = moduleMock(_worldNotifier, true)
 let totalCalls = 0
 let expectedCalls = 1
-
-import _assemblyUpdater = require("../../assembly/AssemblyUpdater")
-import _worldUpdater = require("../../assembly/WorldUpdater")
 
 const assemblyUpdater = moduleMock(_assemblyUpdater, true)
 const worldUpdater = moduleMock(_worldUpdater, true)
@@ -40,7 +40,6 @@ const worldUpdater = moduleMock(_worldUpdater, true)
 let worldListener: WorldListener
 
 before_each(() => {
-  worldNotifier = makeMocked(keys<WorldNotifier>())
   totalCalls = 0
   expectedCalls = 1
   for (const [, func] of pairs(assemblyUpdater)) {
@@ -60,7 +59,7 @@ before_each(() => {
     return true
   })
 
-  worldListener = createWorldListener(worldNotifier)
+  worldListener = createWorldListener()
 })
 
 after_each(() => {
