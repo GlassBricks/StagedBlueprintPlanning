@@ -48,8 +48,13 @@ export type EntityUpdateResult = UpdateSuccess | UpdateError | RotateError
 export type WireUpdateResult = UpdateSuccess | "max-connections-exceeded"
 export type StageMoveResult = UpdateSuccess | "cannot-move-upgraded-underground"
 
-export function addNewEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): AssemblyEntity<any> | nil {
-  const saved = saveEntity(entity)
+export function addNewEntity(
+  assembly: Assembly,
+  entity: LuaEntity,
+  stage: StageNumber,
+  knownValue?: BlueprintEntity,
+): AssemblyEntity<any> | nil {
+  const saved = saveEntity(entity, knownValue)
   if (!saved) return nil
   const { content } = assembly
   const assemblyEntity = createAssemblyEntity(saved, entity.position, entity.direction, stage)

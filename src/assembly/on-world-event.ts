@@ -85,6 +85,7 @@ export function onEntityCreated(
   entity: LuaEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
+  knownBpValue?: BlueprintEntity,
 ): AssemblyEntity | nil {
   const { content } = assembly
 
@@ -104,7 +105,7 @@ export function onEntityCreated(
     }
   }
 
-  return addNewEntity(assembly, entity, stage)
+  return addNewEntity(assembly, entity, stage, knownBpValue)
 }
 
 /** Also asserts that stage > entity's first stage. */
@@ -114,12 +115,13 @@ function getCompatibleEntityOrAdd(
   stage: StageNumber,
   previousDirection: defines.direction | nil,
   byPlayer: PlayerIndex | nil,
+  knownBpValue?: BlueprintEntity,
 ): AssemblyEntity | nil {
   const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection)
   if (compatible && stage >= compatible.firstStage) {
     compatible.replaceWorldEntity(stage, entity) // just in case
   } else {
-    onEntityCreated(assembly, entity, stage, byPlayer)
+    onEntityCreated(assembly, entity, stage, byPlayer, knownBpValue)
     return nil
   }
   return compatible
@@ -223,8 +225,9 @@ export function onEntityPossiblyUpdated(
   stage: StageNumber,
   previousDirection: defines.direction | nil,
   byPlayer: PlayerIndex | nil,
+  knownBpValue?: BlueprintEntity,
 ): false | nil {
-  const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
+  const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer, knownBpValue)
   if (!existing) return false
 
   const result = tryUpdateEntityFromWorld(assembly, existing, stage)

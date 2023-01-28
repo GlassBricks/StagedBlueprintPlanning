@@ -479,6 +479,7 @@ function isFastReplaceable(old: BasicEntityInfo, next: BasicEntityInfo): boolean
 const IsLastEntity = "bp100IsLastEntity"
 
 interface MarkerTags extends Tags {
+  referencedLuaIndex: number
   referencedName: string
   hasCircuitWires: true
 }
@@ -538,6 +539,7 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
       tags: {
         referencedName: name,
         hasCircuitWires,
+        referencedLuaIndex: i,
       } as MarkerTags,
     }
     nextIndex++
@@ -640,7 +642,15 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (!referencedName) return
   const correspondingEntity = entity.surface.find_entity(referencedName, entity.position)
   if (!correspondingEntity) return
-  const result = onEntityPossiblyUpdated(stage.assembly, correspondingEntity, stage.stageNumber, nil, e.player_index)
+  const value = state.blueprintEntities![tags.referencedLuaIndex - 1]
+  const result = onEntityPossiblyUpdated(
+    stage.assembly,
+    correspondingEntity,
+    stage.stageNumber,
+    nil,
+    e.player_index,
+    value,
+  )
   if (result != false && tags.hasCircuitWires) {
     onCircuitWiresPossiblyUpdated(stage.assembly, correspondingEntity, stage.stageNumber, e.player_index)
   }

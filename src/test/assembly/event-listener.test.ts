@@ -547,24 +547,24 @@ describe("revives ghost undergrounds", () => {
 describe("blueprint paste", () => {
   // note: this currently relies on editor mode, instant blueprint paste enabled
   const pos: PositionClass = Pos(4.5, 0.5)
+  const bpEntity: BlueprintEntity = {
+    entity_number: 1,
+    name: "inserter",
+    position: Pos(0.5, 0.5),
+    direction: direction.west,
+  }
   function setBlueprint(): void {
-    const entity: BlueprintEntity = {
-      entity_number: 1,
-      name: "inserter",
-      position: Pos(0.5, 0.5),
-      direction: direction.west,
-    }
     const cursor = player.cursor_stack!
     cursor.clear()
     cursor.set_stack("blueprint")
-    cursor.set_blueprint_entities([entity])
+    cursor.set_blueprint_entities([bpEntity])
   }
   before_each(setBlueprint)
-  function assertCorrect(entity: LuaEntity, position: Position = pos): void {
+  function assertCorrect(entity: LuaEntity, position: Position = pos, bpValue = bpEntity): void {
     expect(entity).to.be.any()
     expect(entity.position).to.equal(position)
 
-    expect(WorldListener.onEntityPossiblyUpdated).calledWith(assembly, entity, 1, expect._, 1)
+    expect(WorldListener.onEntityPossiblyUpdated).calledWith(assembly, entity, 1, expect._, 1, bpValue)
   }
 
   test("create entity", () => {
@@ -596,9 +596,9 @@ describe("blueprint paste", () => {
   })
   test.each([true, false])("update existing entity with wires, already present %s", (alreadyPresent) => {
     const entities = player.cursor_stack!.get_blueprint_entities()!
-    const firstEntity = entities[0] as Mutable<BlueprintEntity>
-    const entity2: BlueprintEntity = {
-      ...firstEntity,
+    const bpEntity1 = entities[0] as Mutable<BlueprintEntity>
+    const bpEntity2: BlueprintEntity = {
+      ...bpEntity1,
       entity_number: 2,
       name: "inserter",
       position: Pos(1.5, 0.5),
@@ -609,12 +609,12 @@ describe("blueprint paste", () => {
         },
       },
     }
-    firstEntity.connections = {
+    bpEntity1.connections = {
       "1": {
         red: [{ entity_id: 2 }],
       },
     }
-    player.cursor_stack!.set_blueprint_entities([firstEntity, entity2])
+    player.cursor_stack!.set_blueprint_entities([bpEntity1, bpEntity2])
 
     const inserter1 = surface.create_entity({
       name: "inserter",
@@ -633,8 +633,8 @@ describe("blueprint paste", () => {
     })[0]
     expect(inserter2).to.be.any()
 
-    assertCorrect(inserter1)
-    assertCorrect(inserter2, pos.plus(Pos(1, 0)))
+    assertCorrect(inserter1, nil, bpEntity1)
+    assertCorrect(inserter2, pos.plus(Pos(1, 0)), bpEntity2)
     if (alreadyPresent) {
       expect(WorldListener.onCircuitWiresPossiblyUpdated).calledWith(assembly, inserter1, 1, 1)
       expect(WorldListener.onCircuitWiresPossiblyUpdated).calledWith(assembly, inserter2, 1, 1)
@@ -672,8 +672,8 @@ describe("blueprint paste", () => {
     const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!
     expect(pole2).to.be.any()
 
-    assertCorrect(pole1)
-    assertCorrect(pole2, pos.plus(Pos(1, 0)))
+    assertCorrect(pole1, nil, entity1)
+    assertCorrect(pole2, pos.plus(Pos(1, 0)), entity2)
     if (alreadyPresent) {
       expect(WorldListener.onCircuitWiresPossiblyUpdated).calledWith(assembly, pole1, 1, 1)
       expect(WorldListener.onCircuitWiresPossiblyUpdated).calledWith(assembly, pole2, 1, 1)

@@ -10,7 +10,7 @@
  */
 
 import { Prototypes } from "../constants"
-import { Events, Mutable } from "../lib"
+import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
@@ -43,7 +43,7 @@ function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity):
   }
 }
 
-function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
+export function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   const { surface, position } = entity
 
   for (const radius of [0.01, 1]) {
@@ -256,10 +256,9 @@ function updateUndergroundRotation(
 
 /**
  * Position and direction are ignored.
- * @param entity
  */
-function saveEntity(entity: LuaEntity): Mutable<Entity> | nil {
-  const bpEntity = blueprintEntity(entity)
+function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<Entity> | nil {
+  const bpEntity = knownValue ? mutableShallowCopy(knownValue) : blueprintEntity(entity)
   if (!bpEntity) return nil
   bpEntity.entity_number = nil!
   bpEntity.position = nil!

@@ -121,8 +121,9 @@ after_each(() => {
 describe("onEntityCreated", () => {
   test("can add a simple entity", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityCreated(assembly, luaEntity, 2, playerIndex)
-    expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity, 2)
+    const knownValue: any = { foo: "bar" }
+    worldListener.onEntityCreated(assembly, luaEntity, 2, playerIndex, knownValue)
+    expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity, 2, knownValue)
   })
 
   test.each([2, 3])("at same or higher stage %d sets entity and calls refreshEntityAtStage", (newStage) => {
@@ -244,8 +245,9 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
 describe("onEntityPossiblyUpdated", () => {
   test("if not in assembly, defaults to add behaviour", () => {
     const luaEntity = createWorldEntity(2)
-    worldListener.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex)
-    expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity, 2)
+    const knownValue: any = { foo: "bar" }
+    worldListener.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex, knownValue)
+    expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity, 2, knownValue)
   })
 
   test.each(resultMessages)('calls tryUpdateEntityFromWorld and notifies, with result "%s"', (result, message) => {

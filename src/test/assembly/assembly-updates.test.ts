@@ -169,6 +169,31 @@ test("addNewEntity", () => {
   assertNewUpdated(entity)
 })
 
+test("addNewEntity with known value", () => {
+  const luaEntity = createEntity(2)
+  const entity = assemblyUpdater.addNewEntity(assembly, luaEntity, 2, {
+    entity_number: 1,
+    direction: 0,
+    position: { x: 0, y: 0 },
+    name: "filter-inserter",
+    neighbours: [2],
+  })!
+  expect(entity).to.be.any()
+  expect(entity.firstValue).toEqual({
+    name: "filter-inserter",
+  })
+  expect(entity.position).to.equal(pos)
+  expect(entity.getDirection()).to.be(0)
+
+  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil) as AssemblyEntity<BlueprintEntity>
+  expect(found).to.be(entity)
+
+  expect(entity.getWorldEntity(2)).to.be(luaEntity)
+
+  assertOneEntity()
+  assertNewUpdated(entity)
+})
+
 function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   const luaEntity = createEntity(stage, args)
   const entity = assemblyUpdater.addNewEntity(assembly, luaEntity, stage) as AssemblyEntity<BlueprintEntity>
