@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -13,6 +13,7 @@ import { Data } from "typed-factorio/data/types"
 import * as util from "util"
 import { empty_sprite } from "util"
 import { BuildableEntityType, Prototypes } from "./constants"
+import { emptySprite16 } from "./data-util"
 import {
   BasicSprite,
   EntityPrototype,
@@ -27,7 +28,6 @@ import {
 } from "./declarations/data"
 import { BBox } from "./lib/geometry"
 import { L_Bp100 } from "./locale"
-import { emptySprite16 } from "./data-util"
 import direction = defines.direction
 import ceil = math.ceil
 import max = math.max
@@ -320,5 +320,4 @@ cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.revers
 
 const stageMoveTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.StageMoveTool]
 const altFilters = [...previewNames, ...buildableNonRollingStockNames]
-stageMoveTool.alt_entity_filters = altFilters
-stageMoveTool.reverse_entity_filters = altFilters
+stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = altFilters

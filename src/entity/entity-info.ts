@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -22,7 +22,8 @@ export type CategoryName = string & {
   _categoryName: never
 }
 
-const categories = new LuaMap<string, CategoryName>()
+const nameToCategory = new LuaMap<string, CategoryName>()
+const categories = new LuaMap<CategoryName, string[]>()
 function processCategory(prototype: LuaEntityPrototype) {
   const { fast_replaceable_group, type, collision_box, name } = prototype
   if (fast_replaceable_group == nil) return
@@ -31,7 +32,23 @@ function processCategory(prototype: LuaEntityPrototype) {
   const { x: rx, y: ry } = collision_box.right_bottom
   const categoryName = [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|") as CategoryName
 
-  categories.set(name, categoryName)
+  nameToCategory.set(name, categoryName)
+  let category = categories.get(categoryName)
+  if (category == nil) {
+    categories.set(categoryName, (category = []))
+  }
+  category.push(name)
+}
+
+function trimCategories() {
+  for (const [categoryName, category] of categories) {
+    if (table_size(category) <= 1) {
+      categories.delete(categoryName)
+      for (const name of category) {
+        nameToCategory.delete(name)
+      }
+    }
+  }
 }
 
 export const enum PasteRotatableType {
@@ -91,6 +108,7 @@ function processPrototypes() {
   for (const [name, prototype] of game.get_filtered_entity_prototypes([{ filter: "blueprintable" }])) {
     processPrototype(name, prototype)
   }
+  trimCategories()
   log("Finished processing entity prototypes")
 }
 Events.on_configuration_changed(processPrototypes)
@@ -98,15 +116,22 @@ Events.on_init(processPrototypes)
 
 export function getEntityCategory(entityName: string): CategoryName | nil {
   if (!prototypesProcessed) processPrototypes()
-  return categories.get(entityName)
+  return nameToCategory.get(entityName)
 }
 
 export function areUpgradeableTypes(a: string, b: string): boolean {
   if (!prototypesProcessed) processPrototypes()
   if (a == b) return true
-  const aCategory = categories.get(a)
+  const aCategory = nameToCategory.get(a)
   if (aCategory == nil) return false
-  return aCategory == categories.get(b)
+  return aCategory == nameToCategory.get(b)
+}
+
+export function getCompatibleNames(entityName: string): readonly string[] | nil {
+  if (!prototypesProcessed) processPrototypes()
+  const category = nameToCategory.get(entityName)
+  if (category == nil) return
+  return categories.get(category)
 }
 
 export function getSelectionBox(entityName: string): BBoxClass {

@@ -12,6 +12,7 @@
 export const enum Settings {
   EntityInfoLocation = "bp100:entity-info-location",
   FlexibleOffshorePumpPlacement = "bp100:flexible-offshore-pump-placement",
+  UpgradeOnPaste = "bp100:upgrade-on-paste",
 }
 
 // noinspection JSUnusedGlobalSymbols

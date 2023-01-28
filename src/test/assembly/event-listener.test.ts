@@ -552,6 +552,7 @@ describe("blueprint paste", () => {
     name: "inserter",
     position: Pos(0.5, 0.5),
     direction: direction.west,
+    override_stack_size: 1,
   }
   function setBlueprint(): void {
     const cursor = player.cursor_stack!
@@ -594,6 +595,7 @@ describe("blueprint paste", () => {
     player.build_from_cursor({ position: pos })
     assertCorrect(inserter)
   })
+
   test.each([true, false])("update existing entity with wires, already present %s", (alreadyPresent) => {
     const entities = player.cursor_stack!.get_blueprint_entities()!
     const bpEntity1 = entities[0] as Mutable<BlueprintEntity>

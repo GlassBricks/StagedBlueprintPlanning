@@ -22,7 +22,7 @@ import {
   LayeredSpritePrototype,
   SelectionToolPrototype,
   ShortcutPrototype,
-  SimpleEntityPrototype,
+  SimpleEntityWithOwnerPrototype,
   SoundPrototype,
   Sprite,
   SpritePrototype,
@@ -31,8 +31,8 @@ import {
 declare const data: Data
 
 // entity marker
-const entityMarker: SimpleEntityPrototype = {
-  type: "simple-entity",
+const entityMarker: SimpleEntityWithOwnerPrototype = {
+  type: "simple-entity-with-owner",
   name: Prototypes.EntityMarker,
   icon: "__core__/graphics/spawn-flag.png",
   icon_size: 64,
@@ -124,15 +124,15 @@ const cleanupTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-b[cleanup]",
 
-  selection_mode: ["entity-with-owner"],
+  selection_mode: ["any-entity"],
   selection_color: cleanupToolColor,
   selection_cursor_box_type: "entity",
 
-  alt_selection_mode: ["entity-with-owner"],
+  alt_selection_mode: ["any-entity"],
   alt_selection_color: cleanupToolColor,
   alt_selection_cursor_box_type: "entity",
 
-  reverse_selection_mode: ["entity-with-owner"],
+  reverse_selection_mode: ["any-entity"],
   reverse_selection_color: cleanupReverseToolColor,
   reverse_selection_cursor_box_type: "not-allowed",
 }

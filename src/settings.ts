@@ -31,4 +31,11 @@ data.extend([
     default_value: FlexibleOffshorePumpPlacement.Disabled,
     order: "b",
   },
+  {
+    name: Settings.UpgradeOnPaste,
+    type: "bool-setting",
+    setting_type: "runtime-per-user",
+    default_value: true,
+    order: "c",
+  },
 ])

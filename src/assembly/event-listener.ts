@@ -10,11 +10,16 @@
  */
 
 import { oppositedirection } from "util"
-import { CustomInputs, Prototypes } from "../constants"
+import { CustomInputs, Prototypes, Settings } from "../constants"
 import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../entity/Entity"
-import { areUpgradeableTypes } from "../entity/entity-info"
+import {
+  areUpgradeableTypes,
+  getCompatibleNames,
+  getPasteRotatableType,
+  PasteRotatableType,
+} from "../entity/entity-info"
 import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -55,7 +60,10 @@ function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
 
 function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (!entity.valid) return
-  if (isMarkerEntity(entity)) entity.destroy() // only handle in on_built_entity; see below
+  if (isMarkerEntity(entity)) {
+    entity.destroy()
+    return
+  }
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
   if (!isWorldEntityAssemblyEntity(entity)) {
@@ -75,7 +83,7 @@ function luaEntityPossiblyUpdated(entity: LuaEntity, player: PlayerIndex | nil):
 }
 
 function luaEntityMarkedForUpgrade(entity: LuaEntity, player: PlayerIndex | nil): void {
-  const stage = getStageAtSurface(entity.surface.index)
+  const stage = getStageAtEntity(entity)
   if (stage) onEntityMarkedForUpgrade(stage.assembly, entity, stage.stageNumber, player)
 }
 
@@ -223,6 +231,7 @@ let state: {
   currentlyInBlueprintPaste?: Stage
   blueprintEntities?: BlueprintEntity[]
   blueprintOriginalNumEntities?: number
+  allowPasteUpgrades?: boolean
 }
 declare global {
   interface PlayerData {
@@ -408,7 +417,6 @@ Events.on_built_entity((e) => {
   // just in case
   if (isMarkerEntity(entity)) {
     entity.destroy()
-    game.print("Marker entity was not supposed to be built")
     return
   }
 
@@ -586,6 +594,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
     state.currentlyInBlueprintPaste = stage
     state.blueprintEntities = entities
     state.blueprintOriginalNumEntities = numEntities!
+    state.allowPasteUpgrades = player.mod_settings[Settings.UpgradeOnPaste].value as boolean
   }
 }
 
@@ -619,6 +628,7 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   state.currentlyInBlueprintPaste = nil
   state.blueprintEntities = nil
   state.blueprintOriginalNumEntities = nil
+  state.allowPasteUpgrades = nil
 }
 
 function isMarkerEntity(entity: LuaEntity): boolean {
@@ -640,19 +650,47 @@ function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: St
 function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags, stage: Stage): void {
   const referencedName = tags.referencedName
   if (!referencedName) return
-  const correspondingEntity = entity.surface.find_entity(referencedName, entity.position)
-  if (!correspondingEntity) return
+  const { position, surface } = entity
+  let luaEntities = entity.surface.find_entities_filtered({
+    position,
+    radius: 0,
+    name: referencedName,
+  })
+  if (!next(luaEntities)[0]) {
+    if (!state.allowPasteUpgrades) return
+    const compatible = getCompatibleNames(referencedName)
+    if (!compatible) return
+    luaEntities = surface.find_entities_filtered({
+      position,
+      radius: 0,
+      name: compatible,
+    })
+    // debugPrint(luaEntities)
+  }
+  let luaEntity: LuaEntity | nil
+  const pasteRotatableType = getPasteRotatableType(referencedName)
+  const entityDir = entity.direction
+  if (entityDir % 2 == 1) {
+    for (const candidate of luaEntities) {
+      // don't use known value, only look at possibly updated
+      onEntityPossiblyUpdated(stage.assembly, candidate, stage.stageNumber, nil, e.player_index)
+    }
+    return
+  }
+
+  if (pasteRotatableType == nil) {
+    luaEntity = luaEntities.find((e) => e.direction == entityDir)
+  } else if (pasteRotatableType == PasteRotatableType.Rectangular) {
+    const oppositeDir = oppositedirection(entityDir)
+    luaEntity = luaEntities.find((e) => e.direction == entityDir || e.direction == oppositeDir)
+  } else {
+    luaEntity = luaEntities[0]
+  }
+  if (!luaEntity) return
   const value = state.blueprintEntities![tags.referencedLuaIndex - 1]
-  const result = onEntityPossiblyUpdated(
-    stage.assembly,
-    correspondingEntity,
-    stage.stageNumber,
-    nil,
-    e.player_index,
-    value,
-  )
+  const result = onEntityPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, nil, e.player_index, value)
   if (result != false && tags.hasCircuitWires) {
-    onCircuitWiresPossiblyUpdated(stage.assembly, correspondingEntity, stage.stageNumber, e.player_index)
+    onCircuitWiresPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, e.player_index)
   }
 }
 

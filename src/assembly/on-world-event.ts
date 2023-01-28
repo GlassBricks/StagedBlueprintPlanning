@@ -230,7 +230,7 @@ export function onEntityPossiblyUpdated(
   const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer, knownBpValue)
   if (!existing) return false
 
-  const result = tryUpdateEntityFromWorld(assembly, existing, stage)
+  const result = tryUpdateEntityFromWorld(assembly, existing, stage, knownBpValue)
   notifyIfError(result, existing, byPlayer)
 }
 export function onEntityRotated(

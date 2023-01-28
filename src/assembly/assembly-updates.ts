@@ -185,14 +185,11 @@ function doUpdateEntityFromWorld(
   stage: StageNumber,
   entity: AssemblyEntity,
   entitySource: LuaEntity,
+  knownValue?: BlueprintEntity,
 ): boolean {
   entity.replaceWorldEntity(stage, entitySource)
-  const worldEntity = assert(entity.getWorldEntity(stage))
-  const newValue = saveEntity(worldEntity)
+  const newValue = saveEntity(entitySource, knownValue)
   if (!newValue) return false
-  if (!canBeAnyDirection(worldEntity)) {
-    assert(entitySource.direction == entity.getDirection(), "direction mismatch on saved entity")
-  }
   return entity.adjustValueAtStage(stage, newValue)
 }
 
@@ -202,6 +199,7 @@ export function tryUpdateEntityFromWorld(
   assembly: Assembly,
   entity: AssemblyEntity,
   stage: StageNumber,
+  knownValue?: BlueprintEntity,
 ): EntityUpdateResult {
   const entitySource = entity.getWorldEntity(stage)
   if (!entitySource) return "no-change"
@@ -220,7 +218,7 @@ export function tryUpdateEntityFromWorld(
     }
   }
 
-  const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
+  const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource, knownValue)
   if (hasDiff || rotated) {
     updateWorldEntities(assembly, entity, stage)
     return "updated"

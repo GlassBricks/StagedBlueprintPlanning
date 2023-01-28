@@ -190,7 +190,6 @@ function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
   })
   if (!newEntity) return entity
   if (entity.valid) {
-    game.print("warning: old entity still valid")
     entity.destroy()
   }
   return newEntity

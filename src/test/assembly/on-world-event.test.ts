@@ -252,13 +252,14 @@ describe("onEntityPossiblyUpdated", () => {
 
   test.each(resultMessages)('calls tryUpdateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
+    const knownValue: any = { foo: "bar" }
     assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
       totalCalls++
       return result
     })
-    worldListener.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex)
+    worldListener.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex, knownValue)
 
-    expect(assemblyUpdater.tryUpdateEntityFromWorld).calledWith(assembly, entity, 2)
+    expect(assemblyUpdater.tryUpdateEntityFromWorld).calledWith(assembly, entity, 2, knownValue)
     if (message) assertNotified(entity, [message], true)
   })
 

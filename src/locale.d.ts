@@ -28,18 +28,18 @@ export declare const enum L_ItemGroupName {
   Utility = "item-group-name.bp100:utility",
 }
 export declare const enum L_ModSettingName {
-  /** Use cyclic stage navigation */
-  CyclicNavigation = "mod-setting-name.bp100:cyclic-navigation",
   /** Flexible offshore pump placement */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
   /** Location of entity stage info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
+  /** Allow upgrading entities and modules via blueprint pasting. */
+  UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
 }
 export declare const enum L_ModSettingDescription {
-  /** The move to previous/next stage controls will wrap around at the first/last stage. */
-  CyclicNavigation = "mod-setting-description.bp100:cyclic-navigation",
   /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
+  /** E.g. if pasting a fast-inserter over a normal inserter, this will upgrade the inserter. This setting only applies while within a staged build. */
+  UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
 }
 export declare const enum L_StringModSetting {
   /** Top */

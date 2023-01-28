@@ -26,7 +26,8 @@ import {
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
 } from "../../assembly/assembly-updates"
-import { Assembly } from "../../assembly/AssemblyDef"
+import { UserAssembly } from "../../assembly/AssemblyDef"
+import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {
   clearWorldEntityAtStage,
   rebuildWorldEntityAtStage,
@@ -34,7 +35,7 @@ import {
   refreshWorldEntityAtStage,
   tryDollyEntities,
 } from "../../assembly/world-entities"
-import { Prototypes } from "../../constants"
+import { Prototypes, Settings } from "../../constants"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
@@ -42,13 +43,17 @@ import { isPreviewEntity } from "../../entity/entity-info"
 import { saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
-import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
+import direction = defines.direction
 
-const surfaces = setupTestSurfaces(6)
-let assembly: Assembly
+let assembly: UserAssembly
+let surfaces: LuaSurface[]
 before_each(() => {
-  assembly = createMockAssembly(surfaces)
+  assembly = createUserAssembly("test", 6)
+  surfaces = assembly.getAllStages().map((stage) => stage.surface)
+})
+after_each(() => {
+  _deleteAllAssemblies()
 })
 
 const pos = Pos(10.5, 10.5)
@@ -189,7 +194,7 @@ function assertIsSettingsRemnant(entity: AssemblyEntity) {
   expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
 }
 
-function setupEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): AssemblyEntity<BlueprintEntity> {
+function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): AssemblyEntity<BlueprintEntity> {
   const luaEntity = createEntity(stage, args)
   const entity = addNewEntity(assembly, luaEntity, stage) as AssemblyEntity<BlueprintEntity>
   assert(entity)
@@ -198,26 +203,26 @@ function setupEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): A
 }
 
 test("creating an entity", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   assertEntityCorrect(entity, false)
 })
 
 test("clear entity at stage", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   clearWorldEntityAtStage(assembly, entity, 4)
   assertEntityCorrect(entity, true)
 })
 
 test("entity can not be placed at stage", () => {
   createEntity(4, { name: "stone-wall" }) // blocker
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   expect(isPreviewEntity(entity.getWorldOrPreviewEntity(4)!)).to.be(true)
   assertEntityCorrect(entity, true)
 })
 
 test("refresh missing entity", () => {
   const blocker = createEntity(4, { name: "stone-wall" })
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   clearWorldEntityAtStage(assembly, entity, 4)
   blocker.destroy()
   refreshWorldEntityAtStage(assembly, entity, 4)
@@ -225,7 +230,7 @@ test("refresh missing entity", () => {
 })
 
 test("replacing missing entity matches", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const newEntity = createEntity(4, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(4, newEntity)
 
@@ -234,7 +239,7 @@ test("replacing missing entity matches", () => {
 })
 
 test("move via preview replace", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
   moveEntityOnPreviewReplace(assembly, entity, 2)
@@ -243,7 +248,7 @@ test("move via preview replace", () => {
 })
 
 test("disallowing entity deletion", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   rebuildWorldEntityAtStage(assembly, entity, 4)
   expect(worldEntity.valid).to.be(false) // replaced
@@ -251,13 +256,13 @@ test("disallowing entity deletion", () => {
 })
 
 test("delete entity", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   deleteEntityOrCreateSettingsRemnant(assembly, entity)
   assertEntityNotPresent(entity)
 })
 
 test("delete to create settings remnant", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -266,7 +271,7 @@ test("delete to create settings remnant", () => {
 })
 describe("revive integration test", () => {
   test.each([1, 2, 3, 4, 5, 6])("settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
-    const entity = setupEntity(1)
+    const entity = buildEntity(1)
     entity._applyDiffAtStage(3, { override_stack_size: 2 })
     entity._applyDiffAtStage(5, { override_stack_size: 3 })
     deleteEntityOrCreateSettingsRemnant(assembly, entity)
@@ -291,7 +296,7 @@ describe("revive integration test", () => {
   })
 
   test("settings remnant 2->3, revive at stage 1", () => {
-    const entity = setupEntity(2)
+    const entity = buildEntity(2)
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     deleteEntityOrCreateSettingsRemnant(assembly, entity)
     assertIsSettingsRemnant(entity)
@@ -308,7 +313,7 @@ describe("revive integration test", () => {
 })
 
 test("force deleting entity", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -317,7 +322,7 @@ test("force deleting entity", () => {
 })
 
 test("updating first value from world", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.inserter_stack_size_override = 2
   const ret = tryUpdateEntityFromWorld(assembly, entity, 3)
@@ -327,7 +332,7 @@ test("updating first value from world", () => {
 })
 
 test("updating higher value from world", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.inserter_stack_size_override = 2
   const ret = tryUpdateEntityFromWorld(assembly, entity, 4)
@@ -340,7 +345,7 @@ test("updating higher value from world", () => {
 })
 
 test("rotating first value from world via update", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
   const ret = tryUpdateEntityFromWorld(assembly, entity, 3)
@@ -350,7 +355,7 @@ test("rotating first value from world via update", () => {
 })
 
 test("rotating first value from world via rotate", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
   tryRotateEntityToMatchWorld(assembly, entity, 3)
@@ -359,7 +364,7 @@ test("rotating first value from world via rotate", () => {
 })
 
 test("rotation forbidden at higher stage", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
   const ret = tryUpdateEntityFromWorld(assembly, entity, 4)
@@ -369,7 +374,7 @@ test("rotation forbidden at higher stage", () => {
 })
 
 test("rotation forbidden at higher stage via rotate", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
   tryRotateEntityToMatchWorld(assembly, entity, 4)
@@ -378,7 +383,7 @@ test("rotation forbidden at higher stage via rotate", () => {
 })
 
 test("creating upgrade via fast replace", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const replacedEntity = createEntity(4, { name: "stack-filter-inserter" })
   entity.replaceWorldEntity(4, replacedEntity)
   tryUpdateEntityFromWorld(assembly, entity, 4)
@@ -389,7 +394,7 @@ test("creating upgrade via fast replace", () => {
 })
 
 test("update with upgrade", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
   refreshWorldEntityAllStages(assembly, entity)
   assertEntityCorrect(entity, false)
@@ -397,7 +402,7 @@ test("update with upgrade", () => {
 
 test("update with upgrade and blocker", () => {
   createEntity(5, { name: "stone-wall" })
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
 
   let preview = entity.getWorldOrPreviewEntity(5)!
   expect(isPreviewEntity(preview)).to.be(true)
@@ -416,7 +421,7 @@ test("update with upgrade and blocker", () => {
 })
 
 test("creating upgrade via apply upgrade target", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.order_upgrade({
     force: worldEntity.force,
@@ -430,21 +435,21 @@ test("creating upgrade via apply upgrade target", () => {
 })
 
 test("moving entity up", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   moveEntityToStage(assembly, entity, 4)
   expect(entity.firstStage).to.be(4)
   assertEntityCorrect(entity, false)
 })
 
 test("moving entity down", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   moveEntityToStage(assembly, entity, 2)
   expect(entity.firstStage).to.be(2)
   assertEntityCorrect(entity, false)
 })
 
 test("dolly entity", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   expect(worldEntity.teleport(1, 0)).to.be(true)
   const newPosition = worldEntity.position
@@ -455,7 +460,7 @@ test("dolly entity", () => {
 })
 
 test("resetProp", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -466,7 +471,7 @@ test("resetProp", () => {
 })
 
 test("movePropDown", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -477,7 +482,7 @@ test("movePropDown", () => {
 })
 
 test("resetAllProps", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
     filter_mode: "blacklist",
@@ -490,7 +495,7 @@ test("resetAllProps", () => {
 })
 
 test("moveAllPropsDown", () => {
-  const entity = setupEntity(3)
+  const entity = buildEntity(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
     filter_mode: "blacklist",
@@ -504,7 +509,7 @@ test("moveAllPropsDown", () => {
 
 // with wire connections
 function setupPole(stage: StageNumber, args: Partial<SurfaceCreateEntity> = {}) {
-  return setupEntity(stage, { name: "medium-electric-pole", position: pos.minus(Pos(0, 1)), ...args })
+  return buildEntity(stage, { name: "medium-electric-pole", position: pos.minus(Pos(0, 1)), ...args })
 }
 function setupPole2(stage: StageNumber) {
   return setupPole(stage, {
@@ -551,7 +556,7 @@ test("disconnect and connect cables", () => {
 })
 
 test("connect and disconnect circuit wires", () => {
-  const inserter = setupEntity(3) // is filter inserter
+  const inserter = buildEntity(3) // is filter inserter
   const pole = setupPole(3)
   pole.getWorldEntity(3)!.connect_neighbour({
     wire: defines.wire_type.red,
@@ -627,8 +632,8 @@ test("train entity error", () => {
 })
 
 test("adding wire in higher stage sets empty control behavior", () => {
-  const inserter = setupEntity(3) // is filter inserter
-  const belt = setupEntity(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
+  const inserter = buildEntity(3) // is filter inserter
+  const belt = buildEntity(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
   refreshWorldEntityAtStage(assembly, inserter, 4)
   refreshWorldEntityAtStage(assembly, belt, 4)
   const inserter4 = inserter.getWorldEntity(4)!
@@ -662,4 +667,54 @@ test("adding wire in higher stage sets empty control behavior", () => {
 
   assertEntityCorrect(inserter, false)
   assertEntityCorrect(belt, false)
+})
+
+test("can build a entity using known value", () => {
+  const luaEntity = createEntity(1, { name: "transport-belt", position: pos, direction: defines.direction.east })
+  const entity = addNewEntity(assembly, luaEntity, 1, {
+    entity_number: 1,
+    name: "transport-belt",
+    position: pos,
+    direction: defines.direction.east,
+    override_stack_size: 1,
+  })!
+  expect(entity).toMatchTable({
+    firstStage: 1,
+    firstValue: {
+      name: "transport-belt",
+      override_stack_size: 1,
+    },
+  })
+})
+
+test.each([true, false])("can maybe upgrade entity via blueprint, with setting %s", (enabled) => {
+  const player = game.players[1]
+  player.mod_settings[Settings.UpgradeOnPaste] = { value: enabled }
+  const bpEntity: BlueprintEntity = {
+    entity_number: 1,
+    name: "fast-inserter",
+    position: Pos(0.5, 0.5),
+    direction: direction.west,
+  }
+  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.blueprint_snap_to_grid = [1, 1]
+  stack.blueprint_absolute_snapping = true
+  stack.set_blueprint_entities([
+    bpEntity,
+    {
+      entity_number: 2,
+      name: "transport-belt",
+      position: Pos(0, 2),
+      direction: direction.south,
+    },
+  ])
+
+  player.teleport([0, 0], surfaces[0])
+  player.build_from_cursor({ position: pos, alt: true })
+
+  const expected = enabled ? "fast-inserter" : "inserter"
+  expect(entity.firstValue).toMatchTable({ name: expected })
+  expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
 })

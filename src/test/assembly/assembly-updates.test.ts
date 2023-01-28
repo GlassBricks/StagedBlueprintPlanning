@@ -325,6 +325,20 @@ describe("tryUpdateEntityFromWorld", () => {
     assertOneEntity()
     assertUpdateCalled(entity, 2, nil)
   })
+  test('with change in first stage and known value returns "updated" and updates all entities', () => {
+    const { entity } = addEntity(2)
+    const knownValue = {
+      name: "filter-inserter",
+      override_stack_size: 3,
+    }
+    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2, knownValue as BlueprintEntity)
+    expect(ret).to.be("updated")
+
+    expect(entity.firstValue.override_stack_size).to.be(3)
+
+    assertOneEntity()
+    assertUpdateCalled(entity, 2, nil)
+  })
 
   test("can detect rotate by pasting", () => {
     const { luaEntity, entity } = addEntity(2, {
