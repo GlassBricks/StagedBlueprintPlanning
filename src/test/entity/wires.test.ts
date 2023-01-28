@@ -26,7 +26,7 @@ before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
 })
 
-import handler = require("../../entity/WireHandler")
+import handler = require("../../entity/wires")
 
 describe("circuit wires", () => {
   let luaEntity1: LuaEntity

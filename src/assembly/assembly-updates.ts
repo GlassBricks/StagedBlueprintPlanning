@@ -20,9 +20,9 @@ import {
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
-import { canBeAnyDirection, saveEntity } from "../entity/EntityHandler"
+import { canBeAnyDirection, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
-import { saveWireConnections } from "../entity/WireHandler"
+import { saveWireConnections } from "../entity/wires"
 import { Assembly } from "./AssemblyDef"
 import {
   deleteAllEntities,
@@ -33,7 +33,7 @@ import {
   updateNewEntityWithoutWires,
   updateWireConnections,
   updateWorldEntities,
-} from "./WorldUpdater"
+} from "./world-entities"
 import min = math.min
 
 export type UpdateSuccess = "updated" | "no-change"

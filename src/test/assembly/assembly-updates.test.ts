@@ -12,7 +12,7 @@
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { replaceWorldEntityAtStage } from "../../assembly/WorldUpdater"
+import { replaceWorldEntityAtStage } from "../../assembly/world-entities"
 import {
   AssemblyEntity,
   createAssemblyEntity,
@@ -27,10 +27,10 @@ import { Pos } from "../../lib/geometry"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
-import assemblyUpdater = require("../../assembly/AssemblyUpdater")
-import _worldListener = require("../../assembly/WorldListener")
-import _worldUpdater = require("../../assembly/WorldUpdater")
-import _wireHandler = require("../../entity/WireHandler")
+import assemblyUpdater = require("../../assembly/assembly-updates")
+import _worldListener = require("../../assembly/on-world-event")
+import _worldUpdater = require("../../assembly/world-entities")
+import _wireHandler = require("../../entity/wires")
 import direction = defines.direction
 import wire_type = defines.wire_type
 

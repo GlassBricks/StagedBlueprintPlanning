@@ -14,7 +14,7 @@ import { getSelectionBox } from "../entity/entity-info"
 import { AnyRender, assertNever, SpriteRender } from "../lib"
 import { Position } from "../lib/geometry"
 import { Assembly } from "./AssemblyDef"
-import { createHighlightBox, createSprite } from "./HighlightCreator"
+import { createHighlightBox, createSprite } from "./create-highlight"
 
 export type HighlightEntity = HighlightBoxEntity | SpriteRender
 export interface HighlightEntities {

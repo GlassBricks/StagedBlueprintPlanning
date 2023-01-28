@@ -13,8 +13,8 @@ import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { createEntity, saveEntity } from "../../entity/EntityHandler"
 import { forceDollyEntity } from "../../entity/picker-dollies"
+import { createEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
@@ -28,9 +28,9 @@ interface TestEntity extends Entity {
 let assembly: Assembly
 let entity: AssemblyEntity<TestEntity>
 
-import _highlighter = require("../../assembly/EntityHighlighter")
-import WorldUpdater = require("../../assembly/WorldUpdater")
-import _wireHandler = require("../../entity/WireHandler")
+import _highlighter = require("../../assembly/entity-highlights")
+import WorldUpdater = require("../../assembly/world-entities")
+import _wireHandler = require("../../entity/wires")
 
 const wireUpdater = moduleMock(_wireHandler, true)
 const highlighter = moduleMock(_highlighter, true)

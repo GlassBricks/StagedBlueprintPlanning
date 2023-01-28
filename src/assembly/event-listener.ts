@@ -19,8 +19,6 @@ import { ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
-import { getAssemblyPlayerData } from "./player-assembly-data"
-import { getStageAtSurface } from "./UserAssembly"
 import {
   onBringToStageUsed,
   onCircuitWiresPossiblyUpdated,
@@ -35,9 +33,11 @@ import {
   onEntityRotated,
   onMoveEntityToStageCustomInput,
   onSendToStageUsed,
+  onTryFixEntity,
   onUndergroundBeltDragRotated,
-  tryFixEntity,
-} from "./WorldListener"
+} from "./on-world-event"
+import { getAssemblyPlayerData } from "./player-assembly-data"
+import { getStageAtSurface } from "./UserAssembly"
 
 const Events = ProtectedEvents
 
@@ -814,7 +814,7 @@ Events.on_chunk_generated((e) => {
   })
   const { stageNumber, assembly } = stage
   for (const entity of entities) {
-    if (entity.valid) tryFixEntity(assembly, stageNumber, entity)
+    if (entity.valid) onTryFixEntity(assembly, stageNumber, entity)
   }
 
   const status = defines.chunk_generated_status.entities

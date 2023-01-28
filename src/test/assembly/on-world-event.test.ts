@@ -10,25 +10,25 @@
  */
 
 import expect from "tstl-expect"
-import { Assembly } from "../../assembly/AssemblyDef"
 import {
   EntityRotateResult,
   EntityUpdateResult,
   StageMoveResult,
   WireUpdateResult,
-} from "../../assembly/AssemblyUpdater"
+} from "../../assembly/assembly-updates"
+import { Assembly } from "../../assembly/AssemblyDef"
 import { L_Game } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
-import { createPreviewEntity, saveEntity } from "../../entity/EntityHandler"
+import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
 import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
-import _assemblyUpdater = require("../../assembly/AssemblyUpdater")
-import worldListener = require("../../assembly/WorldListener")
+import _assemblyUpdater = require("../../assembly/assembly-updates")
 
-import _worldNotifier = require("../../assembly/WorldNotifier")
-import _worldUpdater = require("../../assembly/WorldUpdater")
+import _worldNotifier = require("../../assembly/notifications")
+import worldListener = require("../../assembly/on-world-event")
+import _worldUpdater = require("../../assembly/world-entities")
 
 const worldNotifier = moduleMock(_worldNotifier, true)
 let totalCalls = 0

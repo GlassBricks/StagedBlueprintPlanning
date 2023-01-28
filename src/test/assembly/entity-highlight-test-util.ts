@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { HighlightValues } from "../../assembly/EntityHighlighter"
-import { AssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import expect from "tstl-expect"
+import { HighlightValues } from "../../assembly/entity-highlights"
+import { AssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 
 export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, maxStage: StageNumber): void {
   let i = entity.firstStage

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { saveEntity } from "../entity/EntityHandler"
+import { saveEntity } from "../entity/save-load"
 import { Events } from "../lib"
 import { MockedFunctionTable } from "./module-mock"
 
@@ -52,7 +52,7 @@ for (const [name, key] of pairs(defines.events)) {
   })
 }
 
-import WorldListener = require("../assembly/WorldListener")
+import WorldListener = require("../assembly/on-world-event")
 
 for (const [k, v] of pairs(WorldListener)) {
   if (v == true) continue

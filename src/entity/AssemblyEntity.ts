@@ -26,7 +26,7 @@ import { Position } from "../lib/geometry"
 import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
 import { Entity } from "./Entity"
 import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
-import { registerEntity } from "./entity-registration"
+import { registerEntity } from "./registration"
 import { LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./special-entities"
 import {
   _applyDiffToDiffUnchecked,

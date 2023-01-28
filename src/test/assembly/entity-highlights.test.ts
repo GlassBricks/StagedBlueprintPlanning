@@ -17,7 +17,7 @@ import {
   makeSettingsRemnantHighlights,
   updateAllHighlights,
   updateHighlightsOnSettingsRemnantRevived,
-} from "../../assembly/EntityHighlighter"
+} from "../../assembly/entity-highlights"
 import { Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
@@ -33,7 +33,7 @@ interface FooEntity extends Entity {
 let entity: AssemblyEntity<FooEntity>
 let assembly: Assembly
 
-import _highlightCreator = require("../../assembly/HighlightCreator")
+import _highlightCreator = require("../../assembly/create-highlight")
 
 const highlightCreator = moduleMock(_highlightCreator, false)
 

@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Stage } from "../assembly/AssemblyDef"
 import {
   forceDeleteEntity,
   moveAllPropsDown,
@@ -20,7 +19,8 @@ import {
   resetTrain,
   reviveSettingsRemnant,
   setTrainLocationToCurrent,
-} from "../assembly/AssemblyUpdater"
+} from "../assembly/assembly-updates"
+import { Stage } from "../assembly/AssemblyDef"
 import { checkForEntityUpdates } from "../assembly/event-listener"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"

@@ -11,7 +11,7 @@
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
-import { disableAllEntitiesInStage, enableAllEntitiesInStage, resetStage } from "../assembly/WorldUpdater"
+import { disableAllEntitiesInStage, enableAllEntitiesInStage, resetStage } from "../assembly/world-entities"
 import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
 import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"

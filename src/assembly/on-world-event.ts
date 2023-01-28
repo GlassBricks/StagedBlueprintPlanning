@@ -16,7 +16,6 @@ import { shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { Assembly } from "./AssemblyDef"
 import {
   addNewEntity,
   deleteEntityOrCreateSettingsRemnant,
@@ -29,8 +28,9 @@ import {
   tryRotateEntityToMatchWorld,
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
-} from "./AssemblyUpdater"
-import { createIndicator, createNotification } from "./WorldNotifier"
+} from "./assembly-updates"
+import { Assembly } from "./AssemblyDef"
+import { createIndicator, createNotification } from "./notifications"
 import {
   AssemblyEntityDollyResult,
   clearWorldEntity,
@@ -38,7 +38,7 @@ import {
   refreshWorldEntityAtStage,
   replaceWorldEntityAtStage,
   tryDollyEntities,
-} from "./WorldUpdater"
+} from "./world-entities"
 
 function onPreviewReplaced(
   assembly: Assembly,
@@ -141,7 +141,7 @@ function notifyIfError(result: EntityUpdateResult, entity: AssemblyEntity, byPla
   }
 }
 
-export function tryFixEntity(
+export function onTryFixEntity(
   assembly: Assembly,
   stage: StageNumber,
   previewEntity: LuaEntity,
@@ -282,7 +282,7 @@ export function onEntityMarkedForUpgrade(
   if (entity.valid) entity.cancel_upgrade(entity.force)
 }
 export function onCleanupToolUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
-  tryFixEntity(assembly, stage, entity, true)
+  onTryFixEntity(assembly, stage, entity, true)
 }
 export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity): void {
   const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity)

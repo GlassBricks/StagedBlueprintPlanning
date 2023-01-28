@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,19 +9,19 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, ExtraEntityType } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
-import { getRegisteredAssemblyEntity } from "../../entity/entity-registration"
+import { getRegisteredAssemblyEntity } from "../../entity/registration"
 import { RollingStockEntity } from "../../entity/special-entities"
 import { getEntityDiff } from "../../entity/stage-diff"
 import { shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
+import { getNilPlaceholder } from "../../utils/diff-value"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 import { simpleMock } from "../simple-mock"
 import { createRollingStock } from "./createRollingStock"
-import expect from "tstl-expect"
-import { getNilPlaceholder } from "../../utils/diff-value"
 
 interface InserterEntity extends Entity {
   name: "filter-inserter" | "stack-filter-inserter"

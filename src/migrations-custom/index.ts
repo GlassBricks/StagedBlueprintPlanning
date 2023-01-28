@@ -10,7 +10,7 @@
  */
 
 import { getAssembliesForMigration } from "../assembly/migrations"
-import { updateWorldEntities } from "../assembly/WorldUpdater"
+import { updateWorldEntities } from "../assembly/world-entities"
 import { Events } from "../lib"
 import { formatVersion, Migrations } from "../lib/migration"
 

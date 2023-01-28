@@ -16,12 +16,12 @@ import { _assertInValidState } from "../../assembly/event-listener"
 import { getAssemblyPlayerData } from "../../assembly/player-assembly-data"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { CustomInputs, Prototypes } from "../../constants"
-import { getTempBpItemStack } from "../../entity/EntityHandler"
+import { getTempBpItemStack } from "../../entity/save-load"
 import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { moduleMock } from "../module-mock"
 import { reviveGhost } from "../reviveGhost"
-import _worldListener = require("../../assembly/WorldListener")
+import _worldListener = require("../../assembly/on-world-event")
 import direction = defines.direction
 
 const WorldListener = moduleMock(_worldListener, true)

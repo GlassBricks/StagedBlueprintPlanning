@@ -23,8 +23,8 @@ import {
   PasteRotatableType,
   rollingStockTypes,
 } from "./entity-info"
-import { getRegisteredAssemblyEntity } from "./entity-registration"
 import { MutableMap2D, newMap2D } from "./map2d"
+import { getRegisteredAssemblyEntity } from "./registration"
 import { getUndergroundDirection } from "./underground-belt"
 
 /**

@@ -18,16 +18,16 @@ import {
   StageNumber,
 } from "../entity/AssemblyEntity"
 import { isPreviewEntity } from "../entity/entity-info"
-import { createEntity, createPreviewEntity, updateEntity } from "../entity/EntityHandler"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
-import { updateWireConnectionsAtStage } from "../entity/WireHandler"
+import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-load"
+import { updateWireConnectionsAtStage } from "../entity/wires"
 import { Assembly } from "./AssemblyDef"
 import {
   deleteAllHighlights,
   makeSettingsRemnantHighlights,
   updateAllHighlights,
   updateHighlightsOnSettingsRemnantRevived,
-} from "./EntityHighlighter"
+} from "./entity-highlights"
 
 export type AssemblyEntityDollyResult =
   | EntityDollyResult

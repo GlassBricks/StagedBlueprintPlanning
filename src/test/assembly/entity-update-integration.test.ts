@@ -10,7 +10,6 @@
  */
 
 import expect from "tstl-expect"
-import { Assembly } from "../../assembly/AssemblyDef"
 import {
   addNewEntity,
   deleteEntityOrCreateSettingsRemnant,
@@ -26,20 +25,21 @@ import {
   tryRotateEntityToMatchWorld,
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
-} from "../../assembly/AssemblyUpdater"
+} from "../../assembly/assembly-updates"
+import { Assembly } from "../../assembly/AssemblyDef"
 import {
   clearWorldEntity,
   refreshEntityAllStages,
   refreshWorldEntityAtStage,
   replaceWorldEntityAtStage,
   tryDollyEntities,
-} from "../../assembly/WorldUpdater"
+} from "../../assembly/world-entities"
 import { Prototypes } from "../../constants"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { isPreviewEntity } from "../../entity/entity-info"
-import { saveEntity } from "../../entity/EntityHandler"
+import { saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"

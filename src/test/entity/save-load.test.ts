@@ -12,7 +12,7 @@
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
-import { canBeAnyDirection, createEntity, saveEntity, updateEntity } from "../../entity/EntityHandler"
+import { canBeAnyDirection, createEntity, saveEntity, updateEntity } from "../../entity/save-load"
 
 let surface: LuaSurface
 before_each(() => {

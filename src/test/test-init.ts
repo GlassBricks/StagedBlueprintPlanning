@@ -11,7 +11,7 @@
 
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { createUserAssembly } from "../assembly/UserAssembly"
-import { updateWorldEntities } from "../assembly/WorldUpdater"
+import { updateWorldEntities } from "../assembly/world-entities"
 import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
 import { Pos } from "../lib/geometry"
