@@ -12,9 +12,9 @@
 import { Prototypes } from "../constants"
 import { Events, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
 import { getPasteRotatableType, PasteRotatableType, rollingStockTypes } from "./entity-info"
-import { makePreviewIndestructible } from "./special-entities"
 import { getUndergroundDirection } from "./underground-belt"
 
 declare const global: {
@@ -24,10 +24,17 @@ Events.on_init(() => {
   global.tempBPInventory = game.create_inventory(1)
 })
 
+let bpStack: BlueprintItemStack
+Migrations.since("0.17.0", () => {
+  bpStack = global.tempBPInventory[0]
+  bpStack.set_stack("blueprint")
+})
+Events.on_load(() => {
+  bpStack = global.tempBPInventory[0]
+})
+
 export function getTempBpItemStack(): BlueprintItemStack {
-  const stack = global.tempBPInventory[0]
-  stack.set_stack("blueprint")
-  return stack
+  return bpStack
 }
 
 function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity): number | nil {
@@ -39,10 +46,9 @@ function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity):
 function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   const { surface, position } = entity
 
-  const stack = getTempBpItemStack()
   for (const radius of [0.01, 1]) {
     const isRollingStock = rollingStockTypes.has(entity.type)
-    const indexMapping = stack.create_blueprint({
+    const indexMapping = bpStack.create_blueprint({
       surface,
       force: entity.force,
       area: BBox.around(position, radius),
@@ -52,7 +58,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {
-      return stack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
+      return bpStack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
       // assert(bpEntity.entity_number == matchingIndex)
     }
   }
@@ -64,14 +70,13 @@ function pasteEntity(
   direction: defines.direction,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
-  const stack = getTempBpItemStack()
   const tilePosition = Pos.floor(position)
   const offsetPosition = Pos.minus(position, tilePosition)
-  setBlueprintEntity(stack, entity, offsetPosition, direction)
-  stack.blueprint_snap_to_grid = [1, 1]
-  stack.blueprint_absolute_snapping = true
+  setBlueprintEntity(bpStack, entity, offsetPosition, direction)
+  bpStack.blueprint_snap_to_grid = [1, 1]
+  bpStack.blueprint_absolute_snapping = true
 
-  const ghosts = stack.build_blueprint({
+  const ghosts = bpStack.build_blueprint({
     surface,
     force: "player",
     position: tilePosition,
@@ -288,6 +293,16 @@ function updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.di
   return luaEntity
 }
 
+export function makePreviewIndestructible(entity: LuaEntity | nil): void {
+  if (!entity) return
+  entity.destructible = false
+  entity.minable = false
+  entity.rotatable = false
+  if (entity.type == "rail-remnants") {
+    entity.corpse_expires = false
+    entity.corpse_immune_to_entity_placement = true
+  }
+}
 function createPreviewEntity(
   surface: LuaSurface,
   position: Position,
