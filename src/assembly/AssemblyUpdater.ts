@@ -25,13 +25,10 @@ import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
 import {
-  AssemblyEntityDollyResult,
-  clearWorldEntity,
   deleteAllEntities,
   makeSettingsRemnant,
   refreshWorldEntityAtStage,
   replaceWorldEntityAtStage,
-  tryDollyEntities,
   updateEntitiesOnSettingsRemnantRevived,
   updateNewEntityWithoutWires,
   updateWireConnections,
@@ -39,54 +36,6 @@ import {
 } from "./WorldUpdater"
 import min = math.min
 
-/**
- * @noSelf
- */
-export interface AssemblyUpdater {
-  addNewEntity(assembly: Assembly, entitySource: LuaEntity, stage: StageNumber): AssemblyEntity | nil
-
-  refreshEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
-
-  refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void
-
-  moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
-
-  forbidEntityDeletion(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
-
-  deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
-  reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
-
-  forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): void
-
-  /** Replaces entity with an error highlight */
-  clearEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void
-
-  tryUpdateEntityFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult
-
-  tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult
-
-  /** Doesn't cancel upgrade */
-  tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult
-
-  updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): WireUpdateResult
-
-  tryDollyEntity(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): AssemblyEntityDollyResult
-  moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult
-
-  resetProp<T extends Entity>(assembly: Assembly, entity: AssemblyEntity<T>, stage: StageNumber, prop: keyof T): boolean
-  movePropDown<T extends Entity>(
-    assembly: Assembly,
-    entity: AssemblyEntity<T>,
-    stage: StageNumber,
-    prop: keyof T,
-  ): boolean
-
-  resetAllProps(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
-  moveAllPropsDown(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean
-
-  resetTrain(assembly: Assembly, entity: RollingStockAssemblyEntity): void
-  setTrainLocationToCurrent(assembly: Assembly, entity: RollingStockAssemblyEntity): void
-}
 export type UpdateSuccess = "updated" | "no-change"
 export type RotateError = "cannot-rotate" | "cannot-flip-multi-pair-underground"
 export type UpdateError =
@@ -99,400 +48,400 @@ export type EntityUpdateResult = UpdateSuccess | UpdateError | RotateError
 export type WireUpdateResult = UpdateSuccess | "max-connections-exceeded"
 export type StageMoveResult = UpdateSuccess | "cannot-move-upgraded-underground"
 
-export function createAssemblyUpdater(): AssemblyUpdater {
-  function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
-    if (!entity.isSettingsRemnant) return false
-    entity.isSettingsRemnant = nil
-    entity.moveToStage(stage)
-    updateEntitiesOnSettingsRemnantRevived(assembly, entity)
-    return true
-  }
+export function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
+  if (!entity.isSettingsRemnant) return false
+  entity.isSettingsRemnant = nil
+  entity.moveToStage(stage)
+  updateEntitiesOnSettingsRemnantRevived(assembly, entity)
+  return true
+}
 
-  function shouldMakeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity) {
-    if (entity.inFirstStageOnly()) return false
-    if (entity.hasStageDiff()) return true
-    const connections = assembly.content.getCircuitConnections(entity)
-    if (!connections) return false
-    const stage = entity.firstStage
-    for (const [otherEntity] of connections) {
-      if (otherEntity.getWorldEntity(stage) == nil) {
-        // has a connection at first stage, but not one in the world
-        return true
-      }
+function shouldMakeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity) {
+  if (entity.inFirstStageOnly()) return false
+  if (entity.hasStageDiff()) return true
+  const connections = assembly.content.getCircuitConnections(entity)
+  if (!connections) return false
+  const stage = entity.firstStage
+  for (const [otherEntity] of connections) {
+    if (otherEntity.getWorldEntity(stage) == nil) {
+      // has a connection at first stage, but not one in the world
+      return true
     }
-    return false
   }
+  return false
+}
 
-  function undoRotate(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity) {
+function undoRotate(assembly: Assembly, stage: StageNumber, entity: AssemblyEntity) {
+  refreshWorldEntityAtStage(assembly, entity, stage)
+}
+
+function setRotationOrUndo(
+  assembly: Assembly,
+  stage: StageNumber,
+  entity: AssemblyEntity,
+  newDirection: defines.direction,
+): boolean {
+  const rotateAllowed = stage == entity.firstStage
+  if (rotateAllowed) {
+    entity.setDirection(newDirection)
+  } else {
+    undoRotate(assembly, stage, entity)
+  }
+  return rotateAllowed
+}
+
+function doUpdateEntityFromWorld(
+  assembly: Assembly,
+  stage: StageNumber,
+  entity: AssemblyEntity,
+  entitySource: LuaEntity,
+): boolean {
+  entity.replaceWorldEntity(stage, entitySource)
+  const worldEntity = assert(entity.getWorldEntity(stage))
+  const [newValue, newDirection] = saveEntity(worldEntity)
+  if (!newValue) return false
+  if (!canBeAnyDirection(worldEntity)) {
+    assert(newDirection == entity.getDirection(), "direction mismatch on saved entity")
+  }
+  return entity.adjustValueAtStage(stage, newValue)
+}
+
+function checkUpgradeType(existing: AssemblyEntity, upgradeType: string): void {
+  if (!areUpgradeableTypes(existing.firstValue.name, upgradeType))
+    error(` incompatible upgrade from ${existing.firstValue.name} to ${upgradeType}`)
+}
+
+function tryUpdateUndergroundFromFastReplace(
+  assembly: Assembly,
+  stage: StageNumber,
+  entity: AssemblyEntity,
+  entitySource: LuaEntity,
+): EntityUpdateResult {
+  // only can upgrade via fast-replace
+  const newType = entitySource.name
+  if (newType == entity.getNameAtStage(stage)) return "no-change"
+
+  const result = tryUpgradeUndergroundBelt(assembly, stage, entity as UndergroundBeltAssemblyEntity, newType)
+  if (result != "no-change" && result != "updated") {
     refreshWorldEntityAtStage(assembly, entity, stage)
   }
+  return result
+}
 
-  function setRotationOrUndo(
-    assembly: Assembly,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-    newDirection: defines.direction,
-  ): boolean {
-    const rotateAllowed = stage == entity.firstStage
-    if (rotateAllowed) {
-      entity.setDirection(newDirection)
-    } else {
-      undoRotate(assembly, stage, entity)
+function tryApplyUndergroundUpdateTarget(
+  assembly: Assembly,
+  stage: StageNumber,
+  entity: UndergroundBeltAssemblyEntity,
+  entitySource: LuaEntity,
+): EntityUpdateResult {
+  const upgradeType = entitySource.get_upgrade_target()?.name
+  if (!upgradeType) return "no-change"
+  checkUpgradeType(entity, upgradeType)
+  return tryUpgradeUndergroundBelt(assembly, stage, entity, upgradeType)
+}
+
+function tryUpgradeUndergroundBelt(
+  assembly: Assembly,
+  stage: StageNumber,
+  entity: UndergroundBeltAssemblyEntity,
+  upgradeType: string,
+): EntityUpdateResult {
+  const [pair, hasMultiple] = findUndergroundPair(assembly.content, entity)
+  if (hasMultiple) {
+    return "cannot-upgrade-multi-pair-underground"
+  }
+  let isFirstStage = entity.firstStage == stage
+  if (pair) {
+    isFirstStage ||= pair.firstStage == stage
+    if (!isFirstStage && entity.firstStage != pair.firstStage) {
+      // createNotification(entity, byPlayer, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
+      return "cannot-create-pair-upgrade"
     }
-    return rotateAllowed
   }
+  const oldName = entity.firstValue.name
+  const applyStage = isFirstStage ? entity.firstStage : stage
+  const upgraded = entity.applyUpgradeAtStage(applyStage, upgradeType)
+  if (!upgraded) return "no-change"
 
-  function doUpdateEntityFromWorld(
-    assembly: Assembly,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-    entitySource: LuaEntity,
-  ): boolean {
-    entity.replaceWorldEntity(stage, entitySource)
-    const worldEntity = assert(entity.getWorldEntity(stage))
-    const [newValue, newDirection] = saveEntity(worldEntity)
-    if (!newValue) return false
-    if (!canBeAnyDirection(worldEntity)) {
-      assert(newDirection == entity.getDirection(), "direction mismatch on saved entity")
+  if (!pair) {
+    updateWorldEntities(assembly, entity, applyStage)
+  } else {
+    const pairStage = isFirstStage ? pair.firstStage : stage
+    const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
+    // check pair still correct
+    const [newPair, newMultiple] = findUndergroundPair(assembly.content, entity)
+    if (newPair != pair || newMultiple) {
+      entity.applyUpgradeAtStage(applyStage, oldName)
+      pair.applyUpgradeAtStage(pairStage, oldName)
+      return "cannot-upgrade-changed-pair"
     }
-    return entity.adjustValueAtStage(stage, newValue)
+
+    updateWorldEntities(assembly, entity, applyStage)
+    if (pairUpgraded) updateWorldEntities(assembly, pair, pairStage)
   }
+  return "updated"
+}
 
-  function checkUpgradeType(existing: AssemblyEntity, upgradeType: string): void {
-    if (!areUpgradeableTypes(existing.firstValue.name, upgradeType))
-      error(` incompatible upgrade from ${existing.firstValue.name} to ${upgradeType}`)
-  }
+function checkDefaultControlBehavior(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
+  if (stage <= entity.firstStage || hasControlBehaviorSet(entity, stage)) return false
+  fixEmptyControlBehavior(entity)
+  const luaEntity = entity.getWorldEntity(stage)
+  if (luaEntity) doUpdateEntityFromWorld(assembly, stage, entity, luaEntity)
+  return true
+}
 
-  function tryUpdateUndergroundFromFastReplace(
-    assembly: Assembly,
-    stage: StageNumber,
-    entity: AssemblyEntity,
-    entitySource: LuaEntity,
-  ): EntityUpdateResult {
-    // only can upgrade via fast-replace
-    const newType = entitySource.name
-    if (newType == entity.getNameAtStage(stage)) return "no-change"
+export function addNewEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): AssemblyEntity<any> | nil {
+  const [saved, savedDir] = saveEntity(entity)
+  if (!saved) return nil
+  const { content } = assembly
+  const assemblyEntity = createAssemblyEntity(saved, entity.position, savedDir, stage)
+  assemblyEntity.replaceWorldEntity(stage, entity)
+  content.add(assemblyEntity)
 
-    const result = tryUpgradeUndergroundBelt(assembly, stage, entity as UndergroundBeltAssemblyEntity, newType)
-    if (result != "no-change" && result != "updated") {
-      refreshWorldEntityAtStage(assembly, entity, stage)
-    }
-    return result
-  }
-
-  function tryApplyUndergroundUpdateTarget(
-    assembly: Assembly,
-    stage: StageNumber,
-    entity: UndergroundBeltAssemblyEntity,
-    entitySource: LuaEntity,
-  ): EntityUpdateResult {
-    const upgradeType = entitySource.get_upgrade_target()?.name
-    if (!upgradeType) return "no-change"
-    checkUpgradeType(entity, upgradeType)
-    return tryUpgradeUndergroundBelt(assembly, stage, entity, upgradeType)
-  }
-
-  function tryUpgradeUndergroundBelt(
-    assembly: Assembly,
-    stage: StageNumber,
-    entity: UndergroundBeltAssemblyEntity,
-    upgradeType: string,
-  ): EntityUpdateResult {
-    const [pair, hasMultiple] = findUndergroundPair(assembly.content, entity)
-    if (hasMultiple) {
-      return "cannot-upgrade-multi-pair-underground"
-    }
-    let isFirstStage = entity.firstStage == stage
+  if (entity.type == "underground-belt") {
+    // match direction with underground pair
+    const [pair] = findUndergroundPair(content, assemblyEntity as UndergroundBeltAssemblyEntity)
     if (pair) {
-      isFirstStage ||= pair.firstStage == stage
-      if (!isFirstStage && entity.firstStage != pair.firstStage) {
-        // createNotification(entity, byPlayer, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
-        return "cannot-create-pair-upgrade"
-      }
+      const otherDir = pair.firstValue.type
+      ;(assemblyEntity as UndergroundBeltAssemblyEntity).setTypeProperty(otherDir == "output" ? "input" : "output")
     }
-    const oldName = entity.firstValue.name
-    const applyStage = isFirstStage ? entity.firstStage : stage
-    const upgraded = entity.applyUpgradeAtStage(applyStage, upgradeType)
-    if (!upgraded) return "no-change"
+  }
 
-    if (!pair) {
-      updateWorldEntities(assembly, entity, applyStage)
-    } else {
-      const pairStage = isFirstStage ? pair.firstStage : stage
-      const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
-      // check pair still correct
-      const [newPair, newMultiple] = findUndergroundPair(assembly.content, entity)
-      if (newPair != pair || newMultiple) {
-        entity.applyUpgradeAtStage(applyStage, oldName)
-        pair.applyUpgradeAtStage(pairStage, oldName)
-        return "cannot-upgrade-changed-pair"
-      }
+  updateNewEntityWithoutWires(assembly, assemblyEntity)
+  saveWireConnections(content, assemblyEntity, stage, assembly.maxStage())
+  updateWireConnections(assembly, assemblyEntity)
 
-      updateWorldEntities(assembly, entity, applyStage)
-      if (pairUpgraded) updateWorldEntities(assembly, pair, pairStage)
+  return assemblyEntity
+}
+export function moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
+  if (stage >= entity.firstStage) return false
+  const oldStage = entity.moveToStage(stage)
+  updateWorldEntities(assembly, entity, stage, oldStage)
+  return true
+}
+export function deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
+  if (shouldMakeSettingsRemnant(assembly, entity)) {
+    entity.isSettingsRemnant = true
+    makeSettingsRemnant(assembly, entity)
+  } else {
+    assembly.content.delete(entity)
+    deleteAllEntities(entity)
+  }
+}
+export function forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): void {
+  assembly.content.delete(entity)
+  deleteAllEntities(entity)
+}
+export function tryUpdateEntityFromWorld(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+): EntityUpdateResult {
+  const entitySource = entity.getWorldEntity(stage)
+  if (!entitySource) return "no-change"
+  if (entitySource.type == "underground-belt") {
+    return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
+  }
+
+  const rotated = !canBeAnyDirection(entitySource) && entitySource.direction != entity.getDirection()
+  if (rotated) {
+    if (!setRotationOrUndo(assembly, stage, entity, entitySource.direction)) {
+      return "cannot-rotate"
     }
+  }
+
+  const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
+  if (hasDiff || rotated) {
+    updateWorldEntities(assembly, entity, stage)
     return "updated"
   }
+  return "no-change"
+}
+export function tryRotateEntityToMatchWorld(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+): EntityRotateResult {
+  const entitySource = entity.getWorldEntity(stage)
+  if (!entitySource || canBeAnyDirection(entitySource)) return "no-change"
 
-  function checkDefaultControlBehavior(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
-    if (stage <= entity.firstStage || hasControlBehaviorSet(entity, stage)) return false
-    fixEmptyControlBehavior(entity)
-    const luaEntity = entity.getWorldEntity(stage)
-    if (luaEntity) doUpdateEntityFromWorld(assembly, stage, entity, luaEntity)
-    return true
+  const type = entitySource.type
+
+  let pair: UndergroundBeltAssemblyEntity | nil
+  if (type == "underground-belt") {
+    const [thePair, hasMultiple] = findUndergroundPair(assembly.content, entity as UndergroundBeltAssemblyEntity)
+    if (hasMultiple) {
+      undoRotate(assembly, stage, entity)
+      return "cannot-flip-multi-pair-underground"
+    }
+    pair = thePair
   }
 
-  return {
-    addNewEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): AssemblyEntity<any> | nil {
-      const [saved, savedDir] = saveEntity(entity)
-      if (!saved) return nil
-      const { content } = assembly
-      const assemblyEntity = createAssemblyEntity(saved, entity.position, savedDir, stage)
-      assemblyEntity.replaceWorldEntity(stage, entity)
-      content.add(assemblyEntity)
+  // canBeAnyDirection(entitySource) is false
 
-      if (entity.type == "underground-belt") {
-        // match direction with underground pair
-        const [pair] = findUndergroundPair(content, assemblyEntity as UndergroundBeltAssemblyEntity)
-        if (pair) {
-          const otherDir = pair.firstValue.type
-          ;(assemblyEntity as UndergroundBeltAssemblyEntity).setTypeProperty(otherDir == "output" ? "input" : "output")
-        }
-      }
+  const newDirection = entitySource.direction
+  const rotated = newDirection != entity.getDirection()
+  if (!rotated) return "no-change"
+  const rotateAllowed = stage == entity.firstStage || (pair && pair.firstStage == stage)
+  if (!rotateAllowed) {
+    undoRotate(assembly, stage, entity)
+    return "cannot-rotate"
+  }
+  entity.setDirection(newDirection)
+  if (type == "loader" || type == "loader-1x1") {
+    ;(entity as LoaderAssemblyEntity).setTypeProperty(entitySource.loader_type)
+  } else if (type == "underground-belt") {
+    ;(entity as UndergroundBeltAssemblyEntity).setTypeProperty(entitySource.belt_to_ground_type)
+  }
+  updateWorldEntities(assembly, entity, entity.firstStage)
+  if (pair) {
+    pair.setDirection(newDirection)
+    pair.setTypeProperty(entitySource.belt_to_ground_type == "input" ? "output" : "input")
+    updateWorldEntities(assembly, pair, pair.firstStage)
+  }
+  return "updated"
+}
+export function tryApplyUpgradeTarget(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+): EntityUpdateResult {
+  const entitySource = entity.getWorldEntity(stage)
+  if (!entitySource) return "no-change"
+  if (entitySource.type == "underground-belt") {
+    return tryApplyUndergroundUpdateTarget(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
+  }
 
-      updateNewEntityWithoutWires(assembly, assemblyEntity)
-      saveWireConnections(content, assemblyEntity, stage, assembly.maxStage())
-      updateWireConnections(assembly, assemblyEntity)
+  const rotateDir = entitySource.get_upgrade_direction()
+  const rotated = rotateDir != nil && rotateDir != entity.getDirection() && !canBeAnyDirection(entitySource)
+  if (rotated) {
+    if (!setRotationOrUndo(assembly, stage, entity, rotateDir)) {
+      // don't update other stuff if rotation failed
+      return "cannot-rotate"
+    }
+  }
 
-      return assemblyEntity
-    },
-    refreshEntityAtStage: refreshWorldEntityAtStage,
-    refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
-      return updateWorldEntities(assembly, entity, 1)
-    },
-    moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
-      if (stage >= entity.firstStage) return false
-      const oldStage = entity.moveToStage(stage)
-      updateWorldEntities(assembly, entity, stage, oldStage)
-      return true
-    },
-    tryDollyEntity: tryDollyEntities,
-    forbidEntityDeletion: replaceWorldEntityAtStage,
-    deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
-      if (shouldMakeSettingsRemnant(assembly, entity)) {
-        entity.isSettingsRemnant = true
-        makeSettingsRemnant(assembly, entity)
-      } else {
-        assembly.content.delete(entity)
-        deleteAllEntities(entity)
-      }
-    },
-    forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): void {
-      assembly.content.delete(entity)
-      deleteAllEntities(entity)
-    },
-    reviveSettingsRemnant,
-    clearEntityAtStage: clearWorldEntity,
-    tryUpdateEntityFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
-      const entitySource = entity.getWorldEntity(stage)
-      if (!entitySource) return "no-change"
-      if (entitySource.type == "underground-belt") {
-        return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
-      }
+  let upgraded = false
+  const upgradeType = entitySource.get_upgrade_target()?.name
+  if (upgradeType) {
+    checkUpgradeType(entity, upgradeType)
+    upgraded = entity.applyUpgradeAtStage(stage, upgradeType)
+  }
+  if (rotated || upgraded) {
+    updateWorldEntities(assembly, entity, stage)
+    return "updated"
+  }
+  return "no-change"
+}
+export function updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): WireUpdateResult {
+  const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage, stage)
+  if (maxConnectionsExceeded) {
+    updateWorldEntities(assembly, entity, entity.firstStage)
+    return "max-connections-exceeded"
+  }
+  if (!connectionsChanged) return "no-change"
 
-      const rotated = !canBeAnyDirection(entitySource) && entitySource.direction != entity.getDirection()
-      if (rotated) {
-        if (!setRotationOrUndo(assembly, stage, entity, entitySource.direction)) {
-          return "cannot-rotate"
-        }
+  const circuitConnections = assembly.content.getCircuitConnections(entity)
+  if (circuitConnections) checkDefaultControlBehavior(assembly, entity, stage)
+  updateWorldEntities(assembly, entity, entity.firstStage)
+  if (circuitConnections) {
+    for (const [otherEntity] of circuitConnections) {
+      if (checkDefaultControlBehavior(assembly, otherEntity, stage)) {
+        updateWorldEntities(assembly, otherEntity, otherEntity.firstStage)
       }
+    }
+  }
+  return "updated"
+}
+export function moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
+  if (entity.isSettingsRemnant) return "no-change"
+  const oldStage = entity.firstStage
+  if (oldStage == stage) return "no-change"
 
-      const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource)
-      if (hasDiff || rotated) {
-        updateWorldEntities(assembly, entity, stage)
-        return "updated"
-      }
-      return "no-change"
-    },
-    tryRotateEntityToMatchWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityRotateResult {
-      const entitySource = entity.getWorldEntity(stage)
-      if (!entitySource || canBeAnyDirection(entitySource)) return "no-change"
+  if (entity.isUndergroundBelt() && entity.hasStageDiff()) {
+    return "cannot-move-upgraded-underground"
+  }
 
-      const type = entitySource.type
+  // move
+  entity.moveToStage(stage)
+  updateWorldEntities(assembly, entity, min(oldStage, stage))
+  return "updated"
+}
+export function resetProp<T extends Entity>(
+  assembly: Assembly,
+  entity: AssemblyEntity<T>,
+  stageNumber: StageNumber,
+  prop: keyof T,
+): boolean {
+  const moved = entity.resetProp(stageNumber, prop)
+  if (moved) updateWorldEntities(assembly, entity, stageNumber)
+  return moved
+}
+export function movePropDown<T extends Entity>(
+  assembly: Assembly,
+  entity: AssemblyEntity<T>,
+  stageNumber: StageNumber,
+  prop: keyof T,
+): boolean {
+  const movedStage = entity.movePropDown(stageNumber, prop)
+  if (movedStage) {
+    updateWorldEntities(assembly, entity, movedStage)
+    return true
+  }
+  return false
+}
+export function resetAllProps(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+  const moved = entity.resetValue(stageNumber)
+  if (moved) updateWorldEntities(assembly, entity, stageNumber)
+  return moved
+}
+export function moveAllPropsDown(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+  const movedStage = entity.moveValueDown(stageNumber)
+  if (movedStage) {
+    updateWorldEntities(assembly, entity, movedStage)
+    return true
+  }
+  return false
+}
+export function resetTrain(assembly: Assembly, entity: RollingStockAssemblyEntity): void {
+  const stage = entity.firstStage
+  const luaEntity = entity.getWorldEntity(stage)
+  if (!luaEntity) {
+    refreshWorldEntityAtStage(assembly, entity, stage)
+    return
+  }
 
-      let pair: UndergroundBeltAssemblyEntity | nil
-      if (type == "underground-belt") {
-        const [thePair, hasMultiple] = findUndergroundPair(assembly.content, entity as UndergroundBeltAssemblyEntity)
-        if (hasMultiple) {
-          undoRotate(assembly, stage, entity)
-          return "cannot-flip-multi-pair-underground"
-        }
-        pair = thePair
-      }
+  const train = luaEntity.train
+  if (!train) return
 
-      // canBeAnyDirection(entitySource) is false
+  const entities = train.carriages
 
-      const newDirection = entitySource.direction
-      const rotated = newDirection != entity.getDirection()
-      if (!rotated) return "no-change"
-      const rotateAllowed = stage == entity.firstStage || (pair && pair.firstStage == stage)
-      if (!rotateAllowed) {
-        undoRotate(assembly, stage, entity)
-        return "cannot-rotate"
-      }
-      entity.setDirection(newDirection)
-      if (type == "loader" || type == "loader-1x1") {
-        ;(entity as LoaderAssemblyEntity).setTypeProperty(entitySource.loader_type)
-      } else if (type == "underground-belt") {
-        ;(entity as UndergroundBeltAssemblyEntity).setTypeProperty(entitySource.belt_to_ground_type)
-      }
-      updateWorldEntities(assembly, entity, entity.firstStage)
-      if (pair) {
-        pair.setDirection(newDirection)
-        pair.setTypeProperty(entitySource.belt_to_ground_type == "input" ? "output" : "input")
-        updateWorldEntities(assembly, pair, pair.firstStage)
-      }
-      return "updated"
-    },
-    tryApplyUpgradeTarget(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
-      const entitySource = entity.getWorldEntity(stage)
-      if (!entitySource) return "no-change"
-      if (entitySource.type == "underground-belt") {
-        return tryApplyUndergroundUpdateTarget(assembly, stage, entity as UndergroundBeltAssemblyEntity, entitySource)
-      }
+  const content = assembly.content
+  const assemblyEntities = entities.map((e) => content.findCompatibleWithLuaEntity(e, nil)!)
+  for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
+  for (const entity of assemblyEntities) replaceWorldEntityAtStage(assembly, entity, stage)
+}
+export function setTrainLocationToCurrent(assembly: Assembly, entity: RollingStockAssemblyEntity): void {
+  const stage = entity.firstStage
+  const luaEntity = entity.getWorldEntity(stage)
+  if (!luaEntity) return
 
-      const rotateDir = entitySource.get_upgrade_direction()
-      const rotated = rotateDir != nil && rotateDir != entity.getDirection() && !canBeAnyDirection(entitySource)
-      if (rotated) {
-        if (!setRotationOrUndo(assembly, stage, entity, rotateDir)) {
-          // don't update other stuff if rotation failed
-          return "cannot-rotate"
-        }
-      }
+  const train = luaEntity.train
+  if (!train) return
 
-      let upgraded = false
-      const upgradeType = entitySource.get_upgrade_target()?.name
-      if (upgradeType) {
-        checkUpgradeType(entity, upgradeType)
-        upgraded = entity.applyUpgradeAtStage(stage, upgradeType)
-      }
-      if (rotated || upgraded) {
-        updateWorldEntities(assembly, entity, stage)
-        return "updated"
-      }
-      return "no-change"
-    },
-    updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): WireUpdateResult {
-      const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage, stage)
-      if (maxConnectionsExceeded) {
-        updateWorldEntities(assembly, entity, entity.firstStage)
-        return "max-connections-exceeded"
-      }
-      if (!connectionsChanged) return "no-change"
+  const entities = train.carriages
+  const content = assembly.content
 
-      const circuitConnections = assembly.content.getCircuitConnections(entity)
-      if (circuitConnections) checkDefaultControlBehavior(assembly, entity, stage)
-      updateWorldEntities(assembly, entity, entity.firstStage)
-      if (circuitConnections) {
-        for (const [otherEntity] of circuitConnections) {
-          if (checkDefaultControlBehavior(assembly, otherEntity, stage)) {
-            updateWorldEntities(assembly, otherEntity, otherEntity.firstStage)
-          }
-        }
-      }
-      return "updated"
-    },
-    moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
-      if (entity.isSettingsRemnant) return "no-change"
-      const oldStage = entity.firstStage
-      if (oldStage == stage) return "no-change"
-
-      if (entity.isUndergroundBelt() && entity.hasStageDiff()) {
-        return "cannot-move-upgraded-underground"
-      }
-
-      // move
-      entity.moveToStage(stage)
-      updateWorldEntities(assembly, entity, min(oldStage, stage))
-      return "updated"
-    },
-    resetProp<T extends Entity>(
-      assembly: Assembly,
-      entity: AssemblyEntity<T>,
-      stageNumber: StageNumber,
-      prop: keyof T,
-    ): boolean {
-      const moved = entity.resetProp(stageNumber, prop)
-      if (moved) updateWorldEntities(assembly, entity, stageNumber)
-      return moved
-    },
-    movePropDown<T extends Entity>(
-      assembly: Assembly,
-      entity: AssemblyEntity<T>,
-      stageNumber: StageNumber,
-      prop: keyof T,
-    ): boolean {
-      const movedStage = entity.movePropDown(stageNumber, prop)
-      if (movedStage) {
-        updateWorldEntities(assembly, entity, movedStage)
-        return true
-      }
-      return false
-    },
-    resetAllProps(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-      const moved = entity.resetValue(stageNumber)
-      if (moved) updateWorldEntities(assembly, entity, stageNumber)
-      return moved
-    },
-    moveAllPropsDown(assembly: Assembly, entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-      const movedStage = entity.moveValueDown(stageNumber)
-      if (movedStage) {
-        updateWorldEntities(assembly, entity, movedStage)
-        return true
-      }
-      return false
-    },
-    resetTrain(assembly: Assembly, entity: RollingStockAssemblyEntity): void {
-      const stage = entity.firstStage
-      const luaEntity = entity.getWorldEntity(stage)
-      if (!luaEntity) {
-        refreshWorldEntityAtStage(assembly, entity, stage)
-        return
-      }
-
-      const train = luaEntity.train
-      if (!train) return
-
-      const entities = train.carriages
-
-      const content = assembly.content
-      const assemblyEntities = entities.map((e) => content.findCompatibleWithLuaEntity(e, nil)!)
-      for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
-      for (const entity of assemblyEntities) replaceWorldEntityAtStage(assembly, entity, stage)
-    },
-    setTrainLocationToCurrent(assembly: Assembly, entity: RollingStockAssemblyEntity): void {
-      const stage = entity.firstStage
-      const luaEntity = entity.getWorldEntity(stage)
-      if (!luaEntity) return
-
-      const train = luaEntity.train
-      if (!train) return
-
-      const entities = train.carriages
-      const content = assembly.content
-
-      for (const luaEntity of entities) {
-        const assemblyEntity = content.findCompatibleWithLuaEntity(luaEntity, nil)
-        if (assemblyEntity) {
-          content.changePosition(assemblyEntity, luaEntity.position)
-          replaceWorldEntityAtStage(assembly, assemblyEntity, stage)
-        } else {
-          // add
-          AssemblyUpdater.addNewEntity(assembly, luaEntity, stage)
-        }
-      }
-    },
+  for (const luaEntity of entities) {
+    const assemblyEntity = content.findCompatibleWithLuaEntity(luaEntity, nil)
+    if (assemblyEntity) {
+      content.changePosition(assemblyEntity, luaEntity.position)
+      replaceWorldEntityAtStage(assembly, assemblyEntity, stage)
+    } else {
+      // add
+      addNewEntity(assembly, luaEntity, stage)
+    }
   }
 }
 
-export const AssemblyUpdater = createAssemblyUpdater()
+export const _mockable = true

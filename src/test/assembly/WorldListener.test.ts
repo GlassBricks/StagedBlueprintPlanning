@@ -12,7 +12,6 @@
 import expect, { mock } from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
 import {
-  AssemblyUpdater,
   EntityRotateResult,
   EntityUpdateResult,
   StageMoveResult,
@@ -24,36 +23,48 @@ import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/
 import { createPreviewEntity, saveEntity } from "../../entity/EntityHandler"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
+import { moduleMock } from "../module-mock"
 import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 
 let worldNotifier: mock.MockedObjectNoSelf<WorldNotifier>
-let assemblyUpdater: mock.MockedObjectNoSelf<AssemblyUpdater>
-let totalAuCalls = 0
-let expectedAuCalls = 1
+let totalCalls = 0
+let expectedCalls = 1
+
+import _assemblyUpdater = require("../../assembly/AssemblyUpdater")
+import _worldUpdater = require("../../assembly/WorldUpdater")
+
+const assemblyUpdater = moduleMock(_assemblyUpdater, true)
+const worldUpdater = moduleMock(_worldUpdater, true)
 
 let worldListener: WorldListener
 
 before_each(() => {
   worldNotifier = makeMocked(keys<WorldNotifier>())
-  assemblyUpdater = makeMocked(keys<AssemblyUpdater>())
-  totalAuCalls = 0
-  expectedAuCalls = 1
+  totalCalls = 0
+  expectedCalls = 1
   for (const [, func] of pairs(assemblyUpdater)) {
-    func.invokes((): any => {
-      totalAuCalls++
-    })
+    if (func != true)
+      func.invokes((): any => {
+        totalCalls++
+      })
+  }
+  for (const [, func] of pairs(worldUpdater)) {
+    if (func != true)
+      func.invokes((): any => {
+        totalCalls++
+      })
   }
   assemblyUpdater.moveEntityOnPreviewReplace.invokes(() => {
-    totalAuCalls++
+    totalCalls++
     return true
   })
 
-  worldListener = createWorldListener(assemblyUpdater, worldNotifier)
+  worldListener = createWorldListener(worldNotifier)
 })
 
 after_each(() => {
-  expect(totalAuCalls).to.equal(expectedAuCalls)
+  expect(totalCalls).to.equal(expectedCalls)
 })
 
 const surfaces = setupTestSurfaces(6)
@@ -124,7 +135,7 @@ describe("onEntityCreated", () => {
     worldListener.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
 
     expect(entity.getWorldEntity(newStage)).to.be(luaEntity)
-    expect(assemblyUpdater.refreshEntityAtStage).calledWith(assembly, entity, newStage)
+    expect(worldUpdater.refreshWorldEntityAtStage).calledWith(assembly, entity, newStage)
   })
 
   test.each([1, 2], "at lower stage %d sets entity and calls moveEntityOnPreviewReplace", (newStage) => {
@@ -138,7 +149,7 @@ describe("onEntityCreated", () => {
   test("create at lower stage can handle immediate upgrade", () => {
     const { luaEntity, entity } = addEntity(3)
     assemblyUpdater.moveEntityOnPreviewReplace.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       luaEntity.destroy()
       entity.replaceWorldEntity(1, createWorldEntity(1))
       return true
@@ -188,7 +199,7 @@ describe("onEntityCreated", () => {
     worldListener.onEntityCreated(assembly, luaEntity2, 1, playerIndex)
     assertNotified(entity1.entity, [L_Interaction.CannotBuildDifferentDirection], false)
 
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
 })
 
@@ -196,20 +207,20 @@ describe("onEntityDeleted", () => {
   test("if entity not in assembly, does nothing", () => {
     const luaEntity = createWorldEntity(2)
     worldListener.onEntityDeleted(assembly, luaEntity, 2, playerIndex)
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
 
   test("in a lower stage does nothing (bug)", () => {
     addEntity(2)
     const luaEntity = createWorldEntity(1)
     worldListener.onEntityDeleted(assembly, luaEntity, 1, playerIndex)
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
 
   test("in a higher stage calls disallowEntityDeletion", () => {
     const { luaEntity, entity } = addEntity(2)
     worldListener.onEntityDeleted(assembly, luaEntity, 3, playerIndex)
-    expect(assemblyUpdater.forbidEntityDeletion).calledWith(assembly, entity, 3)
+    expect(worldUpdater.replaceWorldEntityAtStage).calledWith(assembly, entity, 3)
   })
 
   test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
@@ -222,7 +233,7 @@ describe("onEntityDeleted", () => {
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
   worldListener.onEntityDied(assembly, luaEntity, 2)
-  expect(assemblyUpdater.clearEntityAtStage).calledWith(assembly, entity, 2)
+  expect(worldUpdater.clearWorldEntity).calledWith(assembly, entity, 2)
 })
 
 const resultMessages: Array<[EntityUpdateResult, string | false]> = [
@@ -245,7 +256,7 @@ describe("onEntityPossiblyUpdated", () => {
   test.each(resultMessages)('calls tryUpdateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return result
     })
     worldListener.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex)
@@ -257,7 +268,7 @@ describe("onEntityPossiblyUpdated", () => {
   test("works with upgrade-compatible entity (fast-replace)", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return "updated"
     })
     luaEntity.destroy()
@@ -270,7 +281,7 @@ describe("onEntityPossiblyUpdated", () => {
   test("works with upgrade-compatible entity (fast-replace) with different direction", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return "updated"
     })
     const oldDirection = luaEntity.direction
@@ -297,7 +308,7 @@ describe("onEntityRotated", () => {
   ])('calls tryRotateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryRotateEntityToMatchWorld.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return result
     })
     worldListener.onEntityRotated(assembly, luaEntity, 2, luaEntity.direction, playerIndex)
@@ -313,7 +324,7 @@ test("onUndergroundBeltDragRotated", () => {
     type: "input",
   })
   assemblyUpdater.tryRotateEntityToMatchWorld.invokes(() => {
-    totalAuCalls++
+    totalCalls++
     return "updated"
   })
   worldListener.onUndergroundBeltDragRotated(assembly, luaEntity, 2, playerIndex)
@@ -331,7 +342,7 @@ describe("onEntityMarkedForUpgrade", () => {
   test.each(resultMessages)('calls tryUpgradeEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryApplyUpgradeTarget.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return result
     })
     worldListener.onEntityMarkedForUpgrade(assembly, luaEntity, 2, playerIndex)
@@ -354,7 +365,7 @@ describe("onCircuitWiresPossiblyUpdated", () => {
   ])('calls updateWiresFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.updateWiresFromWorld.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return result
     })
     worldListener.onCircuitWiresPossiblyUpdated(assembly, luaEntity, 2, playerIndex)
@@ -372,7 +383,7 @@ describe("onCleanupToolUsed", () => {
   test("if not in assembly, does nothing", () => {
     const luaEntity = createWorldEntity(2)
     worldListener.onCleanupToolUsed(assembly, luaEntity, 2)
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
 
   test("if is settings remnant, calls forceDeleteEntity", () => {
@@ -385,13 +396,13 @@ describe("onCleanupToolUsed", () => {
   test("if is less than first stage, does nothing", () => {
     const { luaEntity } = addEntity(1)
     worldListener.onCleanupToolUsed(assembly, luaEntity, 2)
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
 
   test.each([2, 3])("if is in stage %s, calls refreshEntityAllStages", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
     worldListener.onCleanupToolUsed(assembly, createPreview(luaEntity), atStage)
-    expect(assemblyUpdater.refreshEntityAllStages).calledWith(assembly, entity)
+    expect(worldUpdater.refreshEntityAllStages).calledWith(assembly, entity)
   })
 })
 
@@ -404,20 +415,20 @@ test("onEntityForceDeleted calls forceDeleteEntity", () => {
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
   worldListener.onEntityDied(assembly, luaEntity, 2)
-  expect(assemblyUpdater.clearEntityAtStage).calledWith(assembly, entity, 2)
+  expect(worldUpdater.clearWorldEntity).calledWith(assembly, entity, 2)
 })
 
 describe("onMoveEntityToStageCustomInput", () => {
   test("if not in assembly, does nothing", () => {
     const luaEntity = createWorldEntity(2)
     worldListener.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
   test("if is settings remnant, does nothing", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.isSettingsRemnant = true
     worldListener.onMoveEntityToStageCustomInput(assembly, createPreview(luaEntity), 2, playerIndex)
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
   test.each<[StageMoveResult, LocalisedString | false]>([
     ["updated", [L_Interaction.EntityMovedFromStage, "mock stage 3"]],
@@ -426,7 +437,7 @@ describe("onMoveEntityToStageCustomInput", () => {
   ])('calls moveEntityToStage and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(3)
     assemblyUpdater.moveEntityToStage.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return result
     })
     worldListener.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
@@ -438,7 +449,7 @@ describe("onSendToStageUsed", () => {
   test("calls moveEntityToStage and notifies if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.moveEntityToStage.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return "updated"
     })
     entity.replaceWorldEntity(2, luaEntity)
@@ -449,7 +460,7 @@ describe("onSendToStageUsed", () => {
   test("calls moveEntityToStage and does not notify if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.moveEntityToStage.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return "updated"
     })
     entity.replaceWorldEntity(2, luaEntity)
@@ -461,18 +472,18 @@ describe("onSendToStageUsed", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     assemblyUpdater.moveEntityToStage.invokes(() => {
-      totalAuCalls++
+      totalCalls++
       return "updated"
     })
     worldListener.onSendToStageUsed(assembly, luaEntity, 3, 1, playerIndex)
     expect(assemblyUpdater.moveEntityToStage).not.called()
-    expectedAuCalls = 0
+    expectedCalls = 0
   })
   describe("onBringToStageUsed", () => {
     test("calls moveEntityToStage when moved, and notifies if sent up", () => {
       const { luaEntity, entity } = addEntity(2)
       assemblyUpdater.moveEntityToStage.invokes(() => {
-        totalAuCalls++
+        totalCalls++
         return "updated"
       })
       entity.replaceWorldEntity(2, luaEntity)
@@ -483,7 +494,7 @@ describe("onSendToStageUsed", () => {
     test("calls moveEntityToStage and does not notify if sent down", () => {
       const { luaEntity, entity } = addEntity(2)
       assemblyUpdater.moveEntityToStage.invokes(() => {
-        totalAuCalls++
+        totalCalls++
         return "updated"
       })
       entity.replaceWorldEntity(2, luaEntity)
@@ -495,12 +506,12 @@ describe("onSendToStageUsed", () => {
       const { entity, luaEntity } = addEntity(2)
       entity.replaceWorldEntity(2, luaEntity)
       assemblyUpdater.moveEntityToStage.invokes(() => {
-        totalAuCalls++
+        totalCalls++
         return "updated"
       })
       worldListener.onBringToStageUsed(assembly, luaEntity, 2, playerIndex)
       expect(assemblyUpdater.moveEntityToStage).not.called()
-      expectedAuCalls = 0
+      expectedCalls = 0
     })
   })
 })
@@ -516,26 +527,26 @@ describe("onEntityDollied", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity) // needed to detect entity
     // assemblyUpdater.tryMoveEntity.invokes(() => {
-    //   totalAuCalls++
+    //   totalCalls++
     //   return nil
     // })
     // already returns nil
     worldListener.onEntityDollied(assembly, luaEntity, 2, luaEntity.position, playerIndex)
 
-    expect(assemblyUpdater.tryDollyEntity).calledWith(assembly, entity, 2)
+    expect(worldUpdater.tryDollyEntities).calledWith(assembly, entity, 2)
   })
 
   test("calls tryMoveEntity and notifies if returns error", () => {
     // just one example
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    assemblyUpdater.tryDollyEntity.invokes(() => {
-      totalAuCalls++
+    worldUpdater.tryDollyEntities.invokes(() => {
+      totalCalls++
       return "entities-missing"
     })
     worldListener.onEntityDollied(assembly, luaEntity, 2, luaEntity.position, playerIndex)
 
-    expect(assemblyUpdater.tryDollyEntity).calledWith(assembly, entity, 2)
+    expect(worldUpdater.tryDollyEntities).calledWith(assembly, entity, 2)
     assertNotified(entity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
   })
 })

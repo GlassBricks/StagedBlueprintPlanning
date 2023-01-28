@@ -17,8 +17,27 @@ import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Assembly } from "./AssemblyDef"
-import { AssemblyUpdater, EntityUpdateResult } from "./AssemblyUpdater"
-import { AssemblyEntityDollyResult } from "./WorldUpdater"
+import {
+  addNewEntity,
+  deleteEntityOrCreateSettingsRemnant,
+  EntityUpdateResult,
+  forceDeleteEntity,
+  moveEntityOnPreviewReplace,
+  moveEntityToStage,
+  reviveSettingsRemnant,
+  tryApplyUpgradeTarget,
+  tryRotateEntityToMatchWorld,
+  tryUpdateEntityFromWorld,
+  updateWiresFromWorld,
+} from "./AssemblyUpdater"
+import {
+  AssemblyEntityDollyResult,
+  clearWorldEntity,
+  refreshEntityAllStages,
+  refreshWorldEntityAtStage,
+  replaceWorldEntityAtStage,
+  tryDollyEntities,
+} from "./WorldUpdater"
 
 /**
  * Listens to changes in the world and updates the assembly accordingly.
@@ -122,24 +141,7 @@ export interface WorldNotifier {
   createIndicator(entity: AssemblyEntity, playerIndex: PlayerIndex | nil, text: string, color: Color | ColorArray): void
 }
 
-export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: WorldNotifier): WorldListener {
-  const {
-    addNewEntity,
-    clearEntityAtStage,
-    deleteEntityOrCreateSettingsRemnant,
-    forbidEntityDeletion,
-    forceDeleteEntity,
-    moveEntityOnPreviewReplace,
-    moveEntityToStage,
-    refreshEntityAllStages,
-    refreshEntityAtStage,
-    reviveSettingsRemnant,
-    tryDollyEntity,
-    tryRotateEntityToMatchWorld,
-    tryUpdateEntityFromWorld,
-    tryApplyUpgradeTarget,
-    updateWiresFromWorld,
-  } = assemblyUpdater
+export function createWorldListener(notifier: WorldNotifier): WorldListener {
   // ^ for refactoring purposes only
   const { createNotification, createIndicator } = notifier
 
@@ -164,7 +166,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     if (existingMatch.isSettingsRemnant) {
       reviveSettingsRemnant(assembly, existingMatch, stage)
     } else if (stage >= existingMatch.firstStage) {
-      refreshEntityAtStage(assembly, existingMatch, stage)
+      refreshWorldEntityAtStage(assembly, existingMatch, stage)
     } else {
       onPreviewReplaced(assembly, stage, existingMatch, byPlayer)
     }
@@ -299,7 +301,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
 
       if (existingStage != stage) {
         if (existingStage < stage) {
-          forbidEntityDeletion(assembly, existing, stage)
+          replaceWorldEntityAtStage(assembly, existing, stage)
         }
         // else: stage > existingStage; bug, ignore
         return
@@ -386,7 +388,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
     onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void {
       const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
       if (existing) {
-        clearEntityAtStage(assembly, existing, stage)
+        clearWorldEntity(assembly, existing, stage)
       }
     },
     onMoveEntityToStageCustomInput(
@@ -465,7 +467,7 @@ export function createWorldListener(assemblyUpdater: AssemblyUpdater, notifier: 
       const existing = getCompatibleAtPositionOrAdd(assembly, stage, entity, oldPosition, byPlayer)
       if (!existing) return
       assert(!existing.isSettingsRemnant && !existing.isUndergroundBelt(), "cannot move this entity")
-      const result = tryDollyEntity(assembly, existing, stage)
+      const result = tryDollyEntities(assembly, existing, stage)
       const message = moveResultMessage[result]
       if (message != nil) {
         createNotification(existing, byPlayer, [message, ["entity-name." + entity.name]], true)
@@ -509,4 +511,4 @@ const WorldNotifier: WorldNotifier = {
   },
 }
 
-export const WorldListener: WorldListener = createWorldListener(AssemblyUpdater, WorldNotifier)
+export const WorldListener: WorldListener = createWorldListener(WorldNotifier)

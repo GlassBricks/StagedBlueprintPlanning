@@ -10,7 +10,17 @@
  */
 
 import { Stage } from "../assembly/AssemblyDef"
-import { AssemblyUpdater } from "../assembly/AssemblyUpdater"
+import {
+  forceDeleteEntity,
+  moveAllPropsDown,
+  moveEntityToStage,
+  movePropDown,
+  resetAllProps,
+  resetProp,
+  resetTrain,
+  reviveSettingsRemnant,
+  setTrainLocationToCurrent,
+} from "../assembly/AssemblyUpdater"
 import { checkForEntityUpdates } from "../assembly/event-listener"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
@@ -153,21 +163,21 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   }
   private moveToThisStage() {
     if (this.entity.isSettingsRemnant) {
-      AssemblyUpdater.reviveSettingsRemnant(this.stage.assembly, this.entity, this.stage.stageNumber)
+      reviveSettingsRemnant(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
-      AssemblyUpdater.moveEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber)
+      moveEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber)
     }
     this.rerender(false)
   }
   private resetTrain() {
-    AssemblyUpdater.resetTrain(this.stage.assembly, this.entity)
+    resetTrain(this.stage.assembly, this.entity)
   }
   private setTrainLocationHere() {
-    AssemblyUpdater.setTrainLocationToCurrent(this.stage.assembly, this.entity)
+    setTrainLocationToCurrent(this.stage.assembly, this.entity)
   }
 
   private deleteEntity() {
-    AssemblyUpdater.forceDeleteEntity(this.stage.assembly, this.entity)
+    forceDeleteEntity(this.stage.assembly, this.entity)
   }
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Element {
@@ -207,18 +217,18 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   private resetProp(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      AssemblyUpdater.resetAllProps(this.stage.assembly, this.entity, this.stage.stageNumber)
+      resetAllProps(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
-      AssemblyUpdater.resetProp(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      resetProp(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(true)
   }
   private applyToLowerStage(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      AssemblyUpdater.moveAllPropsDown(this.stage.assembly, this.entity, this.stage.stageNumber)
+      moveAllPropsDown(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
-      AssemblyUpdater.movePropDown(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      movePropDown(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(false)
   }

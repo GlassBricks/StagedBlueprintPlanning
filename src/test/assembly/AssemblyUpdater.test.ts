@@ -12,8 +12,8 @@
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { AssemblyUpdater, createAssemblyUpdater, StageMoveResult } from "../../assembly/AssemblyUpdater"
 import { WorldListener } from "../../assembly/WorldListener"
+import { replaceWorldEntityAtStage } from "../../assembly/WorldUpdater"
 import {
   AssemblyEntity,
   createAssemblyEntity,
@@ -28,6 +28,7 @@ import { Pos } from "../../lib/geometry"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
+import assemblyUpdater = require("../../assembly/AssemblyUpdater")
 import _worldUpdater = require("../../assembly/WorldUpdater")
 import _wireHandler = require("../../entity/WireHandler")
 import direction = defines.direction
@@ -37,8 +38,6 @@ const pos = Pos(10.5, 10.5)
 
 let assembly: Assembly
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
-
-let assemblyUpdater: AssemblyUpdater
 
 const worldUpdater = moduleMock(_worldUpdater, true)
 const wireSaver = moduleMock(_wireHandler, true)
@@ -56,7 +55,6 @@ before_each(() => {
       }) as ContextualFun)
   }
   wireSaver.saveWireConnections.returns(false as any)
-  assemblyUpdater = createAssemblyUpdater()
 
   game.surfaces[1].find_entities().forEach((e) => e.destroy())
 })
@@ -180,26 +178,9 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   return { entity, luaEntity }
 }
 
-test("refreshEntityAtStage", () => {
-  expect(assemblyUpdater.refreshEntityAtStage).to.be(_worldUpdater.refreshWorldEntityAtStage)
-  expectedWuCalls = 0
-})
-test("clearEntityAtStage", () => {
-  expect(assemblyUpdater.clearEntityAtStage).to.be(_worldUpdater.clearWorldEntity)
-  expectedWuCalls = 0
-})
 test("forbidEntityDeletion", () => {
-  expect(assemblyUpdater.forbidEntityDeletion).to.be(_worldUpdater.replaceWorldEntityAtStage)
+  expect(replaceWorldEntityAtStage).to.be(_worldUpdater.replaceWorldEntityAtStage)
   expectedWuCalls = 0
-})
-
-test("refreshEntityAllStages calls worldUpdater at all stages", () => {
-  const { entity } = addEntity(2)
-
-  assemblyUpdater.refreshEntityAllStages(assembly, entity)
-
-  assertOneEntity()
-  assertUpdateCalled(entity, 1, nil)
 })
 
 test("moveEntityOnPreviewReplace", () => {
@@ -996,7 +977,7 @@ describe("undergrounds", () => {
     entity2.applyUpgradeAtStage(2, "fast-underground-belt")
 
     const ret = assemblyUpdater.moveEntityToStage(assembly, entity1, 2)
-    expect(ret).to.be(<StageMoveResult>"cannot-move-upgraded-underground")
+    expect(ret).to.be("cannot-move-upgraded-underground")
 
     expect(entity1.firstStage).to.be(1)
     expect(entity2.firstStage).to.be(1)

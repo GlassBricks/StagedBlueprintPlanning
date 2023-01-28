@@ -191,7 +191,7 @@ export function updateEntitiesOnSettingsRemnantRevived(assembly: Assembly, entit
   updateHighlightsOnSettingsRemnantRevived(assembly, entity)
 }
 
-function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
+export function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
   const [updated] = updateEntitiesAndWires(assembly, entity, stage, stage)
   if (updated) updateAllHighlights(assembly, entity, stage, stage)
 }
@@ -232,11 +232,12 @@ export function updateNewEntityWithoutWires(assembly: Assembly, entity: Assembly
 export function updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void {
   updateWiresInStages(assembly, entity, entity.firstStage, assembly.maxStage())
 }
-export { refreshWorldEntityAtStage }
+
 export function replaceWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
   entity.destroyWorldOrPreviewEntity(stage)
   refreshWorldEntityAtStage(assembly, entity, stage)
 }
+
 export function tryDollyEntities(
   assembly: Assembly,
   entity: AssemblyEntity,
@@ -304,4 +305,8 @@ export function enableAllEntitiesInStage(assembly: Assembly, stage: StageNumber)
     arr[i - 1].active = true
   }
 }
+export function refreshEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
+  return updateWorldEntities(assembly, entity, 1)
+}
+
 export const _mockable = true
