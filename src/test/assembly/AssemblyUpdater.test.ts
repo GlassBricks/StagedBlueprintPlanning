@@ -12,7 +12,6 @@
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { WorldListener } from "../../assembly/WorldListener"
 import { replaceWorldEntityAtStage } from "../../assembly/WorldUpdater"
 import {
   AssemblyEntity,
@@ -29,6 +28,7 @@ import { createRollingStock, createRollingStocks } from "../entity/createRolling
 import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import assemblyUpdater = require("../../assembly/AssemblyUpdater")
+import _worldListener = require("../../assembly/WorldListener")
 import _worldUpdater = require("../../assembly/WorldUpdater")
 import _wireHandler = require("../../entity/WireHandler")
 import direction = defines.direction
@@ -783,12 +783,7 @@ describe("undergrounds", () => {
   })
 
   describe("upgrading", () => {
-    before_each(() => {
-      mock.allNoSelf(WorldListener, true)
-    })
-    after_each(() => {
-      mock.reset(WorldListener)
-    })
+    moduleMock(_worldListener, true)
 
     test("can upgrade underground in first stage", () => {
       const { luaEntity, entity } = createUndergroundBelt(1)

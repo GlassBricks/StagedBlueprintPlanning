@@ -17,7 +17,6 @@ import {
   StageMoveResult,
   WireUpdateResult,
 } from "../../assembly/AssemblyUpdater"
-import { createWorldListener, WorldListener } from "../../assembly/WorldListener"
 import { L_Game } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { createPreviewEntity, saveEntity } from "../../entity/EntityHandler"
@@ -26,6 +25,7 @@ import { L_Interaction } from "../../locale"
 import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import _assemblyUpdater = require("../../assembly/AssemblyUpdater")
+import worldListener = require("../../assembly/WorldListener")
 
 import _worldNotifier = require("../../assembly/WorldNotifier")
 import _worldUpdater = require("../../assembly/WorldUpdater")
@@ -36,8 +36,6 @@ let expectedCalls = 1
 
 const assemblyUpdater = moduleMock(_assemblyUpdater, true)
 const worldUpdater = moduleMock(_worldUpdater, true)
-
-let worldListener: WorldListener
 
 before_each(() => {
   totalCalls = 0
@@ -58,8 +56,6 @@ before_each(() => {
     totalCalls++
     return true
   })
-
-  worldListener = createWorldListener()
 })
 
 after_each(() => {

@@ -16,7 +16,7 @@ import MockedObjectNoSelf = mock.MockedObjectNoSelf
 // note: no imports from other parts of mod, because this file overrides "require"
 
 type SelflessFun = (this: void, ...args: any) => any
-interface MockedFunctionTable {
+export interface MockedFunctionTable {
   original: SelflessFun
   mock?: MockNoSelf<any>
 }

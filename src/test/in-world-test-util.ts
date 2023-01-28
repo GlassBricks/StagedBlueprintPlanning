@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { WorldListener } from "../assembly/WorldListener"
 import { saveEntity } from "../entity/EntityHandler"
-import { Events, SelflessFun } from "../lib"
+import { Events } from "../lib"
+import { MockedFunctionTable } from "./module-mock"
 
 declare let global: {
   printEvents?: boolean
@@ -52,20 +52,23 @@ for (const [name, key] of pairs(defines.events)) {
   })
 }
 
+import WorldListener = require("../assembly/WorldListener")
+
 for (const [k, v] of pairs(WorldListener)) {
-  if (typeof v == "function") {
-    WorldListener[k] = function (...args: any[]) {
-      if (global.printEvents) {
-        global.lastEventTick = game.tick
-        global.eventCount = (global.eventCount || 0) + 1
-        game.print(
-          `(${(game.tick % 1000).toString().padStart(3, " ")}) ${global.eventCount
-            .toString()
-            .padStart(2, "0")}:  [color=green]WorldListener.${k}[/color]`,
-        )
-      }
-      return (v as SelflessFun)(...args)
+  if (v == true) continue
+  assume<MockedFunctionTable>(v)
+  const orig = v.original
+  v.original = (...args: any[]) => {
+    if (global.printEvents) {
+      global.lastEventTick = game.tick
+      global.eventCount = (global.eventCount || 0) + 1
+      game.print(
+        `(${(game.tick % 1000).toString().padStart(3, " ")}) ${global.eventCount
+          .toString()
+          .padStart(2, "0")}:  [color=green]WorldListener.${k}[/color]`,
+      )
     }
+    return orig(...args)
   }
 }
 
