@@ -27,9 +27,9 @@ test("can save an entity", () => {
     direction: defines.direction.east,
   })!
   entity.inserter_stack_size_override = 2
-  const [saved, direction] = saveEntity(entity)
+  const saved = saveEntity(entity)
   expect(saved).to.equal({ name: "inserter", override_stack_size: 2 })
-  expect(direction).to.be(defines.direction.east)
+  expect(entity.direction).to.be(defines.direction.east)
 })
 const directions = Object.values(defines.direction) as defines.direction[]
 test.each(directions)("can saved a curved rail in all directions", (direction) => {
@@ -39,10 +39,10 @@ test.each(directions)("can saved a curved rail in all directions", (direction) =
     force: "player",
     direction,
   })!
+  expect(entity.direction).to.be(direction)
 
-  const [saved, savedDirection] = saveEntity(entity)
+  const saved = saveEntity(entity)
   expect(saved).to.equal({ name: "curved-rail" })
-  expect(savedDirection).to.be(direction)
 })
 
 test.each(directions)("can saved a straight rail in all directions", (direction) => {
@@ -53,12 +53,12 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
     direction,
   })!
 
-  const [saved, savedDirection] = saveEntity(entity)
+  const saved = saveEntity(entity)
   if (direction == defines.direction.south || direction == defines.direction.west) {
     direction = oppositedirection(direction)
   }
+  expect(entity.direction).to.be(direction)
   expect(saved).to.equal({ name: "straight-rail" })
-  expect(savedDirection).to.be(direction)
 })
 
 test("can create an entity", () => {
@@ -156,9 +156,10 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       direction: defines.direction.south,
       type: inOut,
     })!
-    const [saved, direction] = saveEntity(entity)
+    expect(entity.direction).to.be(defines.direction.south)
+
+    const saved = saveEntity(entity)
     expect(saved).to.equal({ name: "underground-belt", type: inOut })
-    expect(direction).to.be(defines.direction.south)
   })
 
   test("creating an underground belt in output direction KEEPS direction", () => {

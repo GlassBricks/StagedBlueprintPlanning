@@ -85,7 +85,5 @@ commands.add_command("bpinfo", "", () => {
     game.print("No entity selected")
     return
   }
-  const [value, dir] = saveEntity(entity)
-  game.print(serpent.block(value))
-  game.print(serpent.block(dir))
+  game.print(serpent.block(saveEntity(entity)))
 })

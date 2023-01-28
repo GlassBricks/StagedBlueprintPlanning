@@ -254,17 +254,19 @@ function updateUndergroundRotation(
   return luaEntity
 }
 
-// export interface EntityHandler extends EntityCreator, EntitySaver {}
-
-function saveEntity(entity: LuaEntity): LuaMultiReturn<[Mutable<Entity>, defines.direction] | []> {
+/**
+ * Position and direction are ignored.
+ * @param entity
+ */
+function saveEntity(entity: LuaEntity): Mutable<Entity> | nil {
   const bpEntity = blueprintEntity(entity)
-  if (!bpEntity) return $multi()
+  if (!bpEntity) return nil
   bpEntity.entity_number = nil!
   bpEntity.position = nil!
   bpEntity.direction = nil
   bpEntity.neighbours = nil
   bpEntity.connections = nil
-  return $multi(bpEntity, entity.direction)
+  return bpEntity
 }
 
 function updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity | nil {

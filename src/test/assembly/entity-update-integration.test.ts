@@ -86,9 +86,9 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
     } else if (isPreview) {
       hasMissing = true
     } else {
-      const [savedValue, dir] = saveEntity(worldEntity)
-      expect(dir).to.be(entity.getDirection())
+      const savedValue = saveEntity(worldEntity)
       expect(savedValue).to.equal(value)
+      expect(worldEntity.direction).to.be(entity.getDirection())
     }
     if (isPreview) {
       expect(worldEntity.name).to.be(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)

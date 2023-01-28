@@ -49,10 +49,10 @@ export type WireUpdateResult = UpdateSuccess | "max-connections-exceeded"
 export type StageMoveResult = UpdateSuccess | "cannot-move-upgraded-underground"
 
 export function addNewEntity(assembly: Assembly, entity: LuaEntity, stage: StageNumber): AssemblyEntity<any> | nil {
-  const [saved, savedDir] = saveEntity(entity)
+  const saved = saveEntity(entity)
   if (!saved) return nil
   const { content } = assembly
-  const assemblyEntity = createAssemblyEntity(saved, entity.position, savedDir, stage)
+  const assemblyEntity = createAssemblyEntity(saved, entity.position, entity.direction, stage)
   assemblyEntity.replaceWorldEntity(stage, entity)
   content.add(assemblyEntity)
 
@@ -183,10 +183,10 @@ function doUpdateEntityFromWorld(
 ): boolean {
   entity.replaceWorldEntity(stage, entitySource)
   const worldEntity = assert(entity.getWorldEntity(stage))
-  const [newValue, newDirection] = saveEntity(worldEntity)
+  const newValue = saveEntity(worldEntity)
   if (!newValue) return false
   if (!canBeAnyDirection(worldEntity)) {
-    assert(newDirection == entity.getDirection(), "direction mismatch on saved entity")
+    assert(entitySource.direction == entity.getDirection(), "direction mismatch on saved entity")
   }
   return entity.adjustValueAtStage(stage, newValue)
 }

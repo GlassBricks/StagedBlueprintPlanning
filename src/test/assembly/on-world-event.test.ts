@@ -94,8 +94,8 @@ function addEntity(
   entity: AssemblyEntity
 } {
   const luaEntity = createWorldEntity(stage, args)
-  const [value, dir] = saveEntity(luaEntity)
-  const assemblyEntity = createAssemblyEntity(value, luaEntity.position, dir, stage)
+  const value = saveEntity(luaEntity)!
+  const assemblyEntity = createAssemblyEntity(value, luaEntity.position, luaEntity.direction, stage)
   assembly.content.add(assemblyEntity)
   return { luaEntity, entity: assemblyEntity }
 }
