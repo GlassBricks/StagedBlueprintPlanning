@@ -1,9 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.0
 Date: ????
+  Features:
+    - Added the ability to upgrade entities via pasting a blueprint. This is controlled by a user setting.
   Changes:
-    - Disallow overbuilding preview entities in a different direction (instead of moving entity).
-    - Build ghosts will no longer be instantly revived (in some cases).
+    - Disallow overbuilding preview entities in a different direction. This previously moved the entity to the current stage instead.
+    - Built ghosts will no longer be instantly revived (this previously occurred in some cases).
+  Optimizations:
+    - Improved speed of pasting large blueprints.
+  Bugfixes:
+    - Fixed some obscure corner case bugs.
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.6
 Date: 2023-01-20
