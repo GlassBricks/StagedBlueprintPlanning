@@ -32,13 +32,13 @@ export declare const enum L_ModSettingName {
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
   /** Location of entity stage info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
-  /** Allow upgrading entities and modules via blueprint pasting. */
+  /** Allow upgrading entities via blueprint paste. */
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
-  /** E.g. if pasting a fast-inserter over a normal inserter, this will upgrade the inserter. This setting only applies while within a staged build. */
+  /** E.g. if pasting a fast-inserter over a normal inserter, this will upgrade the inserter. This is not vanilla behavior.\nThis setting only applies while within a staged build. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
 }
 export declare const enum L_StringModSetting {
