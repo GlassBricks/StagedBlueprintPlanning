@@ -72,6 +72,9 @@ if (!script.active_mods.debugadapter) {
         global.freeSurfaces = []
       }
       global.freeSurfaces.push(surface)
+      for (const id of rendering.get_all_ids(script.mod_name)) {
+        if (rendering.get_surface(id) == surface) rendering.destroy(id)
+      }
     },
   }
 }
