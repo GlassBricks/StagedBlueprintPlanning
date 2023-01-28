@@ -90,7 +90,7 @@ function updateCableConnections(
  *
  * Returns true if connections succeeded (false if max connections exceeded).
  */
-function updateWireConnections(
+function updateWireConnectionsAtStage(
   content: MutableAssemblyContent,
   entity: AssemblyEntity,
   stageNumber: StageNumber,
@@ -276,7 +276,7 @@ function findMatchingCircuitConnection(
   }
 }
 
-export { updateWireConnections, saveWireConnections }
+export { updateWireConnectionsAtStage, saveWireConnections }
 
 // noinspection JSUnusedGlobalSymbols
 export const _mockable = true

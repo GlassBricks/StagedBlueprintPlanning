@@ -14,7 +14,6 @@ import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater, createAssemblyUpdater, StageMoveResult } from "../../assembly/AssemblyUpdater"
 import { WorldListener } from "../../assembly/WorldListener"
-import { WorldUpdater } from "../../assembly/WorldUpdater"
 import {
   AssemblyEntity,
   createAssemblyEntity,
@@ -28,8 +27,8 @@ import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { moduleMock } from "../module-mock"
-import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
+import _worldUpdater = require("../../assembly/WorldUpdater")
 import _wireHandler = require("../../entity/WireHandler")
 import direction = defines.direction
 import wire_type = defines.wire_type
@@ -40,8 +39,8 @@ let assembly: Assembly
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
 let assemblyUpdater: AssemblyUpdater
-let worldUpdater: mock.MockedObjectNoSelf<WorldUpdater>
 
+const worldUpdater = moduleMock(_worldUpdater, true)
 const wireSaver = moduleMock(_wireHandler, true)
 
 let worldUpdaterCalls: number
@@ -50,14 +49,14 @@ before_each(() => {
   assembly = createMockAssembly(surfaces)
   worldUpdaterCalls = 0
   expectedWuCalls = 0
-  worldUpdater = makeMocked(keys<WorldUpdater>())
   for (const [, v] of pairs(worldUpdater)) {
-    v.invokes((() => {
-      worldUpdaterCalls++
-    }) as ContextualFun)
+    if (v != true)
+      v.invokes((() => {
+        worldUpdaterCalls++
+      }) as ContextualFun)
   }
   wireSaver.saveWireConnections.returns(false as any)
-  assemblyUpdater = createAssemblyUpdater(worldUpdater)
+  assemblyUpdater = createAssemblyUpdater()
 
   game.surfaces[1].find_entities().forEach((e) => e.destroy())
 })
@@ -66,10 +65,11 @@ after_each(() => {
   if (expectedWuCalls == worldUpdaterCalls) return
 
   let message = `expected ${expectedWuCalls} calls to worldUpdater, got ${worldUpdaterCalls}\n`
-  for (const [key, spy] of pairs(worldUpdater)) {
-    if (spy.calls.length > 0) {
-      message += `  ${key} called ${spy.calls.length} times\n`
-    }
+  for (const [key, fn] of pairs(worldUpdater)) {
+    if (fn != true)
+      if (fn.calls.length > 0) {
+        message += `  ${key} called ${fn.calls.length} times\n`
+      }
   }
   error(message)
 })
@@ -116,7 +116,7 @@ function assertMakeSettingsRemnantCalled(entity: AssemblyEntity) {
 function assertReviveSettingsRemnantCalled(entity: AssemblyEntity) {
   expectedWuCalls++
   expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.reviveSettingsRemnant).calledWith(assembly, entity)
+  expect(worldUpdater.updateEntitiesOnSettingsRemnantRevived).calledWith(assembly, entity)
 }
 
 function assertOneEntity() {
@@ -181,15 +181,15 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 }
 
 test("refreshEntityAtStage", () => {
-  expect(assemblyUpdater.refreshEntityAtStage).to.be(worldUpdater.refreshWorldEntityAtStage)
+  expect(assemblyUpdater.refreshEntityAtStage).to.be(_worldUpdater.refreshWorldEntityAtStage)
   expectedWuCalls = 0
 })
 test("clearEntityAtStage", () => {
-  expect(assemblyUpdater.clearEntityAtStage).to.be(worldUpdater.clearWorldEntity)
+  expect(assemblyUpdater.clearEntityAtStage).to.be(_worldUpdater.clearWorldEntity)
   expectedWuCalls = 0
 })
 test("forbidEntityDeletion", () => {
-  expect(assemblyUpdater.forbidEntityDeletion).to.be(worldUpdater.replaceWorldEntityAtStage)
+  expect(assemblyUpdater.forbidEntityDeletion).to.be(_worldUpdater.replaceWorldEntityAtStage)
   expectedWuCalls = 0
 })
 

@@ -11,7 +11,7 @@
 
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { createUserAssembly } from "../assembly/UserAssembly"
-import { WorldUpdater } from "../assembly/WorldUpdater"
+import { updateWorldEntities } from "../assembly/WorldUpdater"
 import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
 import { Pos } from "../lib/geometry"
@@ -190,7 +190,7 @@ function setupManualTests(assembly: UserAssembly) {
     entity._applyDiffAtStage(4, { recipe: "copper-cable" })
 
     assembly.content.add(entity)
-    WorldUpdater.updateWorldEntities(assembly, entity, 1, nil)
+    updateWorldEntities(assembly, entity, 1, nil)
 
     teleportToStage(player, assembly.getStage(4)!)
     player.opened = entity.getWorldEntity(4)

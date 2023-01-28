@@ -11,7 +11,13 @@
 
 import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { createHighlightCreator, EntityHighlighter, HighlightEntities } from "../../assembly/EntityHighlighter"
+import {
+  deleteAllHighlights,
+  HighlightEntities,
+  makeSettingsRemnantHighlights,
+  updateAllHighlights,
+  updateHighlightsOnSettingsRemnantRevived,
+} from "../../assembly/EntityHighlighter"
 import { Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
@@ -26,7 +32,6 @@ interface FooEntity extends Entity {
 }
 let entity: AssemblyEntity<FooEntity>
 let assembly: Assembly
-let entityHighlighter: EntityHighlighter
 
 import _highlightCreator = require("../../assembly/HighlightCreator")
 
@@ -36,7 +41,6 @@ const surfaces = setupTestSurfaces(5)
 before_each(() => {
   assembly = createMockAssembly(surfaces)
   highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
-  entityHighlighter = createHighlightCreator()
   entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
 
@@ -72,15 +76,15 @@ describe("error highlights and selection proxy", () => {
   })
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
-    entityHighlighter.updateHighlights(assembly, entity, 2, 2)
+    updateAllHighlights(assembly, entity, 2, 2)
     expect(entity.getExtraEntity("errorOutline", 2)!).to.be.any()
   })
 
   test("deletes highlight when entity revived", () => {
     removeInStage(2)
-    entityHighlighter.updateHighlights(assembly, entity, 2, 2)
+    updateAllHighlights(assembly, entity, 2, 2)
     addInStage(2)
-    entityHighlighter.updateHighlights(assembly, entity, 2, 2)
+    updateAllHighlights(assembly, entity, 2, 2)
     expect(entity.getExtraEntity("errorOutline", 2)).to.be.nil()
   })
 
@@ -90,7 +94,7 @@ describe("error highlights and selection proxy", () => {
       removeInStage(stage)
       stageSet.add(stage)
     }
-    entityHighlighter.updateHighlights(assembly, entity)
+    updateAllHighlights(assembly, entity)
 
     for (let i = 1; i < 5; i++) {
       if (i == 1 || stageSet.has(i)) {
@@ -104,18 +108,18 @@ describe("error highlights and selection proxy", () => {
   test("deletes indicators only when all highlights removed", () => {
     removeInStage(2)
     removeInStage(3)
-    entityHighlighter.updateHighlights(assembly, entity)
+    updateAllHighlights(assembly, entity)
     for (let i = 4; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
     addInStage(3)
-    entityHighlighter.updateHighlights(assembly, entity)
+    updateAllHighlights(assembly, entity)
     for (let i = 3; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
     addInStage(2)
-    entityHighlighter.updateHighlights(assembly, entity)
+    updateAllHighlights(assembly, entity)
     for (let i = 1; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.nil()
   })
 
   test("does nothing if created in lower than first stage", () => {
-    entityHighlighter.updateHighlights(assembly, entity)
+    updateAllHighlights(assembly, entity)
     expect(entity.getExtraEntity("errorOutline", 1)).to.be.nil()
   })
 })
@@ -139,7 +143,7 @@ describe("config changed highlight", () => {
     entity.adjustValueAtStage(stage, entity.getValueAtStage(stage - 1)!)
   }
   function assertCorrect() {
-    entityHighlighter.updateHighlights(assembly, entity)
+    updateAllHighlights(assembly, entity)
     assertConfigChangedHighlightsCorrect(entity, 5)
   }
   test("single", () => {
@@ -193,27 +197,27 @@ describe("settings remnants", () => {
   }
   test("makeSettingsRemnant creates highlights", () => {
     createSettingsRemnant()
-    entityHighlighter.makeSettingsRemnant(assembly, entity)
+    makeSettingsRemnantHighlights(assembly, entity)
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.any()
     }
   })
   test("reviveSettingsRemnant removes highlights and sets entities correct", () => {
     createSettingsRemnant()
-    entityHighlighter.makeSettingsRemnant(assembly, entity)
+    makeSettingsRemnantHighlights(assembly, entity)
     reviveSettingsRemnant()
-    entityHighlighter.reviveSettingsRemnant(assembly, entity)
+    updateHighlightsOnSettingsRemnantRevived(assembly, entity)
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.nil()
     }
   })
 })
 
-test("deleteErrorHighlights deletes all highlights", () => {
+test("deleteAllHighlights deletes all highlights", () => {
   entity.destroyWorldOrPreviewEntity(2)
   entity.destroyWorldOrPreviewEntity(3)
-  entityHighlighter.updateHighlights(assembly, entity)
-  entityHighlighter.deleteHighlights(entity)
+  updateAllHighlights(assembly, entity)
+  deleteAllHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
       expect(entity.getExtraEntity(type, i)).to.be.nil()

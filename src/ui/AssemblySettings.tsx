@@ -11,7 +11,7 @@
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
-import { WorldUpdater } from "../assembly/WorldUpdater"
+import { disableAllEntitiesInStage, enableAllEntitiesInStage, resetStage } from "../assembly/WorldUpdater"
 import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
 import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
@@ -556,7 +556,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
   }
   private resetStage() {
     const stage = this.stage
-    if (stage.valid) WorldUpdater.resetStage(stage.assembly, stage.stageNumber)
+    if (stage.valid) resetStage(stage.assembly, stage.stageNumber)
   }
 
   private setLabTiles() {
@@ -586,13 +586,13 @@ export class StageSettings extends Component<{ stage: Stage }> {
   private disableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    WorldUpdater.disableAllEntities(stage.assembly, stage.stageNumber)
+    disableAllEntitiesInStage(stage.assembly, stage.stageNumber)
   }
 
   private enableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    WorldUpdater.enableAllEntities(stage.assembly, stage.stageNumber)
+    enableAllEntitiesInStage(stage.assembly, stage.stageNumber)
   }
 
   private beginDelete() {

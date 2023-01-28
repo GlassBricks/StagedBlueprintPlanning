@@ -24,7 +24,19 @@ import { canBeAnyDirection, saveEntity } from "../entity/EntityHandler"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/WireHandler"
 import { Assembly } from "./AssemblyDef"
-import { AssemblyEntityDollyResult, WorldUpdater } from "./WorldUpdater"
+import {
+  AssemblyEntityDollyResult,
+  clearWorldEntity,
+  deleteAllEntities,
+  makeSettingsRemnant,
+  refreshWorldEntityAtStage,
+  replaceWorldEntityAtStage,
+  tryDollyEntities,
+  updateEntitiesOnSettingsRemnantRevived,
+  updateNewEntityWithoutWires,
+  updateWireConnections,
+  updateWorldEntities,
+} from "./WorldUpdater"
 import min = math.min
 
 /**
@@ -87,22 +99,12 @@ export type EntityUpdateResult = UpdateSuccess | UpdateError | RotateError
 export type WireUpdateResult = UpdateSuccess | "max-connections-exceeded"
 export type StageMoveResult = UpdateSuccess | "cannot-move-upgraded-underground"
 
-export function createAssemblyUpdater(worldUpdater: WorldUpdater): AssemblyUpdater {
-  const {
-    updateWorldEntities,
-    refreshWorldEntityAtStage,
-    replaceWorldEntityAtStage,
-    makeSettingsRemnant,
-    deleteAllEntities,
-    updateNewEntityWithoutWires,
-    updateWireConnections,
-  } = worldUpdater
-
+export function createAssemblyUpdater(): AssemblyUpdater {
   function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
     if (!entity.isSettingsRemnant) return false
     entity.isSettingsRemnant = nil
     entity.moveToStage(stage)
-    worldUpdater.reviveSettingsRemnant(assembly, entity)
+    updateEntitiesOnSettingsRemnantRevived(assembly, entity)
     return true
   }
 
@@ -274,7 +276,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater): AssemblyUpdat
       updateWorldEntities(assembly, entity, stage, oldStage)
       return true
     },
-    tryDollyEntity: worldUpdater.tryDollyEntities,
+    tryDollyEntity: tryDollyEntities,
     forbidEntityDeletion: replaceWorldEntityAtStage,
     deleteEntityOrCreateSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
       if (shouldMakeSettingsRemnant(assembly, entity)) {
@@ -290,7 +292,7 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater): AssemblyUpdat
       deleteAllEntities(entity)
     },
     reviveSettingsRemnant,
-    clearEntityAtStage: worldUpdater.clearWorldEntity,
+    clearEntityAtStage: clearWorldEntity,
     tryUpdateEntityFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): EntityUpdateResult {
       const entitySource = entity.getWorldEntity(stage)
       if (!entitySource) return "no-change"
@@ -493,4 +495,4 @@ export function createAssemblyUpdater(worldUpdater: WorldUpdater): AssemblyUpdat
   }
 }
 
-export const AssemblyUpdater = createAssemblyUpdater(WorldUpdater)
+export const AssemblyUpdater = createAssemblyUpdater()

@@ -9,10 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import expect, { mock } from "tstl-expect"
+import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { EntityHighlighter } from "../../assembly/EntityHighlighter"
-import { createWorldUpdater, WorldUpdater } from "../../assembly/WorldUpdater"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { createEntity, saveEntity } from "../../entity/EntityHandler"
@@ -21,7 +19,6 @@ import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { doModuleMock, moduleMock } from "../module-mock"
-import { makeMocked } from "../simple-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 
 interface TestEntity extends Entity {
@@ -31,13 +28,12 @@ interface TestEntity extends Entity {
 let assembly: Assembly
 let entity: AssemblyEntity<TestEntity>
 
-let highlighter: mock.MockedObjectNoSelf<EntityHighlighter>
-
+import _highlighter = require("../../assembly/EntityHighlighter")
+import WorldUpdater = require("../../assembly/WorldUpdater")
 import _wireHandler = require("../../entity/WireHandler")
 
 const wireUpdater = moduleMock(_wireHandler, true)
-
-let worldUpdater: WorldUpdater
+const highlighter = moduleMock(_highlighter, true)
 
 const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east
@@ -53,9 +49,6 @@ before_each(() => {
     origDir,
     1,
   )
-
-  highlighter = makeMocked(keys<EntityHighlighter>())
-  worldUpdater = createWorldUpdater(highlighter as unknown as EntityHighlighter)
 })
 
 function findPreviewEntity(i: StageNumber) {
@@ -105,11 +98,11 @@ describe("updateWorldEntities", () => {
       })
     }
     test.each([1, 2, 3, 4])("can create one entity at stage %d", (stage) => {
-      worldUpdater.refreshWorldEntityAtStage(assembly, entity, stage)
+      WorldUpdater.refreshWorldEntityAtStage(assembly, entity, stage)
       assertEntityCorrect(stage)
     })
     test("can create all entities", () => {
-      worldUpdater.updateWorldEntities(assembly, entity, 1)
+      WorldUpdater.updateWorldEntities(assembly, entity, 1)
       for (let i = 1; i <= 4; i++) assertEntityCorrect(i)
     })
 
@@ -119,38 +112,39 @@ describe("updateWorldEntities", () => {
         override_stack_size: 3,
       } as TestEntity)!
       entity.replaceWorldEntity(2, replaced)
-      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
+      WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
       const val = assertEntityCorrect(2)
       expect(replaced).to.equal(val)
     })
 
     test("replaces deleted entity", () => {
-      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 3)
+      WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 3)
       entity.getWorldEntity(3)!.destroy()
       assertNothingPresent(3)
-      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 3)
+      WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 3)
       assertEntityCorrect(3)
     })
 
     test("can upgrade entities", () => {
-      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
+      WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
       entity._applyDiffAtStage(1, { name: "fast-inserter" })
-      worldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
+      WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
       assertEntityCorrect(1)
     })
   })
 
   test("creates preview entities in stages below first stage", () => {
     entity.moveToStage(3)
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
     assertEntityCorrect(3)
   })
 
   test("calls wireUpdater", () => {
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
-    for (let i = 1; i <= 3; i++) expect(wireUpdater.updateWireConnections).calledWith(assembly.content, entity, i)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
+    for (let i = 1; i <= 3; i++)
+      expect(wireUpdater.updateWireConnectionsAtStage).calledWith(assembly.content, entity, i)
   })
 
   function assertDestructible(luaEntity: LuaEntity, value: boolean) {
@@ -168,7 +162,7 @@ describe("updateWorldEntities", () => {
       } as TestEntity)!
       entity.replaceWorldEntity(3, luaEntity)
     }
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
 
     assertDestructible(assertEntityCorrect(2), true)
     assertDestructible(assertEntityCorrect(3), false)
@@ -176,9 +170,9 @@ describe("updateWorldEntities", () => {
   })
 
   test("can handle entity moving up", () => {
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
     entity.moveToStage(2)
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
 
     expect(findMainEntity(1)).to.be.nil()
     assertHasPreview(1)
@@ -187,22 +181,22 @@ describe("updateWorldEntities", () => {
   })
 
   test("can rotate entities", () => {
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
     entity.setDirection(defines.direction.west as defines.direction)
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
   test("can un-rotate entities", () => {
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
     entity.getWorldEntity(2)!.direction = defines.direction.west
-    worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
+    WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
   test("calls updateHighlights", () => {
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
-    expect(highlighter.updateHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
+    expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
   })
 
   test("entity preview in all other stages if is rolling stock", () => {
@@ -211,7 +205,7 @@ describe("updateWorldEntities", () => {
     entity = createAssemblyEntity(value, rollingStock.position, dir, 2) as any
     rollingStock.destroy()
 
-    worldUpdater.updateWorldEntities(assembly, entity, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
 
     assertHasPreview(1)
     const worldEntity = expect(findMainEntity(2)).to.be.any().getValue()
@@ -222,9 +216,9 @@ describe("updateWorldEntities", () => {
 })
 
 test("replaceWorldEntityAtStage replaces old value", () => {
-  worldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
+  WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
   const value = assertEntityCorrect(2)
-  worldUpdater.replaceWorldEntityAtStage(assembly, entity, 2)
+  WorldUpdater.replaceWorldEntityAtStage(assembly, entity, 2)
   expect(value.valid).to.be(false)
   assertEntityCorrect(2)
 })
@@ -270,14 +264,14 @@ describe("tryMoveEntity", () => {
 
   test("can move entity if moved in first stage", () => {
     expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
-    const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
+    const result = WorldUpdater.tryDollyEntities(assembly, entity, 1)
     expect(result).to.be("success")
     assertMoved()
   })
 
   test("can't move entity if moved in later stage", () => {
     expect(forceDollyEntity(entities[1], newPos, newDir)).to.be(true)
-    const result = worldUpdater.tryDollyEntities(assembly, entity, 2)
+    const result = WorldUpdater.tryDollyEntities(assembly, entity, 2)
     expect(result).to.be("cannot-move")
     assertNotMoved()
   })
@@ -285,7 +279,7 @@ describe("tryMoveEntity", () => {
   test("can't move if world entities are missing in any stage", () => {
     expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
     entity.getWorldEntity(2)!.destroy()
-    const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
+    const result = WorldUpdater.tryDollyEntities(assembly, entity, 1)
     expect(result).to.be("entities-missing")
     assertNotMoved()
   })
@@ -306,7 +300,7 @@ describe("tryMoveEntity", () => {
       assembly.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
       expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
-      const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
+      const result = WorldUpdater.tryDollyEntities(assembly, entity, 1)
       expect(result).to.be("connected-entities-missing")
     })
 
@@ -320,7 +314,7 @@ describe("tryMoveEntity", () => {
       })
 
       expect(forceDollyEntity(entities[0], newPos, newDir)).to.be(true)
-      const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
+      const result = WorldUpdater.tryDollyEntities(assembly, entity, 1)
       expect(result).to.be("connected-entities-missing")
     })
 
@@ -344,7 +338,7 @@ describe("tryMoveEntity", () => {
         }),
       )
 
-      const result = worldUpdater.tryDollyEntities(assembly, entity, 1)
+      const result = WorldUpdater.tryDollyEntities(assembly, entity, 1)
       expect(result).to.be("success")
       assertMoved()
     })
@@ -354,25 +348,25 @@ describe("tryMoveEntity", () => {
 test("updateNewEntityWithoutWires", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
-  worldUpdater.updateNewEntityWithoutWires(assembly, entity)
-  expect(highlighter.updateHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
-  expect(wireUpdater.updateWireConnections).not.called()
+  WorldUpdater.updateNewEntityWithoutWires(assembly, entity)
+  expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
+  expect(wireUpdater.updateWireConnectionsAtStage).not.called()
 })
 
 test("updateWireConnections", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
-  worldUpdater.updateNewEntityWithoutWires(assembly, entity)
-  worldUpdater.updateWireConnections(assembly, entity)
+  WorldUpdater.updateNewEntityWithoutWires(assembly, entity)
+  WorldUpdater.updateWireConnections(assembly, entity)
   for (const i of $range(2, assembly.maxStage())) {
-    expect(wireUpdater.updateWireConnections).calledWith(assembly.content, entity, i)
+    expect(wireUpdater.updateWireConnectionsAtStage).calledWith(assembly.content, entity, i)
   }
 })
 
 test("clearWorldEntity", () => {
-  worldUpdater.updateWorldEntities(assembly, entity, 1)
-  worldUpdater.clearWorldEntity(assembly, entity, 2)
-  expect(highlighter.updateHighlights).calledWith(assembly, entity, 2, 2)
+  WorldUpdater.updateWorldEntities(assembly, entity, 1)
+  WorldUpdater.clearWorldEntity(assembly, entity, 2)
+  expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 2, 2)
   expect(findMainEntity(2)).to.be.nil()
   assertEntityCorrect(1)
   assertEntityCorrect(3)
@@ -380,50 +374,50 @@ test("clearWorldEntity", () => {
 
 describe("invalid stages", () => {
   test("out of range is ignored", () => {
-    expect(() => worldUpdater.updateWorldEntities(assembly, entity, -1)).not.to.error()
+    expect(() => WorldUpdater.updateWorldEntities(assembly, entity, -1)).not.to.error()
     for (let i = -1; i <= 5; i++) {
       if (i >= 1 && i <= 4) assertEntityCorrect(i)
       else assertNothingPresent(i)
     }
   })
   test("does nothing if range is empty", () => {
-    worldUpdater.updateWorldEntities(assembly, entity, 5)
+    WorldUpdater.updateWorldEntities(assembly, entity, 5)
     for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   })
 })
 
 test("deleteWorldEntities", () => {
-  worldUpdater.updateWorldEntities(assembly, entity, 1)
-  worldUpdater.deleteAllEntities(entity)
+  WorldUpdater.updateWorldEntities(assembly, entity, 1)
+  WorldUpdater.deleteAllEntities(entity)
   for (let i = 1; i <= 3; i++) assertNothingPresent(i)
-  expect(highlighter.deleteHighlights).calledWith(entity)
+  expect(highlighter.deleteAllHighlights).calledWith(entity)
 })
 
 test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
-  worldUpdater.makeSettingsRemnant(assembly, entity)
+  WorldUpdater.makeSettingsRemnant(assembly, entity)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  expect(highlighter.makeSettingsRemnant).calledWith(assembly, entity)
+  expect(highlighter.makeSettingsRemnantHighlights).calledWith(assembly, entity)
 })
 
 test("updateWorldEntities calls makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
-  worldUpdater.updateWorldEntities(assembly, entity, 1)
+  WorldUpdater.updateWorldEntities(assembly, entity, 1)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  expect(highlighter.makeSettingsRemnant).calledWith(assembly, entity)
+  expect(highlighter.makeSettingsRemnantHighlights).calledWith(assembly, entity)
 })
 
 test("reviveSettingsRemnant revives correct entities and calls highlighter.reviveSettingsRemnant", () => {
   entity.moveToStage(2)
   entity.isSettingsRemnant = true
-  worldUpdater.makeSettingsRemnant(assembly, entity)
+  WorldUpdater.makeSettingsRemnant(assembly, entity)
 
   entity.isSettingsRemnant = nil
-  worldUpdater.reviveSettingsRemnant(assembly, entity)
+  WorldUpdater.updateEntitiesOnSettingsRemnantRevived(assembly, entity)
   assertHasPreview(1)
   assertEntityCorrect(2)
   assertEntityCorrect(3)
-  expect(highlighter.reviveSettingsRemnant).calledWith(assembly, entity)
+  expect(highlighter.updateHighlightsOnSettingsRemnantRevived).calledWith(assembly, entity)
 })
 
 test("resetStage", () => {
@@ -438,7 +432,7 @@ test("resetStage", () => {
     position: Pos(0, 0),
   })!
 
-  worldUpdater.resetStage(assembly, 2)
+  WorldUpdater.resetStage(assembly, 2)
 
   expect(chest.valid).to.be(false)
   expect(entity1.getWorldEntity(2)).to.be.any()
@@ -448,12 +442,10 @@ test("resetStage", () => {
 // this duplicates WireHandler test a bit
 // let's call it an integration test
 describe("circuit wires", () => {
-  let worldUpdater: WorldUpdater
   let entity1: AssemblyEntity
   let entity2: AssemblyEntity
   before_each(() => {
     doModuleMock(_wireHandler, false) // real wire handler
-    worldUpdater = createWorldUpdater(highlighter as unknown as EntityHighlighter) // real entity handle
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
     entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
@@ -462,8 +454,8 @@ describe("circuit wires", () => {
   })
 
   function doAdd() {
-    worldUpdater.updateWorldEntities(assembly, entity1, 1)
-    worldUpdater.updateWorldEntities(assembly, entity2, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity1, 1)
+    WorldUpdater.updateWorldEntities(assembly, entity2, 1)
     const luaEntity1 = entity1.getWorldEntity(1)!
     const luaEntity2 = entity2.getWorldEntity(1)!
     return { luaEntity1, luaEntity2 }
@@ -508,7 +500,7 @@ describe("circuit wires", () => {
   test("can remove circuit wires", () => {
     const { luaEntity1, luaEntity2 } = doAdd()
     addExtraWires({ luaEntity1, luaEntity2 })
-    worldUpdater.refreshWorldEntityAtStage(assembly, entity1, 1)
+    WorldUpdater.refreshWorldEntityAtStage(assembly, entity1, 1)
     expect(luaEntity1.circuit_connection_definitions ?? []).to.equal([])
     expect(luaEntity2.circuit_connection_definitions ?? []).to.equal([])
   })
@@ -520,7 +512,7 @@ describe("circuit wires", () => {
     addWireToAssembly()
     const entities = doAdd()
     addExtraWires(entities)
-    worldUpdater.refreshWorldEntityAtStage(assembly, entity1, 1)
+    WorldUpdater.refreshWorldEntityAtStage(assembly, entity1, 1)
     assertSingleWire(entities)
   })
 })

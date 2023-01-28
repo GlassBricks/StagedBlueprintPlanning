@@ -37,23 +37,6 @@ declare module "../entity/AssemblyEntity" {
   export interface ExtraEntities extends HighlightEntities {}
 }
 
-/**
- * Handles various highlights (preview, icons, highlight-boxes) for world entities.
- *
- * @noSelf
- */
-export interface EntityHighlighter {
-  /** Updates config changed, and error highlights. */
-  updateHighlights(assembly: Assembly, entity: AssemblyEntity): void
-  updateHighlights(assembly: Assembly, entity: AssemblyEntity, stageStart: StageNumber, stageEnd: StageNumber): void
-
-  deleteHighlights(entity: AssemblyEntity): void
-  deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber): void
-
-  makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
-  reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void
-}
-
 interface HighlightConfig {
   readonly type: "highlight"
   readonly renderType: CursorBoxRenderType
@@ -109,164 +92,161 @@ const highlightConfigs: {
   },
 }
 
-export function createHighlightCreator(): EntityHighlighter {
-  function createHighlight<T extends keyof HighlightEntities>(
-    entity: AssemblyEntity,
-    stage: StageNumber,
-    surface: LuaSurface,
-    type: T,
-  ): HighlightEntities[T] {
-    const config = highlightConfigs[type]
-    const existing = entity.getExtraEntity(type, stage)
-    if (existing && config.type == "sprite") return existing
-    // always replace highlight box, in case of upgrade
+function createHighlight<T extends keyof HighlightEntities>(
+  entity: AssemblyEntity,
+  stage: StageNumber,
+  surface: LuaSurface,
+  type: T,
+): HighlightEntities[T] {
+  const config = highlightConfigs[type]
+  const existing = entity.getExtraEntity(type, stage)
+  if (existing && config.type == "sprite") return existing
+  // always replace highlight box, in case of upgrade
 
-    const prototypeName = entity.firstValue.name
-    const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.getWorldDirection())
-    let result: LuaEntity | AnyRender | nil
-    if (config.type == "highlight") {
-      const { renderType } = config
-      const entityTarget = entity.getWorldOrPreviewEntity(stage)
-      result = entityTarget && createHighlightBox(entityTarget, renderType)
-    } else if (config.type == "sprite") {
-      const size = selectionBox.size()
-      const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
-      const worldPosition = relativePosition.plus(entity.position)
-      const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
-      result = createSprite({
-        surface,
-        target: worldPosition,
-        x_scale: scale,
-        y_scale: scale,
-        sprite: config.sprite,
-        tint: config.tint,
-        render_layer: config.renderLayer,
-      })
-    } else {
-      assertNever(config)
-    }
-
-    entity.replaceExtraEntity(type, stage, result as ExtraEntities[T])
-    return result as HighlightEntities[T]
-  }
-  function removeHighlight(entity: AssemblyEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
-    entity.destroyExtraEntity(type, stageNumber)
-  }
-  function removeHighlightFromAllStages(entity: AssemblyEntity, type: keyof HighlightEntities): void {
-    entity.destroyAllExtraEntities(type)
-  }
-  function updateHighlight(
-    entity: AssemblyEntity,
-    stage: StageNumber,
-    surface: LuaSurface,
-    type: keyof HighlightEntities,
-    value: boolean | nil,
-  ): HighlightEntity | nil {
-    if (value) return createHighlight(entity, stage, surface, type)
-    removeHighlight(entity, stage, type)
-    return nil
+  const prototypeName = entity.firstValue.name
+  const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.getWorldDirection())
+  let result: LuaEntity | AnyRender | nil
+  if (config.type == "highlight") {
+    const { renderType } = config
+    const entityTarget = entity.getWorldOrPreviewEntity(stage)
+    result = entityTarget && createHighlightBox(entityTarget, renderType)
+  } else if (config.type == "sprite") {
+    const size = selectionBox.size()
+    const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
+    const worldPosition = relativePosition.plus(entity.position)
+    const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
+    result = createSprite({
+      surface,
+      target: worldPosition,
+      x_scale: scale,
+      y_scale: scale,
+      sprite: config.sprite,
+      tint: config.tint,
+      render_layer: config.renderLayer,
+    })
+  } else {
+    assertNever(config)
   }
 
-  function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
-    let hasErrorAnywhere = false
-    for (const stage of $range(
-      entity.firstStage,
-      entity.inFirstStageOnly() ? entity.firstStage : assembly.maxStage(),
-    )) {
-      const hasError = entityHasErrorAt(entity, stage)
-      updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorOutline", hasError)
-      hasErrorAnywhere ||= hasError
-    }
+  entity.replaceExtraEntity(type, stage, result as ExtraEntities[T])
+  return result as HighlightEntities[T]
+}
+function removeHighlight(entity: AssemblyEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
+  entity.destroyExtraEntity(type, stageNumber)
+}
+function removeHighlightFromAllStages(entity: AssemblyEntity, type: keyof HighlightEntities): void {
+  entity.destroyAllExtraEntities(type)
+}
+function updateHighlight(
+  entity: AssemblyEntity,
+  stage: StageNumber,
+  surface: LuaSurface,
+  type: keyof HighlightEntities,
+  value: boolean | nil,
+): HighlightEntity | nil {
+  if (value) return createHighlight(entity, stage, surface, type)
+  removeHighlight(entity, stage, type)
+  return nil
+}
 
-    if (!hasErrorAnywhere) {
-      entity.destroyAllExtraEntities("errorElsewhereIndicator")
-    } else {
-      for (const stage of $range(1, assembly.maxStage())) {
-        const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) != nil
-        updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorElsewhereIndicator", shouldHaveIndicator)
-      }
-    }
+function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
+  let hasErrorAnywhere = false
+  for (const stage of $range(entity.firstStage, entity.inFirstStageOnly() ? entity.firstStage : assembly.maxStage())) {
+    const hasError = entityHasErrorAt(entity, stage)
+    updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorOutline", hasError)
+    hasErrorAnywhere ||= hasError
   }
 
-  function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): void {
-    if (!entity.hasStageDiff()) {
-      entity.destroyAllExtraEntities("configChangedHighlight")
-      entity.destroyAllExtraEntities("configChangedLaterHighlight")
-      return
-    }
-    const firstStage = entity.firstStage
-    let lastStageWithHighlights = firstStage
+  if (!hasErrorAnywhere) {
+    entity.destroyAllExtraEntities("errorElsewhereIndicator")
+  } else {
     for (const stage of $range(1, assembly.maxStage())) {
-      const hasConfigChanged = entity.hasStageDiff(stage)
-      const isUpgrade = hasConfigChanged && entity.getStageDiff(stage)!.name != nil
-      const highlight = updateHighlight(
-        entity,
-        stage,
-        assembly.getSurface(stage)!,
-        "configChangedHighlight",
-        hasConfigChanged,
-      )
-      if (highlight) {
-        ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
-          ? HighlightValues.Upgraded
-          : HighlightValues.ConfigChanged
-      }
-      if (!hasConfigChanged) continue
-
-      // update configChangedLaterHighlights in previous stages
-      const sprite = isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater
-      for (; lastStageWithHighlights < stage; lastStageWithHighlights++) {
-        const highlight = updateHighlight(
-          entity,
-          lastStageWithHighlights,
-          assembly.getSurface(lastStageWithHighlights)!,
-          "configChangedLaterHighlight",
-          true,
-        ) as SpriteRender
-        highlight.sprite = sprite
-      }
+      const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) != nil
+      updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorElsewhereIndicator", shouldHaveIndicator)
     }
-    if (lastStageWithHighlights == firstStage) {
-      // remove later highlights for all stages
-      removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
-    } else {
-      for (const i of $range(lastStageWithHighlights, assembly.maxStage())) {
-        removeHighlight(entity, i, "configChangedLaterHighlight")
-      }
-      for (const i of $range(1, firstStage - 1)) {
-        removeHighlight(entity, i, "configChangedLaterHighlight")
-      }
-    }
-  }
-  function updateHighlights(assembly: Assembly, entity: AssemblyEntity): void {
-    // ignore start and end stage for now
-    updateErrorOutlines(assembly, entity)
-    if (!entity.inFirstStageOnly()) {
-      updateStageDiffHighlights(assembly, entity)
-    }
-  }
-
-  return {
-    updateHighlights,
-    deleteHighlights(entity: AssemblyEntity): void {
-      for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
-    },
-    deleteHighlightsInStage(entity: AssemblyEntity, stage: StageNumber) {
-      for (const type of keys<HighlightEntities>()) entity.destroyExtraEntity(type, stage)
-    },
-    makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
-      if (!entity.isSettingsRemnant) return
-      for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
-      for (const stage of $range(1, assembly.maxStage())) {
-        updateHighlight(entity, stage, assembly.getSurface(stage)!, "settingsRemnantHighlight", true)
-      }
-    },
-    reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
-      if (entity.isSettingsRemnant) return
-      entity.destroyAllExtraEntities("settingsRemnantHighlight")
-      updateHighlights(assembly, entity)
-    },
   }
 }
 
-export const EntityHighlighter = createHighlightCreator()
+function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): void {
+  if (!entity.hasStageDiff()) {
+    entity.destroyAllExtraEntities("configChangedHighlight")
+    entity.destroyAllExtraEntities("configChangedLaterHighlight")
+    return
+  }
+  const firstStage = entity.firstStage
+  let lastStageWithHighlights = firstStage
+  for (const stage of $range(1, assembly.maxStage())) {
+    const hasConfigChanged = entity.hasStageDiff(stage)
+    const isUpgrade = hasConfigChanged && entity.getStageDiff(stage)!.name != nil
+    const highlight = updateHighlight(
+      entity,
+      stage,
+      assembly.getSurface(stage)!,
+      "configChangedHighlight",
+      hasConfigChanged,
+    )
+    if (highlight) {
+      ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
+        ? HighlightValues.Upgraded
+        : HighlightValues.ConfigChanged
+    }
+    if (!hasConfigChanged) continue
+
+    // update configChangedLaterHighlights in previous stages
+    const sprite = isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater
+    for (; lastStageWithHighlights < stage; lastStageWithHighlights++) {
+      const highlight = updateHighlight(
+        entity,
+        lastStageWithHighlights,
+        assembly.getSurface(lastStageWithHighlights)!,
+        "configChangedLaterHighlight",
+        true,
+      ) as SpriteRender
+      highlight.sprite = sprite
+    }
+  }
+  if (lastStageWithHighlights == firstStage) {
+    // remove later highlights for all stages
+    removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
+  } else {
+    for (const i of $range(lastStageWithHighlights, assembly.maxStage())) {
+      removeHighlight(entity, i, "configChangedLaterHighlight")
+    }
+    for (const i of $range(1, firstStage - 1)) {
+      removeHighlight(entity, i, "configChangedLaterHighlight")
+    }
+  }
+}
+
+export function updateAllHighlights(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _startStage?: StageNumber,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _endStage?: StageNumber,
+): void {
+  // ignore start and end stage for now
+  updateErrorOutlines(assembly, entity)
+  if (!entity.inFirstStageOnly()) {
+    updateStageDiffHighlights(assembly, entity)
+  }
+}
+
+export function deleteAllHighlights(entity: AssemblyEntity): void {
+  for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
+}
+export function makeSettingsRemnantHighlights(assembly: Assembly, entity: AssemblyEntity): void {
+  if (!entity.isSettingsRemnant) return
+  for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
+  for (const stage of $range(1, assembly.maxStage())) {
+    updateHighlight(entity, stage, assembly.getSurface(stage)!, "settingsRemnantHighlight", true)
+  }
+}
+export function updateHighlightsOnSettingsRemnantRevived(assembly: Assembly, entity: AssemblyEntity): void {
+  if (entity.isSettingsRemnant) return
+  entity.destroyAllExtraEntities("settingsRemnantHighlight")
+  updateAllHighlights(assembly, entity)
+}
+
+export const _mockable = true

@@ -12,7 +12,7 @@
 import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { AssemblyUpdater } from "../../assembly/AssemblyUpdater"
-import { WorldUpdater } from "../../assembly/WorldUpdater"
+import { refreshWorldEntityAtStage } from "../../assembly/WorldUpdater"
 import { Prototypes } from "../../constants"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
@@ -608,8 +608,8 @@ test("train entity error", () => {
 test("adding wire in higher stage sets empty control behavior", () => {
   const inserter = setupEntity(3) // is filter inserter
   const belt = setupEntity(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
-  WorldUpdater.refreshWorldEntityAtStage(assembly, inserter, 4)
-  WorldUpdater.refreshWorldEntityAtStage(assembly, belt, 4)
+  refreshWorldEntityAtStage(assembly, inserter, 4)
+  refreshWorldEntityAtStage(assembly, belt, 4)
   const inserter4 = inserter.getWorldEntity(4)!
   const belt4 = belt.getWorldEntity(4)!
 

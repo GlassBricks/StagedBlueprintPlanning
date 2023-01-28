@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,17 +11,17 @@
 
 import { assertNever } from "../lib"
 import { AssemblyEvents } from "./UserAssembly"
-import { WorldUpdater } from "./WorldUpdater"
+import { resetStage } from "./WorldUpdater"
 
 AssemblyEvents.addListener((e) => {
   switch (e.type) {
     case "stage-added":
-      WorldUpdater.resetStage(e.assembly, e.stage.stageNumber)
+      resetStage(e.assembly, e.stage.stageNumber)
       return
     case "stage-deleted": {
       const stageNumber = e.stage.stageNumber
       const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
-      WorldUpdater.resetStage(e.assembly, stageNumberToMerge)
+      resetStage(e.assembly, stageNumberToMerge)
       return
     }
     case "assembly-created":

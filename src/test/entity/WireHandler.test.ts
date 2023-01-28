@@ -101,7 +101,7 @@ describe("circuit wires", () => {
     test("can remove wires", () => {
       addWire1()
       addWire2()
-      handler.updateWireConnections(content, entity1, 1)
+      handler.updateWireConnectionsAtStage(content, entity1, 1)
       expect(luaEntity1.circuit_connection_definitions ?? []).to.equal([])
       expect(luaEntity2.circuit_connection_definitions ?? []).to.equal([])
     })
@@ -117,20 +117,20 @@ describe("circuit wires", () => {
     }
     test("can add wires", () => {
       content.addCircuitConnection(getExpectedWire1())
-      handler.updateWireConnections(content, entity1, 1)
+      handler.updateWireConnectionsAtStage(content, entity1, 1)
       assertWire1Matches()
     })
     test("can update wires", () => {
       addWire1()
       addWire2()
       content.addCircuitConnection(getExpectedWire1())
-      handler.updateWireConnections(content, entity1, 1)
+      handler.updateWireConnectionsAtStage(content, entity1, 1)
       assertWire1Matches()
     })
     test("ignores entities not in the assembly", () => {
       addWire1() // entity1 -> entity2
       content.delete(entity2)
-      handler.updateWireConnections(content, entity1, 1)
+      handler.updateWireConnectionsAtStage(content, entity1, 1)
       // wire should still be there
       assertWire1Matches()
     })
@@ -144,7 +144,7 @@ describe("circuit wires", () => {
         toId: defines.circuit_connector_id.combinator_output,
       }
       content.addCircuitConnection(wire1)
-      handler.updateWireConnections(content, entity1, 1)
+      handler.updateWireConnectionsAtStage(content, entity1, 1)
 
       expect(luaEntity1.circuit_connection_definitions).to.equal([
         {
@@ -212,14 +212,14 @@ describe("cable connections", () => {
 
   test("can add cables", () => {
     content.addCableConnection(entity1, entity2)
-    handler.updateWireConnections(content, entity1, 1)
+    handler.updateWireConnectionsAtStage(content, entity1, 1)
     expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
     expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity1])
   })
 
   test("can remove cables", () => {
     luaEntity1.connect_neighbour(luaEntity2)
-    handler.updateWireConnections(content, entity1, 1)
+    handler.updateWireConnectionsAtStage(content, entity1, 1)
     expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
     expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
   })
@@ -227,7 +227,7 @@ describe("cable connections", () => {
   test("can update cables", () => {
     content.addCableConnection(entity1, entity2) // 1-2
     luaEntity2.connect_neighbour(luaEntity3)
-    handler.updateWireConnections(content, entity2, 1)
+    handler.updateWireConnectionsAtStage(content, entity2, 1)
     // should now only have 1-2
     expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
     expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity1])
@@ -237,7 +237,7 @@ describe("cable connections", () => {
   test("ignores entities not in the assembly", () => {
     luaEntity1.connect_neighbour(luaEntity2)
     content.delete(entity2)
-    handler.updateWireConnections(content, entity1, 1)
+    handler.updateWireConnectionsAtStage(content, entity1, 1)
     // cable should still be there
     expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
   })
