@@ -11,13 +11,10 @@
 
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { createUserAssembly } from "../assembly/UserAssembly"
-import { updateWorldEntities } from "../assembly/world-entities"
-import { createAssemblyEntity } from "../entity/AssemblyEntity"
 import { destroyAllRenders, Events } from "../lib"
-import { Pos } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { refreshCurrentAssembly } from "../ui/AssemblySettings"
-import { teleportToAssembly, teleportToStage } from "../ui/player-current-stage"
+import { teleportToAssembly } from "../ui/player-current-stage"
 import "./in-world-test-util"
 import "./module-mock"
 
@@ -177,24 +174,25 @@ commands.add_command("rr", "", () => {
   game.reload_mods()
 })
 
-function setupManualTests(assembly: UserAssembly) {
-  const player = game.players[1]
-  function createEntityWithChanges() {
-    const entity = createAssemblyEntity(
-      { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
-      Pos(0.5, 0.5),
-      nil,
-      2,
-    )
-    entity.applyUpgradeAtStage(3, "assembling-machine-2")
-    entity._applyDiffAtStage(4, { recipe: "copper-cable" })
-
-    assembly.content.add(entity)
-    updateWorldEntities(assembly, entity, 1, nil)
-
-    teleportToStage(player, assembly.getStage(4)!)
-    player.opened = entity.getWorldEntity(4)
-  }
-
-  createEntityWithChanges()
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function setupManualTests(_assembly: UserAssembly) {
+  // const player = game.players[1]
+  // function createEntityWithChanges() {
+  //   const entity = createAssemblyEntity(
+  //     { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
+  //     Pos(0.5, 0.5),
+  //     nil,
+  //     2,
+  //   )
+  //   entity.applyUpgradeAtStage(3, "assembling-machine-2")
+  //   entity._applyDiffAtStage(4, { recipe: "copper-cable" })
+  //
+  //   assembly.content.add(entity)
+  //   updateWorldEntities(assembly, entity, 1, nil)
+  //
+  //   teleportToStage(player, assembly.getStage(4)!)
+  //   player.opened = entity.getWorldEntity(4)
+  // }
+  //
+  // createEntityWithChanges()
 }

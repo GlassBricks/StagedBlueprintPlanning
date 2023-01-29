@@ -268,6 +268,8 @@ export declare const enum L_GuiAssemblySettings {
   ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
   /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
   ExportBlueprintBookStringToFileTooltip = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file-tooltip",
+  /** Rebuild all stages */
+  RebuildAllStages = "bp100.gui.assembly-settings.rebuild-all-stages",
   /** Delete staged build */
   DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
   /** Are you sure you want to delete staged build __1__? */

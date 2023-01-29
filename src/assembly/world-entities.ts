@@ -300,6 +300,11 @@ export function rebuildStage(assembly: Assembly, stage: StageNumber): void {
     refreshWorldEntityAtStage(assembly, entity, stage)
   }
 }
+export function rebuildAllStages(assembly: Assembly): void {
+  for (const stage of $range(1, assembly.maxStage())) {
+    rebuildStage(assembly, stage)
+  }
+}
 export function disableAllEntitiesInStage(assembly: Assembly, stage: StageNumber): void {
   const surface = assembly.getSurface(stage)
   if (!surface) return

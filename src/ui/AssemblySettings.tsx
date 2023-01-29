@@ -11,7 +11,12 @@
 
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
-import { disableAllEntitiesInStage, enableAllEntitiesInStage, rebuildStage } from "../assembly/world-entities"
+import {
+  disableAllEntitiesInStage,
+  enableAllEntitiesInStage,
+  rebuildAllStages,
+  rebuildStage,
+} from "../assembly/world-entities"
 import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
 import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
@@ -57,8 +62,8 @@ const StageListBoxWidth = 140
 const NewStageBarHeight = 100
 
 const StageSettingsButtonWidth = 140
-
 const BpSettingsButtonWidth = 180
+const OtherSettingsButtonWidth = 140
 
 const AssemblySettingsTabWidth = 420
 
@@ -426,14 +431,24 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     return (
       <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
         <button
+          caption={[L_GuiAssemblySettings.RebuildAllStages]}
+          styleMod={{ width: OtherSettingsButtonWidth }}
+          on_gui_click={ibind(this.rebuildAllStages)}
+        />
+        <line />
+        <button
           style="red_button"
           caption={[L_GuiAssemblySettings.DeleteAssembly]}
+          styleMod={{ width: OtherSettingsButtonWidth }}
           on_gui_click={ibind(this.beginDelete)}
         />
         <VerticalPusher />
         <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
       </flow>
     )
+  }
+  private rebuildAllStages() {
+    rebuildAllStages(this.assembly)
   }
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
