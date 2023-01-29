@@ -20,7 +20,7 @@ import {
   getPasteRotatableType,
   PasteRotatableType,
 } from "../entity/entity-info"
-import { ProtectedEvents } from "../lib"
+import { PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
@@ -228,10 +228,15 @@ let state: {
 
   preMinedItemCalled?: boolean
 
-  currentlyInBlueprintPaste?: Stage
-  blueprintEntities?: BlueprintEntity[]
-  blueprintOriginalNumEntities?: number
-  allowPasteUpgrades?: boolean
+  currentBlueprintPaste?: {
+    stage: Stage
+    entities: BlueprintEntity[]
+    knownLuaEntities: PRecord<number, LuaEntity>
+    needsManualConnections: number[]
+    originalNumEntities: number
+    allowPasteUpgrades: boolean
+    usedPasteUpgrade?: boolean
+  }
 }
 declare global {
   interface PlayerData {
@@ -293,8 +298,7 @@ function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerInde
 
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
-  state.currentlyInBlueprintPaste = nil
-  state.blueprintEntities = nil
+  state.currentBlueprintPaste = nil
 
   const surface = player.surface
   if (player.is_cursor_blueprint()) {
@@ -409,9 +413,9 @@ Events.on_built_entity((e) => {
   const { created_entity: entity } = e
   if (!entity.valid) return
 
-  const currentlyInBlueprintPaste = state.currentlyInBlueprintPaste
-  if (currentlyInBlueprintPaste) {
-    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity, currentlyInBlueprintPaste)
+  const currentBlueprintPaste = state.currentBlueprintPaste
+  if (currentBlueprintPaste) {
+    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity, currentBlueprintPaste.stage)
     return
   }
   // just in case
@@ -489,7 +493,6 @@ const IsLastEntity = "bp100IsLastEntity"
 interface MarkerTags extends Tags {
   referencedLuaIndex: number
   referencedName: string
-  hasCircuitWires: true
 }
 
 function getInnerBlueprint(stack: BaseItemStack | nil): BlueprintItemStack | nil {
@@ -538,7 +541,6 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
     const entity = entities[i - 1]
     const { direction } = entity
     const { name, position } = entity
-    const hasCircuitWires = entity.connections ?? entity.neighbours ? true : nil
     entities[nextIndex - 1] = {
       entity_number: nextIndex,
       name: Prototypes.EntityMarker,
@@ -546,7 +548,6 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
       position,
       tags: {
         referencedName: name,
-        hasCircuitWires,
         referencedLuaIndex: i,
       } as MarkerTags,
     }
@@ -570,10 +571,9 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
 }
 
 function revertPreparedBlueprint(stack: BlueprintItemStack): void {
-  const entities = assert(state.blueprintEntities)
-  const numEntities = entities.length
-  const originalNumEntities = state.blueprintOriginalNumEntities!
-  for (const i of $range(numEntities, originalNumEntities + 1, -1)) {
+  const current = assert(state.currentBlueprintPaste)
+  const entities = current.entities
+  for (const i of $range(entities.length, current.originalNumEntities + 1, -1)) {
     entities[i - 1] = nil!
   }
   stack.set_blueprint_entities(entities)
@@ -591,10 +591,14 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
   }
   const [entities, numEntities] = prepareBlueprintForStagePaste(blueprint)
   if (entities != nil) {
-    state.currentlyInBlueprintPaste = stage
-    state.blueprintEntities = entities
-    state.blueprintOriginalNumEntities = numEntities!
-    state.allowPasteUpgrades = player.mod_settings[Settings.UpgradeOnPaste].value as boolean
+    state.currentBlueprintPaste = {
+      stage,
+      entities,
+      knownLuaEntities: {},
+      needsManualConnections: [],
+      originalNumEntities: numEntities,
+      allowPasteUpgrades: player.mod_settings[Settings.UpgradeOnPaste].value as boolean,
+    }
   }
 }
 
@@ -621,16 +625,6 @@ Events.on_player_changed_surface((e) => {
   state.lastPreBuild = nil
 })
 
-function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
-  const player = game.get_player(e.player_index)!
-  const blueprint = getInnerBlueprint(player.cursor_stack)
-  revertPreparedBlueprint(assert(blueprint))
-  state.currentlyInBlueprintPaste = nil
-  state.blueprintEntities = nil
-  state.blueprintOriginalNumEntities = nil
-  state.allowPasteUpgrades = nil
-}
-
 function isMarkerEntity(entity: LuaEntity): boolean {
   return (
     entity.name == Prototypes.EntityMarker ||
@@ -647,17 +641,73 @@ function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: St
   entity.destroy()
 }
 
+function manuallyConnectWires(
+  luaEntity: LuaEntity,
+  connections: BlueprintConnectionData[] | nil,
+  entityId: number,
+  sourceId: number,
+  wireType: defines.wire_type,
+) {
+  if (!connections) return
+  const knownLuaEntities = state.currentBlueprintPaste!.knownLuaEntities
+  for (const { entity_id: otherId, circuit_id } of connections) {
+    const otherEntity = knownLuaEntities[otherId]
+    if (!otherEntity) continue
+    luaEntity.connect_neighbour({
+      wire: wireType,
+      target_entity: otherEntity,
+      source_circuit_id: sourceId,
+      target_circuit_id: circuit_id ?? 1,
+    })
+  }
+}
+
+function manuallyConnectPoint(
+  luaEntity: LuaEntity,
+  connection: BlueprintConnectionPoint | nil,
+  entityId: number,
+  sourceId: number,
+) {
+  if (!connection) return
+  manuallyConnectWires(luaEntity, connection.red, entityId, sourceId, defines.wire_type.red)
+  manuallyConnectWires(luaEntity, connection.green, entityId, sourceId, defines.wire_type.green)
+}
+
+function manuallyConnectCircuits(
+  luaEntity: LuaEntity,
+  connections: BlueprintCircuitConnection | nil,
+  entityId: number,
+) {
+  if (!connections) return
+  manuallyConnectPoint(luaEntity, connections["1"], entityId, 1)
+  manuallyConnectPoint(luaEntity, connections["2"], entityId, 2)
+}
+
+function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] | nil) {
+  if (!connections || luaEntity.type != "electric-pole") return
+  const knownLuaEntities = state.currentBlueprintPaste!.knownLuaEntities
+  for (const otherId of connections) {
+    const otherEntity = knownLuaEntities[otherId]
+    if (!otherEntity || otherEntity.type != "electric-pole") continue
+    luaEntity.connect_neighbour(otherEntity)
+  }
+}
+
 function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags, stage: Stage): void {
   const referencedName = tags.referencedName
   if (!referencedName) return
+
+  const bpState = state.currentBlueprintPaste!
+
   const { position, surface } = entity
   let luaEntities = entity.surface.find_entities_filtered({
     position,
     radius: 0,
     name: referencedName,
   })
+  let usedPasteUpgrade = false
   if (!next(luaEntities)[0]) {
-    if (!state.allowPasteUpgrades) return
+    if (!bpState.allowPasteUpgrades) return
     const compatible = getCompatibleNames(referencedName)
     if (!compatible) return
     luaEntities = surface.find_entities_filtered({
@@ -665,9 +715,10 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       radius: 0,
       name: compatible,
     })
-    // debugPrint(luaEntities)
+    if (!next(luaEntities)[0]) return
+    usedPasteUpgrade = true
   }
-  let luaEntity: LuaEntity | nil
+
   const pasteRotatableType = getPasteRotatableType(referencedName)
   const entityDir = entity.direction
   if (entityDir % 2 == 1) {
@@ -678,6 +729,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     return
   }
 
+  let luaEntity: LuaEntity | nil
   if (pasteRotatableType == nil) {
     luaEntity = luaEntities.find((e) => e.direction == entityDir)
   } else if (pasteRotatableType == PasteRotatableType.Rectangular) {
@@ -687,11 +739,68 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     luaEntity = luaEntities[0]
   }
   if (!luaEntity) return
-  const value = state.blueprintEntities![tags.referencedLuaIndex - 1]
-  const result = onEntityPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, nil, e.player_index, value)
-  if (result != false && tags.hasCircuitWires) {
-    onCircuitWiresPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, e.player_index)
+
+  if (usedPasteUpgrade) {
+    bpState.usedPasteUpgrade = true
   }
+
+  const entityId = tags.referencedLuaIndex
+  const value = bpState.entities[entityId - 1]
+  const [asmEntity, isExisting] = onEntityPossiblyUpdated(
+    stage.assembly,
+    luaEntity,
+    stage.stageNumber,
+    nil,
+    e.player_index,
+    value,
+  )
+  if (!asmEntity) return
+
+  const { neighbours, connections } = value
+  if (!neighbours && !connections) return
+
+  if (isExisting) {
+    // check for circuit wires
+    if (!luaEntity.valid) {
+      // must have been upgraded
+      luaEntity = asmEntity.getWorldEntity(stage.stageNumber)
+      if (!luaEntity) return
+
+      bpState.needsManualConnections.push(entityId)
+    } else {
+      onCircuitWiresPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, e.player_index)
+    }
+  }
+  bpState.knownLuaEntities[entityId] = luaEntity
+}
+
+function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
+  const {
+    entities,
+    knownLuaEntities,
+    needsManualConnections,
+    usedPasteUpgrade,
+    stage: { assembly, stageNumber },
+  } = state.currentBlueprintPaste!
+
+  for (const entityId of needsManualConnections) {
+    const value = entities[entityId - 1]
+    const luaEntity = knownLuaEntities[entityId]
+    if (!luaEntity) continue
+    manuallyConnectNeighbours(luaEntity, value.neighbours)
+    manuallyConnectCircuits(luaEntity, value.connections, entityId)
+    onCircuitWiresPossiblyUpdated(assembly, luaEntity, stageNumber, e.player_index)
+  }
+
+  const player = game.get_player(e.player_index)!
+
+  if (usedPasteUpgrade) {
+    player.print([L_Interaction.PasteUpgradeApplied])
+  }
+
+  const blueprint = getInnerBlueprint(player.cursor_stack)
+  revertPreparedBlueprint(assert(blueprint))
+  state.currentBlueprintPaste = nil
 }
 
 // Circuit wires and cables
@@ -883,6 +992,7 @@ Events.on_chunk_generated((e) => {
 export const _assertInValidState = (): void => {
   state.lastPreBuild = nil // can be set
   for (const [k, v] of pairs(state)) {
+    state[k] = nil!
     assert(!v, `${k} was not cleaned up`)
   }
 }

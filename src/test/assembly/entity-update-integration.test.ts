@@ -718,3 +718,44 @@ test.each([true, false])("can maybe upgrade entity via blueprint, with setting %
   expect(entity.firstValue).toMatchTable({ name: expected })
   expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
 })
+
+test("can upgrade entity with wires via blueprint", () => {
+  const player = game.players[1]
+  player.mod_settings[Settings.UpgradeOnPaste] = { value: true }
+  const entity1: BlueprintEntity = {
+    entity_number: 1,
+    name: "fast-inserter",
+    position: Pos(0.5, 0.5),
+    direction: direction.west,
+    connections: {
+      1: {
+        red: [{ entity_id: 2, circuit_id: 1 }],
+      },
+    },
+  }
+  const entity2: BlueprintEntity = {
+    entity_number: 2,
+    name: "transport-belt",
+    position: Pos(0, 2),
+    direction: direction.south,
+    connections: {
+      1: {
+        red: [{ entity_id: 1, circuit_id: 1 }],
+      },
+    },
+  }
+  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.blueprint_snap_to_grid = [1, 1]
+  stack.blueprint_absolute_snapping = true
+  stack.set_blueprint_entities([entity1, entity2])
+
+  player.teleport([0, 0], surfaces[0])
+  player.build_from_cursor({ position: pos, alt: true })
+
+  const expected = "fast-inserter"
+  expect(entity.firstValue).toMatchTable({ name: expected })
+  expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
+  expect(assembly.content.getCircuitConnections(entity)).not.toBeNil()
+})

@@ -32,7 +32,7 @@ export declare const enum L_ModSettingName {
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
   /** Location of entity stage info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
-  /** Allow upgrading entities via blueprint paste. */
+  /** Allow upgrading entities via blueprint paste */
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
 }
 export declare const enum L_ModSettingDescription {
@@ -124,6 +124,8 @@ export declare const enum L_Interaction {
   ConnectedEntitiesMissing = "bp100.interaction.connected-entities-missing",
   /** Cannot overbuild existing entity in a different direction */
   CannotBuildDifferentDirection = "bp100.interaction.cannot-build-different-direction",
+  /** Note: some entities were upgraded via blueprint paste (the upgrade-on-paste mod setting is enabled). */
+  PasteUpgradeApplied = "bp100.interaction.paste-upgrade-applied",
   /** Not in an staged build */
   NotInAnAssembly = "bp100.interaction.not-in-an-assembly",
   /** No next stage */

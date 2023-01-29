@@ -116,15 +116,14 @@ function getCompatibleEntityOrAdd(
   previousDirection: defines.direction | nil,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
-): AssemblyEntity | nil {
+): LuaMultiReturn<[AssemblyEntity, true] | [AssemblyEntity | nil, false]> {
   const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection)
-  if (compatible && stage >= compatible.firstStage) {
-    compatible.replaceWorldEntity(stage, entity) // just in case
-  } else {
-    onEntityCreated(assembly, entity, stage, byPlayer, knownBpValue)
-    return nil
+  if (!compatible || stage < compatible.firstStage) {
+    const result = onEntityCreated(assembly, entity, stage, byPlayer, knownBpValue)
+    return $multi(result, false as const)
   }
-  return compatible
+  compatible.replaceWorldEntity(stage, entity) // just in case
+  return $multi(compatible, true as const)
 }
 
 function notifyIfError(result: EntityUpdateResult, entity: AssemblyEntity, byPlayer: PlayerIndex | nil) {
@@ -217,7 +216,7 @@ export function onEntityDeleted(
  * Does not handle wires.
  * If previousDirection is specified, also checks for rotation.
  *
- * Returns: `false` if a previous entity was not found (and may have been added).
+ * @return
  */
 export function onEntityPossiblyUpdated(
   assembly: Assembly,
@@ -226,12 +225,13 @@ export function onEntityPossiblyUpdated(
   previousDirection: defines.direction | nil,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
-): false | nil {
-  const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer, knownBpValue)
-  if (!existing) return false
+): [AssemblyEntity | nil, boolean] {
+  const [existing, found] = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer, knownBpValue)
+  if (!found) return [existing, false]
 
   const result = tryUpdateEntityFromWorld(assembly, existing, stage, knownBpValue)
   notifyIfError(result, existing, byPlayer)
+  return [existing, true]
 }
 export function onEntityRotated(
   assembly: Assembly,
@@ -240,8 +240,8 @@ export function onEntityRotated(
   previousDirection: defines.direction,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const existing = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
-  if (!existing) return
+  const [existing, found] = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
+  if (!found) return
   const result = tryRotateEntityToMatchWorld(assembly, existing, stage)
   notifyIfError(result, existing, byPlayer)
 }
@@ -263,8 +263,8 @@ export function onCircuitWiresPossiblyUpdated(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
-  if (!existing) return
+  const [existing, found] = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
+  if (!found) return
   const result = updateWiresFromWorld(assembly, existing, stage)
   if (result == "max-connections-exceeded") {
     createNotification(existing, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
@@ -278,8 +278,8 @@ export function onEntityMarkedForUpgrade(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const existing = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
-  if (!existing) return
+  const [existing, found] = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
+  if (!found) return
 
   const result = tryApplyUpgradeTarget(assembly, existing, stage)
   notifyIfError(result, existing, byPlayer)
