@@ -1,7 +1,12 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.1
 Date: ????
+  Minor Features:
+    - Added "rebuild all stages" button to the "Other" settings tab.
+  Bugfixes:
+    - Fix issues with circuit wires using paste-to-upgrade.
   Changes:
+    - Make paste-to-upgrade setting default to false.
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.0
 Date: 2023-01-28
