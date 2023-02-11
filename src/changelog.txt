@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.2
-Date: ????
+Date: 2023-02-11
   Bugfixes:
     - Fixed blueprint pasting of entities in diagonal direction.
     - Fixed handling of overlapping rails in different directions.
