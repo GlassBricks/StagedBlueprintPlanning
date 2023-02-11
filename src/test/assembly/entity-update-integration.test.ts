@@ -759,3 +759,33 @@ test("can upgrade entity with wires via blueprint", () => {
   expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
   expect(assembly.content.getCircuitConnections(entity)).not.toBeNil()
 })
+
+describe.each([defines.direction.north, defines.direction.northeast])("with rail direction %d", (diag) => {
+  test.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
+    "can paste a straight rail in all rotations",
+    (direction) => {
+      const player = game.players[1]
+      const entity: BlueprintEntity = {
+        entity_number: 1,
+        name: "straight-rail",
+        position: Pos(0.5, 0.5),
+        direction: diag,
+      }
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.blueprint_snap_to_grid = [1, 1]
+      stack.blueprint_absolute_snapping = true
+      stack.set_blueprint_entities([entity])
+
+      const pos = Pos(5, 5)
+      player.teleport([0, 0], surfaces[0])
+      player.build_from_cursor({ position: pos, direction, alt: true })
+
+      const rail = surfaces[0].find_entity("straight-rail", pos)!
+      expect(rail).not.toBeNil()
+      let expected = (diag + direction) % 8
+      if (expected == 4 || expected == 6) expected -= 4 // left=right, up=down
+      expect(rail.direction).toBe(expected)
+    },
+  )
+})

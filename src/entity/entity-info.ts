@@ -55,12 +55,16 @@ export const enum PasteRotatableType {
   Rectangular,
   Square,
 }
-const pasteRotatableTypes = newLuaSet("assembling-machine", "boiler")
 const pasteRotationTypes = new LuaMap<string, PasteRotatableType>()
 
 function processPasteRotatableType(prototype: LuaEntityPrototype) {
   const type = prototype.type
-  if (!pasteRotatableTypes.has(type)) return
+
+  if (type == "straight-rail") {
+    pasteRotationTypes.set(prototype.name, PasteRotatableType.Rectangular)
+    return
+  }
+  if (type != "assembling-machine" && type != "boiler") return
   const collisionBox = prototype.collision_box
   if (BBox.isCenteredSquare(collisionBox)) {
     pasteRotationTypes.set(prototype.name, PasteRotatableType.Square)

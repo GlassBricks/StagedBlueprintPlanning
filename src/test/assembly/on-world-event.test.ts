@@ -170,18 +170,21 @@ describe("onEntityCreated", () => {
     },
   )
 
-  test("if entity can overlap with self, adding lower at a new direction creates new entity instead of updating old", () => {
-    addEntity(2, {
-      name: "straight-rail",
-      direction: defines.direction.east,
-    })
-    const luaEntity2 = createWorldEntity(2, {
-      name: "straight-rail",
-      direction: defines.direction.north,
-    })
-    worldListener.onEntityCreated(assembly, luaEntity2, 2, playerIndex)
-    expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity2, 2)
-  })
+  test.each([1, 2, 3])(
+    "if entity can overlap with self, adding at new direction at stage %d creates new entity",
+    (stage) => {
+      addEntity(2, {
+        name: "straight-rail",
+        direction: defines.direction.east,
+      })
+      const luaEntity2 = createWorldEntity(stage, {
+        name: "straight-rail",
+        direction: defines.direction.north,
+      })
+      worldListener.onEntityCreated(assembly, luaEntity2, stage, playerIndex)
+      expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity2, stage)
+    },
+  )
 
   test("disallows building at earlier stage with different direction", () => {
     const entity1 = addEntity(2, {

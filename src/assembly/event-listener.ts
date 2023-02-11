@@ -236,6 +236,7 @@ let state: {
     originalNumEntities: number
     allowPasteUpgrades: boolean
     usedPasteUpgrade?: boolean
+    isFlipped: boolean
   }
 }
 declare global {
@@ -303,7 +304,7 @@ Events.on_pre_build((e) => {
   const surface = player.surface
   if (player.is_cursor_blueprint()) {
     const stage = getStageAtSurface(surface.index)
-    onPreBlueprintPasted(player, stage)
+    onPreBlueprintPasted(player, stage, e)
     return
   }
 
@@ -415,7 +416,7 @@ Events.on_built_entity((e) => {
 
   const currentBlueprintPaste = state.currentBlueprintPaste
   if (currentBlueprintPaste) {
-    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity, currentBlueprintPaste.stage)
+    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity)
     return
   }
   // just in case
@@ -579,7 +580,7 @@ function revertPreparedBlueprint(stack: BlueprintItemStack): void {
   stack.set_blueprint_entities(entities)
 }
 
-function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
+function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPreBuildEvent): void {
   if (!stage) {
     tryFixBlueprint(player)
     return
@@ -598,6 +599,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil): void {
       needsManualConnections: [],
       originalNumEntities: numEntities,
       allowPasteUpgrades: player.mod_settings[Settings.UpgradeOnPaste].value as boolean,
+      isFlipped: event.flip_vertical != event.flip_horizontal,
     }
   }
 }
@@ -632,10 +634,10 @@ function isMarkerEntity(entity: LuaEntity): boolean {
   )
 }
 
-function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, stage: Stage): void {
+function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity): void {
   const tags = (e.tags ?? entity.tags) as MarkerTags
   if (tags != nil) {
-    handleEntityMarkerBuilt(e, entity, tags, stage)
+    handleEntityMarkerBuilt(e, entity, tags)
     if (tags[IsLastEntity] != nil) onLastEntityMarkerBuilt(e)
   }
   entity.destroy()
@@ -693,7 +695,7 @@ function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] |
   }
 }
 
-function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags, stage: Stage): void {
+function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags): void {
   const referencedName = tags.referencedName
   if (!referencedName) return
 
@@ -719,17 +721,16 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     usedPasteUpgrade = true
   }
 
-  const pasteRotatableType = getPasteRotatableType(referencedName)
-  const entityDir = entity.direction
-  if (entityDir % 2 == 1) {
-    for (const candidate of luaEntities) {
-      // don't use known value, only look at possibly updated
-      onEntityPossiblyUpdated(stage.assembly, candidate, stage.stageNumber, nil, e.player_index)
-    }
-    return
+  const entityId = tags.referencedLuaIndex
+  const value = bpState.entities[entityId - 1]
+
+  let entityDir = entity.direction
+  if (value.direction && value.direction % 2 == 1) {
+    entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
   }
 
   let luaEntity: LuaEntity | nil
+  const pasteRotatableType = getPasteRotatableType(referencedName)
   if (pasteRotatableType == nil) {
     luaEntity = luaEntities.find((e) => e.direction == entityDir)
   } else if (pasteRotatableType == PasteRotatableType.Rectangular) {
@@ -744,8 +745,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     bpState.usedPasteUpgrade = true
   }
 
-  const entityId = tags.referencedLuaIndex
-  const value = bpState.entities[entityId - 1]
+  const stage = bpState.stage
   const [asmEntity, isExisting] = onEntityPossiblyUpdated(
     stage.assembly,
     luaEntity,
