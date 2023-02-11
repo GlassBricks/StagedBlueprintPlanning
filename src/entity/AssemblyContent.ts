@@ -180,9 +180,13 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     if (pasteRotatableType == PasteRotatableType.Square) {
       return this.findCompatibleAnyDirection(name, entity.position)
     }
-    if (pasteRotatableType == PasteRotatableType.Rectangular) {
+    if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
+      if (direction % 2 == 1) {
+        // if diagonal, we _do_ care about direction
+        return this.findCompatibleByTraits(name, position, direction)
+      }
       return (
         this.findCompatibleByTraits(name, position, direction) ??
         this.findCompatibleByTraits(name, position, oppositedirection(direction))

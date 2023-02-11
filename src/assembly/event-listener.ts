@@ -20,7 +20,7 @@ import {
   getPasteRotatableType,
   PasteRotatableType,
 } from "../entity/entity-info"
-import { PRecord, ProtectedEvents } from "../lib"
+import { assertNever, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
@@ -725,19 +725,23 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   const value = bpState.entities[entityId - 1]
 
   let entityDir = entity.direction
-  if (value.direction && value.direction % 2 == 1) {
+  const isDiagonal = value.direction && value.direction % 2 == 1
+  if (isDiagonal) {
     entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
   }
 
   let luaEntity: LuaEntity | nil
   const pasteRotatableType = getPasteRotatableType(referencedName)
-  if (pasteRotatableType == nil) {
+  if (pasteRotatableType == nil || isDiagonal) {
+    // if diagonal, then don't care about rotatable type
     luaEntity = luaEntities.find((e) => e.direction == entityDir)
-  } else if (pasteRotatableType == PasteRotatableType.Rectangular) {
+  } else if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
     const oppositeDir = oppositedirection(entityDir)
     luaEntity = luaEntities.find((e) => e.direction == entityDir || e.direction == oppositeDir)
-  } else {
+  } else if (pasteRotatableType == PasteRotatableType.Square) {
     luaEntity = luaEntities[0]
+  } else {
+    assertNever(pasteRotatableType)
   }
   if (!luaEntity) return
 

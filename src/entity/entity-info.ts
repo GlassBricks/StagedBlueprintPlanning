@@ -52,7 +52,7 @@ function trimCategories() {
 }
 
 export const enum PasteRotatableType {
-  Rectangular,
+  RectangularOrStraightRail,
   Square,
 }
 const pasteRotationTypes = new LuaMap<string, PasteRotatableType>()
@@ -61,7 +61,7 @@ function processPasteRotatableType(prototype: LuaEntityPrototype) {
   const type = prototype.type
 
   if (type == "straight-rail") {
-    pasteRotationTypes.set(prototype.name, PasteRotatableType.Rectangular)
+    pasteRotationTypes.set(prototype.name, PasteRotatableType.RectangularOrStraightRail)
     return
   }
   if (type != "assembling-machine" && type != "boiler") return
@@ -69,7 +69,7 @@ function processPasteRotatableType(prototype: LuaEntityPrototype) {
   if (BBox.isCenteredSquare(collisionBox)) {
     pasteRotationTypes.set(prototype.name, PasteRotatableType.Square)
   } else if (BBox.isCenteredRectangle(collisionBox)) {
-    pasteRotationTypes.set(prototype.name, PasteRotatableType.Rectangular)
+    pasteRotationTypes.set(prototype.name, PasteRotatableType.RectangularOrStraightRail)
   }
   // else, none
 }
@@ -142,6 +142,7 @@ export function getSelectionBox(entityName: string): BBoxClass {
   if (!prototypesProcessed) processPrototypes()
   return selectionBoxes.get(entityName) ?? BBox.empty()
 }
+/** For straight rails, paste rotation only applies to non-diagonal rails. */
 export function getPasteRotatableType(entityName: string): PasteRotatableType | nil {
   if (!prototypesProcessed) processPrototypes()
   return pasteRotationTypes.get(entityName)

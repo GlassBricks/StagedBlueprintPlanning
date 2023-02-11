@@ -186,6 +186,19 @@ describe("onEntityCreated", () => {
     },
   )
 
+  test("diagonal rails at same position but opposite direction are treated as different entities", () => {
+    addEntity(2, {
+      name: "straight-rail",
+      direction: defines.direction.northeast,
+    })
+    const luaEntity2 = createWorldEntity(2, {
+      name: "straight-rail",
+      direction: defines.direction.southwest,
+    })
+    worldListener.onEntityCreated(assembly, luaEntity2, 2, playerIndex)
+    expect(assemblyUpdater.addNewEntity).calledWith(assembly, luaEntity2, 2)
+  })
+
   test("disallows building at earlier stage with different direction", () => {
     const entity1 = addEntity(2, {
       name: "transport-belt",

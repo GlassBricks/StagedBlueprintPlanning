@@ -768,7 +768,7 @@ describe.each([defines.direction.north, defines.direction.northeast])("with rail
       const entity: BlueprintEntity = {
         entity_number: 1,
         name: "straight-rail",
-        position: Pos(0.5, 0.5),
+        position: Pos(1, 1),
         direction: diag,
       }
       const stack = player.cursor_stack!
@@ -788,4 +788,40 @@ describe.each([defines.direction.north, defines.direction.northeast])("with rail
       expect(rail.direction).toBe(expected)
     },
   )
+})
+
+test("pasting diagonal rail at same position but different direction", () => {
+  const player = game.players[1]
+  const entity: BlueprintEntity = {
+    entity_number: 1,
+    name: "straight-rail",
+    position: Pos(1, 1),
+    direction: defines.direction.northeast,
+  }
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.blueprint_snap_to_grid = [1, 1]
+  stack.blueprint_absolute_snapping = true
+  stack.set_blueprint_entities([entity])
+
+  const pos = Pos(5, 5)
+  player.teleport([0, 0], surfaces[0])
+
+  player.build_from_cursor({ position: pos, direction: defines.direction.north, alt: true })
+  const rail = surfaces[0].find_entities_filtered({
+    name: "straight-rail",
+    position: pos,
+    radius: 0,
+    direction: defines.direction.northeast,
+  })[0]
+  expect(rail).not.toBeNil()
+
+  player.build_from_cursor({ position: pos, direction: defines.direction.south, alt: true })
+  const rail2 = surfaces[0].find_entities_filtered({
+    name: "straight-rail",
+    position: pos,
+    radius: 0,
+    direction: defines.direction.southwest,
+  })
+  expect(rail2).not.toBeNil()
 })

@@ -40,12 +40,7 @@ describe("findCompatible", () => {
   })
 
   test("findCompatibleAnyDirection finds compatible if same name and any direction", () => {
-    const entity: AssemblyEntity = createAssemblyEntity(
-      { name: "foo" },
-      { x: 0, y: 0 },
-      defines.direction.east as defines.direction,
-      1,
-    )
+    const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.add(entity)
 
     expect(content.findCompatibleAnyDirection("foo", { x: 0, y: 0 })).to.be(entity)
@@ -64,7 +59,7 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity(
       { name: "assembling-machine-1" },
       { x: 0, y: 0 },
-      defines.direction.east as defines.direction,
+      defines.direction.east,
       1,
     )
     content.add(entity)
@@ -101,7 +96,7 @@ describe("findCompatible", () => {
         x: 0,
         y: 0,
       },
-      defines.direction.west as defines.direction,
+      defines.direction.west,
       1,
     )
     content.add(assemblyEntity)
@@ -118,6 +113,41 @@ describe("findCompatible", () => {
     expect(content.findExactAtPosition(luaEntity, 2, luaEntity.position)).to.be(entity)
     luaEntity.teleport(1, 1)
     expect(content.findExactAtPosition(luaEntity, 2, { x: 0, y: 0 })).to.be(entity)
+  })
+
+  test("rails at same position but opposite direction are treated different only if diagonal", () => {
+    const entity1: AssemblyEntity = createAssemblyEntity(
+      { name: "straight-rail" },
+      { x: 1, y: 1 },
+      defines.direction.northeast,
+      1,
+    )
+    const entity2: AssemblyEntity = createAssemblyEntity(
+      { name: "straight-rail" },
+      { x: 1, y: 1 },
+      defines.direction.north,
+      1,
+    )
+    const luaEntity1 = assert(
+      surfaces[0].create_entity({
+        name: "straight-rail",
+        position: { x: 1, y: 1 },
+        direction: defines.direction.southwest,
+      }),
+    )
+    const luaEntity2 = assert(
+      surfaces[0].create_entity({
+        name: "straight-rail",
+        position: { x: 1, y: 1 },
+        direction: defines.direction.south,
+      }),
+    )
+    content.add(entity1)
+    content.add(entity2)
+    // diagonal, should have no match
+    expect(content.findCompatibleWithLuaEntity(luaEntity1, nil)).to.be(nil)
+    // orthogonal, should have match
+    expect(content.findCompatibleWithLuaEntity(luaEntity2, nil)).to.be(entity2)
   })
 })
 
