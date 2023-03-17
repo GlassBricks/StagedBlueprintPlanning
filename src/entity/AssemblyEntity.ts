@@ -780,7 +780,12 @@ const excludedTypes: Record<string, true> = {
 }
 
 export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
-  return luaEntity.is_entity_with_owner && luaEntity.has_flag("player-creation") && !excludedTypes[luaEntity.type]
+  return (
+    luaEntity.valid &&
+    luaEntity.is_entity_with_owner &&
+    luaEntity.has_flag("player-creation") &&
+    !excludedTypes[luaEntity.type]
+  )
 }
 
 export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
