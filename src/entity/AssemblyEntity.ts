@@ -27,20 +27,13 @@ import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-va
 import { Entity, LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./Entity"
 import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
 import { registerEntity } from "./registration"
-import {
-  _applyDiffToDiffUnchecked,
-  applyDiffToEntity,
-  getDiffDiff,
-  getEntityDiff,
-  StageDiff,
-  StageDiffInternal,
-} from "./stage-diff"
+import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
 import floor = math.floor
 
 /** 1 indexed */
 export type StageNumber = number
 
-export type InternalSavedDirection = { _internalSavedDirection: never }
+export type InternalSavedDirection = { _internalSavedDirection?: never }
 /**
  * All the data about one entity in an assembly, across all stages.
  */
@@ -246,7 +239,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.position = position
   }
 
-  isRollingStock(): this is AssemblyEntityImpl<RollingStockEntity> {
+  isRollingStock(): boolean {
     return isRollingStockType(this.firstValue.name)
   }
   isUndergroundBelt(): this is UndergroundBeltAssemblyEntity {
@@ -308,7 +301,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     const existingDiff = stageDiffs && stageDiffs[stage]
     if (existingDiff) {
-      _applyDiffToDiffUnchecked(existingDiff, diff)
+      for (const [key, value] of pairs(diff)) {
+        existingDiff[key] = value as any
+      }
     } else {
       stageDiffs ??= this.stageDiffs = {}
       stageDiffs[stage] = shallowCopy(diff)

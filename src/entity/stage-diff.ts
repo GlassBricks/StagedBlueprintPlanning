@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,8 +10,8 @@
  */
 
 import { deepCompare, Events, Mutable, nilIfEmpty, shallowCopy } from "../lib"
-import { Entity } from "./Entity"
 import { DiffValue, getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
+import { Entity } from "./Entity"
 
 export type StageDiff<E extends Entity> = {
   readonly [P in keyof E]?: DiffValue<E[P]>
@@ -38,14 +38,6 @@ export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<Sta
   return nilIfEmpty(changes)
 }
 
-export function _applyDiffToDiffUnchecked<E extends Entity = Entity>(
-  existing: Mutable<StageDiff<E>>,
-  diff: StageDiff<E>,
-): void {
-  for (const [key, value] of pairs(diff)) {
-    existing[key] = value as any
-  }
-}
 export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: StageDiff<E>): void {
   for (const [key, value] of pairs(diff as StageDiffInternal<E>)) {
     if (value == nilPlaceholder) {
