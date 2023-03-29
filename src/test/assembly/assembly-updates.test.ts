@@ -205,13 +205,21 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 test("moveEntityOnPreviewReplace", () => {
   const { entity } = addEntity(2)
 
-  asmUpdates.moveEntityOnPreviewReplaced(assembly, entity, 1)
+  assert(asmUpdates.moveEntityOnPreviewReplaced(assembly, entity, 1))
 
   expect(entity.firstStage).to.equal(1)
   expect((entity.firstValue as BlueprintEntity).override_stack_size).to.be(1)
   expect(entity.hasStageDiff()).to.be(false)
   assertOneEntity()
   assertUpdateCalled(entity, 1, 2)
+})
+
+test("cannot moveEntityOnPreviewReplace to a higher stage", () => {
+  const { entity } = addEntity(2)
+
+  expect(asmUpdates.moveEntityOnPreviewReplaced(assembly, entity, 3)).to.be(false)
+  assertOneEntity()
+  assertWUNotCalled()
 })
 
 test("reviveSettingsRemnant", () => {
@@ -224,6 +232,14 @@ test("reviveSettingsRemnant", () => {
   expect(entity.firstStage).to.equal(1)
   assertOneEntity()
   assertReviveSettingsRemnantCalled(entity)
+})
+
+test("cannot reviveSettingsRemnant if still not a remnant", () => {
+  const { entity } = addEntity(2)
+
+  expect(asmUpdates.reviveSettingsRemnant(assembly, entity, 1)).to.be(false)
+  assertOneEntity()
+  assertWUNotCalled()
 })
 
 describe("deleteEntityOrCreateSettingsRemnant", () => {
@@ -478,14 +494,6 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   test("disallows if has fluid inputs", () => {
     luaEntity.set_recipe("express-transport-belt")
     const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 3)
-    expect(ret).to.be("cannot-rotate")
-
-    assertOneEntity()
-    assertRefreshCalled(entity, 3)
-  })
-  test("disallows if has fluid inputs", () => {
-    luaEntity.set_recipe("express-transport-belt")
-    const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 3)
     expect(ret).to.be("cannot-rotate")
 
     assertOneEntity()

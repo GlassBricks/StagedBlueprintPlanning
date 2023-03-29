@@ -67,7 +67,7 @@ function removeInStage(stage: StageNumber) {
 function addInStage(stage: StageNumber) {
   entity.replaceWorldOrPreviewEntity(stage, createEntity(stage))
 }
-describe("error highlights and selection proxy", () => {
+describe("error highlights", () => {
   before_each(() => {
     for (const i of $range(1, 5)) addInStage(i)
   })
@@ -213,7 +213,7 @@ describe("settings remnants", () => {
   })
 })
 
-test("deleteAllHighlights deletes all highlights", () => {
+test("deleteAllHighlights", () => {
   entity.destroyWorldOrPreviewEntity(2)
   entity.destroyWorldOrPreviewEntity(3)
   updateAllHighlights(assembly, entity)
