@@ -25,6 +25,7 @@ export function formatVersion(version: string): VersionString {
 
 export namespace Migrations {
   let migrations: Record<VersionString, (() => void)[]> = {}
+  let earlyMigrations: Record<VersionString, (() => void)[]> = {}
 
   /** Runs when migrating from a version earlier than the specified version. */
   export function to(version: string, func: () => void): void {
@@ -36,6 +37,10 @@ export namespace Migrations {
     to(version, func)
   }
 
+  export function early(version: string, func: () => void): void {
+    ;(earlyMigrations[formatVersion(version)] ||= []).push(func)
+  }
+
   /** Runs during any migration from an earlier version. */
   export function fromAny(func: () => void): void {
     to(script.active_mods[script.mod_name], func)
@@ -44,20 +49,26 @@ export namespace Migrations {
   export function _prepareMock(): void {
     assert(game && script.active_mods.testorio, "should not mock until game loaded")
     migrations = {}
+    earlyMigrations = {}
   }
 
-  function getMigrationsToRun(oldVersion: string): (() => void)[] {
+  function getMigrationsToRun(
+    oldVersion: string,
+    migrationList: Record<VersionString, (() => void)[]>,
+  ): (() => void)[] {
     const formattedOldVersion = formatVersion(oldVersion)
-    const versions = (Object.keys(migrations) as VersionString[]).filter((v) => formattedOldVersion < v).sort()
+    const versions = (Object.keys(migrationList) as VersionString[]).filter((v) => formattedOldVersion < v).sort()
     if (versions.length > 0) {
       log("Running migrations for versions: " + versions.join(", "))
-      return versions.flatMap((v) => migrations[v])
+      return versions.flatMap((v) => migrationList[v])
     }
     return []
   }
   export function doMigrations(oldVersion: string): void {
-    const migrations = getMigrationsToRun(oldVersion)
-    for (const fn of migrations) fn()
+    const migrations1 = getMigrationsToRun(oldVersion, earlyMigrations)
+    for (const fn of migrations1) fn()
+    const migrations2 = getMigrationsToRun(oldVersion, migrations)
+    for (const fn of migrations2) fn()
   }
 
   // noinspection JSUnusedGlobalSymbols

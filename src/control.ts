@@ -16,7 +16,7 @@
 
 import "./assembly"
 import { Events } from "./lib"
-import "./migrations-custom"
+import { formatVersion, Migrations } from "./lib/migration"
 import "./ui"
 
 pcall(require, "test.test-init")
@@ -25,4 +25,18 @@ Events.on_init(() => {
   const force = game.forces.player
   force.research_all_technologies()
   force.enable_all_recipes()
+})
+
+Events.on_configuration_changed((data) => {
+  const thisChange = data.mod_changes[script.mod_name]
+  if (!thisChange) return
+  const oldVersion = thisChange.old_version
+  if (!oldVersion) return
+  if (formatVersion(oldVersion) < formatVersion("0.13.1")) {
+    error(
+      "Staged blueprint planning: migrating from a version earlier than 0.13.1 is no longer supported after v0.16.0 " +
+        "Try installing version 0.15.x first (by downloading directly from the mod portal), loading/saving the game, THEN install the latest version.",
+    )
+  }
+  Migrations.doMigrations(oldVersion)
 })

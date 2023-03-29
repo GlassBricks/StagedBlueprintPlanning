@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { formatVersion, Migrations } from "../migration"
 import expect from "tstl-expect"
+import { formatVersion, Migrations } from "../migration"
 
 test("formatVersion", () => {
   expect(formatVersion("1.2.3")).to.equal("01.02.03")
@@ -39,5 +39,12 @@ describe("Migrations", () => {
     for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.to(version, () => run.push(version))
     Migrations.doMigrations("1.2.3")
     expect(run).to.equal(["1.2.4", "1.2.5"])
+  })
+
+  test("runs early migrations before later migrations", () => {
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.to(version, () => run.push(version))
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.early(version, () => run.push(version + " e"))
+    Migrations.doMigrations("1.2.3")
+    expect(run).to.equal(["1.2.4 e", "1.2.5 e", "1.2.4", "1.2.5"])
   })
 })
