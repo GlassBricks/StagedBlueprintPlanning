@@ -246,7 +246,7 @@ describe("tryMoveEntity", () => {
     expect(entity.position).to.equal(newPos)
     expect(entity.getDirection()).to.be(newDir)
 
-    expect(assembly.content.findCompatibleByTraits(entity.getNameAtStage(1), newPos, newDir)).to.be(entity)
+    expect(assembly.content.findCompatible(entity.getNameAtStage(1), newPos, newDir)).to.be(entity)
   }
 
   function assertNotMoved() {
@@ -259,7 +259,7 @@ describe("tryMoveEntity", () => {
     expect(entity.position).to.equal(origPos)
     expect(entity.getDirection()).to.be(origDir)
 
-    expect(assembly.content.findCompatibleByTraits(entity.getNameAtStage(1), origPos, origDir)).to.be(entity)
+    expect(assembly.content.findCompatible(entity.getNameAtStage(1), origPos, origDir)).to.be(entity)
   }
 
   test("can move entity if moved in first stage", () => {

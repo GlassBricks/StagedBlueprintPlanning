@@ -1041,7 +1041,7 @@ describe("rolling stock", () => {
 
     assertNEntities(1)
 
-    const found = assembly.content.findCompatibleAnyDirection(rollingStock.name, rollingStock.position)!
+    const found = assembly.content.findCompatible(rollingStock.name, rollingStock.position, nil)!
     expect(found).to.be.any()
     expect(found).to.be(result)
 

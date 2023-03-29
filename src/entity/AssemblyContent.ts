@@ -33,10 +33,20 @@ import { getUndergroundDirection } from "./underground-belt"
  * Also keeps tracks of info spanning multiple entities (wire/circuit connections).
  */
 export interface AssemblyContent {
-  findCompatibleByTraits(entityName: string, position: Position, direction: defines.direction): AssemblyEntity | nil
-  findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil
-  findCompatibleWithLuaEntity(entity: BasicEntityInfo, previousDirection: defines.direction | nil): AssemblyEntity | nil
-  findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil
+  findCompatible(
+    entityName: string,
+    position: Position,
+    direction: defines.direction | nil,
+    stage?: StageNumber,
+  ): AssemblyEntity | nil
+  findCompatibleWithLuaEntity(
+    entity: BasicEntityInfo,
+    previousDirection: defines.direction | nil,
+    stage?: StageNumber,
+  ): AssemblyEntity | nil
+
+  findExact(entity: LuaEntity, stage: StageNumber, position: Position): AssemblyEntity | nil
+
   findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil
 
@@ -88,49 +98,36 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
-  findCompatibleByTraits(entityName: string, position: Position, direction: defines.direction): AssemblyEntity | nil {
-    return this.findCompatible(entityName, position, direction)
-  }
-
-  private findCompatible(
+  findCompatible(
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
+    stage: StageNumber = 1,
   ): AssemblyEntity | nil {
     const { x, y } = position
     let cur = this.byPosition.get(x, y)
     if (!cur) return
     const category = getEntityCategory(entityName)
 
-    if (category == nil) {
-      while (cur != nil) {
-        if ((direction == nil || direction == (cur.direction ?? 0)) && cur.firstValue.name == entityName) return cur
-        cur = cur._next
-      }
-    } else {
-      while (cur != nil) {
-        if (
-          (direction == nil || direction == (cur.direction ?? 0)) &&
-          getEntityCategory(cur.firstValue.name) == category
-        )
-          return cur
-        cur = cur._next
-      }
+    while (cur != nil) {
+      if (
+        (direction == nil || direction == (cur.direction ?? 0)) &&
+        (cur.lastStage == nil || cur.lastStage >= stage) &&
+        (cur.firstValue.name == entityName || (category && getEntityCategory(cur.firstValue.name) == category))
+      )
+        return cur
+      cur = cur._next
     }
     return nil
   }
-
-  findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil {
-    return this.findCompatible(entityName, position, nil)
-  }
-
   findCompatibleWithLuaEntity(
     entity: BasicEntityInfo | LuaEntity,
     previousDirection: defines.direction | nil,
+    stage: StageNumber = 1,
   ): AssemblyEntity | nil {
     const type = entity.type
     if (type == "underground-belt") {
-      const found = this.findCompatibleAnyDirection(type, entity.position)
+      const found = this.findCompatible(type, entity.position, nil, stage)
       if (
         found &&
         getUndergroundDirection(found.getDirection(), (found as UndergroundBeltAssemblyEntity).firstValue.type) ==
@@ -149,21 +146,21 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType == nil) {
-      return this.findCompatibleByTraits(name, entity.position, previousDirection ?? entity.direction)
+      return this.findCompatible(name, entity.position, previousDirection ?? entity.direction)
     }
     if (pasteRotatableType == PasteRotatableType.Square) {
-      return this.findCompatibleAnyDirection(name, entity.position)
+      return this.findCompatible(name, entity.position, nil)
     }
     if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       if (direction % 2 == 1) {
         // if diagonal, we _do_ care about direction
-        return this.findCompatibleByTraits(name, position, direction)
+        return this.findCompatible(name, position, direction)
       }
       return (
-        this.findCompatibleByTraits(name, position, direction) ??
-        this.findCompatibleByTraits(name, position, oppositedirection(direction))
+        this.findCompatible(name, position, direction) ??
+        this.findCompatible(name, position, oppositedirection(direction))
       )
     }
   }
@@ -171,9 +168,9 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil {
     const actualName = previewEntity.name.substring(Prototypes.PreviewEntityPrefix.length)
     if (isRollingStockType(actualName)) {
-      return this.findCompatibleAnyDirection(actualName, previewEntity.position)
+      return this.findCompatible(actualName, previewEntity.position, nil)
     }
-    return this.findCompatibleByTraits(actualName, previewEntity.position, previewEntity.direction)
+    return this.findCompatible(actualName, previewEntity.position, previewEntity.direction)
   }
 
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil {
@@ -184,7 +181,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     return this.findCompatibleWithLuaEntity(entity, nil)
   }
 
-  findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {
+  findExact(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {
     let cur = this.byPosition.get(oldPosition.x, oldPosition.y)
     while (cur != nil) {
       if (cur.getWorldOrPreviewEntity(expectedStage) == entity) return cur

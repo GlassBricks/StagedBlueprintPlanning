@@ -58,7 +58,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly lastStage: StageNumber | nil
   readonly firstValue: Readonly<T>
 
-  /** Linked list */
+  /** Linked list for Map2D */
   _next: AssemblyEntity | nil
 
   isRollingStock(): this is RollingStockAssemblyEntity

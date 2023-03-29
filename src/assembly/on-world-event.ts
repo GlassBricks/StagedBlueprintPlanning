@@ -98,7 +98,7 @@ export function onEntityCreated(
 
   const entityName = entity.name
   if (!shouldCheckEntityExactlyForMatch(entityName)) {
-    const existingDifferentDirection = content.findCompatibleAnyDirection(entityName, entity.position)
+    const existingDifferentDirection = content.findCompatible(entityName, entity.position, nil)
     if (existingDifferentDirection) {
       disallowOverbuildDifferentDirection(assembly, existingDifferentDirection, entity, byPlayer)
       return nil
@@ -170,7 +170,7 @@ function getCompatibleAtPositionOrAdd(
   oldPosition: Position,
   byPlayer: PlayerIndex | nil,
 ): AssemblyEntity | nil {
-  const existing = assembly.content.findExactAtPosition(entity, stage, oldPosition)
+  const existing = assembly.content.findExact(entity, stage, oldPosition)
   if (existing) return existing
   onEntityCreated(assembly, entity, stage, byPlayer)
   return nil
@@ -327,7 +327,7 @@ export function onSendToStageUsed(
   byPlayer: PlayerIndex,
 ): void {
   if (fromStage == toStage) return
-  const existing = assembly.content.findExactAtPosition(entity, fromStage, entity.position)
+  const existing = assembly.content.findExact(entity, fromStage, entity.position)
   if (!existing || existing.firstStage != fromStage || existing.isSettingsRemnant) return
   const result = moveEntityToStage(assembly, existing, toStage)
   if (result == "updated") {

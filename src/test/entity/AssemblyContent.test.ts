@@ -32,30 +32,36 @@ test("countNumEntities", () => {
 })
 
 describe("findCompatible", () => {
-  test("finds compatible if same name and direction", () => {
+  test("matches name and direction", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByTraits("foo", { x: 0, y: 0 }, defines.direction.north)).to.be(entity)
+    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(entity)
   })
 
-  test("findCompatibleAnyDirection finds compatible if same name and any direction", () => {
+  test("does not match if passed stage is higher than entity's last stage", () => {
+    const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+    content.add(entity)
+    entity.setLastStage(2)
+
+    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be.nil()
+  })
+
+  test("if direction is nil, matches any direction", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.add(entity)
 
-    expect(content.findCompatibleAnyDirection("foo", { x: 0, y: 0 })).to.be(entity)
+    expect(content.findCompatible("foo", { x: 0, y: 0 }, nil)).to.be(entity)
   })
 
-  test("finds compatible if same category", () => {
+  test("matches if different name in same category", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByTraits("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north)).to.be(
-      entity,
-    )
+    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north)).to.be(entity)
   })
 
-  test("findCompatibleAnyDirection finds compatible if same category and any direction", () => {
+  test("if direction is nil, matches same category and any direction", () => {
     const entity: AssemblyEntity = createAssemblyEntity(
       { name: "assembling-machine-1" },
       { x: 0, y: 0 },
@@ -64,13 +70,16 @@ describe("findCompatible", () => {
     )
     content.add(entity)
 
-    expect(content.findCompatibleAnyDirection("assembling-machine-2", { x: 0, y: 0 })).to.be(entity)
+    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, nil)).to.be(entity)
   })
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    expect(content.findCompatibleByTraits("test2", entity.position, defines.direction.north)).to.be.nil()
-    expect(content.findCompatibleByTraits("foo", entity.position, defines.direction.south)).to.be.nil()
+    entity.setLastStage(2)
+    expect(content.findCompatible("test2", entity.position, defines.direction.north)).to.be.nil()
+    expect(content.findCompatible("foo", entity.position, defines.direction.south)).to.be.nil()
+    expect(content.findCompatible("foo", { x: 1, y: 0 }, defines.direction.north)).to.be.nil()
+    expect(content.findCompatible("foo", { x: 1, y: 0 }, defines.direction.north, 3)).to.be.nil()
   })
 
   test("find compatible returns same entity if is flipped underground", () => {
@@ -110,9 +119,9 @@ describe("findCompatible", () => {
     const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
     content.add(entity)
     entity.replaceWorldEntity(2, luaEntity)
-    expect(content.findExactAtPosition(luaEntity, 2, luaEntity.position)).to.be(entity)
+    expect(content.findExact(luaEntity, 2, luaEntity.position)).to.be(entity)
     luaEntity.teleport(1, 1)
-    expect(content.findExactAtPosition(luaEntity, 2, { x: 0, y: 0 })).to.be(entity)
+    expect(content.findExact(luaEntity, 2, { x: 0, y: 0 })).to.be(entity)
   })
 
   test("rails at same position but opposite direction are treated different only if diagonal", () => {
@@ -157,7 +166,7 @@ test("changePosition", () => {
   content.changePosition(entity, { x: 1, y: 1 })
   expect(entity.position.x).to.be(1)
   expect(entity.position.y).to.be(1)
-  expect(content.findCompatibleByTraits("foo", { x: 1, y: 1 }, defines.direction.north)).to.be(entity)
+  expect(content.findCompatible("foo", { x: 1, y: 1 }, defines.direction.north)).to.be(entity)
 })
 
 describe("connections", () => {

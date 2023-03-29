@@ -77,7 +77,7 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 
 function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean) {
   expect(entity.isSettingsRemnant).to.be.falsy()
-  const found = assembly.content.findCompatibleByTraits(entity.firstValue.name, entity.position, entity.getDirection())
+  const found = assembly.content.findCompatible(entity.firstValue.name, entity.position, entity.getDirection())
   expect(found).to.be(entity)
 
   let hasMissing = false
@@ -172,7 +172,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
 }
 
 function assertEntityNotPresent(entity: AssemblyEntity) {
-  const found = assembly.content.findCompatibleByTraits(entity.firstValue.name, entity.position, entity.getDirection())
+  const found = assembly.content.findCompatible(entity.firstValue.name, entity.position, entity.getDirection())
   expect(found).to.be.nil()
 
   for (const stage of $range(1, assembly.lastStageFor(entity))) {
