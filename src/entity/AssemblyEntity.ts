@@ -129,10 +129,16 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
 
   /**
-   * @param stage the stage to move to. If moving up, deletes/merges all stage diffs from old stage to new stage.
+   * Sets the first stage. If moving up, deletes/merges all stage diffs from old stage to new stage.
    * @return the previous first stage
    */
   moveToStage(stage: StageNumber): StageNumber
+
+  /**
+   * Sets the last stage. If moving down, deletes all diffs after the new last stage.
+   */
+  setLastStage(stage: StageNumber | nil): void
+
   getWorldEntity(stage: StageNumber): LuaEntity | nil
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
 
@@ -578,6 +584,21 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
     this.firstStage = higherStage
   }
+
+  public setLastStage(stage: StageNumber | nil): void {
+    if (stage) {
+      assert(stage >= this.firstStage)
+      const { stageDiffs } = this
+      if (stageDiffs && (this.lastStage == nil || stage < this.lastStage)) {
+        for (const [stageNumber] of pairs(stageDiffs)) {
+          if (stageNumber > stage) delete stageDiffs[stageNumber]
+        }
+        if (isEmpty(stageDiffs)) delete this.stageDiffs
+      }
+    }
+    this.lastStage = stage
+  }
+
   public getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
     const entity = this[stage]
     if (entity && entity.valid) return entity

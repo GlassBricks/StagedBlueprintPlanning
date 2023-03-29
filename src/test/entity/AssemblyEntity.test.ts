@@ -29,36 +29,36 @@ interface InserterEntity extends Entity {
   filter_mode?: "whitelist" | "blacklist"
 }
 let entity: InserterEntity
-let fooAssemblyEntity: AssemblyEntity<InserterEntity>
+let assemblyEntity: AssemblyEntity<InserterEntity>
 before_each(() => {
   entity = {
     name: "filter-inserter",
     override_stack_size: 1,
   }
-  fooAssemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  fooAssemblyEntity._applyDiffAtStage(3, { override_stack_size: 2, filter_mode: "blacklist" })
-  fooAssemblyEntity._applyDiffAtStage(5, { override_stack_size: 3 })
-  fooAssemblyEntity._applyDiffAtStage(7, { filter_mode: getNilPlaceholder() })
+  assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  assemblyEntity._applyDiffAtStage(3, { override_stack_size: 2, filter_mode: "blacklist" })
+  assemblyEntity._applyDiffAtStage(5, { override_stack_size: 3 })
+  assemblyEntity._applyDiffAtStage(7, { filter_mode: getNilPlaceholder() })
 })
 
 test("getters", () => {
-  expect(fooAssemblyEntity.firstStage).to.equal(2)
-  expect(fooAssemblyEntity.firstValue).to.equal(entity)
-  expect(fooAssemblyEntity.getDirection()).to.equal(0) // nil <=> 0
+  expect(assemblyEntity.firstStage).to.equal(2)
+  expect(assemblyEntity.firstValue).to.equal(entity)
+  expect(assemblyEntity.getDirection()).to.equal(0) // nil <=> 0
 })
 
 test("lastStage default nil", () => {
-  expect(fooAssemblyEntity.lastStage).toBeNil()
+  expect(assemblyEntity.lastStage).toBeNil()
 })
 
 test("isRollingStock", () => {
-  expect(fooAssemblyEntity.isRollingStock()).to.be(false)
+  expect(assemblyEntity.isRollingStock()).to.be(false)
   const assemblyEntity2 = createAssemblyEntity({ name: "locomotive" }, Pos(0, 0), nil, 2)
   expect(assemblyEntity2.isRollingStock()).to.be(true)
 })
 
 test("isUndergroundBelt", () => {
-  expect(fooAssemblyEntity.isUndergroundBelt()).to.be(false)
+  expect(assemblyEntity.isUndergroundBelt()).to.be(false)
   const assemblyEntity2 = createAssemblyEntity({ name: "underground-belt" }, Pos(0, 0), nil, 2)
   expect(assemblyEntity2.isUndergroundBelt()).to.be(true)
 })
@@ -102,25 +102,25 @@ test("prevStageWithDiff", () => {
 
 describe("getValueAtStage", () => {
   test("nil if lower than stage", () => {
-    expect(fooAssemblyEntity.getValueAtStage(1)).to.be.nil()
+    expect(assemblyEntity.getValueAtStage(1)).to.be.nil()
   })
 
   test("getValueAtStage returns same entity if no stageDiffs", () => {
-    expect(fooAssemblyEntity.getValueAtStage(2)).to.equal(entity)
+    expect(assemblyEntity.getValueAtStage(2)).to.equal(entity)
   })
 
   test("applies changes from one stage", () => {
-    const result = fooAssemblyEntity.getValueAtStage(3)
+    const result = assemblyEntity.getValueAtStage(3)
     expect(result).to.equal({ ...entity, override_stack_size: 2, filter_mode: "blacklist" })
   })
 
   test("applies changes from multiple stages", () => {
-    const result = fooAssemblyEntity.getValueAtStage(5)
+    const result = assemblyEntity.getValueAtStage(5)
     expect(result).to.equal({ ...entity, override_stack_size: 3, filter_mode: "blacklist" })
   })
 
   test("replaces nilPlaceholder with nil", () => {
-    const result = fooAssemblyEntity.getValueAtStage(7)
+    const result = assemblyEntity.getValueAtStage(7)
     const expected = { ...entity, override_stack_size: 3 }
     delete expected.filter_mode
 
@@ -128,42 +128,42 @@ describe("getValueAtStage", () => {
   })
 
   test("getPropAtStage", () => {
-    expect(fooAssemblyEntity.getPropAtStage(2, "override_stack_size")).to.equal([1, 2])
-    expect(fooAssemblyEntity.getPropAtStage(3, "override_stack_size")).to.equal([2, 3])
-    expect(fooAssemblyEntity.getPropAtStage(4, "override_stack_size")).to.equal([2, 3])
-    expect(fooAssemblyEntity.getPropAtStage(5, "override_stack_size")).to.equal([3, 5])
-    expect(fooAssemblyEntity.getPropAtStage(6, "override_stack_size")).to.equal([3, 5])
+    expect(assemblyEntity.getPropAtStage(2, "override_stack_size")).to.equal([1, 2])
+    expect(assemblyEntity.getPropAtStage(3, "override_stack_size")).to.equal([2, 3])
+    expect(assemblyEntity.getPropAtStage(4, "override_stack_size")).to.equal([2, 3])
+    expect(assemblyEntity.getPropAtStage(5, "override_stack_size")).to.equal([3, 5])
+    expect(assemblyEntity.getPropAtStage(6, "override_stack_size")).to.equal([3, 5])
 
-    expect(fooAssemblyEntity.getPropAtStage(1, "override_stack_size")).to.equal([1, 2])
+    expect(assemblyEntity.getPropAtStage(1, "override_stack_size")).to.equal([1, 2])
 
-    expect(fooAssemblyEntity.getPropAtStage(2, "filter_mode")).to.equal([nil, 2])
-    expect(fooAssemblyEntity.getPropAtStage(3, "filter_mode")).to.equal(["blacklist", 3])
-    expect(fooAssemblyEntity.getPropAtStage(4, "filter_mode")).to.equal(["blacklist", 3])
-    expect(fooAssemblyEntity.getPropAtStage(5, "filter_mode")).to.equal(["blacklist", 3])
-    expect(fooAssemblyEntity.getPropAtStage(6, "filter_mode")).to.equal(["blacklist", 3])
-    expect(fooAssemblyEntity.getPropAtStage(7, "filter_mode")).to.equal([nil, 7])
-    expect(fooAssemblyEntity.getPropAtStage(8, "filter_mode")).to.equal([nil, 7])
+    expect(assemblyEntity.getPropAtStage(2, "filter_mode")).to.equal([nil, 2])
+    expect(assemblyEntity.getPropAtStage(3, "filter_mode")).to.equal(["blacklist", 3])
+    expect(assemblyEntity.getPropAtStage(4, "filter_mode")).to.equal(["blacklist", 3])
+    expect(assemblyEntity.getPropAtStage(5, "filter_mode")).to.equal(["blacklist", 3])
+    expect(assemblyEntity.getPropAtStage(6, "filter_mode")).to.equal(["blacklist", 3])
+    expect(assemblyEntity.getPropAtStage(7, "filter_mode")).to.equal([nil, 7])
+    expect(assemblyEntity.getPropAtStage(8, "filter_mode")).to.equal([nil, 7])
 
-    expect(fooAssemblyEntity.getPropAtStage(1, "filter_mode")).to.equal([nil, 2])
+    expect(assemblyEntity.getPropAtStage(1, "filter_mode")).to.equal([nil, 2])
   })
 
   test("getNameAtStage ", () => {
-    fooAssemblyEntity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-    expect(fooAssemblyEntity.getNameAtStage(1)).to.equal("filter-inserter")
-    expect(fooAssemblyEntity.getNameAtStage(2)).to.equal("filter-inserter")
-    expect(fooAssemblyEntity.getNameAtStage(3)).to.equal("filter-inserter")
-    expect(fooAssemblyEntity.getNameAtStage(4)).to.equal("stack-filter-inserter")
-    expect(fooAssemblyEntity.getNameAtStage(5)).to.equal("stack-filter-inserter")
+    assemblyEntity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
+    expect(assemblyEntity.getNameAtStage(1)).to.equal("filter-inserter")
+    expect(assemblyEntity.getNameAtStage(2)).to.equal("filter-inserter")
+    expect(assemblyEntity.getNameAtStage(3)).to.equal("filter-inserter")
+    expect(assemblyEntity.getNameAtStage(4)).to.equal("stack-filter-inserter")
+    expect(assemblyEntity.getNameAtStage(5)).to.equal("stack-filter-inserter")
   })
 })
 
 test("iterateValues", () => {
   const expected = []
   for (let stage = 1; stage <= 6; stage++) {
-    expected[stage] = fooAssemblyEntity.getValueAtStage(stage) ?? "nil"
+    expected[stage] = assemblyEntity.getValueAtStage(stage) ?? "nil"
   }
   const result = []
-  for (const [stage, entity] of fooAssemblyEntity.iterateValues(1, 6)) {
+  for (const [stage, entity] of assemblyEntity.iterateValues(1, 6)) {
     result[stage] = entity == nil ? "nil" : shallowCopy(entity)
   }
   expect(result).to.equal(expected)
@@ -172,8 +172,8 @@ test("iterateValues", () => {
 describe("adjustValueAtStage", () => {
   test("can set first value", () => {
     const newEntity = { ...entity, override_stack_size: 3 }
-    fooAssemblyEntity.adjustValueAtStage(2, newEntity)
-    expect(fooAssemblyEntity.firstValue).to.equal(newEntity)
+    assemblyEntity.adjustValueAtStage(2, newEntity)
+    expect(assemblyEntity.firstValue).to.equal(newEntity)
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
@@ -193,9 +193,9 @@ describe("adjustValueAtStage", () => {
   })
 
   test("removes diff entirely if matches lower stage", () => {
-    expect(fooAssemblyEntity.hasStageDiff(3)).to.be(true)
-    fooAssemblyEntity.adjustValueAtStage(3, fooAssemblyEntity.firstValue)
-    expect(fooAssemblyEntity.hasStageDiff(3)).to.be(false)
+    expect(assemblyEntity.hasStageDiff(3)).to.be(true)
+    assemblyEntity.adjustValueAtStage(3, assemblyEntity.firstValue)
+    expect(assemblyEntity.hasStageDiff(3)).to.be(false)
   })
 
   test("complex case", () => {
@@ -222,12 +222,12 @@ describe("adjustValueAtStage", () => {
 
 describe("setPropAtStage", () => {
   test("can set first value", () => {
-    expect(fooAssemblyEntity.setPropAtStage(2, "override_stack_size", 3)).to.be(true)
-    expect(fooAssemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
+    expect(assemblyEntity.setPropAtStage(2, "override_stack_size", 3)).to.be(true)
+    expect(assemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
   })
 
   test("returns false if no change", () => {
-    expect(fooAssemblyEntity.setPropAtStage(2, "override_stack_size", 1)).to.be(false)
+    expect(assemblyEntity.setPropAtStage(2, "override_stack_size", 1)).to.be(false)
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
@@ -331,15 +331,34 @@ describe("moving stage diff props", () => {
 
 describe("move to stage", () => {
   test("move down", () => {
-    fooAssemblyEntity.moveToStage(1)
-    expect(fooAssemblyEntity.firstValue).to.equal(entity)
-    expect(fooAssemblyEntity.firstStage).to.be(1)
+    assemblyEntity.moveToStage(1)
+    expect(assemblyEntity.firstValue).to.equal(entity)
+    expect(assemblyEntity.firstStage).to.be(1)
   })
 
-  test("moving up", () => {
-    const valueAt5 = fooAssemblyEntity.getValueAtStage(5)
-    fooAssemblyEntity.moveToStage(5)
-    expect(fooAssemblyEntity.firstValue).to.equal(valueAt5)
+  test("moving up; also merges stage diffs", () => {
+    const valueAt5 = assemblyEntity.getValueAtStage(5)
+    assemblyEntity.moveToStage(5)
+    expect(assemblyEntity.firstValue).to.equal(valueAt5)
+    const diffs = assemblyEntity.getStageDiffs()!
+    expect(next(diffs)[0]).to.be(7)
+  })
+})
+
+describe("set last stage", () => {
+  test("simple", () => {
+    assemblyEntity.setLastStage(5)
+    expect(assemblyEntity.lastStage).to.be(5)
+  })
+  test("cannot move below first stage", () => {
+    expect(() => assemblyEntity.setLastStage(0)).to.error()
+  })
+  test("moving down deletes later stage diffs", () => {
+    assemblyEntity.setLastStage(5)
+    expect(assemblyEntity.lastStage).to.be(5)
+    const diffs = assemblyEntity.getStageDiffs()!
+    expect(diffs).not.toHaveKey(7)
+    expect(next(diffs)[0]).to.be(3)
   })
 })
 
@@ -529,9 +548,9 @@ describe("rolling stock", () => {
   test("setting a rolling stock world entity will register it in entity-registration", () => {
     const rollingStock = createRollingStock()
 
-    fooAssemblyEntity.replaceWorldEntity(1, rollingStock)
+    assemblyEntity.replaceWorldEntity(1, rollingStock)
     const found = getRegisteredAssemblyEntity(rollingStock)
-    expect(found).to.equal(fooAssemblyEntity)
+    expect(found).to.equal(assemblyEntity)
   })
 })
 
@@ -543,28 +562,28 @@ declare module "../../entity/AssemblyEntity" {
 }
 describe("get/set properties", () => {
   test("get property when not set is nil", () => {
-    expect(fooAssemblyEntity.getProperty("foo", 2)).to.be.nil()
+    expect(assemblyEntity.getProperty("foo", 2)).to.be.nil()
   })
   test("get and set property", () => {
-    fooAssemblyEntity.setProperty("foo", 2, "bar")
-    expect(fooAssemblyEntity.getProperty("foo", 2)).to.be("bar")
+    assemblyEntity.setProperty("foo", 2, "bar")
+    expect(assemblyEntity.getProperty("foo", 2)).to.be("bar")
   })
   test("propertyIsSetAnywhere", () => {
-    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(false)
-    fooAssemblyEntity.setProperty("foo", 2, "bar")
-    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(true)
-    fooAssemblyEntity.setProperty("foo", 3, "bar")
-    fooAssemblyEntity.setProperty("foo", 2, nil)
-    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(true)
-    fooAssemblyEntity.setProperty("foo", 3, nil)
-    expect(fooAssemblyEntity.propertySetInAnyStage("foo")).to.be(false)
+    expect(assemblyEntity.propertySetInAnyStage("foo")).to.be(false)
+    assemblyEntity.setProperty("foo", 2, "bar")
+    expect(assemblyEntity.propertySetInAnyStage("foo")).to.be(true)
+    assemblyEntity.setProperty("foo", 3, "bar")
+    assemblyEntity.setProperty("foo", 2, nil)
+    expect(assemblyEntity.propertySetInAnyStage("foo")).to.be(true)
+    assemblyEntity.setProperty("foo", 3, nil)
+    expect(assemblyEntity.propertySetInAnyStage("foo")).to.be(false)
   })
   test("clear property", () => {
-    fooAssemblyEntity.setProperty("foo", 2, "bar")
-    fooAssemblyEntity.setProperty("foo", 3, "bar")
-    fooAssemblyEntity.clearPropertyInAllStages("foo")
-    expect(fooAssemblyEntity.getProperty("foo", 2)).to.be.nil()
-    expect(fooAssemblyEntity.getProperty("foo", 3)).to.be.nil()
+    assemblyEntity.setProperty("foo", 2, "bar")
+    assemblyEntity.setProperty("foo", 3, "bar")
+    assemblyEntity.clearPropertyInAllStages("foo")
+    expect(assemblyEntity.getProperty("foo", 2)).to.be.nil()
+    expect(assemblyEntity.getProperty("foo", 3)).to.be.nil()
   })
 })
 
