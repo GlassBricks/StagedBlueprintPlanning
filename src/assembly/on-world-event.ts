@@ -21,7 +21,7 @@ import {
   deleteEntityOrCreateSettingsRemnant,
   EntityUpdateResult,
   forceDeleteEntity,
-  moveEntityOnPreviewReplace,
+  moveEntityOnPreviewReplaced,
   moveEntityToStage,
   reviveSettingsRemnant,
   tryApplyUpgradeTarget,
@@ -48,7 +48,7 @@ function onPreviewReplaced(
 ): void {
   const oldStage = entity.firstStage
   createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
-  assert(moveEntityOnPreviewReplace(assembly, entity, stage))
+  assert(moveEntityOnPreviewReplaced(assembly, entity, stage))
 }
 
 function onEntityOverbuilt(

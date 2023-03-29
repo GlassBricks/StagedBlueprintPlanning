@@ -12,7 +12,6 @@
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { rebuildWorldEntityAtStage } from "../../assembly/world-entities"
 import {
   AssemblyEntity,
   createAssemblyEntity,
@@ -27,7 +26,7 @@ import { Pos } from "../../lib/geometry"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
-import assemblyUpdater = require("../../assembly/assembly-updates")
+import asmUpdates = require("../../assembly/assembly-updates")
 import _worldListener = require("../../assembly/on-world-event")
 import _worldUpdater = require("../../assembly/world-entities")
 import _wireHandler = require("../../entity/wires")
@@ -154,7 +153,7 @@ function assertNewUpdated(entity: AssemblyEntity) {
 
 test("addNewEntity", () => {
   const luaEntity = createEntity(2)
-  const entity = assemblyUpdater.addNewEntity(assembly, luaEntity, 2)!
+  const entity = asmUpdates.addNewEntity(assembly, luaEntity, 2)!
   expect(entity).to.be.any()
   expect(entity.firstValue.name).to.be("filter-inserter")
   expect(entity.position).to.equal(pos)
@@ -171,7 +170,7 @@ test("addNewEntity", () => {
 
 test("addNewEntity with known value", () => {
   const luaEntity = createEntity(2)
-  const entity = assemblyUpdater.addNewEntity(assembly, luaEntity, 2, {
+  const entity = asmUpdates.addNewEntity(assembly, luaEntity, 2, {
     entity_number: 1,
     direction: 0,
     position: { x: 0, y: 0 },
@@ -196,22 +195,17 @@ test("addNewEntity with known value", () => {
 
 function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   const luaEntity = createEntity(stage, args)
-  const entity = assemblyUpdater.addNewEntity(assembly, luaEntity, stage) as AssemblyEntity<BlueprintEntity>
+  const entity = asmUpdates.addNewEntity(assembly, luaEntity, stage) as AssemblyEntity<BlueprintEntity>
   expect(entity).to.be.any()
   clearMocks()
   entity.replaceWorldEntity(stage, luaEntity)
   return { entity, luaEntity }
 }
 
-test("forbidEntityDeletion", () => {
-  expect(rebuildWorldEntityAtStage).to.be(_worldUpdater.rebuildWorldEntityAtStage)
-  expectedWuCalls = 0
-})
-
 test("moveEntityOnPreviewReplace", () => {
   const { entity } = addEntity(2)
 
-  assemblyUpdater.moveEntityOnPreviewReplace(assembly, entity, 1)
+  asmUpdates.moveEntityOnPreviewReplaced(assembly, entity, 1)
 
   expect(entity.firstStage).to.equal(1)
   expect((entity.firstValue as BlueprintEntity).override_stack_size).to.be(1)
@@ -224,7 +218,7 @@ test("reviveSettingsRemnant", () => {
   const { entity } = addEntity(2)
   entity.isSettingsRemnant = true
 
-  assemblyUpdater.reviveSettingsRemnant(assembly, entity, 1)
+  asmUpdates.reviveSettingsRemnant(assembly, entity, 1)
 
   expect(entity.isSettingsRemnant).to.be.nil()
   expect(entity.firstStage).to.equal(1)
@@ -236,7 +230,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
   test("deletes normal entity", () => {
     const { entity } = addEntity(1)
 
-    assemblyUpdater.deleteEntityOrCreateSettingsRemnant(assembly, entity)
+    asmUpdates.deleteEntityOrCreateSettingsRemnant(assembly, entity)
     assertNoEntities()
     assertDeleteAllEntitiesCalled(entity)
   })
@@ -245,7 +239,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     const { entity } = addEntity(1)
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
 
-    assemblyUpdater.deleteEntityOrCreateSettingsRemnant(assembly, entity)
+    asmUpdates.deleteEntityOrCreateSettingsRemnant(assembly, entity)
 
     expect(entity.isSettingsRemnant).to.be(true)
     assertOneEntity()
@@ -264,7 +258,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
       wire: wire_type.green,
     })
 
-    assemblyUpdater.deleteEntityOrCreateSettingsRemnant(assembly, entity)
+    asmUpdates.deleteEntityOrCreateSettingsRemnant(assembly, entity)
     expect(entity.isSettingsRemnant).to.be(true)
     assertNEntities(2)
     assertMakeSettingsRemnantCalled(entity)
@@ -288,7 +282,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
       }),
     )
 
-    assemblyUpdater.deleteEntityOrCreateSettingsRemnant(assembly, entity)
+    asmUpdates.deleteEntityOrCreateSettingsRemnant(assembly, entity)
     expect(entity.isSettingsRemnant).to.be.nil()
     assertOneEntity()
     assertDeleteAllEntitiesCalled(entity)
@@ -299,7 +293,7 @@ test("forceDeleteEntity always deletes", () => {
   const { entity } = addEntity(1)
   entity.isSettingsRemnant = true
 
-  assemblyUpdater.forceDeleteEntity(assembly, entity)
+  asmUpdates.forceDeleteEntity(assembly, entity)
 
   assertNoEntities()
   assertDeleteAllEntitiesCalled(entity)
@@ -308,7 +302,7 @@ test("forceDeleteEntity always deletes", () => {
 describe("tryUpdateEntityFromWorld", () => {
   test('with no changes returns "no-change"', () => {
     const { entity } = addEntity(2)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 2)
     expect(ret).to.be("no-change")
     assertOneEntity()
     assertWUNotCalled()
@@ -317,7 +311,7 @@ describe("tryUpdateEntityFromWorld", () => {
   test('with change in first stage returns "updated" and updates all entities', () => {
     const { entity, luaEntity } = addEntity(2)
     luaEntity.inserter_stack_size_override = 3
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 2)
     expect(ret).to.be("updated")
 
     expect(entity.firstValue.override_stack_size).to.be(3)
@@ -331,7 +325,7 @@ describe("tryUpdateEntityFromWorld", () => {
       name: "filter-inserter",
       override_stack_size: 3,
     }
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2, knownValue as BlueprintEntity)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 2, knownValue as BlueprintEntity)
     expect(ret).to.be("updated")
 
     expect(entity.firstValue.override_stack_size).to.be(3)
@@ -346,7 +340,7 @@ describe("tryUpdateEntityFromWorld", () => {
       recipe: "express-transport-belt",
     })
     luaEntity.direction = defines.direction.east
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 2)
     expect(ret).to.be("updated")
 
     expect(entity.getDirection()).to.be(defines.direction.east)
@@ -359,7 +353,7 @@ describe("tryUpdateEntityFromWorld", () => {
     luaEntity.direction = defines.direction.east
 
     entity.replaceWorldEntity(3, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 3)
     expect(ret).to.be("cannot-rotate")
     expect(entity.getDirection()).to.be(defines.direction.north)
 
@@ -376,7 +370,7 @@ describe("tryUpdateEntityFromWorld", () => {
 
     luaEntity.inserter_stack_size_override = 3
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 2)
     expect(ret).to.be("updated")
 
     expect(entity.firstValue.override_stack_size).to.be(1)
@@ -397,7 +391,7 @@ describe("tryUpdateEntityFromWorld", () => {
     luaEntity.inserter_stack_size_override = 1
 
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 2)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 2)
     expect(ret).to.be("updated")
     expect(entity.hasStageDiff()).to.be(false)
 
@@ -410,7 +404,7 @@ describe("tryRotateEntityToMatchWorld", () => {
   test("in first stage rotates all entities", () => {
     const { luaEntity, entity } = addEntity(2)
     luaEntity.direction = direction.west
-    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 2)
+    const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 2)
     expect(ret).to.be("updated")
     expect(entity.getDirection()).to.be(direction.west)
     assertOneEntity()
@@ -422,7 +416,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 2)
+    const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 2)
     expect(ret).to.be("cannot-rotate")
     expect(entity.getDirection()).to.be(oldDirection)
     assertOneEntity()
@@ -432,7 +426,7 @@ describe("tryRotateEntityToMatchWorld", () => {
   test("rotating loader also sets loader type", () => {
     const { luaEntity, entity } = addEntity(1, { name: "loader", direction: direction.north, type: "input" })
     luaEntity.rotate()
-    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 1)
+    const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 1)
     expect(ret).to.be("updated")
     expect(entity.getDirection()).to.be(direction.south)
     expect(entity.firstValue.type).to.be("output")
@@ -457,7 +451,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
     expect(luaEntity.direction).to.be(defines.direction.south)
   })
   test("using update", () => {
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 3)
     expect(ret).to.be("no-change")
     expect(entity.getDirection()).to.be(0)
 
@@ -465,7 +459,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
     assertWUNotCalled()
   })
   test("using rotate", () => {
-    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 3)
+    const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 3)
     expect(ret).to.be("no-change")
     expect(entity.getDirection()).to.be(0)
 
@@ -474,7 +468,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   })
   test("can change recipe and rotate", () => {
     luaEntity.set_recipe("iron-gear-wheel")
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 3)
     expect(ret).to.be("updated")
     expect(entity.getValueAtStage(3)!.recipe).to.be("iron-gear-wheel")
 
@@ -483,7 +477,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   })
   test("disallows if has fluid inputs", () => {
     luaEntity.set_recipe("express-transport-belt")
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 3)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 3)
     expect(ret).to.be("cannot-rotate")
 
     assertOneEntity()
@@ -491,7 +485,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   })
   test("disallows if has fluid inputs", () => {
     luaEntity.set_recipe("express-transport-belt")
-    const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 3)
+    const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 3)
     expect(ret).to.be("cannot-rotate")
 
     assertOneEntity()
@@ -507,7 +501,7 @@ describe("tryApplyUpgradeTarget", () => {
       target: "stack-filter-inserter",
     })
     const direction = luaEntity.direction
-    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
+    const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
     expect(ret).to.be("updated")
     expect(entity.firstValue.name).to.be("stack-filter-inserter")
     expect(entity.getDirection()).to.be(direction)
@@ -522,7 +516,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.west,
     })
 
-    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
+    const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
     expect(ret).to.be("updated")
     expect(entity.firstValue.name).to.be("filter-inserter")
     expect(entity.getDirection()).to.be(direction.west)
@@ -537,7 +531,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.west,
     })
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
+    const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 2)
     expect(ret).to.be("cannot-rotate")
     expect(entity.getDirection()).to.be(0)
     assertOneEntity()
@@ -556,7 +550,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.north,
     })
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
+    const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 2)
     expect(ret).to.be("updated")
     assertOneEntity()
     assertUpdateCalled(entity, 2, nil)
@@ -567,7 +561,7 @@ describe("updateWiresFromWorld", () => {
   test("if saved, calls update", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.returnsOnce(true as any)
-    const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
+    const ret = asmUpdates.updateWiresFromWorld(assembly, entity, 1)
     expect(ret).to.be("updated")
 
     assertOneEntity()
@@ -576,7 +570,7 @@ describe("updateWiresFromWorld", () => {
   test("if no changes, does not call update", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.returnsOnce(false as any)
-    const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 1)
+    const ret = asmUpdates.updateWiresFromWorld(assembly, entity, 1)
     expect(ret).to.be("no-change")
 
     assertOneEntity()
@@ -597,7 +591,7 @@ describe("updateWiresFromWorld", () => {
     wireSaver.saveWireConnections.returnsOnce(true as any)
     luaEntity2.destroy()
 
-    const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity1, 2)
+    const ret = asmUpdates.updateWiresFromWorld(assembly, entity1, 2)
     expect(ret).to.be("updated")
 
     assertNEntities(2)
@@ -609,7 +603,7 @@ describe("updateWiresFromWorld", () => {
   //   // , () => {
   //   // const { entity } = addEntity(1)
   //   // wireSaver.saveWireConnections.returnsOnce(true as any)
-  //   // const ret = assemblyUpdater.updateWiresFromWorld(assembly, entity, 2)
+  //   // const ret = asmUpdates.updateWiresFromWorld(assembly, entity, 2)
   //   // expect(ret).to.be("max-connections-exceeded")
   //   //
   //   // assertOneEntity()
@@ -621,7 +615,7 @@ describe("updateWiresFromWorld", () => {
 describe("moveEntityToStage", () => {
   test("can move up", () => {
     const { entity } = addEntity(1)
-    const result = assemblyUpdater.moveEntityToStage(assembly, entity, 2)
+    const result = asmUpdates.moveEntityToStage(assembly, entity, 2)
     expect(result).to.be("updated")
     expect(entity.firstStage).to.be(2)
     assertOneEntity()
@@ -630,7 +624,7 @@ describe("moveEntityToStage", () => {
 
   test("can move down to preview", () => {
     const { entity } = addEntity(4)
-    assemblyUpdater.moveEntityToStage(assembly, entity, 3)
+    asmUpdates.moveEntityToStage(assembly, entity, 3)
     expect(entity.firstStage).to.be(3)
     assertOneEntity()
     assertUpdateCalled(entity, 3, nil)
@@ -639,7 +633,7 @@ describe("moveEntityToStage", () => {
   test("ignores settings remnants", () => {
     const { entity } = addEntity(1)
     entity.isSettingsRemnant = true
-    assemblyUpdater.moveEntityToStage(assembly, entity, 2)
+    asmUpdates.moveEntityToStage(assembly, entity, 2)
     expect(entity.firstStage).to.be(1)
     assertOneEntity()
     assertWUNotCalled()
@@ -670,7 +664,7 @@ describe("undergrounds", () => {
       direction: direction.east,
       type: "input",
     })
-    const entity = assemblyUpdater.addNewEntity(assembly, luaEntity2, 2) as AssemblyEntity<UndergroundBeltEntity>
+    const entity = asmUpdates.addNewEntity(assembly, luaEntity2, 2) as AssemblyEntity<UndergroundBeltEntity>
     expect(entity).to.be.any()
 
     expect(entity.firstValue.type).to.be("output")
@@ -704,7 +698,7 @@ describe("undergrounds", () => {
       const [rotated] = luaEntity.rotate()
       assert(rotated)
 
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 1)
+      const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 1)
       expect(ret).to.be("updated")
 
       expect(entity.firstValue.type).to.be("output")
@@ -721,7 +715,7 @@ describe("undergrounds", () => {
       assert(rotated)
 
       entity.replaceWorldEntity(2, luaEntity)
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 2)
+      const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 2)
       expect(ret).to.be("cannot-rotate")
 
       expect(entity.firstValue.type).to.be("input")
@@ -738,7 +732,7 @@ describe("undergrounds", () => {
       const [rotated] = entity.getWorldEntity(entity.firstStage)!.rotate()
       assert(rotated)
 
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, entity.firstStage)
+      const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, entity.firstStage)
       expect(ret).to.be("updated")
 
       expect(entity1).toMatchTable({
@@ -762,7 +756,7 @@ describe("undergrounds", () => {
       assert(rotated1)
 
       entity1.replaceWorldEntity(3, luaEntity1)
-      const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity1, 3)
+      const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity1, 3)
       expect(ret).to.be("cannot-rotate")
 
       expect(entity1).toMatchTable({
@@ -795,7 +789,7 @@ describe("undergrounds", () => {
         const [, hasMultiple] = findUndergroundPair(assembly.content, entity)
         expect(hasMultiple).to.be(true)
 
-        const ret = assemblyUpdater.tryRotateEntityToMatchWorld(assembly, entity, 1)
+        const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 1)
         expect(ret).to.be("cannot-flip-multi-pair-underground")
 
         expect(entity1).toMatchTable({
@@ -830,7 +824,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
+      const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
       expect(ret).to.be("updated")
 
       expect(entity.firstValue.name).to.be("fast-underground-belt")
@@ -847,7 +841,7 @@ describe("undergrounds", () => {
         force: luaEntity.force,
       })
       entity.replaceWorldEntity(2, luaEntity)
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 2)
+      const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 2)
       expect(ret).to.be("updated")
 
       expect(entity.getValueAtStage(2)?.name).to.be("fast-underground-belt")
@@ -864,7 +858,7 @@ describe("undergrounds", () => {
         force: luaEntity.force,
         direction: oppositedirection(luaEntity.direction),
       })
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
+      const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
       expect(ret).to.be("no-change")
 
       expect(entity).toMatchTable({
@@ -890,7 +884,7 @@ describe("undergrounds", () => {
           force: luaEntity.force,
         })
         entity.replaceWorldEntity(endStage, luaEntity)
-        const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, endStage)
+        const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, endStage)
         expect(ret).to.be("updated")
 
         expect(entity1).toMatchTable({
@@ -923,7 +917,7 @@ describe("undergrounds", () => {
           target: "fast-underground-belt",
           force: luaEntity.force,
         })
-        const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity, 1)
+        const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
         expect(ret).to.be("cannot-upgrade-multi-pair-underground")
 
         expect(entity1.firstValue.name).to.be("underground-belt")
@@ -943,7 +937,7 @@ describe("undergrounds", () => {
       })
 
       entity1.replaceWorldEntity(3, luaEntity1)
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity1, 3)
+      const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity1, 3)
       expect(ret).to.be("cannot-create-pair-upgrade")
 
       expect(entity1.firstValue.name).to.be("underground-belt")
@@ -964,7 +958,7 @@ describe("undergrounds", () => {
         force: luaEntity1.force,
       })
 
-      const ret = assemblyUpdater.tryApplyUpgradeTarget(assembly, entity1, 1)
+      const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity1, 1)
       expect(ret).to.be("cannot-upgrade-changed-pair")
 
       expect(entity1.firstValue.name).to.be("underground-belt")
@@ -988,7 +982,7 @@ describe("undergrounds", () => {
     expect(newEntity).to.be.any()
     entity1.replaceWorldEntity(1, newEntity)
 
-    const ret = assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity1, 1)
+    const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity1, 1)
     expect(ret).to.be("updated")
 
     expect(entity1).toMatchTable({
@@ -1010,7 +1004,7 @@ describe("undergrounds", () => {
     entity1.applyUpgradeAtStage(2, "fast-underground-belt")
     entity2.applyUpgradeAtStage(2, "fast-underground-belt")
 
-    const ret = assemblyUpdater.moveEntityToStage(assembly, entity1, 2)
+    const ret = asmUpdates.moveEntityToStage(assembly, entity1, 2)
     expect(ret).to.be("cannot-move-upgraded-underground")
 
     expect(entity1.firstStage).to.be(1)
@@ -1028,12 +1022,12 @@ describe("rolling stock", () => {
     rollingStock = createRollingStock()
   })
   function addEntity() {
-    const result = assemblyUpdater.addNewEntity(assembly, rollingStock, 1)
+    const result = asmUpdates.addNewEntity(assembly, rollingStock, 1)
     clearMocks()
     return result
   }
   test("can save rolling stock", () => {
-    const result = assemblyUpdater.addNewEntity(assembly, rollingStock, 1)!
+    const result = asmUpdates.addNewEntity(assembly, rollingStock, 1)!
     expect(result).to.be.any()
     expect(result.firstValue.name).to.be("locomotive")
 
@@ -1053,7 +1047,7 @@ describe("rolling stock", () => {
   test("no update on rolling stock", () => {
     const entity = addEntity()!
 
-    assemblyUpdater.tryUpdateEntityFromWorld(assembly, entity, 1)
+    asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 1)
 
     assertNEntities(1)
     assertWUNotCalled()
@@ -1084,7 +1078,7 @@ describe("trains", () => {
   })
   test("resetTrainLocation", () => {
     const anEntity = assemblyEntities[1]
-    assemblyUpdater.resetTrain(assembly, anEntity)
+    asmUpdates.resetTrain(assembly, anEntity)
 
     assertReplaceCalled(assemblyEntities[0], 1)
     assertReplaceCalled(assemblyEntities[1], 1)
@@ -1095,7 +1089,7 @@ describe("trains", () => {
     entities[0].train!.speed = 10
     after_ticks(10, () => {
       const anEntity = assemblyEntities[1]
-      assemblyUpdater.setTrainLocationToCurrent(assembly, anEntity)
+      asmUpdates.setTrainLocationToCurrent(assembly, anEntity)
 
       for (let i = 0; i < 3; i++) {
         expect(assemblyEntities[i].position).to.equal(entities[i].position)

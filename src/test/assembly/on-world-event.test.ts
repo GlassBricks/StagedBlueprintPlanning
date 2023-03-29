@@ -52,7 +52,7 @@ before_each(() => {
         totalCalls++
       })
   }
-  assemblyUpdater.moveEntityOnPreviewReplace.invokes(() => {
+  assemblyUpdater.moveEntityOnPreviewReplaced.invokes(() => {
     totalCalls++
     return true
   })
@@ -134,17 +134,17 @@ describe("onEntityCreated", () => {
     expect(worldUpdater.refreshWorldEntityAtStage).calledWith(assembly, entity, newStage)
   })
 
-  test.each([1, 2], "at lower stage %d sets entity and calls moveEntityOnPreviewReplace", (newStage) => {
+  test.each([1, 2], "at lower stage %d sets entity and calls moveEntityOnPreviewReplaced", (newStage) => {
     const { luaEntity, entity } = addEntity(3)
     worldListener.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
 
     expect(entity.getWorldEntity(newStage)).to.be(luaEntity)
-    expect(assemblyUpdater.moveEntityOnPreviewReplace).calledWith(assembly, entity, newStage)
+    expect(assemblyUpdater.moveEntityOnPreviewReplaced).calledWith(assembly, entity, newStage)
     assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
   test("create at lower stage can handle immediate upgrade", () => {
     const { luaEntity, entity } = addEntity(3)
-    assemblyUpdater.moveEntityOnPreviewReplace.invokes(() => {
+    assemblyUpdater.moveEntityOnPreviewReplaced.invokes(() => {
       totalCalls++
       luaEntity.destroy()
       entity.replaceWorldEntity(1, createWorldEntity(1))
@@ -153,7 +153,7 @@ describe("onEntityCreated", () => {
     worldListener.onEntityCreated(assembly, luaEntity, 1, playerIndex)
 
     // assert.equal(luaEntity, entity.getWorldEntity(1))
-    expect(assemblyUpdater.moveEntityOnPreviewReplace).calledWith(assembly, entity, 1)
+    expect(assemblyUpdater.moveEntityOnPreviewReplaced).calledWith(assembly, entity, 1)
     assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 
@@ -540,7 +540,7 @@ describe("onEntityDollied", () => {
   test("calls tryMoveEntity and does not notify if returns nil", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity) // needed to detect entity
-    // assemblyUpdater.tryMoveEntity.invokes(() => {
+    // asmUpdates.tryMoveEntity.invokes(() => {
     //   totalCalls++
     //   return nil
     // })
