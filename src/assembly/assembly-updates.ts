@@ -33,7 +33,7 @@ import {
   updateNewWorldEntitiesWithoutWires,
   updateWireConnections,
   updateWorldEntities,
-} from "./world-entities"
+} from "./world-entity-updates"
 import min = math.min
 
 export type UpdateSuccess = "updated" | "no-change"

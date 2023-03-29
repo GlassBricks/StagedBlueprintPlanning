@@ -11,7 +11,7 @@
 
 import { assertNever } from "../lib"
 import { AssemblyEvents } from "./UserAssembly"
-import { rebuildStage } from "./world-entities"
+import { rebuildStage } from "./world-entity-updates"
 
 AssemblyEvents.addListener((e) => {
   switch (e.type) {

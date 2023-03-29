@@ -16,7 +16,7 @@ import {
   enableAllEntitiesInStage,
   rebuildAllStages,
   rebuildStage,
-} from "../assembly/world-entities"
+} from "../assembly/world-entity-updates"
 import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
 import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"

@@ -13,7 +13,7 @@ import { _migrateAssemblyContent0_18_0 } from "../entity/AssemblyContent"
 import { migrateEntity_0_17_0, StageNumber } from "../entity/AssemblyEntity"
 import { Migrations } from "../lib/migration"
 import { UserAssembly } from "./AssemblyDef"
-import { updateWorldEntities } from "./world-entities"
+import { updateWorldEntities } from "./world-entity-updates"
 
 declare const global: {
   assemblies: LuaMap<number, UserAssembly>

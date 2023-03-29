@@ -28,7 +28,7 @@ import _assemblyUpdater = require("../../assembly/assembly-updates")
 
 import _worldNotifier = require("../../assembly/notifications")
 import worldListener = require("../../assembly/on-world-event")
-import _worldUpdater = require("../../assembly/world-entities")
+import _worldUpdater = require("../../assembly/world-entity-updates")
 
 const worldNotifier = moduleMock(_worldNotifier, true)
 let totalCalls = 0

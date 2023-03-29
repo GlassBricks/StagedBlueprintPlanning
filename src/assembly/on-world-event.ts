@@ -38,7 +38,7 @@ import {
   refreshWorldEntityAllStages,
   refreshWorldEntityAtStage,
   tryDollyEntities,
-} from "./world-entities"
+} from "./world-entity-updates"
 
 function onPreviewReplaced(
   assembly: Assembly,

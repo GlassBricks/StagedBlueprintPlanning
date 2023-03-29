@@ -29,7 +29,7 @@ let assembly: Assembly
 let entity: AssemblyEntity<TestEntity>
 
 import _highlighter = require("../../assembly/entity-highlights")
-import WorldUpdater = require("../../assembly/world-entities")
+import WorldUpdater = require("../../assembly/world-entity-updates")
 import _wireHandler = require("../../entity/wires")
 
 const wireUpdater = moduleMock(_wireHandler, true)

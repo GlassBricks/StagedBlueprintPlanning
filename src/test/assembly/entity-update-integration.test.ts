@@ -34,7 +34,7 @@ import {
   refreshWorldEntityAllStages,
   refreshWorldEntityAtStage,
   tryDollyEntities,
-} from "../../assembly/world-entities"
+} from "../../assembly/world-entity-updates"
 import { Prototypes, Settings } from "../../constants"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"

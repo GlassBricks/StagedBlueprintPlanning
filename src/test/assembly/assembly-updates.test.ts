@@ -28,7 +28,7 @@ import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import asmUpdates = require("../../assembly/assembly-updates")
 import _worldListener = require("../../assembly/on-world-event")
-import _worldUpdater = require("../../assembly/world-entities")
+import _worldUpdater = require("../../assembly/world-entity-updates")
 import _wireHandler = require("../../entity/wires")
 import direction = defines.direction
 import wire_type = defines.wire_type
