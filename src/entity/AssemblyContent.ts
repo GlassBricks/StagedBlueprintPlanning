@@ -23,7 +23,7 @@ import {
   PasteRotatableType,
   rollingStockTypes,
 } from "./entity-info"
-import { Map2D, newMap2D } from "./map2d"
+import { _migrateMap2DToLinkedList, Map2D, newMap2D } from "./map2d"
 import { getRegisteredAssemblyEntity } from "./registration"
 import { getUndergroundDirection } from "./underground-belt"
 
@@ -414,4 +414,8 @@ class AssemblyContentImpl implements MutableAssemblyContent {
 
 export function newAssemblyContent(): MutableAssemblyContent {
   return new AssemblyContentImpl()
+}
+
+export function _migrateAssemblyContent0_18_0(content: MutableAssemblyContent): void {
+  _migrateMap2DToLinkedList((content as AssemblyContentImpl).byPosition)
 }

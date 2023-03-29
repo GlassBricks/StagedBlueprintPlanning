@@ -11,61 +11,6 @@
 
 import { PRecord, RegisterClass } from "../lib"
 import { AssemblyEntity } from "./AssemblyEntity"
-//
-// export interface Map2D<T extends AnyNotNil> extends LuaPairsIterable<number, PRecord<number, T | T[]>> {
-//   [x: number]: PRecord<number, T | readonly T[]>
-//
-//   get(x: number, y: number): T | readonly T[] | nil
-//   add(x: number, y: number, value: T): void
-//   delete(x: number, y: number, value: T): void
-// }
-//
-// export type MutableMap2D<T extends AnyNotNil> = Map2D<T>
-//
-// // noinspection JSUnusedLocalSymbols
-// interface Map2DImpl<T extends AnyNotNil> extends LuaPairsIterable<number, PRecord<number, T | T[]>> {
-//   _: never
-// }
-//
-// @RegisterClass("Map2D")
-// class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
-//   [x: number]: PRecord<number, T | T[]>
-//   get(x: number, y: number): T | readonly T[] | nil {
-//     const byX = this[x]
-//     return byX && byX[y]
-//   }
-//   add(x: number, y: number, value: T): void {
-//     const byX = this[x] ?? (this[x] = {})
-//     const existing = byX[y]
-//     if (existing == nil) {
-//       byX[y] = value
-//     } else if (isArray(existing)) {
-//       existing.push(value)
-//     } else {
-//       byX[y] = setmetatable([existing, value], arrayMeta)
-//     }
-//   }
-//   delete(x: number, y: number, value: T): void {
-//     const byX = this[x]
-//     if (byX == nil) return
-//     const byY = byX[y]
-//     if (byY == nil) return
-//     if (isArray(byY)) {
-//       if (remove_from_list(byY, value) && byY.length == 1) {
-//         byX[y] = byY[0]
-//       }
-//     } else {
-//       delete byX[y]
-//       if (next(byX)[0] == nil) {
-//         delete this[x]
-//       }
-//     }
-//   }
-// }
-//
-
-// new: linked list implementation
-// justification: arrays in one position rare, this simplifies user code (avoids checking if array or not)
 
 export interface Map2D<T extends { _next?: T }> {
   [x: number]: PRecord<number, T | nil>
