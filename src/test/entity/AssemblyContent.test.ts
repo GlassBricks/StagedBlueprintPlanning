@@ -119,9 +119,9 @@ describe("findCompatible", () => {
     const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
     content.add(entity)
     entity.replaceWorldEntity(2, luaEntity)
-    expect(content.findExact(luaEntity, 2, luaEntity.position)).to.be(entity)
+    expect(content.findExact(luaEntity, luaEntity.position, 2)).to.be(entity)
     luaEntity.teleport(1, 1)
-    expect(content.findExact(luaEntity, 2, { x: 0, y: 0 })).to.be(entity)
+    expect(content.findExact(luaEntity, { x: 0, y: 0 }, 2)).to.be(entity)
   })
 
   test("rails at same position but opposite direction are treated different only if diagonal", () => {

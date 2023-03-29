@@ -45,7 +45,7 @@ export interface AssemblyContent {
     stage?: StageNumber,
   ): AssemblyEntity | nil
 
-  findExact(entity: LuaEntity, stage: StageNumber, position: Position): AssemblyEntity | nil
+  findExact(entity: LuaEntity, position: Position, stage: StageNumber): AssemblyEntity | nil
 
   findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil
@@ -181,10 +181,10 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     return this.findCompatibleWithLuaEntity(entity, nil)
   }
 
-  findExact(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {
-    let cur = this.byPosition.get(oldPosition.x, oldPosition.y)
+  findExact(entity: LuaEntity, position: Position, stage: StageNumber): AssemblyEntity | nil {
+    let cur = this.byPosition.get(position.x, position.y)
     while (cur != nil) {
-      if (cur.getWorldOrPreviewEntity(expectedStage) == entity) return cur
+      if (cur.getWorldOrPreviewEntity(stage) == entity) return cur
       cur = cur._next
     }
     return nil

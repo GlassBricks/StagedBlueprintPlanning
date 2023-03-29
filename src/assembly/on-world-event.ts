@@ -170,7 +170,7 @@ function getCompatibleAtPositionOrAdd(
   oldPosition: Position,
   byPlayer: PlayerIndex | nil,
 ): AssemblyEntity | nil {
-  const existing = assembly.content.findExact(entity, stage, oldPosition)
+  const existing = assembly.content.findExact(entity, oldPosition, stage)
   if (existing) return existing
   onEntityCreated(assembly, entity, stage, byPlayer)
   return nil
@@ -327,7 +327,7 @@ export function onSendToStageUsed(
   byPlayer: PlayerIndex,
 ): void {
   if (fromStage == toStage) return
-  const existing = assembly.content.findExact(entity, fromStage, entity.position)
+  const existing = assembly.content.findExact(entity, entity.position, fromStage)
   if (!existing || existing.firstStage != fromStage || existing.isSettingsRemnant) return
   const result = moveEntityToStage(assembly, existing, toStage)
   if (result == "updated") {
