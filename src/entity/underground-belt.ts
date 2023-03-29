@@ -59,7 +59,7 @@ function findUndergroundPairOneDirection(
   for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
-    const pair = content.findCompatible(name, curPos, nil) as UndergroundBeltAssemblyEntity | nil
+    const pair = content.findCompatible(name, curPos, nil, 1) as UndergroundBeltAssemblyEntity | nil
     if (
       pair &&
       getUndergroundDirection(pair.getDirection(), pair.firstValue.type) == otherDirection &&

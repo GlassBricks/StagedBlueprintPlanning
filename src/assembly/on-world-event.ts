@@ -89,7 +89,7 @@ export function onEntityCreated(
 ): AssemblyEntity | nil {
   const { content } = assembly
 
-  const existing = content.findCompatibleWithLuaEntity(entity, nil)
+  const existing = content.findCompatibleWithLuaEntity(entity, nil, stage)
 
   if (existing) {
     onEntityOverbuilt(assembly, existing, entity, stage, byPlayer)
@@ -98,7 +98,7 @@ export function onEntityCreated(
 
   const entityName = entity.name
   if (!shouldCheckEntityExactlyForMatch(entityName)) {
-    const existingDifferentDirection = content.findCompatible(entityName, entity.position, nil)
+    const existingDifferentDirection = content.findCompatible(entityName, entity.position, nil, stage)
     if (existingDifferentDirection) {
       disallowOverbuildDifferentDirection(assembly, existingDifferentDirection, entity, byPlayer)
       return nil
@@ -117,7 +117,7 @@ function getCompatibleEntityOrAdd(
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
 ): LuaMultiReturn<[AssemblyEntity, true] | [AssemblyEntity | nil, false]> {
-  const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection)
+  const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
   if (!compatible || stage < compatible.firstStage) {
     const result = onEntityCreated(assembly, entity, stage, byPlayer, knownBpValue)
     return $multi(result, false as const)
@@ -149,7 +149,7 @@ export function onTryFixEntity(
   stage: StageNumber,
   deleteSettingsRemnants?: boolean,
 ): void {
-  const existing = assembly.content.findCompatibleFromPreview(previewEntity)
+  const existing = assembly.content.findCompatibleFromPreview(previewEntity, stage)
   if (!existing) return
   if (existing.isSettingsRemnant) {
     if (deleteSettingsRemnants) {
@@ -196,7 +196,7 @@ export function onEntityDeleted(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _byPlayer: PlayerIndex | nil,
 ): void {
-  const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
+  const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil, stage)
   if (!existing) return
   const existingStage = existing.firstStage
 
@@ -251,7 +251,7 @@ export function onUndergroundBeltDragRotated(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
+  const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil, stage)
   if (!existing || !existing.isUndergroundBelt()) return
   assert(entity.rotate())
   const result = tryRotateEntityToMatchWorld(assembly, existing, stage)
@@ -288,13 +288,13 @@ export function onEntityMarkedForUpgrade(
 export function onCleanupToolUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
   onTryFixEntity(assembly, entity, stage, true)
 }
-export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity): void {
-  const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity)
+export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
+  const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
   if (!existing) return
   forceDeleteEntity(assembly, existing)
 }
 export function onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void {
-  const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil)
+  const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil, stage)
   if (existing) {
     clearWorldEntityAtStage(assembly, existing, stage)
   }
@@ -305,7 +305,7 @@ export function onMoveEntityToStageCustomInput(
   stage: StageNumber,
   byPlayer: PlayerIndex,
 ): void {
-  const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity)
+  const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity, stage)
   if (!existing || existing.isSettingsRemnant) return
   const oldStage = existing.firstStage
   const result = moveEntityToStage(assembly, existing, stage)
@@ -348,7 +348,7 @@ export function onBringToStageUsed(
   stage: StageNumber,
   byPlayer: PlayerIndex,
 ): void {
-  const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity)
+  const existing = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
   if (!existing || existing.isSettingsRemnant) return
   const oldStage = existing.firstStage
   if (oldStage == stage) return

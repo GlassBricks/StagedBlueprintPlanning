@@ -117,8 +117,8 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   const [stage1, stage2, stage3, stage4] = assembly.getAllStages()
 
   createEntity(stage1) // not included
-  const e1 = createEntity(stage1, [1.5, 1.5]) // included, as has change in stage 2
-  const e1Stage2 = assembly.content.findCompatibleWithLuaEntity(e1, nil)!.getWorldEntity(2)!
+  const e1 = createEntity(stage1, [1.5, 1.5]) // included, as has changed in stage 2
+  const e1Stage2 = assembly.content.findCompatibleWithLuaEntity(e1, nil, 1)!.getWorldEntity(2)!
   e1Stage2.get_inventory(defines.inventory.chest)!.set_bar(3)
   checkForEntityUpdates(e1Stage2, nil)
   const e2 = createEntity(stage2, [2.5, 2.5]) // included
@@ -128,7 +128,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   const e4 = createEntity(stage1, [5.5, 5.5], "steel-chest") // included, in additional whitelist
 
   const e5 = createEntity(stage1, [6.5, 6.5], "iron-chest") // included, has wire connection with e3
-  const e5stage3 = assembly.content.findCompatibleWithLuaEntity(e5, nil)!.getWorldEntity(3)!
+  const e5stage3 = assembly.content.findCompatibleWithLuaEntity(e5, nil, 1)!.getWorldEntity(3)!
   e5stage3.connect_neighbour({ wire: defines.wire_type.red, target_entity: e3 })
   checkForCircuitWireUpdates(e5stage3, nil)
 

@@ -16,7 +16,7 @@ import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyE
 export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return $multi()
-  const found = stage.assembly.content.findCompatibleFromLuaEntityOrPreview(entity)
+  const found = stage.assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage.stageNumber)
   if (found) return $multi(stage, found)
   return $multi()
 }

@@ -874,7 +874,7 @@ function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   if (!stage) return
   const { assembly } = stage
   for (const entity of e.entities) {
-    onEntityForceDeleteUsed(assembly, entity)
+    onEntityForceDeleteUsed(assembly, entity, stage.stageNumber)
   }
 }
 

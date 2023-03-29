@@ -17,7 +17,7 @@ import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
 function updateCircuitConnections(
   content: MutableAssemblyContent,
   entity: AssemblyEntity,
-  stageNumber: StageNumber,
+  stage: StageNumber,
   luaEntity: LuaEntity,
 ): void {
   const existingConnections = luaEntity.circuit_connection_definitions
@@ -25,17 +25,18 @@ function updateCircuitConnections(
 
   const assemblyConnections = content.getCircuitConnections(entity)
 
-  const [matchingConnections, extraConnections] = analyzeExistingCircuitConnections(
+  const [matchingConnections, extraConnections] = partitionExistingCircuitConnections(
     assemblyConnections,
     luaEntity,
     existingConnections,
     content,
+    stage,
   )
   for (const [extraConnection] of extraConnections) luaEntity.disconnect_neighbour(extraConnection)
 
   if (assemblyConnections) {
     for (const [otherEntity, connections] of assemblyConnections) {
-      const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
+      const otherLuaEntity = otherEntity.getWorldEntity(stage)
       if (!otherLuaEntity) continue
       for (const connection of connections) {
         if (matchingConnections.has(connection)) continue
@@ -54,7 +55,7 @@ function updateCircuitConnections(
 function updateCableConnections(
   content: MutableAssemblyContent,
   entity: AssemblyEntity,
-  stageNumber: StageNumber,
+  stage: StageNumber,
   luaEntity: LuaEntity,
 ): boolean {
   if (luaEntity.type != "electric-pole") return true
@@ -64,7 +65,7 @@ function updateCableConnections(
   const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
   if (existingConnections) {
     for (const otherLuaEntity of existingConnections) {
-      const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
+      const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil, stage)
       if (!otherEntity) continue
       if (assemblyConnections && assemblyConnections.has(otherEntity)) {
         matching.add(otherEntity)
@@ -76,7 +77,7 @@ function updateCableConnections(
 
   if (assemblyConnections) {
     for (const otherEntity of assemblyConnections) {
-      const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
+      const otherLuaEntity = otherEntity.getWorldEntity(stage)
       if (otherLuaEntity && !matching.has(otherEntity)) {
         if (!luaEntity.connect_neighbour(otherLuaEntity)) return false
       }
@@ -93,29 +94,30 @@ function updateCableConnections(
 function updateWireConnectionsAtStage(
   content: MutableAssemblyContent,
   entity: AssemblyEntity,
-  stageNumber: StageNumber,
+  stage: StageNumber,
 ): boolean {
-  const luaEntity = entity.getWorldEntity(stageNumber)
+  const luaEntity = entity.getWorldEntity(stage)
   if (!luaEntity) return false
-  updateCircuitConnections(content, entity, stageNumber, luaEntity)
-  return updateCableConnections(content, entity, stageNumber, luaEntity)
+  updateCircuitConnections(content, entity, stage, luaEntity)
+  return updateCableConnections(content, entity, stage, luaEntity)
 }
 
 function saveCircuitConnections(
   content: MutableAssemblyContent,
   entity: AssemblyEntity,
-  stageNumber: StageNumber,
+  stage: StageNumber,
   luaEntity: LuaEntity,
 ): boolean {
   const existingConnections = luaEntity.circuit_connection_definitions
   if (!existingConnections) return false
   const assemblyConnections = content.getCircuitConnections(entity)
 
-  const [matchingConnections, extraConnections] = analyzeExistingCircuitConnections(
+  const [matchingConnections, extraConnections] = partitionExistingCircuitConnections(
     assemblyConnections,
     luaEntity,
     existingConnections,
     content,
+    stage,
   )
 
   let hasDiff = !isEmpty(extraConnections)
@@ -123,7 +125,7 @@ function saveCircuitConnections(
   // remove before add, so don't remove just added connections
   if (assemblyConnections) {
     for (const [otherEntity, connections] of assemblyConnections) {
-      const otherLuaEntity = otherEntity.getWorldEntity(stageNumber)
+      const otherLuaEntity = otherEntity.getWorldEntity(stage)
       if (!otherLuaEntity) continue
       for (const connection of connections) {
         if (!matchingConnections.has(connection)) {
@@ -165,7 +167,7 @@ function saveCableConnections(
 
   if (worldConnections) {
     for (const otherLuaEntity of worldConnections) {
-      const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
+      const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil, stage)
       if (!otherEntity) continue
       if (!savedConnections || !savedConnections.has(otherEntity)) {
         newConnections.add(otherEntity)
@@ -182,7 +184,7 @@ function saveCableConnections(
       const higherConnections = (higherEntity.neighbours as { copper?: LuaEntity[] }).copper
       if (higherConnections) {
         for (const otherLuaEntity of higherConnections) {
-          const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
+          const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil, stage)
           if (
             otherEntity &&
             otherEntity.firstStage > stage &&
@@ -229,11 +231,12 @@ function saveWireConnections(
   return $multi(diff1 || diff2, maxConnectionsExceeded)
 }
 
-function analyzeExistingCircuitConnections(
+function partitionExistingCircuitConnections(
   assemblyConnections: AsmEntityCircuitConnections | nil,
   luaEntity: LuaEntity,
   existingConnections: readonly CircuitConnectionDefinition[],
   content: AssemblyContent,
+  stage: StageNumber,
 ): LuaMultiReturn<
   [
     matchingConnections: LuaMap<AsmCircuitConnection, CircuitConnectionDefinition>,
@@ -247,7 +250,7 @@ function analyzeExistingCircuitConnections(
     const otherLuaEntity = existingConnection.target_entity
     if (luaEntity == otherLuaEntity && existingConnection.source_circuit_id > existingConnection.target_circuit_id)
       continue
-    const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil)
+    const otherEntity = content.findCompatibleWithLuaEntity(otherLuaEntity, nil, stage)
     if (!otherEntity) continue
     let matchingConnection: AsmCircuitConnection | nil
     if (assemblyConnections) {

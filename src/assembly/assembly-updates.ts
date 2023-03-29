@@ -421,7 +421,7 @@ export function resetTrain(assembly: Assembly, entity: RollingStockAssemblyEntit
   const entities = train.carriages
 
   const content = assembly.content
-  const assemblyEntities = entities.map((e) => content.findCompatibleWithLuaEntity(e, nil)!)
+  const assemblyEntities = entities.map((e) => content.findCompatibleWithLuaEntity(e, nil, stage)!)
   for (const entity of assemblyEntities) entity.destroyAllWorldOrPreviewEntities()
   for (const entity of assemblyEntities) rebuildWorldEntityAtStage(assembly, entity, stage)
 }
@@ -438,7 +438,7 @@ export function setTrainLocationToCurrent(assembly: Assembly, entity: RollingSto
   const content = assembly.content
 
   for (const luaEntity of entities) {
-    const assemblyEntity = content.findCompatibleWithLuaEntity(luaEntity, nil)
+    const assemblyEntity = content.findCompatibleWithLuaEntity(luaEntity, nil, stage)
     if (assemblyEntity) {
       content.changePosition(assemblyEntity, luaEntity.position)
       rebuildWorldEntityAtStage(assembly, assemblyEntity, stage)

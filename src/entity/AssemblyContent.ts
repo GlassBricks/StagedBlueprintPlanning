@@ -37,18 +37,18 @@ export interface AssemblyContent {
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
-    stage?: StageNumber,
+    stage: StageNumber,
   ): AssemblyEntity | nil
   findCompatibleWithLuaEntity(
     entity: BasicEntityInfo,
     previousDirection: defines.direction | nil,
-    stage?: StageNumber,
+    stage: StageNumber,
   ): AssemblyEntity | nil
 
   findExact(entity: LuaEntity, position: Position, stage: StageNumber): AssemblyEntity | nil
 
-  findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil
-  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil
+  findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): AssemblyEntity | nil
+  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): AssemblyEntity | nil
 
   getCircuitConnections(entity: AssemblyEntity): AsmEntityCircuitConnections | nil
   getCableConnections(entity: AssemblyEntity): AsmEntityCableConnections | nil
@@ -102,7 +102,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
-    stage: StageNumber = 1,
+    stage: StageNumber,
   ): AssemblyEntity | nil {
     const { x, y } = position
     let cur = this.byPosition.get(x, y)
@@ -123,7 +123,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   findCompatibleWithLuaEntity(
     entity: BasicEntityInfo | LuaEntity,
     previousDirection: defines.direction | nil,
-    stage: StageNumber = 1,
+    stage: StageNumber,
   ): AssemblyEntity | nil {
     const type = entity.type
     if (type == "underground-belt") {
@@ -165,13 +165,13 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     }
   }
 
-  findCompatibleFromPreview(previewEntity: LuaEntity, stage?: StageNumber): AssemblyEntity | nil {
+  findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): AssemblyEntity | nil {
     const actualName = previewEntity.name.substring(Prototypes.PreviewEntityPrefix.length)
     const direction = isRollingStockType(actualName) ? 0 : previewEntity.direction
     return this.findCompatible(actualName, previewEntity.position, direction, stage)
   }
 
-  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage?: StageNumber): AssemblyEntity | nil {
+  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): AssemblyEntity | nil {
     const name = entity.name
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
       return this.findCompatibleFromPreview(entity, stage)

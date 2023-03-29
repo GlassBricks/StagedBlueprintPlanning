@@ -268,10 +268,10 @@ export function tryDollyEntities(
     forceDollyEntity(movedEntity, entity.position, entity.getWorldDirection())
   } else {
     entity.setDirection(movedEntity.direction)
-    deleteAllHighlights(entity)
-    updateAllHighlights(assembly, entity, entity.firstStage, assembly.lastStageFor(entity))
     const posChanged = assembly.content.changePosition(entity, movedEntity.position)
     assert(posChanged, "failed to change position in assembly content")
+    deleteAllHighlights(entity)
+    updateAllHighlights(assembly, entity, entity.firstStage, assembly.lastStageFor(entity))
   }
 
   return moveResult

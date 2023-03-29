@@ -159,7 +159,7 @@ test("addNewEntity", () => {
   expect(entity.position).to.equal(pos)
   expect(entity.getDirection()).to.be(0)
 
-  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil) as AssemblyEntity<BlueprintEntity>
+  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
   expect(found).to.be(entity)
 
   expect(entity.getWorldEntity(2)).to.be(luaEntity)
@@ -184,7 +184,7 @@ test("addNewEntity with known value", () => {
   expect(entity.position).to.equal(pos)
   expect(entity.getDirection()).to.be(0)
 
-  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil) as AssemblyEntity<BlueprintEntity>
+  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
   expect(found).to.be(entity)
 
   expect(entity.getWorldEntity(2)).to.be(luaEntity)
@@ -1041,11 +1041,11 @@ describe("rolling stock", () => {
 
     assertNEntities(1)
 
-    const found = assembly.content.findCompatible(rollingStock.name, rollingStock.position, nil)!
+    const found = assembly.content.findCompatible(rollingStock.name, rollingStock.position, nil, 1)!
     expect(found).to.be.any()
     expect(found).to.be(result)
 
-    const foundDirectly = assembly.content.findCompatibleWithLuaEntity(rollingStock, nil)
+    const foundDirectly = assembly.content.findCompatibleWithLuaEntity(rollingStock, nil, 1)
     expect(foundDirectly).to.be.any()
     expect(foundDirectly).to.be(found)
 

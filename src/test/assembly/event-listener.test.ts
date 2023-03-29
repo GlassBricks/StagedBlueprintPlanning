@@ -393,7 +393,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    expect(WorldListener.onEntityForceDeleteUsed).calledWith(assembly, entity)
+    expect(WorldListener.onEntityForceDeleteUsed).calledWith(assembly, entity, 1)
   })
 })
 
