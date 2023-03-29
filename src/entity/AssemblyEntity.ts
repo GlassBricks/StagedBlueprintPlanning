@@ -55,12 +55,13 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   isSettingsRemnant?: true
 
   readonly firstStage: StageNumber
+  readonly lastStage: StageNumber | nil
   readonly firstValue: Readonly<T>
 
   isRollingStock(): this is RollingStockAssemblyEntity
   isUndergroundBelt(): this is UndergroundBeltAssemblyEntity
 
-  inFirstStageOnly(): boolean
+  // inFirstStageOnly(): boolean
 
   isInStage(stage: StageNumber): boolean
 
@@ -197,6 +198,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   public isSettingsRemnant: true | nil
 
   firstStage: StageNumber
+  lastStage: StageNumber | nil
   readonly firstValue: Mutable<T>
   stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>;
 
@@ -210,6 +212,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.direction = (direction == 0 ? nil : direction) as InternalSavedDirection | nil
     this.firstValue = shallowCopy(firstValue)
     this.firstStage = firstStage
+    if (this.isRollingStock()) {
+      this.lastStage = firstStage
+    }
   }
 
   public getDirection(): defines.direction {
@@ -372,19 +377,19 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
   iterateValues(start: StageNumber, end: StageNumber) {
-    if (this.inFirstStageOnly()) return this.iterateValuesRollingStock(start, end)
     const stageDiffs = this.stageDiffs
     if (!stageDiffs) return this.iterateValuesNoDiffs(start, end)
 
     const { firstStage, firstValue } = this
+    const lastStage = this.lastStage ?? end
     let value = this.getValueAtStage(start) as T
     function iterNext(stageDiffs: StageDiffs | nil, prevStage: StageNumber | nil) {
       if (!prevStage) {
         return $multi(start, value)
       }
       const nextStage = prevStage + 1
-      if (nextStage < firstStage) return $multi(nextStage, nil)
       if (nextStage > end) return $multi()
+      if (nextStage < firstStage || nextStage > lastStage) return $multi(nextStage, nil)
       if (nextStage == firstStage) {
         value = shallowCopy(firstValue)
       } else {
@@ -396,23 +401,14 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return $multi<any>(iterNext, stageDiffs, nil)
   }
 
-  private iterateValuesRollingStock(start: StageNumber, end: StageNumber) {
-    // only shows up in the first stage
-    const { firstStage, firstValue } = this
-    function next(_: any, prevStage: StageNumber) {
-      const stage = prevStage + 1
-      if (stage > end) return $multi()
-      if (stage == firstStage) return $multi(stage, firstValue)
-      return $multi(stage, nil)
-    }
-    return $multi<any>(next, nil, start - 1)
-  }
   private iterateValuesNoDiffs(start: StageNumber, end: StageNumber) {
     const { firstStage, firstValue } = this
+    const lastStage = this.lastStage ?? end
     function next(_: any, prevStage: StageNumber) {
       const stage = prevStage + 1
       if (stage > end) return $multi()
-      return $multi(stage, stage >= firstStage ? firstValue : nil)
+      if (stage < firstStage || stage > lastStage) return $multi(stage, nil)
+      return $multi(stage, firstValue)
     }
     return $multi<any>(next, nil, start - 1)
   }

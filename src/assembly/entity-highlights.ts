@@ -151,7 +151,7 @@ function updateHighlight(
 
 function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
   let hasErrorAnywhere = false
-  for (const stage of $range(entity.firstStage, entity.inFirstStageOnly() ? entity.firstStage : assembly.maxStage())) {
+  for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
     const hasError = entityHasErrorAt(entity, stage)
     updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorOutline", hasError)
     hasErrorAnywhere ||= hasError
@@ -160,7 +160,7 @@ function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
   if (!hasErrorAnywhere) {
     entity.destroyAllExtraEntities("errorElsewhereIndicator")
   } else {
-    for (const stage of $range(1, assembly.maxStage())) {
+    for (const stage of $range(1, assembly.lastStageFor(entity))) {
       const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) != nil
       updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorElsewhereIndicator", shouldHaveIndicator)
     }
@@ -175,7 +175,7 @@ function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): 
   }
   const firstStage = entity.firstStage
   let lastStageWithHighlights = firstStage
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.lastStageFor(entity))) {
     const hasConfigChanged = entity.hasStageDiff(stage)
     const isUpgrade = hasConfigChanged && entity.getStageDiff(stage)!.name != nil
     const highlight = updateHighlight(
@@ -209,7 +209,7 @@ function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): 
     // remove later highlights for all stages
     removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
   } else {
-    for (const i of $range(lastStageWithHighlights, assembly.maxStage())) {
+    for (const i of $range(lastStageWithHighlights, assembly.lastStageFor(entity))) {
       removeHighlight(entity, i, "configChangedLaterHighlight")
     }
     for (const i of $range(1, firstStage - 1)) {
@@ -228,9 +228,7 @@ export function updateAllHighlights(
 ): void {
   // ignore start and end stage for now
   updateErrorOutlines(assembly, entity)
-  if (!entity.inFirstStageOnly()) {
-    updateStageDiffHighlights(assembly, entity)
-  }
+  updateStageDiffHighlights(assembly, entity)
 }
 
 export function deleteAllHighlights(entity: AssemblyEntity): void {
@@ -239,7 +237,7 @@ export function deleteAllHighlights(entity: AssemblyEntity): void {
 export function makeSettingsRemnantHighlights(assembly: Assembly, entity: AssemblyEntity): void {
   if (!entity.isSettingsRemnant) return
   for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.lastStageFor(entity))) {
     updateHighlight(entity, stage, assembly.getSurface(stage)!, "settingsRemnantHighlight", true)
   }
 }

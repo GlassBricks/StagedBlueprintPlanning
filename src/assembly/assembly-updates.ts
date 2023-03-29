@@ -71,7 +71,7 @@ export function addNewEntity(
   }
 
   updateNewWorldEntitiesWithoutWires(assembly, assemblyEntity)
-  saveWireConnections(content, assemblyEntity, stage, assembly.maxStage())
+  saveWireConnections(content, assemblyEntity, stage, assembly.lastStageFor(assemblyEntity))
   updateWireConnections(assembly, assemblyEntity)
 
   return assemblyEntity
@@ -85,7 +85,6 @@ export function moveEntityOnPreviewReplace(assembly: Assembly, entity: AssemblyE
 }
 
 function shouldMakeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity) {
-  if (entity.inFirstStageOnly()) return false
   if (entity.hasStageDiff()) return true
   const connections = assembly.content.getCircuitConnections(entity)
   if (!connections) return false

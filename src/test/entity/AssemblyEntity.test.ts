@@ -47,6 +47,10 @@ test("getters", () => {
   expect(fooAssemblyEntity.getDirection()).to.equal(0) // nil <=> 0
 })
 
+test("lastStage default nil", () => {
+  expect(fooAssemblyEntity.lastStage).toBeNil()
+})
+
 test("isRollingStock", () => {
   expect(fooAssemblyEntity.isRollingStock()).to.be(false)
   const assemblyEntity2 = createAssemblyEntity({ name: "locomotive" }, Pos(0, 0), nil, 2)
@@ -94,11 +98,6 @@ test("prevStageWithDiff", () => {
   expect(assemblyEntity.prevStageWithDiff(4)).to.be(3)
   expect(assemblyEntity.prevStageWithDiff(3)).to.be(nil)
   expect(assemblyEntity.prevStageWithDiff(2)).to.be(nil)
-})
-
-test("inFirstStageOnly generally false", () => {
-  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
-  expect(assemblyEntity.inFirstStageOnly()).to.be(false)
 })
 
 describe("getValueAtStage", () => {
@@ -504,7 +503,8 @@ describe("rolling stock", () => {
     expect(assemblyEntity.getValueAtStage(2)).to.equal(assemblyEntity.firstValue)
     expect(assemblyEntity.getValueAtStage(3)).to.be.nil()
 
-    expect(assemblyEntity.inFirstStageOnly()).to.be(true)
+    // expect(assemblyEntity.inFirstStageOnly()).to.be(true)
+    expect(assemblyEntity.lastStage).to.equal(2)
   })
   test("cannot apply stage diffs to rolling stock beyond first stage", () => {
     const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" } as RollingStockEntity, Pos(0, 0), nil, 1)

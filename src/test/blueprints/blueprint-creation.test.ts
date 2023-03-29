@@ -152,7 +152,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
 })
 
 test("make blueprint book", () => {
-  for (const i of $range(1, assembly.maxStage())) {
+  for (const i of $range(1, assembly.numStages())) {
     createEntity(assembly.getStage(i)!, [i + 0.5, i + 0.5])
   }
 
@@ -163,7 +163,7 @@ test("make blueprint book", () => {
   expect(stack.label).toBe(assembly.name.get())
   const inventory = stack.get_inventory(defines.inventory.item_main)!
   expect(inventory).toHaveLength(4)
-  for (const i of $range(1, assembly.maxStage())) {
+  for (const i of $range(1, assembly.numStages())) {
     expect(inventory[i - 1].is_blueprint).toBe(true)
     expect(inventory[i - 1].label).toBe(assembly.getStage(i)!.name.get())
     const entities = inventory[i - 1].get_blueprint_entities()!

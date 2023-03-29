@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -86,7 +86,7 @@ export function teleportToAssembly(player: LuaPlayer, assembly: UserAssembly): v
   }
   const playerData = getAssemblyPlayerData(player.index, assembly)
   if (!playerData) return
-  if (playerData.lastStage && playerData.lastStage <= assembly.maxStage()) {
+  if (playerData.lastStage && playerData.lastStage <= assembly.numStages()) {
     const stage = assembly.getStage(playerData.lastStage)!
     player.teleport(playerData.lastPosition ?? { x: 0, y: 0 }, stage.surface)
   } else {

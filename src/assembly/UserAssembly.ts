@@ -17,7 +17,7 @@ import {
   StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
 import { newAssemblyContent } from "../entity/AssemblyContent"
-import { StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import {
   bind,
   Events,
@@ -41,6 +41,7 @@ import { AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage, UserAssembl
 import { createStageSurface, destroySurface, prepareArea } from "./surfaces"
 import { AutoSetTilesType, setTiles } from "./tiles"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
+import min = math.min
 
 declare const global: {
   nextAssemblyId: AssemblyId
@@ -102,8 +103,15 @@ class UserAssemblyImpl implements UserAssembly {
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-  maxStage(): number {
+  _maxStage(): number {
     return luaLength(this.stages)
+  }
+  numStages(): StageNumber {
+    return luaLength(this.stages)
+  }
+  lastStageFor(entity: AssemblyEntity): StageNumber {
+    if (entity.lastStage != nil) return min(entity.lastStage, this.numStages())
+    return this.numStages()
   }
 
   getAllStages(): readonly StageImpl[] {
@@ -115,7 +123,7 @@ class UserAssemblyImpl implements UserAssembly {
 
   insertStage(index: StageNumber): Stage {
     this.assertValid()
-    assert(index >= 1 && index <= this.maxStage() + 1, "Invalid new stage number")
+    assert(index >= 1 && index <= this.numStages() + 1, "Invalid new stage number")
 
     const newStage = StageImpl.create(this, index, this.getNewStageName())
     table.insert(this.stages as unknown as Stage[], index, newStage)
@@ -133,7 +141,7 @@ class UserAssemblyImpl implements UserAssembly {
     this.assertValid()
     const stage = this.stages[index]
     assert(stage != nil, "invalid stage number")
-    if (this.maxStage() == 1) {
+    if (this.numStages() == 1) {
       this.delete()
       return
     }
@@ -143,7 +151,7 @@ class UserAssemblyImpl implements UserAssembly {
     stage._doDelete()
     table.remove(this.stages as unknown as Stage[], index)
     // update stages
-    for (const i of $range(index, this.maxStage())) {
+    for (const i of $range(index, this.numStages())) {
       this.stages[i].stageNumber = i
     }
     this.content.deleteStage(index)
@@ -368,7 +376,7 @@ Migrations.to("0.16.0", () => {
       newSettings.blacklist.set(oldSettings.entityFilters.get())
     }
 
-    const lastStageSettings = (assembly.getStage(assembly.maxStage())! as OldStage).blueprintSettings!
+    const lastStageSettings = (assembly.getStage(assembly.numStages())! as OldStage).blueprintSettings!
     copyFromOldStageSettings(newSettings, lastStageSettings)
 
     for (const stage of assembly.getAllStages()) {

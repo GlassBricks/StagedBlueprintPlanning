@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -46,7 +46,7 @@ export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
   const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)
   if (!assemblyPlayerData) return
   let selectedStage = assemblyPlayerData.moveTargetStage
-  if (!selectedStage || selectedStage < 1 || selectedStage > assembly.maxStage()) {
+  if (!selectedStage || selectedStage < 1 || selectedStage > assembly.numStages()) {
     selectedStage = stage.stageNumber
   }
 
@@ -98,7 +98,7 @@ function changeSelectedStage(player: LuaPlayer, delta: number) {
   let selectedStage = assemblyPlayerData.moveTargetStage ?? stage.stageNumber
   selectedStage += delta
   if (selectedStage < 1) selectedStage = 1
-  const maxStage = stage.assembly.maxStage()
+  const maxStage = stage.assembly.numStages()
   if (selectedStage > maxStage) selectedStage = maxStage
 
   assemblyPlayerData.moveTargetStage = selectedStage

@@ -81,7 +81,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   expect(found).to.be(entity)
 
   let hasMissing = false
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.lastStageFor(entity))) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)!
     assert(worldEntity, `entity exists at stage ${stage}`)
     const isPreview = isPreviewEntity(worldEntity)
@@ -114,7 +114,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   const isElectricPole = game.entity_prototypes[entity.firstValue.name].type == "electric-pole"
   if (!cableConnections) {
     if (isElectricPole) {
-      for (const stage of $range(entity.firstStage, assembly.maxStage())) {
+      for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
         const pole = entity.getWorldEntity(stage)
         if (!pole) continue
         const cableNeighbors = (pole.neighbours as Record<"copper", LuaEntity[]>).copper
@@ -125,7 +125,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   } else {
     expect(isElectricPole).to.be(true)
     const otherNeighbors = Object.keys(cableConnections)
-    for (const stage of $range(entity.firstStage, assembly.maxStage())) {
+    for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
       const expectedNeighbors = otherNeighbors
         .map((o) => o.getWorldEntity(stage))
         .filter((o) => o)
@@ -141,7 +141,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
   // circuit wires
   const wireConnections = assembly.content.getCircuitConnections(entity)
   if (!wireConnections) {
-    for (const stage of $range(entity.firstStage, assembly.maxStage())) {
+    for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
       const worldEntity = entity.getWorldEntity(stage)
       if (!worldEntity) continue
       const wireNeighbors = worldEntity.circuit_connection_definitions
@@ -149,7 +149,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
       expect(wireNeighbors.filter((x) => x.wire != defines.wire_type.copper)).to.equal([])
     }
   } else {
-    for (const stage of $range(entity.firstStage, assembly.maxStage())) {
+    for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
       const thisWorldEntity = entity.getWorldEntity(stage)
       if (!thisWorldEntity) continue
       const expectedNeighbors = Object.entries(wireConnections).flatMap(([entity, connections]) => {
@@ -175,7 +175,7 @@ function assertEntityNotPresent(entity: AssemblyEntity) {
   const found = assembly.content.findCompatibleByTraits(entity.firstValue.name, entity.position, entity.getDirection())
   expect(found).to.be.nil()
 
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.lastStageFor(entity))) {
     expect(entity.getWorldOrPreviewEntity(stage)).to.be.nil()
   }
   expect(entity.hasAnyExtraEntities("errorOutline")).to.be(false)
@@ -184,7 +184,7 @@ function assertEntityNotPresent(entity: AssemblyEntity) {
 
 function assertIsSettingsRemnant(entity: AssemblyEntity) {
   expect(entity.isSettingsRemnant).to.be(true)
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.lastStageFor(entity))) {
     const preview = entity.getWorldOrPreviewEntity(stage)!
     expect(preview).to.be.any()
     expect(isPreviewEntity(preview)).to.be(true)
@@ -587,7 +587,7 @@ test("connect and disconnect circuit wires", () => {
 
 function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHasError: boolean) {
   let hasError = false
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.lastStageFor(entity))) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)!
     if (stage != entity.firstStage) {
       expect(worldEntity).to.be.any()

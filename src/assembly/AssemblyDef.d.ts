@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,21 +9,23 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { StageNumber } from "../entity/AssemblyEntity"
-import { MutableAssemblyContent } from "../entity/AssemblyContent"
-import { MutableProperty, Property, SimpleSubscribable } from "../lib"
-import { AutoSetTilesType } from "./tiles"
 import {
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
   StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
-import { PropertiesTable } from "../utils/properties-obj"
+import { MutableAssemblyContent } from "../entity/AssemblyContent"
+import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
+import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
+import { PropertiesTable } from "../utils/properties-obj"
+import { AutoSetTilesType } from "./tiles"
 
 export type AssemblyId = number & { _assemblyIdBrand: never }
 export interface Assembly {
-  maxStage(): StageNumber
+  numStages(): StageNumber
+  lastStageFor(entity: AssemblyEntity): StageNumber
+
   getStageName(stage: StageNumber): LocalisedString
   getSurface(stage: StageNumber): LuaSurface | nil
   readonly content: MutableAssemblyContent

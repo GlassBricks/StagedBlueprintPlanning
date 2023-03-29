@@ -19,7 +19,8 @@ export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
     typeof stages == "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
   return {
     getSurface: (stage) => surfaces[stage - 1],
-    maxStage: () => surfaces.length,
+    numStages: () => surfaces.length,
+    lastStageFor: (entity) => (entity.lastStage ? math.min(entity.lastStage, surfaces.length) : surfaces.length),
     content: newAssemblyContent(),
     getStageName: (n) => "mock stage " + n,
   }

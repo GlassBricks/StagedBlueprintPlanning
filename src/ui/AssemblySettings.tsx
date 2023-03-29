@@ -330,7 +330,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   private editGridSettings(settings: AssemblyOrStageBlueprintSettings, stage: Stage | nil) {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const stageToUse = stage ?? this.assembly.getStage(this.assembly.maxStage())!
+    const stageToUse = stage ?? this.assembly.getStage(this.assembly.numStages())!
     const name = stage ? stage.name.get() : "Defaults (only grid settings saved)"
     editInItemBlueprintSettings(player, settings, stageToUse.surface, stageToUse.getBlueprintBBox(), name)
   }
@@ -520,7 +520,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
           <HorizontalPusher />
           <TrashButton
             tooltip={[L_GuiAssemblySettings.DeleteStage]}
-            enabled={this.stage.assembly.maxStage() > 1}
+            enabled={this.stage.assembly.numStages() > 1}
             on_gui_click={ibind(this.beginDelete)}
           />
         </frame>

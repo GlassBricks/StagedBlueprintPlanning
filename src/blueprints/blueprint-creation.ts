@@ -67,7 +67,7 @@ export class BlueprintCreation {
   private computeChangedEntities(assembly: UserAssembly): LuaMap<StageNumber, LuaSet<AssemblyEntity>> {
     log(["", "Collecting changed entity info for assembly: ", assembly.displayName.get()])
     const result = new LuaMap<StageNumber, LuaSet<AssemblyEntity>>()
-    for (const i of $range(1, assembly.maxStage())) {
+    for (const i of $range(1, assembly.numStages())) {
       result.set(i, new LuaSet())
     }
     const content = assembly.content

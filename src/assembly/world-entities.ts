@@ -67,7 +67,7 @@ function makeEntityEditable(entity: LuaEntity) {
   entity.rotatable = true
   entity.destructible = false
 }
-function updateWorldEntitiesOnlyUnchecked(
+function updateWorldEntitiesOnly(
   assembly: Assembly,
   entity: AssemblyEntity,
   startStage: StageNumber,
@@ -128,7 +128,7 @@ function getActualStageRange(
   endStage: StageNumber | nil,
 ): LuaMultiReturn<[StageNumber, StageNumber] | [_?: nil]> {
   if (startStage < 1) startStage = 1
-  const maxStage = assembly.maxStage()
+  const maxStage = assembly.lastStageFor(entity)
   if (!endStage || endStage > maxStage) endStage = maxStage
   if (startStage > endStage) return $multi()
 
@@ -147,7 +147,7 @@ function updateEntitiesAndWires(
   const [start, end] = getActualStageRange(assembly, entity, startStage, endStage)
   if (!start) return $multi()
 
-  updateWorldEntitiesOnlyUnchecked(assembly, entity, start, end)
+  updateWorldEntitiesOnly(assembly, entity, start, end)
   updateWiresInStageRange(assembly, entity, start, end)
   return $multi(start, end)
 }
@@ -177,12 +177,12 @@ export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: A
   if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
   const [actualStart, actualEnd] = getActualStageRange(assembly, entity, 1, nil)
   if (!actualStart) return
-  updateWorldEntitiesOnlyUnchecked(assembly, entity, actualStart, actualEnd)
+  updateWorldEntitiesOnly(assembly, entity, actualStart, actualEnd)
   updateAllHighlights(assembly, entity, actualStart, actualEnd)
 }
 
 export function updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void {
-  updateWiresInStageRange(assembly, entity, entity.firstStage, assembly.maxStage())
+  updateWiresInStageRange(assembly, entity, entity.firstStage, assembly.lastStageFor(entity))
 }
 
 export function refreshWorldEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
@@ -190,10 +190,10 @@ export function refreshWorldEntityAllStages(assembly: Assembly, entity: Assembly
 }
 
 export function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity): void {
-  assert(entity.isSettingsRemnant && !entity.inFirstStageOnly())
+  assert(entity.isSettingsRemnant)
   entity.destroyAllWorldOrPreviewEntities()
   const direction = entity.getPreviewDirection()
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.lastStageFor(entity))) {
     makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), direction)
   }
   makeSettingsRemnantHighlights(assembly, entity)
@@ -240,14 +240,14 @@ function tryMoveOtherEntities(
 ): AssemblyEntityDollyResult {
   if (entity.isUndergroundBelt() || entity.firstStage != stage) return "cannot-move"
 
-  if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.maxStage()))
+  if (!checkConnectionWorldEntityExists(assembly.content, entity, stage, assembly.lastStageFor(entity)))
     return "connected-entities-missing"
 
   const entities: LuaEntity[] = []
   for (const stageNum of $range(1, entity.firstStage - 1)) {
     entities.push(entity.getWorldOrPreviewEntity(stageNum)!)
   }
-  for (const stageNum of $range(entity.firstStage, assembly.maxStage())) {
+  for (const stageNum of $range(entity.firstStage, assembly.lastStageFor(entity))) {
     const worldEntity = entity.getWorldOrPreviewEntity(stageNum)
     if (!worldEntity) return "entities-missing"
     entities.push(worldEntity)
@@ -269,7 +269,7 @@ export function tryDollyEntities(
   } else {
     entity.setDirection(movedEntity.direction)
     deleteAllHighlights(entity)
-    updateAllHighlights(assembly, entity, entity.firstStage, assembly.maxStage())
+    updateAllHighlights(assembly, entity, entity.firstStage, assembly.lastStageFor(entity))
     const posChanged = assembly.content.changePosition(entity, movedEntity.position)
     assert(posChanged, "failed to change position in assembly content")
   }
@@ -301,7 +301,7 @@ export function rebuildStage(assembly: Assembly, stage: StageNumber): void {
   }
 }
 export function rebuildAllStages(assembly: Assembly): void {
-  for (const stage of $range(1, assembly.maxStage())) {
+  for (const stage of $range(1, assembly.numStages())) {
     rebuildStage(assembly, stage)
   }
 }

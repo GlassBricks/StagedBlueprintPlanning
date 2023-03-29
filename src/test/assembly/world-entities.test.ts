@@ -196,10 +196,10 @@ describe("updateWorldEntities", () => {
 
   test("calls updateHighlights", () => {
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
-    expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
+    expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.lastStageFor(entity))
   })
 
-  test("entity preview in all other stages if is rolling stock", () => {
+  test("entity preview in all previous stages if is rolling stock", () => {
     const rollingStock = createRollingStock(surfaces[2 - 1])
     const value = saveEntity(rollingStock)!
     entity = createAssemblyEntity(value, rollingStock.position, rollingStock.direction, 2) as any
@@ -211,7 +211,7 @@ describe("updateWorldEntities", () => {
     const worldEntity = expect(findMainEntity(2)).to.be.any().getValue()
     const foundValue = saveEntity(worldEntity)
     expect(foundValue).to.equal(value)
-    assertHasPreview(3)
+    assertNothingPresent(3)
   })
 })
 
@@ -349,7 +349,7 @@ test("updateNewEntityWithoutWires", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
   WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity)
-  expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.maxStage())
+  expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.lastStageFor(entity))
   expect(wireUpdater.updateWireConnectionsAtStage).not.called()
 })
 
@@ -358,7 +358,7 @@ test("updateWireConnections", () => {
   assembly.content.add(entity)
   WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity)
   WorldUpdater.updateWireConnections(assembly, entity)
-  for (const i of $range(2, assembly.maxStage())) {
+  for (const i of $range(2, assembly.lastStageFor(entity))) {
     expect(wireUpdater.updateWireConnectionsAtStage).calledWith(assembly.content, entity, i)
   }
 })
