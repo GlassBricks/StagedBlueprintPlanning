@@ -146,39 +146,37 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType == nil) {
-      return this.findCompatible(name, entity.position, previousDirection ?? entity.direction)
+      return this.findCompatible(name, entity.position, previousDirection ?? entity.direction, stage)
     }
     if (pasteRotatableType == PasteRotatableType.Square) {
-      return this.findCompatible(name, entity.position, nil)
+      return this.findCompatible(name, entity.position, nil, stage)
     }
     if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       if (direction % 2 == 1) {
         // if diagonal, we _do_ care about direction
-        return this.findCompatible(name, position, direction)
+        return this.findCompatible(name, position, direction, stage)
       }
       return (
-        this.findCompatible(name, position, direction) ??
-        this.findCompatible(name, position, oppositedirection(direction))
+        this.findCompatible(name, position, direction, stage) ??
+        this.findCompatible(name, position, oppositedirection(direction), stage)
       )
     }
   }
 
-  findCompatibleFromPreview(previewEntity: LuaEntity): AssemblyEntity | nil {
+  findCompatibleFromPreview(previewEntity: LuaEntity, stage?: StageNumber): AssemblyEntity | nil {
     const actualName = previewEntity.name.substring(Prototypes.PreviewEntityPrefix.length)
-    if (isRollingStockType(actualName)) {
-      return this.findCompatible(actualName, previewEntity.position, nil)
-    }
-    return this.findCompatible(actualName, previewEntity.position, previewEntity.direction)
+    const direction = isRollingStockType(actualName) ? 0 : previewEntity.direction
+    return this.findCompatible(actualName, previewEntity.position, direction, stage)
   }
 
-  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity): AssemblyEntity | nil {
+  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage?: StageNumber): AssemblyEntity | nil {
     const name = entity.name
     if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
-      return this.findCompatibleFromPreview(entity)
+      return this.findCompatibleFromPreview(entity, stage)
     }
-    return this.findCompatibleWithLuaEntity(entity, nil)
+    return this.findCompatibleWithLuaEntity(entity, nil, stage)
   }
 
   findExact(entity: LuaEntity, position: Position, stage: StageNumber): AssemblyEntity | nil {

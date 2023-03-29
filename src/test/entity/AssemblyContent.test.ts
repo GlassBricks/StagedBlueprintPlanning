@@ -14,7 +14,9 @@ import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { BasicEntityInfo } from "../../entity/Entity"
+import { getPasteRotatableType, PasteRotatableType } from "../../entity/entity-info"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
+import { createRollingStocks } from "./createRollingStock"
 
 let content: MutableAssemblyContent
 before_each(() => {
@@ -51,14 +53,14 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.add(entity)
 
-    expect(content.findCompatible("foo", { x: 0, y: 0 }, nil)).to.be(entity)
+    expect(content.findCompatible("foo", { x: 0, y: 0 }, nil, 1)).to.be(entity)
   })
 
   test("matches if different name in same category", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north)).to.be(entity)
+    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(entity)
   })
 
   test("if direction is nil, matches same category and any direction", () => {
@@ -70,19 +72,84 @@ describe("findCompatible", () => {
     )
     content.add(entity)
 
-    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, nil)).to.be(entity)
+    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).to.be(entity)
   })
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     entity.setLastStage(2)
-    expect(content.findCompatible("test2", entity.position, defines.direction.north)).to.be.nil()
-    expect(content.findCompatible("foo", entity.position, defines.direction.south)).to.be.nil()
-    expect(content.findCompatible("foo", { x: 1, y: 0 }, defines.direction.north)).to.be.nil()
+    expect(content.findCompatible("test2", entity.position, defines.direction.north, 2)).to.be.nil()
+    expect(content.findCompatible("foo", entity.position, defines.direction.south, 2)).to.be.nil()
+    expect(content.findCompatible("foo", { x: 1, y: 0 }, defines.direction.north, 2)).to.be.nil()
     expect(content.findCompatible("foo", { x: 1, y: 0 }, defines.direction.north, 3)).to.be.nil()
   })
+})
 
-  test("find compatible returns same entity if is flipped underground", () => {
+test("findExact", () => {
+  const entity: AssemblyEntity = createAssemblyEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
+  const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
+  content.add(entity)
+  entity.replaceWorldEntity(2, luaEntity)
+  expect(content.findExact(luaEntity, luaEntity.position, 2)).to.be(entity)
+  luaEntity.teleport(1, 1)
+  expect(content.findExact(luaEntity, { x: 0, y: 0 }, 2)).to.be(entity)
+})
+
+describe("findCompatibleWithLuaEntity", () => {
+  test("matches simple", () => {
+    const entity = createAssemblyEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
+    const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
+    content.add(entity)
+
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+  })
+
+  test("matches if is compatible", () => {
+    const entity = createAssemblyEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
+    const luaEntity = assert(surfaces[0].create_entity({ name: "steel-furnace", position: { x: 0, y: 0 } }))
+    content.add(entity)
+
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+  })
+
+  test("matches opposite direction if pasteRotatableType is rectangular", () => {
+    assert(getPasteRotatableType("boiler") == PasteRotatableType.RectangularOrStraightRail)
+    const entity = createAssemblyEntity({ name: "boiler" }, { x: 0.5, y: 0 }, defines.direction.north, 1)
+
+    const luaEntity = assert(
+      surfaces[0].create_entity({ name: "boiler", position: { x: 0.5, y: 0 }, direction: defines.direction.south }),
+    )
+    content.add(entity)
+
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+  })
+
+  test("matches any direction if pasteRotatableType is square", () => {
+    assert(getPasteRotatableType("assembling-machine-1") == PasteRotatableType.Square)
+
+    const entity = createAssemblyEntity(
+      { name: "assembling-machine-2" },
+      {
+        x: 0.5,
+        y: 0.5,
+      },
+      defines.direction.north,
+      1,
+    )
+    const luaEntity = assert(
+      surfaces[0].create_entity({
+        name: "assembling-machine-1",
+        position: { x: 0.5, y: 0.5 },
+        direction: defines.direction.west,
+        recipe: "fast-transport-belt", // fluid, so direction applies
+      }),
+    )
+    content.add(entity)
+
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+  })
+
+  test("matches if is flipped underground", () => {
     const same: BasicEntityInfo = {
       name: "underground-belt",
       type: "underground-belt",
@@ -110,18 +177,19 @@ describe("findCompatible", () => {
     )
     content.add(assemblyEntity)
 
-    expect(content.findCompatibleWithLuaEntity(same, nil)).to.be(assemblyEntity)
-    expect(content.findCompatibleWithLuaEntity(flipped, nil)).to.be(assemblyEntity)
+    expect(content.findCompatibleWithLuaEntity(same, nil, 1)).to.be(assemblyEntity)
+    expect(content.findCompatibleWithLuaEntity(flipped, nil, 1)).to.be(assemblyEntity)
   })
 
-  test("findExactAtPosition", () => {
-    const entity: AssemblyEntity = createAssemblyEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
-    const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
+  test("rolling stock only matches if is exact same entity", () => {
+    const entity = createAssemblyEntity({ name: "locomotive" }, { x: 0, y: 0 }, nil, 1)
+    const [a1, a2] = createRollingStocks(surfaces[0], "locomotive", "locomotive")
     content.add(entity)
-    entity.replaceWorldEntity(2, luaEntity)
-    expect(content.findExact(luaEntity, luaEntity.position, 2)).to.be(entity)
-    luaEntity.teleport(1, 1)
-    expect(content.findExact(luaEntity, { x: 0, y: 0 }, 2)).to.be(entity)
+    entity.replaceWorldEntity(1, a1)
+
+    expect(content.findCompatibleWithLuaEntity(a1, nil, 1)).to.be(entity)
+    expect(content.findCompatibleWithLuaEntity(a2, nil, 1)).to.be.nil()
+    expect(content.findCompatibleWithLuaEntity(a1, nil, 2)).to.be(entity)
   })
 
   test("rails at same position but opposite direction are treated different only if diagonal", () => {
@@ -154,9 +222,9 @@ describe("findCompatible", () => {
     content.add(entity1)
     content.add(entity2)
     // diagonal, should have no match
-    expect(content.findCompatibleWithLuaEntity(luaEntity1, nil)).to.be(nil)
+    expect(content.findCompatibleWithLuaEntity(luaEntity1, nil, 1)).to.be(nil)
     // orthogonal, should have match
-    expect(content.findCompatibleWithLuaEntity(luaEntity2, nil)).to.be(entity2)
+    expect(content.findCompatibleWithLuaEntity(luaEntity2, nil, 1)).to.be(entity2)
   })
 })
 
@@ -166,7 +234,7 @@ test("changePosition", () => {
   content.changePosition(entity, { x: 1, y: 1 })
   expect(entity.position.x).to.be(1)
   expect(entity.position.y).to.be(1)
-  expect(content.findCompatible("foo", { x: 1, y: 1 }, defines.direction.north)).to.be(entity)
+  expect(content.findCompatible("foo", { x: 1, y: 1 }, defines.direction.north, 1)).to.be(entity)
 })
 
 describe("connections", () => {
