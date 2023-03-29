@@ -285,7 +285,7 @@ describe("cable connections", () => {
         const entity = createAssemblyEntity(
           { name: "medium-electric-pole" },
           {
-            x: 5.5 + i,
+            x: 4.5 + i,
             y: 5.5 + i,
           },
           nil,

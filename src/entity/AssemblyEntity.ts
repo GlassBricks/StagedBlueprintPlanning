@@ -58,6 +58,9 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly lastStage: StageNumber | nil
   readonly firstValue: Readonly<T>
 
+  /** Linked list */
+  _next: AssemblyEntity | nil
+
   isRollingStock(): this is RollingStockAssemblyEntity
   isUndergroundBelt(): this is UndergroundBeltAssemblyEntity
 
@@ -206,7 +209,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   firstStage: StageNumber
   lastStage: StageNumber | nil
   readonly firstValue: Mutable<T>
-  stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>;
+  stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
+
+  _next: AssemblyEntityImpl<T> | nil;
 
   [stage: StageNumber]: LuaEntity | nil // world entities and preview entities are stored in the same table
   stageProperties?: {

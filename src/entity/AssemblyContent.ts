@@ -14,7 +14,7 @@ import { Prototypes } from "../constants"
 import { isEmpty, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { AsmCircuitConnection, circuitConnectionEquals } from "./AsmCircuitConnection"
-import { AssemblyEntity, InternalSavedDirection, StageNumber, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
+import { AssemblyEntity, StageNumber, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
 import { BasicEntityInfo } from "./Entity"
 import {
   getEntityCategory,
@@ -23,7 +23,7 @@ import {
   PasteRotatableType,
   rollingStockTypes,
 } from "./entity-info"
-import { MutableMap2D, newMap2D } from "./map2d"
+import { Map2D, newMap2D } from "./map2d"
 import { getRegisteredAssemblyEntity } from "./registration"
 import { getUndergroundDirection } from "./underground-belt"
 
@@ -81,73 +81,47 @@ export interface MutableAssemblyContent extends AssemblyContent {
 export type AsmEntityCircuitConnections = LuaMap<AssemblyEntity, LuaSet<AsmCircuitConnection>>
 export type AsmEntityCableConnections = LuaSet<AssemblyEntity>
 
-function isSingle(entity: AssemblyEntity | readonly AssemblyEntity[]): entity is AssemblyEntity {
-  return (entity as AssemblyEntity).firstStage != nil
-}
-
 @RegisterClass("EntityMap")
 class AssemblyContentImpl implements MutableAssemblyContent {
-  readonly byPosition: MutableMap2D<AssemblyEntity> = newMap2D()
+  readonly byPosition: Map2D<AssemblyEntity> = newMap2D()
   entities = new LuaSet<AssemblyEntity>()
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
   findCompatibleByTraits(entityName: string, position: Position, direction: defines.direction): AssemblyEntity | nil {
+    return this.findCompatible(entityName, position, direction)
+  }
+
+  private findCompatible(
+    entityName: string,
+    position: Position,
+    direction: defines.direction | nil,
+  ): AssemblyEntity | nil {
     const { x, y } = position
-    const atPos = this.byPosition.get(x, y)
-    if (!atPos) return
-    let internalDir = direction as unknown as InternalSavedDirection | nil
-    if (internalDir == (0 as any)) internalDir = nil
+    let cur = this.byPosition.get(x, y)
+    if (!cur) return
     const category = getEntityCategory(entityName)
 
-    if (isSingle(atPos)) {
-      if (atPos.direction != internalDir) return nil
-      if (category == nil) {
-        if (atPos.firstValue.name == entityName) return atPos
-        return nil
-      }
-      if (getEntityCategory(atPos.firstValue.name) == category) return atPos
-      return nil
-    }
-
     if (category == nil) {
-      for (const candidate of atPos) {
-        if (candidate.direction == internalDir && candidate.firstValue.name == entityName) return candidate
+      while (cur != nil) {
+        if ((direction == nil || direction == (cur.direction ?? 0)) && cur.firstValue.name == entityName) return cur
+        cur = cur._next
       }
-      return nil
-    }
-    for (const candidate of atPos) {
-      if (candidate.direction == internalDir && getEntityCategory(candidate.firstValue.name) == category)
-        return candidate
+    } else {
+      while (cur != nil) {
+        if (
+          (direction == nil || direction == (cur.direction ?? 0)) &&
+          getEntityCategory(cur.firstValue.name) == category
+        )
+          return cur
+        cur = cur._next
+      }
     }
     return nil
   }
 
   findCompatibleAnyDirection(entityName: string, position: Position): AssemblyEntity | nil {
-    const { x, y } = position
-    const atPos = this.byPosition.get(x, y)
-    const category = getEntityCategory(entityName)
-    if (!atPos) return
-    if (isSingle(atPos)) {
-      if (atPos.firstValue.name == entityName) return atPos
-      if (category == nil) {
-        if (atPos.firstValue.name == entityName) return atPos
-        return nil
-      }
-      if (getEntityCategory(atPos.firstValue.name) == category) return atPos
-      return nil
-    }
-
-    if (category == nil) {
-      for (const candidate of atPos) {
-        if (candidate.firstValue.name == entityName) return candidate
-      }
-      return nil
-    }
-    for (const candidate of atPos) {
-      if (getEntityCategory(candidate.firstValue.name) == category) return candidate
-    }
-    return nil
+    return this.findCompatible(entityName, position, nil)
   }
 
   findCompatibleWithLuaEntity(
@@ -211,14 +185,10 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   }
 
   findExactAtPosition(entity: LuaEntity, expectedStage: StageNumber, oldPosition: Position): AssemblyEntity | nil {
-    const atPos = this.byPosition.get(oldPosition.x, oldPosition.y)
-    if (!atPos) return
-    if (isSingle(atPos)) {
-      if (atPos.getWorldOrPreviewEntity(expectedStage) == entity) return atPos
-      return nil
-    }
-    for (const candidate of atPos) {
-      if (candidate.getWorldOrPreviewEntity(expectedStage) == entity) return candidate
+    let cur = this.byPosition.get(oldPosition.x, oldPosition.y)
+    while (cur != nil) {
+      if (cur.getWorldOrPreviewEntity(expectedStage) == entity) return cur
+      cur = cur._next
     }
     return nil
   }

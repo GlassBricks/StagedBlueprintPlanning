@@ -9,75 +9,147 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { remove_from_list } from "util"
-import { PRecord, PRRecord, RegisterClass } from "../lib"
+import { PRecord, RegisterClass } from "../lib"
+import { AssemblyEntity } from "./AssemblyEntity"
+//
+// export interface Map2D<T extends AnyNotNil> extends LuaPairsIterable<number, PRecord<number, T | T[]>> {
+//   [x: number]: PRecord<number, T | readonly T[]>
+//
+//   get(x: number, y: number): T | readonly T[] | nil
+//   add(x: number, y: number, value: T): void
+//   delete(x: number, y: number, value: T): void
+// }
+//
+// export type MutableMap2D<T extends AnyNotNil> = Map2D<T>
+//
+// // noinspection JSUnusedLocalSymbols
+// interface Map2DImpl<T extends AnyNotNil> extends LuaPairsIterable<number, PRecord<number, T | T[]>> {
+//   _: never
+// }
+//
+// @RegisterClass("Map2D")
+// class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
+//   [x: number]: PRecord<number, T | T[]>
+//   get(x: number, y: number): T | readonly T[] | nil {
+//     const byX = this[x]
+//     return byX && byX[y]
+//   }
+//   add(x: number, y: number, value: T): void {
+//     const byX = this[x] ?? (this[x] = {})
+//     const existing = byX[y]
+//     if (existing == nil) {
+//       byX[y] = value
+//     } else if (isArray(existing)) {
+//       existing.push(value)
+//     } else {
+//       byX[y] = setmetatable([existing, value], arrayMeta)
+//     }
+//   }
+//   delete(x: number, y: number, value: T): void {
+//     const byX = this[x]
+//     if (byX == nil) return
+//     const byY = byX[y]
+//     if (byY == nil) return
+//     if (isArray(byY)) {
+//       if (remove_from_list(byY, value) && byY.length == 1) {
+//         byX[y] = byY[0]
+//       }
+//     } else {
+//       delete byX[y]
+//       if (next(byX)[0] == nil) {
+//         delete this[x]
+//       }
+//     }
+//   }
+// }
+//
 
-// WARNING: assumes values of T have a metatable
+// new: linked list implementation
+// justification: arrays in one position rare, this simplifies user code (avoids checking if array or not)
 
-export interface Map2D<T extends AnyNotNil> {
-  readonly [x: number]: PRRecord<number, T | readonly T[]>
-  get(x: number, y: number): T | readonly T[] | nil
-}
-
-export interface MutableMap2D<T extends AnyNotNil>
-  extends Map2D<T>,
-    LuaPairsIterable<number, PRecord<number, T | T[]>> {
-  [x: number]: PRecord<number, T | readonly T[]>
+export interface Map2D<T extends { _next?: T }> {
+  [x: number]: PRecord<number, T | nil>
+  get(x: number, y: number): T | nil
   add(x: number, y: number, value: T): void
   delete(x: number, y: number, value: T): void
 }
 
-// noinspection JSUnusedLocalSymbols
-interface Map2DImpl<T extends AnyNotNil> extends LuaPairsIterable<number, PRecord<number, T | T[]>> {
-  _: never
-}
-
-const arrayMeta: LuaMetatable<any[]> = {}
-const getmetatable = _G.getmetatable
-const setmetatable = _G.setmetatable
-
-script.register_metatable("Map2D:array", arrayMeta)
-
-function isArray<T>(value: T | T[]): value is T[] {
-  return getmetatable(value) == arrayMeta
-}
-
 @RegisterClass("Map2D")
-class Map2DImpl<T extends AnyNotNil> implements MutableMap2D<T> {
-  [x: number]: PRecord<number, T | T[]>
-  get(x: number, y: number): T | readonly T[] | nil {
+class Map2DImpl<T extends { _next?: T }> implements Map2D<T> {
+  [x: number]: PRecord<number, T | nil>
+  get(x: number, y: number): T | nil {
     const byX = this[x]
     return byX && byX[y]
   }
+
   add(x: number, y: number, value: T): void {
     const byX = this[x] ?? (this[x] = {})
     const existing = byX[y]
     if (existing == nil) {
       byX[y] = value
-    } else if (isArray(existing)) {
-      existing.push(value)
     } else {
-      byX[y] = setmetatable([existing, value], arrayMeta)
+      value._next = existing
+      byX[y] = value
     }
   }
+
   delete(x: number, y: number, value: T): void {
     const byX = this[x]
     if (byX == nil) return
-    const byY = byX[y]
-    if (byY == nil) return
-    if (isArray(byY)) {
-      if (remove_from_list(byY, value) && byY.length == 1) {
-        byX[y] = byY[0]
+    const first = byX[y]
+    if (first == nil) return
+
+    let _next = first._next
+    if (first == value) {
+      if (_next != nil) {
+        byX[y] = _next
+        return
       }
-    } else {
+      // delete entry
       delete byX[y]
       if (next(byX)[0] == nil) {
         delete this[x]
       }
+      return
+    }
+
+    // search for value
+    let prev = first
+    while (_next != nil) {
+      if (_next == value) {
+        prev._next = _next._next
+        return
+      }
+      prev = _next
+      _next = _next._next
     }
   }
 }
 
-export function newMap2D<T extends AnyNotNil>(): MutableMap2D<T> {
+export function newMap2D<T extends { _next: T | nil }>(): Map2D<T> {
   return new Map2DImpl<T>()
+}
+
+function isArray<T>(value: T | T[]): value is T[] {
+  return (value as AssemblyEntity).firstStage == nil
+}
+
+export function _migrateMap2DToLinkedList(map: Map2D<any>): void {
+  for (const [, byX] of pairs(map as Record<number, PRecord<number, any | any[]>>)) {
+    for (const [y, value] of pairs(byX)) {
+      if (isArray(value)) {
+        const first = value[0]
+        let prev = first
+        for (let i = 1; i < value.length; i++) {
+          const next = value[i]
+          prev._next = next
+          prev = next
+        }
+        byX[y] = first
+      } else {
+        value._next = nil
+        byX[y] = value
+      }
+    }
+  }
 }
