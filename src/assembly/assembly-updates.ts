@@ -79,8 +79,8 @@ export function addNewEntity(
 
 export function moveEntityOnPreviewReplaced(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
   if (stage >= entity.firstStage) return false
-  const oldStage = entity.moveToStage(stage)
-  updateWorldEntities(assembly, entity, stage, oldStage)
+  entity.moveToStage(stage)
+  updateWorldEntities(assembly, entity, stage)
   return true
 }
 

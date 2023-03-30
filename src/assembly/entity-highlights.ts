@@ -218,14 +218,7 @@ function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): 
   }
 }
 
-export function updateAllHighlights(
-  assembly: Assembly,
-  entity: AssemblyEntity,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _startStage?: StageNumber,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _endStage?: StageNumber,
-): void {
+export function updateAllHighlights(assembly: Assembly, entity: AssemblyEntity): void {
   // ignore start and end stage for now
   updateErrorOutlines(assembly, entity)
   updateStageDiffHighlights(assembly, entity)

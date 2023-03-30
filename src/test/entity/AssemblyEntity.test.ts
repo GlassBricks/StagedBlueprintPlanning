@@ -51,6 +51,16 @@ test("lastStage default nil", () => {
   expect(assemblyEntity.lastStage).toBeNil()
 })
 
+test("isInStage", () => {
+  assemblyEntity.setLastStage(4)
+  expect(assemblyEntity.isInStage(1)).to.be(false)
+  expect(assemblyEntity.isInStage(2)).to.be(true)
+  expect(assemblyEntity.isInStage(3)).to.be(true)
+  expect(assemblyEntity.isInStage(4)).to.be(true)
+  expect(assemblyEntity.isInStage(5)).to.be(false)
+  expect(assemblyEntity.isInStage(6)).to.be(false)
+})
+
 test("isRollingStock", () => {
   expect(assemblyEntity.isRollingStock()).to.be(false)
   const assemblyEntity2 = createAssemblyEntity({ name: "locomotive" }, Pos(0, 0), nil, 2)
@@ -167,6 +177,14 @@ test("iterateValues", () => {
     result[stage] = entity == nil ? "nil" : shallowCopy(entity)
   }
   expect(result).to.equal(expected)
+})
+
+test("iterateValues returns nothing if end > start", () => {
+  const result = []
+  for (const [stage, entity] of assemblyEntity.iterateValues(4, 2)) {
+    result[stage] = entity
+  }
+  expect(result).to.equal([])
 })
 
 describe("adjustValueAtStage", () => {

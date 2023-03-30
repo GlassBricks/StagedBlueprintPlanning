@@ -46,7 +46,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   getWorldDirection(): defines.direction
 
   /**
-   * If this is rolling stock, direction is based off of orientation instead.
+   * If this is rolling stock, the direction is based off of orientation instead.
    */
   getPreviewDirection(): defines.direction
 
@@ -262,16 +262,8 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return isUndergroundBeltType(this.firstValue.name)
   }
 
-  public inFirstStageOnly(): boolean {
-    // return this.isRollingStock()
-    return isRollingStockType(this.firstValue.name)
-  }
-
-  public isInStage(stage: StageNumber): boolean {
-    if (this.inFirstStageOnly()) {
-      return stage == this.firstStage
-    }
-    return stage >= this.firstStage
+  isInStage(stage: StageNumber): boolean {
+    return stage >= this.firstStage && (this.lastStage == nil || stage <= this.lastStage)
   }
   setTypeProperty(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
     // assume compiler asserts this is correct
@@ -306,7 +298,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   _applyDiffAtStage(stage: StageNumber, _diff: StageDiffInternal<T>): void {
-    if (this.inFirstStageOnly()) return
+    assert(this.isInStage(stage))
     const diff = _diff as StageDiff<T>
     let { stageDiffs } = this
     const { firstStage } = this
@@ -350,9 +342,9 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   getValueAtStage(stage: StageNumber): Readonly<T> | nil {
     // assert(stage >= 1, "stage must be >= 1")
+    if (!this.isInStage(stage)) return nil
     const { firstStage } = this
     if (stage < firstStage) return nil
-    if (this.inFirstStageOnly() && stage != firstStage) return nil
     const { stageDiffs } = this
     if (!stageDiffs) return this.firstValue
 
@@ -394,10 +386,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     const { firstStage, firstValue } = this
     const lastStage = this.lastStage ?? end
     let value = this.getValueAtStage(start) as T
-    function iterNext(stageDiffs: StageDiffs | nil, prevStage: StageNumber | nil) {
-      if (!prevStage) {
-        return $multi(start, value)
-      }
+    function iterNext(stageDiffs: StageDiffs | nil, prevStage: StageNumber) {
       const nextStage = prevStage + 1
       if (nextStage > end) return $multi()
       if (nextStage < firstStage || nextStage > lastStage) return $multi(nextStage, nil)
@@ -409,7 +398,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
       }
       return $multi(nextStage, value)
     }
-    return $multi<any>(iterNext, stageDiffs, nil)
+    return $multi<any>(iterNext, stageDiffs, start - 1)
   }
 
   private iterateValuesNoDiffs(start: StageNumber, end: StageNumber) {

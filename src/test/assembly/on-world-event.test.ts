@@ -416,7 +416,7 @@ describe("onCleanupToolUsed", () => {
   test.each([2, 3])("if is in stage %s, calls refreshEntityAllStages", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
     worldListener.onCleanupToolUsed(assembly, createPreview(luaEntity), atStage)
-    expect(worldUpdater.refreshWorldEntityAllStages).calledWith(assembly, entity)
+    expect(worldUpdater.refreshAllWorldEntities).calledWith(assembly, entity)
   })
 })
 

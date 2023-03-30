@@ -76,15 +76,15 @@ describe("error highlights", () => {
   })
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
-    updateAllHighlights(assembly, entity, 2, 2)
+    updateAllHighlights(assembly, entity)
     expect(entity.getExtraEntity("errorOutline", 2)!).to.be.any()
   })
 
   test("deletes highlight when entity revived", () => {
     removeInStage(2)
-    updateAllHighlights(assembly, entity, 2, 2)
+    updateAllHighlights(assembly, entity)
     addInStage(2)
-    updateAllHighlights(assembly, entity, 2, 2)
+    updateAllHighlights(assembly, entity)
     expect(entity.getExtraEntity("errorOutline", 2)).to.be.nil()
   })
 

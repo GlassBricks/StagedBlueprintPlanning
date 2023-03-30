@@ -54,7 +54,7 @@ function makePreviewEntity(
 
 export function clearWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
   makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
-  updateAllHighlights(assembly, entity, stage, stage)
+  updateAllHighlights(assembly, entity)
 }
 
 function makeEntityUneditable(entity: LuaEntity) {
@@ -67,15 +67,19 @@ function makeEntityEditable(entity: LuaEntity) {
   entity.rotatable = true
   entity.destructible = false
 }
-function updateWorldEntitiesOnly(
+function updateWorldEntitiesOnlyInRange(
   assembly: Assembly,
   entity: AssemblyEntity,
   startStage: StageNumber,
   endStage: StageNumber,
 ): void {
-  const firstStage = entity.firstStage
+  assert(startStage >= 1)
+  const { firstStage, lastStage } = entity
   const direction = entity.getDirection()
   const previewDirection = entity.getPreviewDirection()
+
+  if (startStage == firstStage) startStage = 1 // also update all previews if first stage edited
+  if (lastStage && lastStage > endStage) endStage = lastStage
 
   for (const [stage, value] of entity.iterateValues(startStage, endStage)) {
     const surface = assembly.getSurface(stage)!
@@ -106,7 +110,7 @@ function updateWorldEntitiesOnly(
   }
 }
 
-function updateWiresInStageRange(
+function updateWiresInRange(
   assembly: Assembly,
   entity: AssemblyEntity,
   startStage: StageNumber,
@@ -121,51 +125,28 @@ function updateWiresInStageRange(
   }
 }
 
-function getActualStageRange(
-  assembly: Assembly,
-  entity: AssemblyEntity,
-  startStage: StageNumber,
-  endStage: StageNumber | nil,
-): LuaMultiReturn<[StageNumber, StageNumber] | [_?: nil]> {
-  if (startStage < 1) startStage = 1
-  const maxStage = assembly.lastStageFor(entity)
-  if (!endStage || endStage > maxStage) endStage = maxStage
-  if (startStage > endStage) return $multi()
-
-  if (startStage == entity.firstStage) {
-    startStage = 1 // also update previews
-  }
-  return $multi(startStage, endStage)
-}
-
-function updateEntitiesAndWires(
-  assembly: Assembly,
-  entity: AssemblyEntity,
-  startStage: StageNumber,
-  endStage: StageNumber | nil,
-): LuaMultiReturn<[_?: nil] | [StageNumber, StageNumber]> {
-  const [start, end] = getActualStageRange(assembly, entity, startStage, endStage)
-  if (!start) return $multi()
-
-  updateWorldEntitiesOnly(assembly, entity, start, end)
-  updateWiresInStageRange(assembly, entity, start, end)
-  return $multi(start, end)
-}
-
 export function updateWorldEntities(
   assembly: Assembly,
   entity: AssemblyEntity,
   startStage: StageNumber,
-  endStage?: StageNumber | nil,
+  updateWires = true,
 ): void {
   if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
-  const [actualStart, actualEnd] = updateEntitiesAndWires(assembly, entity, startStage, endStage)
-  if (actualStart) updateAllHighlights(assembly, entity, actualStart, actualEnd)
+  const lastStage = assembly.lastStageFor(entity)
+  updateWorldEntitiesOnlyInRange(assembly, entity, startStage, lastStage)
+  if (updateWires) updateWiresInRange(assembly, entity, startStage, lastStage)
+  updateAllHighlights(assembly, entity)
+}
+
+export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {
+  return updateWorldEntities(assembly, entity, entity.firstStage, false)
 }
 
 export function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
-  const [updated] = updateEntitiesAndWires(assembly, entity, stage, stage)
-  if (updated) updateAllHighlights(assembly, entity, stage, stage)
+  assert(!entity.isSettingsRemnant && entity.isInStage(stage))
+  updateWorldEntitiesOnlyInRange(assembly, entity, stage, stage)
+  updateWiresInRange(assembly, entity, stage, stage)
+  updateAllHighlights(assembly, entity)
 }
 
 export function rebuildWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
@@ -173,19 +154,16 @@ export function rebuildWorldEntityAtStage(assembly: Assembly, entity: AssemblyEn
   refreshWorldEntityAtStage(assembly, entity, stage)
 }
 
-export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {
-  if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
-  const [actualStart, actualEnd] = getActualStageRange(assembly, entity, 1, nil)
-  if (!actualStart) return
-  updateWorldEntitiesOnly(assembly, entity, actualStart, actualEnd)
-  updateAllHighlights(assembly, entity, actualStart, actualEnd)
-}
-
 export function updateWireConnections(assembly: Assembly, entity: AssemblyEntity): void {
-  updateWiresInStageRange(assembly, entity, entity.firstStage, assembly.lastStageFor(entity))
+  updateWiresInRange(assembly, entity, entity.firstStage, assembly.lastStageFor(entity))
 }
 
-export function refreshWorldEntityAllStages(assembly: Assembly, entity: AssemblyEntity): void {
+export function refreshAllWorldEntities(assembly: Assembly, entity: AssemblyEntity): void {
+  return updateWorldEntities(assembly, entity, 1)
+}
+
+export function rebuildAllWorldEntities(assembly: Assembly, entity: AssemblyEntity): void {
+  entity.destroyAllWorldOrPreviewEntities()
   return updateWorldEntities(assembly, entity, 1)
 }
 
@@ -201,8 +179,10 @@ export function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity):
 
 export function updateEntitiesOnSettingsRemnantRevived(assembly: Assembly, entity: AssemblyEntity): void {
   assert(!entity.isSettingsRemnant)
-  const [updated] = updateEntitiesAndWires(assembly, entity, 1, nil)
-  if (!updated) return
+  const lastStage = assembly.lastStageFor(entity)
+  updateWorldEntitiesOnlyInRange(assembly, entity, 1, lastStage)
+  updateWiresInRange(assembly, entity, 1, lastStage)
+
   updateHighlightsOnSettingsRemnantRevived(assembly, entity)
 }
 
@@ -271,7 +251,7 @@ export function tryDollyEntities(
     const posChanged = assembly.content.changePosition(entity, movedEntity.position)
     assert(posChanged, "failed to change position in assembly content")
     deleteAllHighlights(entity)
-    updateAllHighlights(assembly, entity, entity.firstStage, assembly.lastStageFor(entity))
+    updateAllHighlights(assembly, entity)
   }
 
   return moveResult

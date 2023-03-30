@@ -35,7 +35,7 @@ import {
   AssemblyEntityDollyResult,
   clearWorldEntityAtStage,
   rebuildWorldEntityAtStage,
-  refreshWorldEntityAllStages,
+  refreshAllWorldEntities,
   refreshWorldEntityAtStage,
   tryDollyEntities,
 } from "./world-entity-updates"
@@ -159,7 +159,7 @@ export function onTryFixEntity(
   } else {
     // this is an error entity, try fix
     if (stage < existing.firstStage) return
-    refreshWorldEntityAllStages(assembly, existing)
+    refreshAllWorldEntities(assembly, existing)
   }
 }
 

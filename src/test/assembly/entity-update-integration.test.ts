@@ -31,7 +31,7 @@ import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAss
 import {
   clearWorldEntityAtStage,
   rebuildWorldEntityAtStage,
-  refreshWorldEntityAllStages,
+  refreshAllWorldEntities,
   refreshWorldEntityAtStage,
   tryDollyEntities,
 } from "../../assembly/world-entity-updates"
@@ -396,7 +396,7 @@ test("creating upgrade via fast replace", () => {
 test("update with upgrade", () => {
   const entity = buildEntity(3)
   entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-  refreshWorldEntityAllStages(assembly, entity)
+  refreshAllWorldEntities(assembly, entity)
   assertEntityCorrect(entity, false)
 })
 
@@ -411,7 +411,7 @@ test("update with upgrade and blocker", () => {
   assertEntityCorrect(entity, true)
 
   entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-  refreshWorldEntityAllStages(assembly, entity)
+  refreshAllWorldEntities(assembly, entity)
 
   preview = entity.getWorldOrPreviewEntity(5)!
   expect(isPreviewEntity(preview)).to.be(true)
@@ -627,7 +627,7 @@ test("train entity error", () => {
   train.destroy()
   surfaces[3 - 1].find_entities().forEach((e) => e.destroy()) // destroys rails too, so train cannot be re-created
 
-  refreshWorldEntityAllStages(assembly, entity)
+  refreshAllWorldEntities(assembly, entity)
   assertTrainEntityCorrect(entity, true)
 })
 

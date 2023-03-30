@@ -106,6 +106,19 @@ describe("updateWorldEntities", () => {
       for (let i = 1; i <= 4; i++) assertEntityCorrect(i)
     })
 
+    test("does not create entities past lastStage", () => {
+      entity.setLastStage(3)
+      WorldUpdater.updateWorldEntities(assembly, entity, 1)
+      for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
+      assertNothingPresent(4)
+    })
+
+    test("if first stage passed is past last stage, does nothing", () => {
+      entity.setLastStage(3)
+      WorldUpdater.updateWorldEntities(assembly, entity, 4)
+      for (let i = 1; i <= 4; i++) assertNothingPresent(i)
+    })
+
     test("can refresh a single entity", () => {
       const replaced = createEntity(assembly.getSurface(2)!, entity.position, entity.getDirection(), {
         name: "inserter",
@@ -115,6 +128,12 @@ describe("updateWorldEntities", () => {
       WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
       const val = assertEntityCorrect(2)
       expect(replaced).to.equal(val)
+    })
+
+    test("attempting to refresh world entity past last stage errors", () => {
+      entity.setLastStage(3)
+      expect(() => WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 4)).to.throw()
+      expect(() => WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 0)).to.throw()
     })
 
     test("replaces deleted entity", () => {
@@ -131,6 +150,11 @@ describe("updateWorldEntities", () => {
       WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
       assertEntityCorrect(1)
     })
+  })
+
+  test("does nothing if range is empty", () => {
+    WorldUpdater.updateWorldEntities(assembly, entity, 5)
+    for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   })
 
   test("creates preview entities in stages below first stage", () => {
@@ -196,7 +220,7 @@ describe("updateWorldEntities", () => {
 
   test("calls updateHighlights", () => {
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
-    expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.lastStageFor(entity))
+    expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
   })
 
   test("entity preview in all previous stages if is rolling stock", () => {
@@ -349,7 +373,7 @@ test("updateNewEntityWithoutWires", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
   WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity)
-  expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 1, assembly.lastStageFor(entity))
+  expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
   expect(wireUpdater.updateWireConnectionsAtStage).not.called()
 })
 
@@ -366,24 +390,10 @@ test("updateWireConnections", () => {
 test("clearWorldEntity", () => {
   WorldUpdater.updateWorldEntities(assembly, entity, 1)
   WorldUpdater.clearWorldEntityAtStage(assembly, entity, 2)
-  expect(highlighter.updateAllHighlights).calledWith(assembly, entity, 2, 2)
+  expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
   expect(findMainEntity(2)).to.be.nil()
   assertEntityCorrect(1)
   assertEntityCorrect(3)
-})
-
-describe("invalid stages", () => {
-  test("out of range is ignored", () => {
-    expect(() => WorldUpdater.updateWorldEntities(assembly, entity, -1)).not.to.error()
-    for (let i = -1; i <= 5; i++) {
-      if (i >= 1 && i <= 4) assertEntityCorrect(i)
-      else assertNothingPresent(i)
-    }
-  })
-  test("does nothing if range is empty", () => {
-    WorldUpdater.updateWorldEntities(assembly, entity, 5)
-    for (let i = 1; i <= 3; i++) assertNothingPresent(i)
-  })
 })
 
 test("deleteWorldEntities", () => {

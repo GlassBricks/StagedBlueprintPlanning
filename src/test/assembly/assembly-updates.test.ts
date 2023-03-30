@@ -85,11 +85,11 @@ function assertWUNotCalled() {
     }
   }
 }
-function assertUpdateCalled(entity: AssemblyEntity, startStage: StageNumber, endStage: StageNumber | nil, n?: number) {
+function assertUpdateCalled(entity: AssemblyEntity, startStage: StageNumber, n?: number) {
   expectedWuCalls++
   if (n == nil) expect(worldUpdaterCalls).to.be(1)
   const spy = worldUpdater.updateWorldEntities
-  expect(spy).nthCalledWith(n ?? 1, assembly, entity, startStage, endStage)
+  expect(spy).nthCalledWith(n ?? 1, assembly, entity, startStage, nil)
 }
 
 function assertRefreshCalled(entity: AssemblyEntity, stage: StageNumber) {
@@ -211,7 +211,7 @@ test("moveEntityOnPreviewReplace", () => {
   expect((entity.firstValue as BlueprintEntity).override_stack_size).to.be(1)
   expect(entity.hasStageDiff()).to.be(false)
   assertOneEntity()
-  assertUpdateCalled(entity, 1, 2)
+  assertUpdateCalled(entity, 1)
 })
 
 test("cannot moveEntityOnPreviewReplace to a higher stage", () => {
@@ -333,7 +333,7 @@ describe("tryUpdateEntityFromWorld", () => {
     expect(entity.firstValue.override_stack_size).to.be(3)
 
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil)
+    assertUpdateCalled(entity, 2)
   })
   test('with change in first stage and known value returns "updated" and updates all entities', () => {
     const { entity } = addEntity(2)
@@ -347,7 +347,7 @@ describe("tryUpdateEntityFromWorld", () => {
     expect(entity.firstValue.override_stack_size).to.be(3)
 
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil)
+    assertUpdateCalled(entity, 2)
   })
 
   test("can detect rotate by pasting", () => {
@@ -361,7 +361,7 @@ describe("tryUpdateEntityFromWorld", () => {
 
     expect(entity.getDirection()).to.be(defines.direction.east)
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil)
+    assertUpdateCalled(entity, 2)
   })
 
   test("forbids rotate if in higher stage than first", () => {
@@ -397,7 +397,7 @@ describe("tryUpdateEntityFromWorld", () => {
     }
 
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil)
+    assertUpdateCalled(entity, 2)
   })
 
   test("integration: updating to match removes stage diff", () => {
@@ -412,7 +412,7 @@ describe("tryUpdateEntityFromWorld", () => {
     expect(entity.hasStageDiff()).to.be(false)
 
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil)
+    assertUpdateCalled(entity, 2)
   })
 })
 
@@ -424,7 +424,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     expect(ret).to.be("updated")
     expect(entity.getDirection()).to.be(direction.west)
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil)
+    assertUpdateCalled(entity, 2)
   })
 
   test("in higher stage forbids rotation", () => {
@@ -447,7 +447,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     expect(entity.getDirection()).to.be(direction.south)
     expect(entity.firstValue.type).to.be("output")
     assertOneEntity()
-    assertUpdateCalled(entity, 1, nil)
+    assertUpdateCalled(entity, 1)
   })
 })
 
@@ -489,7 +489,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
     expect(entity.getValueAtStage(3)!.recipe).to.be("iron-gear-wheel")
 
     assertOneEntity()
-    assertUpdateCalled(entity, 3, nil)
+    assertUpdateCalled(entity, 3)
   })
   test("disallows if has fluid inputs", () => {
     luaEntity.set_recipe("express-transport-belt")
@@ -514,7 +514,7 @@ describe("tryApplyUpgradeTarget", () => {
     expect(entity.firstValue.name).to.be("stack-filter-inserter")
     expect(entity.getDirection()).to.be(direction)
     assertOneEntity()
-    assertUpdateCalled(entity, 1, nil)
+    assertUpdateCalled(entity, 1)
   })
   test("can apply rotation", () => {
     const { luaEntity, entity } = addEntity(1)
@@ -529,7 +529,7 @@ describe("tryApplyUpgradeTarget", () => {
     expect(entity.firstValue.name).to.be("filter-inserter")
     expect(entity.getDirection()).to.be(direction.west)
     assertOneEntity()
-    assertUpdateCalled(entity, 1, nil)
+    assertUpdateCalled(entity, 1)
   })
   test("upgrade to rotate forbidden", () => {
     const { luaEntity, entity } = addEntity(1)
@@ -561,7 +561,7 @@ describe("tryApplyUpgradeTarget", () => {
     const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 2)
     expect(ret).to.be("updated")
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil)
+    assertUpdateCalled(entity, 2)
   })
 })
 
@@ -573,7 +573,7 @@ describe("updateWiresFromWorld", () => {
     expect(ret).to.be("updated")
 
     assertOneEntity()
-    assertUpdateCalled(entity, 1, nil)
+    assertUpdateCalled(entity, 1)
   })
   test("if no changes, does not call update", () => {
     const { entity } = addEntity(1)
@@ -603,8 +603,8 @@ describe("updateWiresFromWorld", () => {
     expect(ret).to.be("updated")
 
     assertNEntities(2)
-    assertUpdateCalled(entity1, 2, nil, 1)
-    assertUpdateCalled(entity2, 1, nil, 2)
+    assertUpdateCalled(entity1, 2, 1)
+    assertUpdateCalled(entity2, 1, 2)
   })
   // test.todo(
   //   "if max connections exceeded, notifies and calls update",
@@ -627,7 +627,7 @@ describe("moveEntityToStage", () => {
     expect(result).to.be("updated")
     expect(entity.firstStage).to.be(2)
     assertOneEntity()
-    assertUpdateCalled(entity, 1, nil)
+    assertUpdateCalled(entity, 1)
   })
 
   test("can move down to preview", () => {
@@ -635,7 +635,7 @@ describe("moveEntityToStage", () => {
     asmUpdates.moveEntityToStage(assembly, entity, 3)
     expect(entity.firstStage).to.be(3)
     assertOneEntity()
-    assertUpdateCalled(entity, 3, nil)
+    assertUpdateCalled(entity, 3)
   })
 
   test("ignores settings remnants", () => {
@@ -713,7 +713,7 @@ describe("undergrounds", () => {
       expect(entity.getDirection()).to.be(direction.east)
 
       assertOneEntity()
-      assertUpdateCalled(entity, 1, nil)
+      assertUpdateCalled(entity, 1)
     })
 
     test("lone underground belt in higher stage forbids rotation", () => {
@@ -753,8 +753,8 @@ describe("undergrounds", () => {
       })
 
       assertNEntities(2)
-      assertUpdateCalled(entity1, 1, nil, which == "lower" ? 1 : 2)
-      assertUpdateCalled(entity2, 2, nil, which == "lower" ? 2 : 1)
+      assertUpdateCalled(entity1, 1, which == "lower" ? 1 : 2)
+      assertUpdateCalled(entity2, 2, which == "lower" ? 2 : 1)
     })
 
     test("cannot rotate if not in first stage", () => {
@@ -839,7 +839,7 @@ describe("undergrounds", () => {
       expect(entity.firstValue.type).to.be("input")
       expect(entity.getDirection()).to.be(direction.west)
       assertOneEntity()
-      assertUpdateCalled(entity, 1, nil)
+      assertUpdateCalled(entity, 1)
     })
 
     test("can upgrade underground in higher stage", () => {
@@ -856,7 +856,7 @@ describe("undergrounds", () => {
       expect(entity.firstValue.type).to.be("input")
 
       assertOneEntity()
-      assertUpdateCalled(entity, 2, nil)
+      assertUpdateCalled(entity, 2)
     })
 
     test("cannot apply rotate upgrade to underground belt (not expected)", () => {
@@ -905,8 +905,8 @@ describe("undergrounds", () => {
         })
 
         assertNEntities(2)
-        assertUpdateCalled(entity1, 1, nil, luaEntity == luaEntity1 ? 1 : 2)
-        assertUpdateCalled(entity2, 2, nil, luaEntity == luaEntity1 ? 2 : 1)
+        assertUpdateCalled(entity1, 1, luaEntity == luaEntity1 ? 1 : 2)
+        assertUpdateCalled(entity2, 2, luaEntity == luaEntity1 ? 2 : 1)
       },
     )
 
@@ -1003,8 +1003,8 @@ describe("undergrounds", () => {
     })
 
     assertNEntities(2)
-    assertUpdateCalled(entity1, 1, nil, 1)
-    assertUpdateCalled(entity2, 1, nil, 2)
+    assertUpdateCalled(entity1, 1, 1)
+    assertUpdateCalled(entity2, 1, 2)
   })
 
   test("cannot move underground if it would also upgrade", () => {
