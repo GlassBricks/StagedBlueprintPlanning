@@ -55,10 +55,8 @@ after_each(() => {
   let totalCalls = 0
   const calls = new LuaMap<string, number>()
   for (const [key, value] of pairs(WorldListener)) {
-    if (value != true) {
-      totalCalls += value.calls.length
-      calls.set(key, value.calls.length)
-    }
+    totalCalls += value.calls.length
+    calls.set(key, value.calls.length)
   }
   if (totalCalls != expectedNumCalls) {
     error(

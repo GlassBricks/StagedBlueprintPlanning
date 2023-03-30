@@ -41,16 +41,15 @@ before_each(() => {
   totalCalls = 0
   expectedCalls = 1
   for (const [, func] of pairs(assemblyUpdater)) {
-    if (func != true)
+    if (typeof func == "object" || typeof func == "function")
       func.invokes((): any => {
         totalCalls++
       })
   }
   for (const [, func] of pairs(worldUpdater)) {
-    if (func != true)
-      func.invokes((): any => {
-        totalCalls++
-      })
+    func.invokes((): any => {
+      totalCalls++
+    })
   }
   assemblyUpdater.moveEntityOnPreviewReplaced.invokes(() => {
     totalCalls++
@@ -249,13 +248,12 @@ test("onEntityDied calls clearEntityAtStage", () => {
 })
 
 const resultMessages: Array<[EntityUpdateResult, string | false]> = [
-  ["no-change", false],
-  ["updated", false],
-  ["cannot-rotate", L_Game.CantBeRotated],
-  ["cannot-flip-multi-pair-underground", L_Interaction.CannotFlipUndergroundDueToMultiplePairs],
-  ["cannot-upgrade-multi-pair-underground", L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs],
-  ["cannot-create-pair-upgrade", L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage],
-  ["cannot-upgrade-changed-pair", L_Interaction.CannotUpgradeUndergroundChangedPair],
+  [EntityUpdateResult.NoChange, false],
+  [EntityUpdateResult.Updated, false],
+  [EntityUpdateResult.CannotRotate, L_Game.CantBeRotated],
+  [EntityUpdateResult.CannotUpgradeMultiPairUnderground, L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs],
+  [EntityUpdateResult.CannotCreatePairUpgrade, L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage],
+  [EntityUpdateResult.CannotUpgradeChangedPair, L_Interaction.CannotUpgradeUndergroundChangedPair],
 ]
 
 describe("onEntityPossiblyUpdated", () => {
@@ -283,7 +281,7 @@ describe("onEntityPossiblyUpdated", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
       totalCalls++
-      return "updated"
+      return EntityUpdateResult.Updated
     })
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter" })
@@ -296,7 +294,7 @@ describe("onEntityPossiblyUpdated", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryUpdateEntityFromWorld.invokes(() => {
       totalCalls++
-      return "updated"
+      return EntityUpdateResult.Updated
     })
     const oldDirection = luaEntity.direction
     luaEntity.destroy()
@@ -315,10 +313,10 @@ describe("onEntityRotated", () => {
   })
 
   test.each<[EntityRotateResult, string | false]>([
-    ["no-change", false],
-    ["updated", false],
-    ["cannot-rotate", L_Game.CantBeRotated],
-    ["cannot-flip-multi-pair-underground", L_Interaction.CannotFlipUndergroundDueToMultiplePairs],
+    [EntityRotateResult.NoChange, false],
+    [EntityRotateResult.Updated, false],
+    [EntityRotateResult.CannotRotate, L_Game.CantBeRotated],
+    [EntityRotateResult.CannotFlipMultiPairUnderground, L_Interaction.CannotFlipUndergroundDueToMultiplePairs],
   ])('calls tryRotateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.tryRotateEntityToMatchWorld.invokes(() => {
@@ -339,7 +337,7 @@ test("onUndergroundBeltDragRotated", () => {
   })
   assemblyUpdater.tryRotateEntityToMatchWorld.invokes(() => {
     totalCalls++
-    return "updated"
+    return EntityRotateResult.Updated
   })
   worldListener.onUndergroundBeltDragRotated(assembly, luaEntity, 2, playerIndex)
   expect(luaEntity.direction).toBe(defines.direction.south)
@@ -373,9 +371,9 @@ describe("onCircuitWiresPossiblyUpdated", () => {
   })
 
   test.each<[WireUpdateResult, string | false]>([
-    ["no-change", false],
-    ["updated", false],
-    ["max-connections-exceeded", L_Interaction.MaxConnectionsReachedInAnotherStage],
+    [WireUpdateResult.NoChange, false],
+    [WireUpdateResult.Updated, false],
+    [WireUpdateResult.MaxConnectionsExceeded, L_Interaction.MaxConnectionsReachedInAnotherStage],
   ])('calls updateWiresFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.updateWiresFromWorld.invokes(() => {
@@ -445,9 +443,9 @@ describe("onMoveEntityToStageCustomInput", () => {
     expectedCalls = 0
   })
   test.each<[StageMoveResult, LocalisedString | false]>([
-    ["updated", [L_Interaction.EntityMovedFromStage, "mock stage 3"]],
-    ["no-change", [L_Interaction.AlreadyAtFirstStage]],
-    ["cannot-move-upgraded-underground", [L_Interaction.CannotMoveUndergroundBeltWithUpgrade]],
+    [StageMoveResult.Updated, [L_Interaction.EntityMovedFromStage, "mock stage 3"]],
+    [StageMoveResult.NoChange, [L_Interaction.AlreadyAtFirstStage]],
+    [StageMoveResult.CannotMoveUpgradedUnderground, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade]],
   ])('calls moveEntityToStage and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(3)
     assemblyUpdater.moveEntityToStage.invokes(() => {
@@ -464,7 +462,7 @@ describe("onSendToStageUsed", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.moveEntityToStage.invokes(() => {
       totalCalls++
-      return "updated"
+      return StageMoveResult.Updated
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onSendToStageUsed(assembly, luaEntity, 2, 1, playerIndex)
@@ -475,7 +473,7 @@ describe("onSendToStageUsed", () => {
     const { luaEntity, entity } = addEntity(2)
     assemblyUpdater.moveEntityToStage.invokes(() => {
       totalCalls++
-      return "updated"
+      return StageMoveResult.Updated
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onSendToStageUsed(assembly, luaEntity, 2, 3, playerIndex)
@@ -487,7 +485,7 @@ describe("onSendToStageUsed", () => {
     entity.replaceWorldEntity(2, luaEntity)
     assemblyUpdater.moveEntityToStage.invokes(() => {
       totalCalls++
-      return "updated"
+      return StageMoveResult.Updated
     })
     worldListener.onSendToStageUsed(assembly, luaEntity, 3, 1, playerIndex)
     expect(assemblyUpdater.moveEntityToStage).not.called()
@@ -498,7 +496,7 @@ describe("onSendToStageUsed", () => {
       const { luaEntity, entity } = addEntity(2)
       assemblyUpdater.moveEntityToStage.invokes(() => {
         totalCalls++
-        return "updated"
+        return StageMoveResult.Updated
       })
       entity.replaceWorldEntity(2, luaEntity)
       worldListener.onBringToStageUsed(assembly, luaEntity, 3, playerIndex)
@@ -509,7 +507,7 @@ describe("onSendToStageUsed", () => {
       const { luaEntity, entity } = addEntity(2)
       assemblyUpdater.moveEntityToStage.invokes(() => {
         totalCalls++
-        return "updated"
+        return StageMoveResult.Updated
       })
       entity.replaceWorldEntity(2, luaEntity)
       worldListener.onBringToStageUsed(assembly, luaEntity, 1, playerIndex)
@@ -521,7 +519,7 @@ describe("onSendToStageUsed", () => {
       entity.replaceWorldEntity(2, luaEntity)
       assemblyUpdater.moveEntityToStage.invokes(() => {
         totalCalls++
-        return "updated"
+        return StageMoveResult.Updated
       })
       worldListener.onBringToStageUsed(assembly, luaEntity, 2, playerIndex)
       expect(assemblyUpdater.moveEntityToStage).not.called()

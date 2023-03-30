@@ -10,8 +10,8 @@
  */
 
 import { mock, MockNoSelf } from "tstl-expect"
+import { AnySelflessFun } from "tstl-expect/dist/types"
 import fnNoSelf = mock.fnNoSelf
-import MockedObjectNoSelf = mock.MockedObjectNoSelf
 
 // note: no imports from other parts of mod, because this file overrides "require"
 
@@ -73,13 +73,18 @@ function mockModuleToResult<T extends object>(module: T, stub: boolean, result: 
     }
   }
 }
-export function doModuleMock<T extends object>(module: T, stub: boolean): MockedObjectNoSelf<T> {
+export type MockedModule<T extends object> = {
+  [K in keyof T]: T[K] extends AnySelflessFun ? MockNoSelf<T[K]> : never
+}
+
+export function doModuleMock<T extends object>(module: T, stub: boolean): MockedModule<T> {
   checkIsMockable(module)
   const result: any = {}
   mockModuleToResult(module, stub, result)
   return result
 }
-export function moduleMock<T extends object>(module: T, stub: boolean): MockedObjectNoSelf<T> {
+
+export function moduleMock<T extends object>(module: T, stub: boolean): MockedModule<T> {
   const result: Record<keyof any, any> = {}
   checkIsMockable(module)
   before_each(() => {

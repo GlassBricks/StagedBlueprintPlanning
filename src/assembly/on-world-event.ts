@@ -19,6 +19,7 @@ import { L_Interaction } from "../locale"
 import {
   addNewEntity,
   deleteEntityOrCreateSettingsRemnant,
+  EntityRotateResult,
   EntityUpdateResult,
   forceDeleteEntity,
   moveEntityOnPreviewReplaced,
@@ -126,7 +127,11 @@ function getCompatibleEntityOrAdd(
   return $multi(compatible, true as const)
 }
 
-function notifyIfError(result: EntityUpdateResult, entity: AssemblyEntity, byPlayer: PlayerIndex | nil) {
+function notifyIfError(
+  result: EntityUpdateResult | EntityRotateResult,
+  entity: AssemblyEntity,
+  byPlayer: PlayerIndex | nil,
+) {
   if (result == "no-change" || result == "updated") return
   if (result == "cannot-rotate") {
     createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)

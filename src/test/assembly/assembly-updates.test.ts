@@ -48,10 +48,9 @@ before_each(() => {
   worldUpdaterCalls = 0
   expectedWuCalls = 0
   for (const [, v] of pairs(worldUpdater)) {
-    if (v != true)
-      v.invokes((() => {
-        worldUpdaterCalls++
-      }) as ContextualFun)
+    v.invokes((() => {
+      worldUpdaterCalls++
+    }) as ContextualFun)
   }
   wireSaver.saveWireConnections.returns(false as any)
 
@@ -63,10 +62,9 @@ after_each(() => {
 
   let message = `expected ${expectedWuCalls} calls to worldUpdater, got ${worldUpdaterCalls}\n`
   for (const [key, fn] of pairs(worldUpdater)) {
-    if (fn != true)
-      if (fn.calls.length > 0) {
-        message += `  ${key} called ${fn.calls.length} times\n`
-      }
+    if (fn.calls.length > 0) {
+      message += `  ${key} called ${fn.calls.length} times\n`
+    }
   }
   error(message)
 })
