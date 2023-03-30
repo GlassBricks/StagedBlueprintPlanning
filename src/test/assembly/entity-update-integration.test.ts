@@ -15,8 +15,8 @@ import {
   deleteEntityOrCreateSettingsRemnant,
   forceDeleteEntity,
   moveAllPropsDown,
-  moveEntityOnPreviewReplaced,
   moveEntityToStage,
+  moveFirstStageDownOnPreviewReplace,
   movePropDown,
   resetAllProps,
   resetProp,
@@ -252,7 +252,7 @@ test("move via preview replace", () => {
   const entity = buildEntity(3)
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
-  moveEntityOnPreviewReplaced(assembly, entity, 2)
+  moveFirstStageDownOnPreviewReplace(assembly, entity, 2)
   expect(entity.firstStage).to.be(2)
   assertEntityCorrect(entity, false)
 })

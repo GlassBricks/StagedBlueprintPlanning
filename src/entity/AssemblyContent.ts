@@ -15,12 +15,11 @@ import { isEmpty, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { AsmCircuitConnection, circuitConnectionEquals } from "./AsmCircuitConnection"
 import { AssemblyEntity, StageNumber, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
-import { BasicEntityInfo } from "./Entity"
+import { EntityIdentification } from "./Entity"
 import {
   getEntityCategory,
   getPasteRotatableType,
   isRollingStockType,
-  nameToType,
   PasteRotatableType,
   rollingStockTypes,
 } from "./entity-info"
@@ -41,7 +40,7 @@ export interface AssemblyContent {
     stage: StageNumber,
   ): AssemblyEntity | nil
   findCompatibleWithLuaEntity(
-    entity: BasicEntityInfo,
+    entity: EntityIdentification,
     previousDirection: defines.direction | nil,
     stage: StageNumber,
   ): AssemblyEntity | nil
@@ -61,9 +60,6 @@ export interface AssemblyContent {
    * Will return slightly larger than actual
    */
   computeBoundingBox(): BoundingBox | nil
-
-  canMoveFirstStageDown(entity: AssemblyEntity, newStage: StageNumber): boolean
-  canMoveLastStageUp(entity: AssemblyEntity, newStage: StageNumber): boolean
 }
 
 export const enum CableAddResult {
@@ -131,14 +127,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   }
 
   findCompatibleWithLuaEntity(
-    entity: {
-      name: string
-      type: string
-      position: Position
-      direction: defines.direction
-      belt_to_ground_type?: "input" | "output"
-      object_name?: string
-    },
+    entity: EntityIdentification,
     previousDirection: defines.direction | nil,
     stage: StageNumber,
   ): AssemblyEntity | nil {
@@ -210,38 +199,6 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   }
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity> {
     return this.entities
-  }
-
-  public canMoveFirstStageDown(entity: AssemblyEntity, newStage: StageNumber): boolean {
-    const name = entity.firstValue.name
-    const foundBelow = this.findCompatibleWithLuaEntity(
-      {
-        name,
-        type: nameToType.get(name)!,
-        position: entity.position,
-        direction: entity.getDirection(),
-      },
-      nil,
-      newStage,
-    )
-
-    return foundBelow == nil || foundBelow == entity
-  }
-  public canMoveLastStageUp(entity: AssemblyEntity, newStage: StageNumber): boolean {
-    const { lastStage } = entity
-    if (lastStage == nil) return true
-    const name = entity.firstValue.name
-    const foundAbove = this.findCompatibleWithLuaEntity(
-      {
-        name,
-        type: nameToType.get(name)!,
-        position: entity.position,
-        direction: entity.getDirection(),
-      },
-      nil,
-      lastStage + 1,
-    )
-    return foundAbove == nil || foundAbove.firstStage > newStage
   }
 
   computeBoundingBox(): BoundingBox | nil {

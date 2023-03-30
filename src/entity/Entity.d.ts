@@ -16,14 +16,18 @@ export interface Entity {
   readonly items?: Record<string, number>
   readonly control_behavior?: BlueprintControlBehavior
 }
-export interface BasicEntityInfo {
+
+export interface EntityIdentification {
   readonly name: string
   readonly type: string
-  readonly surface: LuaSurface
   readonly position: Position
   readonly direction: defines.direction
-  readonly belt_to_ground_type?: "input" | "output"
+  readonly belt_to_ground_type: "input" | "output" | nil
   readonly object_name?: string
+}
+export interface LuaEntityInfo extends EntityIdentification {
+  readonly surface: LuaSurface
+  readonly position: Position
 }
 export interface UndergroundBeltEntity extends Entity {
   type: "input" | "output"

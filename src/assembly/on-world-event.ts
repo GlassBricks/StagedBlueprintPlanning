@@ -11,7 +11,7 @@
 
 import { Colors, L_Game } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { BasicEntityInfo } from "../entity/Entity"
+import { LuaEntityInfo } from "../entity/Entity"
 import { shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
 import { assertNever } from "../lib"
 import { Position } from "../lib/geometry"
@@ -22,8 +22,8 @@ import {
   EntityRotateResult,
   EntityUpdateResult,
   forceDeleteEntity,
-  moveEntityOnPreviewReplaced,
   moveEntityToStage,
+  moveFirstStageDownOnPreviewReplace,
   reviveSettingsRemnant,
   tryApplyUpgradeTarget,
   tryRotateEntityToMatchWorld,
@@ -49,7 +49,7 @@ function onPreviewReplaced(
 ): void {
   const oldStage = entity.firstStage
   createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
-  assert(moveEntityOnPreviewReplaced(assembly, entity, stage))
+  assert(moveFirstStageDownOnPreviewReplace(assembly, entity, stage))
 }
 
 function onEntityOverbuilt(
@@ -196,7 +196,7 @@ function createCannotMoveUpgradedUndergroundNotification(entity: AssemblyEntity,
 }
 export function onEntityDeleted(
   assembly: Assembly,
-  entity: BasicEntityInfo,
+  entity: LuaEntityInfo,
   stage: StageNumber,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _byPlayer: PlayerIndex | nil,
@@ -298,7 +298,7 @@ export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, s
   if (!existing) return
   forceDeleteEntity(assembly, existing)
 }
-export function onEntityDied(assembly: Assembly, entity: BasicEntityInfo, stage: StageNumber): void {
+export function onEntityDied(assembly: Assembly, entity: LuaEntityInfo, stage: StageNumber): void {
   const existing = assembly.content.findCompatibleWithLuaEntity(entity, nil, stage)
   if (existing) {
     clearWorldEntityAtStage(assembly, existing, stage)

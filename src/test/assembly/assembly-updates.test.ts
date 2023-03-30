@@ -203,7 +203,7 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 test("moveEntityOnPreviewReplace", () => {
   const { entity } = addEntity(2)
 
-  assert(asmUpdates.moveEntityOnPreviewReplaced(assembly, entity, 1))
+  assert(asmUpdates.moveFirstStageDownOnPreviewReplace(assembly, entity, 1))
 
   expect(entity.firstStage).to.equal(1)
   expect((entity.firstValue as BlueprintEntity).override_stack_size).to.be(1)
@@ -215,7 +215,7 @@ test("moveEntityOnPreviewReplace", () => {
 test("cannot moveEntityOnPreviewReplace to a higher stage", () => {
   const { entity } = addEntity(2)
 
-  expect(asmUpdates.moveEntityOnPreviewReplaced(assembly, entity, 3)).to.be(false)
+  expect(asmUpdates.moveFirstStageDownOnPreviewReplace(assembly, entity, 3)).to.be(false)
   assertOneEntity()
   assertWUNotCalled()
 })

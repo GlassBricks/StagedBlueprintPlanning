@@ -52,7 +52,7 @@ test("lastStage default nil", () => {
 })
 
 test("isInStage", () => {
-  assemblyEntity.setLastStage(4)
+  assemblyEntity.setLastStageUnchecked(4)
   expect(assemblyEntity.isInStage(1)).to.be(false)
   expect(assemblyEntity.isInStage(2)).to.be(true)
   expect(assemblyEntity.isInStage(3)).to.be(true)
@@ -349,41 +349,41 @@ describe("moving stage diff props", () => {
 
 describe("setFirstStage", () => {
   test("move down", () => {
-    assemblyEntity.setFirstStage(1)
+    assemblyEntity.setFirstStageUnchecked(1)
     expect(assemblyEntity.firstValue).to.equal(entity)
     expect(assemblyEntity.firstStage).to.be(1)
   })
 
   test("moving up; also merges stage diffs", () => {
     const valueAt5 = assemblyEntity.getValueAtStage(5)
-    assemblyEntity.setFirstStage(5)
+    assemblyEntity.setFirstStageUnchecked(5)
     expect(assemblyEntity.firstValue).to.equal(valueAt5)
     const diffs = assemblyEntity.getStageDiffs()!
     expect(next(diffs)[0]).to.be(7)
   })
 
   test("cannot move past last stage", () => {
-    assemblyEntity.setLastStage(4)
-    expect(() => assemblyEntity.setFirstStage(4)).not.toError()
-    expect(() => assemblyEntity.setFirstStage(5)).to.error()
+    assemblyEntity.setLastStageUnchecked(4)
+    expect(() => assemblyEntity.setFirstStageUnchecked(4)).not.toError()
+    expect(() => assemblyEntity.setFirstStageUnchecked(5)).to.error()
   })
 })
 
 describe("setLastStage", () => {
   test("set", () => {
-    assemblyEntity.setLastStage(5)
+    assemblyEntity.setLastStageUnchecked(5)
     expect(assemblyEntity.lastStage).to.be(5)
   })
   test("can set back to nil", () => {
-    assemblyEntity.setLastStage(5)
-    assemblyEntity.setLastStage(nil)
+    assemblyEntity.setLastStageUnchecked(5)
+    assemblyEntity.setLastStageUnchecked(nil)
     expect(assemblyEntity.lastStage).to.be(nil)
   })
   test("cannot move below first stage", () => {
-    expect(() => assemblyEntity.setLastStage(0)).to.error()
+    expect(() => assemblyEntity.setLastStageUnchecked(0)).to.error()
   })
   test("moving down deletes later stage diffs", () => {
-    assemblyEntity.setLastStage(5)
+    assemblyEntity.setLastStageUnchecked(5)
     expect(assemblyEntity.lastStage).to.be(5)
     const diffs = assemblyEntity.getStageDiffs()!
     expect(diffs).not.toHaveKey(7)
@@ -628,7 +628,7 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     entity._applyDiffAtStage(4, { override_stack_size: 4 })
-    entity.setLastStage(4)
+    entity.setLastStageUnchecked(4)
 
     entity.insertStage(3)
 
@@ -663,7 +663,7 @@ describe("insert/deleting stages", () => {
 
   test("insert stage after last stage", () => {
     const entity = createAssemblyEntity<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
-    entity.setLastStage(3)
+    entity.setLastStageUnchecked(3)
 
     entity.insertStage(4)
     expect(entity.lastStage).to.be(3)
@@ -689,7 +689,7 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(2, { override_stack_size: 2, filter_mode: "blacklist" })
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     entity._applyDiffAtStage(4, { override_stack_size: 4 })
-    entity.setLastStage(4)
+    entity.setLastStageUnchecked(4)
 
     entity.deleteStage(3)
 
@@ -737,7 +737,7 @@ describe("insert/deleting stages", () => {
       nil,
       3,
     )
-    entity.setLastStage(4)
+    entity.setLastStageUnchecked(4)
 
     entity.deleteStage(5)
     expect(entity.lastStage).to.be(4)

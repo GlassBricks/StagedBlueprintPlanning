@@ -107,14 +107,14 @@ describe("updateWorldEntities", () => {
     })
 
     test("does not create entities past lastStage", () => {
-      entity.setLastStage(3)
+      entity.setLastStageUnchecked(3)
       WorldUpdater.updateWorldEntities(assembly, entity, 1)
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
       assertNothingPresent(4)
     })
 
     test("if first stage passed is past last stage, does nothing", () => {
-      entity.setLastStage(3)
+      entity.setLastStageUnchecked(3)
       WorldUpdater.updateWorldEntities(assembly, entity, 4)
       for (let i = 1; i <= 4; i++) assertNothingPresent(i)
     })
@@ -131,7 +131,7 @@ describe("updateWorldEntities", () => {
     })
 
     test("attempting to refresh world entity past last stage errors", () => {
-      entity.setLastStage(3)
+      entity.setLastStageUnchecked(3)
       expect(() => WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 4)).to.throw()
       expect(() => WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 0)).to.throw()
     })
@@ -158,7 +158,7 @@ describe("updateWorldEntities", () => {
   })
 
   test("creates preview entities in stages below first stage", () => {
-    entity.setFirstStage(3)
+    entity.setFirstStageUnchecked(3)
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
@@ -178,7 +178,7 @@ describe("updateWorldEntities", () => {
   }
 
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
-    entity.setFirstStage(2)
+    entity.setFirstStageUnchecked(2)
     if (withExisting) {
       const luaEntity = createEntity(assembly.getSurface(3)!, entity.position, entity.getDirection(), {
         name: "inserter",
@@ -195,7 +195,7 @@ describe("updateWorldEntities", () => {
 
   test("can handle entity moving up", () => {
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
-    entity.setFirstStage(2)
+    entity.setFirstStageUnchecked(2)
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
 
     expect(findMainEntity(1)).to.be.nil()
@@ -418,7 +418,7 @@ test("updateWorldEntities calls makeSettingsRemnant", () => {
 })
 
 test("reviveSettingsRemnant revives correct entities and calls highlighter.reviveSettingsRemnant", () => {
-  entity.setFirstStage(2)
+  entity.setFirstStageUnchecked(2)
   entity.isSettingsRemnant = true
   WorldUpdater.makeSettingsRemnant(assembly, entity)
 

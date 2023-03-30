@@ -135,12 +135,12 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
    * Sets the first stage. If moving up, deletes/merges all stage diffs from old stage to new stage.
    * @return the previous first stage
    */
-  setFirstStage(stage: StageNumber): StageNumber
+  setFirstStageUnchecked(stage: StageNumber): StageNumber
 
   /**
    * Sets the last stage. If moving down, deletes all diffs after the new last stage.
    */
-  setLastStage(stage: StageNumber | nil): void
+  setLastStageUnchecked(stage: StageNumber | nil): void
 
   getWorldEntity(stage: StageNumber): LuaEntity | nil
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
@@ -556,7 +556,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return nil
   }
 
-  setFirstStage(stage: StageNumber): StageNumber {
+  setFirstStageUnchecked(stage: StageNumber): StageNumber {
     const { firstStage, lastStage } = this
     if (lastStage) assert(stage <= lastStage, "stage must be <= last stage")
     if (stage > firstStage) this.moveFirstStageUp(stage)
@@ -576,7 +576,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     }
   }
 
-  public setLastStage(stage: StageNumber | nil): void {
+  public setLastStageUnchecked(stage: StageNumber | nil): void {
     assert(!stage || stage >= this.firstStage, "stage must be >= first stage")
     const { lastStage } = this
     if (stage && (lastStage == nil || stage < lastStage)) this.moveLastStageDown(stage)

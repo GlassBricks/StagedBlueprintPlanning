@@ -13,7 +13,7 @@ import expect from "tstl-expect"
 import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
-import { BasicEntityInfo } from "../../entity/Entity"
+import { LuaEntityInfo } from "../../entity/Entity"
 import { getPasteRotatableType, PasteRotatableType } from "../../entity/entity-info"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 import { createRollingStocks } from "./createRollingStock"
@@ -44,16 +44,16 @@ describe("findCompatible", () => {
   test("does not match if passed stage is higher than entity's last stage", () => {
     const entity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
-    entity.setLastStage(2)
+    entity.setLastStageUnchecked(2)
 
     expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be.nil()
   })
 
   test.each(["12", "21"])("if multiple matches, finds one with smallest firstStage, order %s", (o) => {
     const e1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    e1.setLastStage(2)
+    e1.setLastStageUnchecked(2)
     const e2 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 3)
-    e2.setLastStage(4)
+    e2.setLastStageUnchecked(4)
 
     if (o == "21") {
       content.add(e2)
@@ -97,7 +97,7 @@ describe("findCompatible", () => {
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    entity.setLastStage(2)
+    entity.setLastStageUnchecked(2)
     expect(content.findCompatibleByProps("test2", entity.position, defines.direction.north, 2)).to.be.nil()
     expect(content.findCompatibleByProps("foo", entity.position, defines.direction.south, 2)).to.be.nil()
     expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 2)).to.be.nil()
@@ -170,7 +170,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("matches if is flipped underground", () => {
-    const same: BasicEntityInfo = {
+    const same: LuaEntityInfo = {
       name: "underground-belt",
       type: "underground-belt",
       belt_to_ground_type: "input",
@@ -178,7 +178,7 @@ describe("findCompatibleWithLuaEntity", () => {
       direction: defines.direction.west,
       surface: nil!,
     }
-    const flipped: BasicEntityInfo = {
+    const flipped: LuaEntityInfo = {
       name: "underground-belt",
       type: "underground-belt",
       belt_to_ground_type: "output",
@@ -246,30 +246,6 @@ describe("findCompatibleWithLuaEntity", () => {
     // orthogonal, should have match
     expect(content.findCompatibleWithLuaEntity(luaEntity2, nil, 1)).to.be(entity2)
   })
-})
-
-test("canMoveFirstStageDown", () => {
-  const entity1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-  entity1.setLastStage(2)
-  const entity2 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 4)
-
-  content.add(entity1)
-  content.add(entity2)
-
-  expect(content.canMoveFirstStageDown(entity2, 3)).toBe(true)
-  expect(content.canMoveFirstStageDown(entity2, 2)).toBe(false)
-})
-
-test("canMoveLastStageUp", () => {
-  const entity1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-  entity1.setLastStage(2)
-  const entity2 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 4)
-
-  content.add(entity1)
-  content.add(entity2)
-
-  expect(content.canMoveLastStageUp(entity1, 3)).toBe(true)
-  expect(content.canMoveLastStageUp(entity1, 4)).toBe(false)
 })
 
 test("changePosition", () => {

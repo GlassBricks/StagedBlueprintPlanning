@@ -13,7 +13,7 @@ import { oppositedirection } from "util"
 import { CustomInputs, Prototypes, Settings } from "../constants"
 import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
 import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
-import { BasicEntityInfo } from "../entity/Entity"
+import { LuaEntityInfo } from "../entity/Entity"
 import {
   areUpgradeableTypes,
   getCompatibleNames,
@@ -211,7 +211,7 @@ Events.on_marked_for_upgrade((e) => luaEntityMarkedForUpgrade(e.entity, e.player
 
 // building, mining, fast replacing: state machine
 
-interface ToBeFastReplacedEntity extends BasicEntityInfo {
+interface ToBeFastReplacedEntity extends LuaEntityInfo {
   readonly stage: Stage
 
   undergroundPair?: LuaEntity
@@ -479,7 +479,7 @@ function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex) {
   clearToBeFastReplaced(player)
 }
 
-function isFastReplaceable(old: BasicEntityInfo, next: BasicEntityInfo): boolean {
+function isFastReplaceable(old: LuaEntityInfo, next: LuaEntityInfo): boolean {
   return Pos.equals(old.position, next.position) && areUpgradeableTypes(old.name, next.name)
 }
 

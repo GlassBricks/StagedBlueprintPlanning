@@ -65,9 +65,13 @@ export function addNewEntity(
   return assemblyEntity
 }
 
-export function moveEntityOnPreviewReplaced(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
+export function moveFirstStageDownOnPreviewReplace(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+): boolean {
   if (stage >= entity.firstStage) return false
-  entity.setFirstStage(stage)
+  entity.setFirstStageUnchecked(stage)
   updateWorldEntities(assembly, entity, stage)
   return true
 }
@@ -103,7 +107,7 @@ export function forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): v
 export function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
   if (!entity.isSettingsRemnant) return false
   entity.isSettingsRemnant = nil
-  entity.setFirstStage(stage)
+  entity.setFirstStageUnchecked(stage)
   updateEntitiesOnSettingsRemnantRevived(assembly, entity)
   return true
 }
@@ -378,7 +382,7 @@ export function moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, st
   }
 
   // move
-  entity.setFirstStage(stage)
+  entity.setFirstStageUnchecked(stage)
   updateWorldEntities(assembly, entity, min(oldStage, stage))
   return StageMoveResult.Updated
 }
