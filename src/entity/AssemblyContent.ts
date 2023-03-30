@@ -109,16 +109,21 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     if (!cur) return
     const category = getEntityCategory(entityName)
 
+    let candidate: AssemblyEntity | nil = nil
+    // out of possible candidates, find one with smallest firstStage
+
     while (cur != nil) {
       if (
         (direction == nil || direction == (cur.direction ?? 0)) &&
         (cur.lastStage == nil || cur.lastStage >= stage) &&
-        (cur.firstValue.name == entityName || (category && getEntityCategory(cur.firstValue.name) == category))
-      )
-        return cur
+        (cur.firstValue.name == entityName || (category && getEntityCategory(cur.firstValue.name) == category)) &&
+        (candidate == nil || cur.firstStage < candidate.firstStage)
+      ) {
+        candidate = cur
+      }
       cur = cur._next
     }
-    return nil
+    return candidate
   }
   findCompatibleWithLuaEntity(
     entity: BasicEntityInfo | LuaEntity,
@@ -214,7 +219,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   add(entity: AssemblyEntity): void {
     const { entities } = this
     if (entities.has(entity)) return
-    this.entities.add(entity)
+    entities.add(entity)
     const { x, y } = entity.position
     this.byPosition.add(x, y, entity)
   }

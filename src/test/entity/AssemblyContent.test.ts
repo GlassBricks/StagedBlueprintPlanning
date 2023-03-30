@@ -49,6 +49,24 @@ describe("findCompatible", () => {
     expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be.nil()
   })
 
+  test.each(["12", "21"])("if multiple matches, finds one with smallest firstStage, order %s", (o) => {
+    const e1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+    e1.setLastStage(2)
+    const e2 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 3)
+    e2.setLastStage(4)
+
+    if (o == "21") {
+      content.add(e2)
+      content.add(e1)
+    } else {
+      content.add(e1)
+      content.add(e2)
+    }
+
+    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 2)).to.be(e1)
+    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be(e2)
+  })
+
   test("if direction is nil, matches any direction", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.add(entity)
