@@ -98,7 +98,7 @@ export function onEntityCreated(
 
   const entityName = entity.name
   if (!shouldCheckEntityExactlyForMatch(entityName)) {
-    const existingDifferentDirection = content.findCompatible(entityName, entity.position, nil, stage)
+    const existingDifferentDirection = content.findCompatibleByProps(entityName, entity.position, nil, stage)
     if (existingDifferentDirection) {
       disallowOverbuildDifferentDirection(assembly, existingDifferentDirection, entity, byPlayer)
       return nil

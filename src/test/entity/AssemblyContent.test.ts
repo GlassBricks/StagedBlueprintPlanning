@@ -38,7 +38,7 @@ describe("findCompatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(entity)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(entity)
   })
 
   test("does not match if passed stage is higher than entity's last stage", () => {
@@ -46,7 +46,7 @@ describe("findCompatible", () => {
     content.add(entity)
     entity.setLastStage(2)
 
-    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be.nil()
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be.nil()
   })
 
   test.each(["12", "21"])("if multiple matches, finds one with smallest firstStage, order %s", (o) => {
@@ -63,22 +63,24 @@ describe("findCompatible", () => {
       content.add(e2)
     }
 
-    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 2)).to.be(e1)
-    expect(content.findCompatible("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be(e2)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 2)).to.be(e1)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be(e2)
   })
 
   test("if direction is nil, matches any direction", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.add(entity)
 
-    expect(content.findCompatible("foo", { x: 0, y: 0 }, nil, 1)).to.be(entity)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, nil, 1)).to.be(entity)
   })
 
   test("matches if different name in same category", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(entity)
+    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(
+      entity,
+    )
   })
 
   test("if direction is nil, matches same category and any direction", () => {
@@ -90,16 +92,16 @@ describe("findCompatible", () => {
     )
     content.add(entity)
 
-    expect(content.findCompatible("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).to.be(entity)
+    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).to.be(entity)
   })
 
   test("not compatible", () => {
     const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     entity.setLastStage(2)
-    expect(content.findCompatible("test2", entity.position, defines.direction.north, 2)).to.be.nil()
-    expect(content.findCompatible("foo", entity.position, defines.direction.south, 2)).to.be.nil()
-    expect(content.findCompatible("foo", { x: 1, y: 0 }, defines.direction.north, 2)).to.be.nil()
-    expect(content.findCompatible("foo", { x: 1, y: 0 }, defines.direction.north, 3)).to.be.nil()
+    expect(content.findCompatibleByProps("test2", entity.position, defines.direction.north, 2)).to.be.nil()
+    expect(content.findCompatibleByProps("foo", entity.position, defines.direction.south, 2)).to.be.nil()
+    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 2)).to.be.nil()
+    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 3)).to.be.nil()
   })
 })
 
@@ -246,13 +248,37 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 })
 
+test("canMoveFirstStageDown", () => {
+  const entity1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  entity1.setLastStage(2)
+  const entity2 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 4)
+
+  content.add(entity1)
+  content.add(entity2)
+
+  expect(content.canMoveFirstStageDown(entity2, 3)).toBe(true)
+  expect(content.canMoveFirstStageDown(entity2, 2)).toBe(false)
+})
+
+test("canMoveLastStageUp", () => {
+  const entity1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  entity1.setLastStage(2)
+  const entity2 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 4)
+
+  content.add(entity1)
+  content.add(entity2)
+
+  expect(content.canMoveLastStageUp(entity1, 3)).toBe(true)
+  expect(content.canMoveLastStageUp(entity1, 4)).toBe(false)
+})
+
 test("changePosition", () => {
   const entity: AssemblyEntity = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
   content.add(entity)
   content.changePosition(entity, { x: 1, y: 1 })
   expect(entity.position.x).to.be(1)
   expect(entity.position.y).to.be(1)
-  expect(content.findCompatible("foo", { x: 1, y: 1 }, defines.direction.north, 1)).to.be(entity)
+  expect(content.findCompatibleByProps("foo", { x: 1, y: 1 }, defines.direction.north, 1)).to.be(entity)
 })
 
 describe("connections", () => {

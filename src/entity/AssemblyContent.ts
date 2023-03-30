@@ -20,6 +20,7 @@ import {
   getEntityCategory,
   getPasteRotatableType,
   isRollingStockType,
+  nameToType,
   PasteRotatableType,
   rollingStockTypes,
 } from "./entity-info"
@@ -33,7 +34,7 @@ import { getUndergroundDirection } from "./underground-belt"
  * Also keeps tracks of info spanning multiple entities (wire/circuit connections).
  */
 export interface AssemblyContent {
-  findCompatible(
+  findCompatibleByProps(
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
@@ -60,6 +61,9 @@ export interface AssemblyContent {
    * Will return slightly larger than actual
    */
   computeBoundingBox(): BoundingBox | nil
+
+  canMoveFirstStageDown(entity: AssemblyEntity, newStage: StageNumber): boolean
+  canMoveLastStageUp(entity: AssemblyEntity, newStage: StageNumber): boolean
 }
 
 export const enum CableAddResult {
@@ -98,7 +102,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
-  findCompatible(
+  findCompatibleByProps(
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
@@ -125,14 +129,22 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     }
     return candidate
   }
+
   findCompatibleWithLuaEntity(
-    entity: BasicEntityInfo | LuaEntity,
+    entity: {
+      name: string
+      type: string
+      position: Position
+      direction: defines.direction
+      belt_to_ground_type?: "input" | "output"
+      object_name?: string
+    },
     previousDirection: defines.direction | nil,
     stage: StageNumber,
   ): AssemblyEntity | nil {
     const type = entity.type
     if (type == "underground-belt") {
-      const found = this.findCompatible(type, entity.position, nil, stage)
+      const found = this.findCompatibleByProps(type, entity.position, nil, stage)
       if (
         found &&
         getUndergroundDirection(found.getDirection(), (found as UndergroundBeltAssemblyEntity).firstValue.type) ==
@@ -151,21 +163,21 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     const name = entity.name
     const pasteRotatableType = getPasteRotatableType(name)
     if (pasteRotatableType == nil) {
-      return this.findCompatible(name, entity.position, previousDirection ?? entity.direction, stage)
+      return this.findCompatibleByProps(name, entity.position, previousDirection ?? entity.direction, stage)
     }
     if (pasteRotatableType == PasteRotatableType.Square) {
-      return this.findCompatible(name, entity.position, nil, stage)
+      return this.findCompatibleByProps(name, entity.position, nil, stage)
     }
     if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       if (direction % 2 == 1) {
         // if diagonal, we _do_ care about direction
-        return this.findCompatible(name, position, direction, stage)
+        return this.findCompatibleByProps(name, position, direction, stage)
       }
       return (
-        this.findCompatible(name, position, direction, stage) ??
-        this.findCompatible(name, position, oppositedirection(direction), stage)
+        this.findCompatibleByProps(name, position, direction, stage) ??
+        this.findCompatibleByProps(name, position, oppositedirection(direction), stage)
       )
     }
   }
@@ -173,7 +185,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): AssemblyEntity | nil {
     const actualName = previewEntity.name.substring(Prototypes.PreviewEntityPrefix.length)
     const direction = isRollingStockType(actualName) ? 0 : previewEntity.direction
-    return this.findCompatible(actualName, previewEntity.position, direction, stage)
+    return this.findCompatibleByProps(actualName, previewEntity.position, direction, stage)
   }
 
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): AssemblyEntity | nil {
@@ -198,6 +210,38 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   }
   iterateAllEntities(): LuaPairsKeyIterable<AssemblyEntity> {
     return this.entities
+  }
+
+  public canMoveFirstStageDown(entity: AssemblyEntity, newStage: StageNumber): boolean {
+    const name = entity.firstValue.name
+    const foundBelow = this.findCompatibleWithLuaEntity(
+      {
+        name,
+        type: nameToType.get(name)!,
+        position: entity.position,
+        direction: entity.getDirection(),
+      },
+      nil,
+      newStage,
+    )
+
+    return foundBelow == nil || foundBelow == entity
+  }
+  public canMoveLastStageUp(entity: AssemblyEntity, newStage: StageNumber): boolean {
+    const { lastStage } = entity
+    if (lastStage == nil) return true
+    const name = entity.firstValue.name
+    const foundAbove = this.findCompatibleWithLuaEntity(
+      {
+        name,
+        type: nameToType.get(name)!,
+        position: entity.position,
+        direction: entity.getDirection(),
+      },
+      nil,
+      lastStage + 1,
+    )
+    return foundAbove == nil || foundAbove.firstStage > newStage
   }
 
   computeBoundingBox(): BoundingBox | nil {
