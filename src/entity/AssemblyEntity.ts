@@ -739,6 +739,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   insertStage(stageNumber: StageNumber): void {
     if (this.firstStage >= stageNumber) this.firstStage++
+    if (this.lastStage && this.lastStage >= stageNumber) this.lastStage++
 
     shiftNumberKeysUp(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
@@ -754,6 +755,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     this.mergeStageDiffWithBelow(stageToMerge)
 
     if (this.firstStage >= stageToMerge) this.firstStage--
+    if (this.lastStage && this.lastStage >= stageNumber) this.lastStage--
 
     shiftNumberKeysDown(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)

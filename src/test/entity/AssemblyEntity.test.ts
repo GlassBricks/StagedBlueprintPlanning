@@ -628,12 +628,14 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     entity._applyDiffAtStage(4, { override_stack_size: 4 })
+    entity.setLastStage(4)
 
     entity.insertStage(3)
 
     // all keys at 3 and above are shifted up
 
-    expect(1).to.be(entity.firstStage)
+    expect(entity.firstStage).to.equal(1)
+    expect(entity.lastStage).to.equal(5)
 
     expect(entity.getWorldEntity(2)).to.be.any()
     expect(entity.getWorldEntity(3)).to.be.nil()
@@ -653,18 +655,18 @@ describe("insert/deleting stages", () => {
   })
 
   test("insert stage before base", () => {
-    const entity = createAssemblyEntity<InserterEntity>(
-      {
-        name: "filter-inserter",
-        override_stack_size: 1,
-      },
-      Pos(0, 0),
-      nil,
-      2,
-    )
+    const entity = createAssemblyEntity<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
 
     entity.insertStage(1)
     expect(entity.firstStage).to.be(3)
+  })
+
+  test("insert stage after last stage", () => {
+    const entity = createAssemblyEntity<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    entity.setLastStage(3)
+
+    entity.insertStage(4)
+    expect(entity.lastStage).to.be(3)
   })
 
   test("delete stage after base", () => {
@@ -687,12 +689,14 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(2, { override_stack_size: 2, filter_mode: "blacklist" })
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     entity._applyDiffAtStage(4, { override_stack_size: 4 })
+    entity.setLastStage(4)
 
     entity.deleteStage(3)
 
     // key 3 is deleted, all keys above it are shifted down
 
-    expect(1).to.be(entity.firstStage)
+    expect(entity.firstStage).to.equal(1)
+    expect(entity.lastStage).to.equal(3)
 
     expect(entity.getWorldEntity(2)).to.be.any()
     expect(entity.getWorldEntity(3)).to.be.any()
@@ -721,6 +725,22 @@ describe("insert/deleting stages", () => {
 
     entity.deleteStage(2)
     expect(entity.firstStage).to.be(2)
+  })
+
+  test("delete stage after last stage", () => {
+    const entity = createAssemblyEntity<InserterEntity>(
+      {
+        name: "filter-inserter",
+        override_stack_size: 1,
+      },
+      Pos(0, 0),
+      nil,
+      3,
+    )
+    entity.setLastStage(4)
+
+    entity.deleteStage(5)
+    expect(entity.lastStage).to.be(4)
   })
 
   test("delete stage right after base applies stage diffs to first entity", () => {
