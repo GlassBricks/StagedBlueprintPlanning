@@ -31,13 +31,13 @@ test("trySetFirstStage", () => {
   expect(trySetFirstStage(content, entity2, 2)).toBe(StageRangeChangeResult.IntersectsAnotherEntity)
   expect(entity2.firstStage).toBe(4)
 
-  expect(trySetFirstStage(content, entity2, 4)).toBe(StageRangeChangeResult.NoChange)
+  expect(trySetFirstStage(content, entity2, 4)).toBe(StageRangeChangeResult.Ok)
   expect(entity2.firstStage).toBe(4)
 
-  expect(trySetFirstStage(content, entity2, 6)).toBe(StageRangeChangeResult.CannotSetPastLastStage)
+  expect(trySetFirstStage(content, entity2, 6)).toBe(StageRangeChangeResult.ViolatesStageRange)
   expect(entity2.firstStage).toBe(4)
 
-  expect(trySetFirstStage(content, entity2, 3)).toBe(StageRangeChangeResult.Changed)
+  expect(trySetFirstStage(content, entity2, 3)).toBe(StageRangeChangeResult.Ok)
   expect(entity2.firstStage).toBe(3)
 })
 
@@ -50,10 +50,10 @@ test("trySetLastStage", () => {
   content.add(entity1)
   content.add(entity2)
 
-  expect(trySetLastStage(content, entity1, 1)).toBe(StageRangeChangeResult.CannotSetBeforeFirstStage)
+  expect(trySetLastStage(content, entity1, 1)).toBe(StageRangeChangeResult.ViolatesStageRange)
   expect(entity1.lastStage).toBe(2)
 
-  expect(trySetLastStage(content, entity1, 2)).toBe(StageRangeChangeResult.NoChange)
+  expect(trySetLastStage(content, entity1, 2)).toBe(StageRangeChangeResult.Ok)
   expect(entity1.lastStage).toBe(2)
 
   expect(trySetLastStage(content, entity1, 4)).toBe(StageRangeChangeResult.IntersectsAnotherEntity)
@@ -62,6 +62,6 @@ test("trySetLastStage", () => {
   expect(trySetLastStage(content, entity1, nil)).toBe(StageRangeChangeResult.IntersectsAnotherEntity)
   expect(entity1.lastStage).toBe(2)
 
-  expect(trySetLastStage(content, entity1, 3)).toBe(StageRangeChangeResult.Changed)
+  expect(trySetLastStage(content, entity1, 3)).toBe(StageRangeChangeResult.Ok)
   expect(entity1.lastStage).toBe(3)
 })

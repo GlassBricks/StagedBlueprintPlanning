@@ -108,6 +108,12 @@ export declare const enum L_Interaction {
   CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
   /** Cannot move underground belt with upgrade. Try first upgrading in the entity first stage. */
   CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
+  /** Cannot move entity past last stage */
+  CannotMovePastLastStage = "bp100.interaction.cannot-move-past-last-stage",
+  /** Cannot delete entity before first stage */
+  CannotDeleteBeforeFirstStage = "bp100.interaction.cannot-delete-before-first-stage",
+  /** Moving this entity will intersect an identical entity in another stage */
+  MoveWillIntersectAnotherEntity = "bp100.interaction.move-will-intersect-another-entity",
   /** Max of 5 connections reached (in another stage). */
   MaxConnectionsReachedInAnotherStage = "bp100.interaction.max-connections-reached-in-another-stage",
   /** __1__ does not support moving (in another stage). */

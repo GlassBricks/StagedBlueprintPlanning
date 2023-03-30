@@ -14,11 +14,8 @@ import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
 import { nameToType } from "./entity-info"
 
 export declare const enum StageRangeChangeResult {
-  Changed = "changed",
-  NoChange = "no-change",
-  CannotSetPastLastStage = "cannot-set-past-last-stage",
-  CannotSetBeforeFirstStage = "cannot-set-before-first-stage",
-
+  Ok = "changed",
+  ViolatesStageRange = "violates-stage-range",
   IntersectsAnotherEntity = "intersects-another-entity",
 }
 
@@ -27,15 +24,14 @@ export function trySetFirstStage(
   entity: AssemblyEntity,
   newStage: StageNumber,
 ): StageRangeChangeResult {
-  if (newStage == entity.firstStage) return StageRangeChangeResult.NoChange
-  // check firstStage <= lastStage
-  if (entity.lastStage && newStage > entity.lastStage) return StageRangeChangeResult.CannotSetPastLastStage
+  if (newStage == entity.firstStage) return StageRangeChangeResult.Ok
+  if (entity.lastStage && newStage > entity.lastStage) return StageRangeChangeResult.ViolatesStageRange
 
   if (!firstStageChangeWillIntersect(content, entity, newStage)) {
     return StageRangeChangeResult.IntersectsAnotherEntity
   }
   entity.setFirstStageUnchecked(newStage)
-  return StageRangeChangeResult.Changed
+  return StageRangeChangeResult.Ok
 }
 
 function firstStageChangeWillIntersect(
@@ -68,17 +64,17 @@ export function trySetLastStage(
   entity: AssemblyEntity,
   newStage: StageNumber | nil,
 ): StageRangeChangeResult {
-  if (newStage == entity.lastStage) return StageRangeChangeResult.NoChange
+  if (newStage == entity.lastStage) return StageRangeChangeResult.Ok
 
   // check firstStage <= lastStage
-  if (newStage != nil && newStage < entity.firstStage) return StageRangeChangeResult.CannotSetBeforeFirstStage
+  if (newStage != nil && newStage < entity.firstStage) return StageRangeChangeResult.ViolatesStageRange
 
   if (!lastStageChangeWillIntersect(content, entity, newStage)) {
     return StageRangeChangeResult.IntersectsAnotherEntity
   }
 
   entity.setLastStageUnchecked(newStage)
-  return StageRangeChangeResult.Changed
+  return StageRangeChangeResult.Ok
 }
 function lastStageChangeWillIntersect(
   content: AssemblyContent,

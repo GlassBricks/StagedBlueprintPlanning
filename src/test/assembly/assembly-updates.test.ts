@@ -11,6 +11,7 @@
 
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
+import { StageMoveResult } from "../../assembly/assembly-updates"
 import { Assembly } from "../../assembly/AssemblyDef"
 import {
   AssemblyEntity,
@@ -643,6 +644,28 @@ describe("moveEntityToStage", () => {
     expect(entity.firstStage).to.be(1)
     assertOneEntity()
     assertWUNotCalled()
+  })
+
+  test("returns no-change if already at stage", () => {
+    const { entity } = addEntity(1)
+    const result = asmUpdates.moveEntityToStage(assembly, entity, 1)
+    expect(result).to.be(StageMoveResult.NoChange)
+  })
+
+  test("cannot move up if will intersect another entity", () => {
+    const { entity: entity1 } = addEntity(1)
+    entity1.setLastStageUnchecked(2)
+    const { entity: entity2 } = addEntity(3) // prevents moving up
+
+    const result = asmUpdates.moveEntityToStage(assembly, entity2, 2)
+    expect(result).to.be(StageMoveResult.IntersectsAnotherEntity)
+  })
+
+  test("cannot move past last stage", () => {
+    const { entity } = addEntity(1)
+    entity.setLastStageUnchecked(2)
+    const result = asmUpdates.moveEntityToStage(assembly, entity, 5)
+    expect(result).to.be(StageMoveResult.CannotMovePastLastStage)
   })
 })
 

@@ -21,8 +21,10 @@ import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-info"
 import { canBeAnyDirection, saveEntity } from "../entity/save-load"
+import { StageRangeChangeResult, trySetFirstStage } from "../entity/stage-range-changes"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
+import { assertNever } from "../lib"
 import { Assembly } from "./AssemblyDef"
 import {
   deleteAllEntities,
@@ -71,7 +73,9 @@ export function moveFirstStageDownOnPreviewReplace(
   stage: StageNumber,
 ): boolean {
   if (stage >= entity.firstStage) return false
-  entity.setFirstStageUnchecked(stage)
+  if (trySetFirstStage(assembly.content, entity, stage) != StageRangeChangeResult.Ok) {
+    return false
+  }
   updateWorldEntities(assembly, entity, stage)
   return true
 }
@@ -106,8 +110,10 @@ export function forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): v
 
 export function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
   if (!entity.isSettingsRemnant) return false
+  if (trySetFirstStage(assembly.content, entity, stage) != StageRangeChangeResult.Ok) {
+    return false
+  }
   entity.isSettingsRemnant = nil
-  entity.setFirstStageUnchecked(stage)
   updateEntitiesOnSettingsRemnantRevived(assembly, entity)
   return true
 }
@@ -370,6 +376,8 @@ export declare const enum StageMoveResult {
   Updated = "updated",
   NoChange = "no-change",
   CannotMoveUpgradedUnderground = "cannot-move-upgraded-underground",
+  CannotMovePastLastStage = "cannot-move-past-last-stage",
+  IntersectsAnotherEntity = "intersects-another-entity",
 }
 
 export function moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
@@ -381,10 +389,15 @@ export function moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, st
     return StageMoveResult.CannotMoveUpgradedUnderground
   }
 
-  // move
-  entity.setFirstStageUnchecked(stage)
-  updateWorldEntities(assembly, entity, min(oldStage, stage))
-  return StageMoveResult.Updated
+  const moveResult = trySetFirstStage(assembly.content, entity, stage)
+  if (moveResult == StageRangeChangeResult.ViolatesStageRange) return StageMoveResult.CannotMovePastLastStage
+  if (moveResult == StageRangeChangeResult.IntersectsAnotherEntity) return StageMoveResult.IntersectsAnotherEntity
+  if (moveResult == StageRangeChangeResult.Ok) {
+    entity.setFirstStageUnchecked(stage)
+    updateWorldEntities(assembly, entity, min(oldStage, stage))
+    return StageMoveResult.Updated
+  }
+  assertNever(moveResult)
 }
 
 export function resetProp<T extends Entity>(

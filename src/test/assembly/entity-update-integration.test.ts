@@ -287,7 +287,7 @@ describe("revive integration test", () => {
     deleteEntityOrCreateSettingsRemnant(assembly, entity)
     assertIsSettingsRemnant(entity)
 
-    reviveSettingsRemnant(assembly, entity, reviveStage)
+    assert(reviveSettingsRemnant(assembly, entity, reviveStage))
     expect(entity.isSettingsRemnant).to.be.falsy()
     expect(reviveStage).to.be(entity.firstStage)
 
