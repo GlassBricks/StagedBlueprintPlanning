@@ -181,7 +181,7 @@ describe("config changed highlight", () => {
   test("clears when moved to higher stage", () => {
     setAt(3)
     assertCorrect()
-    entity.moveToStage(2)
+    entity.setFirstStage(2)
     assertCorrect()
     expect(entity.getExtraEntity("configChangedLaterHighlight", 1)).to.be.nil()
   })

@@ -347,26 +347,37 @@ describe("moving stage diff props", () => {
   })
 })
 
-describe("move to stage", () => {
+describe("setFirstStage", () => {
   test("move down", () => {
-    assemblyEntity.moveToStage(1)
+    assemblyEntity.setFirstStage(1)
     expect(assemblyEntity.firstValue).to.equal(entity)
     expect(assemblyEntity.firstStage).to.be(1)
   })
 
   test("moving up; also merges stage diffs", () => {
     const valueAt5 = assemblyEntity.getValueAtStage(5)
-    assemblyEntity.moveToStage(5)
+    assemblyEntity.setFirstStage(5)
     expect(assemblyEntity.firstValue).to.equal(valueAt5)
     const diffs = assemblyEntity.getStageDiffs()!
     expect(next(diffs)[0]).to.be(7)
   })
+
+  test("cannot move past last stage", () => {
+    assemblyEntity.setLastStage(4)
+    expect(() => assemblyEntity.setFirstStage(4)).not.toError()
+    expect(() => assemblyEntity.setFirstStage(5)).to.error()
+  })
 })
 
-describe("set last stage", () => {
-  test("simple", () => {
+describe("setLastStage", () => {
+  test("set", () => {
     assemblyEntity.setLastStage(5)
     expect(assemblyEntity.lastStage).to.be(5)
+  })
+  test("can set back to nil", () => {
+    assemblyEntity.setLastStage(5)
+    assemblyEntity.setLastStage(nil)
+    expect(assemblyEntity.lastStage).to.be(nil)
   })
   test("cannot move below first stage", () => {
     expect(() => assemblyEntity.setLastStage(0)).to.error()

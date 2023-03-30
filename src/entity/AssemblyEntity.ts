@@ -135,7 +135,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
    * Sets the first stage. If moving up, deletes/merges all stage diffs from old stage to new stage.
    * @return the previous first stage
    */
-  moveToStage(stage: StageNumber): StageNumber
+  setFirstStage(stage: StageNumber): StageNumber
 
   /**
    * Sets the last stage. If moving down, deletes all diffs after the new last stage.
@@ -556,46 +556,49 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return nil
   }
 
-  moveToStage(stage: StageNumber): StageNumber {
-    const { firstStage } = this
-    if (stage > firstStage) {
-      this.moveUp(stage)
-    } else if (stage < firstStage) {
-      this.firstStage = stage
-    }
+  setFirstStage(stage: StageNumber): StageNumber {
+    const { firstStage, lastStage } = this
+    if (lastStage) assert(stage <= lastStage, "stage must be <= last stage")
+    if (stage > firstStage) this.moveFirstStageUp(stage)
+    this.firstStage = stage
     return firstStage
   }
-  private moveUp(higherStage: StageNumber): void {
-    const { firstValue } = this
+  private moveFirstStageUp(newFirstStage: StageNumber): void {
     const { stageDiffs } = this
     if (stageDiffs) {
+      const { firstValue } = this
       for (const [stage, diff] of pairs(stageDiffs)) {
-        if (stage > higherStage) break
+        if (stage > newFirstStage) break
         applyDiffToEntity(firstValue, diff)
         delete stageDiffs[stage]
       }
       if (isEmpty(stageDiffs)) delete this.stageDiffs
     }
-    this.firstStage = higherStage
   }
 
   public setLastStage(stage: StageNumber | nil): void {
-    if (stage) {
-      assert(stage >= this.firstStage)
-      const { stageDiffs } = this
-      if (stageDiffs && (this.lastStage == nil || stage < this.lastStage)) {
-        for (const [stageNumber] of pairs(stageDiffs)) {
-          if (stageNumber > stage) delete stageDiffs[stageNumber]
-        }
-        if (isEmpty(stageDiffs)) delete this.stageDiffs
-      }
-    }
+    assert(!stage || stage >= this.firstStage, "stage must be >= first stage")
+    const { lastStage } = this
+    if (stage && (lastStage == nil || stage < lastStage)) this.moveLastStageDown(stage)
     this.lastStage = stage
   }
 
-  public getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
+  private moveLastStageDown(stage: number): void {
+    const { stageDiffs } = this
+    if (stageDiffs && (this.lastStage == nil || stage < this.lastStage)) {
+      for (const [stageNumber] of pairs(stageDiffs)) {
+        if (stageNumber > stage) delete stageDiffs[stageNumber]
+      }
+      if (isEmpty(stageDiffs)) delete this.stageDiffs
+    }
+  }
+
+  getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
     const entity = this[stage]
-    if (entity && entity.valid) return entity
+    if (entity) {
+      if (entity.valid) return entity
+      delete this[stage]
+    }
   }
 
   getWorldEntity(stage: StageNumber) {

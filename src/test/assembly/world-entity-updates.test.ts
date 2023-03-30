@@ -158,7 +158,7 @@ describe("updateWorldEntities", () => {
   })
 
   test("creates preview entities in stages below first stage", () => {
-    entity.moveToStage(3)
+    entity.setFirstStage(3)
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
@@ -178,7 +178,7 @@ describe("updateWorldEntities", () => {
   }
 
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
-    entity.moveToStage(2)
+    entity.setFirstStage(2)
     if (withExisting) {
       const luaEntity = createEntity(assembly.getSurface(3)!, entity.position, entity.getDirection(), {
         name: "inserter",
@@ -195,7 +195,7 @@ describe("updateWorldEntities", () => {
 
   test("can handle entity moving up", () => {
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
-    entity.moveToStage(2)
+    entity.setFirstStage(2)
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
 
     expect(findMainEntity(1)).to.be.nil()
@@ -418,7 +418,7 @@ test("updateWorldEntities calls makeSettingsRemnant", () => {
 })
 
 test("reviveSettingsRemnant revives correct entities and calls highlighter.reviveSettingsRemnant", () => {
-  entity.moveToStage(2)
+  entity.setFirstStage(2)
   entity.isSettingsRemnant = true
   WorldUpdater.makeSettingsRemnant(assembly, entity)
 

@@ -269,7 +269,7 @@ describe("cable connections", () => {
       const otherLuaEntity2 = surfaces[1].create_entity({ name: "medium-electric-pole", position: entity2.position })!
       entity2.replaceWorldEntity(2, otherLuaEntity2)
       entity3.replaceWorldEntity(2, otherLuaEntity3)
-      entity3.moveToStage(2)
+      entity3.setFirstStage(2)
       otherLuaEntity2.connect_neighbour(otherLuaEntity3)
       luaEntity2.connect_neighbour(luaEntity1)
       // should connect both 1-2 and 2-3

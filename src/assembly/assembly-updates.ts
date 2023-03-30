@@ -79,7 +79,7 @@ export function addNewEntity(
 
 export function moveEntityOnPreviewReplaced(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
   if (stage >= entity.firstStage) return false
-  entity.moveToStage(stage)
+  entity.setFirstStage(stage)
   updateWorldEntities(assembly, entity, stage)
   return true
 }
@@ -115,7 +115,7 @@ export function forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): v
 export function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
   if (!entity.isSettingsRemnant) return false
   entity.isSettingsRemnant = nil
-  entity.moveToStage(stage)
+  entity.setFirstStage(stage)
   updateEntitiesOnSettingsRemnantRevived(assembly, entity)
   return true
 }
@@ -362,7 +362,7 @@ export function moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, st
   }
 
   // move
-  entity.moveToStage(stage)
+  entity.setFirstStage(stage)
   updateWorldEntities(assembly, entity, min(oldStage, stage))
   return "updated"
 }
