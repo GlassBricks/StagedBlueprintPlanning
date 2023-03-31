@@ -34,7 +34,7 @@ import {
   updateNewWorldEntitiesWithoutWires,
   updateWireConnections,
   updateWorldEntities,
-  updateWorldEntitiesOnLastStageChange,
+  updateWorldEntitiesOnLastStageChanged,
 } from "./world-entity-updates"
 import min = math.min
 
@@ -449,7 +449,7 @@ export function setFirstStage(assembly: Assembly, entity: AssemblyEntity, stage:
   return result
 }
 
-export function setLastStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber | nil): StageMoveResult {
+function checkSetLastStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber | nil): StageMoveResult {
   if (entity.isSettingsRemnant) return StageMoveResult.NoChange
   const oldLastStage = entity.lastStage
   if (oldLastStage == stage) return StageMoveResult.NoChange
@@ -460,10 +460,18 @@ export function setLastStage(assembly: Assembly, entity: AssemblyEntity, stage: 
     return StageMoveResult.IntersectsAnotherEntity
   }
 
-  entity.setLastStageUnchecked(stage)
-  updateWorldEntitiesOnLastStageChange(assembly, entity, oldLastStage)
-
   return StageMoveResult.Updated
+}
+
+export function setLastStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber | nil): StageMoveResult {
+  if (entity.isSettingsRemnant) return StageMoveResult.NoChange
+  const result = checkSetLastStage(assembly, entity, stage)
+  if (result == StageMoveResult.Updated) {
+    const oldLastStage = entity.lastStage
+    entity.setLastStageUnchecked(stage)
+    updateWorldEntitiesOnLastStageChanged(assembly, entity, oldLastStage)
+  }
+  return result
 }
 
 export function resetProp<T extends Entity>(

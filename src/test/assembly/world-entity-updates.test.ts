@@ -18,7 +18,7 @@ import { createEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
-import { doModuleMock, moduleMock } from "../module-mock"
+import { clearModuleMock, doModuleMock, moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 
 interface TestEntity extends Entity {
@@ -245,6 +245,52 @@ test("replaceWorldEntityAtStage replaces old value", () => {
   WorldUpdater.rebuildWorldEntityAtStage(assembly, entity, 2)
   expect(value.valid).to.be(false)
   assertEntityCorrect(2)
+})
+
+describe("updateWorldEntitiesOnLastStageChanged", () => {
+  test("moving up creates entities", () => {
+    entity.setFirstStageUnchecked(2)
+    entity.setLastStageUnchecked(2)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
+    assertHasPreview(1)
+    assertEntityCorrect(2)
+    assertNothingPresent(3)
+    assertNothingPresent(4)
+
+    clearModuleMock(_highlighter)
+    clearModuleMock(_wireHandler)
+
+    entity.setLastStageUnchecked(3)
+    WorldUpdater.updateWorldEntitiesOnLastStageChanged(assembly, entity, 2)
+    assertHasPreview(1)
+    assertEntityCorrect(2)
+    assertEntityCorrect(3)
+    assertNothingPresent(4)
+
+    expect(wireUpdater.updateWireConnectionsAtStage).calledWith(assembly.content, entity, 3)
+    expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
+  })
+
+  test("moving down destroys entities", () => {
+    entity.setFirstStageUnchecked(2)
+    entity.setLastStageUnchecked(3)
+    WorldUpdater.updateWorldEntities(assembly, entity, 1)
+    assertHasPreview(1)
+    assertEntityCorrect(2)
+    assertEntityCorrect(3)
+    assertNothingPresent(4)
+
+    clearModuleMock(_highlighter)
+
+    entity.setLastStageUnchecked(2)
+    WorldUpdater.updateWorldEntitiesOnLastStageChanged(assembly, entity, 3)
+    assertHasPreview(1)
+    assertEntityCorrect(2)
+    assertNothingPresent(3)
+    assertNothingPresent(4)
+
+    expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
+  })
 })
 
 describe("tryMoveEntity", () => {

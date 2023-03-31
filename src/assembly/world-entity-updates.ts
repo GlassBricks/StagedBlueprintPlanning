@@ -138,7 +138,7 @@ export function updateWorldEntities(
   updateAllHighlights(assembly, entity)
 }
 
-export function updateWorldEntitiesOnLastStageChange(
+export function updateWorldEntitiesOnLastStageChanged(
   assembly: Assembly,
   entity: AssemblyEntity,
   oldLastStage: StageNumber | nil,
