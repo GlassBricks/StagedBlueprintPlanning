@@ -20,7 +20,7 @@ import {
 } from "../assembly/assembly-updates"
 import { Stage } from "../assembly/AssemblyDef"
 import { checkForEntityUpdates } from "../assembly/event-listener"
-import { userMovedEntityToStage, userRevivedSettingsRemnant } from "../assembly/on-world-event"
+import { userMovedEntityToStage, userRevivedSettingsRemnant, userSetLastStage } from "../assembly/on-world-event"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
@@ -82,6 +82,8 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     const stageDiffs = entity.getStageDiffs()
     const currentStageDiff = stageDiffs && stageDiffs[currentStageNum]
 
+    const lastStage = entity.lastStage
+
     const isErrorEntity = entity.isInStage(currentStageNum) && entity.getWorldEntity(currentStageNum) == nil
 
     function StageButton(buttonStage: Stage): Element {
@@ -103,30 +105,34 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
           <RefreshButton on_gui_click={ibind(this.refresh)} />
         </TitleBar>
         <frame style="inside_shallow_frame_with_padding" direction="vertical">
-          {!isRollingStock && (
-            <table
-              column_count={2}
-              styleMod={{
-                vertical_spacing: 0,
-              }}
-            >
-              <label caption={[L_GuiEntityInfo.FirstStage]} />
-              {StageButton(firstStage)}
-              {stageDiffs && <label caption={[L_GuiEntityInfo.StagesWithChanges]} />}
-              {stageDiffs &&
-                (Object.keys(stageDiffs) as unknown as StageNumber[]).flatMap((stageNum) => {
-                  const stage = assembly.getStage(stageNum)!
-                  return [StageButton(stage), <empty-widget />]
-                })}
-            </table>
-          )}
+          <table column_count={2} styleMod={{ vertical_spacing: 0 }}>
+            <label caption={[L_GuiEntityInfo.FirstStage]} />
+            {StageButton(firstStage)}
+            {stageDiffs && <label caption={[L_GuiEntityInfo.StagesWithChanges]} />}
+            {stageDiffs &&
+              (Object.keys(stageDiffs) as unknown as StageNumber[]).flatMap((stageNum) => {
+                const stage = assembly.getStage(stageNum)!
+                return [StageButton(stage), <empty-widget />]
+              })}
+            {lastStage != nil && <label caption={[L_GuiEntityInfo.LastStage]} />}
+            {lastStage != nil && StageButton(assembly.getStage(lastStage)!)}
+          </table>
+
           <button
             styleMod={{ horizontally_stretchable: true }}
             caption={[L_GuiEntityInfo.MoveToThisStage]}
             on_gui_click={ibind(this.moveToThisStage)}
             enabled={firstStageNum != currentStageNum}
           />
+          {lastStage != nil && (
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiEntityInfo.RemoveLastStage]}
+              on_gui_click={ibind(this.removeLastStage)}
+            />
+          )}
           {isRollingStock && [
+            <line direction="horizontal" style="control_behavior_window_line" />,
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiEntityInfo.ResetTrain]}
@@ -143,7 +149,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
             this.renderStageDiffSettings(currentStageDiff),
           ]}
           {isErrorEntity && [
-            <line direction="horizontal" styleMod={{ margin: [8, -12] }} />,
+            <line direction="horizontal" style="control_behavior_window_line" />,
             <button
               style="red_button"
               styleMod={{ horizontally_stretchable: true }}
@@ -168,6 +174,10 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
       userMovedEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
     }
     this.rerender(wasSettingsRemnant ?? true)
+  }
+  private removeLastStage() {
+    userSetLastStage(this.stage.assembly, this.entity, nil, this.playerIndex)
+    this.rerender(false)
   }
   private resetTrain() {
     resetTrain(this.stage.assembly, this.entity)

@@ -11,7 +11,7 @@ export declare const enum L_ItemName {
   /** Blueprint filters */
   BlueprintFilters = "item-name.bp100:blueprint-filters",
   /** Stage delete tool */
-  StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
+  StageDeconstructionTool = "item-name.bp100:stage-deconstruction-tool",
 }
 export declare const enum L_ShortcutName {
   /** Build cleanup tool */
@@ -21,7 +21,7 @@ export declare const enum L_ShortcutName {
   /** Filtered stage move tool */
   FilteredStageMoveTool = "shortcut-name.bp100:filtered-stage-move-tool",
   /** Stage delete tool */
-  StageDeconstructTool = "shortcut-name.bp100:stage-deconstruct-tool",
+  StageDeconstructionTool = "shortcut-name.bp100:stage-deconstruction-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
@@ -294,8 +294,12 @@ export declare const enum L_GuiEntityInfo {
   FirstStage = "bp100.gui.entity-info.first-stage",
   /** Updated */
   StagesWithChanges = "bp100.gui.entity-info.stages-with-changes",
+  /** Last stage */
+  LastStage = "bp100.gui.entity-info.last-stage",
   /** Move to this stage */
   MoveToThisStage = "bp100.gui.entity-info.move-to-this-stage",
+  /** Remove last stage */
+  RemoveLastStage = "bp100.gui.entity-info.remove-last-stage",
   /** Reset train */
   ResetTrain = "bp100.gui.entity-info.reset-train",
   /** Set train location here */

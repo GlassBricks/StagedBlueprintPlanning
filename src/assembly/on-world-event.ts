@@ -411,6 +411,15 @@ export function onEntityStageDeleteUsed(
   const asmEntity = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
   if (!asmEntity || asmEntity.isSettingsRemnant) return
   const newLastStage = stage - 1
+  userSetLastStage(assembly, asmEntity, newLastStage, byPlayer)
+}
+
+export function userSetLastStage(
+  assembly: Assembly,
+  asmEntity: AssemblyEntity,
+  newLastStage: StageNumber | nil,
+  byPlayer: PlayerIndex | nil,
+): void {
   const result = trySetLastStage(assembly, asmEntity, newLastStage)
   notifyIfMoveError(result, asmEntity, byPlayer)
 }
