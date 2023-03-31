@@ -36,6 +36,7 @@ import {
   onEntityMarkedForUpgrade,
   onEntityPossiblyUpdated,
   onEntityRotated,
+  onEntityStageDeleteUsed,
   onMoveEntityToStageCustomInput,
   onSendToStageUsed,
   onTryFixEntity,
@@ -901,11 +902,10 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
 })
 
 // Stage move tool
-Events.on_player_selected_area((e) => {
-  if (e.item != Prototypes.StageMoveTool) return
+
+function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
-
   const playerIndex = e.player_index
   const playerData = getAssemblyPlayerData(playerIndex, stage.assembly)
   if (!playerData) return
@@ -914,12 +914,29 @@ Events.on_player_selected_area((e) => {
     error("moveTargetStage was not set")
     return
   }
-
   const { stageNumber, assembly } = stage
   for (const entity of e.entities) {
     onSendToStageUsed(assembly, entity, stageNumber, targetStage, playerIndex)
   }
+}
+
+function stageDeleteToolUsed(e: OnPlayerSelectedAreaEvent): void {
+  const stage = getStageAtSurface(e.surface.index)
+  if (!stage) return
+  const { stageNumber, assembly } = stage
+  for (const entity of e.entities) {
+    onEntityStageDeleteUsed(assembly, entity, stageNumber, e.player_index)
+  }
+}
+
+Events.on_player_selected_area((e) => {
+  if (e.item == Prototypes.StageMoveTool) {
+    stageMoveToolUsed(e)
+  } else if (e.item == Prototypes.StageDeconstructTool) {
+    stageDeleteToolUsed(e)
+  }
 })
+
 function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
   if (e.item != Prototypes.StageMoveTool) return
   const stage = getStageAtSurface(e.surface.index)

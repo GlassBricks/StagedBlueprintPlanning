@@ -15,6 +15,7 @@ import { Colors, Prototypes } from "../constants"
 import {
   CustomInputPrototype,
   DeconstructionItemPrototype,
+  IconData,
   SelectionToolPrototype,
   ShortcutPrototype,
   Sprite,
@@ -199,11 +200,73 @@ data.extend([
   selectionToolToInput(filteredStagedMoveTool),
 ])
 
-// blueprint filters
-
+// stage delete tool
 const deconstructionPlanner = table.deepcopy<DeconstructionItemPrototype>(
   data.raw["deconstruction-item"]["deconstruction-planner"],
 )
+function shiftedBlueprintSprite(shift: MapPositionArray, filename: string): IconData {
+  return {
+    icon: filename,
+    icon_size: 64,
+    shift,
+    scale: 0.5,
+  }
+}
+
+const deconstructionPlannerImage = "__base__/graphics/icons/deconstruction-planner.png"
+// staged delete tool
+const stageDeleteTool: SelectionToolPrototype = {
+  type: "selection-tool",
+  name: Prototypes.StageDeconstructTool,
+  icons: [
+    {
+      icon: deconstructionPlannerImage,
+      icon_size: 64,
+      tint: [0, 0, 0, 0],
+    },
+    shiftedBlueprintSprite([-3, -3], deconstructionPlannerImage),
+    shiftedBlueprintSprite([0, 0], deconstructionPlannerImage),
+    shiftedBlueprintSprite([3, 3], deconstructionPlannerImage),
+  ],
+
+  flags: ["spawnable", "not-stackable", "only-in-cursor"],
+  stack_size: 1,
+
+  draw_label_for_cursor_render: true,
+
+  subgroup: "tool",
+  order: "z[bp100]-c[stage-deconstruct-tool]",
+
+  selection_color: deconstructionPlanner.selection_color,
+  selection_cursor_box_type: "not-allowed",
+  selection_mode: ["blueprint"],
+
+  alt_selection_color: deconstructionPlanner.alt_selection_color,
+  alt_selection_cursor_box_type: "not-allowed",
+  alt_selection_mode: ["nothing"],
+
+  reverse_selection_color: deconstructionPlanner.reverse_selection_color,
+  reverse_selection_cursor_box_type: "not-allowed",
+  reverse_selection_mode: ["nothing"],
+}
+
+data.extend([
+  stageDeleteTool,
+  selectionToolToShortcut(
+    stageDeleteTool,
+    {
+      filename: "__base__/graphics/icons/shortcut-toolbar/mip/new-deconstruction-planner-x32-white.png",
+      size: 32,
+      mipmap_count: 2,
+    },
+    Prototypes.StageDeconstructTool,
+    "blue",
+  ),
+  selectionToolToInput(stageDeleteTool),
+])
+
+// blueprint filters
+
 deconstructionPlanner.tile_filter_count = nil
 const blueprintFilters: DeconstructionItemPrototype = {
   ...deconstructionPlanner,

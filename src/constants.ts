@@ -36,6 +36,7 @@ export const enum Prototypes {
 
   StageMoveTool = "bp100:stage-move-tool",
   FilteredStageMoveTool = "bp100:filtered-stage-move-tool",
+  StageDeconstructTool = "bp100:stage-deconstruct-tool",
 
   BlueprintFilters = "bp100:blueprint-filters",
 
@@ -52,6 +53,7 @@ export const enum Sprites {
   CollapseLeft = "bp100:collapse-left",
   CollapseLeftDark = "bp100:collapse-left-dark",
   BlueprintStages = "bp100:blueprint-stages",
+  StagedDeleteTool = "bp100:staged-delete-tool",
 }
 
 export const enum CustomInputs {
