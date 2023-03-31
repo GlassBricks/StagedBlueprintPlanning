@@ -441,7 +441,7 @@ function checkCanSetFirstStage(assembly: Assembly, entity: AssemblyEntity, stage
   return StageMoveResult.Updated
 }
 
-export function setFirstStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
+export function trySetFirstStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
   const result = checkCanSetFirstStage(assembly, entity, stage)
   if (result == StageMoveResult.Updated) {
     const stageToUpdate = min(entity.firstStage, stage)
@@ -465,7 +465,7 @@ function checkSetLastStage(assembly: Assembly, entity: AssemblyEntity, stage: St
   return StageMoveResult.Updated
 }
 
-export function setLastStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber | nil): StageMoveResult {
+export function trySetLastStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber | nil): StageMoveResult {
   if (entity.isSettingsRemnant) return StageMoveResult.NoChange
   const result = checkSetLastStage(assembly, entity, stage)
   if (result == StageMoveResult.Updated) {

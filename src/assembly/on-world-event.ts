@@ -22,11 +22,12 @@ import {
   EntityRotateResult,
   EntityUpdateResult,
   forceDeleteEntity,
-  setFirstStage,
   StageMoveResult,
   tryApplyUpgradeTarget,
   tryReviveSettingsRemnant,
   tryRotateEntityToMatchWorld,
+  trySetFirstStage,
+  trySetLastStage,
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
 } from "./assembly-updates"
@@ -48,7 +49,7 @@ function onPreviewReplaced(
   byPlayer: PlayerIndex | nil,
 ): void {
   const oldStage = entity.firstStage
-  assert(setFirstStage(assembly, entity, stage) == StageMoveResult.Updated)
+  assert(trySetFirstStage(assembly, entity, stage) == StageMoveResult.Updated)
 
   createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
 }
@@ -62,7 +63,7 @@ function onEntityOverbuilt(
 ) {
   asmEntity.replaceWorldEntity(stage, luaEntity)
   if (asmEntity.isSettingsRemnant) {
-    onSettingsRemnantRevived(assembly, asmEntity, stage, byPlayer)
+    userRevivedSettingsRemnant(assembly, asmEntity, stage, byPlayer)
   } else if (stage >= asmEntity.firstStage) {
     refreshWorldEntityAtStage(assembly, asmEntity, stage)
   } else {
@@ -327,7 +328,7 @@ function notifyIfMoveError(result: StageMoveResult, entity: AssemblyEntity, byPl
   }
 }
 
-export function onSettingsRemnantRevived(
+export function userRevivedSettingsRemnant(
   assembly: Assembly,
   entity: AssemblyEntity,
   stage: StageNumber,
@@ -348,8 +349,16 @@ export function onMoveEntityToStageCustomInput(
 ): void {
   const entity = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity, stage)
   if (!entity || entity.isSettingsRemnant) return
+  userMovedEntityToStage(assembly, entity, stage, byPlayer)
+}
+export function userMovedEntityToStage(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex,
+): void {
   const oldStage = entity.firstStage
-  const result = setFirstStage(assembly, entity, stage)
+  const result = trySetFirstStage(assembly, entity, stage)
   if (result == "updated") {
     createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
   } else if (result == "no-change") {
@@ -368,7 +377,7 @@ export function onSendToStageUsed(
   if (fromStage == toStage) return
   const asmEntity = assembly.content.findExact(entity, entity.position, fromStage)
   if (!asmEntity || asmEntity.firstStage != fromStage || asmEntity.isSettingsRemnant) return
-  const result = setFirstStage(assembly, asmEntity, toStage)
+  const result = trySetFirstStage(assembly, asmEntity, toStage)
   if (result == "updated") {
     if (toStage < fromStage) createIndicator(asmEntity, byPlayer, "<<", Colors.Orange)
     return
@@ -385,13 +394,27 @@ export function onBringToStageUsed(
   if (!asmEntity || asmEntity.isSettingsRemnant) return
   const oldStage = asmEntity.firstStage
   if (oldStage == stage) return
-  const result = setFirstStage(assembly, asmEntity, stage)
+  const result = trySetFirstStage(assembly, asmEntity, stage)
   if (result == "updated") {
     if (oldStage < stage) createIndicator(asmEntity, byPlayer, ">>", Colors.Blueish)
     return
   }
   notifyIfMoveError(result, asmEntity, byPlayer)
 }
+
+export function onEntityStageDeleteUsed(
+  assembly: Assembly,
+  entity: LuaEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex,
+): void {
+  const asmEntity = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+  if (!asmEntity || asmEntity.isSettingsRemnant) return
+  const newLastStage = stage - 1
+  const result = trySetLastStage(assembly, asmEntity, newLastStage)
+  notifyIfMoveError(result, asmEntity, byPlayer)
+}
+
 export function onEntityDollied(
   assembly: Assembly,
   entity: LuaEntity,

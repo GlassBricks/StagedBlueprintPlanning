@@ -347,7 +347,7 @@ describe("moving stage diff props", () => {
   })
 })
 
-describe("setFirstStage", () => {
+describe("trySetFirstStage", () => {
   test("move down", () => {
     assemblyEntity.setFirstStageUnchecked(1)
     expect(assemblyEntity.firstValue).to.equal(entity)
@@ -369,7 +369,7 @@ describe("setFirstStage", () => {
   })
 })
 
-describe("setLastStage", () => {
+describe("trySetLastStage", () => {
   test("set", () => {
     assemblyEntity.setLastStageUnchecked(5)
     expect(assemblyEntity.lastStage).to.be(5)

@@ -16,12 +16,11 @@ import {
   resetAllProps,
   resetProp,
   resetTrain,
-  setFirstStage,
   setTrainLocationToCurrent,
 } from "../assembly/assembly-updates"
 import { Stage } from "../assembly/AssemblyDef"
 import { checkForEntityUpdates } from "../assembly/event-listener"
-import { onSettingsRemnantRevived } from "../assembly/on-world-event"
+import { userMovedEntityToStage, userRevivedSettingsRemnant } from "../assembly/on-world-event"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
@@ -162,12 +161,13 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (player) teleportToStage(player, stage)
   }
   private moveToThisStage() {
-    if (this.entity.isSettingsRemnant) {
-      onSettingsRemnantRevived(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
+    const wasSettingsRemnant = this.entity.isSettingsRemnant
+    if (wasSettingsRemnant) {
+      userRevivedSettingsRemnant(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
     } else {
-      setFirstStage(this.stage.assembly, this.entity, this.stage.stageNumber)
+      userMovedEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
     }
-    this.rerender(false)
+    this.rerender(wasSettingsRemnant ?? true)
   }
   private resetTrain() {
     resetTrain(this.stage.assembly, this.entity)

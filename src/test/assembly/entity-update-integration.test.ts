@@ -18,10 +18,10 @@ import {
   movePropDown,
   resetAllProps,
   resetProp,
-  setFirstStage,
   tryApplyUpgradeTarget,
   tryReviveSettingsRemnant,
   tryRotateEntityToMatchWorld,
+  trySetFirstStage,
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
 } from "../../assembly/assembly-updates"
@@ -251,7 +251,7 @@ test("move via preview replace", () => {
   const entity = buildEntity(3)
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
-  setFirstStage(assembly, entity, 2)
+  trySetFirstStage(assembly, entity, 2)
   expect(entity.firstStage).to.be(2)
   assertEntityCorrect(entity, false)
 })
@@ -445,14 +445,14 @@ test("creating upgrade via apply upgrade target", () => {
 
 test("moving entity up", () => {
   const entity = buildEntity(3)
-  setFirstStage(assembly, entity, 4)
+  trySetFirstStage(assembly, entity, 4)
   expect(entity.firstStage).to.be(4)
   assertEntityCorrect(entity, false)
 })
 
 test("moving entity down", () => {
   const entity = buildEntity(3)
-  setFirstStage(assembly, entity, 2)
+  trySetFirstStage(assembly, entity, 2)
   expect(entity.firstStage).to.be(2)
   assertEntityCorrect(entity, false)
 })
