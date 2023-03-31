@@ -417,6 +417,6 @@ export function newAssemblyContent(): MutableAssemblyContent {
   return new AssemblyContentImpl()
 }
 
-export function _migrateAssemblyContent0_18_0(content: MutableAssemblyContent): void {
+export function _migrateAssemblyContent_0_18_0(content: MutableAssemblyContent): void {
   _migrateMap2DToLinkedList((content as AssemblyContentImpl).byPosition)
 }

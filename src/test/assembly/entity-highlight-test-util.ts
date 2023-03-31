@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { HighlightValues } from "../../assembly/entity-highlights"
+import { HighlightConstants } from "../../assembly/entity-highlights"
 import { AssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 
 export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, maxStage: StageNumber): void {
@@ -19,14 +19,18 @@ export function assertConfigChangedHighlightsCorrect(entity: AssemblyEntity, max
     const isUpgrade = changes.name != nil
 
     const highlight = expect(entity.getExtraEntity("configChangedHighlight", stageNumber)).to.be.any().getValue()!
-    expect(highlight.highlight_box_type).to.be(isUpgrade ? HighlightValues.Upgraded : HighlightValues.ConfigChanged)
+    expect(highlight.highlight_box_type).to.be(
+      isUpgrade ? HighlightConstants.Upgraded : HighlightConstants.ConfigChanged,
+    )
 
     const firstI = i
     for (; i < stageNumber; i++) {
       if (i != firstI) expect(entity.getExtraEntity("configChangedHighlight", i)).to.be.nil()
 
       const highlight = expect(entity.getExtraEntity("configChangedLaterHighlight", i)).to.be.any().getValue()!
-      expect(highlight.sprite).to.be(isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater)
+      expect(highlight.sprite).to.be(
+        isUpgrade ? HighlightConstants.UpgradedLater : HighlightConstants.ConfigChangedLater,
+      )
     }
   }
   for (let j = i; j <= maxStage; j++) {
@@ -41,7 +45,7 @@ export function assertErrorHighlightsCorrect(entity: AssemblyEntity, maxStage: S
     if (entity.getWorldEntity(stage) == nil) {
       hasAnyMissing = true
       const highlight = expect(entity.getExtraEntity("errorOutline", stage)).to.be.any().getValue()!
-      expect(highlight.highlight_box_type).to.be(HighlightValues.Error)
+      expect(highlight.highlight_box_type).to.be(HighlightConstants.Error)
     } else {
       expect(entity.getExtraEntity("errorOutline", stage)).to.be.nil()
     }

@@ -85,7 +85,10 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   /** @return the value of a property at a given stage, or at the first stage if below the first stage. Also returns the stage in which the property is affected. */
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
 
-  /** Gets the entity name at the given stage. If below the first stage, returns the first entity name. Alias for `getPropAtStage("name", stage)`. */
+  /**
+   * Gets the entity name at the given stage. If below the first stage, this returns the first entity name.
+   * Similar to `getPropAtStage("name", stage)`.
+   */
   getNameAtStage(stage: StageNumber): string
   /**
    * Iterates the values of stages in the given range. More efficient than repeated calls to getValueAtStage.
@@ -816,7 +819,7 @@ export function getStageToMerge(stageNumber: StageNumber): StageNumber {
   return stageNumber - 1
 }
 
-export function migrateEntity_0_17_0(entity: AssemblyEntity): void {
+export function _migrateEntity_0_17_0(entity: AssemblyEntity): void {
   if (entity.isUndergroundBelt() && entity.firstValue.type == "output") {
     entity.setDirection(oppositedirection(entity.getDirection()))
   }

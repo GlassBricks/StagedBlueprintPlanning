@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { _migrateAssemblyContent0_18_0 } from "../entity/AssemblyContent"
-import { migrateEntity_0_17_0, StageNumber } from "../entity/AssemblyEntity"
+import { _migrateAssemblyContent_0_18_0 } from "../entity/AssemblyContent"
+import { _migrateEntity_0_17_0, StageNumber } from "../entity/AssemblyEntity"
 import { Migrations } from "../lib/migration"
 import { UserAssembly } from "./AssemblyDef"
-import { updateWorldEntities } from "./world-entity-updates"
+import { updateWorldEntities, updateWorldEntitiesOnLastStageChanged } from "./world-entity-updates"
 
 declare const global: {
   assemblies: LuaMap<number, UserAssembly>
@@ -50,21 +50,24 @@ Migrations.to("0.14.3", () => {
 Migrations.to("0.17.0", () => {
   for (const [, assembly] of getAssembliesForMigration()) {
     for (const entity of assembly.content.iterateAllEntities()) {
-      migrateEntity_0_17_0(entity)
+      _migrateEntity_0_17_0(entity)
     }
   }
 })
 
 Migrations.early("0.18.0", () => {
   for (const [, assembly] of getAssembliesForMigration()) {
-    _migrateAssemblyContent0_18_0(assembly.content)
+    _migrateAssemblyContent_0_18_0(assembly.content)
   }
 })
 
 Migrations.to("0.18.0", () => {
   for (const [, assembly] of getAssembliesForMigration()) {
     for (const entity of assembly.content.iterateAllEntities()) {
-      migrateEntity_0_17_0(entity)
+      if (entity.isRollingStock()) {
+        entity.setLastStageUnchecked(entity.firstStage)
+        updateWorldEntitiesOnLastStageChanged(assembly, entity, nil)
+      }
     }
   }
 })
