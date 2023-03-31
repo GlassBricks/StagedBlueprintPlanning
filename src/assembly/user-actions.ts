@@ -33,6 +33,7 @@ import {
 } from "./assembly-updates"
 import { Assembly } from "./AssemblyDef"
 import { createIndicator, createNotification } from "./notifications"
+import { UndoHandler } from "./undo"
 import {
   AssemblyEntityDollyResult,
   clearWorldEntityAtStage,
@@ -42,6 +43,21 @@ import {
   tryDollyEntities,
 } from "./world-entity-updates"
 
+const undoPreviewReplace = UndoHandler(
+  "preview replace",
+  (player, { assembly, entity, oldStage }: { assembly: Assembly; entity: AssemblyEntity; oldStage: StageNumber }) => {
+    if (!assembly.valid) return
+
+    if (!assembly.content.has(entity)) {
+      const matching = assembly.content.findCompatibleWithExistingEntity(entity, entity.firstStage)
+      if (!matching || matching.firstStage != entity.firstStage) return
+      entity = matching
+    }
+
+    userMovedEntityToStage(assembly, entity, oldStage, player.index, true)
+  },
+)
+
 function onPreviewReplaced(
   assembly: Assembly,
   entity: AssemblyEntity,
@@ -49,9 +65,18 @@ function onPreviewReplaced(
   byPlayer: PlayerIndex | nil,
 ): void {
   const oldStage = entity.firstStage
-  assert(trySetFirstStage(assembly, entity, stage) == StageMoveResult.Updated)
+  // assert(trySetFirstStage(assembly, entity, stage) == StageMoveResult.Updated)
+  if (trySetFirstStage(assembly, entity, stage) == StageMoveResult.Updated) {
+    createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
 
-  createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
+    if (byPlayer != nil) {
+      const player = game.get_player(byPlayer)!
+      undoPreviewReplace.registerLater(player, { assembly, entity, oldStage })
+    }
+  } else {
+    // something went wrong, replace the entity
+    rebuildWorldEntityAtStage(assembly, entity, stage)
+  }
 }
 
 function onEntityOverbuilt(
@@ -356,11 +381,13 @@ export function userMovedEntityToStage(
   entity: AssemblyEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex,
+  returned?: boolean,
 ): void {
   const oldStage = entity.firstStage
   const result = trySetFirstStage(assembly, entity, stage)
   if (result == "updated") {
-    createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
+    const message = returned ? L_Interaction.EntityMovedBackToStage : L_Interaction.EntityMovedFromStage
+    createNotification(entity, byPlayer, [message, assembly.getStageName(oldStage)], false)
   } else if (result == "no-change") {
     createNotification(entity, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
   } else {

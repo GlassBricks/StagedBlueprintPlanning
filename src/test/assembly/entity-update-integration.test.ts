@@ -26,7 +26,7 @@ import {
   updateWiresFromWorld,
 } from "../../assembly/assembly-updates"
 import { UserAssembly } from "../../assembly/AssemblyDef"
-import { userSetLastStage } from "../../assembly/on-world-event"
+import { userSetLastStage } from "../../assembly/user-actions"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {
   clearWorldEntityAtStage,

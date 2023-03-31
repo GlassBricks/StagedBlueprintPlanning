@@ -21,7 +21,7 @@ import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { moduleMock } from "../module-mock"
 import { reviveGhost } from "../reviveGhost"
-import _worldListener = require("../../assembly/on-world-event")
+import _worldListener = require("../../assembly/user-actions")
 import direction = defines.direction
 
 const WorldListener = moduleMock(_worldListener, true)

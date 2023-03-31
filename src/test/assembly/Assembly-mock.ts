@@ -23,6 +23,7 @@ export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
     lastStageFor: (entity) => (entity.lastStage ? math.min(entity.lastStage, surfaces.length) : surfaces.length),
     content: newAssemblyContent(),
     getStageName: (n) => "mock stage " + n,
+    valid: true,
   }
 }
 

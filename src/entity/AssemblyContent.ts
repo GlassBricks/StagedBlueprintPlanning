@@ -20,6 +20,7 @@ import {
   getEntityCategory,
   getPasteRotatableType,
   isRollingStockType,
+  nameToType,
   PasteRotatableType,
   rollingStockTypes,
 } from "./entity-info"
@@ -33,6 +34,8 @@ import { getUndergroundDirection } from "./underground-belt"
  * Also keeps tracks of info spanning multiple entities (wire/circuit connections).
  */
 export interface AssemblyContent {
+  has(entity: AssemblyEntity): boolean
+
   findCompatibleByProps(
     entityName: string,
     position: Position,
@@ -44,6 +47,7 @@ export interface AssemblyContent {
     previousDirection: defines.direction | nil,
     stage: StageNumber,
   ): AssemblyEntity | nil
+  findCompatibleWithExistingEntity(entity: AssemblyEntity, stage: StageNumber): AssemblyEntity | nil
 
   findExact(entity: LuaEntity, position: Position, stage: StageNumber): AssemblyEntity | nil
 
@@ -98,6 +102,10 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   circuitConnections = new LuaMap<AssemblyEntity, AsmEntityCircuitConnections>()
   cableConnections = new LuaMap<AssemblyEntity, AsmEntityCableConnections>()
 
+  has(entity: AssemblyEntity): boolean {
+    return this.entities.has(entity)
+  }
+
   findCompatibleByProps(
     entityName: string,
     position: Position,
@@ -125,7 +133,6 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     }
     return candidate
   }
-
   findCompatibleWithLuaEntity(
     entity: EntityIdentification,
     previousDirection: defines.direction | nil,
@@ -169,6 +176,21 @@ class AssemblyContentImpl implements MutableAssemblyContent {
         this.findCompatibleByProps(name, position, oppositedirection(direction), stage)
       )
     }
+  }
+
+  findCompatibleWithExistingEntity(entity: AssemblyEntity, stage: StageNumber): AssemblyEntity | nil {
+    const name = entity.firstValue.name
+    return this.findCompatibleWithLuaEntity(
+      {
+        name,
+        type: nameToType.get(name) ?? "unknown",
+        position: entity.position,
+        direction: entity.getDirection(),
+        belt_to_ground_type: entity.isUndergroundBelt() ? entity.firstValue.type : nil,
+      },
+      nil,
+      stage,
+    )
   }
 
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): AssemblyEntity | nil {

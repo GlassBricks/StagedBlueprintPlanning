@@ -52,7 +52,7 @@ for (const [name, key] of pairs(defines.events)) {
   })
 }
 
-import WorldListener = require("../assembly/on-world-event")
+import WorldListener = require("../assembly/user-actions")
 
 for (const [k, v] of pairs(WorldListener)) {
   if (v == true) continue

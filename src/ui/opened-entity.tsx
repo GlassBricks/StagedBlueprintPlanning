@@ -20,7 +20,7 @@ import {
 } from "../assembly/assembly-updates"
 import { Stage } from "../assembly/AssemblyDef"
 import { checkForEntityUpdates } from "../assembly/event-listener"
-import { userMovedEntityToStage, userRevivedSettingsRemnant, userSetLastStage } from "../assembly/on-world-event"
+import { userMovedEntityToStage, userRevivedSettingsRemnant, userSetLastStage } from "../assembly/user-actions"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"

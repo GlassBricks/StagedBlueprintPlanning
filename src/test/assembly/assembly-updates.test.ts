@@ -28,7 +28,7 @@ import { createRollingStock, createRollingStocks } from "../entity/createRolling
 import { moduleMock } from "../module-mock"
 import { createMockAssembly, setupTestSurfaces } from "./Assembly-mock"
 import asmUpdates = require("../../assembly/assembly-updates")
-import _worldListener = require("../../assembly/on-world-event")
+import _worldListener = require("../../assembly/user-actions")
 import _worldUpdater = require("../../assembly/world-entity-updates")
 import _wireHandler = require("../../entity/wires")
 import direction = defines.direction

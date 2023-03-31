@@ -20,7 +20,7 @@ import {
 } from "../entity/AssemblyEntity"
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
-import { areUpgradeableTypes, nameToType } from "../entity/entity-info"
+import { areUpgradeableTypes } from "../entity/entity-info"
 import { canBeAnyDirection, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
@@ -382,19 +382,7 @@ function firstStageChangeWillIntersect(
   if (newStage >= entity.firstStage) return true
 
   // check moving down
-  const name = entity.firstValue.name
-  const foundBelow = content.findCompatibleWithLuaEntity(
-    {
-      name,
-      type: nameToType.get(name)!,
-      position: entity.position,
-      direction: entity.getDirection(),
-      belt_to_ground_type: entity.isUndergroundBelt() ? entity.firstValue.type : nil,
-    },
-    nil,
-    newStage,
-  )
-
+  const foundBelow = content.findCompatibleWithExistingEntity(entity, newStage)
   return foundBelow == nil || foundBelow == entity
 }
 
@@ -408,18 +396,7 @@ function lastStageChangeWillIntersect(
   if (lastStage == nil || (newStage != nil && newStage < lastStage)) return true
 
   // check moving up
-  const name = entity.firstValue.name
-  const foundAbove = content.findCompatibleWithLuaEntity(
-    {
-      name,
-      type: nameToType.get(name)!,
-      position: entity.position,
-      direction: entity.getDirection(),
-      belt_to_ground_type: entity.isUndergroundBelt() ? entity.firstValue.type : nil,
-    },
-    nil,
-    lastStage + 1,
-  )
+  const foundAbove = content.findCompatibleWithExistingEntity(entity, lastStage + 1)
   return foundAbove == nil || (newStage != nil && foundAbove.firstStage > newStage)
 }
 

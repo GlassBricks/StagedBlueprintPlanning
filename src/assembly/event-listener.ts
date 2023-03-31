@@ -24,6 +24,8 @@ import { assertNever, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
+import { getAssemblyPlayerData } from "./player-assembly-data"
+import { onUndoReferenceBuilt } from "./undo"
 import {
   onBringToStageUsed,
   onCircuitWiresPossiblyUpdated,
@@ -42,9 +44,7 @@ import {
   onStageDeleteUsed,
   onTryFixEntity,
   onUndergroundBeltDragRotated,
-} from "./on-world-event"
-import { getAssemblyPlayerData } from "./player-assembly-data"
-import { onUndoReferenceBuilt } from "./undo"
+} from "./user-actions"
 import { getStageAtSurface } from "./UserAssembly"
 
 const Events = ProtectedEvents

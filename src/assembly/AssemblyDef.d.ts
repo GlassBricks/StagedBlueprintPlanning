@@ -29,6 +29,8 @@ export interface Assembly {
   getStageName(stage: StageNumber): LocalisedString
   getSurface(stage: StageNumber): LuaSurface | nil
   readonly content: MutableAssemblyContent
+
+  readonly valid: boolean
 }
 export interface UserAssembly extends Assembly {
   readonly id: AssemblyId
