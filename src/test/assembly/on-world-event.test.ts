@@ -158,16 +158,39 @@ describe("onEntityCreated", () => {
 
   test.each(
     [1, 2, 3],
-    "on a settings-remnant at any stage (%d) sets entity and calls reviveSettingsRemnant",
+    "on a settings-remnant at stage (%d) sets entity and calls tryReviveSettingsRemnant",
     (newStage) => {
       const { luaEntity, entity } = addEntity(2)
       entity.isSettingsRemnant = true
 
+      assemblyUpdater.tryReviveSettingsRemnant.invokes(() => {
+        totalCalls++
+        entity.isSettingsRemnant = nil
+        return StageMoveResult.Updated
+      })
+
       worldListener.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
       expect(entity.getWorldEntity(newStage)).to.be(luaEntity)
-      expect(assemblyUpdater.reviveSettingsRemnant).calledWith(assembly, entity, newStage)
+      expect(assemblyUpdater.tryReviveSettingsRemnant).calledWith(assembly, entity, newStage)
     },
   )
+
+  test("if cannot revive settings remnant, notifies and destroys", () => {
+    const { luaEntity, entity } = addEntity(2)
+    entity.isSettingsRemnant = true
+
+    assemblyUpdater.tryReviveSettingsRemnant.invokes(() => {
+      totalCalls++
+      return StageMoveResult.IntersectsAnotherEntity
+    })
+
+    worldListener.onEntityCreated(assembly, luaEntity, 3, playerIndex)
+
+    expect(worldUpdater.refreshWorldEntityAtStage).calledWith(assembly, entity, 3)
+    assertNotified(entity, [L_Interaction.MoveWillIntersectAnotherEntity], true)
+
+    expectedCalls = 2
+  })
 
   test.each([1, 2, 3])(
     "if entity can overlap with self, adding at new direction at stage %d creates new entity",

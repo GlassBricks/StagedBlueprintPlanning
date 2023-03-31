@@ -22,10 +22,10 @@ import {
   EntityRotateResult,
   EntityUpdateResult,
   forceDeleteEntity,
-  reviveSettingsRemnant,
   setFirstStage,
   StageMoveResult,
   tryApplyUpgradeTarget,
+  tryReviveSettingsRemnant,
   tryRotateEntityToMatchWorld,
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
@@ -62,7 +62,7 @@ function onEntityOverbuilt(
 ) {
   asmEntity.replaceWorldEntity(stage, luaEntity)
   if (asmEntity.isSettingsRemnant) {
-    reviveSettingsRemnant(assembly, asmEntity, stage)
+    onSettingsRemnantRevived(assembly, asmEntity, stage, byPlayer)
   } else if (stage >= asmEntity.firstStage) {
     refreshWorldEntityAtStage(assembly, asmEntity, stage)
   } else {
@@ -324,6 +324,19 @@ function notifyIfMoveError(result: StageMoveResult, entity: AssemblyEntity, byPl
     createNotification(entity, byPlayer, [L_Interaction.MoveWillIntersectAnotherEntity], true)
   } else {
     assertNever(result)
+  }
+}
+
+export function onSettingsRemnantRevived(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex | nil,
+): void {
+  const result = tryReviveSettingsRemnant(assembly, entity, stage)
+  if (result != "updated" && result != "no-change") {
+    notifyIfMoveError(result, entity, byPlayer)
+    refreshWorldEntityAtStage(assembly, entity, stage)
   }
 }
 

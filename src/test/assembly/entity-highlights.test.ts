@@ -202,7 +202,7 @@ describe("settings remnants", () => {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.any()
     }
   })
-  test("reviveSettingsRemnant removes highlights and sets entities correct", () => {
+  test("tryReviveSettingsRemnant removes highlights and sets entities correct", () => {
     createSettingsRemnant()
     makeSettingsRemnantHighlights(assembly, entity)
     reviveSettingsRemnant()

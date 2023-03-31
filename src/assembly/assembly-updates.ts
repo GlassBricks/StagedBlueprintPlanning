@@ -95,17 +95,19 @@ export function forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): v
   deleteAllEntities(entity)
 }
 
-// todo: make use of return value
-export function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
-  if (!entity.isSettingsRemnant) return false
+export function tryReviveSettingsRemnant(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+): StageMoveResult {
+  if (!entity.isSettingsRemnant) return StageMoveResult.NoChange
   const result = checkCanSetFirstStage(assembly, entity, stage)
-  if (result != StageMoveResult.Updated && result != StageMoveResult.NoChange) {
-    return false
+  if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) {
+    entity.setFirstStageUnchecked(stage)
+    entity.isSettingsRemnant = nil
+    updateEntitiesOnSettingsRemnantRevived(assembly, entity)
   }
-  entity.setFirstStageUnchecked(stage)
-  entity.isSettingsRemnant = nil
-  updateEntitiesOnSettingsRemnantRevived(assembly, entity)
-  return true
+  return result
 }
 
 export declare const enum EntityRotateResult {

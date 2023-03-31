@@ -18,9 +18,9 @@ import {
   movePropDown,
   resetAllProps,
   resetProp,
-  reviveSettingsRemnant,
   setFirstStage,
   tryApplyUpgradeTarget,
+  tryReviveSettingsRemnant,
   tryRotateEntityToMatchWorld,
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
@@ -286,7 +286,7 @@ describe("revive integration test", () => {
     deleteEntityOrCreateSettingsRemnant(assembly, entity)
     assertIsSettingsRemnant(entity)
 
-    assert(reviveSettingsRemnant(assembly, entity, reviveStage))
+    assert(tryReviveSettingsRemnant(assembly, entity, reviveStage))
     expect(entity.isSettingsRemnant).to.be.falsy()
     expect(reviveStage).to.be(entity.firstStage)
 
@@ -310,7 +310,7 @@ describe("revive integration test", () => {
     deleteEntityOrCreateSettingsRemnant(assembly, entity)
     assertIsSettingsRemnant(entity)
 
-    reviveSettingsRemnant(assembly, entity, 1)
+    tryReviveSettingsRemnant(assembly, entity, 1)
     expect(entity.isSettingsRemnant).to.be.falsy()
     expect(1).to.be(entity.firstStage)
 

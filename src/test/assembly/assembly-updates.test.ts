@@ -220,11 +220,11 @@ test("moving entity on preview replace", () => {
   assertUpdateCalled(entity, 1)
 })
 
-test("reviveSettingsRemnant", () => {
+test("tryReviveSettingsRemnant", () => {
   const { entity } = addEntity(2)
   entity.isSettingsRemnant = true
 
-  asmUpdates.reviveSettingsRemnant(assembly, entity, 1)
+  asmUpdates.tryReviveSettingsRemnant(assembly, entity, 1)
 
   expect(entity.isSettingsRemnant).to.be.nil()
   expect(entity.firstStage).to.equal(1)
@@ -232,10 +232,10 @@ test("reviveSettingsRemnant", () => {
   assertReviveSettingsRemnantCalled(entity)
 })
 
-test("cannot reviveSettingsRemnant if still not a remnant", () => {
+test("cannot tryReviveSettingsRemnant if not a remnant", () => {
   const { entity } = addEntity(2)
 
-  expect(asmUpdates.reviveSettingsRemnant(assembly, entity, 1)).to.be(false)
+  expect(asmUpdates.tryReviveSettingsRemnant(assembly, entity, 1)).to.be(StageMoveResult.NoChange)
   assertOneEntity()
   assertWUNotCalled()
 })

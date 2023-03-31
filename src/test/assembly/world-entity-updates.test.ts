@@ -463,7 +463,7 @@ test("updateWorldEntities calls makeSettingsRemnant", () => {
   expect(highlighter.makeSettingsRemnantHighlights).calledWith(assembly, entity)
 })
 
-test("reviveSettingsRemnant revives correct entities and calls highlighter.reviveSettingsRemnant", () => {
+test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tryReviveSettingsRemnant", () => {
   entity.setFirstStageUnchecked(2)
   entity.isSettingsRemnant = true
   WorldUpdater.makeSettingsRemnant(assembly, entity)
