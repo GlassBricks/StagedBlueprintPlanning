@@ -19,7 +19,6 @@ import {
   ItemGroupPrototype,
   ItemPrototype,
   ItemSubgroupPrototype,
-  LayeredSpritePrototype,
   SelectionToolPrototype,
   ShortcutPrototype,
   SimpleEntityWithOwnerPrototype,
@@ -99,6 +98,17 @@ function selectionToolToShortcut(
     associated_control_input: associatedControl,
   }
 }
+function selectionToolToInput(prototype: Omit<SelectionToolPrototype, "type">): CustomInputPrototype {
+  return {
+    type: "custom-input",
+    name: prototype.name,
+    localised_name: ["item-name." + prototype.name],
+    key_sequence: "",
+    item_to_spawn: prototype.name,
+    action: "spawn-item",
+    order: prototype.order,
+  }
+}
 // Cleanup tool
 const cleanupToolColor = Colors.Green
 const cleanupReverseToolColor = Colors.Red
@@ -122,7 +132,7 @@ const cleanupTool: SelectionToolPrototype = {
   stack_size: 1,
 
   subgroup: "tool",
-  order: "z[bp100]-b[cleanup]",
+  order: "z[bp100]-c[cleanup]",
 
   selection_mode: ["any-entity"],
   selection_color: cleanupToolColor,
@@ -137,19 +147,8 @@ const cleanupTool: SelectionToolPrototype = {
   reverse_selection_cursor_box_type: "not-allowed",
 }
 
-const getCleanupToolInput: CustomInputPrototype = {
-  type: "custom-input",
-  name: Prototypes.CleanupTool,
-  localised_name: ["item-name." + Prototypes.CleanupTool],
-  key_sequence: "",
-  item_to_spawn: Prototypes.CleanupTool,
-  action: "spawn-item",
-  order: "a[tools]-a[cleanup]",
-}
-
 data.extend([
   cleanupTool,
-  getCleanupToolInput,
   selectionToolToShortcut(
     cleanupTool,
     {
@@ -159,7 +158,9 @@ data.extend([
     Prototypes.CleanupTool,
     "blue",
   ),
+  selectionToolToInput(cleanupTool),
 ])
+
 // Move to stage tool
 const stageMoveToolColor = Colors.Orange
 const stageMoveToolAltColor = Colors.Blueish
@@ -191,16 +192,6 @@ const stageMoveTool: SelectionToolPrototype = {
   reverse_selection_mode: ["entity-with-owner"],
 }
 
-const stageMoveToolInput: CustomInputPrototype = {
-  type: "custom-input",
-  name: Prototypes.StageMoveTool,
-  localised_name: ["item-name." + Prototypes.StageMoveTool],
-  key_sequence: "",
-  item_to_spawn: Prototypes.StageMoveTool,
-  action: "spawn-item",
-  order: "a[tools]-b[stage-move-tool]",
-}
-
 data.extend([
   stageMoveTool,
   selectionToolToShortcut(
@@ -213,7 +204,7 @@ data.extend([
     Prototypes.StageMoveTool,
     "blue",
   ),
-  stageMoveToolInput,
+  selectionToolToInput(stageMoveTool),
 ])
 
 const filteredStagedMoveTool: DeconstructionItemPrototype = {
@@ -240,7 +231,7 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-c[filtered-stage-move-tool]",
+  order: "z[bp100]-b[stage-move-tool-filtered]",
 
   selection_color: stageMoveToolColor,
   selection_cursor_box_type: "copy",
@@ -253,19 +244,8 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
   // can't do anything about alt or reverse selection mode
 }
 
-const filteredStagedMoveToolInput: CustomInputPrototype = {
-  type: "custom-input",
-  name: Prototypes.FilteredStageMoveTool,
-  localised_name: ["item-name." + Prototypes.FilteredStageMoveTool],
-  key_sequence: "",
-  item_to_spawn: Prototypes.FilteredStageMoveTool,
-  action: "spawn-item",
-  order: "a[tools]-c[stage-move-tool-filtered]",
-}
-
 data.extend([
   filteredStagedMoveTool,
-  filteredStagedMoveToolInput,
   selectionToolToShortcut(
     filteredStagedMoveTool,
     {
@@ -276,6 +256,7 @@ data.extend([
     Prototypes.FilteredStageMoveTool,
     "red",
   ),
+  selectionToolToInput(filteredStagedMoveTool),
 ])
 
 const deconstructionPlanner = table.deepcopy<DeconstructionItemPrototype>(
@@ -315,31 +296,46 @@ data.extend([
   createSprite(Sprites.CollapseLeftDark, "__bp100__/graphics/icons/collapse-left-dark.png", 32, nil, 2),
 ])
 
-function shiftedBlueprintSprite(shift: MapPositionArray): BasicSprite {
+function shiftedBlueprintSprite(shift: MapPositionArray, filename: string): BasicSprite {
   return {
-    filename: "__base__/graphics/icons/blueprint.png",
+    filename,
     size: 64,
     mipmap_count: 4,
     shift,
     scale: 0.75,
   }
 }
-const blueprintStages: LayeredSpritePrototype = {
-  type: "sprite",
-  name: Sprites.BlueprintStages,
-  layers: [
+// filename: "__base__/graphics/icons/blueprint.png",
+const blueprintFileName = "__base__/graphics/icons/blueprint.png"
+
+function stackedSpriteLayers(filename: string): (
+  | {
+      filename: string
+      size: number
+      mipmap_count: number
+      tint: [number, number, number, number]
+    }
+  | BasicSprite
+)[] {
+  return [
     {
-      filename: "__base__/graphics/icons/blueprint.png",
+      filename,
       size: 64,
       mipmap_count: 4,
       tint: [0, 0, 0, 0],
     },
-    shiftedBlueprintSprite([-6, -6]),
-    shiftedBlueprintSprite([0, 0]),
-    shiftedBlueprintSprite([6, 6]),
-  ],
+    shiftedBlueprintSprite([-6, -6], filename),
+    shiftedBlueprintSprite([0, 0], filename),
+    shiftedBlueprintSprite([6, 6], filename),
+  ]
 }
-data.extend([blueprintStages])
+data.extend([
+  {
+    type: "sprite",
+    name: Sprites.BlueprintStages,
+    layers: stackedSpriteLayers(blueprintFileName),
+  },
+])
 
 const buildInput: CustomInputPrototype = {
   type: "custom-input",
