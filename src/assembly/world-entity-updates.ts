@@ -138,6 +138,23 @@ export function updateWorldEntities(
   updateAllHighlights(assembly, entity)
 }
 
+export function updateWorldEntitiesOnLastStageChange(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  oldLastStage: StageNumber | nil,
+): void {
+  const movedDown = entity.lastStage != nil && (oldLastStage == nil || entity.lastStage < oldLastStage)
+  if (movedDown) {
+    // delete all entities after the new last stage
+    for (const stage of $range(entity.lastStage + 1, oldLastStage ?? assembly.numStages())) {
+      entity.destroyWorldOrPreviewEntity(stage)
+    }
+    updateAllHighlights(assembly, entity)
+  } else if (oldLastStage) {
+    updateWorldEntities(assembly, entity, oldLastStage + 1)
+  }
+}
+
 export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {
   return updateWorldEntities(assembly, entity, entity.firstStage, false)
 }

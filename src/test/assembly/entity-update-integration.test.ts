@@ -15,12 +15,11 @@ import {
   deleteEntityOrCreateSettingsRemnant,
   forceDeleteEntity,
   moveAllPropsDown,
-  moveEntityToStage,
-  moveFirstStageDownOnPreviewReplace,
   movePropDown,
   resetAllProps,
   resetProp,
   reviveSettingsRemnant,
+  setFirstStage,
   tryApplyUpgradeTarget,
   tryRotateEntityToMatchWorld,
   tryUpdateEntityFromWorld,
@@ -252,7 +251,7 @@ test("move via preview replace", () => {
   const entity = buildEntity(3)
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
-  moveFirstStageDownOnPreviewReplace(assembly, entity, 2)
+  setFirstStage(assembly, entity, 2)
   expect(entity.firstStage).to.be(2)
   assertEntityCorrect(entity, false)
 })
@@ -446,14 +445,14 @@ test("creating upgrade via apply upgrade target", () => {
 
 test("moving entity up", () => {
   const entity = buildEntity(3)
-  moveEntityToStage(assembly, entity, 4)
+  setFirstStage(assembly, entity, 4)
   expect(entity.firstStage).to.be(4)
   assertEntityCorrect(entity, false)
 })
 
 test("moving entity down", () => {
   const entity = buildEntity(3)
-  moveEntityToStage(assembly, entity, 2)
+  setFirstStage(assembly, entity, 2)
   expect(entity.firstStage).to.be(2)
   assertEntityCorrect(entity, false)
 })

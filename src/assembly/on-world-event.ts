@@ -22,9 +22,8 @@ import {
   EntityRotateResult,
   EntityUpdateResult,
   forceDeleteEntity,
-  moveEntityToStage,
-  moveFirstStageDownOnPreviewReplace,
   reviveSettingsRemnant,
+  setFirstStage,
   StageMoveResult,
   tryApplyUpgradeTarget,
   tryRotateEntityToMatchWorld,
@@ -49,7 +48,8 @@ function onPreviewReplaced(
   byPlayer: PlayerIndex | nil,
 ): void {
   const oldStage = entity.firstStage
-  assert(moveFirstStageDownOnPreviewReplace(assembly, entity, stage))
+  assert(setFirstStage(assembly, entity, stage) == StageMoveResult.Updated)
+
   createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
 }
 
@@ -318,6 +318,8 @@ function notifyIfMoveError(result: StageMoveResult, entity: AssemblyEntity, byPl
     createNotification(entity, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
   } else if (result == StageMoveResult.CannotMovePastLastStage) {
     createNotification(entity, byPlayer, [L_Interaction.CannotMovePastLastStage], true)
+  } else if (result == StageMoveResult.CannotMoveBeforeFirstStage) {
+    createNotification(entity, byPlayer, [L_Interaction.CannotDeleteBeforeFirstStage], true)
   } else if (result == StageMoveResult.IntersectsAnotherEntity) {
     createNotification(entity, byPlayer, [L_Interaction.MoveWillIntersectAnotherEntity], true)
   } else {
@@ -334,7 +336,7 @@ export function onMoveEntityToStageCustomInput(
   const entity = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity, stage)
   if (!entity || entity.isSettingsRemnant) return
   const oldStage = entity.firstStage
-  const result = moveEntityToStage(assembly, entity, stage)
+  const result = setFirstStage(assembly, entity, stage)
   if (result == "updated") {
     createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
   } else if (result == "no-change") {
@@ -353,7 +355,7 @@ export function onSendToStageUsed(
   if (fromStage == toStage) return
   const asmEntity = assembly.content.findExact(entity, entity.position, fromStage)
   if (!asmEntity || asmEntity.firstStage != fromStage || asmEntity.isSettingsRemnant) return
-  const result = moveEntityToStage(assembly, asmEntity, toStage)
+  const result = setFirstStage(assembly, asmEntity, toStage)
   if (result == "updated") {
     if (toStage < fromStage) createIndicator(asmEntity, byPlayer, "<<", Colors.Orange)
     return
@@ -370,7 +372,7 @@ export function onBringToStageUsed(
   if (!asmEntity || asmEntity.isSettingsRemnant) return
   const oldStage = asmEntity.firstStage
   if (oldStage == stage) return
-  const result = moveEntityToStage(assembly, asmEntity, stage)
+  const result = setFirstStage(assembly, asmEntity, stage)
   if (result == "updated") {
     if (oldStage < stage) createIndicator(asmEntity, byPlayer, ">>", Colors.Blueish)
     return

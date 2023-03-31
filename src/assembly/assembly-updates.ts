@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { AssemblyContent } from "../entity/AssemblyContent"
 import {
   AssemblyEntity,
   createAssemblyEntity,
@@ -19,12 +20,10 @@ import {
 } from "../entity/AssemblyEntity"
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
-import { areUpgradeableTypes } from "../entity/entity-info"
+import { areUpgradeableTypes, nameToType } from "../entity/entity-info"
 import { canBeAnyDirection, saveEntity } from "../entity/save-load"
-import { StageRangeChangeResult, trySetFirstStage } from "../entity/stage-range-changes"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
-import { assertNever } from "../lib"
 import { Assembly } from "./AssemblyDef"
 import {
   deleteAllEntities,
@@ -35,6 +34,7 @@ import {
   updateNewWorldEntitiesWithoutWires,
   updateWireConnections,
   updateWorldEntities,
+  updateWorldEntitiesOnLastStageChange,
 } from "./world-entity-updates"
 import min = math.min
 
@@ -67,19 +67,6 @@ export function addNewEntity(
   return assemblyEntity
 }
 
-export function moveFirstStageDownOnPreviewReplace(
-  assembly: Assembly,
-  entity: AssemblyEntity,
-  stage: StageNumber,
-): boolean {
-  if (stage >= entity.firstStage) return false
-  if (trySetFirstStage(assembly.content, entity, stage) != StageRangeChangeResult.Ok) {
-    return false
-  }
-  updateWorldEntities(assembly, entity, stage)
-  return true
-}
-
 function shouldMakeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity) {
   if (entity.hasStageDiff()) return true
   const connections = assembly.content.getCircuitConnections(entity)
@@ -108,11 +95,14 @@ export function forceDeleteEntity(assembly: Assembly, entity: AssemblyEntity): v
   deleteAllEntities(entity)
 }
 
+// todo: make use of return value
 export function reviveSettingsRemnant(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
   if (!entity.isSettingsRemnant) return false
-  if (trySetFirstStage(assembly.content, entity, stage) != StageRangeChangeResult.Ok) {
+  const result = checkCanSetFirstStage(assembly, entity, stage)
+  if (result != StageMoveResult.Updated && result != StageMoveResult.NoChange) {
     return false
   }
+  entity.setFirstStageUnchecked(stage)
   entity.isSettingsRemnant = nil
   updateEntitiesOnSettingsRemnantRevived(assembly, entity)
   return true
@@ -377,10 +367,61 @@ export declare const enum StageMoveResult {
   NoChange = "no-change",
   CannotMoveUpgradedUnderground = "cannot-move-upgraded-underground",
   CannotMovePastLastStage = "cannot-move-past-last-stage",
+  CannotMoveBeforeFirstStage = "cannot-move-before-first-stage",
   IntersectsAnotherEntity = "intersects-another-entity",
 }
 
-export function moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
+function firstStageChangeWillIntersect(
+  content: AssemblyContent,
+  entity: AssemblyEntity,
+  newStage: StageNumber,
+): boolean {
+  // moving up is ok
+  if (newStage >= entity.firstStage) return true
+
+  // check moving down
+  const name = entity.firstValue.name
+  const foundBelow = content.findCompatibleWithLuaEntity(
+    {
+      name,
+      type: nameToType.get(name)!,
+      position: entity.position,
+      direction: entity.getDirection(),
+      belt_to_ground_type: entity.isUndergroundBelt() ? entity.firstValue.type : nil,
+    },
+    nil,
+    newStage,
+  )
+
+  return foundBelow == nil || foundBelow == entity
+}
+
+function lastStageChangeWillIntersect(
+  content: AssemblyContent,
+  entity: AssemblyEntity,
+  newStage: StageNumber | nil,
+): boolean {
+  const { lastStage } = entity
+  // moving down is ok
+  if (lastStage == nil || (newStage != nil && newStage < lastStage)) return true
+
+  // check moving up
+  const name = entity.firstValue.name
+  const foundAbove = content.findCompatibleWithLuaEntity(
+    {
+      name,
+      type: nameToType.get(name)!,
+      position: entity.position,
+      direction: entity.getDirection(),
+      belt_to_ground_type: entity.isUndergroundBelt() ? entity.firstValue.type : nil,
+    },
+    nil,
+    lastStage + 1,
+  )
+  return foundAbove == nil || (newStage != nil && foundAbove.firstStage > newStage)
+}
+
+function checkCanSetFirstStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
   if (entity.isSettingsRemnant) return StageMoveResult.NoChange
   const oldStage = entity.firstStage
   if (oldStage == stage) return StageMoveResult.NoChange
@@ -389,15 +430,40 @@ export function moveEntityToStage(assembly: Assembly, entity: AssemblyEntity, st
     return StageMoveResult.CannotMoveUpgradedUnderground
   }
 
-  const moveResult = trySetFirstStage(assembly.content, entity, stage)
-  if (moveResult == StageRangeChangeResult.ViolatesStageRange) return StageMoveResult.CannotMovePastLastStage
-  if (moveResult == StageRangeChangeResult.IntersectsAnotherEntity) return StageMoveResult.IntersectsAnotherEntity
-  if (moveResult == StageRangeChangeResult.Ok) {
-    entity.setFirstStageUnchecked(stage)
-    updateWorldEntities(assembly, entity, min(oldStage, stage))
-    return StageMoveResult.Updated
+  // if (stage == entity.firstStage) return StageMoveResult.NoChange
+  if (entity.lastStage && stage > entity.lastStage) return StageMoveResult.CannotMovePastLastStage
+
+  if (!firstStageChangeWillIntersect(assembly.content, entity, stage)) {
+    return StageMoveResult.IntersectsAnotherEntity
   }
-  assertNever(moveResult)
+  return StageMoveResult.Updated
+}
+
+export function setFirstStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): StageMoveResult {
+  const result = checkCanSetFirstStage(assembly, entity, stage)
+  if (result == StageMoveResult.Updated) {
+    const stageToUpdate = min(entity.firstStage, stage)
+    entity.setFirstStageUnchecked(stage)
+    updateWorldEntities(assembly, entity, stageToUpdate)
+  }
+  return result
+}
+
+export function setLastStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber | nil): StageMoveResult {
+  if (entity.isSettingsRemnant) return StageMoveResult.NoChange
+  const oldLastStage = entity.lastStage
+  if (oldLastStage == stage) return StageMoveResult.NoChange
+  // check firstStage <= lastStage
+  if (stage != nil && stage < entity.firstStage) return StageMoveResult.CannotMoveBeforeFirstStage
+
+  if (!lastStageChangeWillIntersect(assembly.content, entity, stage)) {
+    return StageMoveResult.IntersectsAnotherEntity
+  }
+
+  entity.setLastStageUnchecked(stage)
+  updateWorldEntitiesOnLastStageChange(assembly, entity, oldLastStage)
+
+  return StageMoveResult.Updated
 }
 
 export function resetProp<T extends Entity>(

@@ -51,9 +51,9 @@ before_each(() => {
       totalCalls++
     })
   }
-  assemblyUpdater.moveFirstStageDownOnPreviewReplace.invokes(() => {
+  assemblyUpdater.setFirstStage.invokes(() => {
     totalCalls++
-    return true
+    return StageMoveResult.Updated
   })
 })
 
@@ -138,21 +138,21 @@ describe("onEntityCreated", () => {
     worldListener.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
 
     expect(entity.getWorldEntity(newStage)).to.be(luaEntity)
-    expect(assemblyUpdater.moveFirstStageDownOnPreviewReplace).calledWith(assembly, entity, newStage)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, newStage)
     assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
   test("create at lower stage can handle immediate upgrade", () => {
     const { luaEntity, entity } = addEntity(3)
-    assemblyUpdater.moveFirstStageDownOnPreviewReplace.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       luaEntity.destroy()
       entity.replaceWorldEntity(1, createWorldEntity(1))
-      return true
+      return StageMoveResult.Updated
     })
     worldListener.onEntityCreated(assembly, luaEntity, 1, playerIndex)
 
     // assert.equal(luaEntity, entity.getWorldEntity(1))
-    expect(assemblyUpdater.moveFirstStageDownOnPreviewReplace).calledWith(assembly, entity, 1)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 1)
     assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 
@@ -448,49 +448,49 @@ describe("onMoveEntityToStageCustomInput", () => {
     [StageMoveResult.CannotMoveUpgradedUnderground, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade]],
     [StageMoveResult.IntersectsAnotherEntity, [L_Interaction.MoveWillIntersectAnotherEntity]],
     [StageMoveResult.CannotMovePastLastStage, [L_Interaction.CannotMovePastLastStage]],
-  ])('calls moveEntityToStage and notifies, with result "%s"', (result, message) => {
+  ])('calls setFirstStage and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(3)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return result
     })
     worldListener.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
-    expect(assemblyUpdater.moveEntityToStage).calledWith(assembly, entity, 2)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 2)
     if (message) assertNotified(entity, message, result != "updated")
   })
 })
 describe("onSendToStageUsed", () => {
-  test("calls moveEntityToStage and notifies if sent down", () => {
+  test("calls setFirstStage and notifies if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return StageMoveResult.Updated
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onSendToStageUsed(assembly, luaEntity, 2, 1, playerIndex)
     assertIndicatorCreated(entity, "<<")
-    expect(assemblyUpdater.moveEntityToStage).calledWith(assembly, entity, 1)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 1)
   })
-  test("calls moveEntityToStage and does not notify if sent up", () => {
+  test("calls setFirstStage and does not notify if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return StageMoveResult.Updated
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onSendToStageUsed(assembly, luaEntity, 2, 3, playerIndex)
     expect(worldNotifier.createIndicator).not.called()
-    expect(assemblyUpdater.moveEntityToStage).calledWith(assembly, entity, 3)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 3)
   })
   test("ignores if not in current stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return StageMoveResult.Updated
     })
     worldListener.onSendToStageUsed(assembly, luaEntity, 3, 1, playerIndex)
-    expect(assemblyUpdater.moveEntityToStage).not.called()
+    expect(assemblyUpdater.setFirstStage).not.called()
     expectedCalls = 0
   })
   test.each<[StageMoveResult, LocalisedString]>([
@@ -500,47 +500,47 @@ describe("onSendToStageUsed", () => {
   ])("notifies error if cannot move to stage %s", (result, message) => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return result
     })
     worldListener.onSendToStageUsed(assembly, luaEntity, 2, 3, playerIndex)
-    expect(assemblyUpdater.moveEntityToStage).calledWith(assembly, entity, 3)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 3)
     assertNotified(entity, message, true)
   })
 })
 describe("onBringToStageUsed", () => {
-  test("calls moveEntityToStage when moved, and notifies if sent up", () => {
+  test("calls setFirstStage when moved, and notifies if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return StageMoveResult.Updated
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onBringToStageUsed(assembly, luaEntity, 3, playerIndex)
     assertIndicatorCreated(entity, ">>")
-    expect(assemblyUpdater.moveEntityToStage).calledWith(assembly, entity, 3)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 3)
   })
-  test("calls moveEntityToStage and does not notify if sent down", () => {
+  test("calls setFirstStage and does not notify if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return StageMoveResult.Updated
     })
     entity.replaceWorldEntity(2, luaEntity)
     worldListener.onBringToStageUsed(assembly, luaEntity, 1, playerIndex)
     expect(worldNotifier.createIndicator).not.called()
-    expect(assemblyUpdater.moveEntityToStage).calledWith(assembly, entity, 1)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 1)
   })
   test("ignores if called at same stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return StageMoveResult.Updated
     })
     worldListener.onBringToStageUsed(assembly, luaEntity, 2, playerIndex)
-    expect(assemblyUpdater.moveEntityToStage).not.called()
+    expect(assemblyUpdater.setFirstStage).not.called()
     expectedCalls = 0
   })
 
@@ -551,12 +551,12 @@ describe("onBringToStageUsed", () => {
   ])("notifies error if cannot move to stage %s", (result, message) => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    assemblyUpdater.moveEntityToStage.invokes(() => {
+    assemblyUpdater.setFirstStage.invokes(() => {
       totalCalls++
       return result
     })
     worldListener.onBringToStageUsed(assembly, luaEntity, 3, playerIndex)
-    expect(assemblyUpdater.moveEntityToStage).calledWith(assembly, entity, 3)
+    expect(assemblyUpdater.setFirstStage).calledWith(assembly, entity, 3)
     assertNotified(entity, message, true)
   })
 })

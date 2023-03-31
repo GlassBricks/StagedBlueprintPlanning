@@ -201,24 +201,17 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   return { entity, luaEntity }
 }
 
-test("moveEntityOnPreviewReplace", () => {
+test("moving entity on preview replace", () => {
   const { entity } = addEntity(2)
 
-  assert(asmUpdates.moveFirstStageDownOnPreviewReplace(assembly, entity, 1))
+  // assert(asmUpdates.moveFirstStageDownOnPreviewReplace(assembly, entity, 1))
+  expect(asmUpdates.setFirstStage(assembly, entity, 1)).to.be(StageMoveResult.Updated)
 
   expect(entity.firstStage).to.equal(1)
   expect((entity.firstValue as BlueprintEntity).override_stack_size).to.be(1)
   expect(entity.hasStageDiff()).to.be(false)
   assertOneEntity()
   assertUpdateCalled(entity, 1)
-})
-
-test("cannot moveEntityOnPreviewReplace to a higher stage", () => {
-  const { entity } = addEntity(2)
-
-  expect(asmUpdates.moveFirstStageDownOnPreviewReplace(assembly, entity, 3)).to.be(false)
-  assertOneEntity()
-  assertWUNotCalled()
 })
 
 test("reviveSettingsRemnant", () => {
@@ -619,10 +612,10 @@ describe("updateWiresFromWorld", () => {
   // )
 })
 
-describe("moveEntityToStage", () => {
+describe("setFirstStage", () => {
   test("can move up", () => {
     const { entity } = addEntity(1)
-    const result = asmUpdates.moveEntityToStage(assembly, entity, 2)
+    const result = asmUpdates.setFirstStage(assembly, entity, 2)
     expect(result).to.be("updated")
     expect(entity.firstStage).to.be(2)
     assertOneEntity()
@@ -631,7 +624,7 @@ describe("moveEntityToStage", () => {
 
   test("can move down to preview", () => {
     const { entity } = addEntity(4)
-    asmUpdates.moveEntityToStage(assembly, entity, 3)
+    asmUpdates.setFirstStage(assembly, entity, 3)
     expect(entity.firstStage).to.be(3)
     assertOneEntity()
     assertUpdateCalled(entity, 3)
@@ -640,7 +633,7 @@ describe("moveEntityToStage", () => {
   test("ignores settings remnants", () => {
     const { entity } = addEntity(1)
     entity.isSettingsRemnant = true
-    asmUpdates.moveEntityToStage(assembly, entity, 2)
+    asmUpdates.setFirstStage(assembly, entity, 2)
     expect(entity.firstStage).to.be(1)
     assertOneEntity()
     assertWUNotCalled()
@@ -648,7 +641,7 @@ describe("moveEntityToStage", () => {
 
   test("returns no-change if already at stage", () => {
     const { entity } = addEntity(1)
-    const result = asmUpdates.moveEntityToStage(assembly, entity, 1)
+    const result = asmUpdates.setFirstStage(assembly, entity, 1)
     expect(result).to.be(StageMoveResult.NoChange)
   })
 
@@ -657,18 +650,45 @@ describe("moveEntityToStage", () => {
     entity1.setLastStageUnchecked(2)
     const { entity: entity2 } = addEntity(3) // prevents moving up
 
-    const result = asmUpdates.moveEntityToStage(assembly, entity2, 2)
+    const result = asmUpdates.setFirstStage(assembly, entity2, 2)
     expect(result).to.be(StageMoveResult.IntersectsAnotherEntity)
   })
 
   test("cannot move past last stage", () => {
     const { entity } = addEntity(1)
     entity.setLastStageUnchecked(2)
-    const result = asmUpdates.moveEntityToStage(assembly, entity, 5)
+    const result = asmUpdates.setFirstStage(assembly, entity, 5)
     expect(result).to.be(StageMoveResult.CannotMovePastLastStage)
   })
 })
 
+// todo: last stage
+
+// test("trySetLastStage", () => {
+//   const entity1 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 2)
+//   entity1.setLastStageUnchecked(2)
+//   const entity2 = createAssemblyEntity({ name: "foo" }, { x: 0, y: 0 }, nil, 4)
+//   entity2.setLastStageUnchecked(5)
+//
+//   content.add(entity1)
+//   content.add(entity2)
+//
+//   expect(trySetLastStage(content, entity1, 1)).toBe(StageRangeChangeResult.ViolatesStageRange)
+//   expect(entity1.lastStage).toBe(2)
+//
+//   expect(trySetLastStage(content, entity1, 2)).toBe(StageRangeChangeResult.Ok)
+//   expect(entity1.lastStage).toBe(2)
+//
+//   expect(trySetLastStage(content, entity1, 4)).toBe(StageRangeChangeResult.IntersectsAnotherEntity)
+//   expect(entity1.lastStage).toBe(2)
+//
+//   expect(trySetLastStage(content, entity1, nil)).toBe(StageRangeChangeResult.IntersectsAnotherEntity)
+//   expect(entity1.lastStage).toBe(2)
+//
+//   expect(trySetLastStage(content, entity1, 3)).toBe(StageRangeChangeResult.Ok)
+//   expect(entity1.lastStage).toBe(3)
+// })
+//
 describe("undergrounds", () => {
   before_each(() => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
@@ -1033,7 +1053,7 @@ describe("undergrounds", () => {
     entity1.applyUpgradeAtStage(2, "fast-underground-belt")
     entity2.applyUpgradeAtStage(2, "fast-underground-belt")
 
-    const ret = asmUpdates.moveEntityToStage(assembly, entity1, 2)
+    const ret = asmUpdates.setFirstStage(assembly, entity1, 2)
     expect(ret).to.be("cannot-move-upgraded-underground")
 
     expect(entity1.firstStage).to.be(1)

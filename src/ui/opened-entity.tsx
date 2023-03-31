@@ -12,12 +12,12 @@
 import {
   forceDeleteEntity,
   moveAllPropsDown,
-  moveEntityToStage,
   movePropDown,
   resetAllProps,
   resetProp,
   resetTrain,
   reviveSettingsRemnant,
+  setFirstStage,
   setTrainLocationToCurrent,
 } from "../assembly/assembly-updates"
 import { Stage } from "../assembly/AssemblyDef"
@@ -165,7 +165,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (this.entity.isSettingsRemnant) {
       reviveSettingsRemnant(this.stage.assembly, this.entity, this.stage.stageNumber)
     } else {
-      moveEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber)
+      setFirstStage(this.stage.assembly, this.entity, this.stage.stageNumber)
     }
     this.rerender(false)
   }
