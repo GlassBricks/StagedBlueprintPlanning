@@ -87,10 +87,13 @@ export function doModuleMock<T extends object>(module: T, stub: boolean): Mocked
 export function moduleMock<T extends object>(module: T, stub: boolean): MockedModule<T> {
   const result: Record<keyof any, any> = {}
   checkIsMockable(module)
-  before_each(() => {
+  before_all(() => {
     mockModuleToResult(module, stub, result)
   })
-  after_each(() => {
+  before_each(() => {
+    clearModuleMock(module)
+  })
+  after_all(() => {
     resetModuleMock(module)
   })
   return result as any

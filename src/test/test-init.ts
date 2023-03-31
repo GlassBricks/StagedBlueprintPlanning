@@ -13,7 +13,7 @@ import { UserAssembly } from "../assembly/AssemblyDef"
 import { deleteAllFreeSurfaces } from "../assembly/surfaces"
 import { UndoHandler } from "../assembly/undo"
 import { createUserAssembly } from "../assembly/UserAssembly"
-import { destroyAllRenders, Events } from "../lib"
+import { destroyAllRenders, Events, shallowCompare } from "../lib"
 import { Migrations } from "../lib/migration"
 import { refreshCurrentAssembly } from "../ui/AssemblySettings"
 import { teleportToAssembly } from "../ui/player-current-stage"
@@ -201,13 +201,28 @@ function setupManualTests(_assembly: UserAssembly) {
   // createEntityWithChanges()
 }
 
-const registerUndo = UndoHandler<string>("in-world-test", (player, data) => {
+const TestUndo = UndoHandler<string>("in-world-test", (player, data) => {
   player.print(`Test undo: ${data}`)
 })
 
 commands.add_command("test-undo", "", (e) => {
   const player = game.player!
   const param = e.parameter ?? "no param"
-  registerUndo(player, param)
+  TestUndo.register(player, param)
   player.print(`Setup undo with: ${param}`)
+})
+
+Events.on_built_entity((e) => {
+  if (e.created_entity.valid && e.created_entity.name == "assembling-machine-3") {
+    const player = game.get_player(e.player_index)!
+    player.request_translation(["bp100-undo-later-test"])
+    // registerUndo(player, "built")
+  }
+})
+
+Events.on_string_translated((e) => {
+  if (shallowCompare(e.localised_string, ["bp100-undo-later-test"])) {
+    const player = game.get_player(e.player_index)!
+    TestUndo.register(player, "build after translation")
+  }
 })

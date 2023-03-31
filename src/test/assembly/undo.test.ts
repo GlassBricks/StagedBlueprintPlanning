@@ -10,41 +10,43 @@
  */
 
 import expect, { mock, MockNoSelf } from "tstl-expect"
-import { UndoHandler } from "../../assembly/undo"
-import { Prototypes } from "../../constants"
+import { _simulateUndo, UndoHandler } from "../../assembly/undo"
 
 let fn: MockNoSelf<(playerIndex: PlayerIndex, data: string) => void>
-const registerTestUndo = UndoHandler("<undo test>", (player, data: string) => {
+const TestUndo = UndoHandler("<undo test>", (player, data: string) => {
   fn?.(player.index, data)
 })
 before_each(() => {
   fn = mock.fnNoSelf()
 })
 
-function simulateUndo(player: LuaPlayer, index: number) {
-  player.cursor_stack!.set_stack(Prototypes.UndoReference)
-  player.build_from_cursor({
-    position: [index, 0],
-  })
-}
-
 test("can run undo action", () => {
   const player = game.players[1]
-  const index = registerTestUndo(player, "test data")
+  TestUndo.register(player, "test data")
 
-  simulateUndo(player, index)
+  _simulateUndo(player)
 
   expect(fn).toHaveBeenCalledWith(1, "test data")
 })
 
 test("can run multiple undo actions", () => {
   const player = game.players[1]
-  const index1 = registerTestUndo(player, "test data 1")
-  const index2 = registerTestUndo(player, "test data 2")
+  const index1 = TestUndo.register(player, "test data 1")
+  const index2 = TestUndo.register(player, "test data 2")
 
-  simulateUndo(player, index2)
-  simulateUndo(player, index1)
+  _simulateUndo(player, index2)
+  _simulateUndo(player, index1)
 
   expect(fn).nthCalledWith(1, 1, "test data 2")
   expect(fn).nthCalledWith(2, 1, "test data 1")
+})
+
+test("can register future undo actions", () => {
+  const player = game.players[1]
+  TestUndo.registerLater(player, "test data")
+  after_ticks(1, () => {
+    _simulateUndo(player)
+
+    expect(fn).toHaveBeenCalledWith(1, "test data")
+  })
 })
