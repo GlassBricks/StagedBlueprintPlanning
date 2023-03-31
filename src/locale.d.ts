@@ -11,7 +11,7 @@ export declare const enum L_ItemName {
   /** Blueprint filters */
   BlueprintFilters = "item-name.bp100:blueprint-filters",
   /** Stage delete tool */
-  StageDeconstructionTool = "item-name.bp100:stage-deconstruction-tool",
+  StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
 }
 export declare const enum L_ShortcutName {
   /** Build cleanup tool */
@@ -21,7 +21,7 @@ export declare const enum L_ShortcutName {
   /** Filtered stage move tool */
   FilteredStageMoveTool = "shortcut-name.bp100:filtered-stage-move-tool",
   /** Stage delete tool */
-  StageDeconstructionTool = "shortcut-name.bp100:stage-deconstruction-tool",
+  StageDeconstructTool = "shortcut-name.bp100:stage-deconstruct-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
