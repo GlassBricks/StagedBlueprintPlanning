@@ -584,7 +584,7 @@ describe("onBringToStageUsed", () => {
   })
 })
 
-describe("onEntityStageDeleteUsed", () => {
+describe("onStageDeleteUsed", () => {
   test("can set stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
@@ -592,7 +592,7 @@ describe("onEntityStageDeleteUsed", () => {
       totalCalls++
       return StageMoveResult.Updated
     })
-    worldListener.onEntityStageDeleteUsed(assembly, luaEntity, 2, playerIndex)
+    worldListener.onStageDeleteUsed(assembly, luaEntity, 2, playerIndex)
     expect(assemblyUpdater.trySetLastStage).calledWith(assembly, entity, 1)
   })
 
@@ -603,11 +603,51 @@ describe("onEntityStageDeleteUsed", () => {
       totalCalls++
       return StageMoveResult.CannotMoveBeforeFirstStage
     })
-    worldListener.onEntityStageDeleteUsed(assembly, luaEntity, 2, playerIndex)
+    worldListener.onStageDeleteUsed(assembly, luaEntity, 2, playerIndex)
     expect(assemblyUpdater.trySetLastStage).calledWith(assembly, entity, 1)
     assertNotified(entity, [L_Interaction.CannotDeleteBeforeFirstStage], true)
   })
 })
+describe("onStageDeleteCancelUsed", () => {
+  test("can clear last stage", () => {
+    const { entity, luaEntity } = addEntity(2)
+    entity.replaceWorldEntity(2, luaEntity)
+    entity.setLastStageUnchecked(2)
+    assemblyUpdater.trySetLastStage.invokes(() => {
+      totalCalls++
+      return StageMoveResult.Updated
+    })
+    worldListener.onStageDeleteCancelUsed(assembly, luaEntity, 2, playerIndex)
+    expect(assemblyUpdater.trySetLastStage).calledWith(assembly, entity, nil)
+  })
+
+  test("notifies if error", () => {
+    const { entity, luaEntity } = addEntity(2)
+    entity.replaceWorldEntity(2, luaEntity)
+    entity.setLastStageUnchecked(2)
+    assemblyUpdater.trySetLastStage.invokes(() => {
+      totalCalls++
+      return StageMoveResult.IntersectsAnotherEntity
+    })
+    worldListener.onStageDeleteCancelUsed(assembly, luaEntity, 2, playerIndex)
+    expect(assemblyUpdater.trySetLastStage).calledWith(assembly, entity, nil)
+    assertNotified(entity, [L_Interaction.MoveWillIntersectAnotherEntity], true)
+  })
+
+  test("ignores if selected stage is not entity's last stage", () => {
+    const { entity, luaEntity } = addEntity(2)
+    entity.replaceWorldEntity(2, luaEntity)
+    entity.setLastStageUnchecked(2)
+    assemblyUpdater.trySetLastStage.invokes(() => {
+      totalCalls++
+      return StageMoveResult.Updated
+    })
+    worldListener.onStageDeleteCancelUsed(assembly, luaEntity, 1, playerIndex)
+    expect(assemblyUpdater.trySetLastStage).not.called()
+    expectedCalls = 0
+  })
+})
+
 describe("onEntityDollied", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)

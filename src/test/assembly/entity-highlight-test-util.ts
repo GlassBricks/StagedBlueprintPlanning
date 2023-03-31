@@ -67,3 +67,26 @@ export function assertErrorHighlightsCorrect(entity: AssemblyEntity, maxStage: S
     }
   }
 }
+
+export function assertLastStageHighlightCorrect(entity: AssemblyEntity): void {
+  if (entity.lastStage != nil && entity.lastStage != entity.firstStage) {
+    const highlight = expect(entity.getExtraEntity("stageDeleteHighlight", entity.lastStage)).to.be.any().getValue()!
+    expect(highlight).toMatchTable({
+      object_name: "_RenderObj",
+      sprite: HighlightConstants.DeletedNextStage,
+    })
+  } else {
+    expect(entity.hasAnyExtraEntities("stageDeleteHighlight")).to.be(false)
+  }
+}
+
+export function assertNoHighlightsAfterLastStage(entity: AssemblyEntity, maxStage: StageNumber): void {
+  if (!entity.lastStage) return
+  for (const stage of $range(entity.lastStage + 1, maxStage)) {
+    expect(entity.getExtraEntity("configChangedHighlight", stage)).to.be.nil()
+    expect(entity.getExtraEntity("configChangedLaterHighlight", stage)).to.be.nil()
+    expect(entity.getExtraEntity("errorOutline", stage)).to.be.nil()
+    expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.nil()
+    expect(entity.getExtraEntity("stageDeleteHighlight", stage)).to.be.nil()
+  }
+}

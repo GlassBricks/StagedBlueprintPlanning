@@ -26,6 +26,7 @@ import {
   updateWiresFromWorld,
 } from "../../assembly/assembly-updates"
 import { UserAssembly } from "../../assembly/AssemblyDef"
+import { userSetLastStage } from "../../assembly/on-world-event"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {
   clearWorldEntityAtStage,
@@ -40,9 +41,15 @@ import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../e
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { isPreviewEntity } from "../../entity/entity-info"
 import { saveEntity } from "../../entity/save-load"
+import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
-import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
+import {
+  assertConfigChangedHighlightsCorrect,
+  assertErrorHighlightsCorrect,
+  assertLastStageHighlightCorrect,
+  assertNoHighlightsAfterLastStage,
+} from "./entity-highlight-test-util"
 import direction = defines.direction
 
 let assembly: UserAssembly
@@ -110,8 +117,15 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
 
   expect(hasMissing).to.be(expectedHasMissing)
 
-  assertErrorHighlightsCorrect(entity, 6)
-  assertConfigChangedHighlightsCorrect(entity, 6)
+  // nothing after last stage
+  for (const stage of $range(assembly.lastStageFor(entity) + 1, assembly.numStages())) {
+    expect(entity.getWorldOrPreviewEntity(stage)).to.be.nil()
+  }
+
+  assertErrorHighlightsCorrect(entity, assembly.lastStageFor(entity))
+  assertConfigChangedHighlightsCorrect(entity, assembly.lastStageFor(entity))
+  assertLastStageHighlightCorrect(entity)
+  assertNoHighlightsAfterLastStage(entity, assembly.numStages())
 
   // cables
   const cableConnections = assembly.content.getCableConnections(entity)
@@ -833,4 +847,38 @@ test("pasting diagonal rail at same position but different direction", () => {
     direction: defines.direction.southwest,
   })
   expect(rail2).not.toBeNil()
+})
+
+test("using stage delete tool", () => {
+  const player = game.players[1]
+  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  Events.raiseFakeEventNamed("on_player_selected_area", {
+    player_index: player.index,
+    item: Prototypes.StageDeconstructTool,
+    entities: [entity.getWorldEntity(3)!],
+    tiles: [],
+    surface: surfaces[2],
+    area: { left_top: pos, right_bottom: pos },
+  })
+
+  expect(entity.lastStage).toBe(2)
+  assertEntityCorrect(entity, false)
+})
+
+test("using stage delete tool alt select", () => {
+  const player = game.players[1]
+  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  userSetLastStage(assembly, entity, 3, player.index)
+
+  Events.raiseFakeEventNamed("on_player_alt_selected_area", {
+    player_index: player.index,
+    item: Prototypes.StageDeconstructTool,
+    entities: [entity.getWorldEntity(3)!],
+    tiles: [],
+    surface: surfaces[2],
+    area: { left_top: pos, right_bottom: pos },
+  })
+
+  expect(entity.lastStage).toBe(nil)
+  assertEntityCorrect(entity, false)
 })

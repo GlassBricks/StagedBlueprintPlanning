@@ -79,5 +79,14 @@ if (!script.active_mods.debugadapter) {
   }
 }
 
+export function deleteAllFreeSurfaces(): void {
+  if (global.freeSurfaces) {
+    for (const surface of global.freeSurfaces) {
+      if (surface.valid) game.delete_surface(surface)
+    }
+    delete global.freeSurfaces
+  }
+}
+
 export const createStageSurface = surfaceCreator.createSurface
 export const destroySurface = surfaceCreator.destroySurface

@@ -543,6 +543,45 @@ describe("revives ghost undergrounds", () => {
   })
 })
 
+describe("stage delete tool", () => {
+  test("delete", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    expect(entity).to.be.any()
+    player.cursor_stack!.set_stack(Prototypes.StageDeconstructTool)
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.StageDeconstructTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+    })
+    expect(WorldListener.onStageDeleteUsed).calledWith(assembly, entity, 1, 1)
+  })
+  test("cancel", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    expect(entity).to.be.any()
+    player.cursor_stack!.set_stack(Prototypes.StageDeconstructTool)
+    Events.raiseFakeEventNamed("on_player_alt_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.StageDeconstructTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+    })
+    expect(WorldListener.onStageDeleteCancelUsed).calledWith(assembly, entity, 1, 1)
+  })
+})
+
 describe("blueprint paste", () => {
   // note: this currently relies on editor mode, instant blueprint paste enabled
   const pos: PositionClass = Pos(4.5, 0.5)

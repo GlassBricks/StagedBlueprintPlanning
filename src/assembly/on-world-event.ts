@@ -402,7 +402,7 @@ export function onBringToStageUsed(
   notifyIfMoveError(result, asmEntity, byPlayer)
 }
 
-export function onEntityStageDeleteUsed(
+export function onStageDeleteUsed(
   assembly: Assembly,
   entity: LuaEntity,
   stage: StageNumber,
@@ -412,6 +412,17 @@ export function onEntityStageDeleteUsed(
   if (!asmEntity || asmEntity.isSettingsRemnant) return
   const newLastStage = stage - 1
   userSetLastStage(assembly, asmEntity, newLastStage, byPlayer)
+}
+
+export function onStageDeleteCancelUsed(
+  assembly: Assembly,
+  entity: LuaEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex,
+): void {
+  const asmEntity = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+  if (!asmEntity || asmEntity.isSettingsRemnant || asmEntity.lastStage != stage) return
+  userSetLastStage(assembly, asmEntity, nil, byPlayer)
 }
 
 export function userSetLastStage(

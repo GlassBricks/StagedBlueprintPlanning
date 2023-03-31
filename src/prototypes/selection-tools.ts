@@ -243,7 +243,7 @@ const stageDeleteTool: SelectionToolPrototype = {
 
   alt_selection_color: deconstructionPlanner.alt_selection_color,
   alt_selection_cursor_box_type: "not-allowed",
-  alt_selection_mode: ["nothing"],
+  alt_selection_mode: ["blueprint"],
 
   reverse_selection_color: deconstructionPlanner.reverse_selection_color,
   reverse_selection_cursor_box_type: "not-allowed",

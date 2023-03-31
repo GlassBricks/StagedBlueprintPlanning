@@ -36,9 +36,10 @@ import {
   onEntityMarkedForUpgrade,
   onEntityPossiblyUpdated,
   onEntityRotated,
-  onEntityStageDeleteUsed,
   onMoveEntityToStageCustomInput,
   onSendToStageUsed,
+  onStageDeleteCancelUsed,
+  onStageDeleteUsed,
   onTryFixEntity,
   onUndergroundBeltDragRotated,
 } from "./on-world-event"
@@ -901,7 +902,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   }
 })
 
-// Stage move tool
+// Stage move tool, stage deconstruct tool
 
 function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
@@ -925,7 +926,7 @@ function stageDeleteToolUsed(e: OnPlayerSelectedAreaEvent): void {
   if (!stage) return
   const { stageNumber, assembly } = stage
   for (const entity of e.entities) {
-    onEntityStageDeleteUsed(assembly, entity, stageNumber, e.player_index)
+    onStageDeleteUsed(assembly, entity, stageNumber, e.player_index)
   }
 }
 
@@ -937,8 +938,7 @@ Events.on_player_selected_area((e) => {
   }
 })
 
-function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
-  if (e.item != Prototypes.StageMoveTool) return
+function stageMoveToolAltUsed(e: OnPlayerAltSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
 
@@ -947,8 +947,28 @@ function checkMoveToolAlt(e: OnPlayerAltSelectedAreaEvent): void {
     onBringToStageUsed(assembly, entity, stageNumber, e.player_index)
   }
 }
-Events.on_player_alt_selected_area(checkMoveToolAlt)
-Events.on_player_reverse_selected_area(checkMoveToolAlt)
+function stageDeleteToolAltUsed(e: OnPlayerAltSelectedAreaEvent): void {
+  const stage = getStageAtSurface(e.surface.index)
+  if (!stage) return
+
+  const { stageNumber, assembly } = stage
+  for (const entity of e.entities) {
+    onStageDeleteCancelUsed(assembly, entity, stageNumber, e.player_index)
+  }
+}
+
+Events.on_player_alt_selected_area((e) => {
+  if (e.item == Prototypes.StageMoveTool) {
+    stageMoveToolAltUsed(e)
+  } else if (e.item == Prototypes.StageDeconstructTool) {
+    stageDeleteToolAltUsed(e)
+  }
+})
+Events.on_player_reverse_selected_area((e) => {
+  if (e.item == Prototypes.StageMoveTool) {
+    stageMoveToolAltUsed(e)
+  }
+})
 // Filtered stage move tool
 Events.on_marked_for_deconstruction((e) => {
   const playerIndex = e.player_index

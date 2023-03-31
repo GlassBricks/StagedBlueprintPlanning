@@ -10,6 +10,7 @@
  */
 
 import { UserAssembly } from "../assembly/AssemblyDef"
+import { deleteAllFreeSurfaces } from "../assembly/surfaces"
 import { createUserAssembly } from "../assembly/UserAssembly"
 import { destroyAllRenders, Events } from "../lib"
 import { Migrations } from "../lib/migration"
@@ -108,6 +109,8 @@ if (script.active_mods.testorio != nil) {
         game.surfaces[1].clear()
         const player = game.players[1]
         player.gui.screen["testorio:test-progress"]?.destroy()
+
+        deleteAllFreeSurfaces()
 
         const assembly = createUserAssembly("Test", 5)
         teleportToAssembly(player, assembly)

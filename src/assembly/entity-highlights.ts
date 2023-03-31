@@ -63,7 +63,7 @@ export const enum HighlightConstants {
   ErrorInOtherStage = "utility/danger_icon",
   ConfigChangedLater = "item/blueprint",
   UpgradedLater = "item/upgrade-planner",
-  DeletedLater = "item/deconstruction-planner",
+  DeletedNextStage = "item/deconstruction-planner",
 }
 const highlightConfigs: {
   [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig
@@ -96,7 +96,7 @@ const highlightConfigs: {
   },
   stageDeleteHighlight: {
     type: "sprite",
-    sprite: HighlightConstants.DeletedLater,
+    sprite: HighlightConstants.DeletedNextStage,
     offset: { x: 0.8, y: 0.8 },
     scale: 0.5,
     renderLayer: "entity-info-icon-above",
