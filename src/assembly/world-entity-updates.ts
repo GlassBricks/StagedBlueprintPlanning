@@ -149,10 +149,10 @@ export function updateWorldEntitiesOnLastStageChanged(
     for (const stage of $range(entity.lastStage + 1, oldLastStage ?? assembly.numStages())) {
       entity.destroyWorldOrPreviewEntity(stage)
     }
-    updateAllHighlights(assembly, entity)
   } else if (oldLastStage) {
     updateWorldEntities(assembly, entity, oldLastStage + 1)
   }
+  updateAllHighlights(assembly, entity)
 }
 
 export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {

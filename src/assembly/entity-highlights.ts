@@ -23,13 +23,16 @@ export interface HighlightEntities {
   /** Indicator sprite when there is an error highlight in another stage. */
   errorElsewhereIndicator?: SpriteRender
 
-  /** Blue outline when a settings remnant entity is left behind. */
+  /** White outline when a settings remnant entity is left behind. */
   settingsRemnantHighlight?: HighlightBoxEntity
 
-  /** Blue outline when an entity's settings have changed. */
+  /** Blue/green outline when an entity's settings have changed; green if is upgrade */
   configChangedHighlight?: HighlightBoxEntity
   /** Blueprint sprite when an entity's settings have changed in a future stage. */
   configChangedLaterHighlight?: SpriteRender
+
+  /** Deconstruction planner sprite when an entity is deleted in the next stage (lastStage is set). Ignored if lastStage == firstStage. */
+  stageDeleteHighlight?: SpriteRender
 }
 declare module "../entity/AssemblyEntity" {
   // noinspection JSUnusedGlobalSymbols
@@ -52,7 +55,7 @@ interface SpriteConfig {
   readonly renderLayer: RenderLayer
 }
 
-export const enum HighlightValues {
+export const enum HighlightConstants {
   Error = "not-allowed",
   SettingsRemnant = "train-visualization",
   ConfigChanged = "logistics",
@@ -60,33 +63,41 @@ export const enum HighlightValues {
   ErrorInOtherStage = "utility/danger_icon",
   ConfigChangedLater = "item/blueprint",
   UpgradedLater = "item/upgrade-planner",
+  DeletedLater = "item/deconstruction-planner",
 }
 const highlightConfigs: {
   [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig
 } = {
   errorOutline: {
     type: "highlight",
-    renderType: HighlightValues.Error,
+    renderType: HighlightConstants.Error,
   },
   errorElsewhereIndicator: {
     type: "sprite",
-    sprite: HighlightValues.ErrorInOtherStage,
+    sprite: HighlightConstants.ErrorInOtherStage,
     offset: { x: 0.2, y: 0.1 },
     scale: 0.3,
     renderLayer: "entity-info-icon-above",
   },
   settingsRemnantHighlight: {
     type: "highlight",
-    renderType: HighlightValues.SettingsRemnant,
+    renderType: HighlightConstants.SettingsRemnant,
   },
   configChangedHighlight: {
     type: "highlight",
-    renderType: HighlightValues.ConfigChanged,
+    renderType: HighlightConstants.ConfigChanged,
   },
   configChangedLaterHighlight: {
     type: "sprite",
-    sprite: HighlightValues.ConfigChangedLater,
+    sprite: HighlightConstants.ConfigChangedLater,
     offset: { x: 0.8, y: 0.1 },
+    scale: 0.5,
+    renderLayer: "entity-info-icon-above",
+  },
+  stageDeleteHighlight: {
+    type: "sprite",
+    sprite: HighlightConstants.DeletedLater,
+    offset: { x: 0.8, y: 0.8 },
     scale: 0.5,
     renderLayer: "entity-info-icon-above",
   },
@@ -149,7 +160,7 @@ function updateHighlight(
   return nil
 }
 
-function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
+export function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
   let hasErrorAnywhere = false
   for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
     const hasError = entityHasErrorAt(entity, stage)
@@ -167,7 +178,7 @@ function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
   }
 }
 
-function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): void {
+export function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): void {
   if (!entity.hasStageDiff()) {
     entity.destroyAllExtraEntities("configChangedHighlight")
     entity.destroyAllExtraEntities("configChangedLaterHighlight")
@@ -187,13 +198,13 @@ function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): 
     )
     if (highlight) {
       ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
-        ? HighlightValues.Upgraded
-        : HighlightValues.ConfigChanged
+        ? HighlightConstants.Upgraded
+        : HighlightConstants.ConfigChanged
     }
     if (!hasConfigChanged) continue
 
     // update configChangedLaterHighlights in previous stages
-    const sprite = isUpgrade ? HighlightValues.UpgradedLater : HighlightValues.ConfigChangedLater
+    const sprite = isUpgrade ? HighlightConstants.UpgradedLater : HighlightConstants.ConfigChangedLater
     for (; lastStageWithHighlights < stage; lastStageWithHighlights++) {
       const highlight = updateHighlight(
         entity,
@@ -218,10 +229,20 @@ function updateStageDiffHighlights(assembly: Assembly, entity: AssemblyEntity): 
   }
 }
 
+export function updateStageDeleteIndicator(assembly: Assembly, entity: AssemblyEntity): void {
+  entity.destroyAllExtraEntities("stageDeleteHighlight")
+  if (entity.lastStage != nil && entity.lastStage != entity.firstStage) {
+    const stage = entity.lastStage
+    const surface = assembly.getSurface(stage)!
+    createHighlight(entity, stage, surface, "stageDeleteHighlight")
+  }
+}
+
 export function updateAllHighlights(assembly: Assembly, entity: AssemblyEntity): void {
   // ignore start and end stage for now
   updateErrorOutlines(assembly, entity)
   updateStageDiffHighlights(assembly, entity)
+  updateStageDeleteIndicator(assembly, entity)
 }
 
 export function deleteAllHighlights(entity: AssemblyEntity): void {

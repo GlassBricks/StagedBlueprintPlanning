@@ -186,6 +186,29 @@ describe("config changed highlight", () => {
     expect(entity.getExtraEntity("configChangedLaterHighlight", 1)).to.be.nil()
   })
 })
+
+describe("stage delete highlights", () => {
+  test("sets highlight if lastStage is set", () => {
+    entity.setLastStageUnchecked(3)
+    updateAllHighlights(assembly, entity)
+    expect(entity.getExtraEntity("stageDeleteHighlight", 3)).to.be.any()
+  })
+
+  test("removes highlight if lastStage is cleared", () => {
+    entity.setLastStageUnchecked(3)
+    updateAllHighlights(assembly, entity)
+    entity.setLastStageUnchecked(nil)
+    updateAllHighlights(assembly, entity)
+    expect(entity.getExtraEntity("stageDeleteHighlight", 3)).to.be.nil()
+  })
+
+  test("does not create highlight if lastStage == firstStage", () => {
+    entity.setLastStageUnchecked(2)
+    updateAllHighlights(assembly, entity)
+    expect(entity.getExtraEntity("stageDeleteHighlight", 2)).to.be.nil()
+  })
+})
+
 describe("settings remnants", () => {
   function createSettingsRemnant() {
     entity.isSettingsRemnant = true
