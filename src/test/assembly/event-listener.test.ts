@@ -46,7 +46,7 @@ let expectedNumCalls = 1
 before_each(() => {
   expectedNumCalls = 1
   surface.find_entities().forEach((e) => e.destroy())
-  WorldListener.onEntityPossiblyUpdated.returns([{} as any, true])
+  WorldListener.onEntityPossiblyUpdated.returns({} as any)
 })
 after_each(() => {
   _assertInValidState()
@@ -663,7 +663,7 @@ describe("blueprint paste", () => {
       direction: direction.west,
     })!
 
-    WorldListener.onEntityPossiblyUpdated.returns(alreadyPresent ? [{} as any, true] : [{} as any, false])
+    WorldListener.onEntityPossiblyUpdated.returns(alreadyPresent ? ({} as any) : nil)
     player.build_from_cursor({ position: pos })
 
     const inserter2 = surface.find_entities_filtered({
@@ -706,7 +706,7 @@ describe("blueprint paste", () => {
       force: "player",
     })!
 
-    WorldListener.onEntityPossiblyUpdated.returns(alreadyPresent ? [{} as any, true] : [{} as any, false])
+    WorldListener.onEntityPossiblyUpdated.returns(alreadyPresent ? ({} as any) : nil)
     player.build_from_cursor({ position: pos })
 
     const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!

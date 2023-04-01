@@ -114,14 +114,14 @@ export function onEntityCreated(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
-): AssemblyEntity | nil {
+): void {
   const { content } = assembly
 
   const asmEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)
 
   if (asmEntity) {
     onEntityOverbuilt(assembly, asmEntity, entity, stage, byPlayer)
-    return asmEntity
+    return
   }
 
   const entityName = entity.name
@@ -133,7 +133,7 @@ export function onEntityCreated(
     }
   }
 
-  return addNewEntity(assembly, entity, stage, knownBpValue)
+  addNewEntity(assembly, entity, stage, knownBpValue)
 }
 
 /** Also asserts that stage > entity's first stage. */
@@ -144,14 +144,14 @@ function getCompatibleEntityOrAdd(
   previousDirection: defines.direction | nil,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
-): LuaMultiReturn<[AssemblyEntity, true] | [AssemblyEntity | nil, false]> {
+): AssemblyEntity | nil {
   const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
   if (!compatible || stage < compatible.firstStage) {
-    const result = onEntityCreated(assembly, entity, stage, byPlayer, knownBpValue)
-    return $multi(result, false as const)
+    onEntityCreated(assembly, entity, stage, byPlayer, knownBpValue)
+    return nil
   }
   compatible.replaceWorldEntity(stage, entity) // just in case
-  return $multi(compatible, true as const)
+  return compatible
 }
 
 function notifyIfError(
@@ -245,7 +245,7 @@ export function onEntityDeleted(
  * Does not handle wires.
  * If previousDirection is specified, this also checks for rotation.
  *
- * @return
+ * @return the updated entity, or nil if a compatible entity was not found.
  */
 export function onEntityPossiblyUpdated(
   assembly: Assembly,
@@ -254,20 +254,13 @@ export function onEntityPossiblyUpdated(
   previousDirection: defines.direction | nil,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
-): [AssemblyEntity | nil, boolean] {
-  const [asmEntity, found] = getCompatibleEntityOrAdd(
-    assembly,
-    entity,
-    stage,
-    previousDirection,
-    byPlayer,
-    knownBpValue,
-  )
-  if (!found) return [asmEntity, false]
+): AssemblyEntity | nil {
+  const asmEntity = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer, knownBpValue)
+  if (!asmEntity) return
 
   const result = tryUpdateEntityFromWorld(assembly, asmEntity, stage, knownBpValue)
   notifyIfError(result, asmEntity, byPlayer)
-  return [asmEntity, true]
+  return asmEntity
 }
 export function onEntityRotated(
   assembly: Assembly,
@@ -276,8 +269,8 @@ export function onEntityRotated(
   previousDirection: defines.direction,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const [asmEntity, found] = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
-  if (!found) return
+  const asmEntity = getCompatibleEntityOrAdd(assembly, entity, stage, previousDirection, byPlayer)
+  if (!asmEntity) return
   const result = tryRotateEntityToMatchWorld(assembly, asmEntity, stage)
   notifyIfError(result, asmEntity, byPlayer)
 }
@@ -299,8 +292,8 @@ export function onCircuitWiresPossiblyUpdated(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const [asmEntity, found] = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
-  if (!found) return
+  const asmEntity = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
+  if (!asmEntity) return
   const result = updateWiresFromWorld(assembly, asmEntity, stage)
   if (result == "max-connections-exceeded") {
     createNotification(asmEntity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
@@ -314,8 +307,8 @@ export function onEntityMarkedForUpgrade(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ): void {
-  const [asmEntity, found] = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
-  if (!found) return
+  const asmEntity = getCompatibleEntityOrAdd(assembly, entity, stage, nil, byPlayer)
+  if (!asmEntity) return
 
   const result = tryApplyUpgradeTarget(assembly, asmEntity, stage)
   notifyIfError(result, asmEntity, byPlayer)

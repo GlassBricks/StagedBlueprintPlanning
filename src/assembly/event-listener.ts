@@ -759,20 +759,12 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   }
 
   const stage = bpState.stage
-  const [asmEntity, isExisting] = onEntityPossiblyUpdated(
-    stage.assembly,
-    luaEntity,
-    stage.stageNumber,
-    nil,
-    e.player_index,
-    value,
-  )
-  if (!asmEntity) return
+  const asmEntity = onEntityPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, nil, e.player_index, value)
 
   const { neighbours, connections } = value
   if (!neighbours && !connections) return
 
-  if (isExisting) {
+  if (asmEntity != nil) {
     // check for circuit wires
     if (!luaEntity.valid) {
       // must have been upgraded
@@ -784,7 +776,8 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       onCircuitWiresPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, e.player_index)
     }
   }
-  bpState.knownLuaEntities[entityId] = luaEntity
+
+  bpState.knownLuaEntities[entityId] = luaEntity // save if has wire connections
 }
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
