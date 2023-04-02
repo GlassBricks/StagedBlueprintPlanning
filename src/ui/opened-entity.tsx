@@ -122,12 +122,6 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
             {lastStage != nil && StageButton(assembly.getStage(lastStage)!)}
           </table>
 
-          <button
-            styleMod={{ horizontally_stretchable: true }}
-            caption={[L_GuiEntityInfo.MoveToThisStage]}
-            on_gui_click={ibind(this.moveToThisStage)}
-            enabled={firstStageNum != currentStageNum}
-          />
           {lastStage != nil && (
             <button
               styleMod={{ horizontally_stretchable: true }}
@@ -135,6 +129,12 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
               on_gui_click={ibind(this.removeLastStage)}
             />
           )}
+          <button
+            styleMod={{ horizontally_stretchable: true }}
+            caption={[L_GuiEntityInfo.MoveToThisStage]}
+            on_gui_click={ibind(this.moveToThisStage)}
+            enabled={firstStageNum != currentStageNum}
+          />
           {isRollingStock && [
             <line direction="horizontal" style="control_behavior_window_line" />,
             <button
