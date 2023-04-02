@@ -431,7 +431,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
   }
 
   __tostring(): string {
-    return `AssemblyContent(${tostring(this.entities)}`
+    return `AssemblyContent(${this.countNumEntities()} entities)`
   }
 }
 

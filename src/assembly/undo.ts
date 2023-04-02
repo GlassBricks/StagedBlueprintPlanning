@@ -60,7 +60,7 @@ export interface UndoHandler<T> {
 
   registerLater(player: LuaPlayer, data: T): void
 
-  getAction(player: PlayerIndex, data: T): UndoAction
+  createAction(player: PlayerIndex, data: T): UndoAction
   // todo: implement tokens / undo groups
 }
 
@@ -75,15 +75,15 @@ export function UndoHandler<T>(name: string, fn: UndoFn<T>): UndoHandler<T> {
   undoHandlers[name] = fn
 
   return {
-    register: (player, data) => createUndoReference(name, player, data),
-    registerLater: (player, data) => registerInFuture(name, player, data),
-    getAction: (playerIndex, data) => ({ playerIndex, handlerName: name, data }),
+    register: (player, data) => registerUndo(name, player, data),
+    registerLater: (player, data) => registerUndoLater(name, player, data),
+    createAction: (playerIndex, data) => ({ playerIndex, handlerName: name, data }),
   }
 }
 
 let _lastUndoIndex: number | nil
 
-function createUndoReference(handlerName: string, player: LuaPlayer, data: unknown) {
+function registerUndo(handlerName: string, player: LuaPlayer, data: unknown) {
   const playerData = global.players[player.index]
   const index = playerData.nextUndoEntryIndex
   const entity = player.surface.create_entity({
@@ -106,12 +106,32 @@ function createUndoReference(handlerName: string, player: LuaPlayer, data: unkno
 
 export function registerUndoAction(action: UndoAction): void {
   const player = game.get_player(action.playerIndex)
-  if (player) createUndoReference(action.handlerName, player, action.data)
+  if (player) registerUndo(action.handlerName, player, action.data)
+}
+
+export function registerUndoActionLater(action: UndoAction): void {
+  const player = game.get_player(action.playerIndex)
+  if (player) registerUndoLater(action.handlerName, player, action.data)
+}
+
+export function registerUndoActionGroup(actions: UndoAction[]): void {
+  if (actions.length == 0) return
+  if (actions.length == 1) return registerUndoAction(actions[0])
+  const playerIndex = actions[0].playerIndex
+  assert(
+    actions.every((a) => a.playerIndex == playerIndex),
+    "All actions must be for the same player",
+  )
+  registerUndoAction({
+    handlerName: "_undoGroup",
+    playerIndex,
+    data: actions,
+  })
 }
 
 const FutureUndoTranslation = "bp100:future-undo-fake-translation"
 
-function registerInFuture(handlerName: string, player: LuaPlayer, data: unknown) {
+function registerUndoLater(handlerName: string, player: LuaPlayer, data: unknown) {
   const id = player.request_translation(FutureUndoTranslation)
   if (id) global.futureUndoData.set(id, { handlerName, data })
 }
@@ -123,19 +143,28 @@ Events.on_string_translated((e) => {
   global.futureUndoData.delete(e.id)
 
   const player = game.get_player(e.player_index)!
-  createUndoReference(entry.handlerName, player, entry.data)
+  registerUndo(entry.handlerName, player, entry.data)
 })
 
-function doUndoEntry(playerIndex: PlayerIndex, undoIndex: number): void {
+function doUndoEntry(player: LuaPlayer, entry: UndoEntry): void {
+  const handler = undoHandlers[entry.handlerName]
+  if (!handler) error(`Undo handler not found: ${entry.handlerName}`)
+  handler(player, entry.data)
+}
+function doUndoEntryAtIndex(playerIndex: PlayerIndex, undoIndex: number): void {
   const playerData = global.players[playerIndex]
   const entry = playerData.undoEntries[undoIndex]
   if (!entry) return // ignore
-  const handler = undoHandlers[entry.handlerName]
-  if (!handler) error(`Undo handler not found: ${entry.handlerName}`)
   delete playerData.undoEntries[undoIndex]
   playerData.nextUndoEntryIndex = undoIndex
-  handler(game.get_player(playerIndex)!, entry.data)
+  const player = game.get_player(playerIndex)!
+  assert(player)
+  doUndoEntry(player, entry)
 }
+
+UndoHandler("_undoGroup", (player, actions: UndoAction[]) => {
+  for (const action of actions) doUndoEntry(player, action)
+})
 
 export function onUndoReferenceBuilt(this: void, playerIndex: PlayerIndex, entity: LuaEntity): void {
   const position = entity.position
@@ -146,17 +175,13 @@ export function onUndoReferenceBuilt(this: void, playerIndex: PlayerIndex, entit
     // invalid, ignore
     return
   }
-  doUndoEntry(playerIndex, index)
+  doUndoEntryAtIndex(playerIndex, index)
 }
 
 export function _simulateUndo(player: LuaPlayer, index = _lastUndoIndex ?? error("No undo action to simulate")): void {
-  doUndoEntry(player.index, index)
+  doUndoEntryAtIndex(player.index, index)
   _lastUndoIndex = nil
 }
 export function _doUndoAction(action: UndoAction): void {
-  const player = game.get_player(action.playerIndex)!
-  assert(player, "Player not found")
-  const handler = undoHandlers[action.handlerName]
-  if (!handler) error(`Undo handler not found: ${action.handlerName}`)
-  handler(player, action.data)
+  doUndoEntry(game.get_player(action.playerIndex)!, action)
 }

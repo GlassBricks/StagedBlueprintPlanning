@@ -25,7 +25,13 @@ import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Stage } from "./AssemblyDef"
 import { getAssemblyPlayerData } from "./player-assembly-data"
-import { onUndoReferenceBuilt } from "./undo"
+import {
+  onUndoReferenceBuilt,
+  registerUndoAction,
+  registerUndoActionGroup,
+  registerUndoActionLater,
+  UndoAction,
+} from "./undo"
 import {
   onBringToStageUsed,
   onCircuitWiresPossiblyUpdated,
@@ -63,7 +69,7 @@ function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
 
 function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (!entity.valid) return
-  if (isMarkerEntity(entity)) {
+  if (getInnerName(entity) == Prototypes.EntityMarker) {
     entity.destroy()
     return
   }
@@ -241,6 +247,8 @@ let state: {
     usedPasteUpgrade?: boolean
     isFlipped: boolean
   }
+
+  accumulatedUndoActions?: UndoAction[]
 }
 declare global {
   interface PlayerData {
@@ -326,7 +334,7 @@ Events.on_pre_build((e) => {
   }
   clearToBeFastReplaced(e.player_index)
 
-  // handle rotate underground via drag, very manually
+  // handle underground rotation via drag, very manually
 
   if (!e.created_by_moving) return
   const stage = getStageAtSurface(surface.index)
@@ -424,17 +432,18 @@ Events.on_built_entity((e) => {
 
   const currentBlueprintPaste = state.currentBlueprintPaste
   if (currentBlueprintPaste) {
-    if (isMarkerEntity(entity)) onEntityMarkerBuilt(e, entity)
+    if (innerName == Prototypes.EntityMarker) onEntityMarkerBuilt(e, entity)
     return
   }
   // just in case
-  if (isMarkerEntity(entity)) {
+  if (innerName == Prototypes.EntityMarker) {
     entity.destroy()
     return
   }
 
   const lastPreBuild = state.lastPreBuild
   state.lastPreBuild = nil
+
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
 
@@ -449,10 +458,15 @@ Events.on_built_entity((e) => {
     return
   }
 
-  if (isWorldEntityAssemblyEntity(entity)) {
-    onEntityCreated(stage.assembly, entity, stage.stageNumber, playerIndex)
-  } else {
+  if (!isWorldEntityAssemblyEntity(entity)) {
     checkNonAssemblyEntity(entity, stage, playerIndex)
+    return
+  }
+
+  // finally, normal build
+  const undoAction = onEntityCreated(stage.assembly, entity, stage.stageNumber, playerIndex)
+  if (undoAction) {
+    registerUndoActionLater(undoAction)
   }
 })
 
@@ -462,7 +476,9 @@ function checkNonAssemblyEntity(entity: LuaEntity, stage: Stage, byPlayer: Playe
     const [, newEntity] = entity.silent_revive()
     if (newEntity) {
       onEntityCreated(stage.assembly, newEntity, stage.stageNumber, byPlayer)
-    } else if (entity.valid) entity.destroy()
+    } else if (entity.valid) {
+      entity.destroy()
+    }
   }
 }
 
@@ -639,10 +655,6 @@ function getInnerName(entity: LuaEntity): string {
   if (entity.type == "entity-ghost") return entity.ghost_name
   return entity.name
 }
-function isMarkerEntity(entity: LuaEntity): boolean {
-  return getInnerName(entity) == Prototypes.EntityMarker
-}
-
 function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity): void {
   const tags = (e.tags ?? entity.tags) as MarkerTags
   if (tags != nil) {
@@ -892,14 +904,17 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   const entity = player.selected
   if (!entity) return
   const stage = getStageAtEntityOrPreview(entity)
-  if (stage) {
-    onMoveEntityToStageCustomInput(stage.assembly, entity, stage.stageNumber, e.player_index)
-  } else {
+  if (!stage) {
+    // should this be in user-actions.ts instead?
     player.create_local_flying_text({
       text: [L_Interaction.NotInAnAssembly],
       create_at_cursor: true,
     })
+    return
   }
+
+  const undoAction = onMoveEntityToStageCustomInput(stage.assembly, entity, stage.stageNumber, e.player_index)
+  if (undoAction) registerUndoAction(undoAction)
 })
 
 // Stage move tool, stage deconstruct tool
@@ -916,18 +931,24 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
     return
   }
   const { stageNumber, assembly } = stage
+  const undoActions: UndoAction[] = []
   for (const entity of e.entities) {
-    onSendToStageUsed(assembly, entity, stageNumber, targetStage, playerIndex)
+    const undoAction = onSendToStageUsed(assembly, entity, stageNumber, targetStage, playerIndex)
+    if (undoAction) undoActions.push(undoAction)
   }
+  registerUndoActionGroup(undoActions)
 }
 
 function stageDeleteToolUsed(e: OnPlayerSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const { stageNumber, assembly } = stage
+  const undoActions: UndoAction[] = []
   for (const entity of e.entities) {
-    onStageDeleteUsed(assembly, entity, stageNumber, e.player_index)
+    const undoAction = onStageDeleteUsed(assembly, entity, stageNumber, e.player_index)
+    if (undoAction) undoActions.push(undoAction)
   }
+  registerUndoActionGroup(undoActions)
 }
 
 Events.on_player_selected_area((e) => {
@@ -943,18 +964,24 @@ function stageMoveToolAltUsed(e: OnPlayerAltSelectedAreaEvent): void {
   if (!stage) return
 
   const { stageNumber, assembly } = stage
+  const undoActions: UndoAction[] = []
   for (const entity of e.entities) {
-    onBringToStageUsed(assembly, entity, stageNumber, e.player_index)
+    const undoAction = onBringToStageUsed(assembly, entity, stageNumber, e.player_index)
+    if (undoAction) undoActions.push(undoAction)
   }
+  registerUndoActionGroup(undoActions)
 }
 function stageDeleteToolAltUsed(e: OnPlayerAltSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
 
   const { stageNumber, assembly } = stage
+  const undoActions: UndoAction[] = []
   for (const entity of e.entities) {
-    onStageDeleteCancelUsed(assembly, entity, stageNumber, e.player_index)
+    const undoAction = onStageDeleteCancelUsed(assembly, entity, stageNumber, e.player_index)
+    if (undoAction) undoActions.push(undoAction)
   }
+  registerUndoActionGroup(undoActions)
 }
 
 Events.on_player_alt_selected_area((e) => {
@@ -984,8 +1011,28 @@ Events.on_marked_for_deconstruction((e) => {
   const playerData = getAssemblyPlayerData(playerIndex, stage.assembly)
   if (!playerData) return
   const targetStage = playerData.moveTargetStage
-  if (targetStage) {
-    onSendToStageUsed(stage.assembly, entity, stage.stageNumber, targetStage, playerIndex)
+  if (!targetStage) return
+  const undoAction = onSendToStageUsed(stage.assembly, entity, stage.stageNumber, targetStage, playerIndex)
+  if (undoAction) {
+    ;(state.accumulatedUndoActions ??= []).push(undoAction)
+  }
+})
+
+Events.on_player_deconstructed_area((e) => {
+  if (e.item != Prototypes.FilteredStageMoveTool) return
+  const player = game.get_player(e.player_index)!
+  if (getStageAtSurface(player.surface.index) == nil) {
+    player.create_local_flying_text({
+      text: [L_Interaction.NotInAnAssembly],
+      create_at_cursor: true,
+    })
+    player.play_sound({ path: "utility/cannot_build" })
+    return
+  }
+  const undoActions = state.accumulatedUndoActions
+  if (undoActions) {
+    registerUndoActionGroup(undoActions)
+    delete state.accumulatedUndoActions
   }
 })
 

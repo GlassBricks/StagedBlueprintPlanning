@@ -20,7 +20,7 @@ import {
 } from "../assembly/assembly-updates"
 import { Stage } from "../assembly/AssemblyDef"
 import { checkForEntityUpdates } from "../assembly/event-listener"
-import { userMovedEntityToStage, userRevivedSettingsRemnant, userSetLastStage } from "../assembly/user-actions"
+import { userMoveEntityToStageWithUndo, userRevivedSettingsRemnant, userSetLastStage } from "../assembly/user-actions"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
@@ -171,7 +171,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     if (wasSettingsRemnant) {
       userRevivedSettingsRemnant(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
     } else {
-      userMovedEntityToStage(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
+      userMoveEntityToStageWithUndo(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
     }
     this.rerender(wasSettingsRemnant ?? true)
   }
