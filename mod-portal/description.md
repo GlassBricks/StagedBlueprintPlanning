@@ -1,6 +1,6 @@
 # Staged Blueprint Planning
 
-The ultimate mod for designing staged blueprints, e.g. for 100% speedruns. A.K.A the Nefrums-approved anti-anti-anti-tool.
+The ultimate mod for designing multi-stage blueprints, e.g. for 100% speedruns. A.K.A. the Nefrums-approved anti-anti-Anti-tool.
 
 Separate your builds into stages. Edit entities in any stage, and changes will automatically be applied to all later stages. Create a blueprint book of all stages in one click.
 
@@ -10,10 +10,9 @@ This mod is in active development (new features are still being added!) Feedback
 
 Create a new staged build by clicking the "Staged Builds" button in the top left.
 
-Move between stages using the settings window, or the navigation shortcuts (see below).
+Move between stages using the settings window or the navigation shortcuts (see below).
 
-When you make any change, that change will be applied to the current and _later_ stages.
-Every game interaction should be handled. (If this is not the case, please submit a bug report!)
+When you make build or edit entities, the changes will be applied to the current and _later_ stages.
 
 You can automatically create blueprints via the "Blueprints" tab of the settings window.
 
@@ -30,51 +29,74 @@ Use the navigation controls! These are (with default keybindings):
 
 Building, mining, rotating, fast-replacing, copper/circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, moving entities with [Picker Dollies](https://mods.factorio.com/mod/PickerDollies), are all supported. If there is some interaction that is not handled, please submit a bug report!
 
-Deleting or rotating an entity is only allowed in the _first stage_ (as those changes cannot be blueprinted between stages).
+Preview entities will be shown for each entity in lower stages. If you're in editor mode, you can open preview entities to view their info.
 
-Trains are treated specially; they are only present in one stage (as you usually do not re-paste trains).
-Trains can move from their original position. Open the train's gui to reset or update their position.
+### Changing entity settings, upgrading entities
 
-Preview entities will be shown for each entity in lower stages. If you are in editor mode, you can open them to view the entity's stage info.
+If you change the settings of an entity, those changes will be applied to _later_ stages only. The entity will be highlighted in blue to indicate the entity has been changed, and a blueprint indicator sprite will appear at lower stages.
 
-If an entity cannot be created in a stage for any reason, an error indicator will be shown at all stages.
+To _upgrade_ an entity, you must use the _upgrade planner_ (instead of fast-replace). This will also highlight the entity.
 
-### Stage move tool
+Copper/circuit wire changes between stages aren't supported; instead, they're always present in all stages.
+To mitigate this, if you connect a new wire to an inserter or belt, in previous stages the control behavior will be set to "no control".
 
-In the bottom right (shortcuts menu, right of the quick-bar), you can access the stage move tool.
+### Deleting/rotating entities
 
-Use (default keybinding) `Shift + scroll wheel` to change the target stage.
+Deleting or rotating an entity is normally only allowed in the entity's _first stage_.
 
+To explicitly delete an entity from later stages, use the Stage Deconstruction Tool (found in the shortcut menu, just right of the quick-bar).
+
+- When an entity has been stage-deconstructed, an indicator sprite will appear in the next-to-last stage.
+- Alt-select (select for deconstruction cancellation) in the previous stage to remove the deconstruction.
+
+Note: trains are by default only in 1 stage (set to be deconstructed in the next stage)
+
+### Moving entities between stages
+
+There is a hotkey control for moving an entity to the current stage. This can be done on entities or previews.
+
+There is also a Stage move tool to facilitate moving multiple entities between stages. This can be accessed in the shortcuts menu (just right of the quick-bar):
+
+- Use `Shift + scroll wheel` (default keybinding) to change the target stage.
 - Selecting entities will move entities in the _current_ stage to the target stage.
 - Alt/Reverse selecting with the tool will move entities from _any_ stage to the current stage.
 
-### Changes/upgrades between stages
+All these actions are compatible with undo!
 
-Changing the configuration of an entity between stages is supported. When this is done, the entity will be highlighted in blue, and an indicator sprite will appear at lower stages.
+### Upgrade on blueprint paste
 
-Similarly, by using the _upgrade planner_, entities can be upgraded.
+There is a user mod setting to "Allow blueprint pasting to upgrade entities". When set to true, when pasting a blueprint entity overlapping a compatible entity, the entity will be upgraded (this is different from vanilla behavior).
 
-Copper/circuit wire changes between stages are not supported; instead, they are always present in all stages.
+### Settings remnants
+
+If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline).
+If you then undo, those settings will be restored.
+
+To remove settings remnants, use the `Staged Build Cleanup Tool` (accessed in the shortcuts menu, right of the quick-bar).
+
+Note: this may become obsolete in the near future!
+
+### Cleanup tool
+
+Using the build cleanup tool will remove "settings remnants", and attempt to revive any errored entities.
+
+Reverse-selecting using the cleanup tool will **force delete** errored entities.
 
 ### Landfill/tiles
 
-Landfill can be automatically placed in your blueprints. See the settings gui for more details.
+Landfill can be automatically placed in your blueprints. See the "Stage" tab in the settings gui for more details.
 
-Additionally, the "Flexible Offshore Pump Placement" _startup setting_ enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
+The "Flexible Offshore Pump Placement" _startup setting_ enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
 
 ### Blueprints
 
-The "Blueprints" tab provides many options for blueprint exporting.
+The "Blueprints" tab provides many settings for blueprint exporting.
 
-Editing the "default" settings will affect all stages in the build, but settings can be overridden for individual stages.
+Editing the "Default" settings will affect blueprints in all stages.
+The settings can be overridden for individual stages in the "Current stage" tab.
 Overriden settings are highlighted in green.
 
-### Accidental data loss prevention
-
-If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline). If you undo the deletion, those settings will be restored. This is so you don't lose data if you accidentally deleted it and undo.
-To remove settings remnants, use the `Staged Build Cleanup Tool` (shortcut, in the bottom right).
-
-Note: experimentation is planned that may make this obsolete in a future version!
+See the tooltips for more information.
 
 ### Footgun removal
 
@@ -85,12 +107,6 @@ Rotating/upgrading an underground will affect its paired underground, in any sta
 It is not possible to upgrade an underground if that will change which underground it pairs with (breaking belt weaving, etc.). If this is intentional, mine and replace the underground.
 
 Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. an underground "cuts" another underground in a later stage), it cannot be rotated/upgraded _after_ being built.
-
-### Cleanup tool
-
-Using the build cleanup tool will remove "settings remnants", and attempt to revive any errored entities.
-
-Reverse-selecting using the cleanup tool will **force-delete** errored entities.
 
 ## Feedback
 
@@ -103,6 +119,7 @@ You can contact me (GlassBricks) on the AntiElitz speedrunning discord, or use t
 - Handle resource entities
 - Automatic analysis and basic optimization
 - Import/export to string
+- More "undo"-able actions
 
 ## Acknowledgements
 

@@ -44,7 +44,7 @@ export declare const enum L_ModSettingName {
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
-  /** E.g. if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter (different from vanilla behavior).\nThis setting only applies while within a staged build. */
+  /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged build. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
 }
 export declare const enum L_StringModSetting {
@@ -250,7 +250,7 @@ export declare const enum L_GuiAssemblySettings {
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */
   IncludeEntitiesInTheNextNStages2 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-2",
-  /** Only new entities, or entities with configuration changes in the last "n" stages will be included.\n[font=default-bold]Notes:[/font]\n  Consider adding assembling machines to the "additional whitelist" below, so that previously unresearched recipes can still be pasted by later blueprints.\n  It may be helpful to include entities such as rails and roboports to the "additional whitelist", to help align blueprints with each other. */
+  /** Only new entities or entities with setting changes in the last "n" stages will be included in the blueprint.\n[font=default-bold]Notes:[/font]\n  Consider adding assembling machines to the whitelist below, so that previously unresearched recipes can still be pasted by later blueprints.\n  It may be helpful to include entities such as rails and roboports to the whitelist to help align blueprints. */
   IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-tooltip",
   /** or in whitelist: */
   OrInWhitelist = "bp100.gui.assembly-settings.or-in-whitelist",
