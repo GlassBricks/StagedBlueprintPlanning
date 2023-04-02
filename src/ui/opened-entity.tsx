@@ -20,7 +20,11 @@ import {
 } from "../assembly/assembly-updates"
 import { Stage } from "../assembly/AssemblyDef"
 import { checkForEntityUpdates } from "../assembly/event-listener"
-import { userMoveEntityToStageWithUndo, userRevivedSettingsRemnant, userSetLastStage } from "../assembly/user-actions"
+import {
+  userMoveEntityToStageWithUndo,
+  userRevivedSettingsRemnant,
+  userSetLastStageWithUndo,
+} from "../assembly/user-actions"
 import { BuildableEntityType, Settings } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { Entity } from "../entity/Entity"
@@ -176,7 +180,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
     this.rerender(wasSettingsRemnant ?? true)
   }
   private removeLastStage() {
-    userSetLastStage(this.stage.assembly, this.entity, nil, this.playerIndex)
+    userSetLastStageWithUndo(this.stage.assembly, this.entity, nil, this.playerIndex)
     this.rerender(false)
   }
   private resetTrain() {

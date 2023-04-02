@@ -26,7 +26,8 @@ import {
   updateWiresFromWorld,
 } from "../../assembly/assembly-updates"
 import { UserAssembly } from "../../assembly/AssemblyDef"
-import { userSetLastStage } from "../../assembly/user-actions"
+import { _simulateUndo } from "../../assembly/undo"
+import { userSetLastStageWithUndo } from "../../assembly/user-actions"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {
   clearWorldEntityAtStage,
@@ -868,7 +869,7 @@ test("using stage delete tool", () => {
 test("using stage delete tool alt select", () => {
   const player = game.players[1]
   const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
-  userSetLastStage(assembly, entity, 3, player.index)
+  userSetLastStageWithUndo(assembly, entity, 3, player.index)
 
   Events.raiseFakeEventNamed("on_player_alt_selected_area", {
     player_index: player.index,
@@ -881,4 +882,8 @@ test("using stage delete tool alt select", () => {
 
   expect(entity.lastStage).toBe(nil)
   assertEntityCorrect(entity, false)
+
+  _simulateUndo(player)
+
+  expect(entity.lastStage).toBe(3)
 })

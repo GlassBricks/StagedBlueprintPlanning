@@ -404,10 +404,10 @@ export function onMoveEntityToStageCustomInput(
 ): UndoAction | nil {
   const entity = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity, stage)
   if (!entity || entity.isSettingsRemnant) return
-  return userMovedEntityToStage(assembly, entity, stage, byPlayer)
+  return userTryMoveEntityToStageWithUndo(assembly, entity, stage, byPlayer)
 }
 
-function userMovedEntityToStage(
+function userTryMoveEntityToStageWithUndo(
   assembly: Assembly,
   entity: AssemblyEntity,
   stage: StageNumber,
@@ -425,7 +425,7 @@ export function userMoveEntityToStageWithUndo(
   stage: StageNumber,
   byPlayer: PlayerIndex,
 ): void {
-  const undoAction = userMovedEntityToStage(assembly, entity, stage, byPlayer)
+  const undoAction = userTryMoveEntityToStageWithUndo(assembly, entity, stage, byPlayer)
   if (undoAction) {
     registerUndoAction(undoAction)
   }
@@ -513,12 +513,12 @@ interface LastStageChangeRecord extends AssemblyEntityRecord {
   oldLastStage: StageNumber | nil
 }
 
-const stageDeleteUndo = UndoHandler(
-  "stage delete",
+const lastStageChangeUndo = UndoHandler(
+  "last stage change",
   (player, { assembly, entity, oldLastStage }: LastStageChangeRecord) => {
     const actualEntity = findCompatibleEntityForUndo(assembly, entity)
     if (actualEntity) {
-      userSetLastStage(assembly, actualEntity, oldLastStage, player.index)
+      userTrySetLastStage(assembly, actualEntity, oldLastStage, player.index)
     }
   },
 )
@@ -533,20 +533,34 @@ export function onStageDeleteUsed(
   if (!asmEntity || asmEntity.isSettingsRemnant) return
   const newLastStage = stage - 1
   const oldLastStage = asmEntity.lastStage
-  if (userSetLastStage(assembly, asmEntity, newLastStage, byPlayer)) {
-    return stageDeleteUndo.createAction(byPlayer, { assembly, entity: asmEntity, oldLastStage })
+  if (userTrySetLastStage(assembly, asmEntity, newLastStage, byPlayer)) {
+    return lastStageChangeUndo.createAction(byPlayer, { assembly, entity: asmEntity, oldLastStage })
   }
 }
 
-const stageDeleteCancelUndo = UndoHandler(
-  "stage delete cancel",
-  (player, { assembly, entity, oldStage }: StageChangeRecord) => {
-    const actualEntity = findCompatibleEntityForUndo(assembly, entity)
-    if (actualEntity) {
-      userSetLastStage(assembly, actualEntity, oldStage, player.index)
-    }
-  },
-)
+const stageDeleteCancelUndo = lastStageChangeUndo
+
+function userTrySetLastStageWithUndo(
+  assembly: Assembly,
+  asmEntity: AssemblyEntity,
+  stage: StageNumber | nil,
+  byPlayer: PlayerIndex,
+): UndoAction | nil {
+  const oldStage = asmEntity.lastStage
+  if (userTrySetLastStage(assembly, asmEntity, stage, byPlayer)) {
+    return stageDeleteCancelUndo.createAction(byPlayer, { assembly, entity: asmEntity, oldLastStage: oldStage })
+  }
+}
+
+export function userSetLastStageWithUndo(
+  assembly: Assembly,
+  asmEntity: AssemblyEntity,
+  newLastStage: StageNumber | nil,
+  byPlayer: PlayerIndex,
+): void {
+  const undoAction = userTrySetLastStageWithUndo(assembly, asmEntity, newLastStage, byPlayer)
+  if (undoAction) registerUndoAction(undoAction)
+}
 
 export function onStageDeleteCancelUsed(
   assembly: Assembly,
@@ -556,12 +570,10 @@ export function onStageDeleteCancelUsed(
 ): UndoAction | nil {
   const asmEntity = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
   if (!asmEntity || asmEntity.isSettingsRemnant || asmEntity.lastStage != stage) return
-  if (userSetLastStage(assembly, asmEntity, nil, byPlayer)) {
-    return stageDeleteCancelUndo.createAction(byPlayer, { assembly, entity: asmEntity, oldStage: stage })
-  }
+  return userTrySetLastStageWithUndo(assembly, asmEntity, nil, byPlayer)
 }
 
-export function userSetLastStage(
+function userTrySetLastStage(
   assembly: Assembly,
   asmEntity: AssemblyEntity,
   newLastStage: StageNumber | nil,
