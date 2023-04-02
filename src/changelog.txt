@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.0
-Date: ????
+Date: 2023-04-02
   Features:
     - Added stage deconstruction tool: allows omitting the entity from future stages. See the docs for more info.
     - Added ability to undo "Entity moved from stage" when overbuilding a preview entity.
