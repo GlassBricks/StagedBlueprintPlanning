@@ -79,18 +79,6 @@ function onEntityOverbuilt(
   }
 }
 
-function disallowOverbuildDifferentDirection(
-  assembly: Assembly,
-  asmEntity: AssemblyEntity,
-  entity: LuaEntity,
-  byPlayer: PlayerIndex | nil,
-) {
-  entity.destroy()
-  if (byPlayer) {
-    createNotification(asmEntity, byPlayer, [L_Interaction.CannotBuildDifferentDirection], false)
-  }
-}
-
 export function onEntityCreated(
   assembly: Assembly,
   entity: LuaEntity,
@@ -110,8 +98,9 @@ export function onEntityCreated(
   if (!shouldCheckEntityExactlyForMatch(entityName)) {
     const existingDifferentDirection = content.findCompatibleByProps(entityName, entity.position, nil, stage)
     if (existingDifferentDirection) {
-      disallowOverbuildDifferentDirection(assembly, existingDifferentDirection, entity, byPlayer)
-      return nil
+      entity.destroy()
+      createNotification(existingDifferentDirection, byPlayer, [L_Interaction.CannotBuildDifferentDirection], false)
+      return
     }
   }
 
