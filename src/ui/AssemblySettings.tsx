@@ -333,7 +333,20 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     if (!player) return
     const stageToUse = stage ?? this.assembly.getStage(this.assembly.numStages())!
     const name = stage ? stage.name.get() : "Defaults (only grid settings saved)"
-    editInItemBlueprintSettings(player, settings, stageToUse.surface, stageToUse.getBlueprintBBox(), name)
+    const successful = editInItemBlueprintSettings(
+      player,
+      settings,
+      stageToUse.surface,
+      stageToUse.getBlueprintBBox(),
+      name,
+    )
+
+    if (!successful) {
+      player.create_local_flying_text({
+        text: [L_Interaction.BlueprintEmpty],
+        create_at_cursor: true,
+      })
+    }
   }
 
   private editFilter(settings: AssemblyOrStageBlueprintSettings, type: "additionalWhitelist" | "blacklist") {
