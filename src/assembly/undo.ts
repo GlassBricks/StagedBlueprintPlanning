@@ -15,7 +15,7 @@ import { Migrations } from "../lib/migration"
 import floor = math.floor
 
 // should be greater than factorio's max undos
-export interface UndoEntry {
+interface UndoEntry {
   handlerName: string
   data: unknown
 }
@@ -45,6 +45,12 @@ onPlayerInitSince("0.18.0", (player) => {
   playerData.nextUndoEntryIndex = 1
 })
 
+export interface UndoAction {
+  playerIndex: PlayerIndex
+  handlerName: string
+  data: unknown
+}
+
 export type UndoFn<T> = (this: void, player: LuaPlayer, data: T) => void
 
 // export type UndoHandler<T> = (this: void, player: LuaPlayer, data: T) => number
@@ -54,7 +60,7 @@ export interface UndoHandler<T> {
 
   registerLater(player: LuaPlayer, data: T): void
 
-  // getToken(player: LuaPlayer, index: number): UndoToken
+  getAction(player: PlayerIndex, data: T): UndoAction
   // todo: implement tokens / undo groups
 }
 
@@ -71,6 +77,7 @@ export function UndoHandler<T>(name: string, fn: UndoFn<T>): UndoHandler<T> {
   return {
     register: (player, data) => createUndoReference(name, player, data),
     registerLater: (player, data) => registerInFuture(name, player, data),
+    getAction: (playerIndex, data) => ({ playerIndex, handlerName: name, data }),
   }
 }
 
@@ -97,6 +104,11 @@ function createUndoReference(handlerName: string, player: LuaPlayer, data: unkno
   return index
 }
 
+export function registerUndoAction(action: UndoAction): void {
+  const player = game.get_player(action.playerIndex)
+  if (player) createUndoReference(action.handlerName, player, action.data)
+}
+
 const FutureUndoTranslation = "bp100:future-undo-fake-translation"
 
 function registerInFuture(handlerName: string, player: LuaPlayer, data: unknown) {
@@ -114,7 +126,7 @@ Events.on_string_translated((e) => {
   createUndoReference(entry.handlerName, player, entry.data)
 })
 
-function performUndoAction(playerIndex: PlayerIndex, undoIndex: number): void {
+function doUndoEntry(playerIndex: PlayerIndex, undoIndex: number): void {
   const playerData = global.players[playerIndex]
   const entry = playerData.undoEntries[undoIndex]
   if (!entry) return // ignore
@@ -124,6 +136,7 @@ function performUndoAction(playerIndex: PlayerIndex, undoIndex: number): void {
   playerData.nextUndoEntryIndex = undoIndex
   handler(game.get_player(playerIndex)!, entry.data)
 }
+
 export function onUndoReferenceBuilt(this: void, playerIndex: PlayerIndex, entity: LuaEntity): void {
   const position = entity.position
   entity.destroy()
@@ -133,10 +146,17 @@ export function onUndoReferenceBuilt(this: void, playerIndex: PlayerIndex, entit
     // invalid, ignore
     return
   }
-  performUndoAction(playerIndex, index)
+  doUndoEntry(playerIndex, index)
 }
 
 export function _simulateUndo(player: LuaPlayer, index = _lastUndoIndex ?? error("No undo action to simulate")): void {
-  performUndoAction(player.index, index)
+  doUndoEntry(player.index, index)
   _lastUndoIndex = nil
+}
+export function _doUndoAction(action: UndoAction): void {
+  const player = game.get_player(action.playerIndex)!
+  assert(player, "Player not found")
+  const handler = undoHandlers[action.handlerName]
+  if (!handler) error(`Undo handler not found: ${action.handlerName}`)
+  handler(player, action.data)
 }

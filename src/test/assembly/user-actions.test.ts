@@ -17,7 +17,7 @@ import {
   WireUpdateResult,
 } from "../../assembly/assembly-updates"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { _simulateUndo } from "../../assembly/undo"
+import { _doUndoAction } from "../../assembly/undo"
 import { L_Game } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
@@ -40,19 +40,14 @@ const userActions = moduleMock(_userActions, false)
 
 before_each(() => {
   expectedCalls = 1
-  // for (const [, func] of pairs(assemblyUpdates)) {
-  //   if (typeof func == "object" || typeof func == "function")
-  //     func.invokes((): any => {
-  //       totalCalls++
-  //     })
-  // }
-  // for (const [, func] of pairs(worldUpdates)) {
-  //   func.invokes((): any => {
-  //     totalCalls++
-  //   })
-  // }
-  assemblyUpdates.trySetFirstStage.returns(StageMoveResult.Updated)
-  assemblyUpdates.trySetLastStage.returns(StageMoveResult.Updated)
+  assemblyUpdates.trySetFirstStage.invokes((assembly, entity, stage) => {
+    entity.setFirstStageUnchecked(stage)
+    return StageMoveResult.Updated
+  })
+  assemblyUpdates.trySetLastStage.invokes((assembly, entity, stage) => {
+    entity.setLastStageUnchecked(stage)
+    return StageMoveResult.Updated
+  })
 })
 
 after_each(() => {
@@ -63,7 +58,20 @@ after_each(() => {
   for (const [, func] of pairs(worldUpdates)) {
     totalCalls += func.calls.length
   }
-  expect(totalCalls).to.equal(expectedCalls)
+  // expect(totalCalls).to.equal(expectedCalls)
+  if (totalCalls != expectedCalls) {
+    const lines: string[] = []
+    lines.push(`Expected ${expectedCalls} calls, but got ${totalCalls}`)
+    for (const [name, func] of pairs(assemblyUpdates)) {
+      const numCalls = func.calls.length
+      if (numCalls > 0) lines.push(`  ${name}: ${numCalls}`)
+    }
+    for (const [name, func] of pairs(worldUpdates)) {
+      const numCalls = func.calls.length
+      if (numCalls > 0) lines.push(`  ${name}: ${numCalls}`)
+    }
+    error(table.concat(lines, "\n"))
+  }
 })
 
 const surfaces = setupTestSurfaces(6)
@@ -120,6 +128,14 @@ before_each(() => {
 })
 after_each(() => {
   if (!notificationsAsserted) expect(notifications.createNotification).not.called()
+})
+
+test("userMovedEntityToStage, with return=true notifies with EntityMovedBackToStage", () => {
+  const { entity } = addEntity(2)
+
+  userActions.userMovedEntityToStage(assembly, entity, 3, playerIndex, true)
+
+  assertNotified(entity, [L_Interaction.EntityMovedBackToStage, "mock stage 2"], false)
 })
 
 describe("onEntityCreated", () => {
@@ -231,6 +247,34 @@ describe("onEntityCreated", () => {
     assertNotified(entity1.entity, [L_Interaction.CannotBuildDifferentDirection], false)
 
     expectedCalls = 0
+  })
+
+  test("can undo overbuilding preview", () => {
+    userActions.userMovedEntityToStage.returns(true) // stub out
+
+    const { luaEntity, entity } = addEntity(3)
+    const undoAction = userActions.onEntityCreated(assembly, luaEntity, 2, playerIndex)
+    notificationsAsserted = true // ignore notifications from onEntityCreated
+
+    expect(undoAction).not.toBeNil()
+
+    _doUndoAction(undoAction!)
+    expect(userActions.userMovedEntityToStage).calledWith(assembly, entity, 3, playerIndex, true)
+  })
+
+  test("can still undo after being deleted and re-added", () => {
+    userActions.userMovedEntityToStage.returns(true) // stub out
+
+    const { luaEntity, entity } = addEntity(3)
+    const undoAction = userActions.onEntityCreated(assembly, luaEntity, 2, playerIndex)
+    notificationsAsserted = true // ignore notifications from onEntityCreated
+    expect(undoAction).not.toBeNil()
+
+    assembly.content.delete(entity)
+
+    const { entity: entity2 } = addEntity(3)
+    _doUndoAction(undoAction!)
+    expect(userActions.userMovedEntityToStage).calledWith(assembly, entity2, 3, playerIndex, true)
   })
 })
 
@@ -446,14 +490,17 @@ test("onEntityDied calls clearEntityAtStage", () => {
 describe("onMoveEntityToStageCustomInput", () => {
   test("if not in assembly, does nothing", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
     expectedCalls = 0
+    expect(undoAction).toBeNil()
   })
   test("if is settings remnant, does nothing", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.isSettingsRemnant = true
-    userActions.onMoveEntityToStageCustomInput(assembly, createPreview(luaEntity), 2, playerIndex)
+    const undoAction = userActions.onMoveEntityToStageCustomInput(assembly, createPreview(luaEntity), 2, playerIndex)
     expectedCalls = 0
+
+    expect(undoAction).toBeNil()
   })
   test.each<[StageMoveResult, LocalisedString | false]>([
     [StageMoveResult.Updated, [L_Interaction.EntityMovedFromStage, "mock stage 3"]],
@@ -463,32 +510,58 @@ describe("onMoveEntityToStageCustomInput", () => {
     [StageMoveResult.CannotMovePastLastStage, [L_Interaction.CannotMovePastLastStage]],
   ])('calls trySetFirstStage and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(3)
-    assemblyUpdates.trySetFirstStage.returns(result)
-    userActions.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
+    assemblyUpdates.trySetFirstStage.invokes((_, entity, stage) => {
+      entity.setFirstStageUnchecked(stage)
+      return result
+    })
+    const undoAction = userActions.onMoveEntityToStageCustomInput(assembly, luaEntity, 2, playerIndex)
+
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 2)
     if (message) assertNotified(entity, message, result != "updated")
+
+    if (result == "updated") {
+      expect(undoAction).not.toBeNil()
+
+      userActions.userMovedEntityToStage.returns(true)
+      _doUndoAction(undoAction!)
+      expect(userActions.userMovedEntityToStage).calledWith(assembly, entity, 3, 1, true)
+    }
   })
 })
 describe("onSendToStageUsed", () => {
   test("calls trySetFirstStage and notifies if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    userActions.onSendToStageUsed(assembly, luaEntity, 2, 1, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(assembly, luaEntity, 2, 1, playerIndex)
+
     assertIndicatorCreated(entity, "<<")
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 1)
+    expect(undoAction).not.toBeNil()
+
+    userActions.userBringEntityToStage.returns(true)
+    _doUndoAction(undoAction!)
+    expect(userActions.userBringEntityToStage).calledWith(assembly, entity, 2, 1)
   })
   test("calls trySetFirstStage and does not notify if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    userActions.onSendToStageUsed(assembly, luaEntity, 2, 3, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(assembly, luaEntity, 2, 3, playerIndex)
+
     expect(notifications.createIndicator).not.called()
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 3)
+    expect(undoAction).not.toBeNil()
+
+    userActions.userBringEntityToStage.returns(true)
+    _doUndoAction(undoAction!)
+    expect(userActions.userBringEntityToStage).calledWith(assembly, entity, 2, 1)
   })
   test("ignores if not in current stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    userActions.onSendToStageUsed(assembly, luaEntity, 3, 1, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(assembly, luaEntity, 3, 1, playerIndex)
+
     expect(assemblyUpdates.trySetFirstStage).not.called()
+    expect(undoAction).toBeNil()
     expectedCalls = 0
   })
   test.each<[StageMoveResult, LocalisedString]>([
@@ -508,22 +581,37 @@ describe("onBringToStageUsed", () => {
   test("calls trySetFirstStage when moved, and notifies if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    userActions.onBringToStageUsed(assembly, luaEntity, 3, playerIndex)
+    const undoAction = userActions.onBringToStageUsed(assembly, luaEntity, 3, playerIndex)
+
     assertIndicatorCreated(entity, ">>")
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 3)
+    expect(undoAction).not.toBeNil()
+
+    userActions.userSentEntityToStage.returns(true)
+    _doUndoAction(undoAction!)
+    expect(userActions.userSentEntityToStage).calledWith(assembly, entity, 3, 2, playerIndex)
   })
   test("calls trySetFirstStage and does not notify if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    userActions.onBringToStageUsed(assembly, luaEntity, 1, playerIndex)
+    const undoAction = userActions.onBringToStageUsed(assembly, luaEntity, 1, playerIndex)
+
     expect(notifications.createIndicator).not.called()
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 1)
+    expect(undoAction).not.toBeNil()
+
+    userActions.userSentEntityToStage.returns(true)
+    _doUndoAction(undoAction!)
+    expect(userActions.userSentEntityToStage).calledWith(assembly, entity, 1, 2, playerIndex)
   })
   test("ignores if called at same stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    userActions.onBringToStageUsed(assembly, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onBringToStageUsed(assembly, luaEntity, 2, playerIndex)
+
     expect(assemblyUpdates.trySetFirstStage).not.called()
+    expect(undoAction).toBeNil()
+
     expectedCalls = 0
   })
 
@@ -631,44 +719,5 @@ describe("onEntityDollied", () => {
 
     expect(worldUpdates.tryDollyEntities).calledWith(assembly, entity, 2)
     assertNotified(entity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
-  })
-})
-
-describe("undo", () => {
-  test("userMovedEntityToStage, with return=true notifies with EntityMovedBackToStage", () => {
-    const { entity } = addEntity(2)
-
-    userActions.userMovedEntityToStage(assembly, entity, 3, playerIndex, true)
-
-    assertNotified(entity, [L_Interaction.EntityMovedBackToStage, "mock stage 2"], false)
-  })
-
-  test("can undo overbuilding preview", () => {
-    userActions.userMovedEntityToStage.returns(nil) // stub out
-
-    const { luaEntity, entity } = addEntity(3)
-    userActions.onEntityCreated(assembly, luaEntity, 2, playerIndex)
-    notificationsAsserted = true // ignore notifications from onEntityCreated
-
-    after_ticks(1, () => {
-      _simulateUndo(game.players[playerIndex])
-      expect(userActions.userMovedEntityToStage).calledWith(assembly, entity, 3, playerIndex, true)
-    })
-  })
-
-  test("can still undo after being deleted and re-added", () => {
-    userActions.userMovedEntityToStage.returns(nil) // stub out
-
-    const { luaEntity, entity } = addEntity(3)
-    userActions.onEntityCreated(assembly, luaEntity, 2, playerIndex)
-    notificationsAsserted = true // ignore notifications from onEntityCreated
-
-    assembly.content.delete(entity)
-
-    const { entity: entity2 } = addEntity(3)
-    after_ticks(1, () => {
-      _simulateUndo(game.players[playerIndex])
-      expect(userActions.userMovedEntityToStage).calledWith(assembly, entity2, 3, playerIndex, true)
-    })
   })
 })

@@ -33,7 +33,7 @@ import {
 } from "./assembly-updates"
 import { Assembly } from "./AssemblyDef"
 import { createIndicator, createNotification } from "./notifications"
-import { UndoHandler } from "./undo"
+import { UndoAction, UndoHandler } from "./undo"
 import {
   AssemblyEntityDollyResult,
   clearWorldEntityAtStage,
@@ -43,40 +43,21 @@ import {
   tryDollyEntities,
 } from "./world-entity-updates"
 
-const undoPreviewReplace = UndoHandler(
-  "preview replace",
-  (player, { assembly, entity, oldStage }: { assembly: Assembly; entity: AssemblyEntity; oldStage: StageNumber }) => {
-    if (!assembly.valid) return
-
-    if (!assembly.content.has(entity)) {
-      const matching = assembly.content.findCompatibleWithExistingEntity(entity, entity.firstStage)
-      if (!matching || matching.firstStage != entity.firstStage) return
-      entity = matching
-    }
-
-    userMovedEntityToStage(assembly, entity, oldStage, player.index, true)
-  },
-)
-
 function onPreviewReplaced(
   assembly: Assembly,
   entity: AssemblyEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
-): void {
+): UndoAction | nil {
   const oldStage = entity.firstStage
-  // assert(trySetFirstStage(assembly, entity, stage) == StageMoveResult.Updated)
-  if (trySetFirstStage(assembly, entity, stage) == StageMoveResult.Updated) {
-    createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
-
-    if (byPlayer != nil) {
-      const player = game.get_player(byPlayer)!
-      undoPreviewReplace.registerLater(player, { assembly, entity, oldStage })
-    }
-  } else {
+  if (trySetFirstStage(assembly, entity, stage) != StageMoveResult.Updated) {
     // something went wrong, replace the entity
     rebuildWorldEntityAtStage(assembly, entity, stage)
+    return
   }
+
+  createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, assembly.getStageName(oldStage)], false)
+  return byPlayer && undoManualStageMove.getAction(byPlayer, { assembly, entity, oldStage })
 }
 
 function onEntityOverbuilt(
@@ -85,14 +66,16 @@ function onEntityOverbuilt(
   luaEntity: LuaEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
-) {
+): UndoAction | nil {
   asmEntity.replaceWorldEntity(stage, luaEntity)
   if (asmEntity.isSettingsRemnant) {
     userRevivedSettingsRemnant(assembly, asmEntity, stage, byPlayer)
+    // no undo action
   } else if (stage >= asmEntity.firstStage) {
     refreshWorldEntityAtStage(assembly, asmEntity, stage)
+    // no undo action
   } else {
-    onPreviewReplaced(assembly, asmEntity, stage, byPlayer)
+    return onPreviewReplaced(assembly, asmEntity, stage, byPlayer)
   }
 }
 
@@ -114,14 +97,13 @@ export function onEntityCreated(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
-): void {
+): UndoAction | nil {
   const { content } = assembly
 
   const asmEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)
 
   if (asmEntity) {
-    onEntityOverbuilt(assembly, asmEntity, entity, stage, byPlayer)
-    return
+    return onEntityOverbuilt(assembly, asmEntity, entity, stage, byPlayer)
   }
 
   const entityName = entity.name
@@ -133,6 +115,7 @@ export function onEntityCreated(
     }
   }
 
+  // in the future: more undo actions
   addNewEntity(assembly, entity, stage, knownBpValue)
 }
 
@@ -359,67 +342,152 @@ export function userRevivedSettingsRemnant(
   }
 }
 
-export function onMoveEntityToStageCustomInput(
-  assembly: Assembly,
-  entityOrPreviewEntity: LuaEntity,
-  stage: StageNumber,
-  byPlayer: PlayerIndex,
-): void {
-  const entity = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity, stage)
-  if (!entity || entity.isSettingsRemnant) return
-  userMovedEntityToStage(assembly, entity, stage, byPlayer)
-}
 export function userMovedEntityToStage(
   assembly: Assembly,
   entity: AssemblyEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex,
   returned?: boolean,
-): void {
+): boolean {
   const oldStage = entity.firstStage
   const result = trySetFirstStage(assembly, entity, stage)
   if (result == "updated") {
     const message = returned ? L_Interaction.EntityMovedBackToStage : L_Interaction.EntityMovedFromStage
     createNotification(entity, byPlayer, [message, assembly.getStageName(oldStage)], false)
-  } else if (result == "no-change") {
+    return true
+  }
+
+  if (result == "no-change") {
     createNotification(entity, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
   } else {
     notifyIfMoveError(result, entity, byPlayer)
   }
+  return false
 }
+
+interface StageChangeUndoData {
+  assembly: Assembly
+  entity: AssemblyEntity
+  oldStage: StageNumber
+}
+
+function findCompatibleEntityForStageChangeUndo(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  stage: StageNumber,
+): AssemblyEntity | nil {
+  if (!assembly.valid) return nil
+
+  if (!assembly.content.has(entity)) {
+    const matching = assembly.content.findCompatibleWithExistingEntity(entity, stage)
+    if (!matching || matching.firstStage != stage) return nil
+    return matching
+  }
+  return entity
+}
+
+const undoManualStageMove = UndoHandler(
+  "preview replace",
+  (player, { assembly, entity, oldStage }: StageChangeUndoData) => {
+    const actualEntity = findCompatibleEntityForStageChangeUndo(assembly, entity, oldStage)
+    if (actualEntity) {
+      userMovedEntityToStage(assembly, actualEntity, oldStage, player.index, true)
+    }
+  },
+)
+const undoSendToStage = UndoHandler("send to stage", (player, { assembly, entity, oldStage }: StageChangeUndoData) => {
+  const actualEntity = findCompatibleEntityForStageChangeUndo(assembly, entity, oldStage)
+  if (actualEntity) {
+    userBringEntityToStage(assembly, actualEntity, oldStage, player.index)
+  }
+})
+
+const undoBringToStage = UndoHandler(
+  "bring to stage",
+  (player, { assembly, entity, oldStage }: StageChangeUndoData) => {
+    const actualEntity = findCompatibleEntityForStageChangeUndo(assembly, entity, oldStage)
+    if (actualEntity) {
+      userSentEntityToStage(assembly, actualEntity, actualEntity.firstStage, oldStage, player.index)
+    }
+  },
+)
+
+export function onMoveEntityToStageCustomInput(
+  assembly: Assembly,
+  entityOrPreviewEntity: LuaEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex,
+): UndoAction | nil {
+  const entity = assembly.content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity, stage)
+  if (!entity || entity.isSettingsRemnant) return
+  const oldStage = entity.firstStage
+  if (userMovedEntityToStage(assembly, entity, stage, byPlayer)) {
+    return undoManualStageMove.getAction(byPlayer, { assembly, entity, oldStage })
+  }
+}
+
+export function userSentEntityToStage(
+  assembly: Assembly,
+  asmEntity: AssemblyEntity,
+  fromStage: StageNumber,
+  toStage: StageNumber,
+  byPlayer: PlayerIndex,
+): boolean {
+  const result = trySetFirstStage(assembly, asmEntity, toStage)
+  if (result != "updated") {
+    notifyIfMoveError(result, asmEntity, byPlayer)
+    return false
+  }
+  if (toStage < fromStage) createIndicator(asmEntity, byPlayer, "<<", Colors.Orange)
+  return true
+}
+
 export function onSendToStageUsed(
   assembly: Assembly,
   entity: LuaEntity,
   fromStage: StageNumber,
   toStage: StageNumber,
   byPlayer: PlayerIndex,
-): void {
+): UndoAction | nil {
   if (fromStage == toStage) return
   const asmEntity = assembly.content.findExact(entity, entity.position, fromStage)
   if (!asmEntity || asmEntity.firstStage != fromStage || asmEntity.isSettingsRemnant) return
-  const result = trySetFirstStage(assembly, asmEntity, toStage)
-  if (result == "updated") {
-    if (toStage < fromStage) createIndicator(asmEntity, byPlayer, "<<", Colors.Orange)
-    return
+
+  if (userSentEntityToStage(assembly, asmEntity, fromStage, toStage, byPlayer)) {
+    return byPlayer && undoSendToStage.getAction(byPlayer, { assembly, entity: asmEntity, oldStage: fromStage })
   }
-  notifyIfMoveError(result, asmEntity, byPlayer)
 }
+
+export function userBringEntityToStage(
+  assembly: Assembly,
+  asmEntity: AssemblyEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex,
+): boolean {
+  const oldStage = asmEntity.firstStage
+  if (oldStage == stage) return false
+  const result = trySetFirstStage(assembly, asmEntity, stage)
+  if (result != "updated") {
+    notifyIfMoveError(result, asmEntity, byPlayer)
+    return false
+  }
+
+  if (oldStage < stage) createIndicator(asmEntity, byPlayer, ">>", Colors.Blueish)
+  return true
+}
+
 export function onBringToStageUsed(
   assembly: Assembly,
   entity: LuaEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex,
-): void {
+): UndoAction | nil {
   const asmEntity = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
   if (!asmEntity || asmEntity.isSettingsRemnant) return
   const oldStage = asmEntity.firstStage
-  if (oldStage == stage) return
-  const result = trySetFirstStage(assembly, asmEntity, stage)
-  if (result == "updated") {
-    if (oldStage < stage) createIndicator(asmEntity, byPlayer, ">>", Colors.Blueish)
-    return
+  if (userBringEntityToStage(assembly, asmEntity, stage, byPlayer)) {
+    return undoBringToStage.getAction(byPlayer, { assembly, entity: asmEntity, oldStage })
   }
-  notifyIfMoveError(result, asmEntity, byPlayer)
 }
 
 export function onStageDeleteUsed(
