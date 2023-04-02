@@ -28,12 +28,6 @@ const previewEntitySubgroup: ItemSubgroupPrototype = {
   group: Prototypes.UtilityGroup,
   order: "b",
 }
-const selectionProxySubgroup: ItemSubgroupPrototype = {
-  type: "item-subgroup",
-  name: Prototypes.SelectionProxySubgroup,
-  group: Prototypes.UtilityGroup,
-  order: "c",
-}
 const blueprintSubgroup: ItemSubgroupPrototype = {
   type: "item-subgroup",
   name: Prototypes.BlueprintSubgroup,
@@ -41,4 +35,4 @@ const blueprintSubgroup: ItemSubgroupPrototype = {
   order: "a",
 }
 
-data.extend([utilityGroup, previewEntitySubgroup, selectionProxySubgroup, blueprintSubgroup])
+data.extend([utilityGroup, previewEntitySubgroup, blueprintSubgroup])

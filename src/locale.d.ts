@@ -10,7 +10,7 @@ export declare const enum L_ItemName {
   FilteredStageMoveTool = "item-name.bp100:filtered-stage-move-tool",
   /** Blueprint filters */
   BlueprintFilters = "item-name.bp100:blueprint-filters",
-  /** Stage delete tool */
+  /** Stage deconstruction tool */
   StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
 }
 export declare const enum L_ShortcutName {
@@ -20,12 +20,14 @@ export declare const enum L_ShortcutName {
   StageMoveTool = "shortcut-name.bp100:stage-move-tool",
   /** Filtered stage move tool */
   FilteredStageMoveTool = "shortcut-name.bp100:filtered-stage-move-tool",
-  /** Stage delete tool */
+  /** Stage deconstruction tool */
   StageDeconstructTool = "shortcut-name.bp100:stage-deconstruct-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
   EntityMarker = "entity-name.bp100:entity-marker",
+  /** Undo reference */
+  UndoReference = "entity-name.bp100:undo-reference",
 }
 export declare const enum L_ItemGroupName {
   /** Staged blueprint planning utility entities */
@@ -34,15 +36,15 @@ export declare const enum L_ItemGroupName {
 export declare const enum L_ModSettingName {
   /** Flexible offshore pump placement */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
-  /** Location of entity stage info gui */
+  /** Location of entity info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
-  /** Allow upgrading entities via blueprint paste */
+  /** Allow blueprint pasting to upgrade entities */
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
-  /** E.g. if pasting a fast-inserter over a normal inserter, this will upgrade the inserter. This is not vanilla behavior.\nThis setting only applies while within a staged build. */
+  /** E.g. if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter (different from vanilla behavior).\nThis setting only applies while within a staged build. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
 }
 export declare const enum L_StringModSetting {
@@ -98,7 +100,7 @@ export declare const enum L_Bp100 {
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp100.interaction.unexpected-error",
-  /** WARNING: pasting a blueprint from the blueprint [font=default-bold]library[/font] into a staged build is not supported.\nEntities that have settings changed from pasting this blueprint will not be detected (newly created entities are fine).\nTo fix, make a copy of the blueprint (book) first, then paste again. */
+  /** WARNING: pasting from the blueprint [font=default-bold]library[/font] into a staged build is not supported.\nTo fix, make a copy of the blueprint (book) from the library, and paste again using the copy. */
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
@@ -108,17 +110,17 @@ export declare const enum L_Interaction {
   CannotFlipUndergroundDueToMultiplePairs = "bp100.interaction.cannot-flip-underground-due-to-multiple-pairs",
   /** Cannot upgrade underground paired with multiple other undergrounds */
   CannotUpgradeUndergroundDueToMultiplePairs = "bp100.interaction.cannot-upgrade-underground-due-to-multiple-pairs",
-  /** Cannot create stage upgrade if underground pair not in the same stage */
+  /** Cannot create upgrade if underground pairs are not in the same stage */
   CannotCreateUndergroundUpgradeIfNotInSameStage = "bp100.interaction.cannot-create-underground-upgrade-if-not-in-same-stage",
   /** Upgrading this will change the underground pair */
   CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
-  /** Cannot move underground belt with upgrade. Try first upgrading in the entity first stage. */
+  /** Cannot move underground belt with upgrade. */
   CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
   /** Cannot move entity past last stage */
   CannotMovePastLastStage = "bp100.interaction.cannot-move-past-last-stage",
-  /** Cannot delete entity before first stage */
+  /** Cannot deconstruct entity at first stage */
   CannotDeleteBeforeFirstStage = "bp100.interaction.cannot-delete-before-first-stage",
-  /** Moving this entity will intersect an identical entity in another stage */
+  /** This move will intersect an identical entity in another stage */
   MoveWillIntersectAnotherEntity = "bp100.interaction.move-will-intersect-another-entity",
   /** Max of 5 connections reached (in another stage). */
   MaxConnectionsReachedInAnotherStage = "bp100.interaction.max-connections-reached-in-another-stage",
@@ -134,9 +136,9 @@ export declare const enum L_Interaction {
   EntitiesMissing = "bp100.interaction.entities-missing",
   /** Cannot move, power/circuit connected entities missing in another stage */
   ConnectedEntitiesMissing = "bp100.interaction.connected-entities-missing",
-  /** Cannot overbuild existing entity in a different direction */
+  /** Cannot overlap existing entity in a different direction */
   CannotBuildDifferentDirection = "bp100.interaction.cannot-build-different-direction",
-  /** Note: some entities were upgraded via blueprint paste (the upgrade-on-paste mod setting is enabled). */
+  /** Note: some entities were upgraded (the upgrade on blueprint paste user setting is enabled) */
   PasteUpgradeApplied = "bp100.interaction.paste-upgrade-applied",
   /** Not in an staged build */
   NotInAnAssembly = "bp100.interaction.not-in-an-assembly",
@@ -156,9 +158,9 @@ export declare const enum L_Interaction {
   BlueprintEmpty = "bp100.interaction.blueprint-empty",
   /** Blueprint book is empty */
   BlueprintBookEmpty = "bp100.interaction.blueprint-book-empty",
-  /** The only entity you should not have removed was removed from the blueprint... snap to grid settings have not been saved properly. Try editing the blueprint again without removing entities. */
+  /** Snap to grid settings have not been saved. Try editing the blueprint again without removing entities. */
   BlueprintFirstEntityRemoved = "bp100.interaction.blueprint-first-entity-removed",
-  /** Cannot move to same stage */
+  /** Cannot move to the same stage */
   CannotMoveToSameStage = "bp100.interaction.cannot-move-to-same-stage",
   /** WARNING: The filtered stage move tool must be used with instant-deconstruction [font=default-large-bold]disabled[/font]. Otherwise, the tool will not work properly (it will act like a deconstruction planner). */
   FilteredStageMoveToolWarning = "bp100.interaction.filtered-stage-move-tool-warning",
@@ -222,16 +224,16 @@ export declare const enum L_GuiAssemblySettings {
   DeleteStage = "bp100.gui.assembly-settings.delete-stage",
   /** Are you sure you want to delete stage __1__? */
   DeleteStageConfirmation1 = "bp100.gui.assembly-settings.delete-stage-confirmation1",
-  /** Stage contents will be merged with the next stage (__1__). */
+  /** Contents will be merged with the next stage (__1__). */
   DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
-  /** Stage contents will be merged with the previous stage (__1__). */
+  /** Contents will be merged with the previous stage (__1__). */
   DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
   /** Defaults */
-  Defaults = "bp100.gui.assembly-settings.defaults",
+  BlueprintSettingsDefaults = "bp100.gui.assembly-settings.blueprint-settings-defaults",
   /** Current stage [img=info] */
-  CurrentStage = "bp100.gui.assembly-settings.current-stage",
+  BlueprintSettingsCurrentStage = "bp100.gui.assembly-settings.blueprint-settings-current-stage",
   /** These settings override the default settings for the current stage. Overriden settings are highlighted. */
-  CurrentStageTooltip = "bp100.gui.assembly-settings.current-stage-tooltip",
+  BlueprintSettingsCurrentStageTooltip = "bp100.gui.assembly-settings.blueprint-settings-current-stage-tooltip",
   /** Defaults */
   EditingDefaults = "bp100.gui.assembly-settings.editing-defaults",
   /** Overrides for stage: __1__ */
@@ -270,8 +272,8 @@ export declare const enum L_GuiAssemblySettings {
   ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
   /** Export */
   BpExport = "bp100.gui.assembly-settings.bp-export",
-  /** Get blueprint */
-  GetBlueprint = "bp100.gui.assembly-settings.get-blueprint",
+  /** Get blueprint for current stage */
+  GetBlueprintForCurrentStage = "bp100.gui.assembly-settings.get-blueprint-for-current-stage",
   /** Make blueprint book [img=info] */
   MakeBlueprintBook = "bp100.gui.assembly-settings.make-blueprint-book",
   /** Creates a blueprint book containing all stages. */

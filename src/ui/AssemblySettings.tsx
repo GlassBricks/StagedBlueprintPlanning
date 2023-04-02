@@ -145,12 +145,10 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
           <frame style="inside_shallow_frame" direction="vertical" styleMod={{ top_padding: 5 }}>
             <tabbed-pane
               style="tabbed_pane_with_no_side_padding"
-              selected_tab_index={1}
               styleMod={{
                 vertically_stretchable: true,
                 minimal_width: AssemblySettingsTabWidth,
               }}
-              onCreate={(e) => (e.selected_tab_index = 2)}
             >
               <tab caption={[L_GuiAssemblySettings.Stage]} />
               {this.StagesTab()}
@@ -231,9 +229,12 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
             bottom_margin: -10,
           }}
         >
-          <tab caption={[L_GuiAssemblySettings.Defaults]} />
+          <tab caption={[L_GuiAssemblySettings.BlueprintSettingsDefaults]} />
           {this.BpSettings(nil)}
-          <tab caption={[L_GuiAssemblySettings.CurrentStage]} tooltip={[L_GuiAssemblySettings.CurrentStageTooltip]} />
+          <tab
+            caption={[L_GuiAssemblySettings.BlueprintSettingsCurrentStage]}
+            tooltip={[L_GuiAssemblySettings.BlueprintSettingsCurrentStageTooltip]}
+          />
           <Fn uses="flow" from={playerCurrentStage(this.playerIndex)} map={ibind(this.BpSettings)} />
           <tab caption={[L_GuiAssemblySettings.BpExport]} />
           {this.BpExportTab()}
@@ -358,9 +359,8 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
   private BpExportTab(): Element {
     return (
       <flow direction="vertical" styleMod={{ padding: 10 }}>
-        <label caption={[L_GuiAssemblySettings.CurrentStage]} style="caption_label" />
         <button
-          caption={[L_GuiAssemblySettings.GetBlueprint]}
+          caption={[L_GuiAssemblySettings.GetBlueprintForCurrentStage]}
           styleMod={{ width: BpSettingsButtonWidth }}
           on_gui_click={ibind(this.getBlueprint)}
         />
