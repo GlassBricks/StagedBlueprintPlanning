@@ -16,7 +16,6 @@ import { Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
-  AssemblyOrStageBlueprintSettings,
   getDefaultBlueprintSettings,
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
@@ -48,6 +47,8 @@ function getCurrentBpSettings(stage: Stage): StageBlueprintSettings {
 
 /**
  * Facilitates the creation of multiple blueprints efficiently.
+ *
+ * Made in anticipation of "blueprint templates", allowing making a book with blueprints from multiple assemblies.
  */
 export class BlueprintCreation {
   private inventory?: LuaInventory
@@ -116,11 +117,7 @@ export class BlueprintCreation {
     }
   }
 
-  public addBlueprint(
-    stage: Stage,
-    stack: LuaItemStack,
-    settingsOverride?: StageBlueprintSettings,
-  ): { result: BlueprintTakeResult | nil } | nil {
+  public addBlueprint(stage: Stage, stack: LuaItemStack): { result: BlueprintTakeResult | nil } | nil {
     const assemblyPlan = this.getPlanForAssembly(stage.assembly)
     const existingStagePlan = assemblyPlan.stagePlans.get(stage.stageNumber)
     if (existingStagePlan) {
@@ -128,7 +125,7 @@ export class BlueprintCreation {
       existingStagePlan.stack = stack
     }
 
-    const settings = existingStagePlan?.settings ?? settingsOverride ?? getCurrentBpSettings(stage)
+    const settings = existingStagePlan?.settings ?? getCurrentBpSettings(stage)
     if (settings.useNextStageTiles) {
       const nextStage = stage.assembly.getStage(stage.stageNumber + 1)
       if (nextStage) this.ensureTilesTaken(assemblyPlan, nextStage)
@@ -252,19 +249,9 @@ export function withBlueprintCreator<T>(action: (creator: BlueprintCreation) => 
   error(result)
 }
 
-export function takeStageBlueprint(
-  stage: Stage,
-  stack: LuaItemStack,
-  settingsOverride?: AssemblyOrStageBlueprintSettings,
-): boolean {
+export function takeStageBlueprint(stage: Stage, stack: LuaItemStack): boolean {
   return withBlueprintCreator((creator) => {
-    const settings =
-      settingsOverride &&
-      ({
-        icons: nil,
-        ...getCurrentValues(settingsOverride),
-      } satisfies StageBlueprintSettings)
-    const plan = creator.addBlueprint(stage, stack, settings)!
+    const plan = creator.addBlueprint(stage, stack)!
     creator.takeAllBlueprints()
     return plan.result != nil
   })
