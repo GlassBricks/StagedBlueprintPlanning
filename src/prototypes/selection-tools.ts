@@ -255,12 +255,11 @@ data.extend([
   selectionToolToShortcut(
     stageDeleteTool,
     {
-      filename: "__base__/graphics/icons/shortcut-toolbar/mip/new-deconstruction-planner-x32-white.png",
+      filename: "__bp100__/graphics/icons/new-stage-deconstruction-planner.png",
       size: 32,
-      mipmap_count: 2,
     },
     Prototypes.StageDeconstructTool,
-    "blue",
+    "red",
   ),
   selectionToolToInput(stageDeleteTool),
 ])
