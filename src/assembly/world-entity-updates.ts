@@ -160,13 +160,16 @@ export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: A
 }
 
 export function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
+  if (!entity.isInStage(stage)) {
+    entity.destroyWorldOrPreviewEntity(stage)
+    return
+  }
   if (entity.isSettingsRemnant) {
     entity.destroyWorldOrPreviewEntity(stage)
     makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
     makeSettingsRemnantHighlights(assembly, entity)
     return
   }
-  assert(entity.isInStage(stage))
   updateWorldEntitiesOnlyInRange(assembly, entity, stage, stage)
   updateWiresInRange(assembly, entity, stage, stage)
   updateAllHighlights(assembly, entity)

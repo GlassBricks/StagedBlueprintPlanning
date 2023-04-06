@@ -68,6 +68,8 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 
   isInStage(stage: StageNumber): boolean
 
+  isPastLastStage(stage: StageNumber): boolean
+
   setTypeProperty(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
@@ -266,8 +268,13 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   }
 
   isInStage(stage: StageNumber): boolean {
-    return stage >= this.firstStage && (this.lastStage == nil || stage <= this.lastStage)
+    return stage >= this.firstStage && !this.isPastLastStage(stage)
   }
+
+  isPastLastStage(stage: StageNumber): boolean {
+    return this.lastStage != nil && stage > this.lastStage
+  }
+
   setTypeProperty(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
     // assume compiler asserts this is correct
     this.firstValue.type = direction

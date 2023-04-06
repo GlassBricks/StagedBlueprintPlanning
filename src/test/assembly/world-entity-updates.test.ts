@@ -130,10 +130,11 @@ describe("updateWorldEntities", () => {
       expect(replaced).to.equal(val)
     })
 
-    test("attempting to refresh world entity past last stage errors", () => {
+    test("attempting to refresh world entity deletes entity if it exists", () => {
       entity.setLastStageUnchecked(3)
-      expect(() => WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 4)).to.throw()
-      expect(() => WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 0)).to.throw()
+      entity.replaceWorldOrPreviewEntity(4, {} as any)
+      WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 4)
+      assertNothingPresent(4)
     })
 
     test("replaces deleted entity", () => {
@@ -476,11 +477,13 @@ test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tr
   expect(highlighter.updateHighlightsOnSettingsRemnantRevived).calledWith(assembly, entity)
 })
 
-test("resetStage", () => {
+test("rebuildStage", () => {
   const entity1 = createAssemblyEntity({ name: "transport-belt" }, Pos(0, 0), nil, 1)
   const entity2 = createAssemblyEntity({ name: "iron-chest" }, Pos(1, 1), nil, 2)
+  const entity3 = createAssemblyEntity({ name: "iron-chest" }, Pos(1, 1), nil, 2)
   assembly.content.add(entity1)
   assembly.content.add(entity2)
+  assembly.content.add(entity3)
 
   const surface = assembly.getSurface(2)!
   const chest = surface.create_entity({
@@ -493,6 +496,8 @@ test("resetStage", () => {
   expect(chest.valid).to.be(false)
   expect(entity1.getWorldEntity(2)).to.be.any()
   expect(entity2.getWorldEntity(2)).to.be.any()
+  expect(entity3.getWorldOrPreviewEntity(2)).to.be.any()
+  expect(entity3.getWorldEntity(2)).toBeNil()
 })
 
 // this duplicates WireHandler test a bit

@@ -61,6 +61,19 @@ test("isInStage", () => {
   expect(assemblyEntity.isInStage(6)).to.be(false)
 })
 
+test("isPastLastStage", () => {
+  assemblyEntity.setLastStageUnchecked(4)
+  expect(assemblyEntity.isPastLastStage(3)).to.be(false)
+  expect(assemblyEntity.isPastLastStage(4)).to.be(false)
+  expect(assemblyEntity.isPastLastStage(5)).to.be(true)
+  expect(assemblyEntity.isPastLastStage(6)).to.be(true)
+
+  assemblyEntity.setLastStageUnchecked(nil)
+  expect(assemblyEntity.isPastLastStage(4)).to.be(false)
+  expect(assemblyEntity.isPastLastStage(5)).to.be(false)
+  expect(assemblyEntity.isPastLastStage(6)).to.be(false)
+})
+
 test("isRollingStock", () => {
   expect(assemblyEntity.isRollingStock()).to.be(false)
   const assemblyEntity2 = createAssemblyEntity({ name: "locomotive" }, Pos(0, 0), nil, 2)
