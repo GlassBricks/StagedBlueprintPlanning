@@ -213,7 +213,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
         <label caption={caption} />
         <HorizontalPusher />
         <SmallToolButton
-          sprite="utility/reset"
+          sprite="utility/close_black"
           tooltip={[L_GuiEntityInfo.ResetProp]}
           tags={{ prop }}
           on_gui_click={ibind(this.resetProp)}

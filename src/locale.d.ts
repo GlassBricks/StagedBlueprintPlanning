@@ -302,7 +302,7 @@ export declare const enum L_GuiEntityInfo {
   LastStage = "bp100.gui.entity-info.last-stage",
   /** Move to this stage */
   MoveToThisStage = "bp100.gui.entity-info.move-to-this-stage",
-  /** Remove last stage */
+  /** Cancel deconstruction */
   RemoveLastStage = "bp100.gui.entity-info.remove-last-stage",
   /** Reset train */
   ResetTrain = "bp100.gui.entity-info.reset-train",
@@ -310,11 +310,11 @@ export declare const enum L_GuiEntityInfo {
   SetTrainLocationHere = "bp100.gui.entity-info.set-train-location-here",
   /** Force delete entity */
   DeleteEntity = "bp100.gui.entity-info.delete-entity",
-  /** Stage changes */
+  /** Changed settings */
   StageDiff = "bp100.gui.entity-info.stage-diff",
-  /** Reset */
+  /** Remove this change (sets to previous value) */
   ResetProp = "bp100.gui.entity-info.reset-prop",
-  /** Apply to previous stage w/ change (__1__) */
+  /** Apply to previous stage (__1__) */
   ApplyToLowerStage = "bp100.gui.entity-info.apply-to-lower-stage",
   /** <All> */
   AllProps = "bp100.gui.entity-info.all-props",
