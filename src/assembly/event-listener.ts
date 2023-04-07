@@ -751,20 +751,21 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
   }
 
-  let luaEntity: LuaEntity | nil
-  const pasteRotatableType = getPasteRotatableType(referencedName)
-  if (pasteRotatableType == nil || isDiagonal) {
-    // if diagonal, then don't care about rotatable type
-    luaEntity = luaEntities.find((e) => e.direction == entityDir)
-  } else if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
-    const oppositeDir = oppositedirection(entityDir)
-    luaEntity = luaEntities.find((e) => e.direction == entityDir || e.direction == oppositeDir)
-  } else if (pasteRotatableType == PasteRotatableType.Square) {
-    luaEntity = luaEntities[0]
-  } else {
-    assertNever(pasteRotatableType)
+  let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == entityDir)
+  if (!luaEntity) {
+    // slower path, check for other directions
+    const pasteRotatableType = getPasteRotatableType(referencedName)
+    if (pasteRotatableType == nil) return
+    if (pasteRotatableType == PasteRotatableType.AnyDirection) {
+      luaEntity = luaEntities[0]
+    } else if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
+      const oppositeDir = oppositedirection(entityDir)
+      luaEntity = luaEntities.find((e) => e.direction == oppositeDir)
+      if (!luaEntity) return
+    } else {
+      assertNever(pasteRotatableType)
+    }
   }
-  if (!luaEntity) return
 
   if (usedPasteUpgrade) {
     bpState.usedPasteUpgrade = true

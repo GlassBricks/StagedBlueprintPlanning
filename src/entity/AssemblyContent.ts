@@ -161,7 +161,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     if (pasteRotatableType == nil) {
       return this.findCompatibleByProps(name, entity.position, previousDirection ?? entity.direction, stage)
     }
-    if (pasteRotatableType == PasteRotatableType.Square) {
+    if (pasteRotatableType == PasteRotatableType.AnyDirection) {
       return this.findCompatibleByProps(name, entity.position, nil, stage)
     }
     if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {

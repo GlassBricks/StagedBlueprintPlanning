@@ -145,7 +145,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("matches any direction if pasteRotatableType is square", () => {
-    assert(getPasteRotatableType("assembling-machine-1") == PasteRotatableType.Square)
+    assert(getPasteRotatableType("assembling-machine-1") == PasteRotatableType.AnyDirection)
 
     const entity = createAssemblyEntity(
       { name: "assembling-machine-2" },

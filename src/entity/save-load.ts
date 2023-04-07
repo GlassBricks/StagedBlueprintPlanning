@@ -328,7 +328,7 @@ export const _mockable = true
 export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
   return (
     luaEntity.type == "assembling-machine" &&
-    getPasteRotatableType(luaEntity.name) == PasteRotatableType.Square &&
+    getPasteRotatableType(luaEntity.name) == PasteRotatableType.AnyDirection &&
     luaEntity.fluidbox.length == 0
   )
 }

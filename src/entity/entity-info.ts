@@ -53,7 +53,7 @@ function trimCategories() {
 
 export const enum PasteRotatableType {
   RectangularOrStraightRail,
-  Square,
+  AnyDirection,
 }
 const pasteRotationTypes = new LuaMap<string, PasteRotatableType>()
 
@@ -64,10 +64,15 @@ function processPasteRotatableType(prototype: LuaEntityPrototype) {
     pasteRotationTypes.set(prototype.name, PasteRotatableType.RectangularOrStraightRail)
     return
   }
+  if (!prototype.supports_direction) {
+    pasteRotationTypes.set(prototype.name, PasteRotatableType.AnyDirection)
+    return
+  }
+
   if (type != "assembling-machine" && type != "boiler") return
   const collisionBox = prototype.collision_box
   if (BBox.isCenteredSquare(collisionBox)) {
-    pasteRotationTypes.set(prototype.name, PasteRotatableType.Square)
+    pasteRotationTypes.set(prototype.name, PasteRotatableType.AnyDirection)
   } else if (BBox.isCenteredRectangle(collisionBox)) {
     pasteRotationTypes.set(prototype.name, PasteRotatableType.RectangularOrStraightRail)
   }

@@ -797,7 +797,7 @@ describe.each([defines.direction.north, defines.direction.northeast])("with rail
       }
       const stack = player.cursor_stack!
       stack.set_stack("blueprint")
-      stack.blueprint_snap_to_grid = [1, 1]
+      stack.blueprint_snap_to_grid = [2, 2]
       stack.blueprint_absolute_snapping = true
       stack.set_blueprint_entities([entity])
 
@@ -809,7 +809,14 @@ describe.each([defines.direction.north, defines.direction.northeast])("with rail
       expect(rail).not.toBeNil()
       let expected = (diag + direction) % 8
       if (expected == 4 || expected == 6) expected -= 4 // left=right, up=down
-      expect(rail.direction).toBe(expected)
+      expect(rail.direction).toEqual(expected)
+
+      const assemblyEntity = assembly.content.findCompatibleWithLuaEntity(rail, nil, 1)
+
+      expect(assemblyEntity).not.toBeNil()
+      expect(assemblyEntity!.getWorldEntity(1)).toEqual(rail)
+
+      expect(assemblyEntity!.getDirection()).toEqual(expected)
     },
   )
 })
@@ -824,7 +831,7 @@ test("pasting diagonal rail at same position but different direction", () => {
   }
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
-  stack.blueprint_snap_to_grid = [1, 1]
+  stack.blueprint_snap_to_grid = [2, 2]
   stack.blueprint_absolute_snapping = true
   stack.set_blueprint_entities([entity])
 
@@ -846,8 +853,46 @@ test("pasting diagonal rail at same position but different direction", () => {
     position: pos,
     radius: 0,
     direction: defines.direction.southwest,
-  })
+  })[0]
   expect(rail2).not.toBeNil()
+
+  const entity1 = assembly.content.findCompatibleWithLuaEntity(rail, nil, 1)
+  const entity2 = assembly.content.findCompatibleWithLuaEntity(rail2, nil, 1)
+  expect(entity1).not.toBeNil()
+  expect(entity2).not.toBeNil()
+
+  expect(entity1!.getDirection()).toEqual(defines.direction.northeast)
+  expect(entity2!.getDirection()).toEqual(defines.direction.southwest)
+
+  expect(entity1!.getWorldEntity(1)).toEqual(rail)
+  expect(entity2!.getWorldEntity(1)).toEqual(rail2)
+})
+
+test("pasting rotated blueprint, with an entity that does not support rotation", () => {
+  const player = game.players[1]
+  const entity: BlueprintEntity = {
+    entity_number: 1,
+    name: "stone-furnace",
+    position: Pos(0, 0),
+    direction: defines.direction.north,
+  }
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.set_blueprint_entities([entity])
+
+  const pos = Pos(5, 5)
+
+  player.teleport([0, 0], surfaces[0])
+  player.build_from_cursor({ position: pos, direction: defines.direction.east, alt: true })
+  const furnace = surfaces[0].find_entity("stone-furnace", pos)!
+  expect(furnace).not.toBeNil()
+
+  expect(furnace.direction).toBe(defines.direction.north)
+
+  const entity1 = assembly.content.findCompatibleWithLuaEntity(furnace, nil, 1)
+  expect(entity1).not.toBeNil()
+  expect(entity1!.getDirection()).toEqual(defines.direction.north)
+  expect(entity1!.getWorldEntity(1)).toEqual(furnace)
 })
 
 test("using stage delete tool", () => {
