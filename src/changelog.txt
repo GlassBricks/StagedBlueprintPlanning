@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.1
-Date: ????
+Date: 2023-04-07
   Bugfixes:
     - Fixed crash with rebuilding, inserting, or deleting stages
     - Fixed pasting a rotated blueprint with entities that don't support rotation, or that only have vertical/horizontal rotation.
