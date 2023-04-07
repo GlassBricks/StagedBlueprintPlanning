@@ -667,7 +667,6 @@ function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity): void {
 function manuallyConnectWires(
   luaEntity: LuaEntity,
   connections: BlueprintConnectionData[] | nil,
-  entityId: number,
   sourceId: number,
   wireType: defines.wire_type,
 ) {
@@ -685,25 +684,16 @@ function manuallyConnectWires(
   }
 }
 
-function manuallyConnectPoint(
-  luaEntity: LuaEntity,
-  connection: BlueprintConnectionPoint | nil,
-  entityId: number,
-  sourceId: number,
-) {
+function manuallyConnectPoint(luaEntity: LuaEntity, connection: BlueprintConnectionPoint | nil, sourceId: number) {
   if (!connection) return
-  manuallyConnectWires(luaEntity, connection.red, entityId, sourceId, defines.wire_type.red)
-  manuallyConnectWires(luaEntity, connection.green, entityId, sourceId, defines.wire_type.green)
+  manuallyConnectWires(luaEntity, connection.red, sourceId, defines.wire_type.red)
+  manuallyConnectWires(luaEntity, connection.green, sourceId, defines.wire_type.green)
 }
 
-function manuallyConnectCircuits(
-  luaEntity: LuaEntity,
-  connections: BlueprintCircuitConnection | nil,
-  entityId: number,
-) {
+function manuallyConnectCircuits(luaEntity: LuaEntity, connections: BlueprintCircuitConnection | nil) {
   if (!connections) return
-  manuallyConnectPoint(luaEntity, connections["1"], entityId, 1)
-  manuallyConnectPoint(luaEntity, connections["2"], entityId, 2)
+  manuallyConnectPoint(luaEntity, connections["1"], 1)
+  manuallyConnectPoint(luaEntity, connections["2"], 2)
 }
 
 function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] | nil) {
@@ -790,7 +780,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     }
   }
 
-  bpState.knownLuaEntities[entityId] = luaEntity // save if has wire connections
+  bpState.knownLuaEntities[entityId] = luaEntity // save the entity if it has wire connections
 }
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
@@ -807,7 +797,7 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
     const luaEntity = knownLuaEntities[entityId]
     if (!luaEntity) continue
     manuallyConnectNeighbours(luaEntity, value.neighbours)
-    manuallyConnectCircuits(luaEntity, value.connections, entityId)
+    manuallyConnectCircuits(luaEntity, value.connections)
     onCircuitWiresPossiblyUpdated(assembly, luaEntity, stageNumber, e.player_index)
   }
 
