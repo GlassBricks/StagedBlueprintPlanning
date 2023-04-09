@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -93,11 +93,15 @@ const setterKeys = keySet<Setters>()
 const getterKeys = keySet<Getters>()
 const otherSetterKeys = keySet<OtherSetters>()
 
+function getKey(key: string) {
+  const [success, value] = pcall(() => (rendering as any)[key])
+  if (success) return value
+}
 const setters: {
   [K in keyof Setters]: LuaRendering[`set_${K}`]
 } = {} as any
 for (const key of setterKeys) {
-  setters[key] = rendering[`set_${key}`] as any
+  setters[key] = getKey(`set_${key}`)
 }
 const getters: {
   -readonly [K in keyof Getters]: LuaRendering[`get_${K}`]
@@ -106,7 +110,7 @@ const getters: {
   destroy: (this: void, id: uint64) => () => void
 } = {} as any
 for (const key of getterKeys) {
-  getters[key] = rendering[`get_${key}`] as any
+  getters[key] = getKey(`get_${key}`)
 }
 getters.valid = rendering.is_valid
 getters.destroy = (id) => () => {
