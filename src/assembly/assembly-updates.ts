@@ -186,7 +186,6 @@ function tryUpdateUndergroundFromFastReplace(
 }
 
 function doUpdateEntityFromWorld(
-  assembly: Assembly,
   stage: StageNumber,
   entity: AssemblyEntity,
   entitySource: LuaEntity,
@@ -223,7 +222,7 @@ export function tryUpdateEntityFromWorld(
     }
   }
 
-  const hasDiff = doUpdateEntityFromWorld(assembly, stage, entity, entitySource, knownValue)
+  const hasDiff = doUpdateEntityFromWorld(stage, entity, entitySource, knownValue)
   if (hasDiff || rotated) {
     updateWorldEntities(assembly, entity, stage)
     return EntityUpdateResult.Updated
@@ -329,11 +328,11 @@ export function tryApplyUpgradeTarget(
   return EntityUpdateResult.NoChange
 }
 
-function checkDefaultControlBehavior(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): boolean {
+function checkDefaultControlBehavior(entity: AssemblyEntity, stage: StageNumber): boolean {
   if (stage <= entity.firstStage || hasControlBehaviorSet(entity, stage)) return false
   fixEmptyControlBehavior(entity)
   const luaEntity = entity.getWorldEntity(stage)
-  if (luaEntity) doUpdateEntityFromWorld(assembly, stage, entity, luaEntity)
+  if (luaEntity) doUpdateEntityFromWorld(stage, entity, luaEntity)
   return true
 }
 
@@ -352,11 +351,11 @@ export function updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity,
   if (!connectionsChanged) return WireUpdateResult.NoChange
 
   const circuitConnections = assembly.content.getCircuitConnections(entity)
-  if (circuitConnections) checkDefaultControlBehavior(assembly, entity, stage)
+  if (circuitConnections) checkDefaultControlBehavior(entity, stage)
   updateWorldEntities(assembly, entity, entity.firstStage)
   if (circuitConnections) {
     for (const [otherEntity] of circuitConnections) {
-      if (checkDefaultControlBehavior(assembly, otherEntity, stage)) {
+      if (checkDefaultControlBehavior(otherEntity, stage)) {
         updateWorldEntities(assembly, otherEntity, otherEntity.firstStage)
       }
     }
