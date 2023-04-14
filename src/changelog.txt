@@ -1,0 +1,421 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.18.4
+Date: ????
+  Changes:
+---------------------------------------------------------------------------------------------------
+Version: 0.18.3
+Date: 2023-04-14
+  Bugfixes:
+    - Fixed pasting storage tanks using rotated blueprints
+---------------------------------------------------------------------------------------------------
+Version: 0.18.2
+Date: 2023-04-09
+  Bugfixes:
+    - The mod should be compatible with any factorio version >= 1.1.71 (not just the latest experimental version).
+---------------------------------------------------------------------------------------------------
+Version: 0.18.1
+Date: 2023-04-07
+  Bugfixes:
+    - Fixed crash with rebuilding, inserting, or deleting stages
+    - Fixed pasting a rotated blueprint with entities that don't support rotation, or that only have vertical/horizontal rotation.
+---------------------------------------------------------------------------------------------------
+Version: 0.18.0
+Date: 2023-04-02
+  Features:
+    - Added stage deconstruction tool: allows omitting the entity from future stages. See the docs for more info.
+    - Added ability to undo "Entity moved from stage" when overbuilding a preview entity.
+    - Added ability to undo the "move entity to current stage" action.
+    - Added ability to undo with stage move tool.
+    - More undoable actions are coming in the future!
+  Locale:
+    - Improved descriptions for some settings.
+---------------------------------------------------------------------------------------------------
+Version: 0.17.3
+Date: 2023-03-17
+  Bugfixes:
+    - Fixed crash when using the "rebuild all stages" button.
+---------------------------------------------------------------------------------------------------
+Version: 0.17.2
+Date: 2023-02-11
+  Bugfixes:
+    - Fixed blueprint pasting of entities in diagonal direction.
+    - Fixed handling of overlapping rails in different directions.
+---------------------------------------------------------------------------------------------------
+Version: 0.17.1
+Date: 2023-01-29
+  Minor Features:
+    - Added "rebuild all stages" button to the "Other" settings tab.
+  Bugfixes:
+    - Fix issues with circuit wires using paste-to-upgrade.
+  Changes:
+    - Make paste-to-upgrade setting default to false.
+---------------------------------------------------------------------------------------------------
+Version: 0.17.0
+Date: 2023-01-28
+  Features:
+    - Added the ability to upgrade entities via pasting a blueprint. This is controlled by a user setting.
+  Changes:
+    - Disallow overbuilding preview entities in a different direction. This previously moved the entity to the current stage instead.
+    - Built ghosts will no longer be instantly revived (this previously occurred in some cases).
+  Optimizations:
+    - Improved speed of pasting large blueprints.
+  Bugfixes:
+    - Fixed some obscure corner case bugs.
+  Other:
+    - Internal refactoring to improve code quality, which revealed the aforementioned bugs/inconsistencies.
+---------------------------------------------------------------------------------------------------
+Version: 0.16.6
+Date: 2023-01-20
+  Minor Features:
+    - Added shortcut to move between staged builds.
+  Gui:
+    - The "Hide settings" button now faces left instead of down.
+---------------------------------------------------------------------------------------------------
+Version: 0.16.5
+Date: 2023-01-20
+  Bugfixes:
+    - Fix being unable to upgrade rotated assembling machines.
+---------------------------------------------------------------------------------------------------
+Version: 0.16.4
+Date: 2023-01-20
+  Bugfixes:
+    - Fix error on when connecting circuit wires to an entity without its entity present in the first stage.
+---------------------------------------------------------------------------------------------------
+Version: 0.16.3
+Date: 2023-01-20
+  Locale:
+    - Added additional tooltip to "only include entities in last x stage" option.
+  Bugfixes:
+    - When using "only include entities in last x stages", circuit connections are now properly included.
+---------------------------------------------------------------------------------------------------
+Version: 0.16.2
+Date: 2023-01-12
+  Locale:
+    - Fixed staged build item tooltip
+---------------------------------------------------------------------------------------------------
+Version: 0.16.1
+Date: 2023-01-12
+  Bugfixes:
+    - Fixed icons not loaded when editing blueprint grid/icon settings
+    - Added stage name when editing blueprint item settings
+---------------------------------------------------------------------------------------------------
+Version: 0.16.0
+Date: 2023-01-07
+  Features:
+    - More flexible blueprint settings
+    - Blueprints: added option to only include entities changed in the last <n> stages
+    - Added ability to reorder staged builds in the staged-builds list
+---------------------------------------------------------------------------------------------------
+Version: 0.15.2
+Date: 2023-01-03
+  Changes:
+    - The Staged build settings window is brought to the "front" of the gui when opened.
+---------------------------------------------------------------------------------------------------
+Version: 0.15.1
+Date: 2022-12-23
+  Bugfixes:
+    - Actually include the new GUI in the packaged mod...
+---------------------------------------------------------------------------------------------------
+Version: 0.15.0
+Date: 2022-12-23
+  Changes:
+    - Rehauled the GUI.
+  Minor Features:
+    - Nothing important
+---------------------------------------------------------------------------------------------------
+Version: 0.14.7
+Date: 2022-12-13
+  Bugfixes:
+    - Fix error when overbuilding an underground preview entity.
+---------------------------------------------------------------------------------------------------
+Version: 0.14.6
+Date: 2022-12-13
+  Bugfixes:
+    - Fix issues with assembling machines being rotated via blueprint pasting.
+    - Fix startup crash with modded entities having very large selection boxes.
+---------------------------------------------------------------------------------------------------
+Version: 0.14.5
+Date: 2022-12-09
+  Bugfixes:
+    - Fix update when dropping modules in machines
+---------------------------------------------------------------------------------------------------
+Version: 0.14.4
+Date: 2022-12-05
+  Features:
+    - Added a force-delete entity button to error entities.
+  Changes:
+    - Increased size of train-previews to make them easier to select.
+  Bugfixes:
+    - Fix creating entities when there are items on the ground.
+---------------------------------------------------------------------------------------------------
+Version: 0.14.3
+Date: 2022-11-13
+  Bugfixes:
+    - Fix rotating loader entities
+    - Fix migration of previews for rolling stock from previous versions
+---------------------------------------------------------------------------------------------------
+Version: 0.14.2
+Date: 2022-11-13
+  Bugfixes:
+    - Fix cursor jumping when editing some text-fields
+---------------------------------------------------------------------------------------------------
+Version: 0.14.1
+Date: 2022-11-13
+  Bugfixes:
+    - Fixed using instant upgrade planner on an entity with stage changes.
+  Changes:
+    - Poles will now respect connections in the current stage first, before connections to future stages.
+---------------------------------------------------------------------------------------------------
+Version: 0.14.0
+Date: 2022-11-13
+  Changes:
+    - Rolling stock entities now have previews on all stages (that is not the first).
+  Bugfixes:
+    - Fix crash on loading a user scenario.
+---------------------------------------------------------------------------------------------------
+Version: 0.13.1
+Date: 2022-11-12
+  Bugfixes:
+    - Fixed crash on empty blueprint filters (no set filters now means no filtering, even in whitelist mode).
+---------------------------------------------------------------------------------------------------
+Version: 0.13.0
+Date: 2022-11-12
+  Features:
+    - Added feature to export blueprint book to a file (in script-output).
+    - Added feature to enable/disable all entities in a stage.
+  Bugfixes:
+    - Fixed tiles in blueprints being offset when grid position is set.
+    - Fixed auto-landfill option not doing anything
+  Gui:
+    - Reorganized staged build settings gui.
+---------------------------------------------------------------------------------------------------
+Version: 0.12.0
+Date: 2022-11-09
+  Features:
+    - Added option to replace infinity chests/pipes with constant combinators in blueprints.
+  Changes:
+    - Updated locale.
+---------------------------------------------------------------------------------------------------
+Version: 0.11.1
+Date: 2022-11-07
+  Gui:
+    - Aligned stage buttons in entity info gui.
+    - Remove build settings window auto-centering.
+---------------------------------------------------------------------------------------------------
+Version: 0.11.0
+Date: 2022-11-06
+  Features:
+    - Added a filtered stage move tool.
+    - Added blueprint filters.
+  Changes:
+    - The stage move tool shortcut icon is now blue.
+---------------------------------------------------------------------------------------------------
+Version: 0.10.6
+Date: 2022-11-06
+  Bugfixes:
+    - Fix loaders being in the wrong direction when created in other stages.
+    - Minor issue fixed (remove obsolete saved info)
+---------------------------------------------------------------------------------------------------
+Version: 0.10.5
+Date: 2022-11-06
+  Bugfixes:
+    - Fixed interactions with dragging belt
+  Changes:
+    - Removed new staged build gui
+    - Improved locale/descriptions
+---------------------------------------------------------------------------------------------------
+Version: 0.10.4
+Date: 2022-11-04
+  Features:
+    - Nothing important
+---------------------------------------------------------------------------------------------------
+Version: 0.10.3
+Date: 2022-11-04
+  Bugfixes:
+    - Fix broken state after Q-building.
+---------------------------------------------------------------------------------------------------
+Version: 0.10.2
+Date: 2022-11-02
+  Changes:
+    - The stage move tool's "Bring to current stage" can be activated with reverse-select as well as alt-select.
+  Bugfixes:
+    - Fixed error when building entities over a preview.
+    - Fixed incorrect handling of disallowed entity dollying.
+---------------------------------------------------------------------------------------------------
+Version: 0.10.1
+Date: 2022-10-31
+  Bugfixes:
+    - Fixed entities not updating after creating "empty" control behavior for belts and inserters.
+    - Fixed allowing preview entities to be dollied.
+---------------------------------------------------------------------------------------------------
+Version: 0.10.0
+Date: 2022-10-30
+  Features:
+    - Added the "Stage Move" tool. See the mod portal description for more info.
+  Changes:
+    - The "Move entity to current stage" shortcut now works on preview entities, and is ignored on settings remnants.
+---------------------------------------------------------------------------------------------------
+Version: 0.9.1
+Date: 2022-10-29
+  Changes:
+    - Update thumbnail
+---------------------------------------------------------------------------------------------------
+Version: 0.9.0
+Date: 2022-10-29
+  Changes:
+    - The mod has been renamed to "Staged Blueprint Planning" to better reflect its more general usage.
+    - "Assemblies" have been renamed to "Staged Builds" (in locale, not in code).
+---------------------------------------------------------------------------------------------------
+Version: 0.8.2
+Date: 2022-10-29
+  Bugfixes:
+    - Fix startup crash with modded entities with size 0 sprites
+---------------------------------------------------------------------------------------------------
+Version: 0.8.1
+Date: 2022-10-27
+  Changes:
+    - Allow creating entities if they can be blueprinted (even if not manually built)
+    - Flexible offshore pump placement is now disabled by default
+---------------------------------------------------------------------------------------------------
+Version: 0.8.0
+Date: 2022-10-27
+  Changes:
+    - New poles may now connect to poles in higher stages.
+    - "Move to old stage" behavior has been removed
+    - Many more blueprint creation options. See mod description for details.
+    - Each stage's blueprint now has individual grid size settings, with an option to sync all stages
+    - The 2x2 grid enforcer was removed; it is no longer necessary
+  Optimizations:
+    - Reduced save size/memory usage
+    - Note: deleting a large blueprint book from your inventory can save another 3MB+ of save size
+    - Slightly improved performance of adding new entities
+    - Slightly improved performance of taking blueprints
+---------------------------------------------------------------------------------------------------
+Version: 0.7.3
+Date: 2022-10-19
+  Bugfixes:
+    - Fix resetting a stage with settings remnant still present
+---------------------------------------------------------------------------------------------------
+Version: 0.7.2
+Date: 2022-09-30
+  Bugfixes:
+    - Fixed connecting a circuit wire on a combinator to itself.
+    - Fixed missing assembly info gui to rail previews.
+---------------------------------------------------------------------------------------------------
+Version: 0.7.0
+Date: 2022-09-25
+  Changes:
+    - The "moved backed to X stage" behavior no longer occurs when using "move to stage" control explicitly. This now only happens when you build over a preview entity.
+    - Improved assembly settings gui.
+    - Entity assembly info gui now shows ALL stages with changes.
+    - When changing between layers with an entity open, preview entities will also be opened if possible (in editor mode).
+    - When adding a _new_ circuit wire to an inserter or belt, entities in previous stages will be set to a "no-op" control behavior. This helps with importing existing builds + preventing accidental side effects when adding a wire.
+  Features:
+    - The location of the assembly info gui is now configurable via a player setting.
+---------------------------------------------------------------------------------------------------
+Version: 0.6.3
+Date: 2022-09-25
+  Bugfixes:
+    - The "Assembly info" gui is now also visible in the assembler recipe-select gui.
+---------------------------------------------------------------------------------------------------
+Version: 0.6.2
+Date: 2022-09-25
+  Optimizations:
+    - Improved performance of creating entities (importing large blueprints, resetting stage).
+---------------------------------------------------------------------------------------------------
+Version: 0.6.1
+Date: 2022-09-25
+  Bugfixes:
+    - Fixed entity previews missing when settings-remnant was revived.
+    - Fixed importing curved-rails.
+---------------------------------------------------------------------------------------------------
+Version: 0.6.0
+Date: 2022-09-16
+  Features:
+    - Generating chunks on one stage generates chunks on other stages.
+  Changes:
+    - Improved appearance of rail previews
+    - Preview tint is now consistent for all entities
+    - Using the assembly cleanup tool to revive entities now attempts to revive the entity in _all_ layers, not just the current one.
+    - Deleting an entity with circuit connections creates a settings remnant if an "undo" action would _not_ restore it.
+    - Removed "selection proxy" entities (internal)
+  Bugfixes:
+    - Fix "Entity Marker" entity incorrectly appearing in blueprints in some cases.
+  Optimizations:
+    - Reduced memory usage & save size
+---------------------------------------------------------------------------------------------------
+Version: 0.5.1
+Date: 2022-09-14
+  Bugfixes:
+    - Fixed issues with pasting cables/circuit connections with blueprints
+---------------------------------------------------------------------------------------------------
+Version: 0.5.0
+Date: 2022-09-13
+  Features:
+    - Added integration with PickerDollies (mod)
+    - Added support for auto-setting landfill in world/blueprints.
+    - Added optional (recommended) flexible offshore pump placement.
+    - Changed behavior of reverse-selecting with the Assembly Cleanup Tool.
+  Bugfixes:
+    - Fixed placing blueprints when not in instant blueprinting mode.
+    - Fixed error when moving entity to lower layer via shortcut.
+---------------------------------------------------------------------------------------------------
+Version: 0.4.0
+Date: 2022-09-09
+  Features:
+    - Added support for trains. Trains will only appear in one stage.
+    - The currently opened entity gui will follow when a player moves between stages.
+    - Added entity assembly info gui, where you manage many things. See the mod description for more info.
+  Changes:
+    - Clouds are now hidden on stage surfaces.
+  Bugfixes:
+    - Fixed "move to this stage" when used on rotated preview entities.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.2
+Date: 2022-09-08
+  Bugfixes:
+    - Fixed some blueprint settings not being saved
+---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 2022-09-05
+  Changes:
+    - Include trains, station names, and tiles in automatic blueprints
+    - Slightly improved speed of taking blueprints
+    - Slightly reduced memory usage
+---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 2022-09-04
+  Features:
+    - Automatic blueprinting/blueprint book creation
+    - Added support for copper cable connections. Cable connections will now be the same in every stage. Exceeding max connections (in any stage) is detected and forbidden.
+  Gui:
+    - The all assemblies window is now placed below the current-assembly window.
+---------------------------------------------------------------------------------------------------
+Version: 0.2.1
+Date: 2022-09-01
+  Bugfixes:
+    - Fixed incorrect entity highlight when deleting the first stage
+    - Fixed adding an entity that matches an entity at a higher stage but with different orientation
+  Control:
+    - Teleporting between assemblies/stages now always remembers and restores your previous position at the assembly
+  Gui:
+    - Assembly settings now always has fixed width, even with long stage names
+  Locale:
+    - Added missing "Move to current stage" control locale
+---------------------------------------------------------------------------------------------------
+Version: 0.2.0
+Date: 2022-08-31
+  Changes:
+    - Each stage is now on its own separate surface; Assembly creation has been simplified.
+    - The above change is backwards incompatible. Migrating will remove all assemblies, entities will still be kept.
+    - Assembly settings gui will now always match the player position
+    - Other Assembly settings gui improvements
+    - Tweaked navigation UI
+  Info:
+    - Thanks to @lark#7483 on Discord for providing feedback!
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 2022-08-26
+  Features:
+    - Initial release
