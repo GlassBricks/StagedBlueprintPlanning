@@ -55,9 +55,11 @@ import direction = defines.direction
 
 let assembly: UserAssembly
 let surfaces: LuaSurface[]
+let player: LuaPlayer
 before_each(() => {
   assembly = createUserAssembly("test", 6)
   surfaces = assembly.getAllStages().map((stage) => stage.surface)
+  player = game.players[1]
 })
 after_each(() => {
   _deleteAllAssemblies()
@@ -712,7 +714,6 @@ test("can build a entity using known value", () => {
 })
 
 test.each([true, false])("can maybe upgrade entity via blueprint, with setting %s", (enabled) => {
-  const player = game.players[1]
   player.mod_settings[Settings.UpgradeOnPaste] = { value: enabled }
   const bpEntity: BlueprintEntity = {
     entity_number: 1,
@@ -744,7 +745,6 @@ test.each([true, false])("can maybe upgrade entity via blueprint, with setting %
 })
 
 test("can upgrade entity with wires via blueprint", () => {
-  const player = game.players[1]
   player.mod_settings[Settings.UpgradeOnPaste] = { value: true }
   const entity1: BlueprintEntity = {
     entity_number: 1,
@@ -788,7 +788,6 @@ describe.each([defines.direction.north, defines.direction.northeast])("with rail
   test.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
     "can paste a straight rail in all rotations",
     (direction) => {
-      const player = game.players[1]
       const entity: BlueprintEntity = {
         entity_number: 1,
         name: "straight-rail",
@@ -822,7 +821,6 @@ describe.each([defines.direction.north, defines.direction.northeast])("with rail
 })
 
 test("pasting diagonal rail at same position but different direction", () => {
-  const player = game.players[1]
   const entity: BlueprintEntity = {
     entity_number: 1,
     name: "straight-rail",
@@ -869,7 +867,6 @@ test("pasting diagonal rail at same position but different direction", () => {
 })
 
 test("pasting rotated blueprint, with an entity that does not support rotation", () => {
-  const player = game.players[1]
   const entity: BlueprintEntity = {
     entity_number: 1,
     name: "stone-furnace",
@@ -895,8 +892,33 @@ test("pasting rotated blueprint, with an entity that does not support rotation",
   expect(entity1!.getWorldEntity(1)).toEqual(furnace)
 })
 
+test("pasting rotate blueprint with a rotated fluid tank", () => {
+  const entity: BlueprintEntity = {
+    entity_number: 1,
+    name: "storage-tank",
+    position: Pos(0, 0),
+    direction: 2,
+  }
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.set_blueprint_entities([entity])
+
+  const pos = Pos(5, 5)
+
+  player.teleport([0, 0], surfaces[0])
+  player.build_from_cursor({ position: pos, direction: 2, alt: true })
+  const tank = surfaces[0].find_entity("storage-tank", pos)!
+  expect(tank).not.toBeNil()
+
+  expect(tank.direction).toBe(0)
+
+  const entity1 = assembly.content.findCompatibleWithLuaEntity(tank, nil, 1)
+  expect(entity1).not.toBeNil()
+  expect(entity1!.getDirection()).toEqual(0)
+  expect(entity1!.getWorldEntity(1)).toEqual(tank)
+})
+
 test("using stage delete tool", () => {
-  const player = game.players[1]
   const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
   Events.raiseFakeEventNamed("on_player_selected_area", {
     player_index: player.index,
@@ -912,7 +934,6 @@ test("using stage delete tool", () => {
 })
 
 test("using stage delete tool alt select", () => {
-  const player = game.players[1]
   const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
   userSetLastStageWithUndo(assembly, entity, 3, player.index)
 

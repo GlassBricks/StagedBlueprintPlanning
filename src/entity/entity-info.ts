@@ -14,7 +14,7 @@ import { Prototypes } from "../constants"
 import { Events, PRecord } from "../lib"
 import { BBox, BBoxClass } from "../lib/geometry"
 
-const typeRemap: PRecord<string, string> = {
+const compatibleTypes: PRecord<string, string> = {
   "logistic-container": "container",
   "rail-chain-signal": "rail-signal",
 }
@@ -27,7 +27,7 @@ const categories = new LuaMap<CategoryName, string[]>()
 function processCategory(prototype: LuaEntityPrototype) {
   const { fast_replaceable_group, type, collision_box, name } = prototype
   if (fast_replaceable_group == nil) return
-  const actualType = typeRemap[type] ?? type
+  const actualType = compatibleTypes[type] ?? type
   const { x: lx, y: ly } = collision_box.left_top
   const { x: rx, y: ry } = collision_box.right_bottom
   const categoryName = [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|") as CategoryName
@@ -51,34 +51,43 @@ function trimCategories() {
   }
 }
 
-export const enum PasteRotatableType {
-  RectangularOrStraightRail,
+/**
+ * Compatible rotations for pasting entities.
+ *
+ * Default: all rotations are different
+ */
+export const enum PasteCompatibleRotations {
+  /** 180 deg rotation is equivalent */
+  Flippable,
+  /** All directions are equivalent */
   AnyDirection,
 }
-const pasteRotationTypes = new LuaMap<string, PasteRotatableType>()
+const pasteRotationTypes = new LuaMap<string, PasteCompatibleRotations>()
 
 const pasteRotatableEntityTypes = newLuaSet("assembling-machine", "boiler", "generator")
+const flippableEntityTypes = newLuaSet("storage-tank", "straight-rail")
 
 function processPasteRotatableType(prototype: LuaEntityPrototype) {
   const type = prototype.type
 
-  if (type == "straight-rail") {
-    pasteRotationTypes.set(prototype.name, PasteRotatableType.RectangularOrStraightRail)
-    return
-  }
   if (!prototype.supports_direction) {
-    pasteRotationTypes.set(prototype.name, PasteRotatableType.AnyDirection)
+    pasteRotationTypes.set(prototype.name, PasteCompatibleRotations.AnyDirection)
     return
   }
 
-  if (!pasteRotatableEntityTypes.has(type)) return
-  const collisionBox = prototype.collision_box
-  if (BBox.isCenteredSquare(collisionBox)) {
-    pasteRotationTypes.set(prototype.name, PasteRotatableType.AnyDirection)
-  } else if (BBox.isCenteredRectangle(collisionBox)) {
-    pasteRotationTypes.set(prototype.name, PasteRotatableType.RectangularOrStraightRail)
+  if (flippableEntityTypes.has(type)) {
+    pasteRotationTypes.set(prototype.name, PasteCompatibleRotations.Flippable)
+    return
   }
-  // else, none
+
+  if (pasteRotatableEntityTypes.has(type)) {
+    const collisionBox = prototype.collision_box
+    if (BBox.isCenteredSquare(collisionBox)) {
+      pasteRotationTypes.set(prototype.name, PasteCompatibleRotations.AnyDirection)
+    } else if (BBox.isCenteredRectangle(collisionBox)) {
+      pasteRotationTypes.set(prototype.name, PasteCompatibleRotations.Flippable)
+    }
+  }
 }
 
 const selectionBoxes = new LuaMap<string, BBoxClass>()
@@ -149,8 +158,9 @@ export function getSelectionBox(entityName: string): BBoxClass {
   if (!prototypesProcessed) processPrototypes()
   return selectionBoxes.get(entityName) ?? BBox.empty()
 }
+
 /** For straight rails, paste rotation only applies to non-diagonal rails. */
-export function getPasteRotatableType(entityName: string): PasteRotatableType | nil {
+export function getPasteRotatableType(entityName: string): PasteCompatibleRotations | nil {
   if (!prototypesProcessed) processPrototypes()
   return pasteRotationTypes.get(entityName)
 }

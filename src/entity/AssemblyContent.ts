@@ -21,7 +21,7 @@ import {
   getPasteRotatableType,
   isRollingStockType,
   nameToType,
-  PasteRotatableType,
+  PasteCompatibleRotations,
   rollingStockTypes,
 } from "./entity-info"
 import { _migrateMap2DToLinkedList, Map2D, newMap2D } from "./map2d"
@@ -161,10 +161,10 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     if (pasteRotatableType == nil) {
       return this.findCompatibleByProps(name, entity.position, previousDirection ?? entity.direction, stage)
     }
-    if (pasteRotatableType == PasteRotatableType.AnyDirection) {
+    if (pasteRotatableType == PasteCompatibleRotations.AnyDirection) {
       return this.findCompatibleByProps(name, entity.position, nil, stage)
     }
-    if (pasteRotatableType == PasteRotatableType.RectangularOrStraightRail) {
+    if (pasteRotatableType == PasteCompatibleRotations.Flippable) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       if (direction % 2 == 1) {
