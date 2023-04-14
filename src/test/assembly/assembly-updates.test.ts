@@ -867,8 +867,8 @@ describe("undergrounds", () => {
     })
 
     test("cannot rotate underground with multiple pairs", () => {
-      const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1)
-      const { entity: entity3, luaEntity: luaEntity3 } = createUndergroundBelt(1, {
+      const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1, 2)
+      const { entity: entity3, luaEntity: luaEntity3 } = createUndergroundBelt(3, {
         position: Pos.plus(pos, { x: -2, y: 0 }),
       })
 
@@ -883,7 +883,7 @@ describe("undergrounds", () => {
         const [, hasMultiple] = findUndergroundPair(assembly.content, entity)
         expect(hasMultiple).to.be(true)
 
-        const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 1)
+        const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, entity.firstStage)
         expect(ret).to.be("cannot-flip-multi-pair-underground")
 
         expect(entity1).toMatchTable({
@@ -900,7 +900,7 @@ describe("undergrounds", () => {
         })
 
         assertNEntities(3)
-        assertRefreshCalled(entity, 1)
+        assertRefreshCalled(entity, entity.firstStage)
         clearMocks()
 
         const [rotatedBack] = luaEntity.rotate()
@@ -998,7 +998,7 @@ describe("undergrounds", () => {
 
     test("cannot upgrade underground with multiple pairs", () => {
       const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1, 1)
-      const { entity: entity3, luaEntity: luaEntity3 } = createUndergroundBelt(1, {
+      const { entity: entity3, luaEntity: luaEntity3 } = createUndergroundBelt(3, {
         position: Pos.plus(pos, { x: -2, y: 0 }),
       })
 
@@ -1011,7 +1011,7 @@ describe("undergrounds", () => {
           target: "fast-underground-belt",
           force: luaEntity.force,
         })
-        const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
+        const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, entity.firstStage)
         expect(ret).to.be("cannot-upgrade-multi-pair-underground")
 
         expect(entity1.firstValue.name).to.be("underground-belt")

@@ -11,7 +11,7 @@
 
 import expect from "tstl-expect"
 import { MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
-import { createAssemblyEntity, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
+import { createAssemblyEntity, StageNumber, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
 import { UndergroundBeltEntity } from "../../entity/Entity"
 import { findUndergroundPair, unit } from "../../entity/underground-belt"
 import direction = defines.direction
@@ -23,12 +23,12 @@ before_each(() => {
 })
 // describe.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
 describe.each([direction.north, direction.west])("findUndergroundPair, direction %s", (direction) => {
-  function createUnderground(location: number, type: "input" | "output") {
+  function createUnderground(location: number, type: "input" | "output", stage: StageNumber) {
     const underground = createAssemblyEntity<UndergroundBeltEntity>(
       { name: "underground-belt", type },
       unit(direction).times(location),
       direction,
-      1,
+      stage,
     )
     content.add(underground)
     return underground
@@ -39,9 +39,9 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     for (let i = 0; i < str.length; i++) {
       const c = str[i]
       if (c == "v") {
-        result.push(createUnderground(i, "input"))
+        result.push(createUnderground(i, "input", i + 1))
       } else if (c == "^") {
-        result.push(createUnderground(i, "output"))
+        result.push(createUnderground(i, "output", i + 1))
       } else {
         result.push("none")
       }
@@ -49,31 +49,66 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
     return result
   }
 
-  function testStr(input: string, probe: number, expected: number | nil, expectedMultiple: boolean) {
-    const inputUndergrounds = strToUndergrounds(input)
-    const expectedUnderground = expected != nil ? inputUndergrounds[expected] : nil
+  function testSingle(
+    undergrounds: (UndergroundBeltAssemblyEntity | "none")[],
+    probe: number,
+    expected: number | undefined,
+    expectedMultiple: boolean,
+  ): void {
+    const expectedUnderground = expected != nil ? undergrounds[expected] : nil
     if (expectedUnderground == "none") error("expectedUnderground is none")
-    const probeUnderground = inputUndergrounds[probe]
+    const probeUnderground = undergrounds[probe]
     if (probeUnderground == "none") error("probeUnderground is none")
     const [underground, hasMultiple] = findUndergroundPair(content, probeUnderground)
     expect(underground).to.equal(expectedUnderground)
     expect(hasMultiple).to.equal(expectedMultiple)
   }
 
+  function testUndergrounds(
+    expected: number | undefined,
+    inputUndergrounds: (UndergroundBeltAssemblyEntity | "none")[],
+    probe: number,
+    expectedMultiple: boolean,
+  ) {
+    testSingle(inputUndergrounds, probe, expected, expectedMultiple)
+    if (expected != nil) {
+      testSingle(inputUndergrounds, expected, probe, expectedMultiple)
+    }
+  }
+
   test("simple", () => {
-    testStr("v___^", 0, 4, false)
+    const undergrounds = strToUndergrounds("v___^")
+    testUndergrounds(4, undergrounds, 0, false)
   })
   test("multiple one direction", () => {
-    testStr("v__^^", 0, 3, true)
+    const undergrounds = strToUndergrounds("v__^^")
+    ;(undergrounds[4] as UndergroundBeltAssemblyEntity).setFirstStageUnchecked(1)
+    testUndergrounds(3, undergrounds, 0, true)
   })
   test("multiple other direction", () => {
-    testStr("v_v^", 2, 3, true)
+    const undergrounds = strToUndergrounds("v_v^")
+    ;(undergrounds[3] as UndergroundBeltAssemblyEntity).setFirstStageUnchecked(1)
+
+    testUndergrounds(3, undergrounds, 2, true)
   })
   test("out of reach", () => {
-    testStr("v_____^", 0, nil, false)
+    const undergrounds = strToUndergrounds("v_____^")
+    testUndergrounds(nil, undergrounds, 0, false)
   })
   test("backwards out of reach", () => {
-    testStr("v____v^", 5, 6, false)
+    const undergrounds = strToUndergrounds("v____v^")
+    ;(undergrounds[6] as UndergroundBeltAssemblyEntity).setFirstStageUnchecked(1)
+    testUndergrounds(6, undergrounds, 5, false)
+  })
+
+  test("if completely covered by first, does not count as multiple", () => {
+    const inputUndergrounds = strToUndergrounds("v__^^")
+    testUndergrounds(3, inputUndergrounds, 0, false)
+  })
+
+  test("none if connected to another pair", () => {
+    const undergrounds = strToUndergrounds("vv__^")
+    testUndergrounds(nil, undergrounds, 0, false)
   })
 
   test("different underground types not same group", () => {

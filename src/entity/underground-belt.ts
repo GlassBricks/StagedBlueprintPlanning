@@ -13,7 +13,9 @@ import { oppositedirection } from "util"
 import { Mutable } from "../lib"
 import { Pos, Position, PositionClass } from "../lib/geometry"
 import { MutableAssemblyContent } from "./AssemblyContent"
-import { UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
+import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
+import max = math.max
+import min = math.min
 
 /**
  * Gets the underground direction (direction of where a paired underground belt would be).
@@ -31,13 +33,17 @@ export function getUndergroundDirection(
  */
 export function findUndergroundPair(
   content: MutableAssemblyContent,
-  member: UndergroundBeltAssemblyEntity,
+  entity: UndergroundBeltAssemblyEntity,
 ): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
-  const [pair, hasMultiple] = findUndergroundPairOneDirection(content, member)
+  const [pair, hasMultiple] = findUndergroundPairOneDirection(content, entity)
   if (!pair || hasMultiple) return $multi(pair, hasMultiple)
 
-  const [, pairHasMultiple] = findUndergroundPairOneDirection(content, pair)
-  return $multi(pair, pairHasMultiple)
+  const [pairPair, pairHasMultiple] = findUndergroundPairOneDirection(content, pair)
+  if (pairHasMultiple) {
+    return $multi(pair, true)
+  }
+  if (pairPair != entity) return $multi(nil, false)
+  return $multi(pair, false)
 }
 
 function findUndergroundPairOneDirection(
@@ -54,22 +60,33 @@ function findUndergroundPairOneDirection(
   const { x, y } = member.position
   const { x: dx, y: dy } = unit(direction)
 
-  let found: UndergroundBeltAssemblyEntity | nil
+  // let found: UndergroundBeltAssemblyEntity | nil
+  const firstStage = member.firstStage
+  const lastStage = member.lastStage ?? math.huge
+  let pair: UndergroundBeltAssemblyEntity | nil = nil
   const curPos = {} as Mutable<Position>
   for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
-    const pair = content.findCompatibleByProps(name, curPos, nil, 1) as UndergroundBeltAssemblyEntity | nil
+    const found = content.findCompatibleByProps(name, curPos, nil, firstStage) as UndergroundBeltAssemblyEntity | nil
     if (
-      pair &&
-      getUndergroundDirection(pair.getDirection(), pair.firstValue.type) == otherDirection &&
-      pair.firstValue.name == name
-    ) {
-      if (found) return $multi(found, true)
-      found = pair
+      !(
+        found &&
+        getUndergroundDirection(found.getDirection(), found.firstValue.type) == otherDirection &&
+        found.firstValue.name == name
+      )
+    )
+      continue
+    if (pair == nil) {
+      pair = found
+    } else {
+      // if the first pair completely shadows the second pair, then we don't count it
+      if (stageRangeCovers(pair, found, firstStage, lastStage)) continue
+
+      return $multi(pair, true)
     }
   }
-  return $multi(found, false)
+  return $multi(pair, false)
 }
 
 export function unit(direction: defines.direction): PositionClass {
@@ -78,4 +95,20 @@ export function unit(direction: defines.direction): PositionClass {
   if (direction == defines.direction.west) return Pos(-1, 0)
   if (direction == defines.direction.east) return Pos(1, 0)
   error("Invalid direction: " + direction)
+}
+
+export function stageRangeCovers(
+  existing: AssemblyEntity,
+  newEntity: AssemblyEntity,
+  minStage: number,
+  maxStage: number,
+): boolean {
+  // covers:
+  // |---- existing  ----|
+  //   |-- newEntity --|
+  const existingFirstStage = max(existing.firstStage, minStage)
+  const existingLastStage = min(existing.lastStage ?? math.huge, maxStage)
+  const newEntityFirstStage = max(newEntity.firstStage, minStage)
+  const newEntityLastStage = min(newEntity.lastStage ?? math.huge, maxStage)
+  return existingFirstStage <= newEntityFirstStage && existingLastStage >= newEntityLastStage
 }
