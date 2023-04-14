@@ -12,7 +12,7 @@
 import { Colors, L_Game } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { LuaEntityInfo } from "../entity/Entity"
-import { shouldCheckEntityExactlyForMatch } from "../entity/entity-info"
+import { shouldCheckEntityExactlyForMatch } from "../entity/entity-prototype-info"
 import { assertNever, deepCompare } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"

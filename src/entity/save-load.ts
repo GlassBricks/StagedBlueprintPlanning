@@ -14,7 +14,7 @@ import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
-import { getPasteRotatableType, PasteCompatibleRotations, rollingStockTypes } from "./entity-info"
+import { getPasteRotatableType, PasteCompatibleRotationType, rollingStockTypes } from "./entity-prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
 
 declare const global: {
@@ -328,7 +328,7 @@ export const _mockable = true
 export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
   return (
     luaEntity.type == "assembling-machine" &&
-    getPasteRotatableType(luaEntity.name) == PasteCompatibleRotations.AnyDirection &&
+    getPasteRotatableType(luaEntity.name) == PasteCompatibleRotationType.AnyDirection &&
     luaEntity.fluidbox.length == 0
   )
 }

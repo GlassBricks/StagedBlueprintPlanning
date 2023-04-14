@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getInfinityEntityNames } from "../entity/entity-info"
+import { getInfinityEntityNames } from "../entity/entity-prototype-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeParameters } from "./blueprint-settings"

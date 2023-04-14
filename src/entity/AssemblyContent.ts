@@ -17,13 +17,13 @@ import { AsmCircuitConnection, circuitConnectionEquals } from "./AsmCircuitConne
 import { AssemblyEntity, StageNumber, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
 import { EntityIdentification } from "./Entity"
 import {
-  getEntityCategory,
+  EntityPrototypeInfo,
   getPasteRotatableType,
   isRollingStockType,
-  nameToType,
-  PasteCompatibleRotations,
+  OnEntityPrototypesLoaded,
+  PasteCompatibleRotationType,
   rollingStockTypes,
-} from "./entity-info"
+} from "./entity-prototype-info"
 import { _migrateMap2DToLinkedList, Map2D, newMap2D } from "./map2d"
 import { getRegisteredAssemblyEntity } from "./registration"
 import { getUndergroundDirection } from "./underground-belt"
@@ -31,7 +31,7 @@ import { getUndergroundDirection } from "./underground-belt"
 /**
  * A collection of assembly entities: the actual data of an assembly.
  *
- * Also keeps tracks of info spanning multiple entities (wire/circuit connections).
+ * Also keeps track of info spanning multiple entities (wire/circuit connections).
  */
 export interface AssemblyContent {
   has(entity: AssemblyEntity): boolean
@@ -95,6 +95,12 @@ export interface MutableAssemblyContent extends AssemblyContent {
 export type AsmEntityCircuitConnections = LuaMap<AssemblyEntity, LuaSet<AsmCircuitConnection>>
 export type AsmEntityCableConnections = LuaSet<AssemblyEntity>
 
+let nameToType: EntityPrototypeInfo["nameToType"]
+let nameToCategory: EntityPrototypeInfo["nameToCategory"]
+OnEntityPrototypesLoaded.addListener((i) => {
+  ;({ nameToType, nameToCategory } = i)
+})
+
 @RegisterClass("EntityMap")
 class AssemblyContentImpl implements MutableAssemblyContent {
   readonly byPosition: Map2D<AssemblyEntity> = newMap2D()
@@ -115,16 +121,16 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     const { x, y } = position
     let cur = this.byPosition.get(x, y)
     if (!cur) return
-    const category = getEntityCategory(entityName)
+    const category = nameToCategory.get(entityName)
 
     let candidate: AssemblyEntity | nil = nil
-    // out of possible candidates, find one with smallest firstStage
+    // out of possible candidates, find one with the smallest firstStage
 
     while (cur != nil) {
       if (
         (direction == nil || direction == (cur.direction ?? 0)) &&
         (cur.lastStage == nil || cur.lastStage >= stage) &&
-        (cur.firstValue.name == entityName || (category && getEntityCategory(cur.firstValue.name) == category)) &&
+        (cur.firstValue.name == entityName || (category && nameToCategory.get(cur.firstValue.name) == category)) &&
         (candidate == nil || cur.firstStage < candidate.firstStage)
       ) {
         candidate = cur
@@ -161,14 +167,14 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     if (pasteRotatableType == nil) {
       return this.findCompatibleByProps(name, entity.position, previousDirection ?? entity.direction, stage)
     }
-    if (pasteRotatableType == PasteCompatibleRotations.AnyDirection) {
+    if (pasteRotatableType == PasteCompatibleRotationType.AnyDirection) {
       return this.findCompatibleByProps(name, entity.position, nil, stage)
     }
-    if (pasteRotatableType == PasteCompatibleRotations.Flippable) {
+    if (pasteRotatableType == PasteCompatibleRotationType.Flippable) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       if (direction % 2 == 1) {
-        // if diagonal, we _do_ care about direction
+        // if diagonal, we _do_ care about the direction
         return this.findCompatibleByProps(name, position, direction, stage)
       }
       return (

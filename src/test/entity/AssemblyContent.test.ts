@@ -14,7 +14,7 @@ import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
 import { LuaEntityInfo } from "../../entity/Entity"
-import { getPasteRotatableType, PasteCompatibleRotations } from "../../entity/entity-info"
+import { getPasteRotatableType, PasteCompatibleRotationType } from "../../entity/entity-prototype-info"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 import { createRollingStocks } from "./createRollingStock"
 
@@ -133,7 +133,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("matches opposite direction if pasteRotatableType is rectangular", () => {
-    assert(getPasteRotatableType("boiler") == PasteCompatibleRotations.Flippable)
+    assert(getPasteRotatableType("boiler") == PasteCompatibleRotationType.Flippable)
     const entity = createAssemblyEntity({ name: "boiler" }, { x: 0.5, y: 0 }, defines.direction.north, 1)
 
     const luaEntity = assert(
@@ -145,11 +145,11 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("storage tank is flippable", () => {
-    expect(getPasteRotatableType("storage-tank")).to.be(PasteCompatibleRotations.Flippable)
+    expect(getPasteRotatableType("storage-tank")).to.be(PasteCompatibleRotationType.Flippable)
   })
 
   test("matches any direction if pasteRotatableType is square", () => {
-    assert(getPasteRotatableType("assembling-machine-1") == PasteCompatibleRotations.AnyDirection)
+    assert(getPasteRotatableType("assembling-machine-1") == PasteCompatibleRotationType.AnyDirection)
 
     const entity = createAssemblyEntity(
       { name: "assembling-machine-2" },

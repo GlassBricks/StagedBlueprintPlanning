@@ -10,9 +10,9 @@
  */
 
 import { AssemblyEntity, entityHasErrorAt, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
-import { getSelectionBox } from "../entity/entity-info"
+import { EntityPrototypeInfo, OnEntityPrototypesLoaded } from "../entity/entity-prototype-info"
 import { AnyRender, assertNever, SpriteRender } from "../lib"
-import { Position } from "../lib/geometry"
+import { BBox, Position } from "../lib/geometry"
 import { Assembly } from "./AssemblyDef"
 import { createHighlightBox, createSprite } from "./create-highlight"
 
@@ -103,6 +103,11 @@ const highlightConfigs: {
   },
 }
 
+let selectionBoxes: EntityPrototypeInfo["selectionBoxes"]
+OnEntityPrototypesLoaded.addListener((info) => {
+  ;({ selectionBoxes } = info)
+})
+
 function createHighlight<T extends keyof HighlightEntities>(
   entity: AssemblyEntity,
   stage: StageNumber,
@@ -122,28 +127,31 @@ function createHighlight<T extends keyof HighlightEntities>(
     return existing
 
   const prototypeName = entity.firstValue.name
-  const selectionBox = getSelectionBox(prototypeName).rotateAboutOrigin(entity.getWorldDirection())
   let result: LuaEntity | AnyRender | nil
   if (config.type == "highlight") {
     const { renderType } = config
     result = entityTarget && createHighlightBox(entityTarget, renderType)
   } else if (config.type == "sprite") {
-    const size = selectionBox.size()
-    const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
-    // const worldPosition = relativePosition.plus(entity.position)
-    const target = entityTarget ?? relativePosition.plus(entity.position)
-    const offset: Vector | nil = entityTarget && [relativePosition.x, relativePosition.y]
-    const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
-    result = createSprite({
-      surface,
-      target,
-      target_offset: offset,
-      x_scale: scale,
-      y_scale: scale,
-      sprite: config.sprite,
-      tint: config.tint,
-      render_layer: config.renderLayer,
-    })
+    const localSelectionBox = selectionBoxes.get(prototypeName)
+    if (localSelectionBox) {
+      const selectionBox = BBox.rotateAboutOrigin(localSelectionBox, entity.getWorldDirection())
+      const size = selectionBox.size()
+      const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
+      // const worldPosition = relativePosition.plus(entity.position)
+      const target = entityTarget ?? relativePosition.plus(entity.position)
+      const offset: Vector | nil = entityTarget && [relativePosition.x, relativePosition.y]
+      const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
+      result = createSprite({
+        surface,
+        target,
+        target_offset: offset,
+        x_scale: scale,
+        y_scale: scale,
+        sprite: config.sprite,
+        tint: config.tint,
+        render_layer: config.renderLayer,
+      })
+    }
   } else {
     assertNever(config)
   }

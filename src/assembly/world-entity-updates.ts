@@ -17,7 +17,7 @@ import {
   RollingStockAssemblyEntity,
   StageNumber,
 } from "../entity/AssemblyEntity"
-import { isPreviewEntity } from "../entity/entity-info"
+import { isPreviewEntity } from "../entity/entity-prototype-info"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"

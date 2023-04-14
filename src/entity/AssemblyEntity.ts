@@ -25,10 +25,21 @@ import {
 import { Position } from "../lib/geometry"
 import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
 import { Entity, LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./Entity"
-import { isPreviewEntity, isRollingStockType, isUndergroundBeltType, rollingStockTypes } from "./entity-info"
+import {
+  EntityPrototypeInfo,
+  isPreviewEntity,
+  isRollingStockType,
+  OnEntityPrototypesLoaded,
+  rollingStockTypes,
+} from "./entity-prototype-info"
 import { registerEntity } from "./registration"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
 import floor = math.floor
+
+let nameToType: EntityPrototypeInfo["nameToType"]
+OnEntityPrototypesLoaded.addListener((info) => {
+  nameToType = info.nameToType
+})
 
 /** 1 indexed */
 export type StageNumber = number
@@ -116,7 +127,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean
 
   /**
-   * Removes all stage diffs at the given stage.
+   * Removes all stage-diffs at the given stage.
    * @return true if there was a stage diff at the given stage.
    */
   resetValue(stage: StageNumber): boolean
@@ -264,7 +275,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     return isRollingStockType(this.firstValue.name)
   }
   isUndergroundBelt(): this is UndergroundBeltAssemblyEntity {
-    return isUndergroundBeltType(this.firstValue.name)
+    return nameToType.get(this.firstValue.name) == "underground-belt"
   }
 
   isInStage(stage: StageNumber): boolean {

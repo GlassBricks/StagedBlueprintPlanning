@@ -20,7 +20,7 @@ import {
 } from "../entity/AssemblyEntity"
 import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
-import { areUpgradeableTypes } from "../entity/entity-info"
+import { areUpgradeableTypes } from "../entity/entity-prototype-info"
 import { canBeAnyDirection, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"

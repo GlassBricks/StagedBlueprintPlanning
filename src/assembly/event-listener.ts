@@ -18,8 +18,8 @@ import {
   areUpgradeableTypes,
   getCompatibleNames,
   getPasteRotatableType,
-  PasteCompatibleRotations,
-} from "../entity/entity-info"
+  PasteCompatibleRotationType,
+} from "../entity/entity-prototype-info"
 import { assertNever, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -746,9 +746,9 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     // slower path, check for other directions
     const pasteRotatableType = getPasteRotatableType(referencedName)
     if (pasteRotatableType == nil) return
-    if (pasteRotatableType == PasteCompatibleRotations.AnyDirection) {
+    if (pasteRotatableType == PasteCompatibleRotationType.AnyDirection) {
       luaEntity = luaEntities[0]
-    } else if (pasteRotatableType == PasteCompatibleRotations.Flippable) {
+    } else if (pasteRotatableType == PasteCompatibleRotationType.Flippable) {
       const oppositeDir = oppositedirection(entityDir)
       luaEntity = luaEntities.find((e) => e.direction == oppositeDir)
       if (!luaEntity) return

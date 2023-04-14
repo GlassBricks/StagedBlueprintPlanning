@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,7 +10,7 @@
  */
 
 import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
-import { nameToType } from "./entity-info"
+import { OnEntityPrototypesLoaded } from "./entity-prototype-info"
 
 export const emptyBeltControlBehavior: BlueprintControlBehavior = {
   circuit_enable_disable: false,
@@ -20,6 +20,11 @@ export const emptyBeltControlBehavior: BlueprintControlBehavior = {
 export const emptyInserterControlBehavior: BlueprintControlBehavior = {
   circuit_mode_of_operation: defines.control_behavior.inserter.circuit_mode_of_operation.none,
 }
+
+let nameToType: ReadonlyLuaMap<string, string>
+OnEntityPrototypesLoaded.addListener((info) => {
+  nameToType = info.nameToType
+})
 
 export function hasControlBehaviorSet(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
   const firstStage = entity.firstStage
