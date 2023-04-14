@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { AssemblyCreatedEvent, PreStageDeletedEvent, StageAddedEvent, UserAssembly } from "../../assembly/AssemblyDef"
 import {
   _deleteAllAssemblies,
@@ -16,7 +17,6 @@ import {
   createUserAssembly,
   getStageAtSurface,
 } from "../../assembly/UserAssembly"
-import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 
 let eventListener: MockNoSelf<AnySelflessFun>
 before_each(() => {
@@ -84,7 +84,7 @@ describe("Stages", () => {
   })
   test("initial name is correct", () => {
     const stage = asm.getStage(1)!
-    expect(stage.name.get()).to.equal("<Stage 1>")
+    expect(stage.name.get()).to.equal("Stage 1")
   })
 })
 
@@ -105,7 +105,7 @@ test("insert stage", () => {
   expect(getStageAtSurface(stage.surface.index)).to.be(stage)
   expect(getStageAtSurface(oldStage.surface.index)).to.be(oldStage)
 
-  expect(stage.name.get()).to.equal("<New stage>")
+  expect(stage.name.get()).to.equal("Stage 0")
 
   expect(asm.getStage(1)!).to.equal(stage)
   expect(asm.getStage(2)!).to.equal(oldStage)
@@ -123,7 +123,7 @@ test("insert stage", () => {
   expect(getStageAtSurface(anotherInserted.surface.index)).to.equal(anotherInserted)
   expect(getStageAtSurface(stage.surface.index)).to.equal(stage)
   expect(getStageAtSurface(oldStage.surface.index)).to.equal(oldStage)
-  expect(anotherInserted.name.get()).to.equal("<New stage> (1)")
+  expect(anotherInserted.name.get()).to.equal("New Stage")
 
   expect(anotherInserted.stageNumber).to.equal(1)
   expect(stage.stageNumber).to.equal(2)
@@ -184,4 +184,120 @@ test("deleting last stage deletes assembly", () => {
   const stage = asm.getStage(1)!
   stage.deleteInAssembly()
   expect(asm.valid).to.be(false)
+})
+
+describe("new stage name", () => {
+  let asm: UserAssembly
+  before_each(() => {
+    asm = createUserAssembly("Test", 2)
+  })
+
+  describe("first stage", () => {
+    test("is 'New Stage' if no naming convention", () => {
+      asm.getStage(1)!.name.set("Foo")
+
+      const stage = asm.insertStage(1)
+
+      expect(stage.name.get()).to.equal("New Stage")
+      expect(stage.stageBlueprintSettings.icons.get()).to.equal([
+        {
+          index: 1,
+          signal: { type: "virtual", name: "signal-1" },
+        },
+      ])
+    })
+
+    test("is next number minus 1 if numbered naming convention", () => {
+      asm.getStage(1)!.name.set("Foo 1")
+
+      // expect(asm._getNewStageName(1)).to.equal({
+      //   name: "Foo 2",
+      //   strategy: "decrement",
+      //   lastNumber: 2,
+      //   previousLastNumber: 3,
+      // })
+
+      const stage = asm.insertStage(1)
+      expect(stage.name.get()).to.equal("Foo 0")
+      expect(stage.stageBlueprintSettings.icons.get()).to.equal([
+        {
+          index: 1,
+          signal: { type: "virtual", name: "signal-0" },
+        },
+      ])
+    })
+  })
+
+  describe("other stages", () => {
+    test('adds " 1" if no naming convention', () => {
+      asm.getStage(1)!.name.set("Foo")
+      asm.getStage(1)!.stageBlueprintSettings.icons.set([
+        {
+          index: 1,
+          signal: { type: "item", name: "iron-plate" },
+        },
+      ])
+
+      const stage = asm.insertStage(2)
+      expect(stage.name.get()).to.equal("Foo 1")
+      expect(stage.stageBlueprintSettings.icons.get()).to.equal([
+        {
+          index: 1,
+          signal: { type: "item", name: "iron-plate" },
+        },
+        {
+          index: 2,
+          signal: { type: "virtual", name: "signal-1" },
+        },
+      ])
+    })
+
+    test("increments number if numbered naming convention", () => {
+      asm.getStage(1)!.name.set("Foo 1")
+
+      const stage = asm.insertStage(2)
+      expect(stage.name.get()).to.equal("Foo 2")
+      expect(stage.stageBlueprintSettings.icons.get()).to.equal([
+        {
+          index: 1,
+          signal: { type: "virtual", name: "signal-2" },
+        },
+      ])
+    })
+
+    test('adds ".1" if numbered naming convention, but next stage already has that name', () => {
+      asm.getStage(1)!.name.set("Foo 3")
+      asm.getStage(2)!.name.set("Foo 4")
+
+      const stage = asm.insertStage(2)
+      expect(stage.name.get()).to.equal("Foo 3.1")
+      expect(stage.stageBlueprintSettings.icons.get()).to.equal([
+        {
+          index: 1,
+          signal: { type: "virtual", name: "signal-1" },
+        },
+        {
+          index: 2,
+          signal: { type: "virtual", name: "signal-1" },
+        },
+      ])
+    })
+
+    test("detects and uses numerical separator if next stage already has that name", () => {
+      asm.getStage(1)!.name.set("Foo 3--2")
+      asm.getStage(2)!.name.set("Foo 3--3")
+      const stage = asm.insertStage(2)
+      expect(stage.name.get()).to.equal("Foo 3--2--1")
+      expect(stage.stageBlueprintSettings.icons.get()).to.equal([
+        {
+          index: 1,
+          signal: { type: "virtual", name: "signal-1" },
+        },
+        {
+          index: 2,
+          signal: { type: "virtual", name: "signal-1" },
+        },
+      ])
+    })
+  })
 })

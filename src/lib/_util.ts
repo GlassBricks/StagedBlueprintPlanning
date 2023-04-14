@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import * as util from "util"
 import { Mutable, PRecord } from "./util-types"
 
 export function shallowCopy<T extends object>(obj: T): T {
@@ -19,6 +20,8 @@ export function shallowCopy<T extends object>(obj: T): T {
   return result as T
 }
 export const mutableShallowCopy: <T extends object>(obj: T) => Mutable<T> = shallowCopy
+
+export const deepCopy = util.table.deepcopy
 
 export function deepCompare<T>(a: T, b: T): boolean {
   if (a == b) return true

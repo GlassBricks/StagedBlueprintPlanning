@@ -161,3 +161,7 @@ export namespace Colors {
   export const Green: ColorArray = [0.5, 0.9, 0.5]
   export const Red: ColorArray = [0.9, 0.5, 0.5]
 }
+
+export const enum OtherConstants {
+  DefaultNumStages = 5,
+}

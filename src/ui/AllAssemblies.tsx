@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import * as mod_gui from "mod-gui"
 import {
   AssembliesReorderedEvent,
   AssemblyCreatedEvent,
@@ -22,6 +23,7 @@ import {
   moveAssemblyDown,
   moveAssemblyUp,
 } from "../assembly/UserAssembly"
+import { OtherConstants, Sprites, Styles } from "../constants"
 import { bind, funcRef, ibind, onPlayerInitSince, RegisterClass, registerFunctions } from "../lib"
 import {
   Component,
@@ -35,13 +37,11 @@ import {
   RenderContext,
   renderNamed,
 } from "../lib/factoriojsx"
-import { Migrations } from "../lib/migration"
-import * as mod_gui from "mod-gui"
-import { L_GuiAssemblySelector } from "../locale"
-import { PlayerChangedStageEvent, playerCurrentStage, teleportToAssembly } from "./player-current-stage"
-import { Sprites, Styles } from "../constants"
-import { bringSettingsWindowToFront } from "./AssemblySettings"
 import { SimpleTitleBar } from "../lib/factoriojsx/components"
+import { Migrations } from "../lib/migration"
+import { L_GuiAssemblySelector } from "../locale"
+import { bringSettingsWindowToFront } from "./AssemblySettings"
+import { PlayerChangedStageEvent, playerCurrentStage, teleportToAssembly } from "./player-current-stage"
 import mouse_button_type = defines.mouse_button_type
 
 declare const global: GlobalWithPlayers
@@ -180,8 +180,9 @@ class AllAssemblies extends Component {
     this.scrollToCurrentAssembly()
   }
 }
+
 function createNewAssembly(player: LuaPlayer): void {
-  const assembly = createUserAssembly("", 5)
+  const assembly = createUserAssembly("", OtherConstants.DefaultNumStages)
   teleportToAssembly(player, assembly)
 }
 

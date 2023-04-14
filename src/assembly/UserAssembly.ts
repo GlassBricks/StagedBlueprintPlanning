@@ -20,10 +20,12 @@ import { newAssemblyContent } from "../entity/AssemblyContent"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import {
   bind,
+  deepCopy,
   Events,
   globalEvent,
   Mutable,
   MutableProperty,
+  nilIfEmpty,
   property,
   Property,
   RegisterClass,
@@ -82,7 +84,16 @@ class UserAssemblyImpl implements UserAssembly {
     this.displayName = this.name.map(bind(UserAssemblyImpl.getDisplayName, id))
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
-      this.stages[i] = StageImpl.create(this, i, `<Stage ${i}>`)
+      const stage = StageImpl.create(this, i, `Stage ${i}`)
+      this.stages[i] = stage
+      if (i <= 9) {
+        stage.stageBlueprintSettings.icons.set([
+          {
+            index: 1,
+            signal: { type: "virtual", name: `signal-${i}` },
+          },
+        ])
+      }
     }
   }
   private static getDisplayName(this: void, id: AssemblyId, name: string): LocalisedString {
@@ -103,9 +114,6 @@ class UserAssemblyImpl implements UserAssembly {
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-  _maxStage(): number {
-    return luaLength(this.stages)
-  }
   numStages(): StageNumber {
     return luaLength(this.stages)
   }
@@ -121,20 +129,62 @@ class UserAssemblyImpl implements UserAssembly {
     return this.stages[stageNumber].name.get()
   }
 
-  insertStage(index: StageNumber): Stage {
+  insertStage(stage: StageNumber): Stage {
     this.assertValid()
-    assert(index >= 1 && index <= this.numStages() + 1, "Invalid new stage number")
+    assert(stage >= 1 && stage <= this.numStages() + 1, "Invalid new stage number")
 
-    const newStage = StageImpl.create(this, index, this.getNewStageName())
-    table.insert(this.stages as unknown as Stage[], index, newStage)
+    const { name, strategy, lastNumber, previousLastNumber } = this._getNewStageName(stage)
+    const newStage = StageImpl.create(this, stage, name)
+    // copy/update icons
+    const copyStage = this.stages[stage == 1 ? 1 : stage - 1]
+
+    const icons = deepCopy(copyStage.stageBlueprintSettings.icons.get() ?? [])
+    if (
+      (strategy == "increment" || strategy == "decrement") &&
+      previousLastNumber &&
+      previousLastNumber >= 0 &&
+      previousLastNumber <= 9 &&
+      lastNumber &&
+      lastNumber >= 0 &&
+      lastNumber <= 9
+    ) {
+      const lastIcon = this.findLastIcon(icons)
+      if (
+        lastIcon != nil &&
+        lastIcon.signal.type == "virtual" &&
+        lastIcon.signal.name == `signal-${previousLastNumber}`
+      ) {
+        ;(lastIcon.signal as Mutable<SignalID>).name = `signal-${lastNumber}`
+      }
+    } else if (strategy == "sublist" && icons.length < 4 && lastNumber && lastNumber >= 0 && lastNumber <= 9) {
+      icons.push({
+        index: icons.length + 1,
+        signal: { type: "virtual", name: `signal-${lastNumber}` },
+      })
+    }
+
+    newStage.stageBlueprintSettings.icons.set(nilIfEmpty(icons))
+
+    table.insert(this.stages as unknown as Stage[], stage, newStage)
     // update stages
-    for (const i of $range(index, luaLength(this.stages))) {
+    for (const i of $range(stage, luaLength(this.stages))) {
       this.stages[i].stageNumber = i
     }
-    this.content.insertStage(index)
+    this.content.insertStage(stage)
 
     this.raiseEvent({ type: "stage-added", assembly: this, stage: newStage })
     return newStage
+  }
+
+  private findLastIcon(icons: BlueprintSignalIcon[]): BlueprintSignalIcon | nil {
+    let icon = icons[0]
+    if (icon == nil) return nil
+    for (const i of $range(2, luaLength(icons))) {
+      if (icons[i - 1].index > icon.index) {
+        icon = icons[i - 1]
+      }
+    }
+    return icon
   }
 
   deleteStage(index: StageNumber): void {
@@ -169,15 +219,50 @@ class UserAssemblyImpl implements UserAssembly {
     this.localEvents.closeAll()
   }
 
-  private getNewStageName(): string {
-    let subName = ""
-    for (let i = 1; ; i++) {
-      const name = `<New stage>${subName}`
-      if ((this.stages as unknown as Stage[]).some((stage) => stage.name.get() == name)) {
-        subName = ` (${i})`
-      } else {
-        return name
+  _getNewStageName(stage: StageNumber): {
+    name: string
+    strategy: "increment" | "decrement" | "sublist" | "none"
+    lastNumber?: number
+    previousLastNumber?: number
+  } {
+    // try to detect naming convention:
+    // (Anything)(number)
+
+    const otherStageNum = stage == 1 ? 1 : stage - 1
+    const otherStage = this.stages[otherStageNum]
+    const previousName = otherStage.name.get()
+    const [name, numStr] = string.match(previousName, "^(.*)(%d+)$")
+    const num = tonumber(numStr)
+
+    const foundNumber = name != nil && num != nil
+    if (foundNumber) {
+      // see if there is a previous number and separator, before the last number
+      // follow naming convention
+      const newNum = tonumber(numStr)! + (stage == 1 ? -1 : 1)
+      if (newNum >= 0) {
+        const candidateName = name + newNum
+        const nextName = this.stages[stage]?.name.get()
+        if (candidateName != nextName) {
+          return {
+            name: candidateName,
+            strategy: stage == 1 ? "decrement" : "increment",
+            lastNumber: newNum,
+            previousLastNumber: num,
+          }
+        }
       }
+    }
+
+    if (stage == 1)
+      return {
+        name: "New Stage",
+        strategy: "none",
+      }
+    const sep = string.match(previousName, "^.*%d+([^%d]+)%d+$")[0] ?? (foundNumber ? "." : " ")
+    return {
+      name: previousName + sep + "1",
+      strategy: "sublist",
+      lastNumber: 1,
     }
   }
 
