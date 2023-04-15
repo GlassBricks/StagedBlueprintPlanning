@@ -256,5 +256,7 @@ Migrations.to("0.15.1", () => {
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {
     closeAllAssemblies(player.index)
+    const flow = mod_gui.get_button_flow(player)
+    if (flow[ModButtonName] == nil) renderNamed(<ModButton />, flow, ModButtonName)
   }
 })
