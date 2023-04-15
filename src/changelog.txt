@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.0
 Date: ????
+  Gui:
+    - Added "Exit staged build" button.
   Features:
     - Changed default stage names and icons convention. The names are now "Stage X", "Stage X.Y", and icons match when possible.
     - Blueprint icons are now by default numbered.
