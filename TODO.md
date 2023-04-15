@@ -1,46 +1,36 @@
 # THE TODO LIST
 
-### Next
-
-- Move entity to stage tool
+> Actually updated (after v0.19), for once
 
 ### Editing
 
-- [ ] Modded entities?
-- [ ] Consider alternate behaviors
-- [ ] Configurable behaviors
+- Hack into Factorio's undo system to get rid of "settings remnants"
+- Make more things undoable
+- Force-delete entity input/selection tool
+- Support some modded entities?
 
-- [ ] "Locked" properties
+- Possible alternate editing behaviors
+    - "Reverse upgrade planner"/apply changes downwards
+    - Option to move/edit in specific layer
 
-### Detect and display conflicts
 
-- [ ] Diagnostics system
-- [ ] Incompatible properties due to upgraded entity
-    - [x] Automatically attempt to fix when entities change
-
-### Other utils
-
-- [ ] Option to move/edit in specific layer?
-- [ ] Teleport history
+- Support using mod in non-cheating way (like Editor Extensions)?
 
 ### Blueprinting
 
-- Process blueprints before export:
-    - Infinity stuff->constant combinator
+- Blueprint book "templates"
+
+- Automatic icon configuration
 
 ### UI
 
-- [ ] Show new vs previous layer entities
-- View/edit layers
-    - Other utils
-        - [ ] Disable/enable all entities
-    - Diagnostics
-        - [ ] By type
-        - [ ] Teleport button
-        - [ ] Resolve options? (delete, remove, merge)
+- Show new vs previous layer entities
+- Diagnostics/highlighting changed entities
 
-## Future
+- Teleport history
 
-- Other simple analysis and diagnostics
-- auto blueprint staging utils?
-- "Select dependencies"?
+### Speculative
+
+- Simple analysis and diagnostics
+- Auto blueprint staging utils
+- "Select dependencies"
