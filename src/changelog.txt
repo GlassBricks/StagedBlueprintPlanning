@@ -3,6 +3,7 @@ Version: 0.19.0
 Date: ????
   Gui:
     - Added "Exit staged build" button.
+    - The full assembly settings will always be shown when a new assembl is created.
   Features:
     - Changed default stage names and icons convention. The names are now "Stage X", "Stage X.Y", and icons match when possible.
     - Blueprint icons are now by default numbered.
