@@ -197,6 +197,7 @@ class AllAssemblies extends Component {
 
 function createNewAssembly(player: LuaPlayer): void {
   const assembly = createUserAssembly("", OtherConstants.DefaultNumStages)
+  global.players[player.index].compactAssemblySettings = nil
   teleportToAssembly(player, assembly)
 }
 

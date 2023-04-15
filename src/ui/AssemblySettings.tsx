@@ -701,8 +701,8 @@ function renderGuiForAssembly(player: LuaPlayer, currentAssembly: UserAssembly |
   if (!currentAssembly) {
     return renderPlaceholder(player)
   }
-  const useCompactSettings = global.players[player.index].compactAssemblySettings
-  if (useCompactSettings) {
+
+  if (global.players[player.index].compactAssemblySettings) {
     renderCompactSettings(player, currentAssembly)
   } else {
     renderFullSettings(player, currentAssembly)
@@ -734,6 +734,8 @@ PlayerChangedStageEvent.addListener((player, newStage, oldStage) => {
   const oldAssembly = oldStage?.assembly
   if (newAssembly != oldAssembly) {
     renderGuiForAssembly(player, newAssembly)
+  } else {
+    bringSettingsWindowToFront(player)
   }
 })
 
