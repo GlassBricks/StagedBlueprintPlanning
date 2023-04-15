@@ -13,7 +13,7 @@ import expect from "tstl-expect"
 import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { Pos } from "../../lib/geometry"
-import { playerCurrentStage, teleportToAssembly, teleportToStage } from "../../ui/player-current-stage"
+import { exitAssembly, playerCurrentStage, teleportToAssembly, teleportToStage } from "../../ui/player-current-stage"
 
 before_each(() => {
   const player = game.players[1]!
@@ -94,5 +94,13 @@ describe("teleporting to stage/assembly", () => {
     teleportToAssembly(player, assembly1)
     expect(player.position).to.equal(Pos(5, 10))
     expect(playerCurrentStage(player.index).get()).to.be(assembly1.getStage(2))
+  })
+
+  test("exitAssembly remembers last position when teleporting from outside assembly", () => {
+    player.teleport(Pos(15, 20), 1 as SurfaceIndex)
+    teleportToAssembly(player, assembly2)
+    exitAssembly(player)
+    expect(player.position).to.equal(Pos(15, 20))
+    expect(player.surface_index).to.equal(1)
   })
 })

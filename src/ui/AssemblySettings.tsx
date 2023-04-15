@@ -41,11 +41,11 @@ import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { ItemRename } from "./ItemRename"
 import {
+  exitAssembly,
   PlayerChangedStageEvent,
   playerCurrentStage,
-  recordLastStagePosition,
+  recordPlayerLastPosition,
   teleportToStage,
-  teleportToSurface1,
 } from "./player-current-stage"
 import { StageSelector } from "./StageSelector"
 
@@ -481,7 +481,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
 
   private deleteAssembly() {
     this.assembly.delete()
-    teleportToSurface1(game.get_player(this.playerIndex)!)
+    exitAssembly(game.get_player(this.playerIndex)!)
   }
 
   private newStageAfter() {
@@ -655,7 +655,7 @@ export class StageSettings extends Component<{ stage: Stage }> {
     const { toMerge } = this.getStageToMerge()
     if (!toMerge) return
     const player = game.get_player(this.playerIndex)!
-    recordLastStagePosition(player)
+    recordPlayerLastPosition(player)
     this.stage.deleteInAssembly()
     teleportToStage(player, toMerge)
   }

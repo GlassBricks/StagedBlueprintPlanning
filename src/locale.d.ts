@@ -174,6 +174,8 @@ export declare const enum L_GuiAssemblySelector {
   AllAssemblies = "bp100.gui.assembly-selector.all-assemblies",
   /** New staged build */
   NewAssembly = "bp100.gui.assembly-selector.new-assembly",
+  /** Exit staged build */
+  ExitAssembly = "bp100.gui.assembly-selector.exit-assembly",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
   ButtonTooltip = "bp100.gui.assembly-selector.button-tooltip",
 }

@@ -41,7 +41,7 @@ import { SimpleTitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiAssemblySelector } from "../locale"
 import { bringSettingsWindowToFront } from "./AssemblySettings"
-import { PlayerChangedStageEvent, playerCurrentStage, teleportToAssembly } from "./player-current-stage"
+import { exitAssembly, PlayerChangedStageEvent, playerCurrentStage, teleportToAssembly } from "./player-current-stage"
 import mouse_button_type = defines.mouse_button_type
 
 declare const global: GlobalWithPlayers
@@ -69,10 +69,12 @@ const AllAssembliesHeight = 28 * 10
 @RegisterClass("gui:AllAssemblies")
 class AllAssemblies extends Component {
   playerIndex!: PlayerIndex
-  element!: ScrollPaneGuiElement
+  scrollPane!: ScrollPaneGuiElement
+  backToNauvisButton!: ButtonGuiElement
 
   public override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
+    const currentStage = playerCurrentStage(this.playerIndex)
     return (
       <frame direction="vertical">
         <SimpleTitleBar title={[L_GuiAssemblySelector.AllAssemblies]} />
@@ -83,13 +85,20 @@ class AllAssemblies extends Component {
             height: AllAssembliesHeight,
           }}
           onCreate={(e) => {
-            this.element = e
+            this.scrollPane = e
             this.scrollToCurrentAssembly()
           }}
         >
           {getAllAssemblies().map((assembly) => this.assemblyButtonFlow(assembly))}
         </scroll-pane>
-        <button caption={[L_GuiAssemblySelector.NewAssembly]} on_gui_click={ibind(this.newAssembly)} />
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <button caption={[L_GuiAssemblySelector.NewAssembly]} on_gui_click={ibind(this.newAssembly)} />
+          <button
+            caption={[L_GuiAssemblySelector.ExitAssembly]}
+            enabled={currentStage.truthy()}
+            on_gui_click={ibind(this.backToNauvis)}
+          />
+        </flow>
       </frame>
     )
   }
@@ -113,17 +122,17 @@ class AllAssemblies extends Component {
   private scrollToCurrentAssembly() {
     const currentAssembly = playerCurrentStage(this.playerIndex).get()?.assembly
     if (!currentAssembly) return
-    const element = this.element
+    const element = this.scrollPane
     if (!element || !element.valid) return
-    const flow = this.element.children.find((c) => c.tags?.assemblyId == currentAssembly.id)
+    const flow = this.scrollPane.children.find((c) => c.tags?.assemblyId == currentAssembly.id)
     if (flow) {
       element.scroll_to_element(flow)
     }
   }
 
   private static onButtonClick(this: void, assembly: UserAssembly, event: OnGuiClickEvent): void {
-    // control left click: move up
-    // control right click: move down
+    // control left-click: move up
+    // control right-click: move down
     // normal click: teleport
     if (event.control) {
       if (event.button == mouse_button_type.left) {
@@ -145,8 +154,13 @@ class AllAssemblies extends Component {
     createNewAssembly(game.get_player(this.playerIndex)!)
   }
 
+  private backToNauvis(): void {
+    closeAllAssemblies(this.playerIndex)
+    exitAssembly(game.get_player(this.playerIndex)!)
+  }
+
   assemblyChangedEvent(e: AssemblyCreatedEvent | AssemblyDeletedEvent | AssembliesReorderedEvent) {
-    const element = this.element
+    const element = this.scrollPane
     if (!element || !element.valid) return
     if (e.type == "assembly-created") {
       render(this.assemblyButtonFlow(e.assembly), element)
@@ -165,7 +179,7 @@ class AllAssemblies extends Component {
   }
 
   private rerenderAssembly(assembly: UserAssembly) {
-    const element = this.element
+    const element = this.scrollPane
     if (!element || !element.valid) return
     const flow = element.children.find((c) => c.tags.assemblyId == assembly.id)
     if (flow) {
