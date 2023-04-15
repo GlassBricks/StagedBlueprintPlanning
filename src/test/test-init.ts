@@ -12,11 +12,13 @@
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { deleteAllFreeSurfaces } from "../assembly/surfaces"
 import { UndoHandler } from "../assembly/undo"
-import { createUserAssembly } from "../assembly/UserAssembly"
+import { createUserAssembly, getStageAtSurface } from "../assembly/UserAssembly"
 import { destroyAllRenders, Events, shallowCompare } from "../lib"
 import { Migrations } from "../lib/migration"
+import { debugPrint } from "../lib/test/misc"
 import { refreshCurrentAssembly } from "../ui/AssemblySettings"
 import { teleportToAssembly } from "../ui/player-current-stage"
+import { getCurrentValues } from "../utils/properties-obj"
 import "./in-world-test-util"
 import "./module-mock"
 
@@ -225,4 +227,16 @@ Events.on_string_translated((e) => {
     const player = game.get_player(e.player_index)!
     TestUndo.register(player, "build after translation")
   }
+})
+
+commands.add_command("print-bp-settings", "", () => {
+  const player = game.player!
+  const stage = getStageAtSurface(player.surface.index)
+  if (!stage) return player.print("No stage at surface")
+
+  // const settings = getCurrentValues(stage.stageBlueprintSettings)
+  const settings = getCurrentValues(stage.getBlueprintSettingsView())
+
+  // player.print(serpent.block(settings))
+  debugPrint(settings)
 })

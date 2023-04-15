@@ -127,6 +127,7 @@ function updateBlueprintItemSettings(
   const snapToGrid = blueprint.blueprint_snap_to_grid
   if (snapToGrid == nil) {
     settings.snapToGrid.set(nil)
+    // keep position offset for later
     return
   }
 
@@ -137,7 +138,7 @@ function updateBlueprintItemSettings(
   settings.snapToGrid.set(snapToGrid)
   settings.absoluteSnapping.set(blueprint.blueprint_absolute_snapping)
   settings.positionRelativeToGrid.set(blueprint.blueprint_position_relative_to_grid)
-  settings.positionOffset.set(snapToGrid && Pos.minus(bpPosition, originalPosition))
+  settings.positionOffset.set(Pos.minus(bpPosition, originalPosition))
 }
 function updateBlueprintFilters(stack: LuaItemStack, property: MutableProperty<ReadonlyLuaSet<string> | nil>): void {
   const filters = stack.entity_filters

@@ -114,6 +114,24 @@ export interface BlueprintTakeResult {
   effectivePositionOffset: Position
 }
 
+function contains2x2Grid(bp: BlueprintItemStack): boolean {
+  bp.blueprint_snap_to_grid = [1, 1]
+  const { x, y } = bp.blueprint_snap_to_grid!
+  return x == 2 && y == 2
+}
+
+function posIsOdd(pos: Position): boolean {
+  return pos.x % 2 == 1 || pos.y % 2 == 1
+}
+
+function alignPosTo2x2(pos: Position, isOdd: boolean): Position {
+  const rem = isOdd ? 1 : 0
+  return {
+    x: math.floor(pos.x / 2) * 2 + rem,
+    y: math.floor(pos.y / 2) * 2 + rem,
+  }
+}
+
 /**
  * If forEdit is true, sets the first entity's original position tag.
  */
@@ -125,9 +143,8 @@ export function takeSingleBlueprint(
   unitNumberFilter: ReadonlyLuaSet<UnitNumber> | nil,
   forEdit: boolean,
 ): BlueprintTakeResult | nil {
-  if (!stack.is_blueprint) {
-    stack.set_stack("blueprint")
-  }
+  stack.clear()
+  stack.set_stack("blueprint")
   const bpMapping = stack.create_blueprint({
     surface,
     force: "player",
@@ -141,11 +158,13 @@ export function takeSingleBlueprint(
 
   const {
     snapToGrid,
-    positionOffset,
     additionalWhitelist,
     blacklist,
     replaceInfinityEntitiesWithCombinators: shouldReplaceInfinity,
+    absoluteSnapping,
   } = params
+
+  let { positionOffset, positionRelativeToGrid } = params
 
   const entities: BlueprintEntity[] = stack.get_blueprint_entities()!
 
@@ -154,6 +173,13 @@ export function takeSingleBlueprint(
   const firstEntityOriginalPosition = bpMapping[1].position
 
   if (snapToGrid && positionOffset) {
+    if (contains2x2Grid(stack)) {
+      const isOddGrid =
+        params.absoluteSnapping != nil && positionRelativeToGrid != nil && posIsOdd(positionRelativeToGrid)
+      positionOffset = alignPosTo2x2(positionOffset, isOddGrid)
+      if (positionRelativeToGrid) positionRelativeToGrid = alignPosTo2x2(positionRelativeToGrid, isOddGrid)
+    }
+
     if (adjustEntitiesToMatchPositionOffset(stack, entities, positionOffset, firstEntityOriginalPosition))
       entitiesAdjusted = true
     effectivePositionOffset = positionOffset
@@ -184,15 +210,17 @@ export function takeSingleBlueprint(
     return nil
   }
 
+  stack.blueprint_snap_to_grid = snapToGrid
+  stack.blueprint_absolute_snapping = absoluteSnapping
+  if (absoluteSnapping) {
+    stack.blueprint_position_relative_to_grid = positionRelativeToGrid
+  }
+
   if (entitiesAdjusted) {
     stack.set_blueprint_entities(entities)
   }
 
   stack.blueprint_icons = params.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
-  stack.blueprint_snap_to_grid = params.snapToGrid
-  stack.blueprint_absolute_snapping = params.absoluteSnapping
-  stack.blueprint_position_relative_to_grid = params.positionRelativeToGrid
-
   if (forEdit) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, firstEntityOriginalPosition)
   }
