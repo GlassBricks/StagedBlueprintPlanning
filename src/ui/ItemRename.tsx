@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -49,6 +49,7 @@ export class ItemRename extends Component<ItemRenameProps> {
         lose_focus_on_confirm
         on_gui_confirmed={Props.setValueFn(this.isRenaming, false)}
         styleMod={{ maximal_width: this.item.maximalWidth ?? 200 }}
+        onCreate={(e) => e.focus()}
       />
     ) : (
       <label
