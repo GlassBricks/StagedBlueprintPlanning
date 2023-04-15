@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed possible blueprint entity misalignment, when blueprint contains 2x2 grid entities and blueprint grid settings are set.
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.0
 Date: 2023-04-15
