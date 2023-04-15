@@ -12,7 +12,7 @@
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { Mutable } from "../lib"
+import { Mutable, protectedAction } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
@@ -241,47 +241,50 @@ export class BlueprintCreation {
   }
 }
 
-export function withBlueprintCreator<T>(action: (creator: BlueprintCreation) => T): T {
+export function withBlueprintCreator<T>(action: (creator: BlueprintCreation) => T): T | nil {
   const creator = new BlueprintCreation()
-  const [success, result] = pcall(action, creator)
+  const res = protectedAction(action, creator)
   creator.cleanup()
-  if (success) return result
-  error(result)
+  return res
 }
 
 export function takeStageBlueprint(stage: Stage, stack: LuaItemStack): boolean {
-  return withBlueprintCreator((creator) => {
-    const plan = creator.addBlueprint(stage, stack)!
-    creator.takeAllBlueprints()
-    return plan.result != nil
-  })
+  return (
+    withBlueprintCreator((creator) => {
+      const plan = creator.addBlueprint(stage, stack)!
+      creator.takeAllBlueprints()
+      return plan.result != nil
+    }) ?? false
+  )
 }
 
 export function makeBlueprintBook(assembly: UserAssembly, stack: LuaItemStack): boolean {
-  return withBlueprintCreator((creator) => {
-    stack.set_stack("blueprint-book")
-    const bookInventory = stack.get_inventory(defines.inventory.item_main)!
+  return (
+    withBlueprintCreator((creator) => {
+      stack.set_stack("blueprint-book")
+      const bookInventory = stack.get_inventory(defines.inventory.item_main)!
 
-    for (const stage of assembly.getAllStages()) {
-      bookInventory.insert("blueprint")
-      const bpStack = bookInventory[bookInventory.length - 1]
-      creator.addBlueprint(stage, bpStack)
-    }
-    creator.takeAllBlueprints()
-    for (const i of $range(1, bookInventory.length)) {
-      const bpStack = bookInventory[i - 1]
-      if (!bpStack.is_blueprint_setup()) {
-        bpStack.clear()
+      for (const stage of assembly.getAllStages()) {
+        bookInventory.insert("blueprint")
+        const bpStack = bookInventory[bookInventory.length - 1]
+        creator.addBlueprint(stage, bpStack)
       }
-    }
-    if (bookInventory.length == 0) {
-      stack.clear()
-      return false
-    }
+      creator.takeAllBlueprints()
+      for (const i of $range(1, bookInventory.length)) {
+        const bpStack = bookInventory[i - 1]
+        if (!bpStack.is_blueprint_setup()) {
+          bpStack.clear()
+        }
+      }
+      if (bookInventory.length == 0) {
+        stack.clear()
+        return false
+      }
 
-    stack.label = assembly.name.get()
-    return true
-  })
+      stack.label = assembly.name.get()
+      return true
+    }) ?? false
+  )
 }
 
 export function exportBlueprintBookToFile(assembly: UserAssembly, player: LuaPlayer): string | nil {

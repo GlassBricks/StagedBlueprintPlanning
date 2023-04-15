@@ -143,8 +143,8 @@ export function takeSingleBlueprint(
   unitNumberFilter: ReadonlyLuaSet<UnitNumber> | nil,
   forEdit: boolean,
 ): BlueprintTakeResult | nil {
-  stack.clear()
   stack.set_stack("blueprint")
+  stack.clear_blueprint()
   const bpMapping = stack.create_blueprint({
     surface,
     force: "player",
