@@ -1,6 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.0
 Date: ????
+  Features:
+    - Changed default stage names and icons convention. The names are now "Stage X", "Stage X.Y", and icons match when possible.
+    - Blueprint icons are now by default numbered.
+    - When adding a new stage, the stage's name and icons is now determined by the previous stage's name. The mod guesses the naming convention and tries to follow it, and updates icons accordingly.
   Changes:
     - Improved underground pair detection. There should now be less false positives for "underground paired with multiple other undergrounds".
 ---------------------------------------------------------------------------------------------------
