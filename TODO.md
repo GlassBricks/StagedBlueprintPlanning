@@ -22,6 +22,8 @@
 
 - Automatic icon configuration
 
+- "Testing" surface
+
 ### UI
 
 - Show new vs previous layer entities
