@@ -379,18 +379,15 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]> {
     let value: T[K] = this.firstValue[prop]
-    const firstStage = this.firstStage
-    if (stage <= firstStage) return $multi(value, firstStage)
+    let resultStage = this.firstStage
     const { stageDiffs } = this
-    let resultStage = firstStage
-    if (stageDiffs) {
-      for (const [changedStage, diff] of pairs(stageDiffs)) {
-        if (changedStage > stage) break
-        const propDiff = diff[prop]
-        if (propDiff != nil) {
-          resultStage = changedStage
-          value = fromDiffValue<T[K]>(propDiff)
-        }
+    if (stage <= resultStage || !stageDiffs) return $multi(value, resultStage)
+    for (const [changedStage, diff] of pairs(stageDiffs)) {
+      if (changedStage > stage) break
+      const propDiff = diff[prop]
+      if (propDiff != nil) {
+        resultStage = changedStage
+        value = fromDiffValue<T[K]>(propDiff)
       }
     }
     return $multi(value, resultStage)

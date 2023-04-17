@@ -26,19 +26,15 @@ OnEntityPrototypesLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 
-export function hasControlBehaviorSet(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  const firstStage = entity.firstStage
-  if (firstStage >= stageNumber) return false
-  const [existingProp, setStage] = entity.getPropAtStage(stageNumber, "control_behavior")
-  return !(existingProp == nil && setStage == firstStage)
-}
-
-export function fixEmptyControlBehavior(entity: AssemblyEntity): void {
-  const firstStage = entity.firstStage
+export function trySetEmptyControlBehavior(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+  if (!(stageNumber > entity.firstStage && entity.firstValue.control_behavior == nil)) return false
   const type = nameToType.get(entity.firstValue.name)
   if (type == "inserter") {
-    entity.setPropAtStage(firstStage, "control_behavior", emptyInserterControlBehavior)
-  } else if (type == "transport-belt") {
-    entity.setPropAtStage(firstStage, "control_behavior", emptyBeltControlBehavior)
+    entity.setPropAtStage(entity.firstStage, "control_behavior", emptyInserterControlBehavior)
+    return true
   }
+  if (type == "transport-belt") {
+    entity.setPropAtStage(entity.firstStage, "control_behavior", emptyBeltControlBehavior)
+  }
+  return false
 }

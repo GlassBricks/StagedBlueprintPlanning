@@ -18,7 +18,7 @@ import {
   StageNumber,
   UndergroundBeltAssemblyEntity,
 } from "../entity/AssemblyEntity"
-import { fixEmptyControlBehavior, hasControlBehaviorSet } from "../entity/empty-control-behavior"
+import { trySetEmptyControlBehavior } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-prototype-info"
 import { canBeAnyDirection, saveEntity } from "../entity/save-load"
@@ -329,8 +329,7 @@ export function tryApplyUpgradeTarget(
 }
 
 function checkDefaultControlBehavior(entity: AssemblyEntity, stage: StageNumber): boolean {
-  if (stage <= entity.firstStage || hasControlBehaviorSet(entity, stage)) return false
-  fixEmptyControlBehavior(entity)
+  if (!trySetEmptyControlBehavior(entity, stage)) return false
   const luaEntity = entity.getWorldEntity(stage)
   if (luaEntity) doUpdateEntityFromWorld(stage, entity, luaEntity)
   return true
