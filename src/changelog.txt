@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.2
 Date: ????
+  Bugfixes:
+    - Fixed circuit wires not appearing on belts when created via blueprint pasting.
   Changes:
+    - Control behavior will be set to no-op when adding a circuit wire for the first time, in more cases than before.
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.1
 Date: 2023-04-15
