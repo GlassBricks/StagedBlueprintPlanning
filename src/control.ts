@@ -12,6 +12,7 @@
 /** @beforeImports */
 {
   pcall(require, "test.module-mock")
+  // require("__debugadapter__/debugadapter.lua")
 }
 
 import "./assembly"

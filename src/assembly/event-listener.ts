@@ -262,6 +262,7 @@ Events.on_init(() => {
   state = global.worldListenerState = {}
 })
 Events.on_load(() => {
+  log("on_load")
   state = global.worldListenerState
 })
 
@@ -774,6 +775,9 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       luaEntity = asmEntity.getWorldEntity(stage.stageNumber)
       if (!luaEntity) return
 
+      bpState.needsManualConnections.push(entityId)
+    } else if (luaEntity.type == "transport-belt") {
+      // factorio bug? transport belts don't save circuit connections immediately when pasted
       bpState.needsManualConnections.push(entityId)
     } else {
       onCircuitWiresPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, e.player_index)
