@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.2
-Date: ????
+Date: 2023-04-17
   Bugfixes:
     - Fixed circuit wires not appearing on belts when created via blueprint pasting.
   Changes:
