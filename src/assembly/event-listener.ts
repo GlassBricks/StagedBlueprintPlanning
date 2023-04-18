@@ -262,7 +262,6 @@ Events.on_init(() => {
   state = global.worldListenerState = {}
 })
 Events.on_load(() => {
-  log("on_load")
   state = global.worldListenerState
 })
 
