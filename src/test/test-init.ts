@@ -93,7 +93,8 @@ if (script.active_mods.testorio != nil) {
 
   const testFiles = getProjectFilesMatchingRegex("\\.test\\.tsx?$")
   // replace . with -
-  const testNames = testFiles.map((x) => string.gsub(x, "%.", "-"))
+  const testNames = testFiles.map((x) => string.gsub(x, "%.", "-")[0])
+  testNames.push("test.misc-test")
   require("__testorio__/init")(testNames, {
     tag_blacklist: tagBlacklist,
     before_test_run() {

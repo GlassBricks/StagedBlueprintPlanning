@@ -16,6 +16,9 @@ export function getPlayer(): LuaPlayer {
 declare global {
   let __TS__sourcemap: Record<string, Record<string, number | Source> | nil> | nil
 }
+declare const global: {
+  __lastDebugPrintCall: string | nil
+}
 export interface Source {
   readonly file?: string
   readonly line?: number
@@ -49,9 +52,15 @@ export function debugPrint(...values: unknown[]): void {
           })
   }
 
+  global.__lastDebugPrintCall = sourceString
+
   const message: LocalisedString = ["", sourceString, ": ", valueStrings.join(", ")]
   game?.print(message)
   log(message)
+}
+
+export function getLastDebugPrintCall(): string | nil {
+  return global.__lastDebugPrintCall
 }
 
 // noinspection JSUnusedGlobalSymbols

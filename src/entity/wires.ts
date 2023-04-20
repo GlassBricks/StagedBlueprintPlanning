@@ -10,7 +10,6 @@
  */
 
 import { isEmpty } from "../lib"
-import { debugPrint } from "../lib/test/misc"
 import { AsmCircuitConnection, circuitConnectionMatches, getDirectionalInfo } from "./AsmCircuitConnection"
 import { AsmEntityCircuitConnections, AssemblyContent, CableAddResult, MutableAssemblyContent } from "./AssemblyContent"
 import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
@@ -112,8 +111,6 @@ function saveCircuitConnections(
   const existingConnections = luaEntity.circuit_connection_definitions
   if (!existingConnections) return false
   const assemblyConnections = content.getCircuitConnections(entity)
-
-  debugPrint(existingConnections)
 
   const [matchingConnections, extraConnections] = partitionExistingCircuitConnections(
     assemblyConnections,

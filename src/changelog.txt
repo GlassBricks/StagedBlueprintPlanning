@@ -1,12 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.6
 Date: ????
-  Changes:
+  Bugfixes:
+    - Remove lingering debug print
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.5
 Date: 2023-04-20
   Bugfixes:
-    - Fixed that pasting a chain of cicruit wires could cause certain wires to be missing.
+    - Fixed that pasting a chain of circuit wires could cause certain wires to be missing.
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.4
 Date: 2023-04-18
