@@ -695,6 +695,54 @@ test("adding wire in higher stage sets empty control behavior", () => {
   assertEntityCorrect(belt, false)
 })
 
+test.each([1, 2])("paste a chain of circuit wires over existing power poles, stage %s", (stage) => {
+  const pole1 = buildEntity(stage, { name: "small-electric-pole", position: pos })
+  const pole2 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
+  const pole3 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(8, 0)) })
+
+  const bpEntities: BlueprintEntity[] = [
+    {
+      entity_number: 1,
+      name: "small-electric-pole",
+      position: pos,
+      connections: { "1": { red: [{ entity_id: 2 }] } },
+    },
+    {
+      entity_number: 2,
+      name: "small-electric-pole",
+      position: pos.plus(Pos(4, 0)),
+      connections: { "1": { red: [{ entity_id: 1 }, { entity_id: 3 }] } },
+    },
+    {
+      entity_number: 3,
+      name: "small-electric-pole",
+      position: pos.plus(Pos(8, 0)),
+      connections: { "1": { red: [{ entity_id: 2 }] } },
+    },
+  ]
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.set_blueprint_entities(bpEntities)
+
+  player.teleport([0, 0], surfaces[stage - 1])
+  player.build_from_cursor({ position: pos.plus(Pos(4, 0)) })
+
+  // should have 2 cable connections
+
+  const connection1 = assembly.content.getCircuitConnections(pole1)?.get(pole2)
+  expect(connection1).not.toBeNil()
+  const connection21 = assembly.content.getCircuitConnections(pole2)?.get(pole1)
+  expect(connection21).not.toBeNil()
+  const connection23 = assembly.content.getCircuitConnections(pole2)?.get(pole3)
+  expect(connection23).not.toBeNil()
+  const connection3 = assembly.content.getCircuitConnections(pole3)?.get(pole2)
+  expect(connection3).not.toBeNil()
+
+  assertEntityCorrect(pole1, false)
+  assertEntityCorrect(pole2, false)
+  assertEntityCorrect(pole3, false)
+})
+
 test("can build a entity using known value", () => {
   const luaEntity = createEntity(1, { name: "transport-belt", position: pos, direction: defines.direction.east })
   const entity = addNewEntity(assembly, luaEntity, 1, {
