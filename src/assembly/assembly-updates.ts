@@ -355,7 +355,7 @@ export function updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity,
   if (circuitConnections) {
     for (const [otherEntity] of circuitConnections) {
       if (checkDefaultControlBehavior(otherEntity, stage)) {
-        updateWorldEntities(assembly, otherEntity, otherEntity.firstStage)
+        updateWorldEntities(assembly, otherEntity, otherEntity.firstStage, false)
       }
     }
   }

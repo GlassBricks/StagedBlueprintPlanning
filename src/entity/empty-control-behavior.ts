@@ -31,8 +31,11 @@ export function trySetEmptyControlBehavior(entity: AssemblyEntity, stageNumber: 
   const type = nameToType.get(entity.firstValue.name)
   if (type == "inserter") {
     entity.setPropAtStage(entity.firstStage, "control_behavior", emptyInserterControlBehavior)
-  } else if (type == "transport-belt") {
-    entity.setPropAtStage(entity.firstStage, "control_behavior", emptyBeltControlBehavior)
+    return true
   }
-  return true
+  if (type == "transport-belt") {
+    entity.setPropAtStage(entity.firstStage, "control_behavior", emptyBeltControlBehavior)
+    return true
+  }
+  return false
 }

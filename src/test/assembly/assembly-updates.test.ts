@@ -84,11 +84,11 @@ function assertWUNotCalled() {
     }
   }
 }
-function assertUpdateCalled(entity: AssemblyEntity, startStage: StageNumber, n?: number) {
+function assertUpdateCalled(entity: AssemblyEntity, startStage: StageNumber, n?: number, updateWires?: boolean) {
   expectedWuCalls++
   if (n == nil) expect(worldUpdaterCalls).to.be(1)
   const spy = worldUpdater.updateWorldEntities
-  expect(spy).nthCalledWith(n ?? 1, assembly, entity, startStage, nil)
+  expect(spy).nthCalledWith(n ?? 1, assembly, entity, startStage, updateWires)
 }
 
 function assertUpdateOnLastStageChangedCalled(entity: AssemblyEntity, startStage: StageNumber) {
@@ -602,7 +602,7 @@ describe("updateWiresFromWorld", () => {
 
     assertNEntities(2)
     assertUpdateCalled(entity1, 2, 1)
-    assertUpdateCalled(entity2, 1, 2)
+    assertUpdateCalled(entity2, 1, 2, false)
   })
   // test.todo(
   //   "if max connections exceeded, notifies and calls update",
