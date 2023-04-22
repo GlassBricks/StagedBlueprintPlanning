@@ -326,7 +326,7 @@ export function moveAssemblyDown(assembly: UserAssembly): boolean {
   return true
 }
 
-const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods.debugadapter != nil ? 32 : 5 * 32)
+const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
 
 function createEmptyStageBlueprintSettings(): StageBlueprintSettingsTable {
   return {
