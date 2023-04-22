@@ -7,7 +7,7 @@
   "factorio_version": "1.1",
   "package": {
     "scripts": {
-      "prepackage": "npm prepare-package"
+      "prepackage": "npm run prepare-package"
     },
     "git_publish_branch": "main",
     "ignore": ["readme.md", "test/**/*", "**/*.xcf", "**/*.svg"],
