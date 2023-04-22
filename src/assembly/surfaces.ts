@@ -49,7 +49,7 @@ declare const global: {
 }
 
 let surfaceCreator: SurfaceCreator
-if (!script.active_mods.debugadapter) {
+if (!script.active_mods["factorio-test"]) {
   surfaceCreator = {
     createSurface: createNewStageSurface,
     destroySurface: (surface) => game.delete_surface(surface),

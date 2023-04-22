@@ -11,24 +11,35 @@
       "adjustMods": {
         "bp100": true,
         "WiderNoticeTextBoxes": true,
-        "testorio": true,
+        "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
-        "bp100Test",
+        "factorio-test/Test",
         "--cache-sprite-atlas",
         "true",
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio/config.ini"
+        "${workspaceRoot}/factorio-test-data/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio",
+      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
       "checkGlobals": false,
-      "hookControl": false
+      "hookControl": false,
+      "adjustModSettings": [
+        {
+          "scope": "startup",
+          "name": "factorio-test-auto-start",
+          "value": true
+        }, {
+          "scope": "runtime-global",
+          "name": "factorio-test-mod-to-test",
+          "value": "bp100"
+        }
+      ]
     },
     {
       "type": "factoriomod",
@@ -37,22 +48,22 @@
       "adjustMods": {
         "bp100": true,
         "WiderNoticeTextBoxes": true,
-        "testorio": true,
+        "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
-        "bp100Test",
+        "factorio-test/Test",
         "--cache-sprite-atlas",
         "true",
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio/config.ini"
+        "${workspaceRoot}/factorio-test-data/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio",
+      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
       "checkGlobals": false,
       "hookControl": true
     },
@@ -63,20 +74,20 @@
       "adjustMods": {
         "bp100": true,
         "WiderNoticeTextBoxes": true,
-        "testorio": true
+        "factorio-test": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
-        "bp100Test",
+        "factorio-test/Test",
         "--cache-sprite-atlas",
         "true",
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio/config.ini",
+        "${workspaceRoot}/factorio-test-data/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio",
+      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
       "checkGlobals": false,
       "hookData": true,
       "hookControl": false
@@ -85,7 +96,9 @@
       "type": "factoriomod",
       "request": "launch",
       "name": "debug only",
-      "factorioArgs": ["--cache-sprite-atlas", "true", "--graphics-quality", "low"],
+      "factorioArgs": [
+        "--cache-sprite-atlas", "true", "--graphics-quality", "low"
+      ],
       "checkGlobals": false,
       "hookControl": true
     }

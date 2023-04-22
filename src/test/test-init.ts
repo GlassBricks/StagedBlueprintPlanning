@@ -54,7 +54,7 @@ declare let global: {
   rerunMode?: "rerun" | "reload" | "none"
 }
 
-if (script.active_mods.testorio != nil) {
+if (script.active_mods["factorio-test"] != nil) {
   function reinit() {
     destroyAllRenders()
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
@@ -95,7 +95,7 @@ if (script.active_mods.testorio != nil) {
   // replace . with -
   const testNames = testFiles.map((x) => string.gsub(x, "%.", "-")[0])
   testNames.push("test.misc-test")
-  require("__testorio__/init")(testNames, {
+  require("__factorio-test__/init")(testNames, {
     tag_blacklist: tagBlacklist,
     before_test_run() {
       reinit()
@@ -108,11 +108,14 @@ if (script.active_mods.testorio != nil) {
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
-      const result = remote.call("testorio", "getResults") as { status?: "passed" | "failed" | "todo"; skipped: number }
+      const result = remote.call("factorio-test", "getResults") as {
+        status?: "passed" | "failed" | "todo"
+        skipped: number
+      }
       if (result.status == "passed" && result.skipped == 0) {
         game.surfaces[1].clear()
         const player = game.players[1]
-        player.gui.screen["testorio:test-progress"]?.destroy()
+        player.gui.screen["factorio-test-test-gui"]?.destroy()
 
         deleteAllFreeSurfaces()
 
@@ -127,7 +130,7 @@ if (script.active_mods.testorio != nil) {
     log_passed_tests: false,
     sound_effects: true,
     // test_pattern: "integration%-test",
-  } satisfies Partial<Testorio.Config>)
+  } satisfies Partial<FactorioTest.Config>)
   if (__DebugAdapter) {
     tagBlacklist.push("after_mod_reload")
   }
@@ -136,8 +139,8 @@ if (script.active_mods.testorio != nil) {
 // auto test rerunning
 
 function isTestsRunning() {
-  if (remote.interfaces.testorio?.isRunning) {
-    return remote.call("testorio", "isRunning") || remote.call("testorio", "getTestStage") == "NotRun"
+  if (remote.interfaces["factorio-test"]?.isRunning) {
+    return remote.call("factorio-test", "isRunning") || remote.call("factorio-test", "getTestStage") == "NotRun"
   }
   return true
 }
@@ -157,11 +160,11 @@ Events.on_tick(() => {
     global.lastCompileTimestamp = lastCompileTime
     global.migrateNextTick = true
     game.reload_mods()
-  } else if (global.lastCompileTimestamp != lastCompileTime && remote.interfaces.testorio?.runTests) {
+  } else if (global.lastCompileTimestamp != lastCompileTime && remote.interfaces["factorio-test"]?.runTests) {
     global.lastCompileTimestamp = lastCompileTime
     game.print("Reloaded: " + lastCompileTime)
     if (global.rerunMode == "rerun") {
-      remote.call("testorio", "runTests")
+      remote.call("factorio-test", "runTests")
     } else {
       refreshCurrentAssembly()
     }

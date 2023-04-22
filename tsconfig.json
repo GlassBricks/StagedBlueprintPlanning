@@ -4,7 +4,7 @@
     "moduleResolution": "node",
     "module": "CommonJS",
     "types": [
-      "typed-factorio/runtime", "typed-factorio/strict-index-types", "testorio", "gb-tstl-utils"
+      "typed-factorio/runtime", "typed-factorio/strict-index-types", "factorio-test", "gb-tstl-utils"
     ],
     "lib": ["esnext"],
     "skipDefaultLibCheck": true,
@@ -24,7 +24,7 @@
   },
   "tstl": {
     "luaTarget": "5.2",
-    "noResolvePaths": ["__testorio__/init", "__debugadapter__/debugadapter.lua"],
+    "noResolvePaths": ["__factorio-test__/init", "__debugadapter__/debugadapter.lua"],
     "noImplicitSelf": true,
     "sourceMapTraceback": true,
     "luaPlugins": [

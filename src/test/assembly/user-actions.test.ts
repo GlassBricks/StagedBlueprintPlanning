@@ -150,7 +150,7 @@ describe("onEntityCreated", () => {
     expect(worldUpdates.refreshWorldEntityAtStage).calledWith(assembly, entity, newStage)
   })
 
-  test.each([1, 2], "at lower stage %d sets entity and calls trySetFirstStage to new value", (newStage) => {
+  test.each([1, 2])("at lower stage %d sets entity and calls trySetFirstStage to new value", (newStage) => {
     const { luaEntity, entity } = addEntity(3)
     userActions.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
 
@@ -168,8 +168,7 @@ describe("onEntityCreated", () => {
     assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 
-  test.each(
-    [1, 2, 3],
+  test.each([1, 2, 3])(
     "on a settings-remnant at stage (%d) sets entity and calls tryReviveSettingsRemnant",
     (newStage) => {
       const { luaEntity, entity } = addEntity(2)

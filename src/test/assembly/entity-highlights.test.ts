@@ -88,22 +88,25 @@ describe("error highlights", () => {
     expect(entity.getExtraEntity("errorOutline", 2)).to.be.nil()
   })
 
-  test.each([[[2]], [[2, 3]], [[2, 4]], [[3]]])("creates indicator in other stages, %s", (stages) => {
-    const stageSet = new LuaSet()
-    for (const stage of stages) {
-      removeInStage(stage)
-      stageSet.add(stage)
-    }
-    updateAllHighlights(assembly, entity)
-
-    for (let i = 1; i < 5; i++) {
-      if (i == 1 || stageSet.has(i)) {
-        expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.nil()
-      } else {
-        expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
+  test.each<[readonly number[]]>([[[2]], [[2, 3]], [[2, 4]], [[3]]])(
+    "creates indicator in other stages, %s",
+    (stages) => {
+      const stageSet = new LuaSet()
+      for (const stage of stages) {
+        removeInStage(stage)
+        stageSet.add(stage)
       }
-    }
-  })
+      updateAllHighlights(assembly, entity)
+
+      for (let i = 1; i < 5; i++) {
+        if (i == 1 || stageSet.has(i)) {
+          expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.nil()
+        } else {
+          expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()
+        }
+      }
+    },
+  )
 
   test("deletes indicators only when all highlights removed", () => {
     removeInStage(2)

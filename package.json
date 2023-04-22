@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "LGPL-3.0",
-  "packageManager": "yarn@3.2.2",
+  "packageManager": "npm@9.5.0",
   "devDependencies": {
     "@types/node": "^18.15.9",
     "@types/prettier": "^2.7.2",
@@ -17,14 +17,14 @@
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-prettier": "^4.2.1",
+    "factorio-test": "^1.0.2",
+    "factorio-test-cli": "^1.0.4",
     "factoriomod-debug": "^1.1.28",
     "gb-tstl-utils": "^1.0.2",
     "lua-types": "^2.13.1",
     "nodemon": "^2.0.22",
     "prettier": "^2.8.7",
     "semver": "^7.3.8",
-    "testorio": "^1.6.2",
-    "testorio-tools": "^0.3.4",
     "ts-node": "^10.9.1",
     "tstl-expect": "^0.3.5",
     "typed-factorio": "^1.14.0",
@@ -33,17 +33,19 @@
     "typescript-tstl-plugin": "^0.3.2"
   },
   "scripts": {
+    "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\" \"!src/utils/base64.lua\"",
     "build:locale": "ts-node scripts/gen-locale-defs.ts",
     "build:gui-specs": "ts-node scripts/gen-gui-specs.ts",
-    "build:scripts": "concurrently \"yarn build:locale\" \"yarn build:gui-specs\"",
-    "build:release": "yarn build:scripts && tstl -p tsconfig-release.json",
-    "build": "yarn build:scripts && tstl",
-    "prepare-package": "yarn clean && yarn build:release",
+    "build:scripts": "conc \"npm:build:locale\" \"npm:build:gui-specs\"",
+    "build:release": "npm run clean && npm run build:scripts && tstl -p tsconfig-release.json",
+    "build:test": "yarn build:scripts && tstl",
     "watch": "tstl --watch",
-    "watch:release-build": "tstl --watch -p tsconfig-release.json",
     "watch:locale": "nodemon scripts/gen-locale-defs.ts",
-    "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\" \"!src/utils/base64.lua\"",
-    "version-minor": "ts-node scripts/bump-version.ts minor"
+    "watch:release": "tstl --watch -p tsconfig-release.json",
+    "version-minor": "ts-node scripts/bump-version.ts minor",
+    "pretest": "yarn clean && yarn build:test",
+    "test": "factorio-test run ./src",
+    "prepare-package": "npm run test && npm run build:release"
   },
   "nodemonConfig": {
     "watch": [

@@ -47,7 +47,7 @@ export namespace Migrations {
   }
 
   export function _prepareMock(): void {
-    assert(game && script.active_mods.testorio, "should not mock until game loaded")
+    assert(game && script.active_mods["factorio-test"], "should not mock until game loaded")
     migrations = {}
     earlyMigrations = {}
   }

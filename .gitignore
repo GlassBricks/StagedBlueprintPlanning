@@ -137,3 +137,5 @@ factorio/
 *.xcf
 
 **/*.hide.ts
+
+factorio-test-data/
