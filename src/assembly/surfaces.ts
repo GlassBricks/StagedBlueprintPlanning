@@ -11,19 +11,23 @@
 
 import { BBox } from "../lib/geometry"
 
+const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
+
 function createNewStageSurface(this: unknown): LuaSurface {
-  const result = game.create_surface("bp100-stage-temp", {
+  const surface = game.create_surface("bp100-stage-temp", {
     width: 10000,
     height: 10000,
   } as MapGenSettingsWrite)
-  result.generate_with_lab_tiles = true
-  result.always_day = true
-  result.show_clouds = false
-  result.name = "bp100-stage-" + result.index
-  return result
+  surface.generate_with_lab_tiles = true
+  surface.always_day = true
+  surface.show_clouds = false
+  surface.name = "bp100-stage-" + surface.index
+
+  prepareArea(surface, initialPreparedArea)
+  return surface
 }
 
-export function prepareArea(surface: LuaSurface, area: BBox): void {
+function prepareArea(surface: LuaSurface, area: BBox): void {
   const { is_chunk_generated, set_chunk_generated_status } = surface
   const status = defines.chunk_generated_status.entities
   const pos = { x: 0, y: 0 }
@@ -39,16 +43,14 @@ export function prepareArea(surface: LuaSurface, area: BBox): void {
   surface.build_checkerboard(actualArea)
 }
 
-export interface SurfaceCreator {
-  createSurface(): LuaSurface
-  destroySurface(surface: LuaSurface): void
-}
-
 declare const global: {
   freeSurfaces?: LuaSurface[]
 }
 
-let surfaceCreator: SurfaceCreator
+let surfaceCreator: {
+  createSurface(): LuaSurface
+  destroySurface(surface: LuaSurface): void
+}
 if (!script.active_mods["factorio-test"]) {
   surfaceCreator = {
     createSurface: createNewStageSurface,

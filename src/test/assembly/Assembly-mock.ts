@@ -10,9 +10,8 @@
  */
 
 import { Assembly } from "../../assembly/AssemblyDef"
-import { createStageSurface, destroySurface, prepareArea } from "../../assembly/surfaces"
+import { createStageSurface, destroySurface } from "../../assembly/surfaces"
 import { newAssemblyContent } from "../../entity/AssemblyContent"
-import { BBox, Pos } from "../../lib/geometry"
 
 export function createMockAssembly(stages: number | LuaSurface[]): Assembly {
   const surfaces: LuaSurface[] =
@@ -32,7 +31,6 @@ export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
   before_all(() => {
     for (let i = 0; i < numSurfaces; i++) {
       const surface = createStageSurface()
-      prepareArea(surface, BBox.around(Pos(0, 0), 10))
       surfaces.push(surface)
     }
   })

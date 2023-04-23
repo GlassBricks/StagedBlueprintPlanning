@@ -40,7 +40,7 @@ import {
   PropertiesTable,
 } from "../utils/properties-obj"
 import { AssemblyId, GlobalAssemblyEvent, LocalAssemblyEvent, Stage, UserAssembly } from "./AssemblyDef"
-import { createStageSurface, destroySurface, prepareArea } from "./surfaces"
+import { createStageSurface, destroySurface } from "./surfaces"
 import { AutoSetTilesType, setTiles } from "./tiles"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 import min = math.min
@@ -326,8 +326,6 @@ export function moveAssemblyDown(assembly: UserAssembly): boolean {
   return true
 }
 
-const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
-
 function createEmptyStageBlueprintSettings(): StageBlueprintSettingsTable {
   return {
     ...createEmptyPropertyOverrideTable<OverrideableBlueprintSettings>(keys<OverrideableBlueprintSettings>()),
@@ -367,7 +365,6 @@ class StageImpl implements Stage {
 
   static create(assembly: UserAssemblyImpl, stageNumber: StageNumber, name: string): StageImpl {
     const surface = createStageSurface()
-    prepareArea(surface, initialPreparedArea)
     return new StageImpl(assembly, surface, stageNumber, name)
   }
 
