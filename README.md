@@ -8,4 +8,4 @@ This uses:
 
 - [TypescriptToLua](https://github.com/TypeScriptToLua/TypeScriptToLua)
 - [typed-factorio](https://github.com/GlassBricks/typed-factorio)
-- [testorio](https://github.com/GlassBricks/Testorio)
+- [Factorio test](https://github.com/GlassBricks/FactorioTest)
