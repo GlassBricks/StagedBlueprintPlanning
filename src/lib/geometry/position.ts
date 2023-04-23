@@ -46,6 +46,9 @@ namespace Pos {
   export function plus(pos1: Position, pos2: Position): PositionClass {
     return Pos(pos1.x + pos2.x, pos1.y + pos2.y)
   }
+  export function add(pos: Position, x: number, y: number): PositionClass {
+    return Pos(pos.x + x, pos.y + y)
+  }
   export function minus(pos1: Position, pos2: Position): PositionClass {
     return Pos(pos1.x - pos2.x, pos1.y - pos2.y)
   }

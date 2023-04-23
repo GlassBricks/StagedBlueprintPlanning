@@ -130,7 +130,7 @@ describe("updateWorldEntities", () => {
       expect(replaced).to.equal(val)
     })
 
-    test("attempting to refresh world entity deletes entity if it exists", () => {
+    test("attempting to refresh world entity past last stage deletes entity if it exists", () => {
       entity.setLastStageUnchecked(3)
       entity.replaceWorldOrPreviewEntity(4, {} as any)
       WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 4)
@@ -238,9 +238,16 @@ describe("updateWorldEntities", () => {
     expect(foundValue).to.equal(value)
     assertNothingPresent(3)
   })
+
+  test("refreshWorldEntityAtStage also builds previews", () => {
+    entity.setFirstStageUnchecked(2)
+    WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 1)
+    assertHasPreview(1)
+    // assertEntityCorrect(2)
+  })
 })
 
-test("replaceWorldEntityAtStage replaces old value", () => {
+test("rebuildWorldEntityAtStage replaces old value", () => {
   WorldUpdater.refreshWorldEntityAtStage(assembly, entity, 2)
   const value = assertEntityCorrect(2)
   WorldUpdater.rebuildWorldEntityAtStage(assembly, entity, 2)

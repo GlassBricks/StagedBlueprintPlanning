@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import * as mod_gui from "mod-gui"
 import { UserAssembly } from "../assembly/AssemblyDef"
 import { deleteAllFreeSurfaces } from "../assembly/surfaces"
 import { UndoHandler } from "../assembly/undo"
@@ -60,12 +61,16 @@ if (script.active_mods["factorio-test"] != nil) {
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories != nil) inventories.forEach((x) => x.destroy())
     const oldGlobal = global
-    global = {}
+    // global = {}
     for (const [, player] of game.players) {
-      const { screen, left, top, center, relative } = player.gui
-      for (const gui of [screen, left, top, center, relative]) {
+      const { screen, left, center, relative } = player.gui
+      for (const gui of [screen, left, mod_gui.get_button_flow(player), center, relative]) {
+        if (!gui) continue
         for (const child of gui.children) {
-          if (child.get_mod() == script.mod_name) child.destroy()
+          if (child.get_mod() == script.mod_name) {
+            log("destorying gui: " + child.name)
+            child.destroy()
+          }
         }
       }
     }

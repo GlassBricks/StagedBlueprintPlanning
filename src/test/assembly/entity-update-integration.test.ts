@@ -18,10 +18,12 @@ import {
   movePropDown,
   resetAllProps,
   resetProp,
+  StageMoveResult,
   tryApplyUpgradeTarget,
   tryReviveSettingsRemnant,
   tryRotateEntityToMatchWorld,
   trySetFirstStage,
+  trySetLastStage,
   tryUpdateEntityFromWorld,
   updateWiresFromWorld,
 } from "../../assembly/assembly-updates"
@@ -31,6 +33,7 @@ import { userSetLastStageWithUndo } from "../../assembly/user-actions"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {
   clearWorldEntityAtStage,
+  rebuildStage,
   rebuildWorldEntityAtStage,
   refreshAllWorldEntities,
   refreshWorldEntityAtStage,
@@ -1000,4 +1003,17 @@ test("using stage delete tool alt select", () => {
   _simulateUndo(player)
 
   expect(entity.lastStage).toBe(3)
+})
+
+test("rebuildStage", () => {
+  const entityPresent = buildEntity(2, { name: "inserter", position: pos.add(1, 0), direction: direction.west })
+  const entityPreview = buildEntity(3, { name: "inserter", position: pos.add(2, 0), direction: direction.west })
+  const entityPastLastStage = buildEntity(1, { name: "inserter", position: pos.add(3, 0), direction: direction.west })
+  expect(trySetLastStage(assembly, entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
+
+  rebuildStage(assembly, 2)
+
+  assertEntityCorrect(entityPresent, false)
+  assertEntityCorrect(entityPreview, false)
+  assertEntityCorrect(entityPastLastStage, false)
 })
