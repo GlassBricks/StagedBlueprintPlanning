@@ -964,8 +964,6 @@ describe.each([
   )
 })
 
-test("pasting rotated blueprint, with an entity that does not support rotation", () => {})
-
 test("pasting rotate blueprint with a rotated fluid tank", () => {
   const entity: BlueprintEntity = {
     entity_number: 1,
