@@ -740,14 +740,17 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (isDiagonal) {
     entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
   }
-
+  const firstEntity = luaEntities[0]
+  if (firstEntity.type == "storage-tank") {
+    entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
+  }
   let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == entityDir)
   if (!luaEntity) {
     // slower path, check for other directions
     const pasteRotatableType = getPasteRotatableType(referencedName)
     if (pasteRotatableType == nil) return
     if (pasteRotatableType == PasteCompatibleRotationType.AnyDirection) {
-      luaEntity = luaEntities[0]
+      luaEntity = firstEntity
     } else if (pasteRotatableType == PasteCompatibleRotationType.Flippable) {
       const oppositeDir = oppositedirection(entityDir)
       luaEntity = luaEntities.find((e) => e.direction == oppositeDir)

@@ -144,10 +144,6 @@ describe("findCompatibleWithLuaEntity", () => {
     expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
   })
 
-  test("storage tank is flippable", () => {
-    expect(getPasteRotatableType("storage-tank")).to.be(PasteCompatibleRotationType.Flippable)
-  })
-
   test("matches any direction if pasteRotatableType is square", () => {
     assert(getPasteRotatableType("assembling-machine-1") == PasteCompatibleRotationType.AnyDirection)
 

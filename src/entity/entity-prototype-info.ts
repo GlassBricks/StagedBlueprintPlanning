@@ -72,7 +72,6 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
   const selectionBoxes = new LuaMap<string, BBox>()
 
   const pasteRotatableEntityTypes = newLuaSet("assembling-machine", "boiler", "generator")
-  const flippableEntityTypes = newLuaSet("storage-tank", "straight-rail")
 
   function getCategory(prototype: LuaEntityPrototype): CategoryName | nil {
     const { fast_replaceable_group, type, collision_box } = prototype
@@ -85,11 +84,12 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
 
   function getPasteCompatibleRotation(prototype: LuaEntityPrototype): PasteCompatibleRotationType | nil {
     const type = prototype.type
-    if (!prototype.supports_direction) {
+    if (!prototype.supports_direction || prototype.has_flag("not-rotatable")) {
       return PasteCompatibleRotationType.AnyDirection
     }
 
-    if (flippableEntityTypes.has(type)) {
+    // hardcoded shenanigans
+    if (type == "straight-rail") {
       return PasteCompatibleRotationType.Flippable
     }
 

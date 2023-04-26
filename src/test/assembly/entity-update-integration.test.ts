@@ -46,7 +46,7 @@ import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../en
 import { isPreviewEntity } from "../../entity/entity-prototype-info"
 import { saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
-import { Pos } from "../../lib/geometry"
+import { BBox, Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
 import {
   assertConfigChangedHighlightsCorrect,
@@ -917,31 +917,54 @@ test("pasting diagonal rail at same position but different direction", () => {
   expect(entity2!.getWorldEntity(1)).toEqual(rail2)
 })
 
-test("pasting rotated blueprint, with an entity that does not support rotation", () => {
-  const entity: BlueprintEntity = {
-    entity_number: 1,
-    name: "stone-furnace",
-    position: Pos(0, 0),
-    direction: defines.direction.north,
-  }
-  const stack = player.cursor_stack!
-  stack.set_stack("blueprint")
-  stack.set_blueprint_entities([entity])
+describe.each([
+  "straight-rail",
+  // "curved-rail",
+  "stone-furnace",
+  "storage-tank",
+  "assembling-machine-1",
+  "small-electric-pole",
+  "boiler",
+  "roboport",
+])("can paste %s", (entityName) => {
+  describe.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
+    "at direction %d",
+    (entityDirection) => {
+      test.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
+        "pasted at direction %d",
+        (pasteDirection) => {
+          const bboxSize = BBox.size(game.entity_prototypes[entityName].collision_box)
+          const pos = Pos(bboxSize.x % 2 == 0 ? 0 : 0.5, bboxSize.y % 2 == 0 ? 0 : 0.5)
 
-  const pos = Pos(5, 5)
+          const entity: BlueprintEntity = {
+            entity_number: 1,
+            name: entityName,
+            position: pos,
+            direction: entityDirection,
+          }
+          const stack = player.cursor_stack!
+          stack.set_stack("blueprint")
+          stack.set_blueprint_entities([entity])
+          player.teleport([0, 0], surfaces[0])
+          player.build_from_cursor({
+            position: Pos(0, 0),
+            direction: pasteDirection,
+            alt: true,
+          })
+          const luaEntity = surfaces[0].find_entity(entityName, pos)!
+          expect(luaEntity).not.toBeNil()
 
-  player.teleport([0, 0], surfaces[0])
-  player.build_from_cursor({ position: pos, direction: defines.direction.east, alt: true })
-  const furnace = surfaces[0].find_entity("stone-furnace", pos)!
-  expect(furnace).not.toBeNil()
-
-  expect(furnace.direction).toBe(defines.direction.north)
-
-  const entity1 = assembly.content.findCompatibleWithLuaEntity(furnace, nil, 1)
-  expect(entity1).not.toBeNil()
-  expect(entity1!.getDirection()).toEqual(defines.direction.north)
-  expect(entity1!.getWorldEntity(1)).toEqual(furnace)
+          const entity1 = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 1)
+          expect(entity1).not.toBeNil()
+          expect(entity1!.getDirection()).toEqual(luaEntity.direction)
+          expect(entity1!.getWorldEntity(1)).toEqual(luaEntity)
+        },
+      )
+    },
+  )
 })
+
+test("pasting rotated blueprint, with an entity that does not support rotation", () => {})
 
 test("pasting rotate blueprint with a rotated fluid tank", () => {
   const entity: BlueprintEntity = {
