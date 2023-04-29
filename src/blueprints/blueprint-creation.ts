@@ -144,8 +144,7 @@ namespace BlueprintMethods {
     curStage.stack!.set_blueprint_tiles(nextStageTiles)
   }
 
-  export function finalizeBlueprintBook(bpBookStack: LuaItemStack): void {
-    const bookInventory = bpBookStack.get_inventory(defines.inventory.item_main)!
+  export function finalizeBlueprintBook(bookInventory: LuaInventory): void {
     for (const i of $range(1, bookInventory.length)) {
       const bpStack = bookInventory[i - 1]
       if (!bpStack.is_blueprint_setup()) {
@@ -377,7 +376,7 @@ function addBlueprintBookTasks(builder: BlueprintCreationTaskBuilder, assembly: 
     const bpStack = bookInventory[bookInventory.length - 1]
     builder.queueBlueprintTask(stage, bpStack)
   }
-  builder.addAllBpTasks().addTask({ name: "finalizeBlueprintBook", args: [stack] })
+  builder.addAllBpTasks().addTask({ name: "finalizeBlueprintBook", args: [bookInventory] })
 }
 
 export function submitAssemblyBlueprintBookTask(assembly: UserAssembly, stack: LuaItemStack): void {
