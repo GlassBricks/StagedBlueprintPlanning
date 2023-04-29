@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.20.0
-Date: ????
+Date: 2023-04-29
   Features:
     - Added full support for power switches.
     - New function with alternative-reverse-selecting using the stage move tool: bring entities to current stage, from later stages only.
