@@ -21,6 +21,7 @@ import {
   renderNamed,
 } from "./factoriojsx"
 import { HorizontalPusher } from "./factoriojsx/components"
+import { protectedAction } from "./protected-action"
 import { funcRef, RegisterClass, registerFunctions } from "./references"
 
 /**
@@ -108,9 +109,25 @@ export function submitTask(task: Task): void {
     // run the entire task in one tick
     destroyTaskGui()
     global.currentTask = nil
-    while (!task.isDone()) task.step()
+    runEntireTask(task)
   }
 }
+
+function stepTask(task: Task) {
+  task.step()
+  return true
+}
+
+function runEntireTask(task: Task): void {
+  while (!task.isDone()) {
+    const success = protectedAction(stepTask, task)
+    if (!success) {
+      task.cancel()
+      break
+    }
+  }
+}
+
 export function cancelCurrentTask(): void {
   if (global.currentTask) {
     global.currentTask.cancel()
@@ -125,8 +142,9 @@ registerFunctions("task", { cancelCurrentTask })
 Events.on_tick(() => {
   const task = global.currentTask
   if (!task) return
-  task.step()
-  if (!task.isDone()) {
+  const stepped = protectedAction(stepTask, task)
+  if (!stepped) task.cancel()
+  if (stepped && !task.isDone()) {
     updateTaskGui(task)
   } else {
     delete global.currentTask

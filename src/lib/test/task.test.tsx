@@ -84,6 +84,27 @@ describe("running tasks", () => {
     })
   })
 
+  test("recovers from error", () => {
+    submitTask(
+      new (class extends TestTask {
+        protected override doStep(i: number): void {
+          if (i == 2) error("test")
+          super.doStep(i)
+        }
+      })(),
+    )
+
+    const expected: unknown[] = []
+    on_tick((i) => {
+      if (i <= 2) expected.push(i - 1)
+      if (i == 3) expected.push("cancelled")
+      expect(actions).toEqual(expected)
+      expect(isTaskRunning()).toBe(i < 3)
+
+      if (i == 4) done()
+    })
+  })
+
   test("runs entire task instantly without gui if game.tick_paused", () => {
     game.tick_paused = true
     after_test(() => (game.tick_paused = false))
