@@ -1,17 +1,21 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.20.0
 Date: ????
+  Features:
+    - Added full support for power switches.
+    - New function with alternative-reverse-selecting using the stage move tool: bring entities to current stage, from later stages only.
   Changes:
+    - Updated graphics for the stage move tool.
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.8
 Date: 2023-04-26
   Bugfixes:
-    - Fix pasting tanks with a flipped blueprint
+    - Fixed pasting tanks using a flipped blueprint
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.7
 Date: 2023-04-23
   Bugfixes:
-    - Fix rebuild stage not rebuilding previews
+    - Fixed that rebuilding a stage would not rebuild previews
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.6
 Date: 2023-04-20
@@ -38,22 +42,22 @@ Date: 2023-04-17
   Bugfixes:
     - Fixed circuit wires not appearing on belts when created via blueprint pasting.
   Changes:
-    - Control behavior will be set to no-op when adding a circuit wire for the first time, in more cases than before.
+    - Control behavior will be set to no-op when adding a circuit wire for the first time; this will happen in more cases than before.
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.1
 Date: 2023-04-15
   Bugfixes:
-    - Fixed possible blueprint entity misalignment, when blueprint contains 2x2 grid entities and blueprint grid settings are set.
+    - Fixed possible blueprint entity misalignment when blueprint contains 2x2 grid entities and blueprint grid settings are set.
 ---------------------------------------------------------------------------------------------------
 Version: 0.19.0
 Date: 2023-04-15
   Gui:
     - Added "Exit staged build" button.
-    - The full assembly settings will always be shown when a new assembl is created.
+    - The full assembly settings will always be shown when a new assembly is created.
   Features:
-    - Changed default stage names and icons convention. The names are now "Stage X", "Stage X.Y", and icons match when possible.
-    - Blueprint icons are now by default numbered.
-    - When adding a new stage, the stage's name and icons is now determined by the previous stage's name. The mod guesses the naming convention and tries to follow it, and updates icons accordingly.
+    - Changed default stage name and icons: The default stage names are now "Stage X", "Stage X.Y", and the icons match when possible.
+    - Blueprint icons are now numbered by default.
+    - When adding a new stage, the stage's name and icons are determined by the previous stage's name. The mod guesses the naming convention and tries to follow it, and updates icons accordingly.
   Changes:
     - Improved underground pair detection. There should now be less false positives for "underground paired with multiple other undergrounds".
 ---------------------------------------------------------------------------------------------------
@@ -80,7 +84,6 @@ Date: 2023-04-02
     - Added ability to undo "Entity moved from stage" when overbuilding a preview entity.
     - Added ability to undo the "move entity to current stage" action.
     - Added ability to undo with stage move tool.
-    - More undoable actions are coming in the future!
   Locale:
     - Improved descriptions for some settings.
 ---------------------------------------------------------------------------------------------------
@@ -100,7 +103,7 @@ Date: 2023-01-29
   Minor Features:
     - Added "rebuild all stages" button to the "Other" settings tab.
   Bugfixes:
-    - Fix issues with circuit wires using paste-to-upgrade.
+    - Fixed issues with circuit wires using paste-to-upgrade.
   Changes:
     - Make paste-to-upgrade setting default to false.
 ---------------------------------------------------------------------------------------------------
@@ -128,12 +131,12 @@ Date: 2023-01-20
 Version: 0.16.5
 Date: 2023-01-20
   Bugfixes:
-    - Fix being unable to upgrade rotated assembling machines.
+    - Fixed being unable to upgrade rotated assembling machines.
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.4
 Date: 2023-01-20
   Bugfixes:
-    - Fix error on when connecting circuit wires to an entity without its entity present in the first stage.
+    - Fixed error when connecting circuit wires to an entity without its entity present in the first stage.
 ---------------------------------------------------------------------------------------------------
 Version: 0.16.3
 Date: 2023-01-20
@@ -225,7 +228,7 @@ Date: 2022-11-13
   Changes:
     - Rolling stock entities now have previews on all stages (that is not the first).
   Bugfixes:
-    - Fix crash on loading a user scenario.
+    - Fixed crash on loading a user scenario.
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.1
 Date: 2022-11-12
@@ -262,7 +265,7 @@ Date: 2022-11-06
     - Added a filtered stage move tool.
     - Added blueprint filters.
   Changes:
-    - The stage move tool shortcut icon is now blue.
+    - Changed the stage move tool shortcut icon to be blue.
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.6
 Date: 2022-11-06
@@ -286,7 +289,7 @@ Date: 2022-11-04
 Version: 0.10.3
 Date: 2022-11-04
   Bugfixes:
-    - Fix broken state after Q-building.
+    - Fixed broken state after Q-building.
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.2
 Date: 2022-11-02
