@@ -34,6 +34,9 @@ class TestTask extends LoopTask {
   protected override getTitleForStep(step: number): LocalisedString {
     return `step ${step}`
   }
+  protected override done(): void {
+    actions.push("done")
+  }
   public override cancel(): void {
     actions.push("cancelled")
   }
@@ -56,15 +59,19 @@ class TestEnumeratedTask extends EnumeratedItemsTask<string> {
   public override cancel(): void {
     actions.push("cancelled")
   }
+  protected override done(): void {
+    actions.push("done")
+  }
 }
 
 describe("running tasks", () => {
   test("can run task", () => {
     submitTask(new TestTask())
 
-    const expected: number[] = []
+    const expected: unknown[] = []
     on_tick((i) => {
       if (i <= 5) expected.push(i - 1)
+      if (i == 5) expected.push("done")
       expect(actions).toEqual(expected)
       expect(isTaskRunning()).toBe(i < 5)
 
@@ -77,6 +84,7 @@ describe("running tasks", () => {
     const expected: unknown[] = []
     on_tick((i) => {
       if (i <= 3) expected.push("abc"[i - 1])
+      if (i == 3) expected.push("done")
       expect(actions).toEqual(expected)
       expect(isTaskRunning()).toBe(i < 3)
 
@@ -111,7 +119,7 @@ describe("running tasks", () => {
     submitTask(new TestTask())
     expect(isTaskRunning()).toBe(false)
 
-    expect(actions).toEqual([0, 1, 2, 3, 4])
+    expect(actions).toEqual([0, 1, 2, 3, 4, "done"])
   })
 
   test("can cancel task immediately", () => {
@@ -149,7 +157,7 @@ describe("running tasks", () => {
     })
     after_ticks(5 + 3 + 1, () => {
       expect(isTaskRunning()).toBe(false)
-      expect(actions).toEqual([0, 1, 2, "cancelled", 0, 1, 2, 3, 4])
+      expect(actions).toEqual([0, 1, 2, "cancelled", 0, 1, 2, 3, 4, "done"])
       done()
     })
   })

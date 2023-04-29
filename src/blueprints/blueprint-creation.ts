@@ -12,8 +12,9 @@
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { Mutable, protectedAction } from "../lib"
+import { Mutable, RegisterClass } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
   getDefaultBlueprintSettings,
@@ -28,6 +29,7 @@ interface AssemblyBlueprintPlan {
   // other stuff will go here eventually
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
 
+  hasComputeChangedEntitiesTask?: boolean
   changedEntities?: LuaMap<StageNumber, LuaSet<AssemblyEntity>>
 }
 
@@ -39,34 +41,21 @@ interface StageBlueprintPlan {
   settings: StageBlueprintSettings
 
   result: BlueprintTakeResult | nil
+
+  unitNumberFilter?: LuaSet<UnitNumber> | nil
 }
 
 function getCurrentBpSettings(stage: Stage): StageBlueprintSettings {
   return getCurrentValues(stage.getBlueprintSettingsView())
 }
 
-/**
- * Facilitates the creation of multiple blueprints efficiently.
- *
- * Made in anticipation of "blueprint templates", allowing making a book with blueprints from multiple assemblies.
- */
-export class BlueprintCreation {
-  private inventory?: LuaInventory
-  private assemblyPlans = new LuaMap<UserAssembly, AssemblyBlueprintPlan>()
-
-  private getPlanForAssembly(assembly: UserAssembly): AssemblyBlueprintPlan {
-    if (!this.assemblyPlans.has(assembly)) {
-      this.assemblyPlans.set(assembly, { assembly, stagePlans: new LuaMap() })
-    }
-    return this.assemblyPlans.get(assembly)!
+namespace BlueprintMethods {
+  export function setLandfillTiles(stage: Stage): void {
+    stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
   }
 
-  private getChangedEntities(assemblyInfo: AssemblyBlueprintPlan): LuaMap<StageNumber, LuaSet<AssemblyEntity>> {
-    return (assemblyInfo.changedEntities ??= this.computeChangedEntities(assemblyInfo.assembly))
-  }
-
-  private computeChangedEntities(assembly: UserAssembly): LuaMap<StageNumber, LuaSet<AssemblyEntity>> {
-    log(["", "Collecting changed entity info for assembly: ", assembly.displayName.get()])
+  export function computeChangedEntities(assemblyPlan: AssemblyBlueprintPlan): void {
+    const assembly = assemblyPlan.assembly
     const result = new LuaMap<StageNumber, LuaSet<AssemblyEntity>>()
     for (const i of $range(1, assembly.numStages())) {
       result.set(i, new LuaSet())
@@ -90,10 +79,133 @@ export class BlueprintCreation {
       }
     }
 
-    return result
+    assemblyPlan.changedEntities = result
   }
 
-  private addNewPlan(
+  export function computeUnitNumberFilter(
+    assemblyPlan: AssemblyBlueprintPlan,
+    stagePlan: StageBlueprintPlan,
+    stageLimit: number,
+  ): void {
+    const stageNumber = stagePlan.stage.stageNumber
+    const minStage = max(1, stageNumber - stageLimit + 1)
+    const maxStage = stageNumber
+
+    const changedEntities = assemblyPlan.changedEntities!
+
+    const result = new LuaSet<UnitNumber>()
+    for (const stage of $range(minStage, maxStage)) {
+      for (const entity of changedEntities.get(stage)!) {
+        const luaEntity = entity.getWorldOrPreviewEntity(stageNumber)
+        if (!luaEntity) continue
+        const unitNumber = luaEntity.unit_number
+        if (unitNumber) result.add(unitNumber)
+      }
+    }
+
+    stagePlan.unitNumberFilter = result
+  }
+
+  export function takeStageBlueprint(
+    stagePlan: StageBlueprintPlan,
+    actualStack: LuaItemStack,
+    settings: OverrideableBlueprintSettings,
+  ): void {
+    const { stage, bbox } = stagePlan
+    stagePlan.result = takeSingleBlueprint(
+      actualStack,
+      settings,
+      stage.surface,
+      bbox,
+      stagePlan.unitNumberFilter,
+      false,
+    )
+    actualStack.label = stage.name.get()
+  }
+
+  export function setNextStageTiles(curStage: StageBlueprintPlan, nextStage: StageBlueprintPlan): void {
+    if (!curStage.result || !nextStage.result) return
+
+    const nextStageTiles = nextStage.stack!.get_blueprint_tiles()
+    if (!nextStageTiles) {
+      curStage.stack!.set_blueprint_tiles([])
+      return
+    }
+    const shift = Pos.minus(curStage.result.effectivePositionOffset, nextStage.result.effectivePositionOffset)
+    if (!Pos.isZero(shift)) {
+      const { x, y } = shift
+      for (const i of $range(1, nextStageTiles.length)) {
+        const pos = nextStageTiles[i - 1].position as Mutable<Position>
+        pos.x += x
+        pos.y += y
+      }
+    }
+    curStage.stack!.set_blueprint_tiles(nextStageTiles)
+  }
+
+  export function cleanupBlueprintBook(bpBookStack: LuaItemStack): void {
+    const bookInventory = bpBookStack.get_inventory(defines.inventory.item_main)!
+    for (const i of $range(1, bookInventory.length)) {
+      const bpStack = bookInventory[i - 1]
+      if (!bpStack.is_blueprint_setup()) {
+        bpStack.clear()
+      }
+    }
+  }
+
+  export function exportBlueprintBookToFile(stack: LuaItemStack, fileName: string, player: LuaPlayer): void {
+    const [assemblyFileName] = string.gsub(fileName, "[^%w%-%_%.]", "_")
+    const filename = `staged-builds/${assemblyFileName}.txt`
+    const data = stack.export_stack()
+    game.write_file(filename, data, false, player.index)
+  }
+}
+
+type BlueprintStep = {
+  [K in keyof typeof BlueprintMethods]: {
+    name: K
+    args: Parameters<(typeof BlueprintMethods)[K]>
+  }
+}[keyof typeof BlueprintMethods]
+
+@RegisterClass("BlueprintCreationTask")
+class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
+  constructor(steps: BlueprintStep[], private inventory?: LuaInventory, private title?: LocalisedString) {
+    super(steps)
+  }
+  public override getTitle(): LocalisedString {
+    return this.title
+  }
+
+  protected override doTask(task: BlueprintStep): void {
+    const method = BlueprintMethods[task.name]
+    ;(method as (this: void, ...args: any) => void)(...task.args)
+  }
+
+  protected override getTitleForTask(task: BlueprintStep): LocalisedString {
+    return nil
+  }
+  protected override done(): void {
+    if (this.inventory?.valid) this.inventory.destroy()
+  }
+  public override cancel(): void {
+    this.done()
+  }
+}
+
+class BlueprintCreationTaskBuilder {
+  private inventory?: LuaInventory
+  private assemblyPlans = new LuaMap<UserAssembly, AssemblyBlueprintPlan>()
+  private tasks: BlueprintStep[] = []
+
+  private getPlanForAssembly(assembly: UserAssembly): AssemblyBlueprintPlan {
+    if (!this.assemblyPlans.has(assembly)) {
+      this.assemblyPlans.set(assembly, { assembly, stagePlans: new LuaMap() })
+    }
+    return this.assemblyPlans.get(assembly)!
+  }
+
+  private addNewStagePlan(
     assemblyInfo: AssemblyBlueprintPlan,
     stack: LuaItemStack | nil,
     stage: Stage,
@@ -113,11 +225,11 @@ export class BlueprintCreation {
   private ensureTilesTaken(assemblyInfo: AssemblyBlueprintPlan, stage: Stage) {
     const stagePlan = assemblyInfo.stagePlans.get(stage.stageNumber)
     if (!stagePlan) {
-      this.addNewPlan(assemblyInfo, nil, stage, getCurrentBpSettings(stage))
+      this.addNewStagePlan(assemblyInfo, nil, stage, getCurrentBpSettings(stage))
     }
   }
 
-  public addBlueprint(stage: Stage, stack: LuaItemStack): { result: BlueprintTakeResult | nil } | nil {
+  public queueBlueprintTask(stage: Stage, stack: LuaItemStack): { result: BlueprintTakeResult | nil } | nil {
     const assemblyPlan = this.getPlanForAssembly(stage.assembly)
     const existingStagePlan = assemblyPlan.stagePlans.get(stage.stageNumber)
     if (existingStagePlan) {
@@ -131,48 +243,40 @@ export class BlueprintCreation {
       if (nextStage) this.ensureTilesTaken(assemblyPlan, nextStage)
     }
 
-    return existingStagePlan ?? this.addNewPlan(assemblyPlan, stack, stage, settings)
+    return existingStagePlan ?? this.addNewStagePlan(assemblyPlan, stack, stage, settings)
   }
 
-  public takeAllBlueprints(): void {
+  addAllBpTasks(): this {
     for (const [, assemblyPlan] of this.assemblyPlans) {
-      log(["", "Taking blueprints for assembly: ", assemblyPlan.assembly.displayName.get()])
       for (const [, stagePlan] of assemblyPlan.stagePlans) {
-        this.takeBlueprint(assemblyPlan, stagePlan)
+        this.addTakeBlueprintTasks(assemblyPlan, stagePlan)
       }
       this.setNextStageTiles(assemblyPlan.stagePlans)
     }
+    return this
+  }
+
+  addTask(task: BlueprintStep): this {
+    this.tasks.push(task)
+    return this
+  }
+
+  public build(taskTitle?: LocalisedString): BlueprintCreationTask {
+    return new BlueprintCreationTask(this.tasks, this.inventory, taskTitle)
   }
 
   private setNextStageTiles(stagePlans: LuaMap<StageNumber, StageBlueprintPlan>): void {
     for (const [stageNumber, curStage] of stagePlans) {
       // factorio guarantees this loop is done in ascending stageNumber order (if <= 1024 stages)
-      if (!(curStage.result && curStage.settings.useNextStageTiles)) continue
-
-      const nextStagePlan = stagePlans.get(stageNumber + 1)!
-      if (!nextStagePlan || !nextStagePlan.result) continue
-
-      const nextStageTiles = nextStagePlan.stack!.get_blueprint_tiles()
-      if (!nextStageTiles) {
-        curStage.stack!.set_blueprint_tiles([])
-        continue
+      if (curStage.settings.useNextStageTiles) {
+        const nextStagePlan = stagePlans.get(stageNumber + 1)!
+        if (!nextStagePlan) continue
+        this.tasks.push({ name: "setNextStageTiles", args: [curStage, nextStagePlan] })
       }
-      const shift = Pos.minus(curStage.result.effectivePositionOffset, nextStagePlan.result.effectivePositionOffset)
-      if (!Pos.isZero(shift)) {
-        const { x, y } = shift
-        for (const i of $range(1, nextStageTiles.length)) {
-          const pos = nextStageTiles[i - 1].position as Mutable<Position>
-          pos.x += x
-          pos.y += y
-        }
-      }
-      curStage.stack!.set_blueprint_tiles(nextStageTiles)
     }
   }
 
-  private takeBlueprint(assemblyPlan: AssemblyBlueprintPlan, stagePlan: StageBlueprintPlan): void {
-    log(`  stage: ${stagePlan.stage.name.get()}`)
-
+  private addTakeBlueprintTasks(assemblyPlan: AssemblyBlueprintPlan, stagePlan: StageBlueprintPlan): void {
     const { stack, stage, bbox } = stagePlan
     let settings: OverrideableBlueprintSettings = stagePlan.settings
 
@@ -185,42 +289,24 @@ export class BlueprintCreation {
       actualStack = stack
     }
     if (settings.autoLandfill) {
-      log("    setting landfill")
-      stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
+      this.tasks.push({ name: "setLandfillTiles", args: [stage] })
     }
 
-    let unitNumberFilter: LuaSet<UnitNumber> | nil
+    // let unitNumberFilter: LuaSet<UnitNumber> | nil
     if (settings.stageLimit != nil) {
-      log("    getting unit number filter")
-      unitNumberFilter = this.getUnitNumberFilter(assemblyPlan, stage, settings.stageLimit)
+      this.ensureHasChangedEntities(assemblyPlan)
+      this.tasks.push({ name: "computeUnitNumberFilter", args: [assemblyPlan, stagePlan, settings.stageLimit] })
     }
-
-    stagePlan.result = takeSingleBlueprint(actualStack, settings, stage.surface, bbox, unitNumberFilter, false)
-    actualStack.label = stage.name.get()
+    this.tasks.push({ name: "takeStageBlueprint", args: [stagePlan, actualStack, settings] })
   }
 
-  private getUnitNumberFilter(
-    assemblyPlan: AssemblyBlueprintPlan,
-    stage: Stage,
-    stageLimit: number,
-  ): LuaSet<UnitNumber> {
-    const result = new LuaSet<UnitNumber>()
-    const stageNumber = stage.stageNumber
-    const minStage = max(1, stageNumber - stageLimit + 1)
-    const maxStage = stageNumber
-    const changedEntities = this.getChangedEntities(assemblyPlan)
-    for (const stage of $range(minStage, maxStage)) {
-      for (const entity of changedEntities.get(stage)!) {
-        const luaEntity = entity.getWorldOrPreviewEntity(stageNumber)
-        if (!luaEntity) continue
-        const unitNumber = luaEntity.unit_number
-        if (unitNumber) result.add(unitNumber)
-      }
+  private ensureHasChangedEntities(assemblyInfo: AssemblyBlueprintPlan): void {
+    if (!assemblyInfo.hasComputeChangedEntitiesTask) {
+      assemblyInfo.hasComputeChangedEntitiesTask = true
+      this.tasks.push({ name: "computeChangedEntities", args: [assemblyInfo] })
     }
-    return result
   }
-
-  private getNewTempStack(): LuaItemStack {
+  getNewTempStack(): LuaItemStack {
     const inventory = (this.inventory ??= game.create_inventory(4))
     let [stack] = inventory.find_empty_stack()
     if (stack) {
@@ -241,67 +327,52 @@ export class BlueprintCreation {
   }
 }
 
-export function withBlueprintCreator<T>(action: (creator: BlueprintCreation) => T): T | nil {
-  const creator = new BlueprintCreation()
-  const res = protectedAction(action, creator)
-  creator.cleanup()
-  return res
-}
-
 export function takeStageBlueprint(stage: Stage, stack: LuaItemStack): boolean {
-  return (
-    withBlueprintCreator((creator) => {
-      const plan = creator.addBlueprint(stage, stack)!
-      creator.takeAllBlueprints()
-      return plan.result != nil
-    }) ?? false
-  )
+  const builder = new BlueprintCreationTaskBuilder()
+  const plan = builder.queueBlueprintTask(stage, stack)
+  const task = builder.addAllBpTasks().build()
+  runEntireTask(task)
+  return plan?.result != nil
 }
 
-export function makeBlueprintBook(assembly: UserAssembly, stack: LuaItemStack): boolean {
-  return (
-    withBlueprintCreator((creator) => {
-      stack.set_stack("blueprint-book")
-      const bookInventory = stack.get_inventory(defines.inventory.item_main)!
+function addBlueprintBookTasks(builder: BlueprintCreationTaskBuilder, assembly: UserAssembly, stack: LuaItemStack) {
+  stack.set_stack("blueprint-book")
+  stack.label = assembly.name.get()
+  const bookInventory = stack.get_inventory(defines.inventory.item_main)!
 
-      for (const stage of assembly.getAllStages()) {
-        bookInventory.insert("blueprint")
-        const bpStack = bookInventory[bookInventory.length - 1]
-        creator.addBlueprint(stage, bpStack)
-      }
-      creator.takeAllBlueprints()
-      for (const i of $range(1, bookInventory.length)) {
-        const bpStack = bookInventory[i - 1]
-        if (!bpStack.is_blueprint_setup()) {
-          bpStack.clear()
-        }
-      }
-      if (bookInventory.length == 0) {
-        stack.clear()
-        return false
-      }
+  for (const stage of assembly.getAllStages()) {
+    bookInventory.insert("blueprint")
+    const bpStack = bookInventory[bookInventory.length - 1]
+    builder.queueBlueprintTask(stage, bpStack)
+  }
+  builder.addAllBpTasks().addTask({ name: "cleanupBlueprintBook", args: [stack] })
+}
 
-      stack.label = assembly.name.get()
-      return true
-    }) ?? false
-  )
+export function submitAssemblyBlueprintBookTask(assembly: UserAssembly, stack: LuaItemStack): void {
+  const builder = new BlueprintCreationTaskBuilder()
+  addBlueprintBookTasks(builder, assembly, stack)
+  submitTask(builder.build())
 }
 
 export function exportBlueprintBookToFile(assembly: UserAssembly, player: LuaPlayer): string | nil {
-  const inventory = game.create_inventory(1)
-  const stack = inventory[0]!
-  if (!makeBlueprintBook(assembly, stack)) {
-    inventory.destroy()
-    return nil
-  }
-  log("Exporting blueprint book to file")
-  const data = stack.export_stack()
-  inventory.destroy()
-  // replace not allowed characters with _
+  const builder = new BlueprintCreationTaskBuilder()
+  const stack = builder.getNewTempStack()
+  stack.set_stack("blueprint-book")
+
+  addBlueprintBookTasks(builder, assembly, stack)
+
   let name = assembly.name.get()
   if (name == "") name = `Unnamed-build-${assembly.id}`
-  const [assemblyFileName] = string.gsub(name, "[^%w%-%_%.]", "_")
-  const filename = `staged-builds/${assemblyFileName}.txt`
-  game.write_file(filename, data, false, player.index)
-  return filename
+  ;[name] = string.gsub(name, "[^%w%-%_%.]", "_")
+  name = `staged-builds/${name}.txt`
+
+  builder.addTask({
+    name: "exportBlueprintBookToFile",
+    args: [stack, name, player],
+  })
+
+  const task = builder.build()
+  submitTask(task)
+
+  return name
 }

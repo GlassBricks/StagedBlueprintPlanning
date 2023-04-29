@@ -17,7 +17,11 @@ import {
   rebuildAllStages,
   rebuildStage,
 } from "../assembly/world-entity-updates"
-import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../blueprints/blueprint-creation"
+import {
+  exportBlueprintBookToFile,
+  submitAssemblyBlueprintBookTask,
+  takeStageBlueprint,
+} from "../blueprints/blueprint-creation"
 import { AssemblyOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Colors, Prototypes } from "../constants"
@@ -416,14 +420,7 @@ class AssemblySettings extends Component<{ assembly: UserAssembly }> {
     if (!player || !player.clear_cursor()) return
     const stack = player.cursor_stack
     if (!stack) return
-    const successful = makeBlueprintBook(this.assembly, stack)
-    if (!successful) {
-      player.create_local_flying_text({
-        text: [L_Interaction.BlueprintBookEmpty],
-        create_at_cursor: true,
-      })
-      return
-    }
+    submitAssemblyBlueprintBookTask(this.assembly, stack)
   }
 
   private exportBlueprintBookStringToFile() {

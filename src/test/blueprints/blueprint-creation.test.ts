@@ -14,8 +14,13 @@ import { Stage, UserAssembly } from "../../assembly/AssemblyDef"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../assembly/event-listener"
 import { AutoSetTilesType } from "../../assembly/tiles"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
-import { exportBlueprintBookToFile, makeBlueprintBook, takeStageBlueprint } from "../../blueprints/blueprint-creation"
+import {
+  exportBlueprintBookToFile,
+  submitAssemblyBlueprintBookTask,
+  takeStageBlueprint,
+} from "../../blueprints/blueprint-creation"
 import { Pos } from "../../lib/geometry"
+import { cancelCurrentTask, isTaskRunning } from "../../lib/task"
 
 let assembly: UserAssembly
 let player: LuaPlayer
@@ -157,20 +162,29 @@ test("make blueprint book", () => {
   }
 
   const stack = player.cursor_stack!
-  const ret = makeBlueprintBook(assembly, stack)
-  expect(ret).toBe(true)
-  expect(stack.is_blueprint_book).toBe(true)
-  expect(stack.label).toBe(assembly.name.get())
-  const inventory = stack.get_inventory(defines.inventory.item_main)!
-  expect(inventory).toHaveLength(4)
-  for (const i of $range(1, assembly.numStages())) {
-    expect(inventory[i - 1].is_blueprint).toBe(true)
-    expect(inventory[i - 1].label).toBe(assembly.getStage(i)!.name.get())
-    const entities = inventory[i - 1].get_blueprint_entities()!
-    expect(entities).toHaveLength(i)
-    expect(entities[0].name).toBe("iron-chest")
-  }
+  submitAssemblyBlueprintBookTask(assembly, stack)
+  on_tick(() => {
+    if (isTaskRunning()) return
 
-  const fileName = exportBlueprintBookToFile(assembly, player) // just check no errors
-  expect(fileName).to.equal("staged-builds/test.txt")
+    expect(stack.is_blueprint_book).toBe(true)
+    expect(stack.label).toBe(assembly.name.get())
+    const inventory = stack.get_inventory(defines.inventory.item_main)!
+    expect(inventory).toHaveLength(4)
+    for (const i of $range(1, assembly.numStages())) {
+      expect(inventory[i - 1].is_blueprint).toBe(true)
+      expect(inventory[i - 1].label).toBe(assembly.getStage(i)!.name.get())
+      const entities = inventory[i - 1].get_blueprint_entities()!
+      expect(entities).toHaveLength(i)
+      expect(entities[0].name).toBe("iron-chest")
+    }
+
+    done()
+  })
+})
+
+test("export blueprint book to file", () => {
+  const result = exportBlueprintBookToFile(assembly, player)
+  expect(result).to.equal("staged-builds/test.txt")
+
+  cancelCurrentTask()
 })

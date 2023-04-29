@@ -49,9 +49,11 @@ export abstract class LoopTask implements Task {
 
   abstract getTitle(): LocalisedString
   protected abstract doStep(i: number): void
+  protected done?(): void
   step(): void {
     if (this.isDone()) return
     this.doStep(this.nextStep++)
+    if (this.isDone()) this.done?.()
   }
   isDone(): boolean {
     return this.nextStep >= this.steps
@@ -76,8 +78,10 @@ export abstract class EnumeratedItemsTask<T> implements Task {
   step(): void {
     if (this.isDone()) return
     this.doTask(this.tasks[this.nextIndex++])
+    if (this.isDone()) this.done?.()
   }
   protected abstract doTask(task: T): void
+  protected done?(): void
   isDone(): boolean {
     return this.nextIndex >= this.tasks.length
   }
@@ -118,7 +122,7 @@ function stepTask(task: Task) {
   return true
 }
 
-function runEntireTask(task: Task): void {
+export function runEntireTask(task: Task): void {
   while (!task.isDone()) {
     const success = protectedAction(stepTask, task)
     if (!success) {
