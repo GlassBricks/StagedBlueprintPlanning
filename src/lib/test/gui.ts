@@ -194,3 +194,7 @@ export function testRender(spec: Element): ElementWrapper {
   makeTestRoot(element)
   return new ElementWrapper(element)
 }
+
+export function wrap<T extends GuiElementType>(element: Extract<LuaGuiElement, { type: T }>): ElementWrapper<T> {
+  return new ElementWrapper(element)
+}

@@ -293,6 +293,14 @@ export declare const enum L_GuiAssemblySettings {
   /** This cannot be undone. */
   DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
 }
+export declare const enum L_GuiActions {
+  /** Rebuild all stages */
+  RebuildAllStages = "bp100.gui.actions.rebuild-all-stages",
+  /** Rebuilding __1__ */
+  RebuildingStage = "bp100.gui.actions.rebuilding-stage",
+  /** Cancel */
+  Cancel = "bp100.gui.actions.cancel",
+}
 export declare const enum L_GuiEntityInfo {
   /** Stage info */
   Title = "bp100.gui.entity-info.title",
