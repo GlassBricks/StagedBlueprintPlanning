@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.21.0
 Date: ????
-  Changes:
+  Features:
+    - Long-running actions (rebuild all stages, make blueprint book) now run over multiple ticks, shows a progress bar, and are cancellable.
 ---------------------------------------------------------------------------------------------------
 Version: 0.20.0
 Date: 2023-04-29
