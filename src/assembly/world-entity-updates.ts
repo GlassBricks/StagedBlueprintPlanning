@@ -23,7 +23,7 @@ import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-
 import { updateWireConnectionsAtStage } from "../entity/wires"
 import { RegisterClass } from "../lib"
 import { LoopTask, submitTask } from "../lib/task"
-import { L_GuiActions } from "../locale"
+import { L_GuiTasks } from "../locale"
 import { Assembly } from "./AssemblyDef"
 import {
   deleteAllHighlights,
@@ -333,13 +333,13 @@ class RebuildAllStagesTask extends LoopTask {
     super(assembly.numStages())
   }
   public override getTitle(): LocalisedString {
-    return [L_GuiActions.RebuildAllStages]
+    return [L_GuiTasks.RebuildAllStages]
   }
   protected override doStep(i: number): void {
     rebuildStage(this.assembly, i + 1)
   }
   protected getTitleForStep(step: number): LocalisedString {
-    return [L_GuiActions.RebuildingStage, this.assembly.getStageName(step + 1)]
+    return [L_GuiTasks.RebuildingStage, this.assembly.getStageName(step + 1)]
   }
 }
 

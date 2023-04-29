@@ -293,13 +293,31 @@ export declare const enum L_GuiAssemblySettings {
   /** This cannot be undone. */
   DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
 }
-export declare const enum L_GuiActions {
-  /** Rebuild all stages */
-  RebuildAllStages = "bp100.gui.actions.rebuild-all-stages",
-  /** Rebuilding __1__ */
-  RebuildingStage = "bp100.gui.actions.rebuilding-stage",
+export declare const enum L_GuiTasks {
   /** Cancel */
-  Cancel = "bp100.gui.actions.cancel",
+  Cancel = "bp100.gui.tasks.cancel",
+  /** Rebuild all stages */
+  RebuildAllStages = "bp100.gui.tasks.rebuild-all-stages",
+  /** Rebuilding __1__ */
+  RebuildingStage = "bp100.gui.tasks.rebuilding-stage",
+}
+export declare const enum L_GuiBlueprintBookTask {
+  /** Assembling blueprint book */
+  AssemblingBlueprintBook = "bp100.gui.blueprint-book-task.assembling-blueprint-book",
+  /** Preparing build __1__ */
+  ComputeChangedEntities = "bp100.gui.blueprint-book-task.compute-changed-entities",
+  /** __1__: preparing to take blueprint */
+  ComputeUnitNumberFilter = "bp100.gui.blueprint-book-task.compute-unit-number-filter",
+  /** __1__: setting landfill tiles */
+  SetLandfillTiles = "bp100.gui.blueprint-book-task.set-landfill-tiles",
+  /** __1__: taking blueprint */
+  TakeStageBlueprint = "bp100.gui.blueprint-book-task.take-stage-blueprint",
+  /** __1__: setting tiles */
+  SetNextStageTiles = "bp100.gui.blueprint-book-task.set-next-stage-tiles",
+  /** Finishing up */
+  FinalizeBlueprintBook = "bp100.gui.blueprint-book-task.finalize-blueprint-book",
+  /** Exporting book to file */
+  ExportBlueprintBookToFile = "bp100.gui.blueprint-book-task.export-blueprint-book-to-file",
 }
 export declare const enum L_GuiEntityInfo {
   /** Stage info */

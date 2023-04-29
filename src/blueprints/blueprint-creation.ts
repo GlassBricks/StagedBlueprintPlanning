@@ -12,9 +12,10 @@
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { Mutable, RegisterClass } from "../lib"
+import { assertNever, Mutable, RegisterClass } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
+import { L_GuiBlueprintBookTask } from "../locale"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
   getDefaultBlueprintSettings,
@@ -50,10 +51,6 @@ function getCurrentBpSettings(stage: Stage): StageBlueprintSettings {
 }
 
 namespace BlueprintMethods {
-  export function setLandfillTiles(stage: Stage): void {
-    stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
-  }
-
   export function computeChangedEntities(assemblyPlan: AssemblyBlueprintPlan): void {
     const assembly = assemblyPlan.assembly
     const result = new LuaMap<StageNumber, LuaSet<AssemblyEntity>>()
@@ -106,6 +103,10 @@ namespace BlueprintMethods {
     stagePlan.unitNumberFilter = result
   }
 
+  export function setLandfillTiles(stage: Stage): void {
+    stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
+  }
+
   export function takeStageBlueprint(
     stagePlan: StageBlueprintPlan,
     actualStack: LuaItemStack,
@@ -143,7 +144,7 @@ namespace BlueprintMethods {
     curStage.stack!.set_blueprint_tiles(nextStageTiles)
   }
 
-  export function cleanupBlueprintBook(bpBookStack: LuaItemStack): void {
+  export function finalizeBlueprintBook(bpBookStack: LuaItemStack): void {
     const bookInventory = bpBookStack.get_inventory(defines.inventory.item_main)!
     for (const i of $range(1, bookInventory.length)) {
       const bpStack = bookInventory[i - 1]
@@ -183,7 +184,38 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
   }
 
   protected override getTitleForTask(task: BlueprintStep): LocalisedString {
-    return nil
+    switch (task.name) {
+      case "takeStageBlueprint": {
+        const stagePlan = task.args[0]
+        return [L_GuiBlueprintBookTask.TakeStageBlueprint, stagePlan.stage.name.get()]
+      }
+      case "computeUnitNumberFilter": {
+        const stagePlan = task.args[1]
+        return [L_GuiBlueprintBookTask.ComputeUnitNumberFilter, stagePlan.stage.name.get()]
+      }
+      case "computeChangedEntities": {
+        const assemblyPlan = task.args[0]
+        return [L_GuiBlueprintBookTask.ComputeChangedEntities, assemblyPlan.assembly.displayName.get()]
+      }
+      case "setLandfillTiles": {
+        const stage = task.args[0]
+        return [L_GuiBlueprintBookTask.SetLandfillTiles, stage.name.get()]
+      }
+      case "finalizeBlueprintBook": {
+        return [L_GuiBlueprintBookTask.FinalizeBlueprintBook]
+      }
+      case "setNextStageTiles": {
+        const curStage = task.args[0]
+        return [L_GuiBlueprintBookTask.SetNextStageTiles, curStage.stage.name.get()]
+      }
+      case "exportBlueprintBookToFile": {
+        return [L_GuiBlueprintBookTask.ExportBlueprintBookToFile]
+      }
+      default:
+        assertNever(task)
+    }
+
+    return "unknown"
   }
   protected override done(): void {
     if (this.inventory?.valid) this.inventory.destroy()
@@ -261,7 +293,7 @@ class BlueprintCreationTaskBuilder {
     return this
   }
 
-  public build(taskTitle?: LocalisedString): BlueprintCreationTask {
+  public build(taskTitle: LocalisedString | nil): BlueprintCreationTask {
     return new BlueprintCreationTask(this.tasks, this.inventory, taskTitle)
   }
 
@@ -277,7 +309,7 @@ class BlueprintCreationTaskBuilder {
   }
 
   private addTakeBlueprintTasks(assemblyPlan: AssemblyBlueprintPlan, stagePlan: StageBlueprintPlan): void {
-    const { stack, stage, bbox } = stagePlan
+    const { stack, stage } = stagePlan
     let settings: OverrideableBlueprintSettings = stagePlan.settings
 
     let actualStack: LuaItemStack
@@ -330,7 +362,7 @@ class BlueprintCreationTaskBuilder {
 export function takeStageBlueprint(stage: Stage, stack: LuaItemStack): boolean {
   const builder = new BlueprintCreationTaskBuilder()
   const plan = builder.queueBlueprintTask(stage, stack)
-  const task = builder.addAllBpTasks().build()
+  const task = builder.addAllBpTasks().build(nil)
   runEntireTask(task)
   return plan?.result != nil
 }
@@ -345,13 +377,13 @@ function addBlueprintBookTasks(builder: BlueprintCreationTaskBuilder, assembly: 
     const bpStack = bookInventory[bookInventory.length - 1]
     builder.queueBlueprintTask(stage, bpStack)
   }
-  builder.addAllBpTasks().addTask({ name: "cleanupBlueprintBook", args: [stack] })
+  builder.addAllBpTasks().addTask({ name: "finalizeBlueprintBook", args: [stack] })
 }
 
 export function submitAssemblyBlueprintBookTask(assembly: UserAssembly, stack: LuaItemStack): void {
   const builder = new BlueprintCreationTaskBuilder()
   addBlueprintBookTasks(builder, assembly, stack)
-  submitTask(builder.build())
+  submitTask(builder.build(L_GuiBlueprintBookTask.AssemblingBlueprintBook))
 }
 
 export function exportBlueprintBookToFile(assembly: UserAssembly, player: LuaPlayer): string | nil {
@@ -371,7 +403,7 @@ export function exportBlueprintBookToFile(assembly: UserAssembly, player: LuaPla
     args: [stack, name, player],
   })
 
-  const task = builder.build()
+  const task = builder.build(L_GuiBlueprintBookTask.AssemblingBlueprintBook)
   submitTask(task)
 
   return name

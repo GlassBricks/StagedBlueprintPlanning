@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { L_GuiActions } from "../locale"
+import { L_GuiTasks } from "../locale"
 import { Events } from "./Events"
 import {
   Component,
@@ -180,7 +180,7 @@ class CurrentTaskGui extends Component<{ task: Task }> {
         />
         <flow direction="horizontal">
           <HorizontalPusher />
-          <button caption={[L_GuiActions.Cancel]} on_gui_click={funcRef(cancelCurrentTask)} />
+          <button caption={[L_GuiTasks.Cancel]} on_gui_click={funcRef(cancelCurrentTask)} />
         </flow>
       </frame>
     )
