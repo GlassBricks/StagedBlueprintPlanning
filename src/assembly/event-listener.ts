@@ -352,7 +352,6 @@ Events.on_pre_build((e) => {
   if (hoveredEntity != nil) {
     onUndergroundBeltDragRotated(stage.assembly, hoveredEntity, stage.stageNumber, e.player_index)
   }
-  // this triggers onMarkedForUpgrade event handler
 })
 
 Events.on_pre_player_mined_item(() => {
