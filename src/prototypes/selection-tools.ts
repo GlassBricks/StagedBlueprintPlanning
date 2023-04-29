@@ -131,6 +131,10 @@ const stageMoveTool: SelectionToolPrototype = {
   reverse_selection_color: stageMoveToolAltColor,
   reverse_selection_cursor_box_type: "electricity",
   reverse_selection_mode: ["entity-with-owner"],
+
+  alt_reverse_selection_color: stageMoveToolAltColor,
+  alt_reverse_selection_cursor_box_type: "electricity",
+  alt_reverse_selection_mode: ["entity-with-owner"],
 }
 
 data.extend([

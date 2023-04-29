@@ -498,6 +498,21 @@ export function onBringToStageUsed(
   }
 }
 
+export function onBringDownToStageUsed(
+  assembly: Assembly,
+  entity: LuaEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex,
+): UndoAction | nil {
+  const asmEntity = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+  if (!asmEntity || asmEntity.isSettingsRemnant) return
+  if (asmEntity.firstStage <= stage) return
+  const oldStage = asmEntity.firstStage
+  if (userBringEntityToStage(assembly, asmEntity, stage, byPlayer)) {
+    return undoBringToStage.createAction(byPlayer, { assembly, entity: asmEntity, oldStage })
+  }
+}
+
 interface LastStageChangeRecord extends AssemblyEntityRecord {
   oldLastStage: StageNumber | nil
 }

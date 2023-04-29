@@ -611,13 +611,13 @@ describe("onBringToStageUsed", () => {
   test("calls trySetFirstStage and does not notify if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onBringToStageUsed(assembly, luaEntity, 1, playerIndex)
+    const undoAction = userActions.onBringToStageUsed(assembly, luaEntity, 1, playerIndex)!
 
     expect(notifications.createIndicator).not.called()
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 1)
     expect(undoAction).not.toBeNil()
 
-    _doUndoAction(undoAction!)
+    _doUndoAction(undoAction)
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 2)
 
     expectedNumCalls = 2
@@ -644,6 +644,34 @@ describe("onBringToStageUsed", () => {
     userActions.onBringToStageUsed(assembly, luaEntity, 3, playerIndex)
     expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 3)
     assertNotified(entity, message, true)
+  })
+})
+
+describe("onBringDownToStageUsed", () => {
+  test("works for entity in higher stage", () => {
+    const { luaEntity, entity } = addEntity(3)
+    entity.replaceWorldEntity(3, luaEntity)
+    const undoAction = userActions.onBringDownToStageUsed(assembly, luaEntity, 2, playerIndex)!
+
+    expect(notifications.createIndicator).not.called()
+    expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 2)
+    expect(undoAction).not.toBeNil()
+
+    _doUndoAction(undoAction)
+    expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 3)
+
+    expectedNumCalls = 2
+  })
+
+  test("ignores for entities in lower stage", () => {
+    const { luaEntity, entity } = addEntity(1)
+    entity.replaceWorldEntity(1, luaEntity)
+    const undoAction = userActions.onBringDownToStageUsed(assembly, luaEntity, 2, playerIndex)
+
+    expect(assemblyUpdates.trySetFirstStage).not.called()
+    expect(undoAction).toBeNil()
+
+    expectedNumCalls = 0
   })
 })
 

@@ -12,7 +12,7 @@
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes, Settings } from "../constants"
 import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
-import { isWorldEntityAssemblyEntity } from "../entity/AssemblyEntity"
+import { isWorldEntityAssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { LuaEntityInfo } from "../entity/Entity"
 import {
   areUpgradeableTypes,
@@ -23,7 +23,7 @@ import {
 import { assertNever, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { Stage } from "./AssemblyDef"
+import { Assembly, Stage } from "./AssemblyDef"
 import { getAssemblyPlayerData } from "./player-assembly-data"
 import {
   onUndoReferenceBuilt,
@@ -33,6 +33,7 @@ import {
   UndoAction,
 } from "./undo"
 import {
+  onBringDownToStageUsed,
   onBringToStageUsed,
   onCleanupToolUsed,
   onEntityCreated,
@@ -936,15 +937,25 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
   registerUndoActionGroup(undoActions)
 }
 
-function stageDeleteToolUsed(e: OnPlayerSelectedAreaEvent): void {
+function selectionToolUsed(
+  e: OnPlayerSelectedAreaEvent | OnPlayerAltSelectedAreaEvent | OnPlayerReverseSelectedAreaEvent,
+  action: (
+    assembly: Assembly,
+    entity: LuaEntity,
+    stageNumber: StageNumber,
+    playerIndex: PlayerIndex,
+  ) => UndoAction | undefined,
+): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
+
   const { stageNumber, assembly } = stage
   const undoActions: UndoAction[] = []
   for (const entity of e.entities) {
-    const undoAction = onStageDeleteUsed(assembly, entity, stageNumber, e.player_index)
+    const undoAction = action(assembly, entity, stageNumber, e.player_index)
     if (undoAction) undoActions.push(undoAction)
   }
+
   registerUndoActionGroup(undoActions)
 }
 
@@ -952,47 +963,29 @@ Events.on_player_selected_area((e) => {
   if (e.item == Prototypes.StageMoveTool) {
     stageMoveToolUsed(e)
   } else if (e.item == Prototypes.StageDeconstructTool) {
-    stageDeleteToolUsed(e)
+    selectionToolUsed(e, onStageDeleteUsed)
   }
 })
 
-function stageMoveToolAltUsed(e: OnPlayerAltSelectedAreaEvent): void {
-  const stage = getStageAtSurface(e.surface.index)
-  if (!stage) return
-
-  const { stageNumber, assembly } = stage
-  const undoActions: UndoAction[] = []
-  for (const entity of e.entities) {
-    const undoAction = onBringToStageUsed(assembly, entity, stageNumber, e.player_index)
-    if (undoAction) undoActions.push(undoAction)
-  }
-  registerUndoActionGroup(undoActions)
-}
-function stageDeleteToolAltUsed(e: OnPlayerAltSelectedAreaEvent): void {
-  const stage = getStageAtSurface(e.surface.index)
-  if (!stage) return
-
-  const { stageNumber, assembly } = stage
-  const undoActions: UndoAction[] = []
-  for (const entity of e.entities) {
-    const undoAction = onStageDeleteCancelUsed(assembly, entity, stageNumber, e.player_index)
-    if (undoAction) undoActions.push(undoAction)
-  }
-  registerUndoActionGroup(undoActions)
-}
-
 Events.on_player_alt_selected_area((e) => {
   if (e.item == Prototypes.StageMoveTool) {
-    stageMoveToolAltUsed(e)
+    selectionToolUsed(e, onBringToStageUsed)
   } else if (e.item == Prototypes.StageDeconstructTool) {
-    stageDeleteToolAltUsed(e)
+    selectionToolUsed(e, onStageDeleteCancelUsed)
   }
 })
 Events.on_player_reverse_selected_area((e) => {
   if (e.item == Prototypes.StageMoveTool) {
-    stageMoveToolAltUsed(e)
+    selectionToolUsed(e, onBringToStageUsed)
   }
 })
+
+Events.on_player_alt_reverse_selected_area((e) => {
+  if (e.item == Prototypes.StageMoveTool) {
+    selectionToolUsed(e, onBringDownToStageUsed)
+  }
+})
+
 // Filtered stage move tool
 Events.on_marked_for_deconstruction((e) => {
   const playerIndex = e.player_index

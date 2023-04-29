@@ -452,6 +452,7 @@ describe("stage move tool", () => {
     let i = 1
     userActions.onSendToStageUsed.invokes(() => TestUndo.createAction(player.index, "send to stage " + i++))
     userActions.onBringToStageUsed.invokes(() => TestUndo.createAction(player.index, "bring to stage " + i++))
+    userActions.onBringDownToStageUsed.invokes(() => TestUndo.createAction(player.index, "bring down to stage " + i++))
   })
   let entity: LuaEntity
   let entity2: LuaEntity
@@ -515,6 +516,25 @@ describe("stage move tool", () => {
     _simulateUndo(player)
     expect(undoFn).calledWith("bring to stage 1")
     expect(undoFn).calledWith("bring to stage 2")
+    expectedNumCalls = 2
+  })
+
+  test("bring down to this stage (alt reverse)", () => {
+    player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
+    Events.raiseFakeEventNamed("on_player_alt_reverse_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.StageMoveTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity, entity2],
+      tiles: [],
+    })
+
+    expect(userActions.onBringDownToStageUsed).calledWith(assembly, entity, 1, 1)
+
+    _simulateUndo(player)
+    expect(undoFn).calledWith("bring down to stage 1")
+    expect(undoFn).calledWith("bring down to stage 2")
     expectedNumCalls = 2
   })
 

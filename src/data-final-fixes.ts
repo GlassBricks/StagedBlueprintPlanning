@@ -118,13 +118,14 @@ const railPrototypes = newLuaSet("straight-rail", "curved-rail")
 const previews: EntityPrototype[] = []
 const types = keys<Record<BuildableEntityType, true>>()
 
-const buildableNonRollingStockNames: string[] = []
+const buildableNames: string[] = []
 
 for (const type of types.sort()) {
   const prototypes = data.raw[type]
   if (!prototypes) continue
   for (const [name, prototype] of pairs<Record<string, EntityPrototype>>(prototypes)) {
     if (!isBuildablePrototype(prototype)) continue
+    buildableNames.push(name)
 
     let placeableBy = prototype.placeable_by
     if (!placeableBy) {
@@ -144,8 +145,6 @@ for (const type of types.sort()) {
 
     if (rollingStockTypes.has(type)) {
       selectionBox = BBox.expand(BBox.normalize(selectionBox), 0.3)
-    } else {
-      buildableNonRollingStockNames.push(name)
     }
 
     const isRail = railPrototypes.has(type)
@@ -314,10 +313,12 @@ function createRailPreview(
 
 data.extend(previews)
 
-const previewNames = previews.map((proxy) => proxy.name)
+const previewNames = previews.map((preview) => preview.name)
 const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.CleanupTool]
 cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
 
 const stageMoveTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.StageMoveTool]
-const altFilters = [...previewNames, ...buildableNonRollingStockNames]
-stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = altFilters
+const entityOrPreviewNames = [...buildableNames, ...previewNames]
+stageMoveTool.entity_filters = buildableNames
+stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = entityOrPreviewNames
+stageMoveTool.alt_reverse_entity_filters = previewNames
