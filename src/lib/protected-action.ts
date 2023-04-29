@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -26,7 +26,7 @@ export function protectedAction<T, A extends any[]>(action: (...args: A) => T, .
 }
 
 function getErrorWithStacktrace(error: unknown): ErrorWithData {
-  if (__DebugAdapter) __DebugAdapter.breakpoint()
+  // if (__DebugAdapter) __DebugAdapter.breakpoint()
   const errorToString = tostring(error)
   return [errorToString, debug.traceback(errorToString, 3)]
 }

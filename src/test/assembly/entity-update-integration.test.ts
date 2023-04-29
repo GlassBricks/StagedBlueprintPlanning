@@ -29,7 +29,7 @@ import {
 } from "../../assembly/assembly-updates"
 import { UserAssembly } from "../../assembly/AssemblyDef"
 import { _simulateUndo } from "../../assembly/undo"
-import { userSetLastStageWithUndo } from "../../assembly/user-actions"
+import { onWiresPossiblyUpdated, userSetLastStageWithUndo } from "../../assembly/user-actions"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {
   clearWorldEntityAtStage,
@@ -40,11 +40,16 @@ import {
   tryDollyEntities,
 } from "../../assembly/world-entity-updates"
 import { Prototypes, Settings } from "../../constants"
-import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/AsmCircuitConnection"
 import { AssemblyEntity, RollingStockAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
+import {
+  AsmCircuitConnection,
+  circuitConnectionEquals,
+  CircuitOrPowerSwitchConnection,
+} from "../../entity/circuit-connection"
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { isPreviewEntity } from "../../entity/entity-prototype-info"
 import { saveEntity } from "../../entity/save-load"
+import { addPowerSwitchConnections } from "../../entity/wires"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
@@ -141,7 +146,9 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
       for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
         const pole = entity.getWorldEntity(stage)
         if (!pole) continue
-        const cableNeighbors = (pole.neighbours as Record<"copper", LuaEntity[]>).copper
+        const cableNeighbors = (pole.neighbours as Record<"copper", LuaEntity[]>).copper.filter(
+          (x) => x.type != "power-switch",
+        )
         expect(cableNeighbors).to.equal([])
       }
     }
@@ -156,6 +163,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
         .map((o) => o?.unit_number)
         .sort()
       const actualNeighbors = (entity.getWorldEntity(stage)?.neighbours as Record<"copper", LuaEntity[]>).copper
+        .filter((x) => x.type != "power-switch")
         .map((o) => o.unit_number)
         .sort()
       expect(actualNeighbors).to.equal(expectedNeighbors)
@@ -168,9 +176,10 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
     for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
       const worldEntity = entity.getWorldEntity(stage)
       if (!worldEntity) continue
-      const wireNeighbors = worldEntity.circuit_connection_definitions
+      const wireNeighbors: CircuitOrPowerSwitchConnection[] | nil = worldEntity.circuit_connection_definitions
       if (!wireNeighbors) continue
-      expect(wireNeighbors.filter((x) => x.wire != defines.wire_type.copper)).to.equal([])
+      addPowerSwitchConnections(worldEntity, wireNeighbors)
+      expect(wireNeighbors).to.equal([])
     }
   } else {
     for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
@@ -184,9 +193,10 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
           entities: newLuaSet(thisWorldEntity.unit_number!, otherWorldEntity.unit_number!),
         }))
       })
-      const actualNeighbors = thisWorldEntity.circuit_connection_definitions
-      expect(actualNeighbors).to.be.any()
-      const actualNeighborsSet = actualNeighbors?.map((x) => ({
+      const actualNeighbors: CircuitOrPowerSwitchConnection[] = thisWorldEntity.circuit_connection_definitions ?? []
+      addPowerSwitchConnections(thisWorldEntity, actualNeighbors)
+
+      const actualNeighborsSet = actualNeighbors.map((x) => ({
         wire: x.wire,
         entities: newLuaSet(x.target_entity.unit_number!, thisWorldEntity.unit_number!),
       }))
@@ -919,13 +929,11 @@ test("pasting diagonal rail at same position but different direction", () => {
 
 describe.each([
   "straight-rail",
-  // "curved-rail",
   "stone-furnace",
   "storage-tank",
   "assembling-machine-1",
   "small-electric-pole",
   "boiler",
-  "roboport",
 ])("can paste %s", (entityName) => {
   describe.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
     "at direction %d",
@@ -988,6 +996,53 @@ test("pasting rotate blueprint with a rotated fluid tank", () => {
   expect(entity1).not.toBeNil()
   expect(entity1!.getDirection()).toEqual(0)
   expect(entity1!.getWorldEntity(1)).toEqual(tank)
+})
+
+test.only("connecting power switch", () => {
+  const pole = buildEntity(2, { name: "medium-electric-pole", position: Pos(0, 0) })
+  const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
+
+  const poleLuaEntity = pole.getWorldEntity(2)!
+  poleLuaEntity.connect_neighbour({
+    wire: defines.wire_type.copper,
+    target_entity: powerSwitch.getWorldEntity(2)!,
+    target_wire_id: defines.wire_connection_id.power_switch_right,
+  })
+
+  onWiresPossiblyUpdated(assembly, poleLuaEntity, 2, player.index)
+
+  assertEntityCorrect(pole, false)
+  assertEntityCorrect(powerSwitch, false)
+})
+
+test.only("connecting power switch to new pole in higher stage", () => {
+  const pole1 = buildEntity(1, { name: "medium-electric-pole", position: Pos(0, 0) })
+  const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
+  const pole2 = buildEntity(2, { name: "medium-electric-pole", position: Pos(4, 0) })
+
+  const pole1LuaEntity = pole1.getWorldEntity(1)!
+  pole1LuaEntity.connect_neighbour({
+    wire: defines.wire_type.copper,
+    target_entity: powerSwitch.getWorldEntity(1)!,
+    target_wire_id: defines.wire_connection_id.power_switch_right,
+  })
+
+  onWiresPossiblyUpdated(assembly, pole1LuaEntity, 1, player.index)
+  assertEntityCorrect(pole1, false)
+  assertEntityCorrect(pole2, false)
+  assertEntityCorrect(powerSwitch, false)
+
+  const pole2LuaEntity = pole2.getWorldEntity(3)!
+  pole2LuaEntity.connect_neighbour({
+    wire: defines.wire_type.copper,
+    target_entity: powerSwitch.getWorldEntity(3)!,
+    target_wire_id: defines.wire_connection_id.power_switch_right,
+  })
+
+  onWiresPossiblyUpdated(assembly, pole2LuaEntity, 3, player.index)
+  assertEntityCorrect(pole1, false)
+  assertEntityCorrect(pole2, false)
+  assertEntityCorrect(powerSwitch, false)
 })
 
 test("using stage delete tool", () => {

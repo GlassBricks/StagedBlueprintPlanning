@@ -60,7 +60,9 @@ export function debugPrint(...values: unknown[]): void {
 }
 
 export function getLastDebugPrintCall(): string | nil {
-  return global.__lastDebugPrintCall
+  const res = global.__lastDebugPrintCall
+  global.__lastDebugPrintCall = nil
+  return res
 }
 
 // noinspection JSUnusedGlobalSymbols

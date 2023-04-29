@@ -10,23 +10,81 @@
  */
 
 import expect from "tstl-expect"
-import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/circuit-connection"
+import { getPowerSwitchConnectionSide } from "../../entity/wires"
 import { shallowCompare } from "../../lib"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
 
 let content: MutableAssemblyContent
-const surfaces = setupTestSurfaces(2)
 let surface: LuaSurface
+const extraSurfaces = setupTestSurfaces(1)
 
 before_each(() => {
   content = newAssemblyContent()
-  surface = surfaces[0]
+  surface = game.surfaces[1]
   surface.find_entities().forEach((e) => e.destroy())
 })
 
 import handler = require("../../entity/wires")
+
+describe("getPowerSwitchConnectionSide", () => {
+  let pole1: LuaEntity
+  let pole2: LuaEntity
+  let powerSwitch: LuaEntity
+  before_each(() => {
+    pole1 = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6 } })!
+    pole2 = surface.create_entity({ name: "medium-electric-pole", position: { x: 7.5, y: 6 } })!
+    powerSwitch = surface.create_entity({ name: "power-switch", position: { x: 4, y: 4 } })!
+
+    pole1.disconnect_neighbour(pole2)
+  })
+
+  test.each([
+    [1, 0],
+    [0, 1],
+    [2, 1],
+    [1, 2],
+  ])("gets correct side when left connected to %s and right connected to %s", (left, right) => {
+    const poles = { [1]: pole1, [2]: pole2 }
+    let expected: defines.wire_connection_id | undefined
+    let connected2 = false
+    if (left != 0) {
+      powerSwitch.connect_neighbour({
+        target_entity: poles[left],
+        wire: defines.wire_type.copper,
+        source_wire_id: defines.wire_connection_id.power_switch_left,
+      })
+      if (left == 1) expected = defines.wire_connection_id.power_switch_left
+      else connected2 = true
+    }
+    if (right != 0) {
+      powerSwitch.connect_neighbour({
+        target_entity: poles[right],
+        wire: defines.wire_type.copper,
+        source_wire_id: defines.wire_connection_id.power_switch_right,
+      })
+      if (right == 1) expected = defines.wire_connection_id.power_switch_right
+      else connected2 = true
+    }
+    assert(expected)
+
+    const side = handler.getPowerSwitchConnectionSide(pole1, powerSwitch)
+    expect(side).toEqual(expected)
+
+    expect((pole1.neighbours as any).copper).toEqual([powerSwitch])
+    if (connected2) {
+      expect((pole2.neighbours as any).copper).toEqual([powerSwitch])
+      expect((powerSwitch.neighbours as any).copper)
+        .toHaveLength(2)
+        .toContain(pole1)
+        .toContain(pole2)
+    } else {
+      expect((powerSwitch.neighbours as any).copper).toEqual([pole1])
+    }
+  })
+})
 
 describe("circuit wires", () => {
   let luaEntity1: LuaEntity
@@ -184,7 +242,247 @@ describe("circuit wires", () => {
 
       const connections = content.getCircuitConnections(entity1)?.get(entity2)
       expect(Object.keys(connections ?? {})).to.equal(world.map((number) => wires[number - 1]))
+
+      expect(content.getCircuitConnections(entity2)?.get(entity1)).toEqual(connections)
     })
+  })
+})
+
+describe("power switch connections", () => {
+  let pole: LuaEntity
+  let powerSwitch: LuaEntity
+  let poleEntity: AssemblyEntity<{ name: string }>
+  let powerSwitchEntity: AssemblyEntity<{ name: string }>
+  before_each(() => {
+    pole = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 5.5 } })!
+    powerSwitch = surface.create_entity({ name: "power-switch", position: { x: 6, y: 7 } })!
+    poleEntity = createAssemblyEntity({ name: "medium-electric-pole" }, pole.position, nil, 1)
+    powerSwitchEntity = createAssemblyEntity({ name: "power-switch" }, powerSwitch.position, nil, 1)
+    poleEntity.replaceWorldEntity(1, pole)
+    powerSwitchEntity.replaceWorldEntity(1, powerSwitch)
+    content.add(poleEntity)
+    content.add(powerSwitchEntity)
+  })
+
+  describe.each(["pole", "power switch"])("from %s", (from) => {
+    // test.skip("modding api borke?", () => {
+    //   pole.connect_neighbour({
+    //     target_entity: powerSwitch,
+    //     wire: defines.wire_type.copper,
+    //     target_wire_id: defines.wire_connection_id.power_switch_right,
+    //   })
+    //   expect((pole.neighbours as any).copper).toEqual([powerSwitch])
+    //   pole.disconnect_neighbour({
+    //     target_entity: powerSwitch,
+    //     wire: defines.wire_type.copper,
+    //     target_wire_id: defines.wire_connection_id.power_switch_right,
+    //   })
+    //   expect((pole.neighbours as any).copper).toEqual([powerSwitch])
+    //   // ^ is a bug?
+    // })
+    //
+    test("can remove wires", () => {
+      pole.connect_neighbour({
+        target_entity: powerSwitch,
+        wire: defines.wire_type.copper,
+        target_wire_id: defines.wire_connection_id.power_switch_right,
+      })
+      handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      expect((pole.neighbours as any).copper).toEqual([])
+      expect((powerSwitch.neighbours as any).copper).toEqual([])
+    })
+
+    test("can add wires", () => {
+      content.addCircuitConnection({
+        fromEntity: poleEntity,
+        toEntity: powerSwitchEntity,
+        wire: defines.wire_type.copper,
+        fromId: defines.wire_connection_id.electric_pole,
+        toId: defines.wire_connection_id.power_switch_right,
+      })
+
+      handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      expect((pole.neighbours as any).copper).toEqual([powerSwitch])
+      expect((powerSwitch.neighbours as any).copper).toEqual([pole])
+      expect(getPowerSwitchConnectionSide(pole, powerSwitch)).toBe(defines.wire_connection_id.power_switch_right)
+    })
+
+    test("can update wires", () => {
+      // world is left, saved is right
+      pole.connect_neighbour({
+        target_entity: powerSwitch,
+        wire: defines.wire_type.copper,
+        target_wire_id: defines.wire_connection_id.power_switch_left,
+      })
+      expect(getPowerSwitchConnectionSide(pole, powerSwitch)).toBe(defines.wire_connection_id.power_switch_left)
+      content.addCircuitConnection({
+        fromEntity: powerSwitchEntity,
+        toEntity: poleEntity,
+        wire: defines.wire_type.copper,
+        fromId: defines.wire_connection_id.power_switch_right,
+        toId: defines.wire_connection_id.electric_pole,
+      })
+
+      handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      expect((pole.neighbours as any).copper).toEqual([powerSwitch])
+      expect((powerSwitch.neighbours as any).copper).toEqual([pole])
+      expect(getPowerSwitchConnectionSide(pole, powerSwitch)).toBe(defines.wire_connection_id.power_switch_right)
+    })
+    test("can save a connection", () => {
+      pole.connect_neighbour({
+        target_entity: powerSwitch,
+        wire: defines.wire_type.copper,
+        target_wire_id: defines.wire_connection_id.power_switch_right,
+      })
+
+      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(
+        content,
+        from == "pole" ? poleEntity : powerSwitchEntity,
+        1,
+      )
+      expect(hasDiff).to.be(true)
+      expect(maxConnectionsReached).toBeFalsy()
+      const connections = content.getCircuitConnections(poleEntity)?.get(powerSwitchEntity)
+      const connection = Object.keys(connections ?? newLuaSet())
+      expect(connection).toHaveLength(1)
+
+      if (
+        !circuitConnectionEquals(connection[0] as any, {
+          fromEntity: poleEntity,
+          toEntity: powerSwitchEntity,
+          wire: defines.wire_type.copper,
+          fromId: defines.wire_connection_id.electric_pole,
+          toId: defines.wire_connection_id.power_switch_right,
+        })
+      ) {
+        expect(connection[0]).toEqual("does not match")
+      }
+      expect(content.getCircuitConnections(powerSwitchEntity)?.get(poleEntity)).toEqual(connections)
+    })
+
+    test("can save pole connected to both sides of same power switch", () => {
+      for (const side of [
+        defines.wire_connection_id.power_switch_left,
+        defines.wire_connection_id.power_switch_right,
+      ]) {
+        pole.connect_neighbour({
+          target_entity: powerSwitch,
+          wire: defines.wire_type.copper,
+          target_wire_id: side,
+        })
+      }
+      const [hasDiff, maxConnectionsReached, additional] = handler.saveWireConnections(
+        content,
+        from == "pole" ? poleEntity : powerSwitchEntity,
+        1,
+      )
+      expect(hasDiff).to.be(true)
+      expect(maxConnectionsReached).toBeFalsy()
+      expect(additional).toBeNil()
+
+      const connections = content.getCircuitConnections(poleEntity)?.get(powerSwitchEntity)
+      const asArray = Object.keys(connections ?? newLuaSet())
+      expect(asArray).toHaveLength(2)
+
+      for (const side of [defines.wire_connection_id.power_switch_left, defines.wire_connection_id.power_switch_right])
+        if (
+          !asArray.find((c) =>
+            circuitConnectionEquals(c as any, {
+              fromEntity: poleEntity,
+              toEntity: powerSwitchEntity,
+              wire: defines.wire_type.copper,
+              fromId: defines.wire_connection_id.electric_pole,
+              toId: side,
+            }),
+          )
+        ) {
+          expect(asArray[0]).toEqual(`does not match side ${side}`)
+        }
+    })
+
+    test("replaces old connection when connecting to same side in different stage", () => {
+      const otherPole = extraSurfaces[0].create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
+      const otherPoleEntity = createAssemblyEntity({ name: "medium-electric-pole" }, otherPole.position, nil, 1)
+      otherPoleEntity.replaceWorldEntity(2, otherPole)
+      content.add(otherPoleEntity)
+
+      const powerSwitch2 = extraSurfaces[0].create_entity({
+        name: "power-switch",
+        position: powerSwitchEntity.position,
+      })!
+      powerSwitchEntity.replaceWorldEntity(2, powerSwitch2)
+
+      pole.connect_neighbour({
+        target_entity: powerSwitch,
+        wire: defines.wire_type.copper,
+        target_wire_id: defines.wire_connection_id.power_switch_right,
+      })
+
+      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(
+        content,
+        from == "pole" ? poleEntity : powerSwitchEntity,
+        1,
+      )
+      expect(hasDiff).to.be(true)
+      expect(maxConnectionsReached).toBeFalsy()
+
+      otherPole.connect_neighbour({
+        target_entity: powerSwitch2,
+        wire: defines.wire_type.copper,
+        target_wire_id: defines.wire_connection_id.power_switch_right,
+      })
+
+      const [hasDiff2, maxConnectionsReached2, additionalEntitiesToUpdate] = handler.saveWireConnections(
+        content,
+        from == "pole" ? otherPoleEntity : powerSwitchEntity,
+        2,
+      )
+      expect(hasDiff2).to.be(true)
+      expect(maxConnectionsReached2).toBeFalsy()
+      expect(additionalEntitiesToUpdate).toBe([powerSwitchEntity])
+
+      const connections = content.getCircuitConnections(powerSwitchEntity)?.get(otherPoleEntity)
+      expect(content.getCircuitConnections(powerSwitchEntity)?.get(poleEntity)).toBeNil()
+      const connection = Object.keys(connections ?? newLuaSet())
+      expect(connection).toHaveLength(1)
+      if (
+        !circuitConnectionEquals(connection[0] as any, {
+          fromEntity: otherPoleEntity,
+          toEntity: powerSwitchEntity,
+          wire: defines.wire_type.copper,
+          fromId: defines.wire_connection_id.electric_pole,
+          toId: defines.wire_connection_id.power_switch_right,
+        })
+      ) {
+        expect(connection[0]).toEqual("does not match")
+      }
+      expect(content.getCircuitConnections(otherPoleEntity)?.get(powerSwitchEntity)).toEqual(connections)
+    })
+  })
+
+  test("can remove connection if connected to different but not existing pole", () => {
+    const pole2 = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
+    const pole2Entity = createAssemblyEntity({ name: "medium-electric-pole" }, pole2.position, nil, 1)
+    pole2Entity.replaceWorldEntity(1, pole2)
+    content.add(pole2Entity)
+
+    pole2.connect_neighbour({
+      target_entity: powerSwitch,
+      wire: defines.wire_type.copper,
+      target_wire_id: defines.wire_connection_id.power_switch_right,
+    })
+
+    content.addCircuitConnection({
+      fromEntity: poleEntity,
+      toEntity: powerSwitchEntity,
+      wire: defines.wire_type.copper,
+      fromId: defines.wire_connection_id.electric_pole,
+      toId: defines.wire_connection_id.power_switch_right,
+    })
+    poleEntity.destroyWorldOrPreviewEntity(1)
+
+    handler.updateWireConnectionsAtStage(content, powerSwitchEntity, 1)
+    expect((pole2.neighbours as any).copper).toEqual([])
   })
 })
 
@@ -265,8 +563,14 @@ describe("cable connections", () => {
     })
 
     test("can add cables in multiple stages", () => {
-      const otherLuaEntity3 = surfaces[1].create_entity({ name: "medium-electric-pole", position: entity3.position })!
-      const otherLuaEntity2 = surfaces[1].create_entity({ name: "medium-electric-pole", position: entity2.position })!
+      const otherLuaEntity3 = extraSurfaces[0].create_entity({
+        name: "medium-electric-pole",
+        position: entity3.position,
+      })!
+      const otherLuaEntity2 = extraSurfaces[0].create_entity({
+        name: "medium-electric-pole",
+        position: entity2.position,
+      })!
       entity2.replaceWorldEntity(2, otherLuaEntity2)
       entity3.replaceWorldEntity(2, otherLuaEntity3)
       entity3.setFirstStageUnchecked(2)

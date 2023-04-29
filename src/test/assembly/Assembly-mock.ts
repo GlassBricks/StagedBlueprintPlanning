@@ -30,13 +30,13 @@ export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
   const surfaces: LuaSurface[] = []
   before_all(() => {
     for (let i = 0; i < numSurfaces; i++) {
-      const surface = createStageSurface()
-      surfaces.push(surface)
+      surfaces[i] = createStageSurface()
+      assert(surfaces[i].valid)
     }
   })
   before_each(() => {
     for (const surface of surfaces) {
-      surface.find_entities().forEach((e) => e.destroy())
+      if (surface.valid) surface.find_entities().forEach((e) => e.destroy())
     }
   })
   after_all(() => {

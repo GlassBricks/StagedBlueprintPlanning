@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,14 +11,23 @@
 
 import { AssemblyEntity } from "./AssemblyEntity"
 
+export type AnyConnectionId = defines.circuit_connector_id | defines.wire_connection_id
+
 export interface AsmCircuitConnection {
   readonly fromEntity: AssemblyEntity
-  readonly fromId: defines.circuit_connector_id
+  readonly fromId: AnyConnectionId
 
   readonly toEntity: AssemblyEntity
-  readonly toId: defines.circuit_connector_id
+  readonly toId: AnyConnectionId
 
   readonly wire: defines.wire_type
+}
+
+export interface CircuitOrPowerSwitchConnection {
+  readonly wire: defines.wire_type
+  readonly target_entity: LuaEntity
+  readonly source_circuit_id: AnyConnectionId
+  readonly target_circuit_id: AnyConnectionId
 }
 
 export function circuitConnectionEquals(a: AsmCircuitConnection, b: AsmCircuitConnection): boolean {
@@ -33,9 +42,7 @@ export function circuitConnectionEquals(a: AsmCircuitConnection, b: AsmCircuitCo
 export function getDirectionalInfo(
   connection: AsmCircuitConnection,
   fromEntity: AssemblyEntity,
-): LuaMultiReturn<
-  [otherEntity: AssemblyEntity, fromId: defines.circuit_connector_id, toId: defines.circuit_connector_id]
-> {
+): LuaMultiReturn<[otherEntity: AssemblyEntity, fromId: AnyConnectionId, toId: AnyConnectionId]> {
   if (connection.fromEntity == fromEntity) return $multi(connection.toEntity, connection.fromId, connection.toId)
   return $multi(connection.fromEntity, connection.toId, connection.fromId)
 }
@@ -44,8 +51,8 @@ export function circuitConnectionMatches(
   connection: AsmCircuitConnection,
   wire: defines.wire_type,
   toEntity: AssemblyEntity,
-  fromId: defines.circuit_connector_id,
-  toId: defines.circuit_connector_id,
+  fromId: AnyConnectionId,
+  toId: AnyConnectionId,
 ): boolean {
   return (
     connection.wire == wire &&

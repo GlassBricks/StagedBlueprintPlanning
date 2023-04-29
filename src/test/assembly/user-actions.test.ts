@@ -432,10 +432,10 @@ describe("onEntityMarkedForUpgrade", () => {
   })
 })
 
-describe("onCircuitWiresPossiblyUpdated", () => {
+describe("onWiresPossiblyUpdated", () => {
   test("if not in assembly, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onCircuitWiresPossiblyUpdated(assembly, luaEntity, 2, playerIndex)
+    userActions.onWiresPossiblyUpdated(assembly, luaEntity, 2, playerIndex)
   })
 
   test.each<[WireUpdateResult, string | false]>([
@@ -447,7 +447,7 @@ describe("onCircuitWiresPossiblyUpdated", () => {
     assemblyUpdates.updateWiresFromWorld.invokes(() => {
       return result
     })
-    userActions.onCircuitWiresPossiblyUpdated(assembly, luaEntity, 2, playerIndex)
+    userActions.onWiresPossiblyUpdated(assembly, luaEntity, 2, playerIndex)
 
     expect(assemblyUpdates.updateWiresFromWorld).calledWith(assembly, entity, 2)
     if (message) assertNotified(entity, [message], true)

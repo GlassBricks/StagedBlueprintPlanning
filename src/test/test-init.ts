@@ -68,7 +68,6 @@ if (script.active_mods["factorio-test"] != nil) {
         if (!gui) continue
         for (const child of gui.children) {
           if (child.get_mod() == script.mod_name) {
-            log("destorying gui: " + child.name)
             child.destroy()
           }
         }
@@ -159,7 +158,7 @@ Events.on_tick(() => {
     Migrations.doMigrations(script.active_mods[script.mod_name])
   }
 
-  const ticks = math.ceil((__DebugAdapter ? 20 : 5) * 60 * game.speed)
+  const ticks = math.ceil((__DebugAdapter ? 20 : 3) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod == 0) {
     global.lastCompileTimestamp = lastCompileTime

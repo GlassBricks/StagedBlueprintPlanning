@@ -61,8 +61,20 @@ export function addNewEntity(
   }
 
   updateNewWorldEntitiesWithoutWires(assembly, assemblyEntity)
-  saveWireConnections(content, assemblyEntity, stage, assembly.lastStageFor(assemblyEntity))
-  updateWireConnections(assembly, assemblyEntity)
+  const [hasDiff, , additionalToUpdate] = saveWireConnections(
+    content,
+    assemblyEntity,
+    stage,
+    assembly.lastStageFor(assemblyEntity),
+  )
+  if (hasDiff) {
+    updateWireConnections(assembly, assemblyEntity)
+    if (additionalToUpdate) {
+      for (const otherEntity of additionalToUpdate) {
+        updateWireConnections(assembly, otherEntity)
+      }
+    }
+  }
 
   return assemblyEntity
 }
@@ -342,14 +354,16 @@ export declare const enum WireUpdateResult {
 }
 
 export function updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): WireUpdateResult {
-  const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(assembly.content, entity, stage, stage)
-  if (maxConnectionsExceeded) {
-    updateWorldEntities(assembly, entity, entity.firstStage)
-    return WireUpdateResult.MaxConnectionsExceeded
-  }
+  const [connectionsChanged, maxConnectionsExceeded, additionalEntitiesToUpdate] = saveWireConnections(
+    assembly.content,
+    entity,
+    stage,
+    stage,
+  )
   if (!connectionsChanged) return WireUpdateResult.NoChange
 
   const circuitConnections = assembly.content.getCircuitConnections(entity)
+  // check setting no-op control behavior
   if (circuitConnections) checkDefaultControlBehavior(entity, stage)
   updateWorldEntities(assembly, entity, entity.firstStage)
   if (circuitConnections) {
@@ -358,6 +372,18 @@ export function updateWiresFromWorld(assembly: Assembly, entity: AssemblyEntity,
         updateWorldEntities(assembly, otherEntity, otherEntity.firstStage, false)
       }
     }
+  }
+
+  // update other entities as needed
+  if (additionalEntitiesToUpdate) {
+    for (const otherEntity of additionalEntitiesToUpdate) {
+      updateWireConnections(assembly, otherEntity)
+    }
+  }
+
+  if (maxConnectionsExceeded) {
+    // this is last, so other updates happen even if max connections exceeded
+    return WireUpdateResult.MaxConnectionsExceeded
   }
   return WireUpdateResult.Updated
 }

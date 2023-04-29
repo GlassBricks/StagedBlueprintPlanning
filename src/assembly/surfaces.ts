@@ -69,6 +69,7 @@ if (!script.active_mods["factorio-test"]) {
       return createNewStageSurface()
     },
     destroySurface: (surface) => {
+      if (!surface.valid) return
       surface.find_entities().forEach((entity) => entity.destroy())
       if (!global.freeSurfaces) {
         global.freeSurfaces = []

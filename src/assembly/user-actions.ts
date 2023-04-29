@@ -258,7 +258,7 @@ export function onUndergroundBeltDragRotated(
   const result = tryRotateEntityToMatchWorld(assembly, asmEntity, stage)
   notifyIfError(result, asmEntity, byPlayer)
 }
-export function onCircuitWiresPossiblyUpdated(
+export function onWiresPossiblyUpdated(
   assembly: Assembly,
   entity: LuaEntity,
   stage: StageNumber,

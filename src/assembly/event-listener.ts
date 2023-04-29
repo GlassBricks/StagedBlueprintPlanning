@@ -34,7 +34,6 @@ import {
 } from "./undo"
 import {
   onBringToStageUsed,
-  onCircuitWiresPossiblyUpdated,
   onCleanupToolUsed,
   onEntityCreated,
   onEntityDeleted,
@@ -50,6 +49,7 @@ import {
   onStageDeleteUsed,
   onTryFixEntity,
   onUndergroundBeltDragRotated,
+  onWiresPossiblyUpdated,
 } from "./user-actions"
 import { getStageAtSurface } from "./UserAssembly"
 
@@ -782,7 +782,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       // factorio bug? transport belts don't save circuit connections immediately when pasted
       bpState.needsManualConnections.push(entityId)
     } else {
-      onCircuitWiresPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, e.player_index)
+      onWiresPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, e.player_index)
     }
   }
 
@@ -804,7 +804,7 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
     if (!luaEntity) continue
     manuallyConnectNeighbours(luaEntity, value.neighbours)
     manuallyConnectCircuits(luaEntity, value.connections)
-    onCircuitWiresPossiblyUpdated(assembly, luaEntity, stageNumber, e.player_index)
+    onWiresPossiblyUpdated(assembly, luaEntity, stageNumber, e.player_index)
   }
 
   const player = game.get_player(e.player_index)!
@@ -830,7 +830,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
   const data = global.players[player.index]
   const existingEntity = data.lastWireAffectedEntity
   if (existingEntity && existingEntity != entity) {
-    onCircuitWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, player.index)
+    onWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, player.index)
   }
   data.lastWireAffectedEntity = entity
 }
@@ -841,7 +841,7 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   if (entity) {
     data.lastWireAffectedEntity = nil
     const stage = getStageAtEntity(entity)
-    if (stage) onCircuitWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, index)
+    if (stage) onWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, index)
   }
 }
 
@@ -1095,6 +1095,6 @@ export function checkForEntityUpdates(entity: LuaEntity, byPlayer: PlayerIndex |
 export function checkForCircuitWireUpdates(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
   if (stage) {
-    onCircuitWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, byPlayer)
+    onWiresPossiblyUpdated(stage.assembly, entity, stage.stageNumber, byPlayer)
   }
 }

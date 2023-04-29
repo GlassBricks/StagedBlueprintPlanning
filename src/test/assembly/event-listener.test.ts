@@ -733,11 +733,11 @@ describe("blueprint paste", () => {
     assertCorrect(inserter1, nil, bpEntity1)
     assertCorrect(inserter2, pos.plus(Pos(1, 0)), bpEntity2)
     if (alreadyPresent) {
-      expect(userActions.onCircuitWiresPossiblyUpdated).calledWith(assembly, inserter1, 1, 1)
-      expect(userActions.onCircuitWiresPossiblyUpdated).calledWith(assembly, inserter2, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).calledWith(assembly, inserter1, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).calledWith(assembly, inserter2, 1, 1)
       expectedNumCalls = 4
     } else {
-      expect(userActions.onCircuitWiresPossiblyUpdated).not.called()
+      expect(userActions.onWiresPossiblyUpdated).not.called()
       expectedNumCalls = 2
     }
   })
@@ -772,11 +772,11 @@ describe("blueprint paste", () => {
     assertCorrect(pole1, nil, entity1)
     assertCorrect(pole2, pos.plus(Pos(1, 0)), entity2)
     if (alreadyPresent) {
-      expect(userActions.onCircuitWiresPossiblyUpdated).calledWith(assembly, pole1, 1, 1)
-      expect(userActions.onCircuitWiresPossiblyUpdated).calledWith(assembly, pole2, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).calledWith(assembly, pole1, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).calledWith(assembly, pole2, 1, 1)
       expectedNumCalls = 4
     } else {
-      expect(userActions.onCircuitWiresPossiblyUpdated).not.called()
+      expect(userActions.onWiresPossiblyUpdated).not.called()
       expectedNumCalls = 2
     }
   })
@@ -828,7 +828,7 @@ describe("belt dragging", () => {
     fakeNoopDrag(belt)
 
     expect(userActions.onEntityPossiblyUpdated).not.called()
-    expect(userActions.onCircuitWiresPossiblyUpdated).not.called()
+    expect(userActions.onWiresPossiblyUpdated).not.called()
     expect(userActions.onEntityCreated).not.called()
 
     player.build_from_cursor({ position: pos2, direction: belt.direction })
@@ -866,7 +866,7 @@ describe("belt dragging", () => {
     player.mine_entity(belt)
 
     expect(userActions.onEntityPossiblyUpdated).not.called()
-    expect(userActions.onCircuitWiresPossiblyUpdated).not.called()
+    expect(userActions.onWiresPossiblyUpdated).not.called()
     expect(userActions.onEntityCreated).not.called()
     expect(userActions.onEntityDeleted).calledWith(assembly, expect._, 1, 1)
   })

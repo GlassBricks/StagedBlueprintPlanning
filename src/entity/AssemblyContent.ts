@@ -13,8 +13,8 @@ import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
 import { isEmpty, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
-import { AsmCircuitConnection, circuitConnectionEquals } from "./AsmCircuitConnection"
 import { AssemblyEntity, StageNumber, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
+import { AsmCircuitConnection, circuitConnectionEquals } from "./circuit-connection"
 import { EntityIdentification } from "./Entity"
 import {
   EntityPrototypeInfo,
@@ -67,10 +67,10 @@ export interface AssemblyContent {
 }
 
 export const enum CableAddResult {
-  Added,
-  Error,
-  AlreadyExists,
-  MaxConnectionsReached,
+  Added = "Added",
+  Error = "Error",
+  AlreadyExists = "AlreadyExists",
+  MaxConnectionsReached = "MaxConnectionsReached",
 }
 const MaxCableConnections = 5 // hard-coded in game
 
@@ -438,6 +438,29 @@ class AssemblyContentImpl implements MutableAssemblyContent {
 
   __tostring(): string {
     return `AssemblyContent(${this.countNumEntities()} entities)`
+  }
+}
+export function _assertCorrect(content: AssemblyContent): void {
+  assume<AssemblyContentImpl>(content)
+  const { entities } = content
+  for (const [entity, points] of content.circuitConnections) {
+    assert(entities.has(entity))
+
+    for (const [otherEntity, connections] of points) {
+      assert(entities.has(otherEntity))
+      for (const connection of connections) {
+        assert(content.circuitConnections.get(otherEntity)!.get(entity)!.has(connection))
+      }
+    }
+  }
+
+  for (const [entity, connections] of content.cableConnections) {
+    assert(entities.has(entity))
+
+    for (const otherEntity of connections) {
+      assert(entities.has(otherEntity))
+      assert(content.cableConnections.get(otherEntity)!.has(entity))
+    }
   }
 }
 

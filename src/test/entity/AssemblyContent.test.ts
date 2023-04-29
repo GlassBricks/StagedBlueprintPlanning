@@ -10,9 +10,14 @@
  */
 
 import expect from "tstl-expect"
-import { AsmCircuitConnection } from "../../entity/AsmCircuitConnection"
-import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
+import {
+  _assertCorrect,
+  CableAddResult,
+  MutableAssemblyContent,
+  newAssemblyContent,
+} from "../../entity/AssemblyContent"
 import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { AsmCircuitConnection } from "../../entity/circuit-connection"
 import { LuaEntityInfo } from "../../entity/Entity"
 import { getPasteRotatableType, PasteCompatibleRotationType } from "../../entity/entity-prototype-info"
 import { setupTestSurfaces } from "../assembly/Assembly-mock"
@@ -21,6 +26,9 @@ import { createRollingStocks } from "./createRollingStock"
 let content: MutableAssemblyContent
 before_each(() => {
   content = newAssemblyContent()
+})
+after_each(() => {
+  _assertCorrect(content)
 })
 const surfaces = setupTestSurfaces(1)
 
@@ -338,7 +346,7 @@ describe("connections", () => {
 
     test("removeCableConnection removes connection", () => {
       content.addCableConnection(entity1, entity2)
-      content.removeCableConnection(entity1, entity2)
+      content.removeCableConnection(entity2, entity1)
 
       expect(content.getCableConnections(entity1) ?? nil).to.equal(nil)
       expect(content.getCableConnections(entity2) ?? nil).to.equal(nil)
