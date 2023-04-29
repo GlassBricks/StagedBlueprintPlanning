@@ -11,7 +11,9 @@
 
 import { _migrateAssemblyContent_0_18_0 } from "../entity/AssemblyContent"
 import { _migrateEntity_0_17_0, StageNumber } from "../entity/AssemblyEntity"
+import { getEntityPrototypeInfo } from "../entity/entity-prototype-info"
 import { Migrations } from "../lib/migration"
+import { updateWiresFromWorld } from "./assembly-updates"
 import { UserAssembly } from "./AssemblyDef"
 import { updateWorldEntities, updateWorldEntitiesOnLastStageChanged } from "./world-entity-updates"
 
@@ -67,6 +69,18 @@ Migrations.to("0.18.0", () => {
       if (entity.isRollingStock()) {
         entity.setLastStageUnchecked(entity.firstStage)
         updateWorldEntitiesOnLastStageChanged(assembly, entity, nil)
+      }
+    }
+  }
+})
+
+Migrations.to("0.20.0", () => {
+  // update all power switches
+  const nameToType = getEntityPrototypeInfo().nameToType
+  for (const [, assembly] of getAssembliesForMigration()) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      if (nameToType.get(entity.firstValue.name) == "power-switch") {
+        updateWiresFromWorld(assembly, entity, assembly.lastStageFor(entity))
       }
     }
   }
