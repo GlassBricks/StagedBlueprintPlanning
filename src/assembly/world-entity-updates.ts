@@ -21,6 +21,9 @@ import { isPreviewEntity } from "../entity/entity-prototype-info"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
+import { RegisterClass } from "../lib"
+import { LoopTask, submitTask } from "../lib/task"
+import { L_GuiActions } from "../locale"
 import { Assembly } from "./AssemblyDef"
 import {
   deleteAllHighlights,
@@ -306,11 +309,7 @@ export function rebuildStage(assembly: Assembly, stage: StageNumber): void {
     refreshWorldEntityAtStage(assembly, entity, stage)
   }
 }
-export function rebuildAllStages(assembly: Assembly): void {
-  for (const stage of $range(1, assembly.numStages())) {
-    rebuildStage(assembly, stage)
-  }
-}
+
 export function disableAllEntitiesInStage(assembly: Assembly, stage: StageNumber): void {
   const surface = assembly.getSurface(stage)
   if (!surface) return
@@ -326,6 +325,26 @@ export function enableAllEntitiesInStage(assembly: Assembly, stage: StageNumber)
   for (const i of $range(1, arr.length)) {
     arr[i - 1].active = true
   }
+}
+
+@RegisterClass("RebuildAllStagesTask")
+class RebuildAllStagesTask extends LoopTask {
+  constructor(private assembly: Assembly) {
+    super(assembly.numStages())
+  }
+  public override getTitle(): LocalisedString {
+    return [L_GuiActions.RebuildAllStages]
+  }
+  protected override doStep(i: number): void {
+    rebuildStage(this.assembly, i + 1)
+  }
+  protected getTitleForStep(step: number): LocalisedString {
+    return [L_GuiActions.RebuildingStage, this.assembly.getStageName(step + 1)]
+  }
+}
+
+export function rebuildAllStages(assembly: Assembly): void {
+  submitTask(new RebuildAllStagesTask(assembly))
 }
 
 export const _mockable = true
