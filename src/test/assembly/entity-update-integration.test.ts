@@ -998,7 +998,7 @@ test("pasting rotate blueprint with a rotated fluid tank", () => {
   expect(entity1!.getWorldEntity(1)).toEqual(tank)
 })
 
-test.only("connecting power switch", () => {
+test("connecting power switch", () => {
   const pole = buildEntity(2, { name: "medium-electric-pole", position: Pos(0, 0) })
   const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
 
@@ -1015,7 +1015,7 @@ test.only("connecting power switch", () => {
   assertEntityCorrect(powerSwitch, false)
 })
 
-test.only("connecting power switch to new pole in higher stage", () => {
+test("connecting power switch to new pole in higher stage", () => {
   const pole1 = buildEntity(1, { name: "medium-electric-pole", position: Pos(0, 0) })
   const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
   const pole2 = buildEntity(2, { name: "medium-electric-pole", position: Pos(4, 0) })

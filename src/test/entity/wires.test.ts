@@ -439,7 +439,11 @@ describe("power switch connections", () => {
       )
       expect(hasDiff2).to.be(true)
       expect(maxConnectionsReached2).toBeFalsy()
-      expect(additionalEntitiesToUpdate).toBe([powerSwitchEntity])
+      if (from == "pole") {
+        expect(additionalEntitiesToUpdate).toEqual([powerSwitchEntity])
+      } else {
+        expect(additionalEntitiesToUpdate).toEqual(nil)
+      }
 
       const connections = content.getCircuitConnections(powerSwitchEntity)?.get(otherPoleEntity)
       expect(content.getCircuitConnections(powerSwitchEntity)?.get(poleEntity)).toBeNil()

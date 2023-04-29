@@ -152,8 +152,11 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
 }
 function assertNewUpdated(entity: AssemblyEntity) {
   expect(worldUpdater.updateNewWorldEntitiesWithoutWires).calledWith(assembly, entity)
-  expect(worldUpdater.updateWireConnections).calledWith(assembly, entity)
-  expectedWuCalls = 2
+  expectedWuCalls = 1
+  if (assembly.content.getCircuitConnections(entity) || assembly.content.getCableConnections(entity)) {
+    expect(worldUpdater.updateWireConnections).calledWith(assembly, entity)
+    expectedWuCalls++
+  }
 }
 
 test("addNewEntity", () => {
