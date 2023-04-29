@@ -40,11 +40,11 @@ const userActions = moduleMock(_userActions, false)
 
 before_each(() => {
   expectedNumCalls = 1
-  assemblyUpdates.trySetFirstStage.invokes((assembly, entity, stage) => {
+  assemblyUpdates.trySetFirstStage.invokes((_assembly, entity, stage) => {
     entity.setFirstStageUnchecked(stage)
     return StageMoveResult.Updated
   })
-  assemblyUpdates.trySetLastStage.invokes((assembly, entity, stage) => {
+  assemblyUpdates.trySetLastStage.invokes((_assembly, entity, stage) => {
     entity.setLastStageUnchecked(stage)
     return StageMoveResult.Updated
   })
