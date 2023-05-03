@@ -6,7 +6,6 @@
 
 - Hack into Factorio's undo system to get rid of "settings remnants"
 - Make more things undoable
-- Force-delete entity input/selection tool
 - Support some modded entities?
 
 - Possible alternate editing behaviors
