@@ -163,5 +163,5 @@ export namespace Colors {
 }
 
 export const enum OtherConstants {
-  DefaultNumStages = 5,
+  DefaultNumStages = 3,
 }
