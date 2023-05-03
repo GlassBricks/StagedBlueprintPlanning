@@ -84,10 +84,16 @@ export declare const enum L_Controls {
   GoToNextNotableStage = "controls.bp100:go-to-next-notable-stage",
   /** Move entity to current stage */
   MoveToThisStage = "controls.bp100:move-to-this-stage",
+  /** Force delete entity */
+  ForceDelete = "controls.bp100:force-delete",
   /** Stage move tool: select next stage */
   StageSelectNext = "controls.bp100:stage-select-next",
   /** Stage move tool: select previous stage */
   StageSelectPrevious = "controls.bp100:stage-select-previous",
+}
+export declare const enum L_ControlsDescription {
+  /** Delete an entity even if it is not in the current stage. */
+  ForceDelete = "controls-description.bp100:force-delete",
 }
 export declare const enum L_Bp100 {
   /** __1__ (preview) */

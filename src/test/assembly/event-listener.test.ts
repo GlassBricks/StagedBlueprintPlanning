@@ -447,6 +447,22 @@ describe("move to this stage", () => {
   })
 })
 
+test("force delete custom input", () => {
+  const entity = surface.create_entity({
+    name: "inserter",
+    position: pos,
+    force: "player",
+  })
+  expect(entity).to.be.any()
+  player.selected = entity
+  Events.raiseFakeEvent(CustomInputs.ForceDelete, {
+    player_index: player.index,
+    input_name: CustomInputs.ForceDelete,
+    cursor_position: player.position,
+  })
+  expect(userActions.onEntityForceDeleteUsed).calledWith(assembly, entity!, 1)
+})
+
 describe("stage move tool", () => {
   before_each(() => {
     let i = 1

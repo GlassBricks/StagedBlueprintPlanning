@@ -895,6 +895,20 @@ Events.onAll({
   on_player_reverse_selected_area: checkCleanupToolReverse,
 })
 
+// Force delete custom input
+
+Events.on(CustomInputs.ForceDelete, (e) => {
+  const player = game.get_player(e.player_index)!
+  const entity = player.selected
+  if (!entity) return
+  const stage = getStageAtEntityOrPreview(entity)
+  if (!stage) return
+  const { name, position } = entity
+  if (onEntityForceDeleteUsed(stage.assembly, entity, stage.stageNumber)) {
+    player.play_sound({ path: "entity-mined/" + name, position })
+  }
+})
+
 // Move to this stage custom input
 Events.on(CustomInputs.MoveToThisStage, (e) => {
   const player = game.get_player(e.player_index)!

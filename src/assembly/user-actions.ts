@@ -289,11 +289,13 @@ export function onEntityMarkedForUpgrade(
 export function onCleanupToolUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
   onTryFixEntity(assembly, entity, stage, true)
 }
-export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): void {
+export function onEntityForceDeleteUsed(assembly: Assembly, entity: LuaEntity, stage: StageNumber): boolean {
   const asmEntity = assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage)
   if (asmEntity) {
     forceDeleteEntity(assembly, asmEntity)
+    return true
   }
+  return false
 }
 export function onEntityDied(assembly: Assembly, entity: LuaEntityInfo, stage: StageNumber): void {
   const asmEntity = assembly.content.findCompatibleWithLuaEntity(entity, nil, stage)

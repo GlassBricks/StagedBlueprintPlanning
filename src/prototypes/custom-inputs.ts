@@ -66,13 +66,38 @@ const moveToThisStage: CustomInputPrototype = {
   key_sequence: "CONTROL + ALT + mouse-button-3",
   order: "b[navigate]-e[move-to-this-stage]",
 }
+const forceDelete: CustomInputPrototype = {
+  name: CustomInputs.ForceDelete,
+  type: "custom-input",
+
+  action: "lua",
+  key_sequence: "CONTROL + SHIFT + mouse-button-2",
+  order: "c[build]-a[force-delete]",
+}
+const stageSelectNext: CustomInputPrototype = {
+  name: CustomInputs.StageSelectNext,
+  type: "custom-input",
+
+  action: "lua",
+  key_sequence: "SHIFT + mouse-wheel-down",
+  order: "d[tools]-g[stage-move-tool]-a[next]",
+}
+const stageSelectPrevious: CustomInputPrototype = {
+  name: CustomInputs.StageSelectPrevious,
+  type: "custom-input",
+
+  action: "lua",
+  key_sequence: "SHIFT + mouse-wheel-up",
+  order: "d[tools]-g[stage-move-tool]-b[previous]",
+}
+
 const nextAssembly: CustomInputPrototype = {
   name: CustomInputs.NextAssembly,
   type: "custom-input",
 
   key_sequence: "",
   action: "lua",
-  order: "b[navigate]-f[next-assembly]",
+  order: "e[navigate-assembly]-a[next-assembly]",
 }
 const previousAssembly: CustomInputPrototype = {
   name: CustomInputs.PreviousAssembly,
@@ -80,24 +105,7 @@ const previousAssembly: CustomInputPrototype = {
 
   key_sequence: "",
   action: "lua",
-  order: "b[navigate]-g[previous-assembly]",
-}
-
-const stageSelectNext: CustomInputPrototype = {
-  name: CustomInputs.StageSelectNext,
-  type: "custom-input",
-
-  action: "lua",
-  key_sequence: "SHIFT + mouse-wheel-down",
-  order: "a[tools]-g[stage-move-tool]-a[next]",
-}
-const stageSelectPrevious: CustomInputPrototype = {
-  name: CustomInputs.StageSelectPrevious,
-  type: "custom-input",
-
-  key_sequence: "SHIFT + mouse-wheel-up",
-  action: "lua",
-  order: "a[tools]-g[stage-move-tool]-b[previous]",
+  order: "e[navigate-assembly]-b[previous-assembly]",
 }
 
 data.extend([
@@ -108,6 +116,7 @@ data.extend([
   goToFirstStage,
   goToNextNotableStage,
   moveToThisStage,
+  forceDelete,
   stageSelectNext,
   stageSelectPrevious,
 ])

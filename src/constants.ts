@@ -57,7 +57,6 @@ export const enum Sprites {
   CollapseLeft = "bp100:collapse-left",
   CollapseLeftDark = "bp100:collapse-left-dark",
   BlueprintStages = "bp100:blueprint-stages",
-  StagedDeleteTool = "bp100:staged-delete-tool",
 }
 
 export const enum CustomInputs {
@@ -70,6 +69,8 @@ export const enum CustomInputs {
   GoToNextNotableStage = "bp100:go-to-next-notable-stage",
 
   MoveToThisStage = "bp100:move-to-this-stage",
+
+  ForceDelete = "bp100:force-delete",
 
   StageSelectNext = "bp100:stage-select-next",
   StageSelectPrevious = "bp100:stage-select-previous",
