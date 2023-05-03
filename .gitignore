@@ -136,6 +136,6 @@ factorio/
 
 *.xcf
 
-**/*.hide.ts
+src/**/*.hide.*
 
 factorio-test-data/
