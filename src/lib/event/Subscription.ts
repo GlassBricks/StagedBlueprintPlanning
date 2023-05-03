@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -15,10 +15,15 @@ export interface Unsubscribable {
   close(): void
 }
 
-export class UnsubscriptionError extends Error {
+export class UnsubscriptionError {
+  message: string
   constructor(readonly errors: any[]) {
-    super(errors.map((err, i) => `${i + 1}) ${err.toString()}`).join("\n  "))
-    this.name = "UnsubscriptionError"
+    // super(errors.map((err, i) => `${i + 1}) ${err.toString()}`).join("\n  "))
+    this.message = errors.map((err, i) => `${i + 1}) ${err.toString()}`).join("\n  ")
+  }
+
+  __tostring(): string {
+    return this.message
   }
 }
 

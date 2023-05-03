@@ -185,7 +185,7 @@ function updateCableConnections(
   if (luaEntity.type != "electric-pole") return
   const assemblyConnections = content.getCableConnections(entity)
 
-  const matching = new Set<AssemblyEntity>()
+  const matching = new LuaSet<AssemblyEntity>()
   const existingConnections = (luaEntity.neighbours as { copper?: LuaEntity[] }).copper
   if (existingConnections) {
     for (const otherLuaEntity of existingConnections) {
