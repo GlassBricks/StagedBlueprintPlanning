@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AssemblyEntity, entityHasErrorAt, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
 import { EntityPrototypeInfo, OnEntityPrototypesLoaded } from "../entity/entity-prototype-info"
 import { AnyRender, assertNever, SpriteRender } from "../lib"
 import { BBox, Position } from "../lib/geometry"
@@ -180,7 +180,7 @@ function updateHighlight(
 export function updateErrorOutlines(assembly: Assembly, entity: AssemblyEntity): void {
   let hasErrorAnywhere = false
   for (const stage of $range(entity.firstStage, assembly.lastStageFor(entity))) {
-    const hasError = entityHasErrorAt(entity, stage)
+    const hasError = entity.hasErrorAt(stage)
     updateHighlight(entity, stage, assembly.getSurface(stage)!, "errorOutline", hasError)
     hasErrorAnywhere ||= hasError
   }

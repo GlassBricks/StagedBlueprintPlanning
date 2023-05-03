@@ -80,8 +80,6 @@ export declare const enum L_Controls {
   PreviousAssembly = "controls.bp100:previous-assembly",
   /** Go to entity's first stage */
   GoToFirstStage = "controls.bp100:go-to-first-stage",
-  /** Go to entity's next notable stage */
-  GoToNextNotableStage = "controls.bp100:go-to-next-notable-stage",
   /** Move entity to current stage */
   MoveToThisStage = "controls.bp100:move-to-this-stage",
   /** Force delete entity */

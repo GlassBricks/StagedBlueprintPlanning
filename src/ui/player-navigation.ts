@@ -18,7 +18,7 @@ import { getAllAssemblies } from "../assembly/UserAssembly"
 import { CustomInputs } from "../constants"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
-import { getAssemblyEntityOfEntity, getNextNotableStage } from "./entity-util"
+import { getAssemblyEntityOfEntity } from "./entity-util"
 import { playerCurrentStage, teleportToAssembly, teleportToStage } from "./player-current-stage"
 
 const Events = ProtectedEvents
@@ -72,24 +72,6 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   const firstStage = stage!.assembly.getStage(firstStageNum)
   assert(firstStage, "First stage not found")
   teleportToStage(player, firstStage!)
-})
-
-Events.on(CustomInputs.GoToNextNotableStage, (e) => {
-  const player = game.get_player(e.player_index)!
-  const entity = player.selected
-  if (!entity) return
-  const [stage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
-  if (!assemblyEntity) {
-    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
-  }
-  const nextNotableStageNum = getNextNotableStage(stage!.assembly, stage!.stageNumber, assemblyEntity)
-  if (nextNotableStageNum == stage!.stageNumber) {
-    return notifyError(player, [L_Interaction.EntitySameInAllStages], true)
-  }
-
-  const nextNotableStage = stage!.assembly.getStage(nextNotableStageNum)
-  assert(nextNotableStage, "stage not found")
-  teleportToStage(player, nextNotableStage!)
 })
 
 function goToBuildRelative(event: CustomInputEvent, diff: number, ErrorLocale: string) {

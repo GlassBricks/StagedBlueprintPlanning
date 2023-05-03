@@ -45,18 +45,11 @@ const previousStage: CustomInputPrototype = {
   key_sequence: "CONTROL + mouse-wheel-up",
   order: "b[navigate]-b[previous-stage]",
 }
-const goToNextNotableStage: CustomInputPrototype = {
-  type: "custom-input",
-  name: CustomInputs.GoToNextNotableStage,
-  action: "lua",
-  key_sequence: "CONTROL + mouse-button-3",
-  order: "b[navigate]-c[go-to-next-notable-stage]",
-}
 const goToFirstStage: CustomInputPrototype = {
   type: "custom-input",
   name: CustomInputs.GoToFirstStage,
   action: "lua",
-  key_sequence: "CONTROL + SHIFT + mouse-button-3",
+  key_sequence: "CONTROL + mouse-button-3",
   order: "b[navigate]-d[go-to-first-stage]",
 }
 const moveToThisStage: CustomInputPrototype = {
@@ -114,7 +107,6 @@ data.extend([
   nextAssembly,
   previousAssembly,
   goToFirstStage,
-  goToNextNotableStage,
   moveToThisStage,
   forceDelete,
   stageSelectNext,

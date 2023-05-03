@@ -81,6 +81,8 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 
   isPastLastStage(stage: StageNumber): boolean
 
+  hasErrorAt(stage: StageNumber): boolean
+
   setTypeProperty(this: UndergroundBeltAssemblyEntity, direction: "input" | "output"): void
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
@@ -284,6 +286,10 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   isPastLastStage(stage: StageNumber): boolean {
     return this.lastStage != nil && stage > this.lastStage
+  }
+
+  hasErrorAt(stage: StageNumber): boolean {
+    return this.isInStage(stage) && this.getWorldEntity(stage) == nil
   }
 
   setTypeProperty(this: AssemblyEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
@@ -815,15 +821,6 @@ export function isWorldEntityAssemblyEntity(luaEntity: LuaEntity): boolean {
     luaEntity.has_flag("player-creation") &&
     !excludedTypes[luaEntity.type]
   )
-}
-
-export function entityHasErrorAt(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  return stageNumber >= entity.firstStage && entity.getWorldEntity(stageNumber) == nil
-}
-
-/** Used by custom input */
-export function isNotableStage(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
-  return entity.firstStage == stageNumber || entity.hasStageDiff(stageNumber) || entityHasErrorAt(entity, stageNumber)
 }
 
 /**

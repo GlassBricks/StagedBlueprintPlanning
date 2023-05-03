@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Stage, UserAssembly } from "../assembly/AssemblyDef"
+import { Stage } from "../assembly/AssemblyDef"
 import { getStageAtSurface } from "../assembly/UserAssembly"
-import { AssemblyEntity, isNotableStage, StageNumber } from "../entity/AssemblyEntity"
+import { AssemblyEntity } from "../entity/AssemblyEntity"
 
 export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
   const stage = getStageAtSurface(entity.surface.index)
@@ -19,17 +19,4 @@ export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[St
   const found = stage.assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage.stageNumber)
   if (found) return $multi(stage, found)
   return $multi()
-}
-
-export function getNextNotableStage(
-  assembly: UserAssembly,
-  currentStageNum: StageNumber,
-  entity: AssemblyEntity,
-): StageNumber {
-  const numStages = assembly.numStages()
-  for (let i = 0; i < numStages - 1; i++) {
-    const testStage = ((currentStageNum + i) % numStages) + 1
-    if (isNotableStage(entity, testStage)) return testStage
-  }
-  return currentStageNum
 }
