@@ -1,12 +1,12 @@
 {
+  "$schema": "https://raw.githubusercontent.com/TypeScriptToLua/TypeScriptToLua/master/tsconfig-schema.json",
   "extends": "./tsconfig.json",
   "include": [
     "src/control.ts", "src/data*.ts", "src/settings*.ts", "src/**/*.d.ts", "tstlPlugin/*.d.ts"
   ],
   "exclude": ["src/**/test/**", "src/**/*-mock.ts"],
   "tstl": {
-    "luaTarget": "5.2",
-    "noImplicitSelf": true,
+    "noResolvePaths": [],
     "sourceMapTraceback": false,
     "luaPlugins": [
       {
@@ -18,6 +18,7 @@
         "warnUseNil": true,
         "warnUseDoubleEquals": true
       }
-    ]
-  },
+    ],
+    "luaLibImport": "require-minimal"
+  }
 }

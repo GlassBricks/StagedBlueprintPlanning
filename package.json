@@ -33,7 +33,7 @@
     "typescript-tstl-plugin": "^0.3.2"
   },
   "scripts": {
-    "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\" \"!src/utils/base64.lua\"",
+    "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\"",
     "build:locale": "ts-node scripts/gen-locale-defs.ts",
     "build:gui-specs": "ts-node scripts/gen-gui-specs.ts",
     "build:scripts": "conc \"npm:build:locale\" \"npm:build:gui-specs\"",
