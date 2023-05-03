@@ -5,6 +5,7 @@ Date: ????
     - Added a "force-delete" custom input, which allows mining entities even if they are not in the current stage.
   Changes:
     - Changed the initial number of stages for new builds to 3.
+    - Removed rarely used "go to next notable stage" custom input in favor of "go to entity's first stage" custom input.
 ---------------------------------------------------------------------------------------------------
 Version: 0.21.0
 Date: 2023-04-29
