@@ -41,10 +41,10 @@ function transformAccessSplitCall(context: TransformationContext, node: ts.CallE
 
   return luaCall
 }
-function createPlugin(options: { hasTests: boolean }): Plugin {
+// noinspection JSUnusedGlobalSymbols
+export default function plugin(options: { hasTests: boolean }): Plugin {
   const visitors: Visitors = {
     [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
-      // handle special case when call = __getTestFiles(), replace with list of files
       const type = context.checker.getTypeAtLocation(node.expression)
       if (type.getProperty("__accessSplitBrand")) {
         return transformAccessSplitCall(context, node)
@@ -101,5 +101,3 @@ function createPlugin(options: { hasTests: boolean }): Plugin {
     beforeEmit,
   }
 }
-// noinspection JSUnusedGlobalSymbols
-export default createPlugin
