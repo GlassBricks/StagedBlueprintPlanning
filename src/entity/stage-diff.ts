@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { deepCompare, Events, Mutable, nilIfEmpty, shallowCopy } from "../lib"
+import { deepCompare, Events, Mutable, shallowCopy } from "../lib"
 import { DiffValue, getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 import { Entity } from "./Entity"
 
@@ -26,16 +26,20 @@ Events.onInitOrLoad(() => {
   nilPlaceholder = getNilPlaceholder()
 })
 export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<StageDiff<E>> | nil {
-  const changes: any = {}
+  let changes: any = nil
   for (const [key, value] of pairs(above)) {
     if (!ignoredProps.has(key) && !deepCompare(value, below[key])) {
+      changes ??= {}
       changes[key] = value
     }
   }
   for (const [key] of pairs(below)) {
-    if (!ignoredProps.has(key) && above[key] == nil) changes[key] = nilPlaceholder
+    if (!ignoredProps.has(key) && above[key] == nil) {
+      changes ??= {}
+      changes[key] = nilPlaceholder
+    }
   }
-  return nilIfEmpty(changes)
+  return changes
 }
 
 export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: StageDiff<E>): void {
@@ -54,9 +58,10 @@ export function getDiffDiff<T extends Entity>(
   newDiff: StageDiff<T> | nil,
 ): StageDiff<T> | nil {
   if (oldDiff == nil) return newDiff && shallowCopy(newDiff)
-  const result: any = {}
+  let result: any = nil
   if (newDiff == nil) {
     for (const [key] of pairs(oldDiff)) {
+      result ??= {}
       const value = previousValue[key]
       result[key] = value != nil ? value : nilPlaceholder
     }
@@ -66,10 +71,11 @@ export function getDiffDiff<T extends Entity>(
     }
     for (const [key] of pairs(oldDiff)) {
       if (newDiff[key] == nil) {
+        result ??= {}
         const value = previousValue[key]
         result[key] = value != nil ? value : nilPlaceholder
       }
     }
   }
-  return nilIfEmpty(result)
+  return result
 }

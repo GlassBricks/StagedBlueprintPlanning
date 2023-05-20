@@ -48,11 +48,10 @@ export function shallowCompare<T>(a: T, b: T): boolean {
   return true
 }
 
+const next: (obj: object) => any = _G.next
+
 export function isEmpty(obj: object): boolean {
-  return next(obj)[0] == nil
-}
-export function nilIfEmpty<T extends object>(obj: T): T | nil {
-  return next(obj)[0] && obj
+  return next(obj) == nil
 }
 
 export function assertNever(value: never): never {

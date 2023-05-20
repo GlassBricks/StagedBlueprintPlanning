@@ -25,7 +25,6 @@ import {
   globalEvent,
   Mutable,
   MutableProperty,
-  nilIfEmpty,
   property,
   Property,
   RegisterClass,
@@ -163,7 +162,7 @@ class UserAssemblyImpl implements UserAssembly {
       })
     }
 
-    newStage.stageBlueprintSettings.icons.set(nilIfEmpty(icons))
+    newStage.stageBlueprintSettings.icons.set(icons[0] && icons)
 
     table.insert(this.stages as unknown as Stage[], stage, newStage)
     // update stages
