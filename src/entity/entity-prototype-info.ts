@@ -153,7 +153,8 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
   "fluid-wagon",
   "locomotive",
 )
-const checkExactlyForMatchTypes = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
+
+export const allowOverlapDifferentDirection = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
 export function getEntityPrototypeInfo(): EntityPrototypeInfo {
   return entityPrototypeInfo
@@ -183,10 +184,6 @@ export function getCompatibleNames(entityName: string): readonly string[] | nil 
 /** For straight rails, paste rotation only applies to non-diagonal rails. */
 export function getPasteRotatableType(entityName: string): PasteCompatibleRotationType | nil {
   return pasteCompatibleRotations.get(entityName)
-}
-export function shouldCheckEntityExactlyForMatch(entityName: string): boolean {
-  const type = nameToType.get(entityName)
-  return type != nil && checkExactlyForMatchTypes.has(type)
 }
 export function isRollingStockType(entityName: string): boolean {
   const type = nameToType.get(entityName)

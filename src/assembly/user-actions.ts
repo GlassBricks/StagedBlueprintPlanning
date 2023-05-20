@@ -12,7 +12,7 @@
 import { Colors, L_Game } from "../constants"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
 import { LuaEntityInfo } from "../entity/Entity"
-import { shouldCheckEntityExactlyForMatch } from "../entity/entity-prototype-info"
+import { allowOverlapDifferentDirection } from "../entity/entity-prototype-info"
 import { assertNever, deepCompare } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -84,19 +84,26 @@ export function onEntityCreated(
   entity: LuaEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
-  knownBpValue?: BlueprintEntity,
 ): UndoAction | nil {
-  const { content } = assembly
-
-  const asmEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)
+  const asmEntity = assembly.content.findCompatibleWithLuaEntity(entity, nil, stage)
 
   if (asmEntity) {
     return onEntityOverbuilt(assembly, asmEntity, entity, stage, byPlayer)
   }
+  return newEntityAdded(assembly, entity, stage, byPlayer)
+}
 
-  const entityName = entity.name
-  if (!shouldCheckEntityExactlyForMatch(entityName) && entity.supports_direction) {
-    const existingDifferentDirection = content.findCompatibleByProps(entityName, entity.position, nil, stage)
+function newEntityAdded(
+  assembly: Assembly,
+  entity: LuaEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex | nil,
+  knownBpValue?: BlueprintEntity,
+): UndoAction | nil {
+  const entityType = entity.type
+
+  if (!allowOverlapDifferentDirection.has(entityType) && entity.supports_direction) {
+    const existingDifferentDirection = assembly.content.findCompatibleByProps(entity.name, entity.position, nil, stage)
     if (existingDifferentDirection) {
       entity.destroy()
       createNotification(existingDifferentDirection, byPlayer, [L_Interaction.CannotBuildDifferentDirection], false)
@@ -104,8 +111,9 @@ export function onEntityCreated(
     }
   }
 
-  // in the future: more undo actions
   addNewEntity(assembly, entity, stage, knownBpValue)
+
+  // possibly more undo actions in the future
 }
 
 /** Also asserts that stage > entity's first stage. */
@@ -119,7 +127,7 @@ function getCompatibleEntityOrAdd(
 ): AssemblyEntity | nil {
   const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
   if (!compatible || stage < compatible.firstStage) {
-    onEntityCreated(assembly, entity, stage, byPlayer, knownBpValue)
+    newEntityAdded(assembly, entity, stage, byPlayer, knownBpValue)
     return nil
   }
   compatible.replaceWorldEntity(stage, entity) // just in case

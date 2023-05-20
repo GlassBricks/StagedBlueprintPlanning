@@ -135,13 +135,6 @@ after_each(() => {
 })
 
 describe("onEntityCreated", () => {
-  test("can add a simple entity", () => {
-    const luaEntity = createWorldEntity(2)
-    const knownValue: any = { foo: "bar" }
-    userActions.onEntityCreated(assembly, luaEntity, 2, playerIndex, knownValue)
-    expect(assemblyUpdates.addNewEntity).calledWith(assembly, luaEntity, 2, knownValue)
-  })
-
   test.each([2, 3])("at same or higher stage %d sets entity and calls refreshEntityAtStage", (newStage) => {
     const { luaEntity, entity } = addEntity(2)
     userActions.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
@@ -331,7 +324,7 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
 ]
 
 describe("onEntityPossiblyUpdated", () => {
-  test("if not in assembly, defaults to add behaviour", () => {
+  test("if not in assembly, adds entity", () => {
     const luaEntity = createWorldEntity(2)
     const knownValue: any = { foo: "bar" }
     userActions.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex, knownValue)
