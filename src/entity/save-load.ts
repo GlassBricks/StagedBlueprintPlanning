@@ -147,6 +147,8 @@ OnEntityPrototypesLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 
+const rawset = _G.rawset
+
 function createEntity(
   surface: LuaSurface,
   position: MapPosition,
@@ -158,7 +160,7 @@ function createEntity(
   const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity)
   if (!luaEntity) return nil
   // const type = luaEntity.type
-  const type = nameToType.get(entity.name)
+  const type = nameToType.get(entity.name)!
   if (type == "underground-belt") {
     if (luaEntity.belt_to_ground_type != entity.type) {
       luaEntity.destroy()
@@ -177,6 +179,11 @@ function createEntity(
     }
   }
   if (entity.items) createItems(luaEntity, entity.items)
+
+  // performance hack: cache name, type
+  rawset(luaEntity, "name", entity.name)
+  rawset(luaEntity, "type", type)
+
   return luaEntity
 }
 
