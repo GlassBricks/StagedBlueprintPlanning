@@ -423,18 +423,55 @@ describe("tryMoveEntity", () => {
   })
 })
 
-test("updateNewEntityWithoutWires", () => {
-  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
-  assembly.content.add(entity)
-  WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity)
-  expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
-  expect(wireUpdater.updateWireConnectionsAtStage).not.called()
+describe("updateNewEntityWithoutWires", () => {
+  test("without updating firstStage", () => {
+    const entity = createAssemblyEntity(
+      { name: "inserter" },
+      Pos(0, 0),
+      defines.direction.north as defines.direction,
+      2,
+    )
+    assembly.content.add(entity)
+    WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity, false)
+    expect(highlighter.updateAllHighlights).not.called()
+    expect(wireUpdater.updateWireConnectionsAtStage).not.called()
+    expect(entity.getWorldOrPreviewEntity(2)).toBeNil()
+  })
+  test("with updating firstStage", () => {
+    const entity = createAssemblyEntity(
+      { name: "inserter" },
+      Pos(0, 0),
+      defines.direction.north as defines.direction,
+      2,
+    )
+    assembly.content.add(entity)
+    WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity, true)
+    // expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
+    expect(highlighter.updateAllHighlights).not.called()
+    expect(wireUpdater.updateWireConnectionsAtStage).not.called()
+    expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
+  })
+  test("updates highlights if there are errors", () => {
+    const entity = createAssemblyEntity(
+      { name: "inserter" },
+      Pos(0, 0),
+      defines.direction.north as defines.direction,
+      2,
+    )
+    assembly.content.add(entity)
+    surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
+    WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity, false)
+    expect(highlighter.updateAllHighlights).calledWith(assembly, entity)
+    expect(wireUpdater.updateWireConnectionsAtStage).not.called()
+    expect(entity.getWorldOrPreviewEntity(2)).toBeNil()
+    expect(findPreviewEntity(3)).not.toBeNil()
+  })
 })
 
 test("updateWireConnections", () => {
   const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
   assembly.content.add(entity)
-  WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity)
+  WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity, true) // note: actually updating first stage, so below works
   WorldUpdater.updateWireConnections(assembly, entity)
   for (const i of $range(2, assembly.lastStageFor(entity))) {
     expect(wireUpdater.updateWireConnectionsAtStage).calledWith(assembly.content, entity, i)

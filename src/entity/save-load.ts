@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Prototypes } from "../constants"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
@@ -319,10 +318,10 @@ function createPreviewEntity(
   surface: LuaSurface,
   position: Position,
   apparentDirection: defines.direction,
-  entityName: string,
+  previewName: string,
 ): LuaEntity | nil {
   const entity = surface.create_entity({
-    name: Prototypes.PreviewEntityPrefix + entityName,
+    name: previewName,
     position,
     direction: apparentDirection,
     force: "player",

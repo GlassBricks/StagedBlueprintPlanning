@@ -18,7 +18,7 @@ import {
 } from "../../assembly/assembly-updates"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { _doUndoAction } from "../../assembly/undo"
-import { L_Game } from "../../constants"
+import { L_Game, Prototypes } from "../../constants"
 import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
@@ -455,7 +455,12 @@ describe("onWiresPossiblyUpdated", () => {
 })
 
 function createPreview(luaEntity: LuaEntity) {
-  return createPreviewEntity(luaEntity.surface, luaEntity.position, luaEntity.direction, luaEntity.name)!
+  return createPreviewEntity(
+    luaEntity.surface,
+    luaEntity.position,
+    luaEntity.direction,
+    Prototypes.PreviewEntityPrefix + luaEntity.name,
+  )!
 }
 
 describe("onCleanupToolUsed", () => {

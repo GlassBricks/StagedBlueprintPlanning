@@ -150,8 +150,8 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   }
   return entity
 }
-function assertNewUpdated(entity: AssemblyEntity) {
-  expect(worldUpdater.updateNewWorldEntitiesWithoutWires).calledWith(assembly, entity)
+function assertNewUpdated(entity: AssemblyEntity, firstStageUpdated: boolean = false) {
+  expect(worldUpdater.updateNewWorldEntitiesWithoutWires).calledWith(assembly, entity, firstStageUpdated)
   expectedWuCalls = 1
   if (assembly.content.getCircuitConnections(entity) || assembly.content.getCableConnections(entity)) {
     expect(worldUpdater.updateWireConnections).calledWith(assembly, entity)
@@ -159,46 +159,70 @@ function assertNewUpdated(entity: AssemblyEntity) {
   }
 }
 
-test("addNewEntity", () => {
-  const luaEntity = createEntity(2)
-  const entity = asmUpdates.addNewEntity(assembly, luaEntity, 2)!
-  expect(entity).to.be.any()
-  expect(entity.firstValue.name).to.be("filter-inserter")
-  expect(entity.position).to.equal(pos)
-  expect(entity.getDirection()).to.be(0)
+describe("addNewEntity", () => {
+  test("simple add", () => {
+    const luaEntity = createEntity(2)
+    const entity = asmUpdates.addNewEntity(assembly, luaEntity, 2)!
+    expect(entity).to.be.any()
+    expect(entity.firstValue.name).to.be("filter-inserter")
+    expect(entity.position).to.equal(pos)
+    expect(entity.getDirection()).to.be(0)
 
-  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
-  expect(found).to.be(entity)
+    const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
+    expect(found).to.be(entity)
 
-  expect(entity.getWorldEntity(2)).to.be(luaEntity)
+    expect(entity.getWorldEntity(2)).to.be(luaEntity)
 
-  assertOneEntity()
-  assertNewUpdated(entity)
-})
-
-test("addNewEntity with known value", () => {
-  const luaEntity = createEntity(2)
-  const entity = asmUpdates.addNewEntity(assembly, luaEntity, 2, {
-    entity_number: 1,
-    direction: 0,
-    position: { x: 0, y: 0 },
-    name: "filter-inserter",
-    neighbours: [2],
-  })!
-  expect(entity).to.be.any()
-  expect(entity.firstValue).toEqual({
-    name: "filter-inserter",
+    assertOneEntity()
+    assertNewUpdated(entity, false)
   })
-  expect(entity.position).to.equal(pos)
-  expect(entity.getDirection()).to.be(0)
 
-  const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
-  expect(found).to.be(entity)
+  test("addNewEntity with known value with same name", () => {
+    const luaEntity = createEntity(2)
+    const entity = asmUpdates.addNewEntity(assembly, luaEntity, 2, {
+      entity_number: 1,
+      direction: 0,
+      position: { x: 0, y: 0 },
+      name: "filter-inserter",
+      neighbours: [2],
+    })!
+    expect(entity).to.be.any()
+    expect(entity.firstValue).toEqual({
+      name: "filter-inserter",
+    })
+    expect(entity.position).to.equal(pos)
+    expect(entity.getDirection()).to.be(0)
 
-  expect(entity.getWorldEntity(2)).to.be(luaEntity)
+    const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
+    expect(found).to.be(entity)
 
-  assertOneEntity()
-  assertNewUpdated(entity)
+    expect(entity.getWorldEntity(2)).to.be(luaEntity)
+
+    assertOneEntity()
+    assertNewUpdated(entity, false)
+  })
+
+  test("addNewEntity with known value with different name", () => {
+    const luaEntity = createEntity(2)
+    const entityUpgraded = asmUpdates.addNewEntity(assembly, luaEntity, 2, {
+      entity_number: 1,
+      direction: 0,
+      position: { x: 0, y: 0 },
+      name: "fast-inserter",
+      neighbours: [2],
+    })!
+    expect(entityUpgraded).to.be.any()
+    expect(entityUpgraded.firstValue).toEqual({
+      name: "fast-inserter",
+    })
+    expect(entityUpgraded.position).to.equal(pos)
+
+    const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
+    expect(found).to.be(entityUpgraded)
+
+    assertOneEntity()
+    assertNewUpdated(entityUpgraded, true)
+  })
 })
 
 function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
@@ -1138,7 +1162,7 @@ describe("rolling stock", () => {
     expect(foundDirectly).to.be.any()
     expect(foundDirectly).to.be(found)
 
-    assertNewUpdated(result)
+    assertNewUpdated(result, false)
   })
 
   test("no update on rolling stock", () => {

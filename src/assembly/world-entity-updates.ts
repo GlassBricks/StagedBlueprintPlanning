@@ -17,6 +17,7 @@ import {
   RollingStockAssemblyEntity,
   StageNumber,
 } from "../entity/AssemblyEntity"
+import { isPreviewEntity } from "../entity/entity-prototype-info"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
@@ -41,21 +42,21 @@ function makePreviewEntity(
   assembly: Assembly,
   stage: StageNumber,
   entity: AssemblyEntity,
-  entityName: string,
   direction: defines.direction,
+  previewName: string, // preview name is passed to avoid extra string concatenation
 ): void {
   const existing = entity.getWorldOrPreviewEntity(stage)
-  const previewName = Prototypes.PreviewEntityPrefix + entityName
   if (existing && existing.name == previewName) {
     existing.direction = direction
   } else {
-    const previewEntity = createPreviewEntity(assembly.getSurface(stage)!, entity.position, direction, entityName)
+    const previewEntity = createPreviewEntity(assembly.getSurface(stage)!, entity.position, direction, previewName)
     entity.replaceWorldOrPreviewEntity(stage, previewEntity)
   }
 }
 
 export function clearWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
-  makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
+  const previewName = Prototypes.PreviewEntityPrefix + entity.firstValue.name
+  makePreviewEntity(assembly, stage, entity, entity.getPreviewDirection(), previewName)
   updateAllHighlights(assembly, entity)
 }
 
@@ -69,12 +70,17 @@ function makeEntityEditable(entity: LuaEntity) {
   entity.rotatable = true
   entity.destructible = false
 }
-function updateWorldEntitiesOnlyInRange(
+
+/**
+ * Returns if has error or resolved error (should update error highlights)
+ */
+function tryUpdateWorldEntitiesInRange(
   assembly: Assembly,
   entity: AssemblyEntity,
   startStage: StageNumber,
   endStage: StageNumber,
-): void {
+  updateFirstStage: boolean = true,
+): boolean {
   assert(startStage >= 1)
   const { firstStage, lastStage } = entity
   const direction = entity.getDirection()
@@ -83,14 +89,24 @@ function updateWorldEntitiesOnlyInRange(
   if (startStage == firstStage) startStage = 1 // also update all previews if first stage edited
   if (lastStage && lastStage > endStage) endStage = lastStage
 
+  // performance: cache stuff to avoid extra string concatenation
+  let lastEntityName: string | nil = nil
+  let lastPreviewName: string
+
+  let hasOrResolvedError = false
+
   for (const [stage, value] of entity.iterateValues(startStage, endStage)) {
+    if (!updateFirstStage && stage == firstStage) continue
     const surface = assembly.getSurface(stage)!
-    const existing = entity.getWorldEntity(stage)
+    const existing = entity.getWorldOrPreviewEntity(stage)
+    const wasPreviewEntity = existing && isPreviewEntity(existing)
+    const existingNormalEntity = !wasPreviewEntity && existing
 
     if (value != nil) {
+      // create entity or updating existing entity
       let luaEntity: LuaEntity | nil
-      if (existing) {
-        luaEntity = updateEntity(existing, value, direction)
+      if (existingNormalEntity) {
+        luaEntity = updateEntity(existingNormalEntity, value, direction)
       } else {
         luaEntity = createEntity(surface, entity.position, direction, value)
       }
@@ -100,16 +116,27 @@ function updateWorldEntitiesOnlyInRange(
         else makeEntityEditable(luaEntity)
 
         entity.replaceWorldOrPreviewEntity(stage, luaEntity)
+        // now is not preview entity, so error state changed
+        if (wasPreviewEntity) hasOrResolvedError = true
 
         continue
       }
-      // else, fall through to make preview
+      // else, could not create entity, fall through to make preview
+
+      // if we have to make any error entity (where before was not), then error state changed
+      hasOrResolvedError = true
     }
 
     // preview
     const entityName = (value ?? entity.firstValue).name
-    makePreviewEntity(assembly, stage, entity, entityName, previewDirection)
+    if (entityName != lastEntityName) {
+      lastEntityName = entityName
+      lastPreviewName = Prototypes.PreviewEntityPrefix + entityName
+    }
+    makePreviewEntity(assembly, stage, entity, previewDirection, lastPreviewName!)
   }
+
+  return hasOrResolvedError
 }
 
 function updateWiresInRange(
@@ -135,7 +162,7 @@ export function updateWorldEntities(
 ): void {
   if (entity.isSettingsRemnant) return makeSettingsRemnant(assembly, entity)
   const lastStage = assembly.lastStageFor(entity)
-  updateWorldEntitiesOnlyInRange(assembly, entity, startStage, lastStage)
+  tryUpdateWorldEntitiesInRange(assembly, entity, startStage, lastStage)
   if (updateWires) updateWiresInRange(assembly, entity, startStage, lastStage)
   updateAllHighlights(assembly, entity)
 }
@@ -157,8 +184,17 @@ export function updateWorldEntitiesOnLastStageChanged(
   updateAllHighlights(assembly, entity)
 }
 
-export function updateNewWorldEntitiesWithoutWires(assembly: Assembly, entity: AssemblyEntity): void {
-  return updateWorldEntities(assembly, entity, entity.firstStage, false)
+// extra hot path
+export function updateNewWorldEntitiesWithoutWires(
+  assembly: Assembly,
+  entity: AssemblyEntity,
+  updateFirstStage: boolean,
+): void {
+  // performance: maybe don't need to entity at firstStage if it's new (entity is guaranteed to match firstValue)
+  const hasError = tryUpdateWorldEntitiesInRange(assembly, entity, 1, assembly.numStages(), updateFirstStage)
+  // performance: if there are no errors, then there are no highlights to update
+  // (no stage diff, last stage, either)
+  if (hasError) updateAllHighlights(assembly, entity)
 }
 
 export function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
@@ -168,18 +204,25 @@ export function refreshWorldEntityAtStage(assembly: Assembly, entity: AssemblyEn
   }
 
   if (!entity.isInStage(stage)) {
-    makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
+    makePreviewEntity(
+      assembly,
+      stage,
+      entity,
+      entity.getPreviewDirection(),
+      Prototypes.PreviewEntityPrefix + entity.getNameAtStage(stage),
+    )
     return
   }
   if (entity.isSettingsRemnant) {
     entity.destroyWorldOrPreviewEntity(stage)
-    makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), entity.getPreviewDirection())
+    makePreviewEntity(assembly, stage, entity, entity.getPreviewDirection(), entity.getNameAtStage(stage))
     makeSettingsRemnantHighlights(assembly, entity)
     return
   }
-  updateWorldEntitiesOnlyInRange(assembly, entity, stage, stage)
+
+  const errorChanged = tryUpdateWorldEntitiesInRange(assembly, entity, stage, stage)
   updateWiresInRange(assembly, entity, stage, stage)
-  updateAllHighlights(assembly, entity)
+  if (errorChanged) updateAllHighlights(assembly, entity)
 }
 
 export function rebuildWorldEntityAtStage(assembly: Assembly, entity: AssemblyEntity, stage: StageNumber): void {
@@ -199,8 +242,9 @@ export function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity):
   assert(entity.isSettingsRemnant)
   entity.destroyAllWorldOrPreviewEntities()
   const direction = entity.getPreviewDirection()
+  const previewName = Prototypes.PreviewEntityPrefix + entity.firstValue.name
   for (const stage of $range(1, assembly.lastStageFor(entity))) {
-    makePreviewEntity(assembly, stage, entity, entity.getNameAtStage(stage), direction)
+    makePreviewEntity(assembly, stage, entity, direction, previewName)
   }
   makeSettingsRemnantHighlights(assembly, entity)
 }
@@ -208,7 +252,7 @@ export function makeSettingsRemnant(assembly: Assembly, entity: AssemblyEntity):
 export function updateEntitiesOnSettingsRemnantRevived(assembly: Assembly, entity: AssemblyEntity): void {
   assert(!entity.isSettingsRemnant)
   const lastStage = assembly.lastStageFor(entity)
-  updateWorldEntitiesOnlyInRange(assembly, entity, 1, lastStage)
+  tryUpdateWorldEntitiesInRange(assembly, entity, 1, lastStage)
   updateWiresInRange(assembly, entity, 1, lastStage)
 
   updateHighlightsOnSettingsRemnantRevived(assembly, entity)

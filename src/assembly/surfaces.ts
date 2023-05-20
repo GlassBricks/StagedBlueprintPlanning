@@ -27,7 +27,7 @@ function createNewStageSurface(this: unknown): LuaSurface {
   return surface
 }
 
-function prepareArea(surface: LuaSurface, area: BBox): void {
+export function prepareArea(surface: LuaSurface, area: BBox): void {
   const { is_chunk_generated, set_chunk_generated_status } = surface
   const status = defines.chunk_generated_status.entities
   const pos = { x: 0, y: 0 }
