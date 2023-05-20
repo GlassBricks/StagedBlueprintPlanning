@@ -752,7 +752,6 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 
   const valueName = value.name
   const type = nameToType.get(valueName)!
-  assert(type)
   if (type == "storage-tank") {
     entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
   }
