@@ -16,8 +16,10 @@ import { isWorldEntityAssemblyEntity, StageNumber } from "../entity/AssemblyEnti
 import { LuaEntityInfo } from "../entity/Entity"
 import {
   areUpgradeableTypes,
+  EntityPrototypeInfo,
   getCompatibleNames,
   getPasteRotatableType,
+  OnEntityPrototypesLoaded,
   PasteCompatibleRotationType,
 } from "../entity/entity-prototype-info"
 import { assertNever, PRecord, ProtectedEvents } from "../lib"
@@ -706,6 +708,13 @@ function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] |
   }
 }
 
+let nameToType: EntityPrototypeInfo["nameToType"]
+OnEntityPrototypesLoaded.addListener((e) => {
+  nameToType = e.nameToType
+})
+
+const rawset = _G.rawset
+
 function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags): void {
   const referencedName = tags.referencedName
   if (!referencedName) return
@@ -740,8 +749,11 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (isDiagonal) {
     entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
   }
-  const firstEntity = luaEntities[0]
-  if (firstEntity.type == "storage-tank") {
+
+  const valueName = value.name
+  const type = nameToType.get(valueName)!
+  assert(type)
+  if (type == "storage-tank") {
     entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
   }
   let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == entityDir)
@@ -750,7 +762,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     const pasteRotatableType = getPasteRotatableType(referencedName)
     if (pasteRotatableType == nil) return
     if (pasteRotatableType == PasteCompatibleRotationType.AnyDirection) {
-      luaEntity = firstEntity
+      luaEntity = luaEntities[0]
     } else if (pasteRotatableType == PasteCompatibleRotationType.Flippable) {
       const oppositeDir = oppositedirection(entityDir)
       luaEntity = luaEntities.find((e) => e.direction == oppositeDir)
@@ -759,6 +771,10 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       assertNever(pasteRotatableType)
     }
   }
+
+  // performance hack: cache name, type
+  rawset(luaEntity, "name", luaEntity.name)
+  rawset(luaEntity, "type", type)
 
   if (usedPasteUpgrade) {
     bpState.usedPasteUpgrade = true

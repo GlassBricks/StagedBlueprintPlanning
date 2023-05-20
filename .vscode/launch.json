@@ -40,8 +40,44 @@
           "value": "bp100"
         }
       ]
-    },
-    {
+    }, {
+      "type": "factoriomod",
+      "request": "launch",
+      "name": "Profile",
+      "adjustMods": {
+        "bp100": true,
+        "WiderNoticeTextBoxes": true,
+        "factorio-test": true,
+        "PickerDollies": true,
+        "stdlib": true
+      },
+      "disableExtraMods": true,
+      "factorioArgs": [
+        "--load-scenario",
+        "factorio-test/Test",
+        "--cache-sprite-atlas",
+        "true",
+        "--graphics-quality",
+        "low",
+        "-c",
+        "${workspaceRoot}/factorio-test-data/config.ini"
+      ],
+      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
+      "checkGlobals": false,
+      "hookControl": true,
+      "hookMode": "profile",
+      "adjustModSettings": [
+        {
+          "scope": "startup",
+          "name": "factorio-test-auto-start",
+          "value": false
+        }, {
+          "scope": "runtime-global",
+          "name": "factorio-test-mod-to-test",
+          "value": "bp100"
+        }
+      ]
+    }, {
       "type": "factoriomod",
       "request": "launch",
       "name": "Test debug",

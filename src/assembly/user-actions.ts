@@ -95,7 +95,7 @@ export function onEntityCreated(
   }
 
   const entityName = entity.name
-  if (!shouldCheckEntityExactlyForMatch(entityName)) {
+  if (!shouldCheckEntityExactlyForMatch(entityName) && entity.supports_direction) {
     const existingDifferentDirection = content.findCompatibleByProps(entityName, entity.position, nil, stage)
     if (existingDifferentDirection) {
       entity.destroy()

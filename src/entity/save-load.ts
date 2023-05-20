@@ -14,7 +14,13 @@ import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
-import { getPasteRotatableType, PasteCompatibleRotationType, rollingStockTypes } from "./entity-prototype-info"
+import {
+  EntityPrototypeInfo,
+  getPasteRotatableType,
+  OnEntityPrototypesLoaded,
+  PasteCompatibleRotationType,
+  rollingStockTypes,
+} from "./entity-prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
 
 declare const global: {
@@ -137,6 +143,11 @@ function tryCreateUnconfiguredEntity(
   return createdEntity
 }
 
+let nameToType: EntityPrototypeInfo["nameToType"]
+OnEntityPrototypesLoaded.addListener((info) => {
+  nameToType = info.nameToType
+})
+
 function createEntity(
   surface: LuaSurface,
   position: MapPosition,
@@ -147,12 +158,14 @@ function createEntity(
   // assert(!isUndergroundBeltType(entity.name))
   const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity)
   if (!luaEntity) return nil
-  if (luaEntity.type == "underground-belt") {
+  // const type = luaEntity.type
+  const type = nameToType.get(entity.name)
+  if (type == "underground-belt") {
     if (luaEntity.belt_to_ground_type != entity.type) {
       luaEntity.destroy()
       return nil
     }
-  } else if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
+  } else if (type == "loader" || type == "loader-1x1") {
     luaEntity.loader_type = entity.type ?? "output"
     luaEntity.direction = direction
   }
@@ -205,12 +218,11 @@ function createItems(luaEntity: LuaEntity, items: Record<string, number>): void 
 function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
   const items = value.items
   const moduleInventory = luaEntity.get_module_inventory()
+  if (!moduleInventory) return
   if (!items) {
-    if (moduleInventory) moduleInventory.clear()
+    moduleInventory.clear()
     return
   }
-  // has items
-  if (!moduleInventory) return
 
   // clear items that don't match
   for (const [item, amount] of pairs(moduleInventory.get_contents())) {

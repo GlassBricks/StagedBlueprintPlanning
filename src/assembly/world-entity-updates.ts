@@ -17,7 +17,6 @@ import {
   RollingStockAssemblyEntity,
   StageNumber,
 } from "../entity/AssemblyEntity"
-import { isPreviewEntity } from "../entity/entity-prototype-info"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
@@ -47,7 +46,7 @@ function makePreviewEntity(
 ): void {
   const existing = entity.getWorldOrPreviewEntity(stage)
   const previewName = Prototypes.PreviewEntityPrefix + entityName
-  if (existing && isPreviewEntity(existing) && existing.name == previewName) {
+  if (existing && existing.name == previewName) {
     existing.direction = direction
   } else {
     const previewEntity = createPreviewEntity(assembly.getSurface(stage)!, entity.position, direction, entityName)
@@ -86,11 +85,11 @@ function updateWorldEntitiesOnlyInRange(
 
   for (const [stage, value] of entity.iterateValues(startStage, endStage)) {
     const surface = assembly.getSurface(stage)!
-    const existing = entity.getWorldOrPreviewEntity(stage)
+    const existing = entity.getWorldEntity(stage)
 
     if (value != nil) {
       let luaEntity: LuaEntity | nil
-      if (existing && !isPreviewEntity(existing)) {
+      if (existing) {
         luaEntity = updateEntity(existing, value, direction)
       } else {
         luaEntity = createEntity(surface, entity.position, direction, value)

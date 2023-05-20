@@ -200,5 +200,9 @@ export function getInfinityEntityNames(): LuaMultiReturn<
 export { rollingStockTypes }
 
 export function isPreviewEntity(entity: LuaEntity): boolean {
-  return entity.name.startsWith(Prototypes.PreviewEntityPrefix)
+  const type = entity.type
+  return (
+    type == "simple-entity-with-owner" ||
+    (type == "rail-remnants" && entity.name.startsWith(Prototypes.PreviewEntityPrefix))
+  )
 }
