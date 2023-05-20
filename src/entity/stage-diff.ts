@@ -67,7 +67,10 @@ export function getDiffDiff<T extends Entity>(
     }
   } else {
     for (const [key, value] of pairs(newDiff)) {
-      if (!deepCompare(value, oldDiff[key])) result[key] = value
+      if (!deepCompare(value, oldDiff[key])) {
+        result ??= {}
+        result[key] = value
+      }
     }
     for (const [key] of pairs(oldDiff)) {
       if (newDiff[key] == nil) {
