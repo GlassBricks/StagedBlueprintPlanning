@@ -47,7 +47,7 @@
       "adjustMods": {
         "bp100": true,
         "WiderNoticeTextBoxes": true,
-        "factorio-test": true,
+        "factorio-test": false,
         "PickerDollies": true,
         "stdlib": true
       },
@@ -65,18 +65,7 @@
       "modsPath": "${workspaceRoot}/factorio-test-data/mods",
       "checkGlobals": false,
       "hookControl": true,
-      "hookMode": "profile",
-      "adjustModSettings": [
-        {
-          "scope": "startup",
-          "name": "factorio-test-auto-start",
-          "value": false
-        }, {
-          "scope": "runtime-global",
-          "name": "factorio-test-mod-to-test",
-          "value": "bp100"
-        }
-      ]
+      "hookMode": "profile"
     }, {
       "type": "factoriomod",
       "request": "launch",
@@ -102,8 +91,7 @@
       "modsPath": "${workspaceRoot}/factorio-test-data/mods",
       "checkGlobals": false,
       "hookControl": true
-    },
-    {
+    }, {
       "type": "factoriomod",
       "request": "launch",
       "name": "debug data",
@@ -127,8 +115,7 @@
       "checkGlobals": false,
       "hookData": true,
       "hookControl": false
-    },
-    {
+    }, {
       "type": "factoriomod",
       "request": "launch",
       "name": "debug only",

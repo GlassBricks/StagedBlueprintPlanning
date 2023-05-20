@@ -54,11 +54,13 @@ function maybeMockModule(module: any) {
   }
 }
 
-const originalRequire = _G.require
-_G.require = function (modname: string) {
-  const module = originalRequire(modname)
-  maybeMockModule(module)
-  return module
+if ("factorio-test" in script.active_mods) {
+  const originalRequire = _G.require
+  _G.require = function (modname: string) {
+    const module = originalRequire(modname)
+    maybeMockModule(module)
+    return module
+  }
 }
 
 function checkIsMockable(module: object): void {

@@ -21,8 +21,6 @@ import { debugPrint } from "../lib/test/misc"
 import { refreshCurrentAssembly } from "../ui/AssemblySettings"
 import { teleportToAssembly, teleportToStage } from "../ui/player-current-stage"
 import { getCurrentValues } from "../utils/properties-obj"
-import "./in-world-test-util"
-import "./module-mock"
 
 // better source map traceback
 declare const ____lualib: {
@@ -56,7 +54,13 @@ declare let global: {
   rerunMode?: "rerun" | "reload" | "none"
 }
 
-if (script.active_mods["factorio-test"] != nil) {
+Events.on_player_created((p) => {
+  game.get_player(p.player_index)?.toggle_map_editor()
+  game.tick_paused = false
+})
+
+if ("factorio-test" in script.active_mods) {
+  require("@NoResolution:test.in-world-test-util")
   function reinit() {
     destroyAllRenders()
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
@@ -83,17 +87,6 @@ if (script.active_mods["factorio-test"] != nil) {
   }
 
   commands.add_command("reinit", "", reinit)
-
-  let testsStarted = false
-  Events.on_game_created_from_scenario(() => {
-    testsStarted = true
-  })
-  Events.on_player_created((p) => {
-    if (!testsStarted) return
-    game.get_player(p.player_index)?.toggle_map_editor()
-    game.tick_paused = false
-  })
-
   const tagBlacklist: string[] = []
 
   const testFiles = getProjectFilesMatchingRegex("\\.test\\.tsx?$")
@@ -269,6 +262,6 @@ commands.add_command("perf", "", () => {
     position: { x: 0, y: 0 },
     alt: true,
   })
-
+  stack.clear()
   remote.call("profiler", "dump")
 })
