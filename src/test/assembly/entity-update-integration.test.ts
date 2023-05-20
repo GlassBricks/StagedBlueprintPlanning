@@ -49,7 +49,7 @@ import {
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { isPreviewEntity } from "../../entity/entity-prototype-info"
 import { saveEntity } from "../../entity/save-load"
-import { addPowerSwitchConnections } from "../../entity/wires"
+import { addPowerSwitchConnections, findPolePowerSwitchNeighbors } from "../../entity/wires"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { createRollingStock } from "../entity/createRollingStock"
@@ -178,7 +178,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
       if (!worldEntity) continue
       const wireNeighbors: CircuitOrPowerSwitchConnection[] | nil = worldEntity.circuit_connection_definitions
       if (!wireNeighbors) continue
-      addPowerSwitchConnections(worldEntity, wireNeighbors)
+      addPowerSwitchConnections(worldEntity, wireNeighbors, findPolePowerSwitchNeighbors(worldEntity))
       expect(wireNeighbors).to.equal([])
     }
   } else {
@@ -194,7 +194,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
         }))
       })
       const actualNeighbors: CircuitOrPowerSwitchConnection[] = thisWorldEntity.circuit_connection_definitions ?? []
-      addPowerSwitchConnections(thisWorldEntity, actualNeighbors)
+      addPowerSwitchConnections(thisWorldEntity, actualNeighbors, findPolePowerSwitchNeighbors(thisWorldEntity))
 
       const actualNeighborsSet = actualNeighbors.map((x) => ({
         wire: x.wire,
