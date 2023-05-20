@@ -239,7 +239,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
     this.position = position
     this.direction = (direction == 0 ? nil : direction) as InternalSavedDirection | nil
-    this.firstValue = shallowCopy(firstValue)
+    this.firstValue = firstValue
     this.firstStage = firstStage
     if (this.isRollingStock()) {
       this.lastStage = firstStage
@@ -797,7 +797,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 }
 
 /** nil direction means the default direction of north */
-export function createAssemblyEntity<E extends Entity>(
+export function createAssemblyEntityNoCopy<E extends Entity>(
   entity: E,
   position: Position,
   direction: defines.direction | nil,

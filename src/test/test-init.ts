@@ -193,7 +193,7 @@ commands.add_command("rr", "", () => {
 function setupManualTests(_assembly: UserAssembly) {
   // const player = game.players[1]
   // function createEntityWithChanges() {
-  //   const entity = createAssemblyEntity(
+  //   const entity = createAssemblyEntityNoCopy(
   //     { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
   //     Pos(0.5, 0.5),
   //     nil,

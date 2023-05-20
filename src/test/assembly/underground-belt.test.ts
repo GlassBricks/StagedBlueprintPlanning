@@ -11,7 +11,7 @@
 
 import expect from "tstl-expect"
 import { MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
-import { createAssemblyEntity, StageNumber, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
+import { createAssemblyEntityNoCopy, StageNumber, UndergroundBeltAssemblyEntity } from "../../entity/AssemblyEntity"
 import { UndergroundBeltEntity } from "../../entity/Entity"
 import { findUndergroundPair, unit } from "../../entity/underground-belt"
 import direction = defines.direction
@@ -24,7 +24,7 @@ before_each(() => {
 // describe.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
 describe.each([direction.north, direction.west])("findUndergroundPair, direction %s", (direction) => {
   function createUnderground(location: number, type: "input" | "output", stage: StageNumber) {
-    const underground = createAssemblyEntity<UndergroundBeltEntity>(
+    const underground = createAssemblyEntityNoCopy<UndergroundBeltEntity>(
       { name: "underground-belt", type },
       unit(direction).times(location),
       direction,

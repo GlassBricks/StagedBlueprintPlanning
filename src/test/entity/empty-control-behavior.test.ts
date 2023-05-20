@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { createAssemblyEntityNoCopy } from "../../entity/AssemblyEntity"
 import {
   emptyBeltControlBehavior,
   emptyInserterControlBehavior,
@@ -18,7 +18,7 @@ import {
 } from "../../entity/empty-control-behavior"
 
 test("returns false if <= first stage", () => {
-  const asmEntity = createAssemblyEntity(
+  const asmEntity = createAssemblyEntityNoCopy(
     {
       name: "inserter",
       control_behavior: nil,
@@ -34,7 +34,7 @@ test("returns false if <= first stage", () => {
 })
 
 test("returns false if control_behavior is already set", () => {
-  const asmEntity = createAssemblyEntity(
+  const asmEntity = createAssemblyEntityNoCopy(
     {
       name: "inserter",
       control_behavior: { circuit_mode_of_operation: 0 },
@@ -49,7 +49,7 @@ test("returns false if control_behavior is already set", () => {
 })
 
 test("sets control behavior to empty for inserter", () => {
-  const asmEntity = createAssemblyEntity(
+  const asmEntity = createAssemblyEntityNoCopy(
     {
       name: "inserter",
       control_behavior: nil,
@@ -64,7 +64,7 @@ test("sets control behavior to empty for inserter", () => {
 })
 
 test("sets control behavior to empty for belt", () => {
-  const asmEntity = createAssemblyEntity(
+  const asmEntity = createAssemblyEntityNoCopy(
     {
       name: "transport-belt",
       control_behavior: nil,
@@ -79,7 +79,7 @@ test("sets control behavior to empty for belt", () => {
 })
 
 test("returns false for other entities", () => {
-  const asmEntity = createAssemblyEntity(
+  const asmEntity = createAssemblyEntityNoCopy(
     {
       name: "small-electric-pole",
       control_behavior: nil,

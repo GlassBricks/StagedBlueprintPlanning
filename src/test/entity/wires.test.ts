@@ -11,7 +11,7 @@
 
 import expect from "tstl-expect"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
-import { AssemblyEntity, createAssemblyEntity } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntityNoCopy } from "../../entity/AssemblyEntity"
 import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/circuit-connection"
 import { getPowerSwitchConnectionSide } from "../../entity/wires"
 import { shallowCompare } from "../../lib"
@@ -94,8 +94,8 @@ describe("circuit wires", () => {
   before_each(() => {
     luaEntity1 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 5.5, y: 6 } })!
     luaEntity2 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!
-    entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, nil, 1)
-    entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
+    entity1 = createAssemblyEntityNoCopy({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, nil, 1)
+    entity2 = createAssemblyEntityNoCopy({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
     entity1.replaceWorldEntity(1, luaEntity1)
     entity2.replaceWorldEntity(1, luaEntity2)
     content.add(entity1)
@@ -256,8 +256,8 @@ describe("power switch connections", () => {
   before_each(() => {
     pole = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 5.5 } })!
     powerSwitch = surface.create_entity({ name: "power-switch", position: { x: 6, y: 7 } })!
-    poleEntity = createAssemblyEntity({ name: "medium-electric-pole" }, pole.position, nil, 1)
-    powerSwitchEntity = createAssemblyEntity({ name: "power-switch" }, powerSwitch.position, nil, 1)
+    poleEntity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, pole.position, nil, 1)
+    powerSwitchEntity = createAssemblyEntityNoCopy({ name: "power-switch" }, powerSwitch.position, nil, 1)
     poleEntity.replaceWorldEntity(1, pole)
     powerSwitchEntity.replaceWorldEntity(1, powerSwitch)
     content.add(poleEntity)
@@ -402,7 +402,7 @@ describe("power switch connections", () => {
 
     test("replaces old connection when connecting to same side in different stage", () => {
       const otherPole = extraSurfaces[0].create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
-      const otherPoleEntity = createAssemblyEntity({ name: "medium-electric-pole" }, otherPole.position, nil, 1)
+      const otherPoleEntity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, otherPole.position, nil, 1)
       otherPoleEntity.replaceWorldEntity(2, otherPole)
       content.add(otherPoleEntity)
 
@@ -466,7 +466,7 @@ describe("power switch connections", () => {
 
   test("can remove connection if connected to different but not existing pole", () => {
     const pole2 = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
-    const pole2Entity = createAssemblyEntity({ name: "medium-electric-pole" }, pole2.position, nil, 1)
+    const pole2Entity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, pole2.position, nil, 1)
     pole2Entity.replaceWorldEntity(1, pole2)
     content.add(pole2Entity)
 
@@ -501,7 +501,7 @@ describe("cable connections", () => {
     const pos = { x: 5.5 + n, y: 5.5 + n }
     const luaEntity = surface.create_entity({ name: "medium-electric-pole", position: pos })!
     luaEntity.disconnect_neighbour()
-    const entity = createAssemblyEntity({ name: "medium-electric-pole" }, pos, nil, 1)
+    const entity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, pos, nil, 1)
     entity.replaceWorldEntity(1, luaEntity)
     content.add(entity)
     return { luaEntity, entity }
@@ -590,7 +590,7 @@ describe("cable connections", () => {
     test("max connections reached", () => {
       // max connections is 5
       for (let i = 0; i < 5; i++) {
-        const entity = createAssemblyEntity(
+        const entity = createAssemblyEntityNoCopy(
           { name: "medium-electric-pole" },
           {
             x: 4.5 + i,

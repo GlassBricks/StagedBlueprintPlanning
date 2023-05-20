@@ -19,7 +19,7 @@ import {
 import { Assembly } from "../../assembly/AssemblyDef"
 import { _doUndoAction } from "../../assembly/undo"
 import { L_Game, Prototypes } from "../../constants"
-import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntityNoCopy, StageNumber } from "../../entity/AssemblyEntity"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
@@ -107,7 +107,7 @@ function addEntity(
 } {
   const luaEntity = createWorldEntity(stage, args)
   const value = saveEntity(luaEntity)!
-  const assemblyEntity = createAssemblyEntity(value, luaEntity.position, luaEntity.direction, stage)
+  const assemblyEntity = createAssemblyEntityNoCopy(value, luaEntity.position, luaEntity.direction, stage)
   assembly.content.add(assemblyEntity)
   return { luaEntity, entity: assemblyEntity }
 }

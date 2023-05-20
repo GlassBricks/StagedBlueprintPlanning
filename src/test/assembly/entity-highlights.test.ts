@@ -19,7 +19,7 @@ import {
   updateHighlightsOnSettingsRemnantRevived,
 } from "../../assembly/entity-highlights"
 import { Prototypes } from "../../constants"
-import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntityNoCopy, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { Pos } from "../../lib/geometry"
 import { moduleMock } from "../module-mock"
@@ -41,7 +41,7 @@ const surfaces = setupTestSurfaces(5)
 before_each(() => {
   assembly = createMockAssembly(surfaces)
   highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
-  entity = createAssemblyEntity({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
+  entity = createAssemblyEntityNoCopy({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
 
 function createEntity(stage: StageNumber) {

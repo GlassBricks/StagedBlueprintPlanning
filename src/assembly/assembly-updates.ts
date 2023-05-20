@@ -12,7 +12,7 @@
 import { AssemblyContent } from "../entity/AssemblyContent"
 import {
   AssemblyEntity,
-  createAssemblyEntity,
+  createAssemblyEntityNoCopy,
   LoaderAssemblyEntity,
   RollingStockAssemblyEntity,
   StageNumber,
@@ -47,7 +47,7 @@ export function addNewEntity(
   const saved = saveEntity(entity, knownValue)
   if (!saved) return nil
   const { content } = assembly
-  const assemblyEntity = createAssemblyEntity(saved, entity.position, entity.direction, stage)
+  const assemblyEntity = createAssemblyEntityNoCopy(saved, entity.position, entity.direction, stage)
   assemblyEntity.replaceWorldEntity(stage, entity)
   content.add(assemblyEntity)
 

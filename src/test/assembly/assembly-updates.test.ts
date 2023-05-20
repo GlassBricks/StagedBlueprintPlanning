@@ -15,7 +15,7 @@ import { StageMoveResult } from "../../assembly/assembly-updates"
 import { Assembly } from "../../assembly/AssemblyDef"
 import {
   AssemblyEntity,
-  createAssemblyEntity,
+  createAssemblyEntityNoCopy,
   RollingStockAssemblyEntity,
   StageDiffsInternal,
   StageNumber,
@@ -289,7 +289,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
   test("creates settings remnant if entity has circuit connections", () => {
     const { entity } = addEntity(1)
-    const otherEntity = createAssemblyEntity({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
+    const otherEntity = createAssemblyEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
     assembly.content.add(otherEntity)
     assembly.content.addCircuitConnection({
       fromEntity: otherEntity,
@@ -307,7 +307,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
   test("deletes if entity has with circuit connections, but connections have world entity", () => {
     const { entity } = addEntity(1)
-    const otherEntity = createAssemblyEntity({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
+    const otherEntity = createAssemblyEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
     assembly.content.add(otherEntity)
     assembly.content.addCircuitConnection({
       fromEntity: otherEntity,
@@ -1182,7 +1182,7 @@ describe("trains", () => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entities = createRollingStocks(game.surfaces[1], "locomotive", "cargo-wagon", "fluid-wagon")
     assemblyEntities = entities.map((e) => {
-      const aEntity = createAssemblyEntity(
+      const aEntity = createAssemblyEntityNoCopy(
         {
           name: e.name,
           orientation: e.orientation,

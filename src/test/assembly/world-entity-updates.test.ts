@@ -11,7 +11,7 @@
 
 import expect from "tstl-expect"
 import { Assembly } from "../../assembly/AssemblyDef"
-import { AssemblyEntity, createAssemblyEntity, StageNumber } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntityNoCopy, StageNumber } from "../../entity/AssemblyEntity"
 import { Entity } from "../../entity/Entity"
 import { forceDollyEntity } from "../../entity/picker-dollies"
 import { createEntity, saveEntity } from "../../entity/save-load"
@@ -40,7 +40,7 @@ const origDir = defines.direction.east
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
 before_each(() => {
   assembly = createMockAssembly(surfaces)
-  entity = createAssemblyEntity(
+  entity = createAssemblyEntityNoCopy(
     {
       name: "inserter",
       override_stack_size: 1,
@@ -227,7 +227,7 @@ describe("updateWorldEntities", () => {
   test("entity preview in all previous stages if is rolling stock", () => {
     const rollingStock = createRollingStock(surfaces[2 - 1])
     const value = saveEntity(rollingStock)!
-    entity = createAssemblyEntity(value, rollingStock.position, rollingStock.direction, 2) as any
+    entity = createAssemblyEntityNoCopy(value, rollingStock.position, rollingStock.direction, 2) as any
     rollingStock.destroy()
 
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
@@ -365,7 +365,7 @@ describe("tryMoveEntity", () => {
   describe("with wire connections", () => {
     let otherEntity: AssemblyEntity
     before_each(() => {
-      otherEntity = createAssemblyEntity(
+      otherEntity = createAssemblyEntityNoCopy(
         { name: "small-electric-pole" },
         Pos(-0.5, 0.5),
         defines.direction.north as defines.direction,
@@ -425,7 +425,7 @@ describe("tryMoveEntity", () => {
 
 describe("updateNewEntityWithoutWires", () => {
   test("without updating firstStage", () => {
-    const entity = createAssemblyEntity(
+    const entity = createAssemblyEntityNoCopy(
       { name: "inserter" },
       Pos(0, 0),
       defines.direction.north as defines.direction,
@@ -438,7 +438,7 @@ describe("updateNewEntityWithoutWires", () => {
     expect(entity.getWorldOrPreviewEntity(2)).toBeNil()
   })
   test("with updating firstStage", () => {
-    const entity = createAssemblyEntity(
+    const entity = createAssemblyEntityNoCopy(
       { name: "inserter" },
       Pos(0, 0),
       defines.direction.north as defines.direction,
@@ -452,7 +452,7 @@ describe("updateNewEntityWithoutWires", () => {
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
   })
   test("updates highlights if there are errors", () => {
-    const entity = createAssemblyEntity(
+    const entity = createAssemblyEntityNoCopy(
       { name: "inserter" },
       Pos(0, 0),
       defines.direction.north as defines.direction,
@@ -469,7 +469,12 @@ describe("updateNewEntityWithoutWires", () => {
 })
 
 test("updateWireConnections", () => {
-  const entity = createAssemblyEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north as defines.direction, 2)
+  const entity = createAssemblyEntityNoCopy(
+    { name: "inserter" },
+    Pos(0, 0),
+    defines.direction.north as defines.direction,
+    2,
+  )
   assembly.content.add(entity)
   WorldUpdater.updateNewWorldEntitiesWithoutWires(assembly, entity, true) // note: actually updating first stage, so below works
   WorldUpdater.updateWireConnections(assembly, entity)
@@ -522,9 +527,9 @@ test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tr
 })
 
 test("rebuildStage", () => {
-  const entity1 = createAssemblyEntity({ name: "transport-belt" }, Pos(0, 0), nil, 1)
-  const entity2 = createAssemblyEntity({ name: "iron-chest" }, Pos(1, 1), nil, 2)
-  const entity3 = createAssemblyEntity({ name: "iron-chest" }, Pos(1, 1), nil, 2)
+  const entity1 = createAssemblyEntityNoCopy({ name: "transport-belt" }, Pos(0, 0), nil, 1)
+  const entity2 = createAssemblyEntityNoCopy({ name: "iron-chest" }, Pos(1, 1), nil, 2)
+  const entity3 = createAssemblyEntityNoCopy({ name: "iron-chest" }, Pos(1, 1), nil, 2)
   assembly.content.add(entity1)
   assembly.content.add(entity2)
   assembly.content.add(entity3)
@@ -552,8 +557,8 @@ describe("circuit wires", () => {
   before_each(() => {
     doModuleMock(_wireHandler, false) // real wire handler
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
-    entity1 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
-    entity2 = createAssemblyEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
+    entity1 = createAssemblyEntityNoCopy({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
+    entity2 = createAssemblyEntityNoCopy({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
     assembly.content.add(entity1)
     assembly.content.add(entity2)
   })

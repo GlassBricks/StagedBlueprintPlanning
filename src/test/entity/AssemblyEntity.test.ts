@@ -11,7 +11,7 @@
 
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
-import { AssemblyEntity, createAssemblyEntity, ExtraEntityType } from "../../entity/AssemblyEntity"
+import { AssemblyEntity, createAssemblyEntityNoCopy, ExtraEntityType } from "../../entity/AssemblyEntity"
 import { Entity, RollingStockEntity } from "../../entity/Entity"
 import { getRegisteredAssemblyEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
@@ -35,7 +35,7 @@ before_each(() => {
     name: "filter-inserter",
     override_stack_size: 1,
   }
-  assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 2, filter_mode: "blacklist" })
   assemblyEntity._applyDiffAtStage(5, { override_stack_size: 3 })
   assemblyEntity._applyDiffAtStage(7, { filter_mode: getNilPlaceholder() })
@@ -76,18 +76,18 @@ test("isPastLastStage", () => {
 
 test("isRollingStock", () => {
   expect(assemblyEntity.isRollingStock()).to.be(false)
-  const assemblyEntity2 = createAssemblyEntity({ name: "locomotive" }, Pos(0, 0), nil, 2)
+  const assemblyEntity2 = createAssemblyEntityNoCopy({ name: "locomotive" }, Pos(0, 0), nil, 2)
   expect(assemblyEntity2.isRollingStock()).to.be(true)
 })
 
 test("isUndergroundBelt", () => {
   expect(assemblyEntity.isUndergroundBelt()).to.be(false)
-  const assemblyEntity2 = createAssemblyEntity({ name: "underground-belt" }, Pos(0, 0), nil, 2)
+  const assemblyEntity2 = createAssemblyEntityNoCopy({ name: "underground-belt" }, Pos(0, 0), nil, 2)
   expect(assemblyEntity2.isUndergroundBelt()).to.be(true)
 })
 
 test("hasStageDiff", () => {
-  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
   expect(assemblyEntity.hasStageDiff()).to.be(false)
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   expect(assemblyEntity.hasStageDiff()).to.be(true)
@@ -96,14 +96,14 @@ test("hasStageDiff", () => {
 })
 
 test("getStageDiff", () => {
-  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
   expect(assemblyEntity.getStageDiff(3)).to.be.nil()
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   expect(assemblyEntity.getStageDiff(3)).to.equal({ override_stack_size: 3 })
 })
 
 test("nextStageWithDiff", () => {
-  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   assemblyEntity._applyDiffAtStage(5, { override_stack_size: 5 })
   expect(assemblyEntity.nextStageWithDiff(2)).to.be(3)
@@ -113,7 +113,7 @@ test("nextStageWithDiff", () => {
 })
 
 test("prevStageWithDiff", () => {
-  const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+  const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
   assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   assemblyEntity._applyDiffAtStage(5, { override_stack_size: 5 })
   expect(assemblyEntity.prevStageWithDiff(6)).to.be(5)
@@ -208,7 +208,7 @@ describe("adjustValueAtStage", () => {
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity.adjustValueAtStage(1, { ...entity, override_stack_size: 3 })
     expect(assemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
@@ -216,7 +216,7 @@ describe("adjustValueAtStage", () => {
   })
 
   test("creates diff if set at higher stage", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity.adjustValueAtStage(2, { ...entity, override_stack_size: 3 })
     expect(assemblyEntity.firstValue).to.equal(entity)
     expect(assemblyEntity.hasStageDiff()).to.be(true)
@@ -234,7 +234,7 @@ describe("adjustValueAtStage", () => {
     const value2 = { ...firstValue, b: 2, c: 2 }
     const newValue2 = { ...firstValue, a: 2, b: 1, c: 5 }
     const value3 = { ...firstValue, a: 2, b: 2, c: 5 }
-    const assemblyEntity = createAssemblyEntity(firstValue, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(firstValue, Pos(0, 0), nil, 1)
     assemblyEntity.adjustValueAtStage(2, value2)
     expect(assemblyEntity.firstValue).to.equal(firstValue)
     expect(assemblyEntity.getValueAtStage(2)).to.equal(value2)
@@ -262,7 +262,7 @@ describe("setPropAtStage", () => {
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     expect(assemblyEntity.setPropAtStage(1, "override_stack_size", 3)).to.be(true)
@@ -271,7 +271,7 @@ describe("setPropAtStage", () => {
   })
 
   test("creates diff if set at higher stage", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     expect(assemblyEntity.setPropAtStage(3, "override_stack_size", 3)).to.be(true)
     expect(assemblyEntity.firstValue).to.equal(entity)
     expect(assemblyEntity.hasStageDiff(3)).to.be(true)
@@ -281,27 +281,27 @@ describe("setPropAtStage", () => {
 
 describe("moving stage diff props", () => {
   test("resetValue removes stage diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     expect(assemblyEntity.resetValue(3)).to.be(true)
     expect(assemblyEntity.getValueAtStage(3)).to.equal(entity)
     expect(assemblyEntity.hasStageDiff()).to.be(false)
   })
   test("returns false if no diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 3 })
     expect(assemblyEntity.resetValue(3)).to.be(false)
   })
 
   test("moveDiffDown can apply to first value", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     expect(assemblyEntity.moveValueDown(3)).to.be(1)
     expect(assemblyEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
     expect(assemblyEntity.hasStageDiff()).to.be(false)
   })
   test("moveDiffDown can apply to next lower stage with diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     expect(assemblyEntity.moveValueDown(4)).to.be(3)
@@ -310,13 +310,13 @@ describe("moving stage diff props", () => {
   })
 
   test("moveDiffDown returns nil if no diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 3 })
     expect(assemblyEntity.moveValueDown(3)).to.be.nil()
   })
 
   test("resetProp removes prop from stage diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
     // is override_stack_size at stage 2
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity.resetProp(3, "override_stack_size")
@@ -325,14 +325,14 @@ describe("moving stage diff props", () => {
   })
 
   test("resetProp returns false if no diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 1)
     assemblyEntity._applyDiffAtStage(3, { filter_mode: "whitelist" })
     expect(assemblyEntity.resetProp(3, "override_stack_size")).to.be(false)
     expect(assemblyEntity.getValueAtStage(3)).to.equal({ ...entity, filter_mode: "whitelist" })
   })
 
   test("resetProp can get from next lower stage with diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     assemblyEntity.resetProp(4, "override_stack_size")
@@ -342,7 +342,7 @@ describe("moving stage diff props", () => {
   })
 
   test("movePropDown can apply a diff to first stage", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     expect(assemblyEntity.movePropDown(3, "override_stack_size")).to.be(2)
     expect(assemblyEntity.getValueAtStage(2)).to.equal({ ...entity, override_stack_size: 3 })
@@ -350,7 +350,7 @@ describe("moving stage diff props", () => {
   })
 
   test("movePropDown can apply a diff to next lower stage with diff", () => {
-    const assemblyEntity = createAssemblyEntity(entity, Pos(0, 0), nil, 2)
+    const assemblyEntity = createAssemblyEntityNoCopy(entity, Pos(0, 0), nil, 2)
     assemblyEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     assemblyEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     expect(assemblyEntity.movePropDown(4, "override_stack_size")).to.be(3)
@@ -413,7 +413,7 @@ describe("Get/set world entities", () => {
     const pos = Pos(0.5, 0.5)
     entity = surfaces[0].create_entity({ name: "iron-chest", position: pos })!
     previewEntity = surfaces[0].create_entity({ name: Prototypes.PreviewEntityPrefix + "iron-chest", position: pos })!
-    assemblyEntity = createAssemblyEntity({ name: entity.name }, pos, nil, 1)
+    assemblyEntity = createAssemblyEntityNoCopy({ name: entity.name }, pos, nil, 1)
   })
 
   test("get after replace returns the correct entity", () => {
@@ -500,7 +500,7 @@ describe("get/set extra entities", () => {
   let assemblyEntity: AssemblyEntity
   before_each(() => {
     entity = simpleMock<LuaEntity>({ name: "test", position: Pos(0, 0) })
-    assemblyEntity = createAssemblyEntity({ name: entity.name }, Pos(0, 0), nil, 1)
+    assemblyEntity = createAssemblyEntityNoCopy({ name: entity.name }, Pos(0, 0), nil, 1)
   })
 
   test("get after replace returns the correct entity", () => {
@@ -559,7 +559,7 @@ describe("get/set extra entities", () => {
 
 describe("rolling stock", () => {
   test("rolling stock only appears in its first stage", () => {
-    const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" }, Pos(0, 0), nil, 2)
+    const assemblyEntity = createAssemblyEntityNoCopy({ name: "cargo-wagon" }, Pos(0, 0), nil, 2)
     expect(assemblyEntity.getValueAtStage(1)).to.be.nil()
     expect(assemblyEntity.getValueAtStage(2)).to.equal(assemblyEntity.firstValue)
     expect(assemblyEntity.getValueAtStage(3)).to.be.nil()
@@ -568,7 +568,7 @@ describe("rolling stock", () => {
     expect(assemblyEntity.lastStage).to.equal(2)
   })
   test("cannot apply stage diffs to rolling stock beyond first stage", () => {
-    const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" } as RollingStockEntity, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy({ name: "cargo-wagon" } as RollingStockEntity, Pos(0, 0), nil, 1)
     const adjusted = assemblyEntity.adjustValueAtStage(1, { name: "cargo-wagon", items: { foo: 1 } })
     expect(adjusted).to.be(true)
     const adjusted2 = assemblyEntity.adjustValueAtStage(2, { name: "cargo-wagon", items: { foo: 2 } })
@@ -576,13 +576,13 @@ describe("rolling stock", () => {
     expect(assemblyEntity.getValueAtStage(1)).to.equal(assemblyEntity.firstValue)
   })
   test("apply stage diff ignores orientation changes", () => {
-    const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon", orientation: 0.25 }, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy({ name: "cargo-wagon", orientation: 0.25 }, Pos(0, 0), nil, 1)
     const adjusted = assemblyEntity.adjustValueAtStage(1, { ...assemblyEntity.firstValue, orientation: 0.5 })
     expect(adjusted).to.be(false)
     expect(assemblyEntity.firstValue.orientation).to.be(0.25)
   })
   test("cannot apply upgrade to rolling stock", () => {
-    const assemblyEntity = createAssemblyEntity({ name: "cargo-wagon" }, Pos(0, 0), nil, 1)
+    const assemblyEntity = createAssemblyEntityNoCopy({ name: "cargo-wagon" }, Pos(0, 0), nil, 1)
     const adjusted = assemblyEntity.applyUpgradeAtStage(1, "cargo-wagon-2")
     expect(adjusted).to.be(false)
     expect(assemblyEntity.getNameAtStage(1)).to.be("cargo-wagon")
@@ -632,7 +632,7 @@ describe("get/set properties", () => {
 describe("insert/deleting stages", () => {
   test("insert stage after base", () => {
     const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "test" })
-    const entity = createAssemblyEntity({ name: luaEntity.name, override_stack_size: 1 }, Pos(0, 0), nil, 1)
+    const entity = createAssemblyEntityNoCopy({ name: luaEntity.name, override_stack_size: 1 }, Pos(0, 0), nil, 1)
     entity.replaceWorldEntity(2, luaEntity)
     entity.replaceWorldEntity(3, luaEntity)
     entity.setProperty("foo", 2, "bar2")
@@ -668,14 +668,14 @@ describe("insert/deleting stages", () => {
   })
 
   test("insert stage before base", () => {
-    const entity = createAssemblyEntity<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    const entity = createAssemblyEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
 
     entity.insertStage(1)
     expect(entity.firstStage).to.be(3)
   })
 
   test("insert stage after last stage", () => {
-    const entity = createAssemblyEntity<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    const entity = createAssemblyEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
     entity.setLastStageUnchecked(3)
 
     entity.insertStage(4)
@@ -684,7 +684,7 @@ describe("insert/deleting stages", () => {
 
   test("delete stage after base", () => {
     const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "test" })
-    const entity = createAssemblyEntity<InserterEntity>(
+    const entity = createAssemblyEntityNoCopy<InserterEntity>(
       {
         name: "filter-inserter",
         override_stack_size: 1,
@@ -726,7 +726,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage before base", () => {
-    const entity = createAssemblyEntity<InserterEntity>(
+    const entity = createAssemblyEntityNoCopy<InserterEntity>(
       {
         name: "filter-inserter",
         override_stack_size: 1,
@@ -741,7 +741,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage after last stage", () => {
-    const entity = createAssemblyEntity<InserterEntity>(
+    const entity = createAssemblyEntityNoCopy<InserterEntity>(
       {
         name: "filter-inserter",
         override_stack_size: 1,
@@ -757,7 +757,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage right after base applies stage diffs to first entity", () => {
-    const entity = createAssemblyEntity<InserterEntity>(
+    const entity = createAssemblyEntityNoCopy<InserterEntity>(
       {
         name: "filter-inserter",
         override_stack_size: 1,
@@ -774,7 +774,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage 1 merges with stage 2 instead", () => {
-    const entity = createAssemblyEntity<InserterEntity>(
+    const entity = createAssemblyEntityNoCopy<InserterEntity>(
       {
         name: "filter-inserter",
         override_stack_size: 1,
@@ -792,7 +792,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage 1 sets stage 1 properties to stage 2 properties", () => {
-    const entity = createAssemblyEntity<InserterEntity>(
+    const entity = createAssemblyEntityNoCopy<InserterEntity>(
       {
         name: "filter-inserter",
         override_stack_size: 1,
