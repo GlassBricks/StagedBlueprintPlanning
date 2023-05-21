@@ -2,6 +2,11 @@
 Version: 0.23.0
 Date: ????
   Changes:
+    - When creating a new stage, all needed chunks will be loaded in advance.
+  Optimizations:
+    - Significantly improved performance of pasting large blueprints.
+  Bugfixes:
+    - Fixed... *inhales* pasting a flipped blueprint containing curved rails facing in a leftward direction.
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.0
 Date: 2023-05-03
