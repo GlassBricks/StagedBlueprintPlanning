@@ -166,7 +166,7 @@ describe("addNewEntity", () => {
     expect(entity).to.be.any()
     expect(entity.firstValue.name).to.be("filter-inserter")
     expect(entity.position).to.equal(pos)
-    expect(entity.getDirection()).to.be(0)
+    expect(entity.direction).to.be(0)
 
     const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
     expect(found).to.be(entity)
@@ -191,7 +191,7 @@ describe("addNewEntity", () => {
       name: "filter-inserter",
     })
     expect(entity.position).to.equal(pos)
-    expect(entity.getDirection()).to.be(0)
+    expect(entity.direction).to.be(0)
 
     const found = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as AssemblyEntity<BlueprintEntity>
     expect(found).to.be(entity)
@@ -384,7 +384,7 @@ describe("tryUpdateEntityFromWorld", () => {
     const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 2)
     expect(ret).to.be("updated")
 
-    expect(entity.getDirection()).to.be(defines.direction.east)
+    expect(entity.direction).to.be(defines.direction.east)
     assertOneEntity()
     assertUpdateCalled(entity, 2)
   })
@@ -396,7 +396,7 @@ describe("tryUpdateEntityFromWorld", () => {
     entity.replaceWorldEntity(3, luaEntity)
     const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 3)
     expect(ret).to.be("cannot-rotate")
-    expect(entity.getDirection()).to.be(defines.direction.north)
+    expect(entity.direction).to.be(defines.direction.north)
 
     assertOneEntity()
     assertRefreshCalled(entity, 3)
@@ -447,7 +447,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     luaEntity.direction = direction.west
     const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 2)
     expect(ret).to.be("updated")
-    expect(entity.getDirection()).to.be(direction.west)
+    expect(entity.direction).to.be(direction.west)
     assertOneEntity()
     assertUpdateCalled(entity, 2)
   })
@@ -459,7 +459,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     entity.replaceWorldEntity(2, luaEntity)
     const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 2)
     expect(ret).to.be("cannot-rotate")
-    expect(entity.getDirection()).to.be(oldDirection)
+    expect(entity.direction).to.be(oldDirection)
     assertOneEntity()
     assertRefreshCalled(entity, 2)
   })
@@ -469,7 +469,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     luaEntity.rotate()
     const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 1)
     expect(ret).to.be("updated")
-    expect(entity.getDirection()).to.be(direction.south)
+    expect(entity.direction).to.be(direction.south)
     expect(entity.firstValue.type).to.be("output")
     assertOneEntity()
     assertUpdateCalled(entity, 1)
@@ -494,7 +494,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   test("using update", () => {
     const ret = asmUpdates.tryUpdateEntityFromWorld(assembly, entity, 3)
     expect(ret).to.be("no-change")
-    expect(entity.getDirection()).to.be(0)
+    expect(entity.direction).to.be(0)
 
     assertOneEntity()
     assertWUNotCalled()
@@ -502,7 +502,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   test("using rotate", () => {
     const ret = asmUpdates.tryRotateEntityToMatchWorld(assembly, entity, 3)
     expect(ret).to.be("no-change")
-    expect(entity.getDirection()).to.be(0)
+    expect(entity.direction).to.be(0)
 
     assertOneEntity()
     assertWUNotCalled()
@@ -537,7 +537,7 @@ describe("tryApplyUpgradeTarget", () => {
     const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
     expect(ret).to.be("updated")
     expect(entity.firstValue.name).to.be("stack-filter-inserter")
-    expect(entity.getDirection()).to.be(direction)
+    expect(entity.direction).to.be(direction)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
@@ -552,7 +552,7 @@ describe("tryApplyUpgradeTarget", () => {
     const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 1)
     expect(ret).to.be("updated")
     expect(entity.firstValue.name).to.be("filter-inserter")
-    expect(entity.getDirection()).to.be(direction.west)
+    expect(entity.direction).to.be(direction.west)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
@@ -566,7 +566,7 @@ describe("tryApplyUpgradeTarget", () => {
     entity.replaceWorldEntity(2, luaEntity)
     const ret = asmUpdates.tryApplyUpgradeTarget(assembly, entity, 2)
     expect(ret).to.be("cannot-rotate")
-    expect(entity.getDirection()).to.be(0)
+    expect(entity.direction).to.be(0)
     assertOneEntity()
     assertRefreshCalled(entity, 2)
   })
@@ -823,7 +823,7 @@ describe("undergrounds", () => {
       expect(ret).to.be("updated")
 
       expect(entity.firstValue.type).to.be("output")
-      expect(entity.getDirection()).to.be(direction.east)
+      expect(entity.direction).to.be(direction.east)
 
       assertOneEntity()
       assertUpdateCalled(entity, 1)
@@ -840,7 +840,7 @@ describe("undergrounds", () => {
       expect(ret).to.be("cannot-rotate")
 
       expect(entity.firstValue.type).to.be("input")
-      expect(entity.getDirection()).to.be(direction.west)
+      expect(entity.direction).to.be(direction.west)
 
       assertOneEntity()
       assertRefreshCalled(entity, 2)
@@ -950,7 +950,7 @@ describe("undergrounds", () => {
 
       expect(entity.firstValue.name).to.be("fast-underground-belt")
       expect(entity.firstValue.type).to.be("input")
-      expect(entity.getDirection()).to.be(direction.west)
+      expect(entity.direction).to.be(direction.west)
       assertOneEntity()
       assertUpdateCalled(entity, 1)
     })

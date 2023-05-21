@@ -44,7 +44,7 @@ before_each(() => {
 test("getters", () => {
   expect(assemblyEntity.firstStage).to.equal(2)
   expect(assemblyEntity.firstValue).to.equal(entity)
-  expect(assemblyEntity.getDirection()).to.equal(0) // nil <=> 0
+  expect(assemblyEntity.direction).to.equal(0) // nil <=> 0
 })
 
 test("lastStage default nil", () => {

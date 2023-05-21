@@ -85,3 +85,11 @@ Migrations.to("0.20.0", () => {
     }
   }
 })
+
+Migrations.to("0.23.0", () => {
+  for (const [, assembly] of getAssembliesForMigration()) {
+    for (const entity of assembly.content.iterateAllEntities()) {
+      entity.direction ??= 0
+    }
+  }
+})

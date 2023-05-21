@@ -83,7 +83,7 @@ function tryUpdateWorldEntitiesInRange(
 ): boolean {
   assert(startStage >= 1)
   const { firstStage, lastStage } = entity
-  const direction = entity.getDirection()
+  const direction = entity.direction
   const previewDirection = entity.getPreviewDirection()
 
   if (startStage == firstStage) startStage = 1 // also update all previews if first stage edited
@@ -317,9 +317,9 @@ export function tryDollyEntities(
   if (!movedEntity) return "entities-missing"
   const moveResult = tryMoveOtherEntities(assembly, entity, stage, movedEntity)
   if (moveResult != "success") {
-    forceDollyEntity(movedEntity, entity.position, entity.getWorldDirection())
+    forceDollyEntity(movedEntity, entity.position, entity.direction)
   } else {
-    entity.setDirection(movedEntity.direction)
+    entity.direction = movedEntity.direction
     const posChanged = assembly.content.changePosition(entity, movedEntity.position)
     assert(posChanged, "failed to change position in assembly content")
     deleteAllHighlights(entity)

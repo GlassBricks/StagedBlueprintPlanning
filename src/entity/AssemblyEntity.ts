@@ -50,12 +50,7 @@ export type InternalSavedDirection = { _internalSavedDirection?: never }
  */
 export interface AssemblyEntity<out T extends Entity = Entity> {
   readonly position: Position
-  readonly direction: InternalSavedDirection | nil
-  getDirection(): defines.direction
-  setDirection(direction: defines.direction): void
-
-  getWorldDirection(): defines.direction
-
+  direction: defines.direction
   /**
    * If this is rolling stock, the direction is based off of orientation instead.
    */
@@ -220,7 +215,7 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
 @RegisterClass("AssemblyEntity")
 class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T> {
   public position: Position
-  public direction: InternalSavedDirection | nil
+  public direction: defines.direction
 
   public isSettingsRemnant: true | nil
 
@@ -238,27 +233,12 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
 
   constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
     this.position = position
-    this.direction = (direction == 0 ? nil : direction) as InternalSavedDirection | nil
+    this.direction = direction ?? 0
     this.firstValue = firstValue
     this.firstStage = firstStage
     if (this.isRollingStock()) {
       this.lastStage = firstStage
     }
-  }
-
-  public getDirection(): defines.direction {
-    return (this.direction ?? 0) as defines.direction
-  }
-  public setDirection(direction: defines.direction): void {
-    if (direction == 0) {
-      this.direction = nil
-    } else {
-      this.direction = direction as unknown as InternalSavedDirection
-    }
-  }
-
-  getWorldDirection(): defines.direction {
-    return (this.direction ?? 0) as defines.direction
   }
 
   public getPreviewDirection(): defines.direction {
@@ -833,6 +813,6 @@ export function getStageToMerge(stageNumber: StageNumber): StageNumber {
 
 export function _migrateEntity_0_17_0(entity: AssemblyEntity): void {
   if (entity.isUndergroundBelt() && entity.firstValue.type == "output") {
-    entity.setDirection(oppositedirection(entity.getDirection()))
+    entity.direction = oppositedirection(entity.direction)
   }
 }

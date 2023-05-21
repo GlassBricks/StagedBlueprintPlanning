@@ -223,11 +223,11 @@ export function tryUpdateEntityFromWorld(
     return tryUpdateUndergroundFromFastReplace(assembly, stage, entity, entitySource)
   }
 
-  const rotated = !canBeAnyDirection(entitySource) && entitySource.direction != entity.getDirection()
+  const rotated = !canBeAnyDirection(entitySource) && entitySource.direction != entity.direction
   if (rotated) {
     const rotateAllowed = stage == entity.firstStage
     if (rotateAllowed) {
-      entity.setDirection(entitySource.direction)
+      entity.direction = entitySource.direction
     } else {
       undoRotate(assembly, entity, stage)
       return EntityUpdateResult.CannotRotate
@@ -265,14 +265,14 @@ export function tryRotateEntityToMatchWorld(
   // canBeAnyDirection(entitySource) is false
 
   const newDirection = entitySource.direction
-  const rotated = newDirection != entity.getDirection()
+  const rotated = newDirection != entity.direction
   if (!rotated) return EntityRotateResult.NoChange
   const rotateAllowed = stage == entity.firstStage || (pair && pair.firstStage == stage)
   if (!rotateAllowed) {
     undoRotate(assembly, entity, stage)
     return EntityRotateResult.CannotRotate
   }
-  entity.setDirection(newDirection)
+  entity.direction = newDirection
   if (type == "loader" || type == "loader-1x1") {
     ;(entity as LoaderAssemblyEntity).setTypeProperty(entitySource.loader_type)
   } else if (type == "underground-belt") {
@@ -280,7 +280,7 @@ export function tryRotateEntityToMatchWorld(
   }
   updateWorldEntities(assembly, entity, entity.firstStage)
   if (pair) {
-    pair.setDirection(newDirection)
+    pair.direction = newDirection
     pair.setTypeProperty(entitySource.belt_to_ground_type == "input" ? "output" : "input")
     updateWorldEntities(assembly, pair, pair.firstStage)
   }
@@ -316,11 +316,11 @@ export function tryApplyUpgradeTarget(
   }
 
   const rotateDir = entitySource.get_upgrade_direction()
-  const rotated = rotateDir != nil && rotateDir != entity.getDirection() && !canBeAnyDirection(entitySource)
+  const rotated = rotateDir != nil && rotateDir != entity.direction && !canBeAnyDirection(entitySource)
   if (rotated) {
     const rotateAllowed = stage == entity.firstStage
     if (rotateAllowed) {
-      entity.setDirection(rotateDir)
+      entity.direction = rotateDir
     } else {
       undoRotate(assembly, entity, stage)
       return EntityUpdateResult.CannotRotate

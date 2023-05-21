@@ -18,7 +18,6 @@ import { AsmCircuitConnection, circuitConnectionEquals } from "./circuit-connect
 import { EntityIdentification } from "./Entity"
 import {
   EntityPrototypeInfo,
-  getPasteRotatableType,
   isRollingStockType,
   OnEntityPrototypesLoaded,
   PasteCompatibleRotationType,
@@ -97,8 +96,9 @@ export type AsmEntityCableConnections = LuaSet<AssemblyEntity>
 
 let nameToType: EntityPrototypeInfo["nameToType"]
 let nameToCategory: EntityPrototypeInfo["nameToCategory"]
+let pasteCompatibleRotations: EntityPrototypeInfo["pasteCompatibleRotations"]
 OnEntityPrototypesLoaded.addListener((i) => {
-  ;({ nameToType, nameToCategory } = i)
+  ;({ nameToType, nameToCategory, pasteCompatibleRotations } = i)
 })
 
 @RegisterClass("EntityMap")
@@ -127,10 +127,11 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     // out of possible candidates, find one with the smallest firstStage
 
     while (cur != nil) {
+      const name = cur.firstValue.name
       if (
-        (direction == nil || direction == (cur.direction ?? 0)) &&
+        (direction == nil || direction == cur.direction) &&
         (cur.lastStage == nil || cur.lastStage >= stage) &&
-        (cur.firstValue.name == entityName || (category && nameToCategory.get(cur.firstValue.name) == category)) &&
+        (name == entityName || (category && nameToCategory.get(name) == category)) &&
         (candidate == nil || cur.firstStage < candidate.firstStage)
       ) {
         candidate = cur
@@ -149,12 +150,13 @@ class AssemblyContentImpl implements MutableAssemblyContent {
       const found = this.findCompatibleByProps(type, entity.position, nil, stage)
       if (
         found &&
-        getUndergroundDirection(found.getDirection(), (found as UndergroundBeltAssemblyEntity).firstValue.type) ==
+        getUndergroundDirection(found.direction, (found as UndergroundBeltAssemblyEntity).firstValue.type) ==
           getUndergroundDirection(entity.direction, entity.belt_to_ground_type)
       )
         return found
       return nil
-    } else if (rollingStockTypes.has(type)) {
+    }
+    if (rollingStockTypes.has(type)) {
       if (entity.object_name == "LuaEntity") {
         const registered = getRegisteredAssemblyEntity(entity as LuaEntity)
         if (registered && this.entities.has(registered)) return registered
@@ -163,7 +165,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
     }
     // now, worldDirection == savedDirection
     const name = entity.name
-    const pasteRotatableType = getPasteRotatableType(name)
+    const pasteRotatableType = pasteCompatibleRotations.get(name)
     if (pasteRotatableType == nil) {
       return this.findCompatibleByProps(name, entity.position, previousDirection ?? entity.direction, stage)
     }
@@ -191,7 +193,7 @@ class AssemblyContentImpl implements MutableAssemblyContent {
         name,
         type: nameToType.get(name) ?? "unknown",
         position: entity.position,
-        direction: entity.getDirection(),
+        direction: entity.direction,
         belt_to_ground_type: entity.isUndergroundBelt() ? entity.firstValue.type : nil,
       },
       nil,

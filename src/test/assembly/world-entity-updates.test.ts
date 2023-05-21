@@ -85,7 +85,7 @@ function assertEntityCorrect(i: StageNumber): LuaEntity {
   const value = saveEntity(worldEntity)
   const valueAtStage = entity.getValueAtStage(i)
   expect(valueAtStage).to.equal(value)
-  expect(entity.getDirection()).to.be(worldEntity.direction)
+  expect(entity.direction).to.be(worldEntity.direction)
   return worldEntity
 }
 
@@ -120,7 +120,7 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = createEntity(assembly.getSurface(2)!, entity.position, entity.getDirection(), {
+      const replaced = createEntity(assembly.getSurface(2)!, entity.position, entity.direction, {
         name: "inserter",
         override_stack_size: 3,
       } as TestEntity)!
@@ -181,7 +181,7 @@ describe("updateWorldEntities", () => {
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
     entity.setFirstStageUnchecked(2)
     if (withExisting) {
-      const luaEntity = createEntity(assembly.getSurface(3)!, entity.position, entity.getDirection(), {
+      const luaEntity = createEntity(assembly.getSurface(3)!, entity.position, entity.direction, {
         name: "inserter",
         override_stack_size: 3,
       } as TestEntity)!
@@ -207,7 +207,7 @@ describe("updateWorldEntities", () => {
 
   test("can rotate entities", () => {
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
-    entity.setDirection(defines.direction.west as defines.direction)
+    entity.direction = defines.direction.west as defines.direction
     WorldUpdater.updateWorldEntities(assembly, entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
@@ -322,7 +322,7 @@ describe("tryMoveEntity", () => {
       expect(luaEntity.direction).to.be(newDir)
     }
     expect(entity.position).to.equal(newPos)
-    expect(entity.getDirection()).to.be(newDir)
+    expect(entity.direction).to.be(newDir)
 
     expect(assembly.content.findCompatibleByProps(entity.getNameAtStage(1), newPos, newDir, 1)).to.be(entity)
   }
@@ -335,7 +335,7 @@ describe("tryMoveEntity", () => {
       expect(luaEntity.direction).to.be(origDir)
     }
     expect(entity.position).to.equal(origPos)
-    expect(entity.getDirection()).to.be(origDir)
+    expect(entity.direction).to.be(origDir)
 
     expect(assembly.content.findCompatibleByProps(entity.getNameAtStage(1), origPos, origDir, 1)).to.be(entity)
   }

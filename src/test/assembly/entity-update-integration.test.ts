@@ -94,12 +94,7 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 
 function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean) {
   expect(entity.isSettingsRemnant).to.be.falsy()
-  const found = assembly.content.findCompatibleByProps(
-    entity.firstValue.name,
-    entity.position,
-    entity.getDirection(),
-    1,
-  )
+  const found = assembly.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).to.be(entity)
 
   let hasMissing = false
@@ -115,13 +110,13 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
     } else {
       const savedValue = saveEntity(worldEntity)
       expect(savedValue).to.equal(value)
-      expect(worldEntity.direction).to.be(entity.getDirection())
+      expect(worldEntity.direction).to.be(entity.direction)
     }
     if (isPreview) {
       expect(worldEntity.name).to.be(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)
     }
     expect(worldEntity.position).to.equal(entity.position)
-    expect(worldEntity.direction).to.equal(entity.getDirection())
+    expect(worldEntity.direction).to.equal(entity.direction)
 
     expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).to.be.nil()
   }
@@ -206,12 +201,7 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
 }
 
 function assertEntityNotPresent(entity: AssemblyEntity) {
-  const found = assembly.content.findCompatibleByProps(
-    entity.firstValue.name,
-    entity.position,
-    entity.getDirection(),
-    1,
-  )
+  const found = assembly.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).to.be.nil()
 
   for (const stage of $range(1, assembly.lastStageFor(entity))) {
@@ -389,7 +379,7 @@ test("rotating first value from world via update", () => {
   worldEntity.direction = defines.direction.south
   const ret = tryUpdateEntityFromWorld(assembly, entity, 3)
   expect(ret).to.be("updated")
-  expect(entity.getDirection()).to.be(defines.direction.south)
+  expect(entity.direction).to.be(defines.direction.south)
   assertEntityCorrect(entity, false)
 })
 
@@ -398,7 +388,7 @@ test("rotating first value from world via rotate", () => {
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
   tryRotateEntityToMatchWorld(assembly, entity, 3)
-  expect(entity.getDirection()).to.be(defines.direction.south)
+  expect(entity.direction).to.be(defines.direction.south)
   assertEntityCorrect(entity, false)
 })
 
@@ -408,7 +398,7 @@ test("rotation forbidden at higher stage", () => {
   worldEntity.direction = defines.direction.south
   const ret = tryUpdateEntityFromWorld(assembly, entity, 4)
   expect(ret).to.be("cannot-rotate")
-  expect(entity.getDirection()).to.be(defines.direction.east)
+  expect(entity.direction).to.be(defines.direction.east)
   assertEntityCorrect(entity, false)
 })
 
@@ -417,7 +407,7 @@ test("rotation forbidden at higher stage via rotate", () => {
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
   tryRotateEntityToMatchWorld(assembly, entity, 4)
-  expect(entity.getDirection()).to.be(defines.direction.east)
+  expect(entity.direction).to.be(defines.direction.east)
   assertEntityCorrect(entity, false)
 })
 
@@ -876,7 +866,7 @@ describe.each([defines.direction.north, defines.direction.northeast])("with rail
       expect(assemblyEntity).not.toBeNil()
       expect(assemblyEntity!.getWorldEntity(1)).toEqual(rail)
 
-      expect(assemblyEntity!.getDirection()).toEqual(expected)
+      expect(assemblyEntity!.direction).toEqual(expected)
     },
   )
 })
@@ -920,8 +910,8 @@ test("pasting diagonal rail at same position but different direction", () => {
   expect(entity1).not.toBeNil()
   expect(entity2).not.toBeNil()
 
-  expect(entity1!.getDirection()).toEqual(defines.direction.northeast)
-  expect(entity2!.getDirection()).toEqual(defines.direction.southwest)
+  expect(entity1!.direction).toEqual(defines.direction.northeast)
+  expect(entity2!.direction).toEqual(defines.direction.southwest)
 
   expect(entity1!.getWorldEntity(1)).toEqual(rail)
   expect(entity2!.getWorldEntity(1)).toEqual(rail2)
@@ -964,7 +954,7 @@ describe.each([
 
           const entity1 = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 1)
           expect(entity1).not.toBeNil()
-          expect(entity1!.getDirection()).toEqual(luaEntity.direction)
+          expect(entity1!.direction).toEqual(luaEntity.direction)
           expect(entity1!.getWorldEntity(1)).toEqual(luaEntity)
         },
       )
@@ -994,7 +984,7 @@ test("pasting rotate blueprint with a rotated fluid tank", () => {
 
   const entity1 = assembly.content.findCompatibleWithLuaEntity(tank, nil, 1)
   expect(entity1).not.toBeNil()
-  expect(entity1!.getDirection()).toEqual(0)
+  expect(entity1!.direction).toEqual(0)
   expect(entity1!.getWorldEntity(1)).toEqual(tank)
 })
 

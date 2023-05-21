@@ -134,7 +134,7 @@ function createHighlight<T extends keyof HighlightEntities>(
   } else if (config.type == "sprite") {
     const localSelectionBox = selectionBoxes.get(prototypeName)
     if (localSelectionBox) {
-      const selectionBox = BBox.rotateAboutOrigin(localSelectionBox, entity.getWorldDirection())
+      const selectionBox = BBox.rotateAboutOrigin(localSelectionBox, entity.direction)
       const size = selectionBox.size()
       const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
       // const worldPosition = relativePosition.plus(entity.position)
