@@ -745,16 +745,21 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   const value = bpState.entities[entityId - 1]
 
   let entityDir = entity.direction
-  const isDiagonal = value.direction && value.direction % 2 == 1
-  if (isDiagonal) {
-    entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
-  }
 
   const valueName = value.name
   const type = nameToType.get(valueName)!
   if (type == "storage-tank") {
     entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
+  } else if (type == "curved-rail") {
+    const isDiagonal = ((value.direction ?? 0) % 2 == 1) != bpState.isFlipped
+    if (isDiagonal) entityDir = (entityDir + 1) % 8
+  } else {
+    const isDiagonal = (value.direction ?? 0) % 2 == 1
+    if (isDiagonal) {
+      entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
+    }
   }
+
   let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == entityDir)
   if (!luaEntity) {
     // slower path, check for other directions
