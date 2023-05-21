@@ -11,9 +11,9 @@
 
 import { BBox } from "../lib/geometry"
 
-const initialPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
+const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
 
-function createNewStageSurface(this: unknown): LuaSurface {
+function createNewStageSurface(area: BBox = defaultPreparedArea): LuaSurface {
   const surface = game.create_surface("bp100-stage-temp", {
     width: 10000,
     height: 10000,
@@ -23,7 +23,7 @@ function createNewStageSurface(this: unknown): LuaSurface {
   surface.show_clouds = false
   surface.name = "bp100-stage-" + surface.index
 
-  prepareArea(surface, initialPreparedArea)
+  prepareArea(surface, area)
   return surface
 }
 
@@ -47,10 +47,13 @@ declare const global: {
   freeSurfaces?: LuaSurface[]
 }
 
-let surfaceCreator: {
-  createSurface(): LuaSurface
+/** @noSelf */
+interface SurfaceCreator {
+  createSurface(preparedArea?: BBox): LuaSurface
   destroySurface(surface: LuaSurface): void
 }
+
+let surfaceCreator: SurfaceCreator
 if (!script.active_mods["factorio-test"]) {
   surfaceCreator = {
     createSurface: createNewStageSurface,
@@ -58,15 +61,18 @@ if (!script.active_mods["factorio-test"]) {
   }
 } else {
   surfaceCreator = {
-    createSurface: () => {
+    createSurface: (area = defaultPreparedArea) => {
       if (!global.freeSurfaces) {
         global.freeSurfaces = []
       }
       while (global.freeSurfaces.length > 0) {
         const surface = global.freeSurfaces.pop()!
-        if (surface.valid) return surface
+        if (surface.valid) {
+          prepareArea(surface, area)
+          return surface
+        }
       }
-      return createNewStageSurface()
+      return createNewStageSurface(area)
     },
     destroySurface: (surface) => {
       if (!surface.valid) return

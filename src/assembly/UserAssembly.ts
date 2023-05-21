@@ -363,7 +363,8 @@ class StageImpl implements Stage {
   }
 
   static create(assembly: UserAssemblyImpl, stageNumber: StageNumber, name: string): StageImpl {
-    const surface = createStageSurface()
+    const area = assembly.content.computeBoundingBox()
+    const surface = createStageSurface(area)
     return new StageImpl(assembly, surface, stageNumber, name)
   }
 

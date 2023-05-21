@@ -40,7 +40,7 @@ export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
     }
   })
   after_all(() => {
-    surfaces.forEach(destroySurface)
+    surfaces.forEach((s) => destroySurface(s))
   })
   return surfaces
 }
