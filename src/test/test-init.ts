@@ -14,7 +14,7 @@ import { UserAssembly } from "../assembly/AssemblyDef"
 import { deleteAllFreeSurfaces, prepareArea } from "../assembly/surfaces"
 import { UndoHandler } from "../assembly/undo"
 import { createUserAssembly, getAllAssemblies, getStageAtSurface } from "../assembly/UserAssembly"
-import { destroyAllRenders, Events, shallowCompare } from "../lib"
+import { destroyAllRenders, Events } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { debugPrint } from "../lib/test/misc"
@@ -168,18 +168,19 @@ Events.on_tick(() => {
     }
   }
 })
-commands.add_command("rerun", "", () => {
-  global.rerunMode = "rerun"
-})
-// noinspection SpellCheckingInspection
-commands.add_command("ronly", "", () => {
-  global.rerunMode = "reload"
-})
-commands.add_command("norerun", "", () => {
-  global.rerunMode = "none"
-})
-commands.add_command("rr", "", () => {
-  game.reload_mods()
+commands.add_command("r", "", (e) => {
+  const arg = e.parameter
+  if (arg == "test") {
+    global.rerunMode = "rerun"
+  } else if (arg == "only") {
+    global.rerunMode = "reload"
+  } else if (arg == "off") {
+    global.rerunMode = "none"
+  } else if (arg == nil) {
+    if (global.rerunMode == "none") game.reload_mods()
+  } else {
+    game.print("Expected 'test', 'only', 'off' or nothing")
+  }
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -216,32 +217,15 @@ commands.add_command("test-undo", "", (e) => {
   player.print(`Setup undo with: ${param}`)
 })
 
-Events.on_built_entity((e) => {
-  if (e.created_entity.valid && e.created_entity.name == "assembling-machine-3") {
-    const player = game.get_player(e.player_index)!
-    player.request_translation(["bp100-undo-later-test"])
-    // registerUndo(player, "built")
-  }
-})
-
-Events.on_string_translated((e) => {
-  if (shallowCompare(e.localised_string, ["bp100-undo-later-test"])) {
-    const player = game.get_player(e.player_index)!
-    TestUndo.register(player, "build after translation")
-  }
-})
-
 commands.add_command("print-bp-settings", "", () => {
   const player = game.player!
   const stage = getStageAtSurface(player.surface.index)
   if (!stage) return player.print("No stage at surface")
 
-  // const settings = getCurrentValues(stage.stageBlueprintSettings)
   const settings = getCurrentValues(stage.getBlueprintSettingsView())
-
-  // player.print(serpent.block(settings))
   debugPrint(settings)
 })
+
 commands.add_command("perf", "", () => {
   const assembly = getAllAssemblies().find((a) => a.name.get() == "Test") ?? createUserAssembly("Test", 5)
   for (const stage of assembly.getAllStages()) {
