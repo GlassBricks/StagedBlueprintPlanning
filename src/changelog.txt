@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.3
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fix issue when blueprint pasting entities over previews.
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.2
 Date: 2023-05-22
@@ -15,7 +16,7 @@ Date: 2023-05-21
   Optimizations:
     - Significantly improved performance of pasting large blueprints.
   Bugfixes:
-    - Fixed... *inhales* pasting a flipped blueprint containing curved rails facing in a leftward direction.
+    - Fixed issue occuring when... *inhales* pasting a blueprint, flipped, containing curved rails, facing in a leftward direction.
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.0
 Date: 2023-05-03
