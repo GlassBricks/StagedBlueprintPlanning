@@ -676,7 +676,7 @@ function manuallyConnectWires(
   const knownLuaEntities = state.currentBlueprintPaste!.knownLuaEntities
   for (const { entity_id: otherId, circuit_id } of connections) {
     const otherEntity = knownLuaEntities[otherId]
-    if (!otherEntity) continue
+    if (!otherEntity || !otherEntity.valid) continue
     luaEntity.connect_neighbour({
       wire: wireType,
       target_entity: otherEntity,

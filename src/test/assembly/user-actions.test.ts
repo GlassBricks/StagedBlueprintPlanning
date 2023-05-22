@@ -143,7 +143,7 @@ describe("onEntityCreated", () => {
     expect(worldUpdates.refreshWorldEntityAtStage).calledWith(assembly, entity, newStage)
   })
 
-  test.each([1, 2])("at lower stage %d sets entity and calls trySetFirstStage to new value", (newStage) => {
+  test.each([1, 2])("at lower stage %d (overbuilding preview) sets entity and calls trySetFirstStage", (newStage) => {
     const { luaEntity, entity } = addEntity(3)
     userActions.onEntityCreated(assembly, luaEntity, newStage, playerIndex)
 
@@ -329,6 +329,13 @@ describe("onEntityPossiblyUpdated", () => {
     const knownValue: any = { foo: "bar" }
     userActions.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex, knownValue)
     expect(assemblyUpdates.addNewEntity).calledWith(assembly, luaEntity, 2, knownValue)
+  })
+
+  test("if is in assembly at higher stage, defaults to overbuild behavior", () => {
+    const { luaEntity, entity } = addEntity(3)
+    userActions.onEntityPossiblyUpdated(assembly, luaEntity, 2, nil, playerIndex, nil)
+    expect(assemblyUpdates.trySetFirstStage).calledWith(assembly, entity, 2)
+    assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
 
   test.each(resultMessages)('calls tryUpdateEntityFromWorld and notifies, with result "%s"', (result, message) => {

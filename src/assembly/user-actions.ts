@@ -126,10 +126,16 @@ function getCompatibleEntityOrAdd(
   knownBpValue?: BlueprintEntity,
 ): AssemblyEntity | nil {
   const compatible = assembly.content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
-  if (!compatible || stage < compatible.firstStage) {
+
+  if (!compatible) {
     newEntityAdded(assembly, entity, stage, byPlayer, knownBpValue)
     return nil
   }
+  if (stage < compatible.firstStage) {
+    onEntityOverbuilt(assembly, compatible, entity, stage, byPlayer)
+    return nil
+  }
+
   compatible.replaceWorldEntity(stage, entity) // just in case
   return compatible
 }

@@ -952,10 +952,12 @@ describe.each([
           const luaEntity = surfaces[0].find_entity(entityName, pos)!
           expect(luaEntity).not.toBeNil()
 
-          const entity1 = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 1)
+          const entity1 = assembly.content.findCompatibleWithLuaEntity(luaEntity, nil, 1)!
           expect(entity1).not.toBeNil()
-          expect(entity1!.direction).toEqual(luaEntity.direction)
-          expect(entity1!.getWorldEntity(1)).toEqual(luaEntity)
+          expect(entity1.direction).toEqual(luaEntity.direction)
+          expect(entity1.getWorldEntity(1)).toEqual(luaEntity)
+
+          assertEntityCorrect(entity1, false)
         },
       )
     },
@@ -982,10 +984,38 @@ test("pasting rotate blueprint with a rotated fluid tank", () => {
 
   expect(tank.direction).toBe(0)
 
-  const entity1 = assembly.content.findCompatibleWithLuaEntity(tank, nil, 1)
+  const entity1 = assembly.content.findCompatibleWithLuaEntity(tank, nil, 1)!
   expect(entity1).not.toBeNil()
-  expect(entity1!.direction).toEqual(0)
-  expect(entity1!.getWorldEntity(1)).toEqual(tank)
+  expect(entity1.direction).toEqual(0)
+  expect(entity1.getWorldEntity(1)).toEqual(tank)
+
+  assertEntityCorrect(entity1, false)
+})
+
+test("can paste a power pole at a lower stage to move", () => {
+  const pole = buildEntity(3, { name: "medium-electric-pole", position: Pos(0.5, 0.5) })
+
+  const entity: BlueprintEntity = {
+    entity_number: 1,
+    name: "medium-electric-pole",
+    position: Pos(0.5, 0.5),
+  }
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.set_blueprint_entities([entity])
+
+  player.teleport([0, 0], surfaces[2 - 1])
+  player.build_from_cursor({ position: Pos(0.5, 0.5), direction: 0, alt: true })
+  // should move to stage 2
+
+  const pole2 = surfaces[2 - 1].find_entity("medium-electric-pole", Pos(0.5, 0.5))!
+  expect(pole2).not.toBeNil()
+
+  expect(pole.firstStage).toBe(2)
+  expect(pole.getWorldEntity(2)).toEqual(pole2)
+
+  assertEntityCorrect(pole, false)
 })
 
 test("connecting power switch", () => {
