@@ -116,7 +116,11 @@ function assertEntityCorrect(entity: AssemblyEntity, expectedHasMissing: boolean
       expect(worldEntity.name).to.be(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)
     }
     expect(worldEntity.position).to.equal(entity.position)
-    expect(worldEntity.direction).to.equal(entity.direction)
+    if (isPreview) {
+      expect(worldEntity.direction).to.equal(entity.getPreviewDirection())
+    } else {
+      expect(worldEntity.direction).to.equal(entity.direction)
+    }
 
     expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).to.be.nil()
   }
@@ -615,33 +619,7 @@ test("connect and disconnect circuit wires", () => {
 })
 
 function assertTrainEntityCorrect(entity: RollingStockAssemblyEntity, expectedHasError: boolean) {
-  let hasError = false
-  for (const stage of $range(1, assembly.lastStageFor(entity))) {
-    const worldEntity = entity.getWorldOrPreviewEntity(stage)!
-    if (stage != entity.firstStage) {
-      expect(worldEntity).to.be.any()
-      expect(isPreviewEntity(worldEntity)).to.be(true)
-      expect(entity.getExtraEntity("errorOutline", stage)).to.be.nil()
-    } else {
-      expect(worldEntity).to.be.any()
-      if (isPreviewEntity(worldEntity)) {
-        hasError = true
-        expect(worldEntity.name).to.be(Prototypes.PreviewEntityPrefix + entity.firstValue.name)
-        expect(entity.getExtraEntity("errorOutline", entity.firstStage)).to.be.any()
-        expect(worldEntity.direction).to.be(entity.getPreviewDirection())
-      } else {
-        expect(worldEntity.name).to.be(entity.firstValue.name)
-        expect(entity.getExtraEntity("errorOutline", entity.firstStage)).to.be.nil()
-        expect(worldEntity.orientation).to.be(entity.firstValue.orientation)
-      }
-      expect(worldEntity.position).to.equal(entity.position)
-    }
-  }
-  expect(hasError).to.be(expectedHasError)
-  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
-  expect(entity.hasAnyExtraEntities("settingsRemnantHighlight")).to.be(false)
-  expect(entity.hasAnyExtraEntities("configChangedHighlight")).to.be(false)
-  expect(entity.hasAnyExtraEntities("configChangedLaterHighlight")).to.be(false)
+  assertEntityCorrect(entity, expectedHasError)
 }
 
 test("create train entity", () => {

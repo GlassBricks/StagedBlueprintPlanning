@@ -191,7 +191,7 @@ export function updateNewWorldEntitiesWithoutWires(
   updateFirstStage: boolean,
 ): void {
   // performance: maybe don't need to entity at firstStage if it's new (entity is guaranteed to match firstValue)
-  const hasError = tryUpdateWorldEntitiesInRange(assembly, entity, 1, assembly.numStages(), updateFirstStage)
+  const hasError = tryUpdateWorldEntitiesInRange(assembly, entity, 1, assembly.lastStageFor(entity), updateFirstStage)
   // performance: if there are no errors, then there are no highlights to update
   // (no stage diff, last stage, either)
   if (hasError) updateAllHighlights(assembly, entity)
