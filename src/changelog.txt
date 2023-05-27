@@ -3,6 +3,8 @@ Version: 0.22.5
 Date: ????
   Bugfixes:
     - Fixed not being able to select rail previews with the stage move tool
+  Locale:
+    - Fix locale issue with blueprint book creation task
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.4
 Date: 2023-05-22

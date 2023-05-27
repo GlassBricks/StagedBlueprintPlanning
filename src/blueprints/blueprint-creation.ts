@@ -292,7 +292,7 @@ class BlueprintCreationTaskBuilder {
     return this
   }
 
-  public build(taskTitle: LocalisedString | nil): BlueprintCreationTask {
+  public build(taskTitle: (LocalisedString & object) | nil): BlueprintCreationTask {
     return new BlueprintCreationTask(this.tasks, this.inventory, taskTitle)
   }
 
@@ -382,7 +382,7 @@ function addBlueprintBookTasks(builder: BlueprintCreationTaskBuilder, assembly: 
 export function submitAssemblyBlueprintBookTask(assembly: UserAssembly, stack: LuaItemStack): void {
   const builder = new BlueprintCreationTaskBuilder()
   addBlueprintBookTasks(builder, assembly, stack)
-  submitTask(builder.build(L_GuiBlueprintBookTask.AssemblingBlueprintBook))
+  submitTask(builder.build([L_GuiBlueprintBookTask.AssemblingBlueprintBook]))
 }
 
 export function exportBlueprintBookToFile(assembly: UserAssembly, player: LuaPlayer): string | nil {
@@ -402,7 +402,7 @@ export function exportBlueprintBookToFile(assembly: UserAssembly, player: LuaPla
     args: [stack, name, player],
   })
 
-  const task = builder.build(L_GuiBlueprintBookTask.AssemblingBlueprintBook)
+  const task = builder.build([L_GuiBlueprintBookTask.AssemblingBlueprintBook])
   submitTask(task)
 
   return name
