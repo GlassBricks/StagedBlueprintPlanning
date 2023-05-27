@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.5
-Date: ????
+Date: 2023-05-27
   Bugfixes:
     - Fixed not being able to select rail previews with the stage move tool
   Locale:
