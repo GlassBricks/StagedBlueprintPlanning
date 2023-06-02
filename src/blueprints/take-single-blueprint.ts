@@ -54,23 +54,26 @@ function filterEntities(
   bpMapping: Record<number, LuaEntity>,
   additionalWhitelist: ReadonlyLuaSet<string>,
   blacklist: ReadonlyLuaSet<string>,
-): boolean {
-  let anyDeleted = false
+): LuaMultiReturn<[deleted?: true, firstNotDeletedIndex?: number]> {
+  let anyDeleted: true | nil
+  let firstNotDeletedLuaIndex: number | nil
+  let un: UnitNumber | nil
   for (const i of $range(1, entities.length)) {
     const entity = entities[i - 1]
 
     // not blacklist, and (no unitNumbers or (in whitelist or in unitNumbers))
     const name = entity.name
-    if (!blacklist.has(name)) {
-      if (!unitNumbers || additionalWhitelist.has(name)) continue
-      const unitNumber = bpMapping[i].unit_number
-      if (unitNumber && unitNumbers.has(unitNumber)) continue
+    if (
+      blacklist.has(name) ||
+      (unitNumbers && !additionalWhitelist.has(name) && !((un = bpMapping[i].unit_number) && unitNumbers.has(un)))
+    ) {
+      delete entities[i - 1]
+      anyDeleted = true
+    } else {
+      firstNotDeletedLuaIndex ??= i
     }
-
-    delete entities[i - 1]
-    anyDeleted = true
   }
-  return anyDeleted
+  return $multi(anyDeleted, firstNotDeletedLuaIndex)
 }
 
 function replaceInfinityEntitiesWithCombinators(entities: Record<number, Mutable<BlueprintEntity>>): boolean {
@@ -171,6 +174,7 @@ export function takeSingleBlueprint(
   let effectivePositionOffset: Position | nil
   let entitiesAdjusted = false
   const firstEntityOriginalPosition = bpMapping[1].position
+  let finalFirstEntityOrigPosition = firstEntityOriginalPosition
 
   if (snapToGrid && positionOffset) {
     if (contains2x2Grid(stack)) {
@@ -188,16 +192,21 @@ export function takeSingleBlueprint(
   }
 
   if (unitNumberFilter || blacklist) {
-    if (
-      filterEntities(
-        entities,
-        unitNumberFilter,
-        bpMapping,
-        additionalWhitelist ?? newLuaSet(),
-        blacklist ?? newLuaSet(),
-      )
-    ) {
+    const [anyDeleted, firstNotDeletedIndex] = filterEntities(
+      entities,
+      unitNumberFilter,
+      bpMapping,
+      additionalWhitelist ?? newLuaSet(),
+      blacklist ?? newLuaSet(),
+    )
+    if (anyDeleted) {
       entitiesAdjusted = true
+      if (firstNotDeletedIndex == nil) {
+        stack.clear_blueprint()
+        return nil
+      }
+
+      finalFirstEntityOrigPosition = bpMapping[firstNotDeletedIndex].position
     }
   }
 
@@ -222,7 +231,7 @@ export function takeSingleBlueprint(
 
   stack.blueprint_icons = params.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
   if (forEdit) {
-    stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, firstEntityOriginalPosition)
+    stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }
   return {
     effectivePositionOffset,

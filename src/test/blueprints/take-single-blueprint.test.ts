@@ -1,7 +1,18 @@
-import { BBox, Pos } from "../../lib/geometry"
-import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
-import { takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
+/*
+ * Copyright (c) 2023 GlassBricks
+ * This file is part of Staged Blueprint Planning.
+ *
+ * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * Staged Blueprint Planning is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import expect from "tstl-expect"
+import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
+import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
+import { BBox, Pos } from "../../lib/geometry"
 
 let surface: LuaSurface
 let player: LuaPlayer
@@ -23,7 +34,7 @@ function createSampleEntities() {
   assert(chest)
   const belt = surface.create_entity({
     name: "transport-belt",
-    position: [0.5, 1.5],
+    position: [1.5, 1.5],
     force: "player",
   })!
   return { chest, belt }
@@ -39,13 +50,13 @@ test("can take blueprint and settings applied", () => {
     positionRelativeToGrid: { x: 4, y: 5 },
   } satisfies StageBlueprintSettings
 
-  createSampleEntities()
+  const { chest, belt } = createSampleEntities()
   surface.set_tiles([{ name: "landfill", position: [0, 0] }])
 
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, false)
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
   expect(ret).toBeTruthy()
 
   expect(stack.blueprint_icons).to.equal(settings.icons)
@@ -54,6 +65,50 @@ test("can take blueprint and settings applied", () => {
   expect(stack.blueprint_position_relative_to_grid).to.equal(settings.positionRelativeToGrid)
   const entities = stack.get_blueprint_entities()!
   expect(entities.length).to.be(2)
+  expect(entities[0]).toMatchTable({
+    name: belt.name,
+    tags: { [FirstEntityOriginalPositionTag]: belt.position },
+  })
+  expect(entities[1]).toMatchTable({
+    name: chest.name,
+  })
+
+  const tiles = stack.get_blueprint_tiles()!
+  expect(tiles).to.be.any()
+  expect(tiles).toHaveLength(1)
+  expect(tiles[0].position).to.equal(settings.positionOffset)
+})
+
+test("forEdit position offset still works when first entity is blacklisted", () => {
+  const settings = {
+    ...getDefaultBlueprintSettings(),
+    icons: [{ signal: { type: "item", name: "iron-plate" }, index: 1 }],
+    snapToGrid: { x: 2, y: 3 },
+    absoluteSnapping: true,
+    positionOffset: { x: 1, y: 2 },
+    positionRelativeToGrid: { x: 4, y: 5 },
+    blacklist: newLuaSet("transport-belt"),
+  } satisfies StageBlueprintSettings
+
+  const { chest } = createSampleEntities()
+  surface.set_tiles([{ name: "landfill", position: [0, 0] }])
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+
+  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
+  expect(ret).toBeTruthy()
+
+  expect(stack.blueprint_snap_to_grid).to.equal(settings.snapToGrid)
+  expect(stack.blueprint_absolute_snapping).to.be(settings.absoluteSnapping)
+  expect(stack.blueprint_position_relative_to_grid).to.equal(settings.positionRelativeToGrid)
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities.length).to.be(1)
+  expect(entities[0]).toMatchTable({
+    name: chest.name,
+    tags: { [FirstEntityOriginalPositionTag]: chest.position },
+  })
 
   const tiles = stack.get_blueprint_tiles()!
   expect(tiles).to.be.any()
@@ -79,7 +134,8 @@ test("applies blacklist", () => {
 
   const entities = stack.get_blueprint_entities()!
   expect(entities.length).to.be(1)
-  expect(entities[0].name).to.equal(belt.name)
+  expect(entities[0]).toMatchTable({ name: belt.name })
+  expect(entities[0]).not.toHaveKey("tags")
 })
 
 test("applies unit number filter", () => {
