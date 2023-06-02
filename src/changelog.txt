@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.6
-Date: ????
+Date: 2023-06-02
   Bugfixes:
     - Fixed saving grid settings when the first entity in the blueprint is filtered out (e.g. via blacklist).
 ---------------------------------------------------------------------------------------------------
