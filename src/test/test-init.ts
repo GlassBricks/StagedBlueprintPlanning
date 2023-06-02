@@ -168,7 +168,7 @@ Events.on_tick(() => {
     }
   }
 })
-commands.add_command("r", "", (e) => {
+commands.add_command("rr", "", (e) => {
   const arg = e.parameter
   if (arg == "test") {
     global.rerunMode = "rerun"
