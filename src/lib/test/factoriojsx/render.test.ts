@@ -336,7 +336,7 @@ test("context onMount", () => {
 test("context onDestroy", () => {
   const fn = mock.fn()
   const spec: FunctionalComponent<any> = {
-    type(props, context) {
+    type(_, context) {
       context.getSubscription().add({ invoke: fn })
 
       return { type: "flow" }

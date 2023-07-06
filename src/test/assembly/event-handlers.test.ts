@@ -74,7 +74,7 @@ let undoFn: (name: string) => void
 before_each(() => {
   undoFn = mock.fnNoSelf()
 })
-const TestUndo = UndoHandler("event listener test undo", (player, data: string) => undoFn(data))
+const TestUndo = UndoHandler("event listener test undo", (_, data: string) => undoFn(data))
 
 describe("add", () => {
   test("player built entity", () => {
