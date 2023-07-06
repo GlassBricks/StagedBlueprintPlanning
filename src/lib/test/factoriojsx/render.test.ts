@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect, { mock } from "tstl-expect"
+import { _numObservers, property } from "../../event"
 import {
   ChooseElemButtonElement,
   ClassComponent,
@@ -25,10 +27,8 @@ import {
   TextBoxElement,
   TextFieldElement,
 } from "../../factoriojsx"
-import { _numObservers, property } from "../../event"
 import { RegisterClass } from "../../references"
 import { testRender } from "../gui"
-import expect, { mock } from "tstl-expect"
 
 describe("create", () => {
   test("Sets spec property", () => {
@@ -254,6 +254,7 @@ test("events", () => {
     button: defines.mouse_button_type.left,
     control: false,
     shift: false,
+    cursor_display_location: nil!,
   }
   script.get_event_handler(defines.events.on_gui_click)(fakeClickEvent)
   expect(func).calledWith(fakeClickEvent)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,13 +10,13 @@
  */
 
 import { isEmpty } from "../_util"
-import { Events } from "../Events"
 import { isMutableProperty, MutableProperty, Property, SimpleObserver, Subscription } from "../event"
+import { Events } from "../Events"
+import { Migrations } from "../migration"
 import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
 import { PRecord } from "../util-types"
-import * as propInfo from "./propInfo.json"
 import {
   ClassComponent,
   Component,
@@ -28,7 +28,7 @@ import {
   GuiEventHandler,
   RenderContext,
 } from "./element"
-import { Migrations } from "../migration"
+import * as propInfo from "./propInfo.json"
 
 type GuiEventName = Extract<keyof typeof defines.events, `on_gui_${string}`>
 
@@ -319,10 +319,17 @@ function renderClassComponent<T>(parent: BaseGuiElement, spec: ClassComponent<T>
 }
 
 export function render<T extends GuiElementType>(
-  spec: FactorioElement & { type: T },
+  spec: FactorioElement & {
+    type: T
+  },
   parent: BaseGuiElement,
   index?: number,
-): Extract<LuaGuiElement, { type: T }>
+): Extract<
+  LuaGuiElement,
+  {
+    type: T
+  }
+>
 export function render(element: Element, parent: BaseGuiElement, index?: number): LuaGuiElement | nil
 export function render(element: Element, parent: BaseGuiElement, index?: number): LuaGuiElement | nil {
   const result = renderInternal(parent, element, newRootContext(parent.player_index, index))
@@ -408,23 +415,9 @@ export function destroyChildren(element: BaseGuiElement): void {
   element.clear()
 }
 
-// -- gui events --
-const guiEventNames: Record<GuiEventName, true> = {
-  on_gui_click: true,
-  on_gui_opened: true,
-  on_gui_closed: true,
-  on_gui_checked_state_changed: true,
-  on_gui_selected_tab_changed: true,
-  on_gui_elem_changed: true,
-  on_gui_value_changed: true,
-  on_gui_selection_state_changed: true,
-  on_gui_switch_state_changed: true,
-  on_gui_location_changed: true,
-  on_gui_confirmed: true,
-  on_gui_text_changed: true,
-}
+const guiEventNames: LuaSet<GuiEventName> = keySet<Record<GuiEventName, true>>()
 
-for (const [name] of pairs(guiEventNames)) {
+for (const name of guiEventNames) {
   const id = defines.events[name]
   Events.on(id, (e) => {
     const element = e.element

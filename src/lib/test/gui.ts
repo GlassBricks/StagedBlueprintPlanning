@@ -132,6 +132,7 @@ export class ElementWrapper<T extends GuiElementType = GuiElementType> {
       alt: modifiers.alt || false,
       control: modifiers.control || false,
       shift: modifiers.shift || false,
+      cursor_display_location: { x: 0, y: 0 },
     })
   }
 

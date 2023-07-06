@@ -421,7 +421,6 @@ describe("move to this stage", () => {
     expect(player.selected).to.equal(entity)
     Events.raiseFakeEvent(CustomInputs.MoveToThisStage, {
       player_index: player.index,
-      input_name: CustomInputs.MoveToThisStage,
       cursor_position: player.position,
     })
     expect(userActions.onMoveEntityToStageCustomInput).calledWith(assembly, entity!, 1, 1)
@@ -457,7 +456,6 @@ test("force delete custom input", () => {
   player.selected = entity
   Events.raiseFakeEvent(CustomInputs.ForceDelete, {
     player_index: player.index,
-    input_name: CustomInputs.ForceDelete,
     cursor_position: player.position,
   })
   expect(userActions.onEntityForceDeleteUsed).calledWith(assembly, entity!, 1)

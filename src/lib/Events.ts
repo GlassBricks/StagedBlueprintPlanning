@@ -64,7 +64,10 @@ export interface EventsObj extends EventsRegistration {
   clearHandlers<E extends EventId<any, any> | string>(event: E): void
 
   raiseFakeEvent<E extends EventId<any, any>>(event: E, data: Omit<E["_eventData"], keyof EventData>): void
-  raiseFakeEvent(event: string, data: Omit<CustomInputEvent, keyof EventData | "input_name">): void
+  raiseFakeEvent(
+    event: string,
+    data: Omit<CustomInputEvent, keyof EventData | "input_name" | "cursor_display_location">,
+  ): void
   raiseFakeEvent<E extends EventId<any, any> | string>(event: E, data: Omit<EventDataOf<E>, keyof EventData>): void
   raiseFakeEventNamed<E extends keyof NamedEventTypes>(event: E, data: Omit<NamedEventTypes[E], keyof EventData>): void
 }
