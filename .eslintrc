@@ -48,11 +48,6 @@
         "ignoreParameters": true
       }
     ],
-    "no-constant-condition": [
-      "error", {
-        "checkLoops": false
-      }
-    ],
     "prettier/prettier": "warn",
     "@typescript-eslint/ban-types": [
       "error", {
