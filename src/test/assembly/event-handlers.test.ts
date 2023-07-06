@@ -814,6 +814,130 @@ describe("blueprint paste", () => {
       expectedNumCalls = 2
     }
   })
+
+  function fakeFlippedPaste(pos: Position) {
+    // fake the paste event, since no api for it yet
+    Events.raiseFakeEventNamed("on_pre_build", {
+      player_index: player.index,
+      position: pos,
+      shift_build: true,
+      direction: 0,
+      created_by_moving: false,
+      flip_vertical: false,
+      flip_horizontal: true,
+    })
+
+    expect(player.cursor_stack!.cost_to_build).toHaveKey(Prototypes.EntityMarker)
+
+    const entity = player.cursor_stack!.get_blueprint_entities()!.find((e) => e.name == Prototypes.EntityMarker)!
+
+    Events.raiseFakeEventNamed("on_built_entity", {
+      player_index: player.index,
+      created_entity: surface.create_entity({
+        name: entity.name,
+        position: pos,
+        direction: entity.direction,
+      })!,
+      stack: player.cursor_stack!,
+      tags: entity.tags,
+    })
+  }
+
+  test("tank has correct direction when not flipped ", () => {
+    const entity: BlueprintEntity = {
+      entity_number: 1,
+      name: "storage-tank",
+      position: Pos(0.5, 0.5),
+    }
+    player.cursor_stack!.set_blueprint_entities([entity])
+
+    const tank = surface.create_entity({
+      name: "storage-tank",
+      position: Pos(0.5, 0.5),
+      force: "player",
+      direction: 0,
+    })
+    expect(tank).to.be.any()
+
+    player.build_from_cursor({ position: Pos(0.5, 0.5) })
+
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(assembly, tank, 1, nil, player.index, entity)
+  })
+
+  test("tank has correct direction when flipped ", () => {
+    const entity: BlueprintEntity = {
+      entity_number: 1,
+      name: "storage-tank",
+      position: Pos(0.5, 0.5),
+    }
+    player.cursor_stack!.set_blueprint_entities([entity])
+
+    const tank = surface.create_entity({
+      name: "storage-tank",
+      position: Pos(0.5, 0.5),
+      force: "player",
+      direction: 2,
+    })
+    expect(tank).to.be.any()
+
+    fakeFlippedPaste(Pos(0.5, 0.5))
+
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(assembly, tank, 1, nil, player.index, entity)
+  })
+
+  test("splitter has correct values when not flipped", () => {
+    const entity: BlueprintEntity = {
+      entity_number: 1,
+      name: "splitter",
+      position: Pos(0, 0.5),
+      input_priority: "right",
+      output_priority: "left",
+    }
+    player.cursor_stack!.set_blueprint_entities([entity])
+
+    const splitter = surface.create_entity({
+      name: "splitter",
+      position: Pos(0, 0.5),
+      force: "player",
+      direction: 0,
+    })
+    expect(splitter).to.be.any()
+
+    player.build_from_cursor({ position: Pos(0, 0.5) })
+
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(assembly, splitter, 1, nil, player.index, entity)
+  })
+
+  test("splitter has flipped priorities when flipped", () => {
+    const entity: BlueprintEntity = {
+      entity_number: 1,
+      name: "splitter",
+      position: Pos(0, 0.5),
+      input_priority: "right",
+      output_priority: "left",
+    }
+    player.cursor_stack!.set_blueprint_entities([entity])
+
+    const splitter = surface.create_entity({
+      name: "splitter",
+      position: Pos(0, 0.5),
+      force: "player",
+    })
+    expect(splitter).to.be.any()
+
+    fakeFlippedPaste(Pos(0, 0.5))
+
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(assembly, splitter, 1, nil, player.index, {
+      ...entity,
+      input_priority: "left",
+      output_priority: "right",
+    })
+  })
+
   // some more tricky cases handled in entity-update-integration.test.ts
 })
 

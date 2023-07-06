@@ -22,7 +22,7 @@ import {
   OnEntityPrototypesLoaded,
   PasteCompatibleRotationType,
 } from "../entity/entity-prototype-info"
-import { assertNever, PRecord, ProtectedEvents } from "../lib"
+import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { Assembly, Stage } from "./AssemblyDef"
@@ -743,6 +743,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 
   const entityId = tags.referencedLuaIndex
   const value = bpState.entities[entityId - 1]
+  let passedValue = value
 
   let entityDir = entity.direction
 
@@ -753,6 +754,20 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   } else if (type == "curved-rail") {
     const isDiagonal = ((value.direction ?? 0) % 2 == 1) != bpState.isFlipped
     if (isDiagonal) entityDir = (entityDir + 1) % 8
+  } else if (type == "splitter") {
+    if (bpState.isFlipped) {
+      // flip splitter priorities
+      if (value.input_priority || value.output_priority) {
+        passedValue = mutableShallowCopy(value)
+        assume<Mutable<BlueprintEntity>>(passedValue)
+        if (passedValue.input_priority) {
+          passedValue.input_priority = passedValue.input_priority == "left" ? "right" : "left"
+        }
+        if (passedValue.output_priority) {
+          passedValue.output_priority = passedValue.output_priority == "left" ? "right" : "left"
+        }
+      }
+    }
   } else {
     const isDiagonal = (value.direction ?? 0) % 2 == 1
     if (isDiagonal) {
@@ -785,7 +800,14 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   }
 
   const stage = bpState.stage
-  const asmEntity = onEntityPossiblyUpdated(stage.assembly, luaEntity, stage.stageNumber, nil, e.player_index, value)
+  const asmEntity = onEntityPossiblyUpdated(
+    stage.assembly,
+    luaEntity,
+    stage.stageNumber,
+    nil,
+    e.player_index,
+    passedValue,
+  )
 
   const { neighbours, connections } = value
   if (!neighbours && !connections) return
