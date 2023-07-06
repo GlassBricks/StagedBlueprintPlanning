@@ -11,7 +11,7 @@
 
 /**
  * This file handles player navigation.
- * For assembly editing, see assembly/event-listener.ts.
+ * For assembly editing, see assembly/event-handlers.ts.
  */
 
 import { getAllAssemblies } from "../assembly/UserAssembly"

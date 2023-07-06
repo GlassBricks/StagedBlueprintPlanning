@@ -19,7 +19,7 @@ import {
   setTrainLocationToCurrent,
 } from "../assembly/assembly-updates"
 import { Stage } from "../assembly/AssemblyDef"
-import { checkForEntityUpdates } from "../assembly/event-listener"
+import { checkForEntityUpdates } from "../assembly/event-handlers"
 import {
   userMoveEntityToStageWithUndo,
   userRevivedSettingsRemnant,

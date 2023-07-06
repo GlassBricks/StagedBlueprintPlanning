@@ -11,7 +11,7 @@
 
 import expect, { mock } from "tstl-expect"
 import { Stage, UserAssembly } from "../../assembly/AssemblyDef"
-import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../assembly/event-listener"
+import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../assembly/event-handlers"
 import { AutoSetTilesType } from "../../assembly/tiles"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {

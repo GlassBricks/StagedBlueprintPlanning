@@ -12,7 +12,7 @@
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { UserAssembly } from "../../assembly/AssemblyDef"
-import { _assertInValidState } from "../../assembly/event-listener"
+import { _assertInValidState } from "../../assembly/event-handlers"
 import { getAssemblyPlayerData } from "../../assembly/player-assembly-data"
 import { _simulateUndo, UndoHandler } from "../../assembly/undo"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
