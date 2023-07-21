@@ -201,7 +201,7 @@ export function isPreviewEntity(entity: LuaEntity): boolean {
   // so we do a cheap check on type before the expensive check on name
   const type = entity.type
   return (
-    type == "simple-entity-with-owner" ||
-    (type == "rail-remnants" && entity.name.startsWith(Prototypes.PreviewEntityPrefix))
+    (type == "simple-entity-with-owner" || type == "rail-remnants") &&
+    entity.name.startsWith(Prototypes.PreviewEntityPrefix)
   )
 }
