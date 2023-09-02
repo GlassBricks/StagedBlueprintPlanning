@@ -4,7 +4,7 @@
   "include": [
     "src/control.ts", "src/data*.ts", "src/settings*.ts", "src/**/*.d.ts", "tstlPlugin/*.d.ts"
   ],
-  "exclude": ["src/**/test/**", "src/**/*-mock.ts"],
+  "exclude": ["src/**/test/**", "src/**/*-mock.ts", "**/node_modules/"],
   "tstl": {
     "noResolvePaths": [],
     "sourceMapTraceback": false,

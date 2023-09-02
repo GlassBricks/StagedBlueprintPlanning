@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/TypeScriptToLua/TypeScriptToLua/master/tsconfig-schema.json",
   "compilerOptions": {
     "target": "esnext",
     "moduleResolution": "node",
@@ -40,5 +41,5 @@
     ]
   },
   "include": ["src", "tstlPlugin/*.d.ts"],
-  "exclude": []
+  "exclude": ["**/node_modules/"]
 }
