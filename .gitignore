@@ -129,8 +129,8 @@ dist
 **/*.lua
 !**/*.def.lua
 
-tstlPlugin/*.js
-tstlPlugin/*.js.map
+tstlPlugin/*.cjs
+tstlPlugin/*.map
 
 factorio/
 

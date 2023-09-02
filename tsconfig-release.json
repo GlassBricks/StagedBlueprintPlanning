@@ -10,7 +10,7 @@
     "sourceMapTraceback": false,
     "luaPlugins": [
       {
-        "name": "./tstlPlugin/plugin.ts",
+        "name": "./tstlPlugin/plugin.cjs",
         "hasTests": false
       }, {
         "name": "gb-tstl-utils/plugin",

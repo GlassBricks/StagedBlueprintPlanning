@@ -18,7 +18,7 @@ import {
   isTableIndexExpression,
   Plugin,
   TransformationContext,
-  Visitors,
+  Visitors
 } from "typescript-to-lua"
 import { createSerialDiagnosticFactory } from "typescript-to-lua/dist/utils"
 

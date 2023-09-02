@@ -1,12 +1,7 @@
 {
+  "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "types": ["node"],
-    "lib": ["es2020"],
-    "strict": true,
-    "sourceMap": true
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["."],
+  "include": ["."]
 }

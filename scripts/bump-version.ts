@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 GlassBricks
+ * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -33,19 +33,19 @@ interface InfoJson {
 const infoJson: InfoJson = JSON.parse(fs.readFileSync(infoJsonPath, "utf8"))
 const oldVersion = infoJson.version
 const version = semver.parse(oldVersion)
-assert(version !== null, "Invalid version in info.json")
+assert.ok(version !== null, "Invalid version in info.json")
 version.inc(arg as ReleaseType)
 
 const changelogPath = path.join(__dirname, "..", "src/changelog.txt")
 // split lines
 const changelog = fs.readFileSync(changelogPath, "utf8").split("\n")
 const expectedLine2 = `Version: ${oldVersion}`
-assert(changelog[1] === expectedLine2, `Expected changelog line 2 to be "${expectedLine2}"`)
+assert.ok(changelog[1] === expectedLine2, `Expected changelog line 2 to be "${expectedLine2}"`)
 
 // write new version
 
 infoJson.version = version.format()
-fs.writeFileSync(infoJsonPath, prettier.format(JSON.stringify(infoJson, null, 2), { parser: "json" }))
+fs.writeFileSync(infoJsonPath, await prettier.format(JSON.stringify(infoJson, null, 2), { parser: "json" }))
 
 changelog.splice(1, 1, `Version: ${version.format()}`)
 fs.writeFileSync(changelogPath, changelog.join("\n"))
