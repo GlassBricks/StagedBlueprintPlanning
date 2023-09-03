@@ -32,10 +32,12 @@ declare const global: GlobalWithPlayers & {
   futureUndoData: LuaMap<number, UndoEntry>
 }
 
-Migrations.since("0.18.0", () => {
+function undoInit() {
   global.futureUndoData = new LuaMap()
   setmetatable(global.futureUndoData, { __mode: "v" })
-})
+}
+Events.on_init(undoInit)
+Migrations.fromAny(undoInit)
 Events.on_load(() => {
   if (global.futureUndoData != nil) setmetatable(global.futureUndoData, { __mode: "v" })
 })

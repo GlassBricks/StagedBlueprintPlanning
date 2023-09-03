@@ -357,7 +357,7 @@ class StageImpl implements Stage {
     return this.project.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
   }
   public constructor(
-    public readonly project: UserProjectImpl,
+    public project: UserProjectImpl,
     public readonly surface: LuaSurface,
     public stageNumber: StageNumber,
     name: string,
@@ -476,6 +476,22 @@ Migrations.to("0.16.0", () => {
       const view = stage.getBlueprintSettingsView()
       copyFromOldStageSettings(view, oldSettings)
       stage.stageBlueprintSettings.icons.set(oldSettings.icons)
+    }
+  }
+})
+
+Migrations.priority(5, "0.23.0", () => {
+  assume<{
+    assemblies?: UserProjectImpl[]
+  }>(global)
+  global.projects = global.assemblies!
+  delete global.assemblies
+  for (const project of global.projects) {
+    for (const stage of project.getAllStages()) {
+      assume<{
+        assembly?: UserProjectImpl
+      }>(stage)
+      stage.project = project
     }
   }
 })
