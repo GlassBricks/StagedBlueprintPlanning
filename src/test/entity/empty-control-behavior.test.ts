@@ -10,15 +10,15 @@
  */
 
 import expect from "tstl-expect"
-import { createAssemblyEntityNoCopy } from "../../entity/AssemblyEntity"
 import {
   emptyBeltControlBehavior,
   emptyInserterControlBehavior,
   trySetEmptyControlBehavior,
 } from "../../entity/empty-control-behavior"
+import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
 
 test("returns false if <= first stage", () => {
-  const asmEntity = createAssemblyEntityNoCopy(
+  const projectEntity = createProjectEntityNoCopy(
     {
       name: "inserter",
       control_behavior: nil,
@@ -28,13 +28,13 @@ test("returns false if <= first stage", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(asmEntity, 1)).toBe(false)
-  expect(trySetEmptyControlBehavior(asmEntity, 0)).toBe(false)
-  expect(asmEntity.firstValue.control_behavior).toBe(nil)
+  expect(trySetEmptyControlBehavior(projectEntity, 1)).toBe(false)
+  expect(trySetEmptyControlBehavior(projectEntity, 0)).toBe(false)
+  expect(projectEntity.firstValue.control_behavior).toBe(nil)
 })
 
 test("returns false if control_behavior is already set", () => {
-  const asmEntity = createAssemblyEntityNoCopy(
+  const projectEntity = createProjectEntityNoCopy(
     {
       name: "inserter",
       control_behavior: { circuit_mode_of_operation: 0 },
@@ -44,12 +44,12 @@ test("returns false if control_behavior is already set", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(asmEntity, 2)).toBe(false)
-  expect(asmEntity.firstValue.control_behavior).not.toBe(nil)
+  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(false)
+  expect(projectEntity.firstValue.control_behavior).not.toBe(nil)
 })
 
 test("sets control behavior to empty for inserter", () => {
-  const asmEntity = createAssemblyEntityNoCopy(
+  const projectEntity = createProjectEntityNoCopy(
     {
       name: "inserter",
       control_behavior: nil,
@@ -59,12 +59,12 @@ test("sets control behavior to empty for inserter", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(asmEntity, 2)).toBe(true)
-  expect(asmEntity.firstValue.control_behavior).toEqual(emptyInserterControlBehavior)
+  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(true)
+  expect(projectEntity.firstValue.control_behavior).toEqual(emptyInserterControlBehavior)
 })
 
 test("sets control behavior to empty for belt", () => {
-  const asmEntity = createAssemblyEntityNoCopy(
+  const projectEntity = createProjectEntityNoCopy(
     {
       name: "transport-belt",
       control_behavior: nil,
@@ -74,12 +74,12 @@ test("sets control behavior to empty for belt", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(asmEntity, 2)).toBe(true)
-  expect(asmEntity.firstValue.control_behavior).toEqual(emptyBeltControlBehavior)
+  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(true)
+  expect(projectEntity.firstValue.control_behavior).toEqual(emptyBeltControlBehavior)
 })
 
 test("returns false for other entities", () => {
-  const asmEntity = createAssemblyEntityNoCopy(
+  const projectEntity = createProjectEntityNoCopy(
     {
       name: "small-electric-pole",
       control_behavior: nil,
@@ -89,6 +89,6 @@ test("returns false for other entities", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(asmEntity, 2)).toBe(false)
-  expect(asmEntity.firstValue.control_behavior).toBe(nil)
+  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(false)
+  expect(projectEntity.firstValue.control_behavior).toBe(nil)
 })

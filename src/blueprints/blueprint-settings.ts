@@ -44,7 +44,7 @@ export interface StageBlueprintSettingsTable
   extends PropertyOverrideTable<OverrideableBlueprintSettings>,
     PropertiesTable<AdditionalBlueprintItemSettings> {}
 
-export interface AssemblyOrStageBlueprintSettings
+export interface ProjectOrStageBlueprintSettings
   extends PropertiesTable<OverrideableBlueprintSettings>,
     Partial<PropertiesTable<AdditionalBlueprintItemSettings>> {}
 

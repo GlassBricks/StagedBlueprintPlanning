@@ -9,21 +9,20 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destroy } from "../lib/factoriojsx"
-import { Migrations } from "../lib/migration"
-import "./AllProjects"
-import "./editor-fix"
-import "./opened-entity"
-import "./player-navigation"
-import "./ProjectSettings"
-import "./stage-move-tool"
+import expect from "tstl-expect"
+import { BBox } from "../../lib/geometry"
+import { createStageSurface } from "../../project/surfaces"
 
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    const opened = player.opened
-    if (opened && opened.object_name == "LuaGuiElement" && opened.get_mod() == script.mod_name) {
-      destroy(opened)
-      player.opened = nil
-    }
+test("generateStageSurface creates surface and generates chunks", () => {
+  const surface = createStageSurface()
+  after_test(() => game.delete_surface(surface))
+  expect(surface.index).not.to.equal(1)
+  expect(surface.always_day).to.be(true)
+  expect(surface.generate_with_lab_tiles).to.be(true)
+
+  const area = BBox.coords(0, 0, 1, 1)
+  for (const [x, y] of area.iterateTiles()) {
+    const pos = { x, y }
+    expect(surface.is_chunk_generated(pos)).to.be(true)
   }
 })

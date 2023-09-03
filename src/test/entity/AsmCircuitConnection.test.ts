@@ -11,10 +11,10 @@
 
 import expect from "tstl-expect"
 import {
-  AsmCircuitConnection,
   circuitConnectionEquals,
   circuitConnectionMatches,
   getDirectionalInfo,
+  ProjectCircuitConnection,
 } from "../../entity/circuit-connection"
 import { shallowCopy } from "../../lib"
 
@@ -22,7 +22,7 @@ test("circuitConnectionEquals", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const circuitConnectionA: AsmCircuitConnection = {
+  const circuitConnectionA: ProjectCircuitConnection = {
     fromEntity: entityA,
     fromId: defines.circuit_connector_id.accumulator,
     toEntity: entityB,
@@ -30,7 +30,7 @@ test("circuitConnectionEquals", () => {
     wire: defines.wire_type.red,
   }
   const identical = shallowCopy(circuitConnectionA)
-  const circuitConnectionB: AsmCircuitConnection = {
+  const circuitConnectionB: ProjectCircuitConnection = {
     toEntity: entityA,
     toId: defines.circuit_connector_id.accumulator,
     fromEntity: entityB,
@@ -40,7 +40,7 @@ test("circuitConnectionEquals", () => {
   expect(circuitConnectionEquals(circuitConnectionA, identical)).to.be(true)
   expect(circuitConnectionEquals(circuitConnectionA, circuitConnectionB)).to.be(true)
 
-  const different: AsmCircuitConnection = {
+  const different: ProjectCircuitConnection = {
     toEntity: entityA,
     toId: defines.circuit_connector_id.constant_combinator,
     fromEntity: entityA,
@@ -55,7 +55,7 @@ test("getDirectionalInfo", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const circuitConnectionA: AsmCircuitConnection = {
+  const circuitConnectionA: ProjectCircuitConnection = {
     fromEntity: entityA,
     fromId: defines.circuit_connector_id.accumulator,
     toEntity: entityB,
@@ -77,7 +77,7 @@ test("circuitConnectionMatches", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const connection: AsmCircuitConnection = {
+  const connection: ProjectCircuitConnection = {
     fromEntity: entityA,
     fromId: 0,
     toEntity: entityB,

@@ -10,15 +10,15 @@
  */
 
 import { LuaEntity } from "factorio:runtime"
-import { AssemblyEntity } from "./AssemblyEntity"
+import { ProjectEntity } from "./ProjectEntity"
 
 export type AnyConnectionId = defines.circuit_connector_id | defines.wire_connection_id
 
-export interface AsmCircuitConnection {
-  readonly fromEntity: AssemblyEntity
+export interface ProjectCircuitConnection {
+  readonly fromEntity: ProjectEntity
   readonly fromId: AnyConnectionId
 
-  readonly toEntity: AssemblyEntity
+  readonly toEntity: ProjectEntity
   readonly toId: AnyConnectionId
 
   readonly wire: defines.wire_type
@@ -31,7 +31,7 @@ export interface CircuitOrPowerSwitchConnection {
   readonly target_circuit_id: AnyConnectionId
 }
 
-export function circuitConnectionEquals(a: AsmCircuitConnection, b: AsmCircuitConnection): boolean {
+export function circuitConnectionEquals(a: ProjectCircuitConnection, b: ProjectCircuitConnection): boolean {
   if (a == b) return true
   if (a.wire != b.wire) return false
   return (
@@ -41,17 +41,17 @@ export function circuitConnectionEquals(a: AsmCircuitConnection, b: AsmCircuitCo
 }
 
 export function getDirectionalInfo(
-  connection: AsmCircuitConnection,
-  fromEntity: AssemblyEntity,
-): LuaMultiReturn<[otherEntity: AssemblyEntity, fromId: AnyConnectionId, toId: AnyConnectionId]> {
+  connection: ProjectCircuitConnection,
+  fromEntity: ProjectEntity,
+): LuaMultiReturn<[otherEntity: ProjectEntity, fromId: AnyConnectionId, toId: AnyConnectionId]> {
   if (connection.fromEntity == fromEntity) return $multi(connection.toEntity, connection.fromId, connection.toId)
   return $multi(connection.fromEntity, connection.toId, connection.fromId)
 }
 
 export function circuitConnectionMatches(
-  connection: AsmCircuitConnection,
+  connection: ProjectCircuitConnection,
   wire: defines.wire_type,
-  toEntity: AssemblyEntity,
+  toEntity: ProjectEntity,
   fromId: AnyConnectionId,
   toId: AnyConnectionId,
 ): boolean {

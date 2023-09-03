@@ -61,18 +61,18 @@ describe("getSavedDirection", () => {
   })
 
   test("same for assembling machine with no fluid inputs", () => {
-    const asm = surface.create_entity({
+    const project = surface.create_entity({
       name: "assembling-machine-2",
       position: { x: 0, y: 0 },
       recipe: "electric-engine-unit",
       direction: defines.direction.east,
     })!
-    assert(asm)
-    expect(asm.direction).to.be(defines.direction.east)
-    expect(asm.direction).to.be(defines.direction.east)
+    assert(project)
+    expect(project.direction).to.be(defines.direction.east)
+    expect(project.direction).to.be(defines.direction.east)
 
-    asm.set_recipe(nil)
-    expect(asm.direction).to.be(defines.direction.east)
-    expect(asm.direction).to.be(defines.direction.east)
+    project.set_recipe(nil)
+    expect(project.direction).to.be(defines.direction.east)
+    expect(project.direction).to.be(defines.direction.east)
   })
 })

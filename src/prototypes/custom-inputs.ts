@@ -84,28 +84,28 @@ const stageSelectPrevious: CustomInputPrototype = {
   order: "d[tools]-g[stage-move-tool]-b[previous]",
 }
 
-const nextAssembly: CustomInputPrototype = {
-  name: CustomInputs.NextAssembly,
+const nextProject: CustomInputPrototype = {
+  name: CustomInputs.NextProject,
   type: "custom-input",
 
   key_sequence: "",
   action: "lua",
-  order: "e[navigate-assembly]-a[next-assembly]",
+  order: "e[navigate-project]-a[next-project]",
 }
-const previousAssembly: CustomInputPrototype = {
-  name: CustomInputs.PreviousAssembly,
+const previousProject: CustomInputPrototype = {
+  name: CustomInputs.PreviousProject,
   type: "custom-input",
 
   key_sequence: "",
   action: "lua",
-  order: "e[navigate-assembly]-b[previous-assembly]",
+  order: "e[navigate-project]-b[previous-project]",
 }
 
 data.extend([
   nextStage,
   previousStage,
-  nextAssembly,
-  previousAssembly,
+  nextProject,
+  previousProject,
   goToFirstStage,
   moveToThisStage,
   forceDelete,

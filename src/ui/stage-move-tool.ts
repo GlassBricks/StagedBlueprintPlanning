@@ -10,12 +10,12 @@
  */
 
 import { LuaItemStack, LuaPlayer } from "factorio:runtime"
-import { Stage } from "../assembly/AssemblyDef"
-import { AssemblyPlayerData, getAssemblyPlayerData } from "../assembly/player-assembly-data"
-import { getStageAtSurface } from "../assembly/UserAssembly"
 import { CustomInputs, Prototypes } from "../constants"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
+import { getProjectPlayerData, ProjectPlayerData } from "../project/player-project-data"
+import { Stage } from "../project/ProjectDef"
+import { getStageAtSurface } from "../project/UserProject"
 import { PlayerChangedStageEvent, playerCurrentStage } from "./player-current-stage"
 
 const Events = ProtectedEvents
@@ -35,24 +35,24 @@ export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
       cursor.label = "<Not in a staged build>"
     } else {
       player.create_local_flying_text({
-        text: [L_Interaction.NotInAnAssembly],
+        text: [L_Interaction.NotInAnProject],
         create_at_cursor: true,
       })
       cursor.clear()
     }
     return
   }
-  const assembly = stage.assembly
+  const project = stage.project
 
-  const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)
-  if (!assemblyPlayerData) return
-  let selectedStage = assemblyPlayerData.moveTargetStage
-  if (!selectedStage || selectedStage < 1 || selectedStage > assembly.numStages()) {
+  const projectPlayerData = getProjectPlayerData(player.index, project)
+  if (!projectPlayerData) return
+  let selectedStage = projectPlayerData.moveTargetStage
+  if (!selectedStage || selectedStage < 1 || selectedStage > project.numStages()) {
     selectedStage = stage.stageNumber
   }
 
-  assemblyPlayerData.moveTargetStage = selectedStage
-  updateItemLabel(cursor, assembly.getStage(selectedStage)!)
+  projectPlayerData.moveTargetStage = selectedStage
+  updateItemLabel(cursor, project.getStage(selectedStage)!)
 
   return player
 }
@@ -78,32 +78,32 @@ function getCursorIfHoldingStageMoveTool(player: LuaPlayer): LuaItemStack | nil 
   return cursor
 }
 
-function getStageAndData(player: LuaPlayer): LuaMultiReturn<[LuaItemStack, Stage, AssemblyPlayerData] | [_?: nil]> {
+function getStageAndData(player: LuaPlayer): LuaMultiReturn<[LuaItemStack, Stage, ProjectPlayerData] | [_?: nil]> {
   const cursor = getCursorIfHoldingStageMoveTool(player)
   if (!cursor) return $multi()
 
   const stage = playerCurrentStage(player.index).get()
   if (!stage) return $multi()
 
-  const assembly = stage.assembly
-  const assemblyPlayerData = getAssemblyPlayerData(player.index, assembly)
-  if (!assemblyPlayerData) return $multi()
+  const project = stage.project
+  const projectPlayerData = getProjectPlayerData(player.index, project)
+  if (!projectPlayerData) return $multi()
 
-  return $multi(cursor, stage, assemblyPlayerData)
+  return $multi(cursor, stage, projectPlayerData)
 }
 
 function changeSelectedStage(player: LuaPlayer, delta: number) {
-  const [cursor, stage, assemblyPlayerData] = getStageAndData(player)
+  const [cursor, stage, projectPlayerData] = getStageAndData(player)
   if (!cursor) return
 
-  let selectedStage = assemblyPlayerData.moveTargetStage ?? stage.stageNumber
+  let selectedStage = projectPlayerData.moveTargetStage ?? stage.stageNumber
   selectedStage += delta
   if (selectedStage < 1) selectedStage = 1
-  const maxStage = stage.assembly.numStages()
+  const maxStage = stage.project.numStages()
   if (selectedStage > maxStage) selectedStage = maxStage
 
-  assemblyPlayerData.moveTargetStage = selectedStage
-  updateItemLabel(cursor, stage.assembly.getStage(selectedStage)!)
+  projectPlayerData.moveTargetStage = selectedStage
+  updateItemLabel(cursor, stage.project.getStage(selectedStage)!)
 }
 Events.on(CustomInputs.StageSelectNext, (e) => {
   changeSelectedStage(game.get_player(e.player_index)!, 1)

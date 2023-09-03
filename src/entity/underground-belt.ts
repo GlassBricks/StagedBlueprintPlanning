@@ -12,8 +12,8 @@
 import { oppositedirection } from "util"
 import { Mutable } from "../lib"
 import { Pos, Position, PositionClass } from "../lib/geometry"
-import { MutableAssemblyContent } from "./AssemblyContent"
-import { AssemblyEntity, UndergroundBeltAssemblyEntity } from "./AssemblyEntity"
+import { MutableProjectContent } from "./ProjectContent"
+import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import max = math.max
 import min = math.min
 
@@ -32,9 +32,9 @@ export function getUndergroundDirection(
  * Finds an underground pair. If there are multiple possible pairs, returns the first one, and true as the second return value.
  */
 export function findUndergroundPair(
-  content: MutableAssemblyContent,
-  entity: UndergroundBeltAssemblyEntity,
-): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
+  content: MutableProjectContent,
+  entity: UndergroundBeltProjectEntity,
+): LuaMultiReturn<[underground: UndergroundBeltProjectEntity | nil, hasMultiple: boolean]> {
   const [pair, hasMultiple] = findUndergroundPairOneDirection(content, entity)
   if (!pair || hasMultiple) return $multi(pair, hasMultiple)
 
@@ -47,9 +47,9 @@ export function findUndergroundPair(
 }
 
 function findUndergroundPairOneDirection(
-  content: MutableAssemblyContent,
-  member: UndergroundBeltAssemblyEntity,
-): LuaMultiReturn<[underground: UndergroundBeltAssemblyEntity | nil, hasMultiple: boolean]> {
+  content: MutableProjectContent,
+  member: UndergroundBeltProjectEntity,
+): LuaMultiReturn<[underground: UndergroundBeltProjectEntity | nil, hasMultiple: boolean]> {
   const name = member.firstValue.name
   const reach = game.entity_prototypes[name].max_underground_distance
   if (!reach) return $multi(nil, false)
@@ -60,15 +60,15 @@ function findUndergroundPairOneDirection(
   const { x, y } = member.position
   const { x: dx, y: dy } = unit(direction)
 
-  // let found: UndergroundBeltAssemblyEntity | nil
+  // let found: UndergroundBeltProjectEntity | nil
   const firstStage = member.firstStage
   const lastStage = member.lastStage ?? math.huge
-  let pair: UndergroundBeltAssemblyEntity | nil = nil
+  let pair: UndergroundBeltProjectEntity | nil = nil
   const curPos = {} as Mutable<Position>
   for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
-    const found = content.findCompatibleByProps(name, curPos, nil, firstStage) as UndergroundBeltAssemblyEntity | nil
+    const found = content.findCompatibleByProps(name, curPos, nil, firstStage) as UndergroundBeltProjectEntity | nil
     if (
       !(
         found &&
@@ -98,8 +98,8 @@ export function unit(direction: defines.direction): PositionClass {
 }
 
 export function stageRangeCovers(
-  existing: AssemblyEntity,
-  newEntity: AssemblyEntity,
+  existing: ProjectEntity,
+  newEntity: ProjectEntity,
   minStage: number,
   maxStage: number,
 ): boolean {

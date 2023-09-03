@@ -15,12 +15,12 @@ import { Events, isEmpty, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { PropertiesTable } from "../utils/properties-obj"
-import { AssemblyOrStageBlueprintSettings, BlueprintTakeParameters, StageBlueprintSettings } from "./blueprint-settings"
+import { BlueprintTakeParameters, ProjectOrStageBlueprintSettings, StageBlueprintSettings } from "./blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "./take-single-blueprint"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
-  settings: AssemblyOrStageBlueprintSettings
+  settings: ProjectOrStageBlueprintSettings
   editType: "blueprint-item" | "additionalWhitelist" | "blacklist"
 }
 declare global {
@@ -39,7 +39,7 @@ function clearOpenedItem(playerIndex: PlayerIndex): void {
   }
 }
 
-function getBasicBlueprintTakeParams(settings: AssemblyOrStageBlueprintSettings): BlueprintTakeParameters {
+function getBasicBlueprintTakeParams(settings: ProjectOrStageBlueprintSettings): BlueprintTakeParameters {
   return {
     positionOffset: settings.positionOffset.get(),
     snapToGrid: settings.snapToGrid.get(),
@@ -55,7 +55,7 @@ function getBasicBlueprintTakeParams(settings: AssemblyOrStageBlueprintSettings)
 
 export function editInItemBlueprintSettings(
   player: LuaPlayer,
-  settings: AssemblyOrStageBlueprintSettings,
+  settings: ProjectOrStageBlueprintSettings,
   surface: LuaSurface,
   bbox: BBox,
   bpName: string,
@@ -83,7 +83,7 @@ export function editInItemBlueprintSettings(
 
 export function editBlueprintFilters(
   player: LuaPlayer,
-  settings: AssemblyOrStageBlueprintSettings,
+  settings: ProjectOrStageBlueprintSettings,
   type: "additionalWhitelist" | "blacklist",
 ): LuaItemStack {
   clearOpenedItem(player.index)
@@ -117,7 +117,7 @@ function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {
 }
 function updateBlueprintItemSettings(
   blueprint: BlueprintItemStack,
-  settings: AssemblyOrStageBlueprintSettings,
+  settings: ProjectOrStageBlueprintSettings,
   playerIndex: PlayerIndex,
 ): void {
   if (settings.icons) {

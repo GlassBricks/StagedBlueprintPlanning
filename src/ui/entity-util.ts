@@ -10,14 +10,14 @@
  */
 
 import { LuaEntity } from "factorio:runtime"
-import { Stage } from "../assembly/AssemblyDef"
-import { getStageAtSurface } from "../assembly/UserAssembly"
-import { AssemblyEntity } from "../entity/AssemblyEntity"
+import { ProjectEntity } from "../entity/ProjectEntity"
+import { Stage } from "../project/ProjectDef"
+import { getStageAtSurface } from "../project/UserProject"
 
-export function getAssemblyEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, AssemblyEntity] | [_?: nil]> {
+export function getProjectEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, ProjectEntity] | [_?: nil]> {
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return $multi()
-  const found = stage.assembly.content.findCompatibleFromLuaEntityOrPreview(entity, stage.stageNumber)
+  const found = stage.project.content.findCompatibleFromLuaEntityOrPreview(entity, stage.stageNumber)
   if (found) return $multi(stage, found)
   return $multi()
 }

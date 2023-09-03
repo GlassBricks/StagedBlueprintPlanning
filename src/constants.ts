@@ -76,8 +76,8 @@ export const enum CustomInputs {
   StageSelectNext = "bp100:stage-select-next",
   StageSelectPrevious = "bp100:stage-select-previous",
 
-  NextAssembly = "bp100:next-assembly",
-  PreviousAssembly = "bp100:previous-assembly",
+  NextProject = "bp100:next-project",
+  PreviousProject = "bp100:previous-project",
 }
 
 // noinspection JSUnusedGlobalSymbols

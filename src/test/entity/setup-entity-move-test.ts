@@ -11,7 +11,7 @@
 
 import { LuaEntity, LuaSurface } from "factorio:runtime"
 import { Position } from "../../lib/geometry"
-import { setupTestSurfaces } from "../assembly/Assembly-mock"
+import { setupTestSurfaces } from "../project/Project-mock"
 
 export function setupEntityMoveTest(
   numSurfaces = 3,

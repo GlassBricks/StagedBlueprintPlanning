@@ -10,16 +10,16 @@
  */
 
 import * as mod_gui from "mod-gui"
-import { UserAssembly } from "../assembly/AssemblyDef"
-import { deleteAllFreeSurfaces, prepareArea } from "../assembly/surfaces"
-import { UndoHandler } from "../assembly/undo"
-import { createUserAssembly, getAllAssemblies, getStageAtSurface } from "../assembly/UserAssembly"
 import { destroyAllRenders, Events } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { debugPrint } from "../lib/test/misc"
-import { refreshCurrentAssembly } from "../ui/AssemblySettings"
-import { teleportToAssembly, teleportToStage } from "../ui/player-current-stage"
+import { UserProject } from "../project/ProjectDef"
+import { deleteAllFreeSurfaces, prepareArea } from "../project/surfaces"
+import { UndoHandler } from "../project/undo"
+import { createUserProject, getAllProjects, getStageAtSurface } from "../project/UserProject"
+import { teleportToProject, teleportToStage } from "../ui/player-current-stage"
+import { refreshCurrentProject } from "../ui/ProjectSettings"
 import { getCurrentValues } from "../utils/properties-obj"
 
 // better source map traceback
@@ -117,10 +117,10 @@ if ("factorio-test" in script.active_mods) {
 
         deleteAllFreeSurfaces()
 
-        const assembly = createUserAssembly("Test", 5)
-        teleportToAssembly(player, assembly)
+        const project = createUserProject("Test", 5)
+        teleportToProject(player, project)
 
-        setupManualTests(assembly)
+        setupManualTests(project)
 
         player.play_sound({ path: "utility/game_won" })
       }
@@ -164,7 +164,7 @@ Events.on_tick(() => {
     if (global.rerunMode == "rerun") {
       remote.call("factorio-test", "runTests")
     } else {
-      refreshCurrentAssembly()
+      refreshCurrentProject()
     }
   }
 })
@@ -184,10 +184,10 @@ commands.add_command("rr", "", (e) => {
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function setupManualTests(_assembly: UserAssembly) {
+function setupManualTests(_project: UserProject) {
   // const player = game.players[1]
   // function createEntityWithChanges() {
-  //   const entity = createAssemblyEntityNoCopy(
+  //   const entity = createProjectEntityNoCopy(
   //     { name: "assembling-machine-1", recipe: "iron-gear-wheel" },
   //     Pos(0.5, 0.5),
   //     nil,
@@ -196,10 +196,10 @@ function setupManualTests(_assembly: UserAssembly) {
   //   entity.applyUpgradeAtStage(3, "assembling-machine-2")
   //   entity._applyDiffAtStage(4, { recipe: "copper-cable" })
   //
-  //   assembly.content.add(entity)
-  //   updateWorldEntities(assembly, entity, 1, nil)
+  //   project.content.add(entity)
+  //   updateWorldEntities(project, entity, 1, nil)
   //
-  //   teleportToStage(player, assembly.getStage(4)!)
+  //   teleportToStage(player, project.getStage(4)!)
   //   player.opened = entity.getWorldEntity(4)
   // }
   //
@@ -227,13 +227,13 @@ commands.add_command("print-bp-settings", "", () => {
 })
 
 commands.add_command("perf", "", () => {
-  const assembly = getAllAssemblies().find((a) => a.name.get() == "Test") ?? createUserAssembly("Test", 5)
-  for (const stage of assembly.getAllStages()) {
+  const project = getAllProjects().find((a) => a.name.get() == "Test") ?? createUserProject("Test", 5)
+  for (const stage of project.getAllStages()) {
     prepareArea(stage.surface, BBox.around({ x: 0, y: 0 }, 32 * 5))
   }
 
   const player = game.player!
-  teleportToStage(player, assembly.getStage(3)!)
+  teleportToStage(player, project.getStage(3)!)
 
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")

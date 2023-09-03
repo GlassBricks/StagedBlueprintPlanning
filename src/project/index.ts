@@ -9,21 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destroy } from "../lib/factoriojsx"
-import { Migrations } from "../lib/migration"
-import "./AllProjects"
-import "./editor-fix"
-import "./opened-entity"
-import "./player-navigation"
-import "./ProjectSettings"
-import "./stage-move-tool"
-
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    const opened = player.opened
-    if (opened && opened.object_name == "LuaGuiElement" && opened.get_mod() == script.mod_name) {
-      destroy(opened)
-      player.opened = nil
-    }
-  }
-})
+import "./event-handlers"
+import "./migrations"
+import "./project-event-listener"
+import "./UserProject"

@@ -11,27 +11,27 @@
 
 import { LuaEntity, LuaPlayer, MapPositionArray } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
-import { Stage, UserAssembly } from "../../assembly/AssemblyDef"
-import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../assembly/event-handlers"
-import { AutoSetTilesType } from "../../assembly/tiles"
-import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import {
   exportBlueprintBookToFile,
-  submitAssemblyBlueprintBookTask,
+  submitProjectBlueprintBookTask,
   takeStageBlueprint,
 } from "../../blueprints/blueprint-creation"
 import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning } from "../../lib/task"
+import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
+import { Stage, UserProject } from "../../project/ProjectDef"
+import { AutoSetTilesType } from "../../project/tiles"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 
-let assembly: UserAssembly
+let project: UserProject
 let player: LuaPlayer
 before_each(() => {
-  assembly = createUserAssembly("test", 4)
+  project = createUserProject("test", 4)
   player = game.players[1]
 })
 
 after_each(() => {
-  _deleteAllAssemblies()
+  _deleteAllProjects()
   player.cursor_stack?.clear()
 })
 
@@ -47,10 +47,10 @@ function createEntity(stage: Stage, pos: MapPositionArray = [0.5, 0.5], name: st
 }
 
 test("can take single blueprint using stage settings", () => {
-  assembly.defaultBlueprintSettings.snapToGrid.set(Pos(2, 3))
-  assembly.defaultBlueprintSettings.positionRelativeToGrid.set(Pos(4, 5))
+  project.defaultBlueprintSettings.snapToGrid.set(Pos(2, 3))
+  project.defaultBlueprintSettings.positionRelativeToGrid.set(Pos(4, 5))
 
-  const stage = assembly.getStage(1)!
+  const stage = project.getStage(1)!
   const stack = player.cursor_stack!
 
   const ret = takeStageBlueprint(stage, stack)
@@ -72,7 +72,7 @@ test("can take single blueprint using stage settings", () => {
 })
 
 test("calls setTiles if autoLandfill is true", () => {
-  const stage = assembly.getStage(1)!
+  const stage = project.getStage(1)!
   mock.on(stage, "autoSetTiles", true).returns(true)
 
   const stack = player.cursor_stack!
@@ -90,8 +90,8 @@ test("calls setTiles if autoLandfill is true", () => {
 })
 
 test.each([false, true])("can use next stage tiles, with next staging having grid %s", (stage2HasGrid) => {
-  const stage2 = assembly.getStage(2)!
-  const stage1 = assembly.getStage(1)!
+  const stage2 = project.getStage(2)!
+  const stage1 = project.getStage(1)!
 
   stage1.stageBlueprintSettings.positionOffset.set(Pos(1, 1))
   stage1.stageBlueprintSettings.snapToGrid.set(Pos(2, 2))
@@ -120,11 +120,11 @@ test.each([false, true])("can use next stage tiles, with next staging having gri
 })
 
 test("stageLimit: only entities present in last x stages or in additionalWhitelist", () => {
-  const [stage1, stage2, stage3, stage4] = assembly.getAllStages()
+  const [stage1, stage2, stage3, stage4] = project.getAllStages()
 
   createEntity(stage1) // not included
   const e1 = createEntity(stage1, [1.5, 1.5]) // included, as has changed in stage 2
-  const e1Stage2 = assembly.content.findCompatibleWithLuaEntity(e1, nil, 1)!.getWorldEntity(2)!
+  const e1Stage2 = project.content.findCompatibleWithLuaEntity(e1, nil, 1)!.getWorldEntity(2)!
   e1Stage2.get_inventory(defines.inventory.chest)!.set_bar(3)
   checkForEntityUpdates(e1Stage2, nil)
   const e2 = createEntity(stage2, [2.5, 2.5]) // included
@@ -134,7 +134,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   const e4 = createEntity(stage1, [5.5, 5.5], "steel-chest") // included, in additional whitelist
 
   const e5 = createEntity(stage1, [6.5, 6.5], "iron-chest") // included, has wire connection with e3
-  const e5stage3 = assembly.content.findCompatibleWithLuaEntity(e5, nil, 1)!.getWorldEntity(3)!
+  const e5stage3 = project.content.findCompatibleWithLuaEntity(e5, nil, 1)!.getWorldEntity(3)!
   e5stage3.connect_neighbour({ wire: defines.wire_type.red, target_entity: e3 })
   checkForCircuitWireUpdates(e5stage3, nil)
 
@@ -158,22 +158,22 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
 })
 
 test("make blueprint book", () => {
-  for (const i of $range(1, assembly.numStages())) {
-    createEntity(assembly.getStage(i)!, [i + 0.5, i + 0.5])
+  for (const i of $range(1, project.numStages())) {
+    createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])
   }
 
   const stack = player.cursor_stack!
-  submitAssemblyBlueprintBookTask(assembly, stack)
+  submitProjectBlueprintBookTask(project, stack)
   on_tick(() => {
     if (isTaskRunning()) return
 
     expect(stack.is_blueprint_book).toBe(true)
-    expect(stack.label).toBe(assembly.name.get())
+    expect(stack.label).toBe(project.name.get())
     const inventory = stack.get_inventory(defines.inventory.item_main)!
     expect(inventory).toHaveLength(4)
-    for (const i of $range(1, assembly.numStages())) {
+    for (const i of $range(1, project.numStages())) {
       expect(inventory[i - 1].is_blueprint).toBe(true)
-      expect(inventory[i - 1].label).toBe(assembly.getStage(i)!.name.get())
+      expect(inventory[i - 1].label).toBe(project.getStage(i)!.name.get())
       const entities = inventory[i - 1].get_blueprint_entities()!
       expect(entities).toHaveLength(i)
       expect(entities[0].name).toBe("iron-chest")
@@ -184,7 +184,7 @@ test("make blueprint book", () => {
 })
 
 test("export blueprint book to file", () => {
-  const result = exportBlueprintBookToFile(assembly, player)
+  const result = exportBlueprintBookToFile(project, player)
   expect(result).to.equal("staged-builds/test.txt")
 
   cancelCurrentTask()

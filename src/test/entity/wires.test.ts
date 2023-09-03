@@ -11,19 +11,19 @@
 
 import { CircuitConnectionDefinition, LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
-import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
-import { AssemblyEntity, createAssemblyEntityNoCopy } from "../../entity/AssemblyEntity"
-import { AsmCircuitConnection, circuitConnectionEquals } from "../../entity/circuit-connection"
+import { circuitConnectionEquals, ProjectCircuitConnection } from "../../entity/circuit-connection"
+import { CableAddResult, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
+import { createProjectEntityNoCopy, ProjectEntity } from "../../entity/ProjectEntity"
 import { getPowerSwitchConnectionSide } from "../../entity/wires"
 import { shallowCompare } from "../../lib"
-import { setupTestSurfaces } from "../assembly/Assembly-mock"
+import { setupTestSurfaces } from "../project/Project-mock"
 
-let content: MutableAssemblyContent
+let content: MutableProjectContent
 let surface: LuaSurface
 const extraSurfaces = setupTestSurfaces(1)
 
 before_each(() => {
-  content = newAssemblyContent()
+  content = newProjectContent()
   surface = game.surfaces[1]
   surface.find_entities().forEach((e) => e.destroy())
 })
@@ -90,13 +90,13 @@ describe("getPowerSwitchConnectionSide", () => {
 describe("circuit wires", () => {
   let luaEntity1: LuaEntity
   let luaEntity2: LuaEntity
-  let entity1: AssemblyEntity
-  let entity2: AssemblyEntity
+  let entity1: ProjectEntity
+  let entity2: ProjectEntity
   before_each(() => {
     luaEntity1 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 5.5, y: 6 } })!
     luaEntity2 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!
-    entity1 = createAssemblyEntityNoCopy({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, nil, 1)
-    entity2 = createAssemblyEntityNoCopy({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
+    entity1 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, nil, 1)
+    entity2 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
     entity1.replaceWorldEntity(1, luaEntity1)
     entity2.replaceWorldEntity(1, luaEntity2)
     content.add(entity1)
@@ -111,7 +111,7 @@ describe("circuit wires", () => {
       target_circuit_id: defines.circuit_connector_id.combinator_output,
     })
   }
-  function getExpectedWire1(): AsmCircuitConnection {
+  function getExpectedWire1(): ProjectCircuitConnection {
     return {
       fromEntity: entity1,
       toEntity: entity2,
@@ -128,7 +128,7 @@ describe("circuit wires", () => {
       target_circuit_id: defines.circuit_connector_id.combinator_output,
     })
   }
-  function getExpectedWire2(): AsmCircuitConnection {
+  function getExpectedWire2(): ProjectCircuitConnection {
     return {
       fromEntity: entity1,
       toEntity: entity2,
@@ -146,7 +146,7 @@ describe("circuit wires", () => {
       target_circuit_id: defines.circuit_connector_id.combinator_output,
     })
   }
-  function getExpectedWire3(): AsmCircuitConnection {
+  function getExpectedWire3(): ProjectCircuitConnection {
     return {
       fromEntity: entity1,
       toEntity: entity2,
@@ -186,7 +186,7 @@ describe("circuit wires", () => {
       handler.updateWireConnectionsAtStage(content, entity1, 1)
       assertWire1Matches()
     })
-    test("ignores entities not in the assembly", () => {
+    test("ignores entities not in the project", () => {
       addWire1() // entity1 -> entity2
       content.delete(entity2)
       handler.updateWireConnectionsAtStage(content, entity1, 1)
@@ -252,13 +252,17 @@ describe("circuit wires", () => {
 describe("power switch connections", () => {
   let pole: LuaEntity
   let powerSwitch: LuaEntity
-  let poleEntity: AssemblyEntity<{ name: string }>
-  let powerSwitchEntity: AssemblyEntity<{ name: string }>
+  let poleEntity: ProjectEntity<{
+    name: string
+  }>
+  let powerSwitchEntity: ProjectEntity<{
+    name: string
+  }>
   before_each(() => {
     pole = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 5.5 } })!
     powerSwitch = surface.create_entity({ name: "power-switch", position: { x: 6, y: 7 } })!
-    poleEntity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, pole.position, nil, 1)
-    powerSwitchEntity = createAssemblyEntityNoCopy({ name: "power-switch" }, powerSwitch.position, nil, 1)
+    poleEntity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pole.position, nil, 1)
+    powerSwitchEntity = createProjectEntityNoCopy({ name: "power-switch" }, powerSwitch.position, nil, 1)
     poleEntity.replaceWorldEntity(1, pole)
     powerSwitchEntity.replaceWorldEntity(1, powerSwitch)
     content.add(poleEntity)
@@ -403,7 +407,7 @@ describe("power switch connections", () => {
 
     test("replaces old connection when connecting to same side in different stage", () => {
       const otherPole = extraSurfaces[0].create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
-      const otherPoleEntity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, otherPole.position, nil, 1)
+      const otherPoleEntity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, otherPole.position, nil, 1)
       otherPoleEntity.replaceWorldEntity(2, otherPole)
       content.add(otherPoleEntity)
 
@@ -467,7 +471,7 @@ describe("power switch connections", () => {
 
   test("can remove connection if connected to different but not existing pole", () => {
     const pole2 = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
-    const pole2Entity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, pole2.position, nil, 1)
+    const pole2Entity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pole2.position, nil, 1)
     pole2Entity.replaceWorldEntity(1, pole2)
     content.add(pole2Entity)
 
@@ -494,15 +498,15 @@ describe("power switch connections", () => {
 describe("cable connections", () => {
   let luaEntity1: LuaEntity
   let luaEntity2: LuaEntity
-  let entity1: AssemblyEntity
-  let entity2: AssemblyEntity
+  let entity1: ProjectEntity
+  let entity2: ProjectEntity
   let luaEntity3: LuaEntity
-  let entity3: AssemblyEntity
+  let entity3: ProjectEntity
   function setup(n: number) {
     const pos = { x: 5.5 + n, y: 5.5 + n }
     const luaEntity = surface.create_entity({ name: "medium-electric-pole", position: pos })!
     luaEntity.disconnect_neighbour()
-    const entity = createAssemblyEntityNoCopy({ name: "medium-electric-pole" }, pos, nil, 1)
+    const entity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pos, nil, 1)
     entity.replaceWorldEntity(1, luaEntity)
     content.add(entity)
     return { luaEntity, entity }
@@ -537,7 +541,7 @@ describe("cable connections", () => {
     expect((luaEntity3.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
   })
 
-  test("ignores entities not in the assembly", () => {
+  test("ignores entities not in the project", () => {
     luaEntity1.connect_neighbour(luaEntity2)
     content.delete(entity2)
     handler.updateWireConnectionsAtStage(content, entity1, 1)
@@ -591,7 +595,7 @@ describe("cable connections", () => {
     test("max connections reached", () => {
       // max connections is 5
       for (let i = 0; i < 5; i++) {
-        const entity = createAssemblyEntityNoCopy(
+        const entity = createProjectEntityNoCopy(
           { name: "medium-electric-pole" },
           {
             x: 4.5 + i,

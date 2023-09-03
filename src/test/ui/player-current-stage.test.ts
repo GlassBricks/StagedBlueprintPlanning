@@ -11,10 +11,10 @@
 
 import { LuaPlayer, PlayerIndex, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
-import { UserAssembly } from "../../assembly/AssemblyDef"
-import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"
 import { Pos } from "../../lib/geometry"
-import { exitAssembly, playerCurrentStage, teleportToAssembly, teleportToStage } from "../../ui/player-current-stage"
+import { UserProject } from "../../project/ProjectDef"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { exitProject, playerCurrentStage, teleportToProject, teleportToStage } from "../../ui/player-current-stage"
 
 before_each(() => {
   const player = game.players[1]!
@@ -23,84 +23,84 @@ before_each(() => {
 after_all(() => {
   const player = game.players[1]!
   player.teleport([0, 0], 1 as SurfaceIndex)
-  _deleteAllAssemblies()
+  _deleteAllProjects()
   player.cursor_stack!.clear()
 })
 
 test("playerCurrentStage", () => {
-  const assembly = createUserAssembly("Test", 3)
+  const project = createUserProject("Test", 3)
   const player = game.players[1]!
   player.teleport([0, 0], 1 as SurfaceIndex)
   const currentStage = playerCurrentStage(1 as PlayerIndex)
   expect(currentStage.get()).to.be.nil()
 
-  for (const stage of assembly.getAllStages()) {
+  for (const stage of project.getAllStages()) {
     player.teleport(player.position, stage.surface)
     expect(stage).to.be(currentStage.get())
   }
 
-  assembly.deleteStage(assembly.numStages())
+  project.deleteStage(project.numStages())
   expect(currentStage.get()).to.be.nil()
 
-  player.teleport(player.position, assembly.getStage(1)!.surface)
-  expect(assembly.getStage(1)!).to.be(currentStage.get())
+  player.teleport(player.position, project.getStage(1)!.surface)
+  expect(project.getStage(1)!).to.be(currentStage.get())
 
-  assembly.delete()
+  project.delete()
   expect(currentStage.get()).to.be.nil()
 })
 
-describe("teleporting to stage/assembly", () => {
-  let assembly1: UserAssembly
-  let assembly2: UserAssembly
+describe("teleporting to stage/project", () => {
+  let project1: UserProject
+  let project2: UserProject
   let player: LuaPlayer
   before_all(() => {
-    assembly1 = createUserAssembly("Test1", 3)
-    assembly2 = createUserAssembly("Test2", 3)
+    project1 = createUserProject("Test1", 3)
+    project2 = createUserProject("Test2", 3)
     player = game.players[1]!
   })
   test("can teleport to stage", () => {
-    teleportToStage(player, assembly1.getStage(1)!)
-    expect(assembly1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
-    teleportToStage(player, assembly1.getStage(2)!)
-    expect(assembly1.getStage(2)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+    teleportToStage(player, project1.getStage(1)!)
+    expect(project1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+    teleportToStage(player, project1.getStage(2)!)
+    expect(project1.getStage(2)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
   })
-  test("keeps players position when teleporting from same assembly", () => {
-    teleportToStage(player, assembly1.getStage(1)!)
+  test("keeps players position when teleporting from same project", () => {
+    teleportToStage(player, project1.getStage(1)!)
     player.teleport(Pos(5, 10))
-    teleportToStage(player, assembly1.getStage(2)!)
+    teleportToStage(player, project1.getStage(2)!)
     expect(player.position).to.equal(Pos(5, 10))
   })
 
-  test("remembers last position when teleporting from different assembly", () => {
-    teleportToStage(player, assembly1.getStage(1)!)
+  test("remembers last position when teleporting from different project", () => {
+    teleportToStage(player, project1.getStage(1)!)
     player.teleport(Pos(5, 10))
-    teleportToStage(player, assembly2.getStage(1)!)
-    teleportToStage(player, assembly1.getStage(1)!)
+    teleportToStage(player, project2.getStage(1)!)
+    teleportToStage(player, project1.getStage(1)!)
     expect(player.position).to.equal(Pos(5, 10))
   })
 
-  test("can teleport to assembly", () => {
-    teleportToAssembly(player, assembly1)
-    expect(assembly1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
-    teleportToAssembly(player, assembly2)
-    expect(assembly2.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+  test("can teleport to project", () => {
+    teleportToProject(player, project1)
+    expect(project1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+    teleportToProject(player, project2)
+    expect(project2.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
   })
 
-  test("teleport to assembly remembers last stage and position", () => {
-    teleportToStage(player, assembly1.getStage(2)!)
+  test("teleport to project remembers last stage and position", () => {
+    teleportToStage(player, project1.getStage(2)!)
     player.teleport(Pos(5, 10))
 
-    teleportToStage(player, assembly2.getStage(1)!)
+    teleportToStage(player, project2.getStage(1)!)
 
-    teleportToAssembly(player, assembly1)
+    teleportToProject(player, project1)
     expect(player.position).to.equal(Pos(5, 10))
-    expect(playerCurrentStage(player.index).get()).to.be(assembly1.getStage(2))
+    expect(playerCurrentStage(player.index).get()).to.be(project1.getStage(2))
   })
 
-  test("exitAssembly remembers last position when teleporting from outside assembly", () => {
+  test("exitProject remembers last position when teleporting from outside project", () => {
     player.teleport(Pos(15, 20), 1 as SurfaceIndex)
-    teleportToAssembly(player, assembly2)
-    exitAssembly(player)
+    teleportToProject(player, project2)
+    exitProject(player)
     expect(player.position).to.equal(Pos(15, 20))
     expect(player.surface_index).to.equal(1)
   })

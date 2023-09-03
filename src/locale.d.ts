@@ -75,9 +75,9 @@ export declare const enum L_Controls {
   /** Go to previous stage */
   PreviousStage = "controls.bp100:previous-stage",
   /** Go to next staged build */
-  NextAssembly = "controls.bp100:next-assembly",
+  NextProject = "controls.bp100:next-project",
   /** Go to previous staged build */
-  PreviousAssembly = "controls.bp100:previous-assembly",
+  PreviousProject = "controls.bp100:previous-project",
   /** Go to entity's first stage */
   GoToFirstStage = "controls.bp100:go-to-first-stage",
   /** Move entity to current stage */
@@ -99,7 +99,7 @@ export declare const enum L_Bp100 {
   /** __1__ (selection proxy) */
   SelectionProxy = "bp100.selection-proxy",
   /** <Unnamed build __1__> */
-  UnnamedAssembly = "bp100.unnamed-assembly",
+  UnnamedProject = "bp100.unnamed-project",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
@@ -145,15 +145,15 @@ export declare const enum L_Interaction {
   /** Note: some entities were upgraded (the upgrade on blueprint paste user setting is enabled) */
   PasteUpgradeApplied = "bp100.interaction.paste-upgrade-applied",
   /** Not in an staged build */
-  NotInAnAssembly = "bp100.interaction.not-in-an-assembly",
+  NotInAnProject = "bp100.interaction.not-in-an-project",
   /** No next stage */
   NoNextStage = "bp100.interaction.no-next-stage",
   /** No previous stage */
   NoPreviousStage = "bp100.interaction.no-previous-stage",
   /** No next staged build */
-  NoNextAssembly = "bp100.interaction.no-next-assembly",
+  NoNextProject = "bp100.interaction.no-next-project",
   /** No previous staged build */
-  NoPreviousAssembly = "bp100.interaction.no-previous-assembly",
+  NoPreviousProject = "bp100.interaction.no-previous-project",
   /** Already at entity first stage */
   AlreadyAtFirstStage = "bp100.interaction.already-at-first-stage",
   /** Entity is the same in all stages */
@@ -171,131 +171,131 @@ export declare const enum L_Interaction {
   /** Blueprint book exported to script-output/__1__ */
   BlueprintBookExported = "bp100.interaction.blueprint-book-exported",
 }
-export declare const enum L_GuiAssemblySelector {
+export declare const enum L_GuiProjectSelector {
   /** Staged builds */
-  ShowAllAssemblies = "bp100.gui.assembly-selector.show-all-assemblies",
+  ShowAllProjects = "bp100.gui.project-selector.show-all-projects",
   /** Staged builds */
-  AllAssemblies = "bp100.gui.assembly-selector.all-assemblies",
+  AllProjects = "bp100.gui.project-selector.all-projects",
   /** New staged build */
-  NewAssembly = "bp100.gui.assembly-selector.new-assembly",
+  NewProject = "bp100.gui.project-selector.new-project",
   /** Exit staged build */
-  ExitAssembly = "bp100.gui.assembly-selector.exit-assembly",
+  ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
-  ButtonTooltip = "bp100.gui.assembly-selector.button-tooltip",
+  ButtonTooltip = "bp100.gui.project-selector.button-tooltip",
 }
-export declare const enum L_GuiAssemblySettings {
+export declare const enum L_GuiProjectSettings {
   /** Show settings */
-  ShowFullSettings = "bp100.gui.assembly-settings.show-full-settings",
+  ShowFullSettings = "bp100.gui.project-settings.show-full-settings",
   /** Hide settings */
-  HideFullSettings = "bp100.gui.assembly-settings.hide-full-settings",
+  HideFullSettings = "bp100.gui.project-settings.hide-full-settings",
   /** Staged build: */
-  TitleCaption = "bp100.gui.assembly-settings.title-caption",
+  TitleCaption = "bp100.gui.project-settings.title-caption",
   /** New stage */
-  NewStage = "bp100.gui.assembly-settings.new-stage",
+  NewStage = "bp100.gui.project-settings.new-stage",
   /** After current */
-  AfterCurrent = "bp100.gui.assembly-settings.after-current",
+  AfterCurrent = "bp100.gui.project-settings.after-current",
   /** At front */
-  AtFront = "bp100.gui.assembly-settings.at-front",
+  AtFront = "bp100.gui.project-settings.at-front",
   /** Rename */
-  RenameAssembly = "bp100.gui.assembly-settings.rename-assembly",
+  RenameProject = "bp100.gui.project-settings.rename-project",
   /** Stage */
-  Stage = "bp100.gui.assembly-settings.stage",
+  Stage = "bp100.gui.project-settings.stage",
   /** Blueprints */
-  Blueprints = "bp100.gui.assembly-settings.blueprints",
+  Blueprints = "bp100.gui.project-settings.blueprints",
   /** Other */
-  Other = "bp100.gui.assembly-settings.other",
+  Other = "bp100.gui.project-settings.other",
   /** Rename stage */
-  RenameStage = "bp100.gui.assembly-settings.rename-stage",
+  RenameStage = "bp100.gui.project-settings.rename-stage",
   /** Entities */
-  Entities = "bp100.gui.assembly-settings.entities",
+  Entities = "bp100.gui.project-settings.entities",
   /** Rebuild stage [img=info] */
-  ResetStage = "bp100.gui.assembly-settings.reset-stage",
+  ResetStage = "bp100.gui.project-settings.reset-stage",
   /** Deletes and replaces all entities to match the stored state.\nThis may help resolve inconsistencies due to bugs. */
-  ResetStageTooltip = "bp100.gui.assembly-settings.reset-stage-tooltip",
+  ResetStageTooltip = "bp100.gui.project-settings.reset-stage-tooltip",
   /** Disable all entities */
-  DisableAllEntities = "bp100.gui.assembly-settings.disable-all-entities",
+  DisableAllEntities = "bp100.gui.project-settings.disable-all-entities",
   /** Enable all entities */
-  EnableAllEntities = "bp100.gui.assembly-settings.enable-all-entities",
+  EnableAllEntities = "bp100.gui.project-settings.enable-all-entities",
   /** Set tiles */
-  SetTiles = "bp100.gui.assembly-settings.set-tiles",
+  SetTiles = "bp100.gui.project-settings.set-tiles",
   /** Lab tiles */
-  LabTiles = "bp100.gui.assembly-settings.lab-tiles",
+  LabTiles = "bp100.gui.project-settings.lab-tiles",
   /** Landfill and water */
-  LandfillAndWater = "bp100.gui.assembly-settings.landfill-and-water",
+  LandfillAndWater = "bp100.gui.project-settings.landfill-and-water",
   /** Landfill and lab tiles */
-  LandfillAndLab = "bp100.gui.assembly-settings.landfill-and-lab",
+  LandfillAndLab = "bp100.gui.project-settings.landfill-and-lab",
   /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
-  FailedToSetTiles = "bp100.gui.assembly-settings.failed-to-set-tiles",
+  FailedToSetTiles = "bp100.gui.project-settings.failed-to-set-tiles",
   /** Delete stage */
-  DeleteStage = "bp100.gui.assembly-settings.delete-stage",
+  DeleteStage = "bp100.gui.project-settings.delete-stage",
   /** Are you sure you want to delete stage __1__? */
-  DeleteStageConfirmation1 = "bp100.gui.assembly-settings.delete-stage-confirmation1",
+  DeleteStageConfirmation1 = "bp100.gui.project-settings.delete-stage-confirmation1",
   /** Contents will be merged with the next stage (__1__). */
-  DeleteStageConfirmation2First = "bp100.gui.assembly-settings.delete-stage-confirmation2-first",
+  DeleteStageConfirmation2First = "bp100.gui.project-settings.delete-stage-confirmation2-first",
   /** Contents will be merged with the previous stage (__1__). */
-  DeleteStageConfirmation2Middle = "bp100.gui.assembly-settings.delete-stage-confirmation2-middle",
+  DeleteStageConfirmation2Middle = "bp100.gui.project-settings.delete-stage-confirmation2-middle",
   /** Defaults */
-  BlueprintSettingsDefaults = "bp100.gui.assembly-settings.blueprint-settings-defaults",
+  BlueprintSettingsDefaults = "bp100.gui.project-settings.blueprint-settings-defaults",
   /** Current stage [img=info] */
-  BlueprintSettingsCurrentStage = "bp100.gui.assembly-settings.blueprint-settings-current-stage",
+  BlueprintSettingsCurrentStage = "bp100.gui.project-settings.blueprint-settings-current-stage",
   /** These settings override the default settings for the current stage. Overriden settings are highlighted. */
-  BlueprintSettingsCurrentStageTooltip = "bp100.gui.assembly-settings.blueprint-settings-current-stage-tooltip",
+  BlueprintSettingsCurrentStageTooltip = "bp100.gui.project-settings.blueprint-settings-current-stage-tooltip",
   /** Defaults */
-  EditingDefaults = "bp100.gui.assembly-settings.editing-defaults",
+  EditingDefaults = "bp100.gui.project-settings.editing-defaults",
   /** Overrides for stage: __1__ */
-  EditingForStage = "bp100.gui.assembly-settings.editing-for-stage",
+  EditingForStage = "bp100.gui.project-settings.editing-for-stage",
   /** Grid settings: */
-  GridSettings = "bp100.gui.assembly-settings.grid-settings",
+  GridSettings = "bp100.gui.project-settings.grid-settings",
   /** Icons and grid settings: */
-  GridSettingsAndIcons = "bp100.gui.assembly-settings.grid-settings-and-icons",
+  GridSettingsAndIcons = "bp100.gui.project-settings.grid-settings-and-icons",
   /** Edit */
-  Edit = "bp100.gui.assembly-settings.edit",
+  Edit = "bp100.gui.project-settings.edit",
   /** Entities */
-  FilteringEntities = "bp100.gui.assembly-settings.filtering-entities",
+  FilteringEntities = "bp100.gui.project-settings.filtering-entities",
   /** Only include entities changed in the last */
-  IncludeEntitiesInTheNextNStages1 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-1",
+  IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */
-  IncludeEntitiesInTheNextNStages2 = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-2",
+  IncludeEntitiesInTheNextNStages2 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-2",
   /** Only new entities or entities with setting changes in the last "n" stages will be included in the blueprint.\n[font=default-bold]Notes:[/font]\n  Consider adding assembling machines to the whitelist below, so that previously unresearched recipes can still be pasted by later blueprints.\n  It may be helpful to include entities such as rails and roboports to the whitelist to help align blueprints. */
-  IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.assembly-settings.include-entities-in-the-next-n-stages-tooltip",
+  IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-tooltip",
   /** or in whitelist: */
-  OrInWhitelist = "bp100.gui.assembly-settings.or-in-whitelist",
+  OrInWhitelist = "bp100.gui.project-settings.or-in-whitelist",
   /** Blacklist: */
-  Blacklist = "bp100.gui.assembly-settings.blacklist",
+  Blacklist = "bp100.gui.project-settings.blacklist",
   /** Tiles */
-  Tiles = "bp100.gui.assembly-settings.tiles",
+  Tiles = "bp100.gui.project-settings.tiles",
   /** Auto-landfill [img=info] */
-  AutoLandfill = "bp100.gui.assembly-settings.auto-landfill",
+  AutoLandfill = "bp100.gui.project-settings.auto-landfill",
   /** Automatically set landfill tiles before taking a blueprint. */
-  AutoLandfillTooltip = "bp100.gui.assembly-settings.auto-landfill-tooltip",
+  AutoLandfillTooltip = "bp100.gui.project-settings.auto-landfill-tooltip",
   /** Use next stage's tiles [img=info] */
-  UseNextStageTiles = "bp100.gui.assembly-settings.use-next-stage-tiles",
+  UseNextStageTiles = "bp100.gui.project-settings.use-next-stage-tiles",
   /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
-  UseNextStageTilesTooltip = "bp100.gui.assembly-settings.use-next-stage-tiles-tooltip",
+  UseNextStageTilesTooltip = "bp100.gui.project-settings.use-next-stage-tiles-tooltip",
   /** Replace infinity chests/pipes with combinators [img=info] */
-  ReplaceInfinityWithCombinators = "bp100.gui.assembly-settings.replace-infinity-with-combinators",
+  ReplaceInfinityWithCombinators = "bp100.gui.project-settings.replace-infinity-with-combinators",
   /** In blueprints, replaces infinity chests/pipes with constant combinators having the same icons when viewed in alt-mode. */
-  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.assembly-settings.replace-infinity-with-combinators-tooltip",
+  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.project-settings.replace-infinity-with-combinators-tooltip",
   /** Export */
-  BpExport = "bp100.gui.assembly-settings.bp-export",
+  BpExport = "bp100.gui.project-settings.bp-export",
   /** Get blueprint for current stage */
-  GetBlueprintForCurrentStage = "bp100.gui.assembly-settings.get-blueprint-for-current-stage",
+  GetBlueprintForCurrentStage = "bp100.gui.project-settings.get-blueprint-for-current-stage",
   /** Make blueprint book [img=info] */
-  MakeBlueprintBook = "bp100.gui.assembly-settings.make-blueprint-book",
+  MakeBlueprintBook = "bp100.gui.project-settings.make-blueprint-book",
   /** Creates a blueprint book containing all stages. */
-  MakeBlueprintBookTooltip = "bp100.gui.assembly-settings.make-blueprint-book-tooltip",
+  MakeBlueprintBookTooltip = "bp100.gui.project-settings.make-blueprint-book-tooltip",
   /** Export book to file [img=info] */
-  ExportBlueprintBookStringToFile = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file",
+  ExportBlueprintBookStringToFile = "bp100.gui.project-settings.export-blueprint-book-string-to-file",
   /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
-  ExportBlueprintBookStringToFileTooltip = "bp100.gui.assembly-settings.export-blueprint-book-string-to-file-tooltip",
+  ExportBlueprintBookStringToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-string-to-file-tooltip",
   /** Rebuild all stages */
-  RebuildAllStages = "bp100.gui.assembly-settings.rebuild-all-stages",
+  RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
   /** Delete staged build */
-  DeleteAssembly = "bp100.gui.assembly-settings.delete-assembly",
+  DeleteProject = "bp100.gui.project-settings.delete-project",
   /** Are you sure you want to delete staged build __1__? */
-  DeleteAssemblyConfirmation1 = "bp100.gui.assembly-settings.delete-assembly-confirmation1",
+  DeleteProjectConfirmation1 = "bp100.gui.project-settings.delete-project-confirmation1",
   /** This cannot be undone. */
-  DeleteAssemblyConfirmation2 = "bp100.gui.assembly-settings.delete-assembly-confirmation2",
+  DeleteProjectConfirmation2 = "bp100.gui.project-settings.delete-project-confirmation2",
 }
 export declare const enum L_GuiTasks {
   /** Cancel */

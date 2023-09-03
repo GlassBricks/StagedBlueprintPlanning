@@ -11,10 +11,10 @@
 
 import { LuaEntity, UnitNumber } from "factorio:runtime"
 import { Events } from "../lib"
-import type { AssemblyEntity } from "./AssemblyEntity"
+import type { ProjectEntity } from "./ProjectEntity"
 
 declare const global: {
-  entityByUnitNumber: LuaMap<UnitNumber, AssemblyEntity>
+  entityByUnitNumber: LuaMap<UnitNumber, ProjectEntity>
 }
 
 Events.on_init(() => {
@@ -22,18 +22,18 @@ Events.on_init(() => {
 })
 
 /** Currently only used for rolling stock (train) entities. */
-export function registerEntity(luaEntity: LuaEntity, assemblyEntity: AssemblyEntity): boolean {
+export function registerEntity(luaEntity: LuaEntity, projectEntity: ProjectEntity): boolean {
   if (!luaEntity.valid) return false
   const unitNumber = luaEntity.unit_number
   if (!unitNumber) return false
   const entry = global.entityByUnitNumber.get(unitNumber)
   if (entry) return true
-  global.entityByUnitNumber.set(unitNumber, assemblyEntity)
+  global.entityByUnitNumber.set(unitNumber, projectEntity)
   if (unitNumber != -1) script.register_on_entity_destroyed(luaEntity)
   return true
 }
 
-export function getRegisteredAssemblyEntity(entity: LuaEntity): AssemblyEntity | nil {
+export function getRegisteredProjectEntity(entity: LuaEntity): ProjectEntity | nil {
   if (!entity.valid) return nil
   const unitNumber = entity.unit_number
   return unitNumber && global.entityByUnitNumber.get(unitNumber)

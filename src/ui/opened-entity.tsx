@@ -18,6 +18,16 @@ import {
   OnGuiClickEvent,
   PlayerIndex,
 } from "factorio:runtime"
+import { BuildableEntityType, Settings } from "../constants"
+import { Entity } from "../entity/Entity"
+import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { StageDiff } from "../entity/stage-diff"
+import { bind, ibind, ProtectedEvents, RegisterClass } from "../lib"
+import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
+import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../lib/factoriojsx/components"
+import { Migrations } from "../lib/migration"
+import { L_GuiEntityInfo } from "../locale"
+import { checkForEntityUpdates } from "../project/event-handlers"
 import {
   forceDeleteEntity,
   moveAllPropsDown,
@@ -26,24 +36,14 @@ import {
   resetProp,
   resetTrain,
   setTrainLocationToCurrent,
-} from "../assembly/assembly-updates"
-import { Stage } from "../assembly/AssemblyDef"
-import { checkForEntityUpdates } from "../assembly/event-handlers"
+} from "../project/project-updates"
+import { Stage } from "../project/ProjectDef"
 import {
   userMoveEntityToStageWithUndo,
   userRevivedSettingsRemnant,
   userSetLastStageWithUndo,
-} from "../assembly/user-actions"
-import { BuildableEntityType, Settings } from "../constants"
-import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
-import { Entity } from "../entity/Entity"
-import { StageDiff } from "../entity/stage-diff"
-import { bind, ibind, ProtectedEvents, RegisterClass } from "../lib"
-import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
-import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../lib/factoriojsx/components"
-import { Migrations } from "../lib/migration"
-import { L_GuiEntityInfo } from "../locale"
-import { getAssemblyEntityOfEntity } from "./entity-util"
+} from "../project/user-actions"
+import { getProjectEntityOfEntity } from "./entity-util"
 import { PlayerChangedStageEvent, teleportToStage } from "./player-current-stage"
 import relative_gui_position = defines.relative_gui_position
 import relative_gui_type = defines.relative_gui_type
@@ -52,21 +52,21 @@ PlayerChangedStageEvent.addListener((player, stage) => {
   const entity = player.opened
   if (!entity || entity.object_name != "LuaEntity") return
 
-  const [oldStage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
+  const [oldStage, projectEntity] = getProjectEntityOfEntity(entity)
   if (!oldStage || oldStage == stage) return
-  if (stage == nil || oldStage.assembly != stage.assembly) {
+  if (stage == nil || oldStage.project != stage.project) {
     player.opened = nil
     return
   }
 
-  player.opened = assemblyEntity.getWorldOrPreviewEntity(stage.stageNumber)
+  player.opened = projectEntity.getWorldOrPreviewEntity(stage.stageNumber)
 })
 
 const StageButtonWidth = 100
 const StageButtonHeight = 28
 
 interface EntityStageInfoProps {
-  assemblyEntity: AssemblyEntity
+  projectEntity: ProjectEntity
   stage: Stage
   anchor: GuiAnchor
 }
@@ -74,24 +74,24 @@ function SmallToolButton(props: ElemProps<"sprite-button">) {
   return <sprite-button style="mini_button" styleMod={{ size: [20, 20] }} {...props} />
 }
 
-@RegisterClass("EntityAssemblyInfo")
-class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
+@RegisterClass("EntityProjectInfo")
+class EntityProjectInfo extends Component<EntityStageInfoProps> {
   playerIndex!: PlayerIndex
   stage!: Stage
-  entity!: AssemblyEntity
+  entity!: ProjectEntity
 
   public override render(props: EntityStageInfoProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
-    const { stage, assemblyEntity: entity } = props
+    const { stage, projectEntity: entity } = props
     this.stage = stage
     this.entity = entity
     const currentStageNum = stage.stageNumber
-    const assembly = stage.assembly
+    const project = stage.project
 
     const isRollingStock = entity.isRollingStock()
 
     const firstStageNum = entity.firstStage
-    const firstStage = assembly.getStage(firstStageNum)!
+    const firstStage = project.getStage(firstStageNum)!
     const stageDiffs = entity.getStageDiffs()
     const currentStageDiff = stageDiffs && stageDiffs[currentStageNum]
 
@@ -105,7 +105,7 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
           caption={buttonStage.name}
           styleMod={{ width: StageButtonWidth, height: StageButtonHeight }}
           enabled={buttonStage != stage}
-          on_gui_click={bind(EntityAssemblyInfo.teleportToStageAction, buttonStage)}
+          on_gui_click={bind(EntityProjectInfo.teleportToStageAction, buttonStage)}
         />
       )
     }
@@ -124,11 +124,11 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
             {stageDiffs && <label caption={[L_GuiEntityInfo.StagesWithChanges]} />}
             {stageDiffs &&
               (Object.keys(stageDiffs) as unknown as StageNumber[]).flatMap((stageNum) => {
-                const stage = assembly.getStage(stageNum)!
+                const stage = project.getStage(stageNum)!
                 return [StageButton(stage), <empty-widget />]
               })}
             {lastStage != nil && <label caption={[L_GuiEntityInfo.LastStage]} />}
-            {lastStage != nil && StageButton(assembly.getStage(lastStage)!)}
+            {lastStage != nil && StageButton(project.getStage(lastStage)!)}
           </table>
 
           {lastStage != nil && (
@@ -182,31 +182,31 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   private moveToThisStage() {
     const wasSettingsRemnant = this.entity.isSettingsRemnant
     if (wasSettingsRemnant) {
-      userRevivedSettingsRemnant(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
+      userRevivedSettingsRemnant(this.stage.project, this.entity, this.stage.stageNumber, this.playerIndex)
     } else {
-      userMoveEntityToStageWithUndo(this.stage.assembly, this.entity, this.stage.stageNumber, this.playerIndex)
+      userMoveEntityToStageWithUndo(this.stage.project, this.entity, this.stage.stageNumber, this.playerIndex)
     }
     this.rerender(wasSettingsRemnant ?? true)
   }
   private removeLastStage() {
-    userSetLastStageWithUndo(this.stage.assembly, this.entity, nil, this.playerIndex)
+    userSetLastStageWithUndo(this.stage.project, this.entity, nil, this.playerIndex)
     this.rerender(false)
   }
   private resetTrain() {
-    resetTrain(this.stage.assembly, this.entity)
+    resetTrain(this.stage.project, this.entity)
   }
   private setTrainLocationHere() {
-    setTrainLocationToCurrent(this.stage.assembly, this.entity)
+    setTrainLocationToCurrent(this.stage.project, this.entity)
   }
 
   private deleteEntity() {
-    forceDeleteEntity(this.stage.assembly, this.entity)
+    forceDeleteEntity(this.stage.project, this.entity)
   }
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Element {
     const diffEntries = Object.keys(stageDiff).sort() as Array<keyof BlueprintEntity>
     const nextLowerStageNum = this.entity.prevStageWithDiff(this.stage.stageNumber) ?? this.entity.firstStage
-    const nextLowerStageName = this.stage.assembly.getStage(nextLowerStageNum)!.name.get()
+    const nextLowerStageName = this.stage.project.getStage(nextLowerStageNum)!.name.get()
     return (
       <>
         <label caption={[L_GuiEntityInfo.StageDiff]} style="heading_2_label" />
@@ -240,18 +240,18 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   private resetProp(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      resetAllProps(this.stage.assembly, this.entity, this.stage.stageNumber)
+      resetAllProps(this.stage.project, this.entity, this.stage.stageNumber)
     } else {
-      resetProp(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      resetProp(this.stage.project, this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(true)
   }
   private applyToLowerStage(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      moveAllPropsDown(this.stage.assembly, this.entity, this.stage.stageNumber)
+      moveAllPropsDown(this.stage.project, this.entity, this.stage.stageNumber)
     } else {
-      movePropDown(this.stage.assembly, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      movePropDown(this.stage.project, this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(false)
   }
@@ -288,9 +288,9 @@ class EntityAssemblyInfo extends Component<EntityStageInfoProps> {
   }
 }
 
-const EntityAssemblyInfoName = script.mod_name + ":EntityAssemblyInfo"
-const EntityAssemblyInfoName2 = script.mod_name + ":EntityAssemblyInfo2"
-function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, assemblyEntity: AssemblyEntity, stage: Stage) {
+const EntityProjectInfoName = script.mod_name + ":EntityProjectInfo"
+const EntityProjectInfoName2 = script.mod_name + ":EntityProjectInfo2"
+function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, projectEntity: ProjectEntity, stage: Stage) {
   const guiType = entityTypeToGuiType[entity.type as BuildableEntityType]
   if (!guiType) return
   let mainGuiType: relative_gui_type
@@ -303,32 +303,32 @@ function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, assemblyEnt
     relative_gui_position[player.mod_settings[Settings.EntityInfoLocation].value as keyof typeof relative_gui_position]
 
   renderNamed(
-    <EntityAssemblyInfo assemblyEntity={assemblyEntity} stage={stage} anchor={{ gui: mainGuiType, position }} />,
+    <EntityProjectInfo projectEntity={projectEntity} stage={stage} anchor={{ gui: mainGuiType, position }} />,
     player.gui.relative,
-    EntityAssemblyInfoName,
+    EntityProjectInfoName,
   )
   if (Array.isArray(guiType)) {
     renderNamed(
-      <EntityAssemblyInfo assemblyEntity={assemblyEntity} stage={stage} anchor={{ gui: guiType[1], position }} />,
+      <EntityProjectInfo projectEntity={projectEntity} stage={stage} anchor={{ gui: guiType[1], position }} />,
       player.gui.relative,
-      EntityAssemblyInfoName2,
+      EntityProjectInfoName2,
     )
   }
 }
 function destroyEntityStageInfo(player: LuaPlayer) {
   const relative = player.gui.relative
-  destroy(relative[EntityAssemblyInfoName])
-  destroy(relative[EntityAssemblyInfoName2])
+  destroy(relative[EntityProjectInfoName])
+  destroy(relative[EntityProjectInfoName2])
 }
 
 function tryRenderExtraStageInfo(player: LuaPlayer, entity: LuaEntity): boolean {
-  const [stage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
+  const [stage, projectEntity] = getProjectEntityOfEntity(entity)
   if (!stage) {
     destroyEntityStageInfo(player)
     return false
   }
 
-  renderEntityStageInfo(player, entity, assemblyEntity, stage)
+  renderEntityStageInfo(player, entity, projectEntity, stage)
   return true
 }
 

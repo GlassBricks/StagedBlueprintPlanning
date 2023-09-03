@@ -11,16 +11,16 @@
 
 /**
  * This file handles player navigation.
- * For assembly editing, see assembly/event-handlers.ts.
+ * For project editing, see project/event-handlers.ts.
  */
 
 import { CustomInputEvent, LocalisedString, LuaPlayer } from "factorio:runtime"
-import { getAllAssemblies } from "../assembly/UserAssembly"
 import { CustomInputs } from "../constants"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
-import { getAssemblyEntityOfEntity } from "./entity-util"
-import { playerCurrentStage, teleportToAssembly, teleportToStage } from "./player-current-stage"
+import { getAllProjects } from "../project/UserProject"
+import { getProjectEntityOfEntity } from "./entity-util"
+import { playerCurrentStage, teleportToProject, teleportToStage } from "./player-current-stage"
 
 const Events = ProtectedEvents
 
@@ -39,10 +39,10 @@ function goToStageRelative(event: CustomInputEvent, diff: number, ErrorLocale: s
   const player = game.get_player(event.player_index)!
   const stage = playerCurrentStage(event.player_index).get()
   if (!stage) {
-    return notifyError(player, [L_Interaction.NotInAnAssembly], false)
+    return notifyError(player, [L_Interaction.NotInAnProject], false)
   }
   const nextStageNum = stage.stageNumber + diff
-  const toStage = stage.assembly.getStage(nextStageNum)
+  const toStage = stage.project.getStage(nextStageNum)
   if (!toStage) {
     return notifyError(player, [ErrorLocale], false)
   }
@@ -61,30 +61,30 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
   if (!entity) return
-  const [stage, assemblyEntity] = getAssemblyEntityOfEntity(entity)
-  if (!assemblyEntity) {
-    return notifyError(player, [L_Interaction.NotInAnAssembly], true)
+  const [stage, projectEntity] = getProjectEntityOfEntity(entity)
+  if (!projectEntity) {
+    return notifyError(player, [L_Interaction.NotInAnProject], true)
   }
-  const firstStageNum = assemblyEntity.firstStage
+  const firstStageNum = projectEntity.firstStage
   const currentStage = stage!.stageNumber
   if (firstStageNum == currentStage) {
     return notifyError(player, [L_Interaction.AlreadyAtFirstStage], true)
   }
-  const firstStage = stage!.assembly.getStage(firstStageNum)
+  const firstStage = stage!.project.getStage(firstStageNum)
   assert(firstStage, "First stage not found")
   teleportToStage(player, firstStage!)
 })
 
 function goToBuildRelative(event: CustomInputEvent, diff: number, ErrorLocale: string) {
-  const assemblies = getAllAssemblies()
-  if (assemblies.length == 0) return
+  const projects = getAllProjects()
+  if (projects.length == 0) return
   let targetIndex: number
 
-  const currentAssembly = playerCurrentStage(event.player_index).get()?.assembly
-  if (!currentAssembly) {
+  const currentProject = playerCurrentStage(event.player_index).get()?.project
+  if (!currentProject) {
     targetIndex = 0
   } else {
-    const curIndex = assemblies.indexOf(currentAssembly)
+    const curIndex = projects.indexOf(currentProject)
     if (curIndex == -1) {
       targetIndex = 0
     } else {
@@ -92,17 +92,17 @@ function goToBuildRelative(event: CustomInputEvent, diff: number, ErrorLocale: s
     }
   }
 
-  if (targetIndex < 0 || targetIndex >= assemblies.length) {
+  if (targetIndex < 0 || targetIndex >= projects.length) {
     return notifyError(game.get_player(event.player_index)!, [ErrorLocale], false)
   }
-  const nextAssembly = assemblies[targetIndex]
-  teleportToAssembly(game.get_player(event.player_index)!, nextAssembly)
+  const nextProject = projects[targetIndex]
+  teleportToProject(game.get_player(event.player_index)!, nextProject)
 }
 
-Events.on(CustomInputs.NextAssembly, (e) => {
-  goToBuildRelative(e, 1, L_Interaction.NoNextAssembly)
+Events.on(CustomInputs.NextProject, (e) => {
+  goToBuildRelative(e, 1, L_Interaction.NoNextProject)
 })
 
-Events.on(CustomInputs.PreviousAssembly, (e) => {
-  goToBuildRelative(e, -1, L_Interaction.NoPreviousAssembly)
+Events.on(CustomInputs.PreviousProject, (e) => {
+  goToBuildRelative(e, -1, L_Interaction.NoPreviousProject)
 })

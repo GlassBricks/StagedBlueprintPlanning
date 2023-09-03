@@ -10,7 +10,7 @@
  */
 
 import { PRecord, RegisterClass } from "../lib"
-import { AssemblyEntity } from "./AssemblyEntity"
+import { ProjectEntity } from "./ProjectEntity"
 
 export interface Map2D<T extends { _next?: T }> {
   [x: number]: PRecord<number, T | nil>
@@ -76,7 +76,7 @@ export function newMap2D<T extends { _next: T | nil }>(): Map2D<T> {
 }
 
 function isArray<T>(value: T | T[]): value is T[] {
-  return (value as AssemblyEntity).firstStage == nil
+  return (value as ProjectEntity).firstStage == nil
 }
 
 export function _migrateMap2DToLinkedList(map: Map2D<any>): void {

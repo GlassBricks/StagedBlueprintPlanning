@@ -9,21 +9,26 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destroy } from "../lib/factoriojsx"
-import { Migrations } from "../lib/migration"
-import "./AllProjects"
-import "./editor-fix"
-import "./opened-entity"
-import "./player-navigation"
-import "./ProjectSettings"
-import "./stage-move-tool"
+import { assertNever } from "../lib"
+import { ProjectEvents } from "./UserProject"
+import { rebuildStage } from "./world-entity-updates"
 
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    const opened = player.opened
-    if (opened && opened.object_name == "LuaGuiElement" && opened.get_mod() == script.mod_name) {
-      destroy(opened)
-      player.opened = nil
+ProjectEvents.addListener((e) => {
+  switch (e.type) {
+    case "stage-added":
+      rebuildStage(e.project, e.stage.stageNumber)
+      return
+    case "stage-deleted": {
+      const stageNumber = e.stage.stageNumber
+      const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
+      rebuildStage(e.project, stageNumberToMerge)
+      return
     }
+    case "project-created":
+    case "project-deleted":
+    case "pre-stage-deleted":
+    case "projects-reordered":
+      return
   }
+  assertNever(e)
 })

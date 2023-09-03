@@ -10,8 +10,8 @@
  */
 
 import { BlueprintControlBehavior } from "factorio:runtime"
-import { AssemblyEntity, StageNumber } from "./AssemblyEntity"
 import { OnEntityPrototypesLoaded } from "./entity-prototype-info"
+import { ProjectEntity, StageNumber } from "./ProjectEntity"
 
 export const emptyBeltControlBehavior: BlueprintControlBehavior = {
   circuit_enable_disable: false,
@@ -27,7 +27,7 @@ OnEntityPrototypesLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 
-export function trySetEmptyControlBehavior(entity: AssemblyEntity, stageNumber: StageNumber): boolean {
+export function trySetEmptyControlBehavior(entity: ProjectEntity, stageNumber: StageNumber): boolean {
   if (!(stageNumber > entity.firstStage && entity.firstValue.control_behavior == nil)) return false
   const type = nameToType.get(entity.firstValue.name)
   if (type == "inserter") {

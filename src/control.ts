@@ -15,9 +15,9 @@
   // require("__debugadapter__/debugadapter.lua")
 }
 
-import "./assembly"
 import { Events } from "./lib"
 import { formatVersion, Migrations } from "./lib/migration"
+import "./project"
 import "./ui"
 
 pcall(require, "test.test-init")
