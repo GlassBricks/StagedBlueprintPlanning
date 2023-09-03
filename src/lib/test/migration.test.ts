@@ -43,10 +43,16 @@ describe("Migrations", () => {
   })
 
   test("runs early migrations before later migrations", () => {
-    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const) Migrations.to(version, () => run.push(version))
-    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const)
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const) {
+      Migrations.to(version, () => run.push(version))
+    }
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const) {
       Migrations.early(version, () => run.push(version + " e"))
+    }
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const) {
+      Migrations.priority(5, version, () => run.push(version + " e5"))
+    }
     Migrations.doMigrations("1.2.3")
-    expect(run).to.equal(["1.2.4 e", "1.2.5 e", "1.2.4", "1.2.5"])
+    expect(run).to.equal(["1.2.4 e5", "1.2.5 e5", "1.2.4 e", "1.2.5 e", "1.2.4", "1.2.5"])
   })
 })

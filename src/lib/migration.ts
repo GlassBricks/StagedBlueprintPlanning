@@ -20,13 +20,34 @@ export function formatVersion(version: string): VersionString {
   return parts.join(".") as VersionString
 }
 
+interface MigrationWithPriority {
+  prio: number
+  version: VersionString
+  order: number
+  func: () => void
+}
+
+function lt(a: MigrationWithPriority, b: MigrationWithPriority): boolean {
+  // prio, version string, order
+  if (a.prio != b.prio) return a.prio < b.prio
+  if (a.version != b.version) return a.version < b.version
+  return a.order < b.order
+}
+
 export namespace Migrations {
-  let migrations: Record<VersionString, (() => void)[]> = {}
-  let earlyMigrations: Record<VersionString, (() => void)[]> = {}
+  let order = 0
+  // let migrations: Record<VersionString, (() => void)[]> = {}
+  // let earlyMigrations: Record<VersionString, (() => void)[]> = {}
+  let migrations: MigrationWithPriority[] = []
 
   /** Runs when migrating from a version earlier than the specified version. */
   export function to(version: VersionString, func: () => void): void {
-    ;(migrations[formatVersion(version)] ||= []).push(func)
+    migrations.push({
+      prio: 9,
+      version: formatVersion(version),
+      order: order++,
+      func: func,
+    })
   }
   /** Runs both during on_init and from an earlier version. */
   export function since(version: VersionString, func: () => void): void {
@@ -35,7 +56,21 @@ export namespace Migrations {
   }
 
   export function early(version: VersionString, func: () => void): void {
-    ;(earlyMigrations[formatVersion(version)] ||= []).push(func)
+    migrations.push({
+      prio: 8,
+      version: formatVersion(version),
+      order: order++,
+      func,
+    })
+  }
+
+  export function priority(prio: number, version: VersionString, func: () => void): void {
+    migrations.push({
+      prio,
+      version: formatVersion(version),
+      order: order++,
+      func,
+    })
   }
 
   /** Runs during any migration from an earlier version. */
@@ -45,27 +80,17 @@ export namespace Migrations {
 
   export function _prepareMock(): void {
     assert(game && script.active_mods["factorio-test"], "should not mock until game loaded")
-    migrations = {}
-    earlyMigrations = {}
+    migrations = []
   }
 
-  function getMigrationsToRun(
-    oldVersion: VersionString,
-    migrationList: Record<VersionString, (() => void)[]>,
-  ): (() => void)[] {
-    const formattedOldVersion = formatVersion(oldVersion)
-    const versions = (Object.keys(migrationList) as VersionString[]).filter((v) => formattedOldVersion < v).sort()
-    if (versions.length > 0) {
-      log("Running migrations for versions: " + versions.join(", "))
-      return versions.flatMap((v) => migrationList[v])
-    }
-    return []
-  }
   export function doMigrations(oldVersion: VersionString): void {
-    const migrations1 = getMigrationsToRun(oldVersion, earlyMigrations)
-    for (const fn of migrations1) fn()
-    const migrations2 = getMigrationsToRun(oldVersion, migrations)
-    for (const fn of migrations2) fn()
+    const formattedOldVersion = formatVersion(oldVersion)
+    const availableMigrations = migrations.filter((m) => formattedOldVersion < m.version)
+    if (availableMigrations.length == 0) return
+    const allVersions = availableMigrations.map((m) => m.version)
+    log("Running migrations for versions: " + allVersions.join(", "))
+    table.sort(availableMigrations, lt)
+    for (const migration of availableMigrations) migration.func()
   }
 
   // noinspection JSUnusedGlobalSymbols
