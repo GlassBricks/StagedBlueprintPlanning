@@ -2,7 +2,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 export declare const enum L_ItemName {
-  /** Build cleanup tool */
+  /** Cleanup tool */
   CleanupTool = "item-name.bp100:cleanup-tool",
   /** Stage move tool */
   StageMoveTool = "item-name.bp100:stage-move-tool",
@@ -14,7 +14,7 @@ export declare const enum L_ItemName {
   StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
 }
 export declare const enum L_ShortcutName {
-  /** Build cleanup tool */
+  /** [Staged BP planning] cleanup tool */
   CleanupTool = "shortcut-name.bp100:cleanup-tool",
   /** Stage move tool */
   StageMoveTool = "shortcut-name.bp100:stage-move-tool",
@@ -30,21 +30,21 @@ export declare const enum L_EntityName {
   UndoReference = "entity-name.bp100:undo-reference",
 }
 export declare const enum L_ItemGroupName {
-  /** Staged blueprint planning utility entities */
+  /** Staged bp planning: utility entities */
   Utility = "item-group-name.bp100:utility",
 }
 export declare const enum L_ModSettingName {
   /** Flexible offshore pump placement */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
-  /** Location of entity info gui */
+  /** Location of Entity info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
-  /** Allow blueprint pasting to upgrade entities */
+  /** Allow blueprint paste to upgrade entities */
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
-  /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged build. */
+  /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged project. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
 }
 export declare const enum L_StringModSetting {
@@ -74,11 +74,11 @@ export declare const enum L_Controls {
   NextStage = "controls.bp100:next-stage",
   /** Go to previous stage */
   PreviousStage = "controls.bp100:previous-stage",
-  /** Go to next staged build */
+  /** Go to next project */
   NextProject = "controls.bp100:next-project",
-  /** Go to previous staged build */
+  /** Go to previous project */
   PreviousProject = "controls.bp100:previous-project",
-  /** Go to entity's first stage */
+  /** Go to entity first stage */
   GoToFirstStage = "controls.bp100:go-to-first-stage",
   /** Move entity to current stage */
   MoveToThisStage = "controls.bp100:move-to-this-stage",
@@ -90,21 +90,19 @@ export declare const enum L_Controls {
   StageSelectPrevious = "controls.bp100:stage-select-previous",
 }
 export declare const enum L_ControlsDescription {
-  /** Delete an entity even if it is not in the current stage. */
+  /** Delete an entity even if not in its the current stage. */
   ForceDelete = "controls-description.bp100:force-delete",
 }
 export declare const enum L_Bp100 {
   /** __1__ (preview) */
   PreviewEntity = "bp100.preview-entity",
-  /** __1__ (selection proxy) */
-  SelectionProxy = "bp100.selection-proxy",
-  /** <Unnamed build __1__> */
+  /** <Unnamed project __1__> */
   UnnamedProject = "bp100.unnamed-project",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp100.interaction.unexpected-error",
-  /** WARNING: pasting from the blueprint [font=default-bold]library[/font] into a staged build is not supported.\nTo fix, make a copy of the blueprint (book) from the library, and paste again using the copy. */
+  /** WARNING: pasting from the blueprint [font=default-bold]library[/font] into a staged BP project may cause issues.\nTo fix, make a copy of the blueprint, and paste again using the copy. */
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
@@ -144,41 +142,37 @@ export declare const enum L_Interaction {
   CannotBuildDifferentDirection = "bp100.interaction.cannot-build-different-direction",
   /** Note: some entities were upgraded (the upgrade on blueprint paste user setting is enabled) */
   PasteUpgradeApplied = "bp100.interaction.paste-upgrade-applied",
-  /** Not in an staged build */
+  /** Not in a Staged BP project */
   NotInAnProject = "bp100.interaction.not-in-an-project",
   /** No next stage */
   NoNextStage = "bp100.interaction.no-next-stage",
   /** No previous stage */
   NoPreviousStage = "bp100.interaction.no-previous-stage",
-  /** No next staged build */
+  /** No next project */
   NoNextProject = "bp100.interaction.no-next-project",
-  /** No previous staged build */
+  /** No previous project */
   NoPreviousProject = "bp100.interaction.no-previous-project",
-  /** Already at entity first stage */
+  /** Already at first stage */
   AlreadyAtFirstStage = "bp100.interaction.already-at-first-stage",
-  /** Entity is the same in all stages */
-  EntitySameInAllStages = "bp100.interaction.entity-same-in-all-stages",
   /** Blueprint is empty */
   BlueprintEmpty = "bp100.interaction.blueprint-empty",
   /** Blueprint book is empty */
   BlueprintBookEmpty = "bp100.interaction.blueprint-book-empty",
   /** Snap to grid settings have not been saved. Try editing the blueprint again without removing entities. */
   BlueprintFirstEntityRemoved = "bp100.interaction.blueprint-first-entity-removed",
-  /** Cannot move to the same stage */
-  CannotMoveToSameStage = "bp100.interaction.cannot-move-to-same-stage",
   /** WARNING: The filtered stage move tool must be used with instant-deconstruction [font=default-large-bold]disabled[/font]. Otherwise, the tool will not work properly (it will act like a deconstruction planner). */
   FilteredStageMoveToolWarning = "bp100.interaction.filtered-stage-move-tool-warning",
   /** Blueprint book exported to script-output/__1__ */
   BlueprintBookExported = "bp100.interaction.blueprint-book-exported",
 }
 export declare const enum L_GuiProjectSelector {
-  /** Staged builds */
+  /** Staged BP projects */
   ShowAllProjects = "bp100.gui.project-selector.show-all-projects",
-  /** Staged builds */
+  /** Staged BP projects */
   AllProjects = "bp100.gui.project-selector.all-projects",
-  /** New staged build */
+  /** New project */
   NewProject = "bp100.gui.project-selector.new-project",
-  /** Exit staged build */
+  /** Exit project */
   ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
   ButtonTooltip = "bp100.gui.project-selector.button-tooltip",
@@ -188,7 +182,7 @@ export declare const enum L_GuiProjectSettings {
   ShowFullSettings = "bp100.gui.project-settings.show-full-settings",
   /** Hide settings */
   HideFullSettings = "bp100.gui.project-settings.hide-full-settings",
-  /** Staged build: */
+  /** Project: */
   TitleCaption = "bp100.gui.project-settings.title-caption",
   /** New stage */
   NewStage = "bp100.gui.project-settings.new-stage",
@@ -210,7 +204,7 @@ export declare const enum L_GuiProjectSettings {
   Entities = "bp100.gui.project-settings.entities",
   /** Rebuild stage [img=info] */
   ResetStage = "bp100.gui.project-settings.reset-stage",
-  /** Deletes and replaces all entities to match the stored state.\nThis may help resolve inconsistencies due to bugs. */
+  /** Deletes and replaces all entities to match the stored state.\nThis may resolve inconsistencies due to bugs. */
   ResetStageTooltip = "bp100.gui.project-settings.reset-stage-tooltip",
   /** Disable all entities */
   DisableAllEntities = "bp100.gui.project-settings.disable-all-entities",
@@ -308,7 +302,7 @@ export declare const enum L_GuiTasks {
 export declare const enum L_GuiBlueprintBookTask {
   /** Assembling blueprint book */
   AssemblingBlueprintBook = "bp100.gui.blueprint-book-task.assembling-blueprint-book",
-  /** Preparing build __1__ */
+  /** Preparing project __1__ */
   ComputeChangedEntities = "bp100.gui.blueprint-book-task.compute-changed-entities",
   /** __1__: preparing to take blueprint */
   ComputeUnitNumberFilter = "bp100.gui.blueprint-book-task.compute-unit-number-filter",
@@ -342,7 +336,7 @@ export declare const enum L_GuiEntityInfo {
   SetTrainLocationHere = "bp100.gui.entity-info.set-train-location-here",
   /** Force delete entity */
   DeleteEntity = "bp100.gui.entity-info.delete-entity",
-  /** Changed settings */
+  /** Updated settings */
   StageDiff = "bp100.gui.entity-info.stage-diff",
   /** Remove this change (sets to previous value) */
   ResetProp = "bp100.gui.entity-info.reset-prop",
