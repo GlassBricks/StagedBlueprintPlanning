@@ -62,6 +62,7 @@ export type ContextualFun = (this: any, ...args: any) => any
 export type SelflessFun = (this: void, ...args: any) => any
 
 export interface Func<F extends ContextualFun = ContextualFun> {
+  // Want to use "call", but that name exists on normal Function interface already
   invoke: F extends (...args: infer A) => infer R ? (this: this, ...args: A) => R : never
 }
 
@@ -102,7 +103,10 @@ export function funcRef<F extends SelflessFun>(func: F): Func<F> {
 
 @RegisterClass("FuncBound1")
 class Bound1 {
-  constructor(public func: Func, public arg1: unknown) {}
+  constructor(
+    public func: Func,
+    public arg1: unknown,
+  ) {}
   invoke(...args: any[]): any {
     return this.func.invoke(this.arg1, ...args)
   }
@@ -110,7 +114,11 @@ class Bound1 {
 
 @RegisterClass("FuncBound2")
 class Bound2 {
-  constructor(public func: Func, public arg1: unknown, public arg2: unknown) {}
+  constructor(
+    public func: Func,
+    public arg1: unknown,
+    public arg2: unknown,
+  ) {}
   invoke(...args: any[]): any {
     return this.func.invoke(this.arg1, this.arg2, ...args)
   }
@@ -118,7 +126,12 @@ class Bound2 {
 
 @RegisterClass("FuncBound3")
 class Bound3 {
-  constructor(public func: Func, public arg1: unknown, public arg2: unknown, public arg3: unknown) {}
+  constructor(
+    public func: Func,
+    public arg1: unknown,
+    public arg2: unknown,
+    public arg3: unknown,
+  ) {}
   invoke(...args: any[]): any {
     return this.func.invoke(this.arg1, this.arg2, this.arg3, ...args)
   }
@@ -141,7 +154,10 @@ class Bound4 {
 @RegisterClass("FuncBoundN")
 class BoundN {
   private readonly args: unknown[]
-  constructor(public func: Func, ...args: unknown[]) {
+  constructor(
+    public func: Func,
+    ...args: unknown[]
+  ) {
     this.args = args
   }
   invoke(...args: any[]): any {
@@ -189,14 +205,17 @@ export function bind(func: FOrFunc<SelflessFun>, ...args: unknown[]): Func {
 
 @RegisterClass("KeyFunc")
 class KeyFunc implements Func {
-  constructor(private readonly instance: Record<keyof any, ContextualFun>, private readonly key: keyof any) {}
+  constructor(
+    private readonly instance: Record<keyof any, ContextualFun>,
+    private readonly key: keyof any,
+  ) {}
 
   invoke(...args: unknown[]) {
     const instance = this.instance
     const fn = instance[this.key]
     if (fn == nil) {
       error(
-        `Function with name ${tostring(this.key)} does not exist on ${this.instance}\n` +
+        `Function with name ${tostring(this.key)} does not exist on ${tostring(this.instance)}\n` +
           `Block: ${serpent.block(this.instance, { maxlevel: 1 })}\n` +
           `Metatable: ${serpent.block(getmetatable(this.instance), { maxlevel: 1 })}`,
       )
@@ -207,7 +226,10 @@ class KeyFunc implements Func {
 
 @RegisterClass("NoSelfKeyFunc")
 class NoSelfKeyFunc implements Func {
-  constructor(private readonly instance: Record<keyof any, SelflessFun>, private readonly key: keyof any) {}
+  constructor(
+    private readonly instance: Record<keyof any, SelflessFun>,
+    private readonly key: keyof any,
+  ) {}
 
   invoke(...args: unknown[]) {
     return this.instance[this.key](...args)

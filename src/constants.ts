@@ -64,6 +64,7 @@ export const enum Sprites {
 export const enum CustomInputs {
   Build = "bp100:build",
   RemovePoleCables = "bp100:remove-pole-cables",
+  ConfirmGui = "bp100:confirm-gui",
 
   NextStage = "bp100:next-stage",
   PreviousStage = "bp100:previous-stage",

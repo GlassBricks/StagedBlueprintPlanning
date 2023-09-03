@@ -9,12 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { FrameGuiElement, FrameGuiElementMembers, LocalisedString, LuaPlayer, OnGuiClosedEvent } from "factorio:runtime"
+import { FrameGuiElement, FrameGuiElementMembers, LocalisedString, LuaPlayer, PlayerIndex } from "factorio:runtime"
+import { CustomInputs } from "../../../constants"
+import { Events } from "../../Events"
 import { Func, ibind, RegisterClass } from "../../references"
 import { Component, Element } from "../element"
-import { destroy, FactorioJsx, GuiEvent, renderOpened } from "../index"
+import { destroy, FactorioJsx, getComponentInstance, GuiEvent, renderOpened } from "../index"
 
-export interface DialogueProps {
+export interface DialogProps {
   title: LocalisedString
   message: LocalisedString[]
 
@@ -27,12 +29,12 @@ export interface DialogueProps {
   redConfirm?: boolean
 }
 @RegisterClass("gui:Dialog")
-export class Dialog extends Component<DialogueProps> {
+export class Dialog extends Component<DialogProps> {
   private element!: FrameGuiElementMembers
   private onBackFn?: Func<(player: LuaPlayer) => void>
   private onConfirmFn?: Func<(player: LuaPlayer) => void>
   private redConfirm?: boolean
-  public override render(props: DialogueProps): Element {
+  public override render(props: DialogProps): Element {
     assert(props.backCaption || props.confirmCaption, "Dialog requires at least one button")
 
     this.onBackFn = props.onBack
@@ -45,7 +47,7 @@ export class Dialog extends Component<DialogueProps> {
         caption={props.title}
         direction={"vertical"}
         onCreate={(e) => (this.element = e)}
-        on_gui_closed={ibind(this.onClose)}
+        on_gui_closed={ibind(this.onBack)}
       >
         {props.message.map((line) => (
           <label caption={line} />
@@ -76,19 +78,23 @@ export class Dialog extends Component<DialogueProps> {
     destroy(this.element)
   }
 
-  private onConfirm(e: GuiEvent) {
+  public onConfirm(e: { player_index: PlayerIndex }): void {
     this.onConfirmFn?.invoke(game.players[e.player_index])
     destroy(this.element)
   }
-  private onClose(e: OnGuiClosedEvent) {
-    if (this.redConfirm) {
-      this.onBack(e)
-    } else {
-      this.onConfirm(e)
-    }
-  }
 }
 
-export function showDialog(player: LuaPlayer, props: DialogueProps): void {
+Events.on(CustomInputs.ConfirmGui, (e) => {
+  const player = game.players[e.player_index]
+  const opened = player.opened
+  if (opened?.object_name != "LuaGuiElement" || opened.type != "frame") return
+  const instance = getComponentInstance(opened)
+  if (instance && instance instanceof Dialog) {
+    instance.onConfirm(e)
+    player.play_sound({ path: "utility/confirm" })
+  }
+})
+
+export function showDialog(player: LuaPlayer, props: DialogProps): void {
   renderOpened(player, { type: Dialog, props })
 }

@@ -29,7 +29,14 @@ const removePoleCablesInput: CustomInputPrototype = {
   key_sequence: "",
   linked_game_control: "remove-pole-cables",
 }
-data.extend([buildInput, removePoleCablesInput])
+const confirmGuiInput: CustomInputPrototype = {
+  type: "custom-input",
+  name: CustomInputs.ConfirmGui,
+
+  key_sequence: "",
+  linked_game_control: "confirm-gui",
+}
+data.extend([buildInput, removePoleCablesInput, confirmGuiInput])
 
 const nextStage: CustomInputPrototype = {
   type: "custom-input",
