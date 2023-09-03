@@ -80,7 +80,7 @@ function isArray<T>(value: T | T[]): value is T[] {
 }
 
 export function _migrateMap2DToLinkedList(map: Map2D<any>): void {
-  for (const [, byX] of pairs(map as Record<number, PRecord<number, any | any[]>>)) {
+  for (const [, byX] of pairs(map as Record<number, PRecord<number, any>>)) {
     for (const [y, value] of pairs(byX)) {
       if (isArray(value)) {
         const first = value[0]
