@@ -398,7 +398,8 @@ export function exportBlueprintBookToFile(project: UserProject, player: LuaPlaye
   addBlueprintBookTasks(builder, project, stack)
 
   let name = project.name.get()
-  if (name == "") name = `Unnamed-build-${project.id}`[name] = string.gsub(name, "[^%w%-%_%.]", "_")
+  if (name == "") name = `Unnamed-build-${project.id}`
+  name = string.gsub(name, "[^%w%-%_%.]", "_")[0]
   name = `staged-builds/${name}.txt`
 
   builder.addTask({
