@@ -330,7 +330,7 @@ test("onCreate", () => {
 test("context onMount", () => {
   const fn = mock.fn<(this: unknown) => void>()
   const spec: FunctionalComponent<any> = {
-    type(props, context) {
+    type(_, context) {
       context.onMount(fn)
       return { type: "flow" }
     },

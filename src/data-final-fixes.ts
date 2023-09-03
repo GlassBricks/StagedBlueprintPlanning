@@ -97,7 +97,7 @@ for (const type of itemTypes) {
   const prototypes = data.raw[type]
   if (prototypes == nil) continue
   for (const [name, itemPrototype] of pairs(prototypes)) {
-    if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name as string)
+    if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)
   }
 }
 const utilityConstants = data.raw["utility-constants"].default!

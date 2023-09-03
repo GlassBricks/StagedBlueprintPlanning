@@ -16,7 +16,7 @@ import {
   LuaEntity,
   LuaPlayer,
   OnGuiClickEvent,
-  PlayerIndex
+  PlayerIndex,
 } from "factorio:runtime"
 import {
   forceDeleteEntity,

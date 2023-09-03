@@ -199,7 +199,6 @@ function renderElement(
   for (let [key, value] of pairs(element)) {
     const propInfoElement = propInfo[key]
     if (!propInfoElement) continue
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     if (typeof value == "function") value = funcRef(value as any)
     if (propInfoElement == "event") {
       assert((value as Func).invoke, "Gui event handler must be a function")

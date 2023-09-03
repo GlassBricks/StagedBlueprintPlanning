@@ -324,15 +324,14 @@ function getPropName(name: string): string | ts.StringLiteral {
 }
 
 const outDir = path.resolve(__dirname, "../src/lib/factoriojsx")
-async function writeFile(filename: string, content: string, _parser: prettier.Options["parser"]) {
+async function writeFile(filename: string, content: string, parser: prettier.Options["parser"]) {
   return fs.writeFile(
     path.join(outDir, filename),
-    // await prettier.format(content, {
-    //   parser,
-    //   printWidth: 120,
-    //   semi: false,
-    // }),
-    content,
+    await prettier.format(content, {
+      parser,
+      printWidth: 120,
+      semi: false,
+    }),
   )
 }
 
