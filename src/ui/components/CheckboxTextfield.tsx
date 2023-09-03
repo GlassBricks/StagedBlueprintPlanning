@@ -9,6 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  CheckboxGuiElement,
+  LocalisedString,
+  OnGuiCheckedStateChangedEvent,
+  OnGuiTextChangedEvent,
+  TextFieldGuiElement,
+} from "factorio:runtime"
 import { ibind, MutableProperty, RegisterClass } from "../../lib"
 import { Component, Element, FactorioJsx } from "../../lib/factoriojsx"
 import { getDefaultValueIfIsOverridenProp, highlightIfOverriden } from "../../utils/DiffedProperty"

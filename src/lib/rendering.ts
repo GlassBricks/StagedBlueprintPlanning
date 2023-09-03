@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaRendering, uint64 } from "factorio:runtime"
+
 type Getters = {
   [K in keyof LuaRendering as K extends `get_${infer P}`
     ? LuaRendering[K] extends (id: uint64) => any

@@ -149,7 +149,7 @@ Events.on_tick(() => {
 
   if (global.migrateNextTick) {
     global.migrateNextTick = nil
-    Migrations.doMigrations(script.active_mods[script.mod_name])
+    Migrations.doMigrations(script.active_mods[script.mod_name]!)
   }
 
   const ticks = math.ceil((__DebugAdapter ? 20 : 3) * 60 * game.speed)

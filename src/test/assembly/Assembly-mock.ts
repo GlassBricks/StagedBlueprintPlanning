@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaSurface } from "factorio:runtime"
 import { Assembly } from "../../assembly/AssemblyDef"
 import { createStageSurface, destroySurface } from "../../assembly/surfaces"
 import { newAssemblyContent } from "../../entity/AssemblyContent"

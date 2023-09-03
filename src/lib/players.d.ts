@@ -11,7 +11,7 @@
 
 interface PlayerData {}
 type GlobalPlayerData = {
-  readonly [P in PlayerIndex]: PlayerData
+  readonly [P in import("factorio:runtime").PlayerIndex]: PlayerData
 }
 interface GlobalWithPlayers {
   readonly players: GlobalPlayerData

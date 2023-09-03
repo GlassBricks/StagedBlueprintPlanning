@@ -9,6 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  ButtonGuiElement,
+  LuaGuiElement,
+  LuaPlayer,
+  OnGuiClickEvent,
+  PlayerIndex,
+  ScrollPaneGuiElement,
+} from "factorio:runtime"
 import * as mod_gui from "mod-gui"
 import {
   AssembliesReorderedEvent,

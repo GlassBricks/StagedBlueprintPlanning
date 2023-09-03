@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaEntity, RealOrientation } from "factorio:runtime"
 import { oppositedirection } from "util"
 import {
   deepCompare,
@@ -44,7 +45,6 @@ OnEntityPrototypesLoaded.addListener((info) => {
 /** 1 indexed */
 export type StageNumber = number
 
-export type InternalSavedDirection = { _internalSavedDirection?: never }
 /**
  * All the data about one entity in an assembly, across all stages.
  */
@@ -145,13 +145,13 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
   movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
 
   /**
-   * Sets the first stage. If moving up, deletes/merges all stage diffs from old stage to new stage.
+   * Sets the first stage. If moving up, deletes/merges stage diffs from old stage to new stage.
    * @return the previous first stage
    */
   setFirstStageUnchecked(stage: StageNumber): StageNumber
 
   /**
-   * Sets the last stage. If moving down, deletes all diffs after the new last stage.
+   * Sets the last stage. If moving down, delete all diffs after the new last stage.
    */
   setLastStageUnchecked(stage: StageNumber | nil): void
 
@@ -183,7 +183,7 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 
   /**
    * Modifies to be consistent with a deleted stage.
-   * Stage contents will be merged with previous stage. If stage is 1, will be merged with next stage instead.
+   * Stage contents will be merged with a previous stage. If stage is 1, will be merged with the next stage instead.
    */
   deleteStage(stageNumber: StageNumber): void
 }
@@ -191,7 +191,6 @@ export interface AssemblyEntity<out T extends Entity = Entity> {
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
 export type StageDiffsInternal<E extends Entity = Entity> = PRRecord<StageNumber, StageDiffInternal<E>>
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ExtraEntities {}
 export type ExtraEntityType = keyof ExtraEntities
 
@@ -245,8 +244,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
     if (this.isRollingStock()) {
       return orientationToDirection((this.firstValue as RollingStockEntity).orientation)
     }
-    // matches saved direction if underground belt
-    return (this.direction ?? 0) as defines.direction
+    return this.direction
   }
 
   setPositionUnchecked(position: Position): void {
@@ -708,6 +706,7 @@ class AssemblyEntityImpl<T extends Entity = Entity> implements AssemblyEntity<T>
   iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {
     let lastKey: StageNumber | nil = nil
     return (() => {
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const nextKey = next(this, lastKey)[0]
         if (typeof nextKey != "number") return nil

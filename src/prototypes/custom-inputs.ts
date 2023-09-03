@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Data } from "typed-factorio/data/types"
+import { PrototypeData } from "factorio:common"
+import { CustomInputPrototype } from "factorio:prototype"
 import { CustomInputs } from "../constants"
-import { CustomInputPrototype } from "../declarations/data"
 
-declare const data: Data
+declare const data: PrototypeData
 
 const buildInput: CustomInputPrototype = {
   type: "custom-input",

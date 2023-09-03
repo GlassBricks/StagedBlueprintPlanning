@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LocalisedString } from "factorio:runtime"
 import { ibind, MutableProperty, Property, property, Props, RegisterClass } from "../lib"
 import { Component, Element, FactorioJsx } from "../lib/factoriojsx"
 import { Fn, RenameButton } from "../lib/factoriojsx/components"

@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { GhostEntity, LuaEntity } from "factorio:runtime"
+
 export function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   if (!ghost.valid) return
   const [, entity, requestProxy] = ghost.silent_revive({

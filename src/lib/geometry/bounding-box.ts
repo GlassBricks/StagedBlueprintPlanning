@@ -11,6 +11,8 @@
 
 /** @noSelfInFile */
 
+import { BoundingBox as PBoundingBox } from "factorio:prototype"
+import { BoundingBox, BoundingBoxArray, BoundingBoxWrite } from "factorio:runtime"
 import { WithMetatable } from "../util-types"
 import { Pos, Position, PositionClass } from "./position"
 
@@ -21,7 +23,6 @@ const ceil = math.ceil
 const setmetatable = globalThis.setmetatable
 
 type BBox = BoundingBox
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface BBoxClass extends WithMetatable<BBox, typeof BBox> {}
 
 function BBox(left_top: Position, right_bottom: Position): BBoxClass {
@@ -177,6 +178,10 @@ namespace BBox {
     const { left_top, right_bottom } = box
     const { left_top: lt2, right_bottom: rb2 } = other
     return left_top.x < rb2.x && right_bottom.x > lt2.x && left_top.y < rb2.y && right_bottom.y > lt2.y
+  }
+  export function asArray(box: BBox): PBoundingBox {
+    const { left_top, right_bottom } = box
+    return [left_top, right_bottom]
   }
 }
 

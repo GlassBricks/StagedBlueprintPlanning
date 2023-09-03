@@ -9,8 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { funcRef, registerFunctions } from "../../index"
+import { LocalisedString, OnGuiClickEvent } from "factorio:runtime"
 import { MaybeProperty } from "../../event"
+import { funcRef, registerFunctions } from "../../index"
 import { ClickEventHandler, destroy, Element, ElementChildren, FactorioJsx, GuiEvent } from "../index"
 import { CloseButton } from "./buttons"
 import { HorizontalPusher } from "./misc"

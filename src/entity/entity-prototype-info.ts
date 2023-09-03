@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaEntity, LuaEntityPrototype } from "factorio:runtime"
 import { merge } from "util"
 import { Prototypes } from "../constants"
 import { Events, globalEvent, PRecord } from "../lib"

@@ -9,11 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LocalisedString } from "factorio:runtime"
+import expect from "tstl-expect"
+import { MutableProperty, property } from "../../../event"
 import { FactorioJsx } from "../../../factoriojsx"
 import { If } from "../../../factoriojsx/components"
-import { MutableProperty, property } from "../../../event"
 import { ElementWrapper, testRender } from "../../gui"
-import expect from "tstl-expect"
 
 let condition: MutableProperty<boolean>
 

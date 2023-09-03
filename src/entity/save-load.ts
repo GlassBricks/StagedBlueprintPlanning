@@ -9,6 +9,15 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  BlueprintEntity,
+  BlueprintItemStack,
+  BoundingBox,
+  LuaEntity,
+  LuaInventory,
+  LuaSurface,
+  MapPosition
+} from "factorio:runtime"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"

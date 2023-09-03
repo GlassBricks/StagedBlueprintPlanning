@@ -10,7 +10,7 @@
  */
 
 import * as assert from "assert"
-import * as fs from "fs"
+import * as fs from "fs/promises"
 import * as path from "path"
 import { dirname } from "path"
 import * as prettier from "prettier"
@@ -47,7 +47,6 @@ type GuiElementType =
   | "table"
   | "textfield"
 
-const outDir = path.resolve(__dirname, "../src/lib/factoriojsx")
 const guiEventsFileName = path.resolve(__dirname, "gui-events.ts")
 
 const program = ts.createProgram({
@@ -161,7 +160,11 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
   const elements = {} as Record<GuiElementType | "base", TypedFactorioInterface>
   const styles = {} as Partial<Record<GuiElementType | "base", TypedFactorioInterface>>
 
-  for (const def of classesDtsFile.statements) {
+  const moduleDeclaration = classesDtsFile.statements.find(ts.isModuleDeclaration)
+  if (!moduleDeclaration || !moduleDeclaration.body || !ts.isModuleBlock(moduleDeclaration.body))
+    throw new Error("Could not find module declaration")
+
+  for (const def of moduleDeclaration.body.statements) {
     if (!ts.isInterfaceDeclaration(def)) continue
     const name = def.name.text
 
@@ -320,14 +323,16 @@ function getPropName(name: string): string | ts.StringLiteral {
   return name.includes("-") ? ts.factory.createStringLiteral(name) : name
 }
 
-async function writeFile(filename: string, content: string, parser: prettier.Options["parser"]) {
-  fs.writeFileSync(
+const outDir = path.resolve(__dirname, "../src/lib/factoriojsx")
+async function writeFile(filename: string, content: string, _parser: prettier.Options["parser"]) {
+  return fs.writeFile(
     path.join(outDir, filename),
-    await prettier.format(content, {
-      parser,
-      printWidth: 120,
-      semi: false,
-    }),
+    // await prettier.format(content, {
+    //   parser,
+    //   printWidth: 120,
+    //   semi: false,
+    // }),
+    content,
   )
 }
 
@@ -403,6 +408,15 @@ async function printFile(filename: string, header: string, statements: ts.Statem
   }
 
   const statements: ts.Statement[] = []
+  const imports = new Set<string>()
+
+  function addImport(name: string) {
+    const inBrackets = name.match(/(?:<|^)([A-Za-z |]+)(?:>|$|\[)/)?.[1]
+    const types = inBrackets?.split(" | ")
+    types?.forEach((typeName) => {
+      imports.add(typeName)
+    })
+  }
 
   // element spec
   function createDefinitions(
@@ -424,13 +438,16 @@ async function printFile(filename: string, header: string, statements: ts.Statem
             ts.factory.createTypeReferenceNode(attr.type),
           ),
         )
+        addImport(attr.type)
       }
       // events
       if (events)
         for (const name of Object.keys(events[type as GuiElementType])) {
+          const eventName = toPascalCase(name) + "Event"
           const type = ts.factory.createTypeReferenceNode("GuiEventHandler", [
-            ts.factory.createTypeReferenceNode(toPascalCase(name) + "Event"),
+            ts.factory.createTypeReferenceNode(eventName),
           ])
+          addImport(eventName)
           members.push(
             ts.factory.createPropertySignature(
               undefined,
@@ -468,22 +485,24 @@ async function printFile(filename: string, header: string, statements: ts.Statem
   createDefinitions(
     "Element",
     elementDefs,
-    (type) => [
-      ts.factory.createPropertySignature(
-        undefined,
-        "onCreate",
-        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-        ts.factory.createTypeReferenceNode("OnCreateHandler", [
-          ts.factory.createTypeReferenceNode(toPascalCase(type) + "GuiElement"),
-        ]),
-      ),
-      ts.factory.createPropertySignature(
-        undefined,
-        "styleMod",
-        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-        ts.factory.createTypeReferenceNode((type in styleMods ? toPascalCase(type) : "Base") + "StyleMod"),
-      ),
-    ],
+    (type) => {
+      const guiElement = toPascalCase(type) + "GuiElement"
+      addImport(guiElement)
+      return [
+        ts.factory.createPropertySignature(
+          undefined,
+          "onCreate",
+          ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+          ts.factory.createTypeReferenceNode("OnCreateHandler", [ts.factory.createTypeReferenceNode(guiElement)]),
+        ),
+        ts.factory.createPropertySignature(
+          undefined,
+          "styleMod",
+          ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+          ts.factory.createTypeReferenceNode((type in styleMods ? toPascalCase(type) : "Base") + "StyleMod"),
+        ),
+      ]
+    },
     events,
   )
   statements.push(
@@ -497,11 +516,18 @@ async function printFile(filename: string, header: string, statements: ts.Statem
     ),
   )
   createDefinitions("StyleMod", styleMods, () => [])
+  ;["string", "boolean", "Element"].forEach((name) => imports.delete(name))
+  imports.add("SignalID")
 
+  const importsList = [...imports].sort()
   const header = `
 import { MaybeMutableProperty, MaybeProperty } from "../event"
 import { Element, GuiEventHandler, OnCreateHandler } from "./element"
 
+import {
+   ${importsList.join(",\n   ")}
+} from "factorio:runtime"
 `
+
   await printFile("factorio-elements.d.ts", header, statements)
 }

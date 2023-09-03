@@ -11,6 +11,7 @@
 
 /** @noSelfInFile */
 
+import { ConfigurationChangedData, CustomInputEvent, EventData, EventId } from "factorio:runtime"
 import { Mutable, PRecord } from "./util-types"
 
 export interface ScriptEvents {

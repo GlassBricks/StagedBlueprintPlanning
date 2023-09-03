@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { BlueprintEntity, LuaEntity } from "factorio:runtime"
 import { AssemblyContent } from "../entity/AssemblyContent"
 import {
   AssemblyEntity,
@@ -191,7 +192,7 @@ function tryUpdateUndergroundFromFastReplace(
   if (newType == entity.getNameAtStage(stage)) return EntityUpdateResult.NoChange
 
   const result = tryUpgradeUndergroundBelt(assembly, stage, entity as UndergroundBeltAssemblyEntity, newType)
-  if (result != "no-change" && result != "updated") {
+  if (result != EntityUpdateResult.NoChange && result != EntityUpdateResult.Updated) {
     refreshWorldEntityAtStage(assembly, entity, stage)
   }
   return result

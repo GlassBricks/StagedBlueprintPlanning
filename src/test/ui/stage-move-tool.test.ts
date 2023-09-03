@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaPlayer, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { getAssemblyPlayerData } from "../../assembly/player-assembly-data"
 import { _deleteAllAssemblies, createUserAssembly } from "../../assembly/UserAssembly"

@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaEntity, UnitNumber } from "factorio:runtime"
 import { Events } from "../lib"
 import type { AssemblyEntity } from "./AssemblyEntity"
 

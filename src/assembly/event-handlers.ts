@@ -9,6 +9,29 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  BaseItemStack,
+  BlueprintBookItemStack,
+  BlueprintCircuitConnection,
+  BlueprintConnectionData,
+  BlueprintConnectionPoint,
+  BlueprintEntity,
+  BlueprintItemStack,
+  CustomEventId,
+  LuaEntity,
+  LuaItemPrototype,
+  LuaPlayer,
+  LuaSurface,
+  MapPosition,
+  OnBuiltEntityEvent,
+  OnPlayerAltSelectedAreaEvent,
+  OnPlayerMinedEntityEvent,
+  OnPlayerReverseSelectedAreaEvent,
+  OnPlayerSelectedAreaEvent,
+  OnPreBuildEvent,
+  PlayerIndex,
+  Tags,
+} from "factorio:runtime"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes, Settings } from "../constants"
 import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
@@ -72,7 +95,7 @@ function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
 
 function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (!entity.valid) return
-  if (getInnerName(entity) == Prototypes.EntityMarker) {
+  if (getInnerName(entity) == (Prototypes.EntityMarker as string)) {
     entity.destroy()
     return
   }

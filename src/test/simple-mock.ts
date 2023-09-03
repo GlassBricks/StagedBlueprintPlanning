@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { mock } from "tstl-expect"
+import { LuaObject } from "factorio:runtime"
 
 /** @noSelf */
 interface LuaObjectLike {
@@ -37,12 +37,4 @@ export function simpleMock<T extends LuaObjectLike | LuaObject>(value?: Partial<
   }
   Object.assign(base, value)
   return setmetatable(base, metatable) as T
-}
-
-export function makeMocked<T>(keys: (keyof T)[]): mock.MockedObjectNoSelf<T> {
-  const result = {} as any
-  for (const key of keys) {
-    result[key] = mock.fnNoSelf()
-  }
-  return result
 }

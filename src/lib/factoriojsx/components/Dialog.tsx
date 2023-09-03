@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { FrameGuiElement, FrameGuiElementMembers, LocalisedString, LuaPlayer, OnGuiClosedEvent } from "factorio:runtime"
 import { Func, ibind, RegisterClass } from "../../references"
-import { destroy, FactorioJsx, GuiEvent, renderOpened } from "../index"
 import { Component, Element } from "../element"
+import { destroy, FactorioJsx, GuiEvent, renderOpened } from "../index"
 
 export interface DialogueProps {
   title: LocalisedString

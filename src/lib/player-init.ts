@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { VersionString } from "factorio:common"
+import { PlayerIndex } from "factorio:runtime"
 import { Events } from "./Events"
 import { Migrations } from "./migration"
 import { Mutable } from "./util-types"
@@ -30,7 +32,7 @@ export function onPlayerInit(action: (player: PlayerIndex) => void): void {
   })
 }
 
-export function onPlayerInitSince(version: string, action: (player: PlayerIndex) => void): void {
+export function onPlayerInitSince(version: VersionString, action: (player: PlayerIndex) => void): void {
   Migrations.since(version, () => {
     for (const [, player] of game.players) {
       action(player.index)

@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { CircuitConnectionDefinition, LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { CableAddResult, MutableAssemblyContent, newAssemblyContent } from "../../entity/AssemblyContent"
 import { AssemblyEntity, createAssemblyEntityNoCopy } from "../../entity/AssemblyEntity"

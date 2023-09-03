@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Color } from "factorio:prototype"
+
 export const enum Settings {
   EntityInfoLocation = "bp100:entity-info-location",
   FlexibleOffshorePumpPlacement = "bp100:flexible-offshore-pump-placement",
@@ -107,7 +109,6 @@ export const enum BuildableEntityTypesDef {
   lamp = "lamp",
   "land-mine" = "land-mine",
   "linked-container" = "linked-container",
-  market = "market",
   "mining-drill" = "mining-drill",
   "offshore-pump" = "offshore-pump",
   pipe = "pipe",
@@ -154,12 +155,12 @@ export const enum L_Game {
 }
 
 export namespace Colors {
-  export const Orange: ColorArray = [255, 155, 65]
-  export const Blueish: ColorArray = [65, 200, 255]
+  export const Orange: Color = [255, 155, 65]
+  export const Blueish: Color = [65, 200, 255]
 
-  export const OverrideHighlight: ColorArray = [0.4, 1, 0.5]
-  export const Green: ColorArray = [0.5, 0.9, 0.5]
-  export const Red: ColorArray = [0.9, 0.5, 0.5]
+  export const OverrideHighlight: Color = [0.4, 1, 0.5]
+  export const Green: Color = [0.5, 0.9, 0.5]
+  export const Red: Color = [0.9, 0.5, 0.5]
 }
 
 export const enum OtherConstants {

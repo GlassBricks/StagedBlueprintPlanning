@@ -9,26 +9,26 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Data } from "typed-factorio/data/types"
+import { PrototypeData } from "factorio:common"
+import { ItemGroup, ItemSubGroup } from "factorio:prototype"
 import { Prototypes } from "../constants"
-import { ItemGroupPrototype, ItemSubgroupPrototype } from "../declarations/data"
 
-declare const data: Data
+declare const data: PrototypeData
 
-const utilityGroup: ItemGroupPrototype = {
+const utilityGroup: ItemGroup = {
   type: "item-group",
   name: Prototypes.UtilityGroup,
   order: "z-utility",
   icon: "__base__/graphics/icons/blueprint.png",
   icon_size: 64,
 }
-const previewEntitySubgroup: ItemSubgroupPrototype = {
+const previewEntitySubgroup: ItemSubGroup = {
   type: "item-subgroup",
   name: Prototypes.PreviewEntitySubgroup,
   group: Prototypes.UtilityGroup,
   order: "b",
 }
-const blueprintSubgroup: ItemSubgroupPrototype = {
+const blueprintSubgroup: ItemSubGroup = {
   type: "item-subgroup",
   name: Prototypes.BlueprintSubgroup,
   group: Prototypes.UtilityGroup,

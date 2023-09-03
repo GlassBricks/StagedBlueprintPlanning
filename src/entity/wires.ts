@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { CircuitConnectionDefinition, LuaEntity, WireConnectionDefinition } from "factorio:runtime"
 import { isEmpty } from "../lib"
 import { AsmEntityCircuitConnections, AssemblyContent, CableAddResult, MutableAssemblyContent } from "./AssemblyContent"
 import { AssemblyEntity, StageNumber } from "./AssemblyEntity"

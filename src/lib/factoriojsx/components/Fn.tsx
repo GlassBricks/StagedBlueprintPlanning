@@ -9,8 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Func, ibind, RegisterClass } from "../../index"
+import { GuiElementType, LuaGuiElement } from "factorio:runtime"
 import { Property } from "../../event"
+import { Func, ibind, RegisterClass } from "../../index"
 import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderContext, renderMultiple } from "../index"
 
 export type FuncProps<T, U extends GuiElementType> = {

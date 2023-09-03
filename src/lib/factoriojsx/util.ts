@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { OnGuiClosedEvent } from "factorio:runtime"
 import { registerFunctions } from "../references"
 import { destroy } from "./render"
 

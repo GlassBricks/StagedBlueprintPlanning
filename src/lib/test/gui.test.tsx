@@ -9,10 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { BaseGuiElement } from "factorio:runtime"
+import expect, { mock } from "tstl-expect"
 import { FactorioJsx, GuiEventHandler } from "../factoriojsx"
 import { getDescription, isRoot, makeWrapper, testRender } from "./gui"
 import { getPlayer } from "./misc"
-import expect, { mock } from "tstl-expect"
 
 describe("makeWrapper", () => {
   let element: BaseGuiElement

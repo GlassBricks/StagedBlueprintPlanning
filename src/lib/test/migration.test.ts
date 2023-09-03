@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { VersionString } from "factorio:common"
 import expect from "tstl-expect"
 import { formatVersion, Migrations } from "../migration"
 
@@ -17,7 +18,7 @@ test("formatVersion", () => {
   expect(formatVersion("01.02.03")).to.equal("01.02.03")
 })
 
-test.each<[string, string, boolean]>([
+test.each<[VersionString, VersionString, boolean]>([
   ["1.2.3", "1.2.4", true],
   ["1.2.3", "1.2.3", false],
   ["1.1.3", "1.2.2", true],
@@ -36,14 +37,15 @@ describe("Migrations", () => {
   })
 
   test("runs later migrations, in sorted order", () => {
-    for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.to(version, () => run.push(version))
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const) Migrations.to(version, () => run.push(version))
     Migrations.doMigrations("1.2.3")
     expect(run).to.equal(["1.2.4", "1.2.5"])
   })
 
   test("runs early migrations before later migrations", () => {
-    for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.to(version, () => run.push(version))
-    for (const version of ["1.2.5", "1.2.4", "1.2.3"]) Migrations.early(version, () => run.push(version + " e"))
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const) Migrations.to(version, () => run.push(version))
+    for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const)
+      Migrations.early(version, () => run.push(version + " e"))
     Migrations.doMigrations("1.2.3")
     expect(run).to.equal(["1.2.4 e", "1.2.5 e", "1.2.4", "1.2.5"])
   })

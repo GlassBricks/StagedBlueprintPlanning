@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Data } from "typed-factorio/data/types"
+import { PrototypeData } from "factorio:common"
+import { ButtonStyleSpecification, SoundPrototype } from "factorio:prototype"
 import { Prototypes, Styles } from "../constants"
-import { SoundPrototype } from "../declarations/data"
 
-declare const data: Data
+declare const data: PrototypeData
 
 const banana: SoundPrototype = {
   type: "sound",
@@ -50,7 +50,7 @@ data.extend([banana])
 //   }
 // }
 
-const styles = data.raw["gui-style"].default
+const styles = data.raw["gui-style"].default!
 
 styles[Styles.FakeListBox] = {
   type: "scroll_pane_style",
@@ -80,6 +80,7 @@ styles[Styles.FakeListBoxItem] = {
   horizontally_stretchable: "on",
   horizontally_squashable: "on",
 }
+assume<ButtonStyleSpecification>(styles.button)
 
 styles[Styles.FakeListBoxItemActive] = {
   type: "button_style",
@@ -88,5 +89,4 @@ styles[Styles.FakeListBoxItemActive] = {
   hovered_graphical_set: styles.button.selected_hovered_graphical_set,
   clicked_graphical_set: styles.button.selected_clicked_graphical_set,
   default_font_color: styles.button.selected_font_color,
-  default_vertical_offset: styles.button.selected_vertical_offset,
 }

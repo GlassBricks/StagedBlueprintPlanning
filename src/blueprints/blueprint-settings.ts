@@ -1,3 +1,4 @@
+import { BlueprintSignalIcon } from "factorio:runtime"
 import { Position } from "../lib/geometry"
 import { createPropertiesTable, PropertiesTable, PropertyOverrideTable } from "../utils/properties-obj"
 

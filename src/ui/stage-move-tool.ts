@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaItemStack, LuaPlayer } from "factorio:runtime"
 import { Stage } from "../assembly/AssemblyDef"
 import { AssemblyPlayerData, getAssemblyPlayerData } from "../assembly/player-assembly-data"
 import { getStageAtSurface } from "../assembly/UserAssembly"

@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { BlueprintSignalIcon, LocalisedString, LuaSurface, SignalID, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
   createNewBlueprintSettings,
@@ -78,7 +79,11 @@ class UserAssemblyImpl implements UserAssembly {
 
   private readonly stages: Record<number, StageImpl> = {}
 
-  constructor(readonly id: AssemblyId, name: string, initialNumStages: number) {
+  constructor(
+    readonly id: AssemblyId,
+    name: string,
+    initialNumStages: number,
+  ) {
     this.name = property(name)
     this.displayName = this.name.map(bind(UserAssemblyImpl.getDisplayName, id))
     this.stages = {}

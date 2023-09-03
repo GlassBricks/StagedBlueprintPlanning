@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LocalisedString, LuaInventory, LuaItemStack, LuaPlayer, UnitNumber } from "factorio:runtime"
 import { Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { AutoSetTilesType } from "../assembly/tiles"
 import { AssemblyEntity, StageNumber } from "../entity/AssemblyEntity"
@@ -170,7 +171,11 @@ type BlueprintStep = {
 
 @RegisterClass("BlueprintCreationTask")
 class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
-  constructor(steps: BlueprintStep[], private inventory?: LuaInventory, private title?: LocalisedString) {
+  constructor(
+    steps: BlueprintStep[],
+    private inventory?: LuaInventory,
+    private title?: LocalisedString,
+  ) {
     super(steps)
   }
   public override getTitle(): LocalisedString {

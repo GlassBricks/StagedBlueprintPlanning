@@ -9,11 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { VersionString } from "factorio:common"
 import { Events } from "./Events"
-
-export type VersionString = string & {
-  _versionStringBrand: void
-}
 
 export function formatVersion(version: string): VersionString {
   const parts: string[] = []
@@ -28,22 +25,22 @@ export namespace Migrations {
   let earlyMigrations: Record<VersionString, (() => void)[]> = {}
 
   /** Runs when migrating from a version earlier than the specified version. */
-  export function to(version: string, func: () => void): void {
+  export function to(version: VersionString, func: () => void): void {
     ;(migrations[formatVersion(version)] ||= []).push(func)
   }
   /** Runs both during on_init and from an earlier version. */
-  export function since(version: string, func: () => void): void {
+  export function since(version: VersionString, func: () => void): void {
     Events.on_init(func)
     to(version, func)
   }
 
-  export function early(version: string, func: () => void): void {
+  export function early(version: VersionString, func: () => void): void {
     ;(earlyMigrations[formatVersion(version)] ||= []).push(func)
   }
 
   /** Runs during any migration from an earlier version. */
   export function fromAny(func: () => void): void {
-    to(script.active_mods[script.mod_name], func)
+    to(script.active_mods[script.mod_name]!, func)
   }
 
   export function _prepareMock(): void {
@@ -53,7 +50,7 @@ export namespace Migrations {
   }
 
   function getMigrationsToRun(
-    oldVersion: string,
+    oldVersion: VersionString,
     migrationList: Record<VersionString, (() => void)[]>,
   ): (() => void)[] {
     const formattedOldVersion = formatVersion(oldVersion)
@@ -64,7 +61,7 @@ export namespace Migrations {
     }
     return []
   }
-  export function doMigrations(oldVersion: string): void {
+  export function doMigrations(oldVersion: VersionString): void {
     const migrations1 = getMigrationsToRun(oldVersion, earlyMigrations)
     for (const fn of migrations1) fn()
     const migrations2 = getMigrationsToRun(oldVersion, migrations)

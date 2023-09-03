@@ -9,35 +9,36 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Data } from "typed-factorio/data/types"
-import * as util from "util"
-import { empty_sprite } from "util"
-import { BuildableEntityType, Prototypes } from "./constants"
-import { emptySprite16 } from "./data-util"
+import { PrototypeData } from "factorio:common"
 import {
-  BasicSprite,
+  BoundingBox,
+  Color,
   EntityPrototype,
   ItemToPlace,
   RailPieceLayers,
   RailRemnantsPrototype,
-  SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
   Sprite,
   Sprite4Way,
-  UtilityConstants,
-} from "./declarations/data"
+  Sprite8Way,
+} from "factorio:prototype"
+import { BoundingBoxArray, BoundingBoxWrite, EntityPrototypeFlags, MapPositionArray } from "factorio:runtime"
+import * as util from "util"
+import { empty_sprite } from "util"
+import { BuildableEntityType, Prototypes } from "./constants"
+import { emptySprite16 } from "./data-util"
 import { BBox } from "./lib/geometry"
 import { L_Bp100 } from "./locale"
 import direction = defines.direction
 import ceil = math.ceil
 import max = math.max
 
-declare const data: Data
+declare const data: PrototypeData
 
 const whiteTile = "__base__/graphics/terrain/lab-tiles/lab-white.png"
-const previewTint: ColorArray = [0.5, 0.5, 0.5, 0.8]
-function getPreviewTint(color: Color | nil): ColorArray {
-  return color ? util.mix_color(color, previewTint as Color) : previewTint
+const previewTint: Color = [0.5, 0.5, 0.5, 0.8]
+function getPreviewTint(color: Color | nil): Color {
+  return color ? util.mix_color(color, previewTint) : previewTint
 }
 export function createWhiteSprite(
   rawBBox: BoundingBoxWrite | BoundingBoxArray,
@@ -74,7 +75,7 @@ export function createWhiteSprite(
       width: isRotated90 ? y : x,
       height: isRotated90 ? x : y,
       scale,
-      shift: center.rotateAboutOrigin(dir),
+      shift: center.rotateAboutOrigin(dir).asArray(),
       priority: "extra-high",
       flags: ["group=none"],
       tint: getPreviewTint(color),
@@ -91,15 +92,15 @@ export function createWhiteSprite(
 }
 
 const entityToItemBuild = new LuaMap<string, string>()
-const itemTypes = ["item", "item-with-entity-data", "rail-planner"]
+const itemTypes = ["item", "item-with-entity-data", "rail-planner"] as const
 for (const type of itemTypes) {
   const prototypes = data.raw[type]
   if (prototypes == nil) continue
   for (const [name, itemPrototype] of pairs(prototypes)) {
-    if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)
+    if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name as string)
   }
 }
-const utilityConstants: UtilityConstants = data.raw["utility-constants"].default
+const utilityConstants = data.raw["utility-constants"].default!
 
 const flagsToTransfer = newLuaSet<keyof EntityPrototypeFlags>("placeable-off-grid", "building-direction-8-way")
 function isBuildablePrototype(prototype: EntityPrototype): boolean {
@@ -123,7 +124,7 @@ const buildableNames: string[] = []
 for (const type of types.sort()) {
   const prototypes = data.raw[type]
   if (!prototypes) continue
-  for (const [name, prototype] of pairs<Record<string, EntityPrototype>>(prototypes)) {
+  for (const [name, prototype] of pairs(prototypes)) {
     if (!isBuildablePrototype(prototype)) continue
     buildableNames.push(name)
 
@@ -138,13 +139,13 @@ for (const type of types.sort()) {
     flags.push("hidden")
     flags.push("not-on-map")
 
-    let selectionBox = prototype.selection_box ?? [
+    let selectionBox: BoundingBox = prototype.selection_box ?? [
       [-0.5, -0.5],
       [0.5, 0.5],
     ]
 
     if (rollingStockTypes.has(type)) {
-      selectionBox = BBox.expand(BBox.normalize(selectionBox), 0.3)
+      selectionBox = BBox.expand(BBox.normalize(selectionBox), 0.3).asArray()
     }
 
     const isRail = railPrototypes.has(type)
@@ -154,7 +155,7 @@ for (const type of types.sort()) {
       const color =
         prototype.friendly_map_color ??
         prototype.map_color ??
-        utilityConstants.chart.default_friendly_color_by_type[type] ??
+        utilityConstants.chart.default_friendly_color_by_type![type] ??
         utilityConstants.chart.default_friendly_color
 
       const preview: SimpleEntityWithOwnerPrototype = {
@@ -178,7 +179,7 @@ for (const type of types.sort()) {
         open_sound: prototype.open_sound,
         close_sound: prototype.close_sound,
 
-        picture: createWhiteSprite(selectionBox, color),
+        picture: createWhiteSprite(selectionBox, color) as Sprite,
 
         // other
         flags,
@@ -193,7 +194,7 @@ for (const type of types.sort()) {
   }
 }
 
-function spriteToRailPieceLayers(sprite: BasicSprite): RailPieceLayers {
+function spriteToRailPieceLayers(sprite: Sprite): RailPieceLayers {
   return {
     metals: emptySprite16,
     backplates: emptySprite16,
@@ -201,7 +202,7 @@ function spriteToRailPieceLayers(sprite: BasicSprite): RailPieceLayers {
     stone_path: sprite,
   }
 }
-function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint: ColorArray): RailPieceLayers {
+function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint: Color): RailPieceLayers {
   return spriteToRailPieceLayers({
     filename: "__bp100__/graphics/rails/curved-rail.png",
     priority: "extra-high",
@@ -212,7 +213,7 @@ function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint
     flags: ["group=none"],
   })
 }
-function getDiagonalRailSprite(n: number, tint: ColorArray): RailPieceLayers {
+function getDiagonalRailSprite(n: number, tint: Color): RailPieceLayers {
   return spriteToRailPieceLayers({
     filename: "__bp100__/graphics/rails/diagonal-rail.png",
     priority: "extra-high",
@@ -223,7 +224,7 @@ function getDiagonalRailSprite(n: number, tint: ColorArray): RailPieceLayers {
     flags: ["group=none"],
   })
 }
-function getStraightRailSprite(tint: Color | ColorArray): RailPieceLayers {
+function getStraightRailSprite(tint: Color): RailPieceLayers {
   // use top 2x2 pixels of lab-tile
   return spriteToRailPieceLayers({
     filename: whiteTile,
@@ -255,13 +256,13 @@ function createRailPictures(color: Color): RailRemnantsPrototype["pictures"] {
     curved_rail_horizontal_left_bottom: getCurvedRailSprite([8, 12], [8, 4], tint),
     rail_endings: {
       sheet: emptySprite16,
-    },
+    } as Sprite8Way,
   }
 }
 
 function createRailPreview(
   prototype: EntityPrototype,
-  placeableBy: ItemToPlace,
+  placeableBy: ItemToPlace | readonly ItemToPlace[],
   flags: (keyof EntityPrototypeFlags)[],
 ): RailRemnantsPrototype {
   const isCurved = prototype.type == "curved-rail"
@@ -270,7 +271,7 @@ function createRailPreview(
     flags.push("building-direction-8-way")
   }
 
-  return {
+  const result = {
     name: Prototypes.PreviewEntityPrefix + prototype.name,
     type: "rail-remnants",
     localised_name: [L_Bp100.PreviewEntity, ["entity-name." + prototype.name]],
@@ -308,16 +309,19 @@ function createRailPreview(
     placeable_by: placeableBy,
     final_render_layer: "ground-patch-higher2",
     subgroup: Prototypes.PreviewEntitySubgroup,
+  } satisfies RailRemnantsPrototype & {
+    secondary_collision_box?: BoundingBox
   }
+  return result
 }
 
 data.extend(previews)
 
 const previewNames = previews.map((preview) => preview.name)
-const cleanupTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.CleanupTool]
+const cleanupTool = data.raw["selection-tool"][Prototypes.CleanupTool]!
 cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
 
-const stageMoveTool: SelectionToolPrototype = data.raw["selection-tool"][Prototypes.StageMoveTool]
+const stageMoveTool = data.raw["selection-tool"][Prototypes.StageMoveTool]!
 const entityOrPreviewNames = [...buildableNames, ...previewNames]
 stageMoveTool.entity_filters = buildableNames
 stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = entityOrPreviewNames

@@ -9,6 +9,17 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  Color,
+  ColorArray,
+  CursorBoxRenderType,
+  HighlightBoxEntity,
+  LuaEntity,
+  LuaSurface,
+  RenderLayer,
+  SpritePath,
+  Vector,
+} from "factorio:runtime"
 import { AssemblyEntity, ExtraEntities, StageNumber } from "../entity/AssemblyEntity"
 import { EntityPrototypeInfo, OnEntityPrototypesLoaded } from "../entity/entity-prototype-info"
 import { AnyRender, assertNever, SpriteRender } from "../lib"
@@ -36,7 +47,6 @@ export interface HighlightEntities {
 }
 declare module "../entity/AssemblyEntity" {
   // noinspection JSUnusedGlobalSymbols
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   export interface ExtraEntities extends HighlightEntities {}
 }
 

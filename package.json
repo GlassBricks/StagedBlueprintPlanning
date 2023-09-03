@@ -27,7 +27,7 @@
     "semver": "^7.5.4",
     "ts-node": "^10.9.1",
     "tstl-expect": "^0.3.5",
-    "typed-factorio": "^1.17.0",
+    "typed-factorio": "^2.0.0",
     "typescript": "~5.2.2",
     "typescript-to-lua": "^1.19.0",
     "typescript-tstl-plugin": "^0.3.2"

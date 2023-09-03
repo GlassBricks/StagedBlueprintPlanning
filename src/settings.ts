@@ -9,10 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Data } from "typed-factorio/settings/types"
+import { SettingsData } from "factorio:common"
 import { FlexibleOffshorePumpPlacement, Settings } from "./constants"
+import { BoolSettingDefinition, StringSettingDefinition } from "factorio:settings"
 
-declare const data: Data
+declare const data: SettingsData
 
 data.extend([
   {
@@ -22,7 +23,7 @@ data.extend([
     default_value: "right",
     allowed_values: ["right", "left"],
     order: "b",
-  },
+  } satisfies StringSettingDefinition,
   {
     name: Settings.FlexibleOffshorePumpPlacement,
     type: "string-setting",
@@ -30,12 +31,12 @@ data.extend([
     allowed_values: Object.values(FlexibleOffshorePumpPlacement),
     default_value: FlexibleOffshorePumpPlacement.Disabled,
     order: "b",
-  },
+  } satisfies StringSettingDefinition,
   {
     name: Settings.UpgradeOnPaste,
     type: "bool-setting",
     setting_type: "runtime-per-user",
     default_value: false,
     order: "c",
-  },
+  } satisfies BoolSettingDefinition,
 ])

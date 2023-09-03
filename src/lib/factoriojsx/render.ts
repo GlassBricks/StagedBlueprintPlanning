@@ -9,6 +9,18 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  BaseGuiElement,
+  GuiElementIndex,
+  GuiElementType,
+  GuiSpec,
+  LuaGuiElement,
+  LuaPlayer,
+  LuaStyle,
+  PlayerIndex,
+  SliderGuiElement,
+  TabbedPaneGuiElement,
+} from "factorio:runtime"
 import { isEmpty } from "../_util"
 import { isMutableProperty, MutableProperty, Property, SimpleObserver, Subscription } from "../event"
 import { Events } from "../Events"
@@ -55,9 +67,11 @@ function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, value: an
 function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
   if (!elem.valid) return
   if (key == "slider_minimum") {
-    ;(elem as SliderGuiElement).set_slider_minimum_maximum(value, (elem as SliderGuiElement).get_slider_maximum())
+    assume<SliderGuiElement>(elem)
+    elem.set_slider_minimum_maximum(value, elem.get_slider_maximum())
   } else if (key == "slider_maximum") {
-    ;(elem as SliderGuiElement).set_slider_minimum_maximum((elem as SliderGuiElement).get_slider_minimum(), value)
+    assume<SliderGuiElement>(elem)
+    elem.set_slider_minimum_maximum(elem.get_slider_minimum(), value)
   } else {
     ;(elem as any as Record<any, SelflessFun>)[key](value)
   }
@@ -185,6 +199,7 @@ function renderElement(
   for (let [key, value] of pairs(element)) {
     const propInfoElement = propInfo[key]
     if (!propInfoElement) continue
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     if (typeof value == "function") value = funcRef(value as any)
     if (propInfoElement == "event") {
       assert((value as Func).invoke, "Gui event handler must be a function")

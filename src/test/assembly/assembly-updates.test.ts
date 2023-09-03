@@ -9,6 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  BlueprintEntity,
+  LuaEntity,
+  LuaSurface,
+  SurfaceCreateEntity,
+  UndergroundBeltSurfaceCreateEntity,
+} from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { StageMoveResult } from "../../assembly/assembly-updates"

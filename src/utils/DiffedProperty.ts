@@ -1,3 +1,5 @@
+import { Color, ColorArray } from "factorio:runtime"
+import { Colors } from "../constants"
 import {
   bind,
   ChangeObserver,
@@ -11,12 +13,14 @@ import {
 } from "../lib"
 import { BaseStyleMod } from "../lib/factoriojsx"
 import { DiffValue, getDiff, getResultValue } from "./diff-value"
-import { Colors } from "../constants"
 
 @RegisterClass("DiffedProperty")
 export class DiffedProperty<T> extends Property<T> implements MutableProperty<T> {
   private resultValue: Property<T>
-  constructor(readonly overrideValue: MutableProperty<DiffValue<T> | nil>, readonly defaultValue: Property<T>) {
+  constructor(
+    readonly overrideValue: MutableProperty<DiffValue<T> | nil>,
+    readonly defaultValue: Property<T>,
+  ) {
     super()
     // prettier-ignore
     this.resultValue = overrideValue.flatMap(bind((getResultValue<MaybeProperty<T>>), defaultValue))
@@ -41,11 +45,11 @@ export class DiffedProperty<T> extends Property<T> implements MutableProperty<T>
     this.resultValue.closeAll()
   }
 }
-function coloredIfNotNil(value: unknown | nil): Color | ColorArray {
+function coloredIfNotNil(value: unknown): Color | ColorArray {
   return value != nil ? Colors.OverrideHighlight : [1, 1, 1]
 }
 
-function boldIfNotNil(value: unknown | nil): string {
+function boldIfNotNil(value: unknown): string {
   return value != nil ? "default-bold" : "default"
 }
 
@@ -54,7 +58,7 @@ registerFunctions("prop-possibly-overriden", {
   boldIfNotNil,
 })
 
-export function highlightIfNotNil(prop: Property<unknown | nil>): BaseStyleMod {
+export function highlightIfNotNil(prop: Property<unknown>): BaseStyleMod {
   return {
     font_color: prop.map(funcRef(coloredIfNotNil)),
     font: prop.map(funcRef(boldIfNotNil)),

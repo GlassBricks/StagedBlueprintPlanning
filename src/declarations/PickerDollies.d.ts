@@ -9,6 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { EventData, LuaEntity, MapPosition, PlayerIndex } from "factorio:runtime"
+
 export interface DollyMovedEntityEvent extends EventData {
   readonly player_index: PlayerIndex
   readonly moved_entity: LuaEntity

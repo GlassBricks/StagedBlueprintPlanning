@@ -9,6 +9,23 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  BaseGuiElement,
+  LuaGuiElement,
+  OnGuiCheckedStateChangedEvent,
+  OnGuiClickEvent,
+  OnGuiClosedEvent,
+  OnGuiConfirmedEvent,
+  OnGuiElemChangedEvent,
+  OnGuiLocationChangedEvent,
+  OnGuiOpenedEvent,
+  OnGuiSelectedTabChangedEvent,
+  OnGuiSelectionStateChangedEvent,
+  OnGuiSwitchStateChangedEvent,
+  OnGuiTextChangedEvent,
+  OnGuiValueChangedEvent,
+  PlayerIndex,
+} from "factorio:runtime"
 import { Subscription } from "../event"
 import { Func, RegisterClass } from "../references"
 import { FactorioElement } from "./factorio-elements"

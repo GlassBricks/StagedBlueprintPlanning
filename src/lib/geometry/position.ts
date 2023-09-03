@@ -11,6 +11,7 @@
 
 /** @noSelfInFile */
 
+import { MapPosition, MapPositionArray } from "factorio:runtime"
 import * as util from "util"
 import { WithMetatable } from "../util-types"
 
@@ -22,7 +23,6 @@ const _ceil = math.ceil
 
 export type Position = MapPosition
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface PositionClass extends WithMetatable<Position, typeof Pos> {}
 
 function Pos(x: number, y: number): PositionClass {
@@ -85,6 +85,9 @@ namespace Pos {
     if (direction == defines.direction.west) return Pos(pos1.y, -pos1.x)
     if (direction == defines.direction.east) return Pos(-pos1.y, pos1.x)
     error(`invalid direction: ${defines.direction[direction]}`)
+  }
+  export function asArray(pos1: Position): MapPositionArray {
+    return [pos1.x, pos1.y]
   }
 }
 

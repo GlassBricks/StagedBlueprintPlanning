@@ -10,6 +10,15 @@
  */
 
 import {
+  BlueprintEntity,
+  GuiAnchor,
+  LocalisedString,
+  LuaEntity,
+  LuaPlayer,
+  OnGuiClickEvent,
+  PlayerIndex
+} from "factorio:runtime"
+import {
   forceDeleteEntity,
   moveAllPropsDown,
   movePropDown,
@@ -427,7 +436,6 @@ const entityTypeToGuiType: Record<
   gate: relative_gui_type.additional_entity_info_gui,
   generator: relative_gui_type.additional_entity_info_gui,
   inserter: relative_gui_type.inserter_gui,
-  market: relative_gui_type.market_gui,
   pipe: relative_gui_type.pipe_gui,
   radar: relative_gui_type.entity_with_energy_source_gui,
   splitter: relative_gui_type.splitter_gui,

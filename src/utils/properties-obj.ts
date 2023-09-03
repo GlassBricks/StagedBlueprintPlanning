@@ -2,11 +2,11 @@ import { MutableProperty, property } from "../lib"
 import { DiffValue } from "./diff-value"
 import { DiffedProperty } from "./DiffedProperty"
 
-export type PropertiesTable<T extends table> = {
+export type PropertiesTable<T extends object> = {
   readonly [K in keyof T]: MutableProperty<T[K]>
 }
 
-export type PropertyOverrideTable<T extends table> = {
+export type PropertyOverrideTable<T extends object> = {
   readonly [K in keyof T]: MutableProperty<DiffValue<T[K]> | nil>
 }
 

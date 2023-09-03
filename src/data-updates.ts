@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Data } from "typed-factorio/data/types"
+import { PrototypeData } from "factorio:common"
 import { FlexibleOffshorePumpPlacement, Settings } from "./constants"
 
-declare const data: Data
+declare const data: PrototypeData
 const value = settings.startup[Settings.FlexibleOffshorePumpPlacement].value as FlexibleOffshorePumpPlacement
 if (value != FlexibleOffshorePumpPlacement.Disabled) {
   const offshorePump = data.raw["offshore-pump"]["offshore-pump"]
@@ -28,8 +28,6 @@ if (value != FlexibleOffshorePumpPlacement.Disabled) {
     offshorePump.adjacent_tile_collision_mask = []
     offshorePump.check_bounding_box_collides_with_tiles = false
     offshorePump.placeable_position_visualization = nil
-    offshorePump.flags = (offshorePump.flags as Array<keyof EntityPrototypeFlags>).filter(
-      (x) => x != "filter-directions",
-    )
+    offshorePump.flags = offshorePump.flags!.filter((x) => x != "filter-directions")
   }
 }

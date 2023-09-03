@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { FrameGuiElement, LocalisedString, ProgressBarGuiElement } from "factorio:runtime"
 import { L_GuiTasks } from "../locale"
 import { Events } from "./Events"
 import {

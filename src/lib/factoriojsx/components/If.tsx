@@ -11,8 +11,9 @@
 
 // this could maybe be moved to shared lib in the future
 
-import { Func, ibind, RegisterClass } from "../../index"
+import { FlowGuiElementMembers } from "factorio:runtime"
 import { Property } from "../../event"
+import { Func, ibind, RegisterClass } from "../../index"
 import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderContext, renderMultiple } from "../index"
 
 export type IfProps = {

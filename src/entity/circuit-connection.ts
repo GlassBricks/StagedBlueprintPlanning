@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaEntity } from "factorio:runtime"
 import { AssemblyEntity } from "./AssemblyEntity"
 
 export type AnyConnectionId = defines.circuit_connector_id | defines.wire_connection_id

@@ -9,9 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Data } from "typed-factorio/data/types"
-import { table } from "util"
-import { Colors, Prototypes } from "../constants"
+import { PrototypeData } from "factorio:common"
 import {
   CustomInputPrototype,
   DeconstructionItemPrototype,
@@ -19,11 +17,15 @@ import {
   SelectionToolPrototype,
   ShortcutPrototype,
   Sprite,
-} from "../declarations/data"
+} from "factorio:prototype"
+import { MapPositionArray } from "factorio:runtime"
+import { table } from "util"
+import { Colors, Prototypes } from "../constants"
 
-declare const data: Data
+declare const data: PrototypeData
+
 function selectionToolToShortcut(
-  prototype: Omit<SelectionToolPrototype, "type">,
+  prototype: SelectionToolPrototype | DeconstructionItemPrototype,
   icon: Sprite,
   associatedControl: string | nil,
   style: ShortcutPrototype["style"],
@@ -39,7 +41,7 @@ function selectionToolToShortcut(
     associated_control_input: associatedControl,
   }
 }
-function selectionToolToInput(prototype: Omit<SelectionToolPrototype, "type">): CustomInputPrototype {
+function selectionToolToInput(prototype: SelectionToolPrototype | DeconstructionItemPrototype): CustomInputPrototype {
   return {
     type: "custom-input",
     name: prototype.name,
@@ -205,9 +207,7 @@ data.extend([
 ])
 
 // stage delete tool
-const deconstructionPlanner = table.deepcopy<DeconstructionItemPrototype>(
-  data.raw["deconstruction-item"]["deconstruction-planner"],
-)
+const deconstructionPlanner = table.deepcopy(data.raw["deconstruction-item"]["deconstruction-planner"]!)
 function shiftedBlueprintSprite(shift: MapPositionArray, filename: string): IconData {
   return {
     icon: filename,

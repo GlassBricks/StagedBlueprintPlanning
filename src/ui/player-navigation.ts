@@ -14,6 +14,7 @@
  * For assembly editing, see assembly/event-handlers.ts.
  */
 
+import { CustomInputEvent, LocalisedString, LuaPlayer } from "factorio:runtime"
 import { getAllAssemblies } from "../assembly/UserAssembly"
 import { CustomInputs } from "../constants"
 import { ProtectedEvents } from "../lib"

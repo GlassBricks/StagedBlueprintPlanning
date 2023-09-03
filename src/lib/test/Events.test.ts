@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/* eslint-disable @typescript-eslint/no-empty-function */
 /** @noSelfInFile */
-import { Events } from "../Events"
+import { SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
+import { Events } from "../Events"
 
 const eventId = defines.events.script_raised_set_tiles
 after_each(() => {

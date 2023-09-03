@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { LuaEntity, LuaPlayer, MapPositionArray } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
 import { Stage, UserAssembly } from "../../assembly/AssemblyDef"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../assembly/event-handlers"

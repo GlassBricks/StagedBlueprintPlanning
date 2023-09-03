@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "module": "CommonJS",
     "types": [
-      "typed-factorio/runtime", "typed-factorio/strict-index-types", "factorio-test", "gb-tstl-utils"
+      "typed-factorio/runtime", "factorio-test", "gb-tstl-utils"
     ],
     "lib": ["esnext"],
     "skipDefaultLibCheck": true,

@@ -9,6 +9,18 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {
+  BlueprintEntity,
+  BlueprintInfinitySettings,
+  BlueprintItemStack,
+  BlueprintSignalIcon,
+  InfinityPipeFilter,
+  LuaEntity,
+  LuaItemStack,
+  LuaSurface,
+  MapPosition,
+  UnitNumber,
+} from "factorio:runtime"
 import { getInfinityEntityNames } from "../entity/entity-prototype-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"

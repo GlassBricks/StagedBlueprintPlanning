@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { DropDownGuiElement, ListBoxGuiElement, LocalisedString, PlayerIndex } from "factorio:runtime"
 import { LocalAssemblyEvent, Stage, UserAssembly } from "../assembly/AssemblyDef"
 import { StageNumber } from "../entity/AssemblyEntity"
 import { assertNever, bind, ibind, MutableProperty, RegisterClass, Subscription } from "../lib"
