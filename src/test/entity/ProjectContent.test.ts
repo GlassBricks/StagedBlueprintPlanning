@@ -244,9 +244,9 @@ describe("findCompatibleWithLuaEntity", () => {
     )
     content.add(entity1)
     content.add(entity2)
-    // diagonal, should have no match
+    // diagonal, so should have no match
     expect(content.findCompatibleWithLuaEntity(luaEntity1, nil, 1)).to.be(nil)
-    // orthogonal, should have match
+    // orthogonal, so should have a match
     expect(content.findCompatibleWithLuaEntity(luaEntity2, nil, 1)).to.be(entity2)
   })
 })

@@ -245,7 +245,7 @@ function saveCircuitConnections(
 
   let hasDiff = !isEmpty(extraConnections)
 
-  // remove before add, so don't remove just added connections
+  // remove before adding, so don't remove just added connections
   if (projectConnections) {
     for (const [otherEntity, connections] of projectConnections) {
       const otherLuaEntity = otherEntity.getWorldEntity(stage)

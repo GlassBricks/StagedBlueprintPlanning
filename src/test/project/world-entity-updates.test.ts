@@ -476,7 +476,8 @@ test("updateWireConnections", () => {
     2,
   )
   project.content.add(entity)
-  WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity, true) // note: actually updating first stage, so below works
+  // note: actually updating the first stage, so below works
+  WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity, true) //
   WorldUpdater.updateWireConnections(project, entity)
   for (const i of $range(2, project.lastStageFor(entity))) {
     expect(wireUpdater.updateWireConnectionsAtStage).calledWith(project.content, entity, i)

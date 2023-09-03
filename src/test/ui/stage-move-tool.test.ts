@@ -41,7 +41,7 @@ test("current selected stage starts out as current stage", () => {
 
   player.teleport([0, 0], project.getSurface(1))
 
-  expect(projectPlayerData.moveTargetStage).to.be(2) // still same
+  expect(projectPlayerData.moveTargetStage).to.be(2) // still the same
   expect(player.cursor_stack!.label).to.be("Send to Stage 2")
 })
 

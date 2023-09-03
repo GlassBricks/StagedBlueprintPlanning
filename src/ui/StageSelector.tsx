@@ -27,7 +27,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   private trackerSubscription!: Subscription
   private playerIndex!: PlayerIndex
 
-  private elementsSubscription?: Subscription
+  private elementSubscription?: Subscription
   private element!: DropDownGuiElement | ListBoxGuiElement
 
   public override render(props: StageSelectorProps<T>, context: RenderContext): Element {
@@ -48,8 +48,8 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   }
 
   private setup() {
-    this.elementsSubscription?.close()
-    const subscription = (this.elementsSubscription = new Subscription())
+    this.elementSubscription?.close()
+    const subscription = (this.elementSubscription = new Subscription())
     this.trackerSubscription.add(subscription)
 
     const stages = this.project.getAllStages()

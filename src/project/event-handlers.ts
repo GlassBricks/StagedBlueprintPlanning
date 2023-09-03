@@ -180,7 +180,7 @@ Deconstruct:
   script_raised_destroy
 
 Upgrade:
-  on_player_mined_entity   note: no on_pre_player_mined_item
+  on_player_mined_entity (note: no on_pre_player_mined_item)
   on_built_entity
 
 In editor mode:
@@ -851,7 +851,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     }
   }
 
-  bpState.knownLuaEntities[entityId] = luaEntity // save the entity if it has wire connections
+  bpState.knownLuaEntities[entityId] = luaEntity // save the entity if it has wire-connections
 }
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {

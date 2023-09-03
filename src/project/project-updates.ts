@@ -53,7 +53,7 @@ export function addNewEntity(
   content.add(projectEntity)
 
   if (entity.type == "underground-belt") {
-    // match direction with underground pair
+    // match the direction with the underground pair
     const [pair] = findUndergroundPair(content, projectEntity as UndergroundBeltProjectEntity)
     if (pair) {
       const otherDir = pair.firstValue.type
@@ -87,7 +87,7 @@ function shouldMakeSettingsRemnant(project: Project, entity: ProjectEntity) {
   const stage = entity.firstStage
   for (const [otherEntity] of connections) {
     if (otherEntity.getWorldEntity(stage) == nil) {
-      // has a connection at first stage, but not one in the world
+      // has a connection at the first stage, but not one in the world
       return true
     }
   }
@@ -163,7 +163,7 @@ function tryUpgradeUndergroundBelt(
   } else {
     const pairStage = isFirstStage ? pair.firstStage : stage
     const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
-    // check pair still correct
+    // check that pair is still correct
     const [newPair, newMultiple] = findUndergroundPair(project.content, entity)
     if (newPair != pair || newMultiple) {
       entity.applyUpgradeAtStage(applyStage, oldName)

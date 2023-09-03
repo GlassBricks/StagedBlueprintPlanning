@@ -270,7 +270,7 @@ describe("power switch connections", () => {
   })
 
   describe.each(["pole", "power switch"])("from %s", (from) => {
-    // test.skip("modding api borke?", () => {
+    // test.skip("modding api broken?", () => {
     //   pole.connect_neighbour({
     //     target_entity: powerSwitch,
     //     wire: defines.wire_type.copper,
@@ -313,7 +313,7 @@ describe("power switch connections", () => {
     })
 
     test("can update wires", () => {
-      // world is left, saved is right
+      // "world" is left, "saved" is right
       pole.connect_neighbour({
         target_entity: powerSwitch,
         wire: defines.wire_type.copper,
@@ -593,7 +593,7 @@ describe("cable connections", () => {
     })
 
     test("max connections reached", () => {
-      // max connections is 5
+      // max # of connections is 5
       for (let i = 0; i < 5; i++) {
         const entity = createProjectEntityNoCopy(
           { name: "medium-electric-pole" },

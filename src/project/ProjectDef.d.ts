@@ -47,7 +47,7 @@ export interface UserProject extends Project {
   getAllStages(): readonly Stage[]
 
   insertStage(index: StageNumber): Stage
-  /** Cannot be first stage, contents will be merged with previous stage. */
+  /** Cannot be first stage, contents will be merged with the previous stage. */
   deleteStage(index: StageNumber): void
 
   readonly valid: boolean

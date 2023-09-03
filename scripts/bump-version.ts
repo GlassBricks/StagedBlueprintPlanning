@@ -42,7 +42,7 @@ const changelog = fs.readFileSync(changelogPath, "utf8").split("\n")
 const expectedLine2 = `Version: ${oldVersion}`
 assert.ok(changelog[1] === expectedLine2, `Expected changelog line 2 to be "${expectedLine2}"`)
 
-// write new version
+// write the new version
 
 infoJson.version = version.format()
 fs.writeFileSync(infoJsonPath, await prettier.format(JSON.stringify(infoJson, null, 2), { parser: "json" }))

@@ -14,10 +14,10 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
   /** If not nil, only include entities changed in the last x stages */
   readonly stageLimit: number | nil
 
-  /** If not nil, also include white-listed entities in addition to [stageLimit]. Ignored if [stageLimit] is nil. */
+  /** If not nil, also include whitelisted entities in addition to [stageLimit]. Ignored if [stageLimit] is nil. */
   readonly additionalWhitelist: ReadonlyLuaSet<string> | nil
 
-  /** If not nil, exclude these black-listed entities. Always applied. */
+  /** If not nil, exclude these blacklisted entities. Always applied. */
   readonly blacklist: ReadonlyLuaSet<string> | nil
 
   // (transformations)

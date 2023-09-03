@@ -37,7 +37,7 @@ export interface ObserveOnlySubscription {
 
 @RegisterClass("Subscription")
 export class Subscription implements Unsubscribable, ObserveOnlySubscription {
-  // if nil, is closed
+  // if nil, then is closed
   _children: LuaSet<UnsubscribeAction> | nil = new LuaSet()
   _parents: LuaSet<Subscription> | nil = new LuaSet()
 

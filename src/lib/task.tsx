@@ -26,12 +26,12 @@ import { protectedAction } from "./protected-action"
 import { funcRef, RegisterClass, registerFunctions } from "./references"
 
 /**
- * A long-running task split over multiple ticks, so game does not freeze for too long.
+ * A long-running task split over multiple ticks, so the game does not freeze for too long.
  */
 export interface Task {
   /** Title to be shown to the user */
   getTitle(): LocalisedString
-  /** Runs one tick. Does nothing if task is done.*/
+  /** Runs one tick. Does nothing if the current task is done.*/
   step(): void
   /** If this task is done. */
   isDone(): boolean

@@ -339,7 +339,7 @@ test("can handle item changes", () => {
 })
 
 test("can be any direction", () => {
-  // only true if assembling machine with no fluid inputs
+  // only true if is an assembling machine with no fluid inputs
   const entity = surface.create_entity({
     name: "assembling-machine-3",
     position: { x: 12.5, y: 12.5 },

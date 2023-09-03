@@ -133,7 +133,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
 
   const e4 = createEntity(stage1, [5.5, 5.5], "steel-chest") // included, in additional whitelist
 
-  const e5 = createEntity(stage1, [6.5, 6.5], "iron-chest") // included, has wire connection with e3
+  const e5 = createEntity(stage1, [6.5, 6.5], "iron-chest") // included, has wire-connection with e3
   const e5stage3 = project.content.findCompatibleWithLuaEntity(e5, nil, 1)!.getWorldEntity(3)!
   e5stage3.connect_neighbour({ wire: defines.wire_type.red, target_entity: e3 })
   checkForCircuitWireUpdates(e5stage3, nil)

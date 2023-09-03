@@ -128,7 +128,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: boolean)
 
   expect(hasMissing).to.be(expectedHasMissing)
 
-  // nothing after last stage
+  // nothing after the last stage
   for (const stage of $range(project.lastStageFor(entity) + 1, project.numStages())) {
     expect(entity.getWorldOrPreviewEntity(stage)).to.be.nil()
   }

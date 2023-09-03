@@ -199,7 +199,7 @@ export { rollingStockTypes }
 
 export function isPreviewEntity(entity: LuaEntity): boolean {
   // performance: this returns false almost all the time,
-  // so we do a cheap check on type before the expensive check on name
+  // so we do a cheap check on the type before the expensive check on name
   const type = entity.type
   return (
     (type == "simple-entity-with-owner" || type == "rail-remnants") &&
