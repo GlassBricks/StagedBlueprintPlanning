@@ -9,14 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  ButtonGuiElement,
-  LuaGuiElement,
-  LuaPlayer,
-  OnGuiClickEvent,
-  PlayerIndex,
-  ScrollPaneGuiElement,
-} from "factorio:runtime"
+import { LuaGuiElement, LuaPlayer, OnGuiClickEvent, PlayerIndex, ScrollPaneGuiElement } from "factorio:runtime"
 import * as mod_gui from "mod-gui"
 import { OtherConstants, Sprites, Styles } from "../constants"
 import { bind, funcRef, ibind, onPlayerInitSince, RegisterClass, registerFunctions } from "../lib"
@@ -73,7 +66,6 @@ const AllProjectsHeight = 28 * 10
 class AllProjects extends Component {
   playerIndex!: PlayerIndex
   scrollPane!: ScrollPaneGuiElement
-  backToNauvisButton!: ButtonGuiElement
 
   public override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
@@ -99,7 +91,7 @@ class AllProjects extends Component {
           <button
             caption={[L_GuiProjectSelector.ExitProject]}
             enabled={currentStage.truthy()}
-            on_gui_click={ibind(this.backToNauvis)}
+            on_gui_click={ibind(this.exitProject)}
           />
         </flow>
       </frame>
@@ -157,7 +149,7 @@ class AllProjects extends Component {
     createNewProject(game.get_player(this.playerIndex)!)
   }
 
-  private backToNauvis(): void {
+  private exitProject(): void {
     closeAllProjects(this.playerIndex)
     exitProject(game.get_player(this.playerIndex)!)
   }

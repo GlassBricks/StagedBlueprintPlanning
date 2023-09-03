@@ -48,7 +48,7 @@ function mockModule(module: Record<keyof any, any>) {
   module[IsModuleMockedSymbol] = true
 }
 
-function maybeMockModule(module: any) {
+function maybeMockModule(module: { _mockable?: boolean }) {
   if (typeof module == "object" && getmetatable(module) == nil && module._mockable) {
     mockModule(module)
   }

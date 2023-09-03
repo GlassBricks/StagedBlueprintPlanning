@@ -46,7 +46,7 @@ export namespace Migrations {
       prio: 9,
       version: formatVersion(version),
       order: order++,
-      func: func,
+      func,
     })
   }
   /** Runs both during on_init and from an earlier version. */

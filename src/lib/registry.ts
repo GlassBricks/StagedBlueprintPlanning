@@ -15,7 +15,10 @@ export class Registry<T extends AnyNotNil> {
   private nameToItem = {} as PRecord<string, T>
   private itemToName = new LuaMap<T, string>()
 
-  constructor(protected itemName: string, protected getDebugDescription: (item: T) => string) {}
+  constructor(
+    protected itemName: string,
+    protected getDebugDescription: (item: T) => string,
+  ) {}
 
   registerRaw(name: string, item: T): void {
     if (game != nil) {

@@ -121,7 +121,10 @@ class MappedProperty<T, U> extends BasicProperty<U> {
   private sourceSubscription: Subscription | nil
   private curValue: U | nil
 
-  public constructor(private readonly source: Property<T>, private readonly mapper: Mapper<T, U>) {
+  public constructor(
+    private readonly source: Property<T>,
+    private readonly mapper: Mapper<T, U>,
+  ) {
     super()
   }
 
@@ -159,7 +162,7 @@ class MappedProperty<T, U> extends BasicProperty<U> {
   }
 
   __tostring(): string {
-    return `MappedState(${this.source})`
+    return `MappedState(${tostring(this.source)})`
   }
 }
 
@@ -168,7 +171,10 @@ class CustomProperty<U> extends BasicProperty<U> {
   private subscriptions: Subscription[] | nil
   private curValue: U | nil
 
-  public constructor(private readonly sources: Property<unknown>[], private readonly func: Func<() => U>) {
+  public constructor(
+    private readonly sources: Property<unknown>[],
+    private readonly func: Func<() => U>,
+  ) {
     super()
   }
   get(): U {
@@ -236,7 +242,10 @@ export class FlatMappedProperty<T, U> extends BasicProperty<U> {
   private nestedSubscription: Subscription | nil
   private curValue: U | nil
 
-  public constructor(private readonly source: Property<T>, private readonly mapper: Mapper<T, MaybeProperty<U>>) {
+  public constructor(
+    private readonly source: Property<T>,
+    private readonly mapper: Mapper<T, MaybeProperty<U>>,
+  ) {
     super()
   }
 
@@ -301,7 +310,7 @@ export class FlatMappedProperty<T, U> extends BasicProperty<U> {
   }
 
   __tostring(): string {
-    return "FlatMappedState(" + this.source + ")"
+    return `FlatMappedState(${tostring(this.source)})`
   }
 }
 

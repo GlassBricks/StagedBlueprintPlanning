@@ -27,7 +27,7 @@ test("project created calls event", () => {
   const project = createUserProject("Mock", 0)
   expect(eventListener).calledWith({
     type: "project-created",
-    project: project,
+    project,
   } as ProjectCreatedEvent)
 })
 
@@ -59,11 +59,11 @@ describe("deletion", () => {
     project.delete()
     expect(eventListener).calledWith({
       type: "project-deleted",
-      project: project,
+      project,
     })
     expect(sp2).calledWith({
       type: "project-deleted",
-      project: project,
+      project,
     })
   })
 })
@@ -107,7 +107,7 @@ test("insert stage", () => {
 
   const expected: StageAddedEvent = {
     type: "stage-added",
-    project: project,
+    project,
     stage,
   }
   expect(eventListener).calledWith(expected)
@@ -156,7 +156,7 @@ test("delete stage", () => {
 
   const expected: PreStageDeletedEvent = {
     type: "pre-stage-deleted",
-    project: project,
+    project,
     stage: stage2,
   }
   expect(eventListener).calledWith(expected)

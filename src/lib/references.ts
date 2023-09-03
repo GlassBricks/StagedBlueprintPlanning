@@ -239,7 +239,7 @@ class NoSelfKeyFunc implements Func {
 /**
  * Instance bind. The single parameter passed must be a property/element access call, and a registered func that calls the instance/key will be returned.
  *
- * E.g. ibind(this.foo) stores (this, "foo") and returns a func that calls this.foo().
+ * ibind(this.foo) stores (this, "foo") and returns a func that calls this.foo().
  */
 export const ibind: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
   new KeyFunc(obj, key)) as any

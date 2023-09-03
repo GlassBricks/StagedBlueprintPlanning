@@ -15,7 +15,6 @@ import {
   GuiElementMembers,
   GuiElementType,
   LuaGuiElement,
-  OnGuiCheckedStateChangedEvent,
   OnGuiClickEvent,
 } from "factorio:runtime"
 import { cleanGuiInstances, destroy, Element, FactorioElement, GuiEvent, render } from "../factoriojsx"
@@ -145,17 +144,6 @@ export class ElementWrapper<T extends GuiElementType = GuiElementType> {
     })
   }
 
-  simulateToggleState(this: ElementWrapper<"checkbox"> | ElementWrapper<"radiobutton">): void {
-    this.element.state = !this.element.state
-    this.simulateEvent<OnGuiCheckedStateChangedEvent>({
-      name: defines.events.on_gui_checked_state_changed,
-    })
-  }
-  setState(this: ElementWrapper<"checkbox"> | ElementWrapper<"radiobutton">, state: boolean): void {
-    if (this.element.state != state) {
-      this.simulateToggleState()
-    }
-  }
   find<T extends GuiElementType>(
     type: T,
     predicate?: (element: Extract<LuaGuiElement, { type: T }>) => boolean,

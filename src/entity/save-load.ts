@@ -16,7 +16,7 @@ import {
   LuaEntity,
   LuaInventory,
   LuaSurface,
-  MapPosition
+  MapPosition,
 } from "factorio:runtime"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
