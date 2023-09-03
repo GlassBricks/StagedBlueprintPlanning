@@ -32,7 +32,7 @@ export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
   const stage = getStageAtSurface(player.surface.index)
   if (!stage) {
     if (cursor.name == Prototypes.FilteredStageMoveTool) {
-      cursor.label = "<Not in a staged build>"
+      cursor.label = "<Not in a staged BP project>"
     } else {
       player.create_local_flying_text({
         text: [L_Interaction.NotInAnProject],

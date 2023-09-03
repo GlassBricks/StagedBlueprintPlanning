@@ -89,11 +89,11 @@ test("changing selected stage", () => {
   expect(player.cursor_stack!.label).to.be("Send to Stage 1")
 })
 
-test("filtered stage move tool name set to <Not in a staged build>", () => {
+test("filtered stage move tool name set to <Not in a staged BP project>", () => {
   player.teleport([0, 0], 1 as SurfaceIndex)
   player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
   updateMoveToolInCursor(player)
-  expect(player.cursor_stack!.label).to.be("<Not in a staged build>")
+  expect(player.cursor_stack!.label).to.be("<Not in a staged BP project>")
 })
 
 test("changing selected stage with filtered stage move tool", () => {

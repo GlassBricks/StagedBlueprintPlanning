@@ -284,9 +284,9 @@ export declare const enum L_GuiProjectSettings {
   ExportBlueprintBookStringToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-string-to-file-tooltip",
   /** Rebuild all stages */
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
-  /** Delete staged build */
+  /** Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
-  /** Are you sure you want to delete staged build __1__? */
+  /** Are you sure you want to delete project __1__? */
   DeleteProjectConfirmation1 = "bp100.gui.project-settings.delete-project-confirmation1",
   /** This cannot be undone. */
   DeleteProjectConfirmation2 = "bp100.gui.project-settings.delete-project-confirmation2",
