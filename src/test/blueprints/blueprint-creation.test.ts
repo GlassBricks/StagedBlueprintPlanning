@@ -185,7 +185,7 @@ test("make blueprint book", () => {
 
 test("export blueprint book to file", () => {
   const result = exportBlueprintBookToFile(project, player)
-  expect(result).to.equal("staged-builds/test.txt")
+  expect(result).to.equal("staged-blueprints/test")
 
   cancelCurrentTask()
 })
