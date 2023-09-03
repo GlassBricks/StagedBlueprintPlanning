@@ -49,7 +49,7 @@ Migrations.to("0.14.3", () => {
   }
 })
 
-Migrations.to("0.17.0", () => {
+Migrations.early("0.17.0", () => {
   for (const [, project] of getProjectsForMigration()) {
     for (const entity of project.content.iterateAllEntities()) {
       _migrateEntity_0_17_0(entity)
@@ -86,7 +86,7 @@ Migrations.to("0.20.0", () => {
   }
 })
 
-Migrations.to("0.22.2", () => {
+Migrations.early("0.22.2", () => {
   for (const [, project] of getProjectsForMigration()) {
     for (const entity of project.content.iterateAllEntities()) {
       entity.direction ??= 0
