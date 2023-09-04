@@ -12,7 +12,7 @@
     "git_publish_branch": "main",
     "ignore": ["readme.md", "test/**/*", "**/*.xcf", "**/*.svg"],
     "removeZipAfterPackage": true,
-    "noGitTag": true
+    "no_git_tag": true
   },
   "dependencies": ["base >= 1.1.71", "? PickerDollies >= 1.2.1"]
 }
