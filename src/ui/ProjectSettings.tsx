@@ -19,7 +19,17 @@ import { ProjectOrStageBlueprintSettings } from "../blueprints/blueprint-setting
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Colors, Prototypes } from "../constants"
 import { getStageToMerge } from "../entity/ProjectEntity"
-import { bind, funcRef, ibind, multiMap, Property, property, RegisterClass, registerFunctions } from "../lib"
+import {
+  bind,
+  funcRef,
+  ibind,
+  multiMap,
+  onPlayerInitSince,
+  Property,
+  property,
+  RegisterClass,
+  registerFunctions,
+} from "../lib"
 import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
 import {
   CollapseButton,
@@ -57,9 +67,15 @@ import { StageSelector } from "./StageSelector"
 declare global {
   interface PlayerData {
     compactProjectSettings?: true
+    projectSettingsSelectedTab: Property<number>
   }
 }
 declare const global: GlobalWithPlayers
+
+onPlayerInitSince("0.23.0", (playerIndex) => {
+  const data = global.players[playerIndex]
+  data.projectSettingsSelectedTab = property(1)
+})
 
 const StageListBoxHeight = 28 * 12
 const StageListBoxWidth = 140
@@ -133,6 +149,8 @@ class ProjectSettings extends Component<{
     this.project = props.project
     this.playerIndex = context.playerIndex
 
+    const selectedTabIndex = global.players[this.playerIndex].projectSettingsSelectedTab
+
     return (
       <frame direction="vertical">
         <TitleBar>
@@ -163,7 +181,7 @@ class ProjectSettings extends Component<{
                 vertically_stretchable: true,
                 minimal_width: ProjectSettingsTabWidth,
               }}
-              selected_tab_index={1}
+              selected_tab_index={selectedTabIndex}
             >
               <tab caption={[L_GuiProjectSettings.Stage]} />
               {this.StagesTab()}

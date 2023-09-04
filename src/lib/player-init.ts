@@ -33,11 +33,13 @@ export function onPlayerInit(action: (player: PlayerIndex) => void): void {
 }
 
 export function onPlayerInitSince(version: VersionString, action: (player: PlayerIndex) => void): void {
-  Migrations.since(version, () => {
+  function initForAllPlayers() {
     for (const [, player] of game.players) {
       action(player.index)
     }
-  })
+  }
+  Migrations.early(version, initForAllPlayers)
+  Events.on_init(initForAllPlayers)
   Events.on_player_created((e) => {
     action(e.player_index)
   })
