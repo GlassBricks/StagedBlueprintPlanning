@@ -8,7 +8,9 @@ Date: ????
     - Using the "confirm" control will confirm dialogs rather than cancel them, paralleling the behavior of vanilla Factorio guis. Pressing "escape" will still cancel.
     - The project list window (previously staged build window) will automatically close after selecting a project.
     - Removed error messages when using certain hotkeys when not in a project.
+  Gui:
     - Made project list window visually cleaner.
+    - Made selected tab in project settings persistent.
   Bugfixes:
     - Fixed migrating from a version earlier than 0.17.0
     - Removed extra .txt file extension from blueprint book export

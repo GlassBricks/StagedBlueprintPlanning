@@ -19,7 +19,6 @@ import {
   LuaStyle,
   PlayerIndex,
   SliderGuiElement,
-  TabbedPaneGuiElement,
 } from "factorio:runtime"
 import { isEmpty } from "../_util"
 import { isMutableProperty, MutableProperty, Property, SimpleObserver, Subscription } from "../event"
@@ -216,8 +215,11 @@ function renderElement(
         // value is state
         error(`${key} cannot be a state value`)
       }
-      if (typeof isElemProp == "string") elemProps.set([isElemProp], value)
-      else elemProps.set(key, value)
+      if (typeof isElemProp != "string") {
+        elemProps.set(key, value)
+      } else {
+        elemProps.set([isElemProp], value)
+      }
       if (stateEvent && value instanceof Property) {
         if (isMutableProperty<any>(value)) {
           if (events[stateEvent]) {
@@ -240,6 +242,9 @@ function renderElement(
   const factorioElement = parent.add(guiSpec as GuiSpec)
 
   for (const [key, value] of elemProps) {
+    // this is currently one hardcoded exception
+    if (key == "selected_tab_index") continue
+    // set later
     if (value instanceof Property) {
       let observer: SimpleObserver<unknown>
       let name: string
@@ -280,7 +285,7 @@ function renderElement(
   }
 
   // setup tabbed pane
-  if (element.type == "tabbed-pane") {
+  if (factorioElement.type == "tabbed-pane") {
     // alternate indexes tab-content
     const children = factorioElement.children
     for (const i of $range(1, children.length, 2)) {
@@ -293,7 +298,12 @@ function renderElement(
             .join(", ")}`,
         )
       }
-      ;(factorioElement as TabbedPaneGuiElement).add_tab(tab, content)
+      factorioElement.add_tab(tab, content)
+    }
+    const selectedTabIndex = elemProps.get("selected_tab_index")
+    if (selectedTabIndex) {
+      factorioElement.selected_tab_index =
+        selectedTabIndex instanceof Property ? selectedTabIndex.get() : selectedTabIndex
     }
   }
 
