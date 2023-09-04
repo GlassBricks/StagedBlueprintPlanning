@@ -38,9 +38,7 @@ function notifyError(player: LuaPlayer, message: LocalisedString, playSound: boo
 function goToStageRelative(event: CustomInputEvent, diff: number, ErrorLocale: string) {
   const player = game.get_player(event.player_index)!
   const stage = playerCurrentStage(event.player_index).get()
-  if (!stage) {
-    return notifyError(player, [L_Interaction.NotInAnProject], false)
-  }
+  if (!stage) return
   const nextStageNum = stage.stageNumber + diff
   const toStage = stage.project.getStage(nextStageNum)
   if (!toStage) {
@@ -62,9 +60,7 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   const entity = player.selected
   if (!entity) return
   const [stage, projectEntity] = getProjectEntityOfEntity(entity)
-  if (!projectEntity) {
-    return notifyError(player, [L_Interaction.NotInAnProject], true)
-  }
+  if (!projectEntity) return
   const firstStageNum = projectEntity.firstStage
   const currentStage = stage!.stageNumber
   if (firstStageNum == currentStage) {
