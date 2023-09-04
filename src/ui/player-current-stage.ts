@@ -12,6 +12,7 @@
 import { LuaPlayer, LuaSurface, PlayerIndex, SurfaceIndex } from "factorio:runtime"
 import { assertNever, Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
 import { Pos, Position } from "../lib/geometry"
+import { Migrations } from "../lib/migration"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { Stage, UserProject } from "../project/ProjectDef"
 import { getStageAtSurface, ProjectEvents } from "../project/UserProject"
@@ -121,3 +122,14 @@ export function exitProject(player: LuaPlayer): void {
     player.teleport([0, 0], 1 as SurfaceIndex)
   }
 }
+Migrations.early("0.23.0", () => {
+  for (const [, player] of game.players) {
+    const playerData = global.players[player.index]
+    if (!playerData) continue
+    assume<{
+      lastNonAssemblyLocation: any
+    }>(playerData)
+    playerData.lastNonProjectLocation = playerData.lastNonAssemblyLocation
+    delete playerData.lastNonAssemblyLocation
+  }
+})

@@ -33,6 +33,7 @@ import {
 } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+import { debugPrint } from "../lib/test/misc"
 import { L_Bp100 } from "../locale"
 import {
   createdDiffedPropertyTableView,
@@ -60,13 +61,20 @@ Migrations.to("0.16.0", () => {
   const oldProjects = global.projects as unknown as LuaMap<ProjectId, UserProjectImpl>
   global.projects = Object.values(oldProjects)
 })
+Migrations.early("0.23.0", () => {
+  assume<{
+    nextAssemblyId: any
+  }>(global)
+  global.nextProjectId = global.nextAssemblyId
+  delete global.nextAssemblyId
+})
 
 const GlobalProjectEvents = globalEvent<[GlobalProjectEvent]>()
 export { GlobalProjectEvents as ProjectEvents }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
-@RegisterClass("Project")
+@RegisterClass("Assembly")
 class UserProjectImpl implements UserProject {
   name: MutableProperty<string>
   displayName: Property<LocalisedString>

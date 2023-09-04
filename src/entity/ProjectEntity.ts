@@ -211,7 +211,7 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
   return floor(orientation * 8 + 0.5) % 8
 }
 
-@RegisterClass("ProjectEntity")
+@RegisterClass("AssemblyEntity")
 class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   public position: Position
   public direction: defines.direction

@@ -163,6 +163,7 @@ class ProjectSettings extends Component<{
                 vertically_stretchable: true,
                 minimal_width: ProjectSettingsTabWidth,
               }}
+              selected_tab_index={1}
             >
               <tab caption={[L_GuiProjectSettings.Stage]} />
               {this.StagesTab()}
@@ -688,14 +689,6 @@ function renderAtProjectSettingsLoc(player: LuaPlayer, spec: Element): void {
 
   element.bring_to_front()
 }
-Migrations.early("0.23.0", () => {
-  const oldProjectSettingsName = `${script.mod_name}:assembly-settings`
-  for (const [, player] of game.players) {
-    const old = player.gui.screen[oldProjectSettingsName]
-    if (old) old.destroy()
-  }
-})
-
 function renderPlaceholder(player: LuaPlayer) {
   renderAtProjectSettingsLoc(
     player,
@@ -781,5 +774,10 @@ Migrations.to("0.15.1", () => {
     delete playerData?.currentShownProject
   }
 })
-
 Migrations.fromAny(refreshCurrentProject)
+Migrations.early("0.23.0", () => {
+  const oldProjectSettingsName = `${script.mod_name}:assembly-settings`
+  for (const [, player] of game.players) {
+    destroy(player.gui.screen[oldProjectSettingsName])
+  }
+})
