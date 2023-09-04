@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.23.0
-Date: ????
+Date: 2023-09-04
   Locale:
     - Renamed "staged build" to "Staged BP project", or just "project".
   Changes:
