@@ -239,13 +239,13 @@ PlayerChangedStageEvent.addListener((player, oldStage, newStage) => {
 
 Migrations.to("0.15.1", () => {
   interface OldPlayerData {
-    currentProjectGui?: {
+    currentAssembliesGui?: {
       mainFlow?: LuaGuiElement
     }
   }
   for (const [, playerData] of pairs(global.players)) {
     const oldPlayerData = playerData as OldPlayerData
-    destroy(oldPlayerData?.currentProjectGui?.mainFlow)
+    destroy(oldPlayerData?.currentAssembliesGui?.mainFlow)
   }
 })
 Migrations.fromAny(() => {
@@ -253,5 +253,12 @@ Migrations.fromAny(() => {
     closeAllProjects(player.index)
     const flow = mod_gui.get_button_flow(player)
     if (flow[ModButtonName] == nil) renderNamed(<ModButton />, flow, ModButtonName)
+  }
+})
+Migrations.early("0.23.0", () => {
+  const oldModButtonName = script.mod_name + ":all-assemblies"
+  for (const [, player] of game.players) {
+    const flow = mod_gui.get_button_flow(player)
+    destroy(flow[oldModButtonName])
   }
 })
