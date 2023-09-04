@@ -139,7 +139,7 @@ class AllProjects extends Component {
     }
     const playerIndex = event.player_index
     const player = game.get_player(playerIndex)!
-    // closeAllProjects(playerIndex)
+    closeAllProjects(playerIndex)
     teleportToProject(player, project)
     bringSettingsWindowToFront(player)
   }
