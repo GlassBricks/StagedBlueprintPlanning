@@ -25,7 +25,7 @@ import {
   RenderContext,
   renderNamed,
 } from "../lib/factoriojsx"
-import { SimpleTitleBar } from "../lib/factoriojsx/components"
+import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSelector } from "../locale"
 import { ProjectCreatedEvent, ProjectDeletedEvent, ProjectsReorderedEvent, UserProject } from "../project/ProjectDef"
@@ -73,21 +73,28 @@ class AllProjects extends Component {
     return (
       <frame direction="vertical">
         <SimpleTitleBar title={[L_GuiProjectSelector.AllProjects]} />
-        <scroll-pane
-          style={Styles.FakeListBox}
-          styleMod={{
-            width: AllProjectsWidth,
-            height: AllProjectsHeight,
-          }}
-          onCreate={(e) => {
-            this.scrollPane = e
-            this.scrollToCurrentProject()
-          }}
+        <frame
+          direction="vertical"
+          style="inside_deep_frame"
+          styleMod={{ vertically_stretchable: true, bottom_margin: 8 }}
         >
-          {getAllProjects().map((project) => this.projectButtonFlow(project))}
-        </scroll-pane>
+          <scroll-pane
+            style={Styles.FakeListBox}
+            styleMod={{
+              width: AllProjectsWidth,
+              height: AllProjectsHeight,
+            }}
+            onCreate={(e) => {
+              this.scrollPane = e
+              this.scrollToCurrentProject()
+            }}
+          >
+            {getAllProjects().map((project) => this.projectButtonFlow(project))}
+          </scroll-pane>
+        </frame>
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <button caption={[L_GuiProjectSelector.NewProject]} on_gui_click={ibind(this.newProject)} />
+          <HorizontalPusher />
           <button
             caption={[L_GuiProjectSelector.ExitProject]}
             enabled={currentStage.truthy()}
