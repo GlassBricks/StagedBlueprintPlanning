@@ -1,7 +1,16 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.22.9
+Version: 0.23.0
 Date: ????
+  Locale:
+    - Renamed "staged build" to "Staged BP project", or just "project".
   Changes:
+    - Various minor UX tweaks:
+    - Using the "confirm" control will confirm dialogs rather than cancel them, paralleling the behavior of vanilla Factorio guis. Pressing "escape" will still cancel.
+    - The project list window (previously staged build window) will automatically close after selecting a project.
+    - Removed error messages when using certain hotkeys when not in a project.
+  Bugfixes:
+    - Fixed migrating from a version earlier than 0.17.0
+    - Removed redundant .txt file extension from blueprint book export
 ---------------------------------------------------------------------------------------------------
 Version: 0.22.8
 Date: 2023-07-21
