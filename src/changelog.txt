@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.23.1
-Date: ????
+Date: 2023-09-06
   Bugfixes:
     - Fixed that highlights/indicators would not reappear on stage rebuild.
     - Fixed occasional missing locale issue with an unnamed project
