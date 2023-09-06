@@ -503,3 +503,8 @@ Migrations.priority(5, "0.23.0", () => {
     }
   }
 })
+Migrations.to("0.23.1", () => {
+  for (const project of global.projects) {
+    project.name.forceNotify()
+  }
+})
