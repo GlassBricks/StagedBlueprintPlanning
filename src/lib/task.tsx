@@ -143,6 +143,14 @@ export function cancelCurrentTask(): void {
 export function isTaskRunning(): boolean {
   return global.currentTask != nil
 }
+export function runEntireCurrentTask(): void {
+  if (global.currentTask) {
+    runEntireTask(global.currentTask)
+    delete global.currentTask
+    destroyTaskGui()
+  }
+}
+
 registerFunctions("task", { cancelCurrentTask })
 Events.on_tick(() => {
   const task = global.currentTask
@@ -158,9 +166,18 @@ Events.on_tick(() => {
 })
 
 @RegisterClass("CurrentTaskGui")
-class CurrentTaskGui extends Component<{ task: Task }> {
+class CurrentTaskGui extends Component<{
+  task: Task
+}> {
   mainFrame!: FrameGuiElement
-  public override render({ task }: { task: Task }, context: RenderContext): Element {
+  public override render(
+    {
+      task,
+    }: {
+      task: Task
+    },
+    context: RenderContext,
+  ): Element {
     context.onMount(() => this.update(task))
     return (
       <frame

@@ -24,6 +24,7 @@ import { saveEntity } from "../../entity/save-load"
 import { addPowerSwitchConnections, findPolePowerSwitchNeighbors } from "../../entity/wires"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
+import { runEntireCurrentTask } from "../../lib/task"
 import {
   addNewEntity,
   deleteEntityOrCreateSettingsRemnant,
@@ -47,6 +48,7 @@ import { onWiresPossiblyUpdated, userSetLastStageWithUndo } from "../../project/
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import {
   clearWorldEntityAtStage,
+  rebuildAllStages,
   rebuildStage,
   rebuildWorldEntityAtStage,
   refreshAllWorldEntities,
@@ -93,12 +95,12 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   return entity
 }
 
-function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: boolean) {
+function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: number | false) {
   expect(entity.isSettingsRemnant).to.be.falsy()
   const found = project.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).to.be(entity)
 
-  let hasMissing = false
+  let hasMissing: number | false = false
   for (const stage of $range(1, project.lastStageFor(entity))) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)!
     assert(worldEntity, `entity exists at stage ${stage}`)
@@ -107,7 +109,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: boolean)
     if (value == nil) {
       assert(isPreview, `entity must be preview at stage ${stage}`)
     } else if (isPreview) {
-      hasMissing = true
+      hasMissing ||= stage
     } else {
       const savedValue = saveEntity(worldEntity)
       expect(savedValue).to.equal(value)
@@ -233,6 +235,7 @@ function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): P
   const entity = addNewEntity(project, luaEntity, stage) as ProjectEntity<BlueprintEntity>
   assert(entity)
   expect(entity.firstStage).to.be(stage)
+  expect(entity.getWorldEntity(stage)).to.be(luaEntity)
   return entity
 }
 
@@ -244,14 +247,14 @@ test("creating an entity", () => {
 test("clear entity at stage", () => {
   const entity = buildEntity(3)
   clearWorldEntityAtStage(project, entity, 4)
-  assertEntityCorrect(entity, true)
+  assertEntityCorrect(entity, 4)
 })
 
 test("entity can not be placed at stage", () => {
   createEntity(4, { name: "stone-wall" }) // blocker
   const entity = buildEntity(3)
   expect(isPreviewEntity(entity.getWorldOrPreviewEntity(4)!)).to.be(true)
-  assertEntityCorrect(entity, true)
+  assertEntityCorrect(entity, 4)
 })
 
 test("refresh missing entity", () => {
@@ -427,10 +430,25 @@ test("creating upgrade via fast replace", () => {
   assertEntityCorrect(entity, false)
 })
 
-test("update with upgrade", () => {
-  const entity = buildEntity(3)
-  entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
+test("refreshing and rebuilding an entity with diffs", () => {
+  const entity = buildEntity(2)
+  entity._applyDiffAtStage(5, { name: "stack-filter-inserter" })
+  entity._applyDiffAtStage(3, { override_stack_size: 2 })
   refreshAllWorldEntities(project, entity)
+  for (const stage of $range(1, 6)) {
+    refreshWorldEntityAtStage(project, entity, stage)
+    assertEntityCorrect(entity, false)
+  }
+  for (const stage of $range(1, 6)) {
+    rebuildWorldEntityAtStage(project, entity, stage)
+    assertEntityCorrect(entity, false)
+  }
+  for (const stage of $range(1, 6)) {
+    rebuildStage(project, stage)
+    assertEntityCorrect(entity, false)
+  }
+  rebuildAllStages(project)
+  runEntireCurrentTask()
   assertEntityCorrect(entity, false)
 })
 
@@ -442,7 +460,7 @@ test("update with upgrade and blocker", () => {
   expect(isPreviewEntity(preview)).to.be(true)
   expect(preview.name).to.be(Prototypes.PreviewEntityPrefix + "filter-inserter")
 
-  assertEntityCorrect(entity, true)
+  assertEntityCorrect(entity, 5)
 
   entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
   refreshAllWorldEntities(project, entity)
@@ -451,7 +469,7 @@ test("update with upgrade and blocker", () => {
   expect(isPreviewEntity(preview)).to.be(true)
   expect(preview.name).to.be(Prototypes.PreviewEntityPrefix + "stack-filter-inserter")
 
-  assertEntityCorrect(entity, true)
+  assertEntityCorrect(entity, 5)
 })
 
 test("creating upgrade via apply upgrade target", () => {
@@ -470,6 +488,7 @@ test("creating upgrade via apply upgrade target", () => {
 
 test("moving entity up", () => {
   const entity = buildEntity(3)
+  assertEntityCorrect(entity, false)
   trySetFirstStage(project, entity, 4)
   expect(entity.firstStage).to.be(4)
   assertEntityCorrect(entity, false)
@@ -619,7 +638,7 @@ test("connect and disconnect circuit wires", () => {
   assertEntityCorrect(pole, false)
 })
 
-function assertTrainEntityCorrect(entity: RollingStockProjectEntity, expectedHasError: boolean) {
+function assertTrainEntityCorrect(entity: RollingStockProjectEntity, expectedHasError: number | false) {
   assertEntityCorrect(entity, expectedHasError)
 }
 
@@ -636,7 +655,7 @@ test("train entity error", () => {
   surfaces[3 - 1].find_entities().forEach((e) => e.destroy()) // destroys rails too, so train cannot be re-created
 
   refreshAllWorldEntities(project, entity)
-  assertTrainEntityCorrect(entity, true)
+  assertTrainEntityCorrect(entity, 3)
 })
 
 test("adding wire in higher stage sets empty control behavior", () => {
@@ -1085,10 +1104,15 @@ test("rebuildStage", () => {
   const entityPreview = buildEntity(3, { name: "inserter", position: pos.add(2, 0), direction: direction.west })
   const entityPastLastStage = buildEntity(1, { name: "inserter", position: pos.add(3, 0), direction: direction.west })
   expect(trySetLastStage(project, entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
-
-  rebuildStage(project, 2)
-
+  entityPresent._applyDiffAtStage(4, { name: "stack-filter-inserter" })
+  refreshAllWorldEntities(project, entityPresent)
   assertEntityCorrect(entityPresent, false)
-  assertEntityCorrect(entityPreview, false)
-  assertEntityCorrect(entityPastLastStage, false)
+
+  for (const stage of $range(1, 6)) {
+    rebuildStage(project, stage)
+
+    assertEntityCorrect(entityPresent, false)
+    assertEntityCorrect(entityPreview, false)
+    assertEntityCorrect(entityPastLastStage, false)
+  }
 })

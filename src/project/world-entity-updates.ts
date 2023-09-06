@@ -198,7 +198,12 @@ export function updateNewWorldEntitiesWithoutWires(
   if (hasError) updateAllHighlights(project, entity)
 }
 
-export function refreshWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void {
+export function refreshWorldEntityAtStage(
+  project: Project,
+  entity: ProjectEntity,
+  stage: StageNumber,
+  updateHighlights: boolean = true,
+): void {
   if (entity.isPastLastStage(stage)) {
     entity.destroyWorldOrPreviewEntity(stage)
     return
@@ -221,9 +226,9 @@ export function refreshWorldEntityAtStage(project: Project, entity: ProjectEntit
     return
   }
 
-  const errorChanged = tryUpdateWorldEntitiesInRange(project, entity, stage, stage)
+  tryUpdateWorldEntitiesInRange(project, entity, stage, stage)
   updateWiresInRange(project, entity, stage, stage)
-  if (errorChanged) updateAllHighlights(project, entity)
+  if (updateHighlights) updateAllHighlights(project, entity)
 }
 
 export function rebuildWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void {
