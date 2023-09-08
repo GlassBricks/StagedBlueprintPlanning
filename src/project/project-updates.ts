@@ -61,7 +61,7 @@ export function addNewEntity(
     }
   }
 
-  updateNewWorldEntitiesWithoutWires(project, projectEntity, knownValue != nil && knownValue.name != entity.name)
+  updateNewWorldEntitiesWithoutWires(project, projectEntity)
   const [hasDiff, , additionalToUpdate] = saveWireConnections(
     content,
     projectEntity,

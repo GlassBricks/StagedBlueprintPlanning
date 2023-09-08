@@ -17,8 +17,10 @@ import {
   LuaInventory,
   LuaSurface,
   MapPosition,
+  RollingStockSurfaceCreateEntity,
+  UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { Events, Mutable, mutableShallowCopy } from "../lib"
+import { Events, Mutable, mutableShallowCopy, shallowCompare } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
@@ -30,6 +32,9 @@ import {
   rollingStockTypes,
 } from "./entity-prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
+import build_check_ghost_revive = defines.build_check_type.ghost_revive
+import build_check_manual = defines.build_check_type.manual
+import floor = math.floor
 
 declare const global: {
   tempBPInventory: LuaInventory
@@ -57,18 +62,17 @@ function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity):
   }
 }
 
-export function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
+function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   const { surface, position } = entity
 
   for (const radius of [0.01, 1]) {
-    const isRollingStock = rollingStockTypes.has(entity.type)
     const indexMapping = bpStack.create_blueprint({
       surface,
-      force: entity.force,
+      force: entity.force_index,
       area: BBox.around(position, radius),
       include_station_names: true,
-      include_trains: isRollingStock,
-      include_fuel: isRollingStock,
+      include_trains: true,
+      include_fuel: true,
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {
@@ -78,25 +82,6 @@ export function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | n
   }
 }
 
-function pasteEntity(
-  surface: LuaSurface,
-  position: MapPosition,
-  direction: defines.direction,
-  entity: BlueprintEntity,
-): LuaEntity | nil {
-  const tilePosition = Pos.floor(position)
-  const offsetPosition = Pos.minus(position, tilePosition)
-  setBlueprintEntity(bpStack, entity, offsetPosition, direction)
-  bpStack.blueprint_snap_to_grid = [1, 1]
-  bpStack.blueprint_absolute_snapping = true
-
-  const ghosts = bpStack.build_blueprint({
-    surface,
-    force: "player",
-    position: tilePosition,
-  })
-  return ghosts[0]
-}
 function setBlueprintEntity(
   stack: BlueprintItemStack,
   entity: Mutable<BlueprintEntity>,
@@ -113,38 +98,85 @@ function setBlueprintEntity(
   entity.entity_number = nil!
 }
 
+let entityVersion = 1
+
+let pasteEntityVersion = 0
+function pasteEntity(
+  surface: LuaSurface,
+  position: MapPosition,
+  direction: defines.direction,
+  entity: BlueprintEntity,
+): LuaEntity | nil {
+  const tilePosition = { x: floor(position.x), y: floor(position.y) }
+
+  if (pasteEntityVersion != entityVersion) {
+    pasteEntityVersion = entityVersion
+    const offsetPosition = Pos.minus(position, tilePosition)
+    setBlueprintEntity(bpStack, entity, offsetPosition, direction)
+    bpStack.blueprint_snap_to_grid = [1, 1]
+    bpStack.blueprint_absolute_snapping = true
+  }
+
+  const ghosts = bpStack.build_blueprint({
+    surface,
+    force: "player",
+    position: tilePosition,
+  })
+  return ghosts[0]
+}
+
 function removeIntersectingItemsOnGround(surface: LuaSurface, area: BoundingBox) {
   const items = surface.find_entities_filtered({ type: "item-entity", area })
   for (const item of items) item.destroy()
 }
 
+const tryCreateEntityParams: Mutable<
+  RollingStockSurfaceCreateEntity & UndergroundBeltSurfaceCreateEntity & Parameters<LuaSurface["can_place_entity"]>[0]
+> = {
+  name: "",
+  position: nil!,
+  direction: nil!,
+  orientation: nil,
+  type: nil!,
+  force: "player",
+  create_build_effect_smoke: false,
+  build_check_type: build_check_ghost_revive,
+}
+
+let tryCreateVersion = 0
 function tryCreateUnconfiguredEntity(
   surface: LuaSurface,
   position: Position,
   direction: defines.direction,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
-  // assert(!isUndergroundBeltType(entity.name))
-  const orientation = entity.orientation
-  if (orientation) direction = nil!
-  const params = {
-    name: entity.name,
-    position,
-    direction,
-    orientation: entity.orientation,
-    type: entity.type,
-    force: "player",
-    create_build_effect_smoke: false,
-    build_check_type: defines.build_check_type.ghost_revive,
+  if (tryCreateVersion != entityVersion) {
+    tryCreateVersion = entityVersion
+    const orientation = entity.orientation
+    if (orientation) direction = nil!
+    tryCreateEntityParams.name = entity.name
+    tryCreateEntityParams.position = position
+    tryCreateEntityParams.direction = direction
+    tryCreateEntityParams.orientation = orientation
+    tryCreateEntityParams.type = entity.type
   }
-  const canPlace = surface.can_place_entity(params)
-  if (canPlace) {
-    return surface.create_entity(params)
+  tryCreateEntityParams.build_check_type = build_check_ghost_revive
+
+  assert(tryCreateEntityParams.name == entity.name)
+  assert(shallowCompare(tryCreateEntityParams.position, position))
+  assert(tryCreateEntityParams.direction == direction)
+
+  const canPlaceEntity = surface.can_place_entity
+  if (canPlaceEntity(tryCreateEntityParams)) {
+    return surface.create_entity(tryCreateEntityParams)
   }
-  params.build_check_type = defines.build_check_type.manual
-  if (!surface.can_place_entity(params)) return
-  const createdEntity = surface.create_entity(params)
+  // try manual
+  tryCreateEntityParams.build_check_type = build_check_manual
+  if (!canPlaceEntity(tryCreateEntityParams)) return
+  // try creating via manual
+  const createdEntity = surface.create_entity(tryCreateEntityParams)
   if (!createdEntity) return
+
   removeIntersectingItemsOnGround(surface, createdEntity.bounding_box)
   if (createdEntity.secondary_bounding_box)
     removeIntersectingItemsOnGround(surface, createdEntity.secondary_bounding_box)
@@ -158,14 +190,19 @@ OnEntityPrototypesLoaded.addListener((info) => {
 
 const rawset = _G.rawset
 
+/**
+ * If reuseEntity is true, the code assumes that the last time this was called [entity] is the same.
+ * This is a performance optimization to use with care.
+ */
 function createEntity(
   surface: LuaSurface,
   position: MapPosition,
   direction: defines.direction,
   entity: Entity,
+  changed: boolean = true,
 ): LuaEntity | nil {
   assume<BlueprintEntity>(entity)
-  // assert(!isUndergroundBeltType(entity.name))
+  if (changed) entityVersion++
   const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity)
   if (!luaEntity) return nil
   // const type = luaEntity.type
@@ -187,7 +224,9 @@ function createEntity(
       return nil
     }
   }
-  if (entity.items) createItems(luaEntity, entity.items)
+  if (entity.items) {
+    createItems(luaEntity, entity.items)
+  }
 
   // performance hack: cache name, type
   rawset(luaEntity, "name", entity.name)
@@ -203,30 +242,36 @@ function entityHasSettings(entity: BlueprintEntity): boolean {
   return false
 }
 
-function upgradeEntity(entity: LuaEntity, name: string): LuaEntity {
-  const { surface, position, direction } = entity
-  entity.minable = true
-  const newEntity = surface.create_entity({
-    name,
-    position,
-    direction,
-    force: "player",
-    fast_replace: true,
-    spill: false,
-    create_build_effect_smoke: false,
-    type: entity.type == "underground-belt" ? entity.belt_to_ground_type : nil,
-  })
-  if (!newEntity) return entity
-  if (entity.valid) {
-    entity.destroy()
+const upgradeEntityParams: Mutable<RollingStockSurfaceCreateEntity & UndergroundBeltSurfaceCreateEntity> = {
+  name: "",
+  position: nil!,
+  direction: nil,
+  force: "player",
+  fast_replace: true,
+  spill: false,
+  create_build_effect_smoke: false,
+  type: nil,
+}
+let upgradeEntityVersion = 0
+function upgradeEntity(oldEntity: LuaEntity, name: string): LuaEntity {
+  if (upgradeEntityVersion != entityVersion) {
+    upgradeEntityVersion = entityVersion
+    oldEntity.minable = true
+    upgradeEntityParams.name = name
+    upgradeEntityParams.position = oldEntity.position
+    upgradeEntityParams.direction = oldEntity.direction
+    upgradeEntityParams.type = oldEntity.type == "underground-belt" ? oldEntity.belt_to_ground_type : nil
   }
+  const newEntity = oldEntity.surface.create_entity(upgradeEntityParams)
+  if (!newEntity) return oldEntity
+  if (oldEntity.valid) oldEntity.destroy()
   return newEntity
 }
 
 function createItems(luaEntity: LuaEntity, items: Record<string, number>): void {
   const insertTarget = luaEntity.get_module_inventory() ?? luaEntity
-  for (const [item, amount] of pairs(items)) {
-    insertTarget.insert({ name: item, count: amount })
+  for (const [name, count] of pairs(items)) {
+    insertTarget.insert({ name, count })
   }
 }
 
@@ -268,7 +313,7 @@ function updateUndergroundRotation(
     const surface = luaEntity.surface
     const position = luaEntity.position
     luaEntity.destroy()
-    return createEntity(surface, position, direction, value)
+    return createEntity(surface, position, direction, value, false)
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
@@ -294,8 +339,17 @@ function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<En
   return bpEntity
 }
 
-function updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.direction): LuaEntity | nil {
+function updateEntity(
+  luaEntity: LuaEntity,
+  value: Entity,
+  direction: defines.direction,
+  changed: boolean = true,
+): LuaEntity | nil {
   assume<BlueprintEntity>(value)
+  if (changed) entityVersion++
+  // entityVersion++
+
+  // todo: is this a bug?
   if (rollingStockTypes.has(luaEntity.type)) return luaEntity
 
   if (luaEntity.name != value.name) {
@@ -320,7 +374,7 @@ function updateEntity(luaEntity: LuaEntity, value: Entity, direction: defines.di
   return luaEntity
 }
 
-export function makePreviewIndestructible(entity: LuaEntity | nil): void {
+function makePreviewIndestructible(entity: LuaEntity | nil): void {
   if (!entity) return
   entity.destructible = false
   entity.minable = false

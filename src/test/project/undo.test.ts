@@ -45,7 +45,7 @@ test("can run multiple undo actions", () => {
 test("can register future undo actions", () => {
   const player = game.players[1]
   TestUndo.registerLater(player, "test data")
-  after_ticks(1, () => {
+  after_ticks(10, () => {
     _simulateUndo(player)
 
     expect(fn).toHaveBeenCalledWith(1, "test data")

@@ -103,8 +103,14 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   /**
    * Iterates the values of stages in the given range. More efficient than repeated calls to getValueAtStage.
    * The same instance will be returned for each stage; its value is ephemeral.
+   *
+   * Changed: if the value returned is the same value as last iteration.
+   * Undefined value on very first iteration.
    */
-  iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
+  iterateValues(
+    start: StageNumber,
+    end: StageNumber,
+  ): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil, changed: boolean]>>
 
   /**
    * Adjusts stage diffs so that the value at the given stage matches the given value.
@@ -380,25 +386,28 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     return this.getPropAtStage(stage, "name")[0]
   }
 
-  iterateValues(start: StageNumber, end: StageNumber): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil]>>
+  iterateValues(
+    start: StageNumber,
+    end: StageNumber,
+  ): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil, changed: boolean]>>
   iterateValues(start: StageNumber, end: StageNumber) {
     const stageDiffs = this.stageDiffs
     if (!stageDiffs) return this.iterateValuesNoDiffs(start, end)
 
     const { firstStage, firstValue } = this
     const lastStage = this.lastStage ?? end
-    let value = this.getValueAtStage(start) as T
+    let value = this.getValueAtStage(start - 1) as T
     function iterNext(stageDiffs: StageDiffs | nil, prevStage: StageNumber) {
       const nextStage = prevStage + 1
       if (nextStage > end) return $multi()
-      if (nextStage < firstStage || nextStage > lastStage) return $multi(nextStage, nil)
+      if (nextStage < firstStage || nextStage > lastStage) return $multi(nextStage, nil, false)
       if (nextStage == firstStage) {
         value = shallowCopy(firstValue)
-      } else {
-        const diff = stageDiffs && stageDiffs[nextStage]
-        if (diff) applyDiffToEntity(value, diff)
+        return $multi(nextStage, value, true)
       }
-      return $multi(nextStage, value)
+      const diff = stageDiffs && stageDiffs[nextStage]
+      if (diff) applyDiffToEntity(value, diff)
+      return $multi(nextStage, value, diff != nil || nextStage == start)
     }
     return $multi<any>(iterNext, stageDiffs, start - 1)
   }
@@ -409,8 +418,8 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     function next(_: any, prevStage: StageNumber) {
       const stage = prevStage + 1
       if (stage > end) return $multi()
-      if (stage < firstStage || stage > lastStage) return $multi(stage, nil)
-      return $multi(stage, firstValue)
+      if (stage < firstStage || stage > lastStage) return $multi(stage, nil, false)
+      return $multi(stage, firstValue, stage == firstStage || stage == start)
     }
     return $multi<any>(next, nil, start - 1)
   }

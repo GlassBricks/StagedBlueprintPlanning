@@ -424,7 +424,7 @@ describe("tryMoveEntity", () => {
 })
 
 describe("updateNewEntityWithoutWires", () => {
-  test("without updating firstStage", () => {
+  test("can update", () => {
     const entity = createProjectEntityNoCopy(
       { name: "inserter" },
       Pos(0, 0),
@@ -432,21 +432,7 @@ describe("updateNewEntityWithoutWires", () => {
       2,
     )
     project.content.add(entity)
-    WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity, false)
-    expect(highlighter.updateAllHighlights).not.called()
-    expect(wireUpdater.updateWireConnectionsAtStage).not.called()
-    expect(entity.getWorldOrPreviewEntity(2)).toBeNil()
-  })
-  test("with updating firstStage", () => {
-    const entity = createProjectEntityNoCopy(
-      { name: "inserter" },
-      Pos(0, 0),
-      defines.direction.north as defines.direction,
-      2,
-    )
-    project.content.add(entity)
-    WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity, true)
-    // expect(highlighter.updateAllHighlights).calledWith(project, entity)
+    WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity)
     expect(highlighter.updateAllHighlights).not.called()
     expect(wireUpdater.updateWireConnectionsAtStage).not.called()
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
@@ -460,10 +446,10 @@ describe("updateNewEntityWithoutWires", () => {
     )
     project.content.add(entity)
     surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
-    WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity, false)
+    WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity)
     expect(highlighter.updateAllHighlights).calledWith(project, entity)
     expect(wireUpdater.updateWireConnectionsAtStage).not.called()
-    expect(entity.getWorldOrPreviewEntity(2)).toBeNil()
+    expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
     expect(findPreviewEntity(3)).not.toBeNil()
   })
 })
@@ -477,7 +463,7 @@ test("updateWireConnections", () => {
   )
   project.content.add(entity)
   // note: actually updating the first stage, so below works
-  WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity, true) //
+  WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity) //
   WorldUpdater.updateWireConnections(project, entity)
   for (const i of $range(2, project.lastStageFor(entity))) {
     expect(wireUpdater.updateWireConnectionsAtStage).calledWith(project.content, entity, i)

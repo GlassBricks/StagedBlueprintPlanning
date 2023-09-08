@@ -16,7 +16,7 @@ import { Entity, RollingStockEntity } from "../../entity/Entity"
 import { createProjectEntityNoCopy, ExtraEntityType, ProjectEntity } from "../../entity/ProjectEntity"
 import { getRegisteredProjectEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
-import { shallowCopy } from "../../lib"
+import { deepCompare, deepCopy, shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getNilPlaceholder } from "../../utils/diff-value"
 import { setupTestSurfaces } from "../project/Project-mock"
@@ -181,18 +181,44 @@ describe("getValueAtStage", () => {
   })
 })
 
-test("iterateValues", () => {
-  const expected = []
-  for (let stage = 1; stage <= 6; stage++) {
-    expected[stage] = projectEntity.getValueAtStage(stage) ?? "nil"
-  }
-  const result = []
-  for (const [stage, entity] of projectEntity.iterateValues(1, 6)) {
-    result[stage] = entity == nil ? "nil" : shallowCopy(entity)
-  }
-  expect(result).to.equal(expected)
+describe.each([
+  [1, 8],
+  [2, 8],
+  [3, 8],
+  [4, 8],
+  [5, 8],
+  [6, 8],
+  [1, 1],
+  [2, 2],
+  [3, 3],
+  [4, 4],
+  [5, 5],
+  [6, 6],
+  [7, 7],
+  [8, 8],
+])("iterateValues from %s to %s", (start, end) => {
+  test.each([true, false])("with diff %s", (withDiff) => {
+    const expected = []
+    if (!withDiff) {
+      projectEntity.setFirstStageUnchecked(10)
+      projectEntity.setFirstStageUnchecked(3)
+      // setting up/down should clear diffs
+      expect(projectEntity.hasStageDiff()).toBe(false)
+    }
+    projectEntity.setFirstStageUnchecked(3)
+    for (let stage = start; stage <= end; stage++) {
+      expected[stage] = projectEntity.getValueAtStage(stage) ?? "nil"
+    }
+    const result = []
+    let lastValue: unknown = nil
+    for (const [stage, entity, changed] of projectEntity.iterateValues(start, end)) {
+      result[stage] = entity == nil ? "nil" : shallowCopy(entity)
+      expect(changed).toBe(!deepCompare(entity, lastValue))
+      lastValue = deepCopy(entity)
+    }
+    expect(result).to.equal(expected)
+  })
 })
-
 test("iterateValues returns nothing if end > start", () => {
   const result = []
   for (const [stage, entity] of projectEntity.iterateValues(4, 2)) {

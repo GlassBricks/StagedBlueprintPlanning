@@ -74,7 +74,6 @@ function updateWorldEntitiesInRange(
   entity: ProjectEntity,
   startStage: StageNumber,
   endStage: StageNumber,
-  updateFirstStage: boolean = true,
 ): boolean {
   assert(startStage >= 1)
   const { firstStage, lastStage } = entity
@@ -90,8 +89,7 @@ function updateWorldEntitiesInRange(
 
   let hasOrResolvedError = false
 
-  for (const [stage, value] of entity.iterateValues(startStage, endStage)) {
-    if (!updateFirstStage && stage == firstStage) continue
+  for (const [stage, value, changed] of entity.iterateValues(startStage, endStage)) {
     const surface = project.getSurface(stage)!
     const existing = entity.getWorldOrPreviewEntity(stage)
     const wasPreviewEntity = existing && isPreviewEntity(existing)
@@ -101,9 +99,9 @@ function updateWorldEntitiesInRange(
       // create entity or updating existing entity
       let luaEntity: LuaEntity | nil
       if (existingNormalEntity) {
-        luaEntity = updateEntity(existingNormalEntity, value, direction)
+        luaEntity = updateEntity(existingNormalEntity, value, direction, changed)
       } else {
-        luaEntity = createEntity(surface, entity.position, direction, value)
+        luaEntity = createEntity(surface, entity.position, direction, value, changed)
       }
 
       if (luaEntity) {
@@ -149,12 +147,8 @@ export function updateWorldEntities(project: Project, entity: ProjectEntity, sta
   updateAllHighlights(project, entity)
 }
 // extra hot path
-export function updateNewWorldEntitiesWithoutWires(
-  project: Project,
-  entity: ProjectEntity,
-  updateFirstStage: boolean,
-): void {
-  const hasError = updateWorldEntitiesInRange(project, entity, 1, project.lastStageFor(entity), updateFirstStage)
+export function updateNewWorldEntitiesWithoutWires(project: Project, entity: ProjectEntity): void {
+  const hasError = updateWorldEntitiesInRange(project, entity, 1, project.lastStageFor(entity))
   // performance: if there are no errors, then there are no highlights to update
   // (no stage diff or last stage, either)
   if (hasError) updateAllHighlights(project, entity)

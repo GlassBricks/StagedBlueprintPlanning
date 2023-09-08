@@ -157,8 +157,8 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   }
   return entity
 }
-function assertNewUpdated(entity: ProjectEntity, firstStageUpdated: boolean = false) {
-  expect(worldUpdater.updateNewWorldEntitiesWithoutWires).calledWith(project, entity, firstStageUpdated)
+function assertNewUpdated(entity: ProjectEntity) {
+  expect(worldUpdater.updateNewWorldEntitiesWithoutWires).calledWith(project, entity)
   expectedWuCalls = 1
   if (project.content.getCircuitConnections(entity) || project.content.getCableConnections(entity)) {
     expect(worldUpdater.updateWireConnections).calledWith(project, entity)
@@ -181,7 +181,7 @@ describe("addNewEntity", () => {
     expect(entity.getWorldEntity(2)).to.be(luaEntity)
 
     assertOneEntity()
-    assertNewUpdated(entity, false)
+    assertNewUpdated(entity)
   })
 
   test("addNewEntity with known value with same name", () => {
@@ -206,7 +206,7 @@ describe("addNewEntity", () => {
     expect(entity.getWorldEntity(2)).to.be(luaEntity)
 
     assertOneEntity()
-    assertNewUpdated(entity, false)
+    assertNewUpdated(entity)
   })
 
   test("addNewEntity with known value with different name", () => {
@@ -228,7 +228,7 @@ describe("addNewEntity", () => {
     expect(found).to.be(entityUpgraded)
 
     assertOneEntity()
-    assertNewUpdated(entityUpgraded, true)
+    assertNewUpdated(entityUpgraded)
   })
 })
 
@@ -1169,7 +1169,7 @@ describe("rolling stock", () => {
     expect(foundDirectly).to.be.any()
     expect(foundDirectly).to.be(found)
 
-    assertNewUpdated(result, false)
+    assertNewUpdated(result)
   })
 
   test("no update on rolling stock", () => {
