@@ -30,7 +30,7 @@ import {
 } from "../../entity/ProjectEntity"
 import { checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
-import { addPowerSwitchConnections, findPolePowerSwitchNeighbors } from "../../entity/wires"
+import { addPowerSwitchConnections } from "../../entity/wires"
 import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
@@ -182,7 +182,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
       if (!worldEntity) continue
       const wireNeighbors: CircuitOrPowerSwitchConnection[] | nil = worldEntity.circuit_connection_definitions
       if (!wireNeighbors) continue
-      addPowerSwitchConnections(worldEntity, wireNeighbors, findPolePowerSwitchNeighbors(worldEntity))
+      addPowerSwitchConnections(worldEntity, wireNeighbors)
       expect(wireNeighbors).toEqual([])
     }
   } else {
@@ -198,7 +198,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
         }))
       })
       const actualNeighbors: CircuitOrPowerSwitchConnection[] = thisWorldEntity.circuit_connection_definitions ?? []
-      addPowerSwitchConnections(thisWorldEntity, actualNeighbors, findPolePowerSwitchNeighbors(thisWorldEntity))
+      addPowerSwitchConnections(thisWorldEntity, actualNeighbors)
 
       const actualNeighborsSet = actualNeighbors.map((x) => ({
         wire: x.wire,

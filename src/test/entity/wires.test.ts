@@ -19,7 +19,6 @@ import {
   createProjectEntityNoCopy,
   ProjectEntity,
 } from "../../entity/ProjectEntity"
-import { getPowerSwitchConnectionSide } from "../../entity/wires"
 import { shallowCompare } from "../../lib"
 import { setupTestSurfaces } from "../project/Project-mock"
 
@@ -76,7 +75,7 @@ describe("getPowerSwitchConnectionSide", () => {
     }
     assert(expected)
 
-    const side = handler.getPowerSwitchConnectionSide(pole1, powerSwitch)
+    const side = pole1.copper_connection_definitions.find((c) => c.target_entity == powerSwitch)!.target_wire_connector
     expect(side).toEqual(expected)
 
     expect((pole1.neighbours as any).copper).toEqual([powerSwitch])
@@ -314,7 +313,8 @@ describe("power switch connections", () => {
       handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
       expect((pole.neighbours as any).copper).toEqual([powerSwitch])
       expect((powerSwitch.neighbours as any).copper).toEqual([pole])
-      expect(getPowerSwitchConnectionSide(pole, powerSwitch)).toBe(defines.wire_connection_id.power_switch_right)
+      const side = pole.copper_connection_definitions.find((c) => c.target_entity == powerSwitch)!.target_wire_connector
+      expect(side).toEqual(defines.wire_connection_id.power_switch_right)
     })
 
     test("can update wires", () => {
@@ -324,7 +324,8 @@ describe("power switch connections", () => {
         wire: defines.wire_type.copper,
         target_wire_id: defines.wire_connection_id.power_switch_left,
       })
-      expect(getPowerSwitchConnectionSide(pole, powerSwitch)).toBe(defines.wire_connection_id.power_switch_left)
+      const side = pole.copper_connection_definitions.find((c) => c.target_entity == powerSwitch)!.target_wire_connector
+      expect(side).toEqual(defines.wire_connection_id.power_switch_left)
       addCircuitConnection({
         fromEntity: powerSwitchEntity,
         toEntity: poleEntity,
@@ -336,7 +337,10 @@ describe("power switch connections", () => {
       handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
       expect((pole.neighbours as any).copper).toEqual([powerSwitch])
       expect((powerSwitch.neighbours as any).copper).toEqual([pole])
-      expect(getPowerSwitchConnectionSide(pole, powerSwitch)).toBe(defines.wire_connection_id.power_switch_right)
+      const side2 = pole.copper_connection_definitions.find(
+        (c) => c.target_entity == powerSwitch,
+      )!.target_wire_connector
+      expect(side2).toEqual(defines.wire_connection_id.power_switch_right)
     })
     test("can save a connection", () => {
       pole.connect_neighbour({
