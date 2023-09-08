@@ -56,8 +56,12 @@ export function addNewEntity(
     // match the direction with the underground pair
     const [pair] = findUndergroundPair(content, projectEntity as UndergroundBeltProjectEntity)
     if (pair) {
-      const otherDir = pair.firstValue.type
-      ;(projectEntity as UndergroundBeltProjectEntity).setTypeProperty(otherDir == "output" ? "input" : "output")
+      assume<UndergroundBeltProjectEntity>(projectEntity)
+      const expectedType = pair.firstValue.type == "output" ? "input" : "output"
+      if (expectedType != projectEntity.firstValue.type) {
+        projectEntity.setTypeProperty(expectedType)
+        projectEntity.direction = pair.direction
+      }
     }
   }
 

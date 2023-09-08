@@ -235,7 +235,7 @@ function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): P
   const entity = addNewEntity(project, luaEntity, stage) as ProjectEntity<BlueprintEntity>
   assert(entity)
   expect(entity.firstStage).to.be(stage)
-  expect(entity.getWorldEntity(stage)).to.be(luaEntity)
+  expect(entity.getWorldEntity(stage)).toEqual(luaEntity)
   return entity
 }
 
@@ -398,6 +398,33 @@ test("rotating first value from world via rotate", () => {
   tryRotateEntityToMatchWorld(project, entity, 3)
   expect(entity.direction).to.be(defines.direction.south)
   assertEntityCorrect(entity, false)
+})
+
+test.each([true, false])("placing underground snaps to pair in later stage", (flipped) => {
+  // type defaults to input
+  const expectedDirection = !flipped ? defines.direction.east : defines.direction.west
+  const westType = !flipped ? "input" : "output"
+  const eastType = !flipped ? "output" : "input"
+  const westUnderground = buildEntity(4, {
+    name: "underground-belt",
+    direction: expectedDirection,
+    type: westType,
+    position: pos.minus(Pos(1, 0)),
+  })
+  // place underground belt facing west (input), should snap to east output
+  const placedUnderground = buildEntity(3, {
+    name: "underground-belt",
+    direction: defines.direction.west,
+    type: "input",
+  })
+  expect(placedUnderground.direction).to.be(expectedDirection)
+  expect(placedUnderground.firstValue.type).to.be(eastType)
+  assertEntityCorrect(placedUnderground, false)
+
+  expect(westUnderground.direction).to.be(expectedDirection)
+  expect(westUnderground.firstValue.type).to.be(westType)
+
+  expect(westUnderground.getWorldEntity(4)!.neighbours).toEqual(placedUnderground.getWorldEntity(4)!)
 })
 
 test("rotation forbidden at higher stage", () => {
