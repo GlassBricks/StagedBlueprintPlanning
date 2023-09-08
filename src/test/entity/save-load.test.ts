@@ -14,7 +14,7 @@ import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
 import { canBeAnyDirection, createEntity, saveEntity, updateEntity } from "../../entity/save-load"
-import { createRollingStock, createRollingStocks } from "./createRollingStock"
+import { createRollingStocks } from "./createRollingStock"
 
 let surface: LuaSurface
 before_each(() => {
