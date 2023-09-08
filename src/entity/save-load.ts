@@ -325,6 +325,23 @@ function updateUndergroundRotation(
   return luaEntity
 }
 
+function updateRollingStock(luaEntity: LuaEntity, value: BlueprintEntity): void {
+  if (luaEntity.type != "locomotive") return
+
+  const train = luaEntity.train
+  if (!train) return
+  const schedule = value.schedule
+  if (!schedule) {
+    train.schedule = nil
+  } else {
+    const oldScheduleCurrent = train.schedule?.current
+    train.schedule = {
+      current: oldScheduleCurrent ?? 1,
+      records: value.schedule,
+    }
+  }
+}
+
 /**
  * Position and direction are ignored.
  */
@@ -347,22 +364,21 @@ function updateEntity(
 ): LuaEntity | nil {
   assume<BlueprintEntity>(value)
   if (changed) entityVersion++
-  // entityVersion++
-
-  // todo: is this a bug?
-  if (rollingStockTypes.has(luaEntity.type)) return luaEntity
 
   if (luaEntity.name != value.name) {
     luaEntity = upgradeEntity(luaEntity, value.name)
   }
 
-  if (luaEntity.type == "underground-belt") {
+  const type = luaEntity.type
+  if (type == "underground-belt") {
     // underground belts don't have other settings.
     return updateUndergroundRotation(luaEntity, value, direction)
   }
-
-  if (luaEntity.type == "loader" || luaEntity.type == "loader-1x1") {
+  if (type == "loader" || type == "loader-1x1") {
     luaEntity.loader_type = value.type ?? "output"
+  } else if (rollingStockTypes.has(type)) {
+    updateRollingStock(luaEntity, value)
+    return luaEntity
   }
   luaEntity.direction = direction
 

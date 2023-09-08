@@ -9,11 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LuaSurface } from "factorio:runtime"
+import { BlueprintEntity, LuaSurface, TrainScheduleRecord } from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
 import { canBeAnyDirection, createEntity, saveEntity, updateEntity } from "../../entity/save-load"
+import { createRollingStock, createRollingStocks } from "./createRollingStock"
 
 let surface: LuaSurface
 before_each(() => {
@@ -338,7 +339,46 @@ test("can handle item changes", () => {
   expect(entity.get_module_inventory()!.get_contents()).to.equal(newContents)
 })
 
-test("can be any direction", () => {
+test("can set train schedule", () => {
+  const [locomotive] = createRollingStocks(surface, "locomotive", "cargo-wagon")
+  const schedule: TrainScheduleRecord[] = [
+    {
+      station: "test1",
+      wait_conditions: [
+        {
+          type: "time",
+          compare_type: "and",
+          ticks: 100,
+        },
+      ],
+    },
+    {
+      station: "test2",
+      wait_conditions: [
+        {
+          type: "time",
+          compare_type: "and",
+          ticks: 200,
+        },
+      ],
+    },
+  ]
+  locomotive.train!.schedule = {
+    current: 2,
+    records: schedule,
+  }
+  ;(schedule[1].wait_conditions![0] as any).ticks = 300
+  const newValue: Partial<BlueprintEntity> = {
+    name: "locomotive",
+    schedule,
+  }
+  const newEntity = updateEntity(locomotive, newValue as Entity, defines.direction.north)!
+  expect(newEntity).to.be(locomotive)
+  expect(newEntity.train?.schedule?.current).to.equal(2)
+  expect(newEntity.train?.schedule?.records).to.equal(newValue.schedule)
+})
+
+test("canBeAnyDirection", () => {
   // only true if is an assembling machine with no fluid inputs
   const entity = surface.create_entity({
     name: "assembling-machine-3",
