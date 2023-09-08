@@ -31,7 +31,7 @@ import {
   makeSettingsRemnant,
   rebuildWorldEntityAtStage,
   refreshWorldEntityAtStage,
-  updateEntitiesOnSettingsRemnantRevived,
+  reviveSettingsRemnant,
   updateNewWorldEntitiesWithoutWires,
   updateWireConnections,
   updateWorldEntities,
@@ -114,7 +114,7 @@ export function tryReviveSettingsRemnant(project: Project, entity: ProjectEntity
   if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) {
     entity.setFirstStageUnchecked(stage)
     entity.isSettingsRemnant = nil
-    updateEntitiesOnSettingsRemnantRevived(project, entity)
+    reviveSettingsRemnant(project, entity)
   }
   return result
 }
@@ -362,7 +362,7 @@ export function updateWiresFromWorld(project: Project, entity: ProjectEntity, st
   if (circuitConnections) {
     for (const [otherEntity] of circuitConnections) {
       if (checkDefaultControlBehavior(otherEntity, stage)) {
-        updateWorldEntities(project, otherEntity, otherEntity.firstStage, false)
+        updateWorldEntities(project, otherEntity, otherEntity.firstStage)
       }
     }
   }

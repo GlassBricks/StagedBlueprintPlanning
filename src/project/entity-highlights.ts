@@ -282,7 +282,7 @@ export function makeSettingsRemnantHighlights(project: Project, entity: ProjectE
     updateHighlight(entity, stage, project.getSurface(stage)!, "settingsRemnantHighlight", true)
   }
 }
-export function updateHighlightsOnSettingsRemnantRevived(project: Project, entity: ProjectEntity): void {
+export function updateHighlightsOnReviveSettingsRemnant(project: Project, entity: ProjectEntity): void {
   if (entity.isSettingsRemnant) return
   entity.destroyAllExtraEntities("settingsRemnantHighlight")
   updateAllHighlights(project, entity)

@@ -19,7 +19,7 @@ import {
   HighlightEntities,
   makeSettingsRemnantHighlights,
   updateAllHighlights,
-  updateHighlightsOnSettingsRemnantRevived,
+  updateHighlightsOnReviveSettingsRemnant,
 } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
 import { moduleMock } from "../module-mock"
@@ -232,7 +232,7 @@ describe("settings remnants", () => {
     createSettingsRemnant()
     makeSettingsRemnantHighlights(project, entity)
     reviveSettingsRemnant()
-    updateHighlightsOnSettingsRemnantRevived(project, entity)
+    updateHighlightsOnReviveSettingsRemnant(project, entity)
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).to.be.nil()
     }

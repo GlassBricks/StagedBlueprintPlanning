@@ -613,10 +613,10 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     this.replaceWorldOrPreviewEntity(stage, entity)
   }
   replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void {
-    if (entity == nil) return this.destroyWorldOrPreviewEntity(stage)
     const existing = this[stage]
     if (existing && existing.valid && existing != entity) existing.destroy()
     this[stage] = entity
+    if (entity == nil) return
     if (rollingStockTypes.has(entity.type)) {
       registerEntity(entity, this)
     }

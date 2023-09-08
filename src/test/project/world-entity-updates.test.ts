@@ -520,11 +520,11 @@ test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tr
   WorldUpdater.makeSettingsRemnant(project, entity)
 
   entity.isSettingsRemnant = nil
-  WorldUpdater.updateEntitiesOnSettingsRemnantRevived(project, entity)
+  WorldUpdater.reviveSettingsRemnant(project, entity)
   assertHasPreview(1)
   assertEntityCorrect(2)
   assertEntityCorrect(3)
-  expect(highlighter.updateHighlightsOnSettingsRemnantRevived).calledWith(project, entity)
+  expect(highlighter.updateHighlightsOnReviveSettingsRemnant).calledWith(project, entity)
 })
 
 test("rebuildStage", () => {

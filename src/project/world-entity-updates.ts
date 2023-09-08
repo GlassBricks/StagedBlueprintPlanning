@@ -29,7 +29,7 @@ import {
   deleteAllHighlights,
   makeSettingsRemnantHighlights,
   updateAllHighlights,
-  updateHighlightsOnSettingsRemnantRevived,
+  updateHighlightsOnReviveSettingsRemnant,
 } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 
@@ -60,22 +60,16 @@ export function clearWorldEntityAtStage(project: Project, entity: ProjectEntity,
   makePreviewEntity(project, stage, entity, entity.getPreviewDirection(), previewName)
   updateAllHighlights(project, entity)
 }
-
-function makeEntityUneditable(entity: LuaEntity) {
-  entity.minable = false
-  entity.rotatable = false
-  entity.destructible = false
-}
-function makeEntityEditable(entity: LuaEntity) {
-  entity.minable = true
-  entity.rotatable = true
+function setEntityUpdateable(entity: LuaEntity, updateable: boolean) {
+  entity.minable = updateable
+  entity.rotatable = updateable
   entity.destructible = false
 }
 
 /**
  * Returns if has error or resolved error (should update error highlights)
  */
-function tryUpdateWorldEntitiesInRange(
+function updateWorldEntitiesInRange(
   project: Project,
   entity: ProjectEntity,
   startStage: StageNumber,
@@ -113,9 +107,7 @@ function tryUpdateWorldEntitiesInRange(
       }
 
       if (luaEntity) {
-        if (stage != firstStage) makeEntityUneditable(luaEntity)
-        else makeEntityEditable(luaEntity)
-
+        setEntityUpdateable(luaEntity, stage == firstStage)
         entity.replaceWorldOrPreviewEntity(stage, luaEntity)
         // now is not preview entity, so error state changed
         if (wasPreviewEntity) hasOrResolvedError = true
@@ -140,61 +132,31 @@ function tryUpdateWorldEntitiesInRange(
   return hasOrResolvedError
 }
 
-function updateWiresInRange(
-  project: Project,
-  entity: ProjectEntity,
-  startStage: StageNumber,
-  endStage: StageNumber,
-): void {
+function updateWires(project: Project, entity: ProjectEntity, startStage: StageNumber): void {
   const content = project.content
-  for (const stage of $range(startStage, endStage)) {
-    const worldEntity = entity.getWorldEntity(stage)
-    if (worldEntity) {
-      updateWireConnectionsAtStage(content, entity, stage)
-    }
+  const lastStage = project.lastStageFor(entity)
+  for (const stage of $range(startStage, lastStage)) {
+    updateWireConnectionsAtStage(content, entity, stage)
   }
 }
 
-export function updateWorldEntities(
-  project: Project,
-  entity: ProjectEntity,
-  startStage: StageNumber,
-  updateWires = true,
-): void {
+export function updateWorldEntities(project: Project, entity: ProjectEntity, startStage: StageNumber): void {
   if (entity.isSettingsRemnant) return makeSettingsRemnant(project, entity)
   const lastStage = project.lastStageFor(entity)
-  tryUpdateWorldEntitiesInRange(project, entity, startStage, lastStage)
-  if (updateWires) updateWiresInRange(project, entity, startStage, lastStage)
+  if (lastStage < startStage) return
+  updateWorldEntitiesInRange(project, entity, startStage, lastStage)
+  updateWires(project, entity, startStage)
   updateAllHighlights(project, entity)
 }
-
-export function updateWorldEntitiesOnLastStageChanged(
-  project: Project,
-  entity: ProjectEntity,
-  oldLastStage: StageNumber | nil,
-): void {
-  const movedDown = entity.lastStage != nil && (oldLastStage == nil || entity.lastStage < oldLastStage)
-  if (movedDown) {
-    // delete all entities after the new last stage
-    for (const stage of $range(entity.lastStage + 1, oldLastStage ?? project.numStages())) {
-      entity.destroyWorldOrPreviewEntity(stage)
-    }
-  } else if (oldLastStage) {
-    updateWorldEntities(project, entity, oldLastStage + 1)
-  }
-  updateAllHighlights(project, entity)
-}
-
 // extra hot path
 export function updateNewWorldEntitiesWithoutWires(
   project: Project,
   entity: ProjectEntity,
   updateFirstStage: boolean,
 ): void {
-  // performance: maybe don't need to entity at firstStage if it's new (entity is guaranteed to match firstValue)
-  const hasError = tryUpdateWorldEntitiesInRange(project, entity, 1, project.lastStageFor(entity), updateFirstStage)
+  const hasError = updateWorldEntitiesInRange(project, entity, 1, project.lastStageFor(entity), updateFirstStage)
   // performance: if there are no errors, then there are no highlights to update
-  // (no stage diff, last stage, either)
+  // (no stage diff or last stage, either)
   if (hasError) updateAllHighlights(project, entity)
 }
 
@@ -221,8 +183,9 @@ export function refreshWorldEntityAtStage(project: Project, entity: ProjectEntit
     return
   }
 
-  tryUpdateWorldEntitiesInRange(project, entity, stage, stage)
-  updateWiresInRange(project, entity, stage, stage)
+  updateWorldEntitiesInRange(project, entity, stage, stage)
+  // updateWiresInRange(project, entity, stage, stage)
+  updateWireConnectionsAtStage(project.content, entity, stage)
   updateAllHighlights(project, entity)
 }
 
@@ -231,8 +194,26 @@ export function rebuildWorldEntityAtStage(project: Project, entity: ProjectEntit
   refreshWorldEntityAtStage(project, entity, stage)
 }
 
+export function updateWorldEntitiesOnLastStageChanged(
+  project: Project,
+  entity: ProjectEntity,
+  oldLastStage: StageNumber | nil,
+): void {
+  const movedDown = entity.lastStage != nil && (oldLastStage == nil || entity.lastStage < oldLastStage)
+  if (movedDown) {
+    // delete all entities after the new last stage
+    for (const stage of $range(entity.lastStage + 1, oldLastStage ?? project.numStages())) {
+      entity.destroyWorldOrPreviewEntity(stage)
+    }
+  } else if (oldLastStage) {
+    // moved up
+    updateWorldEntities(project, entity, oldLastStage + 1)
+  }
+  updateAllHighlights(project, entity)
+}
+
 export function updateWireConnections(project: Project, entity: ProjectEntity): void {
-  updateWiresInRange(project, entity, entity.firstStage, project.lastStageFor(entity))
+  updateWires(project, entity, entity.firstStage)
 }
 
 export function refreshAllWorldEntities(project: Project, entity: ProjectEntity): void {
@@ -250,13 +231,13 @@ export function makeSettingsRemnant(project: Project, entity: ProjectEntity): vo
   makeSettingsRemnantHighlights(project, entity)
 }
 
-export function updateEntitiesOnSettingsRemnantRevived(project: Project, entity: ProjectEntity): void {
+export function reviveSettingsRemnant(project: Project, entity: ProjectEntity): void {
   assert(!entity.isSettingsRemnant)
   const lastStage = project.lastStageFor(entity)
-  tryUpdateWorldEntitiesInRange(project, entity, 1, lastStage)
-  updateWiresInRange(project, entity, 1, lastStage)
+  updateWorldEntitiesInRange(project, entity, 1, lastStage)
+  updateWires(project, entity, 1)
 
-  updateHighlightsOnSettingsRemnantRevived(project, entity)
+  updateHighlightsOnReviveSettingsRemnant(project, entity)
 }
 
 export function deleteAllEntities(entity: ProjectEntity): void {
