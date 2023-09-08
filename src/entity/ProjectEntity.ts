@@ -273,7 +273,14 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   }
 
   hasErrorAt(stage: StageNumber): boolean {
-    return this.isInStage(stage) && this.getWorldEntity(stage) == nil
+    // if this gets complicated enough, it may move out of this class
+    if (!this.isInStage(stage)) return false
+    const worldEntity = this.getWorldEntity(stage)
+    if (worldEntity == nil) return true
+    return (
+      worldEntity.type == "underground-belt" &&
+      worldEntity.belt_to_ground_type != (this.firstValue as unknown as UndergroundBeltEntity).type
+    )
   }
 
   setTypeProperty(this: ProjectEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
