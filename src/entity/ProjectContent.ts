@@ -18,6 +18,7 @@ import { circuitConnectionEquals, ProjectCircuitConnection } from "./circuit-con
 import { EntityIdentification } from "./Entity"
 import {
   EntityPrototypeInfo,
+  isPreviewEntity,
   isRollingStockType,
   OnEntityPrototypesLoaded,
   PasteCompatibleRotationType,
@@ -209,8 +210,7 @@ class ProjectContentImpl implements MutableProjectContent {
   }
 
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil {
-    const name = entity.name
-    if (name.startsWith(Prototypes.PreviewEntityPrefix)) {
+    if (isPreviewEntity(entity)) {
       return this.findCompatibleFromPreview(entity, stage)
     }
     return this.findCompatibleWithLuaEntity(entity, nil, stage)

@@ -340,6 +340,7 @@ export function rebuildStage(project: Project, stage: StageNumber): void {
     type: ["simple-entity-with-owner", "rail-remnants"],
   })) {
     if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) entity.destroy()
+    // see also: isPreviewEntity
   }
   const updateLater: RollingStockProjectEntity[] = []
   for (const entity of project.content.iterateAllEntities()) {

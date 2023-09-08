@@ -41,6 +41,7 @@ import {
   EntityPrototypeInfo,
   getCompatibleNames,
   getPasteRotatableType,
+  isPreviewEntity,
   OnEntityPrototypesLoaded,
   PasteCompatibleRotationType,
 } from "../entity/entity-prototype-info"
@@ -88,7 +89,7 @@ function getStageAtEntity(entity: LuaEntity): Stage | nil {
 }
 
 function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
-  if (entity.valid && (isWorldEntityProjectEntity(entity) || entity.name.startsWith(Prototypes.PreviewEntityPrefix))) {
+  if (entity.valid && (isWorldEntityProjectEntity(entity) || isPreviewEntity(entity))) {
     return getStageAtSurface(entity.surface.index)
   }
 }
@@ -135,7 +136,7 @@ function luaEntityRotated(entity: LuaEntity, previousDirection: defines.directio
     onEntityRotated(stage.project, entity, stage.stageNumber, previousDirection, player)
     return
   }
-  if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) {
+  if (isPreviewEntity(entity)) {
     entity.direction = previousDirection
     return
   }
