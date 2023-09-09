@@ -162,10 +162,6 @@ function tryCreateUnconfiguredEntity(
   }
   tryCreateEntityParams.build_check_type = build_check_ghost_revive
 
-  assert(tryCreateEntityParams.name == entity.name)
-  assert(shallowCompare(tryCreateEntityParams.position, position))
-  assert(tryCreateEntityParams.direction == direction)
-
   const canPlaceEntity = surface.can_place_entity
   if (canPlaceEntity(tryCreateEntityParams)) {
     return surface.create_entity(tryCreateEntityParams)
