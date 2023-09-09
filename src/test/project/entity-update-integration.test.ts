@@ -19,7 +19,12 @@ import {
 } from "../../entity/circuit-connection"
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { isPreviewEntity } from "../../entity/entity-prototype-info"
-import { ProjectEntity, RollingStockProjectEntity, StageNumber } from "../../entity/ProjectEntity"
+import {
+  ProjectEntity,
+  RollingStockProjectEntity,
+  StageNumber,
+  UndergroundBeltProjectEntity,
+} from "../../entity/ProjectEntity"
 import { saveEntity } from "../../entity/save-load"
 import { addPowerSwitchConnections, findPolePowerSwitchNeighbors } from "../../entity/wires"
 import { Events } from "../../lib"
@@ -400,31 +405,66 @@ test("rotating first value from world via rotate", () => {
   assertEntityCorrect(entity, false)
 })
 
-test.each([true, false])("placing underground snaps to pair in later stage", (flipped) => {
-  // type defaults to input
+describe.each([true, false])("underground snapping, with flipped %s", (flipped) => {
   const expectedDirection = !flipped ? defines.direction.east : defines.direction.west
   const westType = !flipped ? "input" : "output"
   const eastType = !flipped ? "output" : "input"
-  const westUnderground = buildEntity(4, {
-    name: "underground-belt",
-    direction: expectedDirection,
-    type: westType,
-    position: pos.minus(Pos(1, 0)),
+  let westUnderground: ProjectEntity<BlueprintEntity>
+  before_each(() => {
+    westUnderground = buildEntity(4, {
+      name: "underground-belt",
+      direction: expectedDirection,
+      type: westType,
+      position: pos.minus(Pos(1, 0)),
+    })
+    assertEntityCorrect(westUnderground, false)
   })
-  // place underground belt facing west (input), should snap to east output
-  const placedUnderground = buildEntity(3, {
-    name: "underground-belt",
-    direction: defines.direction.west,
-    type: "input",
+
+  test("placing underground", () => {
+    // place underground belt facing west (input), should snap to east output
+    const placedUnderground = buildEntity(3, {
+      name: "underground-belt",
+      direction: defines.direction.west,
+      type: "input",
+    })
+    expect(placedUnderground.direction).to.be(expectedDirection)
+    expect(placedUnderground.firstValue.type).to.be(eastType)
+    assertEntityCorrect(placedUnderground, false)
+    // type defaults to input
+    expect(westUnderground.direction).to.be(expectedDirection)
+    expect(westUnderground.firstValue.type).to.be(westType)
+
+    expect(westUnderground.getWorldEntity(4)!.neighbours).toEqual(placedUnderground.getWorldEntity(4)!)
   })
-  expect(placedUnderground.direction).to.be(expectedDirection)
-  expect(placedUnderground.firstValue.type).to.be(eastType)
-  assertEntityCorrect(placedUnderground, false)
+  test("pasting underground", () => {
+    const stack = player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities([
+      {
+        name: "underground-belt",
+        direction: defines.direction.west,
+        type: "input",
+        entity_number: 1,
+        position: Pos(0.5, 0.5),
+      },
+    ])
+    player.teleport(pos, surfaces[3 - 1])
 
-  expect(westUnderground.direction).to.be(expectedDirection)
-  expect(westUnderground.firstValue.type).to.be(westType)
+    player.build_from_cursor({ position: pos, alt: true })
+    const ghost = surfaces[3 - 1].find_entity("entity-ghost", pos)
+    expect(ghost).toBeNil()
 
-  expect(westUnderground.getWorldEntity(4)!.neighbours).toEqual(placedUnderground.getWorldEntity(4)!)
+    const builtEntity = surfaces[3 - 1].find_entity("underground-belt", pos)!
+    expect(builtEntity).to.be.any()
+    expect(builtEntity.direction).to.be(expectedDirection)
+    expect(builtEntity.belt_to_ground_type).to.be(eastType)
+
+    const entity = project.content.findCompatibleWithLuaEntity(builtEntity, nil, 3) as UndergroundBeltProjectEntity
+    expect(entity).to.be.any()
+    expect(entity.isUndergroundBelt()).toBe(true)
+    expect(entity.direction).to.be(expectedDirection)
+    expect(entity.firstValue.type).to.be(eastType)
+  })
 })
 
 test("rotation forbidden at higher stage", () => {
@@ -949,6 +989,7 @@ describe.each([
   "assembling-machine-1",
   "small-electric-pole",
   "boiler",
+  "underground-belt",
 ])("can paste %s", (entityName) => {
   describe.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
     "at direction %d",

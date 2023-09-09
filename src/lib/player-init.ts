@@ -48,6 +48,7 @@ Events.on_init(() => {
   global.players = {}
 })
 onPlayerInit((index) => {
+  global.players ??= {}
   ;(global.players as Mutable<GlobalPlayerData>)[index] = {} as PlayerData
 })
 
@@ -62,5 +63,5 @@ Events.on_player_removed((e) => {
   for (const handler of playerRemovedHandlers) {
     handler(index)
   }
-  delete (global.players as Mutable<GlobalPlayerData>)[index]
+  if (global.players != nil) delete (global.players as Mutable<GlobalPlayerData>)[index]
 })

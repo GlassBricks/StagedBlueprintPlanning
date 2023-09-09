@@ -91,19 +91,17 @@ export function onEntityCreated(
   if (projectEntity) {
     return onEntityOverbuilt(project, projectEntity, entity, stage, byPlayer)
   }
-  return newEntityAdded(project, entity, stage, byPlayer)
+  return tryAddNewEntity(project, entity, stage, byPlayer)
 }
 
-function newEntityAdded(
+function tryAddNewEntity(
   project: Project,
   entity: LuaEntity,
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
 ): UndoAction | nil {
-  const entityType = entity.type
-
-  if (!allowOverlapDifferentDirection.has(entityType) && entity.supports_direction) {
+  if (!allowOverlapDifferentDirection.has(entity.type) && entity.supports_direction) {
     const existingDifferentDirection = project.content.findCompatibleByProps(entity.name, entity.position, nil, stage)
     if (existingDifferentDirection) {
       entity.destroy()
@@ -129,7 +127,7 @@ function getCompatibleEntityOrAdd(
   const compatible = project.content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
 
   if (!compatible) {
-    newEntityAdded(project, entity, stage, byPlayer, knownBpValue)
+    tryAddNewEntity(project, entity, stage, byPlayer, knownBpValue)
     return nil
   }
   if (stage < compatible.firstStage) {

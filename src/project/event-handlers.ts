@@ -475,6 +475,11 @@ Events.on_built_entity((e) => {
 
   const playerIndex = e.player_index
 
+  if (!isWorldEntityProjectEntity(entity)) {
+    checkNonProjectEntity(entity, stage, playerIndex)
+    return
+  }
+
   // also handles instant upgrade planner
   if (tryFastReplace(entity, stage, playerIndex)) return
 
@@ -483,12 +488,6 @@ Events.on_built_entity((e) => {
     onEntityCreated(stage.project, entity, stage.stageNumber, playerIndex)
     return
   }
-
-  if (!isWorldEntityProjectEntity(entity)) {
-    checkNonProjectEntity(entity, stage, playerIndex)
-    return
-  }
-
   // finally, normal build
   const undoAction = onEntityCreated(stage.project, entity, stage.stageNumber, playerIndex)
   if (undoAction) {
