@@ -1,7 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.23.2
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed an issue in the UI framework that could cause crash when editing blueprint settings.
+    - Fixed that underground belt sometimes got rotated (not flipped) when placed.
+    - Fixed that undergrounds placed by blueprint were sometimes not registered.
+    - Fixed that multi-stage trains don't have their train schedule updated.
+  Optimizations:
+    - Improved speed of pasting large blueprints, again.
+
 ---------------------------------------------------------------------------------------------------
 Version: 0.23.1
 Date: 2023-09-06
