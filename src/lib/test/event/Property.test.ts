@@ -108,7 +108,7 @@ describe("map", () => {
     expect(_numObservers(val)).to.equal(1)
 
     sub.close()
-    val.forceNotify()
+    // val.forceNotify()
 
     expect(_numObservers(val)).to.equal(0)
   })
@@ -155,7 +155,6 @@ describe("multiMap", () => {
     expect(_numObservers(val2)).to.equal(1)
 
     sub.close()
-    val1.forceNotify()
 
     expect(_numObservers(val1)).to.equal(0)
     expect(_numObservers(val2)).to.equal(0)
@@ -232,7 +231,6 @@ describe("flatMap", () => {
     expect(_numObservers(innerVal)).to.equal(1)
 
     sub.close()
-    val.forceNotify()
 
     expect(_numObservers(val)).to.equal(0)
     expect(_numObservers(innerVal)).to.equal(0)

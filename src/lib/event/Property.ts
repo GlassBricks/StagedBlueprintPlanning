@@ -9,7 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isEmpty } from "../_util"
+import { isEmpty, visitAll } from "../_util"
+import { Migrations } from "../migration"
 import { bind, Callback, Func, funcRef, ibind, RegisterClass, registerFunctions } from "../references"
 import { Event, Subscribable } from "./Event"
 import { Subscription } from "./Subscription"
@@ -81,7 +82,13 @@ export abstract class BasicProperty<T> extends Property<T> {
   }
 }
 export function _numObservers(state: Property<unknown>): number {
-  return table_size((state as unknown as { event: Event<any> }).event)
+  return table_size(
+    (
+      state as unknown as {
+        event: Event<any>
+      }
+    ).event,
+  )
 }
 
 export interface MutableProperty<T> extends Property<T> {
@@ -156,9 +163,16 @@ class MappedProperty<T, U> extends BasicProperty<U> {
     this.event.raise(mappedNewValue, oldValue!)
   }
 
+  checkEmpty() {
+    if (isEmpty(this.event)) this.unsubscribeFromSource()
+  }
+  _checkEmpty = ibind(this.checkEmpty)
+
   override _subscribeIndependently(observer: ChangeObserver<U>): Subscription {
     if (!this.sourceSubscription) this.subscribeToSource()
-    return super._subscribeIndependently(observer)
+    const childSubscription = super._subscribeIndependently(observer)
+    childSubscription.add(this._checkEmpty)
+    return childSubscription
   }
 
   __tostring(): string {
@@ -203,9 +217,16 @@ class CustomProperty<U> extends BasicProperty<U> {
     this.event.raise(mappedNewValue, oldValue!)
   }
 
+  checkEmpty() {
+    if (isEmpty(this.event)) this.unsubscribeFromSources()
+  }
+  _checkEmpty = ibind(this.checkEmpty)
+
   override _subscribeIndependently(observer: ChangeObserver<U>): Subscription {
     if (!this.subscriptions) this.subscribeToSources()
-    return super._subscribeIndependently(observer)
+    const subscription = super._subscribeIndependently(observer)
+    subscription.add(this._checkEmpty)
+    return subscription
   }
 
   __tostring(): string {
@@ -304,9 +325,16 @@ export class FlatMappedProperty<T, U> extends BasicProperty<U> {
     this.curValue = nil
   }
 
+  checkEmpty(): void {
+    if (isEmpty(this.event)) this.unsubscribeFromSource()
+  }
+  _checkEmpty = ibind(this.checkEmpty)
+
   override _subscribeIndependently(observer: ChangeObserver<U>): Subscription {
     if (!this.sourceSubscription) this.subscribeToSource()
-    return super._subscribeIndependently(observer)
+    const subscription = super._subscribeIndependently(observer)
+    subscription.add(this._checkEmpty)
+    return subscription
   }
 
   __tostring(): string {
@@ -335,3 +363,28 @@ export namespace Props {
     return bind(toggle, state)
   }
 }
+
+function _migrateCheckEmpty(
+  property: MappedProperty<any, any> | FlatMappedProperty<any, any> | CustomProperty<any>,
+): void {
+  property._checkEmpty = ibind(property.checkEmpty)
+  assume<{
+    event: LuaMap<Subscription>
+  }>(property)
+  for (const [subscription] of property.event) {
+    subscription.add(property._checkEmpty)
+  }
+  property.checkEmpty()
+}
+
+declare const global: object
+function migrateCheckEmpty(): void {
+  const metatables = newLuaSet<object>(MappedProperty.prototype, FlatMappedProperty.prototype, CustomProperty.prototype)
+  visitAll(global, (obj) => {
+    const metatable = getmetatable(obj)
+    if (metatable && metatables.has(metatable)) {
+      _migrateCheckEmpty(obj as any)
+    }
+  })
+}
+Migrations.to("0.23.2", migrateCheckEmpty)

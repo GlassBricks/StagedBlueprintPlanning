@@ -83,3 +83,23 @@ export function shiftNumberKeysDown(obj: PRecord<any, any>, number: number): voi
     delete obj[stage]
   }
 }
+
+export function visitAll(obj: object, fn: (obj: unknown) => void): void {
+  const seen = new LuaSet<object>()
+  seen.add(obj)
+  const queue = [obj]
+  while (queue.length > 0) {
+    const obj = queue.pop()
+    fn(obj)
+    for (const [k, v] of pairs(obj)) {
+      if (type(k) == "table" && !seen.has(k)) {
+        seen.add(k)
+        queue.push(k)
+      }
+      if (type(v) == "table" && !seen.has(v)) {
+        seen.add(v)
+        queue.push(v)
+      }
+    }
+  }
+}
