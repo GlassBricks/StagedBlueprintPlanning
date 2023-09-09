@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.23.2
-Date: ????
+Date: 2023-09-09
   Bugfixes:
     - Fixed an issue in the UI framework that could cause crash when editing blueprint settings.
     - Fixed that underground belt sometimes got rotated (not flipped) when placed.
