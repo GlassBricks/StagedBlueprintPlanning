@@ -83,7 +83,7 @@ Migrations.to("0.20.0", () => {
   }
 })
 
-Migrations.early("0.22.2", () => {
+Migrations.priority(7, "0.22.0", () => {
   for (const [, project] of global.projects) {
     for (const entity of project.content.iterateAllEntities()) {
       entity.direction ??= 0

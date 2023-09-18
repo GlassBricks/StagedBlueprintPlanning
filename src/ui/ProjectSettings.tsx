@@ -782,14 +782,13 @@ export function refreshCurrentProject(): void {
   }
 }
 Migrations.to("0.15.1", () => {
-  const ProjectSettingsFlowName = "gui:ProjectSettingsFrame"
   for (const [, player] of game.players) {
-    destroy(player.gui.screen[ProjectSettingsFlowName])
+    destroy(player.gui.screen["gui:AssemblySettingsFrame"])
     interface OldPlayerData {
-      currentShownProject?: UserProject
+      currentShownAssembly?: UserProject
     }
     const playerData = global.players[player.index] as OldPlayerData | nil
-    delete playerData?.currentShownProject
+    delete playerData?.currentShownAssembly
   }
 })
 Migrations.fromAny(refreshCurrentProject)

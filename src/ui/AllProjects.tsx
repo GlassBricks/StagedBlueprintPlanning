@@ -250,9 +250,11 @@ Migrations.to("0.15.1", () => {
       mainFlow?: LuaGuiElement
     }
   }
-  for (const [, playerData] of pairs(global.players)) {
+  for (const [playerIndex, playerData] of pairs(global.players)) {
     const oldPlayerData = playerData as OldPlayerData
     destroy(oldPlayerData?.currentAssembliesGui?.mainFlow)
+    const player = game.get_player(playerIndex)
+    destroy(player?.gui.left[`${script.mod_name}:current-assembly`])
   }
 })
 Migrations.fromAny(() => {
@@ -264,8 +266,11 @@ Migrations.fromAny(() => {
 })
 Migrations.early("0.23.0", () => {
   const oldModButtonName = script.mod_name + ":all-assemblies"
+  const oldAllProjectsName = script.mod_name + ":all-assemblies"
   for (const [, player] of game.players) {
     const flow = mod_gui.get_button_flow(player)
     destroy(flow[oldModButtonName])
+    const frameFlow = mod_gui.get_frame_flow(player)
+    destroy(frameFlow[oldAllProjectsName])
   }
 })
