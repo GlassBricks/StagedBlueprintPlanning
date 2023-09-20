@@ -14,6 +14,7 @@ import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
 import { canBeAnyDirection, createEntity, saveEntity, updateEntity } from "../../entity/save-load"
+import { assert } from "../../lib"
 import { createRollingStocks } from "./createRollingStock"
 
 let surface: LuaSurface
@@ -175,14 +176,14 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     expect(luaEntity.direction).to.be(defines.direction.south)
   })
 
-  test("creating a flipped underground deletes entity and returns nil", () => {
+  test("creating a flipped underground still creates entity", () => {
     // create underground, tunneling east, at 0.5, 0.5
     const westUnderground = surface.create_entity({
       name: "underground-belt",
       position: { x: 0.5, y: 0.5 },
       force: "player",
-      direction: !flipped ? defines.direction.east : defines.direction.west,
-      type: inOut,
+      direction: flipped ? defines.direction.west : defines.direction.east,
+      type: flipped ? "output" : "input",
     })
     expect(westUnderground).to.be.any()
     // try pasting east output underground at 1.5, 0.5
@@ -190,20 +191,15 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     const eastUnderground = createEntity(
       surface,
       { x: 1.5, y: 0.5 },
-      !flipped ? defines.direction.west : defines.direction.east,
+      flipped ? defines.direction.east : defines.direction.west,
       {
         name: "underground-belt",
-        type: "output",
+        type: flipped ? "output" : "input",
       } as Entity,
     )!
-    if (flipped) {
-      expect(eastUnderground).to.be.nil()
-      expect(surface.find_entity("underground-belt", { x: 1.5, y: 0.5 })).to.be.nil()
-    } else {
-      expect(eastUnderground).to.be.any()
-      expect(eastUnderground.name).to.be("underground-belt")
-      expect(eastUnderground.direction).to.be(!flipped ? defines.direction.west : defines.direction.east)
-    }
+    expect(eastUnderground).toBeAny()
+    expect(surface.find_entity("underground-belt", { x: 1.5, y: 0.5 })).toBeAny()
+    expect(eastUnderground.belt_to_ground_type).toBe(flipped ? "input" : "output")
   })
 
   test("can flip underground", () => {
@@ -224,6 +220,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       } as Entity,
       defines.direction.east,
     )!
+    assert(updated)
     expect(updated).to.be(entity)
     expect(updated.belt_to_ground_type).to.be(otherDir)
     expect(updated.rotatable).to.be(false)
@@ -318,7 +315,7 @@ test("can flip loader", () => {
 
 test("can handle item changes", () => {
   const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
-  const newContents = { "productivity-module-2": 2, "speed-module": 1 }
+  const newContents = { "productivity-module-2": 1, "speed-module": 1, "productivity-module": 2 }
 
   const entity = surface.create_entity({
     name: "assembling-machine-3",

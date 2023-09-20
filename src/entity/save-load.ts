@@ -20,7 +20,7 @@ import {
   RollingStockSurfaceCreateEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { Events, Mutable, mutableShallowCopy, shallowCompare } from "../lib"
+import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { Entity } from "./Entity"
@@ -187,7 +187,7 @@ OnEntityPrototypesLoaded.addListener((info) => {
 const rawset = _G.rawset
 
 /**
- * If reuseEntity is true, the code assumes that the last time this was called [entity] is the same.
+ * If changed is false, the code assumes that the last time this was called [entity] is the same.
  * This is a performance optimization to use with care.
  */
 function createEntity(
@@ -203,31 +203,21 @@ function createEntity(
   if (!luaEntity) return nil
   // const type = luaEntity.type
   const type = nameToType.get(entity.name)!
-  if (type == "underground-belt") {
-    if (luaEntity.belt_to_ground_type != entity.type) {
-      luaEntity.destroy()
-      return nil
-    }
-  } else if (type == "loader" || type == "loader-1x1") {
+  // performance hack: cache name, type
+  rawset(luaEntity, "name", entity.name)
+  rawset(luaEntity, "type", type)
+
+  if (type == "loader" || type == "loader-1x1") {
     luaEntity.loader_type = entity.type ?? "output"
     luaEntity.direction = direction
   }
   if (entityHasSettings(entity)) {
     const ghost = pasteEntity(surface, position, direction, entity)
-    if (ghost) {
-      luaEntity.destroy()
-      ghost.destroy()
-      return nil
-    }
+    ghost?.destroy()
   }
   if (entity.items) {
     createItems(luaEntity, entity.items)
   }
-
-  // performance hack: cache name, type
-  rawset(luaEntity, "name", entity.name)
-  rawset(luaEntity, "type", type)
-
   return luaEntity
 }
 

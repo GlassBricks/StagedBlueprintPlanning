@@ -57,6 +57,7 @@ export function isEmpty(obj: object): boolean {
 export function assertNever(value: never): never {
   error("should not be reachable: " + serpent.block(value))
 }
+export const assert: (value: unknown, message?: string) => asserts value = _G.assert
 
 export function shiftNumberKeysUp(obj: PRecord<any, any>, number: number): void {
   const keysToChange: number[] = []
