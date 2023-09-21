@@ -13,7 +13,7 @@ import expect from "tstl-expect"
 import {
   emptyBeltControlBehavior,
   emptyInserterControlBehavior,
-  trySetEmptyControlBehavior,
+  maybeSetEmptyControlBehavior,
 } from "../../entity/empty-control-behavior"
 import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
 
@@ -28,8 +28,8 @@ test("returns false if <= first stage", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(projectEntity, 1)).toBe(false)
-  expect(trySetEmptyControlBehavior(projectEntity, 0)).toBe(false)
+  expect(maybeSetEmptyControlBehavior(projectEntity, 1)).toBe(false)
+  expect(maybeSetEmptyControlBehavior(projectEntity, 0)).toBe(false)
   expect(projectEntity.firstValue.control_behavior).toBe(nil)
 })
 
@@ -44,7 +44,7 @@ test("returns false if control_behavior is already set", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(false)
+  expect(maybeSetEmptyControlBehavior(projectEntity, 2)).toBe(false)
   expect(projectEntity.firstValue.control_behavior).not.toBe(nil)
 })
 
@@ -59,7 +59,7 @@ test("sets control behavior to empty for inserter", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(true)
+  expect(maybeSetEmptyControlBehavior(projectEntity, 2)).toBe(true)
   expect(projectEntity.firstValue.control_behavior).toEqual(emptyInserterControlBehavior)
 })
 
@@ -74,7 +74,7 @@ test("sets control behavior to empty for belt", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(true)
+  expect(maybeSetEmptyControlBehavior(projectEntity, 2)).toBe(true)
   expect(projectEntity.firstValue.control_behavior).toEqual(emptyBeltControlBehavior)
 })
 
@@ -89,6 +89,6 @@ test("returns false for other entities", () => {
     1,
   )
 
-  expect(trySetEmptyControlBehavior(projectEntity, 2)).toBe(false)
+  expect(maybeSetEmptyControlBehavior(projectEntity, 2)).toBe(false)
   expect(projectEntity.firstValue.control_behavior).toBe(nil)
 })

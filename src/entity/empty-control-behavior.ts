@@ -27,7 +27,7 @@ OnEntityPrototypesLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 
-export function trySetEmptyControlBehavior(entity: ProjectEntity, stageNumber: StageNumber): boolean {
+export function maybeSetEmptyControlBehavior(entity: ProjectEntity, stageNumber: StageNumber): boolean {
   if (!(stageNumber > entity.firstStage && entity.firstValue.control_behavior == nil)) return false
   const type = nameToType.get(entity.firstValue.name)
   if (type == "inserter") {

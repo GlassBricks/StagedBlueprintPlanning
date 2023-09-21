@@ -10,7 +10,7 @@
  */
 
 import { BlueprintEntity, LuaEntity } from "factorio:runtime"
-import { trySetEmptyControlBehavior } from "../entity/empty-control-behavior"
+import { maybeSetEmptyControlBehavior } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-prototype-info"
 import { ProjectContent } from "../entity/ProjectContent"
@@ -337,8 +337,8 @@ export function tryApplyUpgradeTarget(project: Project, entity: ProjectEntity, s
   return EntityUpdateResult.NoChange
 }
 
-function checkDefaultControlBehavior(entity: ProjectEntity, stage: StageNumber): boolean {
-  if (!trySetEmptyControlBehavior(entity, stage)) return false
+function maybeApplyEmptyControlBehavior(entity: ProjectEntity, stage: StageNumber): boolean {
+  if (!maybeSetEmptyControlBehavior(entity, stage)) return false
   const luaEntity = entity.getWorldEntity(stage)
   if (luaEntity) doUpdateEntityFromWorld(stage, entity, luaEntity)
   return true
@@ -361,11 +361,11 @@ export function updateWiresFromWorld(project: Project, entity: ProjectEntity, st
 
   const circuitConnections = project.content.getCircuitConnections(entity)
   // check setting no-op control behavior
-  if (circuitConnections) checkDefaultControlBehavior(entity, stage)
+  if (circuitConnections) maybeApplyEmptyControlBehavior(entity, stage)
   updateWorldEntities(project, entity, entity.firstStage)
   if (circuitConnections) {
     for (const [otherEntity] of circuitConnections) {
-      if (checkDefaultControlBehavior(otherEntity, stage)) {
+      if (maybeApplyEmptyControlBehavior(otherEntity, stage)) {
         updateWorldEntities(project, otherEntity, otherEntity.firstStage)
       }
     }
