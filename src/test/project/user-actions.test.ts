@@ -319,7 +319,6 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
   [EntityUpdateResult.NoChange, false],
   [EntityUpdateResult.Updated, false],
   [EntityUpdateResult.CannotRotate, L_Game.CantBeRotated],
-  [EntityUpdateResult.CannotCreatePairUpgrade, L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage],
   [EntityUpdateResult.CannotUpgradeChangedPair, L_Interaction.CannotUpgradeUndergroundChangedPair],
 ]
 

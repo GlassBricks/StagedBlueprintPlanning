@@ -459,7 +459,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     expect(ret).to.be("updated")
     expect(entity.direction).to.be(direction.west)
     assertOneEntity()
-    assertUpdateCalled(entity, 2, nil, false)
+    assertUpdateCalled(entity, 2)
   })
 
   test("in higher stage forbids rotation", () => {
@@ -482,7 +482,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     expect(entity.direction).to.be(direction.south)
     expect(entity.firstValue.type).to.be("output")
     assertOneEntity()
-    assertUpdateCalled(entity, 1, nil, false)
+    assertUpdateCalled(entity, 1)
   })
 })
 
@@ -836,7 +836,7 @@ describe("undergrounds", () => {
       expect(entity.direction).to.be(direction.east)
 
       assertOneEntity()
-      assertUpdateCalled(entity, 1, nil, false)
+      assertUpdateCalled(entity, 1)
     })
 
     test("lone underground belt in higher stage forbids rotation", () => {
@@ -876,8 +876,8 @@ describe("undergrounds", () => {
       })
 
       assertNEntities(2)
-      assertUpdateCalled(entity1, 1, which == "lower" ? 1 : 2, which == "lower" ? false : nil)
-      assertUpdateCalled(entity2, 2, which == "lower" ? 2 : 1, which == "lower" ? nil : false)
+      assertUpdateCalled(entity1, 1, which == "lower" ? 1 : 2, false)
+      assertUpdateCalled(entity2, 2, which == "lower" ? 2 : 1, false)
     })
 
     test("cannot rotate if not in first stage", () => {
@@ -986,28 +986,10 @@ describe("undergrounds", () => {
         })
 
         assertNEntities(2)
-        assertUpdateCalled(entity1, 1, luaEntity == luaEntity1 ? 1 : 2)
-        assertUpdateCalled(entity2, 2, luaEntity == luaEntity1 ? 2 : 1)
+        assertUpdateCalled(entity1, 1, luaEntity == luaEntity1 ? 1 : 2, false)
+        assertUpdateCalled(entity2, 2, luaEntity == luaEntity1 ? 2 : 1, false)
       },
     )
-
-    test("cannot upgrade in higher stage if pairs are in different stages", () => {
-      const { luaEntity1, entity1, entity2 } = createUndergroundBeltPair(1, 2)
-      luaEntity1.order_upgrade({
-        target: "fast-underground-belt",
-        force: luaEntity1.force,
-      })
-
-      entity1.replaceWorldEntity(3, luaEntity1)
-      const ret = projectUpdates.tryApplyUpgradeTarget(project, entity1, 3)
-      expect(ret).to.be("cannot-create-pair-upgrade")
-
-      expect(entity1.firstValue.name).to.be("underground-belt")
-      expect(entity2.firstValue.name).to.be("underground-belt")
-
-      assertNEntities(2)
-      assertWUNotCalled()
-    })
 
     test("cannot upgrade underground if it would change pair", () => {
       const { luaEntity1, entity1, entity2 } = createUndergroundBeltPair(1, 1)
@@ -1028,7 +1010,8 @@ describe("undergrounds", () => {
       expect(entity3.firstValue.name).to.be("fast-underground-belt")
 
       assertNEntities(3)
-      assertWUNotCalled()
+      assertRefreshCalled(entity1, 1)
+      assertRefreshCalled(entity2, 1)
     })
 
     test("cannot upgrade underground if it would break existing pair", () => {
@@ -1050,7 +1033,7 @@ describe("undergrounds", () => {
       expect(entity3.firstValue.name).to.be("fast-underground-belt")
 
       assertNEntities(3)
-      assertWUNotCalled()
+      assertRefreshCalled(entity3, 1)
     })
   })
   test("fast replace to upgrade also upgrades pair", () => {
@@ -1079,8 +1062,8 @@ describe("undergrounds", () => {
     })
 
     assertNEntities(2)
-    assertUpdateCalled(entity1, 1, 1)
-    assertUpdateCalled(entity2, 1, 2)
+    assertUpdateCalled(entity1, 1, 1, false)
+    assertUpdateCalled(entity2, 1, 2, false)
   })
 
   test("cannot move underground if it would also upgrade", () => {
