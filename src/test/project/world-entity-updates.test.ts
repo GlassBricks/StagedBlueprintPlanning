@@ -13,7 +13,12 @@ import { CircuitConnectionDefinition, LuaEntity, LuaSurface } from "factorio:run
 import expect from "tstl-expect"
 import { Entity } from "../../entity/Entity"
 import { forceDollyEntity } from "../../entity/picker-dollies"
-import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
+import {
+  createProjectEntityNoCopy,
+  ProjectEntity,
+  StageNumber,
+  UndergroundBeltProjectEntity,
+} from "../../entity/ProjectEntity"
 import { createEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { Project } from "../../project/ProjectDef"
@@ -208,7 +213,7 @@ describe("updateWorldEntities", () => {
 
   test("can rotate entities", () => {
     WorldUpdater.updateWorldEntities(project, entity, 1)
-    entity.direction = defines.direction.west as defines.direction
+    entity.direction = defines.direction.west
     WorldUpdater.updateWorldEntities(project, entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
@@ -369,7 +374,7 @@ describe("tryMoveEntity", () => {
       otherEntity = createProjectEntityNoCopy(
         { name: "small-electric-pole" },
         Pos(-0.5, 0.5),
-        defines.direction.north as defines.direction,
+        defines.direction.north,
         1,
       )
       project.content.add(otherEntity)
@@ -426,12 +431,7 @@ describe("tryMoveEntity", () => {
 
 describe("updateNewEntityWithoutWires", () => {
   test("can update", () => {
-    const entity = createProjectEntityNoCopy(
-      { name: "inserter" },
-      Pos(0, 0),
-      defines.direction.north as defines.direction,
-      2,
-    )
+    const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.add(entity)
     WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity)
     expect(highlighter.updateAllHighlights).not.called()
@@ -439,12 +439,7 @@ describe("updateNewEntityWithoutWires", () => {
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
   })
   test("updates highlights if there are errors", () => {
-    const entity = createProjectEntityNoCopy(
-      { name: "inserter" },
-      Pos(0, 0),
-      defines.direction.north as defines.direction,
-      2,
-    )
+    const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.add(entity)
     surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
     WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity)
@@ -456,12 +451,7 @@ describe("updateNewEntityWithoutWires", () => {
 })
 
 test("updateWireConnections", () => {
-  const entity = createProjectEntityNoCopy(
-    { name: "inserter" },
-    Pos(0, 0),
-    defines.direction.north as defines.direction,
-    2,
-  )
+  const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
   project.content.add(entity)
   // note: actually updating the first stage, so below works
   WorldUpdater.updateNewWorldEntitiesWithoutWires(project, entity) //
@@ -482,9 +472,54 @@ test("clearWorldEntity", () => {
 
 test("deleteWorldEntities", () => {
   WorldUpdater.updateWorldEntities(project, entity, 1)
-  WorldUpdater.deleteAllEntities(entity)
+  WorldUpdater.deleteWorldEntities(project, entity)
   for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   expect(highlighter.deleteAllHighlights).calledWith(entity)
+})
+
+test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
+  const leftWorldEntity = surfaces[0].create_entity({
+    name: "underground-belt",
+    type: "output",
+    position: Pos(-0.5, 0.5),
+    direction: defines.direction.west,
+    force: "player",
+  })!
+  assert(leftWorldEntity)
+  const middleUg = createProjectEntityNoCopy(
+    { name: "underground-belt", type: "input" },
+    Pos(0.5, 0.5),
+    defines.direction.east,
+    1,
+  ) as UndergroundBeltProjectEntity
+  WorldUpdater.updateWorldEntities(project, middleUg, 1)
+  const middleWorldEntity = middleUg.getWorldEntity(1)!
+  assert(middleWorldEntity)
+
+  const rightUg = createProjectEntityNoCopy(
+    { name: "underground-belt", type: "output" },
+    Pos(1.5, 0.5),
+    defines.direction.east,
+    1,
+  ) as UndergroundBeltProjectEntity
+  project.content.add(rightUg)
+  WorldUpdater.updateWorldEntities(project, rightUg, 1)
+
+  expect(rightUg.getWorldEntity(1)).toMatchTable({
+    neighbours: middleWorldEntity,
+  })
+
+  WorldUpdater.deleteWorldEntities(project, middleUg)
+
+  expect(rightUg.getWorldEntity(1)).toMatchTable({
+    neighbours: leftWorldEntity,
+  })
+  expect(rightUg.hasErrorAt(1)).toBe(true)
+
+  expect(highlighter.updateAllHighlights).calledWith(project, rightUg)
+
+  expect(middleUg.getWorldEntity(1)).toBeNil()
+  expect(highlighter.deleteAllHighlights).calledWith(middleUg)
 })
 
 test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {

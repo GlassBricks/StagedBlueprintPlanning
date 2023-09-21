@@ -27,12 +27,13 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
-import { canFlipUnderground, saveEntity } from "../../entity/save-load"
+import { checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { addPowerSwitchConnections, findPolePowerSwitchNeighbors } from "../../entity/wires"
 import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
+import { updateAllHighlights } from "../../project/entity-highlights"
 import {
   addNewEntity,
   deleteEntityOrCreateSettingsRemnant,
@@ -62,6 +63,7 @@ import {
   refreshAllWorldEntities,
   refreshWorldEntityAtStage,
   tryDollyEntities,
+  updateWorldEntities,
 } from "../../project/world-entity-updates"
 import { createRollingStock } from "../entity/createRollingStock"
 import {
@@ -522,7 +524,7 @@ describe("underground belt inconsistencies", () => {
       assert(middleStage2)
 
       expect(leftStage2.neighbours).toEqual(middleStage2)
-      expect(canFlipUnderground(middleStage2)).toBe(false)
+      expect(checkUndergroundPairFlippable(middleStage2)).toMatchTable([middleUnderground, false])
 
       expect(findUndergroundPair(project.content, leftUnderground, 1)).toBe(rightUnderground)
     })
@@ -655,7 +657,86 @@ describe("underground belt inconsistencies", () => {
       assertEntityCorrect(rightUnderground, false)
       assertEntityCorrect(middleUnderground, false)
     })
+    test("when deleting an underground causing old pair to flip, updates highlights on old pair", () => {
+      middleUnderground.setFirstStageUnchecked(1)
+      updateWorldEntities(project, middleUnderground, 1)
+
+      middleUnderground.getWorldEntity(1)!.rotate({ by_player: player })
+      expect(middleUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+      expect(leftUnderground).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.west,
+      })
+      assertEntityCorrect(middleUnderground, false)
+      assertEntityCorrect(leftUnderground, false)
+
+      player.mine_entity(middleUnderground.getWorldEntity(1)!, true)
+
+      expect(project.content.has(middleUnderground)).toBe(false)
+
+      expect(leftUnderground.hasErrorAt(1)).toBe(true)
+
+      assertEntityCorrect(leftUnderground, 1)
+      assertEntityCorrect(rightUnderground, false)
+    })
   })
+  test.each([false, true])(
+    "flipping an underground with a pair with error updates highlight on pair, with middle %s",
+    (hasMiddle) => {
+      const leftUnderground = buildEntity(1, {
+        name: "underground-belt",
+        type: "input",
+        direction: defines.direction.east,
+      })
+      if (hasMiddle) {
+        // make an error entity in the middle
+        const middle = buildEntity(1, {
+          name: "underground-belt",
+          type: "output",
+          direction: defines.direction.east,
+          position: pos.add(1, 0),
+        })
+        middle.destroyAllWorldOrPreviewEntities()
+      }
+      const rightUnderground = buildEntity(1, {
+        name: "underground-belt",
+        type: "output",
+        direction: defines.direction.east,
+        position: pos.add(2, 0),
+      }) as UndergroundBeltProjectEntity
+      const leftWorldEntity = leftUnderground.getWorldEntity(1)!
+      expect(leftWorldEntity).toMatchTable({
+        belt_to_ground_type: "input",
+        direction: defines.direction.east,
+        neighbours: rightUnderground.getWorldEntity(1)!,
+      })
+
+      // manually break right underground
+      rightUnderground.setTypeProperty("input")
+      rightUnderground.direction = defines.direction.west
+
+      expect(rightUnderground.hasErrorAt(1)).toBe(true)
+      updateAllHighlights(project, rightUnderground)
+      assertEntityCorrect(rightUnderground, 1)
+
+      // rotate left
+      leftWorldEntity.rotate({ by_player: player })
+      expect(leftUnderground).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.west,
+      })
+      expect(rightUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+
+      assertEntityCorrect(leftUnderground, false)
+      assertEntityCorrect(rightUnderground, false)
+    },
+  )
 })
 test("rotation forbidden at higher stage", () => {
   const entity = buildEntity(3)

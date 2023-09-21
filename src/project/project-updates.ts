@@ -28,7 +28,7 @@ import { saveWireConnections } from "../entity/wires"
 import { updateAllHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 import {
-  deleteAllEntities,
+  deleteWorldEntities,
   makeSettingsRemnant,
   rebuildWorldEntityAtStage,
   refreshWorldEntityAtStage,
@@ -105,12 +105,12 @@ export function deleteEntityOrCreateSettingsRemnant(project: Project, entity: Pr
     makeSettingsRemnant(project, entity)
   } else {
     project.content.delete(entity)
-    deleteAllEntities(entity)
+    deleteWorldEntities(project, entity)
   }
 }
 export function forceDeleteEntity(project: Project, entity: ProjectEntity): void {
   project.content.delete(entity)
-  deleteAllEntities(entity)
+  deleteWorldEntities(project, entity)
 }
 
 export function tryReviveSettingsRemnant(project: Project, entity: ProjectEntity, stage: StageNumber): StageMoveResult {

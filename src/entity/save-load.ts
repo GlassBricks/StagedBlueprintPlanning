@@ -33,7 +33,7 @@ import {
   PasteCompatibleRotationType,
   rollingStockTypes,
 } from "./entity-prototype-info"
-import { UndergroundBeltProjectEntity } from "./ProjectEntity"
+import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { getUndergroundDirection } from "./underground-belt"
 import build_check_ghost_revive = defines.build_check_type.ghost_revive
 import build_check_manual = defines.build_check_type.manual
@@ -290,21 +290,24 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
   moduleInventory.sort_and_merge()
 }
 
-export function canFlipUnderground(luaEntity: LuaEntity): boolean {
+export function checkUndergroundPairFlippable(
+  luaEntity: LuaEntity | nil,
+): LuaMultiReturn<[neighbor: UndergroundBeltProjectEntity | nil, neighborIsFlippable: boolean]> {
+  if (!luaEntity) return $multi(nil, true)
   const stage = getStageAtSurface(luaEntity.surface_index)
-  if (!stage) return true
+  if (!stage) return $multi(nil, true)
   const content = stage.project.content
   const existing = content.findCompatibleWithLuaEntity(luaEntity, nil, stage.stageNumber)
-  if (!existing) return true
+  if (!existing) return $multi(nil, true)
   assume<UndergroundBeltProjectEntity>(existing)
-  return existing.firstValue.type != luaEntity.belt_to_ground_type
+  return $multi(existing, existing.firstValue.type != luaEntity.belt_to_ground_type)
 }
 
 function updateUndergroundRotation(
   luaEntity: LuaEntity,
   value: BlueprintEntity,
   direction: defines.direction,
-): LuaEntity | nil {
+): LuaMultiReturn<[updated: LuaEntity | nil, updatedNeighbors?: ProjectEntity]> {
   if (
     getUndergroundDirection(direction, value.type) !=
     getUndergroundDirection(luaEntity.direction, luaEntity.belt_to_ground_type)
@@ -312,18 +315,22 @@ function updateUndergroundRotation(
     const surface = luaEntity.surface
     const position = luaEntity.position
     luaEntity.destroy()
-    return createEntity(surface, position, direction, value, false)
+    return $multi(createEntity(surface, position, direction, value, false))
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
     const neighbor = luaEntity.neighbours as LuaEntity | nil
-    if (neighbor && !canFlipUnderground(neighbor)) return luaEntity
+    const [neighborProjEntity, flippable] = checkUndergroundPairFlippable(neighbor)
+    if (!flippable) {
+      return $multi(luaEntity)
+    }
     const wasRotatable = luaEntity.rotatable
     luaEntity.rotatable = true
-    luaEntity.rotate()
+    const [rotated] = luaEntity.rotate()
     luaEntity.rotatable = wasRotatable
+    return $multi(luaEntity, rotated ? neighborProjEntity : nil)
   }
-  return luaEntity
+  return $multi(luaEntity)
 }
 
 function updateRollingStock(luaEntity: LuaEntity, value: BlueprintEntity): void {
@@ -362,7 +369,7 @@ export function updateEntity(
   value: Entity,
   direction: defines.direction,
   changed: boolean = true,
-): LuaEntity | nil {
+): LuaMultiReturn<[updated: LuaEntity | nil, updatedNeighbors?: ProjectEntity]> {
   assume<BlueprintEntity>(value)
   if (changed) entityVersion++
 
@@ -379,16 +386,15 @@ export function updateEntity(
     luaEntity.loader_type = value.type ?? "output"
   } else if (rollingStockTypes.has(type)) {
     updateRollingStock(luaEntity, value)
-    return luaEntity
+    return $multi(luaEntity)
   }
   luaEntity.direction = direction
 
-  // don't paste at luaEntity.direction, because it might fail to rotate if this is an assembling machine
   const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value)
   if (ghost) ghost.destroy() // should not happen?
   matchItems(luaEntity, value)
 
-  return luaEntity
+  return $multi(luaEntity)
 }
 
 function makePreviewIndestructible(entity: LuaEntity | nil): void {

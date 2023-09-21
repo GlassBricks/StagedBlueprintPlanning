@@ -120,10 +120,10 @@ function assertReplaceCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
   expect(worldUpdater.rebuildWorldEntityAtStage).calledWith(project, entity, stage)
 }
-function assertDeleteAllEntitiesCalled(entity: ProjectEntity) {
+function assertDeleteWorldEntityCalled(entity: ProjectEntity) {
   expectedWuCalls++
   expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.deleteAllEntities).calledWith(entity)
+  expect(worldUpdater.deleteWorldEntities).calledWith(project, entity)
 }
 function assertMakeSettingsRemnantCalled(entity: ProjectEntity) {
   expectedWuCalls++
@@ -288,7 +288,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
     projectUpdates.deleteEntityOrCreateSettingsRemnant(project, entity)
     assertNoEntities()
-    assertDeleteAllEntitiesCalled(entity)
+    assertDeleteWorldEntityCalled(entity)
   })
 
   test("creates settings remnant if entity has stage diffs", () => {
@@ -341,7 +341,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     projectUpdates.deleteEntityOrCreateSettingsRemnant(project, entity)
     expect(entity.isSettingsRemnant).to.be.nil()
     assertOneEntity()
-    assertDeleteAllEntitiesCalled(entity)
+    assertDeleteWorldEntityCalled(entity)
   })
 })
 
@@ -352,7 +352,7 @@ test("forceDeleteEntity always deletes", () => {
   projectUpdates.forceDeleteEntity(project, entity)
 
   assertNoEntities()
-  assertDeleteAllEntitiesCalled(entity)
+  assertDeleteWorldEntityCalled(entity)
 })
 
 describe("tryUpdateEntityFromWorld", () => {

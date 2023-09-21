@@ -14,7 +14,13 @@ import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
 import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
-import { canBeAnyDirection, canFlipUnderground, createEntity, saveEntity, updateEntity } from "../../entity/save-load"
+import {
+  canBeAnyDirection,
+  checkUndergroundPairFlippable,
+  createEntity,
+  saveEntity,
+  updateEntity,
+} from "../../entity/save-load"
 import { assert } from "../../lib"
 import { UserProject } from "../../project/ProjectDef"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
@@ -118,7 +124,7 @@ test("can update an entity", () => {
       bar: 4,
     } as Entity,
     defines.direction.north,
-  )
+  )[0]
   expect(newEntity).to.be(entity)
   expect(entity.get_inventory(defines.inventory.chest)!.get_bar() - 1).to.be(4)
 })
@@ -131,7 +137,7 @@ test("can upgrade an entity", () => {
   })!
   entity.minable = false
   entity.destructible = false
-  const newEntity = updateEntity(entity, { name: "steel-chest" } as Entity, defines.direction.north)!
+  const newEntity = updateEntity(entity, { name: "steel-chest" } as Entity, defines.direction.north)[0]!
   expect(newEntity.name).to.be("steel-chest")
   expect(entity.valid).to.be(false)
 })
@@ -143,7 +149,7 @@ test("can rotate entity", () => {
     force: "player",
     direction: defines.direction.east,
   })!
-  const newEntity = updateEntity(entity, { name: "inserter" } as Entity, defines.direction.south)
+  const newEntity = updateEntity(entity, { name: "inserter" } as Entity, defines.direction.south)[0]
   expect(entity).to.be(newEntity)
   expect(entity.direction).to.be(defines.direction.south)
 })
@@ -155,7 +161,7 @@ test("can rotate an assembler with no fluid recipe", () => {
     force: "player",
     direction: defines.direction.east,
   })!
-  const newEntity = updateEntity(entity, { name: "assembling-machine-1" } as Entity, defines.direction.south)
+  const newEntity = updateEntity(entity, { name: "assembling-machine-1" } as Entity, defines.direction.south)[0]
   expect(entity).to.be(newEntity)
   expect(entity.direction).to.be(defines.direction.south)
 })
@@ -183,7 +189,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     expect(entity.direction).to.be(defines.direction.south)
 
     const saved = saveEntity(entity)
-    expect(saved).to.equal({ name: "underground-belt", type: type })
+    expect(saved).to.equal({ name: "underground-belt", type })
   })
 
   test("creating an underground belt in output direction KEEPS direction", () => {
@@ -236,19 +242,22 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     })!
     entity.rotatable = false // should not matter
     const otherDir = flipped ? "input" : "output"
-    const updated = updateEntity(
+    const [updated, updateNeighbor] = updateEntity(
       entity,
       {
         name: "underground-belt",
         type: otherDir,
       } as Entity,
       defines.direction.east,
-    )!
+    )
     assert(updated)
     expect(updated).to.be(entity)
-    expect(updated.belt_to_ground_type).to.be(otherDir)
-    expect(updated.rotatable).to.be(false)
-    expect(updated.direction).to.be(defines.direction.east)
+    expect(updated).toMatchTable({
+      belt_to_ground_type: otherDir,
+      direction: defines.direction.east,
+      rotatable: false,
+    })
+    expect(updateNeighbor).toBeNil()
   })
 
   test("can flip underground with pair", () => {
@@ -278,7 +287,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type: flipped ? "input" : "output",
       } as Entity,
       flipped ? defines.direction.east : defines.direction.west,
-    )
+    )[0]
     assert(updated)
 
     expect(updated).to.be.any()
@@ -297,7 +306,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type,
       })
       assert(entity)
-      expect(canFlipUnderground(entity)).toBe(true)
+      expect(checkUndergroundPairFlippable(entity)).toEqual([nil, true])
     })
     test("returns false if entity in correct direction", () => {
       const entity = surface.create_entity({
@@ -319,7 +328,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       )
       project.content.add(projectEntity)
 
-      expect(canFlipUnderground(entity)).toBe(false)
+      expect(checkUndergroundPairFlippable(entity)).toEqual([projectEntity, false])
     })
     test("returns true if entity in wrong direction", () => {
       const entity = surface.create_entity({
@@ -341,11 +350,11 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       )
       project.content.add(projectEntity)
 
-      expect(canFlipUnderground(entity)).toBe(true)
+      expect(checkUndergroundPairFlippable(entity)).toEqual([projectEntity, true])
     })
   })
 
-  test("won't flip underground if canFlipUnderground on pair is false", () => {
+  test("won't flip underground if checkUndergroundPairFlippable on pair is false", () => {
     const leftUnderground = surface.create_entity({
       name: "underground-belt",
       position: { x: 0.5, y: 0.5 },
@@ -374,9 +383,9 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     )
     project.content.add(rightEntity)
 
-    expect(canFlipUnderground(rightUnderground)).toBe(false)
+    expect(checkUndergroundPairFlippable(rightUnderground)).toMatchTable([expect.anything(), false])
 
-    const updated = updateEntity(
+    const [updated, updatedNeighbor] = updateEntity(
       leftUnderground,
       {
         name: "underground-belt",
@@ -385,6 +394,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       flipped ? defines.direction.east : defines.direction.west,
     )
     expect(updated).toBe(leftUnderground)
+    expect(updatedNeighbor).toBeNil()
 
     // not flipped
     expect(leftUnderground).toMatchTable({
@@ -413,7 +423,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type,
       } as Entity,
       defines.direction.west,
-    )!
+    )[0]!
     expect(updated).to.be.any()
     expect(updated.name).to.be("fast-underground-belt")
     expect(updated.direction).to.be(defines.direction.west)
@@ -436,7 +446,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type,
       } as Entity,
       defines.direction.south,
-    )!
+    )[0]!
     expect(updated).to.be.any()
     expect(updated.name).to.be("underground-belt")
     expect(updated.direction).to.be(defines.direction.south)
@@ -477,7 +487,7 @@ test("can flip loader", () => {
       type: "output",
     } as Entity,
     defines.direction.east,
-  )!
+  )[0]!
   expect(updated).to.be(entity)
   expect(updated.loader_type).to.be("output")
   expect(updated.rotatable).to.be(false)
@@ -501,7 +511,7 @@ test("can handle item changes", () => {
       items: newContents,
     } as Entity,
     defines.direction.north,
-  )
+  )[0]
   expect(entity).to.be(newEntity)
   expect(entity.get_module_inventory()!.get_contents()).to.equal(newContents)
 })
@@ -539,7 +549,7 @@ test("can set train schedule", () => {
     name: "locomotive",
     schedule,
   }
-  const newEntity = updateEntity(locomotive, newValue as Entity, defines.direction.north)!
+  const newEntity = updateEntity(locomotive, newValue as Entity, defines.direction.north)[0]!
   expect(newEntity).to.be(locomotive)
   expect(newEntity.train?.schedule?.current).to.equal(2)
   expect(newEntity.train?.schedule?.records).to.equal(newValue.schedule)

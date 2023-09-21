@@ -19,6 +19,7 @@ import {
   ProjectEntity,
   RollingStockProjectEntity,
   StageNumber,
+  UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
 import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
@@ -66,9 +67,6 @@ function setEntityUpdateable(entity: LuaEntity, updateable: boolean) {
   entity.destructible = false
 }
 
-/**
- * Returns if has error or resolved error (should update error highlights)
- */
 function updateWorldEntitiesInRange(
   project: Project,
   entity: ProjectEntity,
@@ -88,6 +86,8 @@ function updateWorldEntitiesInRange(
 
   let hasOrResolvedError = false
 
+  let updatedNeighbors: LuaSet<ProjectEntity> | nil
+
   for (const [stage, value, changed] of entity.iterateValues(startStage, endStage)) {
     const surface = project.getSurface(stage)!
     const existing = entity.getWorldOrPreviewEntity(stage)
@@ -98,7 +98,12 @@ function updateWorldEntitiesInRange(
       // create entity or updating existing entity
       let luaEntity: LuaEntity | nil
       if (existingNormalEntity) {
-        luaEntity = updateEntity(existingNormalEntity, value, direction, changed)
+        let updatedNeighbor: ProjectEntity | nil
+        ;[luaEntity, updatedNeighbor] = updateEntity(existingNormalEntity, value, direction, changed)
+        if (updatedNeighbor) {
+          updatedNeighbors ??= new LuaSet()
+          updatedNeighbors.add(updatedNeighbor)
+        }
       } else {
         luaEntity = createEntity(surface, entity.position, direction, value, changed)
       }
@@ -124,6 +129,13 @@ function updateWorldEntitiesInRange(
       lastPreviewName = Prototypes.PreviewEntityPrefix + entityName
     }
     makePreviewEntity(project, stage, entity, previewDirection, lastPreviewName!)
+  }
+
+  // kinda hacky spot for this, but no better place as of now
+  if (updatedNeighbors) {
+    for (const neighbor of updatedNeighbors) {
+      updateAllHighlights(project, neighbor)
+    }
   }
 
   return hasOrResolvedError
@@ -238,8 +250,27 @@ export function reviveSettingsRemnant(project: Project, entity: ProjectEntity): 
   updateHighlightsOnReviveSettingsRemnant(project, entity)
 }
 
-export function deleteAllEntities(entity: ProjectEntity): void {
+function deleteUndergroundBelt(entity: ProjectEntity, project: Project): void {
+  const pairsToUpdate = new LuaSet<UndergroundBeltProjectEntity>()
+  for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
+    const worldEntity = entity.getWorldOrPreviewEntity(stage)
+    if (!worldEntity) continue
+    const pair = worldEntity.neighbours as LuaEntity | nil
+    if (!pair) continue
+    const pairProjectEntity = project.content.findCompatibleWithLuaEntity(pair, nil, stage)
+    if (pairProjectEntity) pairsToUpdate.add(pairProjectEntity as UndergroundBeltProjectEntity)
+  }
   entity.destroyAllWorldOrPreviewEntities()
+  for (const pair of pairsToUpdate) {
+    updateAllHighlights(project, pair)
+  }
+}
+export function deleteWorldEntities(project: Project, entity: ProjectEntity): void {
+  if (entity.isUndergroundBelt()) {
+    deleteUndergroundBelt(entity, project)
+  } else {
+    entity.destroyAllWorldOrPreviewEntities()
+  }
   deleteAllHighlights(entity)
 }
 
