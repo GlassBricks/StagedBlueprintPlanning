@@ -16,12 +16,7 @@ import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../ent
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
-import {
-  EntityRotateResult,
-  EntityUpdateResult,
-  StageMoveResult,
-  WireUpdateResult,
-} from "../../project/project-updates"
+import { EntityUpdateResult, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { _doUndoAction } from "../../project/undo"
 import { moduleMock } from "../module-mock"
@@ -382,10 +377,10 @@ describe("onEntityRotated", () => {
     expect(projectUpdates.addNewEntity).calledWith(project, luaEntity, 2)
   })
 
-  test.each<[EntityRotateResult, string | false]>([
-    [EntityRotateResult.NoChange, false],
-    [EntityRotateResult.Updated, false],
-    [EntityRotateResult.CannotRotate, L_Game.CantBeRotated],
+  test.each<[EntityUpdateResult, string | false]>([
+    [EntityUpdateResult.NoChange, false],
+    [EntityUpdateResult.Updated, false],
+    [EntityUpdateResult.CannotRotate, L_Game.CantBeRotated],
   ])('calls tryRotateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     projectUpdates.tryRotateEntityToMatchWorld.invokes(() => {
@@ -404,7 +399,7 @@ test("onUndergroundBeltDragRotated", () => {
     type: "input",
   })
   projectUpdates.tryRotateEntityToMatchWorld.invokes(() => {
-    return EntityRotateResult.Updated
+    return EntityUpdateResult.Updated
   })
   userActions.onUndergroundBeltDragRotated(project, luaEntity, 2, playerIndex)
   expect(luaEntity.direction).toBe(defines.direction.south)

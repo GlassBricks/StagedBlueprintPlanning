@@ -28,7 +28,7 @@ import {
 } from "../../entity/ProjectEntity"
 import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { StageMoveResult } from "../../project/project-updates"
+import { EntityUpdateResult, StageMoveResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { moduleMock } from "../module-mock"
@@ -92,11 +92,16 @@ function assertWUNotCalled() {
     }
   }
 }
-function assertUpdateCalled(entity: ProjectEntity, startStage: StageNumber, n?: number, updateWires?: boolean): void {
+function assertUpdateCalled(
+  entity: ProjectEntity,
+  startStage: StageNumber,
+  n?: number,
+  updateHighlights?: boolean,
+): void {
   expectedWuCalls++
   if (n == nil) expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.updateWorldEntities).nthCalledWith(n ?? 1, project, entity, startStage, updateWires)
-  if (updateWires == false) {
+  expect(worldUpdater.updateWorldEntities).nthCalledWith(n ?? 1, project, entity, startStage, updateHighlights)
+  if (updateHighlights == false) {
     expect(highlights.updateAllHighlights).calledWith(project, entity)
   }
 }
@@ -940,7 +945,7 @@ describe("undergrounds", () => {
       assertUpdateCalled(entity, 2)
     })
 
-    test("cannot apply rotate upgrade to underground belt (not expected)", () => {
+    test("can apply rotate via upgrade to underground belt", () => {
       const { luaEntity, entity } = createUndergroundBelt(1)
       luaEntity.order_upgrade({
         target: "underground-belt",
@@ -948,7 +953,48 @@ describe("undergrounds", () => {
         direction: oppositedirection(luaEntity.direction),
       })
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
-      expect(ret).to.be("no-change")
+      expect(ret).to.be("updated")
+
+      expect(entity).toMatchTable({
+        firstValue: {
+          name: "underground-belt",
+          type: "output",
+        },
+        direction: direction.east,
+      })
+      assertOneEntity()
+      assertUpdateCalled(entity, 1)
+    })
+    test("can both rotate and upgrade", () => {
+      const { luaEntity, entity } = createUndergroundBelt(1)
+      luaEntity.order_upgrade({
+        target: "fast-underground-belt",
+        force: luaEntity.force,
+        direction: oppositedirection(luaEntity.direction),
+      })
+      const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
+      expect(ret).to.be("updated")
+
+      expect(entity).toMatchTable({
+        firstValue: {
+          name: "fast-underground-belt",
+          type: "output",
+        },
+        direction: direction.east,
+      })
+      assertOneEntity()
+      assertUpdateCalled(entity, 1)
+    })
+    test("if not in first stage, forbids both rotate and upgrade", () => {
+      const { luaEntity, entity } = createUndergroundBelt(1)
+      luaEntity.order_upgrade({
+        target: "fast-underground-belt",
+        force: luaEntity.force,
+        direction: oppositedirection(luaEntity.direction),
+      })
+      entity.replaceWorldEntity(2, luaEntity)
+      const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 2)
+      expect(ret).to.be("cannot-rotate")
 
       expect(entity).toMatchTable({
         firstValue: {
@@ -957,8 +1003,9 @@ describe("undergrounds", () => {
         },
         direction: direction.west,
       })
+
       assertOneEntity()
-      assertWUNotCalled()
+      assertRefreshCalled(entity, 2)
     })
 
     test.each(["lower", "pair in higher", "self in higher"])(
@@ -1034,6 +1081,35 @@ describe("undergrounds", () => {
 
       assertNEntities(3)
       assertRefreshCalled(entity3, 1)
+    })
+    test("if rotate allowed but not upgrade, still does rotate", () => {
+      const { entity1, luaEntity1, entity2 } = createUndergroundBeltPair(1, 1)
+      // just to forbid upgrade
+      createUndergroundBelt(1, {
+        position: Pos.plus(pos, { x: -2, y: 0 }),
+        name: "fast-underground-belt",
+      })
+      luaEntity1.order_upgrade({
+        target: "fast-underground-belt",
+        force: luaEntity1.force,
+        direction: oppositedirection(luaEntity1.direction),
+      })
+
+      const ret = projectUpdates.tryApplyUpgradeTarget(project, entity1, 1)
+      expect(ret).to.be(EntityUpdateResult.CannotUpgradeChangedPair)
+
+      expect(entity1).toMatchTable({
+        firstValue: { name: "underground-belt", type: "output" },
+        direction: direction.east,
+      })
+      expect(entity2).toMatchTable({
+        firstValue: { name: "underground-belt", type: "input" },
+        direction: direction.east,
+      })
+
+      assertNEntities(3)
+      assertUpdateCalled(entity1, 1, 1, false)
+      assertUpdateCalled(entity2, 1, 2, false)
     })
   })
   test("fast replace to upgrade also upgrades pair", () => {

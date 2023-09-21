@@ -21,7 +21,6 @@ import { createIndicator, createNotification } from "./notifications"
 import {
   addNewEntity,
   deleteEntityOrCreateSettingsRemnant,
-  EntityRotateResult,
   EntityUpdateResult,
   forceDeleteEntity,
   StageMoveResult,
@@ -139,11 +138,7 @@ function getCompatibleEntityOrAdd(
   return compatible
 }
 
-function notifyIfError(
-  result: EntityUpdateResult | EntityRotateResult,
-  entity: ProjectEntity,
-  byPlayer: PlayerIndex | nil,
-) {
+function notifyIfError(result: EntityUpdateResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil) {
   if (result == "no-change" || result == "updated") return
   if (result == "cannot-rotate") {
     createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)

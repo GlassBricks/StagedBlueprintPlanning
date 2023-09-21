@@ -124,12 +124,6 @@ export function tryReviveSettingsRemnant(project: Project, entity: ProjectEntity
   return result
 }
 
-export declare const enum EntityRotateResult {
-  Updated = "updated",
-  NoChange = "no-change",
-  CannotRotate = "cannot-rotate",
-}
-
 export declare const enum EntityUpdateResult {
   Updated = "updated",
   NoChange = "no-change",
@@ -137,19 +131,15 @@ export declare const enum EntityUpdateResult {
   CannotUpgradeChangedPair = "cannot-upgrade-changed-pair",
 }
 
-function doUpdateEntityFromWorld(
+function applyValueFromWorld(
   stage: StageNumber,
   entity: ProjectEntity,
   entitySource: LuaEntity,
   knownValue?: BlueprintEntity,
 ): boolean {
-  entity.replaceWorldEntity(stage, entitySource)
   const newValue = saveEntity(entitySource, knownValue)
-  if (!newValue) return false
-  return entity.adjustValueAtStage(stage, newValue)
+  return newValue != nil && entity.adjustValueAtStage(stage, newValue)
 }
-
-const undoRotate = refreshWorldEntityAtStage
 
 export function tryUpdateEntityFromWorld(
   project: Project,
@@ -157,69 +147,15 @@ export function tryUpdateEntityFromWorld(
   stage: StageNumber,
   knownValue?: BlueprintEntity,
 ): EntityUpdateResult {
-  const entitySource = entity.getWorldEntity(stage)
-  if (!entitySource) return EntityUpdateResult.NoChange
-
-  if (entity.isUndergroundBelt()) {
-    return handleUndergroundBeltUpdate(project, stage, entity, entitySource, entitySource.direction, entitySource.name)
-  }
-
-  const rotated = !canBeAnyDirection(entitySource) && entitySource.direction != entity.direction
-  if (rotated) {
-    const rotateAllowed = stage == entity.firstStage
-    if (rotateAllowed) {
-      entity.direction = entitySource.direction
-    } else {
-      undoRotate(project, entity, stage)
-      return EntityUpdateResult.CannotRotate
-    }
-  }
-
-  const hasDiff = doUpdateEntityFromWorld(stage, entity, entitySource, knownValue)
-  if (hasDiff || rotated) {
-    updateWorldEntities(project, entity, stage)
-    return EntityUpdateResult.Updated
-  }
-  return EntityUpdateResult.NoChange
+  return handleUpdate(project, stage, entity, nil, nil, true, knownValue)
 }
 
 export function tryRotateEntityToMatchWorld(
   project: Project,
   entity: ProjectEntity,
   stage: StageNumber,
-): EntityRotateResult {
-  const entitySource = entity.getWorldEntity(stage)
-  if (!entitySource || canBeAnyDirection(entitySource)) return EntityRotateResult.NoChange
-
-  const type = entitySource.type
-
-  if (type == "underground-belt") {
-    return handleUndergroundBeltUpdate(
-      project,
-      stage,
-      entity as UndergroundBeltProjectEntity,
-      entitySource,
-      entitySource.direction,
-      nil,
-    ) as unknown as EntityRotateResult
-  }
-
-  const newDirection = entitySource.direction
-  const rotated = newDirection != entity.direction
-  if (!rotated) return EntityRotateResult.NoChange
-  const rotateAllowed = stage == entity.firstStage
-  if (!rotateAllowed) {
-    undoRotate(project, entity, stage)
-    return EntityRotateResult.CannotRotate
-  }
-  entity.direction = newDirection
-  if (type == "loader" || type == "loader-1x1") {
-    ;(entity as LoaderProjectEntity).setTypeProperty(entitySource.loader_type)
-  } else if (type == "underground-belt") {
-    ;(entity as UndergroundBeltProjectEntity).setTypeProperty(entitySource.belt_to_ground_type)
-  }
-  updateWorldEntities(project, entity, entity.firstStage)
-  return EntityRotateResult.Updated
+): EntityUpdateResult {
+  return handleUpdate(project, stage, entity, nil, nil, false, nil)
 }
 
 function checkUpgradeType(existing: ProjectEntity, upgradeType: string): void {
@@ -230,45 +166,56 @@ function checkUpgradeType(existing: ProjectEntity, upgradeType: string): void {
 export function tryApplyUpgradeTarget(project: Project, entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
   const entitySource = entity.getWorldEntity(stage)
   if (!entitySource) return EntityUpdateResult.NoChange
+
+  const overrideUpgradeTarget = entitySource.get_upgrade_target()?.name
+  return handleUpdate(project, stage, entity, entitySource.get_upgrade_direction(), overrideUpgradeTarget, false, nil)
+}
+
+function handleUpdate(
+  project: Project,
+  stage: StageNumber,
+  entity: ProjectEntity,
+  overrideDirection: defines.direction | nil,
+  upgradeTarget: string | nil,
+  shouldGetBpValue: boolean,
+  knownBpValue: BlueprintEntity | nil,
+): EntityUpdateResult {
+  const entitySource = entity.getWorldEntity(stage)
+  if (!entitySource) return EntityUpdateResult.NoChange
   if (entity.isUndergroundBelt()) {
-    return tryApplyUndergroundUpgradeTarget(project, stage, entity, entitySource)
+    return handleUndergroundBeltUpdate(project, stage, entity, entitySource, overrideDirection, upgradeTarget)
   }
 
-  const rotateDir = entitySource.get_upgrade_direction()
-  const rotated = rotateDir != nil && rotateDir != entity.direction && !canBeAnyDirection(entitySource)
+  const newDirection = overrideDirection ?? entitySource.direction
+  const rotated = newDirection && newDirection != entity.direction && !canBeAnyDirection(entitySource)
   if (rotated) {
     const rotateAllowed = stage == entity.firstStage
     if (rotateAllowed) {
-      entity.direction = rotateDir
+      entity.direction = newDirection
+      const entityType = entitySource.type
+      if (entityType == "loader" || entityType == "loader-1x1") {
+        assume<LoaderProjectEntity>(entity)
+        entity.setTypeProperty(entitySource.loader_type)
+      }
     } else {
-      undoRotate(project, entity, stage)
+      refreshWorldEntityAtStage(project, entity, stage)
       return EntityUpdateResult.CannotRotate
     }
   }
-
-  let upgraded = false
-  const upgradeType = entitySource.get_upgrade_target()?.name
-  if (upgradeType) {
-    checkUpgradeType(entity, upgradeType)
-    upgraded = entity.applyUpgradeAtStage(stage, upgradeType)
+  let hasDiff = false
+  if (shouldGetBpValue && applyValueFromWorld(stage, entity, entitySource, knownBpValue)) {
+    hasDiff = true
+  } else if (upgradeTarget) {
+    checkUpgradeType(entity, upgradeTarget)
+    if (entity.applyUpgradeAtStage(stage, upgradeTarget)) {
+      hasDiff = true
+    }
   }
-  if (rotated || upgraded) {
+  if (rotated || hasDiff) {
     updateWorldEntities(project, entity, stage)
     return EntityUpdateResult.Updated
   }
   return EntityUpdateResult.NoChange
-}
-function tryApplyUndergroundUpgradeTarget(
-  project: Project,
-  stage: StageNumber,
-  entity: UndergroundBeltProjectEntity,
-  entitySource: LuaEntity,
-): EntityUpdateResult {
-  const upgradeType = entitySource.get_upgrade_target()?.name
-  if (!upgradeType) return EntityUpdateResult.NoChange
-  checkUpgradeType(entity, upgradeType)
-  // TODO: rotate target
-  return handleUndergroundBeltUpdate(project, stage, entity, entitySource, nil, upgradeType)
 }
 
 function handleUndergroundBeltUpdate(
@@ -276,12 +223,15 @@ function handleUndergroundBeltUpdate(
   stage: StageNumber,
   entity: UndergroundBeltProjectEntity,
   entitySource: LuaEntity,
-  rotateTarget: defines.direction | nil,
+  overrideDirection: defines.direction | nil,
   upgradeTarget: string | nil,
 ): EntityUpdateResult {
+  const newDirection = overrideDirection ?? entitySource.direction
+  const rotated = newDirection && newDirection != entity.direction
+
+  const newName = upgradeTarget ?? entitySource.name
   const oldName = entity.getNameAtStage(stage)
-  const upgraded = upgradeTarget && upgradeTarget != oldName
-  const rotated = rotateTarget && rotateTarget != entity.direction
+  const upgraded = newName != oldName
 
   if (!rotated && !upgraded) return EntityUpdateResult.NoChange
 
@@ -295,48 +245,49 @@ function handleUndergroundBeltUpdate(
       return EntityUpdateResult.CannotRotate
     }
 
-    entity.direction = rotateTarget
-    entity.setTypeProperty(entitySource.belt_to_ground_type)
+    entity.direction = newDirection
+    const oldType = entity.firstValue.type
+    const newType = oldType == "input" ? "output" : "input"
+    entity.setTypeProperty(newType)
     if (pair) {
-      pair.direction = rotateTarget
-      pair.setTypeProperty(entitySource.belt_to_ground_type == "input" ? "output" : "input")
+      pair.direction = newDirection
+      pair.setTypeProperty(oldType)
     }
   }
 
   const applyStage = isSelfOrPairFirstStage ? entity.firstStage : stage
   const pairApplyStage = pair && isSelfOrPairFirstStage ? pair.firstStage : stage
+  let cannotUpgradeChangedPair = false
   if (upgraded) {
-    entity.applyUpgradeAtStage(applyStage, upgradeTarget)
-    pair?.applyUpgradeAtStage(pairApplyStage, upgradeTarget)
+    entity.applyUpgradeAtStage(applyStage, newName)
+    pair?.applyUpgradeAtStage(pairApplyStage, newName)
     const newPair = findUndergroundPair(project.content, entity, stage)
-
-    if (newPair != pair) {
+    cannotUpgradeChangedPair = newPair != pair
+    if (cannotUpgradeChangedPair) {
       entity.applyUpgradeAtStage(stage, oldName)
-      refreshWorldEntityAtStage(project, entity, stage)
-      if (pair) {
-        pair.applyUpgradeAtStage(pairApplyStage, oldName)
-        refreshWorldEntityAtStage(project, pair, pairApplyStage)
-      }
-      return EntityUpdateResult.CannotUpgradeChangedPair
+      pair?.applyUpgradeAtStage(pairApplyStage, oldName)
     }
   }
 
-  if (pair) {
+  if (cannotUpgradeChangedPair && !rotated) {
+    refreshWorldEntityAtStage(project, entity, stage)
+    if (pair) refreshWorldEntityAtStage(project, pair, stage)
+  } else if (!pair) {
+    updateWorldEntities(project, entity, applyStage)
+  } else {
     // delay updating of highlights, since both pairs might need to be rotated together to avoid errors
     updateWorldEntities(project, entity, applyStage, false)
     updateWorldEntities(project, pair, pairApplyStage, false)
     updateAllHighlights(project, entity)
     updateAllHighlights(project, pair)
-  } else {
-    updateWorldEntities(project, entity, applyStage)
   }
-  return EntityUpdateResult.Updated
+  return cannotUpgradeChangedPair ? EntityUpdateResult.CannotUpgradeChangedPair : EntityUpdateResult.Updated
 }
 
 function maybeApplyEmptyControlBehavior(entity: ProjectEntity, stage: StageNumber): boolean {
   if (!maybeSetEmptyControlBehavior(entity, stage)) return false
   const luaEntity = entity.getWorldEntity(stage)
-  if (luaEntity) doUpdateEntityFromWorld(stage, entity, luaEntity)
+  if (luaEntity) applyValueFromWorld(stage, entity, luaEntity)
   return true
 }
 

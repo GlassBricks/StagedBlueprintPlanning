@@ -609,6 +609,52 @@ describe("underground belt inconsistencies", () => {
       assertEntityCorrect(rightUnderground, false)
       assertEntityCorrect(middleUnderground, false)
     })
+    test.skip("when flipping an underground to correct error, also flips its pair", () => {
+      const leftStage1 = leftUnderground.getWorldEntity(1)!
+      leftStage1.rotate({ by_player: player })
+      // see first test for current state
+
+      // now rotate the broken case (left in stage 2)
+      const leftStage2 = leftUnderground.getWorldEntity(2)!
+      expect(leftStage2).toMatchTable({
+        direction: defines.direction.east,
+        belt_to_ground_type: "input",
+      })
+      leftStage2.rotate({ by_player: player })
+
+      // now all 3 should be rotated
+      expect(leftUnderground).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.west,
+      })
+      expect(rightUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+      expect(middleUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+
+      const middle = middleUnderground.getWorldEntity(2)!
+
+      expect(leftStage1).toMatchTable({
+        direction: defines.direction.west,
+        belt_to_ground_type: "output",
+      })
+      expect(leftStage2).toMatchTable({
+        direction: defines.direction.west,
+        belt_to_ground_type: "output",
+      })
+      expect(middle).toMatchTable({
+        direction: defines.direction.west,
+        belt_to_ground_type: "input",
+      })
+
+      assertEntityCorrect(leftUnderground, false)
+      assertEntityCorrect(rightUnderground, false)
+      assertEntityCorrect(middleUnderground, false)
+    })
   })
 })
 test("rotation forbidden at higher stage", () => {
