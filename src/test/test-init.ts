@@ -102,6 +102,8 @@ if ("factorio-test" in script.active_mods) {
       force.enable_all_recipes()
       const player = game.players[1]
       if (player.controller_type != defines.controllers.editor) player.toggle_map_editor()
+
+      deleteAllFreeSurfaces()
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6

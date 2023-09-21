@@ -962,7 +962,7 @@ describe("undergrounds", () => {
     })
 
     test.each(["lower", "pair in higher", "self in higher"])(
-      "upgrading %s underground in first stage upgrades pair",
+      "upgrading underground %s stage upgrades pair",
       (which) => {
         const endStage = which == "lower" ? 1 : 2
         const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1, 2)
@@ -1021,6 +1021,28 @@ describe("undergrounds", () => {
       })
 
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity1, 1)
+      expect(ret).to.be("cannot-upgrade-changed-pair")
+
+      expect(entity1.firstValue.name).to.be("underground-belt")
+      expect(entity2.firstValue.name).to.be("underground-belt")
+      expect(entity3.firstValue.name).to.be("fast-underground-belt")
+
+      assertNEntities(3)
+      assertWUNotCalled()
+    })
+
+    test("cannot upgrade underground if it would break existing pair", () => {
+      const { entity1, entity2 } = createUndergroundBeltPair(1, 1)
+      const { entity: entity3, luaEntity: luaEntity3 } = createUndergroundBelt(1, {
+        position: Pos.plus(pos, { x: -2, y: 0 }),
+        name: "fast-underground-belt",
+      })
+      // downgrading entity3 would cut the pair
+      luaEntity3.order_upgrade({
+        target: "underground-belt",
+        force: luaEntity3.force,
+      })
+      const ret = projectUpdates.tryApplyUpgradeTarget(project, entity3, 1)
       expect(ret).to.be("cannot-upgrade-changed-pair")
 
       expect(entity1.firstValue.name).to.be("underground-belt")

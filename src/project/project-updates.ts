@@ -159,6 +159,12 @@ function tryUpgradeUndergroundBelt(
   if (!upgraded) return EntityUpdateResult.NoChange
 
   if (!pair) {
+    // check that this did not break an existing pair
+    const currentPair = findUndergroundPair(project.content, entity, stage)
+    if (currentPair != nil) {
+      entity.applyUpgradeAtStage(stage, oldName)
+      return EntityUpdateResult.CannotUpgradeChangedPair
+    }
     updateWorldEntities(project, entity, applyStage)
   } else {
     const pairStage = isFirstStage ? pair.firstStage : stage
