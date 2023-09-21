@@ -513,7 +513,6 @@ describe("onMoveEntityToStageCustomInput", () => {
   test.each<[StageMoveResult, LocalisedString | false]>([
     [StageMoveResult.Updated, [L_Interaction.EntityMovedFromStage, "mock stage 3"]],
     [StageMoveResult.NoChange, [L_Interaction.AlreadyAtFirstStage]],
-    [StageMoveResult.CannotMoveUpgradedUnderground, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade]],
     [StageMoveResult.IntersectsAnotherEntity, [L_Interaction.MoveWillIntersectAnotherEntity]],
     [StageMoveResult.CannotMovePastLastStage, [L_Interaction.CannotMovePastLastStage]],
   ])('calls trySetFirstStage and notifies, with result "%s"', (result, message) => {
@@ -579,7 +578,6 @@ describe("onSendToStageUsed", () => {
   })
   test.each<[StageMoveResult, LocalisedString]>([
     [StageMoveResult.CannotMovePastLastStage, [L_Interaction.CannotMovePastLastStage]],
-    [StageMoveResult.CannotMoveUpgradedUnderground, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade]],
     [StageMoveResult.IntersectsAnotherEntity, [L_Interaction.MoveWillIntersectAnotherEntity]],
   ])("notifies error if cannot move to stage %s", (result, message) => {
     const { entity, luaEntity } = addEntity(2)
@@ -633,7 +631,6 @@ describe("onBringToStageUsed", () => {
 
   test.each<[StageMoveResult, LocalisedString]>([
     [StageMoveResult.CannotMovePastLastStage, [L_Interaction.CannotMovePastLastStage]],
-    [StageMoveResult.CannotMoveUpgradedUnderground, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade]],
     [StageMoveResult.IntersectsAnotherEntity, [L_Interaction.MoveWillIntersectAnotherEntity]],
   ])("notifies error if cannot move to stage %s", (result, message) => {
     const { entity, luaEntity } = addEntity(2)

@@ -117,24 +117,24 @@ function tryAddNewEntity(
 /** Also asserts that stage > entity's first stage. */
 function getCompatibleEntityOrAdd(
   project: Project,
-  entity: LuaEntity,
+  worldEntity: LuaEntity,
   stage: StageNumber,
   previousDirection: defines.direction | nil,
   byPlayer: PlayerIndex | nil,
   knownBpValue?: BlueprintEntity,
 ): ProjectEntity | nil {
-  const compatible = project.content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
+  const compatible = project.content.findCompatibleWithLuaEntity(worldEntity, previousDirection, stage)
 
   if (!compatible) {
-    tryAddNewEntity(project, entity, stage, byPlayer, knownBpValue)
+    tryAddNewEntity(project, worldEntity, stage, byPlayer, knownBpValue)
     return nil
   }
   if (stage < compatible.firstStage) {
-    onEntityOverbuilt(project, compatible, entity, stage, byPlayer)
+    onEntityOverbuilt(project, compatible, worldEntity, stage, byPlayer)
     return nil
   }
 
-  compatible.replaceWorldEntity(stage, entity) // just in case
+  compatible.replaceWorldEntity(stage, worldEntity) // just in case
   return compatible
 }
 
@@ -236,6 +236,36 @@ export function onEntityPossiblyUpdated(
   notifyIfError(result, projectEntity, byPlayer)
   return projectEntity
 }
+
+function tryRotateAndNotify(
+  project: Project,
+  projectEntity: ProjectEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex | nil,
+) {
+  const result = tryRotateEntityToMatchWorld(project, projectEntity, stage)
+  notifyIfError(result, projectEntity, byPlayer)
+}
+
+function handleRotate(
+  project: Project,
+  worldEntity: LuaEntity,
+  projectEntity: ProjectEntity,
+  stage: StageNumber,
+  byPlayer: PlayerIndex | nil,
+) {
+  tryRotateAndNotify(project, projectEntity, stage, byPlayer)
+
+  if (projectEntity.isUndergroundBelt()) {
+    const worldPair = worldEntity.neighbours as LuaEntity | nil
+    if (!worldPair) return
+    const pairProjectEntity = getCompatibleEntityOrAdd(project, worldPair, stage, nil, byPlayer)
+    if (pairProjectEntity) {
+      tryRotateAndNotify(project, pairProjectEntity, stage, byPlayer)
+    }
+  }
+}
+
 export function onEntityRotated(
   project: Project,
   entity: LuaEntity,
@@ -244,9 +274,9 @@ export function onEntityRotated(
   byPlayer: PlayerIndex | nil,
 ): void {
   const projectEntity = getCompatibleEntityOrAdd(project, entity, stage, previousDirection, byPlayer)
-  if (!projectEntity) return
-  const result = tryRotateEntityToMatchWorld(project, projectEntity, stage)
-  notifyIfError(result, projectEntity, byPlayer)
+  if (projectEntity) {
+    handleRotate(project, entity, projectEntity, stage, byPlayer)
+  }
 }
 export function onUndergroundBeltDragRotated(
   project: Project,
@@ -256,10 +286,10 @@ export function onUndergroundBeltDragRotated(
 ): void {
   const projectEntity = project.content.findCompatibleWithLuaEntity(entity, nil, stage)
   if (!projectEntity || !projectEntity.isUndergroundBelt()) return
-  assert(entity.rotate())
-  const result = tryRotateEntityToMatchWorld(project, projectEntity, stage)
-  notifyIfError(result, projectEntity, byPlayer)
+  if (!entity.rotate()) return
+  handleRotate(project, entity, projectEntity, stage, byPlayer)
 }
+
 export function onWiresPossiblyUpdated(
   project: Project,
   entity: LuaEntity,
@@ -309,9 +339,7 @@ export function onEntityDied(project: Project, entity: LuaEntityInfo, stage: Sta
 function notifyIfMoveError(result: StageMoveResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil) {
   if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) return
 
-  if (result == StageMoveResult.CannotMoveUpgradedUnderground) {
-    createNotification(entity, byPlayer, [L_Interaction.CannotMoveUndergroundBeltWithUpgrade], true)
-  } else if (result == StageMoveResult.CannotMovePastLastStage) {
+  if (result == StageMoveResult.CannotMovePastLastStage) {
     createNotification(entity, byPlayer, [L_Interaction.CannotMovePastLastStage], true)
   } else if (result == StageMoveResult.CannotMoveBeforeFirstStage) {
     createNotification(entity, byPlayer, [L_Interaction.CannotDeleteBeforeFirstStage], true)

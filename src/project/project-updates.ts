@@ -147,7 +147,9 @@ export function tryUpdateEntityFromWorld(
   stage: StageNumber,
   knownValue?: BlueprintEntity,
 ): EntityUpdateResult {
-  return handleUpdate(project, stage, entity, nil, nil, true, knownValue)
+  const entitySource = entity.getWorldEntity(stage)
+  if (!entitySource) return EntityUpdateResult.NoChange
+  return handleUpdate(project, entity, entitySource, stage, entitySource.direction, nil, true, knownValue)
 }
 
 export function tryRotateEntityToMatchWorld(
@@ -155,7 +157,9 @@ export function tryRotateEntityToMatchWorld(
   entity: ProjectEntity,
   stage: StageNumber,
 ): EntityUpdateResult {
-  return handleUpdate(project, stage, entity, nil, nil, false, nil)
+  const entitySource = entity.getWorldEntity(stage)
+  if (!entitySource) return EntityUpdateResult.NoChange
+  return handleUpdate(project, entity, entitySource, stage, entitySource.direction, nil, false, nil)
 }
 
 function checkUpgradeType(existing: ProjectEntity, upgradeType: string): void {
@@ -168,30 +172,37 @@ export function tryApplyUpgradeTarget(project: Project, entity: ProjectEntity, s
   if (!entitySource) return EntityUpdateResult.NoChange
 
   const overrideUpgradeTarget = entitySource.get_upgrade_target()?.name
-  return handleUpdate(project, stage, entity, entitySource.get_upgrade_direction(), overrideUpgradeTarget, false, nil)
+  return handleUpdate(
+    project,
+    entity,
+    entitySource,
+    stage,
+    entitySource.get_upgrade_direction(),
+    overrideUpgradeTarget,
+    false,
+    nil,
+  )
 }
 
 function handleUpdate(
   project: Project,
-  stage: StageNumber,
   entity: ProjectEntity,
-  overrideDirection: defines.direction | nil,
-  upgradeTarget: string | nil,
-  shouldGetBpValue: boolean,
+  entitySource: LuaEntity,
+  stage: StageNumber,
+  targetDirection: defines.direction | nil,
+  targetUpgrade: string | nil,
+  getBpValue: boolean,
   knownBpValue: BlueprintEntity | nil,
 ): EntityUpdateResult {
-  const entitySource = entity.getWorldEntity(stage)
-  if (!entitySource) return EntityUpdateResult.NoChange
   if (entity.isUndergroundBelt()) {
-    return handleUndergroundBeltUpdate(project, stage, entity, entitySource, overrideDirection, upgradeTarget)
+    return handleUndergroundBeltUpdate(project, entity, stage, targetDirection, targetUpgrade ?? entitySource.name)
   }
 
-  const newDirection = overrideDirection ?? entitySource.direction
-  const rotated = newDirection && newDirection != entity.direction && !canBeAnyDirection(entitySource)
+  const rotated = targetDirection && targetDirection != entity.direction && !canBeAnyDirection(entitySource)
   if (rotated) {
     const rotateAllowed = stage == entity.firstStage
     if (rotateAllowed) {
-      entity.direction = newDirection
+      entity.direction = targetDirection
       const entityType = entitySource.type
       if (entityType == "loader" || entityType == "loader-1x1") {
         assume<LoaderProjectEntity>(entity)
@@ -203,11 +214,11 @@ function handleUpdate(
     }
   }
   let hasDiff = false
-  if (shouldGetBpValue && applyValueFromWorld(stage, entity, entitySource, knownBpValue)) {
+  if (getBpValue && applyValueFromWorld(stage, entity, entitySource, knownBpValue)) {
     hasDiff = true
-  } else if (upgradeTarget) {
-    checkUpgradeType(entity, upgradeTarget)
-    if (entity.applyUpgradeAtStage(stage, upgradeTarget)) {
+  } else if (targetUpgrade) {
+    checkUpgradeType(entity, targetUpgrade)
+    if (entity.applyUpgradeAtStage(stage, targetUpgrade)) {
       hasDiff = true
     }
   }
@@ -220,20 +231,24 @@ function handleUpdate(
 
 function handleUndergroundBeltUpdate(
   project: Project,
-  stage: StageNumber,
   entity: UndergroundBeltProjectEntity,
-  entitySource: LuaEntity,
-  overrideDirection: defines.direction | nil,
-  upgradeTarget: string | nil,
+  stage: StageNumber,
+  targetDirection: defines.direction | nil,
+  targetUpgrade: string | nil,
 ): EntityUpdateResult {
-  const newDirection = overrideDirection ?? entitySource.direction
-  const rotated = newDirection && newDirection != entity.direction
+  const rotated = targetDirection && targetDirection != entity.direction
 
-  const newName = upgradeTarget ?? entitySource.name
   const oldName = entity.getNameAtStage(stage)
-  const upgraded = newName != oldName
+  const upgraded = targetUpgrade != nil && targetUpgrade != oldName
 
-  if (!rotated && !upgraded) return EntityUpdateResult.NoChange
+  if (!rotated && !upgraded) {
+    if (targetDirection) {
+      // the entity was just rotated to expected state (and not upgraded)
+      // check if the underground direction was just fixed
+      updateWorldEntities(project, entity, stage)
+    }
+    return EntityUpdateResult.NoChange
+  }
 
   const pair = findUndergroundPair(project.content, entity, stage)
   const isSelfOrPairFirstStage = stage == entity.firstStage || (pair && pair.firstStage == stage)
@@ -245,12 +260,12 @@ function handleUndergroundBeltUpdate(
       return EntityUpdateResult.CannotRotate
     }
 
-    entity.direction = newDirection
+    entity.direction = targetDirection
     const oldType = entity.firstValue.type
     const newType = oldType == "input" ? "output" : "input"
     entity.setTypeProperty(newType)
     if (pair) {
-      pair.direction = newDirection
+      pair.direction = targetDirection
       pair.setTypeProperty(oldType)
     }
   }
@@ -259,8 +274,8 @@ function handleUndergroundBeltUpdate(
   const pairApplyStage = pair && isSelfOrPairFirstStage ? pair.firstStage : stage
   let cannotUpgradeChangedPair = false
   if (upgraded) {
-    entity.applyUpgradeAtStage(applyStage, newName)
-    pair?.applyUpgradeAtStage(pairApplyStage, newName)
+    entity.applyUpgradeAtStage(applyStage, targetUpgrade)
+    pair?.applyUpgradeAtStage(pairApplyStage, targetUpgrade)
     const newPair = findUndergroundPair(project.content, entity, stage)
     cannotUpgradeChangedPair = newPair != pair
     if (cannotUpgradeChangedPair) {
@@ -335,7 +350,6 @@ export function updateWiresFromWorld(project: Project, entity: ProjectEntity, st
 export declare const enum StageMoveResult {
   Updated = "updated",
   NoChange = "no-change",
-  CannotMoveUpgradedUnderground = "cannot-move-upgraded-underground",
   CannotMovePastLastStage = "cannot-move-past-last-stage",
   CannotMoveBeforeFirstStage = "cannot-move-before-first-stage",
   IntersectsAnotherEntity = "intersects-another-entity",
@@ -365,15 +379,7 @@ function lastStageChangeWillIntersect(
 }
 
 function checkCanSetFirstStage(project: Project, entity: ProjectEntity, stage: StageNumber): StageMoveResult {
-  if (entity.isSettingsRemnant) return StageMoveResult.NoChange
-  const oldStage = entity.firstStage
-  if (oldStage == stage) return StageMoveResult.NoChange
-
-  if (entity.isUndergroundBelt() && entity.hasStageDiff()) {
-    return StageMoveResult.CannotMoveUpgradedUnderground
-  }
-
-  // if (stage == entity.firstStage) return StageMoveResult.NoChange
+  if (entity.isSettingsRemnant || entity.firstStage == stage) return StageMoveResult.NoChange
   if (entity.lastStage && stage > entity.lastStage) return StageMoveResult.CannotMovePastLastStage
 
   if (!firstStageChangeWillIntersect(project.content, entity, stage)) {

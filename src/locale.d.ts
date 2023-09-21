@@ -110,8 +110,6 @@ export declare const enum L_Interaction {
   EntityMovedBackToStage = "bp100.interaction.entity-moved-back-to-stage",
   /** Upgrading this will change the underground pair */
   CannotUpgradeUndergroundChangedPair = "bp100.interaction.cannot-upgrade-underground-changed-pair",
-  /** Cannot move underground belt with upgrade. */
-  CannotMoveUndergroundBeltWithUpgrade = "bp100.interaction.cannot-move-underground-belt-with-upgrade",
   /** Cannot move entity past last stage */
   CannotMovePastLastStage = "bp100.interaction.cannot-move-past-last-stage",
   /** Cannot deconstruct entity at first stage */

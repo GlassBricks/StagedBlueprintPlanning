@@ -609,7 +609,7 @@ describe("underground belt inconsistencies", () => {
       assertEntityCorrect(rightUnderground, false)
       assertEntityCorrect(middleUnderground, false)
     })
-    test.skip("when flipping an underground to correct error, also flips its pair", () => {
+    test("when flipping an underground to correct error, also flips its pair", () => {
       const leftStage1 = leftUnderground.getWorldEntity(1)!
       leftStage1.rotate({ by_player: player })
       // see first test for current state

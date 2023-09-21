@@ -1142,19 +1142,55 @@ describe("undergrounds", () => {
     assertUpdateCalled(entity2, 1, 2, false)
   })
 
-  test("cannot move underground if it would also upgrade", () => {
-    const { entity1, entity2 } = createUndergroundBeltPair(1)
-    entity1.applyUpgradeAtStage(2, "fast-underground-belt")
-    entity2.applyUpgradeAtStage(2, "fast-underground-belt")
+  test("rotating to fix direction updates all entities", () => {
+    const { luaEntity, entity } = createUndergroundBelt(1)
+    luaEntity.rotate()
+    expect(entity.hasErrorAt(1)).toBe(true)
+    luaEntity.rotate()
+    expect(entity.hasErrorAt(1)).toBe(false)
+    const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, 1)
+    expect(ret).toBe(EntityUpdateResult.NoChange)
 
-    const ret = projectUpdates.trySetFirstStage(project, entity1, 2)
-    expect(ret).to.be("cannot-move-upgraded-underground")
+    assertOneEntity()
+    assertUpdateCalled(entity, 1)
+  })
+  test("updating to fix direction updates highlights", () => {
+    const { luaEntity, entity } = createUndergroundBelt(1)
+    luaEntity.rotate()
+    expect(entity.hasErrorAt(1)).toBe(true)
+    luaEntity.rotate()
+    expect(entity.hasErrorAt(1)).toBe(false)
+    const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 1)
+    expect(ret).toBe(EntityUpdateResult.NoChange)
 
-    expect(entity1.firstStage).to.be(1)
-    expect(entity2.firstStage).to.be(1)
+    assertOneEntity()
+    assertUpdateCalled(entity, 1)
+  })
+  test("upgrade rotating to fix direction applies upgrade and updates highlights", () => {
+    const { luaEntity, entity } = createUndergroundBelt(1)
+    luaEntity.rotate()
+    expect(entity.hasErrorAt(1)).toBe(true)
 
-    assertNEntities(2)
-    assertWUNotCalled()
+    luaEntity.order_upgrade({
+      target: "underground-belt",
+      force: luaEntity.force,
+      direction: direction.west,
+    })
+    worldUpdater.updateWorldEntities.invokes((_, pEntity, stage) => {
+      if (entity == pEntity && stage == 1) {
+        luaEntity.rotate()
+      }
+      worldUpdaterCalls++
+    })
+
+    const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
+    expect(ret).toBe(EntityUpdateResult.NoChange)
+
+    expect(luaEntity.direction).toBe(direction.west)
+    expect(luaEntity.direction).toBe(entity.direction)
+
+    assertOneEntity()
+    assertUpdateCalled(entity, 1)
   })
 })
 
