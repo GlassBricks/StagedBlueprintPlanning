@@ -101,7 +101,7 @@ describe("error highlights", () => {
       updateAllHighlights(project, entity)
 
       for (let i = 1; i < 5; i++) {
-        if (i == 1 || stageSet.has(i)) {
+        if (stageSet.has(i)) {
           expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.nil()
         } else {
           expect(entity.getExtraEntity("errorElsewhereIndicator", i)).to.be.any()

@@ -53,16 +53,14 @@ export function assertErrorHighlightsCorrect(entity: ProjectEntity, maxStage: St
   if (!anyHasError) {
     expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
   } else {
-    for (const stage of $range(1, entity.firstStage - 1)) {
-      expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.nil()
-    }
-    for (const stage of $range(maxStage + 1, maxStage)) {
-      const hasError = entity.getWorldEntity(stage) == nil
+    for (const stage of $range(1, maxStage)) {
+      const hasError = entity.hasErrorAt(stage)
       if (hasError) {
         // no indicator
-        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.nil()
+        expect(entity.getExtraEntity("errorOutline", stage)).not.toBeNil()
+        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).toBeNil()
       } else {
-        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.any()
+        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).toBeAny()
       }
     }
   }

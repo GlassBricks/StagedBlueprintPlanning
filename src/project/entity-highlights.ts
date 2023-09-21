@@ -199,7 +199,7 @@ function updateErrorOutlines(project: Project, entity: ProjectEntity): void {
     entity.destroyAllExtraEntities("errorElsewhereIndicator")
   } else {
     for (const stage of $range(1, project.lastStageFor(entity))) {
-      const shouldHaveIndicator = stage >= entity.firstStage && entity.getWorldEntity(stage) != nil
+      const shouldHaveIndicator = !entity.hasErrorAt(stage)
       updateHighlight(entity, stage, project, "errorElsewhereIndicator", shouldHaveIndicator)
     }
   }
