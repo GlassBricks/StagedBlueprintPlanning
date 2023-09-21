@@ -23,6 +23,8 @@ import {
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+
+import { getStageAtSurface } from "../project/UserProject"
 import { Entity } from "./Entity"
 import {
   EntityPrototypeInfo,
@@ -31,6 +33,7 @@ import {
   PasteCompatibleRotationType,
   rollingStockTypes,
 } from "./entity-prototype-info"
+import { UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { getUndergroundDirection } from "./underground-belt"
 import build_check_ghost_revive = defines.build_check_type.ghost_revive
 import build_check_manual = defines.build_check_type.manual
@@ -190,7 +193,7 @@ const rawset = _G.rawset
  * If changed is false, the code assumes that the last time this was called [entity] is the same.
  * This is a performance optimization to use with care.
  */
-function createEntity(
+export function createEntity(
   surface: LuaSurface,
   position: MapPosition,
   direction: defines.direction,
@@ -287,6 +290,16 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
   moduleInventory.sort_and_merge()
 }
 
+export function canFlipUnderground(luaEntity: LuaEntity): boolean {
+  const stage = getStageAtSurface(luaEntity.surface_index)
+  if (!stage) return true
+  const content = stage.project.content
+  const existing = content.findCompatibleWithLuaEntity(luaEntity, nil, stage.stageNumber)
+  if (!existing) return true
+  assume<UndergroundBeltProjectEntity>(existing)
+  return existing.firstValue.type != luaEntity.belt_to_ground_type
+}
+
 function updateUndergroundRotation(
   luaEntity: LuaEntity,
   value: BlueprintEntity,
@@ -303,6 +316,8 @@ function updateUndergroundRotation(
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
+    const neighbor = luaEntity.neighbours as LuaEntity | nil
+    if (neighbor && !canFlipUnderground(neighbor)) return luaEntity
     const wasRotatable = luaEntity.rotatable
     luaEntity.rotatable = true
     luaEntity.rotate()
@@ -331,7 +346,7 @@ function updateRollingStock(luaEntity: LuaEntity, value: BlueprintEntity): void 
 /**
  * Position and direction are ignored.
  */
-function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<Entity> | nil {
+export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<Entity> | nil {
   const bpEntity = knownValue ? mutableShallowCopy(knownValue) : blueprintEntity(entity)
   if (!bpEntity) return nil
   bpEntity.entity_number = nil!
@@ -342,7 +357,7 @@ function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<En
   return bpEntity
 }
 
-function updateEntity(
+export function updateEntity(
   luaEntity: LuaEntity,
   value: Entity,
   direction: defines.direction,
@@ -386,7 +401,7 @@ function makePreviewIndestructible(entity: LuaEntity | nil): void {
     entity.corpse_immune_to_entity_placement = true
   }
 }
-function createPreviewEntity(
+export function createPreviewEntity(
   surface: LuaSurface,
   position: Position,
   apparentDirection: defines.direction,
@@ -401,8 +416,6 @@ function createPreviewEntity(
   makePreviewIndestructible(entity)
   return entity
 }
-
-export { createEntity, updateEntity, createPreviewEntity, saveEntity }
 
 // noinspection JSUnusedGlobalSymbols
 export const _mockable = true

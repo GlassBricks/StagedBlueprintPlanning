@@ -108,10 +108,6 @@ export declare const enum L_Interaction {
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",
   /** Entity moved back to __1__ */
   EntityMovedBackToStage = "bp100.interaction.entity-moved-back-to-stage",
-  /** Cannot flip underground paired with multiple other undergrounds */
-  CannotFlipUndergroundDueToMultiplePairs = "bp100.interaction.cannot-flip-underground-due-to-multiple-pairs",
-  /** Cannot upgrade underground paired with multiple other undergrounds */
-  CannotUpgradeUndergroundDueToMultiplePairs = "bp100.interaction.cannot-upgrade-underground-due-to-multiple-pairs",
   /** Cannot create upgrade if underground pairs are not in the same stage */
   CannotCreateUndergroundUpgradeIfNotInSameStage = "bp100.interaction.cannot-create-underground-upgrade-if-not-in-same-stage",
   /** Upgrading this will change the underground pair */

@@ -13,8 +13,11 @@ import { BlueprintEntity, LuaSurface, TrainScheduleRecord } from "factorio:runti
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
-import { canBeAnyDirection, createEntity, saveEntity, updateEntity } from "../../entity/save-load"
+import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
+import { canBeAnyDirection, canFlipUnderground, createEntity, saveEntity, updateEntity } from "../../entity/save-load"
 import { assert } from "../../lib"
+import { UserProject } from "../../project/ProjectDef"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { createRollingStocks } from "./createRollingStock"
 
 let surface: LuaSurface
@@ -22,6 +25,7 @@ before_each(() => {
   surface = game.surfaces[1]
   surface.find_entities().forEach((e) => e.destroy())
 })
+
 test("can save an entity", () => {
   const entity = surface.create_entity({
     name: "inserter",
@@ -107,7 +111,14 @@ test("can update an entity", () => {
     force: "player",
     bar: 3,
   })!
-  const newEntity = updateEntity(entity, { name: "iron-chest", bar: 4 } as Entity, defines.direction.north)
+  const newEntity = updateEntity(
+    entity,
+    {
+      name: "iron-chest",
+      bar: 4,
+    } as Entity,
+    defines.direction.north,
+  )
   expect(newEntity).to.be(entity)
   expect(entity.get_inventory(defines.inventory.chest)!.get_bar() - 1).to.be(4)
 })
@@ -150,25 +161,35 @@ test("can rotate an assembler with no fluid recipe", () => {
 })
 
 describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
-  const inOut = flipped ? "output" : "input"
+  const type = flipped ? "output" : "input"
+  const otherType = flipped ? "input" : "output"
+  let project: UserProject
+  before_each(() => {
+    project = createUserProject("Test", 2)
+    surface = project.getSurface(1)!
+  })
+  after_each(() => {
+    _deleteAllProjects()
+  })
+
   test("saving an underground belt in output direction KEEPS direction", () => {
     const entity = surface.create_entity({
       name: "underground-belt",
       position: { x: 12.5, y: 12.5 },
       force: "player",
       direction: defines.direction.south,
-      type: inOut,
+      type,
     })!
     expect(entity.direction).to.be(defines.direction.south)
 
     const saved = saveEntity(entity)
-    expect(saved).to.equal({ name: "underground-belt", type: inOut })
+    expect(saved).to.equal({ name: "underground-belt", type: type })
   })
 
   test("creating an underground belt in output direction KEEPS direction", () => {
     const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.south, {
       name: "underground-belt",
-      type: inOut,
+      type,
     } as Entity)!
     expect(luaEntity).to.be.any()
     expect(luaEntity.name).to.be("underground-belt")
@@ -190,7 +211,10 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     // if west underground is output, the created entity will be flipped
     const eastUnderground = createEntity(
       surface,
-      { x: 1.5, y: 0.5 },
+      {
+        x: 1.5,
+        y: 0.5,
+      },
       flipped ? defines.direction.east : defines.direction.west,
       {
         name: "underground-belt",
@@ -208,7 +232,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       position: { x: 12.5, y: 12.5 },
       force: "player",
       direction: defines.direction.west,
-      type: inOut,
+      type,
     })!
     entity.rotatable = false // should not matter
     const otherDir = flipped ? "input" : "output"
@@ -227,12 +251,158 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     expect(updated.direction).to.be(defines.direction.east)
   })
 
+  test("can flip underground with pair", () => {
+    const westUnderground = surface.create_entity({
+      name: "underground-belt",
+      position: { x: 0.5, y: 0.5 },
+      force: "player",
+      direction: flipped ? defines.direction.west : defines.direction.east,
+      type: flipped ? "output" : "input",
+    })
+    assert(westUnderground)
+    const eastUnderground = surface.create_entity({
+      name: "underground-belt",
+      position: { x: 1.5, y: 0.5 },
+      force: "player",
+      direction: flipped ? defines.direction.west : defines.direction.east,
+      type: flipped ? "input" : "output",
+    })
+    assert(eastUnderground)
+
+    expect(westUnderground.neighbours).toEqual(eastUnderground)
+
+    const updated = updateEntity(
+      westUnderground,
+      {
+        name: "underground-belt",
+        type: flipped ? "input" : "output",
+      } as Entity,
+      flipped ? defines.direction.east : defines.direction.west,
+    )
+    assert(updated)
+
+    expect(updated).to.be.any()
+    expect(updated.name).to.be("underground-belt")
+    expect(updated.direction).to.be(flipped ? defines.direction.east : defines.direction.west)
+  })
+
+  describe("canFlipUnderground", () => {
+    const pos = { x: 12.5, y: 12.5 }
+    test("returns true if entity not in project", () => {
+      const entity = surface.create_entity({
+        name: "underground-belt",
+        position: pos,
+        force: "player",
+        direction: defines.direction.south,
+        type,
+      })
+      assert(entity)
+      expect(canFlipUnderground(entity)).toBe(true)
+    })
+    test("returns false if entity in correct direction", () => {
+      const entity = surface.create_entity({
+        name: "underground-belt",
+        position: pos,
+        force: "player",
+        direction: defines.direction.south,
+        type,
+      })
+      assert(entity)
+      const projectEntity = createProjectEntityNoCopy(
+        {
+          name: "underground-belt",
+          type,
+        },
+        pos,
+        defines.direction.south,
+        1,
+      )
+      project.content.add(projectEntity)
+
+      expect(canFlipUnderground(entity)).toBe(false)
+    })
+    test("returns true if entity in wrong direction", () => {
+      const entity = surface.create_entity({
+        name: "underground-belt",
+        position: pos,
+        force: "player",
+        direction: defines.direction.north,
+        type: otherType,
+      })
+      assert(entity)
+      const projectEntity = createProjectEntityNoCopy(
+        {
+          name: "underground-belt",
+          type,
+        },
+        pos,
+        defines.direction.south,
+        1,
+      )
+      project.content.add(projectEntity)
+
+      expect(canFlipUnderground(entity)).toBe(true)
+    })
+  })
+
+  test("won't flip underground if canFlipUnderground on pair is false", () => {
+    const leftUnderground = surface.create_entity({
+      name: "underground-belt",
+      position: { x: 0.5, y: 0.5 },
+      force: "player",
+      direction: flipped ? defines.direction.west : defines.direction.east,
+      type,
+    })
+    assert(leftUnderground)
+    const rightUnderground = surface.create_entity({
+      name: "underground-belt",
+      position: { x: 1.5, y: 0.5 },
+      force: "player",
+      direction: flipped ? defines.direction.west : defines.direction.east,
+      type: otherType,
+    })
+    assert(rightUnderground)
+    expect(leftUnderground.neighbours).toEqual(rightUnderground)
+    const rightEntity = createProjectEntityNoCopy(
+      {
+        name: "underground-belt",
+        type: rightUnderground.belt_to_ground_type,
+      },
+      rightUnderground.position,
+      rightUnderground.direction,
+      1,
+    )
+    project.content.add(rightEntity)
+
+    expect(canFlipUnderground(rightUnderground)).toBe(false)
+
+    const updated = updateEntity(
+      leftUnderground,
+      {
+        name: "underground-belt",
+        type: otherType,
+      } as Entity,
+      flipped ? defines.direction.east : defines.direction.west,
+    )
+    expect(updated).toBe(leftUnderground)
+
+    // not flipped
+    expect(leftUnderground).toMatchTable({
+      belt_to_ground_type: type,
+      direction: flipped ? defines.direction.west : defines.direction.east,
+    })
+    expect(rightUnderground).toMatchTable({
+      belt_to_ground_type: otherType,
+      direction: flipped ? defines.direction.west : defines.direction.east,
+    })
+  })
+
   test("can upgrade underground", () => {
     const entity = surface.create_entity({
       name: "underground-belt",
       position: { x: 12.5, y: 12.5 },
       force: "player",
-      type: inOut,
+      type,
       direction: defines.direction.west,
     })!
     expect(entity).to.be.any()
@@ -240,14 +410,14 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       entity,
       {
         name: "fast-underground-belt",
-        type: inOut,
+        type,
       } as Entity,
       defines.direction.west,
     )!
     expect(updated).to.be.any()
     expect(updated.name).to.be("fast-underground-belt")
     expect(updated.direction).to.be(defines.direction.west)
-    expect(updated.belt_to_ground_type).to.be(inOut)
+    expect(updated.belt_to_ground_type).to.be(type)
   })
 
   test("can rotate underground", () => {
@@ -255,7 +425,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       name: "underground-belt",
       position: { x: 12.5, y: 12.5 },
       force: "player",
-      type: inOut,
+      type,
       direction: defines.direction.west,
     })!
     expect(entity).to.be.any()
@@ -263,7 +433,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       entity,
       {
         name: "underground-belt",
-        type: inOut,
+        type,
       } as Entity,
       defines.direction.south,
     )!

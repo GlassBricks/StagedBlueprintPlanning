@@ -10,10 +10,12 @@
  */
 
 import expect from "tstl-expect"
+import { direction_vectors } from "util"
 import { UndergroundBeltEntity } from "../../entity/Entity"
 import { MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { createProjectEntityNoCopy, StageNumber, UndergroundBeltProjectEntity } from "../../entity/ProjectEntity"
-import { findUndergroundPair, unit } from "../../entity/underground-belt"
+import { findUndergroundPair } from "../../entity/underground-belt"
+import { Pos } from "../../lib/geometry"
 import direction = defines.direction
 
 let content: MutableProjectContent
@@ -26,96 +28,123 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
   function createUnderground(location: number, type: "input" | "output", stage: StageNumber) {
     const underground = createProjectEntityNoCopy<UndergroundBeltEntity>(
       { name: "underground-belt", type },
-      unit(direction).times(location),
+      Pos.normalize(direction_vectors[direction]).times(location),
       direction,
       stage,
     )
     content.add(underground)
     return underground
   }
-
-  function strToUndergrounds(str: string) {
-    const result: (UndergroundBeltProjectEntity | "none")[] = []
-    for (let i = 0; i < str.length; i++) {
-      const c = str[i]
-      if (c == "v") {
-        result.push(createUnderground(i, "input", i + 1))
-      } else if (c == "^") {
-        result.push(createUnderground(i, "output", i + 1))
-      } else {
-        result.push("none")
-      }
-    }
-    return result
-  }
-
-  function testSingle(
-    undergrounds: (UndergroundBeltProjectEntity | "none")[],
-    probe: number,
-    expected: number | undefined,
-    expectedMultiple: boolean,
-  ): void {
-    const expectedUnderground = expected != nil ? undergrounds[expected] : nil
-    if (expectedUnderground == "none") error("expectedUnderground is none")
-    const probeUnderground = undergrounds[probe]
-    if (probeUnderground == "none") error("probeUnderground is none")
-    const [underground, hasMultiple] = findUndergroundPair(content, probeUnderground)
-    expect(underground).to.equal(expectedUnderground)
-    expect(hasMultiple).to.equal(expectedMultiple)
-  }
-
-  function testUndergrounds(
-    expected: number | undefined,
-    inputUndergrounds: (UndergroundBeltProjectEntity | "none")[],
-    probe: number,
-    expectedMultiple: boolean,
+  function checkPair(
+    u1: UndergroundBeltProjectEntity,
+    expectedPair: UndergroundBeltProjectEntity | nil,
+    stage: StageNumber,
   ) {
-    testSingle(inputUndergrounds, probe, expected, expectedMultiple)
-    if (expected != nil) {
-      testSingle(inputUndergrounds, expected, probe, expectedMultiple)
+    const pair = findUndergroundPair(content, u1, stage)
+    expect(pair).toEqual(expectedPair)
+    if (expectedPair) {
+      const pairPair = findUndergroundPair(content, expectedPair, stage)
+      expect(pairPair).toEqual(u1)
     }
   }
 
-  test("simple", () => {
-    const undergrounds = strToUndergrounds("v___^")
-    testUndergrounds(4, undergrounds, 0, false)
+  test("nil if no pair", () => {
+    const u1 = createUnderground(0, "input", 1)
+    checkPair(u1, nil, 1)
   })
-  test("multiple one direction", () => {
-    const undergrounds = strToUndergrounds("v__^^")
-    ;(undergrounds[4] as UndergroundBeltProjectEntity).setFirstStageUnchecked(1)
-    testUndergrounds(3, undergrounds, 0, true)
-  })
-  test("multiple other direction", () => {
-    const undergrounds = strToUndergrounds("v_v^")
-    ;(undergrounds[3] as UndergroundBeltProjectEntity).setFirstStageUnchecked(1)
-
-    testUndergrounds(3, undergrounds, 2, true)
-  })
-  test("out of reach", () => {
-    const undergrounds = strToUndergrounds("v_____^")
-    testUndergrounds(nil, undergrounds, 0, false)
-  })
-  test("backwards out of reach", () => {
-    const undergrounds = strToUndergrounds("v____v^")
-    ;(undergrounds[6] as UndergroundBeltProjectEntity).setFirstStageUnchecked(1)
-    testUndergrounds(6, undergrounds, 5, false)
+  test("nil if wrong direction", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "input", 1)
+    checkPair(u1, nil, 1)
+    checkPair(u2, nil, 1)
   })
 
-  test("if completely covered by first, does not count as multiple", () => {
-    const inputUndergrounds = strToUndergrounds("v__^^")
-    testUndergrounds(3, inputUndergrounds, 0, false)
+  test("finds pair", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 1)
+    checkPair(u1, u2, 1)
   })
 
-  test("none if connected to another pair", () => {
-    const undergrounds = strToUndergrounds("vv__^")
-    testUndergrounds(nil, undergrounds, 0, false)
+  test("does not find pair if not in range", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(6, "output", 1)
+    checkPair(u1, nil, 1)
+    checkPair(u2, nil, 1)
   })
 
-  test("different underground types not same group", () => {
-    const undergrounds = strToUndergrounds("v^") as UndergroundBeltProjectEntity[]
-    undergrounds[0].applyUpgradeAtStage(1, "fast-underground-belt")
-    const [pair, hasMultiple] = findUndergroundPair(content, undergrounds[1])
-    expect(pair).to.be.nil()
-    expect(hasMultiple).to.be(false)
+  test("if multiple pairs, returns closest", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 1)
+    const u3 = createUnderground(2, "output", 1)
+    checkPair(u1, u2, 1)
+    checkPair(u3, nil, 1)
+  })
+
+  test("if multiple pairs in later stages, returns first", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 3)
+    const u3 = createUnderground(2, "output", 2)
+    checkPair(u1, u3, 1)
+    checkPair(u1, u2, 3)
+  })
+
+  test("if beyond lastStage, does not match", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 1)
+    u2.setLastStageUnchecked(1)
+    checkPair(u1, u2, 1)
+    checkPair(u1, nil, 2)
+  })
+
+  test("if shadowed by existing, returns nil", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "input", 1)
+    const u3 = createUnderground(2, "output", 1)
+    checkPair(u1, nil, 1)
+    checkPair(u2, u3, 1)
+  })
+
+  test("if shadow is in later stage, depends on stage", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "input", 2)
+    const u3 = createUnderground(2, "output", 1)
+    checkPair(u1, u3, 1)
+    checkPair(u1, nil, 2)
+    checkPair(u2, u3, 2)
+  })
+
+  test("returns if pair is in later stage", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 2)
+    checkPair(u1, u2, 1)
+  })
+
+  test("must match type", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 1)
+    u2._applyDiffAtStage(1, { name: "fast-underground-belt" })
+
+    checkPair(u1, nil, 1)
+    checkPair(u2, nil, 1)
+  })
+
+  test("if has upgrade, doesn't match if upgrade doesn't match", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 1)
+    u2.applyUpgradeAtStage(2, "fast-underground-belt")
+
+    checkPair(u1, u2, 1)
+    checkPair(u1, nil, 2)
+    checkPair(u2, nil, 2)
+  })
+
+  test("with name argument", () => {
+    const u1 = createUnderground(0, "input", 1)
+    const u2 = createUnderground(1, "output", 1)
+    u2.applyUpgradeAtStage(1, "fast-underground-belt")
+    const pair = findUndergroundPair(content, u1, 1)
+    expect(pair).toEqual(nil)
+    const pair2 = findUndergroundPair(content, u1, 1, "fast-underground-belt")
+    expect(pair2).toEqual(u2)
   })
 })

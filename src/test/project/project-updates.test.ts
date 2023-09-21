@@ -26,7 +26,6 @@ import {
   StageDiffsInternal,
   StageNumber,
 } from "../../entity/ProjectEntity"
-import { findUndergroundPair } from "../../entity/underground-belt"
 import { ContextualFun } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { StageMoveResult } from "../../project/project-updates"
@@ -35,6 +34,7 @@ import { createRollingStock, createRollingStocks } from "../entity/createRolling
 import { moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 import _wireHandler = require("../../entity/wires")
+import _highlights = require("../../project/entity-highlights")
 import projectUpdates = require("../../project/project-updates")
 import _worldListener = require("../../project/user-actions")
 import _worldUpdater = require("../../project/world-entity-updates")
@@ -48,6 +48,7 @@ const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
 const worldUpdater = moduleMock(_worldUpdater, true)
 const wireSaver = moduleMock(_wireHandler, true)
+const highlights = moduleMock(_highlights, true)
 
 let worldUpdaterCalls: number
 let expectedWuCalls: number
@@ -91,11 +92,13 @@ function assertWUNotCalled() {
     }
   }
 }
-function assertUpdateCalled(entity: ProjectEntity, startStage: StageNumber, n?: number) {
+function assertUpdateCalled(entity: ProjectEntity, startStage: StageNumber, n?: number, updateWires?: boolean): void {
   expectedWuCalls++
   if (n == nil) expect(worldUpdaterCalls).to.be(1)
-  const spy = worldUpdater.updateWorldEntities
-  expect(spy).nthCalledWith(n ?? 1, project, entity, startStage)
+  expect(worldUpdater.updateWorldEntities).nthCalledWith(n ?? 1, project, entity, startStage, updateWires)
+  if (updateWires == false) {
+    expect(highlights.updateAllHighlights).calledWith(project, entity)
+  }
 }
 
 function assertUpdateOnLastStageChangedCalled(entity: ProjectEntity, startStage: StageNumber) {
@@ -456,7 +459,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     expect(ret).to.be("updated")
     expect(entity.direction).to.be(direction.west)
     assertOneEntity()
-    assertUpdateCalled(entity, 2)
+    assertUpdateCalled(entity, 2, nil, false)
   })
 
   test("in higher stage forbids rotation", () => {
@@ -479,7 +482,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     expect(entity.direction).to.be(direction.south)
     expect(entity.firstValue.type).to.be("output")
     assertOneEntity()
-    assertUpdateCalled(entity, 1)
+    assertUpdateCalled(entity, 1, nil, false)
   })
 })
 
@@ -833,7 +836,7 @@ describe("undergrounds", () => {
       expect(entity.direction).to.be(direction.east)
 
       assertOneEntity()
-      assertUpdateCalled(entity, 1)
+      assertUpdateCalled(entity, 1, nil, false)
     })
 
     test("lone underground belt in higher stage forbids rotation", () => {
@@ -873,8 +876,8 @@ describe("undergrounds", () => {
       })
 
       assertNEntities(2)
-      assertUpdateCalled(entity1, 1, which == "lower" ? 1 : 2)
-      assertUpdateCalled(entity2, 2, which == "lower" ? 2 : 1)
+      assertUpdateCalled(entity1, 1, which == "lower" ? 1 : 2, which == "lower" ? false : nil)
+      assertUpdateCalled(entity2, 2, which == "lower" ? 2 : 1, which == "lower" ? nil : false)
     })
 
     test("cannot rotate if not in first stage", () => {
@@ -898,48 +901,6 @@ describe("undergrounds", () => {
 
       assertNEntities(2)
       assertRefreshCalled(entity1, 3)
-    })
-
-    test("cannot rotate underground with multiple pairs", () => {
-      const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1, 2)
-      const { entity: entity3, luaEntity: luaEntity3 } = createUndergroundBelt(3, {
-        position: Pos.plus(pos, { x: -2, y: 0 }),
-      })
-
-      for (const [entity, luaEntity] of [
-        [entity1, luaEntity1],
-        [entity2, luaEntity2],
-        [entity3, luaEntity3],
-      ] as const) {
-        const [rotated] = luaEntity.rotate()
-        assert(rotated)
-
-        const [, hasMultiple] = findUndergroundPair(project.content, entity)
-        expect(hasMultiple).to.be(true)
-
-        const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, entity.firstStage)
-        expect(ret).to.be("cannot-flip-multi-pair-underground")
-
-        expect(entity1).toMatchTable({
-          firstValue: { type: "input" },
-          direction: direction.west,
-        })
-        expect(entity2).toMatchTable({
-          firstValue: { type: "output" },
-          direction: direction.west,
-        })
-        expect(entity3).toMatchTable({
-          firstValue: { type: "input" },
-          direction: direction.west,
-        })
-
-        assertNEntities(3)
-        assertRefreshCalled(entity, entity.firstStage)
-        clearMocks()
-
-        const [rotatedBack] = luaEntity.rotate()
-        expect(rotatedBack).to.be(true)
-      }
     })
   })
 
@@ -1029,33 +990,6 @@ describe("undergrounds", () => {
         assertUpdateCalled(entity2, 2, luaEntity == luaEntity1 ? 2 : 1)
       },
     )
-
-    test("cannot upgrade underground with multiple pairs", () => {
-      const { entity1, entity2, luaEntity1, luaEntity2 } = createUndergroundBeltPair(1, 1)
-      const { entity: entity3, luaEntity: luaEntity3 } = createUndergroundBelt(3, {
-        position: Pos.plus(pos, { x: -2, y: 0 }),
-      })
-
-      for (const [entity, luaEntity] of [
-        [entity1, luaEntity1],
-        [entity2, luaEntity2],
-        [entity3, luaEntity3],
-      ] as const) {
-        luaEntity.order_upgrade({
-          target: "fast-underground-belt",
-          force: luaEntity.force,
-        })
-        const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, entity.firstStage)
-        expect(ret).to.be("cannot-upgrade-multi-pair-underground")
-
-        expect(entity1.firstValue.name).to.be("underground-belt")
-        expect(entity2.firstValue.name).to.be("underground-belt")
-        expect(entity3.firstValue.name).to.be("underground-belt")
-
-        assertNEntities(3)
-        assertWUNotCalled()
-      }
-    })
 
     test("cannot upgrade in higher stage if pairs are in different stages", () => {
       const { luaEntity1, entity1, entity2 } = createUndergroundBeltPair(1, 2)

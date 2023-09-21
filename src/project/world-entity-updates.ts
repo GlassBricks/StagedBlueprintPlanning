@@ -76,8 +76,7 @@ function updateWorldEntitiesInRange(
   endStage: StageNumber,
 ): boolean {
   assert(startStage >= 1)
-  const { firstStage, lastStage } = entity
-  const direction = entity.direction
+  const { firstStage, lastStage, direction } = entity
   const previewDirection = entity.getPreviewDirection()
 
   if (startStage == firstStage) startStage = 1 // also update all previews if first stage edited
@@ -138,13 +137,18 @@ function updateWires(project: Project, entity: ProjectEntity, startStage: StageN
   }
 }
 
-export function updateWorldEntities(project: Project, entity: ProjectEntity, startStage: StageNumber): void {
+export function updateWorldEntities(
+  project: Project,
+  entity: ProjectEntity,
+  startStage: StageNumber,
+  updateHighlights: boolean = true,
+): void {
   if (entity.isSettingsRemnant) return makeSettingsRemnant(project, entity)
   const lastStage = project.lastStageFor(entity)
   if (lastStage < startStage) return
   updateWorldEntitiesInRange(project, entity, startStage, lastStage)
   updateWires(project, entity, startStage)
-  updateAllHighlights(project, entity)
+  if (updateHighlights) updateAllHighlights(project, entity)
 }
 // extra hot path
 export function updateNewWorldEntitiesWithoutWires(project: Project, entity: ProjectEntity): void {

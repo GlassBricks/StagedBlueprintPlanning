@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { SurfaceCreateEntity } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
@@ -44,19 +45,21 @@ before_each(() => {
   entity = createProjectEntityNoCopy({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
 
-function createEntity(stage: StageNumber) {
-  return assert(
-    surfaces[stage - 1].create_entity({
-      name: "stone-furnace",
-      position: Pos(1, 1),
-    }),
-  )
+function createEntity(stage: StageNumber, params?: Partial<SurfaceCreateEntity>) {
+  const entity = surfaces[stage - 1].create_entity({
+    name: "stone-furnace",
+    position: Pos(1, 1),
+    ...params,
+  })
+  assert(entity, "entity created")
+  return entity!
 }
-function createPreview(stage: StageNumber) {
+function createPreview(stage: StageNumber, params: Partial<SurfaceCreateEntity> = {}) {
   return assert(
     surfaces[stage - 1].create_entity({
-      name: Prototypes.PreviewEntityPrefix + "stone-furnace",
       position: Pos(1, 1),
+      ...params,
+      name: Prototypes.PreviewEntityPrefix + (params?.name ?? "stone-furnace"),
     }),
   )
 }
@@ -79,7 +82,6 @@ describe("error highlights", () => {
     updateAllHighlights(project, entity)
     expect(entity.getExtraEntity("errorOutline", 2)!).to.be.any()
   })
-
   test("deletes highlight when entity revived", () => {
     removeInStage(2)
     updateAllHighlights(project, entity)
@@ -124,6 +126,45 @@ describe("error highlights", () => {
   test("does nothing if created in lower than first stage", () => {
     updateAllHighlights(project, entity)
     expect(entity.getExtraEntity("errorOutline", 1)).to.be.nil()
+  })
+})
+describe("undergrounds", () => {
+  before_each(() => {
+    surfaces.forEach((s) => s.find_entities().forEach((e) => e.destroy()))
+  })
+  test("creates error highlight if underground in wrong direction", () => {
+    const pos = Pos(1.5, 1.5)
+    const undergroundEntity = createProjectEntityNoCopy(
+      {
+        name: "underground-belt",
+        type: "input",
+      },
+      pos,
+      defines.direction.east,
+      2,
+    )
+    project.content.add(undergroundEntity)
+    undergroundEntity.replaceWorldOrPreviewEntity(
+      1,
+      createPreview(1, {
+        name: "underground-belt",
+        position: pos,
+      }),
+    )
+    for (const i of $range(2, 5)) {
+      undergroundEntity.replaceWorldOrPreviewEntity(
+        i,
+        createEntity(i, {
+          name: "underground-belt",
+          type: "output",
+          direction: defines.direction.west,
+          position: pos,
+        }),
+      )
+    }
+    updateAllHighlights(project, undergroundEntity)
+    expect(undergroundEntity.getExtraEntity("errorOutline", 2)).to.be.any()
+    assertErrorHighlightsCorrect(undergroundEntity, 5)
   })
 })
 

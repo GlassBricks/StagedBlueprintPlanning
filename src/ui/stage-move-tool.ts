@@ -15,6 +15,7 @@ import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
 import { getProjectPlayerData, ProjectPlayerData } from "../project/player-project-data"
 import { Stage } from "../project/ProjectDef"
+
 import { getStageAtSurface } from "../project/UserProject"
 import { PlayerChangedStageEvent, playerCurrentStage } from "./player-current-stage"
 

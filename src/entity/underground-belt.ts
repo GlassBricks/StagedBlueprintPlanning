@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { oppositedirection } from "util"
+import { direction_vectors, oppositedirection } from "util"
 import { Mutable } from "../lib"
-import { Pos, Position, PositionClass } from "../lib/geometry"
+import { Position } from "../lib/geometry"
 import { MutableProjectContent } from "./ProjectContent"
-import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
+import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import max = math.max
 import min = math.min
 
@@ -33,68 +33,42 @@ export function getUndergroundDirection(
  */
 export function findUndergroundPair(
   content: MutableProjectContent,
-  entity: UndergroundBeltProjectEntity,
-): LuaMultiReturn<[underground: UndergroundBeltProjectEntity | nil, hasMultiple: boolean]> {
-  const [pair, hasMultiple] = findUndergroundPairOneDirection(content, entity)
-  if (!pair || hasMultiple) return $multi(pair, hasMultiple)
-
-  const [pairPair, pairHasMultiple] = findUndergroundPairOneDirection(content, pair)
-  if (pairHasMultiple) {
-    return $multi(pair, true)
-  }
-  if (pairPair != entity) return $multi(nil, false)
-  return $multi(pair, false)
-}
-
-function findUndergroundPairOneDirection(
-  content: MutableProjectContent,
   member: UndergroundBeltProjectEntity,
-): LuaMultiReturn<[underground: UndergroundBeltProjectEntity | nil, hasMultiple: boolean]> {
-  const name = member.firstValue.name
+  stage: StageNumber,
+  name: string = member.getNameAtStage(stage),
+): UndergroundBeltProjectEntity | nil {
   const reach = game.entity_prototypes[name].max_underground_distance
-  if (!reach) return $multi(nil, false)
+  if (!reach) return
 
   const direction = getUndergroundDirection(member.direction, member.firstValue.type)
   const otherDirection = oppositedirection(direction)
 
   const { x, y } = member.position
-  const { x: dx, y: dy } = unit(direction)
+  const [dx, dy] = direction_vectors[direction]
 
-  // let found: UndergroundBeltProjectEntity | nil
-  const firstStage = member.firstStage
-  const lastStage = member.lastStage ?? math.huge
-  let pair: UndergroundBeltProjectEntity | nil = nil
+  // find pair: first by stage, then by closeness
+
+  let currentPair: UndergroundBeltProjectEntity | nil = nil
+  let shadowStage: StageNumber = Infinity
   const curPos = {} as Mutable<Position>
   for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
-    const found = content.findCompatibleByProps(name, curPos, nil, firstStage) as UndergroundBeltProjectEntity | nil
-    if (
-      !(
-        found &&
-        getUndergroundDirection(found.direction, found.firstValue.type) == otherDirection &&
-        found.firstValue.name == name
-      )
-    )
-      continue
-    if (pair == nil) {
-      pair = found
-    } else {
-      // if the first pair completely shadows the second pair, then we don't count it
-      if (stageRangeCovers(pair, found, firstStage, lastStage)) continue
-
-      return $multi(pair, true)
+    const candidate = content.findCompatibleByProps(name, curPos, nil, stage) as UndergroundBeltProjectEntity | nil
+    if (!candidate || candidate.getNameAtStage(stage) != name || candidate.firstStage >= shadowStage) continue
+    const candidateDirection = getUndergroundDirection(candidate.direction, candidate.firstValue.type)
+    if (candidateDirection == direction) {
+      // same direction and type; can shadow
+      shadowStage = min(shadowStage, candidate.firstStage)
+      if (shadowStage <= stage) break
     }
+    if (candidateDirection == otherDirection) {
+      if (candidate.firstStage <= stage) return candidate
+      if (currentPair == nil || candidate.firstStage < currentPair.firstStage) currentPair = candidate
+    }
+    // if <= firstStage, can't get any better, and is closest
   }
-  return $multi(pair, false)
-}
-
-export function unit(direction: defines.direction): PositionClass {
-  if (direction == defines.direction.north) return Pos(0, -1)
-  if (direction == defines.direction.south) return Pos(0, 1)
-  if (direction == defines.direction.west) return Pos(-1, 0)
-  if (direction == defines.direction.east) return Pos(1, 0)
-  error("Invalid direction: " + direction)
+  return currentPair
 }
 
 export function stageRangeCovers(

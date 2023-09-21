@@ -147,10 +147,6 @@ function notifyIfError(
   if (result == "no-change" || result == "updated") return
   if (result == "cannot-rotate") {
     createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
-  } else if (result == "cannot-flip-multi-pair-underground") {
-    createNotification(entity, byPlayer, [L_Interaction.CannotFlipUndergroundDueToMultiplePairs], true)
-  } else if (result == "cannot-upgrade-multi-pair-underground") {
-    createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs], true)
   } else if (result == "cannot-create-pair-upgrade") {
     createNotification(entity, byPlayer, [L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage], true)
   } else if (result == "cannot-upgrade-changed-pair") {

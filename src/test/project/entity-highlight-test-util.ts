@@ -40,17 +40,17 @@ export function assertConfigChangedHighlightsCorrect(entity: ProjectEntity, maxS
 }
 
 export function assertErrorHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
-  let hasAnyMissing = false
+  let anyHasError = false
   for (const stage of $range(entity.firstStage, maxStage)) {
-    if (entity.getWorldEntity(stage) == nil) {
-      hasAnyMissing = true
+    if (entity.hasErrorAt(stage)) {
+      anyHasError = true
       const highlight = expect(entity.getExtraEntity("errorOutline", stage)).to.be.any().getValue()!
       expect(highlight.highlight_box_type).to.be(HighlightConstants.Error)
     } else {
       expect(entity.getExtraEntity("errorOutline", stage)).to.be.nil()
     }
   }
-  if (!hasAnyMissing) {
+  if (!anyHasError) {
     expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
   } else {
     for (const stage of $range(1, entity.firstStage - 1)) {

@@ -1004,7 +1004,6 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
   const targetStage = playerData.moveTargetStage
   if (!targetStage) {
     error("moveTargetStage was not set")
-    return
   }
   const { stageNumber, project } = stage
   const undoActions: UndoAction[] = []

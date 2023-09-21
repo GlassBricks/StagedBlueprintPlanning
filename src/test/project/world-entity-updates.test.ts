@@ -39,6 +39,7 @@ const highlighter = moduleMock(_highlighter, true)
 const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
+
 before_each(() => {
   project = createMockProject(surfaces)
   entity = createProjectEntityNoCopy(

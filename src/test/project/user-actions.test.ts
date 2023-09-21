@@ -319,7 +319,6 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
   [EntityUpdateResult.NoChange, false],
   [EntityUpdateResult.Updated, false],
   [EntityUpdateResult.CannotRotate, L_Game.CantBeRotated],
-  [EntityUpdateResult.CannotUpgradeMultiPairUnderground, L_Interaction.CannotUpgradeUndergroundDueToMultiplePairs],
   [EntityUpdateResult.CannotCreatePairUpgrade, L_Interaction.CannotCreateUndergroundUpgradeIfNotInSameStage],
   [EntityUpdateResult.CannotUpgradeChangedPair, L_Interaction.CannotUpgradeUndergroundChangedPair],
 ]
@@ -388,7 +387,6 @@ describe("onEntityRotated", () => {
     [EntityRotateResult.NoChange, false],
     [EntityRotateResult.Updated, false],
     [EntityRotateResult.CannotRotate, L_Game.CantBeRotated],
-    [EntityRotateResult.CannotFlipMultiPairUnderground, L_Interaction.CannotFlipUndergroundDueToMultiplePairs],
   ])('calls tryRotateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     projectUpdates.tryRotateEntityToMatchWorld.invokes(() => {

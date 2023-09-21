@@ -12,6 +12,7 @@
 import { LuaEntity } from "factorio:runtime"
 import { ProjectEntity } from "../entity/ProjectEntity"
 import { Stage } from "../project/ProjectDef"
+
 import { getStageAtSurface } from "../project/UserProject"
 
 export function getProjectEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, ProjectEntity] | [_?: nil]> {

@@ -172,7 +172,7 @@ describe("findCompatibleWithLuaEntity", () => {
     expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
   })
 
-  test("matches if is flipped underground", () => {
+  test("matches underground both flipped and unflipped", () => {
     const same: LuaEntityInfo = {
       name: "underground-belt",
       type: "underground-belt",

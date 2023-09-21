@@ -11,6 +11,7 @@
 
 import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, SurfaceCreateEntity } from "factorio:runtime"
 import expect from "tstl-expect"
+import { oppositedirection } from "util"
 import { Prototypes, Settings } from "../../constants"
 import {
   circuitConnectionEquals,
@@ -18,6 +19,7 @@ import {
   ProjectCircuitConnection,
 } from "../../entity/circuit-connection"
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
+import { UndergroundBeltEntity } from "../../entity/Entity"
 import { isPreviewEntity } from "../../entity/entity-prototype-info"
 import {
   ProjectEntity,
@@ -25,9 +27,10 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
-import { saveEntity } from "../../entity/save-load"
+import { canFlipUnderground, saveEntity } from "../../entity/save-load"
+import { findUndergroundPair } from "../../entity/underground-belt"
 import { addPowerSwitchConnections, findPolePowerSwitchNeighbors } from "../../entity/wires"
-import { Events } from "../../lib"
+import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import {
@@ -91,7 +94,8 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
     direction: defines.direction.east,
     ...args,
   }
-  const entity: LuaEntity = assert(surfaces[stage - 1].create_entity(params), "created entity")[0]
+  const entity = surfaces[stage - 1].create_entity(params)
+  assert(entity, "created entity")
   const proto = game.entity_prototypes[params.name]
   if (proto.type == "inserter") {
     entity.inserter_stack_size_override = 1
@@ -100,12 +104,12 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   return entity
 }
 
-function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: number | false) {
+function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | false) {
   expect(entity.isSettingsRemnant).to.be.falsy()
   const found = project.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).to.be(entity)
 
-  let hasMissing: number | false = false
+  let hasError: number | false = false
   for (const stage of $range(1, project.lastStageFor(entity))) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)!
     assert(worldEntity, `entity exists at stage ${stage}`)
@@ -114,7 +118,19 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: number |
     if (value == nil) {
       assert(isPreview, `entity must be preview at stage ${stage}`)
     } else if (isPreview) {
-      hasMissing ||= stage
+      assert(entity.hasErrorAt(stage), `entity must have error at stage ${stage} to be preview`)
+      hasError ||= stage
+    } else if (entity.hasErrorAt(stage)) {
+      assert(
+        worldEntity.type == "underground-belt",
+        "Only underground belt currently can have error with existing entity",
+      )
+      assert(entity.isUndergroundBelt())
+      hasError ||= stage
+      const type = worldEntity.belt_to_ground_type
+      const oppositeType = type == "input" ? "output" : "input"
+      expect(entity.direction).to.be(oppositedirection(worldEntity.direction))
+      expect(entity.firstValue.type).to.be(oppositeType)
     } else {
       const savedValue = saveEntity(worldEntity)
       expect(savedValue).to.equal(value)
@@ -126,6 +142,8 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: number |
     expect(worldEntity.position).to.equal(entity.position)
     if (isPreview) {
       expect(worldEntity.direction).to.equal(entity.getPreviewDirection())
+    } else if (entity.isUndergroundBelt() && entity.hasErrorAt(stage)) {
+      expect(worldEntity.direction).to.equal(oppositedirection(entity.direction))
     } else {
       expect(worldEntity.direction).to.equal(entity.direction)
     }
@@ -133,7 +151,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasMissing: number |
     expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).to.be.nil()
   }
 
-  expect(hasMissing).to.be(expectedHasMissing)
+  expect(hasError).to.be(expectedHasError)
 
   // nothing after the last stage
   for (const stage of $range(project.lastStageFor(entity) + 1, project.numStages())) {
@@ -467,6 +485,132 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
   })
 })
 
+describe("underground belt inconsistencies", () => {
+  describe("left, high middle, right", () => {
+    let leftUnderground: ProjectEntity<UndergroundBeltEntity>
+    let rightUnderground: ProjectEntity<BlueprintEntity>
+    let middleUnderground: ProjectEntity<BlueprintEntity>
+    before_each(() => {
+      leftUnderground = buildEntity(1, {
+        name: "underground-belt",
+        type: "input",
+        direction: defines.direction.east,
+        position: pos.add(-1, 0),
+      }) as UndergroundBeltProjectEntity
+      rightUnderground = buildEntity(1, {
+        name: "underground-belt",
+        type: "output",
+        direction: defines.direction.east,
+        position: pos.add(1, 0),
+      })
+      middleUnderground = buildEntity(2, {
+        name: "underground-belt",
+        type: "output",
+        direction: defines.direction.east,
+        position: pos,
+      })
+      const leftStage1 = leftUnderground.getWorldEntity(1)
+      assert(leftStage1)
+      expect(leftStage1.neighbours).not.toBeNil().and.toEqual(rightUnderground.getWorldEntity(1))
+      expect(leftUnderground.getWorldEntity(2)?.neighbours)
+        .not.toBeNil()
+        .and.toEqual(middleUnderground.getWorldEntity(2))
+
+      const leftStage2 = leftUnderground.getWorldEntity(2)
+      assert(leftStage2)
+      const middleStage2 = middleUnderground.getWorldEntity(2)
+      assert(middleStage2)
+
+      expect(leftStage2.neighbours).toEqual(middleStage2)
+      expect(canFlipUnderground(middleStage2)).toBe(false)
+
+      expect(findUndergroundPair(project.content, leftUnderground, 1)).toBe(rightUnderground)
+    })
+    test("When flipping an left paired with multiple undergrounds, error is shown in stage where left flip failed", () => {
+      // stage 1: < >
+      // stage 2: <i>
+      // flipping in stage 1 will flip both < and >, but in stage 2 because of "i", it fails to flip
+      // error should be shown in 2 for <
+      const leftStage1 = leftUnderground.getWorldEntity(1)!
+      const rightStage1 = rightUnderground.getWorldEntity(1)!
+      const leftStage2 = leftUnderground.getWorldEntity(2)!
+
+      leftStage1.rotate({ by_player: player })
+
+      expect(leftUnderground).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.west,
+      })
+      expect(rightUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+      // middle unchanged
+      expect(middleUnderground).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.east,
+      })
+
+      expect(leftStage1).toMatchTable({
+        direction: defines.direction.west,
+        belt_to_ground_type: "output",
+      })
+      expect(rightStage1).toMatchTable({
+        direction: defines.direction.west,
+        belt_to_ground_type: "input",
+      })
+      // stage 2 should not have changed
+      expect(leftStage2).toMatchTable({
+        direction: defines.direction.east,
+        belt_to_ground_type: "input",
+      })
+      expect(leftUnderground.hasErrorAt(2)).toBe(true)
+
+      assertEntityCorrect(leftUnderground, 2)
+      assertEntityCorrect(rightUnderground, false)
+      assertEntityCorrect(middleUnderground, false)
+    })
+    test("when flipping middle, middle succeeds, but error is shown in left where the flip failed", () => {
+      const middle = middleUnderground.getWorldEntity(2)!
+      const leftStage1 = leftUnderground.getWorldEntity(1)!
+      const leftStage2 = leftUnderground.getWorldEntity(2)!
+
+      middle.rotate({ by_player: player })
+
+      // left and middle should have flipped
+      expect(leftUnderground).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.west,
+      })
+      expect(middleUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+      // right unchanged
+      expect(rightUnderground).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.east,
+      })
+
+      // error in left stage 1
+      expect(leftStage1).toMatchTable({
+        direction: defines.direction.east,
+        belt_to_ground_type: "input",
+      })
+      expect(leftUnderground.hasErrorAt(1)).toBe(true)
+
+      // fine in stage 2
+      expect(leftStage2).toMatchTable({
+        direction: defines.direction.west,
+        belt_to_ground_type: "output",
+      })
+
+      assertEntityCorrect(leftUnderground, 1)
+      assertEntityCorrect(rightUnderground, false)
+      assertEntityCorrect(middleUnderground, false)
+    })
+  })
+})
 test("rotation forbidden at higher stage", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!

@@ -25,6 +25,7 @@ import {
 import { canBeAnyDirection, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
+import { updateAllHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 import {
   deleteAllEntities,
@@ -54,7 +55,7 @@ export function addNewEntity(
 
   if (entity.type == "underground-belt") {
     // match the direction with the underground pair
-    const [pair] = findUndergroundPair(content, projectEntity as UndergroundBeltProjectEntity)
+    const pair = findUndergroundPair(content, projectEntity as UndergroundBeltProjectEntity, stage)
     if (pair) {
       assume<UndergroundBeltProjectEntity>(projectEntity)
       const expectedType = pair.firstValue.type == "output" ? "input" : "output"
@@ -127,14 +128,12 @@ export declare const enum EntityRotateResult {
   Updated = "updated",
   NoChange = "no-change",
   CannotRotate = "cannot-rotate",
-  CannotFlipMultiPairUnderground = "cannot-flip-multi-pair-underground",
 }
 
 export declare const enum EntityUpdateResult {
   Updated = "updated",
   NoChange = "no-change",
   CannotRotate = "cannot-rotate",
-  CannotUpgradeMultiPairUnderground = "cannot-upgrade-multi-pair-underground",
   CannotCreatePairUpgrade = "cannot-create-pair-upgrade",
   CannotUpgradeChangedPair = "cannot-upgrade-changed-pair",
 }
@@ -145,10 +144,7 @@ function tryUpgradeUndergroundBelt(
   entity: UndergroundBeltProjectEntity,
   upgradeType: string,
 ): EntityUpdateResult {
-  const [pair, hasMultiple] = findUndergroundPair(project.content, entity)
-  if (hasMultiple) {
-    return EntityUpdateResult.CannotUpgradeMultiPairUnderground
-  }
+  const pair = findUndergroundPair(project.content, entity, stage)
   let isFirstStage = entity.firstStage == stage
   if (pair) {
     isFirstStage ||= pair.firstStage == stage
@@ -168,8 +164,8 @@ function tryUpgradeUndergroundBelt(
     const pairStage = isFirstStage ? pair.firstStage : stage
     const pairUpgraded = pair.applyUpgradeAtStage(pairStage, upgradeType)
     // check that pair is still correct
-    const [newPair, newMultiple] = findUndergroundPair(project.content, entity)
-    if (newPair != pair || newMultiple) {
+    const newPair = findUndergroundPair(project.content, entity, applyStage)
+    if (newPair != pair) {
       entity.applyUpgradeAtStage(applyStage, oldName)
       pair.applyUpgradeAtStage(pairStage, oldName)
       return EntityUpdateResult.CannotUpgradeChangedPair
@@ -255,12 +251,7 @@ export function tryRotateEntityToMatchWorld(
 
   let pair: UndergroundBeltProjectEntity | nil
   if (type == "underground-belt") {
-    const [thePair, hasMultiple] = findUndergroundPair(project.content, entity as UndergroundBeltProjectEntity)
-    if (hasMultiple) {
-      undoRotate(project, entity, stage)
-      return EntityRotateResult.CannotFlipMultiPairUnderground
-    }
-    pair = thePair
+    pair = findUndergroundPair(project.content, entity as UndergroundBeltProjectEntity, stage)
   }
 
   // canBeAnyDirection(entitySource) is false
@@ -279,12 +270,15 @@ export function tryRotateEntityToMatchWorld(
   } else if (type == "underground-belt") {
     ;(entity as UndergroundBeltProjectEntity).setTypeProperty(entitySource.belt_to_ground_type)
   }
-  updateWorldEntities(project, entity, entity.firstStage)
+  // delay updating of highlights, since both pairs might need to be rotated together to avoid errors
+  updateWorldEntities(project, entity, entity.firstStage, false)
   if (pair) {
     pair.direction = newDirection
     pair.setTypeProperty(entitySource.belt_to_ground_type == "input" ? "output" : "input")
     updateWorldEntities(project, pair, pair.firstStage)
   }
+  // note: maybe an event-based system, with queues and stuff, rather than lots of calls?
+  updateAllHighlights(project, entity)
   return EntityRotateResult.Updated
 }
 
