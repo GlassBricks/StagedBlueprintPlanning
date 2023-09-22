@@ -11,6 +11,7 @@
 
 import { LuaSurface } from "factorio:runtime"
 import { newProjectContent } from "../../entity/ProjectContent"
+import { getPlayer } from "../../lib/test/misc"
 import { Project } from "../../project/ProjectDef"
 import { createStageSurface, destroySurface } from "../../project/surfaces"
 
@@ -34,6 +35,8 @@ export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
       surfaces[i] = createStageSurface()
       assert(surfaces[i].valid)
     }
+    const player = getPlayer()
+    player.teleport(player.position, surfaces[0])
   })
   before_each(() => {
     for (const surface of surfaces) {
@@ -42,6 +45,8 @@ export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
   })
   after_all(() => {
     surfaces.forEach((s) => destroySurface(s))
+    const player = getPlayer()
+    player.teleport(player.position, game.surfaces[1])
   })
   return surfaces
 }
