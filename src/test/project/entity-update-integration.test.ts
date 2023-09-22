@@ -683,14 +683,17 @@ describe("underground belt inconsistencies", () => {
       assertEntityCorrect(rightUnderground, false)
     })
   })
-  test.each([false, true])(
-    "flipping an underground with a pair with error updates highlight on pair, with middle %s",
-    (hasMiddle) => {
-      const leftUnderground = buildEntity(1, {
+  describe.each([false, true])("left, middle %s, broken right", (hasMiddle) => {
+    let leftUnderground: ProjectEntity<BlueprintEntity>
+    let rightUnderground: ProjectEntity<UndergroundBeltEntity>
+    let leftWorldEntity: LuaEntity
+    before_each(() => {
+      leftUnderground = buildEntity(1, {
         name: "underground-belt",
         type: "input",
         direction: defines.direction.east,
       })
+
       if (hasMiddle) {
         // make an error entity in the middle
         const middle = buildEntity(1, {
@@ -701,27 +704,28 @@ describe("underground belt inconsistencies", () => {
         })
         middle.destroyAllWorldOrPreviewEntities()
       }
-      const rightUnderground = buildEntity(1, {
+      rightUnderground = buildEntity(1, {
         name: "underground-belt",
         type: "output",
         direction: defines.direction.east,
         position: pos.add(2, 0),
       }) as UndergroundBeltProjectEntity
-      const leftWorldEntity = leftUnderground.getWorldEntity(1)!
+      leftWorldEntity = leftUnderground.getWorldEntity(1)!
       expect(leftWorldEntity).toMatchTable({
         belt_to_ground_type: "input",
         direction: defines.direction.east,
         neighbours: rightUnderground.getWorldEntity(1)!,
       })
-
       // manually break right underground
       rightUnderground.setTypeProperty("input")
       rightUnderground.direction = defines.direction.west
 
       expect(rightUnderground.hasErrorAt(1)).toBe(true)
+      expect(rightUnderground.hasErrorAt(2)).toBe(true)
       updateAllHighlights(project, rightUnderground)
       assertEntityCorrect(rightUnderground, 1)
-
+    })
+    test("flipping an underground with a pair with error updates highlight on pair", () => {
       // rotate left
       leftWorldEntity.rotate({ by_player: player })
       expect(leftUnderground).toMatchTable({
@@ -735,8 +739,39 @@ describe("underground belt inconsistencies", () => {
 
       assertEntityCorrect(leftUnderground, false)
       assertEntityCorrect(rightUnderground, false)
-    },
-  )
+    })
+    test("flipping pair with broken underground at higher stage still disallows rotation", () => {
+      const leftWorldEntity2 = leftUnderground.getWorldEntity(2)!
+      leftWorldEntity2.rotate({ by_player: player })
+      expect(leftUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.east,
+      })
+      expect(rightUnderground).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+      expect(leftWorldEntity).toMatchTable({
+        belt_to_ground_type: "input",
+        direction: defines.direction.east,
+      })
+      // not changed
+      expect(leftUnderground.getWorldEntity(2)).toMatchTable({
+        belt_to_ground_type: "input",
+        direction: defines.direction.east,
+      })
+      // still broken
+      expect(rightUnderground.getWorldEntity(2)).toMatchTable({
+        belt_to_ground_type: "output",
+        direction: defines.direction.east,
+      })
+      expect(rightUnderground.hasErrorAt(1)).toBe(true)
+      expect(rightUnderground.hasErrorAt(2)).toBe(true)
+
+      assertEntityCorrect(leftUnderground, false)
+      assertEntityCorrect(rightUnderground, 1)
+    })
+  })
 })
 test("rotation forbidden at higher stage", () => {
   const entity = buildEntity(3)

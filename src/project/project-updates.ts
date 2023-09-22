@@ -22,7 +22,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import { canBeAnyDirection, saveEntity } from "../entity/save-load"
+import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { updateAllHighlights } from "./entity-highlights"
@@ -32,6 +32,7 @@ import {
   makeSettingsRemnant,
   rebuildWorldEntityAtStage,
   refreshWorldEntityAtStage,
+  resetUnderground,
   reviveSettingsRemnant,
   updateNewWorldEntitiesWithoutWires,
   updateWireConnections,
@@ -195,7 +196,14 @@ function handleUpdate(
   knownBpValue: BlueprintEntity | nil,
 ): EntityUpdateResult {
   if (entity.isUndergroundBelt()) {
-    return handleUndergroundBeltUpdate(project, entity, stage, targetDirection, targetUpgrade ?? entitySource.name)
+    return handleUndergroundBeltUpdate(
+      project,
+      entity,
+      entitySource,
+      stage,
+      targetDirection,
+      targetUpgrade ?? entitySource.name,
+    )
   }
 
   const rotated = targetDirection && targetDirection != entity.direction && !canBeAnyDirection(entitySource)
@@ -229,12 +237,60 @@ function handleUpdate(
   return EntityUpdateResult.NoChange
 }
 
-function handleUndergroundBeltUpdate(
+function updatePair(
+  project: Project,
+  entity1: UndergroundBeltProjectEntity,
+  entity1Stage: StageNumber,
+  entity2: UndergroundBeltProjectEntity,
+  entity2Stage: StageNumber,
+) {
+  // delay updating of highlights, since both pairs might need to be rotated together to avoid errors
+  updateWorldEntities(project, entity1, entity1Stage, false)
+  updateWorldEntities(project, entity2, entity2Stage, false)
+  updateAllHighlights(project, entity1)
+  updateAllHighlights(project, entity2)
+}
+
+function handleUndergroundFlippedBack(
   project: Project,
   entity: UndergroundBeltProjectEntity,
+  worldEntity: LuaEntity,
+  stage: StageNumber,
+  targetDirection: defines.direction,
+  pair: UndergroundBeltProjectEntity | nil,
+): EntityUpdateResult {
+  if (!pair) {
+    // allow
+    updateWorldEntities(project, entity, stage)
+    return EntityUpdateResult.NoChange
+  }
+  if (pair.direction == targetDirection) {
+    // pair is already correct direction
+    updatePair(project, entity, entity.firstStage, pair, pair.firstStage)
+    return EntityUpdateResult.NoChange
+  }
+  // this wasn't rotated, but pair was
+  const rotateAllowed = stage == entity.firstStage || pair.firstStage == stage
+  if (!rotateAllowed) {
+    forceFlipUnderground(worldEntity) // back to broken state
+    return EntityUpdateResult.CannotRotate
+  }
+  // rotate pair
+  pair.direction = worldEntity.direction
+  const oppositeType = worldEntity.belt_to_ground_type == "input" ? "output" : "input"
+  pair.setTypeProperty(oppositeType)
+  updatePair(project, entity, entity.firstStage, pair, pair.firstStage)
+  return EntityUpdateResult.Updated
+}
+
+function doUndergroundBeltUpdate(
+  project: Project,
+  entity: UndergroundBeltProjectEntity,
+  worldEntity: LuaEntity,
+  pair: UndergroundBeltProjectEntity | nil,
   stage: StageNumber,
   targetDirection: defines.direction | nil,
-  targetUpgrade: string | nil,
+  targetUpgrade: string | undefined,
 ): EntityUpdateResult {
   const rotated = targetDirection && targetDirection != entity.direction
 
@@ -242,21 +298,16 @@ function handleUndergroundBeltUpdate(
   const upgraded = targetUpgrade != nil && targetUpgrade != oldName
 
   if (!rotated && !upgraded) {
-    if (targetDirection) {
-      // the entity was just rotated to expected state (and not upgraded)
-      // check if the underground direction was just fixed
-      updateWorldEntities(project, entity, stage)
-    }
-    return EntityUpdateResult.NoChange
+    if (!targetDirection) return EntityUpdateResult.NoChange
+    return handleUndergroundFlippedBack(project, entity, worldEntity, stage, targetDirection, pair)
   }
 
-  const pair = findUndergroundPair(project.content, entity, stage)
   const isSelfOrPairFirstStage = stage == entity.firstStage || (pair && pair.firstStage == stage)
 
   if (rotated) {
     const rotateAllowed = isSelfOrPairFirstStage
     if (!rotateAllowed) {
-      refreshWorldEntityAtStage(project, entity, stage)
+      resetUnderground(project, entity, stage)
       return EntityUpdateResult.CannotRotate
     }
 
@@ -290,13 +341,38 @@ function handleUndergroundBeltUpdate(
   } else if (!pair) {
     updateWorldEntities(project, entity, applyStage)
   } else {
-    // delay updating of highlights, since both pairs might need to be rotated together to avoid errors
-    updateWorldEntities(project, entity, applyStage, false)
-    updateWorldEntities(project, pair, pairApplyStage, false)
-    updateAllHighlights(project, entity)
-    updateAllHighlights(project, pair)
+    updatePair(project, entity, applyStage, pair, pairApplyStage)
   }
   return cannotUpgradeChangedPair ? EntityUpdateResult.CannotUpgradeChangedPair : EntityUpdateResult.Updated
+}
+function handleUndergroundBeltUpdate(
+  project: Project,
+  entity: UndergroundBeltProjectEntity,
+  worldEntity: LuaEntity,
+  stage: StageNumber,
+  targetDirection: defines.direction | nil,
+  targetUpgrade: string | nil,
+): EntityUpdateResult {
+  const pair = findUndergroundPair(project.content, entity, stage)
+  const updateResult = doUndergroundBeltUpdate(
+    project,
+    entity,
+    worldEntity,
+    pair,
+    stage,
+    targetDirection,
+    targetUpgrade,
+  )
+
+  const worldPair = worldEntity.neighbours as LuaEntity | nil
+  if (worldPair && (!pair || pair.getWorldEntity(stage) != worldPair)) {
+    // this pair is not the expected pair, so doUndergroundBeltUpdate didn't update it
+    // this is an error state, just update highlights
+    const worldPairEntity = project.content.findCompatibleWithLuaEntity(worldPair, nil, stage)
+    if (worldPairEntity) updateAllHighlights(project, worldPairEntity)
+  }
+
+  return updateResult
 }
 
 function maybeApplyEmptyControlBehavior(entity: ProjectEntity, stage: StageNumber): boolean {

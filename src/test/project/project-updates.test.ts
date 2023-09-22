@@ -116,6 +116,10 @@ function assertRefreshCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
   expect(worldUpdater.refreshWorldEntityAtStage).calledWith(project, entity, stage)
 }
+function assertResetUndergroundRotationCalled(entity: ProjectEntity, stage: StageNumber) {
+  expectedWuCalls++
+  expect(worldUpdater.resetUnderground).calledWith(project, entity, stage)
+}
 function assertReplaceCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
   expect(worldUpdater.rebuildWorldEntityAtStage).calledWith(project, entity, stage)
@@ -858,7 +862,7 @@ describe("undergrounds", () => {
       expect(entity.direction).to.be(direction.west)
 
       assertOneEntity()
-      assertRefreshCalled(entity, 2)
+      assertResetUndergroundRotationCalled(entity, 2)
     })
 
     test.each(["lower", "higher"])("%s underground in first stage rotates pair", (which) => {
@@ -905,7 +909,7 @@ describe("undergrounds", () => {
       })
 
       assertNEntities(2)
-      assertRefreshCalled(entity1, 3)
+      assertResetUndergroundRotationCalled(entity1, 3)
     })
   })
 
@@ -1005,7 +1009,7 @@ describe("undergrounds", () => {
       })
 
       assertOneEntity()
-      assertRefreshCalled(entity, 2)
+      assertResetUndergroundRotationCalled(entity, 2)
     })
 
     test.each(["lower", "pair in higher", "self in higher"])(
@@ -1154,7 +1158,7 @@ describe("undergrounds", () => {
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
-  test("updating to fix direction updates highlights", () => {
+  test("updating to fix direction updates all entities", () => {
     const { luaEntity, entity } = createUndergroundBelt(1)
     luaEntity.rotate()
     expect(entity.hasErrorAt(1)).toBe(true)
@@ -1166,7 +1170,7 @@ describe("undergrounds", () => {
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
-  test("upgrade rotating to fix direction applies upgrade and updates highlights", () => {
+  test("upgrade rotating to fix direction applies upgrade and updates entities", () => {
     const { luaEntity, entity } = createUndergroundBelt(1)
     luaEntity.rotate()
     expect(entity.hasErrorAt(1)).toBe(true)
@@ -1191,6 +1195,77 @@ describe("undergrounds", () => {
 
     assertOneEntity()
     assertUpdateCalled(entity, 1)
+  })
+
+  test("rotate a broken underground at higher stage fixes underground, if pair is correct", () => {
+    const { luaEntity1, entity1, luaEntity2, entity2 } = createUndergroundBeltPair(1, 1)
+    entity1.replaceWorldEntity(2, luaEntity1)
+    entity2.replaceWorldEntity(2, luaEntity2)
+
+    luaEntity2.rotate()
+    expect(entity2.hasErrorAt(2)).toBe(true)
+    luaEntity2.rotate()
+    expect(entity2.hasErrorAt(2)).toBe(false)
+
+    const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity2, 2)
+    expect(ret).toBe(EntityUpdateResult.NoChange)
+    assertUpdateCalled(entity2, 1, 1, false)
+    assertUpdateCalled(entity1, 1, 2, false)
+
+    assertNEntities(2)
+  })
+  test.each(["self", "pair"])("rotating a broken underground fixes pair if %s in first stage", (which) => {
+    const { luaEntity1, entity1, luaEntity2, entity2 } = createUndergroundBeltPair(
+      which == "pair" ? 2 : 1,
+      which == "pair" ? 1 : 2,
+    )
+    entity1.replaceWorldEntity(2, luaEntity1)
+    entity2.replaceWorldEntity(2, luaEntity2)
+    // break entity2
+    entity2.direction = direction.east
+    entity2.setTypeProperty("input")
+    expect(entity2.hasErrorAt(2)).toBe(true)
+
+    assert(luaEntity2.rotate())
+
+    const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity2, 2)
+    expect(ret).toBe(EntityUpdateResult.Updated)
+
+    expect(entity1).toMatchTable({
+      direction: direction.east,
+      firstValue: { type: "output" },
+    })
+    expect(entity2).toMatchTable({
+      direction: direction.east,
+      firstValue: { type: "input" },
+    })
+
+    assertUpdateCalled(entity2, entity2.firstStage, 1, false)
+    assertUpdateCalled(entity1, entity1.firstStage, 2, false)
+
+    assertNEntities(2)
+  })
+  test("rotating a broken underground that changes pair disallowed if not first stage", () => {
+    const { luaEntity1, entity1, luaEntity2, entity2 } = createUndergroundBeltPair(1, 1)
+    entity1.replaceWorldEntity(2, luaEntity1)
+    entity2.replaceWorldEntity(2, luaEntity2)
+    // break entity2
+    entity2.direction = direction.east
+    entity2.setTypeProperty("input")
+    expect(entity2.hasErrorAt(2)).toBe(true)
+
+    assert(luaEntity2.rotate())
+
+    const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity2, 2)
+    expect(ret).toBe(EntityUpdateResult.CannotRotate)
+    // assert rotated back
+    expect(luaEntity2).toMatchTable({
+      direction: direction.west,
+      belt_to_ground_type: "output",
+    })
+
+    assertNEntities(2)
+    assertWUNotCalled()
   })
 })
 

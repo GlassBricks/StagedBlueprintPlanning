@@ -70,6 +70,7 @@ function mockModuleToResult<T extends object>(module: T, stub: boolean, result: 
   for (const [k, v] of pairs(module)) {
     if (isMockableFunction(v)) {
       const mock = fnNoSelf(stub ? nil : v.original)
+      if (type(k) == "string") mock.mockName(k as string)
       v.mock = mock
       result[k] = mock
     }

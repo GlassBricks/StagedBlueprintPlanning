@@ -11,7 +11,7 @@
 
 import { CircuitConnectionDefinition, LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
-import { Entity } from "../../entity/Entity"
+import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
 import { forceDollyEntity } from "../../entity/picker-dollies"
 import {
   createProjectEntityNoCopy,
@@ -249,7 +249,6 @@ describe("updateWorldEntities", () => {
     entity.setFirstStageUnchecked(2)
     WorldUpdater.refreshWorldEntityAtStage(project, entity, 1)
     assertHasPreview(1)
-    // assertEntityCorrect(2)
   })
 })
 
@@ -477,49 +476,82 @@ test("deleteWorldEntities", () => {
   expect(highlighter.deleteAllHighlights).calledWith(entity)
 })
 
-test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
-  const leftWorldEntity = surfaces[0].create_entity({
-    name: "underground-belt",
-    type: "output",
-    position: Pos(-0.5, 0.5),
-    direction: defines.direction.west,
-    force: "player",
-  })!
-  assert(leftWorldEntity)
-  const middleUg = createProjectEntityNoCopy(
-    { name: "underground-belt", type: "input" },
-    Pos(0.5, 0.5),
-    defines.direction.east,
-    1,
-  ) as UndergroundBeltProjectEntity
-  WorldUpdater.updateWorldEntities(project, middleUg, 1)
-  const middleWorldEntity = middleUg.getWorldEntity(1)!
-  assert(middleWorldEntity)
+describe("underground pair", () => {
+  let leftWorldEntity: LuaEntity
+  let middleUg: ProjectEntity<UndergroundBeltEntity>
+  let rightUg: ProjectEntity<UndergroundBeltEntity>
+  before_each(() => {
+    leftWorldEntity = surfaces[0].create_entity({
+      name: "underground-belt",
+      type: "output",
+      position: Pos(-0.5, 0.5),
+      direction: defines.direction.west,
+      force: "player",
+    })!
+    assert(leftWorldEntity)
+    middleUg = createProjectEntityNoCopy(
+      { name: "underground-belt", type: "input" },
+      Pos(0.5, 0.5),
+      defines.direction.east,
+      1,
+    ) as UndergroundBeltProjectEntity
+    WorldUpdater.updateWorldEntities(project, middleUg, 1)
+    const middleWorldEntity = middleUg.getWorldEntity(1)!
+    assert(middleWorldEntity)
 
-  const rightUg = createProjectEntityNoCopy(
-    { name: "underground-belt", type: "output" },
-    Pos(1.5, 0.5),
-    defines.direction.east,
-    1,
-  ) as UndergroundBeltProjectEntity
-  project.content.add(rightUg)
-  WorldUpdater.updateWorldEntities(project, rightUg, 1)
+    rightUg = createProjectEntityNoCopy(
+      { name: "underground-belt", type: "output" },
+      Pos(1.5, 0.5),
+      defines.direction.east,
+      1,
+    ) as UndergroundBeltProjectEntity
+    project.content.add(rightUg)
+    WorldUpdater.updateWorldEntities(project, rightUg, 1)
 
-  expect(rightUg.getWorldEntity(1)).toMatchTable({
-    neighbours: middleWorldEntity,
+    expect(rightUg.getWorldEntity(1)).toMatchTable({
+      neighbours: middleWorldEntity,
+    })
   })
+  test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
+    WorldUpdater.deleteWorldEntities(project, middleUg)
+    expect(rightUg.getWorldEntity(1)).toMatchTable({
+      neighbours: leftWorldEntity,
+    })
+    expect(rightUg.hasErrorAt(1)).toBe(true)
 
-  WorldUpdater.deleteWorldEntities(project, middleUg)
+    expect(highlighter.updateAllHighlights).calledWith(project, rightUg)
 
-  expect(rightUg.getWorldEntity(1)).toMatchTable({
-    neighbours: leftWorldEntity,
+    expect(middleUg.getWorldEntity(1)).toBeNil()
+    expect(highlighter.deleteAllHighlights).calledWith(middleUg)
   })
-  expect(rightUg.hasErrorAt(1)).toBe(true)
+  test("refreshWorldEntityAtStage with force=true still rotates underground even if errored", () => {
+    // manually break right underground
+    rightUg.setTypeProperty("input")
+    rightUg.direction = defines.direction.west
+    expect(rightUg.hasErrorAt(1)).toBe(true)
 
-  expect(highlighter.updateAllHighlights).calledWith(project, rightUg)
+    middleUg.getWorldEntity(1)!.rotate()
+    WorldUpdater.refreshWorldEntityAtStage(project, middleUg, 1)
 
-  expect(middleUg.getWorldEntity(1)).toBeNil()
-  expect(highlighter.deleteAllHighlights).calledWith(middleUg)
+    // expect rotated back
+    expect(rightUg).toMatchTable({
+      firstValue: { type: "input" },
+      direction: defines.direction.west,
+    })
+    expect(middleUg).toMatchTable({
+      firstValue: { type: "input" },
+      direction: defines.direction.east,
+    })
+    // still broken
+    expect(rightUg.getWorldEntity(1)).toMatchTable({
+      belt_to_ground_type: "output",
+      direction: defines.direction.east,
+    })
+    expect(middleUg.getWorldEntity(1)).toMatchTable({
+      belt_to_ground_type: "input",
+      direction: defines.direction.east,
+    })
+  })
 })
 
 test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {

@@ -21,7 +21,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import { createEntity, createPreviewEntity, updateEntity } from "../entity/save-load"
+import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
 import { RegisterClass } from "../lib"
 import { LoopTask, submitTask } from "../lib/task"
@@ -196,6 +196,17 @@ export function refreshWorldEntityAtStage(project: Project, entity: ProjectEntit
   updateWorldEntitiesInRange(project, entity, stage, stage)
   // updateWiresInRange(project, entity, stage, stage)
   updateWireConnectionsAtStage(project.content, entity, stage)
+  updateAllHighlights(project, entity)
+}
+/**
+ * Forces change even if that would make the pair incorrect
+ */
+export function resetUnderground(project: Project, entity: UndergroundBeltProjectEntity, stage: StageNumber): void {
+  const worldEntity = entity.getWorldOrPreviewEntity(stage)
+  if (worldEntity && worldEntity.belt_to_ground_type != entity.firstValue.type) {
+    forceFlipUnderground(worldEntity)
+  }
+  updateWorldEntitiesInRange(project, entity, stage, stage)
   updateAllHighlights(project, entity)
 }
 

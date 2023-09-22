@@ -14,9 +14,11 @@ import { Colors, L_Game } from "../constants"
 import { LuaEntityInfo } from "../entity/Entity"
 import { allowOverlapDifferentDirection } from "../entity/entity-prototype-info"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { findUndergroundPair } from "../entity/underground-belt"
 import { assertNever, deepCompare } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
+import { updateAllHighlights } from "./entity-highlights"
 import { createIndicator, createNotification } from "./notifications"
 import {
   addNewEntity,
@@ -237,16 +239,6 @@ export function onEntityPossiblyUpdated(
   return projectEntity
 }
 
-function tryRotateAndNotify(
-  project: Project,
-  projectEntity: ProjectEntity,
-  stage: StageNumber,
-  byPlayer: PlayerIndex | nil,
-) {
-  const result = tryRotateEntityToMatchWorld(project, projectEntity, stage)
-  notifyIfError(result, projectEntity, byPlayer)
-}
-
 function handleRotate(
   project: Project,
   worldEntity: LuaEntity,
@@ -254,14 +246,17 @@ function handleRotate(
   stage: StageNumber,
   byPlayer: PlayerIndex | nil,
 ) {
-  tryRotateAndNotify(project, projectEntity, stage, byPlayer)
+  const result = tryRotateEntityToMatchWorld(project, projectEntity, stage)
+  notifyIfError(result, projectEntity, byPlayer)
 
   if (projectEntity.isUndergroundBelt()) {
     const worldPair = worldEntity.neighbours as LuaEntity | nil
     if (!worldPair) return
-    const pairProjectEntity = getCompatibleEntityOrAdd(project, worldPair, stage, nil, byPlayer)
-    if (pairProjectEntity) {
-      tryRotateAndNotify(project, pairProjectEntity, stage, byPlayer)
+    const pairEntity = getCompatibleEntityOrAdd(project, worldPair, stage, nil, byPlayer)
+    if (!pairEntity) return
+    const expectedPair = findUndergroundPair(project.content, projectEntity, stage)
+    if (pairEntity != expectedPair) {
+      updateAllHighlights(project, pairEntity)
     }
   }
 }

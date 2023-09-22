@@ -23,7 +23,6 @@ import {
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
-
 import { getStageAtSurface } from "../project/UserProject"
 import { Entity } from "./Entity"
 import {
@@ -302,7 +301,6 @@ export function checkUndergroundPairFlippable(
   assume<UndergroundBeltProjectEntity>(existing)
   return $multi(existing, existing.firstValue.type != luaEntity.belt_to_ground_type)
 }
-
 function updateUndergroundRotation(
   luaEntity: LuaEntity,
   value: BlueprintEntity,
@@ -324,13 +322,17 @@ function updateUndergroundRotation(
     if (!flippable) {
       return $multi(luaEntity)
     }
-    const wasRotatable = luaEntity.rotatable
-    luaEntity.rotatable = true
-    const [rotated] = luaEntity.rotate()
-    luaEntity.rotatable = wasRotatable
+    const rotated = forceFlipUnderground(luaEntity)
     return $multi(luaEntity, rotated ? neighborProjEntity : nil)
   }
   return $multi(luaEntity)
+}
+export function forceFlipUnderground(luaEntity: LuaEntity): boolean {
+  const wasRotatable = luaEntity.rotatable
+  luaEntity.rotatable = true
+  const [rotated] = luaEntity.rotate()
+  luaEntity.rotatable = wasRotatable
+  return rotated
 }
 
 function updateRollingStock(luaEntity: LuaEntity, value: BlueprintEntity): void {
@@ -379,7 +381,6 @@ export function updateEntity(
 
   const type = luaEntity.type
   if (type == "underground-belt") {
-    // underground belts don't have other settings.
     return updateUndergroundRotation(luaEntity, value, direction)
   }
   if (type == "loader" || type == "loader-1x1") {

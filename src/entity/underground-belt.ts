@@ -13,8 +13,7 @@ import { direction_vectors, oppositedirection } from "util"
 import { Mutable } from "../lib"
 import { Position } from "../lib/geometry"
 import { MutableProjectContent } from "./ProjectContent"
-import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
-import max = math.max
+import { StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import min = math.min
 
 /**
@@ -69,20 +68,4 @@ export function findUndergroundPair(
     // if <= firstStage, can't get any better, and is closest
   }
   return currentPair
-}
-
-export function stageRangeCovers(
-  existing: ProjectEntity,
-  newEntity: ProjectEntity,
-  minStage: number,
-  maxStage: number,
-): boolean {
-  // covers:
-  // |---- existing  ----|
-  //   |-- newEntity --|
-  const existingFirstStage = max(existing.firstStage, minStage)
-  const existingLastStage = min(existing.lastStage ?? math.huge, maxStage)
-  const newEntityFirstStage = max(newEntity.firstStage, minStage)
-  const newEntityLastStage = min(newEntity.lastStage ?? math.huge, maxStage)
-  return existingFirstStage <= newEntityFirstStage && existingLastStage >= newEntityLastStage
 }
