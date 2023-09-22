@@ -2,6 +2,9 @@
 Version: 0.24.0
 Date: ????
   Changes:
+    - Greatly relaxed restrictions for editing underground belts.
+    - Underground belts forced to be in a wrong direction due to another underground belt pair, will now be shown as an error.
+    - Fixed multiple quirks and bugs related to underground belts.
 ---------------------------------------------------------------------------------------------------
 Version: 0.23.3
 Date: 2023-09-18
