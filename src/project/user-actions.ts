@@ -157,16 +157,14 @@ export function onTryFixEntity(
   stage: StageNumber,
   deleteSettingsRemnants?: boolean,
 ): void {
-  const existing = project.content.findCompatibleFromPreview(previewEntity, stage)
+  const existing = project.content.findCompatibleFromLuaEntityOrPreview(previewEntity, stage)
   if (!existing) return
   if (existing.isSettingsRemnant) {
     if (deleteSettingsRemnants) {
       // settings remnant, remove
       forceDeleteEntity(project, existing)
     }
-  } else {
-    // this is an error entity, try fix
-    if (stage < existing.firstStage) return
+  } else if (existing.hasErrorAt(stage)) {
     refreshAllWorldEntities(project, existing)
   }
 }

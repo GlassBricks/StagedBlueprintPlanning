@@ -470,13 +470,15 @@ describe("onCleanupToolUsed", () => {
     expect(projectUpdates.forceDeleteEntity).calledWith(project, entity)
   })
 
-  test("if is less than first stage, does nothing", () => {
-    const { luaEntity } = addEntity(1)
-    userActions.onCleanupToolUsed(project, luaEntity, 2)
+  test.only("if does not have error, does nothing", () => {
+    const { luaEntity, entity } = addEntity(1)
+    entity.replaceWorldEntity(1, luaEntity)
+    expect(entity.hasErrorAt(1)).toBe(false)
+    userActions.onCleanupToolUsed(project, luaEntity, 1)
     expectedNumCalls = 0
   })
 
-  test.each([2, 3])("if is in stage %s, calls refreshEntityAllStages", (atStage) => {
+  test.each([2, 3])("if is in stage %s, calls refreshAllWorldEntities", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
     userActions.onCleanupToolUsed(project, createPreview(luaEntity), atStage)
     expect(worldUpdates.refreshAllWorldEntities).calledWith(project, entity)

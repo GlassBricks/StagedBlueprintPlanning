@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, SurfaceCreateEntity } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, PlayerIndex, SurfaceCreateEntity } from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes, Settings } from "../../constants"
@@ -771,6 +771,41 @@ describe("underground belt inconsistencies", () => {
       assertEntityCorrect(leftUnderground, false)
       assertEntityCorrect(rightUnderground, 1)
     })
+  })
+  test("calling refresh entity on an broken underground fixes it", () => {
+    const underground = buildEntity(1, {
+      name: "underground-belt",
+      type: "input",
+      direction: defines.direction.east,
+    })
+    assert(underground.getWorldEntity(1)!.rotate())
+    refreshWorldEntityAtStage(project, underground, 1)
+    expect(underground).toMatchTable({
+      firstValue: { type: "input" },
+      direction: defines.direction.east,
+    })
+    assertEntityCorrect(underground, false)
+  })
+  test("using a cleanup tool on an broken underground fixes it", () => {
+    const underground = buildEntity(1, {
+      name: "underground-belt",
+      type: "input",
+      direction: defines.direction.east,
+    })
+    assert(underground.getWorldEntity(1)!.rotate())
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.CleanupTool,
+      surface: surfaces[0],
+      area: BBox.around(pos, 10),
+      entities: [underground.getWorldEntity(1)!],
+      tiles: [],
+    })
+    expect(underground).toMatchTable({
+      firstValue: { type: "input" },
+      direction: defines.direction.east,
+    })
+    assertEntityCorrect(underground, false)
   })
 })
 test("rotation forbidden at higher stage", () => {
