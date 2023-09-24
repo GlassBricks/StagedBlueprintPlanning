@@ -2,6 +2,7 @@
 Version: 0.24.1
 Date: ????
   Changes:
+    - Using the cleanup tool will try to fix flipped underground belts.
 ---------------------------------------------------------------------------------------------------
 Version: 0.24.0
 Date: 2023-09-22
