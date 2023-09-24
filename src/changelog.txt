@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.24.2
-Date: ????
+Date: 2023-09-24
   Bugfixes:
     - Fixed issue when pasting underground belts via blueprint, that gets flipped due to an existing underground belt pair.
     - Fixed upgrading underground belts via blueprint paste.
