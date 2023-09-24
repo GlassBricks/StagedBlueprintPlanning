@@ -41,6 +41,28 @@ import {
 } from "./world-entity-updates"
 import min = math.min
 
+function fixNewUndergroundBelt(
+  content: ProjectContent,
+  projectEntity: ProjectEntity,
+  entity: LuaEntity,
+  stage: StageNumber,
+  knownValue: BlueprintEntity | nil,
+): void {
+  if (entity.type != "underground-belt") return
+  assume<UndergroundBeltProjectEntity>(projectEntity)
+  if (knownValue) {
+    // if blueprint paste, always respect REAL direction in case of flip
+    projectEntity.setTypeProperty(entity.belt_to_ground_type)
+  }
+  const pair = findUndergroundPair(content, projectEntity, stage)
+  if (pair) {
+    const expectedType = pair.firstValue.type == "output" ? "input" : "output"
+    if (expectedType != projectEntity.firstValue.type) {
+      projectEntity.setTypeProperty(expectedType)
+      projectEntity.direction = pair.direction
+    }
+  }
+}
 export function addNewEntity(
   project: Project,
   entity: LuaEntity,
@@ -54,18 +76,7 @@ export function addNewEntity(
   projectEntity.replaceWorldEntity(stage, entity)
   content.add(projectEntity)
 
-  if (entity.type == "underground-belt") {
-    // match the direction with the underground pair
-    const pair = findUndergroundPair(content, projectEntity as UndergroundBeltProjectEntity, stage)
-    if (pair) {
-      assume<UndergroundBeltProjectEntity>(projectEntity)
-      const expectedType = pair.firstValue.type == "output" ? "input" : "output"
-      if (expectedType != projectEntity.firstValue.type) {
-        projectEntity.setTypeProperty(expectedType)
-        projectEntity.direction = pair.direction
-      }
-    }
-  }
+  fixNewUndergroundBelt(content, projectEntity, entity, stage, knownValue)
 
   updateNewWorldEntitiesWithoutWires(project, projectEntity)
   const [hasDiff, , additionalToUpdate] = saveWireConnections(
@@ -202,7 +213,7 @@ function handleUpdate(
       entitySource,
       stage,
       targetDirection,
-      targetUpgrade ?? entitySource.name,
+      targetUpgrade ?? knownBpValue?.name ?? entitySource.name,
     )
   }
 
@@ -290,12 +301,12 @@ function doUndergroundBeltUpdate(
   pair: UndergroundBeltProjectEntity | nil,
   stage: StageNumber,
   targetDirection: defines.direction | nil,
-  targetUpgrade: string | undefined,
+  targetUpgrade: string,
 ): EntityUpdateResult {
   const rotated = targetDirection && targetDirection != entity.direction
 
   const oldName = entity.getNameAtStage(stage)
-  const upgraded = targetUpgrade != nil && targetUpgrade != oldName
+  const upgraded = targetUpgrade != oldName
 
   if (!rotated && !upgraded) {
     if (!targetDirection) return EntityUpdateResult.NoChange
@@ -351,7 +362,7 @@ function handleUndergroundBeltUpdate(
   worldEntity: LuaEntity,
   stage: StageNumber,
   targetDirection: defines.direction | nil,
-  targetUpgrade: string | nil,
+  targetUpgrade: string,
 ): EntityUpdateResult {
   const pair = findUndergroundPair(project.content, entity, stage)
   const updateResult = doUndergroundBeltUpdate(

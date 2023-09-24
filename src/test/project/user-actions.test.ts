@@ -470,7 +470,7 @@ describe("onCleanupToolUsed", () => {
     expect(projectUpdates.forceDeleteEntity).calledWith(project, entity)
   })
 
-  test.only("if does not have error, does nothing", () => {
+  test("if does not have error, does nothing", () => {
     const { luaEntity, entity } = addEntity(1)
     entity.replaceWorldEntity(1, luaEntity)
     expect(entity.hasErrorAt(1)).toBe(false)

@@ -786,7 +786,7 @@ describe("underground belt inconsistencies", () => {
     })
     assertEntityCorrect(underground, false)
   })
-  test("using a cleanup tool on an broken underground fixes it", () => {
+  test("using cleanup tool on an broken underground fixes it", () => {
     const underground = buildEntity(1, {
       name: "underground-belt",
       type: "input",
@@ -807,7 +807,166 @@ describe("underground belt inconsistencies", () => {
     })
     assertEntityCorrect(underground, false)
   })
+  test("using cleanup tool on broken pair fixes it", () => {
+    const left = buildEntity(1, {
+      name: "underground-belt",
+      type: "input",
+      direction: defines.direction.east,
+    })
+    const right = buildEntity(1, {
+      name: "underground-belt",
+      type: "output",
+      direction: defines.direction.east,
+      position: pos.add(1, 0),
+    })
+    assert(left.getWorldEntity(1)!.rotate())
+    expect(right.hasErrorAt(1)).toBe(true)
+
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: 1 as PlayerIndex,
+      item: Prototypes.CleanupTool,
+      surface: surfaces[0],
+      area: BBox.around(pos, 10),
+      entities: [left.getWorldEntity(1)!],
+      tiles: [],
+    })
+
+    assertEntityCorrect(left, false)
+    assertEntityCorrect(right, false)
+  })
+
+  describe("pasting an underground", () => {
+    before_each(() => {
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities([
+        {
+          name: "underground-belt",
+          type: "input",
+          direction: defines.direction.west,
+          entity_number: 1,
+          position: Pos(0.5, 0.5),
+        },
+      ])
+      player.teleport(pos, surfaces[0])
+    })
+    test("pasting an underground belt works", () => {
+      player.build_from_cursor({
+        position: pos.add(2, 0),
+      })
+
+      const builtEntity = surfaces[0].find_entity("underground-belt", pos.add(2, 0))!
+      expect(builtEntity).toBeAny()
+
+      const projEntity = project.content.findCompatibleWithLuaEntity(
+        builtEntity,
+        nil,
+        1,
+      ) as UndergroundBeltProjectEntity
+      expect(projEntity).toBeAny()
+      expect(projEntity).toMatchTable({
+        firstValue: { type: "input" },
+        direction: defines.direction.west,
+      })
+    })
+
+    test.each([false, true])("pasting an underground belt that gets flipped works, with middle %s", (hasMiddle) => {
+      buildEntity(1, {
+        name: "underground-belt",
+        type: "input",
+        direction: defines.direction.east,
+      })
+      if (hasMiddle) {
+        const entity = buildEntity(1, {
+          name: "underground-belt",
+          type: "output",
+          direction: defines.direction.east,
+          position: pos.add(1, 0),
+        })
+        entity.destroyAllWorldOrPreviewEntities()
+      }
+      player.build_from_cursor({
+        position: pos.add(2, 0),
+      })
+
+      const builtEntity = surfaces[0].find_entity("underground-belt", pos.add(2, 0))!
+      expect(builtEntity).toBeAny()
+
+      // should be flipped
+      const projEntity = project.content.findCompatibleWithLuaEntity(
+        builtEntity,
+        nil,
+        1,
+      ) as UndergroundBeltProjectEntity
+      expect(projEntity).toBeAny()
+      expect(projEntity).toMatchTable({
+        firstValue: { type: "output" },
+        direction: defines.direction.east,
+      })
+    })
+  })
+
+  describe("upgrading underground via blueprint paste", () => {
+    let underground: UndergroundBeltProjectEntity
+    before_each(() => {
+      player.mod_settings[Settings.UpgradeOnPaste] = { value: true }
+      underground = buildEntity(1, {
+        name: "underground-belt",
+        type: "input",
+        direction: defines.direction.east,
+      }) as UndergroundBeltProjectEntity
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities([
+        {
+          name: "fast-underground-belt",
+          type: "input",
+          direction: defines.direction.east,
+          entity_number: 1,
+          position: Pos(0.5, 0.5),
+        },
+        {
+          name: "small-electric-pole",
+          entity_number: 2,
+          position: Pos(1.5, 1.5),
+        },
+      ])
+      stack.blueprint_snap_to_grid = [1, 1]
+      stack.blueprint_absolute_snapping = true
+      player.teleport(pos, surfaces[0])
+    })
+    after_each(() => {
+      player.mod_settings[Settings.UpgradeOnPaste] = { value: false }
+    })
+    test("can upgrading underground belt via paste", () => {
+      player.build_from_cursor({ position: pos, alt: true })
+      expect(underground).toMatchTable({
+        firstValue: { name: "fast-underground-belt", type: "input" },
+        direction: defines.direction.east,
+      })
+    })
+    test("can upgrade underground in flipped direction", () => {
+      underground.getWorldEntity(1)!.rotate({ by_player: player })
+      player.build_from_cursor({ position: pos, alt: true })
+
+      expect(underground).toMatchTable({
+        firstValue: { name: "fast-underground-belt", type: "output" },
+        direction: defines.direction.west,
+      })
+    })
+    test("does not upgrade underground belt in wrong direction", () => {
+      underground.setTypeProperty("output")
+      refreshAllWorldEntities(project, underground)
+      player.build_from_cursor({ position: pos, alt: true })
+
+      expect(underground).toMatchTable({
+        firstValue: { name: "underground-belt", type: "output" },
+        direction: defines.direction.east,
+      })
+    })
+  })
 })
+
 test("rotation forbidden at higher stage", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!

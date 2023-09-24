@@ -799,7 +799,18 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   }
 
   let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == entityDir)
-  if (!luaEntity) {
+  if (type == "underground-belt") {
+    const valueType = value.type ?? "input"
+    if (luaEntity) {
+      // make sure is also correct belt_to_ground_type, else would match opposite direction
+      if (luaEntity.belt_to_ground_type != valueType) return
+    } else {
+      // entity not found, check for opposite type and opposite direction
+      entityDir = oppositedirection(entityDir)
+      luaEntity = luaEntities.find((e) => e.direction == entityDir && e.belt_to_ground_type != valueType)
+    }
+    if (!luaEntity) return
+  } else if (!luaEntity) {
     // slower path, check for other directions
     const pasteRotatableType = getPasteRotatableType(referencedName)
     if (pasteRotatableType == nil) return
@@ -808,10 +819,10 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     } else if (pasteRotatableType == PasteCompatibleRotationType.Flippable) {
       const oppositeDir = oppositedirection(entityDir)
       luaEntity = luaEntities.find((e) => e.direction == oppositeDir)
-      if (!luaEntity) return
     } else {
       assertNever(pasteRotatableType)
     }
+    if (!luaEntity) return
   }
 
   // performance hack: cache name, type

@@ -12,7 +12,7 @@
 import { direction_vectors, oppositedirection } from "util"
 import { Mutable } from "../lib"
 import { Position } from "../lib/geometry"
-import { MutableProjectContent } from "./ProjectContent"
+import { ProjectContent } from "./ProjectContent"
 import { StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import min = math.min
 
@@ -31,7 +31,7 @@ export function getUndergroundDirection(
  * Finds an underground pair. If there are multiple possible pairs, returns the first one, and true as the second return value.
  */
 export function findUndergroundPair(
-  content: MutableProjectContent,
+  content: ProjectContent,
   member: UndergroundBeltProjectEntity,
   stage: StageNumber,
   name: string = member.getNameAtStage(stage),
