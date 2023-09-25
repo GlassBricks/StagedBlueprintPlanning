@@ -21,7 +21,7 @@ import {
   MapPosition,
   UnitNumber,
 } from "factorio:runtime"
-import { isEmpty, Mutable } from "../lib"
+import { isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeParameters } from "./blueprint-settings"
 
@@ -151,6 +151,8 @@ function replaceInfinityEntitiesWithCombinators(entities: Record<number, Mutable
 
 export interface BlueprintTakeResult {
   effectivePositionOffset: Position
+  entities: PRecord<number, BlueprintEntity>
+  bpMapping: Record<number, LuaEntity>
 }
 
 function contains2x2Grid(bp: BlueprintItemStack): boolean {
@@ -271,5 +273,7 @@ export function takeSingleBlueprint(
   }
   return {
     effectivePositionOffset,
+    entities,
+    bpMapping,
   }
 }

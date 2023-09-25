@@ -74,6 +74,14 @@ test("can take blueprint and settings applied", () => {
     name: chest.name,
   })
 
+  delete (entities[0] as any).tags
+  expect(ret?.entities).toEqual(entities)
+
+  expect(ret?.bpMapping).toEqual({
+    1: belt,
+    2: chest,
+  })
+
   const tiles = stack.get_blueprint_tiles()!
   expect(tiles).to.be.any()
   expect(tiles).toHaveLength(1)
