@@ -1,7 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.25.0
 Date: ????
-  Changes:
+  Features:
+    - Added module preloading, which allows creating bot requests for modules even if the assembling machine is not high enough tier.
+  Gui:
+    - Clarified some descriptions in project settings.
+    - Removed cutting off of text on various buttons.
 ---------------------------------------------------------------------------------------------------
 Version: 0.24.3
 Date: 2023-09-25
