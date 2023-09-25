@@ -938,10 +938,15 @@ describe("underground belt inconsistencies", () => {
     after_each(() => {
       player.mod_settings[Settings.UpgradeOnPaste] = { value: false }
     })
-    test("can upgrading underground belt via paste", () => {
+    test("can upgrade underground belt via paste", () => {
       player.build_from_cursor({ position: pos, alt: true })
       expect(underground).toMatchTable({
         firstValue: { name: "fast-underground-belt", type: "input" },
+        direction: defines.direction.east,
+      })
+      expect(underground.getWorldEntity(1)).toMatchTable({
+        name: "fast-underground-belt",
+        belt_to_ground_type: "input",
         direction: defines.direction.east,
       })
     })

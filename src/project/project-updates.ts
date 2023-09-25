@@ -375,12 +375,15 @@ function handleUndergroundBeltUpdate(
     targetUpgrade,
   )
 
-  const worldPair = worldEntity.neighbours as LuaEntity | nil
-  if (worldPair && (!pair || pair.getWorldEntity(stage) != worldPair)) {
-    // this pair is not the expected pair, so doUndergroundBeltUpdate didn't update it
-    // this is an error state, just update highlights
-    const worldPairEntity = project.content.findCompatibleWithLuaEntity(worldPair, nil, stage)
-    if (worldPairEntity) updateAllHighlights(project, worldPairEntity)
+  const newWorldEntity = entity.getWorldEntity(stage)
+  if (newWorldEntity) {
+    const worldPair = newWorldEntity.neighbours as LuaEntity | nil
+    if (worldPair && (!pair || pair.getWorldEntity(stage) != worldPair)) {
+      // this pair is not the expected pair, so doUndergroundBeltUpdate didn't update it
+      // this is an error state, just update highlights
+      const worldPairEntity = project.content.findCompatibleWithLuaEntity(worldPair, nil, stage)
+      if (worldPairEntity) updateAllHighlights(project, worldPairEntity)
+    }
   }
 
   return updateResult
