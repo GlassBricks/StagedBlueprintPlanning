@@ -18,14 +18,14 @@ import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderCont
 
 export type IfProps = {
   condition: Property<boolean>
-  then: Func<() => Element | undefined>
-  else?: Func<() => Element | undefined>
+  then: Func<() => Element | nil>
+  else?: Func<() => Element | nil>
 } & ElemProps<"flow">
 
 @RegisterClass("gui:If")
 export class If extends Component<IfProps> {
-  then!: Func<() => Element | undefined>
-  else?: Func<() => Element | undefined>
+  then!: Func<() => Element | nil>
+  else?: Func<() => Element | nil>
   element!: FlowGuiElementMembers
 
   render(props: IfProps, context: RenderContext): Element {

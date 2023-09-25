@@ -21,7 +21,7 @@ export type StageDiffInternal<E extends Entity> = {
 }
 
 const ignoredProps = newLuaSet<keyof any>("position", "direction")
-let nilPlaceholder: NilPlaceholder | undefined
+let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
   nilPlaceholder = getNilPlaceholder()
 })

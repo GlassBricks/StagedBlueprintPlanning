@@ -49,7 +49,7 @@ describe("getPowerSwitchConnectionSide", () => {
     [1, 2],
   ])("gets correct side when left connected to %s and right connected to %s", (left, right) => {
     const poles = { [1]: pole1, [2]: pole2 }
-    let expected: defines.wire_connection_id | undefined
+    let expected: defines.wire_connection_id | nil
     let connected2 = false
     if (left != 0) {
       powerSwitch.connect_neighbour({

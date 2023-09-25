@@ -1027,12 +1027,7 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
 
 function selectionToolUsed(
   e: OnPlayerSelectedAreaEvent | OnPlayerAltSelectedAreaEvent | OnPlayerReverseSelectedAreaEvent,
-  action: (
-    project: Project,
-    entity: LuaEntity,
-    stageNumber: StageNumber,
-    playerIndex: PlayerIndex,
-  ) => UndoAction | undefined,
+  action: (project: Project, entity: LuaEntity, stageNumber: StageNumber, playerIndex: PlayerIndex) => UndoAction | nil,
 ): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
