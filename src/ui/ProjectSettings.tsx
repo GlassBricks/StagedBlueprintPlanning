@@ -82,9 +82,9 @@ const StageListBoxWidth = 140
 
 const NewStageBarHeight = 100
 
-const StageSettingsButtonWidth = 140
-const BpSettingsButtonWidth = 180
-const OtherSettingsButtonWidth = 140
+const StageSettingsButtonWidth = 160
+const BpSettingsButtonWidth = 220
+const OtherSettingsButtonWidth = 180
 
 const ProjectSettingsTabWidth = 420
 
@@ -281,7 +281,7 @@ class ProjectSettings extends Component<{
       stage == nil ? this.project.defaultBlueprintSettings : stage.getBlueprintSettingsView()
 
     return (
-      <flow direction="vertical" styleMod={{ padding: 10 }}>
+      <flow direction="vertical" styleMod={{ padding: 10, bottom_padding: 20 }}>
         <label
           caption={
             stage == nil
@@ -303,7 +303,7 @@ class ProjectSettings extends Component<{
           <EditButton on_gui_click={bind(ibind(this.editGridSettings), settings, stage)} />
         </flow>
 
-        <label caption={[L_GuiProjectSettings.FilteringEntities]} style="caption_label" />
+        <label caption={[L_GuiProjectSettings.EntityFilters]} style="caption_label" />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label caption={[L_GuiProjectSettings.Blacklist]} styleMod={highlightIfOverriden(settings.blacklist)} />
           <EditButton on_gui_click={bind(ibind(this.editFilter), settings, "blacklist")} />
@@ -331,6 +331,20 @@ class ProjectSettings extends Component<{
           </flow>
         </flow>
 
+        <label caption={[L_GuiProjectSettings.EntityEdits]} style="caption_label" />
+        <checkbox
+          state={settings.useModulePreloading}
+          caption={[L_GuiProjectSettings.UseModulePreloading]}
+          tooltip={[L_GuiProjectSettings.UseModulePreloadingTooltip]}
+          styleMod={highlightIfOverriden(settings.useModulePreloading)}
+        />
+        <checkbox
+          state={settings.replaceInfinityEntitiesWithCombinators}
+          caption={[L_GuiProjectSettings.ReplaceInfinityWithCombinators]}
+          tooltip={[L_GuiProjectSettings.ReplaceInfinityWithCombinatorsTooltip]}
+          styleMod={highlightIfOverriden(settings.replaceInfinityEntitiesWithCombinators)}
+        />
+
         <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
         <checkbox
           state={settings.autoLandfill}
@@ -343,15 +357,6 @@ class ProjectSettings extends Component<{
           caption={[L_GuiProjectSettings.UseNextStageTiles]}
           tooltip={[L_GuiProjectSettings.UseNextStageTilesTooltip]}
           styleMod={highlightIfOverriden(settings.useNextStageTiles)}
-        />
-
-        <label caption={[L_GuiProjectSettings.Other]} style="caption_label" />
-
-        <checkbox
-          state={settings.replaceInfinityEntitiesWithCombinators}
-          caption={[L_GuiProjectSettings.ReplaceInfinityWithCombinators]}
-          tooltip={[L_GuiProjectSettings.ReplaceInfinityWithCombinatorsTooltip]}
-          styleMod={highlightIfOverriden(settings.replaceInfinityEntitiesWithCombinators)}
         />
       </flow>
     )

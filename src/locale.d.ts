@@ -220,9 +220,9 @@ export declare const enum L_GuiProjectSettings {
   DeleteStageConfirmation2First = "bp100.gui.project-settings.delete-stage-confirmation2-first",
   /** Contents will be merged with the previous stage (__1__). */
   DeleteStageConfirmation2Middle = "bp100.gui.project-settings.delete-stage-confirmation2-middle",
-  /** Defaults */
+  /** Settings: Defaults */
   BlueprintSettingsDefaults = "bp100.gui.project-settings.blueprint-settings-defaults",
-  /** Current stage [img=info] */
+  /** Settings: Current stage [img=info] */
   BlueprintSettingsCurrentStage = "bp100.gui.project-settings.blueprint-settings-current-stage",
   /** These settings override the default settings for the current stage. Overriden settings are highlighted. */
   BlueprintSettingsCurrentStageTooltip = "bp100.gui.project-settings.blueprint-settings-current-stage-tooltip",
@@ -230,14 +230,16 @@ export declare const enum L_GuiProjectSettings {
   EditingDefaults = "bp100.gui.project-settings.editing-defaults",
   /** Overrides for stage: __1__ */
   EditingForStage = "bp100.gui.project-settings.editing-for-stage",
-  /** Grid settings: */
+  /** Grid settings[img=info]: */
   GridSettings = "bp100.gui.project-settings.grid-settings",
+  /** Icons can only be edited in the current stage settings. */
+  GridSettingsTooltip = "bp100.gui.project-settings.grid-settings-tooltip",
   /** Icons and grid settings: */
   GridSettingsAndIcons = "bp100.gui.project-settings.grid-settings-and-icons",
   /** Edit */
   Edit = "bp100.gui.project-settings.edit",
-  /** Entities */
-  FilteringEntities = "bp100.gui.project-settings.filtering-entities",
+  /** Entity filters */
+  EntityFilters = "bp100.gui.project-settings.entity-filters",
   /** Only include entities changed in the last */
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */
@@ -248,6 +250,16 @@ export declare const enum L_GuiProjectSettings {
   OrInWhitelist = "bp100.gui.project-settings.or-in-whitelist",
   /** Blacklist: */
   Blacklist = "bp100.gui.project-settings.blacklist",
+  /** Entity edits */
+  EntityEdits = "bp100.gui.project-settings.entity-edits",
+  /** Use module preloading [img=info] */
+  UseModulePreloading = "bp100.gui.project-settings.use-module-preloading",
+  /** If an assembling machine has modules added at later stage, the modules are included in blueprints in earlier stages [font=default-bold]even if[/font] the machine is not high enough tier or has the wrong recipe.\nThis is useful to still bot requests for modules that will be added later.\nThe machine may need upgrading or having the correct recipe set [font=default-bold]before[/font] bots arrive to insert modules successfully.\n\n It is possible to create these blueprints without mods. */
+  UseModulePreloadingTooltip = "bp100.gui.project-settings.use-module-preloading-tooltip",
+  /** Replace infinity chests/pipes with combinators [img=info] */
+  ReplaceInfinityWithCombinators = "bp100.gui.project-settings.replace-infinity-with-combinators",
+  /** In blueprints, replaces infinity chests/pipes with constant combinators having the same icons when viewed in alt-mode. */
+  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.project-settings.replace-infinity-with-combinators-tooltip",
   /** Tiles */
   Tiles = "bp100.gui.project-settings.tiles",
   /** Auto-landfill [img=info] */
@@ -258,10 +270,6 @@ export declare const enum L_GuiProjectSettings {
   UseNextStageTiles = "bp100.gui.project-settings.use-next-stage-tiles",
   /** Each blueprint will contain the next stage's tiles. Useful for landfill. */
   UseNextStageTilesTooltip = "bp100.gui.project-settings.use-next-stage-tiles-tooltip",
-  /** Replace infinity chests/pipes with combinators [img=info] */
-  ReplaceInfinityWithCombinators = "bp100.gui.project-settings.replace-infinity-with-combinators",
-  /** In blueprints, replaces infinity chests/pipes with constant combinators having the same icons when viewed in alt-mode. */
-  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.project-settings.replace-infinity-with-combinators-tooltip",
   /** Export */
   BpExport = "bp100.gui.project-settings.bp-export",
   /** Get blueprint for current stage */
