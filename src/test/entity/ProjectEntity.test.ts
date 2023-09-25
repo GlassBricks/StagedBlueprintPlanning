@@ -104,7 +104,7 @@ test("getStageDiff", () => {
 })
 test("getNextStageDiffForProp", () => {
   const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
-  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).to.equal([projectEntity.firstStage, 1])
+  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).to.equal([])
   projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
   expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).to.equal([4, 3])
 })

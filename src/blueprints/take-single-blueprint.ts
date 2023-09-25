@@ -21,7 +21,7 @@ import {
   MapPosition,
   UnitNumber,
 } from "factorio:runtime"
-import { isEmpty, Mutable, PRecord } from "../lib"
+import { getKeySet, isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeParameters } from "./blueprint-settings"
 
@@ -87,13 +87,8 @@ function filterEntities(
   return $multi(anyDeleted, firstNotDeletedLuaIndex)
 }
 
-function keySet(keys: LuaPairsIterable<string, unknown>) {
-  const result = newLuaSet<string>()
-  for (const [key] of keys) result.add(key)
-  return result
-}
 function getInfinityEntityNames(): LuaMultiReturn<[chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]> {
-  const infinityChestNames = keySet(
+  const infinityChestNames = getKeySet(
     game.get_filtered_entity_prototypes([
       {
         filter: "type",
@@ -101,7 +96,7 @@ function getInfinityEntityNames(): LuaMultiReturn<[chests: ReadonlyLuaSet<string
       },
     ]),
   )
-  const infinityPipeNames = keySet(
+  const infinityPipeNames = getKeySet(
     game.get_filtered_entity_prototypes([
       {
         filter: "type",

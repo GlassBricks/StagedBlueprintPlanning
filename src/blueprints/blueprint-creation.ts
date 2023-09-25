@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LocalisedString, LuaInventory, LuaItemStack, LuaPlayer, UnitNumber } from "factorio:runtime"
+import { BlueprintEntity, LocalisedString, LuaInventory, LuaItemStack, LuaPlayer, UnitNumber } from "factorio:runtime"
+import { Entity } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
-import { assertNever, Mutable, RegisterClass } from "../lib"
+import { assertNever, getKeySet, Mutable, RegisterClass } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { L_GuiBlueprintBookTask } from "../locale"
@@ -26,17 +27,31 @@ import {
 import { BlueprintTakeResult, takeSingleBlueprint } from "./take-single-blueprint"
 import max = math.max
 
+class PseudoPromise<T extends AnyNotNil> {
+  private value?: T
+  set(value: T) {
+    assert(!this.value, "value already set")
+    this.value = value
+  }
+
+  get(): T {
+    return assert(this.value, "value not set")[0]
+  }
+}
+
 interface ProjectBlueprintPlan {
   project: UserProject
   // other stuff will go here eventually
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
 
-  hasComputeChangedEntitiesTask?: boolean
-  changedEntities?: LuaMap<StageNumber, LuaSet<ProjectEntity>>
+  changedEntities?: PseudoPromise<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
+  moduleOverrides?: PseudoPromise<LuaMap<UnitNumber, Record<string, number>>>
 }
 
 interface StageBlueprintPlan {
   stage: Stage
+
+  projectPlan: ProjectBlueprintPlan
 
   stack: LuaItemStack | nil
   bbox: BBox
@@ -77,7 +92,7 @@ namespace BlueprintMethods {
       }
     }
 
-    projectPlan.changedEntities = result
+    projectPlan.changedEntities!.set(result)
   }
 
   export function computeUnitNumberFilter(
@@ -89,7 +104,7 @@ namespace BlueprintMethods {
     const minStage = max(1, stageNumber - stageLimit + 1)
     const maxStage = stageNumber
 
-    const changedEntities = projectPlan.changedEntities!
+    const changedEntities = projectPlan.changedEntities!.get()
 
     const result = new LuaSet<UnitNumber>()
     for (const stage of $range(minStage, maxStage)) {
@@ -104,6 +119,33 @@ namespace BlueprintMethods {
     stagePlan.unitNumberFilter = result
   }
 
+  export function computeModuleOverrides(projectPlan: ProjectBlueprintPlan): void {
+    const project = projectPlan.project
+    const assemblingMachineNames = getKeySet(
+      game.get_filtered_entity_prototypes([
+        {
+          filter: "type",
+          type: "assembling-machine",
+        },
+      ]),
+    )
+    const result = new LuaMap<UnitNumber, Record<string, number>>()
+    for (const entity of project.content.iterateAllEntities()) {
+      const firstValue = entity.firstValue
+      if (firstValue.items || !assemblingMachineNames.has(firstValue.name)) continue
+      const [firstDiffStage, newItems] = entity.getFirstStageDiffForProp("items")
+      if (!firstDiffStage) continue
+      for (const stage of $range(entity.firstStage, firstDiffStage - 1)) {
+        const worldEntity = entity.getWorldEntity(stage)
+        if (!worldEntity) continue
+        const un = worldEntity.unit_number
+        if (!un) continue
+        result.set(un, newItems!)
+      }
+    }
+    projectPlan.moduleOverrides!.set(result)
+  }
+
   export function setLandfillTiles(stage: Stage): void {
     stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
   }
@@ -114,15 +156,24 @@ namespace BlueprintMethods {
     settings: OverrideableBlueprintSettings,
   ): void {
     const { stage, bbox } = stagePlan
-    stagePlan.result = takeSingleBlueprint(
-      actualStack,
-      settings,
-      stage.surface,
-      bbox,
-      stagePlan.unitNumberFilter,
-      false,
-    )
+    const result = takeSingleBlueprint(actualStack, settings, stage.surface, bbox, stagePlan.unitNumberFilter, false)
+    stagePlan.result = result
     actualStack.label = stage.name.get()
+
+    if (result && settings.useModulePreloading) {
+      const moduleOverrides = stagePlan.projectPlan.moduleOverrides!.get()
+      const { entities, bpMapping } = result
+      for (const [entityNumber, luaEntity] of pairs(bpMapping)) {
+        const un = luaEntity.unit_number
+        if (!un) continue
+        const overrides = moduleOverrides.get(un)
+        if (!overrides) continue
+        const entity = entities[entityNumber]
+        if (!entity) continue
+        ;(entity as Mutable<Entity>).items = overrides
+      }
+      actualStack.set_blueprint_entities(entities as BlueprintEntity[])
+    }
   }
 
   export function setNextStageTiles(curStage: StageBlueprintPlan, nextStage: StageBlueprintPlan): void {
@@ -193,13 +244,14 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
         const stagePlan = task.args[0]
         return [L_GuiBlueprintBookTask.TakeStageBlueprint, stagePlan.stage.name.get()]
       }
+      case "computeChangedEntities":
+      case "computeModuleOverrides": {
+        const projectPlan = task.args[0]
+        return [L_GuiBlueprintBookTask.PreparingProject, projectPlan.project.displayName.get()]
+      }
       case "computeUnitNumberFilter": {
         const stagePlan = task.args[1]
-        return [L_GuiBlueprintBookTask.ComputeUnitNumberFilter, stagePlan.stage.name.get()]
-      }
-      case "computeChangedEntities": {
-        const projectPlan = task.args[0]
-        return [L_GuiBlueprintBookTask.ComputeChangedEntities, projectPlan.project.displayName.get()]
+        return [L_GuiBlueprintBookTask.PreparingStage, stagePlan.stage.name.get()]
       }
       case "setLandfillTiles": {
         const stage = task.args[0]
@@ -240,7 +292,7 @@ class BlueprintCreationTaskBuilder {
   }
 
   private addNewStagePlan(
-    projectInfo: ProjectBlueprintPlan,
+    projectPlan: ProjectBlueprintPlan,
     stack: LuaItemStack | nil,
     stage: Stage,
     settings: StageBlueprintSettings,
@@ -249,10 +301,11 @@ class BlueprintCreationTaskBuilder {
       stack,
       stage,
       bbox: stage.getBlueprintBBox(),
+      projectPlan,
       settings,
       result: nil,
     }
-    projectInfo.stagePlans.set(stage.stageNumber, plan)
+    projectPlan.stagePlans.set(stage.stageNumber, plan)
     return plan
   }
 
@@ -263,7 +316,14 @@ class BlueprintCreationTaskBuilder {
     }
   }
 
-  public queueBlueprintTask(stage: Stage, stack: LuaItemStack): { result: BlueprintTakeResult | nil } | nil {
+  public queueBlueprintTask(
+    stage: Stage,
+    stack: LuaItemStack,
+  ):
+    | {
+        result: BlueprintTakeResult | nil
+      }
+    | nil {
     const projectPlan = this.getPlanForProject(stage.project)
     const existingStagePlan = projectPlan.stagePlans.get(stage.stageNumber)
     if (existingStagePlan) {
@@ -328,18 +388,28 @@ class BlueprintCreationTaskBuilder {
 
     // let unitNumberFilter: LuaSet<UnitNumber> | nil
     if (settings.stageLimit != nil) {
-      this.ensureHasChangedEntities(projectPlan)
+      this.ensureHasComputeChangedEntities(projectPlan)
       this.tasks.push({ name: "computeUnitNumberFilter", args: [projectPlan, stagePlan, settings.stageLimit] })
+    }
+    if (settings.useModulePreloading) {
+      this.ensureHasComputeModuleOverrides(projectPlan)
     }
     this.tasks.push({ name: "takeStageBlueprint", args: [stagePlan, actualStack, settings] })
   }
 
-  private ensureHasChangedEntities(projectInfo: ProjectBlueprintPlan): void {
-    if (!projectInfo.hasComputeChangedEntitiesTask) {
-      projectInfo.hasComputeChangedEntitiesTask = true
+  private ensureHasComputeChangedEntities(projectInfo: ProjectBlueprintPlan): void {
+    if (!projectInfo.changedEntities) {
+      projectInfo.changedEntities = new PseudoPromise()
       this.tasks.push({ name: "computeChangedEntities", args: [projectInfo] })
     }
   }
+  private ensureHasComputeModuleOverrides(projectInfo: ProjectBlueprintPlan): void {
+    if (!projectInfo.moduleOverrides) {
+      projectInfo.moduleOverrides = new PseudoPromise()
+      this.tasks.push({ name: "computeModuleOverrides", args: [projectInfo] })
+    }
+  }
+
   getNewTempStack(): LuaItemStack {
     const inventory = (this.inventory ??= game.create_inventory(4))
     let [stack] = inventory.find_empty_stack()

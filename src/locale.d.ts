@@ -295,9 +295,9 @@ export declare const enum L_GuiBlueprintBookTask {
   /** Assembling blueprint book */
   AssemblingBlueprintBook = "bp100.gui.blueprint-book-task.assembling-blueprint-book",
   /** Preparing project __1__ */
-  ComputeChangedEntities = "bp100.gui.blueprint-book-task.compute-changed-entities",
+  PreparingProject = "bp100.gui.blueprint-book-task.preparing-project",
   /** __1__: preparing to take blueprint */
-  ComputeUnitNumberFilter = "bp100.gui.blueprint-book-task.compute-unit-number-filter",
+  PreparingStage = "bp100.gui.blueprint-book-task.preparing-stage",
   /** __1__: setting landfill tiles */
   SetLandfillTiles = "bp100.gui.blueprint-book-task.set-landfill-tiles",
   /** __1__: taking blueprint */

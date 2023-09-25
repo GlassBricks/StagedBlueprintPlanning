@@ -84,7 +84,7 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
   getStageDiffs(): StageDiffs<T> | nil
-  getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[StageNumber, T[K]]>
+  getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
 
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
   /** Returns the first stage after the given stage number with a stage diff, or `nil` if none. */
@@ -317,7 +317,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     return this.stageDiffs
   }
 
-  getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[StageNumber, T[K]]> {
+  getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber, T[K]]> {
     const stageDiffs = this.stageDiffs
     if (stageDiffs) {
       for (const [stage, diff] of pairs(stageDiffs)) {
@@ -325,7 +325,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
         if (value != nil) return $multi(stage, fromDiffValue<T[K]>(value))
       }
     }
-    return $multi(this.firstStage, this.firstValue[prop])
+    return $multi()
   }
 
   _applyDiffAtStage(stage: StageNumber, _diff: StageDiffInternal<T>): void {

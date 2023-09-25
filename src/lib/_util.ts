@@ -104,3 +104,8 @@ export function visitAll(obj: object, fn: (obj: unknown) => void): void {
     }
   }
 }
+export function getKeySet<T extends AnyNotNil>(keys: LuaPairsIterable<T, unknown>): LuaSet<T> {
+  const result = new LuaSet<T>()
+  for (const [key] of keys) result.add(key)
+  return result
+}

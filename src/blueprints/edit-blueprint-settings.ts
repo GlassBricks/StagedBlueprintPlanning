@@ -49,7 +49,7 @@ function getBasicBlueprintTakeParams(settings: ProjectOrStageBlueprintSettings):
     additionalWhitelist: nil,
     blacklist: settings.blacklist.get(),
     replaceInfinityEntitiesWithCombinators: settings.replaceInfinityEntitiesWithCombinators.get(),
-    moduleOverloading: false,
+    useModulePreloading: false,
     icons: settings.icons?.get(),
   }
 }

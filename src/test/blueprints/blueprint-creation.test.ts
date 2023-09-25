@@ -9,19 +9,21 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LuaEntity, LuaPlayer, MapPositionArray } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, LuaPlayer, MapPositionArray } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
 import {
   exportBlueprintBookToFile,
   submitProjectBlueprintBookTask,
   takeStageBlueprint,
 } from "../../blueprints/blueprint-creation"
+import { ProjectEntity } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
 import { Stage, UserProject } from "../../project/ProjectDef"
 import { AutoSetTilesType } from "../../project/tiles"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { refreshAllWorldEntities } from "../../project/world-entity-updates"
 
 let project: UserProject
 let player: LuaPlayer
@@ -155,6 +157,37 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   expect(entities.map((e) => e.position).sort((a, b) => a.x - b.x)).toEqual(
     includedEntities.map((e) => e.position).sort((a, b) => a.x - b.x),
   )
+})
+
+test("moduleOverrides: uses modules later stage if updated", () => {
+  const stage1 = project.getStage(1)!
+  const e1 = createEntity(stage1, nil, "assembling-machine-1")
+  const projEntity = project.content.findCompatibleWithLuaEntity(e1, nil, 1) as ProjectEntity<BlueprintEntity>
+  projEntity._applyDiffAtStage(2, {
+    name: "assembling-machine-2",
+    recipe: "iron-gear-wheel",
+    items: {
+      "productivity-module": 2,
+    },
+  })
+  refreshAllWorldEntities(project, projEntity)
+
+  const stack = player.cursor_stack!
+  const stageBlueprintSettings = stage1.stageBlueprintSettings
+  stageBlueprintSettings.useModulePreloading.set(true)
+
+  const ret = takeStageBlueprint(stage1, stack)
+
+  expect(ret).toBe(true)
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities).toHaveLength(1)
+  expect(entities[0]).toMatchTable({
+    name: "assembling-machine-1",
+    items: {
+      ["productivity-module"]: 2,
+    },
+  })
 })
 
 test("make blueprint book", () => {

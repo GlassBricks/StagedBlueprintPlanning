@@ -510,10 +510,10 @@ Migrations.to("0.23.1", () => {
 Migrations.to("0.25.0", () => {
   for (const project of global.projects) {
     assume<Mutable<PropertiesTable<OverrideableBlueprintSettings>>>(project.defaultBlueprintSettings)
-    project.defaultBlueprintSettings.moduleOverloading = property(false)
+    project.defaultBlueprintSettings.useModulePreloading = property(false)
     for (const stage of project.getAllStages()) {
       assume<Mutable<StageBlueprintSettingsTable>>(stage.stageBlueprintSettings)
-      stage.stageBlueprintSettings.moduleOverloading = property(false)
+      stage.stageBlueprintSettings.useModulePreloading = property(false)
     }
   }
 })
