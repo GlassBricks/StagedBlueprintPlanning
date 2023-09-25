@@ -102,6 +102,12 @@ test("getStageDiff", () => {
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   expect(projectEntity.getStageDiff(3)).to.equal({ override_stack_size: 3 })
 })
+test("getNextStageDiffForProp", () => {
+  const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).to.equal([projectEntity.firstStage, 1])
+  projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
+  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).to.equal([4, 3])
+})
 
 test("nextStageWithDiff", () => {
   const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
