@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.25.0
-Date: ????
+Date: 2023-09-25
   Features:
     - Added module preloading, which allows creating bot requests for modules even if the assembling machine is not high enough tier.
   Gui:
