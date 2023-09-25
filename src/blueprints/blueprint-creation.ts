@@ -218,8 +218,6 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
       default:
         assertNever(task)
     }
-
-    return "unknown"
   }
   protected override done(): void {
     if (this.inventory?.valid) this.inventory.destroy()
