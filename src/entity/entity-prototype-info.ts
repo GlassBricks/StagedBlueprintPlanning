@@ -179,32 +179,6 @@ export function isRollingStockType(entityName: string): boolean {
   const type = nameToType.get(entityName)
   return type != nil && rollingStockTypes.has(type)
 }
-function keySet(keys: LuaPairsIterable<string, unknown>) {
-  const result = newLuaSet<string>()
-  for (const [key] of keys) result.add(key)
-  return result
-}
-export function getInfinityEntityNames(): LuaMultiReturn<
-  [chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]
-> {
-  const infinityChestNames = keySet(
-    game.get_filtered_entity_prototypes([
-      {
-        filter: "type",
-        type: "infinity-container",
-      },
-    ]),
-  )
-  const infinityPipeNames = keySet(
-    game.get_filtered_entity_prototypes([
-      {
-        filter: "type",
-        type: "infinity-pipe",
-      },
-    ]),
-  )
-  return $multi(infinityChestNames, infinityPipeNames)
-}
 export { rollingStockTypes }
 
 export function isPreviewEntity(entity: LuaEntity): boolean {

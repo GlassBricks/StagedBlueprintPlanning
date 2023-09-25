@@ -21,7 +21,6 @@ import {
   MapPosition,
   UnitNumber,
 } from "factorio:runtime"
-import { getInfinityEntityNames } from "../entity/entity-prototype-info"
 import { isEmpty, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeParameters } from "./blueprint-settings"
@@ -86,6 +85,31 @@ function filterEntities(
     }
   }
   return $multi(anyDeleted, firstNotDeletedLuaIndex)
+}
+
+function keySet(keys: LuaPairsIterable<string, unknown>) {
+  const result = newLuaSet<string>()
+  for (const [key] of keys) result.add(key)
+  return result
+}
+function getInfinityEntityNames(): LuaMultiReturn<[chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]> {
+  const infinityChestNames = keySet(
+    game.get_filtered_entity_prototypes([
+      {
+        filter: "type",
+        type: "infinity-container",
+      },
+    ]),
+  )
+  const infinityPipeNames = keySet(
+    game.get_filtered_entity_prototypes([
+      {
+        filter: "type",
+        type: "infinity-pipe",
+      },
+    ]),
+  )
+  return $multi(infinityChestNames, infinityPipeNames)
 }
 
 function replaceInfinityEntitiesWithCombinators(entities: Record<number, Mutable<BlueprintEntity>>): boolean {
