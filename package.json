@@ -44,7 +44,7 @@
     "watch": "tstl --watch",
     "watch:locale": "nodemon scripts/gen-locale-defs.ts",
     "watch:release": "tstl --watch -p tsconfig-release.json",
-    "version-minor": "ts-node scripts/bump-version.ts minor",
+    "version-minor": "ts-node --esm scripts/bump-version.ts minor",
     "pretest": "npm run clean && npm run build:test",
     "test": "factorio-test run ./src",
     "prepare-package": "npm run test && npm run build:release"

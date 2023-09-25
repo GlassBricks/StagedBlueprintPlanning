@@ -16,6 +16,10 @@ import * as path from "path"
 import * as prettier from "prettier"
 import * as semver from "semver"
 import { ReleaseType } from "semver"
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const args = process.argv.slice(2)
 
