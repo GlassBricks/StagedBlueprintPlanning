@@ -244,7 +244,7 @@ export declare const enum L_GuiProjectSettings {
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */
   IncludeEntitiesInTheNextNStages2 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-2",
-  /** Only new entities or entities with setting changes in the last "n" stages will be included in the blueprint.\n[font=default-bold]Notes:[/font]\n  Consider adding assembling machines to the whitelist below, so that previously unresearched recipes can still be pasted by later blueprints.\n  It may be helpful to include entities such as rails and roboports to the whitelist to help align blueprints. */
+  /** Only new entities or entities with setting changes in the last "n" stages will be included in the blueprint.\n[font=default-bold]Notes:[/font]\n  Consider adding assembling machines to the whitelist below, so previously unresearched recipes can still be pasted by later blueprints.\n  Consider adding alignment entities to the whitelist, such as rails and roboports, to assist in pasting blueprints. */
   IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-tooltip",
   /** or in whitelist: */
   OrInWhitelist = "bp100.gui.project-settings.or-in-whitelist",
