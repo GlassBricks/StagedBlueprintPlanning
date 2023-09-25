@@ -24,8 +24,6 @@ export interface EntityPrototypeInfo {
   pasteCompatibleRotations: ReadonlyLuaMap<string, PasteCompatibleRotationType>
   selectionBoxes: ReadonlyLuaMap<string, BBox>
   nameToType: ReadonlyLuaMap<string, string>
-  infinityChestNames: ReadonlyLuaSet<string>
-  infinityPipeNames: ReadonlyLuaSet<string>
 }
 /**
  * Compatible rotations for pasting entities.
@@ -105,9 +103,6 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
     }
   }
 
-  const infinityChestNames = new LuaSet<string>()
-  const infinityPipeNames = new LuaSet<string>()
-
   const nameToType = new LuaMap<string, string>()
 
   for (const [name, prototype] of game.get_filtered_entity_prototypes([{ filter: "blueprintable" }])) {
@@ -124,11 +119,7 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
 
     selectionBoxes.set(name, BBox.from(prototype.selection_box))
 
-    const type = prototype.type
-    if (type == "infinity-container") infinityChestNames.add(name)
-    if (type == "infinity-pipe") infinityPipeNames.add(name)
-
-    nameToType.set(name, type)
+    nameToType.set(name, prototype.type)
   }
 
   for (const [categoryName, category] of categories) {
@@ -144,8 +135,6 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
     pasteCompatibleRotations: pasteRotationTypes,
     selectionBoxes,
     nameToType,
-    infinityChestNames,
-    infinityPipeNames,
   }
 }
 const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
@@ -190,10 +179,31 @@ export function isRollingStockType(entityName: string): boolean {
   const type = nameToType.get(entityName)
   return type != nil && rollingStockTypes.has(type)
 }
+function keySet(keys: LuaPairsIterable<string, unknown>) {
+  const result = newLuaSet<string>()
+  for (const [key] of keys) result.add(key)
+  return result
+}
 export function getInfinityEntityNames(): LuaMultiReturn<
   [chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]
 > {
-  return $multi(entityPrototypeInfo.infinityChestNames, entityPrototypeInfo.infinityPipeNames)
+  const infinityChestNames = keySet(
+    game.get_filtered_entity_prototypes([
+      {
+        filter: "type",
+        type: "infinity-container",
+      },
+    ]),
+  )
+  const infinityPipeNames = keySet(
+    game.get_filtered_entity_prototypes([
+      {
+        filter: "type",
+        type: "infinity-pipe",
+      },
+    ]),
+  )
+  return $multi(infinityChestNames, infinityPipeNames)
 }
 export { rollingStockTypes }
 
