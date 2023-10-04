@@ -2,6 +2,7 @@
 Version: 0.25.1
 Date: ????
   Changes:
+    - Better support for modded transport belts.
 ---------------------------------------------------------------------------------------------------
 Version: 0.25.0
 Date: 2023-09-25

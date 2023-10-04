@@ -28,4 +28,7 @@ describe("getCategoryName", () => {
   test("logistic-container is same as container", () => {
     expect(getEntityCategory("logistic-chest-passive-provider")).to.be(getEntityCategory("iron-chest"))
   })
+  test("transport belt has no fast-replace-group in category", () => {
+    expect(getEntityCategory("fast-transport-belt")).not.toInclude("|transport-belt|")
+  })
 })

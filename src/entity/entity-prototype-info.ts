@@ -64,6 +64,7 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
     "logistic-container": "container",
     "rail-chain-signal": "rail-signal",
   }
+  const ignoreFastReplaceGroup = newLuaSet("transport-belt", "underground-belt", "splitter")
 
   const nameToCategory = new LuaMap<string, CategoryName>()
   const categories = new LuaMap<CategoryName, string[]>()
@@ -74,11 +75,12 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
 
   function getCategory(prototype: LuaEntityPrototype): CategoryName | nil {
     const { fast_replaceable_group, type, collision_box } = prototype
-    if (fast_replaceable_group == nil) return
+    const actualFastReplaceGroup = ignoreFastReplaceGroup.has(type) ? "" : fast_replaceable_group
+    if (actualFastReplaceGroup == nil) return
     const actualType = compatibleTypes[type] ?? type
     const { x: lx, y: ly } = collision_box.left_top
     const { x: rx, y: ry } = collision_box.right_bottom
-    return [actualType, fast_replaceable_group, lx, ly, rx, ry].join("|") as CategoryName
+    return [actualType, actualFastReplaceGroup, lx, ly, rx, ry].join("|") as CategoryName
   }
 
   function getPasteCompatibleRotation(prototype: LuaEntityPrototype): PasteCompatibleRotationType | nil {
