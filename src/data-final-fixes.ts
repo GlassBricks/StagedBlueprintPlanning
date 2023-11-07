@@ -300,8 +300,7 @@ function createRailPreview(
     close_sound: prototype.close_sound,
 
     pictures: createRailPictures(color),
-    // int max
-    time_before_removed: 2147483647,
+    time_before_removed: 2000000,
     remove_on_tile_placement: false,
     remove_on_entity_placement: false,
 
