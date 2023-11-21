@@ -63,6 +63,7 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
   const compatibleTypes: PRecord<string, string> = {
     "logistic-container": "container",
     "rail-chain-signal": "rail-signal",
+    tank: "pipe",
   }
   const ignoreFastReplaceGroup = newLuaSet("transport-belt", "underground-belt", "splitter")
 
