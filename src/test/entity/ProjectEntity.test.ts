@@ -9,14 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LuaEntity } from "factorio:runtime"
+import { LuaEntity, ScriptRaisedBuiltEvent, ScriptRaisedDestroyEvent } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity, RollingStockEntity } from "../../entity/Entity"
 import { createProjectEntityNoCopy, ExtraEntityType, ProjectEntity } from "../../entity/ProjectEntity"
 import { getRegisteredProjectEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
-import { deepCompare, deepCopy, shallowCopy } from "../../lib"
+import { deepCompare, deepCopy, Events, shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getNilPlaceholder } from "../../utils/diff-value"
 import { setupTestSurfaces } from "../project/Project-mock"
@@ -29,6 +29,34 @@ interface InserterEntity extends Entity {
   override_stack_size?: number
   filter_mode?: "whitelist" | "blacklist"
 }
+
+let events: (ScriptRaisedBuiltEvent | ScriptRaisedDestroyEvent)[] = []
+let running = false
+before_each(() => {
+  events = []
+  running = true
+})
+after_each(() => {
+  running = false
+})
+Events.script_raised_built((e) => {
+  if (running) events.push(e)
+})
+Events.script_raised_destroy((e) => {
+  if (running) {
+    events.push({
+      name: e.name,
+      entity: {
+        name: e.entity.name,
+        position: e.entity.position,
+        direction: e.entity.direction,
+      } as LuaEntity,
+      mod_name: e.mod_name,
+      tick: e.tick,
+    })
+  }
+})
+
 let entity: InserterEntity
 let projectEntity: ProjectEntity<InserterEntity>
 before_each(() => {
@@ -460,6 +488,23 @@ describe("Get/set world entities", () => {
     expect(projectEntity.getWorldEntity(2)).to.equal(entity)
   })
 
+  test("replaceWorldEntity deletes old entity", () => {
+    projectEntity.replaceWorldEntity(1, entity)
+    const newEntity = surfaces[0].create_entity({ name: "iron-chest", position: Pos(1.5, 1.5) })!
+    projectEntity.replaceWorldEntity(1, newEntity)
+    expect(entity.valid).to.be(false)
+    expect(projectEntity.getWorldEntity(1)).to.equal(newEntity)
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchTable({
+      name: defines.events.script_raised_destroy,
+      entity: {
+        name: "iron-chest",
+        position: Pos(0.5, 0.5),
+      } as any,
+      mod_name: script.mod_name,
+    } satisfies Partial<ScriptRaisedDestroyEvent>)
+  })
+
   test("getWorldEntity returns nil if is a preview entity", () => {
     projectEntity.replaceWorldOrPreviewEntity(1, previewEntity)
     expect(projectEntity.getWorldEntity(1)).to.be.nil()
@@ -470,6 +515,15 @@ describe("Get/set world entities", () => {
     projectEntity.replaceWorldEntity(1, entity)
     projectEntity.destroyWorldOrPreviewEntity(1)
     expect(entity.valid).to.be(false)
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchTable({
+      name: defines.events.script_raised_destroy,
+      entity: {
+        name: "iron-chest",
+        position: Pos(0.5, 0.5),
+      } as any,
+      mod_name: script.mod_name,
+    } satisfies Partial<ScriptRaisedDestroyEvent>)
     expect(projectEntity.getWorldEntity(1)).to.be.nil()
   })
 
@@ -509,6 +563,26 @@ describe("Get/set world entities", () => {
     expect(previewEntity.valid).to.be(false)
     expect(projectEntity.getWorldEntity(1)).to.be.nil()
     expect(projectEntity.getWorldEntity(2)).to.be.nil()
+
+    expect(events).toHaveLength(2)
+    expect(events[0]).toMatchTable({
+      name: defines.events.script_raised_destroy,
+      entity: {
+        name: "iron-chest",
+        position: Pos(0.5, 0.5),
+        direction: 0,
+      } as any,
+      mod_name: script.mod_name,
+    } satisfies Partial<ScriptRaisedDestroyEvent>)
+    expect(events[1]).toMatchTable({
+      name: defines.events.script_raised_destroy,
+      entity: {
+        name: Prototypes.PreviewEntityPrefix + "iron-chest",
+        position: Pos(0.5, 0.5),
+        direction: 0,
+      } as any,
+      mod_name: script.mod_name,
+    } satisfies Partial<ScriptRaisedDestroyEvent>)
   })
 
   test("hasWorldEntityInRange", () => {

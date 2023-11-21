@@ -111,7 +111,7 @@ describe("add", () => {
     expect(entity).to.be.any()
     expect(userActions.onEntityCreated).calledWith(project, entity, 1, nil)
   })
-  test("does not run if raised by this mod", () => {
+  test("does not run create if raised by this mod", () => {
     const entity = surface.create_entity({
       name: "iron-chest",
       position: pos,
@@ -140,8 +140,14 @@ describe("delete", () => {
     expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, 1)
   })
   test("script raised destroy", () => {
-    entity.destroy({ raise_destroy: true })
+    // entity.destroy({ raise_destroy: true })
+    Events.raiseFakeEventNamed("script_raised_destroy", { entity })
     expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, nil)
+  })
+  test("does not run delete if raised by this mod", () => {
+    script.raise_script_destroy({ entity })
+    expect(userActions.onEntityDeleted).not.called()
+    expectedNumCalls = 0
   })
   test("die", () => {
     entity.die()

@@ -219,6 +219,8 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
   return floor(orientation * 8 + 0.5) % 8
 }
 
+const { raise_script_destroy } = script
+
 @RegisterClass("AssemblyEntity")
 class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   public position: Position
@@ -643,10 +645,12 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   }
   replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void {
     const existing = this[stage]
-    if (existing && existing.valid && existing != entity) existing.destroy()
+    if (existing && existing.valid && existing != entity) {
+      raise_script_destroy({ entity: existing })
+      existing.destroy()
+    }
     this[stage] = entity
-    if (entity == nil) return
-    if (rollingStockTypes.has(entity.type)) {
+    if (entity && rollingStockTypes.has(entity.type)) {
       registerEntity(entity, this)
     }
   }
@@ -654,6 +658,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   destroyWorldOrPreviewEntity(stage: StageNumber): void {
     const existing = this[stage]
     if (existing && existing.valid) {
+      raise_script_destroy({ entity: existing })
       existing.destroy()
       delete this[stage]
     }
@@ -663,7 +668,10 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     for (const [k, v] of pairs(this)) {
       if (typeof k != "number") break
       assume<LuaEntity>(v)
-      if (v.valid) v.destroy()
+      if (v.valid) {
+        raise_script_destroy({ entity: v })
+        v.destroy()
+      }
       delete this[k]
     }
   }
@@ -680,6 +688,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     return false
   }
 
+  // note: for extra entities, we don't call raiseScriptDestroy as it's not needed + for performance reasons
   getExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber): ExtraEntities[T] | nil {
     const { stageProperties } = this
     if (!stageProperties) return nil

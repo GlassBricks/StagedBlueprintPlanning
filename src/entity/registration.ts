@@ -29,7 +29,7 @@ export function registerEntity(luaEntity: LuaEntity, projectEntity: ProjectEntit
   const entry = global.entityByUnitNumber.get(unitNumber)
   if (entry) return true
   global.entityByUnitNumber.set(unitNumber, projectEntity)
-  if (unitNumber != -1) script.register_on_entity_destroyed(luaEntity)
+  script.register_on_entity_destroyed(luaEntity)
   return true
 }
 

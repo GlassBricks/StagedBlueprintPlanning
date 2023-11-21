@@ -223,7 +223,9 @@ Events.script_raised_built((e) => {
 Events.on_robot_built_entity((e) => luaEntityCreated(e.created_entity, nil))
 Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 
-Events.script_raised_destroy((e) => luaEntityDeleted(e.entity, nil))
+Events.script_raised_destroy((e) => {
+  if (e.mod_name != modName) luaEntityDeleted(e.entity, nil)
+})
 Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
 
 Events.on_entity_died((e) => luaEntityDied(e.entity))
