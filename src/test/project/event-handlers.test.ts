@@ -174,13 +174,22 @@ describe("update", () => {
     expect(userActions.onEntityPossiblyUpdated).calledWith(project, entity, 1, nil, 1)
   })
   test("settings copy paste", () => {
-    Events.raiseFakeEventNamed("on_entity_settings_pasted", {
-      source: entity,
-      destination: entity,
-      player_index: 1 as PlayerIndex,
-    })
-
+    const entity2 = surface.create_entity({
+      name: "inserter",
+      position: pos.add(1, 0),
+      force: "player",
+    })!
+    entity.copy_settings(entity2, 1 as PlayerIndex)
     expect(userActions.onEntityPossiblyUpdated).calledWith(project, entity, 1, nil, 1)
+  })
+  test("does not run if copied from entityMarker", () => {
+    const entityMarker = surface.create_entity({
+      name: Prototypes.EntityMarker,
+      position: pos,
+    })!
+    entity.copy_settings(entityMarker, 1 as PlayerIndex)
+    expect(userActions.onEntityPossiblyUpdated).not.called()
+    expectedNumCalls = 0
   })
 
   test("rotate", () => {

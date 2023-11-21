@@ -17,9 +17,11 @@ import {
   LuaInventory,
   LuaSurface,
   MapPosition,
+  PlayerIndex,
   RollingStockSurfaceCreateEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
+import { Prototypes } from "../constants"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
@@ -40,6 +42,7 @@ import floor = math.floor
 
 declare const global: {
   tempBPInventory: LuaInventory
+  fakeCopySource?: LuaEntity
 }
 Events.on_init(() => {
   global.tempBPInventory = game.create_inventory(1)
@@ -222,7 +225,7 @@ export function createEntity(
     createItems(luaEntity, entity.items)
   }
   raise_script_built({ entity: luaEntity })
-  return luaEntity
+  if (luaEntity.valid) return luaEntity
 }
 
 function entityHasSettings(entity: BlueprintEntity): boolean {
@@ -368,6 +371,18 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mut
   return bpEntity
 }
 
+function getFakeCopySource(): LuaEntity {
+  const existing = global.fakeCopySource
+  if (existing && existing.valid) return existing
+  const newSource = game.surfaces[1].create_entity({
+    name: Prototypes.EntityMarker,
+    position: [-0.5, -0.5],
+  })!
+  assert(newSource, "Failed to create fake copy source")
+  global.fakeCopySource = newSource
+  return newSource
+}
+
 export function updateEntity(
   luaEntity: LuaEntity,
   value: Entity,
@@ -397,6 +412,10 @@ export function updateEntity(
   if (ghost) ghost.destroy() // should not happen?
   matchItems(luaEntity, value)
 
+  // raise a fake event, this potentially lets mods know that the entity was updated
+  luaEntity.copy_settings(getFakeCopySource(), 1 as PlayerIndex)
+
+  if (!luaEntity.valid) return $multi(nil)
   return $multi(luaEntity)
 }
 

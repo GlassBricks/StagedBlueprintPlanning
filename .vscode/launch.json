@@ -15,7 +15,6 @@
         "PickerDollies": true,
         "stdlib": true
       },
-      "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
         "factorio-test/Test",
@@ -51,7 +50,6 @@
         "PickerDollies": true,
         "stdlib": true
       },
-      "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
         "factorio-test/Test",
@@ -77,7 +75,6 @@
         "PickerDollies": true,
         "stdlib": true
       },
-      "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
         "factorio-test/Test",
@@ -100,7 +97,6 @@
         "WiderNoticeTextBoxes": true,
         "factorio-test": true
       },
-      "disableExtraMods": true,
       "factorioArgs": [
         "--load-scenario",
         "factorio-test/Test",

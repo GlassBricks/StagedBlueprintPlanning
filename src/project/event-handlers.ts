@@ -230,7 +230,9 @@ Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
 
 Events.on_entity_died((e) => luaEntityDied(e.entity))
 
-Events.on_entity_settings_pasted((e) => luaEntityPossiblyUpdated(e.destination, e.player_index))
+Events.on_entity_settings_pasted((e) => {
+  if (e.source.name != Prototypes.EntityMarker) luaEntityPossiblyUpdated(e.destination, e.player_index)
+})
 Events.on_gui_closed((e) => {
   if (e.entity) luaEntityPossiblyUpdated(e.entity, e.player_index)
 })

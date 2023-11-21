@@ -25,6 +25,7 @@ import {
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
+import { debugPrint } from "../lib/test/misc"
 import { updateAllHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 import {
@@ -69,8 +70,10 @@ export function addNewEntity(
   stage: StageNumber,
   knownValue?: BlueprintEntity,
 ): ProjectEntity<any> | nil {
+  // _breakpoint()
   const saved = saveEntity(entity, knownValue)
   if (!saved) return nil
+  debugPrint(saved)
   const { content } = project
   const projectEntity = createProjectEntityNoCopy(saved, entity.position, entity.direction, stage)
   projectEntity.replaceWorldEntity(stage, entity)
