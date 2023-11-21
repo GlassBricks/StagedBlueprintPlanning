@@ -587,48 +587,6 @@ describe("stage move tool", () => {
   })
 })
 
-describe("revives ghost undergrounds", () => {
-  test("by player", () => {
-    const pos = Pos(4.5, 0.5)
-    player.cursor_stack!.set_stack("underground-belt")
-    player.build_from_cursor({
-      position: pos,
-      alt: true,
-    })
-    const underground = surface.find_entities_filtered({
-      name: "underground-belt",
-      limit: 1,
-    })[0]
-    expect(underground).to.be.any()
-    expect(underground.position).to.equal(pos)
-    const ghosts = surface.find_entities_filtered({
-      type: "entity-ghost",
-      limit: 1,
-    })[0]
-    expect(ghosts).to.be.nil()
-
-    expect(userActions.onEntityCreated).calledWith(project, underground, 1, 1)
-  })
-  test("by script", () => {
-    const pos = Pos(4.5, 0.5)
-    const undergroundGhost = surface.create_entity({
-      name: "entity-ghost",
-      inner_name: "underground-belt",
-      position: pos,
-      force: "player",
-      raise_built: true,
-    })
-    expect(undergroundGhost?.valid).to.be.falsy()
-    const underground = surface.find_entities_filtered({
-      name: "underground-belt",
-      limit: 1,
-    })[0]
-    expect(underground).to.be.any()
-    expect(underground.position).to.equal(pos)
-    expect(userActions.onEntityCreated).calledWith(project, underground, 1, nil)
-  })
-})
-
 describe("stage delete tool", () => {
   let entity: LuaEntity
   let entity2: LuaEntity

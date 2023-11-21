@@ -102,10 +102,9 @@ function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   }
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
-  if (!isWorldEntityProjectEntity(entity)) {
-    return checkNonProjectEntity(entity, stage, player)
+  if (isWorldEntityProjectEntity(entity)) {
+    onEntityCreated(stage.project, entity, stage.stageNumber, player)
   }
-  onEntityCreated(stage.project, entity, stage.stageNumber, player)
 }
 
 function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
@@ -479,7 +478,6 @@ Events.on_built_entity((e) => {
   const playerIndex = e.player_index
 
   if (!isWorldEntityProjectEntity(entity)) {
-    checkNonProjectEntity(entity, stage, playerIndex)
     return
   }
 
@@ -497,18 +495,6 @@ Events.on_built_entity((e) => {
     registerUndoActionLater(undoAction)
   }
 })
-
-function checkNonProjectEntity(entity: LuaEntity, stage: Stage, byPlayer: PlayerIndex | nil): void {
-  // always revive ghost undergrounds
-  if (entity.type == "entity-ghost" && entity.ghost_type == "underground-belt") {
-    const [, newEntity] = entity.silent_revive()
-    if (newEntity) {
-      onEntityCreated(stage.project, newEntity, stage.stageNumber, byPlayer)
-    } else if (entity.valid) {
-      entity.destroy()
-    }
-  }
-}
 
 function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex) {
   const { toBeFastReplaced } = state
