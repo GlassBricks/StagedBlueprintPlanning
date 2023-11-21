@@ -2,6 +2,10 @@
 Version: 0.26.0
 Date: ????
   Changes:
+    - Added better support for modded pipes
+    - Added support for Bob's adjustable inserters
+    - Flexible offshore pump placement now works for modded offshore pumps
+    - *Slightly* better support for modded entities in general
 ---------------------------------------------------------------------------------------------------
 Version: 0.25.2
 Date: 2023-11-07
