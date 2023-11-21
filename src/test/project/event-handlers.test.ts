@@ -103,14 +103,23 @@ describe("add", () => {
   })
 
   test("script raise built", () => {
-    const position = pos
     const entity = surface.create_entity({
       name: "iron-chest",
-      position,
+      position: pos,
       raise_built: true,
     })!
     expect(entity).to.be.any()
     expect(userActions.onEntityCreated).calledWith(project, entity, 1, nil)
+  })
+  test("does not run if raised by this mod", () => {
+    const entity = surface.create_entity({
+      name: "iron-chest",
+      position: pos,
+      raise_built: false,
+    })!
+    script.raise_script_built({ entity })
+    expect(userActions.onEntityCreated).not.called()
+    expectedNumCalls = 0
   })
 })
 

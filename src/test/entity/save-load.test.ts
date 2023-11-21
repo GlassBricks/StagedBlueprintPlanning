@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaSurface, TrainScheduleRecord } from "factorio:runtime"
+import { BlueprintEntity, LuaSurface, ScriptRaisedBuiltEvent, TrainScheduleRecord } from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Entity } from "../../entity/Entity"
@@ -21,7 +21,7 @@ import {
   saveEntity,
   updateEntity,
 } from "../../entity/save-load"
-import { assert } from "../../lib"
+import { assert, Events } from "../../lib"
 import { UserProject } from "../../project/ProjectDef"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { createRollingStocks } from "./createRollingStock"
@@ -73,6 +73,18 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
   expect(entity.direction).to.be(direction)
   expect(saved).to.equal({ name: "straight-rail" })
 })
+let events: ScriptRaisedBuiltEvent[] = []
+let running = false
+before_each(() => {
+  events = []
+  running = true
+})
+after_each(() => {
+  running = false
+})
+Events.script_raised_built((e) => {
+  if (running) events.push(e)
+})
 
 test("can create an entity", () => {
   const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
@@ -83,6 +95,11 @@ test("can create an entity", () => {
   expect(luaEntity.name).to.be("iron-chest")
   expect(luaEntity.position).to.equal({ x: 0.5, y: 0.5 })
   expect(luaEntity.get_inventory(defines.inventory.chest)!.get_bar() - 1).to.be(3)
+  expect(events).toHaveLength(1)
+  expect(events[0]).toMatchTable({
+    entity: luaEntity,
+    mod_name: script.mod_name,
+  } satisfies Partial<ScriptRaisedBuiltEvent>)
 })
 
 test("can create an offshore pump anywhere", () => {

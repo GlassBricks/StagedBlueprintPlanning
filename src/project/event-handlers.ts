@@ -217,7 +217,10 @@ Start:
 */
 
 // simple:
-Events.script_raised_built((e) => luaEntityCreated(e.entity, nil))
+const modName = script.mod_name
+Events.script_raised_built((e) => {
+  if (e.mod_name != modName) luaEntityCreated(e.entity, nil)
+})
 Events.on_robot_built_entity((e) => luaEntityCreated(e.created_entity, nil))
 Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 

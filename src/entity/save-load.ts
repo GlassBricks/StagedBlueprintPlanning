@@ -188,6 +188,7 @@ OnEntityPrototypesLoaded.addListener((info) => {
 
 const rawset = _G.rawset
 
+const { raise_script_built } = script
 /**
  * If changed is false, the code assumes that the last time this was called [entity] is the same.
  * This is a performance optimization to use with care.
@@ -220,6 +221,7 @@ export function createEntity(
   if (entity.items) {
     createItems(luaEntity, entity.items)
   }
+  raise_script_built({ entity: luaEntity })
   return luaEntity
 }
 
