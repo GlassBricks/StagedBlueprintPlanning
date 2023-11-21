@@ -83,7 +83,6 @@ function flattenChildrenToProp(...children: Array<false | nil | Element>): unkno
 
 const _type = type
 export default function createElement(
-  this: unknown,
   type: string | FunctionComponent<any> | ComponentClass<any>,
   props?: unknown,
   ...children: any[]
