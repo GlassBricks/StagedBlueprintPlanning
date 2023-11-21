@@ -114,7 +114,7 @@ class AllProjects extends Component {
     return (
       <button
         style={project == currentProject ? Styles.FakeListBoxItemActive : Styles.FakeListBoxItem}
-        caption={project.displayName}
+        caption={project.displayName()}
         tooltip={[L_GuiProjectSelector.ButtonTooltip]}
         on_gui_click={bind(AllProjects.onButtonClick, project)}
       />

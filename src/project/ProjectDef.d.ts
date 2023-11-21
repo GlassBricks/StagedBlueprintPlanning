@@ -38,11 +38,11 @@ export interface Project {
 export interface UserProject extends Project {
   readonly id: ProjectId
   readonly name: MutableProperty<string>
-  readonly displayName: Property<LocalisedString>
   readonly content: MutableProjectContent
   readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
   readonly localEvents: SimpleSubscribable<LocalProjectEvent>
 
+  displayName(): Property<LocalisedString>
   getStage(stageNumber: StageNumber): Stage | nil
   getAllStages(): readonly Stage[]
 

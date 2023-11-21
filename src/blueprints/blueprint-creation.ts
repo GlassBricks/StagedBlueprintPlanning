@@ -247,7 +247,7 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
       case "computeChangedEntities":
       case "computeModuleOverrides": {
         const projectPlan = task.args[0]
-        return [L_GuiBlueprintBookTask.PreparingProject, projectPlan.project.displayName.get()]
+        return [L_GuiBlueprintBookTask.PreparingProject, projectPlan.project.displayName().get()]
       }
       case "computeUnitNumberFilter": {
         const stagePlan = task.args[1]

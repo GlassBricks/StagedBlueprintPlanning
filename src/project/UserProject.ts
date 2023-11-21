@@ -91,7 +91,6 @@ declare const luaLength: LuaLength<Record<number, any>, number>
 @RegisterClass("Assembly")
 class UserProjectImpl implements UserProject {
   name: MutableProperty<string>
-  displayName: Property<LocalisedString>
 
   content = newProjectContent()
   localEvents = new SimpleEvent<LocalProjectEvent>()
@@ -107,7 +106,6 @@ class UserProjectImpl implements UserProject {
     initialNumStages: number,
   ) {
     this.name = property(name)
-    this.displayName = this.name.map(bind(UserProjectImpl.getDisplayName, id))
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
       const stage = StageImpl.create(this, i, `Stage ${i}`)
@@ -124,6 +122,9 @@ class UserProjectImpl implements UserProject {
   }
   private static getDisplayName(this: void, id: ProjectId, name: string): LocalisedString {
     return name != "" ? name : [L_Bp100.UnnamedProject, id]
+  }
+  public displayName(): Property<LocalisedString> {
+    return this.name.map(bind(UserProjectImpl.getDisplayName, this.id))
   }
 
   static create(name: string, initialNumStages: number): UserProjectImpl {
@@ -515,5 +516,10 @@ Migrations.to("0.25.0", () => {
       assume<Mutable<StageBlueprintSettingsTable>>(stage.stageBlueprintSettings)
       stage.stageBlueprintSettings.useModulePreloading = property(false)
     }
+  }
+})
+Migrations.early("0.26.0", () => {
+  for (const project of global.projects) {
+    project.displayName = nil!
   }
 })

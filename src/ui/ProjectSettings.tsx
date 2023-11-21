@@ -119,7 +119,7 @@ class CompactProjectSettings extends Component<{
       <frame direction="vertical">
         <TitleBar>
           <label
-            caption={project.displayName}
+            caption={project.displayName()}
             style="caption_label"
             styleMod={{ maximal_width: StageListBoxWidth - 50 }}
             ignored_by_interaction
@@ -162,7 +162,7 @@ class ProjectSettings extends Component<{
           />
           <ItemRename
             name={this.project.name}
-            displayName={this.project.displayName}
+            displayName={this.project.displayName()}
             renameTooltip={[L_GuiProjectSettings.RenameProject]}
             maximalWidth={240}
           />
@@ -500,7 +500,7 @@ class ProjectSettings extends Component<{
     showDialog(player, {
       title: [L_GuiProjectSettings.DeleteProject],
       message: [
-        [L_GuiProjectSettings.DeleteProjectConfirmation1, this.project.displayName.get()],
+        [L_GuiProjectSettings.DeleteProjectConfirmation1, this.project.displayName().get()],
         [L_GuiProjectSettings.DeleteProjectConfirmation2],
       ],
       redConfirm: true,
