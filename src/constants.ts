@@ -20,8 +20,7 @@ export const enum Settings {
 // noinspection JSUnusedGlobalSymbols
 export enum FlexibleOffshorePumpPlacement {
   Disabled = "disabled",
-  OneWaterTile = "one-water-tile",
-  Anywhere = "anywhere",
+  Enabled = "anywhere",
 }
 
 export const enum Prototypes {

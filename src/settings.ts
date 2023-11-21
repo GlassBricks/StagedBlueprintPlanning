@@ -10,20 +10,20 @@
  */
 
 import { SettingsData } from "factorio:common"
-import { FlexibleOffshorePumpPlacement, Settings } from "./constants"
 import { BoolSettingDefinition, StringSettingDefinition } from "factorio:settings"
+import { FlexibleOffshorePumpPlacement, Settings } from "./constants"
 
 declare const data: SettingsData
 
-data.extend([
+data.extend<StringSettingDefinition | BoolSettingDefinition>([
   {
     name: Settings.EntityInfoLocation,
     type: "string-setting",
     setting_type: "runtime-per-user",
     default_value: "right",
     allowed_values: ["right", "left"],
-    order: "b",
-  } satisfies StringSettingDefinition,
+    order: "a",
+  },
   {
     name: Settings.FlexibleOffshorePumpPlacement,
     type: "string-setting",
@@ -31,12 +31,12 @@ data.extend([
     allowed_values: Object.values(FlexibleOffshorePumpPlacement),
     default_value: FlexibleOffshorePumpPlacement.Disabled,
     order: "b",
-  } satisfies StringSettingDefinition,
+  },
   {
     name: Settings.UpgradeOnPaste,
     type: "bool-setting",
     setting_type: "runtime-per-user",
     default_value: false,
     order: "c",
-  } satisfies BoolSettingDefinition,
+  },
 ])
