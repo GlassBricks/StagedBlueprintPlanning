@@ -1161,12 +1161,23 @@ export const _assertInValidState = (): void => {
 /**
  * For manual calls from other parts of the code
  */
-export function checkForEntityUpdates(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
-  const stage = getStageAtEntity(entity)
-  if (stage) {
-    onEntityPossiblyUpdated(stage.project, entity, stage.stageNumber, nil, byPlayer)
-  }
+export const checkForEntityUpdates = luaEntityPossiblyUpdated
+
+interface BobInserterChangedPositionEvent {
+  entity: LuaEntity
 }
+// bob inserters support
+Events.onInitOrLoad(() => {
+  for (const mod of ["bobinserters", "boblogistics"]) {
+    if (mod in remote.interfaces) {
+      const eventId = remote.call(
+        mod,
+        "get_changed_position_event_id",
+      ) as CustomEventId<BobInserterChangedPositionEvent>
+      Events.on(eventId, (e) => luaEntityPossiblyUpdated(e.entity, nil))
+    }
+  }
+})
 
 export function checkForCircuitWireUpdates(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)

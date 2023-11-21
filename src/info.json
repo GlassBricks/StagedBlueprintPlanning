@@ -14,5 +14,5 @@
     "removeZipAfterPackage": true,
     "no_git_tag": true
   },
-  "dependencies": ["base >= 1.1.71", "? PickerDollies >= 1.2.1"]
+  "dependencies": ["base >= 1.1.71", "? PickerDollies >= 1.2.1", "? bobinserters >= 1.0.0", "? boblogistics >= 1.0.0"]
 }

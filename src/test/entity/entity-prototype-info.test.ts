@@ -23,7 +23,9 @@ describe("getCategoryName", () => {
     expect(getEntityCategory("fast-inserter")).to.be(getEntityCategory("inserter"))
   })
   test("same type, not same category", () => {
-    expect(getEntityCategory("inserter")).not.to.be(getEntityCategory("long-handed-inserter"))
+    if (!("bobinserters" in script.active_mods)) {
+      expect(getEntityCategory("inserter")).not.to.be(getEntityCategory("long-handed-inserter"))
+    }
   })
   test("logistic-container is same as container", () => {
     expect(getEntityCategory("logistic-chest-passive-provider")).to.be(getEntityCategory("iron-chest"))
