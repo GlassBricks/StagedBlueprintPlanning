@@ -417,6 +417,7 @@ export interface ButtonStyleMod extends BaseStyleMod {
   selected_hovered_font_color?: MaybeProperty<Color | ColorArray>
   selected_clicked_font_color?: MaybeProperty<Color | ColorArray>
   strikethrough_color?: MaybeProperty<Color | ColorArray>
+  draw_grayscale_picture?: MaybeProperty<boolean>
 }
 
 export interface FlowStyleMod extends BaseStyleMod {

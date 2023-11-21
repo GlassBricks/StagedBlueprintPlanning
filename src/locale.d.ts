@@ -34,7 +34,7 @@ export declare const enum L_ItemGroupName {
   Utility = "item-group-name.bp100:utility",
 }
 export declare const enum L_ModSettingName {
-  /** Flexible offshore pump placement */
+  /** Place offshore pumps anywhere */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
   /** Location of Entity info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
@@ -42,7 +42,7 @@ export declare const enum L_ModSettingName {
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
 }
 export declare const enum L_ModSettingDescription {
-  /** Allow placing offshore pumps at locations that are not normally allowed. See dropdown tooltips for more info. */
+  /** Allow placing offshore pumps anywhere, without need for a water source. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
   /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged project. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
@@ -56,18 +56,6 @@ export declare const enum L_StringModSetting {
   EntityInfoLocationLeft = "string-mod-setting.bp100:entity-info-location-left",
   /** Right */
   EntityInfoLocationRight = "string-mod-setting.bp100:entity-info-location-right",
-  /** Disabled */
-  FlexibleOffshorePumpPlacementDisabled = "string-mod-setting.bp100:flexible-offshore-pump-placement-disabled",
-  /** One water tile */
-  FlexibleOffshorePumpPlacementOneWaterTile = "string-mod-setting.bp100:flexible-offshore-pump-placement-one-water-tile",
-  /** Anywhere */
-  FlexibleOffshorePumpPlacementAnywhere = "string-mod-setting.bp100:flexible-offshore-pump-placement-anywhere",
-}
-export declare const enum L_StringModSettingDescription {
-  /** Offshore pumps only require only one water tile behind one land tile to be placed. */
-  FlexibleOffshorePumpPlacementOneWaterTile = "string-mod-setting-description.bp100:flexible-offshore-pump-placement-one-water-tile",
-  /** Offshore pumps can be placed anywhere on land (water tiles not required). */
-  FlexibleOffshorePumpPlacementAnywhere = "string-mod-setting-description.bp100:flexible-offshore-pump-placement-anywhere",
 }
 export declare const enum L_Controls {
   /** Go to next stage */
