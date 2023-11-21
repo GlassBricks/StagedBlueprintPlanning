@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.26.0
-Date: ????
+Date: 2023-11-21
   Changes:
     - Added better support for modded pipes
     - Added support for Bob's adjustable inserters
