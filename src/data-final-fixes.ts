@@ -21,6 +21,7 @@ import {
   Sprite,
   Sprite4Way,
   Sprite8Way,
+  SpriteSheet,
 } from "factorio:prototype"
 import { BoundingBoxArray, BoundingBoxWrite, EntityPrototypeFlags, MapPositionArray } from "factorio:runtime"
 import * as util from "util"
@@ -194,7 +195,7 @@ for (const type of types.sort()) {
   }
 }
 
-function spriteToRailPieceLayers(sprite: Sprite): RailPieceLayers {
+function spriteToRailPieceLayers(sprite: SpriteSheet): RailPieceLayers {
   return {
     metals: emptySprite16,
     backplates: emptySprite16,
