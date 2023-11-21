@@ -12,12 +12,15 @@
 import { BlueprintEntity, LuaSurface, ScriptRaisedBuiltEvent, TrainScheduleRecord } from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
+import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
+import { isPreviewEntity } from "../../entity/entity-prototype-info"
 import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
 import {
   canBeAnyDirection,
   checkUndergroundPairFlippable,
   createEntity,
+  createPreviewEntity,
   saveEntity,
   updateEntity,
 } from "../../entity/save-load"
@@ -570,6 +573,28 @@ test("can set train schedule", () => {
   expect(newEntity).to.be(locomotive)
   expect(newEntity.train?.schedule?.current).to.equal(2)
   expect(newEntity.train?.schedule?.records).to.equal(newValue.schedule)
+})
+
+test("createPreviewEntity", () => {
+  const preview = createPreviewEntity(
+    surface,
+    {
+      x: 12.5,
+      y: 12.5,
+    },
+    defines.direction.east,
+    Prototypes.PreviewEntityPrefix + "iron-chest",
+  )
+  expect(preview).toMatchTable({
+    position: { x: 12.5, y: 12.5 },
+    name: Prototypes.PreviewEntityPrefix + "iron-chest",
+    destructible: false,
+    minable: false,
+    rotatable: false,
+  })
+  expect(isPreviewEntity(preview!)).to.be(true)
+  // events NOT raised for preview entities
+  expect(events).toHaveLength(0)
 })
 
 test("canBeAnyDirection", () => {
