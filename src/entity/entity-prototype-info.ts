@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { PrototypeMap } from "factorio:prototype"
 import { LuaEntity, LuaEntityPrototype } from "factorio:runtime"
 import { merge } from "util"
 import { Prototypes } from "../constants"
@@ -23,7 +24,7 @@ export interface EntityPrototypeInfo {
   categories: ReadonlyLuaMap<CategoryName, string[]>
   pasteCompatibleRotations: ReadonlyLuaMap<string, PasteCompatibleRotationType>
   selectionBoxes: ReadonlyLuaMap<string, BBox>
-  nameToType: ReadonlyLuaMap<string, string>
+  nameToType: ReadonlyLuaMap<string, keyof PrototypeMap>
 }
 /**
  * Compatible rotations for pasting entities.
@@ -60,10 +61,10 @@ Events.on_load(() => {
 
 function computeEntityPrototypeInfo(): EntityPrototypeInfo {
   log("Processing blueprint-able entity prototypes")
-  const compatibleTypes: PRecord<string, string> = {
+  const compatibleTypes: PRecord<keyof PrototypeMap, keyof PrototypeMap> = {
     "logistic-container": "container",
     "rail-chain-signal": "rail-signal",
-    tank: "pipe",
+    "storage-tank": "pipe",
   }
   const ignoreFastReplaceGroup = newLuaSet("transport-belt", "underground-belt", "splitter")
 
@@ -76,6 +77,7 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
 
   function getCategory(prototype: LuaEntityPrototype): CategoryName | nil {
     const { fast_replaceable_group, type, collision_box } = prototype
+    assume<keyof PrototypeMap>(type)
     const actualFastReplaceGroup = ignoreFastReplaceGroup.has(type) ? "" : fast_replaceable_group
     if (actualFastReplaceGroup == nil) return
     const actualType = compatibleTypes[type] ?? type
@@ -106,7 +108,7 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
     }
   }
 
-  const nameToType = new LuaMap<string, string>()
+  const nameToType = new LuaMap<string, keyof PrototypeMap>()
 
   for (const [name, prototype] of game.get_filtered_entity_prototypes([{ filter: "blueprintable" }])) {
     const categoryName = getCategory(prototype)
@@ -122,7 +124,7 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
 
     selectionBoxes.set(name, BBox.from(prototype.selection_box))
 
-    nameToType.set(name, prototype.type)
+    nameToType.set(name, prototype.type as keyof PrototypeMap)
   }
 
   for (const [categoryName, category] of categories) {
