@@ -161,11 +161,11 @@ describe("circuit wires", () => {
       addWire1()
       addWire2()
       handler.updateWireConnectionsAtStage(content, entity1, 1)
-      expect(luaEntity1.circuit_connection_definitions ?? []).to.equal([])
-      expect(luaEntity2.circuit_connection_definitions ?? []).to.equal([])
+      expect(luaEntity1.circuit_connection_definitions ?? []).toEqual([])
+      expect(luaEntity2.circuit_connection_definitions ?? []).toEqual([])
     })
     function assertWire1Matches(): void {
-      expect(luaEntity1.circuit_connection_definitions).to.equal([
+      expect(luaEntity1.circuit_connection_definitions).toEqual([
         {
           target_entity: luaEntity2,
           wire: defines.wire_type.red,
@@ -205,7 +205,7 @@ describe("circuit wires", () => {
       content.addCircuitConnection(wire1)
       handler.updateWireConnectionsAtStage(content, entity1, 1)
 
-      expect(luaEntity1.circuit_connection_definitions).to.equal([
+      expect(luaEntity1.circuit_connection_definitions).toEqual([
         {
           target_entity: luaEntity1,
           wire: defines.wire_type.red,
@@ -238,11 +238,11 @@ describe("circuit wires", () => {
       for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
 
       const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
-      expect(hasDiff).to.be(!shallowCompare(existing, world))
-      expect(maxConnectionsReached).to.be.nil() // not relevant for circuit wires
+      expect(hasDiff).toBe(!shallowCompare(existing, world))
+      expect(maxConnectionsReached).toBeNil() // not relevant for circuit wires
 
       const connections = content.getCircuitConnections(entity1)?.get(entity2)
-      expect(Object.keys(connections ?? {})).to.equal(world.map((number) => wires[number - 1]))
+      expect(Object.keys(connections ?? {})).toEqual(world.map((number) => wires[number - 1]))
 
       expect(content.getCircuitConnections(entity2)?.get(entity1)).toEqual(connections)
     })
@@ -345,7 +345,7 @@ describe("power switch connections", () => {
         from == "pole" ? poleEntity : powerSwitchEntity,
         1,
       )
-      expect(hasDiff).to.be(true)
+      expect(hasDiff).toBe(true)
       expect(maxConnectionsReached).toBeFalsy()
       const connections = content.getCircuitConnections(poleEntity)?.get(powerSwitchEntity)
       const connection = Object.keys(connections ?? newLuaSet())
@@ -381,7 +381,7 @@ describe("power switch connections", () => {
         from == "pole" ? poleEntity : powerSwitchEntity,
         1,
       )
-      expect(hasDiff).to.be(true)
+      expect(hasDiff).toBe(true)
       expect(maxConnectionsReached).toBeFalsy()
       expect(additional).toBeNil()
 
@@ -428,7 +428,7 @@ describe("power switch connections", () => {
         from == "pole" ? poleEntity : powerSwitchEntity,
         1,
       )
-      expect(hasDiff).to.be(true)
+      expect(hasDiff).toBe(true)
       expect(maxConnectionsReached).toBeFalsy()
 
       otherPole.connect_neighbour({
@@ -442,7 +442,7 @@ describe("power switch connections", () => {
         from == "pole" ? otherPoleEntity : powerSwitchEntity,
         2,
       )
-      expect(hasDiff2).to.be(true)
+      expect(hasDiff2).toBe(true)
       expect(maxConnectionsReached2).toBeFalsy()
       if (from == "pole") {
         expect(additionalEntitiesToUpdate).toEqual([powerSwitchEntity])
@@ -520,15 +520,39 @@ describe("cable connections", () => {
   test("can add cables", () => {
     content.addCableConnection(entity1, entity2)
     handler.updateWireConnectionsAtStage(content, entity1, 1)
-    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
-    expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity1])
+    expect(
+      (
+        luaEntity1.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([luaEntity2])
+    expect(
+      (
+        luaEntity2.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([luaEntity1])
   })
 
   test("can remove cables", () => {
     luaEntity1.connect_neighbour(luaEntity2)
     handler.updateWireConnectionsAtStage(content, entity1, 1)
-    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
-    expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
+    expect(
+      (
+        luaEntity1.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([])
+    expect(
+      (
+        luaEntity2.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([])
   })
 
   test("can update cables", () => {
@@ -536,9 +560,27 @@ describe("cable connections", () => {
     luaEntity2.connect_neighbour(luaEntity3)
     handler.updateWireConnectionsAtStage(content, entity2, 1)
     // should now only have 1-2
-    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
-    expect((luaEntity2.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity1])
-    expect((luaEntity3.neighbours as { copper: LuaEntity[] }).copper).to.equal([])
+    expect(
+      (
+        luaEntity1.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([luaEntity2])
+    expect(
+      (
+        luaEntity2.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([luaEntity1])
+    expect(
+      (
+        luaEntity3.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([])
   })
 
   test("ignores entities not in the project", () => {
@@ -546,7 +588,13 @@ describe("cable connections", () => {
     content.delete(entity2)
     handler.updateWireConnectionsAtStage(content, entity1, 1)
     // cable should still be there
-    expect((luaEntity1.neighbours as { copper: LuaEntity[] }).copper).to.equal([luaEntity2])
+    expect(
+      (
+        luaEntity1.neighbours as {
+          copper: LuaEntity[]
+        }
+      ).copper,
+    ).toEqual([luaEntity2])
   })
 
   describe("saving cables", () => {
@@ -564,11 +612,11 @@ describe("cable connections", () => {
       if (world.includes(2)) luaEntity2.connect_neighbour(luaEntity3)
 
       const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
-      expect(hasDiff).to.be(!shallowCompare(existing, world))
-      expect(maxConnectionsReached).to.be.nil()
+      expect(hasDiff).toBe(!shallowCompare(existing, world))
+      expect(maxConnectionsReached).toBeNil()
 
       const connections = content.getCableConnections(entity2)
-      expect(Object.keys(connections ?? {})).to.equal(world.map((number) => [entity1, entity3][number - 1]))
+      expect(Object.keys(connections ?? {})).toEqual(world.map((number) => [entity1, entity3][number - 1]))
     })
 
     test("can add cables in multiple stages", () => {
@@ -589,7 +637,7 @@ describe("cable connections", () => {
       handler.saveWireConnections(content, entity2, 1, 2)
 
       const connections = content.getCableConnections(entity2)
-      expect(Object.keys(connections ?? {})).to.equal([entity1, entity3])
+      expect(Object.keys(connections ?? {})).toEqual([entity1, entity3])
     })
 
     test("max connections reached", () => {
@@ -607,23 +655,23 @@ describe("cable connections", () => {
         // no lua entity
         content.add(entity)
         const result = content.addCableConnection(entity1, entity)
-        expect(result).to.be(CableAddResult.Added)
+        expect(result).toBe(CableAddResult.Added)
       }
       luaEntity1.connect_neighbour(luaEntity2)
       // saving should fail
       {
         const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
-        expect(hasDiff).to.be(true)
-        expect(maxConnectionsReached).to.be(true)
-        expect(content.getCableConnections(entity2)).to.be.nil()
-        expect(content.getCableConnections(entity1)!.has(entity2)).to.be(false)
+        expect(hasDiff).toBe(true)
+        expect(maxConnectionsReached).toBe(true)
+        expect(content.getCableConnections(entity2)).toBeNil()
+        expect(content.getCableConnections(entity1)!.has(entity2)).toBe(false)
       }
       {
         const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
-        expect(hasDiff).to.be(true)
-        expect(maxConnectionsReached).to.be(true)
-        expect(content.getCableConnections(entity2)).to.be.nil()
-        expect(content.getCableConnections(entity1)!.has(entity2)).to.be(false)
+        expect(hasDiff).toBe(true)
+        expect(maxConnectionsReached).toBe(true)
+        expect(content.getCableConnections(entity2)).toBeNil()
+        expect(content.getCableConnections(entity1)!.has(entity2)).toBe(false)
       }
     })
   })

@@ -32,21 +32,21 @@ test("playerCurrentStage", () => {
   const player = game.players[1]!
   player.teleport([0, 0], 1 as SurfaceIndex)
   const currentStage = playerCurrentStage(1 as PlayerIndex)
-  expect(currentStage.get()).to.be.nil()
+  expect(currentStage.get()).toBeNil()
 
   for (const stage of project.getAllStages()) {
     player.teleport(player.position, stage.surface)
-    expect(stage).to.be(currentStage.get())
+    expect(stage).toBe(currentStage.get())
   }
 
   project.deleteStage(project.numStages())
-  expect(currentStage.get()).to.be.nil()
+  expect(currentStage.get()).toBeNil()
 
   player.teleport(player.position, project.getStage(1)!.surface)
-  expect(project.getStage(1)!).to.be(currentStage.get())
+  expect(project.getStage(1)!).toBe(currentStage.get())
 
   project.delete()
-  expect(currentStage.get()).to.be.nil()
+  expect(currentStage.get()).toBeNil()
 })
 
 describe("teleporting to stage/project", () => {
@@ -60,15 +60,15 @@ describe("teleporting to stage/project", () => {
   })
   test("can teleport to stage", () => {
     teleportToStage(player, project1.getStage(1)!)
-    expect(project1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+    expect(project1.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
     teleportToStage(player, project1.getStage(2)!)
-    expect(project1.getStage(2)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+    expect(project1.getStage(2)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
   })
   test("keeps players position when teleporting from same project", () => {
     teleportToStage(player, project1.getStage(1)!)
     player.teleport(Pos(5, 10))
     teleportToStage(player, project1.getStage(2)!)
-    expect(player.position).to.equal(Pos(5, 10))
+    expect(player.position).toEqual(Pos(5, 10))
   })
 
   test("remembers last position when teleporting from different project", () => {
@@ -76,14 +76,14 @@ describe("teleporting to stage/project", () => {
     player.teleport(Pos(5, 10))
     teleportToStage(player, project2.getStage(1)!)
     teleportToStage(player, project1.getStage(1)!)
-    expect(player.position).to.equal(Pos(5, 10))
+    expect(player.position).toEqual(Pos(5, 10))
   })
 
   test("can teleport to project", () => {
     teleportToProject(player, project1)
-    expect(project1.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+    expect(project1.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
     teleportToProject(player, project2)
-    expect(project2.getStage(1)!).to.be(playerCurrentStage(1 as PlayerIndex).get())
+    expect(project2.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
   })
 
   test("teleport to project remembers last stage and position", () => {
@@ -93,15 +93,15 @@ describe("teleporting to stage/project", () => {
     teleportToStage(player, project2.getStage(1)!)
 
     teleportToProject(player, project1)
-    expect(player.position).to.equal(Pos(5, 10))
-    expect(playerCurrentStage(player.index).get()).to.be(project1.getStage(2))
+    expect(player.position).toEqual(Pos(5, 10))
+    expect(playerCurrentStage(player.index).get()).toBe(project1.getStage(2))
   })
 
   test("exitProject remembers last position when teleporting from outside project", () => {
     player.teleport(Pos(15, 20), 1 as SurfaceIndex)
     teleportToProject(player, project2)
     exitProject(player)
-    expect(player.position).to.equal(Pos(15, 20))
-    expect(player.surface_index).to.equal(1)
+    expect(player.position).toEqual(Pos(15, 20))
+    expect(player.surface_index).toEqual(1)
   })
 })

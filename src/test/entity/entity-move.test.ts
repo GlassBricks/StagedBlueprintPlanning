@@ -21,16 +21,16 @@ const newDir = defines.direction.south
 test("forceMoveEntity moves entities", () => {
   const entity = entities[0]
   forceDollyEntity(entity, newPos, newDir)
-  expect(entity.position).to.equal(newPos)
-  expect(entity.direction).to.equal(newDir)
+  expect(entity.position).toEqual(newPos)
+  expect(entity.direction).toEqual(newDir)
 })
 
 test("tryMoveAllEntities moves all entities", () => {
   const result = tryDollyAllEntities(entities, newPos, newDir)
-  expect(result).to.be("success")
+  expect(result).toBe("success")
   for (const entity of entities) {
-    expect(entity.position).to.equal(newPos)
-    expect(entity.direction).to.equal(newDir)
+    expect(entity.position).toEqual(newPos)
+    expect(entity.direction).toEqual(newDir)
   }
 })
 
@@ -39,10 +39,10 @@ test("can move to position overlapping with itself", () => {
   const entity = entities[0]
   forceDollyEntity(entity, newPos2, origDir)
   const result = tryDollyAllEntities(entities, newPos2, origDir)
-  expect(result).to.be("success")
+  expect(result).toBe("success")
   for (const entity of entities) {
-    expect(entity.position).to.equal(newPos2)
-    expect(entity.direction).to.equal(origDir)
+    expect(entity.position).toEqual(newPos2)
+    expect(entity.direction).toEqual(origDir)
   }
 })
 
@@ -53,10 +53,10 @@ test("does not move any entities if any would overlap", () => {
     direction: defines.direction.east,
   })
   const result = tryDollyAllEntities(entities, newPos, newDir)
-  expect(result).to.be("overlap")
+  expect(result).toBe("overlap")
   for (const entity of entities) {
-    expect(entity.position).to.equal(origPos)
-    expect(entity.direction).to.equal(origDir)
+    expect(entity.position).toEqual(origPos)
+    expect(entity.direction).toEqual(origDir)
   }
 })
 
@@ -64,10 +64,10 @@ test("ok if already at target position", () => {
   forceDollyEntity(entities[0], newPos, newDir)
 
   const result = tryDollyAllEntities(entities, newPos, newDir)
-  expect(result).to.be("success")
+  expect(result).toBe("success")
   for (const entity of entities) {
-    expect(entity.position).to.equal(newPos)
-    expect(entity.direction).to.equal(newDir)
+    expect(entity.position).toEqual(newPos)
+    expect(entity.direction).toEqual(newDir)
   }
 })
 
@@ -85,9 +85,9 @@ test("does not move any if wires cannot reach", () => {
     "failed to connect",
   )
   const result = tryDollyAllEntities(entities, newPos, newDir)
-  expect(result).to.be("wires-cannot-reach")
+  expect(result).toBe("wires-cannot-reach")
   for (const entity of entities) {
-    expect(entity.direction).to.equal(origDir)
-    expect(entity.position).to.equal(origPos)
+    expect(entity.direction).toEqual(origDir)
+    expect(entity.position).toEqual(origPos)
   }
 })

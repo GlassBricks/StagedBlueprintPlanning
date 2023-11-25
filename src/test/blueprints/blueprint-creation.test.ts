@@ -113,7 +113,7 @@ test.each([false, true])("can use next stage tiles, with next staging having gri
   expect(ret).toBe(true)
 
   const tiles = stack.get_blueprint_tiles()!
-  expect(tiles).to.matchTable([
+  expect(tiles).toMatchTable([
     {
       name: "landfill",
       position: Pos(4, 5).plus(Pos(1, 1)),
@@ -218,7 +218,7 @@ test("make blueprint book", () => {
 
 test("export blueprint book to file", () => {
   const result = exportBlueprintBookToFile(project, player)
-  expect(result).to.equal("staged-blueprints/test")
+  expect(result).toEqual("staged-blueprints/test")
 
   cancelCurrentTask()
 })

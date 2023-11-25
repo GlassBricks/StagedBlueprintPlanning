@@ -17,18 +17,18 @@ describe("getCategoryName", () => {
     return getEntityPrototypeInfo().nameToCategory.get(name) ?? "unknown"
   }
   test("same type", () => {
-    expect(getEntityCategory("inserter")).to.be(getEntityCategory("inserter"))
+    expect(getEntityCategory("inserter")).toBe(getEntityCategory("inserter"))
   })
   test("same category", () => {
-    expect(getEntityCategory("fast-inserter")).to.be(getEntityCategory("inserter"))
+    expect(getEntityCategory("fast-inserter")).toBe(getEntityCategory("inserter"))
   })
   test("same type, not same category", () => {
     if (!("bobinserters" in script.active_mods)) {
-      expect(getEntityCategory("inserter")).not.to.be(getEntityCategory("long-handed-inserter"))
+      expect(getEntityCategory("inserter")).not.toBe(getEntityCategory("long-handed-inserter"))
     }
   })
   test("logistic-container is same as container", () => {
-    expect(getEntityCategory("logistic-chest-passive-provider")).to.be(getEntityCategory("iron-chest"))
+    expect(getEntityCategory("logistic-chest-passive-provider")).toBe(getEntityCategory("iron-chest"))
   })
   test("transport belt has no fast-replace-group in category", () => {
     expect(getEntityCategory("fast-transport-belt")).not.toInclude("|transport-belt|")

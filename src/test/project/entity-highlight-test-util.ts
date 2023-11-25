@@ -18,24 +18,24 @@ export function assertConfigChangedHighlightsCorrect(entity: ProjectEntity, maxS
   for (const [stageNumber, changes] of pairs(entity.getStageDiffs() ?? {})) {
     const isUpgrade = changes.name != nil
 
-    const highlight = expect(entity.getExtraEntity("configChangedHighlight", stageNumber)).to.be.any().getValue()!
-    expect(highlight.highlight_box_type).to.be(
+    const highlight = expect(entity.getExtraEntity("configChangedHighlight", stageNumber)).toBeAny().getValue()!
+    expect(highlight.highlight_box_type).toBe(
       isUpgrade ? HighlightConstants.Upgraded : HighlightConstants.ConfigChanged,
     )
 
     const firstI = i
     for (; i < stageNumber; i++) {
-      if (i != firstI) expect(entity.getExtraEntity("configChangedHighlight", i)).to.be.nil()
+      if (i != firstI) expect(entity.getExtraEntity("configChangedHighlight", i)).toBeNil()
 
-      const highlight = expect(entity.getExtraEntity("configChangedLaterHighlight", i)).to.be.any().getValue()!
-      expect(highlight.sprite).to.be(
+      const highlight = expect(entity.getExtraEntity("configChangedLaterHighlight", i)).toBeAny().getValue()!
+      expect(highlight.sprite).toBe(
         isUpgrade ? HighlightConstants.UpgradedLater : HighlightConstants.ConfigChangedLater,
       )
     }
   }
   for (let j = i; j <= maxStage; j++) {
-    if (j != i) expect(entity.getExtraEntity("configChangedHighlight", j)).to.be.nil()
-    expect(entity.getExtraEntity("configChangedLaterHighlight", j)).to.be.nil()
+    if (j != i) expect(entity.getExtraEntity("configChangedHighlight", j)).toBeNil()
+    expect(entity.getExtraEntity("configChangedLaterHighlight", j)).toBeNil()
   }
 }
 
@@ -44,14 +44,14 @@ export function assertErrorHighlightsCorrect(entity: ProjectEntity, maxStage: St
   for (const stage of $range(entity.firstStage, maxStage)) {
     if (entity.hasErrorAt(stage)) {
       anyHasError = true
-      const highlight = expect(entity.getExtraEntity("errorOutline", stage)).to.be.any().getValue()!
-      expect(highlight.highlight_box_type).to.be(HighlightConstants.Error)
+      const highlight = expect(entity.getExtraEntity("errorOutline", stage)).toBeAny().getValue()!
+      expect(highlight.highlight_box_type).toBe(HighlightConstants.Error)
     } else {
-      expect(entity.getExtraEntity("errorOutline", stage)).to.be.nil()
+      expect(entity.getExtraEntity("errorOutline", stage)).toBeNil()
     }
   }
   if (!anyHasError) {
-    expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
+    expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
   } else {
     for (const stage of $range(1, maxStage)) {
       const hasError = entity.hasErrorAt(stage)
@@ -68,23 +68,23 @@ export function assertErrorHighlightsCorrect(entity: ProjectEntity, maxStage: St
 
 export function assertLastStageHighlightCorrect(entity: ProjectEntity): void {
   if (entity.lastStage != nil && entity.lastStage != entity.firstStage) {
-    const highlight = expect(entity.getExtraEntity("stageDeleteHighlight", entity.lastStage)).to.be.any().getValue()!
+    const highlight = expect(entity.getExtraEntity("stageDeleteHighlight", entity.lastStage)).toBeAny().getValue()!
     expect(highlight).toMatchTable({
       object_name: "_RenderObj",
       sprite: HighlightConstants.DeletedNextStage,
     })
   } else {
-    expect(entity.hasAnyExtraEntities("stageDeleteHighlight")).to.be(false)
+    expect(entity.hasAnyExtraEntities("stageDeleteHighlight")).toBe(false)
   }
 }
 
 export function assertNoHighlightsAfterLastStage(entity: ProjectEntity, maxStage: StageNumber): void {
   if (!entity.lastStage) return
   for (const stage of $range(entity.lastStage + 1, maxStage)) {
-    expect(entity.getExtraEntity("configChangedHighlight", stage)).to.be.nil()
-    expect(entity.getExtraEntity("configChangedLaterHighlight", stage)).to.be.nil()
-    expect(entity.getExtraEntity("errorOutline", stage)).to.be.nil()
-    expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).to.be.nil()
-    expect(entity.getExtraEntity("stageDeleteHighlight", stage)).to.be.nil()
+    expect(entity.getExtraEntity("configChangedHighlight", stage)).toBeNil()
+    expect(entity.getExtraEntity("configChangedLaterHighlight", stage)).toBeNil()
+    expect(entity.getExtraEntity("errorOutline", stage)).toBeNil()
+    expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).toBeNil()
+    expect(entity.getExtraEntity("stageDeleteHighlight", stage)).toBeNil()
   }
 }

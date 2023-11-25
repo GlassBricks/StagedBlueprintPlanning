@@ -22,17 +22,17 @@ describe("line", () => {
       color: [],
       width: 1,
     })
-    expect(obj.valid).to.be(true)
-    expect(obj.object_name).to.be("_RenderObj")
-    expect(obj.surface).to.equal(game.surfaces[1])
-    expect(obj.from.position).to.equal({ x: 1, y: 1 })
-    expect(obj.to.position).to.equal({ x: 2, y: 2 })
+    expect(obj.valid).toBe(true)
+    expect(obj.object_name).toBe("_RenderObj")
+    expect(obj.surface).toEqual(game.surfaces[1])
+    expect(obj.from.position).toEqual({ x: 1, y: 1 })
+    expect(obj.to.position).toEqual({ x: 2, y: 2 })
     // obj.set_from({ x: 1, y: 2 })
-    // expect(obj.from.position).to.equal({ x: 1, y: 2 })
+    // expect(obj.from.position).toEqual({ x: 1, y: 2 })
     // broken right now, but not needed
     obj.visible = false
-    expect(obj.visible).to.be(false)
+    expect(obj.visible).toBe(false)
     obj.destroy()
-    expect(obj.valid).to.be(false)
+    expect(obj.valid).toBe(false)
   })
 })

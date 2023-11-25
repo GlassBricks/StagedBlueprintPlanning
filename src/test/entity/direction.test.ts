@@ -28,10 +28,10 @@ describe("getSavedDirection", () => {
       direction: defines.direction.north,
     })!
     assert(entity)
-    expect(defines.direction.north).to.be(entity.direction)
+    expect(defines.direction.north).toBe(entity.direction)
 
     entity.direction = defines.direction.east
-    expect(defines.direction.east).to.be(entity.direction)
+    expect(defines.direction.east).toBe(entity.direction)
   })
 
   test("NOT opposite direction for output underground belts", () => {
@@ -42,7 +42,7 @@ describe("getSavedDirection", () => {
       type: "input",
     })!
     assert(entity)
-    expect(defines.direction.east).to.be(entity.direction)
+    expect(defines.direction.east).toBe(entity.direction)
     entity.destroy()
     const entity2 = surface.create_entity({
       name: "underground-belt",
@@ -51,13 +51,13 @@ describe("getSavedDirection", () => {
       type: "output",
     })
     assert(entity2)
-    expect(defines.direction.east).to.be(entity2!.direction)
+    expect(defines.direction.east).toBe(entity2!.direction)
   })
 
   test("always north for rolling stock", () => {
     const rollingStock = createRollingStock()
     assert(rollingStock)
-    expect(defines.direction.north).to.be(rollingStock.direction)
+    expect(defines.direction.north).toBe(rollingStock.direction)
   })
 
   test("same for assembling machine with no fluid inputs", () => {
@@ -68,11 +68,11 @@ describe("getSavedDirection", () => {
       direction: defines.direction.east,
     })!
     assert(project)
-    expect(project.direction).to.be(defines.direction.east)
-    expect(project.direction).to.be(defines.direction.east)
+    expect(project.direction).toBe(defines.direction.east)
+    expect(project.direction).toBe(defines.direction.east)
 
     project.set_recipe(nil)
-    expect(project.direction).to.be(defines.direction.east)
-    expect(project.direction).to.be(defines.direction.east)
+    expect(project.direction).toBe(defines.direction.east)
+    expect(project.direction).toBe(defines.direction.east)
   })
 })

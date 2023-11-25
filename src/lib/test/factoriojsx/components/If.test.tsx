@@ -27,10 +27,10 @@ function findAllLabels(root: ElementWrapper): LocalisedString[] {
 }
 test("single then", () => {
   const component = testRender(<If condition={condition} then={{ invoke: () => <label caption="true" /> }} />)
-  expect(findAllLabels(component)).to.equal(["true"])
+  expect(findAllLabels(component)).toEqual(["true"])
 
   condition.set(false)
-  expect(findAllLabels(component)).to.equal([])
+  expect(findAllLabels(component)).toEqual([])
 })
 
 test("then and else", () => {
@@ -41,11 +41,11 @@ test("then and else", () => {
       else={{ invoke: () => <label caption="false" /> }}
     />,
   )
-  expect(findAllLabels(component)).to.equal(["true"])
+  expect(findAllLabels(component)).toEqual(["true"])
 
   condition.set(false)
-  expect(findAllLabels(component)).to.equal(["false"])
+  expect(findAllLabels(component)).toEqual(["false"])
 
   condition.set(true)
-  expect(findAllLabels(component)).to.equal(["true"])
+  expect(findAllLabels(component)).toEqual(["true"])
 })

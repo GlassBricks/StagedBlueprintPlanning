@@ -71,9 +71,9 @@ before_each(() => {
 })
 
 test("getters", () => {
-  expect(projectEntity.firstStage).to.equal(2)
-  expect(projectEntity.firstValue).to.equal(entity)
-  expect(projectEntity.direction).to.equal(0) // nil <=> 0
+  expect(projectEntity.firstStage).toEqual(2)
+  expect(projectEntity.firstValue).toEqual(entity)
+  expect(projectEntity.direction).toEqual(0) // nil <=> 0
 })
 
 test("lastStage default nil", () => {
@@ -82,99 +82,99 @@ test("lastStage default nil", () => {
 
 test("isInStage", () => {
   projectEntity.setLastStageUnchecked(4)
-  expect(projectEntity.isInStage(1)).to.be(false)
-  expect(projectEntity.isInStage(2)).to.be(true)
-  expect(projectEntity.isInStage(3)).to.be(true)
-  expect(projectEntity.isInStage(4)).to.be(true)
-  expect(projectEntity.isInStage(5)).to.be(false)
-  expect(projectEntity.isInStage(6)).to.be(false)
+  expect(projectEntity.isInStage(1)).toBe(false)
+  expect(projectEntity.isInStage(2)).toBe(true)
+  expect(projectEntity.isInStage(3)).toBe(true)
+  expect(projectEntity.isInStage(4)).toBe(true)
+  expect(projectEntity.isInStage(5)).toBe(false)
+  expect(projectEntity.isInStage(6)).toBe(false)
 })
 
 test("isPastLastStage", () => {
   projectEntity.setLastStageUnchecked(4)
-  expect(projectEntity.isPastLastStage(3)).to.be(false)
-  expect(projectEntity.isPastLastStage(4)).to.be(false)
-  expect(projectEntity.isPastLastStage(5)).to.be(true)
-  expect(projectEntity.isPastLastStage(6)).to.be(true)
+  expect(projectEntity.isPastLastStage(3)).toBe(false)
+  expect(projectEntity.isPastLastStage(4)).toBe(false)
+  expect(projectEntity.isPastLastStage(5)).toBe(true)
+  expect(projectEntity.isPastLastStage(6)).toBe(true)
 
   projectEntity.setLastStageUnchecked(nil)
-  expect(projectEntity.isPastLastStage(4)).to.be(false)
-  expect(projectEntity.isPastLastStage(5)).to.be(false)
-  expect(projectEntity.isPastLastStage(6)).to.be(false)
+  expect(projectEntity.isPastLastStage(4)).toBe(false)
+  expect(projectEntity.isPastLastStage(5)).toBe(false)
+  expect(projectEntity.isPastLastStage(6)).toBe(false)
 })
 
 test("isRollingStock", () => {
-  expect(projectEntity.isRollingStock()).to.be(false)
+  expect(projectEntity.isRollingStock()).toBe(false)
   const projectEntity2 = createProjectEntityNoCopy({ name: "locomotive" }, Pos(0, 0), nil, 2)
-  expect(projectEntity2.isRollingStock()).to.be(true)
+  expect(projectEntity2.isRollingStock()).toBe(true)
 })
 
 test("isUndergroundBelt", () => {
-  expect(projectEntity.isUndergroundBelt()).to.be(false)
+  expect(projectEntity.isUndergroundBelt()).toBe(false)
   const projectEntity2 = createProjectEntityNoCopy({ name: "underground-belt" }, Pos(0, 0), nil, 2)
-  expect(projectEntity2.isUndergroundBelt()).to.be(true)
+  expect(projectEntity2.isUndergroundBelt()).toBe(true)
 })
 
 test("hasStageDiff", () => {
   const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
-  expect(projectEntity.hasStageDiff()).to.be(false)
+  expect(projectEntity.hasStageDiff()).toBe(false)
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-  expect(projectEntity.hasStageDiff()).to.be(true)
-  expect(projectEntity.hasStageDiff(3)).to.be(true)
-  expect(projectEntity.hasStageDiff(2)).to.be(false)
+  expect(projectEntity.hasStageDiff()).toBe(true)
+  expect(projectEntity.hasStageDiff(3)).toBe(true)
+  expect(projectEntity.hasStageDiff(2)).toBe(false)
 })
 
 test("getStageDiff", () => {
   const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
-  expect(projectEntity.getStageDiff(3)).to.be.nil()
+  expect(projectEntity.getStageDiff(3)).toBeNil()
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-  expect(projectEntity.getStageDiff(3)).to.equal({ override_stack_size: 3 })
+  expect(projectEntity.getStageDiff(3)).toEqual({ override_stack_size: 3 })
 })
 test("getNextStageDiffForProp", () => {
   const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
-  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).to.equal([])
+  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).toEqual([])
   projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
-  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).to.equal([4, 3])
+  expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).toEqual([4, 3])
 })
 
 test("nextStageWithDiff", () => {
   const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   projectEntity._applyDiffAtStage(5, { override_stack_size: 5 })
-  expect(projectEntity.nextStageWithDiff(2)).to.be(3)
-  expect(projectEntity.nextStageWithDiff(3)).to.be(5)
-  expect(projectEntity.nextStageWithDiff(4)).to.be(5)
-  expect(projectEntity.nextStageWithDiff(5)).to.be(nil)
+  expect(projectEntity.nextStageWithDiff(2)).toBe(3)
+  expect(projectEntity.nextStageWithDiff(3)).toBe(5)
+  expect(projectEntity.nextStageWithDiff(4)).toBe(5)
+  expect(projectEntity.nextStageWithDiff(5)).toBe(nil)
 })
 
 test("prevStageWithDiff", () => {
   const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   projectEntity._applyDiffAtStage(5, { override_stack_size: 5 })
-  expect(projectEntity.prevStageWithDiff(6)).to.be(5)
-  expect(projectEntity.prevStageWithDiff(5)).to.be(3)
-  expect(projectEntity.prevStageWithDiff(4)).to.be(3)
-  expect(projectEntity.prevStageWithDiff(3)).to.be(nil)
-  expect(projectEntity.prevStageWithDiff(2)).to.be(nil)
+  expect(projectEntity.prevStageWithDiff(6)).toBe(5)
+  expect(projectEntity.prevStageWithDiff(5)).toBe(3)
+  expect(projectEntity.prevStageWithDiff(4)).toBe(3)
+  expect(projectEntity.prevStageWithDiff(3)).toBe(nil)
+  expect(projectEntity.prevStageWithDiff(2)).toBe(nil)
 })
 
 describe("getValueAtStage", () => {
   test("nil if lower than stage", () => {
-    expect(projectEntity.getValueAtStage(1)).to.be.nil()
+    expect(projectEntity.getValueAtStage(1)).toBeNil()
   })
 
   test("getValueAtStage returns same entity if no stageDiffs", () => {
-    expect(projectEntity.getValueAtStage(2)).to.equal(entity)
+    expect(projectEntity.getValueAtStage(2)).toEqual(entity)
   })
 
   test("applies changes from one stage", () => {
     const result = projectEntity.getValueAtStage(3)
-    expect(result).to.equal({ ...entity, override_stack_size: 2, filter_mode: "blacklist" })
+    expect(result).toEqual({ ...entity, override_stack_size: 2, filter_mode: "blacklist" })
   })
 
   test("applies changes from multiple stages", () => {
     const result = projectEntity.getValueAtStage(5)
-    expect(result).to.equal({ ...entity, override_stack_size: 3, filter_mode: "blacklist" })
+    expect(result).toEqual({ ...entity, override_stack_size: 3, filter_mode: "blacklist" })
   })
 
   test("replaces nilPlaceholder with nil", () => {
@@ -182,36 +182,36 @@ describe("getValueAtStage", () => {
     const expected = { ...entity, override_stack_size: 3 }
     delete expected.filter_mode
 
-    expect(result).to.equal(expected)
+    expect(result).toEqual(expected)
   })
 
   test("getPropAtStage", () => {
-    expect(projectEntity.getPropAtStage(2, "override_stack_size")).to.equal([1, 2])
-    expect(projectEntity.getPropAtStage(3, "override_stack_size")).to.equal([2, 3])
-    expect(projectEntity.getPropAtStage(4, "override_stack_size")).to.equal([2, 3])
-    expect(projectEntity.getPropAtStage(5, "override_stack_size")).to.equal([3, 5])
-    expect(projectEntity.getPropAtStage(6, "override_stack_size")).to.equal([3, 5])
+    expect(projectEntity.getPropAtStage(2, "override_stack_size")).toEqual([1, 2])
+    expect(projectEntity.getPropAtStage(3, "override_stack_size")).toEqual([2, 3])
+    expect(projectEntity.getPropAtStage(4, "override_stack_size")).toEqual([2, 3])
+    expect(projectEntity.getPropAtStage(5, "override_stack_size")).toEqual([3, 5])
+    expect(projectEntity.getPropAtStage(6, "override_stack_size")).toEqual([3, 5])
 
-    expect(projectEntity.getPropAtStage(1, "override_stack_size")).to.equal([1, 2])
+    expect(projectEntity.getPropAtStage(1, "override_stack_size")).toEqual([1, 2])
 
-    expect(projectEntity.getPropAtStage(2, "filter_mode")).to.equal([nil, 2])
-    expect(projectEntity.getPropAtStage(3, "filter_mode")).to.equal(["blacklist", 3])
-    expect(projectEntity.getPropAtStage(4, "filter_mode")).to.equal(["blacklist", 3])
-    expect(projectEntity.getPropAtStage(5, "filter_mode")).to.equal(["blacklist", 3])
-    expect(projectEntity.getPropAtStage(6, "filter_mode")).to.equal(["blacklist", 3])
-    expect(projectEntity.getPropAtStage(7, "filter_mode")).to.equal([nil, 7])
-    expect(projectEntity.getPropAtStage(8, "filter_mode")).to.equal([nil, 7])
+    expect(projectEntity.getPropAtStage(2, "filter_mode")).toEqual([nil, 2])
+    expect(projectEntity.getPropAtStage(3, "filter_mode")).toEqual(["blacklist", 3])
+    expect(projectEntity.getPropAtStage(4, "filter_mode")).toEqual(["blacklist", 3])
+    expect(projectEntity.getPropAtStage(5, "filter_mode")).toEqual(["blacklist", 3])
+    expect(projectEntity.getPropAtStage(6, "filter_mode")).toEqual(["blacklist", 3])
+    expect(projectEntity.getPropAtStage(7, "filter_mode")).toEqual([nil, 7])
+    expect(projectEntity.getPropAtStage(8, "filter_mode")).toEqual([nil, 7])
 
-    expect(projectEntity.getPropAtStage(1, "filter_mode")).to.equal([nil, 2])
+    expect(projectEntity.getPropAtStage(1, "filter_mode")).toEqual([nil, 2])
   })
 
   test("getNameAtStage ", () => {
     projectEntity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-    expect(projectEntity.getNameAtStage(1)).to.equal("filter-inserter")
-    expect(projectEntity.getNameAtStage(2)).to.equal("filter-inserter")
-    expect(projectEntity.getNameAtStage(3)).to.equal("filter-inserter")
-    expect(projectEntity.getNameAtStage(4)).to.equal("stack-filter-inserter")
-    expect(projectEntity.getNameAtStage(5)).to.equal("stack-filter-inserter")
+    expect(projectEntity.getNameAtStage(1)).toEqual("filter-inserter")
+    expect(projectEntity.getNameAtStage(2)).toEqual("filter-inserter")
+    expect(projectEntity.getNameAtStage(3)).toEqual("filter-inserter")
+    expect(projectEntity.getNameAtStage(4)).toEqual("stack-filter-inserter")
+    expect(projectEntity.getNameAtStage(5)).toEqual("stack-filter-inserter")
   })
 })
 
@@ -250,7 +250,7 @@ describe.each([
       expect(changed).toBe(!deepCompare(entity, lastValue))
       lastValue = deepCopy(entity)
     }
-    expect(result).to.equal(expected)
+    expect(result).toEqual(expected)
   })
 })
 test("iterateValues returns nothing if end > start", () => {
@@ -258,36 +258,36 @@ test("iterateValues returns nothing if end > start", () => {
   for (const [stage, entity] of projectEntity.iterateValues(4, 2)) {
     result[stage] = entity
   }
-  expect(result).to.equal([])
+  expect(result).toEqual([])
 })
 
 describe("adjustValueAtStage", () => {
   test("can set first value", () => {
     const newEntity = { ...entity, override_stack_size: 3 }
     projectEntity.adjustValueAtStage(2, newEntity)
-    expect(projectEntity.firstValue).to.equal(newEntity)
+    expect(projectEntity.firstValue).toEqual(newEntity)
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity.adjustValueAtStage(1, { ...entity, override_stack_size: 3 })
-    expect(projectEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
-    expect(projectEntity.hasStageDiff()).to.be(false)
+    expect(projectEntity.firstValue).toEqual({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.hasStageDiff()).toBe(false)
   })
 
   test("creates diff if set at higher stage", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity.adjustValueAtStage(2, { ...entity, override_stack_size: 3 })
-    expect(projectEntity.firstValue).to.equal(entity)
-    expect(projectEntity.hasStageDiff()).to.be(true)
-    expect(projectEntity.getValueAtStage(2)).to.equal({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.firstValue).toEqual(entity)
+    expect(projectEntity.hasStageDiff()).toBe(true)
+    expect(projectEntity.getValueAtStage(2)).toEqual({ ...entity, override_stack_size: 3 })
   })
 
   test("removes diff entirely if matches lower stage", () => {
-    expect(projectEntity.hasStageDiff(3)).to.be(true)
+    expect(projectEntity.hasStageDiff(3)).toBe(true)
     projectEntity.adjustValueAtStage(3, projectEntity.firstValue)
-    expect(projectEntity.hasStageDiff(3)).to.be(false)
+    expect(projectEntity.hasStageDiff(3)).toBe(false)
   })
 
   test("complex case", () => {
@@ -297,46 +297,46 @@ describe("adjustValueAtStage", () => {
     const value3 = { ...firstValue, a: 2, b: 2, c: 5 }
     const projectEntity = createProjectEntityNoCopy(firstValue, Pos(0, 0), nil, 1)
     projectEntity.adjustValueAtStage(2, value2)
-    expect(projectEntity.firstValue).to.equal(firstValue)
-    expect(projectEntity.getValueAtStage(2)).to.equal(value2)
+    expect(projectEntity.firstValue).toEqual(firstValue)
+    expect(projectEntity.getValueAtStage(2)).toEqual(value2)
     projectEntity.adjustValueAtStage(3, value3)
-    expect(projectEntity.firstValue).to.equal(firstValue)
-    expect(projectEntity.getValueAtStage(2)).to.equal(value2)
-    expect(projectEntity.getValueAtStage(3)).to.equal(value3)
+    expect(projectEntity.firstValue).toEqual(firstValue)
+    expect(projectEntity.getValueAtStage(2)).toEqual(value2)
+    expect(projectEntity.getValueAtStage(3)).toEqual(value3)
     projectEntity.adjustValueAtStage(2, newValue2)
-    expect(projectEntity.firstValue).to.equal(firstValue)
-    expect(projectEntity.getValueAtStage(2)).to.equal(newValue2)
+    expect(projectEntity.firstValue).toEqual(firstValue)
+    expect(projectEntity.getValueAtStage(2)).toEqual(newValue2)
     const newValue3 = { ...value3, b: 1 } // due to change in newValue2
-    expect(projectEntity.getValueAtStage(3)).to.equal(newValue3)
-    expect(projectEntity.getStageDiff(3)).to.equal(getEntityDiff(newValue2, newValue3))
+    expect(projectEntity.getValueAtStage(3)).toEqual(newValue3)
+    expect(projectEntity.getStageDiff(3)).toEqual(getEntityDiff(newValue2, newValue3))
   })
 })
 
 describe("setPropAtStage", () => {
   test("can set first value", () => {
-    expect(projectEntity.setPropAtStage(2, "override_stack_size", 3)).to.be(true)
-    expect(projectEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.setPropAtStage(2, "override_stack_size", 3)).toBe(true)
+    expect(projectEntity.firstValue).toEqual({ ...entity, override_stack_size: 3 })
   })
 
   test("returns false if no change", () => {
-    expect(projectEntity.setPropAtStage(2, "override_stack_size", 1)).to.be(false)
+    expect(projectEntity.setPropAtStage(2, "override_stack_size", 1)).toBe(false)
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
-    expect(projectEntity.setPropAtStage(1, "override_stack_size", 3)).to.be(true)
-    expect(projectEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
-    expect(projectEntity.hasStageDiff(3)).to.be(false)
+    expect(projectEntity.setPropAtStage(1, "override_stack_size", 3)).toBe(true)
+    expect(projectEntity.firstValue).toEqual({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.hasStageDiff(3)).toBe(false)
   })
 
   test("creates diff if set at higher stage", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
-    expect(projectEntity.setPropAtStage(3, "override_stack_size", 3)).to.be(true)
-    expect(projectEntity.firstValue).to.equal(entity)
-    expect(projectEntity.hasStageDiff(3)).to.be(true)
-    expect(projectEntity.getValueAtStage(3)).to.equal({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.setPropAtStage(3, "override_stack_size", 3)).toBe(true)
+    expect(projectEntity.firstValue).toEqual(entity)
+    expect(projectEntity.hasStageDiff(3)).toBe(true)
+    expect(projectEntity.getValueAtStage(3)).toEqual({ ...entity, override_stack_size: 3 })
   })
 })
 
@@ -344,36 +344,36 @@ describe("moving stage diff props", () => {
   test("resetValue removes stage diff", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-    expect(projectEntity.resetValue(3)).to.be(true)
-    expect(projectEntity.getValueAtStage(3)).to.equal(entity)
-    expect(projectEntity.hasStageDiff()).to.be(false)
+    expect(projectEntity.resetValue(3)).toBe(true)
+    expect(projectEntity.getValueAtStage(3)).toEqual(entity)
+    expect(projectEntity.hasStageDiff()).toBe(false)
   })
   test("returns false if no diff", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
-    expect(projectEntity.resetValue(3)).to.be(false)
+    expect(projectEntity.resetValue(3)).toBe(false)
   })
 
   test("moveDiffDown can apply to first value", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-    expect(projectEntity.moveValueDown(3)).to.be(1)
-    expect(projectEntity.firstValue).to.equal({ ...entity, override_stack_size: 3 })
-    expect(projectEntity.hasStageDiff()).to.be(false)
+    expect(projectEntity.moveValueDown(3)).toBe(1)
+    expect(projectEntity.firstValue).toEqual({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.hasStageDiff()).toBe(false)
   })
   test("moveDiffDown can apply to next lower stage with diff", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
-    expect(projectEntity.moveValueDown(4)).to.be(3)
-    expect(projectEntity.getValueAtStage(3)).to.equal({ ...entity, override_stack_size: 4 })
-    expect(projectEntity.hasStageDiff(4)).to.be(false)
+    expect(projectEntity.moveValueDown(4)).toBe(3)
+    expect(projectEntity.getValueAtStage(3)).toEqual({ ...entity, override_stack_size: 4 })
+    expect(projectEntity.hasStageDiff(4)).toBe(false)
   })
 
   test("moveDiffDown returns nil if no diff", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
-    expect(projectEntity.moveValueDown(3)).to.be.nil()
+    expect(projectEntity.moveValueDown(3)).toBeNil()
   })
 
   test("resetProp removes prop from stage diff", () => {
@@ -381,15 +381,15 @@ describe("moving stage diff props", () => {
     // is override_stack_size at stage 2
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity.resetProp(3, "override_stack_size")
-    expect(projectEntity.getValueAtStage(3)).to.equal(entity)
-    expect(projectEntity.hasStageDiff()).to.be(false)
+    expect(projectEntity.getValueAtStage(3)).toEqual(entity)
+    expect(projectEntity.hasStageDiff()).toBe(false)
   })
 
   test("resetProp returns false if no diff", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
     projectEntity._applyDiffAtStage(3, { filter_mode: "whitelist" })
-    expect(projectEntity.resetProp(3, "override_stack_size")).to.be(false)
-    expect(projectEntity.getValueAtStage(3)).to.equal({ ...entity, filter_mode: "whitelist" })
+    expect(projectEntity.resetProp(3, "override_stack_size")).toBe(false)
+    expect(projectEntity.getValueAtStage(3)).toEqual({ ...entity, filter_mode: "whitelist" })
   })
 
   test("resetProp can get from next lower stage with diff", () => {
@@ -397,71 +397,71 @@ describe("moving stage diff props", () => {
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     projectEntity.resetProp(4, "override_stack_size")
-    expect(projectEntity.getValueAtStage(4)).to.equal({ ...entity, override_stack_size: 3 })
-    expect(projectEntity.hasStageDiff(3)).to.be(true)
-    expect(projectEntity.hasStageDiff(4)).to.be(false)
+    expect(projectEntity.getValueAtStage(4)).toEqual({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.hasStageDiff(3)).toBe(true)
+    expect(projectEntity.hasStageDiff(4)).toBe(false)
   })
 
   test("movePropDown can apply a diff to first stage", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
-    expect(projectEntity.movePropDown(3, "override_stack_size")).to.be(2)
-    expect(projectEntity.getValueAtStage(2)).to.equal({ ...entity, override_stack_size: 3 })
-    expect(projectEntity.hasStageDiff()).to.be(false)
+    expect(projectEntity.movePropDown(3, "override_stack_size")).toBe(2)
+    expect(projectEntity.getValueAtStage(2)).toEqual({ ...entity, override_stack_size: 3 })
+    expect(projectEntity.hasStageDiff()).toBe(false)
   })
 
   test("movePropDown can apply a diff to next lower stage with diff", () => {
     const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
-    expect(projectEntity.movePropDown(4, "override_stack_size")).to.be(3)
-    expect(projectEntity.getValueAtStage(3)).to.equal({ ...entity, override_stack_size: 4 })
-    expect(projectEntity.hasStageDiff(3)).to.be(true)
-    expect(projectEntity.hasStageDiff(4)).to.be(false)
+    expect(projectEntity.movePropDown(4, "override_stack_size")).toBe(3)
+    expect(projectEntity.getValueAtStage(3)).toEqual({ ...entity, override_stack_size: 4 })
+    expect(projectEntity.hasStageDiff(3)).toBe(true)
+    expect(projectEntity.hasStageDiff(4)).toBe(false)
   })
 })
 
 describe("trySetFirstStage", () => {
   test("move down", () => {
     projectEntity.setFirstStageUnchecked(1)
-    expect(projectEntity.firstValue).to.equal(entity)
-    expect(projectEntity.firstStage).to.be(1)
+    expect(projectEntity.firstValue).toEqual(entity)
+    expect(projectEntity.firstStage).toBe(1)
   })
 
   test("moving up; also merges stage diffs", () => {
     const valueAt5 = projectEntity.getValueAtStage(5)
     projectEntity.setFirstStageUnchecked(5)
-    expect(projectEntity.firstValue).to.equal(valueAt5)
+    expect(projectEntity.firstValue).toEqual(valueAt5)
     const diffs = projectEntity.getStageDiffs()!
-    expect(next(diffs)[0]).to.be(7)
+    expect(next(diffs)[0]).toBe(7)
   })
 
   test("cannot move past last stage", () => {
     projectEntity.setLastStageUnchecked(4)
     expect(() => projectEntity.setFirstStageUnchecked(4)).not.toError()
-    expect(() => projectEntity.setFirstStageUnchecked(5)).to.error()
+    expect(() => projectEntity.setFirstStageUnchecked(5)).toError()
   })
 })
 
 describe("trySetLastStage", () => {
   test("set", () => {
     projectEntity.setLastStageUnchecked(5)
-    expect(projectEntity.lastStage).to.be(5)
+    expect(projectEntity.lastStage).toBe(5)
   })
   test("can set back to nil", () => {
     projectEntity.setLastStageUnchecked(5)
     projectEntity.setLastStageUnchecked(nil)
-    expect(projectEntity.lastStage).to.be(nil)
+    expect(projectEntity.lastStage).toBe(nil)
   })
   test("cannot move below first stage", () => {
-    expect(() => projectEntity.setLastStageUnchecked(0)).to.error()
+    expect(() => projectEntity.setLastStageUnchecked(0)).toError()
   })
   test("moving down deletes later stage diffs", () => {
     projectEntity.setLastStageUnchecked(5)
-    expect(projectEntity.lastStage).to.be(5)
+    expect(projectEntity.lastStage).toBe(5)
     const diffs = projectEntity.getStageDiffs()!
     expect(diffs).not.toHaveKey(7)
-    expect(next(diffs)[0]).to.be(3)
+    expect(next(diffs)[0]).toBe(3)
   })
 })
 
@@ -478,22 +478,22 @@ describe("Get/set world entities", () => {
   })
 
   test("get after replace returns the correct entity", () => {
-    expect(projectEntity.getWorldEntity(1)).to.be.nil()
-    expect(projectEntity.getWorldEntity(2)).to.be.nil()
+    expect(projectEntity.getWorldEntity(1)).toBeNil()
+    expect(projectEntity.getWorldEntity(2)).toBeNil()
     projectEntity.replaceWorldEntity(1, entity)
-    expect(projectEntity.getWorldEntity(1)).to.equal(entity)
-    expect(projectEntity.getWorldEntity(2)).to.be.nil()
+    expect(projectEntity.getWorldEntity(1)).toEqual(entity)
+    expect(projectEntity.getWorldEntity(2)).toBeNil()
     projectEntity.replaceWorldEntity(2, entity)
-    expect(projectEntity.getWorldEntity(1)).to.equal(entity)
-    expect(projectEntity.getWorldEntity(2)).to.equal(entity)
+    expect(projectEntity.getWorldEntity(1)).toEqual(entity)
+    expect(projectEntity.getWorldEntity(2)).toEqual(entity)
   })
 
   test("replaceWorldEntity deletes old entity", () => {
     projectEntity.replaceWorldEntity(1, entity)
     const newEntity = surfaces[0].create_entity({ name: "iron-chest", position: Pos(1.5, 1.5) })!
     projectEntity.replaceWorldEntity(1, newEntity)
-    expect(entity.valid).to.be(false)
-    expect(projectEntity.getWorldEntity(1)).to.equal(newEntity)
+    expect(entity.valid).toBe(false)
+    expect(projectEntity.getWorldEntity(1)).toEqual(newEntity)
     expect(events).toHaveLength(1)
     expect(events[0]).toMatchTable({
       name: defines.events.script_raised_destroy,
@@ -507,14 +507,14 @@ describe("Get/set world entities", () => {
 
   test("getWorldEntity returns nil if is a preview entity", () => {
     projectEntity.replaceWorldOrPreviewEntity(1, previewEntity)
-    expect(projectEntity.getWorldEntity(1)).to.be.nil()
-    expect(projectEntity.getWorldOrPreviewEntity(1)).to.be(previewEntity)
+    expect(projectEntity.getWorldEntity(1)).toBeNil()
+    expect(projectEntity.getWorldOrPreviewEntity(1)).toBe(previewEntity)
   })
 
   test("destroyWorldOrPreviewEntity", () => {
     projectEntity.replaceWorldEntity(1, entity)
     projectEntity.destroyWorldOrPreviewEntity(1)
-    expect(entity.valid).to.be(false)
+    expect(entity.valid).toBe(false)
     expect(events).toHaveLength(1)
     expect(events[0]).toMatchTable({
       name: defines.events.script_raised_destroy,
@@ -524,45 +524,45 @@ describe("Get/set world entities", () => {
       } as any,
       mod_name: script.mod_name,
     } satisfies Partial<ScriptRaisedDestroyEvent>)
-    expect(projectEntity.getWorldEntity(1)).to.be.nil()
+    expect(projectEntity.getWorldEntity(1)).toBeNil()
   })
 
   test("replace with nil destroys the entity", () => {
     projectEntity.replaceWorldEntity(1, entity)
     projectEntity.replaceWorldEntity(1, nil)
-    expect(entity.valid).to.be(false)
-    expect(projectEntity.getWorldEntity(1)).to.be.nil()
+    expect(entity.valid).toBe(false)
+    expect(projectEntity.getWorldEntity(1)).toBeNil()
   })
 
   test("replace world entity deletes old entity", () => {
     projectEntity.replaceWorldEntity(1, entity)
     const newEntity = surfaces[0].create_entity({ name: "iron-chest", position: Pos(1.5, 1.5) })!
     projectEntity.replaceWorldEntity(1, newEntity)
-    expect(entity.valid).to.be(false)
-    expect(projectEntity.getWorldEntity(1)).to.equal(newEntity)
+    expect(entity.valid).toBe(false)
+    expect(projectEntity.getWorldEntity(1)).toEqual(newEntity)
   })
 
   test("replace world entity does not delete if same entity", () => {
     projectEntity.replaceWorldEntity(1, entity)
     projectEntity.replaceWorldEntity(1, entity)
-    expect(entity.valid).to.be(true)
-    expect(projectEntity.getWorldEntity(1)).to.equal(entity)
+    expect(entity.valid).toBe(true)
+    expect(projectEntity.getWorldEntity(1)).toEqual(entity)
   })
 
   test("get world entity returns nil if entity becomes invalid", () => {
     projectEntity.replaceWorldEntity(1, entity)
     entity.destroy()
-    expect(projectEntity.getWorldEntity(1)).to.be.nil()
+    expect(projectEntity.getWorldEntity(1)).toBeNil()
   })
 
   test("destroyAllWorldOrPreviewEntities", () => {
     projectEntity.replaceWorldOrPreviewEntity(1, entity)
     projectEntity.replaceWorldOrPreviewEntity(2, previewEntity)
     projectEntity.destroyAllWorldOrPreviewEntities()
-    expect(entity.valid).to.be(false)
-    expect(previewEntity.valid).to.be(false)
-    expect(projectEntity.getWorldEntity(1)).to.be.nil()
-    expect(projectEntity.getWorldEntity(2)).to.be.nil()
+    expect(entity.valid).toBe(false)
+    expect(previewEntity.valid).toBe(false)
+    expect(projectEntity.getWorldEntity(1)).toBeNil()
+    expect(projectEntity.getWorldEntity(2)).toBeNil()
 
     expect(events).toHaveLength(2)
     expect(events[0]).toMatchTable({
@@ -586,13 +586,13 @@ describe("Get/set world entities", () => {
   })
 
   test("hasWorldEntityInRange", () => {
-    expect(projectEntity.hasWorldEntityInRange(1, 2)).to.be(false)
+    expect(projectEntity.hasWorldEntityInRange(1, 2)).toBe(false)
     projectEntity.replaceWorldEntity(2, entity)
     projectEntity.replaceWorldEntity(5, entity)
-    expect(projectEntity.hasWorldEntityInRange(1, 1)).to.be(false)
-    expect(projectEntity.hasWorldEntityInRange(1, 3)).to.be(true)
-    expect(projectEntity.hasWorldEntityInRange(3, 4)).to.be(false)
-    expect(projectEntity.hasWorldEntityInRange(3, 5)).to.be(true)
+    expect(projectEntity.hasWorldEntityInRange(1, 1)).toBe(false)
+    expect(projectEntity.hasWorldEntityInRange(1, 3)).toBe(true)
+    expect(projectEntity.hasWorldEntityInRange(3, 4)).toBe(false)
+    expect(projectEntity.hasWorldEntityInRange(3, 5)).toBe(true)
   })
 })
 
@@ -611,95 +611,95 @@ describe("get/set extra entities", () => {
   })
 
   test("get after replace returns the correct entity", () => {
-    expect(projectEntity.getExtraEntity(type, 1)).to.be.nil()
-    expect(projectEntity.getExtraEntity(type, 2)).to.be.nil()
+    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
+    expect(projectEntity.getExtraEntity(type, 2)).toBeNil()
     projectEntity.replaceExtraEntity(type, 1, entity)
-    expect(projectEntity.getExtraEntity(type, 1)).to.equal(entity)
-    expect(projectEntity.getExtraEntity(type, 2)).to.be.nil()
+    expect(projectEntity.getExtraEntity(type, 1)).toEqual(entity)
+    expect(projectEntity.getExtraEntity(type, 2)).toBeNil()
     projectEntity.replaceExtraEntity(type, 2, entity)
-    expect(projectEntity.getExtraEntity(type, 1)).to.equal(entity)
-    expect(projectEntity.getExtraEntity(type, 2)).to.equal(entity)
+    expect(projectEntity.getExtraEntity(type, 1)).toEqual(entity)
+    expect(projectEntity.getExtraEntity(type, 2)).toEqual(entity)
   })
 
   test("destroyExtraEntity", () => {
     projectEntity.replaceExtraEntity(type, 1, entity)
     projectEntity.destroyExtraEntity(type, 1)
-    expect(entity.valid).to.be(false)
-    expect(projectEntity.getExtraEntity(type, 1)).to.be.nil()
+    expect(entity.valid).toBe(false)
+    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
   })
 
   test("replace with nil destroys the entity", () => {
     projectEntity.replaceExtraEntity(type, 1, entity)
     projectEntity.replaceExtraEntity(type, 1, nil)
-    expect(entity.valid).to.be(false)
-    expect(projectEntity.getExtraEntity(type, 1)).to.be.nil()
+    expect(entity.valid).toBe(false)
+    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
   })
 
   test("replace extra entity deletes old entity", () => {
     projectEntity.replaceExtraEntity(type, 1, entity)
     const newEntity = simpleMock<LuaEntity>({ name: "test", position: Pos(0, 0) })
     projectEntity.replaceExtraEntity(type, 1, newEntity)
-    expect(entity.valid).to.be(false)
-    expect(projectEntity.getExtraEntity(type, 1)).to.equal(newEntity)
+    expect(entity.valid).toBe(false)
+    expect(projectEntity.getExtraEntity(type, 1)).toEqual(newEntity)
   })
 
   test("replace extra entity does not delete if same entity", () => {
     projectEntity.replaceExtraEntity(type, 1, entity)
     projectEntity.replaceExtraEntity(type, 1, entity)
-    expect(entity.valid).to.be(true)
-    expect(projectEntity.getExtraEntity(type, 1)).to.equal(entity)
+    expect(entity.valid).toBe(true)
+    expect(projectEntity.getExtraEntity(type, 1)).toEqual(entity)
   })
 
   test("get extra entity returns nil if entity becomes invalid", () => {
     projectEntity.replaceExtraEntity(type, 1, entity)
     entity.destroy()
-    expect(projectEntity.getExtraEntity(type, 1)).to.be.nil()
+    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
   })
 
   test("destroyAllExtraEntities", () => {
     projectEntity.replaceExtraEntity(type, 1, entity)
     projectEntity.destroyAllExtraEntities(type)
-    expect(entity.valid).to.be(false)
-    expect(projectEntity.getExtraEntity(type, 1)).to.be.nil()
+    expect(entity.valid).toBe(false)
+    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
   })
 })
 
 describe("rolling stock", () => {
   test("rolling stock only appears in its first stage", () => {
     const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon" }, Pos(0, 0), nil, 2)
-    expect(projectEntity.getValueAtStage(1)).to.be.nil()
-    expect(projectEntity.getValueAtStage(2)).to.equal(projectEntity.firstValue)
-    expect(projectEntity.getValueAtStage(3)).to.be.nil()
+    expect(projectEntity.getValueAtStage(1)).toBeNil()
+    expect(projectEntity.getValueAtStage(2)).toEqual(projectEntity.firstValue)
+    expect(projectEntity.getValueAtStage(3)).toBeNil()
 
-    // expect(projectEntity.inFirstStageOnly()).to.be(true)
-    expect(projectEntity.lastStage).to.equal(2)
+    // expect(projectEntity.inFirstStageOnly()).toBe(true)
+    expect(projectEntity.lastStage).toEqual(2)
   })
   test("cannot apply stage diffs to rolling stock beyond first stage", () => {
     const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon" } as RollingStockEntity, Pos(0, 0), nil, 1)
     const adjusted = projectEntity.adjustValueAtStage(1, { name: "cargo-wagon", items: { foo: 1 } })
-    expect(adjusted).to.be(true)
+    expect(adjusted).toBe(true)
     const adjusted2 = projectEntity.adjustValueAtStage(2, { name: "cargo-wagon", items: { foo: 2 } })
-    expect(adjusted2).to.be(false)
-    expect(projectEntity.getValueAtStage(1)).to.equal(projectEntity.firstValue)
+    expect(adjusted2).toBe(false)
+    expect(projectEntity.getValueAtStage(1)).toEqual(projectEntity.firstValue)
   })
   test("apply stage diff ignores orientation changes", () => {
     const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon", orientation: 0.25 }, Pos(0, 0), nil, 1)
     const adjusted = projectEntity.adjustValueAtStage(1, { ...projectEntity.firstValue, orientation: 0.5 })
-    expect(adjusted).to.be(false)
-    expect(projectEntity.firstValue.orientation).to.be(0.25)
+    expect(adjusted).toBe(false)
+    expect(projectEntity.firstValue.orientation).toBe(0.25)
   })
   test("cannot apply upgrade to rolling stock", () => {
     const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon" }, Pos(0, 0), nil, 1)
     const adjusted = projectEntity.applyUpgradeAtStage(1, "cargo-wagon-2")
-    expect(adjusted).to.be(false)
-    expect(projectEntity.getNameAtStage(1)).to.be("cargo-wagon")
+    expect(adjusted).toBe(false)
+    expect(projectEntity.getNameAtStage(1)).toBe("cargo-wagon")
   })
   test("setting a rolling stock world entity will register it in entity-registration", () => {
     const rollingStock = createRollingStock()
 
     projectEntity.replaceWorldEntity(1, rollingStock)
     const found = getRegisteredProjectEntity(rollingStock)
-    expect(found).to.equal(projectEntity)
+    expect(found).toEqual(projectEntity)
   })
 })
 
@@ -711,28 +711,28 @@ declare module "../../entity/ProjectEntity" {
 }
 describe("get/set properties", () => {
   test("get property when not set is nil", () => {
-    expect(projectEntity.getProperty("foo", 2)).to.be.nil()
+    expect(projectEntity.getProperty("foo", 2)).toBeNil()
   })
   test("get and set property", () => {
     projectEntity.setProperty("foo", 2, "bar")
-    expect(projectEntity.getProperty("foo", 2)).to.be("bar")
+    expect(projectEntity.getProperty("foo", 2)).toBe("bar")
   })
   test("propertyIsSetAnywhere", () => {
-    expect(projectEntity.propertySetInAnyStage("foo")).to.be(false)
+    expect(projectEntity.propertySetInAnyStage("foo")).toBe(false)
     projectEntity.setProperty("foo", 2, "bar")
-    expect(projectEntity.propertySetInAnyStage("foo")).to.be(true)
+    expect(projectEntity.propertySetInAnyStage("foo")).toBe(true)
     projectEntity.setProperty("foo", 3, "bar")
     projectEntity.setProperty("foo", 2, nil)
-    expect(projectEntity.propertySetInAnyStage("foo")).to.be(true)
+    expect(projectEntity.propertySetInAnyStage("foo")).toBe(true)
     projectEntity.setProperty("foo", 3, nil)
-    expect(projectEntity.propertySetInAnyStage("foo")).to.be(false)
+    expect(projectEntity.propertySetInAnyStage("foo")).toBe(false)
   })
   test("clear property", () => {
     projectEntity.setProperty("foo", 2, "bar")
     projectEntity.setProperty("foo", 3, "bar")
     projectEntity.clearPropertyInAllStages("foo")
-    expect(projectEntity.getProperty("foo", 2)).to.be.nil()
-    expect(projectEntity.getProperty("foo", 3)).to.be.nil()
+    expect(projectEntity.getProperty("foo", 2)).toBeNil()
+    expect(projectEntity.getProperty("foo", 3)).toBeNil()
   })
 })
 
@@ -754,19 +754,19 @@ describe("insert/deleting stages", () => {
 
     // all keys at 3 and above are shifted up
 
-    expect(entity.firstStage).to.equal(1)
-    expect(entity.lastStage).to.equal(5)
+    expect(entity.firstStage).toEqual(1)
+    expect(entity.lastStage).toEqual(5)
 
-    expect(entity.getWorldEntity(2)).to.be.any()
-    expect(entity.getWorldEntity(3)).to.be.nil()
-    expect(entity.getWorldEntity(4)).to.be.any()
+    expect(entity.getWorldEntity(2)).toBeAny()
+    expect(entity.getWorldEntity(3)).toBeNil()
+    expect(entity.getWorldEntity(4)).toBeAny()
 
-    expect(entity.getProperty("foo", 2)).to.be("bar2")
-    expect(entity.getProperty("foo", 3)).to.be.nil()
-    expect(entity.getProperty("foo", 4)).to.be("bar3")
-    expect(entity.getProperty("foo", 5)).to.be("bar4")
+    expect(entity.getProperty("foo", 2)).toBe("bar2")
+    expect(entity.getProperty("foo", 3)).toBeNil()
+    expect(entity.getProperty("foo", 4)).toBe("bar3")
+    expect(entity.getProperty("foo", 5)).toBe("bar4")
 
-    expect(entity.getStageDiffs()).to.equal({
+    expect(entity.getStageDiffs()).toEqual({
       2: { override_stack_size: 2 },
       3: nil,
       4: { override_stack_size: 3 },
@@ -778,7 +778,7 @@ describe("insert/deleting stages", () => {
     const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
 
     entity.insertStage(1)
-    expect(entity.firstStage).to.be(3)
+    expect(entity.firstStage).toBe(3)
   })
 
   test("insert stage after last stage", () => {
@@ -786,7 +786,7 @@ describe("insert/deleting stages", () => {
     entity.setLastStageUnchecked(3)
 
     entity.insertStage(4)
-    expect(entity.lastStage).to.be(3)
+    expect(entity.lastStage).toBe(3)
   })
 
   test("delete stage after base", () => {
@@ -815,18 +815,18 @@ describe("insert/deleting stages", () => {
 
     // key 3 is deleted, all keys above it are shifted down
 
-    expect(entity.firstStage).to.equal(1)
-    expect(entity.lastStage).to.equal(3)
+    expect(entity.firstStage).toEqual(1)
+    expect(entity.lastStage).toEqual(3)
 
-    expect(entity.getWorldEntity(2)).to.be.any()
-    expect(entity.getWorldEntity(3)).to.be.any()
-    expect(entity.getWorldEntity(4)).to.be.nil()
+    expect(entity.getWorldEntity(2)).toBeAny()
+    expect(entity.getWorldEntity(3)).toBeAny()
+    expect(entity.getWorldEntity(4)).toBeNil()
 
-    expect(entity.getProperty("foo", 2)).to.be("bar2")
-    expect(entity.getProperty("foo", 3)).to.be("bar4")
-    expect(entity.getProperty("foo", 4)).to.be.nil()
+    expect(entity.getProperty("foo", 2)).toBe("bar2")
+    expect(entity.getProperty("foo", 3)).toBe("bar4")
+    expect(entity.getProperty("foo", 4)).toBeNil()
 
-    expect(entity.getStageDiffs()).to.equal({
+    expect(entity.getStageDiffs()).toEqual({
       2: { override_stack_size: 3, filter_mode: "blacklist" }, // merge of 2 and 3
       3: { override_stack_size: 4 },
     })
@@ -844,7 +844,7 @@ describe("insert/deleting stages", () => {
     )
 
     entity.deleteStage(2)
-    expect(entity.firstStage).to.be(2)
+    expect(entity.firstStage).toBe(2)
   })
 
   test("delete stage after last stage", () => {
@@ -860,7 +860,7 @@ describe("insert/deleting stages", () => {
     entity.setLastStageUnchecked(4)
 
     entity.deleteStage(5)
-    expect(entity.lastStage).to.be(4)
+    expect(entity.lastStage).toBe(4)
   })
 
   test("delete stage right after base applies stage diffs to first entity", () => {
@@ -877,7 +877,7 @@ describe("insert/deleting stages", () => {
     const value = entity.getValueAtStage(2)
 
     entity.deleteStage(2)
-    expect(entity.getValueAtStage(1)).to.equal(value)
+    expect(entity.getValueAtStage(1)).toEqual(value)
   })
 
   test("delete stage 1 merges with stage 2 instead", () => {
@@ -895,7 +895,7 @@ describe("insert/deleting stages", () => {
 
     const value = entity.getValueAtStage(2)
     entity.deleteStage(2)
-    expect(entity.getValueAtStage(1)).to.equal(value)
+    expect(entity.getValueAtStage(1)).toEqual(value)
   })
 
   test("delete stage 1 sets stage 1 properties to stage 2 properties", () => {
@@ -913,7 +913,7 @@ describe("insert/deleting stages", () => {
     entity.setProperty("foo", 3, "bar3")
 
     entity.deleteStage(1)
-    expect(entity.getProperty("foo", 1)).to.be("bar2")
-    expect(entity.getProperty("foo", 2)).to.be("bar3")
+    expect(entity.getProperty("foo", 1)).toBe("bar2")
+    expect(entity.getProperty("foo", 2)).toBe("bar3")
   })
 })

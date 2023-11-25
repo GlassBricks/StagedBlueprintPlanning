@@ -9,13 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
 import { Component, Element, ElementChildren, FactorioJsx, FlowElement, FunctionalComponent } from "../../factoriojsx"
 import { RegisterClass } from "../../references"
-import expect from "tstl-expect"
 
 test("Basic element", () => {
   const el = <flow />
-  expect(el).to.equal({
+  expect(el).toEqual({
     type: "flow",
   })
 })
@@ -23,7 +23,7 @@ test("Basic element", () => {
 test("Basic element with props", () => {
   const el = <flow caption="foo" />
 
-  expect(el).to.equal({ type: "flow", caption: "foo" })
+  expect(el).toEqual({ type: "flow", caption: "foo" })
 })
 
 test("Basic element with children", () => {
@@ -33,7 +33,7 @@ test("Basic element with children", () => {
     </flow>
   )
 
-  expect(el).to.equal({ type: "flow", children: [{ type: "flow", name: "bob" }] })
+  expect(el).toEqual({ type: "flow", children: [{ type: "flow", name: "bob" }] })
 })
 
 test("basic element with multiple children", () => {
@@ -44,7 +44,7 @@ test("basic element with multiple children", () => {
     </flow>
   )
 
-  expect(el).to.equal({
+  expect(el).toEqual({
     type: "flow",
     children: [
       { type: "flow", name: "bob" },
@@ -55,13 +55,13 @@ test("basic element with multiple children", () => {
 
 test("basic element with nil children", () => {
   const el = <flow>{nil}</flow>
-  expect(el).to.equal({ type: "flow" })
+  expect(el).toEqual({ type: "flow" })
 })
 
 test("basic element with array children", () => {
   const array = [<flow name="bob" />, <flow name="joe" />]
   const el = <flow>{array}</flow>
-  expect(el).to.equal({
+  expect(el).toEqual({
     type: "flow",
     children: [
       { type: "flow", name: "bob" },
@@ -77,12 +77,12 @@ function Foo(props: TestProps) {
 
 test("Function component", () => {
   const el = <Foo />
-  expect(el).to.equal({ type: Foo, props: {} })
+  expect(el).toEqual({ type: Foo, props: {} })
 })
 
 test("Function component with props", () => {
   const el = <Foo me="bob" />
-  expect(el).to.equal({ type: Foo, props: { me: "bob" } })
+  expect(el).toEqual({ type: Foo, props: { me: "bob" } })
 })
 
 test("Function component with children", () => {
@@ -91,7 +91,7 @@ test("Function component with children", () => {
       <flow name="bob" />
     </Foo>
   )
-  expect(el).to.equal({
+  expect(el).toEqual({
     type: Foo,
     props: {
       children: { type: "flow", name: "bob" },
@@ -106,7 +106,7 @@ test("Function component with multiple children", () => {
       <flow name="joe" />
     </Foo>
   )
-  expect(el).to.equal({
+  expect(el).toEqual({
     type: Foo,
     props: {
       children: [
@@ -119,7 +119,7 @@ test("Function component with multiple children", () => {
 
 test("Function component with nil children", () => {
   const el = <Foo>{nil}</Foo>
-  expect(el).to.equal({ type: Foo, props: {} })
+  expect(el).toEqual({ type: Foo, props: {} })
 })
 
 @RegisterClass("Test component: jsx Foo")
@@ -131,12 +131,12 @@ class FooClass extends Component<TestProps> {
 
 test("Class component", () => {
   const el = <FooClass />
-  expect(el).to.equal({ type: FooClass, props: {} })
+  expect(el).toEqual({ type: FooClass, props: {} })
 })
 
 test("Class component with props", () => {
   const el = <FooClass me="bob" />
-  expect(el).to.equal({ type: FooClass, props: { me: "bob" } })
+  expect(el).toEqual({ type: FooClass, props: { me: "bob" } })
 })
 
 test("Class component with children", () => {
@@ -145,7 +145,7 @@ test("Class component with children", () => {
       <flow name="bob" />
     </FooClass>
   )
-  expect(el).to.equal({
+  expect(el).toEqual({
     type: FooClass,
     props: {
       children: { type: "flow", name: "bob" },
@@ -160,7 +160,7 @@ test("Class component with multiple children", () => {
       <flow name="joe" />
     </FooClass>
   )
-  expect(el).to.equal({
+  expect(el).toEqual({
     type: FooClass,
     props: {
       children: [
@@ -173,7 +173,7 @@ test("Class component with multiple children", () => {
 
 test("Class component with nil children", () => {
   const el = <FooClass>{nil}</FooClass>
-  expect(el).to.equal({ type: FooClass, props: {} })
+  expect(el).toEqual({ type: FooClass, props: {} })
 })
 
 describe("fragment", () => {
@@ -184,7 +184,7 @@ describe("fragment", () => {
         <flow name="joe" />
       </>
     )
-    expect(el).to.equal({
+    expect(el).toEqual({
       type: "fragment",
       children: [
         { type: "flow", name: "bob" },
@@ -195,13 +195,13 @@ describe("fragment", () => {
 
   test("basic fragment with nil children", () => {
     const el = <>{nil}</>
-    expect(el).to.equal({ type: "fragment", children: nil })
+    expect(el).toEqual({ type: "fragment", children: nil })
   })
 
   test("basic fragment with array children", () => {
     const array = [<flow name="bob" />, <flow name="joe" />]
     const el = <>{array}</>
-    expect(el).to.equal({
+    expect(el).toEqual({
       type: "fragment",
       children: [
         { type: "flow", name: "bob" },
@@ -221,7 +221,7 @@ describe("fragment", () => {
         <flow name="4" />
       </flow>
     )
-    expect((el as FlowElement).children).to.equal([
+    expect((el as FlowElement).children).toEqual([
       { type: "flow", name: "1" },
       { type: "flow", name: "2" },
       { type: "flow", name: "3" },
@@ -238,7 +238,7 @@ describe("fragment", () => {
         </>
       </Foo>
     )
-    expect((el as FunctionalComponent<any>).props.children).to.equal([
+    expect((el as FunctionalComponent<any>).props.children).toEqual([
       { type: "flow", name: "2" },
       { type: "flow", name: "3" },
     ])
@@ -255,7 +255,7 @@ describe("fragment", () => {
         <flow name="4" />
       </Foo>
     )
-    expect((el as FunctionalComponent<any>).props.children).to.equal([
+    expect((el as FunctionalComponent<any>).props.children).toEqual([
       { type: "flow", name: "1" },
       { type: "flow", name: "2" },
       { type: "flow", name: "3" },

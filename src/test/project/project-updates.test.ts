@@ -88,7 +88,7 @@ function clearMocks(): void {
 function assertWUNotCalled() {
   if (worldUpdaterCalls != 0) {
     for (const [, spy] of pairs(worldUpdater)) {
-      expect(spy as any).not.called()
+      expect(spy as any).not.toHaveBeenCalled()
     }
   }
 }
@@ -99,59 +99,65 @@ function assertUpdateCalled(
   updateHighlights?: boolean,
 ): void {
   expectedWuCalls++
-  if (n == nil) expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.updateWorldEntities).nthCalledWith(n ?? 1, project, entity, startStage, updateHighlights)
+  if (n == nil) expect(worldUpdaterCalls).toBe(1)
+  expect(worldUpdater.updateWorldEntities).toHaveBeenNthCalledWith(
+    n ?? 1,
+    project,
+    entity,
+    startStage,
+    updateHighlights,
+  )
   if (updateHighlights == false) {
-    expect(highlights.updateAllHighlights).calledWith(project, entity)
+    expect(highlights.updateAllHighlights).toHaveBeenCalledWith(project, entity)
   }
 }
 
 function assertUpdateOnLastStageChangedCalled(entity: ProjectEntity, startStage: StageNumber) {
   expectedWuCalls++
-  expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.updateWorldEntitiesOnLastStageChanged).calledWith(project, entity, startStage)
+  expect(worldUpdaterCalls).toBe(1)
+  expect(worldUpdater.updateWorldEntitiesOnLastStageChanged).toHaveBeenCalledWith(project, entity, startStage)
 }
 
 function assertRefreshCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldUpdater.refreshWorldEntityAtStage).calledWith(project, entity, stage)
+  expect(worldUpdater.refreshWorldEntityAtStage).toHaveBeenCalledWith(project, entity, stage)
 }
 function assertResetUndergroundRotationCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldUpdater.resetUnderground).calledWith(project, entity, stage)
+  expect(worldUpdater.resetUnderground).toHaveBeenCalledWith(project, entity, stage)
 }
 function assertReplaceCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldUpdater.rebuildWorldEntityAtStage).calledWith(project, entity, stage)
+  expect(worldUpdater.rebuildWorldEntityAtStage).toHaveBeenCalledWith(project, entity, stage)
 }
 function assertDeleteWorldEntityCalled(entity: ProjectEntity) {
   expectedWuCalls++
-  expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.deleteWorldEntities).calledWith(project, entity)
+  expect(worldUpdaterCalls).toBe(1)
+  expect(worldUpdater.deleteWorldEntities).toHaveBeenCalledWith(project, entity)
 }
 function assertMakeSettingsRemnantCalled(entity: ProjectEntity) {
   expectedWuCalls++
-  expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.makeSettingsRemnant).calledWith(project, entity)
+  expect(worldUpdaterCalls).toBe(1)
+  expect(worldUpdater.makeSettingsRemnant).toHaveBeenCalledWith(project, entity)
 }
 function assertReviveSettingsRemnantCalled(entity: ProjectEntity) {
   expectedWuCalls++
-  expect(worldUpdaterCalls).to.be(1)
-  expect(worldUpdater.reviveSettingsRemnant).calledWith(project, entity)
+  expect(worldUpdaterCalls).toBe(1)
+  expect(worldUpdater.reviveSettingsRemnant).toHaveBeenCalledWith(project, entity)
 }
 
 function assertOneEntity() {
-  expect(project.content.countNumEntities()).to.be(1)
+  expect(project.content.countNumEntities()).toBe(1)
 }
 function assertNEntities(n: number) {
-  expect(project.content.countNumEntities()).to.be(n)
+  expect(project.content.countNumEntities()).toBe(n)
 }
 function assertNoEntities() {
-  expect(project.content.countNumEntities()).to.equal(0)
+  expect(project.content.countNumEntities()).toEqual(0)
 }
 
 function assertStageDiffs(entity: ProjectEntity, changes: StageDiffsInternal<BlueprintEntity>) {
-  expect(entity.getStageDiffs()).to.equal(changes)
+  expect(entity.getStageDiffs()).toEqual(changes)
 }
 
 function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {
@@ -170,10 +176,10 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   return entity
 }
 function assertNewUpdated(entity: ProjectEntity) {
-  expect(worldUpdater.updateNewWorldEntitiesWithoutWires).calledWith(project, entity)
+  expect(worldUpdater.updateNewWorldEntitiesWithoutWires).toHaveBeenCalledWith(project, entity)
   expectedWuCalls = 1
   if (project.content.getCircuitConnections(entity) || project.content.getCableConnections(entity)) {
-    expect(worldUpdater.updateWireConnections).calledWith(project, entity)
+    expect(worldUpdater.updateWireConnections).toHaveBeenCalledWith(project, entity)
     expectedWuCalls++
   }
 }
@@ -182,15 +188,15 @@ describe("addNewEntity", () => {
   test("simple add", () => {
     const luaEntity = createEntity(2)
     const entity = projectUpdates.addNewEntity(project, luaEntity, 2)!
-    expect(entity).to.be.any()
-    expect(entity.firstValue.name).to.be("filter-inserter")
-    expect(entity.position).to.equal(pos)
-    expect(entity.direction).to.be(0)
+    expect(entity).toBeAny()
+    expect(entity.firstValue.name).toBe("filter-inserter")
+    expect(entity.position).toEqual(pos)
+    expect(entity.direction).toBe(0)
 
     const found = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as ProjectEntity<BlueprintEntity>
-    expect(found).to.be(entity)
+    expect(found).toBe(entity)
 
-    expect(entity.getWorldEntity(2)).to.be(luaEntity)
+    expect(entity.getWorldEntity(2)).toBe(luaEntity)
 
     assertOneEntity()
     assertNewUpdated(entity)
@@ -205,17 +211,17 @@ describe("addNewEntity", () => {
       name: "filter-inserter",
       neighbours: [2],
     })!
-    expect(entity).to.be.any()
+    expect(entity).toBeAny()
     expect(entity.firstValue).toEqual({
       name: "filter-inserter",
     })
-    expect(entity.position).to.equal(pos)
-    expect(entity.direction).to.be(0)
+    expect(entity.position).toEqual(pos)
+    expect(entity.direction).toBe(0)
 
     const found = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as ProjectEntity<BlueprintEntity>
-    expect(found).to.be(entity)
+    expect(found).toBe(entity)
 
-    expect(entity.getWorldEntity(2)).to.be(luaEntity)
+    expect(entity.getWorldEntity(2)).toBe(luaEntity)
 
     assertOneEntity()
     assertNewUpdated(entity)
@@ -230,14 +236,14 @@ describe("addNewEntity", () => {
       name: "fast-inserter",
       neighbours: [2],
     })!
-    expect(entityUpgraded).to.be.any()
+    expect(entityUpgraded).toBeAny()
     expect(entityUpgraded.firstValue).toEqual({
       name: "fast-inserter",
     })
-    expect(entityUpgraded.position).to.equal(pos)
+    expect(entityUpgraded.position).toEqual(pos)
 
     const found = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as ProjectEntity<BlueprintEntity>
-    expect(found).to.be(entityUpgraded)
+    expect(found).toBe(entityUpgraded)
 
     assertOneEntity()
     assertNewUpdated(entityUpgraded)
@@ -247,7 +253,7 @@ describe("addNewEntity", () => {
 function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   const luaEntity = createEntity(stage, args)
   const entity = projectUpdates.addNewEntity(project, luaEntity, stage) as ProjectEntity<BlueprintEntity>
-  expect(entity).to.be.any()
+  expect(entity).toBeAny()
   clearMocks()
   entity.replaceWorldEntity(stage, luaEntity)
   return { entity, luaEntity }
@@ -257,11 +263,11 @@ test("moving entity on preview replace", () => {
   const { entity } = addEntity(2)
 
   // assert(projectUpdates.moveFirstStageDownOnPreviewReplace(project, entity, 1))
-  expect(projectUpdates.trySetFirstStage(project, entity, 1)).to.be(StageMoveResult.Updated)
+  expect(projectUpdates.trySetFirstStage(project, entity, 1)).toBe(StageMoveResult.Updated)
 
-  expect(entity.firstStage).to.equal(1)
-  expect((entity.firstValue as BlueprintEntity).override_stack_size).to.be(1)
-  expect(entity.hasStageDiff()).to.be(false)
+  expect(entity.firstStage).toEqual(1)
+  expect((entity.firstValue as BlueprintEntity).override_stack_size).toBe(1)
+  expect(entity.hasStageDiff()).toBe(false)
   assertOneEntity()
   assertUpdateCalled(entity, 1)
 })
@@ -272,8 +278,8 @@ test("tryReviveSettingsRemnant", () => {
 
   projectUpdates.tryReviveSettingsRemnant(project, entity, 1)
 
-  expect(entity.isSettingsRemnant).to.be.nil()
-  expect(entity.firstStage).to.equal(1)
+  expect(entity.isSettingsRemnant).toBeNil()
+  expect(entity.firstStage).toEqual(1)
   assertOneEntity()
   assertReviveSettingsRemnantCalled(entity)
 })
@@ -281,7 +287,7 @@ test("tryReviveSettingsRemnant", () => {
 test("cannot tryReviveSettingsRemnant if not a remnant", () => {
   const { entity } = addEntity(2)
 
-  expect(projectUpdates.tryReviveSettingsRemnant(project, entity, 1)).to.be(StageMoveResult.NoChange)
+  expect(projectUpdates.tryReviveSettingsRemnant(project, entity, 1)).toBe(StageMoveResult.NoChange)
   assertOneEntity()
   assertWUNotCalled()
 })
@@ -301,7 +307,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
     projectUpdates.deleteEntityOrCreateSettingsRemnant(project, entity)
 
-    expect(entity.isSettingsRemnant).to.be(true)
+    expect(entity.isSettingsRemnant).toBe(true)
     assertOneEntity()
     assertMakeSettingsRemnantCalled(entity)
   })
@@ -319,7 +325,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     })
 
     projectUpdates.deleteEntityOrCreateSettingsRemnant(project, entity)
-    expect(entity.isSettingsRemnant).to.be(true)
+    expect(entity.isSettingsRemnant).toBe(true)
     assertNEntities(2)
     assertMakeSettingsRemnantCalled(entity)
   })
@@ -343,7 +349,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     )
 
     projectUpdates.deleteEntityOrCreateSettingsRemnant(project, entity)
-    expect(entity.isSettingsRemnant).to.be.nil()
+    expect(entity.isSettingsRemnant).toBeNil()
     assertOneEntity()
     assertDeleteWorldEntityCalled(entity)
   })
@@ -363,7 +369,7 @@ describe("tryUpdateEntityFromWorld", () => {
   test('with no changes returns "no-change"', () => {
     const { entity } = addEntity(2)
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 2)
-    expect(ret).to.be("no-change")
+    expect(ret).toBe("no-change")
     assertOneEntity()
     assertWUNotCalled()
   })
@@ -372,9 +378,9 @@ describe("tryUpdateEntityFromWorld", () => {
     const { entity, luaEntity } = addEntity(2)
     luaEntity.inserter_stack_size_override = 3
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 2)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
 
-    expect(entity.firstValue.override_stack_size).to.be(3)
+    expect(entity.firstValue.override_stack_size).toBe(3)
 
     assertOneEntity()
     assertUpdateCalled(entity, 2)
@@ -386,9 +392,9 @@ describe("tryUpdateEntityFromWorld", () => {
       override_stack_size: 3,
     }
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 2, knownValue as BlueprintEntity)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
 
-    expect(entity.firstValue.override_stack_size).to.be(3)
+    expect(entity.firstValue.override_stack_size).toBe(3)
 
     assertOneEntity()
     assertUpdateCalled(entity, 2)
@@ -401,9 +407,9 @@ describe("tryUpdateEntityFromWorld", () => {
     })
     luaEntity.direction = defines.direction.east
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 2)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
 
-    expect(entity.direction).to.be(defines.direction.east)
+    expect(entity.direction).toBe(defines.direction.east)
     assertOneEntity()
     assertUpdateCalled(entity, 2)
   })
@@ -414,8 +420,8 @@ describe("tryUpdateEntityFromWorld", () => {
 
     entity.replaceWorldEntity(3, luaEntity)
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 3)
-    expect(ret).to.be("cannot-rotate")
-    expect(entity.direction).to.be(defines.direction.north)
+    expect(ret).toBe("cannot-rotate")
+    expect(entity.direction).toBe(defines.direction.north)
 
     assertOneEntity()
     assertRefreshCalled(entity, 3)
@@ -431,9 +437,9 @@ describe("tryUpdateEntityFromWorld", () => {
     luaEntity.inserter_stack_size_override = 3
     entity.replaceWorldEntity(2, luaEntity)
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 2)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
 
-    expect(entity.firstValue.override_stack_size).to.be(1)
+    expect(entity.firstValue.override_stack_size).toBe(1)
     if (withExistingChanges) {
       assertStageDiffs(entity, { 2: { override_stack_size: 3, filter_mode: "blacklist" } })
     } else {
@@ -447,13 +453,13 @@ describe("tryUpdateEntityFromWorld", () => {
   test("integration: updating to match removes stage diff", () => {
     const { luaEntity, entity } = addEntity(1)
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
-    expect(entity.hasStageDiff()).to.be(true)
+    expect(entity.hasStageDiff()).toBe(true)
     luaEntity.inserter_stack_size_override = 1
 
     entity.replaceWorldEntity(2, luaEntity)
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 2)
-    expect(ret).to.be("updated")
-    expect(entity.hasStageDiff()).to.be(false)
+    expect(ret).toBe("updated")
+    expect(entity.hasStageDiff()).toBe(false)
 
     assertOneEntity()
     assertUpdateCalled(entity, 2)
@@ -465,8 +471,8 @@ describe("tryRotateEntityToMatchWorld", () => {
     const { luaEntity, entity } = addEntity(2)
     luaEntity.direction = direction.west
     const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, 2)
-    expect(ret).to.be("updated")
-    expect(entity.direction).to.be(direction.west)
+    expect(ret).toBe("updated")
+    expect(entity.direction).toBe(direction.west)
     assertOneEntity()
     assertUpdateCalled(entity, 2)
   })
@@ -477,8 +483,8 @@ describe("tryRotateEntityToMatchWorld", () => {
     luaEntity.direction = direction.west
     entity.replaceWorldEntity(2, luaEntity)
     const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, 2)
-    expect(ret).to.be("cannot-rotate")
-    expect(entity.direction).to.be(oldDirection)
+    expect(ret).toBe("cannot-rotate")
+    expect(entity.direction).toBe(oldDirection)
     assertOneEntity()
     assertRefreshCalled(entity, 2)
   })
@@ -487,9 +493,9 @@ describe("tryRotateEntityToMatchWorld", () => {
     const { luaEntity, entity } = addEntity(1, { name: "loader", direction: direction.north, type: "input" })
     luaEntity.rotate()
     const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, 1)
-    expect(ret).to.be("updated")
-    expect(entity.direction).to.be(direction.south)
-    expect(entity.firstValue.type).to.be("output")
+    expect(ret).toBe("updated")
+    expect(entity.direction).toBe(direction.south)
+    expect(entity.firstValue.type).toBe("output")
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
@@ -508,20 +514,20 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
     luaEntity.set_recipe("express-transport-belt")
     luaEntity.direction = defines.direction.south
     luaEntity.set_recipe(nil)
-    expect(luaEntity.direction).to.be(defines.direction.south)
+    expect(luaEntity.direction).toBe(defines.direction.south)
   })
   test("using update", () => {
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 3)
-    expect(ret).to.be("no-change")
-    expect(entity.direction).to.be(0)
+    expect(ret).toBe("no-change")
+    expect(entity.direction).toBe(0)
 
     assertOneEntity()
     assertWUNotCalled()
   })
   test("using rotate", () => {
     const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, 3)
-    expect(ret).to.be("no-change")
-    expect(entity.direction).to.be(0)
+    expect(ret).toBe("no-change")
+    expect(entity.direction).toBe(0)
 
     assertOneEntity()
     assertWUNotCalled()
@@ -529,8 +535,8 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   test("can change recipe and rotate", () => {
     luaEntity.set_recipe("iron-gear-wheel")
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 3)
-    expect(ret).to.be("updated")
-    expect(entity.getValueAtStage(3)!.recipe).to.be("iron-gear-wheel")
+    expect(ret).toBe("updated")
+    expect(entity.getValueAtStage(3)!.recipe).toBe("iron-gear-wheel")
 
     assertOneEntity()
     assertUpdateCalled(entity, 3)
@@ -538,7 +544,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   test("disallows if has fluid inputs", () => {
     luaEntity.set_recipe("express-transport-belt")
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity, 3)
-    expect(ret).to.be("cannot-rotate")
+    expect(ret).toBe("cannot-rotate")
 
     assertOneEntity()
     assertRefreshCalled(entity, 3)
@@ -554,9 +560,9 @@ describe("tryApplyUpgradeTarget", () => {
     })
     const direction = luaEntity.direction
     const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
-    expect(ret).to.be("updated")
-    expect(entity.firstValue.name).to.be("stack-filter-inserter")
-    expect(entity.direction).to.be(direction)
+    expect(ret).toBe("updated")
+    expect(entity.firstValue.name).toBe("stack-filter-inserter")
+    expect(entity.direction).toBe(direction)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
@@ -569,9 +575,9 @@ describe("tryApplyUpgradeTarget", () => {
     })
 
     const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
-    expect(ret).to.be("updated")
-    expect(entity.firstValue.name).to.be("filter-inserter")
-    expect(entity.direction).to.be(direction.west)
+    expect(ret).toBe("updated")
+    expect(entity.firstValue.name).toBe("filter-inserter")
+    expect(entity.direction).toBe(direction.west)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
@@ -584,8 +590,8 @@ describe("tryApplyUpgradeTarget", () => {
     })
     entity.replaceWorldEntity(2, luaEntity)
     const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 2)
-    expect(ret).to.be("cannot-rotate")
-    expect(entity.direction).to.be(0)
+    expect(ret).toBe("cannot-rotate")
+    expect(entity.direction).toBe(0)
     assertOneEntity()
     assertRefreshCalled(entity, 2)
   })
@@ -603,7 +609,7 @@ describe("tryApplyUpgradeTarget", () => {
     })
     entity.replaceWorldEntity(2, luaEntity)
     const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 2)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
     assertOneEntity()
     assertUpdateCalled(entity, 2)
   })
@@ -614,7 +620,7 @@ describe("updateWiresFromWorld", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.returnsOnce(true as any)
     const ret = projectUpdates.updateWiresFromWorld(project, entity, 1)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
 
     assertOneEntity()
     assertUpdateCalled(entity, 1)
@@ -623,7 +629,7 @@ describe("updateWiresFromWorld", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.returnsOnce(false as any)
     const ret = projectUpdates.updateWiresFromWorld(project, entity, 1)
-    expect(ret).to.be("no-change")
+    expect(ret).toBe("no-change")
 
     assertOneEntity()
     assertWUNotCalled()
@@ -644,7 +650,7 @@ describe("updateWiresFromWorld", () => {
     luaEntity2.destroy()
 
     const ret = projectUpdates.updateWiresFromWorld(project, entity1, 2)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
 
     assertNEntities(2)
     assertUpdateCalled(entity1, 2, 1)
@@ -656,7 +662,7 @@ describe("updateWiresFromWorld", () => {
   //   // const { entity } = addEntity(1)
   //   // wireSaver.saveWireConnections.returnsOnce(true as any)
   //   // const ret = projectUpdates.updateWiresFromWorld(project, entity, 2)
-  //   // expect(ret).to.be("max-connections-exceeded")
+  //   // expect(ret).toBe("max-connections-exceeded")
   //   //
   //   // assertOneEntity()
   //   // assertUpdateCalled(entity, 1, nil)
@@ -668,8 +674,8 @@ describe("trySetFirstStage", () => {
   test("can move up", () => {
     const { entity } = addEntity(1)
     const result = projectUpdates.trySetFirstStage(project, entity, 2)
-    expect(result).to.be("updated")
-    expect(entity.firstStage).to.be(2)
+    expect(result).toBe("updated")
+    expect(entity.firstStage).toBe(2)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
@@ -677,8 +683,8 @@ describe("trySetFirstStage", () => {
   test("can move down to preview", () => {
     const { entity } = addEntity(4)
     const result = projectUpdates.trySetFirstStage(project, entity, 3)
-    expect(result).to.be("updated")
-    expect(entity.firstStage).to.be(3)
+    expect(result).toBe("updated")
+    expect(entity.firstStage).toBe(3)
     assertOneEntity()
     assertUpdateCalled(entity, 3)
   })
@@ -687,8 +693,8 @@ describe("trySetFirstStage", () => {
     const { entity } = addEntity(1)
     entity.isSettingsRemnant = true
     const result = projectUpdates.trySetFirstStage(project, entity, 2)
-    expect(result).to.be(StageMoveResult.NoChange)
-    expect(entity.firstStage).to.be(1)
+    expect(result).toBe(StageMoveResult.NoChange)
+    expect(entity.firstStage).toBe(1)
     assertOneEntity()
     assertWUNotCalled()
   })
@@ -696,7 +702,7 @@ describe("trySetFirstStage", () => {
   test("returns no-change if already at stage", () => {
     const { entity } = addEntity(1)
     const result = projectUpdates.trySetFirstStage(project, entity, 1)
-    expect(result).to.be(StageMoveResult.NoChange)
+    expect(result).toBe(StageMoveResult.NoChange)
   })
 
   test("cannot move down if will intersect another entity", () => {
@@ -705,14 +711,14 @@ describe("trySetFirstStage", () => {
     const { entity: entity2 } = addEntity(3) // prevents moving up
 
     const result = projectUpdates.trySetFirstStage(project, entity2, 2)
-    expect(result).to.be(StageMoveResult.IntersectsAnotherEntity)
+    expect(result).toBe(StageMoveResult.IntersectsAnotherEntity)
   })
 
   test("cannot move past last stage", () => {
     const { entity } = addEntity(1)
     entity.setLastStageUnchecked(2)
     const result = projectUpdates.trySetFirstStage(project, entity, 5)
-    expect(result).to.be(StageMoveResult.CannotMovePastLastStage)
+    expect(result).toBe(StageMoveResult.CannotMovePastLastStage)
   })
 })
 
@@ -721,8 +727,8 @@ describe("trySetLastStage", () => {
     const { entity } = addEntity(2)
     entity.setLastStageUnchecked(3)
     const result = projectUpdates.trySetLastStage(project, entity, 2)
-    expect(result).to.be("updated")
-    expect(entity.lastStage).to.be(2)
+    expect(result).toBe("updated")
+    expect(entity.lastStage).toBe(2)
     assertOneEntity()
     assertUpdateOnLastStageChangedCalled(entity, 3)
   })
@@ -730,8 +736,8 @@ describe("trySetLastStage", () => {
     const { entity } = addEntity(2)
     entity.setLastStageUnchecked(3)
     const result = projectUpdates.trySetLastStage(project, entity, 4)
-    expect(result).to.be("updated")
-    expect(entity.lastStage).to.be(4)
+    expect(result).toBe("updated")
+    expect(entity.lastStage).toBe(4)
     assertOneEntity()
     assertUpdateOnLastStageChangedCalled(entity, 3)
   })
@@ -740,8 +746,8 @@ describe("trySetLastStage", () => {
     const { entity } = addEntity(2)
     entity.setLastStageUnchecked(3)
     const result = projectUpdates.trySetLastStage(project, entity, nil)
-    expect(result).to.be("updated")
-    expect(entity.lastStage).to.be(nil)
+    expect(result).toBe("updated")
+    expect(entity.lastStage).toBe(nil)
     assertOneEntity()
     assertUpdateOnLastStageChangedCalled(entity, 3)
   })
@@ -750,8 +756,8 @@ describe("trySetLastStage", () => {
     const { entity } = addEntity(1)
     entity.isSettingsRemnant = true
     const result = projectUpdates.trySetLastStage(project, entity, 2)
-    expect(result).to.be(StageMoveResult.NoChange)
-    expect(entity.lastStage).to.be(nil)
+    expect(result).toBe(StageMoveResult.NoChange)
+    expect(entity.lastStage).toBe(nil)
     assertOneEntity()
     assertWUNotCalled()
   })
@@ -760,7 +766,7 @@ describe("trySetLastStage", () => {
     const { entity } = addEntity(1)
     entity.setLastStageUnchecked(2)
     const result = projectUpdates.trySetLastStage(project, entity, 2)
-    expect(result).to.be(StageMoveResult.NoChange)
+    expect(result).toBe(StageMoveResult.NoChange)
   })
 
   test("cannot move up if will intersect another entity", () => {
@@ -769,14 +775,14 @@ describe("trySetLastStage", () => {
     addEntity(3) // prevents moving down
 
     const result = projectUpdates.trySetLastStage(project, entity1, 3)
-    expect(result).to.be(StageMoveResult.IntersectsAnotherEntity)
+    expect(result).toBe(StageMoveResult.IntersectsAnotherEntity)
   })
 
   test("cannot move before first stage", () => {
     const { entity } = addEntity(1)
     entity.setLastStageUnchecked(2)
     const result = projectUpdates.trySetLastStage(project, entity, 0)
-    expect(result).to.be(StageMoveResult.CannotMoveBeforeFirstStage)
+    expect(result).toBe(StageMoveResult.CannotMoveBeforeFirstStage)
   })
 })
 
@@ -805,13 +811,13 @@ describe("undergrounds", () => {
       type: "input",
     })
     const entity = projectUpdates.addNewEntity(project, luaEntity2, 2) as ProjectEntity<UndergroundBeltEntity>
-    expect(entity).to.be.any()
+    expect(entity).toBeAny()
 
-    expect(entity.firstValue.type).to.be("output")
+    expect(entity.firstValue.type).toBe("output")
     assertNEntities(2)
 
     assertNewUpdated(entity)
-    // assert.spy(wireSaver.saveWireConnections).calledWith(project.content, entity, 1)
+    // assert.spy(wireSaver.saveWireConnections).toHaveBeenCalledWith(project.content, entity, 1)
   })
 
   function createUndergroundBeltPair(
@@ -839,10 +845,10 @@ describe("undergrounds", () => {
       assert(rotated)
 
       const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, 1)
-      expect(ret).to.be("updated")
+      expect(ret).toBe("updated")
 
-      expect(entity.firstValue.type).to.be("output")
-      expect(entity.direction).to.be(direction.east)
+      expect(entity.firstValue.type).toBe("output")
+      expect(entity.direction).toBe(direction.east)
 
       assertOneEntity()
       assertUpdateCalled(entity, 1)
@@ -856,10 +862,10 @@ describe("undergrounds", () => {
 
       entity.replaceWorldEntity(2, luaEntity)
       const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, 2)
-      expect(ret).to.be("cannot-rotate")
+      expect(ret).toBe("cannot-rotate")
 
-      expect(entity.firstValue.type).to.be("input")
-      expect(entity.direction).to.be(direction.west)
+      expect(entity.firstValue.type).toBe("input")
+      expect(entity.direction).toBe(direction.west)
 
       assertOneEntity()
       assertResetUndergroundRotationCalled(entity, 2)
@@ -873,7 +879,7 @@ describe("undergrounds", () => {
       assert(rotated)
 
       const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity, entity.firstStage)
-      expect(ret).to.be("updated")
+      expect(ret).toBe("updated")
 
       expect(entity1).toMatchTable({
         firstValue: { type: "output" },
@@ -897,7 +903,7 @@ describe("undergrounds", () => {
 
       entity1.replaceWorldEntity(3, luaEntity1)
       const ret = projectUpdates.tryRotateEntityToMatchWorld(project, entity1, 3)
-      expect(ret).to.be("cannot-rotate")
+      expect(ret).toBe("cannot-rotate")
 
       expect(entity1).toMatchTable({
         firstValue: { type: "input" },
@@ -923,11 +929,11 @@ describe("undergrounds", () => {
         force: luaEntity.force,
       })
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
-      expect(ret).to.be("updated")
+      expect(ret).toBe("updated")
 
-      expect(entity.firstValue.name).to.be("fast-underground-belt")
-      expect(entity.firstValue.type).to.be("input")
-      expect(entity.direction).to.be(direction.west)
+      expect(entity.firstValue.name).toBe("fast-underground-belt")
+      expect(entity.firstValue.type).toBe("input")
+      expect(entity.direction).toBe(direction.west)
       assertOneEntity()
       assertUpdateCalled(entity, 1)
     })
@@ -940,10 +946,10 @@ describe("undergrounds", () => {
       })
       entity.replaceWorldEntity(2, luaEntity)
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 2)
-      expect(ret).to.be("updated")
+      expect(ret).toBe("updated")
 
-      expect(entity.getValueAtStage(2)?.name).to.be("fast-underground-belt")
-      expect(entity.firstValue.type).to.be("input")
+      expect(entity.getValueAtStage(2)?.name).toBe("fast-underground-belt")
+      expect(entity.firstValue.type).toBe("input")
 
       assertOneEntity()
       assertUpdateCalled(entity, 2)
@@ -957,7 +963,7 @@ describe("undergrounds", () => {
         direction: oppositedirection(luaEntity.direction),
       })
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
-      expect(ret).to.be("updated")
+      expect(ret).toBe("updated")
 
       expect(entity).toMatchTable({
         firstValue: {
@@ -977,7 +983,7 @@ describe("undergrounds", () => {
         direction: oppositedirection(luaEntity.direction),
       })
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 1)
-      expect(ret).to.be("updated")
+      expect(ret).toBe("updated")
 
       expect(entity).toMatchTable({
         firstValue: {
@@ -998,7 +1004,7 @@ describe("undergrounds", () => {
       })
       entity.replaceWorldEntity(2, luaEntity)
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, 2)
-      expect(ret).to.be("cannot-rotate")
+      expect(ret).toBe("cannot-rotate")
 
       expect(entity).toMatchTable({
         firstValue: {
@@ -1025,7 +1031,7 @@ describe("undergrounds", () => {
         })
         entity.replaceWorldEntity(endStage, luaEntity)
         const ret = projectUpdates.tryApplyUpgradeTarget(project, entity, endStage)
-        expect(ret).to.be("updated")
+        expect(ret).toBe("updated")
 
         expect(entity1).toMatchTable({
           firstValue: { name: "fast-underground-belt", type: "input" },
@@ -1054,11 +1060,11 @@ describe("undergrounds", () => {
       })
 
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity1, 1)
-      expect(ret).to.be("cannot-upgrade-changed-pair")
+      expect(ret).toBe("cannot-upgrade-changed-pair")
 
-      expect(entity1.firstValue.name).to.be("underground-belt")
-      expect(entity2.firstValue.name).to.be("underground-belt")
-      expect(entity3.firstValue.name).to.be("fast-underground-belt")
+      expect(entity1.firstValue.name).toBe("underground-belt")
+      expect(entity2.firstValue.name).toBe("underground-belt")
+      expect(entity3.firstValue.name).toBe("fast-underground-belt")
 
       assertNEntities(3)
       assertRefreshCalled(entity1, 1)
@@ -1077,11 +1083,11 @@ describe("undergrounds", () => {
         force: luaEntity3.force,
       })
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity3, 1)
-      expect(ret).to.be("cannot-upgrade-changed-pair")
+      expect(ret).toBe("cannot-upgrade-changed-pair")
 
-      expect(entity1.firstValue.name).to.be("underground-belt")
-      expect(entity2.firstValue.name).to.be("underground-belt")
-      expect(entity3.firstValue.name).to.be("fast-underground-belt")
+      expect(entity1.firstValue.name).toBe("underground-belt")
+      expect(entity2.firstValue.name).toBe("underground-belt")
+      expect(entity3.firstValue.name).toBe("fast-underground-belt")
 
       assertNEntities(3)
       assertRefreshCalled(entity3, 1)
@@ -1100,7 +1106,7 @@ describe("undergrounds", () => {
       })
 
       const ret = projectUpdates.tryApplyUpgradeTarget(project, entity1, 1)
-      expect(ret).to.be(EntityUpdateResult.CannotUpgradeChangedPair)
+      expect(ret).toBe(EntityUpdateResult.CannotUpgradeChangedPair)
 
       expect(entity1).toMatchTable({
         firstValue: { name: "underground-belt", type: "output" },
@@ -1126,11 +1132,11 @@ describe("undergrounds", () => {
       type: luaEntity1.belt_to_ground_type,
       fast_replace: true,
     })!
-    expect(newEntity).to.be.any()
+    expect(newEntity).toBeAny()
     entity1.replaceWorldEntity(1, newEntity)
 
     const ret = projectUpdates.tryUpdateEntityFromWorld(project, entity1, 1)
-    expect(ret).to.be("updated")
+    expect(ret).toBe("updated")
 
     expect(entity1).toMatchTable({
       firstValue: { name: "fast-underground-belt", type: "input" },
@@ -1282,18 +1288,18 @@ describe("rolling stock", () => {
   }
   test("can save rolling stock", () => {
     const result = projectUpdates.addNewEntity(project, rollingStock, 1)!
-    expect(result).to.be.any()
-    expect(result.firstValue.name).to.be("locomotive")
+    expect(result).toBeAny()
+    expect(result.firstValue.name).toBe("locomotive")
 
     assertNEntities(1)
 
     const found = project.content.findCompatibleByProps(rollingStock.name, rollingStock.position, nil, 1)!
-    expect(found).to.be.any()
-    expect(found).to.be(result)
+    expect(found).toBeAny()
+    expect(found).toBe(result)
 
     const foundDirectly = project.content.findCompatibleWithLuaEntity(rollingStock, nil, 1)
-    expect(foundDirectly).to.be.any()
-    expect(foundDirectly).to.be(found)
+    expect(foundDirectly).toBeAny()
+    expect(foundDirectly).toBe(found)
 
     assertNewUpdated(result)
   })
@@ -1346,7 +1352,7 @@ describe("trains", () => {
       projectUpdates.setTrainLocationToCurrent(project, anEntity)
 
       for (let i = 0; i < 3; i++) {
-        expect(projectEntities[i].position).to.equal(entities[i].position)
+        expect(projectEntities[i].position).toEqual(entities[i].position)
       }
       assertReplaceCalled(projectEntities[0], 1)
       assertReplaceCalled(projectEntities[1], 1)

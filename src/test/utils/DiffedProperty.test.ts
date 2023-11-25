@@ -12,47 +12,47 @@ before_each(() => {
   prop = new DiffedProperty(override, defaultValue)
 })
 test("sets the override property when not equal to default", () => {
-  expect(prop.get()).to.be(false)
+  expect(prop.get()).toBe(false)
 
   prop.set(true)
-  expect(prop.get()).to.be(true)
-  expect(override.get()).to.be(true)
+  expect(prop.get()).toBe(true)
+  expect(override.get()).toBe(true)
 
   prop.set(false)
-  expect(prop.get()).to.be(false)
-  expect(override.get()).to.be(nil)
+  expect(prop.get()).toBe(false)
+  expect(override.get()).toBe(nil)
 })
 test("has the value of default when override is nil", () => {
   defaultValue.set(true)
-  expect(prop.get()).to.be(true)
-  expect(override.get()).to.be(nil)
+  expect(prop.get()).toBe(true)
+  expect(override.get()).toBe(nil)
 
   defaultValue.set(false)
-  expect(prop.get()).to.be(false)
-  expect(override.get()).to.be(nil)
+  expect(prop.get()).toBe(false)
+  expect(override.get()).toBe(nil)
 })
 
 test("preserves override if default value set later", () => {
   prop.set(true)
   defaultValue.set(true) // set LATER to match
 
-  expect(prop.get()).to.be(true)
-  expect(override.get()).to.be(true)
+  expect(prop.get()).toBe(true)
+  expect(override.get()).toBe(true)
 
   defaultValue.set(false)
 
-  expect(prop.get()).to.be(true)
-  expect(override.get()).to.be(true)
+  expect(prop.get()).toBe(true)
+  expect(override.get()).toBe(true)
 })
 
 test("can override with nil using nilPlaceholder", () => {
   const nilPlaceholder: NilPlaceholder = getNilPlaceholder()
   override.set(nilPlaceholder)
-  expect(prop.get()).to.be(nil)
+  expect(prop.get()).toBe(nil)
 
   override.set(true)
-  expect(prop.get()).to.be(true)
+  expect(prop.get()).toBe(true)
 
   override.set(nil)
-  expect(prop.get()).to.be(false)
+  expect(prop.get()).toBe(false)
 })

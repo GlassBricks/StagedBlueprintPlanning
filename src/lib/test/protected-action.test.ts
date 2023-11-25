@@ -9,13 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect, { mock } from "tstl-expect"
 import { L_Interaction } from "../../locale"
 import { protectedAction } from "../protected-action"
-import expect, { mock } from "tstl-expect"
 
 test("Protected action with no error", () => {
   const result = protectedAction(() => "test")
-  expect(result).to.equal("test")
+  expect(result).toEqual("test")
 })
 
 test("Protected action with unexpected error", () => {
@@ -24,6 +24,6 @@ test("Protected action with unexpected error", () => {
   after_test(() => rawset(game, "print", nil!))
 
   const result = protectedAction(() => error("test1231"))
-  expect(result).to.be.nil()
-  expect(sp).to.be.calledWith([L_Interaction.UnexpectedError, expect.stringMatching("test1231")])
+  expect(result).toBeNil()
+  expect(sp).toHaveBeenCalledWith([L_Interaction.UnexpectedError, expect.stringMatching("test1231")])
 })

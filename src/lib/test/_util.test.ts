@@ -21,8 +21,8 @@ test("shallowCopy", () => {
     },
   }
   const copy = shallowCopy(obj)
-  expect(1).to.be(copy.a)
-  expect(obj.b).to.be(copy.b)
+  expect(1).toBe(copy.a)
+  expect(obj.b).toBe(copy.b)
 })
 
 test("compare", () => {
@@ -40,7 +40,7 @@ test("compare", () => {
       d: 3,
     },
   }
-  expect(deepCompare(a, b)).to.be(true)
+  expect(deepCompare(a, b)).toBe(true)
   const c = {
     a: 1,
     b: {
@@ -48,10 +48,10 @@ test("compare", () => {
       d: 4,
     },
   }
-  expect(deepCompare(a, c)).to.be(false)
+  expect(deepCompare(a, c)).toBe(false)
 })
 
 test("isEmpty", () => {
-  expect(isEmpty({})).to.be(true)
-  expect(isEmpty({ a: 1 })).to.be(false)
+  expect(isEmpty({})).toBe(true)
+  expect(isEmpty({ a: 1 })).toBe(false)
 })

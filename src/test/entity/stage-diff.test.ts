@@ -28,7 +28,7 @@ const entity2 = {
 }
 test("getEntityDiff", () => {
   const diff = getEntityDiff(entity1, entity2)
-  expect(diff).to.equal({
+  expect(diff).toEqual({
     name: "2",
     changedProp: { x: 2, y: 2 },
     setToNil: getNilPlaceholder(),
@@ -38,5 +38,5 @@ test("applyDiffToEntity", () => {
   const diff = getEntityDiff(entity1, entity2)!
   const entity = { ...entity1 }
   applyDiffToEntity(entity, diff)
-  expect(entity).to.equal(entity2)
+  expect(entity).toEqual(entity2)
 })

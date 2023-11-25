@@ -25,13 +25,13 @@ before_each(() => {
 
 test("add and get", () => {
   map2d.add(1, 1, ["a"])
-  expect(map2d.get(1, 1)).to.equal(["a"])
+  expect(map2d.get(1, 1)).toEqual(["a"])
 })
 
 test("add and get multiple", () => {
   map2d.add(1, 1, ["a"])
   map2d.add(1, 1, ["b"])
-  expect(map2d.get(1, 1)).to.equal({
+  expect(map2d.get(1, 1)).toEqual({
     [1]: "b",
     _next: ["a"],
   })
@@ -40,8 +40,8 @@ test("add and get multiple", () => {
 test("add in multiple coords", () => {
   map2d.add(1, 1, ["a"])
   map2d.add(2, 2, ["b"])
-  expect(map2d.get(1, 1)).to.equal(["a"])
-  expect(map2d.get(2, 2)).to.equal(["b"])
+  expect(map2d.get(1, 1)).toEqual(["a"])
+  expect(map2d.get(2, 2)).toEqual(["b"])
 })
 
 test("remove and get first", () => {
@@ -49,7 +49,7 @@ test("remove and get first", () => {
   map2d.add(1, 1, va)
   map2d.add(1, 1, ["b"])
   map2d.delete(1, 1, va)
-  expect(map2d.get(1, 1)).to.equal(["b"])
+  expect(map2d.get(1, 1)).toEqual(["b"])
 })
 
 test("remove and get second", () => {
@@ -57,14 +57,14 @@ test("remove and get second", () => {
   map2d.add(1, 1, ["b"])
   map2d.add(1, 1, va)
   map2d.delete(1, 1, va)
-  expect(map2d.get(1, 1)).to.equal(["b"])
+  expect(map2d.get(1, 1)).toEqual(["b"])
 })
 
 test("removes empty entries", () => {
   const va = ["a"]
   map2d.add(1, 1, va)
   map2d.delete(1, 1, va)
-  expect(map2d).to.equal({})
+  expect(map2d).toEqual({})
 })
 
 test("removes empty from multiple values", () => {
@@ -74,5 +74,5 @@ test("removes empty from multiple values", () => {
   map2d.add(1, 1, vb)
   map2d.delete(1, 1, va)
   map2d.delete(1, 1, vb)
-  expect(map2d).to.equal({})
+  expect(map2d).toEqual({})
 })

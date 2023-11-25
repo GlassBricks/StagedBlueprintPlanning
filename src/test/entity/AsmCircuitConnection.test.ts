@@ -37,8 +37,8 @@ test("circuitConnectionEquals", () => {
     fromId: defines.circuit_connector_id.constant_combinator,
     wire: defines.wire_type.red,
   }
-  expect(circuitConnectionEquals(circuitConnectionA, identical)).to.be(true)
-  expect(circuitConnectionEquals(circuitConnectionA, circuitConnectionB)).to.be(true)
+  expect(circuitConnectionEquals(circuitConnectionA, identical)).toBe(true)
+  expect(circuitConnectionEquals(circuitConnectionA, circuitConnectionB)).toBe(true)
 
   const different: ProjectCircuitConnection = {
     toEntity: entityA,
@@ -47,8 +47,8 @@ test("circuitConnectionEquals", () => {
     fromId: defines.circuit_connector_id.accumulator,
     wire: defines.wire_type.red,
   }
-  expect(circuitConnectionEquals(circuitConnectionA, different)).to.be(false)
-  expect(circuitConnectionEquals(circuitConnectionB, different)).to.be(false)
+  expect(circuitConnectionEquals(circuitConnectionA, different)).toBe(false)
+  expect(circuitConnectionEquals(circuitConnectionB, different)).toBe(false)
 })
 
 test("getDirectionalInfo", () => {
@@ -62,12 +62,12 @@ test("getDirectionalInfo", () => {
     toId: defines.circuit_connector_id.constant_combinator,
     wire: defines.wire_type.red,
   }
-  expect(getDirectionalInfo(circuitConnectionA, entityA)).to.equal([
+  expect(getDirectionalInfo(circuitConnectionA, entityA)).toEqual([
     entityB,
     defines.circuit_connector_id.accumulator,
     defines.circuit_connector_id.constant_combinator,
   ])
-  expect(getDirectionalInfo(circuitConnectionA, entityB)).to.equal([
+  expect(getDirectionalInfo(circuitConnectionA, entityB)).toEqual([
     entityA,
     defines.circuit_connector_id.constant_combinator,
     defines.circuit_connector_id.accumulator,
@@ -84,8 +84,8 @@ test("circuitConnectionMatches", () => {
     toId: 1,
     wire: defines.wire_type.red,
   }
-  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 1, 0)).to.be(true)
-  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityB, 0, 1)).to.be(true)
-  expect(circuitConnectionMatches(connection, defines.wire_type.green, entityA, 1, 0)).to.be(false)
-  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 0, 1)).to.be(false)
+  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 1, 0)).toBe(true)
+  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityB, 0, 1)).toBe(true)
+  expect(circuitConnectionMatches(connection, defines.wire_type.green, entityA, 1, 0)).toBe(false)
+  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 0, 1)).toBe(false)
 })

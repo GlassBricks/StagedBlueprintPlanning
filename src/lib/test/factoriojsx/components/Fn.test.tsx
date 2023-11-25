@@ -9,11 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import expect from "tstl-expect"
+import { property } from "../../../event"
 import { FactorioJsx } from "../../../factoriojsx"
 import { Fn } from "../../../factoriojsx/components"
-import { property } from "../../../event"
 import { testRender } from "../../gui"
-import expect from "tstl-expect"
 
 test("fn", () => {
   const val = property("one")
@@ -22,7 +22,7 @@ test("fn", () => {
     return wrapper.findAll("label").map((x) => x.element.caption)
   }
 
-  expect(findLabels()).to.equal(["one"])
+  expect(findLabels()).toEqual(["one"])
   val.set("two")
-  expect(findLabels()).to.equal(["two"])
+  expect(findLabels()).toEqual(["two"])
 })

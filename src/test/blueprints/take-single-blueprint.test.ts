@@ -60,12 +60,12 @@ test("can take blueprint and settings applied", () => {
   const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
   expect(ret).toBeTruthy()
 
-  expect(stack.blueprint_icons).to.equal(settings.icons)
-  expect(stack.blueprint_snap_to_grid).to.equal(settings.snapToGrid)
-  expect(stack.blueprint_absolute_snapping).to.be(settings.absoluteSnapping)
-  expect(stack.blueprint_position_relative_to_grid).to.equal(settings.positionRelativeToGrid)
+  expect(stack.blueprint_icons).toEqual(settings.icons)
+  expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
+  expect(stack.blueprint_absolute_snapping).toBe(settings.absoluteSnapping)
+  expect(stack.blueprint_position_relative_to_grid).toEqual(settings.positionRelativeToGrid)
   const entities = stack.get_blueprint_entities()!
-  expect(entities.length).to.be(2)
+  expect(entities.length).toBe(2)
   expect(entities[0]).toMatchTable({
     name: belt.name,
     tags: { [FirstEntityOriginalPositionTag]: belt.position },
@@ -83,9 +83,9 @@ test("can take blueprint and settings applied", () => {
   })
 
   const tiles = stack.get_blueprint_tiles()!
-  expect(tiles).to.be.any()
+  expect(tiles).toBeAny()
   expect(tiles).toHaveLength(1)
-  expect(tiles[0].position).to.equal(settings.positionOffset)
+  expect(tiles[0].position).toEqual(settings.positionOffset)
 })
 
 test("forEdit position offset still works when first entity is blacklisted", () => {
@@ -108,21 +108,21 @@ test("forEdit position offset still works when first entity is blacklisted", () 
   const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
   expect(ret).toBeTruthy()
 
-  expect(stack.blueprint_snap_to_grid).to.equal(settings.snapToGrid)
-  expect(stack.blueprint_absolute_snapping).to.be(settings.absoluteSnapping)
-  expect(stack.blueprint_position_relative_to_grid).to.equal(settings.positionRelativeToGrid)
+  expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
+  expect(stack.blueprint_absolute_snapping).toBe(settings.absoluteSnapping)
+  expect(stack.blueprint_position_relative_to_grid).toEqual(settings.positionRelativeToGrid)
 
   const entities = stack.get_blueprint_entities()!
-  expect(entities.length).to.be(1)
+  expect(entities.length).toBe(1)
   expect(entities[0]).toMatchTable({
     name: chest.name,
     tags: { [FirstEntityOriginalPositionTag]: chest.position },
   })
 
   const tiles = stack.get_blueprint_tiles()!
-  expect(tiles).to.be.any()
+  expect(tiles).toBeAny()
   expect(tiles).toHaveLength(1)
-  expect(tiles[0].position).to.equal(settings.positionOffset)
+  expect(tiles[0].position).toEqual(settings.positionOffset)
 })
 
 test("applies blacklist", () => {
@@ -142,7 +142,7 @@ test("applies blacklist", () => {
   expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
-  expect(entities.length).to.be(1)
+  expect(entities.length).toBe(1)
   expect(entities[0]).toMatchTable({ name: belt.name })
   expect(entities[0]).not.toHaveKey("tags")
 })
@@ -163,8 +163,8 @@ test("applies unit number filter", () => {
   expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
-  expect(entities.length).to.be(1)
-  expect(entities[0].name).to.equal(chest.name)
+  expect(entities.length).toBe(1)
+  expect(entities[0].name).toEqual(chest.name)
 })
 
 test("applies unit number filter as well as whitelist", () => {
@@ -184,8 +184,8 @@ test("applies unit number filter as well as whitelist", () => {
   expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
-  expect(entities.length).to.be(1)
-  expect(entities[0].name).to.equal(belt.name)
+  expect(entities.length).toBe(1)
+  expect(entities[0].name).toEqual(belt.name)
 })
 
 test("replace infinity entities with constant combinators", () => {
@@ -195,7 +195,7 @@ test("replace infinity entities with constant combinators", () => {
     position: [0.5, 0.5],
     force: "player",
   })!
-  expect(chest).to.be.any()
+  expect(chest).toBeAny()
   chest.infinity_container_filters = [
     {
       index: 1,
@@ -214,7 +214,7 @@ test("replace infinity entities with constant combinators", () => {
     position: [1.5, 0.5],
     force: "player",
   })!
-  expect(belt).to.be.any()
+  expect(belt).toBeAny()
   belt.connect_neighbour({ wire: defines.wire_type.red, target_entity: chest })
   // infinity pipe
   const pipe = surface.create_entity({
@@ -240,11 +240,11 @@ test("replace infinity entities with constant combinators", () => {
   expect(res).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
-  expect(entities.length).to.be(3)
+  expect(entities.length).toBe(3)
 
-  expect(entities[0].position).to.equal(pipe.position)
-  expect(entities[0].name).to.equal("constant-combinator")
-  expect(entities[0].control_behavior).to.equal({
+  expect(entities[0].position).toEqual(pipe.position)
+  expect(entities[0].name).toEqual("constant-combinator")
+  expect(entities[0].control_behavior).toEqual({
     filters: [
       {
         index: 1,
@@ -254,18 +254,18 @@ test("replace infinity entities with constant combinators", () => {
     ],
   })
 
-  expect(entities[1].position).to.equal(belt.position)
-  expect(entities[1].name).to.equal("transport-belt")
+  expect(entities[1].position).toEqual(belt.position)
+  expect(entities[1].name).toEqual("transport-belt")
 
-  expect(entities[2].position).to.equal(chest.position)
-  expect(entities[2].name).to.equal("constant-combinator")
-  expect(entities[2].control_behavior).to.equal({
+  expect(entities[2].position).toEqual(chest.position)
+  expect(entities[2].name).toEqual("constant-combinator")
+  expect(entities[2].control_behavior).toEqual({
     filters: [
       { index: 1, count: 60, signal: { type: "item", name: "iron-plate" } },
       { index: 2, count: 80, signal: { type: "item", name: "copper-plate" } },
     ],
   } as BlueprintControlBehavior)
-  expect(entities[2].connections!["1"]).to.equal({
+  expect(entities[2].connections!["1"]).toEqual({
     red: [{ entity_id: 2 }],
   })
 })

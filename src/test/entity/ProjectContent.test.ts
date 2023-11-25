@@ -29,11 +29,11 @@ const surfaces = setupTestSurfaces(1)
 
 test("countNumEntities", () => {
   const entity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-  expect(content.countNumEntities()).to.be(0)
+  expect(content.countNumEntities()).toBe(0)
   content.add(entity)
-  expect(content.countNumEntities()).to.be(1)
+  expect(content.countNumEntities()).toBe(1)
   content.delete(entity)
-  expect(content.countNumEntities()).to.be(0)
+  expect(content.countNumEntities()).toBe(0)
 })
 
 describe("findCompatible", () => {
@@ -41,7 +41,7 @@ describe("findCompatible", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(entity)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(entity)
   })
 
   test("does not match if passed stage is higher than entity's last stage", () => {
@@ -49,7 +49,7 @@ describe("findCompatible", () => {
     content.add(entity)
     entity.setLastStageUnchecked(2)
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be.nil()
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBeNil()
   })
 
   test.each(["12", "21"])("if multiple matches, finds one with smallest firstStage, order %s", (o) => {
@@ -66,22 +66,22 @@ describe("findCompatible", () => {
       content.add(e2)
     }
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 2)).to.be(e1)
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).to.be(e2)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 2)).toBe(e1)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBe(e2)
   })
 
   test("if direction is nil, matches any direction", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, nil, 1)).to.be(entity)
+    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, nil, 1)).toBe(entity)
   })
 
   test("matches if different name in same category", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).to.be(
+    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(
       entity,
     )
   })
@@ -95,16 +95,16 @@ describe("findCompatible", () => {
     )
     content.add(entity)
 
-    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).to.be(entity)
+    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).toBe(entity)
   })
 
   test("not compatible", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     entity.setLastStageUnchecked(2)
-    expect(content.findCompatibleByProps("test2", entity.position, defines.direction.north, 2)).to.be.nil()
-    expect(content.findCompatibleByProps("foo", entity.position, defines.direction.south, 2)).to.be.nil()
-    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 2)).to.be.nil()
-    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 3)).to.be.nil()
+    expect(content.findCompatibleByProps("test2", entity.position, defines.direction.north, 2)).toBeNil()
+    expect(content.findCompatibleByProps("foo", entity.position, defines.direction.south, 2)).toBeNil()
+    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 2)).toBeNil()
+    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 3)).toBeNil()
   })
 })
 
@@ -113,9 +113,9 @@ test("findExact", () => {
   const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
   content.add(entity)
   entity.replaceWorldEntity(2, luaEntity)
-  expect(content.findExact(luaEntity, luaEntity.position, 2)).to.be(entity)
+  expect(content.findExact(luaEntity, luaEntity.position, 2)).toBe(entity)
   luaEntity.teleport(1, 1)
-  expect(content.findExact(luaEntity, { x: 0, y: 0 }, 2)).to.be(entity)
+  expect(content.findExact(luaEntity, { x: 0, y: 0 }, 2)).toBe(entity)
 })
 
 describe("findCompatibleWithLuaEntity", () => {
@@ -124,7 +124,7 @@ describe("findCompatibleWithLuaEntity", () => {
     const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
     content.add(entity)
 
-    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
 
   test("matches if is compatible", () => {
@@ -132,7 +132,7 @@ describe("findCompatibleWithLuaEntity", () => {
     const luaEntity = assert(surfaces[0].create_entity({ name: "steel-furnace", position: { x: 0, y: 0 } }))
     content.add(entity)
 
-    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
 
   test("matches opposite direction if pasteRotatableType is rectangular", () => {
@@ -144,7 +144,7 @@ describe("findCompatibleWithLuaEntity", () => {
     )
     content.add(entity)
 
-    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
 
   test("matches any direction if pasteRotatableType is square", () => {
@@ -169,7 +169,7 @@ describe("findCompatibleWithLuaEntity", () => {
     )
     content.add(entity)
 
-    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).to.be(entity)
+    expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
 
   test("matches underground both flipped and unflipped", () => {
@@ -200,8 +200,8 @@ describe("findCompatibleWithLuaEntity", () => {
     )
     content.add(projectEntity)
 
-    expect(content.findCompatibleWithLuaEntity(same, nil, 1)).to.be(projectEntity)
-    expect(content.findCompatibleWithLuaEntity(flipped, nil, 1)).to.be(projectEntity)
+    expect(content.findCompatibleWithLuaEntity(same, nil, 1)).toBe(projectEntity)
+    expect(content.findCompatibleWithLuaEntity(flipped, nil, 1)).toBe(projectEntity)
   })
 
   test("rolling stock only matches if is exact same entity", () => {
@@ -210,9 +210,9 @@ describe("findCompatibleWithLuaEntity", () => {
     content.add(entity)
     entity.replaceWorldEntity(1, a1)
 
-    expect(content.findCompatibleWithLuaEntity(a1, nil, 1)).to.be(entity)
-    expect(content.findCompatibleWithLuaEntity(a2, nil, 1)).to.be.nil()
-    expect(content.findCompatibleWithLuaEntity(a1, nil, 2)).to.be(entity)
+    expect(content.findCompatibleWithLuaEntity(a1, nil, 1)).toBe(entity)
+    expect(content.findCompatibleWithLuaEntity(a2, nil, 1)).toBeNil()
+    expect(content.findCompatibleWithLuaEntity(a1, nil, 2)).toBe(entity)
   })
 
   test("rails at same position but opposite direction are treated different only if diagonal", () => {
@@ -245,9 +245,9 @@ describe("findCompatibleWithLuaEntity", () => {
     content.add(entity1)
     content.add(entity2)
     // diagonal, so should have no match
-    expect(content.findCompatibleWithLuaEntity(luaEntity1, nil, 1)).to.be(nil)
+    expect(content.findCompatibleWithLuaEntity(luaEntity1, nil, 1)).toBe(nil)
     // orthogonal, so should have a match
-    expect(content.findCompatibleWithLuaEntity(luaEntity2, nil, 1)).to.be(entity2)
+    expect(content.findCompatibleWithLuaEntity(luaEntity2, nil, 1)).toBe(entity2)
   })
 })
 
@@ -255,9 +255,9 @@ test("changePosition", () => {
   const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
   content.add(entity)
   content.changePosition(entity, { x: 1, y: 1 })
-  expect(entity.position.x).to.be(1)
-  expect(entity.position.y).to.be(1)
-  expect(content.findCompatibleByProps("foo", { x: 1, y: 1 }, defines.direction.north, 1)).to.be(entity)
+  expect(entity.position.x).toBe(1)
+  expect(entity.position.y).toBe(1)
+  expect(content.findCompatibleByProps("foo", { x: 1, y: 1 }, defines.direction.north, 1)).toBe(entity)
 })
 
 describe("connections", () => {
@@ -288,18 +288,18 @@ describe("connections", () => {
     }
 
     test("getCircuitConnections initially empty", () => {
-      expect(content.getCircuitConnections(entity1)).to.be.nil()
+      expect(content.getCircuitConnections(entity1)).toBeNil()
     })
 
     test("addCircuitConnection shows up in getCircuitConnections", () => {
       const connection = createCircuitConnection(entity1, entity2)
       content.addCircuitConnection(connection)
-      expect(content.getCircuitConnections(entity1)!.get(entity2)).to.equal(newLuaSet(connection))
-      expect(content.getCircuitConnections(entity2)!.get(entity1)).to.equal(newLuaSet(connection))
+      expect(content.getCircuitConnections(entity1)!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(content.getCircuitConnections(entity2)!.get(entity1)).toEqual(newLuaSet(connection))
       const connection2 = createCircuitConnection(entity1, entity2, defines.wire_type.green)
       content.addCircuitConnection(connection2)
-      expect(content.getCircuitConnections(entity1)!.get(entity2)).to.equal(newLuaSet(connection, connection2))
-      expect(content.getCircuitConnections(entity2)!.get(entity1)).to.equal(newLuaSet(connection, connection2))
+      expect(content.getCircuitConnections(entity1)!.get(entity2)).toEqual(newLuaSet(connection, connection2))
+      expect(content.getCircuitConnections(entity2)!.get(entity1)).toEqual(newLuaSet(connection, connection2))
     })
 
     test("does not add if identical connection is already present", () => {
@@ -307,8 +307,8 @@ describe("connections", () => {
       const connection2 = createCircuitConnection(entity2, entity1)
       content.addCircuitConnection(connection)
       content.addCircuitConnection(connection2)
-      expect(content.getCircuitConnections(entity1)!.get(entity2)).to.equal(newLuaSet(connection))
-      expect(content.getCircuitConnections(entity2)!.get(entity1)).to.equal(newLuaSet(connection))
+      expect(content.getCircuitConnections(entity1)!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(content.getCircuitConnections(entity2)!.get(entity1)).toEqual(newLuaSet(connection))
     })
 
     test("removeCircuitConnection removes connection", () => {
@@ -316,60 +316,60 @@ describe("connections", () => {
       content.addCircuitConnection(connection)
       content.removeCircuitConnection(connection)
 
-      expect(content.getCircuitConnections(entity1)).to.be.nil()
-      expect(content.getCircuitConnections(entity2)).to.be.nil()
+      expect(content.getCircuitConnections(entity1)).toBeNil()
+      expect(content.getCircuitConnections(entity2)).toBeNil()
     })
 
     test("deleting entity removes its connections", () => {
       content.addCircuitConnection(createCircuitConnection(entity1, entity2))
       content.delete(entity1)
-      expect(content.getCircuitConnections(entity1) ?? nil).to.equal(nil)
-      expect(content.getCircuitConnections(entity2) ?? nil).to.equal(nil)
+      expect(content.getCircuitConnections(entity1) ?? nil).toEqual(nil)
+      expect(content.getCircuitConnections(entity2) ?? nil).toEqual(nil)
     })
   })
 
   describe("cable connections", () => {
     test("getCableConnections initially empty", () => {
-      expect(content.getCableConnections(entity1)).to.be.nil()
+      expect(content.getCableConnections(entity1)).toBeNil()
     })
 
     test("addCableConnection shows up in getCableConnections", () => {
-      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.Added)
-      expect(content.getCableConnections(entity1)!).to.equal(newLuaSet(entity2))
-      expect(content.getCableConnections(entity2)!).to.equal(newLuaSet(entity1))
+      expect(content.addCableConnection(entity1, entity2)).toBe(CableAddResult.Added)
+      expect(content.getCableConnections(entity1)!).toEqual(newLuaSet(entity2))
+      expect(content.getCableConnections(entity2)!).toEqual(newLuaSet(entity1))
     })
 
     test("removeCableConnection removes connection", () => {
       content.addCableConnection(entity1, entity2)
       content.removeCableConnection(entity2, entity1)
 
-      expect(content.getCableConnections(entity1) ?? nil).to.equal(nil)
-      expect(content.getCableConnections(entity2) ?? nil).to.equal(nil)
+      expect(content.getCableConnections(entity1) ?? nil).toEqual(nil)
+      expect(content.getCableConnections(entity2) ?? nil).toEqual(nil)
     })
 
     test("deleting entity removes its connections", () => {
       content.addCableConnection(entity1, entity2)
       content.delete(entity1)
-      expect(content.getCableConnections(entity1) ?? nil).to.equal(nil)
-      expect(content.getCableConnections(entity2) ?? nil).to.equal(nil)
+      expect(content.getCableConnections(entity1) ?? nil).toEqual(nil)
+      expect(content.getCableConnections(entity2) ?? nil).toEqual(nil)
     })
 
     test("can't add cable to itself", () => {
-      expect(content.addCableConnection(entity1, entity1)).to.be(CableAddResult.Error)
+      expect(content.addCableConnection(entity1, entity1)).toBe(CableAddResult.Error)
     })
 
     test("adding same cable twice does nothing", () => {
-      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.Added)
-      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.AlreadyExists)
+      expect(content.addCableConnection(entity1, entity2)).toBe(CableAddResult.Added)
+      expect(content.addCableConnection(entity1, entity2)).toBe(CableAddResult.AlreadyExists)
     })
 
     test("won't add if max connections is reached", () => {
       for (let i = 3; i < 3 + 5; i++) {
         const entity = makeProjectEntity(i)
         content.add(entity)
-        expect(content.addCableConnection(entity1, entity)).to.be(CableAddResult.Added)
+        expect(content.addCableConnection(entity1, entity)).toBe(CableAddResult.Added)
       }
-      expect(content.addCableConnection(entity1, entity2)).to.be(CableAddResult.MaxConnectionsReached)
+      expect(content.addCableConnection(entity1, entity2)).toBe(CableAddResult.MaxConnectionsReached)
     })
   })
 })

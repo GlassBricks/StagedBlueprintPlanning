@@ -66,16 +66,16 @@ describe("in-item blueprint settings", () => {
     ]
     settings.icons.set(icons)
     const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
-    expect(stack).to.be.any()
-    expect(stack.label).to.equal("Test")
-    expect(stack.valid_for_read && stack.is_blueprint).to.be(true)
+    expect(stack).toBeAny()
+    expect(stack.label).toEqual("Test")
+    expect(stack.valid_for_read && stack.is_blueprint).toBe(true)
     expect(stack.blueprint_icons).toEqual(icons)
   })
 
   test("can edit settings", () => {
     const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
-    expect(stack).to.be.any()
-    expect(stack.valid_for_read && stack.is_blueprint).to.be(true)
+    expect(stack).toBeAny()
+    expect(stack.valid_for_read && stack.is_blueprint).toBe(true)
 
     const icons: BlueprintSignalIcon[] = [{ signal: { type: "item", name: "iron-plate" }, index: 1 }]
     stack.blueprint_icons = icons
@@ -98,7 +98,7 @@ describe("in-item blueprint settings", () => {
 
     player.opened = nil
 
-    expect(stack.valid).to.be(false)
+    expect(stack.valid).toBe(false)
 
     const newSettings = getCurrentValues(settings)
     expect(newSettings).toMatchTable({
@@ -124,7 +124,7 @@ describe("in-item blueprint settings", () => {
 
     player.opened = nil
 
-    expect(stack.valid).to.be(false)
+    expect(stack.valid).toBe(false)
 
     const newSettings = getCurrentValues(settings)
     expect(newSettings).toMatchTable({
@@ -147,7 +147,7 @@ test.each(["additionalWhitelist", "blacklist"] as const)("can edit blueprint fil
 
   player.opened = nil
 
-  expect(settings[type].get()).to.equal(newLuaSet("iron-chest", "steel-chest"))
+  expect(settings[type].get()).toEqual(newLuaSet("iron-chest", "steel-chest"))
 })
 
 test.each(["additionalWhitelist", "blacklist"] as const)("can clear blueprint filters", (type) => {

@@ -23,7 +23,7 @@ test("Can register directly", () => {
   const func = () => {}
   Events.on(eventId, func)
 
-  expect(script.get_event_handler(eventId)).to.be(func)
+  expect(script.get_event_handler(eventId)).toBe(func)
 })
 
 test("Can register multiple", () => {
@@ -38,13 +38,13 @@ test("Can register multiple", () => {
     actions.push(3)
   })
   script.raise_script_set_tiles({ surface_index: 1 as SurfaceIndex, tiles: [] })
-  expect(actions).to.equal([1, 2, 3])
+  expect(actions).toEqual([1, 2, 3])
 })
 
 test("Shorthand register", () => {
   const func = () => {}
   Events.script_raised_set_tiles(func)
-  expect(script.get_event_handler(eventId)).to.be(func)
+  expect(script.get_event_handler(eventId)).toBe(func)
 })
 
 test("Object register", () => {
@@ -52,5 +52,5 @@ test("Object register", () => {
   Events.onAll({
     script_raised_set_tiles: func,
   })
-  expect(script.get_event_handler(eventId)).to.be(func)
+  expect(script.get_event_handler(eventId)).toBe(func)
 })

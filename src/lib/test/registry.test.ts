@@ -31,29 +31,29 @@ describe("registering", () => {
   test("Can register function", () => {
     const testFuncName = "foo"
     registry.registerRaw(testFuncName, "foo")
-    expect(registry.get(testFuncName)).to.equal("foo")
-    expect(registry.nameOf("foo")).to.equal(testFuncName)
+    expect(registry.get(testFuncName)).toEqual("foo")
+    expect(registry.nameOf("foo")).toEqual(testFuncName)
   })
 
   test("error on duplicate name", () => {
     expect(() => {
       registry.registerRaw("foo", "bar")
       registry.registerRaw("foo", "baz")
-    }).to.error()
+    }).toError()
   })
 
   test("error on nonexistent func", () => {
     expect(() => {
       registry.get("foo22")
-    }).to.error()
+    }).toError()
     expect(() => {
       registry.nameOf("foo22")
-    }).to.error()
+    }).toError()
   })
 })
 test("Error when registering after load", () => {
   expect(() => {
     const registry = new Registry<string>("string", (x) => x)
     registry.registerRaw("foo", "bar")
-  }).to.error()
+  }).toError()
 })

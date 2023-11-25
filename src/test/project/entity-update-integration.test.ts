@@ -107,9 +107,9 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 }
 
 function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | false) {
-  expect(entity.isSettingsRemnant).to.be.falsy()
+  expect(entity.isSettingsRemnant).toBeFalsy()
   const found = project.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
-  expect(found).to.be(entity)
+  expect(found).toBe(entity)
 
   let hasError: number | false = false
   for (const stage of $range(1, project.lastStageFor(entity))) {
@@ -131,33 +131,33 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
       hasError ||= stage
       const type = worldEntity.belt_to_ground_type
       const oppositeType = type == "input" ? "output" : "input"
-      expect(entity.direction).to.be(oppositedirection(worldEntity.direction))
-      expect(entity.firstValue.type).to.be(oppositeType)
+      expect(entity.direction).toBe(oppositedirection(worldEntity.direction))
+      expect(entity.firstValue.type).toBe(oppositeType)
     } else {
       const savedValue = saveEntity(worldEntity)
-      expect(savedValue).to.equal(value)
-      expect(worldEntity.direction).to.be(entity.direction)
+      expect(savedValue).toEqual(value)
+      expect(worldEntity.direction).toBe(entity.direction)
     }
     if (isPreview) {
-      expect(worldEntity.name).to.be(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)
+      expect(worldEntity.name).toBe(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)
     }
-    expect(worldEntity.position).to.equal(entity.position)
+    expect(worldEntity.position).toEqual(entity.position)
     if (isPreview) {
-      expect(worldEntity.direction).to.equal(entity.getPreviewDirection())
+      expect(worldEntity.direction).toEqual(entity.getPreviewDirection())
     } else if (entity.isUndergroundBelt() && entity.hasErrorAt(stage)) {
-      expect(worldEntity.direction).to.equal(oppositedirection(entity.direction))
+      expect(worldEntity.direction).toEqual(oppositedirection(entity.direction))
     } else {
-      expect(worldEntity.direction).to.equal(entity.direction)
+      expect(worldEntity.direction).toEqual(entity.direction)
     }
 
-    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).to.be.nil()
+    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).toBeNil()
   }
 
-  expect(hasError).to.be(expectedHasError)
+  expect(hasError).toBe(expectedHasError)
 
   // nothing after the last stage
   for (const stage of $range(project.lastStageFor(entity) + 1, project.numStages())) {
-    expect(entity.getWorldOrPreviewEntity(stage)).to.be.nil()
+    expect(entity.getWorldOrPreviewEntity(stage)).toBeNil()
   }
 
   assertErrorHighlightsCorrect(entity, project.lastStageFor(entity))
@@ -176,12 +176,12 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
         const cableNeighbors = (pole.neighbours as Record<"copper", LuaEntity[]>).copper.filter(
           (x) => x.type != "power-switch",
         )
-        expect(cableNeighbors).to.equal([])
+        expect(cableNeighbors).toEqual([])
       }
     }
     // else, ok
   } else {
-    expect(isElectricPole).to.be(true)
+    expect(isElectricPole).toBe(true)
     const otherNeighbors = Object.keys(cableConnections)
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
       const expectedNeighbors = otherNeighbors
@@ -193,7 +193,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
         .filter((x) => x.type != "power-switch")
         .map((o) => o.unit_number)
         .sort()
-      expect(actualNeighbors).to.equal(expectedNeighbors)
+      expect(actualNeighbors).toEqual(expectedNeighbors)
     }
   }
 
@@ -206,7 +206,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
       const wireNeighbors: CircuitOrPowerSwitchConnection[] | nil = worldEntity.circuit_connection_definitions
       if (!wireNeighbors) continue
       addPowerSwitchConnections(worldEntity, wireNeighbors, findPolePowerSwitchNeighbors(worldEntity))
-      expect(wireNeighbors).to.equal([])
+      expect(wireNeighbors).toEqual([])
     }
   } else {
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
@@ -227,39 +227,39 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
         wire: x.wire,
         entities: newLuaSet(x.target_entity.unit_number!, thisWorldEntity.unit_number!),
       }))
-      expect(actualNeighborsSet).to.equal(expectedNeighbors)
+      expect(actualNeighborsSet).toEqual(expectedNeighbors)
     }
   }
 }
 
 function assertEntityNotPresent(entity: ProjectEntity) {
   const found = project.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
-  expect(found).to.be.nil()
+  expect(found).toBeNil()
 
   for (const stage of $range(1, project.lastStageFor(entity))) {
-    expect(entity.getWorldOrPreviewEntity(stage)).to.be.nil()
+    expect(entity.getWorldOrPreviewEntity(stage)).toBeNil()
   }
-  expect(entity.hasAnyExtraEntities("errorOutline")).to.be(false)
-  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
+  expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
+  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
 }
 
 function assertIsSettingsRemnant(entity: ProjectEntity) {
-  expect(entity.isSettingsRemnant).to.be(true)
+  expect(entity.isSettingsRemnant).toBe(true)
   for (const stage of $range(1, project.lastStageFor(entity))) {
     const preview = entity.getWorldOrPreviewEntity(stage)!
-    expect(preview).to.be.any()
-    expect(isPreviewEntity(preview)).to.be(true)
-    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).to.be.any()
+    expect(preview).toBeAny()
+    expect(isPreviewEntity(preview)).toBe(true)
+    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).toBeAny()
   }
-  expect(entity.hasAnyExtraEntities("errorOutline")).to.be(false)
-  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).to.be(false)
+  expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
+  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
 }
 
 function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): ProjectEntity<BlueprintEntity> {
   const luaEntity = createEntity(stage, args)
   const entity = addNewEntity(project, luaEntity, stage) as ProjectEntity<BlueprintEntity>
   assert(entity)
-  expect(entity.firstStage).to.be(stage)
+  expect(entity.firstStage).toBe(stage)
   expect(entity.getWorldEntity(stage)).toEqual(luaEntity)
   return entity
 }
@@ -278,7 +278,7 @@ test("clear entity at stage", () => {
 test("entity can not be placed at stage", () => {
   createEntity(4, { name: "stone-wall" }) // blocker
   const entity = buildEntity(3)
-  expect(isPreviewEntity(entity.getWorldOrPreviewEntity(4)!)).to.be(true)
+  expect(isPreviewEntity(entity.getWorldOrPreviewEntity(4)!)).toBe(true)
   assertEntityCorrect(entity, 4)
 })
 
@@ -305,7 +305,7 @@ test("move via preview replace", () => {
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
   trySetFirstStage(project, entity, 2)
-  expect(entity.firstStage).to.be(2)
+  expect(entity.firstStage).toBe(2)
   assertEntityCorrect(entity, false)
 })
 
@@ -313,7 +313,7 @@ test("disallowing entity deletion", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   rebuildWorldEntityAtStage(project, entity, 4)
-  expect(worldEntity.valid).to.be(false) // replaced
+  expect(worldEntity.valid).toBe(false) // replaced
   assertEntityCorrect(entity, false)
 })
 
@@ -340,18 +340,18 @@ describe("revive integration test", () => {
     assertIsSettingsRemnant(entity)
 
     assert(tryReviveSettingsRemnant(project, entity, reviveStage))
-    expect(entity.isSettingsRemnant).to.be.falsy()
-    expect(reviveStage).to.be(entity.firstStage)
+    expect(entity.isSettingsRemnant).toBeFalsy()
+    expect(reviveStage).toBe(entity.firstStage)
 
     if (reviveStage >= 5) {
-      expect(entity.firstValue.override_stack_size).to.be(3)
-      expect(entity.hasStageDiff()).to.be(false)
+      expect(entity.firstValue.override_stack_size).toBe(3)
+      expect(entity.hasStageDiff()).toBe(false)
     } else if (reviveStage >= 3) {
-      expect(entity.firstValue.override_stack_size).to.be(2)
-      expect(entity.getStageDiffs()).to.equal({ 5: { override_stack_size: 3 } })
+      expect(entity.firstValue.override_stack_size).toBe(2)
+      expect(entity.getStageDiffs()).toEqual({ 5: { override_stack_size: 3 } })
     } else {
-      expect(entity.firstValue.override_stack_size).to.be(1)
-      expect(entity.getStageDiffs()).to.equal({ 3: { override_stack_size: 2 }, 5: { override_stack_size: 3 } })
+      expect(entity.firstValue.override_stack_size).toBe(1)
+      expect(entity.getStageDiffs()).toEqual({ 3: { override_stack_size: 2 }, 5: { override_stack_size: 3 } })
     }
 
     assertEntityCorrect(entity, false)
@@ -364,11 +364,11 @@ describe("revive integration test", () => {
     assertIsSettingsRemnant(entity)
 
     tryReviveSettingsRemnant(project, entity, 1)
-    expect(entity.isSettingsRemnant).to.be.falsy()
-    expect(1).to.be(entity.firstStage)
+    expect(entity.isSettingsRemnant).toBeFalsy()
+    expect(1).toBe(entity.firstStage)
 
-    expect(entity.firstValue.override_stack_size).to.be(1)
-    expect(entity.getStageDiffs()).to.equal({ 3: { override_stack_size: 3 } })
+    expect(entity.firstValue.override_stack_size).toBe(1)
+    expect(entity.getStageDiffs()).toEqual({ 3: { override_stack_size: 3 } })
 
     assertEntityCorrect(entity, false)
   })
@@ -388,8 +388,8 @@ test("updating first value from world", () => {
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.inserter_stack_size_override = 2
   const ret = tryUpdateEntityFromWorld(project, entity, 3)
-  expect(ret).to.be("updated")
-  expect(entity.firstValue.override_stack_size).to.be(2)
+  expect(ret).toBe("updated")
+  expect(entity.firstValue.override_stack_size).toBe(2)
   assertEntityCorrect(entity, false)
 })
 
@@ -398,10 +398,10 @@ test("updating higher value from world", () => {
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.inserter_stack_size_override = 2
   const ret = tryUpdateEntityFromWorld(project, entity, 4)
-  expect(ret).to.be("updated")
-  expect(entity.firstValue.override_stack_size).to.be(1)
-  expect(entity.hasStageDiff(4)).to.be(true)
-  expect(entity.getStageDiff(4)).to.equal({ override_stack_size: 2 })
+  expect(ret).toBe("updated")
+  expect(entity.firstValue.override_stack_size).toBe(1)
+  expect(entity.hasStageDiff(4)).toBe(true)
+  expect(entity.getStageDiff(4)).toEqual({ override_stack_size: 2 })
 
   assertEntityCorrect(entity, false)
 })
@@ -411,8 +411,8 @@ test("rotating first value from world via update", () => {
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
   const ret = tryUpdateEntityFromWorld(project, entity, 3)
-  expect(ret).to.be("updated")
-  expect(entity.direction).to.be(defines.direction.south)
+  expect(ret).toBe("updated")
+  expect(entity.direction).toBe(defines.direction.south)
   assertEntityCorrect(entity, false)
 })
 
@@ -421,7 +421,7 @@ test("rotating first value from world via rotate", () => {
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
   tryRotateEntityToMatchWorld(project, entity, 3)
-  expect(entity.direction).to.be(defines.direction.south)
+  expect(entity.direction).toBe(defines.direction.south)
   assertEntityCorrect(entity, false)
 })
 
@@ -447,12 +447,12 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
       direction: defines.direction.west,
       type: "input",
     })
-    expect(placedUnderground.direction).to.be(expectedDirection)
-    expect(placedUnderground.firstValue.type).to.be(eastType)
+    expect(placedUnderground.direction).toBe(expectedDirection)
+    expect(placedUnderground.firstValue.type).toBe(eastType)
     assertEntityCorrect(placedUnderground, false)
     // type defaults to input
-    expect(westUnderground.direction).to.be(expectedDirection)
-    expect(westUnderground.firstValue.type).to.be(westType)
+    expect(westUnderground.direction).toBe(expectedDirection)
+    expect(westUnderground.firstValue.type).toBe(westType)
 
     expect(westUnderground.getWorldEntity(4)!.neighbours).toEqual(placedUnderground.getWorldEntity(4)!)
   })
@@ -475,15 +475,15 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
     expect(ghost).toBeNil()
 
     const builtEntity = surfaces[3 - 1].find_entity("underground-belt", pos)!
-    expect(builtEntity).to.be.any()
-    expect(builtEntity.direction).to.be(expectedDirection)
-    expect(builtEntity.belt_to_ground_type).to.be(eastType)
+    expect(builtEntity).toBeAny()
+    expect(builtEntity.direction).toBe(expectedDirection)
+    expect(builtEntity.belt_to_ground_type).toBe(eastType)
 
     const entity = project.content.findCompatibleWithLuaEntity(builtEntity, nil, 3) as UndergroundBeltProjectEntity
-    expect(entity).to.be.any()
+    expect(entity).toBeAny()
     expect(entity.isUndergroundBelt()).toBe(true)
-    expect(entity.direction).to.be(expectedDirection)
-    expect(entity.firstValue.type).to.be(eastType)
+    expect(entity.direction).toBe(expectedDirection)
+    expect(entity.firstValue.type).toBe(eastType)
   })
 })
 
@@ -977,8 +977,8 @@ test("rotation forbidden at higher stage", () => {
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
   const ret = tryUpdateEntityFromWorld(project, entity, 4)
-  expect(ret).to.be("cannot-rotate")
-  expect(entity.direction).to.be(defines.direction.east)
+  expect(ret).toBe("cannot-rotate")
+  expect(entity.direction).toBe(defines.direction.east)
   assertEntityCorrect(entity, false)
 })
 
@@ -987,7 +987,7 @@ test("rotation forbidden at higher stage via rotate", () => {
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
   tryRotateEntityToMatchWorld(project, entity, 4)
-  expect(entity.direction).to.be(defines.direction.east)
+  expect(entity.direction).toBe(defines.direction.east)
   assertEntityCorrect(entity, false)
 })
 
@@ -996,8 +996,8 @@ test("creating upgrade via fast replace", () => {
   const replacedEntity = createEntity(4, { name: "stack-filter-inserter" })
   entity.replaceWorldEntity(4, replacedEntity)
   tryUpdateEntityFromWorld(project, entity, 4)
-  expect(entity.firstValue.name).to.be("filter-inserter")
-  expect(entity.getStageDiff(4)).to.equal({ name: "stack-filter-inserter" })
+  expect(entity.firstValue.name).toBe("filter-inserter")
+  expect(entity.getStageDiff(4)).toEqual({ name: "stack-filter-inserter" })
 
   assertEntityCorrect(entity, false)
 })
@@ -1029,8 +1029,8 @@ test("update with upgrade and blocker", () => {
   const entity = buildEntity(3)
 
   let preview = entity.getWorldOrPreviewEntity(5)!
-  expect(isPreviewEntity(preview)).to.be(true)
-  expect(preview.name).to.be(Prototypes.PreviewEntityPrefix + "filter-inserter")
+  expect(isPreviewEntity(preview)).toBe(true)
+  expect(preview.name).toBe(Prototypes.PreviewEntityPrefix + "filter-inserter")
 
   assertEntityCorrect(entity, 5)
 
@@ -1038,8 +1038,8 @@ test("update with upgrade and blocker", () => {
   refreshAllWorldEntities(project, entity)
 
   preview = entity.getWorldOrPreviewEntity(5)!
-  expect(isPreviewEntity(preview)).to.be(true)
-  expect(preview.name).to.be(Prototypes.PreviewEntityPrefix + "stack-filter-inserter")
+  expect(isPreviewEntity(preview)).toBe(true)
+  expect(preview.name).toBe(Prototypes.PreviewEntityPrefix + "stack-filter-inserter")
 
   assertEntityCorrect(entity, 5)
 })
@@ -1052,8 +1052,8 @@ test("creating upgrade via apply upgrade target", () => {
     target: "stack-filter-inserter",
   })
   tryApplyUpgradeTarget(project, entity, 4)
-  expect(entity.firstValue.name).to.be("filter-inserter")
-  expect(entity.getStageDiff(4)).to.equal({ name: "stack-filter-inserter" })
+  expect(entity.firstValue.name).toBe("filter-inserter")
+  expect(entity.getStageDiff(4)).toEqual({ name: "stack-filter-inserter" })
 
   assertEntityCorrect(entity, false)
 })
@@ -1062,25 +1062,25 @@ test("moving entity up", () => {
   const entity = buildEntity(3)
   assertEntityCorrect(entity, false)
   trySetFirstStage(project, entity, 4)
-  expect(entity.firstStage).to.be(4)
+  expect(entity.firstStage).toBe(4)
   assertEntityCorrect(entity, false)
 })
 
 test("moving entity down", () => {
   const entity = buildEntity(3)
   trySetFirstStage(project, entity, 2)
-  expect(entity.firstStage).to.be(2)
+  expect(entity.firstStage).toBe(2)
   assertEntityCorrect(entity, false)
 })
 
 test("dolly entity", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
-  expect(worldEntity.teleport(1, 0)).to.be(true)
+  expect(worldEntity.teleport(1, 0)).toBe(true)
   const newPosition = worldEntity.position
   const ret = tryDollyEntities(project, entity, 3)
-  expect(ret).to.be("success")
-  expect(entity.position).to.equal(newPosition)
+  expect(ret).toBe("success")
+  expect(entity.position).toEqual(newPosition)
   assertEntityCorrect(entity, false)
 })
 
@@ -1090,8 +1090,8 @@ test("resetProp", () => {
     override_stack_size: 2,
   })
   resetProp(project, entity, 4, "override_stack_size")
-  expect(entity.hasStageDiff()).to.be(false)
-  expect(entity.firstValue.override_stack_size).to.be(1)
+  expect(entity.hasStageDiff()).toBe(false)
+  expect(entity.firstValue.override_stack_size).toBe(1)
   assertEntityCorrect(entity, false)
 })
 
@@ -1101,8 +1101,8 @@ test("movePropDown", () => {
     override_stack_size: 2,
   })
   movePropDown(project, entity, 4, "override_stack_size")
-  expect(entity.hasStageDiff()).to.be(false)
-  expect(entity.firstValue.override_stack_size).to.be(2)
+  expect(entity.hasStageDiff()).toBe(false)
+  expect(entity.firstValue.override_stack_size).toBe(2)
   assertEntityCorrect(entity, false)
 })
 
@@ -1113,9 +1113,9 @@ test("resetAllProps", () => {
     filter_mode: "blacklist",
   })
   resetAllProps(project, entity, 4)
-  expect(entity.hasStageDiff()).to.be(false)
-  expect(entity.firstValue.override_stack_size).to.be(1)
-  expect(entity.firstValue.filter_mode).to.be.nil() // whitelist is default
+  expect(entity.hasStageDiff()).toBe(false)
+  expect(entity.firstValue.override_stack_size).toBe(1)
+  expect(entity.firstValue.filter_mode).toBeNil() // whitelist is default
   assertEntityCorrect(entity, false)
 })
 
@@ -1126,9 +1126,9 @@ test("moveAllPropsDown", () => {
     filter_mode: "blacklist",
   })
   moveAllPropsDown(project, entity, 4)
-  expect(entity.hasStageDiff()).to.be(false)
-  expect(entity.firstValue.override_stack_size).to.be(2)
-  expect(entity.firstValue.filter_mode).to.be("blacklist")
+  expect(entity.hasStageDiff()).toBe(false)
+  expect(entity.firstValue.override_stack_size).toBe(2)
+  expect(entity.firstValue.filter_mode).toBe("blacklist")
   assertEntityCorrect(entity, false)
 })
 
@@ -1145,8 +1145,8 @@ function setupPole2(stage: StageNumber) {
 test("saves initial cable connections", () => {
   const pole1 = setupPole(3)
   const pole2 = setupPole2(3)
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).to.be(true)
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).to.be(true)
+  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
+  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 })
@@ -1154,8 +1154,8 @@ test("saves initial cable connections", () => {
 test("saves initial cable connections to a pole in higher stage", () => {
   const pole1 = setupPole(4)
   const pole2 = setupPole2(3) // should connect to pole1
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).to.be(true)
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).to.be(true)
+  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
+  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 })
@@ -1166,16 +1166,16 @@ test("disconnect and connect cables", () => {
   pole1.getWorldEntity(3)!.disconnect_neighbour(pole2.getWorldEntity(3))
   updateWiresFromWorld(project, pole1, 3)
 
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).to.be.falsy()
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).to.be.falsy()
+  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBeFalsy()
+  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBeFalsy()
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 
   pole1.getWorldEntity(3)!.connect_neighbour(pole2.getWorldEntity(3)!)
   updateWiresFromWorld(project, pole1, 3)
 
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).to.be(true)
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).to.be(true)
+  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
+  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 })
@@ -1192,7 +1192,7 @@ test("connect and disconnect circuit wires", () => {
   const expectedConnection = next(
     project.content.getCircuitConnections(inserter)!.get(pole)!,
   )[0] as ProjectCircuitConnection
-  expect(expectedConnection).to.be.any()
+  expect(expectedConnection).toBeAny()
   expect(
     circuitConnectionEquals(
       {
@@ -1204,7 +1204,7 @@ test("connect and disconnect circuit wires", () => {
       },
       expectedConnection,
     ),
-  ).to.be(true)
+  ).toBe(true)
 
   assertEntityCorrect(inserter, false)
   assertEntityCorrect(pole, false)
@@ -1217,7 +1217,7 @@ function assertTrainEntityCorrect(entity: RollingStockProjectEntity, expectedHas
 test("create train entity", () => {
   const train = createRollingStock(surfaces[3 - 1])
   const entity = addNewEntity(project, train, 3)!
-  expect(entity).to.be.any()
+  expect(entity).toBeAny()
   assertTrainEntityCorrect(entity, false)
 })
 test("train entity error", () => {
@@ -1245,9 +1245,9 @@ test("adding wire in higher stage sets empty control behavior", () => {
   updateWiresFromWorld(project, inserter, 4)
 
   const connections = project.content.getCircuitConnections(inserter)!
-  expect(connections).to.be.any()
+  expect(connections).toBeAny()
   const connection = next(connections.get(belt)!)[0] as ProjectCircuitConnection
-  expect(connection).to.be.any()
+  expect(connection).toBeAny()
   expect(
     circuitConnectionEquals(connection, {
       wire: defines.wire_type.red,
@@ -1256,13 +1256,13 @@ test("adding wire in higher stage sets empty control behavior", () => {
       fromId: 1,
       toId: 1,
     }),
-  ).to.be(true)
+  ).toBe(true)
 
-  expect(inserter.firstValue.control_behavior).to.be(emptyInserterControlBehavior)
-  expect(belt.firstValue.control_behavior).to.be(emptyBeltControlBehavior)
+  expect(inserter.firstValue.control_behavior).toBe(emptyInserterControlBehavior)
+  expect(belt.firstValue.control_behavior).toBe(emptyBeltControlBehavior)
 
-  expect(inserter.getStageDiff(4)!.control_behavior).to.be.truthy()
-  expect(belt.getStageDiff(4)!.control_behavior).to.be.truthy()
+  expect(inserter.getStageDiff(4)!.control_behavior).toBeTruthy()
+  expect(belt.getStageDiff(4)!.control_behavior).toBeTruthy()
 
   assertEntityCorrect(inserter, false)
   assertEntityCorrect(belt, false)

@@ -19,11 +19,11 @@ describe("makeWrapper", () => {
   let element: BaseGuiElement
   test("create", () => {
     element = makeWrapper()
-    expect(isRoot(element)).to.equal(true)
-    expect(getPlayer().gui.screen).to.equal(element.parent)
+    expect(isRoot(element)).toEqual(true)
+    expect(getPlayer().gui.screen).toEqual(element.parent)
   })
   test("after create", () => {
-    expect(element.valid).to.equal(false)
+    expect(element.valid).toEqual(false)
   })
 })
 
@@ -33,20 +33,20 @@ describe("getDescription", () => {
       type: "label",
       name: "test-label",
     })
-    expect(getDescription(element)).to.equal("<root>.test-label")
+    expect(getDescription(element)).toEqual("<root>.test-label")
   })
   it("without name", () => {
     const element = makeWrapper().add({
       type: "label",
     })
-    expect(getDescription(element)).to.equal("<root>.[1, label]")
+    expect(getDescription(element)).toEqual("<root>.[1, label]")
   })
 })
 
 test("testRender", () => {
   const element = testRender(<flow name="test-flow" />)
-  expect(element.isRoot()).to.equal(true)
-  expect(getPlayer().gui.screen).to.equal(element.element.parent)
+  expect(element.isRoot()).toEqual(true)
+  expect(getPlayer().gui.screen).toEqual(element.element.parent)
 })
 
 describe("findSatisfying", () => {
@@ -58,7 +58,7 @@ describe("findSatisfying", () => {
     )
     const found = element.findSatisfying((x) => x.caption == "hi").element
     const flow = element.element.children[0]
-    expect(found).to.equal(flow)
+    expect(found).toEqual(flow)
   })
 
   it("finds deep element", () => {
@@ -74,14 +74,14 @@ describe("findSatisfying", () => {
     )
     const found = element.findSatisfying((x) => x.caption == "baz").element
     const flow = element.element.children[0].children[0].children[1]
-    expect(found).to.equal(flow)
+    expect(found).toEqual(flow)
   })
 })
 
 test("simulateEvent", () => {
   const fn = mock.fn<GuiEventHandler["invoke"]>()
   const button = testRender(<button on_gui_click={{ invoke: fn }} />)
-  expect(fn).not.called()
+  expect(fn).not.toHaveBeenCalled()
   button.simulateClick()
-  expect(fn).calledTimes(1)
+  expect(fn).toHaveBeenCalledTimes(1)
 })

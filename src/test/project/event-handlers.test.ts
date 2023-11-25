@@ -93,12 +93,12 @@ describe("add", () => {
       limit: 1,
       name: "iron-chest",
     })[0]
-    expect(entity).to.be.any()
-    expect(userActions.onEntityCreated).calledWith(project, entity, 1, 1)
+    expect(entity).toBeAny()
+    expect(userActions.onEntityCreated).toHaveBeenCalledWith(project, entity, 1, 1)
 
     after_ticks(1, () => {
       _simulateUndo(player)
-      expect(undoFn).calledWith("overbuild preview")
+      expect(undoFn).toHaveBeenCalledWith("overbuild preview")
     })
   })
 
@@ -108,8 +108,8 @@ describe("add", () => {
       position: pos,
       raise_built: true,
     })!
-    expect(entity).to.be.any()
-    expect(userActions.onEntityCreated).calledWith(project, entity, 1, nil)
+    expect(entity).toBeAny()
+    expect(userActions.onEntityCreated).toHaveBeenCalledWith(project, entity, 1, nil)
   })
   test("does not run create if raised by this mod", () => {
     const entity = surface.create_entity({
@@ -118,7 +118,7 @@ describe("add", () => {
       raise_built: false,
     })!
     script.raise_script_built({ entity })
-    expect(userActions.onEntityCreated).not.called()
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
     expectedNumCalls = 0
   })
 })
@@ -137,21 +137,21 @@ describe("delete", () => {
   })
   test("player mined entity", () => {
     player.mine_entity(entity, true)
-    expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, 1)
+    expect(userActions.onEntityDeleted).toHaveBeenCalledWith(project, expect._, 1, 1)
   })
   test("script raised destroy", () => {
     // entity.destroy({ raise_destroy: true })
     Events.raiseFakeEventNamed("script_raised_destroy", { entity })
-    expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, nil)
+    expect(userActions.onEntityDeleted).toHaveBeenCalledWith(project, expect._, 1, nil)
   })
   test("does not run delete if raised by this mod", () => {
     script.raise_script_destroy({ entity })
-    expect(userActions.onEntityDeleted).not.called()
+    expect(userActions.onEntityDeleted).not.toHaveBeenCalled()
     expectedNumCalls = 0
   })
   test("die", () => {
     entity.die()
-    expect(userActions.onEntityDied).calledWith(project, expect._, 1)
+    expect(userActions.onEntityDied).toHaveBeenCalledWith(project, expect._, 1)
   })
 })
 
@@ -171,7 +171,7 @@ describe("update", () => {
     player.opened = nil
     player.opened = entity
     player.opened = nil
-    expect(userActions.onEntityPossiblyUpdated).calledWith(project, entity, 1, nil, 1)
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, entity, 1, nil, 1)
   })
   test("settings copy paste", () => {
     Events.raiseFakeEventNamed("on_entity_settings_pasted", {
@@ -180,13 +180,13 @@ describe("update", () => {
       player_index: 1 as PlayerIndex,
     })
 
-    expect(userActions.onEntityPossiblyUpdated).calledWith(project, entity, 1, nil, 1)
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, entity, 1, nil, 1)
   })
 
   test("rotate", () => {
     const oldDirection = entity.direction
     entity.rotate({ by_player: 1 as PlayerIndex })
-    expect(userActions.onEntityRotated).calledWith(project, entity, 1, oldDirection, 1)
+    expect(userActions.onEntityRotated).toHaveBeenCalledWith(project, entity, 1, oldDirection, 1)
   })
 })
 
@@ -216,10 +216,10 @@ test.each([
   player.cursor_stack!.set_stack(newType)
   player.build_from_cursor({ position, direction: rotate ? direction.east : nil })
   const newEntity = surface.find_entity(newType, position)!
-  expect(newEntity).to.be.any()
+  expect(newEntity).toBeAny()
 
-  expect(entity.valid).to.be(false)
-  expect(userActions.onEntityPossiblyUpdated).calledWith(project, newEntity, 1, expect._, 1)
+  expect(entity.valid).toBe(false)
+  expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, newEntity, 1, expect._, 1)
 })
 
 test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
@@ -230,7 +230,7 @@ test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
     position: pos,
     force: "player",
   })!
-  expect(u1).to.be.any()
+  expect(u1).toBeAny()
   const u2 = surface.create_entity({
     name: "underground-belt",
     direction: direction.east,
@@ -238,7 +238,7 @@ test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
     position: Pos.plus(u1.position, Pos(1, 0)),
     force: "player",
   })!
-  expect(u2).to.be.any()
+  expect(u2).toBeAny()
   const pos1 = u1.position
   const pos2 = u2.position
 
@@ -250,15 +250,15 @@ test("fast replace an underground runs onEntityPossiblyUpdate on both", () => {
   })
 
   const newU1 = surface.find_entity("fast-underground-belt", pos1)!
-  expect(newU1).to.be.any()
+  expect(newU1).toBeAny()
   const newU2 = surface.find_entity("fast-underground-belt", pos2)!
-  expect(newU2).to.be.any()
+  expect(newU2).toBeAny()
 
-  expect(userActions.onEntityCreated).not.called()
-  expect(userActions.onEntityDeleted).not.called()
+  expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+  expect(userActions.onEntityDeleted).not.toHaveBeenCalled()
 
-  expect(userActions.onEntityPossiblyUpdated).calledWith(project, newU1, 1, expect._, 1)
-  expect(userActions.onEntityPossiblyUpdated).calledWith(project, newU2, 1, expect._, 1)
+  expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, newU1, 1, expect._, 1)
+  expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, newU2, 1, expect._, 1)
   expectedNumCalls = 2
 })
 
@@ -280,7 +280,7 @@ describe("upgrade", () => {
       force: "player",
       target: "fast-inserter",
     })
-    expect(userActions.onEntityMarkedForUpgrade).calledWith(project, entity, 1, nil)
+    expect(userActions.onEntityMarkedForUpgrade).toHaveBeenCalledWith(project, entity, 1, nil)
   })
   test("marked to rotate", () => {
     entity.order_upgrade({
@@ -288,7 +288,7 @@ describe("upgrade", () => {
       target: "inserter",
       direction: defines.direction.east,
     })
-    expect(userActions.onEntityMarkedForUpgrade).calledWith(project, entity, 1, nil)
+    expect(userActions.onEntityMarkedForUpgrade).toHaveBeenCalledWith(project, entity, 1, nil)
   })
 
   test("instant upgrade planner", () => {
@@ -309,8 +309,8 @@ describe("upgrade", () => {
       created_entity: newEntity,
       stack: nil!,
     })
-    expect(userActions.onEntityPossiblyUpdated).calledWith(project, newEntity, 1, oldDirection, 1)
-    expect(userActions.onEntityDeleted).not.called()
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, newEntity, 1, oldDirection, 1)
+    expect(userActions.onEntityDeleted).not.toHaveBeenCalled()
   })
 })
 
@@ -332,13 +332,13 @@ describe("robot actions", () => {
       type: "roboport",
       limit: 1,
     })[0]
-    expect(roboport).to.be.any()
+    expect(roboport).toBeAny()
     roboport.insert("construction-robot")
     const storageChest = surface.find_entities_filtered({
       name: "logistic-chest-storage",
       limit: 1,
     })[0]
-    expect(storageChest).to.be.any()
+    expect(storageChest).toBeAny()
     storageChest.insert("iron-chest")
   })
   test("build", () => {
@@ -354,8 +354,8 @@ describe("robot actions", () => {
         name: "iron-chest",
         limit: 1,
       })[0]
-      expect(chest).to.be.any()
-      expect(userActions.onEntityCreated).calledWith(project, chest, 1, nil)
+      expect(chest).toBeAny()
+      expect(userActions.onEntityCreated).toHaveBeenCalledWith(project, chest, 1, nil)
     })
   })
 
@@ -369,7 +369,7 @@ describe("robot actions", () => {
     assert(chest, "chest created")
     chest.order_deconstruction("player")
     after_ticks(120, () => {
-      expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, nil)
+      expect(userActions.onEntityDeleted).toHaveBeenCalledWith(project, expect._, 1, nil)
     })
   })
 })
@@ -389,7 +389,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    expect(userActions.onCleanupToolUsed).calledWith(project, entity, 1)
+    expect(userActions.onCleanupToolUsed).toHaveBeenCalledWith(project, entity, 1)
   })
   test("delete settings remnant", () => {
     const entity = surface.create_entity({
@@ -406,7 +406,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    expect(userActions.onCleanupToolUsed).calledWith(project, entity, 1)
+    expect(userActions.onCleanupToolUsed).toHaveBeenCalledWith(project, entity, 1)
   })
   test("force-delete", () => {
     const entity = surface.create_entity({
@@ -423,7 +423,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    expect(userActions.onEntityForceDeleteUsed).calledWith(project, entity, 1)
+    expect(userActions.onEntityForceDeleteUsed).toHaveBeenCalledWith(project, entity, 1)
   })
 })
 
@@ -434,15 +434,15 @@ describe("move to this stage", () => {
   function testOnEntity(entity: LuaEntity | nil): void {
     expect(entity).not.toBeNil()
     player.selected = entity
-    expect(player.selected).to.equal(entity)
+    expect(player.selected).toEqual(entity)
     Events.raiseFakeEvent(CustomInputs.MoveToThisStage, {
       player_index: player.index,
       cursor_position: player.position,
     })
-    expect(userActions.onMoveEntityToStageCustomInput).calledWith(project, entity!, 1, 1)
+    expect(userActions.onMoveEntityToStageCustomInput).toHaveBeenCalledWith(project, entity!, 1, 1)
 
     _simulateUndo(player)
-    expect(undoFn).calledWith("move to this stage")
+    expect(undoFn).toHaveBeenCalledWith("move to this stage")
   }
   test("on normal entity", () => {
     const entity = surface.create_entity({
@@ -468,13 +468,13 @@ test("force delete custom input", () => {
     position: pos,
     force: "player",
   })
-  expect(entity).to.be.any()
+  expect(entity).toBeAny()
   player.selected = entity
   Events.raiseFakeEvent(CustomInputs.ForceDelete, {
     player_index: player.index,
     cursor_position: player.position,
   })
-  expect(userActions.onEntityForceDeleteUsed).calledWith(project, entity!, 1)
+  expect(userActions.onEntityForceDeleteUsed).toHaveBeenCalledWith(project, entity!, 1)
 })
 
 describe("stage move tool", () => {
@@ -488,9 +488,9 @@ describe("stage move tool", () => {
   let entity2: LuaEntity
   before_each(() => {
     entity = surface.create_entity({ name: "inserter", position: pos, force: "player" })!
-    expect(entity).to.be.any()
+    expect(entity).toBeAny()
     entity2 = surface.create_entity({ name: "inserter", position: pos.plus(Pos(1, 0)), force: "player" })!
-    expect(entity2).to.be.any()
+    expect(entity2).toBeAny()
   })
   test("send to stage", () => {
     player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
@@ -504,12 +504,12 @@ describe("stage move tool", () => {
       entities: [entity, entity2],
       tiles: [],
     })
-    expect(userActions.onSendToStageUsed).calledWith(project, entity, 1, 2, 1)
-    expect(userActions.onSendToStageUsed).calledWith(project, entity2, 1, 2, 1)
+    expect(userActions.onSendToStageUsed).toHaveBeenCalledWith(project, entity, 1, 2, 1)
+    expect(userActions.onSendToStageUsed).toHaveBeenCalledWith(project, entity2, 1, 2, 1)
 
     _simulateUndo(player)
-    expect(undoFn).calledWith("send to stage 1")
-    expect(undoFn).calledWith("send to stage 2")
+    expect(undoFn).toHaveBeenCalledWith("send to stage 1")
+    expect(undoFn).toHaveBeenCalledWith("send to stage 2")
 
     expectedNumCalls = 2
   })
@@ -524,11 +524,11 @@ describe("stage move tool", () => {
       tiles: [],
     })
 
-    expect(userActions.onBringToStageUsed).calledWith(project, entity, 1, 1)
+    expect(userActions.onBringToStageUsed).toHaveBeenCalledWith(project, entity, 1, 1)
 
     _simulateUndo(player)
-    expect(undoFn).calledWith("bring to stage 1")
-    expect(undoFn).calledWith("bring to stage 2")
+    expect(undoFn).toHaveBeenCalledWith("bring to stage 1")
+    expect(undoFn).toHaveBeenCalledWith("bring to stage 2")
     expectedNumCalls = 2
   })
   test("bring to this stage (reverse)", () => {
@@ -541,11 +541,11 @@ describe("stage move tool", () => {
       entities: [entity, entity2],
       tiles: [],
     })
-    expect(userActions.onBringToStageUsed).calledWith(project, entity, 1, 1)
+    expect(userActions.onBringToStageUsed).toHaveBeenCalledWith(project, entity, 1, 1)
 
     _simulateUndo(player)
-    expect(undoFn).calledWith("bring to stage 1")
-    expect(undoFn).calledWith("bring to stage 2")
+    expect(undoFn).toHaveBeenCalledWith("bring to stage 1")
+    expect(undoFn).toHaveBeenCalledWith("bring to stage 2")
     expectedNumCalls = 2
   })
 
@@ -560,11 +560,11 @@ describe("stage move tool", () => {
       tiles: [],
     })
 
-    expect(userActions.onBringDownToStageUsed).calledWith(project, entity, 1, 1)
+    expect(userActions.onBringDownToStageUsed).toHaveBeenCalledWith(project, entity, 1, 1)
 
     _simulateUndo(player)
-    expect(undoFn).calledWith("bring down to stage 1")
-    expect(undoFn).calledWith("bring down to stage 2")
+    expect(undoFn).toHaveBeenCalledWith("bring down to stage 1")
+    expect(undoFn).toHaveBeenCalledWith("bring down to stage 2")
     expectedNumCalls = 2
   })
 
@@ -582,12 +582,12 @@ describe("stage move tool", () => {
       alt: false,
     })
 
-    expect(userActions.onSendToStageUsed).calledWith(project, entity, 1, 2, 1)
+    expect(userActions.onSendToStageUsed).toHaveBeenCalledWith(project, entity, 1, 2, 1)
 
     _simulateUndo(player)
 
-    expect(undoFn).calledWith("send to stage 1")
-    expect(undoFn).calledWith("send to stage 2")
+    expect(undoFn).toHaveBeenCalledWith("send to stage 1")
+    expect(undoFn).toHaveBeenCalledWith("send to stage 2")
 
     expectedNumCalls = 2
   })
@@ -602,9 +602,9 @@ describe("stage delete tool", () => {
       position: pos,
       force: "player",
     })!
-    expect(entity).to.be.any()
+    expect(entity).toBeAny()
     entity2 = surface.create_entity({ name: "inserter", position: pos.plus(Pos(1, 0)), force: "player" })!
-    expect(entity2).to.be.any()
+    expect(entity2).toBeAny()
 
     let i = 1
     userActions.onStageDeleteUsed.invokes(() => TestUndo.createAction(player.index, "delete " + i++))
@@ -620,13 +620,13 @@ describe("stage delete tool", () => {
       entities: [entity, entity2],
       tiles: [],
     })
-    expect(userActions.onStageDeleteUsed).calledWith(project, entity, 1, 1)
-    expect(userActions.onStageDeleteUsed).calledWith(project, entity2, 1, 1)
+    expect(userActions.onStageDeleteUsed).toHaveBeenCalledWith(project, entity, 1, 1)
+    expect(userActions.onStageDeleteUsed).toHaveBeenCalledWith(project, entity2, 1, 1)
     expectedNumCalls = 2
 
     _simulateUndo(player)
-    expect(undoFn).calledWith("delete 1")
-    expect(undoFn).calledWith("delete 2")
+    expect(undoFn).toHaveBeenCalledWith("delete 1")
+    expect(undoFn).toHaveBeenCalledWith("delete 2")
   })
   test("cancel", () => {
     player.cursor_stack!.set_stack(Prototypes.StageDeconstructTool)
@@ -638,12 +638,12 @@ describe("stage delete tool", () => {
       entities: [entity, entity2],
       tiles: [],
     })
-    expect(userActions.onStageDeleteCancelUsed).calledWith(project, entity, 1, 1)
+    expect(userActions.onStageDeleteCancelUsed).toHaveBeenCalledWith(project, entity, 1, 1)
     expectedNumCalls = 2
 
     _simulateUndo(player)
-    expect(undoFn).calledWith("delete cancel 1")
-    expect(undoFn).calledWith("delete cancel 2")
+    expect(undoFn).toHaveBeenCalledWith("delete cancel 1")
+    expect(undoFn).toHaveBeenCalledWith("delete cancel 2")
   })
 })
 
@@ -665,10 +665,10 @@ describe("blueprint paste", () => {
   }
   before_each(setBlueprint)
   function assertCorrect(entity: LuaEntity, position: Position = pos, bpValue = bpEntity): void {
-    expect(entity).to.be.any()
-    expect(entity.position).to.equal(position)
+    expect(entity).toBeAny()
+    expect(entity.position).toEqual(position)
 
-    expect(userActions.onEntityPossiblyUpdated).calledWith(project, entity, 1, expect._, 1, bpValue)
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, entity, 1, expect._, 1, bpValue)
   }
 
   test("create entity", () => {
@@ -736,16 +736,16 @@ describe("blueprint paste", () => {
       direction: direction.east,
       limit: 1,
     })[0]
-    expect(inserter2).to.be.any()
+    expect(inserter2).toBeAny()
 
     assertCorrect(inserter1, nil, bpEntity1)
     assertCorrect(inserter2, pos.plus(Pos(1, 0)), bpEntity2)
     if (alreadyPresent) {
-      expect(userActions.onWiresPossiblyUpdated).calledWith(project, inserter1, 1, 1)
-      expect(userActions.onWiresPossiblyUpdated).calledWith(project, inserter2, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).toHaveBeenCalledWith(project, inserter1, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).toHaveBeenCalledWith(project, inserter2, 1, 1)
       expectedNumCalls = 4
     } else {
-      expect(userActions.onWiresPossiblyUpdated).not.called()
+      expect(userActions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
       expectedNumCalls = 2
     }
   })
@@ -775,16 +775,16 @@ describe("blueprint paste", () => {
     player.build_from_cursor({ position: pos })
 
     const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!
-    expect(pole2).to.be.any()
+    expect(pole2).toBeAny()
 
     assertCorrect(pole1, nil, entity1)
     assertCorrect(pole2, pos.plus(Pos(1, 0)), entity2)
     if (alreadyPresent) {
-      expect(userActions.onWiresPossiblyUpdated).calledWith(project, pole1, 1, 1)
-      expect(userActions.onWiresPossiblyUpdated).calledWith(project, pole2, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).toHaveBeenCalledWith(project, pole1, 1, 1)
+      expect(userActions.onWiresPossiblyUpdated).toHaveBeenCalledWith(project, pole2, 1, 1)
       expectedNumCalls = 4
     } else {
-      expect(userActions.onWiresPossiblyUpdated).not.called()
+      expect(userActions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
       expectedNumCalls = 2
     }
   })
@@ -831,7 +831,7 @@ describe("blueprint paste", () => {
       force: "player",
       direction: 0,
     })
-    expect(tank).to.be.any()
+    expect(tank).toBeAny()
 
     player.build_from_cursor({ position: Pos(0.5, 0.5) })
 
@@ -853,7 +853,7 @@ describe("blueprint paste", () => {
       force: "player",
       direction: 2,
     })
-    expect(tank).to.be.any()
+    expect(tank).toBeAny()
 
     fakeFlippedPaste(Pos(0.5, 0.5))
 
@@ -877,7 +877,7 @@ describe("blueprint paste", () => {
       force: "player",
       direction: 0,
     })
-    expect(splitter).to.be.any()
+    expect(splitter).toBeAny()
 
     player.build_from_cursor({ position: Pos(0, 0.5) })
 
@@ -900,7 +900,7 @@ describe("blueprint paste", () => {
       position: Pos(0, 0.5),
       force: "player",
     })
-    expect(splitter).to.be.any()
+    expect(splitter).toBeAny()
 
     fakeFlippedPaste(Pos(0, 0.5))
 
@@ -959,15 +959,15 @@ describe("belt dragging", () => {
 
     fakeNoopDrag(belt)
 
-    expect(userActions.onEntityPossiblyUpdated).not.called()
-    expect(userActions.onWiresPossiblyUpdated).not.called()
-    expect(userActions.onEntityCreated).not.called()
+    expect(userActions.onEntityPossiblyUpdated).not.toHaveBeenCalled()
+    expect(userActions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
 
     player.build_from_cursor({ position: pos2, direction: belt.direction })
     const newBelt = surface.find_entity("transport-belt", pos2)!
-    expect(newBelt).to.be.any()
+    expect(newBelt).toBeAny()
 
-    expect(userActions.onEntityCreated).calledWith(project, newBelt, 1, 1)
+    expect(userActions.onEntityCreated).toHaveBeenCalledWith(project, newBelt, 1, 1)
   })
 
   test("build in different direction calls onEntityPossiblyUpdated", () => {
@@ -976,14 +976,14 @@ describe("belt dragging", () => {
       position: pos,
       force: "player",
     })!
-    expect(belt).to.be.any()
+    expect(belt).toBeAny()
     player.cursor_stack!.set_stack("transport-belt")
 
     player.build_from_cursor({ position: pos, direction: direction.east })
     const newBelt = surface.find_entity("transport-belt", pos)!
-    expect(newBelt).to.be.any()
+    expect(newBelt).toBeAny()
 
-    expect(userActions.onEntityPossiblyUpdated).calledWith(project, newBelt, 1, 0, 1)
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, newBelt, 1, 0, 1)
   })
 
   test("drag over existing followed by mine", () => {
@@ -997,10 +997,10 @@ describe("belt dragging", () => {
     fakeNoopDrag(belt)
     player.mine_entity(belt)
 
-    expect(userActions.onEntityPossiblyUpdated).not.called()
-    expect(userActions.onWiresPossiblyUpdated).not.called()
-    expect(userActions.onEntityCreated).not.called()
-    expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, 1)
+    expect(userActions.onEntityPossiblyUpdated).not.toHaveBeenCalled()
+    expect(userActions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+    expect(userActions.onEntityDeleted).toHaveBeenCalledWith(project, expect._, 1, 1)
   })
 
   test("drag over existing followed by fast replace on same belt", () => {
@@ -1015,11 +1015,11 @@ describe("belt dragging", () => {
     player.cursor_stack!.set_stack("fast-transport-belt")
     player.build_from_cursor({ position: pos1, direction: belt.direction })
     const newBelt = surface.find_entity("fast-transport-belt", pos1)!
-    expect(newBelt).to.be.any()
+    expect(newBelt).toBeAny()
 
-    expect(userActions.onEntityDeleted).not.called()
-    expect(userActions.onEntityCreated).not.called()
-    expect(userActions.onEntityPossiblyUpdated).calledWith(project, newBelt, 1, expect._, 1)
+    expect(userActions.onEntityDeleted).not.toHaveBeenCalled()
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, newBelt, 1, expect._, 1)
   })
 
   test("drag over existing followed by fast replace on different belt", () => {
@@ -1040,9 +1040,9 @@ describe("belt dragging", () => {
     player.build_from_cursor({ position: pos2, direction: belt.direction })
     const newBelt = surface.find_entity("transport-belt", pos2)!
 
-    expect(userActions.onEntityDeleted).not.called()
-    expect(userActions.onEntityCreated).not.called()
-    expect(userActions.onEntityPossiblyUpdated).calledWith(project, newBelt, 1, expect._, 1)
+    expect(userActions.onEntityDeleted).not.toHaveBeenCalled()
+    expect(userActions.onEntityCreated).not.toHaveBeenCalled()
+    expect(userActions.onEntityPossiblyUpdated).toHaveBeenCalledWith(project, newBelt, 1, expect._, 1)
   })
 
   test("fast replacing with underground belt", () => {
@@ -1061,16 +1061,16 @@ describe("belt dragging", () => {
       force: "player",
       fast_replace: true,
     })
-    expect(u1).to.be.any()
+    expect(u1).toBeAny()
     player.cursor_stack!.set_stack("underground-belt")
     // build at 5th belt
     player.build_from_cursor({ position: Pos(0.5, 5.5), direction: defines.direction.north })
 
     const underground = surface.find_entity("underground-belt", Pos(0.5, 5.5))!
 
-    expect(userActions.onEntityPossiblyUpdated).not.called()
-    expect(userActions.onEntityCreated).calledWith(project, underground, 1, 1)
-    expect(userActions.onEntityDeleted).calledTimes(5)
+    expect(userActions.onEntityPossiblyUpdated).not.toHaveBeenCalled()
+    expect(userActions.onEntityCreated).toHaveBeenCalledWith(project, underground, 1, 1)
+    expect(userActions.onEntityDeleted).toHaveBeenCalledTimes(5)
     expectedNumCalls = 6
   })
 
@@ -1095,7 +1095,7 @@ describe("belt dragging", () => {
         position: Pos(0, 0.5),
         force: "player",
       })!
-      expect(belt).to.be.any()
+      expect(belt).toBeAny()
 
       u1 = surface.create_entity({
         name: "underground-belt",
@@ -1104,7 +1104,7 @@ describe("belt dragging", () => {
         type: "output",
         force: "player",
       })!
-      expect(u1).to.be.any()
+      expect(u1).toBeAny()
       player.cursor_stack!.set_stack("transport-belt")
     })
 
@@ -1112,14 +1112,14 @@ describe("belt dragging", () => {
       fakeNoopDrag(belt)
       fakeUndergroundDrag(u1, belt.direction)
 
-      expect(userActions.onUndergroundBeltDragRotated).calledWith(project, u1, 1, 1)
+      expect(userActions.onUndergroundBeltDragRotated).toHaveBeenCalledWith(project, u1, 1, 1)
     })
 
     test("does not count if wrong direction", () => {
       fakeNoopDrag(belt)
       fakeUndergroundDrag(u1, oppositedirection(belt.direction))
 
-      expect(userActions.onUndergroundBeltDragRotated).not.called()
+      expect(userActions.onUndergroundBeltDragRotated).not.toHaveBeenCalled()
       expectedNumCalls = 0
     })
     test("does not count if replaced", () => {
@@ -1128,10 +1128,10 @@ describe("belt dragging", () => {
         position,
         direction: u1.direction,
       })
-      expect(userActions.onUndergroundBeltDragRotated).not.called()
-      expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, 1)
+      expect(userActions.onUndergroundBeltDragRotated).not.toHaveBeenCalled()
+      expect(userActions.onEntityDeleted).toHaveBeenCalledWith(project, expect._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
-      expect(userActions.onEntityCreated).calledWith(project, newBelt, 1, 1)
+      expect(userActions.onEntityCreated).toHaveBeenCalledWith(project, newBelt, 1, 1)
       expectedNumCalls = 2
     })
     test("does not count if replaced sideways", () => {
@@ -1140,10 +1140,10 @@ describe("belt dragging", () => {
         position,
         direction: belt.direction + 2,
       })
-      expect(userActions.onUndergroundBeltDragRotated).not.called()
-      expect(userActions.onEntityDeleted).calledWith(project, expect._, 1, 1)
+      expect(userActions.onUndergroundBeltDragRotated).not.toHaveBeenCalled()
+      expect(userActions.onEntityDeleted).toHaveBeenCalledWith(project, expect._, 1, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
-      expect(userActions.onEntityCreated).calledWith(project, newBelt, 1, 1)
+      expect(userActions.onEntityCreated).toHaveBeenCalledWith(project, newBelt, 1, 1)
       expectedNumCalls = 2
     })
   })

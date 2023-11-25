@@ -14,8 +14,8 @@ import expect from "tstl-expect"
 import { formatVersion, Migrations } from "../migration"
 
 test("formatVersion", () => {
-  expect(formatVersion("1.2.3")).to.equal("01.02.03")
-  expect(formatVersion("01.02.03")).to.equal("01.02.03")
+  expect(formatVersion("1.2.3")).toEqual("01.02.03")
+  expect(formatVersion("01.02.03")).toEqual("01.02.03")
 })
 
 test.each<[VersionString, VersionString, boolean]>([
@@ -26,7 +26,7 @@ test.each<[VersionString, VersionString, boolean]>([
   ["1.2.3", "2.1.0", true],
   ["2.1.0", "1.2.3", false],
 ])("versionStrLess: %s < %s => %s", (a, b, expected) => {
-  expect(formatVersion(a) < formatVersion(b)).to.be(expected)
+  expect(formatVersion(a) < formatVersion(b)).toBe(expected)
 })
 
 describe("Migrations", () => {
@@ -39,7 +39,7 @@ describe("Migrations", () => {
   test("runs later migrations, in sorted order", () => {
     for (const version of ["1.2.5", "1.2.4", "1.2.3"] as const) Migrations.to(version, () => run.push(version))
     Migrations.doMigrations("1.2.3")
-    expect(run).to.equal(["1.2.4", "1.2.5"])
+    expect(run).toEqual(["1.2.4", "1.2.5"])
   })
 
   test("runs early migrations before later migrations", () => {
@@ -53,6 +53,6 @@ describe("Migrations", () => {
       Migrations.priority(5, version, () => run.push(version + " e5"))
     }
     Migrations.doMigrations("1.2.3")
-    expect(run).to.equal(["1.2.4 e5", "1.2.5 e5", "1.2.4 e", "1.2.5 e", "1.2.4", "1.2.5"])
+    expect(run).toEqual(["1.2.4 e5", "1.2.5 e5", "1.2.4 e", "1.2.5 e", "1.2.4", "1.2.5"])
   })
 })

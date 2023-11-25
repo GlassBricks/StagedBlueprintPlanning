@@ -38,8 +38,8 @@ test("can run multiple undo actions", () => {
   _simulateUndo(player, index2)
   _simulateUndo(player, index1)
 
-  expect(fn).nthCalledWith(1, 1, "test data 2")
-  expect(fn).nthCalledWith(2, 1, "test data 1")
+  expect(fn).toHaveBeenNthCalledWith(1, 1, "test data 2")
+  expect(fn).toHaveBeenNthCalledWith(2, 1, "test data 1")
 })
 
 test("can register future undo actions", () => {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2023 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,19 +10,20 @@
  */
 
 import expect from "tstl-expect"
-import { BBox } from "../../lib/geometry"
-import { createStageSurface } from "../../project/surfaces"
+import { mockObj } from "../mock-obj"
 
-test("generateStageSurface creates surface and generates chunks", () => {
-  const surface = createStageSurface()
-  after_test(() => game.delete_surface(surface))
-  expect(surface.index).not.toEqual(1)
-  expect(surface.always_day).toBe(true)
-  expect(surface.generate_with_lab_tiles).toBe(true)
+interface Foo {
+  f1(arg: any): void
+  f2(): unknown
+}
 
-  const area = BBox.coords(0, 0, 1, 1)
-  for (const [x, y] of area.iterateTiles()) {
-    const pos = { x, y }
-    expect(surface.is_chunk_generated(pos)).toBe(true)
-  }
+test("can create and use mock object", () => {
+  const foo = mockObj<Foo>()
+  foo.f1(3)
+  expect(foo.f1).toHaveBeenCalledWith(3)
+  expect(foo.f2).not.toHaveBeenCalled()
+  foo.f2()
+  expect(foo.f2).toHaveBeenCalled()
+  foo.f2.returns(5)
+  expect(foo.f2()).toBe(5)
 })

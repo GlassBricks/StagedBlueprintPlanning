@@ -44,7 +44,7 @@ describe("create", () => {
       type: "flow",
       direction: "vertical",
     }
-    expect(testRender(spec).element.direction).to.equal("vertical")
+    expect(testRender(spec).element.direction).toEqual("vertical")
   })
 
   test("Sets element property", () => {
@@ -53,7 +53,7 @@ describe("create", () => {
       elem_type: "item",
       locked: true,
     }
-    expect(testRender(spec).element.locked).to.be(true)
+    expect(testRender(spec).element.locked).toBe(true)
   })
 
   test("Listens to source property", () => {
@@ -63,9 +63,9 @@ describe("create", () => {
       caption: v,
     }
     const element = testRender(spec).element
-    expect(element.caption).to.be("one")
+    expect(element.caption).toBe("one")
     v.set("two")
-    expect(element.caption).to.be("two")
+    expect(element.caption).toBe("two")
   })
 
   test("Call method property", () => {
@@ -75,9 +75,9 @@ describe("create", () => {
       value_step: value,
     }
     const element = testRender(spec).element
-    expect(element.get_slider_value_step()).to.be(1)
+    expect(element.get_slider_value_step()).toBe(1)
     value.set(2)
-    expect(element.get_slider_value_step()).to.be(2)
+    expect(element.get_slider_value_step()).toBe(2)
   })
 
   test("Slider minimum", () => {
@@ -88,11 +88,11 @@ describe("create", () => {
       maximum_value: 5,
     }
     const element = testRender(spec).element
-    expect(element.get_slider_minimum()).to.be(1)
-    expect(element.get_slider_maximum()).to.be(5)
+    expect(element.get_slider_minimum()).toBe(1)
+    expect(element.get_slider_maximum()).toBe(5)
     value.set(2)
-    expect(element.get_slider_minimum()).to.be(2)
-    expect(element.get_slider_maximum()).to.be(5)
+    expect(element.get_slider_minimum()).toBe(2)
+    expect(element.get_slider_maximum()).toBe(5)
   })
 
   test("Slider maximum", () => {
@@ -103,11 +103,11 @@ describe("create", () => {
       maximum_value: value,
     }
     const element = testRender(spec).element
-    expect(element.get_slider_minimum()).to.be(1)
-    expect(element.get_slider_maximum()).to.be(5)
+    expect(element.get_slider_minimum()).toBe(1)
+    expect(element.get_slider_maximum()).toBe(5)
     value.set(6)
-    expect(element.get_slider_minimum()).to.be(1)
-    expect(element.get_slider_maximum()).to.be(6)
+    expect(element.get_slider_minimum()).toBe(1)
+    expect(element.get_slider_maximum()).toBe(6)
   })
 
   test("Does not allow source on create-only property", () => {
@@ -118,7 +118,7 @@ describe("create", () => {
     }
     expect(() => {
       testRender(spec)
-    }).to.error()
+    }).toError()
   })
 
   test("can specify children", () => {
@@ -132,8 +132,8 @@ describe("create", () => {
       ],
     }
     const element = testRender(spec).element
-    expect(element.children[0].type).to.be("button")
-    expect(element.children[0].caption).to.be("hi")
+    expect(element.children[0].type).toBe("button")
+    expect(element.children[0].caption).toBe("hi")
   })
 
   test("can specify multiple children", () => {
@@ -151,10 +151,10 @@ describe("create", () => {
       ],
     }
     const element = testRender(spec).element
-    expect(element.children[0].type).to.be("button")
-    expect(element.children[0].caption).to.be("hi")
-    expect(element.children[1].type).to.be("button")
-    expect(element.children[1].caption).to.be("bye")
+    expect(element.children[0].type).toBe("button")
+    expect(element.children[0].caption).toBe("hi")
+    expect(element.children[1].type).toBe("button")
+    expect(element.children[1].caption).toBe("bye")
   })
 })
 
@@ -166,7 +166,7 @@ describe("styleMod", () => {
         left_padding: 3,
       },
     }
-    expect(testRender(spec).element.style.left_padding).to.equal(3)
+    expect(testRender(spec).element.style.left_padding).toEqual(3)
   })
 
   test("sets setter property", () => {
@@ -176,7 +176,7 @@ describe("styleMod", () => {
         padding: [3, 3],
       },
     }
-    expect(testRender(spec).element.style.left_padding).to.equal(3)
+    expect(testRender(spec).element.style.left_padding).toEqual(3)
   })
 
   test("listens to source property", () => {
@@ -188,9 +188,9 @@ describe("styleMod", () => {
       },
     }
     const element = testRender(spec).element
-    expect(element.style.left_padding).to.equal(1)
+    expect(element.style.left_padding).toEqual(1)
     value.set(2)
-    expect(element.style.left_padding).to.equal(2)
+    expect(element.style.left_padding).toEqual(2)
   })
 })
 
@@ -202,7 +202,7 @@ describe("destroy", () => {
     }
     const element = testRender(spec).element
     destroy(element)
-    expect(element.valid).to.be(false)
+    expect(element.valid).toBe(false)
   })
 
   test("calling destroy ends subscriptions", () => {
@@ -212,9 +212,9 @@ describe("destroy", () => {
       caption: source,
     }
     const element = testRender(spec).element
-    expect(_numObservers(source)).to.equal(1)
+    expect(_numObservers(source)).toEqual(1)
     destroy(element)
-    expect(_numObservers(source)).to.equal(0)
+    expect(_numObservers(source)).toEqual(0)
   })
 
   test("calling destroy ends child subscriptions", () => {
@@ -235,9 +235,9 @@ describe("destroy", () => {
     }
     const element = testRender(spec).element
 
-    expect(_numObservers(source)).to.equal(1)
+    expect(_numObservers(source)).toEqual(1)
     destroy(element)
-    expect(_numObservers(source)).to.equal(0)
+    expect(_numObservers(source)).toEqual(0)
   })
 })
 
@@ -251,7 +251,7 @@ test("events", () => {
   }
   const element = testRender(spec).element
 
-  expect(func).not.called()
+  expect(func).not.toHaveBeenCalled()
 
   const fakeClickEvent: OnGuiClickEvent = {
     element: element as LuaGuiElement,
@@ -265,7 +265,7 @@ test("events", () => {
     cursor_display_location: nil!,
   }
   script.get_event_handler(defines.events.on_gui_click)(fakeClickEvent)
-  expect(func).calledWith(fakeClickEvent)
+  expect(func).toHaveBeenCalledWith(fakeClickEvent)
 
   const fakeOpenEvent: OnGuiOpenedEvent = {
     element: element as LuaGuiElement,
@@ -275,7 +275,7 @@ test("events", () => {
     gui_type: defines.gui_type.custom,
   }
   script.get_event_handler(defines.events.on_gui_opened)(fakeOpenEvent)
-  expect(func).calledWith(fakeOpenEvent)
+  expect(func).toHaveBeenCalledWith(fakeOpenEvent)
 
   const fakeTextChangeEvent: OnGuiTextChangedEvent = {
     element: element as LuaGuiElement,
@@ -285,7 +285,7 @@ test("events", () => {
     text: "hi",
   }
   script.get_event_handler(defines.events.on_gui_text_changed)(fakeTextChangeEvent)
-  expect(func).calledWith(fakeTextChangeEvent)
+  expect(func).toHaveBeenCalledWith(fakeTextChangeEvent)
 })
 
 test("observable value", () => {
@@ -296,8 +296,8 @@ test("observable value", () => {
   }
   const element = testRender(spec).element
 
-  expect(val.get()).to.equal("one")
-  expect(element.text).to.equal("one")
+  expect(val.get()).toEqual("one")
+  expect(element.text).toEqual("one")
 
   element.text = "two"
   const fakeEvent: OnGuiTextChangedEvent = {
@@ -309,10 +309,10 @@ test("observable value", () => {
   }
   script.get_event_handler(defines.events.on_gui_text_changed)(fakeEvent)
 
-  expect(val.get()).to.equal("two")
+  expect(val.get()).toEqual("two")
 
   val.set("three")
-  expect(element.text).to.equal("three")
+  expect(element.text).toEqual("three")
 })
 
 test("onCreate", () => {
@@ -324,7 +324,7 @@ test("onCreate", () => {
     },
   }
 
-  expect(testRender(spec).element).to.be(element1)
+  expect(testRender(spec).element).toBe(element1)
 })
 
 test("context onMount", () => {
@@ -337,8 +337,8 @@ test("context onMount", () => {
     props: {},
   }
   const element = testRender(spec).element
-  expect(fn).calledTimes(1)
-  expect(fn).calledWith(element)
+  expect(fn).toHaveBeenCalledTimes(1)
+  expect(fn).toHaveBeenCalledWith(element)
 })
 
 test("context onDestroy", () => {
@@ -353,9 +353,9 @@ test("context onDestroy", () => {
   }
 
   const element = testRender(spec).element
-  expect(fn).not.called()
+  expect(fn).not.toHaveBeenCalled()
   destroy(element)
-  expect(fn).called()
+  expect(fn).toHaveBeenCalled()
 })
 
 describe("Class component", () => {
@@ -377,7 +377,7 @@ describe("Class component", () => {
 
     render(props: Props, context: RenderContext): Element {
       context.onMount((element) => {
-        expect(element.type).to.be("flow")
+        expect(element.type).toBe("flow")
         results.push("onMount")
       })
       context.getSubscription().add({ invoke: () => results.push("destroyed") })
@@ -398,7 +398,7 @@ describe("Class component", () => {
 
     render(props: Props, context: RenderContext): Element {
       context.onMount((element) => {
-        expect(element.type).to.be("flow")
+        expect(element.type).toBe("flow")
         results.push("onMount2")
       })
       context.getSubscription().add({ invoke: () => results.push("destroyed2") })
@@ -421,11 +421,11 @@ describe("Class component", () => {
     }
     const element = testRender(spec).element
 
-    expect(element.type).to.be("flow")
-    expect(results).to.equal(["constructed", "render", "cb flow", "onMount"])
+    expect(element.type).toBe("flow")
+    expect(results).toEqual(["constructed", "render", "cb flow", "onMount"])
     results.length = 0
     destroy(element)
-    expect(results).to.equal(["destroyed"])
+    expect(results).toEqual(["destroyed"])
   })
 
   test("create2", () => {
@@ -435,11 +435,11 @@ describe("Class component", () => {
     }
     const element = testRender(spec).element
 
-    expect(element.type).to.be("flow")
-    expect(results).to.equal(["constructed2", "render2", "constructed", "render", "cb flow", "onMount", "onMount2"])
+    expect(element.type).toBe("flow")
+    expect(results).toEqual(["constructed2", "render2", "constructed", "render", "cb flow", "onMount", "onMount2"])
     results.length = 0
     destroy(element)
-    expect(results).to.equal(["destroyed2", "destroyed"])
+    expect(results).toEqual(["destroyed2", "destroyed"])
   })
 
   test("unregistered components give error", () => {
@@ -452,7 +452,7 @@ describe("Class component", () => {
       type: C,
       props: {},
     }
-    expect(() => testRender(spec)).to.error()
+    expect(() => testRender(spec)).toError()
   })
 
   describe("getComponentInstance", () => {
@@ -462,7 +462,7 @@ describe("Class component", () => {
         props: {},
       }
       const instance = getComponentInstance(testRender(spec).element)
-      expect(instance).to.be.a(Foo)
+      expect(instance).toBeA(Foo)
     })
     test("returns outer component if nested", () => {
       const spec: ClassComponent<any> = {
@@ -470,7 +470,7 @@ describe("Class component", () => {
         props: {},
       }
       const instance = getComponentInstance(testRender(spec).element)
-      expect(instance).to.be.a(Foo2)
+      expect(instance).toBeA(Foo2)
     })
   })
 })
@@ -514,11 +514,11 @@ describe("function component", () => {
     }
     const element = testRender(spec).element
 
-    expect(element.type).to.be("flow")
-    expect(results).to.equal(["render", "flow", "mountA", "mountB"])
+    expect(element.type).toBe("flow")
+    expect(results).toEqual(["render", "flow", "mountA", "mountB"])
     results.length = 0
     destroy(element)
-    expect(results).to.equal(["destroyed"])
+    expect(results).toEqual(["destroyed"])
   })
 
   test("render 2", () => {
@@ -528,11 +528,11 @@ describe("function component", () => {
     }
     const element = testRender(spec).element
 
-    expect(element.type).to.be("flow")
-    expect(results).to.equal(["render2", "render", "flow", "mount2A", "mount2B", "mountA", "mountB"])
+    expect(element.type).toBe("flow")
+    expect(results).toEqual(["render2", "render", "flow", "mount2A", "mount2B", "mountA", "mountB"])
     results.length = 0
     destroy(element)
-    expect(results).to.equal(["destroyed2", "destroyed"])
+    expect(results).toEqual(["destroyed2", "destroyed"])
   })
 })
 
@@ -542,7 +542,7 @@ describe("Fragments", () => {
       type: "fragment",
       children: [{ type: "flow" }, { type: "flow" }],
     }
-    expect(() => testRender(spec as any)).to.error()
+    expect(() => testRender(spec as any)).toError()
   })
 
   test("Fragment with multiple children inside another element is ok", () => {
@@ -551,10 +551,10 @@ describe("Fragments", () => {
       children: [{ type: "fragment", children: [{ type: "flow" }, { type: "flow" }] }],
     }
     const element = testRender(spec).element
-    expect(element.type).to.be("flow")
-    expect(element.children.length).to.be(2)
-    expect(element.children[0].type).to.be("flow")
-    expect(element.children[1].type).to.be("flow")
+    expect(element.type).toBe("flow")
+    expect(element.children.length).toBe(2)
+    expect(element.children[0].type).toBe("flow")
+    expect(element.children[1].type).toBe("flow")
   })
 
   test("fragment with multiple children as result of functional component", () => {
@@ -564,17 +564,17 @@ describe("Fragments", () => {
         children: [{ type: "flow" }, { type: "flow" }],
       }
     }
-    expect(() => testRender({ type: Comp, props: {} })).to.error()
+    expect(() => testRender({ type: Comp, props: {} })).toError()
 
     const spec2: Element = {
       type: "flow",
       children: [{ type: Comp, props: {} }],
     }
     const element = testRender(spec2).element
-    expect(element.type).to.be("flow")
-    expect(element.children.length).to.be(2)
-    expect(element.children[0].type).to.be("flow")
-    expect(element.children[1].type).to.be("flow")
+    expect(element.type).toBe("flow")
+    expect(element.children.length).toBe(2)
+    expect(element.children[0].type).toBe("flow")
+    expect(element.children[1].type).toBe("flow")
   })
 })
 
@@ -589,9 +589,9 @@ test("tabbed-pane", () => {
     ],
   }
   const element = testRender(spec).element
-  expect(element.tabs.length).to.be(2)
-  expect(element.tabs[0].tab.caption).to.be("one")
-  expect(element.tabs[0].content.caption).to.be("one content")
-  expect(element.tabs[1].tab.caption).to.be("two")
-  expect(element.tabs[1].content.caption).to.be("two content")
+  expect(element.tabs.length).toBe(2)
+  expect(element.tabs[0].tab.caption).toBe("one")
+  expect(element.tabs[0].content.caption).toBe("one content")
+  expect(element.tabs[1].tab.caption).toBe("two")
+  expect(element.tabs[1].content.caption).toBe("two content")
 })
