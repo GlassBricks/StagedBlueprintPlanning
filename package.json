@@ -47,7 +47,8 @@
     "version-minor": "ts-node --esm scripts/bump-version.ts minor",
     "pretest": "npm run clean && npm run build:test",
     "test": "factorio-test run ./src",
-    "prepare-package": "npm run test && npm run build:release"
+    "prepare-package": "npm run test && npm run build:release && npm run check-clean-tree",
+    "check-clean-tree": "git diff-index --exit-code HEAD --"
   },
   "nodemonConfig": {
     "watch": [
