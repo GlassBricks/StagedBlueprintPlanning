@@ -1,6 +1,6 @@
 {
   "name": "bp100",
-  "version": "0.26.1",
+  "version": "0.27.0",
   "title": "Staged Blueprint Planning",
   "description": "The ultimate mod for designing staged blueprints, e.g. for 100% speedruns.",
   "author": "GlassBricks",
@@ -14,5 +14,10 @@
     "removeZipAfterPackage": true,
     "no_git_tag": true
   },
-  "dependencies": ["base >= 1.1.71", "? PickerDollies >= 1.2.1", "? bobinserters >= 1.0.0", "? boblogistics >= 1.0.0"]
+  "dependencies": [
+    "base >= 1.1.71",
+    "? PickerDollies >= 1.2.1",
+    "? bobinserters >= 1.0.0",
+    "? boblogistics >= 1.0.0"
+  ]
 }
