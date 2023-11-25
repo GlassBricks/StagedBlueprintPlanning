@@ -8,23 +8,10 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
-// export abstract class LazyLoad<T> implements LuaMetatable<T>, T {
-//   protected abstract load(): T
-//
-//   private _loaded?: () => void
-//
-//   __index(this: LazyLoad<T> & T, key: keyof T): any {
-//     if (this._loaded) return nil
-//
-//     const value = this.load()
-//     for (const [k, v] of pairs(value)) {
-//       ;(this as any)[k] = v
-//     }
-//     this._loaded = () => {}
-//     return value[key]
-//   }
-// }
-
+/**
+ * Creates a class that will lazily load its methods when they are first called.
+ * This allows you to use a closure-based class, while being able to be stored/loaded in global.
+ */
 export function LazyLoadClass<V extends object, T extends object>(
   registeredName: string,
   load: (value: V) => T,
@@ -45,10 +32,10 @@ export function LazyLoadClass<V extends object, T extends object>(
         }
         this[k] = v as any
       }
-      this._loaded = () => {}
+      this._loaded = () => {} // cleared on reload
       return value[key]
     },
   }
   script.register_metatable(registeredName, mt)
-  return (value: any) => setmetatable(value, mt) as V & T
+  return (value: any) => setmetatable(value, mt)
 }

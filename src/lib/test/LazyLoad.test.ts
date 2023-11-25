@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { LazyLoadClass } from "../experiment"
+import { LazyLoadClass } from "../LazyLoad"
 
 interface Foo {
   f1(): void
