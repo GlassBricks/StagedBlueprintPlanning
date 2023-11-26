@@ -36,7 +36,6 @@ import { createMockProject, setupTestSurfaces } from "./Project-mock"
 import _wireHandler = require("../../entity/wires")
 import _highlights = require("../../project/entity-highlights")
 import projectUpdates = require("../../project/project-updates")
-import _worldListener = require("../../project/user-actions")
 import _worldUpdater = require("../../project/world-entity-updates")
 import direction = defines.direction
 import wire_type = defines.wire_type
@@ -920,8 +919,6 @@ describe("undergrounds", () => {
   })
 
   describe("upgrading", () => {
-    moduleMock(_worldListener, true)
-
     test("can upgrade underground in first stage", () => {
       const { luaEntity, entity } = createUndergroundBelt(1)
       luaEntity.order_upgrade({

@@ -53,7 +53,6 @@ import {
 } from "../../project/project-updates"
 import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo } from "../../project/undo"
-import { onWiresPossiblyUpdated, userSetLastStageWithUndo } from "../../project/user-actions"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import {
   clearWorldEntityAtStage,
@@ -1600,7 +1599,7 @@ test("connecting power switch", () => {
     target_wire_id: defines.wire_connection_id.power_switch_right,
   })
 
-  onWiresPossiblyUpdated(project, poleLuaEntity, 2, player.index)
+  project.actions.onWiresPossiblyUpdated(poleLuaEntity, 2, player.index)
 
   assertEntityCorrect(pole, false)
   assertEntityCorrect(powerSwitch, false)
@@ -1618,7 +1617,7 @@ test("connecting power switch to new pole in higher stage", () => {
     target_wire_id: defines.wire_connection_id.power_switch_right,
   })
 
-  onWiresPossiblyUpdated(project, pole1LuaEntity, 1, player.index)
+  project.actions.onWiresPossiblyUpdated(pole1LuaEntity, 1, player.index)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
   assertEntityCorrect(powerSwitch, false)
@@ -1630,7 +1629,7 @@ test("connecting power switch to new pole in higher stage", () => {
     target_wire_id: defines.wire_connection_id.power_switch_right,
   })
 
-  onWiresPossiblyUpdated(project, pole2LuaEntity, 3, player.index)
+  project.actions.onWiresPossiblyUpdated(pole2LuaEntity, 3, player.index)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
   assertEntityCorrect(powerSwitch, false)
@@ -1653,7 +1652,7 @@ test("using stage delete tool", () => {
 
 test("using stage delete tool alt select", () => {
   const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
-  userSetLastStageWithUndo(project, entity, 3, player.index)
+  project.actions.userSetLastStageWithUndo(entity, 3, player.index)
 
   Events.raiseFakeEventNamed("on_player_alt_selected_area", {
     player_index: player.index,

@@ -23,7 +23,8 @@ import {
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
-import { getStageAtSurface } from "../project/UserProject"
+import { getStageAtSurface } from "../project/stage-surface"
+
 import { Entity } from "./Entity"
 import {
   EntityPrototypeInfo,

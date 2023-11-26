@@ -11,7 +11,8 @@
 
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
-import { _deleteAllProjects, createUserProject, getStageAtSurface, ProjectEvents } from "../../project/UserProject"
+import { getStageAtSurface } from "../../project/stage-surface"
+import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
 
 let eventListener: MockNoSelf<AnySelflessFun>
 before_each(() => {

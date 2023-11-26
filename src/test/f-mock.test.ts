@@ -12,13 +12,13 @@
 import expect from "tstl-expect"
 import { fMock } from "./f-mock"
 
-test("can use fMock", () => {
-  interface Foo {
-    f1(value: number): unknown
-    f2(): void
-  }
-  const foo = fMock<Foo>()
+interface Foo {
+  f1(value: number): unknown
+  f2(): void
+}
 
+const foo = fMock<Foo>()
+test("can use fMock", () => {
   expect(foo.f2).not.toHaveBeenCalled()
   foo.f2()
   expect(foo.f2).toHaveBeenCalled()

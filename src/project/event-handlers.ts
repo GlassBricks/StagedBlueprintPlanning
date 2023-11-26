@@ -45,12 +45,13 @@ import {
   OnEntityPrototypesLoaded,
   PasteCompatibleRotationType,
 } from "../entity/entity-prototype-info"
-import { isWorldEntityProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { isWorldEntityProjectEntity } from "../entity/ProjectEntity"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { getProjectPlayerData } from "./player-project-data"
-import { Project, Stage } from "./ProjectDef"
+import { Stage } from "./ProjectDef"
+import { getStageAtSurface } from "./stage-surface"
 import {
   onUndoReferenceBuilt,
   registerUndoAction,
@@ -58,27 +59,6 @@ import {
   registerUndoActionLater,
   UndoAction,
 } from "./undo"
-import {
-  onBringDownToStageUsed,
-  onBringToStageUsed,
-  onCleanupToolUsed,
-  onEntityCreated,
-  onEntityDeleted,
-  onEntityDied,
-  onEntityDollied,
-  onEntityForceDeleteUsed,
-  onEntityMarkedForUpgrade,
-  onEntityPossiblyUpdated,
-  onEntityRotated,
-  onMoveEntityToStageCustomInput,
-  onSendToStageUsed,
-  onStageDeleteCancelUsed,
-  onStageDeleteUsed,
-  onTryFixEntity,
-  onUndergroundBeltDragRotated,
-  onWiresPossiblyUpdated,
-} from "./user-actions"
-import { getStageAtSurface } from "./UserProject"
 
 const Events = ProtectedEvents
 
@@ -103,28 +83,28 @@ function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
   if (isWorldEntityProjectEntity(entity)) {
-    onEntityCreated(stage.project, entity, stage.stageNumber, player)
+    stage.actions.onEntityCreated(entity, stage.stageNumber, player)
   }
 }
 
 function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
-  if (stage) onEntityDeleted(stage.project, entity, stage.stageNumber, player)
+  if (stage) stage.actions.onEntityDeleted(entity, stage.stageNumber, player)
 }
 
 function luaEntityPossiblyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
-  if (stage) onEntityPossiblyUpdated(stage.project, entity, stage.stageNumber, nil, player)
+  if (stage) stage.actions.onEntityPossiblyUpdated(entity, stage.stageNumber, nil, player)
 }
 
 function luaEntityMarkedForUpgrade(entity: LuaEntity, player: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
-  if (stage) onEntityMarkedForUpgrade(stage.project, entity, stage.stageNumber, player)
+  if (stage) stage.actions.onEntityMarkedForUpgrade(entity, stage.stageNumber, player)
 }
 
 function luaEntityDied(entity: LuaEntity): void {
   const stage = getStageAtEntity(entity)
-  if (stage) onEntityDied(stage.project, entity, stage.stageNumber)
+  if (stage) stage.actions.onEntityDied(entity, stage.stageNumber)
 }
 
 function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {
@@ -132,7 +112,7 @@ function luaEntityRotated(entity: LuaEntity, previousDirection: defines.directio
   const stage = getStageAtSurface(entity.surface.index)
   if (!stage) return
   if (isWorldEntityProjectEntity(entity)) {
-    onEntityRotated(stage.project, entity, stage.stageNumber, previousDirection, player)
+    stage.actions.onEntityRotated(entity, stage.stageNumber, previousDirection, player)
     return
   }
   if (isPreviewEntity(entity)) {
@@ -301,11 +281,11 @@ function clearToBeFastReplaced(player: PlayerIndex | nil): void {
   if (toBeFastReplaced) {
     const { stage } = toBeFastReplaced
     if (stage.valid) {
-      const { stageNumber, project } = stage
-      onEntityDeleted(project, toBeFastReplaced, stageNumber, player)
+      const { stageNumber } = stage
+      stage.actions.onEntityDeleted(toBeFastReplaced, stageNumber, player)
       const { undergroundPairValue } = toBeFastReplaced
       if (undergroundPairValue) {
-        onEntityDeleted(project, undergroundPairValue, stageNumber, player)
+        stage.actions.onEntityDeleted(undergroundPairValue, stageNumber, player)
       }
     }
     state.toBeFastReplaced = nil
@@ -380,7 +360,7 @@ Events.on_pre_build((e) => {
     limit: 1,
   })[0]
   if (hoveredEntity != nil) {
-    onUndergroundBeltDragRotated(stage.project, hoveredEntity, stage.stageNumber, e.player_index)
+    stage.actions.onUndergroundBeltDragRotated(hoveredEntity, stage.stageNumber, e.player_index)
   }
 })
 
@@ -447,7 +427,7 @@ Events.on_player_mined_entity((e) => {
     // this happens when using instant upgrade planner
     setToBeFastReplaced(entity, stage, e.player_index)
   } else {
-    onEntityDeleted(stage.project, entity, stage.stageNumber, e.player_index)
+    stage.actions.onEntityDeleted(entity, stage.stageNumber, e.player_index)
   }
 })
 
@@ -488,11 +468,11 @@ Events.on_built_entity((e) => {
 
   if (lastPreBuild == nil) {
     // editor mode build, marker entity, or multiple-entities in one build
-    onEntityCreated(stage.project, entity, stage.stageNumber, playerIndex)
+    stage.actions.onEntityCreated(entity, stage.stageNumber, playerIndex)
     return
   }
   // finally, normal build
-  const undoAction = onEntityCreated(stage.project, entity, stage.stageNumber, playerIndex)
+  const undoAction = stage.actions.onEntityCreated(entity, stage.stageNumber, playerIndex)
   if (undoAction) {
     registerUndoActionLater(undoAction)
   }
@@ -505,13 +485,13 @@ function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex) {
   const undergroundPairValue = toBeFastReplaced.undergroundPairValue
 
   if (isFastReplaceable(toBeFastReplaced, entity)) {
-    onEntityPossiblyUpdated(stage.project, entity, stage.stageNumber, toBeFastReplaced.direction, player)
+    stage.actions.onEntityPossiblyUpdated(entity, stage.stageNumber, toBeFastReplaced.direction, player)
     state.toBeFastReplaced = undergroundPairValue // could be nil
     return true
   }
   // check the underground pair value instead
   if (undergroundPairValue && isFastReplaceable(undergroundPairValue, entity)) {
-    onEntityPossiblyUpdated(stage.project, entity, stage.stageNumber, toBeFastReplaced.direction, player)
+    stage.actions.onEntityPossiblyUpdated(entity, stage.stageNumber, toBeFastReplaced.direction, player)
     toBeFastReplaced.undergroundPairValue = nil
     return true
   }
@@ -825,8 +805,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   }
 
   const stage = bpState.stage
-  const projectEntity = onEntityPossiblyUpdated(
-    stage.project,
+  const projectEntity = stage.actions.onEntityPossiblyUpdated(
     luaEntity,
     stage.stageNumber,
     nil,
@@ -849,7 +828,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       // factorio bug? transport belts don't save circuit connections immediately when pasted
       bpState.needsManualConnections.push(entityId)
     } else {
-      onWiresPossiblyUpdated(stage.project, luaEntity, stage.stageNumber, e.player_index)
+      stage.actions.onWiresPossiblyUpdated(luaEntity, stage.stageNumber, e.player_index)
     }
   }
 
@@ -857,13 +836,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 }
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
-  const {
-    entities,
-    knownLuaEntities,
-    needsManualConnections,
-    usedPasteUpgrade,
-    stage: { project, stageNumber },
-  } = state.currentBlueprintPaste!
+  const { entities, knownLuaEntities, needsManualConnections, usedPasteUpgrade, stage } = state.currentBlueprintPaste!
 
   for (const entityId of needsManualConnections) {
     const value = entities[entityId - 1]
@@ -871,7 +844,7 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
     if (!luaEntity) continue
     manuallyConnectNeighbours(luaEntity, value.neighbours)
     manuallyConnectCircuits(luaEntity, value.connections)
-    onWiresPossiblyUpdated(project, luaEntity, stageNumber, e.player_index)
+    stage.actions.onWiresPossiblyUpdated(luaEntity, stage.stageNumber, e.player_index)
   }
 
   const player = game.get_player(e.player_index)!
@@ -897,7 +870,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
   const data = global.players[player.index]
   const existingEntity = data.lastWireAffectedEntity
   if (existingEntity && existingEntity != entity) {
-    onWiresPossiblyUpdated(stage.project, entity, stage.stageNumber, player.index)
+    stage.actions.onWiresPossiblyUpdated(entity, stage.stageNumber, player.index)
   }
   data.lastWireAffectedEntity = entity
 }
@@ -908,7 +881,7 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   if (entity) {
     data.lastWireAffectedEntity = nil
     const stage = getStageAtEntity(entity)
-    if (stage) onWiresPossiblyUpdated(stage.project, entity, stage.stageNumber, index)
+    if (stage) stage.actions.onWiresPossiblyUpdated(entity, stage.stageNumber, index)
   }
 }
 
@@ -934,25 +907,27 @@ function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const updateLater: LuaEntity[] = []
-  const { stageNumber, project } = stage
+  const { stageNumber } = stage
+  const onCleanupToolUsed = stage.actions.onCleanupToolUsed
   for (const entity of e.entities) {
     if (entity.train) {
       updateLater.push(entity)
     } else {
-      onCleanupToolUsed(project, entity, stageNumber)
+      onCleanupToolUsed(entity, stageNumber)
     }
   }
   for (const entity of updateLater) {
-    onCleanupToolUsed(project, entity, stageNumber)
+    onCleanupToolUsed(entity, stageNumber)
   }
 }
 function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   if (e.item != Prototypes.CleanupTool) return
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
-  const { project } = stage
+  const onEntityForceDeleteUsed = stage.actions.onEntityForceDeleteUsed
+  const stageNumber = stage.stageNumber
   for (const entity of e.entities) {
-    onEntityForceDeleteUsed(project, entity, stage.stageNumber)
+    onEntityForceDeleteUsed(entity, stageNumber)
   }
 }
 
@@ -971,7 +946,7 @@ Events.on(CustomInputs.ForceDelete, (e) => {
   const stage = getStageAtEntityOrPreview(entity)
   if (!stage) return
   const { name, position } = entity
-  if (onEntityForceDeleteUsed(stage.project, entity, stage.stageNumber)) {
+  if (stage.actions.onEntityForceDeleteUsed(entity, stage.stageNumber)) {
     player.play_sound({ path: "entity-mined/" + name, position })
   }
 })
@@ -983,7 +958,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   if (!entity) return
   const stage = getStageAtEntityOrPreview(entity)
   if (!stage) {
-    // should this be in user-actions.ts instead?
+    // should this be in project-actions.ts instead?
     player.create_local_flying_text({
       text: [L_Interaction.NotInAnProject],
       create_at_cursor: true,
@@ -991,7 +966,7 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
     return
   }
 
-  const undoAction = onMoveEntityToStageCustomInput(stage.project, entity, stage.stageNumber, e.player_index)
+  const undoAction = stage.actions.onMoveEntityToStageCustomInput(entity, stage.stageNumber, e.player_index)
   if (undoAction) registerUndoAction(undoAction)
 })
 
@@ -1007,10 +982,11 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
   if (!targetStage) {
     error("moveTargetStage was not set")
   }
-  const { stageNumber, project } = stage
+  const { stageNumber } = stage
   const undoActions: UndoAction[] = []
+  const onSendToStageUsed = stage.actions.onSendToStageUsed
   for (const entity of e.entities) {
-    const undoAction = onSendToStageUsed(project, entity, stageNumber, targetStage, playerIndex)
+    const undoAction = onSendToStageUsed(entity, stageNumber, targetStage, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
   registerUndoActionGroup(undoActions)
@@ -1018,15 +994,17 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
 
 function selectionToolUsed(
   e: OnPlayerSelectedAreaEvent | OnPlayerAltSelectedAreaEvent | OnPlayerReverseSelectedAreaEvent,
-  action: (project: Project, entity: LuaEntity, stageNumber: StageNumber, playerIndex: PlayerIndex) => UndoAction | nil,
+  action: "onStageDeleteUsed" | "onStageDeleteCancelUsed" | "onBringToStageUsed" | "onBringDownToStageUsed",
 ): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
 
-  const { stageNumber, project } = stage
+  const { stageNumber } = stage
   const undoActions: UndoAction[] = []
+  const fn = stage.actions[action]
+  const playerIndex = e.player_index
   for (const entity of e.entities) {
-    const undoAction = action(project, entity, stageNumber, e.player_index)
+    const undoAction = fn(entity, stageNumber, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
 
@@ -1037,26 +1015,26 @@ Events.on_player_selected_area((e) => {
   if (e.item == Prototypes.StageMoveTool) {
     stageMoveToolUsed(e)
   } else if (e.item == Prototypes.StageDeconstructTool) {
-    selectionToolUsed(e, onStageDeleteUsed)
+    selectionToolUsed(e, "onStageDeleteUsed")
   }
 })
 
 Events.on_player_alt_selected_area((e) => {
   if (e.item == Prototypes.StageMoveTool) {
-    selectionToolUsed(e, onBringToStageUsed)
+    selectionToolUsed(e, "onBringToStageUsed")
   } else if (e.item == Prototypes.StageDeconstructTool) {
-    selectionToolUsed(e, onStageDeleteCancelUsed)
+    selectionToolUsed(e, "onStageDeleteCancelUsed")
   }
 })
 Events.on_player_reverse_selected_area((e) => {
   if (e.item == Prototypes.StageMoveTool) {
-    selectionToolUsed(e, onBringToStageUsed)
+    selectionToolUsed(e, "onBringToStageUsed")
   }
 })
 
 Events.on_player_alt_reverse_selected_area((e) => {
   if (e.item == Prototypes.StageMoveTool) {
-    selectionToolUsed(e, onBringDownToStageUsed)
+    selectionToolUsed(e, "onBringDownToStageUsed")
   }
 })
 
@@ -1076,7 +1054,7 @@ Events.on_marked_for_deconstruction((e) => {
   if (!playerData) return
   const targetStage = playerData.moveTargetStage
   if (!targetStage) return
-  const undoAction = onSendToStageUsed(stage.project, entity, stage.stageNumber, targetStage, playerIndex)
+  const undoAction = stage.actions.onSendToStageUsed(entity, stage.stageNumber, targetStage, playerIndex)
   if (undoAction) {
     ;(state.accumulatedUndoActions ??= []).push(undoAction)
   }
@@ -1107,7 +1085,7 @@ if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_mov
     Events.on(event, (e) => {
       const stage = getStageAtEntityOrPreview(e.moved_entity)
       if (stage) {
-        onEntityDollied(stage.project, e.moved_entity, stage.stageNumber, e.start_pos, e.player_index)
+        stage.actions.onEntityDollied(e.moved_entity, stage.stageNumber, e.start_pos, e.player_index)
       }
     })
   })
@@ -1122,8 +1100,10 @@ Events.on_chunk_generated((e) => {
     area: e.area,
   })
   const { stageNumber, project } = stage
+
+  const onTryFixEntity = stage.actions.onTryFixEntity
   for (const entity of entities) {
-    if (entity.valid) onTryFixEntity(project, entity, stageNumber)
+    if (entity.valid) onTryFixEntity(entity, stageNumber)
   }
 
   const status = defines.chunk_generated_status.entities
@@ -1173,6 +1153,6 @@ Events.onInitOrLoad(() => {
 export function checkForCircuitWireUpdates(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
   if (stage) {
-    onWiresPossiblyUpdated(stage.project, entity, stage.stageNumber, byPlayer)
+    stage.actions.onWiresPossiblyUpdated(entity, stage.stageNumber, byPlayer)
   }
 }

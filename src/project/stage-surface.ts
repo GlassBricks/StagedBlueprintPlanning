@@ -9,21 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import expect from "tstl-expect"
-import { mockObj } from "../mock-obj"
+import { SurfaceIndex } from "factorio:runtime"
+import { Stage } from "./ProjectDef"
 
-interface Foo {
-  f1(arg: any): void
-  f2(): unknown
+declare const global: {
+  surfaceIndexToStage: ReadonlyLuaMap<SurfaceIndex, Stage>
 }
 
-test("can create and use mock object", () => {
-  const foo = mockObj<Foo>()
-  foo.f1(3)
-  expect(foo.f1).toHaveBeenCalledWith(3)
-  expect(foo.f2).not.toHaveBeenCalled()
-  foo.f2()
-  expect(foo.f2).toHaveBeenCalled()
-  foo.f2.returns(5)
-  expect(foo.f2()).toBe(5)
-})
+export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
+  return global.surfaceIndexToStage.get(surfaceIndex)
+}

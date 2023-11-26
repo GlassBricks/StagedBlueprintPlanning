@@ -31,3 +31,15 @@ export function fMock<T>(): mock.MockedObjectNoSelf<T> {
   })
   return result
 }
+
+/**
+ * This only works properly with objects using lazyLoad
+ */
+export function fStub<T>(value: T): mock.MockedObjectNoSelf<T> {
+  for (const [k, v] of pairs(value)) {
+    if (typeof v == "function") {
+      error(`already loaded value ${tostring(k)}, ${v}`)
+    }
+  }
+  return setmetatable(value, anyMockMt)
+}

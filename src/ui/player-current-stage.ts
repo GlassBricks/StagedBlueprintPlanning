@@ -15,7 +15,8 @@ import { Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { Stage, UserProject } from "../project/ProjectDef"
-import { getStageAtSurface, ProjectEvents } from "../project/UserProject"
+import { getStageAtSurface } from "../project/stage-surface"
+import { ProjectEvents } from "../project/UserProject"
 
 declare global {
   interface PlayerData {

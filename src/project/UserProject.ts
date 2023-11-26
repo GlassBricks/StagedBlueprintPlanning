@@ -39,7 +39,9 @@ import {
   createEmptyPropertyOverrideTable,
   PropertiesTable,
 } from "../utils/properties-obj"
+import { ProjectActions, projectActionsEntry } from "./project-actions"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, UserProject } from "./ProjectDef"
+import { getStageAtSurface } from "./stage-surface"
 import { createStageSurface, destroySurface } from "./surfaces"
 import { AutoSetTilesType, setTiles } from "./tiles"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
@@ -99,6 +101,8 @@ class UserProjectImpl implements UserProject {
   valid = true
 
   private readonly stages: Record<number, StageImpl> = {}
+
+  actions = projectActionsEntry(this)
 
   constructor(
     readonly id: ProjectId,
@@ -369,6 +373,8 @@ class StageImpl implements Stage {
 
   stageBlueprintSettings = createEmptyStageBlueprintSettings()
 
+  actions: ProjectActions
+
   getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings> {
     return {
       ...createdDiffedPropertyTableView(this.project.defaultBlueprintSettings, this.stageBlueprintSettings),
@@ -388,6 +394,7 @@ class StageImpl implements Stage {
     this.name = property(name)
     this.surfaceIndex = surface.index
     if (project.id != 0) global.surfaceIndexToStage.set(this.surfaceIndex, this)
+    this.actions = project.actions
   }
 
   static create(project: UserProjectImpl, stageNumber: StageNumber, name: string): StageImpl {
@@ -416,10 +423,6 @@ class StageImpl implements Stage {
   __tostring() {
     return `<Stage ${this.stageNumber} "${this.name.get()}" of "${this.project.name.get()}">`
   }
-}
-
-export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
-  return global.surfaceIndexToStage.get(surfaceIndex)
 }
 
 Events.on_pre_surface_deleted((e) => {

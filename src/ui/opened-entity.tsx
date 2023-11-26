@@ -38,11 +38,7 @@ import {
   setTrainLocationToCurrent,
 } from "../project/project-updates"
 import { Stage } from "../project/ProjectDef"
-import {
-  userMoveEntityToStageWithUndo,
-  userRevivedSettingsRemnant,
-  userSetLastStageWithUndo,
-} from "../project/user-actions"
+
 import { getProjectEntityOfEntity } from "./entity-util"
 import { PlayerChangedStageEvent, teleportToStage } from "./player-current-stage"
 import relative_gui_position = defines.relative_gui_position
@@ -182,14 +178,14 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   private moveToThisStage() {
     const wasSettingsRemnant = this.entity.isSettingsRemnant
     if (wasSettingsRemnant) {
-      userRevivedSettingsRemnant(this.stage.project, this.entity, this.stage.stageNumber, this.playerIndex)
+      this.stage.actions.userRevivedSettingsRemnant(this.entity, this.stage.stageNumber, this.playerIndex)
     } else {
-      userMoveEntityToStageWithUndo(this.stage.project, this.entity, this.stage.stageNumber, this.playerIndex)
+      this.stage.actions.userMoveEntityToStageWithUndo(this.entity, this.stage.stageNumber, this.playerIndex)
     }
     this.rerender(wasSettingsRemnant ?? true)
   }
   private removeLastStage() {
-    userSetLastStageWithUndo(this.stage.project, this.entity, nil, this.playerIndex)
+    this.stage.actions.userSetLastStageWithUndo(this.entity, nil, this.playerIndex)
     this.rerender(false)
   }
   private resetTrain() {

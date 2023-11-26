@@ -16,6 +16,7 @@ import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../ent
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
+import { ProjectActions } from "../../project/project-actions"
 import { EntityUpdateResult, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { _doUndoAction } from "../../project/undo"
@@ -23,7 +24,6 @@ import { moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 import _notifications = require("../../project/notifications")
 import _projectUpdates = require("../../project/project-updates")
-import _userActions = require("../../project/user-actions")
 import _worldEntityUpdates = require("../../project/world-entity-updates")
 
 const notifications = moduleMock(_notifications, true)
@@ -31,9 +31,6 @@ let expectedNumCalls = 1
 
 const projectUpdates = moduleMock(_projectUpdates, true)
 const worldUpdates = moduleMock(_worldEntityUpdates, true)
-
-const userActions = moduleMock(_userActions, false)
-
 before_each(() => {
   expectedNumCalls = 1
   projectUpdates.trySetFirstStage.invokes((_project, entity, stage) => {
@@ -72,8 +69,12 @@ after_each(() => {
 
 const surfaces = setupTestSurfaces(6)
 let project: Project
+let userActions: ProjectActions
+
 before_each(() => {
   project = createMockProject(surfaces)
+  userActions = ProjectActions(project)
+  project.actions = userActions // needed for undo support, and the funky way we get OOP to work
 })
 
 const pos = Pos(10.5, 10.5)
@@ -133,7 +134,7 @@ after_each(() => {
 describe("onEntityCreated", () => {
   test.each([2, 3])("at same or higher stage %d sets entity and calls refreshEntityAtStage", (newStage) => {
     const { luaEntity, entity } = addEntity(2)
-    userActions.onEntityCreated(project, luaEntity, newStage, playerIndex)
+    userActions.onEntityCreated(luaEntity, newStage, playerIndex)
 
     expect(entity.getWorldEntity(newStage)).toBe(luaEntity)
     expect(worldUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(project, entity, newStage)
@@ -141,7 +142,7 @@ describe("onEntityCreated", () => {
 
   test.each([1, 2])("at lower stage %d (overbuilding preview) sets entity and calls trySetFirstStage", (newStage) => {
     const { luaEntity, entity } = addEntity(3)
-    userActions.onEntityCreated(project, luaEntity, newStage, playerIndex)
+    userActions.onEntityCreated(luaEntity, newStage, playerIndex)
 
     expect(entity.getWorldEntity(newStage)).toBe(luaEntity)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, newStage)
@@ -150,7 +151,7 @@ describe("onEntityCreated", () => {
 
   test("create at lower stage can handle immediate upgrade", () => {
     const { luaEntity, entity } = addEntity(3)
-    userActions.onEntityCreated(project, luaEntity, 1, playerIndex)
+    userActions.onEntityCreated(luaEntity, 1, playerIndex)
 
     // assert.equal(luaEntity, entity.getWorldEntity(1))
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 1)
@@ -167,7 +168,7 @@ describe("onEntityCreated", () => {
         return StageMoveResult.Updated
       })
 
-      userActions.onEntityCreated(project, luaEntity, newStage, playerIndex)
+      userActions.onEntityCreated(luaEntity, newStage, playerIndex)
       expect(entity.getWorldEntity(newStage)).toBe(luaEntity)
       expect(projectUpdates.tryReviveSettingsRemnant).toHaveBeenCalledWith(project, entity, newStage)
     },
@@ -181,7 +182,7 @@ describe("onEntityCreated", () => {
       return StageMoveResult.IntersectsAnotherEntity
     })
 
-    userActions.onEntityCreated(project, luaEntity, 3, playerIndex)
+    userActions.onEntityCreated(luaEntity, 3, playerIndex)
 
     expect(worldUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 3)
     assertNotified(entity, [L_Interaction.MoveWillIntersectAnotherEntity], true)
@@ -200,7 +201,7 @@ describe("onEntityCreated", () => {
         name: "straight-rail",
         direction: defines.direction.north,
       })
-      userActions.onEntityCreated(project, luaEntity2, stage, playerIndex)
+      userActions.onEntityCreated(luaEntity2, stage, playerIndex)
       expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(project, luaEntity2, stage)
     },
   )
@@ -214,7 +215,7 @@ describe("onEntityCreated", () => {
       name: "straight-rail",
       direction: defines.direction.southwest,
     })
-    userActions.onEntityCreated(project, luaEntity2, 2, playerIndex)
+    userActions.onEntityCreated(luaEntity2, 2, playerIndex)
     expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(project, luaEntity2, 2)
   })
 
@@ -227,7 +228,7 @@ describe("onEntityCreated", () => {
       name: "transport-belt",
       direction: defines.direction.north,
     })
-    userActions.onEntityCreated(project, luaEntity2, 1, playerIndex)
+    userActions.onEntityCreated(luaEntity2, 1, playerIndex)
     assertNotified(entity1.entity, [L_Interaction.CannotBuildDifferentDirection], false)
 
     expectedNumCalls = 0
@@ -235,7 +236,7 @@ describe("onEntityCreated", () => {
 
   test("can undo overbuilding preview", () => {
     const { luaEntity, entity } = addEntity(3)
-    const undoAction = userActions.onEntityCreated(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onEntityCreated(luaEntity, 2, playerIndex)
     expect(undoAction).not.toBeNil()
     ignoreNotification()
 
@@ -248,7 +249,7 @@ describe("onEntityCreated", () => {
 
   test("can still undo after being deleted and re-added", () => {
     const { luaEntity, entity } = addEntity(3)
-    const undoAction = userActions.onEntityCreated(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onEntityCreated(luaEntity, 2, playerIndex)
     expect(undoAction).not.toBeNil()
     ignoreNotification()
 
@@ -264,7 +265,7 @@ describe("onEntityCreated", () => {
 
   test("does not do undo action if not same first layer", () => {
     const { luaEntity, entity } = addEntity(3)
-    const undoAction = userActions.onEntityCreated(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onEntityCreated(luaEntity, 2, playerIndex)
     expect(undoAction).not.toBeNil()
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledTimes(1)
     ignoreNotification()
@@ -280,33 +281,33 @@ describe("onEntityCreated", () => {
 describe("onEntityDeleted", () => {
   test("if entity not in project, does nothing", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onEntityDeleted(project, luaEntity, 2, playerIndex)
+    userActions.onEntityDeleted(luaEntity, 2, playerIndex)
     expectedNumCalls = 0
   })
 
   test("in a lower stage does nothing (bug)", () => {
     addEntity(2)
     const luaEntity = createWorldEntity(1)
-    userActions.onEntityDeleted(project, luaEntity, 1, playerIndex)
+    userActions.onEntityDeleted(luaEntity, 1, playerIndex)
     expectedNumCalls = 0
   })
 
   test("in a higher stage calls disallowEntityDeletion", () => {
     const { luaEntity, entity } = addEntity(2)
-    userActions.onEntityDeleted(project, luaEntity, 3, playerIndex)
+    userActions.onEntityDeleted(luaEntity, 3, playerIndex)
     expect(worldUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 3)
   })
 
   test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
     const { luaEntity, entity } = addEntity(2)
-    userActions.onEntityDeleted(project, luaEntity, 2, playerIndex)
+    userActions.onEntityDeleted(luaEntity, 2, playerIndex)
     expect(projectUpdates.deleteEntityOrCreateSettingsRemnant).toHaveBeenCalledWith(project, entity)
   })
 })
 
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
-  userActions.onEntityDied(project, luaEntity, 2)
+  userActions.onEntityDied(luaEntity, 2)
   expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 2)
 })
 
@@ -321,13 +322,13 @@ describe("onEntityPossiblyUpdated", () => {
   test("if not in project, adds entity", () => {
     const luaEntity = createWorldEntity(2)
     const knownValue: any = { foo: "bar" }
-    userActions.onEntityPossiblyUpdated(project, luaEntity, 2, nil, playerIndex, knownValue)
+    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, knownValue)
     expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(project, luaEntity, 2, knownValue)
   })
 
   test("if is in project at higher stage, defaults to overbuild behavior", () => {
     const { luaEntity, entity } = addEntity(3)
-    userActions.onEntityPossiblyUpdated(project, luaEntity, 2, nil, playerIndex, nil)
+    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, nil)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 2)
     assertNotified(entity, [L_Interaction.EntityMovedFromStage, "mock stage 3"], false)
   })
@@ -338,7 +339,7 @@ describe("onEntityPossiblyUpdated", () => {
     projectUpdates.tryUpdateEntityFromWorld.invokes(() => {
       return result
     })
-    userActions.onEntityPossiblyUpdated(project, luaEntity, 2, nil, playerIndex, knownValue)
+    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, knownValue)
 
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(project, entity, 2, knownValue)
     if (message) assertNotified(entity, [message], true)
@@ -351,7 +352,7 @@ describe("onEntityPossiblyUpdated", () => {
     })
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter" })
-    userActions.onEntityPossiblyUpdated(project, luaEntity2, 2, nil, playerIndex)
+    userActions.onEntityPossiblyUpdated(luaEntity2, 2, nil, playerIndex)
 
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(project, entity, 2)
   })
@@ -364,7 +365,7 @@ describe("onEntityPossiblyUpdated", () => {
     const oldDirection = luaEntity.direction
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter", direction: defines.direction.south })
-    userActions.onEntityPossiblyUpdated(project, luaEntity2, 2, oldDirection, playerIndex)
+    userActions.onEntityPossiblyUpdated(luaEntity2, 2, oldDirection, playerIndex)
 
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(project, entity, 2)
   })
@@ -373,7 +374,7 @@ describe("onEntityPossiblyUpdated", () => {
 describe("onEntityRotated", () => {
   test("if not in project, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onEntityRotated(project, luaEntity, 2, luaEntity.direction, playerIndex)
+    userActions.onEntityRotated(luaEntity, 2, luaEntity.direction, playerIndex)
     expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(project, luaEntity, 2)
   })
 
@@ -386,7 +387,7 @@ describe("onEntityRotated", () => {
     projectUpdates.tryRotateEntityToMatchWorld.invokes(() => {
       return result
     })
-    userActions.onEntityRotated(project, luaEntity, 2, luaEntity.direction, playerIndex)
+    userActions.onEntityRotated(luaEntity, 2, luaEntity.direction, playerIndex)
 
     expect(projectUpdates.tryRotateEntityToMatchWorld).toHaveBeenCalledWith(project, entity, 2)
     if (message) assertNotified(entity, [message], true)
@@ -401,7 +402,7 @@ test("onUndergroundBeltDragRotated", () => {
   projectUpdates.tryRotateEntityToMatchWorld.invokes(() => {
     return EntityUpdateResult.Updated
   })
-  userActions.onUndergroundBeltDragRotated(project, luaEntity, 2, playerIndex)
+  userActions.onUndergroundBeltDragRotated(luaEntity, 2, playerIndex)
   expect(luaEntity.direction).toBe(defines.direction.south)
   expect(projectUpdates.tryRotateEntityToMatchWorld).toHaveBeenCalledWith(project, entity, 2)
 })
@@ -409,7 +410,7 @@ test("onUndergroundBeltDragRotated", () => {
 describe("onEntityMarkedForUpgrade", () => {
   test("if not in project, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onEntityMarkedForUpgrade(project, luaEntity, 2, playerIndex)
+    userActions.onEntityMarkedForUpgrade(luaEntity, 2, playerIndex)
     expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(project, luaEntity, 2)
   })
 
@@ -418,7 +419,7 @@ describe("onEntityMarkedForUpgrade", () => {
     projectUpdates.tryApplyUpgradeTarget.invokes(() => {
       return result
     })
-    userActions.onEntityMarkedForUpgrade(project, luaEntity, 2, playerIndex)
+    userActions.onEntityMarkedForUpgrade(luaEntity, 2, playerIndex)
 
     expect(projectUpdates.tryApplyUpgradeTarget).toHaveBeenCalledWith(project, entity, 2)
     if (message) assertNotified(entity, [message], true)
@@ -428,7 +429,7 @@ describe("onEntityMarkedForUpgrade", () => {
 describe("onWiresPossiblyUpdated", () => {
   test("if not in project, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onWiresPossiblyUpdated(project, luaEntity, 2, playerIndex)
+    userActions.onWiresPossiblyUpdated(luaEntity, 2, playerIndex)
   })
 
   test.each<[WireUpdateResult, string | false]>([
@@ -440,7 +441,7 @@ describe("onWiresPossiblyUpdated", () => {
     projectUpdates.updateWiresFromWorld.invokes(() => {
       return result
     })
-    userActions.onWiresPossiblyUpdated(project, luaEntity, 2, playerIndex)
+    userActions.onWiresPossiblyUpdated(luaEntity, 2, playerIndex)
 
     expect(projectUpdates.updateWiresFromWorld).toHaveBeenCalledWith(project, entity, 2)
     if (message) assertNotified(entity, [message], true)
@@ -459,14 +460,14 @@ function createPreview(luaEntity: LuaEntity) {
 describe("onCleanupToolUsed", () => {
   test("if not in project, does nothing", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onCleanupToolUsed(project, luaEntity, 2)
+    userActions.onCleanupToolUsed(luaEntity, 2)
     expectedNumCalls = 0
   })
 
   test("if is settings remnant, calls forceDeleteEntity", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.isSettingsRemnant = true
-    userActions.onCleanupToolUsed(project, createPreview(luaEntity), 2)
+    userActions.onCleanupToolUsed(createPreview(luaEntity), 2)
     expect(projectUpdates.forceDeleteEntity).toHaveBeenCalledWith(project, entity)
   })
 
@@ -474,40 +475,40 @@ describe("onCleanupToolUsed", () => {
     const { luaEntity, entity } = addEntity(1)
     entity.replaceWorldEntity(1, luaEntity)
     expect(entity.hasErrorAt(1)).toBe(false)
-    userActions.onCleanupToolUsed(project, luaEntity, 1)
+    userActions.onCleanupToolUsed(luaEntity, 1)
     expectedNumCalls = 0
   })
 
   test.each([2, 3])("if is in stage %s, calls refreshAllWorldEntities", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
-    userActions.onCleanupToolUsed(project, createPreview(luaEntity), atStage)
+    userActions.onCleanupToolUsed(createPreview(luaEntity), atStage)
     expect(worldUpdates.refreshAllWorldEntities).toHaveBeenCalledWith(project, entity)
   })
 })
 
 test("onEntityForceDeleted calls forceDeleteEntity", () => {
   const { luaEntity, entity } = addEntity(2)
-  userActions.onEntityForceDeleteUsed(project, createPreview(luaEntity), 2)
+  userActions.onEntityForceDeleteUsed(createPreview(luaEntity), 2)
   expect(projectUpdates.forceDeleteEntity).toHaveBeenCalledWith(project, entity)
 })
 
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
-  userActions.onEntityDied(project, luaEntity, 2)
+  userActions.onEntityDied(luaEntity, 2)
   expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 2)
 })
 
 describe("onMoveEntityToStageCustomInput", () => {
   test("if not in project, does nothing", () => {
     const luaEntity = createWorldEntity(2)
-    const undoAction = userActions.onMoveEntityToStageCustomInput(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onMoveEntityToStageCustomInput(luaEntity, 2, playerIndex)
     expectedNumCalls = 0
     expect(undoAction).toBeNil()
   })
   test("if is settings remnant, does nothing", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.isSettingsRemnant = true
-    const undoAction = userActions.onMoveEntityToStageCustomInput(project, createPreview(luaEntity), 2, playerIndex)
+    const undoAction = userActions.onMoveEntityToStageCustomInput(createPreview(luaEntity), 2, playerIndex)
     expectedNumCalls = 0
 
     expect(undoAction).toBeNil()
@@ -523,7 +524,7 @@ describe("onMoveEntityToStageCustomInput", () => {
       entity.setFirstStageUnchecked(stage)
       return result
     })
-    const undoAction = userActions.onMoveEntityToStageCustomInput(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onMoveEntityToStageCustomInput(luaEntity, 2, playerIndex)
 
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 2)
     if (message) assertNotified(entity, message, result != "updated")
@@ -543,7 +544,7 @@ describe("onSendToStageUsed", () => {
   test("calls trySetFirstStage and notifies if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onSendToStageUsed(project, luaEntity, 2, 1, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(luaEntity, 2, 1, playerIndex)
 
     assertIndicatorCreated(entity, "<<")
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 1)
@@ -558,7 +559,7 @@ describe("onSendToStageUsed", () => {
   test("calls trySetFirstStage and does not notify if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onSendToStageUsed(project, luaEntity, 2, 3, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(luaEntity, 2, 3, playerIndex)
 
     expect(notifications.createIndicator).not.toHaveBeenCalled()
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 3)
@@ -572,7 +573,7 @@ describe("onSendToStageUsed", () => {
   test("ignores if not in current stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onSendToStageUsed(project, luaEntity, 3, 1, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(luaEntity, 3, 1, playerIndex)
 
     expect(projectUpdates.trySetFirstStage).not.toHaveBeenCalled()
     expect(undoAction).toBeNil()
@@ -585,7 +586,7 @@ describe("onSendToStageUsed", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     projectUpdates.trySetFirstStage.returns(result)
-    userActions.onSendToStageUsed(project, luaEntity, 2, 3, playerIndex)
+    userActions.onSendToStageUsed(luaEntity, 2, 3, playerIndex)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 3)
     assertNotified(entity, message, true)
   })
@@ -594,7 +595,7 @@ describe("onBringToStageUsed", () => {
   test("calls trySetFirstStage when moved, and notifies if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onBringToStageUsed(project, luaEntity, 3, playerIndex)
+    const undoAction = userActions.onBringToStageUsed(luaEntity, 3, playerIndex)
 
     assertIndicatorCreated(entity, ">>")
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 3)
@@ -609,7 +610,7 @@ describe("onBringToStageUsed", () => {
   test("calls trySetFirstStage and does not notify if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onBringToStageUsed(project, luaEntity, 1, playerIndex)!
+    const undoAction = userActions.onBringToStageUsed(luaEntity, 1, playerIndex)!
 
     expect(notifications.createIndicator).not.toHaveBeenCalled()
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 1)
@@ -623,7 +624,7 @@ describe("onBringToStageUsed", () => {
   test("ignores if called at same stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onBringToStageUsed(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onBringToStageUsed(luaEntity, 2, playerIndex)
 
     expect(projectUpdates.trySetFirstStage).not.toHaveBeenCalled()
     expect(undoAction).toBeNil()
@@ -638,7 +639,7 @@ describe("onBringToStageUsed", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     projectUpdates.trySetFirstStage.returns(result)
-    userActions.onBringToStageUsed(project, luaEntity, 3, playerIndex)
+    userActions.onBringToStageUsed(luaEntity, 3, playerIndex)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 3)
     assertNotified(entity, message, true)
   })
@@ -648,7 +649,7 @@ describe("onBringDownToStageUsed", () => {
   test("works for entity in higher stage", () => {
     const { luaEntity, entity } = addEntity(3)
     entity.replaceWorldEntity(3, luaEntity)
-    const undoAction = userActions.onBringDownToStageUsed(project, luaEntity, 2, playerIndex)!
+    const undoAction = userActions.onBringDownToStageUsed(luaEntity, 2, playerIndex)!
 
     expect(notifications.createIndicator).not.toHaveBeenCalled()
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(project, entity, 2)
@@ -663,7 +664,7 @@ describe("onBringDownToStageUsed", () => {
   test("ignores for entities in lower stage", () => {
     const { luaEntity, entity } = addEntity(1)
     entity.replaceWorldEntity(1, luaEntity)
-    const undoAction = userActions.onBringDownToStageUsed(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onBringDownToStageUsed(luaEntity, 2, playerIndex)
 
     expect(projectUpdates.trySetFirstStage).not.toHaveBeenCalled()
     expect(undoAction).toBeNil()
@@ -676,7 +677,7 @@ describe("onStageDeleteUsed", () => {
   test("can set stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onStageDeleteUsed(project, luaEntity, 3, playerIndex)
+    const undoAction = userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(project, entity, 2)
 
     expect(undoAction).not.toBeNil()
@@ -690,7 +691,7 @@ describe("onStageDeleteUsed", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     entity.setLastStageUnchecked(3)
-    const undoAction = userActions.onStageDeleteUsed(project, luaEntity, 3, playerIndex)
+    const undoAction = userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(project, entity, 2)
 
     expect(undoAction).not.toBeNil()
@@ -704,7 +705,7 @@ describe("onStageDeleteUsed", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     projectUpdates.trySetLastStage.returns(StageMoveResult.CannotMoveBeforeFirstStage)
-    const undoAction = userActions.onStageDeleteUsed(project, luaEntity, 3, playerIndex)
+    const undoAction = userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(project, entity, 2)
     assertNotified(entity, [L_Interaction.CannotDeleteBeforeFirstStage], true)
 
@@ -716,7 +717,7 @@ describe("onStageDeleteCancelUsed", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     entity.setLastStageUnchecked(2)
-    const undoAction = userActions.onStageDeleteCancelUsed(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onStageDeleteCancelUsed(luaEntity, 2, playerIndex)
 
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(project, entity, nil)
 
@@ -732,7 +733,7 @@ describe("onStageDeleteCancelUsed", () => {
     entity.replaceWorldEntity(2, luaEntity)
     entity.setLastStageUnchecked(2)
     projectUpdates.trySetLastStage.returns(StageMoveResult.IntersectsAnotherEntity)
-    const undoAction = userActions.onStageDeleteCancelUsed(project, luaEntity, 2, playerIndex)
+    const undoAction = userActions.onStageDeleteCancelUsed(luaEntity, 2, playerIndex)
 
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(project, entity, nil)
     assertNotified(entity, [L_Interaction.MoveWillIntersectAnotherEntity], true)
@@ -744,7 +745,7 @@ describe("onStageDeleteCancelUsed", () => {
     entity.replaceWorldEntity(2, luaEntity)
     entity.setLastStageUnchecked(2)
 
-    const undoAction = userActions.onStageDeleteCancelUsed(project, luaEntity, 1, playerIndex)
+    const undoAction = userActions.onStageDeleteCancelUsed(luaEntity, 1, playerIndex)
     expect(projectUpdates.trySetLastStage).not.toHaveBeenCalled()
     expectedNumCalls = 0
 
@@ -755,7 +756,7 @@ describe("onStageDeleteCancelUsed", () => {
 describe("onEntityDollied", () => {
   test("if not in project, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
-    userActions.onEntityDollied(project, luaEntity, 2, luaEntity.position, playerIndex)
+    userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
     expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(project, luaEntity, 2)
   })
 
@@ -767,7 +768,7 @@ describe("onEntityDollied", () => {
     //   return nil
     // })
     // already returns nil
-    userActions.onEntityDollied(project, luaEntity, 2, luaEntity.position, playerIndex)
+    userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
 
     expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(project, entity, 2)
   })
@@ -779,7 +780,7 @@ describe("onEntityDollied", () => {
     worldUpdates.tryDollyEntities.invokes(() => {
       return "entities-missing"
     })
-    userActions.onEntityDollied(project, luaEntity, 2, luaEntity.position, playerIndex)
+    userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
 
     expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(project, entity, 2)
     assertNotified(entity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)

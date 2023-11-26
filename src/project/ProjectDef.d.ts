@@ -20,6 +20,7 @@ import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { PropertiesTable } from "../utils/properties-obj"
+import { ProjectActions } from "./project-actions"
 import { AutoSetTilesType } from "./tiles"
 
 export type ProjectId = number & {
@@ -34,6 +35,9 @@ export interface Project {
   readonly content: MutableProjectContent
 
   readonly valid: boolean
+
+  /** Main entry point project actions */
+  actions: ProjectActions
 }
 export interface UserProject extends Project {
   readonly id: ProjectId
@@ -59,7 +63,10 @@ export interface Stage {
   readonly name: MutableProperty<string>
 
   readonly stageNumber: StageNumber
-  readonly project: UserProject // TODO: migrate
+  readonly project: UserProject
+
+  /** Same value as project.actions */
+  readonly actions: ProjectActions
 
   readonly stageBlueprintSettings: StageBlueprintSettingsTable
   getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings>
