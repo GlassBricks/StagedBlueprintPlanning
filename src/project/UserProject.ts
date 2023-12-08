@@ -58,22 +58,23 @@ Events.on_init(() => {
   global.projects = []
   global.surfaceIndexToStage = new LuaMap()
 })
+
 Migrations.priority(1, "0.23.0", () => {
   assume<{
-    assemblies?: UserProjectImpl[]
+    assemblies?: Record<number, UserProjectImpl>
   }>(global)
-  global.projects = global.assemblies!
-  delete global.assemblies
-  for (const project of global.projects) {
+  global.projects = global.assemblies! as any
+  for (const [, project] of pairs(global.assemblies!)) {
     for (const stage of project.getAllStages()) {
       assume<{
         assembly?: UserProjectImpl
       }>(stage)
       stage.project = project
+      delete stage.assembly
     }
   }
 })
-Migrations.to("0.16.0", () => {
+Migrations.priority(2, "0.16.0", () => {
   const oldProjects = global.projects as unknown as LuaMap<ProjectId, UserProjectImpl>
   global.projects = Object.values(oldProjects)
 })
@@ -83,6 +84,16 @@ Migrations.early("0.23.0", () => {
   }>(global)
   global.nextProjectId = global.nextAssemblyId
   delete global.nextAssemblyId
+})
+Migrations.to("0.26.1", () => {
+  for (const project of global.projects) {
+    for (const stage of project.getAllStages()) {
+      assume<{
+        assembly?: UserProjectImpl
+      }>(stage)
+      delete stage.assembly
+    }
+  }
 })
 
 const GlobalProjectEvents = globalEvent<[GlobalProjectEvent]>()
