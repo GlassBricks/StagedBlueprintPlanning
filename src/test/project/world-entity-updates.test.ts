@@ -21,10 +21,12 @@ import {
 } from "../../entity/ProjectEntity"
 import { createEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
+import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
 import { WorldEntityUpdates } from "../../project/world-entity-updates"
 import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
+import { fMock } from "../f-mock"
 import { clearModuleMock, doModuleMock, moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 
@@ -36,10 +38,9 @@ let project: Project
 let entity: ProjectEntity<TestEntity>
 
 import _wireHandler = require("../../entity/wires")
-import _highlighter = require("../../project/entity-highlights")
 
 const wireUpdater = moduleMock(_wireHandler, true)
-const highlighter = moduleMock(_highlighter, true)
+const entityHighlights = fMock<EntityHighlights>()
 
 const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east
@@ -48,7 +49,7 @@ const surfaces: LuaSurface[] = setupTestSurfaces(4)
 let worldEntityUpdates: WorldEntityUpdates
 before_each(() => {
   project = createMockProject(surfaces)
-  project.entityUpdates = worldEntityUpdates = WorldEntityUpdates(project)
+  project.entityUpdates = worldEntityUpdates = WorldEntityUpdates(project, entityHighlights)
   entity = createProjectEntityNoCopy(
     {
       name: "inserter",
@@ -230,7 +231,7 @@ describe("updateWorldEntities", () => {
 
   test("calls updateHighlights", () => {
     worldEntityUpdates.updateWorldEntities(entity, 1)
-    expect(highlighter.updateAllHighlights).toHaveBeenCalledWith(project, entity)
+    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   })
 
   test("entity preview in all previous stages if is rolling stock", () => {
@@ -273,7 +274,6 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
     assertNothingPresent(3)
     assertNothingPresent(4)
 
-    clearModuleMock(_highlighter)
     clearModuleMock(_wireHandler)
 
     entity.setLastStageUnchecked(3)
@@ -284,7 +284,7 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
     assertNothingPresent(4)
 
     expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, 3)
-    expect(highlighter.updateAllHighlights).toHaveBeenCalledWith(project, entity)
+    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   })
 
   test("moving down destroys entities", () => {
@@ -296,8 +296,6 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
     assertEntityCorrect(3)
     assertNothingPresent(4)
 
-    clearModuleMock(_highlighter)
-
     entity.setLastStageUnchecked(2)
     worldEntityUpdates.updateWorldEntitiesOnLastStageChanged(entity, 3)
     assertHasPreview(1)
@@ -305,7 +303,7 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
     assertNothingPresent(3)
     assertNothingPresent(4)
 
-    expect(highlighter.updateAllHighlights).toHaveBeenCalledWith(project, entity)
+    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   })
 })
 
@@ -436,7 +434,7 @@ describe("updateNewEntityWithoutWires", () => {
     const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.add(entity)
     worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity)
-    expect(highlighter.updateAllHighlights).not.toHaveBeenCalled()
+    expect(entityHighlights.updateAllHighlights).not.toHaveBeenCalled()
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
   })
@@ -445,7 +443,7 @@ describe("updateNewEntityWithoutWires", () => {
     project.content.add(entity)
     surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
     worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity)
-    expect(highlighter.updateAllHighlights).toHaveBeenCalledWith(project, entity)
+    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
     expect(findPreviewEntity(3)).not.toBeNil()
@@ -466,7 +464,7 @@ test("updateWireConnections", () => {
 test("clearWorldEntity", () => {
   worldEntityUpdates.updateWorldEntities(entity, 1)
   worldEntityUpdates.clearWorldEntityAtStage(entity, 2)
-  expect(highlighter.updateAllHighlights).toHaveBeenCalledWith(project, entity)
+  expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   expect(findMainEntity(2)).toBeNil()
   assertEntityCorrect(1)
   assertEntityCorrect(3)
@@ -476,7 +474,7 @@ test("deleteWorldEntities", () => {
   worldEntityUpdates.updateWorldEntities(entity, 1)
   worldEntityUpdates.deleteWorldEntities(entity)
   for (let i = 1; i <= 3; i++) assertNothingPresent(i)
-  expect(highlighter.deleteAllHighlights).toHaveBeenCalledWith(entity)
+  expect(entityHighlights.deleteAllHighlights).toHaveBeenCalledWith(entity)
 })
 
 describe("underground pair", () => {
@@ -522,10 +520,10 @@ describe("underground pair", () => {
     })
     expect(rightUg.hasErrorAt(1)).toBe(true)
 
-    expect(highlighter.updateAllHighlights).toHaveBeenCalledWith(project, rightUg)
+    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(rightUg)
 
     expect(middleUg.getWorldEntity(1)).toBeNil()
-    expect(highlighter.deleteAllHighlights).toHaveBeenCalledWith(middleUg)
+    expect(entityHighlights.deleteAllHighlights).toHaveBeenCalledWith(middleUg)
   })
   test("refreshWorldEntityAtStage with force=true still rotates underground even if errored", () => {
     // manually break right underground
@@ -561,14 +559,14 @@ test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsR
   entity.isSettingsRemnant = true
   worldEntityUpdates.makeSettingsRemnant(entity)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  expect(highlighter.makeSettingsRemnantHighlights).toHaveBeenCalledWith(project, entity)
+  expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
 
 test("updateWorldEntities calls makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
   worldEntityUpdates.updateWorldEntities(entity, 1)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  expect(highlighter.makeSettingsRemnantHighlights).toHaveBeenCalledWith(project, entity)
+  expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
 
 test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tryReviveSettingsRemnant", () => {
@@ -581,7 +579,7 @@ test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tr
   assertHasPreview(1)
   assertEntityCorrect(2)
   assertEntityCorrect(3)
-  expect(highlighter.updateHighlightsOnReviveSettingsRemnant).toHaveBeenCalledWith(project, entity)
+  expect(entityHighlights.updateHighlightsOnReviveSettingsRemnant).toHaveBeenCalledWith(entity)
 })
 
 test("rebuildStage", () => {

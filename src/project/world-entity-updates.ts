@@ -25,12 +25,7 @@ import { updateWireConnectionsAtStage } from "../entity/wires"
 import { RegisterClass } from "../lib"
 import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
-import {
-  deleteAllHighlights,
-  makeSettingsRemnantHighlights,
-  updateAllHighlights,
-  updateHighlightsOnReviveSettingsRemnant,
-} from "./entity-highlights"
+import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 
 export type ProjectEntityDollyResult =
@@ -63,6 +58,9 @@ export interface WorldEntityUpdates {
 
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
+
+  // passed from EntityHighlights
+  updateAllHighlights(entity: ProjectEntity): void
 }
 
 @RegisterClass("RebuildAllStagesTask")
@@ -81,8 +79,14 @@ class RebuildAllStagesTask extends LoopTask {
   }
 }
 
-export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
+export function WorldEntityUpdates(project: Project, highlights: EntityHighlights): WorldEntityUpdates {
   const content = project.content
+  const {
+    updateAllHighlights,
+    deleteAllHighlights,
+    makeSettingsRemnantHighlights,
+    updateHighlightsOnReviveSettingsRemnant,
+  } = highlights
 
   return {
     updateWorldEntities,
@@ -102,6 +106,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
     tryDollyEntities,
     resetUnderground,
     rebuildAllStages,
+    updateAllHighlights,
   }
 
   function makePreviewEntity(
@@ -122,7 +127,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
   function clearWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
     const previewName = Prototypes.PreviewEntityPrefix + entity.firstValue.name
     makePreviewEntity(stage, entity, entity.getPreviewDirection(), previewName)
-    updateAllHighlights(project, entity)
+    updateAllHighlights(entity)
   }
   function setEntityUpdateable(entity: LuaEntity, updateable: boolean) {
     entity.minable = updateable
@@ -192,7 +197,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
     // kinda hacky spot for this, but no better place as of now
     if (updatedNeighbors) {
       for (const neighbor of updatedNeighbors) {
-        updateAllHighlights(project, neighbor)
+        updateAllHighlights(neighbor)
       }
     }
 
@@ -212,14 +217,14 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
     if (lastStage < startStage) return
     updateWorldEntitiesInRange(entity, startStage, lastStage)
     updateWires(entity, startStage)
-    if (updateHighlights) updateAllHighlights(project, entity)
+    if (updateHighlights) updateAllHighlights(entity)
   }
   // extra hot path
   function updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void {
     const hasError = updateWorldEntitiesInRange(entity, 1, project.lastStageFor(entity))
     // performance: if there are no errors, then there are no highlights to update
     // (no stage diff or last stage, either)
-    if (hasError) updateAllHighlights(project, entity)
+    if (hasError) updateAllHighlights(entity)
   }
 
   function refreshWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
@@ -240,14 +245,14 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
     if (entity.isSettingsRemnant) {
       entity.destroyWorldOrPreviewEntity(stage)
       makePreviewEntity(stage, entity, entity.getPreviewDirection(), entity.getNameAtStage(stage))
-      makeSettingsRemnantHighlights(project, entity)
+      makeSettingsRemnantHighlights(entity)
       return
     }
 
     updateWorldEntitiesInRange(entity, stage, stage)
     // updateWiresInRange(project, entity, stage, stage)
     updateWireConnectionsAtStage(content, entity, stage)
-    updateAllHighlights(project, entity)
+    updateAllHighlights(entity)
   }
   /**
    * Forces change even if that would make the pair incorrect
@@ -258,7 +263,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
       forceFlipUnderground(worldEntity)
     }
     updateWorldEntitiesInRange(entity, stage, stage)
-    updateAllHighlights(project, entity)
+    updateAllHighlights(entity)
   }
 
   function rebuildWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
@@ -277,7 +282,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
       // moved up
       updateWorldEntities(entity, oldLastStage + 1)
     }
-    updateAllHighlights(project, entity)
+    updateAllHighlights(entity)
   }
 
   function updateWireConnections(entity: ProjectEntity): void {
@@ -296,7 +301,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
     for (const stage of $range(1, project.lastStageFor(entity))) {
       makePreviewEntity(stage, entity, direction, previewName)
     }
-    makeSettingsRemnantHighlights(project, entity)
+    makeSettingsRemnantHighlights(entity)
   }
 
   function reviveSettingsRemnant(entity: ProjectEntity): void {
@@ -305,7 +310,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
     updateWorldEntitiesInRange(entity, 1, lastStage)
     updateWires(entity, 1)
 
-    updateHighlightsOnReviveSettingsRemnant(project, entity)
+    updateHighlightsOnReviveSettingsRemnant(entity)
   }
 
   function deleteUndergroundBelt(entity: ProjectEntity, project: Project): void {
@@ -320,7 +325,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
     }
     entity.destroyAllWorldOrPreviewEntities()
     for (const pair of pairsToUpdate) {
-      updateAllHighlights(project, pair)
+      updateAllHighlights(pair)
     }
   }
   function deleteWorldEntities(entity: ProjectEntity): void {
@@ -386,7 +391,7 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
       const posChanged = content.changePosition(entity, movedEntity.position)
       assert(posChanged, "failed to change position in content")
       deleteAllHighlights(entity)
-      updateAllHighlights(project, entity)
+      updateAllHighlights(entity)
     }
 
     return moveResult

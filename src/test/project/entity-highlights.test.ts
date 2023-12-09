@@ -15,13 +15,8 @@ import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
 import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
-import {
-  deleteAllHighlights,
-  HighlightEntities,
-  makeSettingsRemnantHighlights,
-  updateAllHighlights,
-  updateHighlightsOnReviveSettingsRemnant,
-} from "../../project/entity-highlights"
+import { EntityHighlights, HighlightEntities } from "../../project/entity-highlights"
+
 import { Project } from "../../project/ProjectDef"
 import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
@@ -39,8 +34,10 @@ import _highlightCreator = require("../../project/create-highlight")
 const highlightCreator = moduleMock(_highlightCreator, false)
 
 const surfaces = setupTestSurfaces(5)
+let entityHighlights: EntityHighlights
 before_each(() => {
   project = createMockProject(surfaces)
+  entityHighlights = EntityHighlights(project)
   highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
   entity = createProjectEntityNoCopy({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
 })
@@ -79,14 +76,14 @@ describe("error highlights", () => {
   })
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     expect(entity.getExtraEntity("errorOutline", 2)!).toBeAny()
   })
   test("deletes highlight when entity revived", () => {
     removeInStage(2)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     addInStage(2)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     expect(entity.getExtraEntity("errorOutline", 2)).toBeNil()
   })
 
@@ -98,7 +95,7 @@ describe("error highlights", () => {
         removeInStage(stage)
         stageSet.add(stage)
       }
-      updateAllHighlights(project, entity)
+      entityHighlights.updateAllHighlights(entity)
 
       for (let i = 1; i < 5; i++) {
         if (stageSet.has(i)) {
@@ -113,18 +110,18 @@ describe("error highlights", () => {
   test("deletes indicators only when all highlights removed", () => {
     removeInStage(2)
     removeInStage(3)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     for (let i = 4; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeAny()
     addInStage(3)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     for (let i = 3; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeAny()
     addInStage(2)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     for (let i = 1; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeNil()
   })
 
   test("does nothing if created in lower than first stage", () => {
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     expect(entity.getExtraEntity("errorOutline", 1)).toBeNil()
   })
 })
@@ -162,7 +159,7 @@ describe("undergrounds", () => {
         }),
       )
     }
-    updateAllHighlights(project, undergroundEntity)
+    entityHighlights.updateAllHighlights(undergroundEntity)
     expect(undergroundEntity.getExtraEntity("errorOutline", 2)).toBeAny()
     assertErrorHighlightsCorrect(undergroundEntity, 5)
   })
@@ -187,7 +184,7 @@ describe("config changed highlight", () => {
     entity.adjustValueAtStage(stage, entity.getValueAtStage(stage - 1)!)
   }
   function assertCorrect() {
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     assertConfigChangedHighlightsCorrect(entity, 5)
   }
   test("single", () => {
@@ -234,21 +231,21 @@ describe("config changed highlight", () => {
 describe("stage delete highlights", () => {
   test("sets highlight if lastStage is set", () => {
     entity.setLastStageUnchecked(3)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     expect(entity.getExtraEntity("stageDeleteHighlight", 3)).toBeAny()
   })
 
   test("removes highlight if lastStage is cleared", () => {
     entity.setLastStageUnchecked(3)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     entity.setLastStageUnchecked(nil)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     expect(entity.getExtraEntity("stageDeleteHighlight", 3)).toBeNil()
   })
 
   test("does not create highlight if lastStage == firstStage", () => {
     entity.setLastStageUnchecked(2)
-    updateAllHighlights(project, entity)
+    entityHighlights.updateAllHighlights(entity)
     expect(entity.getExtraEntity("stageDeleteHighlight", 2)).toBeNil()
   })
 })
@@ -264,16 +261,16 @@ describe("settings remnants", () => {
   }
   test("makeSettingsRemnant creates highlights", () => {
     createSettingsRemnant()
-    makeSettingsRemnantHighlights(project, entity)
+    entityHighlights.makeSettingsRemnantHighlights(entity)
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).toBeAny()
     }
   })
   test("tryReviveSettingsRemnant removes highlights and sets entities correct", () => {
     createSettingsRemnant()
-    makeSettingsRemnantHighlights(project, entity)
+    entityHighlights.makeSettingsRemnantHighlights(entity)
     reviveSettingsRemnant()
-    updateHighlightsOnReviveSettingsRemnant(project, entity)
+    entityHighlights.updateHighlightsOnReviveSettingsRemnant(entity)
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).toBeNil()
     }
@@ -283,8 +280,8 @@ describe("settings remnants", () => {
 test("deleteAllHighlights", () => {
   entity.destroyWorldOrPreviewEntity(2)
   entity.destroyWorldOrPreviewEntity(3)
-  updateAllHighlights(project, entity)
-  deleteAllHighlights(entity)
+  entityHighlights.updateAllHighlights(entity)
+  entityHighlights.deleteAllHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
       expect(entity.getExtraEntity(type, i)).toBeNil()

@@ -35,7 +35,6 @@ import { fMock } from "../f-mock"
 import { moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 import _wireHandler = require("../../entity/wires")
-import _highlights = require("../../project/entity-highlights")
 import direction = defines.direction
 import wire_type = defines.wire_type
 
@@ -46,7 +45,6 @@ const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
 const worldEntityUpdates = fMock<WorldEntityUpdates>()
 const wireSaver = moduleMock(_wireHandler, true)
-const highlights = moduleMock(_highlights, true)
 
 let projectUpdates: ProjectUpdates
 before_each(() => {
@@ -105,7 +103,8 @@ function assertUpdateCalled(
   if (n == nil) expect(numWuCalls()).toBe(1)
   expect(worldEntityUpdates.updateWorldEntities).toHaveBeenNthCalledWith(n ?? 1, entity, startStage, updateHighlights)
   if (updateHighlights == false) {
-    expect(highlights.updateAllHighlights).toHaveBeenCalledWith(project, entity)
+    expect(worldEntityUpdates.updateAllHighlights).toHaveBeenCalledWith(entity)
+    expectedWuCalls++
   }
 }
 

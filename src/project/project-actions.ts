@@ -18,7 +18,6 @@ import { findUndergroundPair } from "../entity/underground-belt"
 import { assertNever, deepCompare } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { updateAllHighlights } from "./entity-highlights"
 import { createIndicator, createNotification } from "./notifications"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-updates"
 
@@ -182,6 +181,7 @@ export function ProjectActions(
     refreshAllWorldEntities,
     refreshWorldEntityAtStage,
     tryDollyEntities,
+    updateAllHighlights,
   } = worldEntityUpdates
 
   const result: InternalProjectActions = {
@@ -391,7 +391,7 @@ export function ProjectActions(
       if (!pairEntity) return
       const expectedPair = findUndergroundPair(content, projectEntity, stage)
       if (pairEntity != expectedPair) {
-        updateAllHighlights(project, pairEntity)
+        updateAllHighlights(pairEntity)
       }
     }
   }

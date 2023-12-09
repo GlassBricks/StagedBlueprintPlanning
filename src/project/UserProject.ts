@@ -40,6 +40,7 @@ import {
   createEmptyPropertyOverrideTable,
   PropertiesTable,
 } from "../utils/properties-obj"
+import { EntityHighlights } from "./entity-highlights"
 import { ProjectActions } from "./project-actions"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, UserProject } from "./ProjectDef"
@@ -306,7 +307,7 @@ const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUp
   ProjectUpdates(project, project.entityUpdates),
 )
 const WorldEntityUpdatesClass = LazyLoadClass<HasProject, WorldEntityUpdates>("WorldEntityUpdates", ({ project }) =>
-  WorldEntityUpdates(project),
+  WorldEntityUpdates(project, EntityHighlights(project)),
 )
 
 export function createUserProject(name: string, initialNumStages: number): UserProject {

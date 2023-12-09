@@ -13,7 +13,6 @@ import { getEntityPrototypeInfo } from "../entity/entity-prototype-info"
 import { _migrateProjectContent_0_18_0 } from "../entity/ProjectContent"
 import { _migrateEntity_0_17_0, StageNumber } from "../entity/ProjectEntity"
 import { Migrations } from "../lib/migration"
-import { updateAllHighlights } from "./entity-highlights"
 import { UserProject } from "./ProjectDef"
 
 declare const global: {
@@ -93,7 +92,7 @@ Migrations.to("0.23.1", () => {
   for (const [, project] of global.projects) {
     for (const entity of project.content.iterateAllEntities()) {
       if (entity.hasStageDiff() || entity.lastStage != nil) {
-        updateAllHighlights(project, entity)
+        project.entityUpdates.updateAllHighlights(entity)
       }
     }
   }

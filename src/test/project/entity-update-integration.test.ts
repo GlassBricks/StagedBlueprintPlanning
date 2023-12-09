@@ -33,7 +33,6 @@ import { addPowerSwitchConnections, findPolePowerSwitchNeighbors } from "../../e
 import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
-import { updateAllHighlights } from "../../project/entity-highlights"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "../../project/project-updates"
 
 import { UserProject } from "../../project/ProjectDef"
@@ -699,7 +698,7 @@ describe("underground belt inconsistencies", () => {
 
       expect(rightUnderground.hasErrorAt(1)).toBe(true)
       expect(rightUnderground.hasErrorAt(2)).toBe(true)
-      updateAllHighlights(project, rightUnderground)
+      project.entityUpdates.updateAllHighlights(rightUnderground)
       assertEntityCorrect(rightUnderground, 1)
     })
     test("flipping an underground with a pair with error updates highlight on pair", () => {

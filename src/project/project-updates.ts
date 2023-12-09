@@ -24,7 +24,6 @@ import {
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
-import { updateAllHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 import { WorldEntityUpdates } from "./world-entity-updates"
 import min = math.min
@@ -84,6 +83,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     updateWireConnections,
     updateWorldEntities,
     updateWorldEntitiesOnLastStageChanged,
+    updateAllHighlights,
   } = worldEntityUpdates
 
   return {
@@ -300,8 +300,8 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     // delay updating of highlights, since both pairs might need to be rotated together to avoid errors
     updateWorldEntities(entity1, entity1Stage, false)
     updateWorldEntities(entity2, entity2Stage, false)
-    updateAllHighlights(project, entity1)
-    updateAllHighlights(project, entity2)
+    updateAllHighlights(entity1)
+    updateAllHighlights(entity2)
   }
 
   function handleUndergroundFlippedBack(
@@ -413,7 +413,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
         // this pair is not the expected pair, so doUndergroundBeltUpdate didn't update it
         // this is an error state, just update highlights
         const worldPairEntity = content.findCompatibleWithLuaEntity(worldPair, nil, stage)
-        if (worldPairEntity) updateAllHighlights(project, worldPairEntity)
+        if (worldPairEntity) updateAllHighlights(worldPairEntity)
       }
     }
 
