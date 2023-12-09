@@ -25,7 +25,11 @@ import { Project, UserProject } from "./ProjectDef"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
 import { ProjectEntityDollyResult, WorldEntityUpdates } from "./world-entity-updates"
 
-/** @noSelf */
+/**
+ * Entry point for actions that can be performed on a project, from user input.
+ *
+ * @noSelf
+ */
 export interface ProjectActions {
   onEntityCreated(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): UndoAction | nil
   onEntityDeleted(entity: LuaEntityInfo, stage: StageNumber, byPlayer: PlayerIndex | nil): void

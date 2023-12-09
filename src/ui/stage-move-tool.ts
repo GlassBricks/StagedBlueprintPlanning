@@ -30,7 +30,7 @@ export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
 
   cursor.allow_manual_label_change = false
 
-  const stage = getStageAtSurface(player.surface.index)
+  const stage = getStageAtSurface(player.surface_index)
   if (!stage) {
     if (cursor.name == Prototypes.FilteredStageMoveTool) {
       cursor.label = "<Not in a staged BP project>"

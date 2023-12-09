@@ -40,7 +40,7 @@ function updatePlayer(player: LuaPlayer): void {
   if (data == nil) return
 
   const curStage = data.currentStage
-  const newStage = getStageAtSurface(player.surface.index)
+  const newStage = getStageAtSurface(player.surface_index)
   const oldStage = curStage.get()
   if (newStage == oldStage) return
   curStage.set(newStage)
@@ -70,7 +70,7 @@ ProjectEvents.addListener((e) => {
 })
 
 export function teleportToStage(player: LuaPlayer, stage: Stage): void {
-  const currentStage = getStageAtSurface(player.surface.index)
+  const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage && currentStage.project == stage.project) {
     if (currentStage != stage) player.teleport(player.position, stage.surface)
     return
@@ -82,7 +82,7 @@ export function teleportToStage(player: LuaPlayer, stage: Stage): void {
 }
 
 export function teleportToProject(player: LuaPlayer, project: UserProject): void {
-  const currentStage = getStageAtSurface(player.surface.index)
+  const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage && currentStage.project == project) {
     return
   }
@@ -100,7 +100,7 @@ export function teleportToProject(player: LuaPlayer, project: UserProject): void
 }
 
 export function recordPlayerLastPosition(player: LuaPlayer): void {
-  const currentStage = getStageAtSurface(player.surface.index)
+  const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage) {
     const playerData = getProjectPlayerData(player.index, currentStage.project)
     if (!playerData) return

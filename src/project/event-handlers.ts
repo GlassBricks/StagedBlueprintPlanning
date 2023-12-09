@@ -64,13 +64,13 @@ const Events = ProtectedEvents
 
 function getStageAtEntity(entity: LuaEntity): Stage | nil {
   if (entity.valid && isWorldEntityProjectEntity(entity)) {
-    return getStageAtSurface(entity.surface.index)
+    return getStageAtSurface(entity.surface_index)
   }
 }
 
 function getStageAtEntityOrPreview(entity: LuaEntity): Stage | nil {
   if (entity.valid && (isWorldEntityProjectEntity(entity) || isPreviewEntity(entity))) {
-    return getStageAtSurface(entity.surface.index)
+    return getStageAtSurface(entity.surface_index)
   }
 }
 
@@ -80,7 +80,7 @@ function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
     entity.destroy()
     return
   }
-  const stage = getStageAtSurface(entity.surface.index)
+  const stage = getStageAtSurface(entity.surface_index)
   if (!stage) return
   if (isWorldEntityProjectEntity(entity)) {
     stage.actions.onEntityCreated(entity, stage.stageNumber, player)
@@ -109,7 +109,7 @@ function luaEntityDied(entity: LuaEntity): void {
 
 function luaEntityRotated(entity: LuaEntity, previousDirection: defines.direction, player: PlayerIndex | nil): void {
   if (!entity.valid) return
-  const stage = getStageAtSurface(entity.surface.index)
+  const stage = getStageAtSurface(entity.surface_index)
   if (!stage) return
   if (isWorldEntityProjectEntity(entity)) {
     stage.actions.onEntityRotated(entity, stage.stageNumber, previousDirection, player)
@@ -217,7 +217,7 @@ Events.on_gui_closed((e) => {
 // Events.on_player_fast_transferred((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
 Events.on_player_cursor_stack_changed((e) => {
   const player = game.get_player(e.player_index)!
-  const stage = getStageAtSurface(player.surface.index)
+  const stage = getStageAtSurface(player.surface_index)
   if (!stage) return
   const selected = player.selected
   if (selected && isWorldEntityProjectEntity(selected) && selected.get_module_inventory() != nil) {
@@ -454,7 +454,7 @@ Events.on_built_entity((e) => {
   const lastPreBuild = state.lastPreBuild
   state.lastPreBuild = nil
 
-  const stage = getStageAtSurface(entity.surface.index)
+  const stage = getStageAtSurface(entity.surface_index)
   if (!stage) return
 
   const playerIndex = e.player_index
@@ -1048,7 +1048,7 @@ Events.on_marked_for_deconstruction((e) => {
 
   const entity = e.entity
   entity.cancel_deconstruction(entity.force)
-  const stage = getStageAtSurface(entity.surface.index)
+  const stage = getStageAtSurface(entity.surface_index)
   if (!stage) return
   const playerData = getProjectPlayerData(playerIndex, stage.project)
   if (!playerData) return
@@ -1063,7 +1063,7 @@ Events.on_marked_for_deconstruction((e) => {
 Events.on_player_deconstructed_area((e) => {
   if (e.item != Prototypes.FilteredStageMoveTool) return
   const player = game.get_player(e.player_index)!
-  if (getStageAtSurface(player.surface.index) == nil) {
+  if (getStageAtSurface(player.surface_index) == nil) {
     player.create_local_flying_text({
       text: [L_Interaction.NotInAnProject],
       create_at_cursor: true,

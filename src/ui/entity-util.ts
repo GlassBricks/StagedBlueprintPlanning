@@ -15,7 +15,7 @@ import { Stage } from "../project/ProjectDef"
 import { getStageAtSurface } from "../project/stage-surface"
 
 export function getProjectEntityOfEntity(entity: LuaEntity): LuaMultiReturn<[Stage, ProjectEntity] | [_?: nil]> {
-  const stage = getStageAtSurface(entity.surface.index)
+  const stage = getStageAtSurface(entity.surface_index)
   if (!stage) return $multi()
   const found = stage.project.content.findCompatibleFromLuaEntityOrPreview(entity, stage.stageNumber)
   if (found) return $multi(stage, found)

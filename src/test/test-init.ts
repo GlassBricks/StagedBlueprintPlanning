@@ -221,7 +221,7 @@ commands.add_command("test-undo", "", (e) => {
 
 commands.add_command("print-bp-settings", "", () => {
   const player = game.player!
-  const stage = getStageAtSurface(player.surface.index)
+  const stage = getStageAtSurface(player.surface_index)
   if (!stage) return player.print("No stage at surface")
 
   const settings = getCurrentValues(stage.getBlueprintSettingsView())
