@@ -48,6 +48,7 @@ class Map2DImpl<T extends { _next?: T }> implements Map2D<T> {
     if (first == value) {
       if (_next != nil) {
         byX[y] = _next
+        first._next = nil
         return
       }
       // delete entry
@@ -63,6 +64,7 @@ class Map2DImpl<T extends { _next?: T }> implements Map2D<T> {
     while (_next != nil) {
       if (_next == value) {
         prev._next = _next._next
+        value._next = nil
         return
       }
       prev = _next

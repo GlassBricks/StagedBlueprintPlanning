@@ -45,7 +45,7 @@ test("add in multiple coords", () => {
 })
 
 test("remove and get first", () => {
-  const va = ["a"]
+  const va: Foo = ["a"]
   map2d.add(1, 1, va)
   map2d.add(1, 1, ["b"])
   map2d.delete(1, 1, va)
@@ -53,11 +53,26 @@ test("remove and get first", () => {
 })
 
 test("remove and get second", () => {
-  const va = ["a"]
+  const va: Foo = ["a"]
   map2d.add(1, 1, ["b"])
   map2d.add(1, 1, va)
+  expect(va._next).toBeAny()
   map2d.delete(1, 1, va)
+  expect(va._next).toBeNil()
   expect(map2d.get(1, 1)).toEqual(["b"])
+})
+
+test("three elements, removing second", () => {
+  const vb: Foo = ["b"]
+  map2d.add(1, 1, ["a"])
+  map2d.add(1, 1, vb)
+  map2d.add(1, 1, ["c"])
+  map2d.delete(1, 1, vb)
+  expect(map2d.get(1, 1)).toEqual({
+    [1]: "c",
+    _next: ["a"],
+  })
+  expect(vb._next).toBeNil()
 })
 
 test("removes empty entries", () => {
