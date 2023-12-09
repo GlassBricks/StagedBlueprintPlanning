@@ -28,15 +28,7 @@ import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../li
 import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
 import { checkForEntityUpdates } from "../project/event-handlers"
-import {
-  forceDeleteEntity,
-  moveAllPropsDown,
-  movePropDown,
-  resetAllProps,
-  resetProp,
-  resetTrain,
-  setTrainLocationToCurrent,
-} from "../project/project-updates"
+import { ProjectActions } from "../project/project-actions"
 import { Stage } from "../project/ProjectDef"
 
 import { getProjectEntityOfEntity } from "./entity-util"
@@ -74,6 +66,7 @@ function SmallToolButton(props: ElemProps<"sprite-button">) {
 class EntityProjectInfo extends Component<EntityStageInfoProps> {
   playerIndex!: PlayerIndex
   stage!: Stage
+  actions!: ProjectActions
   entity!: ProjectEntity
 
   public override render(props: EntityStageInfoProps, context: RenderContext): Element {
@@ -81,6 +74,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     const { stage, projectEntity: entity } = props
     this.stage = stage
     this.entity = entity
+    this.actions = stage.actions
     const currentStageNum = stage.stageNumber
     const project = stage.project
 
@@ -178,25 +172,25 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   private moveToThisStage() {
     const wasSettingsRemnant = this.entity.isSettingsRemnant
     if (wasSettingsRemnant) {
-      this.stage.actions.userRevivedSettingsRemnant(this.entity, this.stage.stageNumber, this.playerIndex)
+      this.actions.userRevivedSettingsRemnant(this.entity, this.stage.stageNumber, this.playerIndex)
     } else {
-      this.stage.actions.userMoveEntityToStageWithUndo(this.entity, this.stage.stageNumber, this.playerIndex)
+      this.actions.userMoveEntityToStageWithUndo(this.entity, this.stage.stageNumber, this.playerIndex)
     }
     this.rerender(wasSettingsRemnant ?? true)
   }
   private removeLastStage() {
-    this.stage.actions.userSetLastStageWithUndo(this.entity, nil, this.playerIndex)
+    this.actions.userSetLastStageWithUndo(this.entity, nil, this.playerIndex)
     this.rerender(false)
   }
   private resetTrain() {
-    resetTrain(this.stage.project, this.entity)
+    this.actions.updates().resetTrain(this.entity)
   }
   private setTrainLocationHere() {
-    setTrainLocationToCurrent(this.stage.project, this.entity)
+    this.actions.updates().setTrainLocationToCurrent(this.entity)
   }
 
   private deleteEntity() {
-    forceDeleteEntity(this.stage.project, this.entity)
+    this.actions.updates().forceDeleteEntity(this.entity)
   }
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Element {
@@ -236,18 +230,18 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   private resetProp(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      resetAllProps(this.stage.project, this.entity, this.stage.stageNumber)
+      this.actions.updates().resetAllProps(this.entity, this.stage.stageNumber)
     } else {
-      resetProp(this.stage.project, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      this.actions.updates().resetProp(this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(true)
   }
   private applyToLowerStage(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      moveAllPropsDown(this.stage.project, this.entity, this.stage.stageNumber)
+      this.actions.updates().moveAllPropsDown(this.entity, this.stage.stageNumber)
     } else {
-      movePropDown(this.stage.project, this.entity, this.stage.stageNumber, prop as keyof Entity)
+      this.actions.updates().movePropDown(this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(false)
   }

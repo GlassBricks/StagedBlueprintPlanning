@@ -34,23 +34,8 @@ import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import { updateAllHighlights } from "../../project/entity-highlights"
-import {
-  addNewEntity,
-  deleteEntityOrCreateSettingsRemnant,
-  forceDeleteEntity,
-  moveAllPropsDown,
-  movePropDown,
-  resetAllProps,
-  resetProp,
-  StageMoveResult,
-  tryApplyUpgradeTarget,
-  tryReviveSettingsRemnant,
-  tryRotateEntityToMatchWorld,
-  trySetFirstStage,
-  trySetLastStage,
-  tryUpdateEntityFromWorld,
-  updateWiresFromWorld,
-} from "../../project/project-updates"
+import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "../../project/project-updates"
+
 import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo } from "../../project/undo"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
@@ -76,10 +61,12 @@ import direction = defines.direction
 let project: UserProject
 let surfaces: LuaSurface[]
 let player: LuaPlayer
+let updates: ProjectUpdates
 before_each(() => {
   project = createUserProject("test", 6)
   surfaces = project.getAllStages().map((stage) => stage.surface)
   player = game.players[1]
+  updates = project.actions.updates()
 })
 after_each(() => {
   _deleteAllProjects()
@@ -256,7 +243,7 @@ function assertIsSettingsRemnant(entity: ProjectEntity) {
 
 function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): ProjectEntity<BlueprintEntity> {
   const luaEntity = createEntity(stage, args)
-  const entity = addNewEntity(project, luaEntity, stage) as ProjectEntity<BlueprintEntity>
+  const entity = updates.addNewEntity(luaEntity, stage) as ProjectEntity<BlueprintEntity>
   assert(entity)
   expect(entity.firstStage).toBe(stage)
   expect(entity.getWorldEntity(stage)).toEqual(luaEntity)
@@ -303,7 +290,7 @@ test("move via preview replace", () => {
   const entity = buildEntity(3)
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
-  trySetFirstStage(project, entity, 2)
+  updates.trySetFirstStage(entity, 2)
   expect(entity.firstStage).toBe(2)
   assertEntityCorrect(entity, false)
 })
@@ -318,7 +305,7 @@ test("disallowing entity deletion", () => {
 
 test("delete entity", () => {
   const entity = buildEntity(3)
-  deleteEntityOrCreateSettingsRemnant(project, entity)
+  updates.deleteEntityOrCreateSettingsRemnant(entity)
   assertEntityNotPresent(entity)
 })
 
@@ -327,7 +314,7 @@ test("delete to create settings remnant", () => {
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
-  deleteEntityOrCreateSettingsRemnant(project, entity)
+  updates.deleteEntityOrCreateSettingsRemnant(entity)
   assertIsSettingsRemnant(entity)
 })
 describe("revive integration test", () => {
@@ -335,10 +322,10 @@ describe("revive integration test", () => {
     const entity = buildEntity(1)
     entity._applyDiffAtStage(3, { override_stack_size: 2 })
     entity._applyDiffAtStage(5, { override_stack_size: 3 })
-    deleteEntityOrCreateSettingsRemnant(project, entity)
+    updates.deleteEntityOrCreateSettingsRemnant(entity)
     assertIsSettingsRemnant(entity)
 
-    assert(tryReviveSettingsRemnant(project, entity, reviveStage))
+    assert(updates.tryReviveSettingsRemnant(entity, reviveStage))
     expect(entity.isSettingsRemnant).toBeFalsy()
     expect(reviveStage).toBe(entity.firstStage)
 
@@ -359,10 +346,10 @@ describe("revive integration test", () => {
   test("settings remnant 2->3, revive at stage 1", () => {
     const entity = buildEntity(2)
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
-    deleteEntityOrCreateSettingsRemnant(project, entity)
+    updates.deleteEntityOrCreateSettingsRemnant(entity)
     assertIsSettingsRemnant(entity)
 
-    tryReviveSettingsRemnant(project, entity, 1)
+    updates.tryReviveSettingsRemnant(entity, 1)
     expect(entity.isSettingsRemnant).toBeFalsy()
     expect(1).toBe(entity.firstStage)
 
@@ -378,7 +365,7 @@ test("force deleting entity", () => {
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
-  forceDeleteEntity(project, entity)
+  updates.forceDeleteEntity(entity)
   assertEntityNotPresent(entity)
 })
 
@@ -386,8 +373,8 @@ test("updating first value from world", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.inserter_stack_size_override = 2
-  const ret = tryUpdateEntityFromWorld(project, entity, 3)
-  expect(ret).toBe("updated")
+  const ret = updates.tryUpdateEntityFromWorld(entity, 3)
+  expect(ret).toBe(EntityUpdateResult.Updated)
   expect(entity.firstValue.override_stack_size).toBe(2)
   assertEntityCorrect(entity, false)
 })
@@ -396,8 +383,8 @@ test("updating higher value from world", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.inserter_stack_size_override = 2
-  const ret = tryUpdateEntityFromWorld(project, entity, 4)
-  expect(ret).toBe("updated")
+  const ret = updates.tryUpdateEntityFromWorld(entity, 4)
+  expect(ret).toBe(EntityUpdateResult.Updated)
   expect(entity.firstValue.override_stack_size).toBe(1)
   expect(entity.hasStageDiff(4)).toBe(true)
   expect(entity.getStageDiff(4)).toEqual({ override_stack_size: 2 })
@@ -409,7 +396,7 @@ test("rotating first value from world via update", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
-  const ret = tryUpdateEntityFromWorld(project, entity, 3)
+  const ret = updates.tryUpdateEntityFromWorld(entity, 3)
   expect(ret).toBe("updated")
   expect(entity.direction).toBe(defines.direction.south)
   assertEntityCorrect(entity, false)
@@ -419,7 +406,7 @@ test("rotating first value from world via rotate", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
-  tryRotateEntityToMatchWorld(project, entity, 3)
+  updates.tryRotateEntityToMatchWorld(entity, 3)
   expect(entity.direction).toBe(defines.direction.south)
   assertEntityCorrect(entity, false)
 })
@@ -975,7 +962,7 @@ test("rotation forbidden at higher stage", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
-  const ret = tryUpdateEntityFromWorld(project, entity, 4)
+  const ret = updates.tryUpdateEntityFromWorld(entity, 4)
   expect(ret).toBe("cannot-rotate")
   expect(entity.direction).toBe(defines.direction.east)
   assertEntityCorrect(entity, false)
@@ -985,7 +972,7 @@ test("rotation forbidden at higher stage via rotate", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
-  tryRotateEntityToMatchWorld(project, entity, 4)
+  updates.tryRotateEntityToMatchWorld(entity, 4)
   expect(entity.direction).toBe(defines.direction.east)
   assertEntityCorrect(entity, false)
 })
@@ -994,7 +981,7 @@ test("creating upgrade via fast replace", () => {
   const entity = buildEntity(3)
   const replacedEntity = createEntity(4, { name: "stack-filter-inserter" })
   entity.replaceWorldEntity(4, replacedEntity)
-  tryUpdateEntityFromWorld(project, entity, 4)
+  updates.tryUpdateEntityFromWorld(entity, 4)
   expect(entity.firstValue.name).toBe("filter-inserter")
   expect(entity.getStageDiff(4)).toEqual({ name: "stack-filter-inserter" })
 
@@ -1050,7 +1037,7 @@ test("creating upgrade via apply upgrade target", () => {
     force: worldEntity.force,
     target: "stack-filter-inserter",
   })
-  tryApplyUpgradeTarget(project, entity, 4)
+  updates.tryApplyUpgradeTarget(entity, 4)
   expect(entity.firstValue.name).toBe("filter-inserter")
   expect(entity.getStageDiff(4)).toEqual({ name: "stack-filter-inserter" })
 
@@ -1060,14 +1047,14 @@ test("creating upgrade via apply upgrade target", () => {
 test("moving entity up", () => {
   const entity = buildEntity(3)
   assertEntityCorrect(entity, false)
-  trySetFirstStage(project, entity, 4)
+  updates.trySetFirstStage(entity, 4)
   expect(entity.firstStage).toBe(4)
   assertEntityCorrect(entity, false)
 })
 
 test("moving entity down", () => {
   const entity = buildEntity(3)
-  trySetFirstStage(project, entity, 2)
+  updates.trySetFirstStage(entity, 2)
   expect(entity.firstStage).toBe(2)
   assertEntityCorrect(entity, false)
 })
@@ -1088,7 +1075,7 @@ test("resetProp", () => {
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
-  resetProp(project, entity, 4, "override_stack_size")
+  updates.resetProp(entity, 4, "override_stack_size")
   expect(entity.hasStageDiff()).toBe(false)
   expect(entity.firstValue.override_stack_size).toBe(1)
   assertEntityCorrect(entity, false)
@@ -1099,7 +1086,7 @@ test("movePropDown", () => {
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
-  movePropDown(project, entity, 4, "override_stack_size")
+  updates.movePropDown(entity, 4, "override_stack_size")
   expect(entity.hasStageDiff()).toBe(false)
   expect(entity.firstValue.override_stack_size).toBe(2)
   assertEntityCorrect(entity, false)
@@ -1111,7 +1098,7 @@ test("resetAllProps", () => {
     override_stack_size: 2,
     filter_mode: "blacklist",
   })
-  resetAllProps(project, entity, 4)
+  updates.resetAllProps(entity, 4)
   expect(entity.hasStageDiff()).toBe(false)
   expect(entity.firstValue.override_stack_size).toBe(1)
   expect(entity.firstValue.filter_mode).toBeNil() // whitelist is default
@@ -1124,7 +1111,7 @@ test("moveAllPropsDown", () => {
     override_stack_size: 2,
     filter_mode: "blacklist",
   })
-  moveAllPropsDown(project, entity, 4)
+  updates.moveAllPropsDown(entity, 4)
   expect(entity.hasStageDiff()).toBe(false)
   expect(entity.firstValue.override_stack_size).toBe(2)
   expect(entity.firstValue.filter_mode).toBe("blacklist")
@@ -1132,18 +1119,18 @@ test("moveAllPropsDown", () => {
 })
 
 // with wire connections
-function setupPole(stage: StageNumber, args: Partial<SurfaceCreateEntity> = {}) {
+function setupole(stage: StageNumber, args: Partial<SurfaceCreateEntity> = {}) {
   return buildEntity(stage, { name: "medium-electric-pole", position: pos.minus(Pos(0, 1)), ...args })
 }
-function setupPole2(stage: StageNumber) {
-  return setupPole(stage, {
+function setupole2(stage: StageNumber) {
+  return setupole(stage, {
     position: pos.minus(Pos(0, 2)),
   })
 }
 
 test("saves initial cable connections", () => {
-  const pole1 = setupPole(3)
-  const pole2 = setupPole2(3)
+  const pole1 = setupole(3)
+  const pole2 = setupole2(3)
   expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
   expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
@@ -1151,8 +1138,8 @@ test("saves initial cable connections", () => {
 })
 
 test("saves initial cable connections to a pole in higher stage", () => {
-  const pole1 = setupPole(4)
-  const pole2 = setupPole2(3) // should connect to pole1
+  const pole1 = setupole(4)
+  const pole2 = setupole2(3) // should connect to pole1
   expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
   expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
@@ -1160,10 +1147,10 @@ test("saves initial cable connections to a pole in higher stage", () => {
 })
 
 test("disconnect and connect cables", () => {
-  const pole1 = setupPole(3)
-  const pole2 = setupPole2(3)
+  const pole1 = setupole(3)
+  const pole2 = setupole2(3)
   pole1.getWorldEntity(3)!.disconnect_neighbour(pole2.getWorldEntity(3))
-  updateWiresFromWorld(project, pole1, 3)
+  updates.updateWiresFromWorld(pole1, 3)
 
   expect(project.content.getCableConnections(pole1)?.has(pole2)).toBeFalsy()
   expect(project.content.getCableConnections(pole2)?.has(pole1)).toBeFalsy()
@@ -1171,7 +1158,7 @@ test("disconnect and connect cables", () => {
   assertEntityCorrect(pole2, false)
 
   pole1.getWorldEntity(3)!.connect_neighbour(pole2.getWorldEntity(3)!)
-  updateWiresFromWorld(project, pole1, 3)
+  updates.updateWiresFromWorld(pole1, 3)
 
   expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
   expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
@@ -1181,12 +1168,12 @@ test("disconnect and connect cables", () => {
 
 test("connect and disconnect circuit wires", () => {
   const inserter = buildEntity(3) // is filter inserter
-  const pole = setupPole(3)
+  const pole = setupole(3)
   pole.getWorldEntity(3)!.connect_neighbour({
     wire: defines.wire_type.red,
     target_entity: inserter.getWorldEntity(3)!,
   })
-  updateWiresFromWorld(project, pole, 3)
+  updates.updateWiresFromWorld(pole, 3)
 
   const expectedConnection = next(
     project.content.getCircuitConnections(inserter)!.get(pole)!,
@@ -1215,13 +1202,13 @@ function assertTrainEntityCorrect(entity: RollingStockProjectEntity, expectedHas
 
 test("create train entity", () => {
   const train = createRollingStock(surfaces[3 - 1])
-  const entity = addNewEntity(project, train, 3)!
+  const entity = updates.addNewEntity(train, 3)!
   expect(entity).toBeAny()
   assertTrainEntityCorrect(entity, false)
 })
 test("train entity error", () => {
   const train = createRollingStock(surfaces[3 - 1])
-  const entity = addNewEntity(project, train, 3)!
+  const entity = updates.addNewEntity(train, 3)!
   train.destroy()
   surfaces[3 - 1].find_entities().forEach((e) => e.destroy()) // destroys rails too, so train cannot be re-created
 
@@ -1241,7 +1228,7 @@ test("adding wire in higher stage sets empty control behavior", () => {
     wire: defines.wire_type.red,
     target_entity: belt4,
   })
-  updateWiresFromWorld(project, inserter, 4)
+  updates.updateWiresFromWorld(inserter, 4)
 
   const connections = project.content.getCircuitConnections(inserter)!
   expect(connections).toBeAny()
@@ -1317,7 +1304,7 @@ test.each([1, 2])("paste a chain of circuit wires over existing power poles, sta
 
 test("can build a entity using known value", () => {
   const luaEntity = createEntity(1, { name: "transport-belt", position: pos, direction: defines.direction.east })
-  const entity = addNewEntity(project, luaEntity, 1, {
+  const entity = updates.addNewEntity(luaEntity, 1, {
     entity_number: 1,
     name: "transport-belt",
     position: pos,
@@ -1675,7 +1662,7 @@ test("rebuildStage", () => {
   const entityPresent = buildEntity(2, { name: "inserter", position: pos.add(1, 0), direction: direction.west })
   const entityPreview = buildEntity(3, { name: "inserter", position: pos.add(2, 0), direction: direction.west })
   const entityPastLastStage = buildEntity(1, { name: "inserter", position: pos.add(3, 0), direction: direction.west })
-  expect(trySetLastStage(project, entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
+  expect(updates.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
   entityPresent._applyDiffAtStage(4, { name: "stack-filter-inserter" })
   refreshAllWorldEntities(project, entityPresent)
   assertEntityCorrect(entityPresent, false)

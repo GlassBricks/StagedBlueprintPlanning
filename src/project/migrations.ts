@@ -14,7 +14,6 @@ import { _migrateProjectContent_0_18_0 } from "../entity/ProjectContent"
 import { _migrateEntity_0_17_0, StageNumber } from "../entity/ProjectEntity"
 import { Migrations } from "../lib/migration"
 import { updateAllHighlights } from "./entity-highlights"
-import { updateWiresFromWorld } from "./project-updates"
 import { UserProject } from "./ProjectDef"
 import { updateWorldEntities, updateWorldEntitiesOnLastStageChanged } from "./world-entity-updates"
 
@@ -77,7 +76,7 @@ Migrations.to("0.20.0", () => {
   for (const [, project] of global.projects) {
     for (const entity of project.content.iterateAllEntities()) {
       if (nameToType.get(entity.firstValue.name) == "power-switch") {
-        updateWiresFromWorld(project, entity, project.lastStageFor(entity))
+        project.actions.updates().updateWiresFromWorld(entity, project.lastStageFor(entity))
       }
     }
   }

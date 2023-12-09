@@ -8,24 +8,17 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
-/**
- * Creates a class that will lazily load its methods when they are first called.
- * This allows you to use a closure-based class, while being able to be stored/loaded in global.
- */
-export function LazyLoadClass<V extends object, T extends object>(
-  registeredName: string,
-  load: (value: V) => T,
-): (value: V) => V & T {
-  const mt: LuaMetatable<T> = {
+/** Returns just a metatable for {@link LazyLoadClass}. */
+export function lazyLoadMt<V extends object, T extends object>(load: (self: V) => T): LuaMetatable<T> {
+  return {
     __index(
-      this: V &
-        T & {
-          _loaded?: () => void
-        },
+      this: T & {
+        _loaded?: () => void
+      },
       key: keyof T,
     ): any {
       if (rawget(this, "_loaded")) return nil
-      const value = load(this)
+      const value = load(this as any)
       for (const [k, v] of pairs(value)) {
         if (type(v) != "function") {
           error("LazyLoad only supports functions")
@@ -35,7 +28,18 @@ export function LazyLoadClass<V extends object, T extends object>(
       this._loaded = () => {} // cleared on reload
       return value[key]
     },
-  }
+  } satisfies LuaMetatable<T>
+}
+
+/**
+ * Creates a class that will lazily load its methods when they are first called.
+ * This allows you to use a closure-based class, while being able to be stored/loaded in global.
+ */
+export function LazyLoadClass<V extends object, T extends object>(
+  registeredName: string,
+  load: (value: V) => T,
+): (value: V) => V & T {
+  const mt = lazyLoadMt(load)
   script.register_metatable(registeredName, mt)
   return (value: any) => setmetatable(value, mt)
 }

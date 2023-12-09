@@ -101,7 +101,7 @@ export { GlobalProjectEvents as ProjectEvents }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
-@RegisterClass("Assembly")
+@RegisterClass("Assembly") // named differently for legacy reasons
 class UserProjectImpl implements UserProject {
   name: MutableProperty<string>
 
