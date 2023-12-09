@@ -86,6 +86,25 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     updateWorldEntitiesOnLastStageChanged,
   } = worldEntityUpdates
 
+  return {
+    addNewEntity,
+    deleteEntityOrCreateSettingsRemnant,
+    forceDeleteEntity,
+    tryReviveSettingsRemnant,
+    tryUpdateEntityFromWorld,
+    tryRotateEntityToMatchWorld,
+    tryApplyUpgradeTarget,
+    updateWiresFromWorld,
+    trySetFirstStage,
+    trySetLastStage,
+    resetProp,
+    movePropDown,
+    resetAllProps,
+    moveAllPropsDown,
+    resetTrain,
+    setTrainLocationToCurrent,
+  }
+
   function fixNewUndergroundBelt(
     projectEntity: ProjectEntity,
     entity: LuaEntity,
@@ -575,23 +594,5 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
         addNewEntity(luaEntity, stage)
       }
     }
-  }
-  return {
-    addNewEntity,
-    deleteEntityOrCreateSettingsRemnant,
-    forceDeleteEntity,
-    tryReviveSettingsRemnant,
-    tryUpdateEntityFromWorld,
-    tryRotateEntityToMatchWorld,
-    tryApplyUpgradeTarget,
-    updateWiresFromWorld,
-    trySetFirstStage,
-    trySetLastStage,
-    resetProp,
-    movePropDown,
-    resetAllProps,
-    moveAllPropsDown,
-    resetTrain,
-    setTrainLocationToCurrent,
   }
 }

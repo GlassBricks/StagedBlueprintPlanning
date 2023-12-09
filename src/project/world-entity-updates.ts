@@ -83,6 +83,27 @@ class RebuildAllStagesTask extends LoopTask {
 
 export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
   const content = project.content
+
+  return {
+    updateWorldEntities,
+    updateWorldEntitiesOnLastStageChanged,
+    updateWireConnections,
+    updateNewWorldEntitiesWithoutWires,
+    makeSettingsRemnant,
+    reviveSettingsRemnant,
+    clearWorldEntityAtStage,
+    refreshWorldEntityAtStage,
+    refreshAllWorldEntities,
+    rebuildWorldEntityAtStage,
+    rebuildStage,
+    disableAllEntitiesInStage,
+    enableAllEntitiesInStage,
+    deleteWorldEntities,
+    tryDollyEntities,
+    resetUnderground,
+    rebuildAllStages,
+  }
+
   function makePreviewEntity(
     stage: StageNumber,
     entity: ProjectEntity,
@@ -414,25 +435,5 @@ export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
 
   function rebuildAllStages(): void {
     submitTask(new RebuildAllStagesTask(project))
-  }
-
-  return {
-    updateWorldEntities,
-    updateWorldEntitiesOnLastStageChanged,
-    updateWireConnections,
-    updateNewWorldEntitiesWithoutWires,
-    makeSettingsRemnant,
-    reviveSettingsRemnant,
-    clearWorldEntityAtStage,
-    refreshWorldEntityAtStage,
-    refreshAllWorldEntities,
-    rebuildWorldEntityAtStage,
-    rebuildStage,
-    disableAllEntitiesInStage,
-    enableAllEntitiesInStage,
-    deleteWorldEntities,
-    tryDollyEntities,
-    resetUnderground,
-    rebuildAllStages,
   }
 }

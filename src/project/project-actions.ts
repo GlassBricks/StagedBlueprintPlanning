@@ -147,6 +147,16 @@ const lastStageChangeUndo = UndoHandler(
   },
 )
 
+const moveResultMessage: Record<ProjectEntityDollyResult, L_Interaction | nil> = {
+  success: nil,
+  "connected-entities-missing": L_Interaction.ConnectedEntitiesMissing,
+  "entities-missing": L_Interaction.EntitiesMissing,
+  overlap: L_Interaction.NoRoomInAnotherStage,
+  "could-not-teleport": L_Interaction.CannotBeTeleportedInAnotherStage,
+  "cannot-move": L_Interaction.CannotMove,
+  "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
+}
+
 export function ProjectActions(
   project: Project,
   projectUpdates: ProjectUpdates,
@@ -173,6 +183,36 @@ export function ProjectActions(
     refreshWorldEntityAtStage,
     tryDollyEntities,
   } = worldEntityUpdates
+
+  const result: InternalProjectActions = {
+    onEntityCreated,
+    onEntityDeleted,
+    onEntityPossiblyUpdated,
+    onEntityRotated,
+    onUndergroundBeltDragRotated,
+    onWiresPossiblyUpdated,
+    onEntityMarkedForUpgrade,
+    onCleanupToolUsed,
+    onTryFixEntity,
+    onEntityForceDeleteUsed,
+    onEntityDied,
+    onEntityDollied,
+    onStageDeleteUsed,
+    onStageDeleteCancelUsed,
+    onBringToStageUsed,
+    onBringDownToStageUsed,
+    onSendToStageUsed,
+    onMoveEntityToStageCustomInput,
+    userRevivedSettingsRemnant,
+    userMoveEntityToStageWithUndo,
+    userSetLastStageWithUndo,
+    userBringEntityToStage,
+    userSendEntityToStage,
+    userTryMoveEntityToStage,
+    findCompatibleEntityForUndo,
+    userTrySetLastStage,
+  }
+  return result
 
   function onPreviewReplaced(entity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): UndoAction | nil {
     const oldStage = entity.firstStage
@@ -290,16 +330,6 @@ export function ProjectActions(
     if (existing) return existing
     onEntityCreated(entity, stage, byPlayer)
     return nil
-  }
-
-  const moveResultMessage: Record<ProjectEntityDollyResult, L_Interaction | nil> = {
-    success: nil,
-    "connected-entities-missing": L_Interaction.ConnectedEntitiesMissing,
-    "entities-missing": L_Interaction.EntitiesMissing,
-    overlap: L_Interaction.NoRoomInAnotherStage,
-    "could-not-teleport": L_Interaction.CannotBeTeleportedInAnotherStage,
-    "cannot-move": L_Interaction.CannotMove,
-    "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
   }
 
   function onEntityDeleted(
@@ -583,8 +613,6 @@ export function ProjectActions(
     }
   }
 
-  const stageDeleteCancelUndo = lastStageChangeUndo
-
   function userTrySetLastStageWithUndo(
     projectEntity: ProjectEntity,
     stage: StageNumber | nil,
@@ -592,7 +620,7 @@ export function ProjectActions(
   ): UndoAction | nil {
     const oldStage = projectEntity.lastStage
     if (userTrySetLastStage(projectEntity, stage, byPlayer)) {
-      return stageDeleteCancelUndo.createAction(byPlayer, { project, entity: projectEntity, oldLastStage: oldStage })
+      return lastStageChangeUndo.createAction(byPlayer, { project, entity: projectEntity, oldLastStage: oldStage })
     }
   }
 
@@ -636,34 +664,4 @@ export function ProjectActions(
       createNotification(projectEntity, byPlayer, [message, ["entity-name." + entity.name]], true)
     }
   }
-
-  const result: InternalProjectActions = {
-    onEntityCreated,
-    onEntityDeleted,
-    onEntityPossiblyUpdated,
-    onEntityRotated,
-    onUndergroundBeltDragRotated,
-    onWiresPossiblyUpdated,
-    onEntityMarkedForUpgrade,
-    onCleanupToolUsed,
-    onTryFixEntity,
-    onEntityForceDeleteUsed,
-    onEntityDied,
-    onEntityDollied,
-    onStageDeleteUsed,
-    onStageDeleteCancelUsed,
-    onBringToStageUsed,
-    onBringDownToStageUsed,
-    onSendToStageUsed,
-    onMoveEntityToStageCustomInput,
-    userRevivedSettingsRemnant,
-    userMoveEntityToStageWithUndo,
-    userSetLastStageWithUndo,
-    userBringEntityToStage,
-    userSendEntityToStage,
-    userTryMoveEntityToStage,
-    findCompatibleEntityForUndo,
-    userTrySetLastStage,
-  }
-  return result
 }
