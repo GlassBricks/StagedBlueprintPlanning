@@ -15,12 +15,12 @@ import { ProjectEvents } from "./UserProject"
 ProjectEvents.addListener((e) => {
   switch (e.type) {
     case "stage-added":
-      e.project.entityUpdates.rebuildStage(e.project, e.stage.stageNumber)
+      e.project.entityUpdates.rebuildStage(e.stage.stageNumber)
       return
     case "stage-deleted": {
       const stageNumber = e.stage.stageNumber
       const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
-      e.project.entityUpdates.rebuildStage(e.project, stageNumberToMerge)
+      e.project.entityUpdates.rebuildStage(stageNumberToMerge)
       return
     }
     case "project-created":

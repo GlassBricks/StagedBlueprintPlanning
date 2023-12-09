@@ -139,7 +139,7 @@ describe("onEntityCreated", () => {
     userActions.onEntityCreated(luaEntity, newStage, playerIndex)
 
     expect(entity.getWorldEntity(newStage)).toBe(luaEntity)
-    expect(worldUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(project, entity, newStage)
+    expect(worldUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(entity, newStage)
   })
 
   test.each([1, 2])("at lower stage %d (overbuilding preview) sets entity and calls trySetFirstStage", (newStage) => {
@@ -186,7 +186,7 @@ describe("onEntityCreated", () => {
 
     userActions.onEntityCreated(luaEntity, 3, playerIndex)
 
-    expect(worldUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 3)
+    expect(worldUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(entity, 3)
     assertNotified(entity, [L_Interaction.MoveWillIntersectAnotherEntity], true)
 
     expectedNumCalls = 2
@@ -297,7 +297,7 @@ describe("onEntityDeleted", () => {
   test("in a higher stage calls disallowEntityDeletion", () => {
     const { luaEntity, entity } = addEntity(2)
     userActions.onEntityDeleted(luaEntity, 3, playerIndex)
-    expect(worldUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 3)
+    expect(worldUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(entity, 3)
   })
 
   test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
@@ -310,7 +310,7 @@ describe("onEntityDeleted", () => {
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
   userActions.onEntityDied(luaEntity, 2)
-  expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 2)
+  expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(entity, 2)
 })
 
 const resultMessages: Array<[EntityUpdateResult, string | false]> = [
@@ -484,7 +484,7 @@ describe("onCleanupToolUsed", () => {
   test.each([2, 3])("if is in stage %s, calls refreshAllWorldEntities", (atStage) => {
     const { luaEntity, entity } = addEntity(2)
     userActions.onCleanupToolUsed(createPreview(luaEntity), atStage)
-    expect(worldUpdates.refreshAllWorldEntities).toHaveBeenCalledWith(project, entity)
+    expect(worldUpdates.refreshAllWorldEntities).toHaveBeenCalledWith(entity)
   })
 })
 
@@ -497,7 +497,7 @@ test("onEntityForceDeleted calls forceDeleteEntity", () => {
 test("onEntityDied calls clearEntityAtStage", () => {
   const { luaEntity, entity } = addEntity(2)
   userActions.onEntityDied(luaEntity, 2)
-  expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(project, entity, 2)
+  expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(entity, 2)
 })
 
 describe("onMoveEntityToStageCustomInput", () => {
@@ -772,7 +772,7 @@ describe("onEntityDollied", () => {
     // already returns nil
     userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
 
-    expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(project, entity, 2)
+    expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(entity, 2)
   })
 
   test("calls tryMoveEntity and notifies if returns error", () => {
@@ -784,7 +784,7 @@ describe("onEntityDollied", () => {
     })
     userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
 
-    expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(project, entity, 2)
+    expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(entity, 2)
     assertNotified(entity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
   })
 })

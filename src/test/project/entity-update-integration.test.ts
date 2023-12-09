@@ -248,7 +248,7 @@ test("creating an entity", () => {
 
 test("clear entity at stage", () => {
   const entity = buildEntity(3)
-  project.entityUpdates.clearWorldEntityAtStage(project, entity, 4)
+  project.entityUpdates.clearWorldEntityAtStage(entity, 4)
   assertEntityCorrect(entity, 4)
 })
 
@@ -262,9 +262,9 @@ test("entity can not be placed at stage", () => {
 test("refresh missing entity", () => {
   const blocker = createEntity(4, { name: "stone-wall" })
   const entity = buildEntity(3)
-  project.entityUpdates.clearWorldEntityAtStage(project, entity, 4)
+  project.entityUpdates.clearWorldEntityAtStage(entity, 4)
   blocker.destroy()
-  project.entityUpdates.refreshWorldEntityAtStage(project, entity, 4)
+  project.entityUpdates.refreshWorldEntityAtStage(entity, 4)
   assertEntityCorrect(entity, false)
 })
 
@@ -273,7 +273,7 @@ test("replacing missing entity matches", () => {
   const newEntity = createEntity(4, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(4, newEntity)
 
-  project.entityUpdates.refreshWorldEntityAtStage(project, entity, 4)
+  project.entityUpdates.refreshWorldEntityAtStage(entity, 4)
   assertEntityCorrect(entity, false)
 })
 
@@ -289,7 +289,7 @@ test("move via preview replace", () => {
 test("disallowing entity deletion", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
-  project.entityUpdates.rebuildWorldEntityAtStage(project, entity, 4)
+  project.entityUpdates.rebuildWorldEntityAtStage(entity, 4)
   expect(worldEntity.valid).toBe(false) // replaced
   assertEntityCorrect(entity, false)
 })
@@ -636,7 +636,7 @@ describe("underground belt inconsistencies", () => {
     })
     test("when deleting an underground causing old pair to flip, updates highlights on old pair", () => {
       middleUnderground.setFirstStageUnchecked(1)
-      project.entityUpdates.updateWorldEntities(project, middleUnderground, 1)
+      project.entityUpdates.updateWorldEntities(middleUnderground, 1)
 
       middleUnderground.getWorldEntity(1)!.rotate({ by_player: player })
       expect(middleUnderground).toMatchTable({
@@ -756,7 +756,7 @@ describe("underground belt inconsistencies", () => {
       direction: defines.direction.east,
     })
     assert(underground.getWorldEntity(1)!.rotate())
-    project.entityUpdates.refreshWorldEntityAtStage(project, underground, 1)
+    project.entityUpdates.refreshWorldEntityAtStage(underground, 1)
     expect(underground).toMatchTable({
       firstValue: { type: "input" },
       direction: defines.direction.east,
@@ -938,7 +938,7 @@ describe("underground belt inconsistencies", () => {
     })
     test("does not upgrade underground belt in wrong direction", () => {
       underground.setTypeProperty("output")
-      project.entityUpdates.refreshAllWorldEntities(project, underground)
+      project.entityUpdates.refreshAllWorldEntities(underground)
       player.build_from_cursor({ position: pos, alt: true })
 
       expect(underground).toMatchTable({
@@ -983,20 +983,20 @@ test("refreshing and rebuilding an entity with diffs", () => {
   const entity = buildEntity(2)
   entity._applyDiffAtStage(5, { name: "stack-filter-inserter" })
   entity._applyDiffAtStage(3, { override_stack_size: 2 })
-  project.entityUpdates.refreshAllWorldEntities(project, entity)
+  project.entityUpdates.refreshAllWorldEntities(entity)
   for (const stage of $range(1, 6)) {
-    project.entityUpdates.refreshWorldEntityAtStage(project, entity, stage)
+    project.entityUpdates.refreshWorldEntityAtStage(entity, stage)
     assertEntityCorrect(entity, false)
   }
   for (const stage of $range(1, 6)) {
-    project.entityUpdates.rebuildWorldEntityAtStage(project, entity, stage)
+    project.entityUpdates.rebuildWorldEntityAtStage(entity, stage)
     assertEntityCorrect(entity, false)
   }
   for (const stage of $range(1, 6)) {
-    project.entityUpdates.rebuildStage(project, stage)
+    project.entityUpdates.rebuildStage(stage)
     assertEntityCorrect(entity, false)
   }
-  project.entityUpdates.rebuildAllStages(project)
+  project.entityUpdates.rebuildAllStages()
   runEntireCurrentTask()
   assertEntityCorrect(entity, false)
 })
@@ -1012,7 +1012,7 @@ test("update with upgrade and blocker", () => {
   assertEntityCorrect(entity, 5)
 
   entity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-  project.entityUpdates.refreshAllWorldEntities(project, entity)
+  project.entityUpdates.refreshAllWorldEntities(entity)
 
   preview = entity.getWorldOrPreviewEntity(5)!
   expect(isPreviewEntity(preview)).toBe(true)
@@ -1055,7 +1055,7 @@ test("dolly entity", () => {
   const worldEntity = entity.getWorldEntity(3)!
   expect(worldEntity.teleport(1, 0)).toBe(true)
   const newPosition = worldEntity.position
-  const ret = project.entityUpdates.tryDollyEntities(project, entity, 3)
+  const ret = project.entityUpdates.tryDollyEntities(entity, 3)
   expect(ret).toBe("success")
   expect(entity.position).toEqual(newPosition)
   assertEntityCorrect(entity, false)
@@ -1203,15 +1203,15 @@ test("train entity error", () => {
   train.destroy()
   surfaces[3 - 1].find_entities().forEach((e) => e.destroy()) // destroys rails too, so train cannot be re-created
 
-  project.entityUpdates.refreshAllWorldEntities(project, entity)
+  project.entityUpdates.refreshAllWorldEntities(entity)
   assertTrainEntityCorrect(entity, 3)
 })
 
 test("adding wire in higher stage sets empty control behavior", () => {
   const inserter = buildEntity(3) // is filter inserter
   const belt = buildEntity(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
-  project.entityUpdates.refreshWorldEntityAtStage(project, inserter, 4)
-  project.entityUpdates.refreshWorldEntityAtStage(project, belt, 4)
+  project.entityUpdates.refreshWorldEntityAtStage(inserter, 4)
+  project.entityUpdates.refreshWorldEntityAtStage(belt, 4)
   const inserter4 = inserter.getWorldEntity(4)!
   const belt4 = belt.getWorldEntity(4)!
 
@@ -1655,11 +1655,11 @@ test("rebuildStage", () => {
   const entityPastLastStage = buildEntity(1, { name: "inserter", position: pos.add(3, 0), direction: direction.west })
   expect(updates.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
   entityPresent._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-  project.entityUpdates.refreshAllWorldEntities(project, entityPresent)
+  project.entityUpdates.refreshAllWorldEntities(entityPresent)
   assertEntityCorrect(entityPresent, false)
 
   for (const stage of $range(1, 6)) {
-    project.entityUpdates.rebuildStage(project, stage)
+    project.entityUpdates.rebuildStage(stage)
 
     assertEntityCorrect(entityPresent, false)
     assertEntityCorrect(entityPreview, false)

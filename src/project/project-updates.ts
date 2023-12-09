@@ -117,7 +117,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
 
     fixNewUndergroundBelt(projectEntity, entity, stage, knownValue)
 
-    updateNewWorldEntitiesWithoutWires(project, projectEntity)
+    updateNewWorldEntitiesWithoutWires(projectEntity)
     const [hasDiff, , additionalToUpdate] = saveWireConnections(
       content,
       projectEntity,
@@ -125,10 +125,10 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       project.lastStageFor(projectEntity),
     )
     if (hasDiff) {
-      updateWireConnections(project, projectEntity)
+      updateWireConnections(projectEntity)
       if (additionalToUpdate) {
         for (const otherEntity of additionalToUpdate) {
-          updateWireConnections(project, otherEntity)
+          updateWireConnections(otherEntity)
         }
       }
     }
@@ -153,15 +153,15 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
   function deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void {
     if (shouldMakeSettingsRemnant(entity)) {
       entity.isSettingsRemnant = true
-      makeSettingsRemnant(project, entity)
+      makeSettingsRemnant(entity)
     } else {
       content.delete(entity)
-      deleteWorldEntities(project, entity)
+      deleteWorldEntities(entity)
     }
   }
   function forceDeleteEntity(entity: ProjectEntity): void {
     content.delete(entity)
-    deleteWorldEntities(project, entity)
+    deleteWorldEntities(entity)
   }
 
   function tryReviveSettingsRemnant(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
@@ -170,7 +170,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) {
       entity.setFirstStageUnchecked(stage)
       entity.isSettingsRemnant = nil
-      reviveSettingsRemnant(project, entity)
+      reviveSettingsRemnant(entity)
     }
     return result
   }
@@ -252,7 +252,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
           entity.setTypeProperty(entitySource.loader_type)
         }
       } else {
-        refreshWorldEntityAtStage(project, entity, stage)
+        refreshWorldEntityAtStage(entity, stage)
         return EntityUpdateResult.CannotRotate
       }
     }
@@ -266,7 +266,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       }
     }
     if (rotated || hasDiff) {
-      updateWorldEntities(project, entity, stage)
+      updateWorldEntities(entity, stage)
       return EntityUpdateResult.Updated
     }
     return EntityUpdateResult.NoChange
@@ -279,8 +279,8 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     entity2Stage: StageNumber,
   ) {
     // delay updating of highlights, since both pairs might need to be rotated together to avoid errors
-    updateWorldEntities(project, entity1, entity1Stage, false)
-    updateWorldEntities(project, entity2, entity2Stage, false)
+    updateWorldEntities(entity1, entity1Stage, false)
+    updateWorldEntities(entity2, entity2Stage, false)
     updateAllHighlights(project, entity1)
     updateAllHighlights(project, entity2)
   }
@@ -294,7 +294,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
   ): EntityUpdateResult {
     if (!pair) {
       // allow
-      updateWorldEntities(project, entity, stage)
+      updateWorldEntities(entity, stage)
       return EntityUpdateResult.NoChange
     }
     if (pair.direction == targetDirection) {
@@ -339,7 +339,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     if (rotated) {
       const rotateAllowed = isSelfOrPairFirstStage
       if (!rotateAllowed) {
-        resetUnderground(project, entity, stage)
+        resetUnderground(entity, stage)
         return EntityUpdateResult.CannotRotate
       }
 
@@ -368,10 +368,10 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     }
 
     if (cannotUpgradeChangedPair && !rotated) {
-      refreshWorldEntityAtStage(project, entity, stage)
-      if (pair) refreshWorldEntityAtStage(project, pair, stage)
+      refreshWorldEntityAtStage(entity, stage)
+      if (pair) refreshWorldEntityAtStage(pair, stage)
     } else if (!pair) {
-      updateWorldEntities(project, entity, applyStage)
+      updateWorldEntities(entity, applyStage)
     } else {
       updatePair(entity, applyStage, pair, pairApplyStage)
     }
@@ -420,11 +420,11 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     const circuitConnections = content.getCircuitConnections(entity)
     // check setting no-op control behavior
     if (circuitConnections) maybeApplyEmptyControlBehavior(entity, stage)
-    updateWorldEntities(project, entity, entity.firstStage)
+    updateWorldEntities(entity, entity.firstStage)
     if (circuitConnections) {
       for (const [otherEntity] of circuitConnections) {
         if (maybeApplyEmptyControlBehavior(otherEntity, stage)) {
-          updateWorldEntities(project, otherEntity, otherEntity.firstStage)
+          updateWorldEntities(otherEntity, otherEntity.firstStage)
         }
       }
     }
@@ -432,7 +432,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     // update other entities as needed
     if (additionalEntitiesToUpdate) {
       for (const otherEntity of additionalEntitiesToUpdate) {
-        updateWireConnections(project, otherEntity)
+        updateWireConnections(otherEntity)
       }
     }
 
@@ -477,7 +477,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     if (result == StageMoveResult.Updated) {
       const stageToUpdate = min(entity.firstStage, stage)
       entity.setFirstStageUnchecked(stage)
-      updateWorldEntities(project, entity, stageToUpdate)
+      updateWorldEntities(entity, stageToUpdate)
     }
     return result
   }
@@ -502,21 +502,21 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     if (result == StageMoveResult.Updated) {
       const oldLastStage = entity.lastStage
       entity.setLastStageUnchecked(stage)
-      updateWorldEntitiesOnLastStageChanged(project, entity, oldLastStage)
+      updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
     }
     return result
   }
 
   function resetProp<T extends Entity>(entity: ProjectEntity<T>, stageNumber: StageNumber, prop: keyof T): boolean {
     const moved = entity.resetProp(stageNumber, prop)
-    if (moved) updateWorldEntities(project, entity, stageNumber)
+    if (moved) updateWorldEntities(entity, stageNumber)
     return moved
   }
 
   function movePropDown<T extends Entity>(entity: ProjectEntity<T>, stageNumber: StageNumber, prop: keyof T): boolean {
     const movedStage = entity.movePropDown(stageNumber, prop)
     if (movedStage) {
-      updateWorldEntities(project, entity, movedStage)
+      updateWorldEntities(entity, movedStage)
       return true
     }
     return false
@@ -524,14 +524,14 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
 
   function resetAllProps(entity: ProjectEntity, stageNumber: StageNumber): boolean {
     const moved = entity.resetValue(stageNumber)
-    if (moved) updateWorldEntities(project, entity, stageNumber)
+    if (moved) updateWorldEntities(entity, stageNumber)
     return moved
   }
 
   function moveAllPropsDown(entity: ProjectEntity, stageNumber: StageNumber): boolean {
     const movedStage = entity.moveValueDown(stageNumber)
     if (movedStage) {
-      updateWorldEntities(project, entity, movedStage)
+      updateWorldEntities(entity, movedStage)
       return true
     }
     return false
@@ -541,7 +541,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     const stage = entity.firstStage
     const luaEntity = entity.getWorldEntity(stage)
     if (!luaEntity) {
-      refreshWorldEntityAtStage(project, entity, stage)
+      refreshWorldEntityAtStage(entity, stage)
       return
     }
 
@@ -552,7 +552,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
 
     const projectEntities = entities.map((e) => content.findCompatibleWithLuaEntity(e, nil, stage)!)
     for (const entity of projectEntities) entity.destroyAllWorldOrPreviewEntities()
-    for (const entity of projectEntities) rebuildWorldEntityAtStage(project, entity, stage)
+    for (const entity of projectEntities) rebuildWorldEntityAtStage(entity, stage)
   }
 
   function setTrainLocationToCurrent(entity: RollingStockProjectEntity): void {
@@ -569,7 +569,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       const projectEntity = content.findCompatibleWithLuaEntity(luaEntity, nil, stage)
       if (projectEntity) {
         content.changePosition(projectEntity, luaEntity.position)
-        rebuildWorldEntityAtStage(project, projectEntity, stage)
+        rebuildWorldEntityAtStage(projectEntity, stage)
       } else {
         // add
         addNewEntity(luaEntity, stage)

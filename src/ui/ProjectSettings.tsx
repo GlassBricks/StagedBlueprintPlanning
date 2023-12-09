@@ -487,7 +487,7 @@ class ProjectSettings extends Component<{
     )
   }
   private rebuildAllStages() {
-    this.project.entityUpdates.rebuildAllStages(this.project)
+    this.project.entityUpdates.rebuildAllStages()
   }
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
@@ -617,7 +617,7 @@ export class StageSettings extends Component<{
   }
   private resetStage() {
     const stage = this.stage
-    if (stage.valid) stage.project.entityUpdates.rebuildStage(stage.project, stage.stageNumber)
+    if (stage.valid) stage.project.entityUpdates.rebuildStage(stage.stageNumber)
   }
 
   private setLabTiles() {
@@ -647,13 +647,13 @@ export class StageSettings extends Component<{
   private disableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    stage.project.entityUpdates.disableAllEntitiesInStage(stage.project, stage.stageNumber)
+    stage.project.entityUpdates.disableAllEntitiesInStage(stage.stageNumber)
   }
 
   private enableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    stage.project.entityUpdates.enableAllEntitiesInStage(stage.project, stage.stageNumber)
+    stage.project.entityUpdates.enableAllEntitiesInStage(stage.stageNumber)
   }
 
   private beginDelete() {

@@ -38,7 +38,7 @@ Migrations.to("0.14.3", () => {
     for (const entity of project.content.iterateAllEntities()) {
       // re-generate previews, if not existing
       if (entity.isRollingStock()) {
-        project.entityUpdates.updateWorldEntities(project, entity, 1)
+        project.entityUpdates.updateWorldEntities(entity, 1)
       }
     }
   }
@@ -63,7 +63,7 @@ Migrations.to("0.18.0", () => {
     for (const entity of project.content.iterateAllEntities()) {
       if (entity.isRollingStock()) {
         entity.setLastStageUnchecked(entity.firstStage)
-        project.entityUpdates.updateWorldEntitiesOnLastStageChanged(project, entity, nil)
+        project.entityUpdates.updateWorldEntitiesOnLastStageChanged(entity, nil)
       }
     }
   }

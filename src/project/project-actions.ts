@@ -178,7 +178,7 @@ export function ProjectActions(
     const oldStage = entity.firstStage
     if (trySetFirstStage(entity, stage) != StageMoveResult.Updated) {
       // something went wrong, replace the entity
-      rebuildWorldEntityAtStage(project, entity, stage)
+      rebuildWorldEntityAtStage(entity, stage)
       return
     }
 
@@ -197,7 +197,7 @@ export function ProjectActions(
       userRevivedSettingsRemnant(projectEntity, stage, byPlayer)
       // no undo action
     } else if (stage >= projectEntity.firstStage) {
-      refreshWorldEntityAtStage(project, projectEntity, stage)
+      refreshWorldEntityAtStage(projectEntity, stage)
       // no undo action
     } else {
       return onPreviewReplaced(projectEntity, stage, byPlayer)
@@ -276,7 +276,7 @@ export function ProjectActions(
         forceDeleteEntity(existing)
       }
     } else if (existing.hasErrorAt(stage)) {
-      refreshAllWorldEntities(project, existing)
+      refreshAllWorldEntities(existing)
     }
   }
 
@@ -314,7 +314,7 @@ export function ProjectActions(
 
     if (firstStage != stage) {
       if (firstStage < stage) {
-        rebuildWorldEntityAtStage(project, projectEntity, stage)
+        rebuildWorldEntityAtStage(projectEntity, stage)
       }
       // else: stage > existingStage; bug, ignore
       return
@@ -416,7 +416,7 @@ export function ProjectActions(
   function onEntityDied(entity: LuaEntityInfo, stage: StageNumber): void {
     const projectEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)
     if (projectEntity) {
-      clearWorldEntityAtStage(project, projectEntity, stage)
+      clearWorldEntityAtStage(projectEntity, stage)
     }
   }
 
@@ -438,7 +438,7 @@ export function ProjectActions(
     const result = tryReviveSettingsRemnant(entity, stage)
     if (result != "updated" && result != "no-change") {
       notifyIfMoveError(result, entity, byPlayer)
-      refreshWorldEntityAtStage(project, entity, stage)
+      refreshWorldEntityAtStage(entity, stage)
     }
   }
 
@@ -630,7 +630,7 @@ export function ProjectActions(
     const projectEntity = getCompatibleAtPositionOrAdd(entity, stage, oldPosition, byPlayer)
     if (!projectEntity) return
     assert(!projectEntity.isSettingsRemnant && !projectEntity.isUndergroundBelt(), "cannot move this entity")
-    const result = tryDollyEntities(project, projectEntity, stage)
+    const result = tryDollyEntities(projectEntity, stage)
     const message = moveResultMessage[result]
     if (message != nil) {
       createNotification(projectEntity, byPlayer, [message, ["entity-name." + entity.name]], true)

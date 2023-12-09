@@ -13,7 +13,6 @@ import { LocalisedString, LuaEntity } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { isPreviewEntity } from "../entity/entity-prototype-info"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
-import { ProjectContent } from "../entity/ProjectContent"
 import {
   isWorldEntityProjectEntity,
   ProjectEntity,
@@ -42,33 +41,28 @@ export type ProjectEntityDollyResult =
 
 /** @noSelf */
 export interface WorldEntityUpdates {
-  updateWorldEntities(
-    project: Project,
-    entity: ProjectEntity,
-    startStage: StageNumber,
-    updateHighlights?: boolean,
-  ): void
-  updateWorldEntitiesOnLastStageChanged(project: Project, entity: ProjectEntity, oldLastStage: StageNumber | nil): void
-  updateNewWorldEntitiesWithoutWires(project: Project, entity: ProjectEntity): void
+  updateWorldEntities(entity: ProjectEntity, startStage: StageNumber, updateHighlights?: boolean): void
+  updateWorldEntitiesOnLastStageChanged(entity: ProjectEntity, oldLastStage: StageNumber | nil): void
+  updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void
 
-  updateWireConnections(project: Project, entity: ProjectEntity): void
-  clearWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void
-  refreshWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void
-  refreshAllWorldEntities(project: Project, entity: ProjectEntity): void
+  updateWireConnections(entity: ProjectEntity): void
+  clearWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
+  refreshWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
+  refreshAllWorldEntities(entity: ProjectEntity): void
 
-  makeSettingsRemnant(project: Project, entity: ProjectEntity): void
-  reviveSettingsRemnant(project: Project, entity: ProjectEntity): void
+  makeSettingsRemnant(entity: ProjectEntity): void
+  reviveSettingsRemnant(entity: ProjectEntity): void
 
-  rebuildWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void
+  rebuildWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
 
-  disableAllEntitiesInStage(project: Project, stage: StageNumber): void
-  enableAllEntitiesInStage(project: Project, stage: StageNumber): void
-  deleteWorldEntities(project: Project, entity: ProjectEntity): void
-  tryDollyEntities(project: Project, entity: ProjectEntity, stage: StageNumber): ProjectEntityDollyResult
-  resetUnderground(project: Project, entity: UndergroundBeltProjectEntity, stage: StageNumber): void
+  disableAllEntitiesInStage(stage: StageNumber): void
+  enableAllEntitiesInStage(stage: StageNumber): void
+  deleteWorldEntities(entity: ProjectEntity): void
+  tryDollyEntities(entity: ProjectEntity, stage: StageNumber): ProjectEntityDollyResult
+  resetUnderground(entity: UndergroundBeltProjectEntity, stage: StageNumber): void
 
-  rebuildStage(project: Project, stage: StageNumber): void
-  rebuildAllStages(project: Project): void
+  rebuildStage(stage: StageNumber): void
+  rebuildAllStages(): void
 }
 
 @RegisterClass("RebuildAllStagesTask")
@@ -80,16 +74,16 @@ class RebuildAllStagesTask extends LoopTask {
     return [L_GuiTasks.RebuildAllStages]
   }
   protected override doStep(i: number): void {
-    this.project.entityUpdates.rebuildStage(this.project, i + 1)
+    this.project.entityUpdates.rebuildStage(i + 1)
   }
   protected getTitleForStep(step: number): LocalisedString {
     return [L_GuiTasks.RebuildingStage, this.project.getStageName(step + 1)]
   }
 }
 
-export function WorldEntityUpdates(): WorldEntityUpdates {
+export function WorldEntityUpdates(project: Project): WorldEntityUpdates {
+  const content = project.content
   function makePreviewEntity(
-    project: Project,
     stage: StageNumber,
     entity: ProjectEntity,
     direction: defines.direction,
@@ -104,9 +98,9 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
     }
   }
 
-  function clearWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void {
+  function clearWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
     const previewName = Prototypes.PreviewEntityPrefix + entity.firstValue.name
-    makePreviewEntity(project, stage, entity, entity.getPreviewDirection(), previewName)
+    makePreviewEntity(stage, entity, entity.getPreviewDirection(), previewName)
     updateAllHighlights(project, entity)
   }
   function setEntityUpdateable(entity: LuaEntity, updateable: boolean) {
@@ -115,12 +109,7 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
     entity.destructible = false
   }
 
-  function updateWorldEntitiesInRange(
-    project: Project,
-    entity: ProjectEntity,
-    startStage: StageNumber,
-    endStage: StageNumber,
-  ): boolean {
+  function updateWorldEntitiesInRange(entity: ProjectEntity, startStage: StageNumber, endStage: StageNumber): boolean {
     assert(startStage >= 1)
     const { firstStage, lastStage, direction } = entity
     const previewDirection = entity.getPreviewDirection()
@@ -176,7 +165,7 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
         lastEntityName = entityName
         lastPreviewName = Prototypes.PreviewEntityPrefix + entityName
       }
-      makePreviewEntity(project, stage, entity, previewDirection, lastPreviewName!)
+      makePreviewEntity(stage, entity, previewDirection, lastPreviewName!)
     }
 
     // kinda hacky spot for this, but no better place as of now
@@ -189,36 +178,30 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
     return hasOrResolvedError
   }
 
-  function updateWires(project: Project, entity: ProjectEntity, startStage: StageNumber): void {
-    const content = project.content
+  function updateWires(entity: ProjectEntity, startStage: StageNumber): void {
     const lastStage = project.lastStageFor(entity)
     for (const stage of $range(startStage, lastStage)) {
       updateWireConnectionsAtStage(content, entity, stage)
     }
   }
 
-  function updateWorldEntities(
-    project: Project,
-    entity: ProjectEntity,
-    startStage: StageNumber,
-    updateHighlights: boolean = true,
-  ): void {
-    if (entity.isSettingsRemnant) return makeSettingsRemnant(project, entity)
+  function updateWorldEntities(entity: ProjectEntity, startStage: StageNumber, updateHighlights: boolean = true): void {
+    if (entity.isSettingsRemnant) return makeSettingsRemnant(entity)
     const lastStage = project.lastStageFor(entity)
     if (lastStage < startStage) return
-    updateWorldEntitiesInRange(project, entity, startStage, lastStage)
-    updateWires(project, entity, startStage)
+    updateWorldEntitiesInRange(entity, startStage, lastStage)
+    updateWires(entity, startStage)
     if (updateHighlights) updateAllHighlights(project, entity)
   }
   // extra hot path
-  function updateNewWorldEntitiesWithoutWires(project: Project, entity: ProjectEntity): void {
-    const hasError = updateWorldEntitiesInRange(project, entity, 1, project.lastStageFor(entity))
+  function updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void {
+    const hasError = updateWorldEntitiesInRange(entity, 1, project.lastStageFor(entity))
     // performance: if there are no errors, then there are no highlights to update
     // (no stage diff or last stage, either)
     if (hasError) updateAllHighlights(project, entity)
   }
 
-  function refreshWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void {
+  function refreshWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
     if (entity.isPastLastStage(stage)) {
       entity.destroyWorldOrPreviewEntity(stage)
       return
@@ -226,7 +209,6 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
 
     if (!entity.isInStage(stage)) {
       makePreviewEntity(
-        project,
         stage,
         entity,
         entity.getPreviewDirection(),
@@ -236,38 +218,34 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
     }
     if (entity.isSettingsRemnant) {
       entity.destroyWorldOrPreviewEntity(stage)
-      makePreviewEntity(project, stage, entity, entity.getPreviewDirection(), entity.getNameAtStage(stage))
+      makePreviewEntity(stage, entity, entity.getPreviewDirection(), entity.getNameAtStage(stage))
       makeSettingsRemnantHighlights(project, entity)
       return
     }
 
-    updateWorldEntitiesInRange(project, entity, stage, stage)
+    updateWorldEntitiesInRange(entity, stage, stage)
     // updateWiresInRange(project, entity, stage, stage)
-    updateWireConnectionsAtStage(project.content, entity, stage)
+    updateWireConnectionsAtStage(content, entity, stage)
     updateAllHighlights(project, entity)
   }
   /**
    * Forces change even if that would make the pair incorrect
    */
-  function resetUnderground(project: Project, entity: UndergroundBeltProjectEntity, stage: StageNumber): void {
+  function resetUnderground(entity: UndergroundBeltProjectEntity, stage: StageNumber): void {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)
     if (worldEntity && worldEntity.belt_to_ground_type != entity.firstValue.type) {
       forceFlipUnderground(worldEntity)
     }
-    updateWorldEntitiesInRange(project, entity, stage, stage)
+    updateWorldEntitiesInRange(entity, stage, stage)
     updateAllHighlights(project, entity)
   }
 
-  function rebuildWorldEntityAtStage(project: Project, entity: ProjectEntity, stage: StageNumber): void {
+  function rebuildWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
     entity.destroyWorldOrPreviewEntity(stage)
-    refreshWorldEntityAtStage(project, entity, stage)
+    refreshWorldEntityAtStage(entity, stage)
   }
 
-  function updateWorldEntitiesOnLastStageChanged(
-    project: Project,
-    entity: ProjectEntity,
-    oldLastStage: StageNumber | nil,
-  ): void {
+  function updateWorldEntitiesOnLastStageChanged(entity: ProjectEntity, oldLastStage: StageNumber | nil): void {
     const movedDown = entity.lastStage != nil && (oldLastStage == nil || entity.lastStage < oldLastStage)
     if (movedDown) {
       // delete all entities after the new last stage
@@ -276,35 +254,35 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
       }
     } else if (oldLastStage) {
       // moved up
-      updateWorldEntities(project, entity, oldLastStage + 1)
+      updateWorldEntities(entity, oldLastStage + 1)
     }
     updateAllHighlights(project, entity)
   }
 
-  function updateWireConnections(project: Project, entity: ProjectEntity): void {
-    updateWires(project, entity, entity.firstStage)
+  function updateWireConnections(entity: ProjectEntity): void {
+    updateWires(entity, entity.firstStage)
   }
 
-  function refreshAllWorldEntities(project: Project, entity: ProjectEntity): void {
-    return updateWorldEntities(project, entity, 1)
+  function refreshAllWorldEntities(entity: ProjectEntity): void {
+    return updateWorldEntities(entity, 1)
   }
 
-  function makeSettingsRemnant(project: Project, entity: ProjectEntity): void {
+  function makeSettingsRemnant(entity: ProjectEntity): void {
     assert(entity.isSettingsRemnant)
     entity.destroyAllWorldOrPreviewEntities()
     const direction = entity.getPreviewDirection()
     const previewName = Prototypes.PreviewEntityPrefix + entity.firstValue.name
     for (const stage of $range(1, project.lastStageFor(entity))) {
-      makePreviewEntity(project, stage, entity, direction, previewName)
+      makePreviewEntity(stage, entity, direction, previewName)
     }
     makeSettingsRemnantHighlights(project, entity)
   }
 
-  function reviveSettingsRemnant(project: Project, entity: ProjectEntity): void {
+  function reviveSettingsRemnant(entity: ProjectEntity): void {
     assert(!entity.isSettingsRemnant)
     const lastStage = project.lastStageFor(entity)
-    updateWorldEntitiesInRange(project, entity, 1, lastStage)
-    updateWires(project, entity, 1)
+    updateWorldEntitiesInRange(entity, 1, lastStage)
+    updateWires(entity, 1)
 
     updateHighlightsOnReviveSettingsRemnant(project, entity)
   }
@@ -316,7 +294,7 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
       if (!worldEntity) continue
       const pair = worldEntity.neighbours as LuaEntity | nil
       if (!pair) continue
-      const pairProjectEntity = project.content.findCompatibleWithLuaEntity(pair, nil, stage)
+      const pairProjectEntity = content.findCompatibleWithLuaEntity(pair, nil, stage)
       if (pairProjectEntity) pairsToUpdate.add(pairProjectEntity as UndergroundBeltProjectEntity)
     }
     entity.destroyAllWorldOrPreviewEntities()
@@ -324,7 +302,7 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
       updateAllHighlights(project, pair)
     }
   }
-  function deleteWorldEntities(project: Project, entity: ProjectEntity): void {
+  function deleteWorldEntities(entity: ProjectEntity): void {
     if (entity.isUndergroundBelt()) {
       deleteUndergroundBelt(entity, project)
     } else {
@@ -334,7 +312,6 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
   }
 
   function checkConnectionWorldEntityExists(
-    content: ProjectContent,
     entity: ProjectEntity,
     startStage: StageNumber,
     endStage: StageNumber,
@@ -355,14 +332,13 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
   }
 
   function tryMoveOtherEntities(
-    project: Project,
     entity: ProjectEntity,
     stage: StageNumber,
     movedEntity: LuaEntity,
   ): ProjectEntityDollyResult {
     if (entity.isUndergroundBelt() || entity.firstStage != stage) return "cannot-move"
 
-    if (!checkConnectionWorldEntityExists(project.content, entity, stage, project.lastStageFor(entity)))
+    if (!checkConnectionWorldEntityExists(entity, stage, project.lastStageFor(entity)))
       return "connected-entities-missing"
 
     const entities: LuaEntity[] = []
@@ -378,23 +354,23 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
     return tryDollyAllEntities(entities, movedEntity.position, movedEntity.direction)
   }
 
-  function tryDollyEntities(project: Project, entity: ProjectEntity, stage: StageNumber): ProjectEntityDollyResult {
+  function tryDollyEntities(entity: ProjectEntity, stage: StageNumber): ProjectEntityDollyResult {
     const movedEntity = entity.getWorldOrPreviewEntity(stage)
     if (!movedEntity) return "entities-missing"
-    const moveResult = tryMoveOtherEntities(project, entity, stage, movedEntity)
+    const moveResult = tryMoveOtherEntities(entity, stage, movedEntity)
     if (moveResult != "success") {
       forceDollyEntity(movedEntity, entity.position, entity.direction)
     } else {
       entity.direction = movedEntity.direction
-      const posChanged = project.content.changePosition(entity, movedEntity.position)
-      assert(posChanged, "failed to change position in project content")
+      const posChanged = content.changePosition(entity, movedEntity.position)
+      assert(posChanged, "failed to change position in content")
       deleteAllHighlights(entity)
       updateAllHighlights(project, entity)
     }
 
     return moveResult
   }
-  function disableAllEntitiesInStage(project: Project, stage: StageNumber): void {
+  function disableAllEntitiesInStage(stage: StageNumber): void {
     const surface = project.getSurface(stage)
     if (!surface) return
     const arr = surface.find_entities()
@@ -402,7 +378,7 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
       arr[i - 1].active = false
     }
   }
-  function enableAllEntitiesInStage(project: Project, stage: StageNumber): void {
+  function enableAllEntitiesInStage(stage: StageNumber): void {
     const surface = project.getSurface(stage)
     if (!surface) return
     const arr = surface.find_entities()
@@ -411,7 +387,7 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
     }
   }
 
-  function rebuildStage(project: Project, stage: StageNumber): void {
+  function rebuildStage(stage: StageNumber): void {
     const surface = project.getSurface(stage)
     if (!surface) return
     for (const entity of surface.find_entities()) {
@@ -424,19 +400,19 @@ export function WorldEntityUpdates(): WorldEntityUpdates {
       // see also: isPreviewEntity
     }
     const updateLater: RollingStockProjectEntity[] = []
-    for (const entity of project.content.iterateAllEntities()) {
+    for (const entity of content.iterateAllEntities()) {
       if (entity.isRollingStock()) {
         updateLater.push(entity)
       } else {
-        project.entityUpdates.refreshWorldEntityAtStage(project, entity, stage)
+        refreshWorldEntityAtStage(entity, stage)
       }
     }
     for (const entity of updateLater) {
-      project.entityUpdates.refreshWorldEntityAtStage(project, entity, stage)
+      refreshWorldEntityAtStage(entity, stage)
     }
   }
 
-  function rebuildAllStages(project: Project): void {
+  function rebuildAllStages(): void {
     submitTask(new RebuildAllStagesTask(project))
   }
 

@@ -305,8 +305,8 @@ const ProjectActionsClass = LazyLoadClass<HasProject, ProjectActions>("ProjectAc
 const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUpdates", ({ project }) =>
   ProjectUpdates(project, project.entityUpdates),
 )
-const WorldEntityUpdatesClass = LazyLoadClass<HasProject, WorldEntityUpdates>("WorldEntityUpdates", () =>
-  WorldEntityUpdates(),
+const WorldEntityUpdatesClass = LazyLoadClass<HasProject, WorldEntityUpdates>("WorldEntityUpdates", ({ project }) =>
+  WorldEntityUpdates(project),
 )
 
 export function createUserProject(name: string, initialNumStages: number): UserProject {

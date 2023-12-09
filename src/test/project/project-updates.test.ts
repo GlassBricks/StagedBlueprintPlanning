@@ -103,13 +103,7 @@ function assertUpdateCalled(
 ): void {
   expectedWuCalls++
   if (n == nil) expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.updateWorldEntities).toHaveBeenNthCalledWith(
-    n ?? 1,
-    project,
-    entity,
-    startStage,
-    updateHighlights,
-  )
+  expect(worldEntityUpdates.updateWorldEntities).toHaveBeenNthCalledWith(n ?? 1, entity, startStage, updateHighlights)
   if (updateHighlights == false) {
     expect(highlights.updateAllHighlights).toHaveBeenCalledWith(project, entity)
   }
@@ -118,35 +112,35 @@ function assertUpdateCalled(
 function assertUpdateOnLastStageChangedCalled(entity: ProjectEntity, startStage: StageNumber) {
   expectedWuCalls++
   expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.updateWorldEntitiesOnLastStageChanged).toHaveBeenCalledWith(project, entity, startStage)
+  expect(worldEntityUpdates.updateWorldEntitiesOnLastStageChanged).toHaveBeenCalledWith(entity, startStage)
 }
 
 function assertRefreshCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldEntityUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(project, entity, stage)
+  expect(worldEntityUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(entity, stage)
 }
 function assertResetUndergroundRotationCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldEntityUpdates.resetUnderground).toHaveBeenCalledWith(project, entity, stage)
+  expect(worldEntityUpdates.resetUnderground).toHaveBeenCalledWith(entity, stage)
 }
 function assertReplaceCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldEntityUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(project, entity, stage)
+  expect(worldEntityUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(entity, stage)
 }
 function assertDeleteWorldEntityCalled(entity: ProjectEntity) {
   expectedWuCalls++
   expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.deleteWorldEntities).toHaveBeenCalledWith(project, entity)
+  expect(worldEntityUpdates.deleteWorldEntities).toHaveBeenCalledWith(entity)
 }
 function assertMakeSettingsRemnantCalled(entity: ProjectEntity) {
   expectedWuCalls++
   expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.makeSettingsRemnant).toHaveBeenCalledWith(project, entity)
+  expect(worldEntityUpdates.makeSettingsRemnant).toHaveBeenCalledWith(entity)
 }
 function assertReviveSettingsRemnantCalled(entity: ProjectEntity) {
   expectedWuCalls++
   expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.reviveSettingsRemnant).toHaveBeenCalledWith(project, entity)
+  expect(worldEntityUpdates.reviveSettingsRemnant).toHaveBeenCalledWith(entity)
 }
 
 function assertOneEntity() {
@@ -179,10 +173,10 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   return entity
 }
 function assertNewUpdated(entity: ProjectEntity) {
-  expect(worldEntityUpdates.updateNewWorldEntitiesWithoutWires).toHaveBeenCalledWith(project, entity)
+  expect(worldEntityUpdates.updateNewWorldEntitiesWithoutWires).toHaveBeenCalledWith(entity)
   expectedWuCalls = 1
   if (project.content.getCircuitConnections(entity) || project.content.getCableConnections(entity)) {
-    expect(worldEntityUpdates.updateWireConnections).toHaveBeenCalledWith(project, entity)
+    expect(worldEntityUpdates.updateWireConnections).toHaveBeenCalledWith(entity)
     expectedWuCalls++
   }
 }
@@ -1187,7 +1181,7 @@ describe("undergrounds", () => {
       force: luaEntity.force,
       direction: direction.west,
     })
-    worldEntityUpdates.updateWorldEntities.invokes((_, pEntity, stage) => {
+    worldEntityUpdates.updateWorldEntities.invokes((pEntity, stage) => {
       if (entity == pEntity && stage == 1) {
         luaEntity.rotate()
       }
