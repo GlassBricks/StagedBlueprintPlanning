@@ -462,11 +462,11 @@ describe("tryUpdateEntityFromWorld", () => {
   })
 })
 
-describe("tryRotateEntityToMatchWorld", () => {
+describe("tryRotateEntityFromWorld", () => {
   test("in first stage rotates all entities", () => {
     const { luaEntity, entity } = addEntity(2)
     luaEntity.direction = direction.west
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, 2)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity, 2)
     expect(ret).toBe("updated")
     expect(entity.direction).toBe(direction.west)
     assertOneEntity()
@@ -478,7 +478,7 @@ describe("tryRotateEntityToMatchWorld", () => {
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, 2)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity, 2)
     expect(ret).toBe("cannot-rotate")
     expect(entity.direction).toBe(oldDirection)
     assertOneEntity()
@@ -488,7 +488,7 @@ describe("tryRotateEntityToMatchWorld", () => {
   test("rotating loader also sets loader type", () => {
     const { luaEntity, entity } = addEntity(1, { name: "loader", direction: direction.north, type: "input" })
     luaEntity.rotate()
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, 1)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity, 1)
     expect(ret).toBe("updated")
     expect(entity.direction).toBe(direction.south)
     expect(entity.firstValue.type).toBe("output")
@@ -521,7 +521,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
     assertWUNotCalled()
   })
   test("using rotate", () => {
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, 3)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity, 3)
     expect(ret).toBe("no-change")
     expect(entity.direction).toBe(0)
 
@@ -547,7 +547,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   })
 })
 
-describe("tryApplyUpgradeTarget", () => {
+describe("tryUpgradeEntityFromWorld", () => {
   test("can apply upgrade", () => {
     const { luaEntity, entity } = addEntity(1)
     luaEntity.order_upgrade({
@@ -555,7 +555,7 @@ describe("tryApplyUpgradeTarget", () => {
       target: "stack-filter-inserter",
     })
     const direction = luaEntity.direction
-    const ret = projectUpdates.tryApplyUpgradeTarget(entity, 1)
+    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
     expect(ret).toBe("updated")
     expect(entity.firstValue.name).toBe("stack-filter-inserter")
     expect(entity.direction).toBe(direction)
@@ -570,7 +570,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.west,
     })
 
-    const ret = projectUpdates.tryApplyUpgradeTarget(entity, 1)
+    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
     expect(ret).toBe("updated")
     expect(entity.firstValue.name).toBe("filter-inserter")
     expect(entity.direction).toBe(direction.west)
@@ -585,7 +585,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.west,
     })
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = projectUpdates.tryApplyUpgradeTarget(entity, 2)
+    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
     expect(ret).toBe("cannot-rotate")
     expect(entity.direction).toBe(0)
     assertOneEntity()
@@ -604,7 +604,7 @@ describe("tryApplyUpgradeTarget", () => {
       direction: direction.north,
     })
     entity.replaceWorldEntity(2, luaEntity)
-    const ret = projectUpdates.tryApplyUpgradeTarget(entity, 2)
+    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
     expect(ret).toBe("updated")
     assertOneEntity()
     assertUpdateCalled(entity, 2)
@@ -840,7 +840,7 @@ describe("undergrounds", () => {
       const [rotated] = luaEntity.rotate()
       assert(rotated)
 
-      const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, 1)
+      const ret = projectUpdates.tryRotateEntityFromWorld(entity, 1)
       expect(ret).toBe("updated")
 
       expect(entity.firstValue.type).toBe("output")
@@ -857,7 +857,7 @@ describe("undergrounds", () => {
       assert(rotated)
 
       entity.replaceWorldEntity(2, luaEntity)
-      const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, 2)
+      const ret = projectUpdates.tryRotateEntityFromWorld(entity, 2)
       expect(ret).toBe("cannot-rotate")
 
       expect(entity.firstValue.type).toBe("input")
@@ -874,7 +874,7 @@ describe("undergrounds", () => {
       const [rotated] = entity.getWorldEntity(entity.firstStage)!.rotate()
       assert(rotated)
 
-      const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, entity.firstStage)
+      const ret = projectUpdates.tryRotateEntityFromWorld(entity, entity.firstStage)
       expect(ret).toBe("updated")
 
       expect(entity1).toMatchTable({
@@ -898,7 +898,7 @@ describe("undergrounds", () => {
       assert(rotated1)
 
       entity1.replaceWorldEntity(3, luaEntity1)
-      const ret = projectUpdates.tryRotateEntityToMatchWorld(entity1, 3)
+      const ret = projectUpdates.tryRotateEntityFromWorld(entity1, 3)
       expect(ret).toBe("cannot-rotate")
 
       expect(entity1).toMatchTable({
@@ -922,7 +922,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity, 1)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
       expect(ret).toBe("updated")
 
       expect(entity.firstValue.name).toBe("fast-underground-belt")
@@ -939,7 +939,7 @@ describe("undergrounds", () => {
         force: luaEntity.force,
       })
       entity.replaceWorldEntity(2, luaEntity)
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity, 2)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
       expect(ret).toBe("updated")
 
       expect(entity.getValueAtStage(2)?.name).toBe("fast-underground-belt")
@@ -956,7 +956,7 @@ describe("undergrounds", () => {
         force: luaEntity.force,
         direction: oppositedirection(luaEntity.direction),
       })
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity, 1)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
       expect(ret).toBe("updated")
 
       expect(entity).toMatchTable({
@@ -976,7 +976,7 @@ describe("undergrounds", () => {
         force: luaEntity.force,
         direction: oppositedirection(luaEntity.direction),
       })
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity, 1)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
       expect(ret).toBe("updated")
 
       expect(entity).toMatchTable({
@@ -997,7 +997,7 @@ describe("undergrounds", () => {
         direction: oppositedirection(luaEntity.direction),
       })
       entity.replaceWorldEntity(2, luaEntity)
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity, 2)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
       expect(ret).toBe("cannot-rotate")
 
       expect(entity).toMatchTable({
@@ -1024,7 +1024,7 @@ describe("undergrounds", () => {
           force: luaEntity.force,
         })
         entity.replaceWorldEntity(endStage, luaEntity)
-        const ret = projectUpdates.tryApplyUpgradeTarget(entity, endStage)
+        const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, endStage)
         expect(ret).toBe("updated")
 
         expect(entity1).toMatchTable({
@@ -1053,7 +1053,7 @@ describe("undergrounds", () => {
         force: luaEntity1.force,
       })
 
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity1, 1)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity1, 1)
       expect(ret).toBe("cannot-upgrade-changed-pair")
 
       expect(entity1.firstValue.name).toBe("underground-belt")
@@ -1076,7 +1076,7 @@ describe("undergrounds", () => {
         target: "underground-belt",
         force: luaEntity3.force,
       })
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity3, 1)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity3, 1)
       expect(ret).toBe("cannot-upgrade-changed-pair")
 
       expect(entity1.firstValue.name).toBe("underground-belt")
@@ -1099,7 +1099,7 @@ describe("undergrounds", () => {
         direction: oppositedirection(luaEntity1.direction),
       })
 
-      const ret = projectUpdates.tryApplyUpgradeTarget(entity1, 1)
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity1, 1)
       expect(ret).toBe(EntityUpdateResult.CannotUpgradeChangedPair)
 
       expect(entity1).toMatchTable({
@@ -1152,7 +1152,7 @@ describe("undergrounds", () => {
     expect(entity.hasErrorAt(1)).toBe(true)
     luaEntity.rotate()
     expect(entity.hasErrorAt(1)).toBe(false)
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity, 1)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity, 1)
     expect(ret).toBe(EntityUpdateResult.NoChange)
 
     assertOneEntity()
@@ -1186,7 +1186,7 @@ describe("undergrounds", () => {
       }
     })
 
-    const ret = projectUpdates.tryApplyUpgradeTarget(entity, 1)
+    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
     expect(ret).toBe(EntityUpdateResult.NoChange)
 
     expect(luaEntity.direction).toBe(direction.west)
@@ -1206,7 +1206,7 @@ describe("undergrounds", () => {
     luaEntity2.rotate()
     expect(entity2.hasErrorAt(2)).toBe(false)
 
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity2, 2)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity2, 2)
     expect(ret).toBe(EntityUpdateResult.NoChange)
     assertUpdateCalled(entity2, 1, 1, false)
     assertUpdateCalled(entity1, 1, 2, false)
@@ -1227,7 +1227,7 @@ describe("undergrounds", () => {
 
     assert(luaEntity2.rotate())
 
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity2, 2)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity2, 2)
     expect(ret).toBe(EntityUpdateResult.Updated)
 
     expect(entity1).toMatchTable({
@@ -1255,7 +1255,7 @@ describe("undergrounds", () => {
 
     assert(luaEntity2.rotate())
 
-    const ret = projectUpdates.tryRotateEntityToMatchWorld(entity2, 2)
+    const ret = projectUpdates.tryRotateEntityFromWorld(entity2, 2)
     expect(ret).toBe(EntityUpdateResult.CannotRotate)
     // assert rotated back
     expect(luaEntity2).toMatchTable({

@@ -52,19 +52,25 @@ export declare const enum StageMoveResult {
 /** @noSelf */
 export interface ProjectUpdates {
   addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil
+
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
   forceDeleteEntity(entity: ProjectEntity): void
+
   tryReviveSettingsRemnant(entity: ProjectEntity, stage: StageNumber): StageMoveResult
+
   tryUpdateEntityFromWorld(entity: ProjectEntity, stage: StageNumber, knownValue?: BlueprintEntity): EntityUpdateResult
-  tryRotateEntityToMatchWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
-  tryApplyUpgradeTarget(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
+  tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
+  tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult
+
   trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult
   trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult
+
   resetProp<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean
   movePropDown<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean
   resetAllProps(entity: ProjectEntity, stage: StageNumber): boolean
   moveAllPropsDown(entity: ProjectEntity, stage: StageNumber): boolean
+
   resetTrain(entity: RollingStockProjectEntity): void
   setTrainLocationToCurrent(entity: RollingStockProjectEntity): void
 }
@@ -92,8 +98,8 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     forceDeleteEntity,
     tryReviveSettingsRemnant,
     tryUpdateEntityFromWorld,
-    tryRotateEntityToMatchWorld,
-    tryApplyUpgradeTarget,
+    tryRotateEntityFromWorld,
+    tryUpgradeEntityFromWorld,
     updateWiresFromWorld,
     trySetFirstStage,
     trySetLastStage,
@@ -214,7 +220,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     return handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, knownValue)
   }
 
-  function tryRotateEntityToMatchWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
+  function tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
     const entitySource = entity.getWorldEntity(stage)
     if (!entitySource) return EntityUpdateResult.NoChange
     return handleUpdate(entity, entitySource, stage, entitySource.direction, nil, false, nil)
@@ -225,7 +231,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       error(` incompatible upgrade from ${existing.firstValue.name} to ${upgradeType}`)
   }
 
-  function tryApplyUpgradeTarget(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
+  function tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
     const entitySource = entity.getWorldEntity(stage)
     if (!entitySource) return EntityUpdateResult.NoChange
 

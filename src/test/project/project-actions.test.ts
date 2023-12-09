@@ -386,12 +386,12 @@ describe("onEntityRotated", () => {
     [EntityUpdateResult.CannotRotate, L_Game.CantBeRotated],
   ])('calls tryRotateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
-    projectUpdates.tryRotateEntityToMatchWorld.invokes(() => {
+    projectUpdates.tryRotateEntityFromWorld.invokes(() => {
       return result
     })
     userActions.onEntityRotated(luaEntity, 2, luaEntity.direction, playerIndex)
 
-    expect(projectUpdates.tryRotateEntityToMatchWorld).toHaveBeenCalledWith(entity, 2)
+    expect(projectUpdates.tryRotateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
     if (message) assertNotified(entity, [message], true)
   })
 })
@@ -401,12 +401,12 @@ test("onUndergroundBeltDragRotated", () => {
     name: "underground-belt",
     type: "input",
   })
-  projectUpdates.tryRotateEntityToMatchWorld.invokes(() => {
+  projectUpdates.tryRotateEntityFromWorld.invokes(() => {
     return EntityUpdateResult.Updated
   })
   userActions.onUndergroundBeltDragRotated(luaEntity, 2, playerIndex)
   expect(luaEntity.direction).toBe(defines.direction.south)
-  expect(projectUpdates.tryRotateEntityToMatchWorld).toHaveBeenCalledWith(entity, 2)
+  expect(projectUpdates.tryRotateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
 })
 
 describe("onEntityMarkedForUpgrade", () => {
@@ -418,12 +418,12 @@ describe("onEntityMarkedForUpgrade", () => {
 
   test.each(resultMessages)('calls tryUpgradeEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
-    projectUpdates.tryApplyUpgradeTarget.invokes(() => {
+    projectUpdates.tryUpgradeEntityFromWorld.invokes(() => {
       return result
     })
     userActions.onEntityMarkedForUpgrade(luaEntity, 2, playerIndex)
 
-    expect(projectUpdates.tryApplyUpgradeTarget).toHaveBeenCalledWith(entity, 2)
+    expect(projectUpdates.tryUpgradeEntityFromWorld).toHaveBeenCalledWith(entity, 2)
     if (message) assertNotified(entity, [message], true)
   })
 })

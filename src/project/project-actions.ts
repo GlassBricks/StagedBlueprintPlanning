@@ -166,9 +166,9 @@ export function ProjectActions(
     addNewEntity,
     deleteEntityOrCreateSettingsRemnant,
     forceDeleteEntity,
-    tryApplyUpgradeTarget,
+    tryUpgradeEntityFromWorld,
     tryReviveSettingsRemnant,
-    tryRotateEntityToMatchWorld,
+    tryRotateEntityFromWorld,
     trySetFirstStage,
     trySetLastStage,
     tryUpdateEntityFromWorld,
@@ -381,7 +381,7 @@ export function ProjectActions(
     stage: StageNumber,
     byPlayer: PlayerIndex | nil,
   ) {
-    const result = tryRotateEntityToMatchWorld(projectEntity, stage)
+    const result = tryRotateEntityFromWorld(projectEntity, stage)
     notifyIfError(result, projectEntity, byPlayer)
 
     if (projectEntity.isUndergroundBelt()) {
@@ -428,7 +428,7 @@ export function ProjectActions(
     const projectEntity = getCompatibleEntityOrAdd(entity, stage, nil, byPlayer)
     if (!projectEntity) return
 
-    const result = tryApplyUpgradeTarget(projectEntity, stage)
+    const result = tryUpgradeEntityFromWorld(projectEntity, stage)
     notifyIfError(result, projectEntity, byPlayer)
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }

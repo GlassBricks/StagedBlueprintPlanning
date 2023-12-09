@@ -396,7 +396,7 @@ test("rotating first value from world via rotate", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
-  updates.tryRotateEntityToMatchWorld(entity, 3)
+  updates.tryRotateEntityFromWorld(entity, 3)
   expect(entity.direction).toBe(defines.direction.south)
   assertEntityCorrect(entity, false)
 })
@@ -962,7 +962,7 @@ test("rotation forbidden at higher stage via rotate", () => {
   const entity = buildEntity(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
-  updates.tryRotateEntityToMatchWorld(entity, 4)
+  updates.tryRotateEntityFromWorld(entity, 4)
   expect(entity.direction).toBe(defines.direction.east)
   assertEntityCorrect(entity, false)
 })
@@ -1027,7 +1027,7 @@ test("creating upgrade via apply upgrade target", () => {
     force: worldEntity.force,
     target: "stack-filter-inserter",
   })
-  updates.tryApplyUpgradeTarget(entity, 4)
+  updates.tryUpgradeEntityFromWorld(entity, 4)
   expect(entity.firstValue.name).toBe("filter-inserter")
   expect(entity.getStageDiff(4)).toEqual({ name: "stack-filter-inserter" })
 
