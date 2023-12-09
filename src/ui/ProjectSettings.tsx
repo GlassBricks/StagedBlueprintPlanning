@@ -46,12 +46,7 @@ import { Migrations } from "../lib/migration"
 import { L_GuiProjectSettings, L_Interaction } from "../locale"
 import { Stage, UserProject } from "../project/ProjectDef"
 import { AutoSetTilesType } from "../project/tiles"
-import {
-  disableAllEntitiesInStage,
-  enableAllEntitiesInStage,
-  rebuildAllStages,
-  rebuildStage,
-} from "../project/world-entity-updates"
+
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { ItemRename } from "./ItemRename"
@@ -492,7 +487,7 @@ class ProjectSettings extends Component<{
     )
   }
   private rebuildAllStages() {
-    rebuildAllStages(this.project)
+    this.project.entityUpdates.rebuildAllStages(this.project)
   }
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
@@ -622,7 +617,7 @@ export class StageSettings extends Component<{
   }
   private resetStage() {
     const stage = this.stage
-    if (stage.valid) rebuildStage(stage.project, stage.stageNumber)
+    if (stage.valid) stage.project.entityUpdates.rebuildStage(stage.project, stage.stageNumber)
   }
 
   private setLabTiles() {
@@ -652,13 +647,13 @@ export class StageSettings extends Component<{
   private disableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    disableAllEntitiesInStage(stage.project, stage.stageNumber)
+    stage.project.entityUpdates.disableAllEntitiesInStage(stage.project, stage.stageNumber)
   }
 
   private enableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    enableAllEntitiesInStage(stage.project, stage.stageNumber)
+    stage.project.entityUpdates.enableAllEntitiesInStage(stage.project, stage.stageNumber)
   }
 
   private beginDelete() {

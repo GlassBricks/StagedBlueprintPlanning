@@ -15,7 +15,6 @@ import { _migrateEntity_0_17_0, StageNumber } from "../entity/ProjectEntity"
 import { Migrations } from "../lib/migration"
 import { updateAllHighlights } from "./entity-highlights"
 import { UserProject } from "./ProjectDef"
-import { updateWorldEntities, updateWorldEntitiesOnLastStageChanged } from "./world-entity-updates"
 
 declare const global: {
   projects: LuaMap<number, UserProject>
@@ -39,7 +38,7 @@ Migrations.to("0.14.3", () => {
     for (const entity of project.content.iterateAllEntities()) {
       // re-generate previews, if not existing
       if (entity.isRollingStock()) {
-        updateWorldEntities(project, entity, 1)
+        project.entityUpdates.updateWorldEntities(project, entity, 1)
       }
     }
   }
@@ -64,7 +63,7 @@ Migrations.to("0.18.0", () => {
     for (const entity of project.content.iterateAllEntities()) {
       if (entity.isRollingStock()) {
         entity.setLastStageUnchecked(entity.firstStage)
-        updateWorldEntitiesOnLastStageChanged(project, entity, nil)
+        project.entityUpdates.updateWorldEntitiesOnLastStageChanged(project, entity, nil)
       }
     }
   }
@@ -76,7 +75,7 @@ Migrations.to("0.20.0", () => {
   for (const [, project] of global.projects) {
     for (const entity of project.content.iterateAllEntities()) {
       if (nameToType.get(entity.firstValue.name) == "power-switch") {
-        project.actions.updates().updateWiresFromWorld(entity, project.lastStageFor(entity))
+        project.updates.updateWiresFromWorld(entity, project.lastStageFor(entity))
       }
     }
   }

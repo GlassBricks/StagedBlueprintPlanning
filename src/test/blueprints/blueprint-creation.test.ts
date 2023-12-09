@@ -23,7 +23,6 @@ import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project
 import { Stage, UserProject } from "../../project/ProjectDef"
 import { AutoSetTilesType } from "../../project/tiles"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
-import { refreshAllWorldEntities } from "../../project/world-entity-updates"
 
 let project: UserProject
 let player: LuaPlayer
@@ -170,7 +169,7 @@ test("moduleOverrides: uses modules later stage if updated", () => {
       "productivity-module": 2,
     },
   })
-  refreshAllWorldEntities(project, projEntity)
+  project.entityUpdates.refreshAllWorldEntities(project, projEntity)
 
   const stack = player.cursor_stack!
   const stageBlueprintSettings = stage1.stageBlueprintSettings

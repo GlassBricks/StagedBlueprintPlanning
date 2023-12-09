@@ -26,18 +26,7 @@ import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { updateAllHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
-import {
-  deleteWorldEntities,
-  makeSettingsRemnant,
-  rebuildWorldEntityAtStage,
-  refreshWorldEntityAtStage,
-  resetUnderground,
-  reviveSettingsRemnant,
-  updateNewWorldEntitiesWithoutWires,
-  updateWireConnections,
-  updateWorldEntities,
-  updateWorldEntitiesOnLastStageChanged,
-} from "./world-entity-updates"
+import { WorldEntityUpdates } from "./world-entity-updates"
 import min = math.min
 
 export declare const enum EntityUpdateResult {
@@ -81,8 +70,21 @@ export interface ProjectUpdates {
   setTrainLocationToCurrent(entity: RollingStockProjectEntity): void
 }
 
-export function ProjectUpdates(project: Project): ProjectUpdates {
+export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntityUpdates): ProjectUpdates {
   const content = project.content
+
+  const {
+    deleteWorldEntities,
+    makeSettingsRemnant,
+    rebuildWorldEntityAtStage,
+    refreshWorldEntityAtStage,
+    resetUnderground,
+    reviveSettingsRemnant,
+    updateNewWorldEntitiesWithoutWires,
+    updateWireConnections,
+    updateWorldEntities,
+    updateWorldEntitiesOnLastStageChanged,
+  } = worldEntityUpdates
 
   function fixNewUndergroundBelt(
     projectEntity: ProjectEntity,

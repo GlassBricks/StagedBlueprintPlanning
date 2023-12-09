@@ -29,6 +29,7 @@ import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
 import { checkForEntityUpdates } from "../project/event-handlers"
 import { ProjectActions } from "../project/project-actions"
+import { ProjectUpdates } from "../project/project-updates"
 import { Stage } from "../project/ProjectDef"
 
 import { getProjectEntityOfEntity } from "./entity-util"
@@ -67,6 +68,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   playerIndex!: PlayerIndex
   stage!: Stage
   actions!: ProjectActions
+  updates!: ProjectUpdates
   entity!: ProjectEntity
 
   public override render(props: EntityStageInfoProps, context: RenderContext): Element {
@@ -74,9 +76,12 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     const { stage, projectEntity: entity } = props
     this.stage = stage
     this.entity = entity
-    this.actions = stage.actions
+
     const currentStageNum = stage.stageNumber
     const project = stage.project
+
+    this.actions = project.actions
+    this.updates = project.updates
 
     const isRollingStock = entity.isRollingStock()
 
@@ -183,14 +188,14 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     this.rerender(false)
   }
   private resetTrain() {
-    this.actions.updates().resetTrain(this.entity)
+    this.updates.resetTrain(this.entity)
   }
   private setTrainLocationHere() {
-    this.actions.updates().setTrainLocationToCurrent(this.entity)
+    this.updates.setTrainLocationToCurrent(this.entity)
   }
 
   private deleteEntity() {
-    this.actions.updates().forceDeleteEntity(this.entity)
+    this.updates.forceDeleteEntity(this.entity)
   }
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Element {
@@ -230,18 +235,18 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   private resetProp(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      this.actions.updates().resetAllProps(this.entity, this.stage.stageNumber)
+      this.updates.resetAllProps(this.entity, this.stage.stageNumber)
     } else {
-      this.actions.updates().resetProp(this.entity, this.stage.stageNumber, prop as keyof Entity)
+      this.updates.resetProp(this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(true)
   }
   private applyToLowerStage(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      this.actions.updates().moveAllPropsDown(this.entity, this.stage.stageNumber)
+      this.updates.moveAllPropsDown(this.entity, this.stage.stageNumber)
     } else {
-      this.actions.updates().movePropDown(this.entity, this.stage.stageNumber, prop as keyof Entity)
+      this.updates.movePropDown(this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(false)
   }

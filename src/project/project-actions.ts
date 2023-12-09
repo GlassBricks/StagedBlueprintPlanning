@@ -17,7 +17,6 @@ import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { assertNever, deepCompare } from "../lib"
 import { Position } from "../lib/geometry"
-import { LazyLoadClass } from "../lib/LazyLoad"
 import { L_Interaction } from "../locale"
 import { updateAllHighlights } from "./entity-highlights"
 import { createIndicator, createNotification } from "./notifications"
@@ -25,14 +24,7 @@ import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-u
 
 import { Project, UserProject } from "./ProjectDef"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
-import {
-  clearWorldEntityAtStage,
-  ProjectEntityDollyResult,
-  rebuildWorldEntityAtStage,
-  refreshAllWorldEntities,
-  refreshWorldEntityAtStage,
-  tryDollyEntities,
-} from "./world-entity-updates"
+import { ProjectEntityDollyResult, WorldEntityUpdates } from "./world-entity-updates"
 
 /** @noSelf */
 export interface ProjectActions {
@@ -84,8 +76,6 @@ export interface ProjectActions {
     toStage: StageNumber,
     byPlayer: PlayerIndex,
   ): boolean
-
-  updates(): ProjectUpdates
 }
 
 /** @noSelf */
@@ -159,7 +149,8 @@ const lastStageChangeUndo = UndoHandler(
 
 export function ProjectActions(
   project: Project,
-  projectUpdates: ProjectUpdates = ProjectUpdates(project),
+  projectUpdates: ProjectUpdates,
+  worldEntityUpdates: WorldEntityUpdates,
 ): ProjectActions {
   const content = project.content
   const {
@@ -174,6 +165,14 @@ export function ProjectActions(
     tryUpdateEntityFromWorld,
     updateWiresFromWorld,
   } = projectUpdates
+
+  const {
+    clearWorldEntityAtStage,
+    rebuildWorldEntityAtStage,
+    refreshAllWorldEntities,
+    refreshWorldEntityAtStage,
+    tryDollyEntities,
+  } = worldEntityUpdates
 
   function onPreviewReplaced(entity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): UndoAction | nil {
     const oldStage = entity.firstStage
@@ -665,18 +664,6 @@ export function ProjectActions(
     userTryMoveEntityToStage,
     findCompatibleEntityForUndo,
     userTrySetLastStage,
-    updates: () => projectUpdates,
   }
   return result
-}
-
-const ProjectActionsEntry = LazyLoadClass<
-  {
-    project: Project
-  },
-  ProjectActions
->("ProjectActions", (value) => ProjectActions(value.project))
-
-export function projectActionsEntry(project: Project): ProjectActions {
-  return ProjectActionsEntry({ project })
 }

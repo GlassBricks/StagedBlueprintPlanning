@@ -25,7 +25,9 @@ export function createMockProject(stages: number | LuaSurface[]): Project {
     content: newProjectContent(),
     getStageName: (n) => "mock stage " + n,
     valid: true,
-    actions: "need to fill" as any,
+    actions: "actions not mocked" as any,
+    updates: "updates not mocked" as any,
+    entityUpdates: "entityUpdates not mocked" as any,
   }
 }
 

@@ -20,26 +20,27 @@ import { ProjectActions } from "../../project/project-actions"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { _doUndoAction } from "../../project/undo"
+import { WorldEntityUpdates } from "../../project/world-entity-updates"
 import { fMock } from "../f-mock"
 import { moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 import _notifications = require("../../project/notifications")
-import _worldEntityUpdates = require("../../project/world-entity-updates")
 
 const notifications = moduleMock(_notifications, true)
 let expectedNumCalls = 1
 
-const projectUpdates = fMock<ProjectUpdates>()
-const worldUpdates = moduleMock(_worldEntityUpdates, true)
-
 const surfaces = setupTestSurfaces(6)
 let project: Project
+
+const projectUpdates = fMock<ProjectUpdates>()
+const worldUpdates = fMock<WorldEntityUpdates>()
 let userActions: ProjectActions
 
 before_each(() => {
   project = createMockProject(surfaces)
-  userActions = ProjectActions(project, projectUpdates)
-  project.actions = userActions // needed for undo support, and the funky way we get OOP to work
+  project.entityUpdates = worldUpdates
+  project.updates = projectUpdates
+  project.actions = userActions = ProjectActions(project, projectUpdates, worldUpdates)
 })
 
 before_each(() => {

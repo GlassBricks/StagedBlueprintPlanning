@@ -21,7 +21,9 @@ import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { PropertiesTable } from "../utils/properties-obj"
 import { ProjectActions } from "./project-actions"
+import { ProjectUpdates } from "./project-updates"
 import { AutoSetTilesType } from "./tiles"
+import { WorldEntityUpdates } from "./world-entity-updates"
 
 export type ProjectId = number & {
   _projectIdBrand: never
@@ -36,9 +38,12 @@ export interface Project {
 
   readonly valid: boolean
 
-  /** Main entry point project actions */
+  // Refs to modules, handling all possible updates
   actions: ProjectActions
+  updates: ProjectUpdates
+  entityUpdates: WorldEntityUpdates
 }
+
 export interface UserProject extends Project {
   readonly id: ProjectId
   readonly name: MutableProperty<string>

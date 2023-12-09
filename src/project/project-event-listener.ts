@@ -11,17 +11,16 @@
 
 import { assertNever } from "../lib"
 import { ProjectEvents } from "./UserProject"
-import { rebuildStage } from "./world-entity-updates"
 
 ProjectEvents.addListener((e) => {
   switch (e.type) {
     case "stage-added":
-      rebuildStage(e.project, e.stage.stageNumber)
+      e.project.entityUpdates.rebuildStage(e.project, e.stage.stageNumber)
       return
     case "stage-deleted": {
       const stageNumber = e.stage.stageNumber
       const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
-      rebuildStage(e.project, stageNumberToMerge)
+      e.project.entityUpdates.rebuildStage(e.project, stageNumberToMerge)
       return
     }
     case "project-created":

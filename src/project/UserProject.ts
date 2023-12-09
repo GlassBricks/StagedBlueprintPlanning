@@ -32,6 +32,7 @@ import {
   SimpleEvent,
 } from "../lib"
 import { BBox, Position } from "../lib/geometry"
+import { LazyLoadClass } from "../lib/LazyLoad"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
 import {
@@ -39,11 +40,13 @@ import {
   createEmptyPropertyOverrideTable,
   PropertiesTable,
 } from "../utils/properties-obj"
-import { ProjectActions, projectActionsEntry } from "./project-actions"
+import { ProjectActions } from "./project-actions"
+import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, UserProject } from "./ProjectDef"
 import { getStageAtSurface } from "./stage-surface"
 import { createStageSurface, destroySurface } from "./surfaces"
 import { AutoSetTilesType, setTiles } from "./tiles"
+import { WorldEntityUpdates } from "./world-entity-updates"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 import min = math.min
 
@@ -57,43 +60,6 @@ Events.on_init(() => {
   global.nextProjectId = 1 as ProjectId
   global.projects = []
   global.surfaceIndexToStage = new LuaMap()
-})
-
-Migrations.priority(1, "0.23.0", () => {
-  assume<{
-    assemblies?: Record<number, UserProjectImpl>
-  }>(global)
-  global.projects = global.assemblies! as any
-  for (const [, project] of pairs(global.assemblies!)) {
-    for (const stage of project.getAllStages()) {
-      assume<{
-        assembly?: UserProjectImpl
-      }>(stage)
-      stage.project = project
-      delete stage.assembly
-    }
-  }
-})
-Migrations.priority(2, "0.16.0", () => {
-  const oldProjects = global.projects as unknown as LuaMap<ProjectId, UserProjectImpl>
-  global.projects = Object.values(oldProjects)
-})
-Migrations.early("0.23.0", () => {
-  assume<{
-    nextAssemblyId: any
-  }>(global)
-  global.nextProjectId = global.nextAssemblyId
-  delete global.nextAssemblyId
-})
-Migrations.to("0.26.1", () => {
-  for (const project of global.projects) {
-    for (const stage of project.getAllStages()) {
-      assume<{
-        assembly?: UserProjectImpl
-      }>(stage)
-      delete stage.assembly
-    }
-  }
 })
 
 const GlobalProjectEvents = globalEvent<[GlobalProjectEvent]>()
@@ -113,7 +79,9 @@ class UserProjectImpl implements UserProject {
 
   private readonly stages: Record<number, StageImpl> = {}
 
-  actions = projectActionsEntry(this)
+  actions = ProjectActionsClass({ project: this })
+  updates = ProjectUpdatesClass({ project: this })
+  entityUpdates = WorldEntityUpdatesClass({ project: this })
 
   constructor(
     readonly id: ProjectId,
@@ -327,6 +295,20 @@ class UserProjectImpl implements UserProject {
   }
 }
 
+interface HasProject {
+  project: UserProject
+}
+
+const ProjectActionsClass = LazyLoadClass<HasProject, ProjectActions>("ProjectActions", ({ project }) =>
+  ProjectActions(project, project.updates, project.entityUpdates),
+)
+const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUpdates", ({ project }) =>
+  ProjectUpdates(project, project.entityUpdates),
+)
+const WorldEntityUpdatesClass = LazyLoadClass<HasProject, WorldEntityUpdates>("WorldEntityUpdates", () =>
+  WorldEntityUpdates(),
+)
+
 export function createUserProject(name: string, initialNumStages: number): UserProject {
   return UserProjectImpl.create(name, initialNumStages)
 }
@@ -441,6 +423,55 @@ Events.on_pre_surface_deleted((e) => {
   if (stage != nil) stage.deleteInProject()
 })
 
+Migrations.priority(1, "0.23.0", () => {
+  assume<{
+    assemblies?: Record<number, UserProjectImpl>
+  }>(global)
+  global.projects = global.assemblies! as any
+  for (const [, project] of pairs(global.assemblies!)) {
+    for (const stage of project.getAllStages()) {
+      assume<{
+        assembly?: UserProjectImpl
+      }>(stage)
+      stage.project = project
+      delete stage.assembly
+    }
+  }
+})
+Migrations.priority(2, "0.16.0", () => {
+  const oldProjects = global.projects as unknown as LuaMap<ProjectId, UserProjectImpl>
+  global.projects = Object.values(oldProjects)
+})
+Migrations.priority(2, "0.27.0", () => {
+  for (const project of global.projects) {
+    project.actions = ProjectActionsClass({ project })
+    project.updates = ProjectUpdatesClass({ project })
+    project.entityUpdates = WorldEntityUpdatesClass({ project })
+  }
+})
+Migrations.early("0.23.0", () => {
+  assume<{
+    nextAssemblyId: any
+  }>(global)
+  global.nextProjectId = global.nextAssemblyId
+  delete global.nextAssemblyId
+})
+Migrations.early("0.26.0", () => {
+  for (const project of global.projects) {
+    project.displayName = nil!
+  }
+})
+Migrations.to("0.26.1", () => {
+  for (const project of global.projects) {
+    for (const stage of project.getAllStages()) {
+      assume<{
+        assembly?: UserProjectImpl
+      }>(stage)
+      delete stage.assembly
+    }
+  }
+})
+
 Migrations.to("0.16.0", () => {
   interface OldProject {
     assemblyBlueprintSettings?: {
@@ -530,10 +561,5 @@ Migrations.to("0.25.0", () => {
       assume<Mutable<StageBlueprintSettingsTable>>(stage.stageBlueprintSettings)
       stage.stageBlueprintSettings.useModulePreloading = property(false)
     }
-  }
-})
-Migrations.early("0.26.0", () => {
-  for (const project of global.projects) {
-    project.displayName = nil!
   }
 })
