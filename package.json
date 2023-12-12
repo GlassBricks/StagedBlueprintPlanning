@@ -44,10 +44,14 @@
     "watch": "tstl --watch",
     "watch:locale": "nodemon scripts/gen-locale-defs.ts",
     "watch:release": "tstl --watch -p tsconfig-release.json",
-    "version-minor": "ts-node --esm scripts/bump-version.ts minor",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.tsx\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.tsx\"",
+    "lint": "eslint --ext .ts,.tsx src",
     "pretest": "npm run clean && npm run build:test",
     "test": "factorio-test run ./src",
-    "prepare-package": "npm run test && npm run build:release && npm run check-clean-tree",
+    "check": "npm run format:check && npm run lint && npm run test",
+    "version-minor": "ts-node --esm scripts/bump-version.ts minor",
+    "prepare-package": "npm run check && npm run build:release && npm run check-clean-tree",
     "check-clean-tree": "git diff-index --exit-code HEAD --"
   },
   "nodemonConfig": {
