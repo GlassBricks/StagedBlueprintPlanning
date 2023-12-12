@@ -9,3 +9,14 @@ This uses:
 - [TypescriptToLua](https://github.com/TypeScriptToLua/TypeScriptToLua)
 - [typed-factorio](https://github.com/GlassBricks/typed-factorio)
 - [Factorio test](https://github.com/GlassBricks/FactorioTest)
+
+## Building
+
+This projects builds using Node 19.
+
+
+```bash
+# Setup
+npm ci
+npm run build:tstlPlugin
+```
