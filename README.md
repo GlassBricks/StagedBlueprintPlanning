@@ -4,8 +4,6 @@ A factorio mod for designing staged blueprints, e.g. for 100% speedruns.
 
 For more info, see the mod portal (https://mods.factorio.com/mod/bp100).
 
-This uses:
+## Contributing
 
-- [TypescriptToLua](https://github.com/TypeScriptToLua/TypeScriptToLua)
-- [typed-factorio](https://github.com/GlassBricks/typed-factorio)
-- [Factorio test](https://github.com/GlassBricks/FactorioTest)
+If you're interested in contributing to this project (or just want to play around), see the setup instructions in [Contributing.md](Contributing.md).

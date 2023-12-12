@@ -138,4 +138,7 @@ factorio/
 
 src/**/*.hide.*
 
-factorio-test-data/
+factorio-test-data/**/*
+!factorio-test-data/mods
+factorio-test-data/mods/*
+!factorio-test-data/mods/factorio-test_*.zip

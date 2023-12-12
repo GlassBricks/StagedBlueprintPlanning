@@ -16,8 +16,6 @@ import { PRRecord } from "./util-types"
 
 // --- Classes ---
 
-// on a class it marks if the class was processed
-// on an instance (prototype) it returns the class name
 export interface Class<T> {
   name: string
   prototype: T
@@ -44,6 +42,7 @@ function registerClass(name: string, item: Class<any>) {
   }
 }
 
+/** Decorator for {@link registerClass}. */
 export function RegisterClass(name: string): (this: unknown, _class: Class<any>) => void {
   return (_class: Class<any>) => registerClass(name, _class)
 }
@@ -239,7 +238,10 @@ class NoSelfKeyFunc implements Func {
 /**
  * Instance bind. The single parameter passed must be a property/element access call, and a registered func that calls the instance/key will be returned.
  *
- * ibind(this.foo) stores (this, "foo") and returns a func that calls this.foo().
+ * The TSTL compiler plugin will transform `ibind(this.foo)` to `ibind(this, "foo")`.
+ *
+ * Calling the returned function will call `this.foo()`, with the provided arguments, with `this` set to the instance.
+ * This relies on the value of `this` having a registered class (metatable) with the given function.
  */
 export const ibind: AccessSplit<<F extends ContextualFun>(func: F) => Func<F>> = ((obj: any, key: keyof any) =>
   new KeyFunc(obj, key)) as any
