@@ -40,8 +40,8 @@ type OtherSetters = {
     ? P extends keyof Setters
       ? never
       : LuaRendering[K] extends (id: uint64, ...args: any) => void
-      ? K
-      : never
+        ? K
+        : never
     : never]: LuaRendering[K] extends (id: uint64, ...args: infer V) => void
     ? (this: unknown, ...args: V) => void
     : never

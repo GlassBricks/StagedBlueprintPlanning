@@ -31,8 +31,8 @@ export type EventHandlers = {
 export type EventDataOf<T extends EventId<any, any> | string> = T extends EventId<any, any>
   ? T["_eventData"]
   : T extends string
-  ? CustomInputEvent
-  : never
+    ? CustomInputEvent
+    : never
 
 export type ShorthandRegister = {
   -readonly [E in keyof NamedEventTypes]: (handler: (data: NamedEventTypes[E]) => void) => void
