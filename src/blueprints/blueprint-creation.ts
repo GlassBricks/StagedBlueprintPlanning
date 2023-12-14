@@ -17,7 +17,7 @@ import { BBox, Pos, Position } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { L_GuiBlueprintBookTask } from "../locale"
 import { Stage, UserProject } from "../project/ProjectDef"
-import { AutoSetTilesType } from "../project/tiles"
+import { setTilesAndCheckerboard } from "../project/set-tiles"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
   getDefaultBlueprintSettings,
@@ -146,8 +146,8 @@ namespace BlueprintMethods {
     projectPlan.moduleOverrides!.set(result)
   }
 
-  export function setLandfillTiles(stage: Stage): void {
-    stage.autoSetTiles(AutoSetTilesType.LandfillAndLabTiles)
+  export function setLandfill(stage: Stage): void {
+    setTilesAndCheckerboard(stage.surface, stage.getBlueprintBBox(), "landfill")
   }
 
   export function takeStageBlueprint(
@@ -253,7 +253,7 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
         const stagePlan = task.args[1]
         return [L_GuiBlueprintBookTask.PreparingStage, stagePlan.stage.name.get()]
       }
-      case "setLandfillTiles": {
+      case "setLandfill": {
         const stage = task.args[0]
         return [L_GuiBlueprintBookTask.SetLandfillTiles, stage.name.get()]
       }
@@ -383,7 +383,7 @@ class BlueprintCreationTaskBuilder {
       actualStack = stack
     }
     if (settings.autoLandfill) {
-      this.tasks.push({ name: "setLandfillTiles", args: [stage] })
+      this.tasks.push({ name: "setLandfill", args: [stage] })
     }
 
     // let unitNumberFilter: LuaSet<UnitNumber> | nil

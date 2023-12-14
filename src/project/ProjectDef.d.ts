@@ -20,9 +20,9 @@ import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { PropertiesTable } from "../utils/properties-obj"
+
 import { ProjectActions } from "./project-actions"
 import { ProjectUpdates } from "./project-updates"
-import { AutoSetTilesType } from "./tiles"
 import { WorldEntityUpdates } from "./world-entity-updates"
 
 export type ProjectId = number & {
@@ -56,7 +56,6 @@ export interface UserProject extends Project {
   getAllStages(): readonly Stage[]
 
   insertStage(index: StageNumber): Stage
-  /** Cannot be first stage, contents will be merged with the previous stage. */
   deleteStage(index: StageNumber): void
 
   readonly valid: boolean
@@ -77,7 +76,6 @@ export interface Stage {
   getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings>
 
   getBlueprintBBox(): BBox
-  autoSetTiles(tiles: AutoSetTilesType): boolean
   readonly valid: boolean
   deleteInProject(): void
 }

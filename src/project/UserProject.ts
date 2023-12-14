@@ -46,7 +46,6 @@ import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, UserProject } from "./ProjectDef"
 import { getStageAtSurface } from "./stage-surface"
 import { createStageSurface, destroySurface } from "./surfaces"
-import { AutoSetTilesType, setTiles } from "./tiles"
 import { WorldEntityUpdates } from "./world-entity-updates"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 import min = math.min
@@ -395,11 +394,6 @@ class StageImpl implements Stage {
     const area = project.content.computeBoundingBox()
     const surface = createStageSurface(area)
     return new StageImpl(project, surface, stageNumber, name)
-  }
-
-  autoSetTiles(tiles: AutoSetTilesType): boolean {
-    const bbox = this.project.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
-    return setTiles(this.surface, bbox, tiles)
   }
 
   deleteInProject(): void {

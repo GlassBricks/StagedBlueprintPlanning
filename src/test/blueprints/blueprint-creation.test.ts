@@ -10,7 +10,7 @@
  */
 
 import { BlueprintEntity, LuaEntity, LuaPlayer, MapPositionArray } from "factorio:runtime"
-import expect, { mock } from "tstl-expect"
+import expect from "tstl-expect"
 import {
   exportBlueprintBookToFile,
   submitProjectBlueprintBookTask,
@@ -21,8 +21,9 @@ import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
 import { Stage, UserProject } from "../../project/ProjectDef"
-import { AutoSetTilesType } from "../../project/tiles"
+import * as _setTiles from "../../project/set-tiles"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { moduleMock } from "../module-mock"
 
 let project: UserProject
 let player: LuaPlayer
@@ -72,22 +73,24 @@ test("can take single blueprint using stage settings", () => {
   expect(entities[0].name).toBe("iron-chest")
 })
 
-test("calls setTiles if autoLandfill is true", () => {
-  const stage = project.getStage(1)!
-  mock.on(stage, "autoSetTiles", true).returns(true)
+describe("set tiles", () => {
+  const setTiles = moduleMock(_setTiles, true)
+  test("calls setTiles if setTilesAndWater is true", () => {
+    const stage = project.getStage(1)!
 
-  const stack = player.cursor_stack!
-  createEntity(stage)
+    const stack = player.cursor_stack!
+    createEntity(stage)
 
-  let ret = takeStageBlueprint(stage, stack)
-  expect(ret).toBe(true)
-  expect(stage.autoSetTiles).not.toHaveBeenCalled()
+    let ret = takeStageBlueprint(stage, stack)
+    expect(ret).toBe(true)
+    expect(setTiles.setTilesAndCheckerboard).not.toHaveBeenCalled()
 
-  stage.stageBlueprintSettings.autoLandfill.set(true)
+    stage.stageBlueprintSettings.autoLandfill.set(true)
 
-  ret = takeStageBlueprint(stage, stack)
-  expect(ret).toBe(true)
-  expect(stage.autoSetTiles).toHaveBeenCalledWith(AutoSetTilesType.LandfillAndLabTiles)
+    ret = takeStageBlueprint(stage, stack)
+    expect(ret).toBe(true)
+    expect(setTiles.setTilesAndCheckerboard).toHaveBeenCalledWith(stage.surface, expect.anything(), "landfill")
+  })
 })
 
 test.each([false, true])("can use next stage tiles, with next staging having grid %s", (stage2HasGrid) => {

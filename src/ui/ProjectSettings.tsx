@@ -45,8 +45,7 @@ import {
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSettings, L_Interaction } from "../locale"
 import { Stage, UserProject } from "../project/ProjectDef"
-import { AutoSetTilesType } from "../project/tiles"
-
+import { setCheckerboard, setTilesAndCheckerboard, setTilesAndWater } from "../project/set-tiles"
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { ItemRename } from "./ItemRename"
@@ -620,21 +619,22 @@ export class StageSettings extends Component<{
   }
 
   private setLabTiles() {
-    this.trySetTiles(AutoSetTilesType.LabTiles)
+    setCheckerboard(this.stage.surface, this.stage.getBlueprintBBox())
   }
 
   private setLandfillAndWater() {
-    this.trySetTiles(AutoSetTilesType.LandfillAndWater)
+    this.trySetLandfillTile(setTilesAndWater)
   }
 
   private setLandfillAndLabTiles() {
-    this.trySetTiles(AutoSetTilesType.LandfillAndLabTiles)
+    this.trySetLandfillTile(setTilesAndCheckerboard)
   }
 
-  private trySetTiles(type: AutoSetTilesType) {
+  private trySetLandfillTile(fn: typeof setTilesAndWater) {
     const stage = this.stage
     if (!stage.valid) return
-    const success = stage.autoSetTiles(type)
+    const bbox = stage.getBlueprintBBox()
+    const success = fn(stage.surface, bbox, "landfill")
     if (!success) {
       game.get_player(this.playerIndex)?.create_local_flying_text({
         text: [L_GuiProjectSettings.FailedToSetTiles],

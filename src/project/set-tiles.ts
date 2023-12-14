@@ -13,63 +13,47 @@ import { BoundingBox, LuaSurface, TileWrite } from "factorio:runtime"
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
 
-function autoLandfill(surface: LuaSurface, area: BoundingBox): boolean {
-  if (!waterLandfillTilesExist()) return false
-  const tiles: Mutable<TileWrite>[] = []
-  let i = 1
+function getTiles(area: BoundingBox, tile: string): [Mutable<TileWrite>[], number] {
+  const tiles: TileWrite[] = []
+  let i = 0
   for (const [x, y] of BBox.roundTile(area).iterateTiles()) {
+    i++
     tiles[i - 1] = {
-      name: "landfill",
+      name: tile,
       position: { x, y },
     }
-    i++
   }
+  return [tiles, i]
+}
+
+export function setTilesAndWater(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
+  if (!("water" in game.tile_prototypes && tile in game.tile_prototypes)) return false
+  const [tiles, count] = getTiles(area, tile)
   surface.set_tiles(tiles, true, "abort_on_collision")
 
-  for (const k of $range(1, i - 1)) tiles[k - 1].name = "water"
+  for (const k of $range(1, count)) tiles[k - 1].name = "water"
 
   surface.set_tiles(tiles, true, "abort_on_collision")
   return true
 }
 
-function autoSetLandfillAndLabTiles(surface: LuaSurface, area: BoundingBox): boolean {
-  if (!autoLandfill(surface, area)) return false
-  const landfillTiles = surface.find_tiles_filtered({
+export function setTilesAndCheckerboard(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
+  if (!setTilesAndWater(surface, area, tile)) return false
+  const nonWaterTiles = surface.find_tiles_filtered({
     area,
-    name: "landfill",
+    name: tile,
   })
-  const tiles = landfillTiles.map((tile) => ({
-    name: "landfill",
-    position: tile.position,
+  const tiles = nonWaterTiles.map((luaTile) => ({
+    name: tile,
+    position: luaTile.position,
   }))
   surface.build_checkerboard(area)
   surface.set_tiles(tiles, true, "abort_on_collision")
   return true
 }
 
-function setLabTiles(surface: LuaSurface, area: BoundingBox): void {
+export function setCheckerboard(surface: LuaSurface, area: BoundingBox): void {
   surface.build_checkerboard(area)
 }
 
-function waterLandfillTilesExist(): boolean {
-  return game.tile_prototypes.water != nil && game.tile_prototypes.landfill != nil
-}
-
-export const enum AutoSetTilesType {
-  LabTiles,
-  LandfillAndWater,
-  LandfillAndLabTiles,
-}
-export function setTiles(surface: LuaSurface, area: BBox, type: AutoSetTilesType): boolean {
-  if (type == AutoSetTilesType.LabTiles) {
-    setLabTiles(surface, area)
-    return true
-  }
-  if (type == AutoSetTilesType.LandfillAndWater) {
-    return autoLandfill(surface, area)
-  }
-  if (type == AutoSetTilesType.LandfillAndLabTiles) {
-    return autoSetLandfillAndLabTiles(surface, area)
-  }
-  error("Invalid AutoSetTilesType")
-}
+export const _mockable = true
