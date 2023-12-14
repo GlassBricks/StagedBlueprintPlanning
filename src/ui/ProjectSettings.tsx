@@ -609,6 +609,10 @@ export class StageSettings extends Component<{
               on_gui_click={ibind(this.setLandfillAndLabTiles)}
             />
           </flow>
+          <flow>
+            <label style="caption_label" caption={[L_GuiProjectSettings.LandfillTile]} />
+            <choose-elem-button elem_type="tile" elem_value={this.stage.project.landfillTile} />
+          </flow>
         </flow>
       </>
     )

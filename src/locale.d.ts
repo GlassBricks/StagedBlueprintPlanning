@@ -200,6 +200,8 @@ export declare const enum L_GuiProjectSettings {
   LandfillAndLab = "bp100.gui.project-settings.landfill-and-lab",
   /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
   FailedToSetTiles = "bp100.gui.project-settings.failed-to-set-tiles",
+  /** Tile to use for landfill */
+  LandfillTile = "bp100.gui.project-settings.landfill-tile",
   /** Delete stage */
   DeleteStage = "bp100.gui.project-settings.delete-stage",
   /** Are you sure you want to delete stage __1__? */
