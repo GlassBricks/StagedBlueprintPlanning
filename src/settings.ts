@@ -39,4 +39,11 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     default_value: false,
     order: "c",
   },
+  {
+    name: Settings.LandfillTile,
+    type: "string-setting",
+    setting_type: "runtime-global",
+    default_value: "landfill",
+    order: "d",
+  },
 ])

@@ -12,14 +12,16 @@
 import { BoundingBox, LuaSurface, TileWrite } from "factorio:runtime"
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
+import { Settings } from "../constants"
 
 function autoLandfill(surface: LuaSurface, area: BoundingBox): boolean {
   if (!waterLandfillTilesExist()) return false
   const tiles: Mutable<TileWrite>[] = []
   let i = 1
+  const tileName = settings.global[Settings.LandfillTile].value as string
   for (const [x, y] of BBox.roundTile(area).iterateTiles()) {
     tiles[i - 1] = {
-      name: "landfill",
+      name: tileName,
       position: { x, y },
     }
     i++
@@ -34,12 +36,13 @@ function autoLandfill(surface: LuaSurface, area: BoundingBox): boolean {
 
 function autoSetLandfillAndLabTiles(surface: LuaSurface, area: BoundingBox): boolean {
   if (!autoLandfill(surface, area)) return false
+  const tileName = settings.global[Settings.LandfillTile].value as string
   const landfillTiles = surface.find_tiles_filtered({
     area,
-    name: "landfill",
+    name: tileName,
   })
   const tiles = landfillTiles.map((tile) => ({
-    name: "landfill",
+    name: tileName,
     position: tile.position,
   }))
   surface.build_checkerboard(area)

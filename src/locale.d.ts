@@ -40,12 +40,16 @@ export declare const enum L_ModSettingName {
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
   /** Allow blueprint paste to upgrade entities */
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
+  /** Tile to use for landfill */
+  LandfillTile = "mod-setting-name.bp100:landfill-tile",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps anywhere, without need for a water source. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
   /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged project. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
+  /** You can find the name to use by enabling show-debug-info-in-tooltips in the debug info ad look for the `tile-name` field */
+  LandfillTile = "mod-setting-description.bp100:landfill-tile",
 }
 export declare const enum L_StringModSetting {
   /** Top */
