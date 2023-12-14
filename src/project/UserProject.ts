@@ -75,8 +75,9 @@ class UserProjectImpl implements UserProject {
   localEvents = new SimpleEvent<LocalProjectEvent>()
 
   defaultBlueprintSettings = createNewBlueprintSettings()
-  valid = true
+  landfillTile = property<string | nil>("landfill")
 
+  valid = true
   private readonly stages: Record<number, StageImpl> = {}
 
   actions = ProjectActionsClass({ project: this })
@@ -442,6 +443,9 @@ Migrations.priority(2, "0.27.0", () => {
     project.actions = ProjectActionsClass({ project })
     project.updates = ProjectUpdatesClass({ project })
     project.entityUpdates = WorldEntityUpdatesClass({ project })
+    for (const stage of project.getAllStages()) {
+      stage.actions = project.actions
+    }
   }
 })
 Migrations.early("0.23.0", () => {
@@ -556,5 +560,11 @@ Migrations.to("0.25.0", () => {
       assume<Mutable<StageBlueprintSettingsTable>>(stage.stageBlueprintSettings)
       stage.stageBlueprintSettings.useModulePreloading = property(false)
     }
+  }
+})
+Migrations.to("0.27.0", () => {
+  for (const project of global.projects) {
+    assume<Mutable<UserProjectImpl>>(project)
+    project.landfillTile = property("landfill")
   }
 })

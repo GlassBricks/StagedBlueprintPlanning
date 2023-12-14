@@ -192,13 +192,23 @@ export declare const enum L_GuiProjectSettings {
   EnableAllEntities = "bp100.gui.project-settings.enable-all-entities",
   /** Set tiles */
   SetTiles = "bp100.gui.project-settings.set-tiles",
+  /** Selected tile: */
+  SelectedTile = "bp100.gui.project-settings.selected-tile",
+  /** Allow non-blueprintable tiles */
+  AllowNonBlueprintableTiles = "bp100.gui.project-settings.allow-non-blueprintable-tiles",
   /** Lab tiles */
-  LabTiles = "bp100.gui.project-settings.lab-tiles",
-  /** Landfill and water */
-  LandfillAndWater = "bp100.gui.project-settings.landfill-and-water",
-  /** Landfill and lab tiles */
-  LandfillAndLab = "bp100.gui.project-settings.landfill-and-lab",
-  /** Failed to set tiles. Have the "water" or "landfill" tiles been removed by another mod? */
+  SetLabTiles = "bp100.gui.project-settings.set-lab-tiles",
+  /** Selected tile */
+  SetSelectedTile = "bp100.gui.project-settings.set-selected-tile",
+  /** Selected tile and lab tiles [img=info] */
+  SetSelectedTileAndLab = "bp100.gui.project-settings.set-selected-tile-and-lab",
+  /** Selected tile and water [img=info] */
+  SetSelectedTileAndWater = "bp100.gui.project-settings.set-selected-tile-and-water",
+  /** Tiles underneath entities will be set to the selected tile\nOther tiles will be set to lab tiles. Useful for landfill */
+  SetSelectedTileAndLabTooltip = "bp100.gui.project-settings.set-selected-tile-and-lab-tooltip",
+  /** Tiles underneath entities will be set to the selected tile\nOther tiles will be set to water. Useful for landfill */
+  SetSelectedTileAndWaterTooltip = "bp100.gui.project-settings.set-selected-tile-and-water-tooltip",
+  /** No tile selected */
   FailedToSetTiles = "bp100.gui.project-settings.failed-to-set-tiles",
   /** Delete stage */
   DeleteStage = "bp100.gui.project-settings.delete-stage",

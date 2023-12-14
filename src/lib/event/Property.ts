@@ -58,11 +58,23 @@ export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   }
 
   // utils
-  static truthyFn<V>(this: void, value: V): boolean {
+  static truthyFn(this: void, value: unknown): boolean {
     return !!value
   }
   truthy(): Property<boolean> {
     return this.map(funcRef(Property.truthyFn))
+  }
+  static andFn<V>(this: void, outValue: V, thisValue: unknown): V | nil {
+    return thisValue ? outValue : nil
+  }
+  and<V>(other: MaybeProperty<V>): Property<V | nil> {
+    return this.flatMap(bind(Property.andFn<MaybeProperty<V>>, other))
+  }
+  static selectFn<V>(this: void, ifTrue: V, ifFalse: V, value: unknown): V {
+    return value ? ifTrue : ifFalse
+  }
+  select<V>(ifTrue: MaybeProperty<V>, ifFalse: MaybeProperty<V>): Property<V> {
+    return this.flatMap(bind(Property.selectFn<MaybeProperty<V>>, ifTrue, ifFalse))
   }
 }
 

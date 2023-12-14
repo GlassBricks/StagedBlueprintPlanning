@@ -12,6 +12,7 @@
 import { BoundingBox, LuaSurface, TileWrite } from "factorio:runtime"
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
+import { Stage } from "./ProjectDef"
 
 function getTiles(area: BoundingBox, tile: string): [Mutable<TileWrite>[], number] {
   const tiles: TileWrite[] = []
@@ -24,6 +25,13 @@ function getTiles(area: BoundingBox, tile: string): [Mutable<TileWrite>[], numbe
     }
   }
   return [tiles, i]
+}
+
+export function setTiles(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
+  if (!(tile in game.tile_prototypes)) return false
+  const [tiles] = getTiles(area, tile)
+  surface.set_tiles(tiles, true, "abort_on_collision")
+  return true
 }
 
 export function setTilesAndWater(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
@@ -40,7 +48,7 @@ export function setTilesAndWater(surface: LuaSurface, area: BoundingBox, tile: s
 export function setTilesAndCheckerboard(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
   if (!setTilesAndWater(surface, area, tile)) return false
   const nonWaterTiles = surface.find_tiles_filtered({
-    area,
+    area: BBox.expand(area, 1),
     name: tile,
   })
   const tiles = nonWaterTiles.map((luaTile) => ({
@@ -50,6 +58,21 @@ export function setTilesAndCheckerboard(surface: LuaSurface, area: BoundingBox, 
   surface.build_checkerboard(area)
   surface.set_tiles(tiles, true, "abort_on_collision")
   return true
+}
+
+export function setTilesForStage(stage: Stage): boolean {
+  const tile = stage.project.landfillTile.get()
+  return tile != nil && setTiles(stage.surface, stage.getBlueprintBBox(), tile)
+}
+
+export function setTilesAndWaterForStage(stage: Stage): boolean {
+  const tile = stage.project.landfillTile.get()
+  return tile != nil && setTilesAndWater(stage.surface, stage.getBlueprintBBox(), tile)
+}
+
+export function setTilesAndCheckerboardForStage(stage: Stage): boolean {
+  const tile = stage.project.landfillTile.get()
+  return tile != nil && setTilesAndCheckerboard(stage.surface, stage.getBlueprintBBox(), tile)
 }
 
 export function setCheckerboard(surface: LuaSurface, area: BoundingBox): void {

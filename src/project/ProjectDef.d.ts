@@ -48,8 +48,12 @@ export interface UserProject extends Project {
   readonly id: ProjectId
   readonly name: MutableProperty<string>
   readonly content: MutableProjectContent
-  readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
   readonly localEvents: SimpleSubscribable<LocalProjectEvent>
+
+  readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
+
+  // this may become a per-stage setting in the future
+  readonly landfillTile: MutableProperty<string | nil>
 
   displayName(): Property<LocalisedString>
   getStage(stageNumber: StageNumber): Stage | nil
