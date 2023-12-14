@@ -587,6 +587,7 @@ test("tabbed-pane", () => {
       { type: "tab", caption: "two" },
       { type: "label", caption: "two content" },
     ],
+    selected_tab_index: 2,
   }
   const element = testRender(spec).element
   expect(element.tabs.length).toBe(2)
@@ -594,4 +595,5 @@ test("tabbed-pane", () => {
   expect(element.tabs[0].content.caption).toBe("one content")
   expect(element.tabs[1].tab.caption).toBe("two")
   expect(element.tabs[1].content.caption).toBe("two content")
+  expect(element.selected_tab_index).toBe(2)
 })
