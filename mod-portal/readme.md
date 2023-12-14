@@ -1,6 +1,6 @@
 # Staged Blueprint Planning
 
-The ultimate mod for designing multi-stage blueprints, e.g. for 100% speedruns. A.K.A. the Nefrums-approved anti-anti-Anti-tool.
+The ultimate mod for designing multi-stage blueprints. A.K.A. the Nefrums-approved anti-anti-Anti-tool.
 
 Separate your builds into stages. Edit entities in any stage, and changes will automatically be applied to all later stages. Create a blueprint book of all stages in one click.
 
@@ -29,7 +29,7 @@ Use the navigation controls! These are (with default keybindings):
 
 Building, mining, rotating, fast-replacing, copper/circuit wires, configuration changing, blueprints/deconstruction planner/upgrade planner, moving entities with [Picker Dollies](https://mods.factorio.com/mod/PickerDollies), are all supported. If there is some interaction that is not handled, please submit a bug report!
 
-Preview entities will be shown for each entity in lower stages. If you're in editor mode, you can open preview entities to view their info.
+Preview entities will be shown for entities in previous stages. If you're in editor mode, you can open preview entities to view their info.
 
 ### Changing entity settings, upgrading entities
 
@@ -88,6 +88,8 @@ Landfill can be automatically placed in your blueprints. See the "Stage" tab in 
 
 The "Flexible Offshore Pump Placement" _startup setting_ enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
 
+More complete tiles support may come in the future.
+
 ### Blueprints
 
 The "Blueprints" tab provides many settings for blueprint exporting.
@@ -104,9 +106,7 @@ If an entity overlaps with another in a higher stage, a red outline will appear 
 
 Rotating/upgrading an underground will affect its paired underground, in any stage.
 
-It is not possible to upgrade an underground if that will change which underground it pairs with (breaking belt weaving, etc.). If this is intentional, mine and replace the underground.
-
-Due to limitations in implementation, if an underground can possibly connect with multiple other undergrounds (e.g. an underground "cuts" another underground in a later stage), it cannot be rotated/upgraded _after_ being built.
+If there are inconsistencies in underground directions due to being flipped by a pair underground, these will be highlighted in red.
 
 ## Feedback
 
@@ -114,22 +114,10 @@ Any comments, criticisms, and suggestions are greatly appreciated!
 
 You can contact me (GlassBricks) on the AntiElitz speedrunning discord, or use the mod portal forums.
 
-## Possible future features
-
-- Handle resource entities
-- Automatic analysis and basic optimization
-- Import/export to string
-- More "undo"-able actions
-
 ## Acknowledgements
 
-Gallery images from Nefrums's recent 100% run blueprints (on speedrun.com).
+Gallery images from Nefrums's recent 100% run blueprints (on speedrun.com). They are also outdated...
 
 Thanks to the [AntiElitz factorio speedrunning community](https://discord.gg/AntiElitz) and [Warger](https://discord.com/invite/nfkbu6qSCj) for providing inspiration and feedback for this mod.
 
 This mod was inspired by [Blueprint Stages](https://mods.factorio.com/mod/blueprint-stages).
-
-This mod is made with:
-
-- [TypescriptToLua](https://typescripttolua.github.io/); type definitions from [typed-factorio](https://github.com/GlassBricks/typed-factorio)
-- [Testorio](https://mods.factorio.com/mod/testorio), a factorio mod testing framework, used extensively for TDD

@@ -39,7 +39,7 @@
     "build:gui-specs": "ts-node --esm scripts/gen-gui-specs.ts",
     "build:tstlPlugin": "tsc -p tstlPlugin/tsconfig.json",
     "build:scripts": "conc \"npm:build:locale\" \"npm:build:gui-specs\" \"npm:build:tstlPlugin\"",
-    "build:release": "npm run clean && npm run build:scripts && tstl -p tsconfig-release.json",
+    "build:release": "npm run clean && npm run build:scripts && tstl -p tsconfig-release.json && npm run check-clean-tree",
     "build:test": "npm run build:scripts && tstl",
     "watch": "tstl --watch",
     "watch:locale": "nodemon scripts/gen-locale-defs.ts",
@@ -51,7 +51,6 @@
     "test": "factorio-test run ./src",
     "check": "npm run format:check && npm run lint && npm run test",
     "version-minor": "ts-node --esm scripts/bump-version.ts minor",
-    "prepare-package": "npm run check && npm run build:release && npm run check-clean-tree",
     "check-clean-tree": "git diff-index --exit-code HEAD --"
   },
   "nodemonConfig": {
