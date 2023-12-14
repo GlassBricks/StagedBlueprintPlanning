@@ -24,6 +24,7 @@ before_all(() => {
 })
 before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
+  surface.build_checkerboard(bbox.expand(20))
 })
 
 function createSampleEntities() {
@@ -41,7 +42,7 @@ function createSampleEntities() {
   return { chest, belt }
 }
 
-test("can take blueprint and settings applied", () => {
+test("can take blueprint with settings applied", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
     icons: [{ signal: { type: "item", name: "iron-plate" }, index: 1 }],
