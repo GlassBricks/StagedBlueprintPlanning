@@ -16,3 +16,6 @@ export interface DollyMovedEntityEvent extends EventData {
   readonly moved_entity: LuaEntity
   readonly start_pos: MapPosition
 }
+export interface BobInserterChangedPositionEvent {
+  entity: LuaEntity
+}

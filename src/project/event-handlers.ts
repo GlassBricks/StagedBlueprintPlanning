@@ -34,7 +34,7 @@ import {
 } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes, Settings } from "../constants"
-import { DollyMovedEntityEvent } from "../declarations/PickerDollies"
+import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
 import {
   areUpgradeableTypes,
@@ -757,7 +757,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 
   const entityId = tags.referencedLuaIndex
   const value = bpState.entities[entityId - 1]
-  let passedValue = value
+  let passedValue: BlueprintEntity | nil = value
 
   let entityDir = entity.direction
 
@@ -781,6 +781,11 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
           passedValue.output_priority = passedValue.output_priority == "left" ? "right" : "left"
         }
       }
+    }
+  } else if (type == "inserter") {
+    if (passedValue.pickup_position || passedValue.drop_position) {
+      // this is quite difficult to handle, we just force re-blueprinting the inserter
+      passedValue = nil
     }
   } else {
     const isDiagonal = (value.direction ?? 0) % 2 == 1
@@ -962,7 +967,7 @@ Events.onAll({
   on_player_reverse_selected_area: checkCleanupToolReverse,
 })
 
-// Force delete custom input
+// Custom inputs
 
 Events.on(CustomInputs.ForceDelete, (e) => {
   const player = game.get_player(e.player_index)!
@@ -976,7 +981,6 @@ Events.on(CustomInputs.ForceDelete, (e) => {
   }
 })
 
-// Move to this stage custom input
 Events.on(CustomInputs.MoveToThisStage, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
@@ -1100,19 +1104,6 @@ Events.on_player_deconstructed_area((e) => {
   }
 })
 
-// PickerDollies
-if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
-  Events.onInitOrLoad(() => {
-    const event = remote.call("PickerDollies", "dolly_moved_entity_id") as CustomEventId<DollyMovedEntityEvent>
-    Events.on(event, (e) => {
-      const stage = getStageAtEntityOrPreview(e.moved_entity)
-      if (stage) {
-        onEntityDollied(stage.project, e.moved_entity, stage.stageNumber, e.start_pos, e.player_index)
-      }
-    })
-  })
-}
-
 // Generated chunks
 Events.on_chunk_generated((e) => {
   const stage = getStageAtSurface(e.surface.index)
@@ -1141,23 +1132,22 @@ Events.on_chunk_generated((e) => {
   }
 })
 
-export const _assertInValidState = (): void => {
-  state.lastPreBuild = nil // can be set
-  for (const [k, v] of pairs(state)) {
-    state[k] = nil!
-    assert(!v, `${k} was not cleaned up`)
-  }
+// Mod support
+
+// PickerDollies
+if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
+  Events.onInitOrLoad(() => {
+    const event = remote.call("PickerDollies", "dolly_moved_entity_id") as CustomEventId<DollyMovedEntityEvent>
+    Events.on(event, (e) => {
+      const stage = getStageAtEntityOrPreview(e.moved_entity)
+      if (stage) {
+        onEntityDollied(stage.project, e.moved_entity, stage.stageNumber, e.start_pos, e.player_index)
+      }
+    })
+  })
 }
 
-/**
- * For manual calls from other parts of the code
- */
-export const checkForEntityUpdates = luaEntityPossiblyUpdated
-
-interface BobInserterChangedPositionEvent {
-  entity: LuaEntity
-}
-// bob inserters support
+// bob inserters
 Events.onInitOrLoad(() => {
   for (const mod of ["bobinserters", "boblogistics"]) {
     if (mod in remote.interfaces) {
@@ -1170,9 +1160,20 @@ Events.onInitOrLoad(() => {
   }
 })
 
+/**
+ * For manual calls from other parts of the code
+ */
+export const checkForEntityUpdates = luaEntityPossiblyUpdated
 export function checkForCircuitWireUpdates(entity: LuaEntity, byPlayer: PlayerIndex | nil): void {
   const stage = getStageAtEntity(entity)
-  if (stage) {
-    onWiresPossiblyUpdated(stage.project, entity, stage.stageNumber, byPlayer)
+  if (stage) onWiresPossiblyUpdated(stage.project, entity, stage.stageNumber, byPlayer)
+}
+
+// debug
+export const _assertInValidState = (): void => {
+  state.lastPreBuild = nil // can be set
+  for (const [k, v] of pairs(state)) {
+    state[k] = nil!
+    assert(!v, `${k} was not cleaned up`)
   }
 }
