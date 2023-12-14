@@ -25,7 +25,7 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
-import { Entity, LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./Entity"
+import { Entity, InserterEntity, LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./Entity"
 import {
   EntityPrototypeInfo,
   isPreviewEntity,
@@ -69,6 +69,7 @@ export interface ProjectEntity<out T extends Entity = Entity> {
 
   isRollingStock(): this is RollingStockProjectEntity
   isUndergroundBelt(): this is UndergroundBeltProjectEntity
+  isInserter(): this is InserterProjectEntity
 
   // inFirstStageOnly(): boolean
 
@@ -79,6 +80,8 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   hasErrorAt(stage: StageNumber): boolean
 
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
+  setDropPosition(this: InserterProjectEntity, position: Position): void
+  setPickupPosition(this: InserterProjectEntity, position: Position): void
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
@@ -209,6 +212,7 @@ export interface StageProperties {
 export type RollingStockProjectEntity = ProjectEntity<RollingStockEntity>
 export type UndergroundBeltProjectEntity = ProjectEntity<UndergroundBeltEntity>
 export type LoaderProjectEntity = ProjectEntity<LoaderEntity>
+export type InserterProjectEntity = ProjectEntity<InserterEntity>
 
 type StageData = ExtraEntities & StageProperties
 
@@ -267,6 +271,9 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   isUndergroundBelt(): this is UndergroundBeltProjectEntity {
     return nameToType.get(this.firstValue.name) == "underground-belt"
   }
+  isInserter(): this is InserterProjectEntity {
+    return nameToType.get(this.firstValue.name) == "inserter"
+  }
 
   isInStage(stage: StageNumber): boolean {
     return stage >= this.firstStage && !this.isPastLastStage(stage)
@@ -290,6 +297,13 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   setTypeProperty(this: ProjectEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
     // assume compiler asserts this is correct
     this.firstValue.type = direction
+  }
+
+  setDropPosition(this: ProjectEntityImpl<InserterEntity>, position: Position): void {
+      this.firstValue.drop_position = position
+  }
+  setPickupPosition(this: ProjectEntityImpl<InserterEntity>, position: Position): void {
+      this.firstValue.pickup_position = position
   }
 
   hasStageDiff(stage?: StageNumber): boolean {
