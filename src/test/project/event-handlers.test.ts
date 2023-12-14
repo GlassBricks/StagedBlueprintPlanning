@@ -9,10 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, PlayerIndex } from "factorio:runtime"
+import { BlueprintEntity, CustomEventId, LuaEntity, LuaPlayer, LuaSurface, PlayerIndex } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes } from "../../constants"
+import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../../declarations/mods"
 import { getTempBpItemStack } from "../../entity/save-load"
 import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
@@ -901,8 +902,6 @@ describe("blueprint paste", () => {
   // some more tricky cases handled in entity-update-integration.test.ts
 })
 
-// picker dollies only tested up to WorldUpdater
-
 test("Q-building", () => {
   // this is technically a bug in the base game, but we are supporting it anyway
   player.cursor_stack!.set_stack("transport-belt")
@@ -1159,3 +1158,42 @@ test("splitter has correct values when not flipped", () => {
   expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
   expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, entity)
 })
+
+// mod support
+if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
+  test("when dollied, calls onEntityDollied", () => {
+    const eventId = remote.call("PickerDollies", "dolly_moved_entity_id") as CustomEventId<DollyMovedEntityEvent>
+    const entity = surface.create_entity({
+      name: "iron-chest",
+      position: pos,
+      force: "player",
+    })!
+
+    entity.teleport(Pos(1.5, 0))
+    Events.raiseFakeEvent(eventId, {
+      player_index: player.index,
+      start_pos: pos,
+      moved_entity: entity,
+    })
+
+    expect(project.actions.onEntityDollied).toHaveBeenCalledWith(entity, 1, pos, 1)
+  })
+}
+
+if (remote.interfaces.bobinserters && remote.interfaces.bobinserters.get_changed_position_event_id) {
+  test("when inserter changed position, calls onEntityPossiblyUpdated", () => {
+    const eventId = remote.call(
+      "bobinserters",
+      "get_changed_position_event_id",
+    ) as CustomEventId<BobInserterChangedPositionEvent>
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    entity.teleport(Pos(1.5, 0))
+    Events.raiseFakeEvent(eventId, { entity })
+
+    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, nil, nil, nil)
+  })
+}

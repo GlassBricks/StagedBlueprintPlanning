@@ -3,6 +3,11 @@ Version: 0.27.0
 Date: ????
   Changes:
 ---------------------------------------------------------------------------------------------------
+Version: 0.26.2
+Date: 2023-12-14
+  Bugfixes:
+    - Adjustable inserters: Fix pasting rotated blueprints with inserters having adjusted positions
+---------------------------------------------------------------------------------------------------
 Version: 0.26.1
 Date: 2023-12-02
   Bugfixes:

@@ -1665,3 +1665,39 @@ test("rebuildStage", () => {
     assertEntityCorrect(entityPastLastStage, false)
   }
 })
+
+// bobinserters support
+if ("bobinserters" in script.active_mods) {
+  test("when pasting a inserter with adjustable pickup/dropoff, it gets the correct values", () => {
+    const stack = player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities([
+      {
+        entity_number: 1,
+        name: "inserter",
+        position: Pos(0.5, 0.5),
+        direction: direction.north,
+        pickup_position: Pos(2, 1),
+      },
+    ])
+    player.teleport(pos, surfaces[3 - 1])
+
+    player.build_from_cursor({ position: pos, alt: true, direction: direction.west }) // rotated 90 CC
+
+    const builtEntity = surfaces[3 - 1].find_entity("inserter", pos)!
+    expect(builtEntity).toBeAny()
+
+    const projEntity = project.content.findCompatibleWithLuaEntity(builtEntity, nil, 1)!
+
+    const rotatedPickupPos = Pos(1, -2)
+
+    expect(projEntity).toBeAny()
+    expect(projEntity).toMatchTable({
+      firstValue: { pickup_position: rotatedPickupPos },
+      direction: direction.west,
+    })
+    expect(builtEntity.pickup_position).toEqual(rotatedPickupPos.plus(pos))
+
+    assertEntityCorrect(projEntity, false)
+  })
+}
