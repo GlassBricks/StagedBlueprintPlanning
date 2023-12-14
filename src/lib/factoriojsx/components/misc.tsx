@@ -28,3 +28,10 @@ export const VerticalPusher = (): Element => (
     }}
   />
 )
+
+export const HorizontalSpacer = ({ width }: { width: number }): Element => (
+  <empty-widget styleMod={{ natural_width: width }} />
+)
+export const VerticalSpacer = ({ height }: { height: number }): Element => (
+  <empty-widget styleMod={{ natural_height: height }} />
+)

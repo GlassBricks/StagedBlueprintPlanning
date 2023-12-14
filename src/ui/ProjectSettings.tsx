@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LocalisedString, LuaPlayer, OnGuiClickEvent, PlayerIndex } from "factorio:runtime"
+import { LocalisedString, LuaPlayer, OnGuiClickEvent, PlayerIndex, TilePrototypeFilter } from "factorio:runtime"
 import {
   exportBlueprintBookToFile,
   submitProjectBlueprintBookTask,
@@ -45,7 +45,12 @@ import {
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSettings, L_Interaction } from "../locale"
 import { Stage, UserProject } from "../project/ProjectDef"
-import { setCheckerboard, setTilesAndCheckerboard, setTilesAndWater } from "../project/set-tiles"
+import {
+  setCheckerboard,
+  setTilesAndCheckerboardForStage,
+  setTilesAndWaterForStage,
+  setTilesForStage,
+} from "../project/set-tiles"
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { ItemRename } from "./ItemRename"
@@ -76,9 +81,9 @@ const StageListBoxWidth = 140
 
 const NewStageBarHeight = 100
 
-const StageSettingsButtonWidth = 160
-const BpSettingsButtonWidth = 220
+const StageSettingsButtonWidth = 180
 const OtherSettingsButtonWidth = 180
+const BpSettingsButtonWidth = 220
 
 const ProjectSettingsTabWidth = 420
 
@@ -552,6 +557,12 @@ export class StageSettings extends Component<{
     this.stage = props.stage
     this.playerIndex = context.playerIndex
 
+    const selectedTile = this.stage.project.landfillTile
+    const selectedTileValue = selectedTile.get()
+    const tileIsNotBlueprintable = selectedTileValue && !game.tile_prototypes[selectedTileValue]?.items_to_place_this
+
+    const allowNonBlueprintable = property<boolean>(!!tileIsNotBlueprintable)
+
     return (
       <>
         <frame style="subheader_frame" direction="horizontal">
@@ -592,31 +603,56 @@ export class StageSettings extends Component<{
           <line />
 
           <label style="caption_label" caption={[L_GuiProjectSettings.SetTiles]} />
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.LabTiles]}
-            on_gui_click={ibind(this.setLabTiles)}
-          />
+          <flow styleMod={{ vertical_align: "center" }}>
+            <flow
+              direction="horizontal"
+              styleMod={{
+                width: StageSettingsButtonWidth,
+                vertical_align: "center",
+              }}
+            >
+              <label caption={[L_GuiProjectSettings.SelectedTile]} />
+              <choose-elem-button
+                elem_type="tile"
+                elem_value={selectedTile}
+                elem_filters={allowNonBlueprintable.select(nil, [
+                  { filter: "item-to-place" } satisfies TilePrototypeFilter,
+                ])}
+              />
+            </flow>
+            <checkbox state={allowNonBlueprintable} caption={[L_GuiProjectSettings.AllowNonBlueprintableTiles]} />
+          </flow>
           <flow>
             <button
               styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.LandfillAndWater]}
-              on_gui_click={ibind(this.setLandfillAndWater)}
+              caption={[L_GuiProjectSettings.SetLabTiles]}
+              on_gui_click={ibind(this.setLabTiles)}
             />
             <button
               styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.LandfillAndLab]}
-              on_gui_click={ibind(this.setLandfillAndLabTiles)}
+              caption={[L_GuiProjectSettings.SetSelectedTile]}
+              on_gui_click={ibind(this.setSelectedTile)}
             />
           </flow>
           <flow>
-            <label style="caption_label" caption={[L_GuiProjectSettings.LandfillTile]} />
-            <choose-elem-button elem_type="tile" elem_value={this.stage.project.landfillTile} />
+            <button
+              styleMod={{ width: StageSettingsButtonWidth }}
+              caption={[L_GuiProjectSettings.SetSelectedTileAndLab]}
+              tooltip={[L_GuiProjectSettings.SetSelectedTileAndLabTooltip]}
+              on_gui_click={ibind(this.setLandfillAndLabTiles)}
+            />
+            <button
+              styleMod={{ width: StageSettingsButtonWidth }}
+              caption={[L_GuiProjectSettings.SetSelectedTileAndWater]}
+              tooltip={[L_GuiProjectSettings.SetSelectedTileAndWaterTooltip]}
+              on_gui_click={ibind(this.setLandfillAndWater)}
+            />
           </flow>
         </flow>
       </>
     )
   }
+
   private resetStage() {
     const stage = this.stage
     if (stage.valid) stage.project.entityUpdates.rebuildStage(stage.stageNumber)
@@ -626,19 +662,22 @@ export class StageSettings extends Component<{
     setCheckerboard(this.stage.surface, this.stage.getBlueprintBBox())
   }
 
+  private setSelectedTile() {
+    this.trySetLandfillTile(setTilesForStage)
+  }
+
   private setLandfillAndWater() {
-    this.trySetLandfillTile(setTilesAndWater)
+    this.trySetLandfillTile(setTilesAndWaterForStage)
   }
 
   private setLandfillAndLabTiles() {
-    this.trySetLandfillTile(setTilesAndCheckerboard)
+    this.trySetLandfillTile(setTilesAndCheckerboardForStage)
   }
 
-  private trySetLandfillTile(fn: typeof setTilesAndWater) {
+  private trySetLandfillTile(fn: typeof setTilesAndWaterForStage) {
     const stage = this.stage
     if (!stage.valid) return
-    const bbox = stage.getBlueprintBBox()
-    const success = fn(stage.surface, bbox, "landfill")
+    const success = fn(stage)
     if (!success) {
       game.get_player(this.playerIndex)?.create_local_flying_text({
         text: [L_GuiProjectSettings.FailedToSetTiles],
