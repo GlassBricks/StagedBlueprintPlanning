@@ -7,13 +7,6 @@
   "factorio_version": "1.1",
   "package": {
     "readme": "../mod-portal/readme.md",
-    "gallery": [
-      "../mod-portal/gallery/Assembly info.png",
-      "../mod-portal/gallery/Highlights.png",
-      "../mod-portal/gallery/s1.png",
-      "../mod-portal/gallery/s2.png",
-      "../mod-portal/gallery/s3.png"
-    ],
     "scripts": {
       "compile": "npm run build:release",
       "prepublish": "npm run check"
