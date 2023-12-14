@@ -84,7 +84,7 @@ Reverse-selecting using the cleanup tool will **force delete** errored entities.
 
 ### Landfill/tiles
 
-Landfill can be automatically placed in your blueprints. See the "Stage" tab in the settings gui for more details.
+Landfill can be automatically placed in blueprints. See the "Stage" tab in the settings gui for more details.
 
 The "Flexible Offshore Pump Placement" _startup setting_ enables placing offshore pumps in places not usually allowed. This may be useful in designing blueprints with offshore pumps, and is enabled by default.
 
