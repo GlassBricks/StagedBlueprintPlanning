@@ -20,12 +20,14 @@ import {
   RollingStockProjectEntity,
   StageNumber,
   UndergroundBeltProjectEntity,
+  InserterProjectEntity,
 } from "../entity/ProjectEntity"
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { Project } from "./ProjectDef"
 import { WorldEntityUpdates } from "./world-entity-updates"
+import { Pos } from "../lib/geometry/position"
 import min = math.min
 
 export declare const enum EntityUpdateResult {
@@ -275,6 +277,12 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
         if (entityType == "loader" || entityType == "loader-1x1") {
           assume<LoaderProjectEntity>(entity)
           entity.setTypeProperty(entitySource.loader_type)
+        } else if (entityType == "inserter") {
+            assume<InserterProjectEntity>(entity)
+            // Need a relative position when setting the positions, but we only get an absolute when retrieving them from the source
+            // So we need to translate them
+            entity.setPickupPosition(Pos.minus(entitySource.pickup_position, entitySource.position))
+            entity.setDropPosition(Pos.minus(entitySource.drop_position, entitySource.position))
         }
       } else {
         refreshWorldEntityAtStage(entity, stage)
