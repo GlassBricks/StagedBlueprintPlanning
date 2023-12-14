@@ -241,7 +241,6 @@ class ProjectSettings extends Component<{
   }
 
   private BlueprintSettingsTab() {
-    const selectedIndex = property(1)
     return (
       <flow
         direction="vertical"
@@ -251,7 +250,7 @@ class ProjectSettings extends Component<{
       >
         <tabbed-pane
           style="tabbed_pane_with_no_side_padding"
-          selected_tab_index={selectedIndex}
+          selected_tab_index={1}
           styleMod={{
             horizontally_stretchable: true,
             bottom_margin: -10,
