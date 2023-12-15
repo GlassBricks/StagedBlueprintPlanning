@@ -147,7 +147,8 @@ namespace BlueprintMethods {
   }
 
   export function setLandfill(stage: Stage): void {
-    setTilesAndCheckerboard(stage.surface, stage.getBlueprintBBox(), "landfill")
+    const tile = stage.project.landfillTile.get() ?? "landfill"
+    setTilesAndCheckerboard(stage.surface, stage.getBlueprintBBox(), tile)
   }
 
   export function takeStageBlueprint(
