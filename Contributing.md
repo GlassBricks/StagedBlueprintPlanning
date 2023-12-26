@@ -15,10 +15,10 @@ We usen
 Fork/clone this repo.
 Open this project in vscode, and install the vscode extension [Factorio Mod Debug](https://marketplace.visualstudio.com/items?itemName=justarandomgeek.factoriomod-debug).
 
-Checkout the `develop` branch:
+Checkout the `main` branch:
 
 ```sh
-git checkout develop
+git checkout main
 ```
 
 Run `npm install` to install dependencies.
@@ -35,10 +35,6 @@ Launch the `Test run` vscode launch configuration or `Test debug`, which is slow
 
 Tests will automatically re-run each time the project is rebuilt.
 > This rerun mechanism works using a combination of the [tstlPlugin](tstlPlugin/plugin.cts) and logic in `src/test/test-init.ts`.
-
-## Branches
-
-Development is mostly done on the `develop` or `patch` branches. `main` is used for releases.
 
 ## Testing
 
