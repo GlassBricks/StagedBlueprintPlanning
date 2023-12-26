@@ -17,7 +17,7 @@ import { BBox, Pos, Position } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { L_GuiBlueprintBookTask } from "../locale"
 import { Stage, UserProject } from "../project/ProjectDef"
-import { setTilesAndCheckerboard } from "../project/set-tiles"
+import { setTilesForStage } from "../project/set-tiles"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
   getDefaultBlueprintSettings,
@@ -146,10 +146,7 @@ namespace BlueprintMethods {
     projectPlan.moduleOverrides!.set(result)
   }
 
-  export function setLandfill(stage: Stage): void {
-    const tile = stage.project.landfillTile.get() ?? "landfill"
-    setTilesAndCheckerboard(stage.surface, stage.getBlueprintBBox(), tile)
-  }
+  export const setLandfill = setTilesForStage
 
   export function takeStageBlueprint(
     stagePlan: StageBlueprintPlan,

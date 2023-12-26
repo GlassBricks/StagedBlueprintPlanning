@@ -75,7 +75,7 @@ test("can take single blueprint using stage settings", () => {
 
 describe("set tiles", () => {
   const setTiles = moduleMock(_setTiles, true)
-  test("calls setTiles if setTilesAndWater is true", () => {
+  test("calls setTiles if autoLandfill is true", () => {
     const stage = project.getStage(1)!
 
     const stack = player.cursor_stack!
@@ -83,13 +83,13 @@ describe("set tiles", () => {
 
     let ret = takeStageBlueprint(stage, stack)
     expect(ret).toBe(true)
-    expect(setTiles.setTilesAndCheckerboard).not.toHaveBeenCalled()
+    expect(setTiles.setTilesForStage).not.toHaveBeenCalled()
 
     stage.stageBlueprintSettings.autoLandfill.set(true)
 
     ret = takeStageBlueprint(stage, stack)
     expect(ret).toBe(true)
-    expect(setTiles.setTilesAndCheckerboard).toHaveBeenCalledWith(stage.surface, expect.anything(), "landfill")
+    expect(setTiles.setTilesForStage).toHaveBeenCalledWith(stage)
   })
 })
 
