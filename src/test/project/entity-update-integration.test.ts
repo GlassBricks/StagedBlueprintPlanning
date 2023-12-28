@@ -1678,6 +1678,7 @@ if ("bobinserters" in script.active_mods) {
         position: Pos(0.5, 0.5),
         direction: direction.north,
         pickup_position: Pos(2, 1),
+        drop_position: Pos(1, 2),
       },
     ])
     player.teleport(pos, surfaces[3 - 1])
@@ -1690,14 +1691,49 @@ if ("bobinserters" in script.active_mods) {
     const projEntity = project.content.findCompatibleWithLuaEntity(builtEntity, nil, 1)!
 
     const rotatedPickupPos = Pos(1, -2)
+    const rotatedDropPos = Pos(2, -1)
 
     expect(projEntity).toBeAny()
     expect(projEntity).toMatchTable({
-      firstValue: { pickup_position: rotatedPickupPos },
+      firstValue: {
+        pickup_position: rotatedPickupPos,
+        drop_position: rotatedDropPos,
+      },
       direction: direction.west,
     })
     expect(builtEntity.pickup_position).toEqual(rotatedPickupPos.plus(pos))
+    expect(builtEntity.drop_position).toEqual(rotatedDropPos.plus(pos))
 
     assertEntityCorrect(projEntity, false)
+  })
+
+  test("when rotating an inserter, the pickup and drop positions also rotate", () => {
+    const entity = buildEntity(3, {
+      name: "inserter",
+      position: pos,
+      direction: direction.north,
+    })
+    entity.setPickupPosition(Pos(2, 1))
+    entity.setDropPosition(Pos(1, 2))
+    const worldEntity = entity.getWorldEntity(3)!
+    worldEntity.pickup_position = pos.plus(Pos(2, 1))
+    worldEntity.drop_position = pos.plus(Pos(1, 2))
+
+    worldEntity.rotate({ by_player: player, reverse: true })
+
+    const rotatedPickupPos = Pos(1, -2)
+    const rotatedDropPos = Pos(2, -1)
+
+    expect(entity).toMatchTable({
+      direction: direction.west,
+      firstValue: {
+        pickup_position: rotatedPickupPos,
+        drop_position: rotatedDropPos,
+      },
+    })
+    expect(worldEntity.pickup_position).toEqual(rotatedPickupPos.plus(pos))
+    expect(worldEntity.drop_position).toEqual(rotatedDropPos.plus(pos))
+
+    assertEntityCorrect(entity, false)
   })
 }
