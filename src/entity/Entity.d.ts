@@ -35,8 +35,8 @@ export interface UndergroundBeltEntity extends Entity {
 }
 export type LoaderEntity = UndergroundBeltEntity
 export interface InserterEntity extends Entity {
-    drop_position: Position
-    pickup_position: Position
+  drop_position?: Position
+  pickup_position?: Position
 }
 export interface RollingStockEntity extends Entity {
   orientation?: RealOrientation

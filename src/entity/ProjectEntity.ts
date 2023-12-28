@@ -80,8 +80,8 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   hasErrorAt(stage: StageNumber): boolean
 
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
-  setDropPosition(this: InserterProjectEntity, position: Position): void
-  setPickupPosition(this: InserterProjectEntity, position: Position): void
+  setDropPosition(this: InserterProjectEntity, position: Position | nil): void
+  setPickupPosition(this: InserterProjectEntity, position: Position | nil): void
 
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
@@ -299,11 +299,11 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     this.firstValue.type = direction
   }
 
-  setDropPosition(this: ProjectEntityImpl<InserterEntity>, position: Position): void {
-      this.firstValue.drop_position = position
+  setDropPosition(this: ProjectEntityImpl<InserterEntity>, position: Position | nil): void {
+    this.firstValue.drop_position = position
   }
-  setPickupPosition(this: ProjectEntityImpl<InserterEntity>, position: Position): void {
-      this.firstValue.pickup_position = position
+  setPickupPosition(this: ProjectEntityImpl<InserterEntity>, position: Position | nil): void {
+    this.firstValue.pickup_position = position
   }
 
   hasStageDiff(stage?: StageNumber): boolean {
