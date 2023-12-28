@@ -15,12 +15,12 @@ import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-prototype-info"
 import {
   createProjectEntityNoCopy,
+  InserterProjectEntity,
   LoaderProjectEntity,
   ProjectEntity,
   RollingStockProjectEntity,
   StageNumber,
   UndergroundBeltProjectEntity,
-  InserterProjectEntity,
 } from "../entity/ProjectEntity"
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
@@ -278,10 +278,13 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
           assume<LoaderProjectEntity>(entity)
           entity.setTypeProperty(entitySource.loader_type)
         } else if (entityType == "inserter") {
-            assume<InserterProjectEntity>(entity)
-            // Need a relative position when setting the positions, but we only get an absolute when retrieving them from the source
-            // So we need to translate them
+          assume<InserterProjectEntity>(entity)
+          // also update pickup and drop positions
+          // Need a relative position when setting the positions, but we only get an absolute when retrieving them from
+          // the source, so we need to translate them
+          if (entity.firstValue.pickup_position)
             entity.setPickupPosition(Pos.minus(entitySource.pickup_position, entitySource.position))
+          if (entity.firstValue.drop_position)
             entity.setDropPosition(Pos.minus(entitySource.drop_position, entitySource.position))
         }
       } else {
