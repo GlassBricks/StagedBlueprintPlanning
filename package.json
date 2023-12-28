@@ -48,7 +48,7 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.tsx\"",
     "lint": "eslint --ext .ts,.tsx src",
     "pretest": "npm run clean && npm run build:test",
-    "test": "factorio-test run ./src",
+    "test": "factorio-test run ./src -- --graphics-quality very-low --cache-sprite-atlas true --disable-audio",
     "check-clean-tree": "git diff --exit-code HEAD --",
     "check": "npm run format:check && npm run lint && npm run test && npm run check-clean-tree",
     "version-minor": "ts-node --esm scripts/bump-version.ts minor"
