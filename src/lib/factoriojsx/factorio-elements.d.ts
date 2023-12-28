@@ -13,6 +13,7 @@ import {
   Color,
   ColorArray,
   DropDownGuiElement,
+  ElemID,
   EmptyWidgetGuiElement,
   EntityPreviewGuiElement,
   FlowGuiElement,
@@ -70,6 +71,7 @@ export interface BaseElement {
   name?: MaybeProperty<string>
   caption?: MaybeProperty<LocalisedString>
   tooltip?: MaybeProperty<LocalisedString | nil>
+  elem_tooltip?: MaybeProperty<ElemID | nil>
   enabled?: MaybeProperty<boolean>
   visible?: MaybeProperty<boolean>
   ignored_by_interaction?: MaybeProperty<boolean>

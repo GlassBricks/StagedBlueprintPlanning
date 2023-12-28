@@ -3,6 +3,7 @@
   "name": [true, true],
   "caption": [true, true],
   "tooltip": [true, true],
+  "elem_tooltip": [true, true],
   "enabled": [true, true],
   "visible": [true, true],
   "ignored_by_interaction": [true, true],
