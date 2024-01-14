@@ -130,9 +130,11 @@ export function WorldEntityUpdates(project: Project, highlights: EntityHighlight
     updateAllHighlights(entity)
   }
   function setEntityUpdateable(entity: LuaEntity, updateable: boolean) {
-    entity.minable = updateable
-    entity.rotatable = updateable
-    entity.destructible = false
+    if (entity && entity.valid) {
+      entity.minable = updateable
+      entity.rotatable = updateable
+      entity.destructible = false
+    }
   }
 
   function updateWorldEntitiesInRange(entity: ProjectEntity, startStage: StageNumber, endStage: StageNumber): boolean {
