@@ -17,11 +17,11 @@ import { _deleteAllProjects, createUserProject } from "../../project/UserProject
 import { exitProject, playerCurrentStage, teleportToProject, teleportToStage } from "../../ui/player-current-stage"
 
 before_each(() => {
-  const player = game.players[1]!
+  const player = game.players[1]
   player.teleport([0, 0], 1 as SurfaceIndex)
 })
 after_all(() => {
-  const player = game.players[1]!
+  const player = game.players[1]
   player.teleport([0, 0], 1 as SurfaceIndex)
   _deleteAllProjects()
   player.cursor_stack!.clear()
@@ -29,7 +29,7 @@ after_all(() => {
 
 test("playerCurrentStage", () => {
   const project = createUserProject("Test", 3)
-  const player = game.players[1]!
+  const player = game.players[1]
   player.teleport([0, 0], 1 as SurfaceIndex)
   const currentStage = playerCurrentStage(1 as PlayerIndex)
   expect(currentStage.get()).toBeNil()
