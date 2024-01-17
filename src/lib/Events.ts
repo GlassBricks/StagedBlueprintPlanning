@@ -82,7 +82,19 @@ export type AnyHandler = (this: void, data?: any) => void
 // symbol -- script event
 const registeredHandlers: PRecord<keyof any, AnyHandler[]> = {}
 
+let canRegister = true
+let ignoreRegister = false
+
+export function _setCanRegister(value: boolean): void {
+  canRegister = value
+}
+
 function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
+  if (ignoreRegister) {
+    log("Ignoring register call for " + tostring(id))
+    return
+  }
+  if (!canRegister) error("Cannot register event handlers after on_init/on_load")
   let handlers = registeredHandlers[id]
   if (!handlers) {
     handlers = registeredHandlers[id] = []
@@ -91,7 +103,7 @@ function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
   else handlers.push(handler)
   if (handlers.length > 2) return
 
-  let func
+  let func: AnyHandler
   if (handlers.length == 1) {
     func = handler
   } else {
@@ -103,13 +115,19 @@ function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
     }
   }
   if (type(id) == "table") {
-    script[(id as symbol).description as keyof ScriptEvents](func)
+    // script[(id as symbol).description as keyof ScriptEvents](func)
+    const funcWrapper = () => {
+      func()
+      canRegister = false
+    }
+    script[(id as symbol).description as keyof ScriptEvents](funcWrapper)
   } else {
     script.on_event(id as any, func)
   }
 }
 
 function raiseFakeEvent(id: keyof any, data: any) {
+  ignoreRegister = true
   const handlers = registeredHandlers[id]
   if (!handlers) return
   if (data) {
@@ -124,6 +142,7 @@ function raiseFakeEvent(id: keyof any, data: any) {
   for (const handler of handlers) {
     handler(data)
   }
+  ignoreRegister = false
 }
 
 function clear(id: keyof any) {

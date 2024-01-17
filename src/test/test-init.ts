@@ -28,7 +28,12 @@ declare const ____lualib: {
   __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: SourceMap): void
 }
 interface SourceMap {
-  [line: number]: number | { line: number; file: string }
+  [line: number]:
+    | number
+    | {
+        line: number
+        file: string
+      }
 }
 {
   const oldSourceMapTraceBack = ____lualib.__TS__SourceMapTraceBack
@@ -128,10 +133,11 @@ if ("factorio-test" in script.active_mods) {
       }
     },
     log_passed_tests: false,
+    log_skipped_tests: true,
     sound_effects: true,
     // test_pattern: "integration%-test",
   } satisfies Partial<FactorioTest.Config>)
-  if (__DebugAdapter) {
+  if (__DebugAdapter && __DebugAdapter.breakpoint != nil) {
     tagBlacklist.push("after_mod_reload")
   }
 }

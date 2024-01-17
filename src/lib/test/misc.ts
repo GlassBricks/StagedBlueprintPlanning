@@ -37,10 +37,14 @@ function tryUseSourcemap(rawFile: string | nil, line: number | nil): Source | ni
   return typeof data == "number" ? { file: fileName + ".ts", line: data } : data
 }
 
+export function getCallerSource(): Source | nil {
+  const info = debug.getinfo(3, "Sl")!
+  return tryUseSourcemap(info.source, info.currentline)
+}
+
 // noinspection JSUnusedGlobalSymbols
 export function debugPrint(...values: unknown[]): void {
-  const info = debug.getinfo(2, "Sl")!
-  const source = tryUseSourcemap(info.source, info.currentline)
+  const source = getCallerSource()
   const sourceString = source ? `${source.file}:${source.line ?? 1}` : "<unknown source>"
   const valueStrings = []
   for (const i of $range(1, select("#", ...values))) {

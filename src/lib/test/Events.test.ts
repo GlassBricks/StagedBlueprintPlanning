@@ -12,11 +12,17 @@
 /** @noSelfInFile */
 import { SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
-import { Events } from "../Events"
+import { _setCanRegister, Events } from "../Events"
 
 const eventId = defines.events.script_raised_set_tiles
 after_each(() => {
   Events.clearHandlers(eventId)
+})
+before_each(() => {
+  _setCanRegister(true)
+})
+after_each(() => {
+  _setCanRegister(false)
 })
 
 test("Can register directly", () => {
