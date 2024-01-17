@@ -12,7 +12,7 @@
 import expect from "tstl-expect"
 import { ProjectCircuitConnection } from "../../entity/circuit-connection"
 import { LuaEntityInfo } from "../../entity/Entity"
-import { getPasteRotatableType, PasteCompatibleRotationType } from "../../entity/entity-prototype-info"
+import { getPrototypeRotationType, RotationType } from "../../entity/entity-prototype-info"
 import { _assertCorrect, CableAddResult, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { createProjectEntityNoCopy, ProjectEntity } from "../../entity/ProjectEntity"
 import { setupTestSurfaces } from "../project/Project-mock"
@@ -136,7 +136,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("matches opposite direction if pasteRotatableType is rectangular", () => {
-    assert(getPasteRotatableType("boiler") == PasteCompatibleRotationType.Flippable)
+    assert(getPrototypeRotationType("boiler") == RotationType.Flippable)
     const entity = createProjectEntityNoCopy({ name: "boiler" }, { x: 0.5, y: 0 }, defines.direction.north, 1)
 
     const luaEntity = assert(
@@ -148,7 +148,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("matches any direction if pasteRotatableType is square", () => {
-    assert(getPasteRotatableType("assembling-machine-1") == PasteCompatibleRotationType.AnyDirection)
+    assert(getPrototypeRotationType("assembling-machine-1") == RotationType.AnyDirection)
 
     const entity = createProjectEntityNoCopy(
       { name: "assembling-machine-2" },

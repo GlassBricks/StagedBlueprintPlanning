@@ -14,6 +14,7 @@ import {
   BoundingBox,
   Color,
   EntityPrototype,
+  ItemPrototype,
   ItemToPlace,
   RailPieceLayers,
   RailRemnantsPrototype,
@@ -30,6 +31,7 @@ import { BuildableEntityType, Prototypes } from "./constants"
 import { emptySprite16 } from "./data-util"
 import { BBox } from "./lib/geometry"
 import { L_Bp100 } from "./locale"
+import type { PassedPrototypeInfo } from "./passed-prototype-info"
 import direction = defines.direction
 import ceil = math.ceil
 import max = math.max
@@ -326,3 +328,24 @@ const entityOrPreviewNames = [...buildableNames, ...previewNames]
 stageMoveTool.entity_filters = buildableNames
 stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = entityOrPreviewNames
 stageMoveTool.alt_reverse_entity_filters = previewNames
+
+const twoDirectionOnlyTanks: string[] = []
+for (const [name, tank] of pairs(data.raw["storage-tank"])) {
+  if (tank.two_direction_only) {
+    twoDirectionOnlyTanks.push(name)
+  }
+}
+
+const prototypeInfo: PassedPrototypeInfo = { twoDirectionOnlyTanks }
+
+data.extend<ItemPrototype>([
+  {
+    name: Prototypes.PassedPrototypeInfo,
+    type: "item",
+    localised_description: serpent.dump(prototypeInfo),
+    flags: ["hidden"],
+    icon: empty_sprite().filename,
+    icon_size: 1,
+    stack_size: 1,
+  },
+])

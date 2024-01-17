@@ -21,8 +21,8 @@ import {
   isPreviewEntity,
   isRollingStockType,
   OnEntityPrototypesLoaded,
-  PasteCompatibleRotationType,
   rollingStockTypes,
+  RotationType,
 } from "./entity-prototype-info"
 import { _migrateMap2DToLinkedList, Map2D, newMap2D } from "./map2d"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
@@ -98,9 +98,9 @@ export type ProjectEntityCableConnections = LuaSet<ProjectEntity>
 
 let nameToType: EntityPrototypeInfo["nameToType"]
 let nameToCategory: EntityPrototypeInfo["nameToCategory"]
-let pasteCompatibleRotations: EntityPrototypeInfo["pasteCompatibleRotations"]
+let pasteCompatibleRotations: EntityPrototypeInfo["rotationTypes"]
 OnEntityPrototypesLoaded.addListener((i) => {
-  ;({ nameToType, nameToCategory, pasteCompatibleRotations } = i)
+  ;({ nameToType, nameToCategory, rotationTypes: pasteCompatibleRotations } = i)
 })
 
 @RegisterClass("EntityMap")
@@ -171,10 +171,10 @@ class ProjectContentImpl implements MutableProjectContent {
     if (pasteRotatableType == nil) {
       return this.findCompatibleByProps(name, entity.position, previousDirection ?? entity.direction, stage)
     }
-    if (pasteRotatableType == PasteCompatibleRotationType.AnyDirection) {
+    if (pasteRotatableType == RotationType.AnyDirection) {
       return this.findCompatibleByProps(name, entity.position, nil, stage)
     }
-    if (pasteRotatableType == PasteCompatibleRotationType.Flippable) {
+    if (pasteRotatableType == RotationType.Flippable) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       if (direction % 2 == 1) {

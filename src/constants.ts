@@ -41,6 +41,8 @@ export const enum Prototypes {
 
   BlueprintFilters = "bp100:blueprint-filters",
 
+  PassedPrototypeInfo = "bp100:passed-prototype-info",
+
   BANANA = "bp100:banana",
 }
 

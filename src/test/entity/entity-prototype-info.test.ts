@@ -33,4 +33,7 @@ describe("getCategoryName", () => {
   test("transport belt has no fast-replace-group in category", () => {
     expect(getEntityCategory("fast-transport-belt")).not.toInclude("|transport-belt|")
   })
+  test("normal storage tanks are two-directional", () => {
+    expect(getEntityPrototypeInfo().twoDirectionTanks).toHaveKey("storage-tank")
+  })
 })

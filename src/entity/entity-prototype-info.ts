@@ -11,10 +11,11 @@
 
 import { PrototypeMap } from "factorio:prototype"
 import { LuaEntity, LuaEntityPrototype } from "factorio:runtime"
-import { merge } from "util"
+import { list_to_map, merge } from "util"
 import { Prototypes } from "../constants"
 import { Events, globalEvent, PRecord } from "../lib"
 import { BBox } from "../lib/geometry"
+import { PassedPrototypeInfo } from "../passed-prototype-info"
 
 export type CategoryName = string & {
   _categoryName: never
@@ -22,16 +23,17 @@ export type CategoryName = string & {
 export interface EntityPrototypeInfo {
   nameToCategory: ReadonlyLuaMap<string, CategoryName>
   categories: ReadonlyLuaMap<CategoryName, string[]>
-  pasteCompatibleRotations: ReadonlyLuaMap<string, PasteCompatibleRotationType>
+  rotationTypes: ReadonlyLuaMap<string, RotationType>
   selectionBoxes: ReadonlyLuaMap<string, BBox>
   nameToType: ReadonlyLuaMap<string, keyof PrototypeMap>
+  twoDirectionTanks: ReadonlyLuaSet<string>
 }
 /**
  * Compatible rotations for pasting entities.
  *
  * Default: all rotations are different
  */
-export const enum PasteCompatibleRotationType {
+export const enum RotationType {
   /** 180 deg rotation is equivalent */
   Flippable,
   /** All directions are equivalent */
@@ -59,6 +61,13 @@ Events.on_load(() => {
   }
 })
 
+function getPassedPrototypeInfo(): PassedPrototypeInfo {
+  const fakeItem = game.item_prototypes[Prototypes.PassedPrototypeInfo]
+  const [success, value] = serpent.load<PassedPrototypeInfo>(fakeItem.localised_description as string)
+  if (!success) error("Failed to parse passed prototype info.")
+  return value
+}
+
 function computeEntityPrototypeInfo(): EntityPrototypeInfo {
   log("Processing blueprint-able entity prototypes")
   const compatibleTypes: PRecord<keyof PrototypeMap, keyof PrototypeMap> = {
@@ -70,8 +79,11 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
 
   const nameToCategory = new LuaMap<string, CategoryName>()
   const categories = new LuaMap<CategoryName, string[]>()
-  const pasteRotationTypes = new LuaMap<string, PasteCompatibleRotationType>()
+  const rotationTypes = new LuaMap<string, RotationType>()
   const selectionBoxes = new LuaMap<string, BBox>()
+
+  const passedPrototypeInfo = getPassedPrototypeInfo()
+  const twoDirectionTanks = list_to_map(passedPrototypeInfo.twoDirectionOnlyTanks)
 
   const pasteRotatableEntityTypes = newLuaSet("assembling-machine", "boiler", "generator")
 
@@ -86,24 +98,24 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
     return [actualType, actualFastReplaceGroup, lx, ly, rx, ry].join("|") as CategoryName
   }
 
-  function getPasteCompatibleRotation(prototype: LuaEntityPrototype): PasteCompatibleRotationType | nil {
-    const type = prototype.type
+  function getPasteCompatibleRotation(prototype: LuaEntityPrototype): RotationType | nil {
     if (!prototype.supports_direction || prototype.has_flag("not-rotatable")) {
-      return PasteCompatibleRotationType.AnyDirection
+      return RotationType.AnyDirection
     }
 
+    const type = prototype.type
     // hardcoded shenanigans
     if (type == "straight-rail") {
-      return PasteCompatibleRotationType.Flippable
+      return RotationType.Flippable
     }
 
     if (pasteRotatableEntityTypes.has(type)) {
       const collisionBox = prototype.collision_box
       if (BBox.isCenteredSquare(collisionBox)) {
-        return PasteCompatibleRotationType.AnyDirection
+        return RotationType.AnyDirection
       }
       if (BBox.isCenteredRectangle(collisionBox)) {
-        return PasteCompatibleRotationType.Flippable
+        return RotationType.Flippable
       }
     }
   }
@@ -120,7 +132,7 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
     }
 
     const pasteRotationType = getPasteCompatibleRotation(prototype)
-    if (pasteRotationType != nil) pasteRotationTypes.set(name, pasteRotationType)
+    if (pasteRotationType != nil) rotationTypes.set(name, pasteRotationType)
 
     selectionBoxes.set(name, BBox.from(prototype.selection_box))
 
@@ -137,9 +149,10 @@ function computeEntityPrototypeInfo(): EntityPrototypeInfo {
   return {
     nameToCategory,
     categories,
-    pasteCompatibleRotations: pasteRotationTypes,
+    rotationTypes,
     selectionBoxes,
     nameToType,
+    twoDirectionTanks,
   }
 }
 const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
@@ -158,9 +171,9 @@ export function getEntityPrototypeInfo(): EntityPrototypeInfo {
 let nameToCategory: EntityPrototypeInfo["nameToCategory"]
 let nameToType: EntityPrototypeInfo["nameToType"]
 let categories: EntityPrototypeInfo["categories"]
-let pasteCompatibleRotations: EntityPrototypeInfo["pasteCompatibleRotations"]
+let rotationTypes: EntityPrototypeInfo["rotationTypes"]
 OnEntityPrototypesLoaded.addListener((info) => {
-  ;({ nameToCategory, categories, pasteCompatibleRotations, nameToType } = info)
+  ;({ nameToCategory, categories, rotationTypes, nameToType } = info)
 })
 
 export function areUpgradeableTypes(a: string, b: string): boolean {
@@ -177,8 +190,8 @@ export function getCompatibleNames(entityName: string): readonly string[] | nil 
 }
 
 /** For straight rails, paste rotation only applies to non-diagonal rails. */
-export function getPasteRotatableType(entityName: string): PasteCompatibleRotationType | nil {
-  return pasteCompatibleRotations.get(entityName)
+export function getPrototypeRotationType(entityName: string): RotationType | nil {
+  return rotationTypes.get(entityName)
 }
 export function isRollingStockType(entityName: string): boolean {
   const type = nameToType.get(entityName)

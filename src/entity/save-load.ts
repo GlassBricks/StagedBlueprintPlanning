@@ -28,10 +28,10 @@ import { getStageAtSurface } from "../project/stage-surface"
 import { Entity } from "./Entity"
 import {
   EntityPrototypeInfo,
-  getPasteRotatableType,
+  getPrototypeRotationType,
   OnEntityPrototypesLoaded,
-  PasteCompatibleRotationType,
   rollingStockTypes,
+  RotationType,
 } from "./entity-prototype-info"
 import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { getUndergroundDirection } from "./underground-belt"
@@ -434,7 +434,7 @@ export const _mockable = true
 export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
   return (
     luaEntity.type == "assembling-machine" &&
-    getPasteRotatableType(luaEntity.name) == PasteCompatibleRotationType.AnyDirection &&
+    getPrototypeRotationType(luaEntity.name) == RotationType.AnyDirection &&
     luaEntity.fluidbox.length == 0
   )
 }

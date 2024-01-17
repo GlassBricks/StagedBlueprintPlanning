@@ -40,10 +40,10 @@ import {
   areUpgradeableTypes,
   EntityPrototypeInfo,
   getCompatibleNames,
-  getPasteRotatableType,
+  getPrototypeRotationType,
   isPreviewEntity,
   OnEntityPrototypesLoaded,
-  PasteCompatibleRotationType,
+  RotationType,
 } from "../entity/entity-prototype-info"
 import { isWorldEntityProjectEntity } from "../entity/ProjectEntity"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
@@ -703,8 +703,10 @@ function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] |
 }
 
 let nameToType: EntityPrototypeInfo["nameToType"]
+let twoDirectionTanks: EntityPrototypeInfo["twoDirectionTanks"]
 OnEntityPrototypesLoaded.addListener((e) => {
   nameToType = e.nameToType
+  twoDirectionTanks = e.twoDirectionTanks
 })
 
 const rawset = _G.rawset
@@ -744,7 +746,9 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   const valueName = value.name
   const type = nameToType.get(valueName)!
   if (type == "storage-tank") {
-    entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
+    if (twoDirectionTanks.has(valueName)) {
+      entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
+    }
   } else if (type == "curved-rail") {
     const isDiagonal = ((value.direction ?? 0) % 2 == 1) != bpState.isFlipped
     if (isDiagonal) entityDir = (entityDir + 1) % 8
@@ -788,11 +792,11 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     if (!luaEntity) return
   } else if (!luaEntity) {
     // slower path, check for other directions
-    const pasteRotatableType = getPasteRotatableType(referencedName)
+    const pasteRotatableType = getPrototypeRotationType(referencedName)
     if (pasteRotatableType == nil) return
-    if (pasteRotatableType == PasteCompatibleRotationType.AnyDirection) {
+    if (pasteRotatableType == RotationType.AnyDirection) {
       luaEntity = luaEntities[0]
-    } else if (pasteRotatableType == PasteCompatibleRotationType.Flippable) {
+    } else if (pasteRotatableType == RotationType.Flippable) {
       const oppositeDir = oppositedirection(entityDir)
       luaEntity = luaEntities.find((e) => e.direction == oppositeDir)
     } else {
