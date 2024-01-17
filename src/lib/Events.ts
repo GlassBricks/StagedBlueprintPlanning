@@ -116,8 +116,8 @@ function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
   }
   if (type(id) == "table") {
     // script[(id as symbol).description as keyof ScriptEvents](func)
-    const funcWrapper = () => {
-      func()
+    const funcWrapper: AnyHandler = (data: any) => {
+      func(data)
       canRegister = false
     }
     script[(id as symbol).description as keyof ScriptEvents](funcWrapper)
