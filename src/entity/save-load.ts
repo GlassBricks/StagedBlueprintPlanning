@@ -223,7 +223,7 @@ export function createEntity(
     createItems(luaEntity, entity.items)
   }
   raise_script_built({ entity: luaEntity })
-  return luaEntity
+  if (luaEntity.valid) return luaEntity
 }
 
 function entityHasSettings(entity: BlueprintEntity): boolean {

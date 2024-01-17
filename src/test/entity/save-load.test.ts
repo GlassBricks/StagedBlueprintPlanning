@@ -78,15 +78,23 @@ test.each(directions)("can saved a straight rail in all directions", (direction)
 })
 let events: ScriptRaisedBuiltEvent[] = []
 let running = false
+let destroyOnBuilt = false
 before_each(() => {
   events = []
   running = true
 })
 after_each(() => {
   running = false
+  destroyOnBuilt = false
 })
 Events.script_raised_built((e) => {
-  if (running) events.push(e)
+  if (running) {
+    events.push(e)
+    if (destroyOnBuilt) {
+      destroyOnBuilt = false
+      e.entity.destroy()
+    }
+  }
 })
 
 test("can create an entity", () => {
@@ -103,6 +111,15 @@ test("can create an entity", () => {
     entity: luaEntity,
     mod_name: script.mod_name,
   } satisfies Partial<ScriptRaisedBuiltEvent>)
+})
+
+test("returns nil if entity becomes invalid via script", () => {
+  destroyOnBuilt = true
+  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
+    name: "iron-chest",
+    bar: 3,
+  } as Entity)
+  expect(luaEntity).toBeNil()
 })
 
 test("can create an offshore pump anywhere", () => {
