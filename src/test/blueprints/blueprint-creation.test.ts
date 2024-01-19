@@ -83,13 +83,13 @@ describe("set tiles", () => {
 
     let ret = takeStageBlueprint(stage, stack)
     expect(ret).toBe(true)
-    expect(setTiles.setTilesForStage).not.toHaveBeenCalled()
+    expect(setTiles.setTilesAndCheckerboardForStage).not.toHaveBeenCalled()
 
     stage.stageBlueprintSettings.autoLandfill.set(true)
 
     ret = takeStageBlueprint(stage, stack)
     expect(ret).toBe(true)
-    expect(setTiles.setTilesForStage).toHaveBeenCalledWith(stage)
+    expect(setTiles.setTilesAndCheckerboardForStage).toHaveBeenCalledWith(stage)
   })
 })
 
