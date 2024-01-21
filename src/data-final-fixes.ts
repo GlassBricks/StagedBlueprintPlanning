@@ -324,10 +324,16 @@ const cleanupTool = data.raw["selection-tool"][Prototypes.CleanupTool]!
 cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
 
 const stageMoveTool = data.raw["selection-tool"][Prototypes.StageMoveTool]!
+const stagedCopyTool = data.raw["selection-tool"][Prototypes.StagedCopyTool]!
+const stagedCutTool = data.raw["selection-tool"][Prototypes.StagedCutTool]!
+
 const entityOrPreviewNames = [...buildableNames, ...previewNames]
 stageMoveTool.entity_filters = buildableNames
 stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = entityOrPreviewNames
 stageMoveTool.alt_reverse_entity_filters = previewNames
+
+stagedCopyTool.alt_entity_filters = entityOrPreviewNames
+stagedCutTool.alt_entity_filters = entityOrPreviewNames
 
 const twoDirectionOnlyTanks: string[] = []
 for (const [name, tank] of pairs(data.raw["storage-tank"])) {

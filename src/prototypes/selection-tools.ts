@@ -21,6 +21,7 @@ import {
 import { MapPositionArray } from "factorio:runtime"
 import { table } from "util"
 import { Colors, Prototypes } from "../constants"
+import { L_Bp100 } from "../locale"
 
 declare const data: PrototypeData
 
@@ -41,12 +42,15 @@ function selectionToolToShortcut(
     associated_control_input: associatedControl,
   }
 }
-function selectionToolToInput(prototype: SelectionToolPrototype | DeconstructionItemPrototype): CustomInputPrototype {
+function selectionToolToInput(
+  prototype: SelectionToolPrototype | DeconstructionItemPrototype,
+  keySequence: string = "",
+): CustomInputPrototype {
   return {
     type: "custom-input",
     name: prototype.name,
     localised_name: ["item-name." + prototype.name],
-    key_sequence: "",
+    key_sequence: keySequence,
     item_to_spawn: prototype.name,
     action: "spawn-item",
     order: prototype.order,
@@ -204,6 +208,59 @@ data.extend([
     "red",
   ),
   selectionToolToInput(filteredStagedMoveTool),
+])
+
+// staged copy and cut tools
+const stageCopyTool = table.deepcopy(
+  data.raw["copy-paste-tool"]["copy-paste-tool"]!,
+) as unknown as SelectionToolPrototype
+Object.assign(stageCopyTool, {
+  type: "selection-tool",
+  name: Prototypes.StagedCopyTool,
+  subgroup: "tool",
+  order: "z[bp100]-b[staged-copy-tool]",
+  selection_mode: ["blueprint"],
+  alt_selection_mode: ["any-entity"],
+  localised_name: [L_Bp100.StagedTool, ["item-name.copy-paste-tool"]],
+} satisfies Partial<SelectionToolPrototype>)
+
+const stageCutTool = table.deepcopy(data.raw["copy-paste-tool"]["cut-paste-tool"]!) as unknown as SelectionToolPrototype
+Object.assign(stageCutTool, {
+  type: "selection-tool",
+  name: Prototypes.StagedCutTool,
+  subgroup: "tool",
+  order: "z[bp100]-b[staged-cut-tool]",
+  selection_mode: ["blueprint"],
+  localised_name: [L_Bp100.StagedTool, ["item-name.cut-paste-tool"]],
+  alt_selection_mode: ["any-entity"],
+} satisfies Partial<SelectionToolPrototype>)
+
+const stageCopyShortcut = table.deepcopy(data.raw["shortcut"]["copy"]!)
+delete stageCopyShortcut.technology_to_unlock
+Object.assign(stageCopyShortcut, {
+  name: Prototypes.StagedCopyTool,
+  associated_control_input: Prototypes.StagedCopyTool,
+  localised_name: [L_Bp100.StagedTool, ["shortcut.copy"]],
+  order: "z[bp100]-b[staged-copy-tool]",
+  style: "blue",
+} satisfies Partial<ShortcutPrototype>)
+const stageCutShortcut = table.deepcopy(data.raw["shortcut"]["cut"]!)
+delete stageCutShortcut.technology_to_unlock
+Object.assign(stageCutShortcut, {
+  name: Prototypes.StagedCutTool,
+  associated_control_input: Prototypes.StagedCutTool,
+  localised_name: [L_Bp100.StagedTool, ["shortcut.cut"]],
+  order: "z[bp100]-b[staged-cut-tool]",
+  style: "blue",
+} satisfies Partial<ShortcutPrototype>)
+
+data.extend([
+  stageCopyTool,
+  stageCutTool,
+  stageCopyShortcut,
+  stageCutShortcut,
+  selectionToolToInput(stageCopyTool, "CONTROL + SHIFT + C"),
+  selectionToolToInput(stageCutTool, "CONTROL + SHIFT + X"),
 ])
 
 // stage delete tool

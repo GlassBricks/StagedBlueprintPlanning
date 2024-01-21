@@ -39,6 +39,9 @@ export const enum Prototypes {
   FilteredStageMoveTool = "bp100:filtered-stage-move-tool",
   StageDeconstructTool = "bp100:stage-deconstruct-tool",
 
+  StagedCopyTool = "bp100:staged-copy-tool",
+  StagedCutTool = "bp100:staged-cut-tool",
+
   BlueprintFilters = "bp100:blueprint-filters",
 
   PassedPrototypeInfo = "bp100:passed-prototype-info",

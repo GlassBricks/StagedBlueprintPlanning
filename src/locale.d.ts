@@ -86,6 +86,8 @@ export declare const enum L_Bp100 {
   PreviewEntity = "bp100.preview-entity",
   /** <Unnamed project __1__> */
   UnnamedProject = "bp100.unnamed-project",
+  /** Staged __1__ */
+  StagedTool = "bp100.staged-tool",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
