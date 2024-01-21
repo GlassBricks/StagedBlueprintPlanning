@@ -15,7 +15,6 @@ import { Events, onPlayerInitSince } from "../lib"
 import { Migrations } from "../lib/migration"
 import floor = math.floor
 
-// should be greater than factorio's max undos
 interface UndoEntry {
   handlerName: string
   data: unknown
