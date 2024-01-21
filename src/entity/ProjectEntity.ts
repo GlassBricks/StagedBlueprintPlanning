@@ -86,7 +86,7 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
-  getStageDiffs(): StageDiffs<T> | nil
+  readonly stageDiffs?: StageDiffs<T>
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
 
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
@@ -327,10 +327,6 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     const val = stageDiff[prop]
     if (val == nil) return $multi(false)
     return $multi(true, fromDiffValue<T[K]>(val))
-  }
-
-  getStageDiffs(): StageDiffs<T> | nil {
-    return this.stageDiffs
   }
 
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber, T[K]]> {

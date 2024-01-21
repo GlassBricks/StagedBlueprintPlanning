@@ -78,7 +78,7 @@ namespace BlueprintMethods {
       const firstStageMap = result.get(entity.firstStage)!
       firstStageMap.add(entity)
 
-      const diffs = entity.getStageDiffs()
+      const diffs = entity.stageDiffs
       if (diffs) {
         for (const [stage] of pairs(diffs)) {
           result.get(stage)!.add(entity)

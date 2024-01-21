@@ -324,10 +324,10 @@ describe("revive integration test", () => {
       expect(entity.hasStageDiff()).toBe(false)
     } else if (reviveStage >= 3) {
       expect(entity.firstValue.override_stack_size).toBe(2)
-      expect(entity.getStageDiffs()).toEqual({ 5: { override_stack_size: 3 } })
+      expect(entity.stageDiffs).toEqual({ 5: { override_stack_size: 3 } })
     } else {
       expect(entity.firstValue.override_stack_size).toBe(1)
-      expect(entity.getStageDiffs()).toEqual({ 3: { override_stack_size: 2 }, 5: { override_stack_size: 3 } })
+      expect(entity.stageDiffs).toEqual({ 3: { override_stack_size: 2 }, 5: { override_stack_size: 3 } })
     }
 
     assertEntityCorrect(entity, false)
@@ -344,7 +344,7 @@ describe("revive integration test", () => {
     expect(1).toBe(entity.firstStage)
 
     expect(entity.firstValue.override_stack_size).toBe(1)
-    expect(entity.getStageDiffs()).toEqual({ 3: { override_stack_size: 3 } })
+    expect(entity.stageDiffs).toEqual({ 3: { override_stack_size: 3 } })
 
     assertEntityCorrect(entity, false)
   })

@@ -87,7 +87,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
 
     const firstStageNum = entity.firstStage
     const firstStage = project.getStage(firstStageNum)!
-    const stageDiffs = entity.getStageDiffs()
+    const stageDiffs = entity.stageDiffs
     const currentStageDiff = stageDiffs && stageDiffs[currentStageNum]
 
     const lastStage = entity.lastStage

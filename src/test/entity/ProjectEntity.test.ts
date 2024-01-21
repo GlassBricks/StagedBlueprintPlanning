@@ -432,7 +432,7 @@ describe("trySetFirstStage", () => {
     const valueAt5 = projectEntity.getValueAtStage(5)
     projectEntity.setFirstStageUnchecked(5)
     expect(projectEntity.firstValue).toEqual(valueAt5)
-    const diffs = projectEntity.getStageDiffs()!
+    const diffs = projectEntity.stageDiffs!
     expect(next(diffs)[0]).toBe(7)
   })
 
@@ -459,7 +459,7 @@ describe("trySetLastStage", () => {
   test("moving down deletes later stage diffs", () => {
     projectEntity.setLastStageUnchecked(5)
     expect(projectEntity.lastStage).toBe(5)
-    const diffs = projectEntity.getStageDiffs()!
+    const diffs = projectEntity.stageDiffs!
     expect(diffs).not.toHaveKey(7)
     expect(next(diffs)[0]).toBe(3)
   })
@@ -766,7 +766,7 @@ describe("insert/deleting stages", () => {
     expect(entity.getProperty("foo", 4)).toBe("bar3")
     expect(entity.getProperty("foo", 5)).toBe("bar4")
 
-    expect(entity.getStageDiffs()).toEqual({
+    expect(entity.stageDiffs).toEqual({
       2: { override_stack_size: 2 },
       3: nil,
       4: { override_stack_size: 3 },
@@ -826,7 +826,7 @@ describe("insert/deleting stages", () => {
     expect(entity.getProperty("foo", 3)).toBe("bar4")
     expect(entity.getProperty("foo", 4)).toBeNil()
 
-    expect(entity.getStageDiffs()).toEqual({
+    expect(entity.stageDiffs).toEqual({
       2: { override_stack_size: 3, filter_mode: "blacklist" }, // merge of 2 and 3
       3: { override_stack_size: 4 },
     })

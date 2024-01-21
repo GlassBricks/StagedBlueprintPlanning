@@ -153,7 +153,7 @@ function assertNoEntities() {
 }
 
 function assertStageDiffs(entity: ProjectEntity, changes: StageDiffsInternal<BlueprintEntity>) {
-  expect(entity.getStageDiffs()).toEqual(changes)
+  expect(entity.stageDiffs).toEqual(changes)
 }
 
 function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {

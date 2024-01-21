@@ -15,7 +15,7 @@ import { HighlightConstants } from "../../project/entity-highlights"
 
 export function assertConfigChangedHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
   let i = entity.firstStage
-  for (const [stageNumber, changes] of pairs(entity.getStageDiffs() ?? {})) {
+  for (const [stageNumber, changes] of pairs(entity.stageDiffs ?? {})) {
     const isUpgrade = changes.name != nil
 
     const highlight = expect(entity.getExtraEntity("configChangedHighlight", stageNumber)).toBeAny().getValue()!

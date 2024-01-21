@@ -10,21 +10,23 @@
  */
 
 import { Entity } from "../entity/Entity"
+import { StageDiffs, StageNumber } from "../entity/ProjectEntity"
 import { StageDiff } from "../entity/stage-diff"
-import { Events } from "../lib"
+import { Events, PRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 
 export type BlueprintNilPlaceholder = {
   __nil: true
 }
 
-export function isNilPlaceholder(value: AnyNotNil): value is BlueprintNilPlaceholder {
+export function isBpNilPlaceholder(value: AnyNotNil): value is BlueprintNilPlaceholder {
   return typeof value == "object" && "__nil" in value
 }
 
 export type BlueprintStageDiff<E extends Entity = Entity> = {
   readonly [P in keyof E]?: E[P] | BlueprintNilPlaceholder
 }
+export type BlueprintStageDiffs<E extends Entity = Entity> = PRecord<StageNumber, BlueprintStageDiff<E>>
 
 let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
@@ -44,7 +46,25 @@ export function toBlueprintStageDiff<E extends Entity>(diff: StageDiff<E>): Blue
 export function fromBlueprintStageDiff<E extends Entity>(diff: BlueprintStageDiff<E>): StageDiff<E> {
   const ret: any = {}
   for (const [key, value] of pairs(diff)) {
-    ret[key] = isNilPlaceholder(value) ? nilPlaceholder : value
+    ret[key] = isBpNilPlaceholder(value) ? nilPlaceholder : value
   }
   return ret
+}
+
+export function convertToBpStageDiffs(diffs: StageDiffs): BlueprintStageDiffs {
+  const ret: BlueprintStageDiffs = {}
+  for (const [stage, diff] of pairs(diffs)) {
+    ret[stage] = toBlueprintStageDiff(diff)
+  }
+  return ret
+}
+
+export interface BpStageInfo<E extends Entity = Entity> {
+  firstStage: StageNumber
+  firstValue?: E
+  stageDiffs?: BlueprintStageDiffs<E>
+}
+
+export interface BpStageInfoTags {
+  bp100: BpStageInfo
 }

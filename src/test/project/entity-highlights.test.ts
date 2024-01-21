@@ -175,12 +175,12 @@ describe("config changed highlight", () => {
   }
   function setUpgradeAt(stage: StageNumber) {
     assert(stage >= 2)
-    // ;(entity._getStageDiffs() as any)[stage] = { name: "test" + stage.toString() }
+    // ;(entity._stageDiffs as any)[stage] = { name: "test" + stage.toString() }
     entity._applyDiffAtStage(stage, { name: "test" + stage.toString() })
   }
   function clearAt(stage: StageNumber) {
     assert(stage >= 2)
-    // ;(entity._getStageDiffs() as any)[stage] = nil
+    // ;(entity._stageDiffs as any)[stage] = nil
     entity.adjustValueAtStage(stage, entity.getValueAtStage(stage - 1)!)
   }
   function assertCorrect() {

@@ -41,3 +41,6 @@ export interface InserterEntity extends Entity {
 export interface RollingStockEntity extends Entity {
   orientation?: RealOrientation
 }
+export interface AssemblingMachineEntity extends Entity {
+  recipe?: string
+}

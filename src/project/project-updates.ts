@@ -25,9 +25,9 @@ import {
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
+import { Pos } from "../lib/geometry"
 import { Project } from "./ProjectDef"
 import { WorldEntityUpdates } from "./world-entity-updates"
-import { Pos } from "../lib/geometry/position"
 import min = math.min
 
 export declare const enum EntityUpdateResult {
@@ -53,6 +53,11 @@ export declare const enum StageMoveResult {
 
 /** @noSelf */
 export interface ProjectUpdates {
+  addNewEntity<E extends Entity = Entity>(
+    entity: LuaEntity,
+    stage: StageNumber,
+    knownValue?: BlueprintEntity,
+  ): ProjectEntity<E> | nil
   addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil
 
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
