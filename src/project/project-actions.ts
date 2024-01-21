@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity, nil, PlayerIndex } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, PlayerIndex } from "factorio:runtime"
 import { Colors, L_Game } from "../constants"
 import { LuaEntityInfo } from "../entity/Entity"
 import { allowOverlapDifferentDirection } from "../entity/entity-prototype-info"
