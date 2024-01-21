@@ -28,6 +28,7 @@ ProjectEvents.addListener((e) => {
     case "pre-stage-deleted":
     case "projects-reordered":
       return
+    default:
+      assertNever(e)
   }
-  assertNever(e)
 })
