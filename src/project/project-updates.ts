@@ -191,6 +191,9 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
         }
       }
     }
+    if (projectEntity.stageDiffs) {
+      updateAllHighlights(projectEntity)
+    }
 
     return projectEntity
   }

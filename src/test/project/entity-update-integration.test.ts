@@ -13,6 +13,7 @@ import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, PlayerIndex, Surface
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes, Settings } from "../../constants"
+import { BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
 import {
   circuitConnectionEquals,
   CircuitOrPowerSwitchConnection,
@@ -1537,6 +1538,49 @@ test("pasting rotate blueprint with a rotated fluid tank", () => {
   expect(entity1.getWorldEntity(1)).toEqual(tank)
 
   assertEntityCorrect(entity1, false)
+})
+
+test.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", (stage) => {
+  const entity: BlueprintEntity = {
+    entity_number: 1,
+    name: "inserter", // intentionally different from firstValue
+    position: Pos(0, 0),
+    direction: direction.south,
+    tags: {
+      bp100: {
+        firstStage: 2,
+        firstValue: {
+          name: "fast-inserter",
+        },
+        stageDiffs: {
+          "3": {
+            name: "inserter",
+          },
+        },
+      },
+    } satisfies BpStagedInfoTags,
+  }
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.set_blueprint_entities([entity])
+
+  const pos = Pos(4.5, 4.5)
+  player.teleport([0, 0], surfaces[stage - 1])
+  player.build_from_cursor({ position: pos, direction: direction.west, alt: true })
+  const wrongInserter = surfaces[1].find_entity("inserter", pos)!
+  expect(wrongInserter).toBeNil()
+
+  const inserter = surfaces[1].find_entity("fast-inserter", pos)!
+  expect(inserter).not.toBeNil()
+  expect(inserter.direction).toBe(direction.east) // total rotation
+
+  const projEntity = project.content.findCompatibleWithLuaEntity(inserter, nil, 1)!
+  expect(projEntity.firstStage).toBe(2)
+  expect(projEntity.stageDiffs).toEqual({
+    3: { name: "inserter" },
+  })
+
+  assertEntityCorrect(projEntity, false)
 })
 
 test("can paste a power pole at a lower stage to move", () => {
