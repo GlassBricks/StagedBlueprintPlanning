@@ -61,6 +61,7 @@ import {
   registerUndoActionLater,
   UndoAction,
 } from "./undo"
+import transform = Pos.applyTransformation
 
 const Events = ProtectedEvents
 
@@ -259,6 +260,9 @@ let state: {
     allowPasteUpgrades: boolean
     usedPasteUpgrade?: boolean
     isFlipped: boolean
+    flipVertical: boolean
+    flipHorizontal: boolean
+    direction: defines.direction
   }
 
   accumulatedUndoActions?: UndoAction[]
@@ -622,6 +626,9 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
       originalNumEntities: numEntities,
       allowPasteUpgrades: player.mod_settings[Settings.UpgradeOnPaste].value as boolean,
       isFlipped: event.flip_vertical != event.flip_horizontal,
+      flipVertical: event.flip_vertical ?? false,
+      flipHorizontal: event.flip_horizontal ?? false,
+      direction: event.direction,
     }
   }
 }
@@ -766,7 +773,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 
   const entityId = tags.referencedLuaIndex
   const value = bpState.entities[entityId - 1]
-  let passedValue: BlueprintEntity | nil = value
+  let passedValue: BlueprintEntity = value
 
   let entityDir = entity.direction
 
@@ -785,8 +792,24 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     }
   } else if (type == "inserter") {
     if (passedValue.pickup_position || passedValue.drop_position) {
-      // this is quite difficult to handle, we just force re-blueprinting the inserter
-      passedValue = nil
+      passedValue = editPassedValue(value, (inserter) => {
+        if (inserter.pickup_position) {
+          inserter.pickup_position = transform(
+            inserter.pickup_position,
+            bpState.flipHorizontal,
+            bpState.flipVertical,
+            bpState.direction,
+          )
+        }
+        if (inserter.drop_position) {
+          inserter.drop_position = transform(
+            inserter.drop_position,
+            bpState.flipHorizontal,
+            bpState.flipVertical,
+            bpState.direction,
+          )
+        }
+      })
     }
   } else {
     const isDiagonal = (value.direction ?? 0) % 2 == 1

@@ -64,30 +64,43 @@ namespace Pos {
   export function ediv(pos1: Position, pos2: Position): PositionClass {
     return Pos(pos1.x / pos2.x, pos1.y / pos2.y)
   }
-  export function floor(pos1: Position): PositionClass {
-    return Pos(_floor(pos1.x), _floor(pos1.y))
+  export function floor(pos: Position): PositionClass {
+    return Pos(_floor(pos.x), _floor(pos.y))
   }
-  export function ceil(pos1: Position): PositionClass {
-    return Pos(_ceil(pos1.x), _ceil(pos1.y))
+  export function ceil(pos: Position): PositionClass {
+    return Pos(_ceil(pos.x), _ceil(pos.y))
   }
-  export function length(pos1: Position): number {
-    return sqrt(pos1.x * pos1.x + pos1.y * pos1.y)
+  export function length(pos: Position): number {
+    return sqrt(pos.x * pos.x + pos.y * pos.y)
   }
   export function equals(pos1: Position, pos2: Position): boolean {
     return pos1.x == pos2.x && pos1.y == pos2.y
   }
-  export function isZero(pos1: Position): boolean {
-    return pos1.x == 0 && pos1.y == 0
+  export function isZero(pos: Position): boolean {
+    return pos.x == 0 && pos.y == 0
   }
-  export function rotateAboutOrigin(pos1: Position, direction: defines.direction | nil): PositionClass {
-    if (direction == nil || direction == defines.direction.north) return Pos.from(pos1)
-    if (direction == defines.direction.south) return Pos(-pos1.x, -pos1.y)
-    if (direction == defines.direction.west) return Pos(pos1.y, -pos1.x)
-    if (direction == defines.direction.east) return Pos(-pos1.y, pos1.x)
+  export function rotateAboutOrigin(pos: Position, direction: defines.direction | nil): PositionClass {
+    if (direction == nil || direction == defines.direction.north) return Pos.from(pos)
+    if (direction == defines.direction.south) return Pos(-pos.x, -pos.y)
+    if (direction == defines.direction.west) return Pos(pos.y, -pos.x)
+    if (direction == defines.direction.east) return Pos(-pos.y, pos.x)
     error(`invalid direction: ${defines.direction[direction]}`)
   }
   export function asArray(pos1: Position): MapPositionArray {
     return [pos1.x, pos1.y]
+  }
+
+  export function applyTransformation(
+    pos: Position,
+    flipHorizontal: boolean,
+    flipVertical: boolean,
+    rotation: defines.direction | nil,
+  ) {
+    let x = pos.x
+    let y = pos.y
+    if (flipHorizontal) x = -x
+    if (flipVertical) y = -y
+    return rotateAboutOrigin({ x, y }, rotation)
   }
 }
 

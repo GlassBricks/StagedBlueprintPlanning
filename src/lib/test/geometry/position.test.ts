@@ -9,8 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Pos } from "../../geometry"
 import expect from "tstl-expect"
+import { Pos } from "../../geometry"
 
 test("create", () => {
   const position = Pos(1, 2)
@@ -127,4 +127,28 @@ test("isZero", () => {
   expect(Pos(0, 0).isZero()).toBe(true)
   expect(Pos(1, 0).isZero()).toBe(false)
   expect(Pos(1, 1).isZero()).toBe(false)
+})
+
+test("applyTransformation", () => {
+  const position = Pos(1, 2)
+  const position2 = position.applyTransformation(false, false, defines.direction.north)
+  expect(position2).toEqual({ x: 1, y: 2 })
+
+  const position3 = position.applyTransformation(true, false, defines.direction.north)
+  expect(position3).toEqual({ x: -1, y: 2 })
+
+  const position4 = position.applyTransformation(false, true, defines.direction.north)
+  expect(position4).toEqual({ x: 1, y: -2 })
+
+  // both
+  const position5 = position.applyTransformation(true, true, defines.direction.north)
+  expect(position5).toEqual({ x: -1, y: -2 })
+
+  // rotate
+  const position6 = position.applyTransformation(false, false, defines.direction.east)
+  expect(position6).toEqual({ x: -2, y: 1 })
+
+  // flip and rotate
+  const position7 = position.applyTransformation(true, false, defines.direction.east)
+  expect(position7).toEqual({ x: -2, y: -1 })
 })
