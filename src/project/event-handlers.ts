@@ -34,6 +34,7 @@ import {
 } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes, Settings } from "../constants"
+import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { createBlueprintWithStageInfo } from "../copy-paste/create-blueprint-with-stage-info"
 import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
@@ -712,6 +713,34 @@ OnEntityPrototypesLoaded.addListener((e) => {
 
 const rawset = _G.rawset
 
+function flipSplitterPriority(entity: Mutable<BlueprintEntity>) {
+  if (entity.input_priority) {
+    entity.input_priority = entity.input_priority == "left" ? "right" : "left"
+  }
+  if (entity.output_priority) {
+    entity.output_priority = entity.output_priority == "left" ? "right" : "left"
+  }
+}
+function editPassedValue(
+  entity: BlueprintEntity,
+  transformation: (entity: Mutable<BlueprintEntity>) => void,
+): BlueprintEntity {
+  const passedValue = mutableShallowCopy(entity)
+  assume<Mutable<BlueprintEntity>>(passedValue)
+  const stageInfoTags = passedValue.tags?.bp100 as BpStagedInfo | nil
+  if (!stageInfoTags?.firstValue) {
+    transformation(passedValue)
+  } else {
+    transformation(stageInfoTags.firstValue as Mutable<BlueprintEntity>)
+    if (stageInfoTags?.stageDiffs) {
+      for (const [, value] of pairs(stageInfoTags.stageDiffs)) {
+        transformation(value as Mutable<BlueprintEntity>)
+      }
+    }
+  }
+  return passedValue
+}
+
 function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags): void {
   const referencedName = tags.referencedName
   if (!referencedName) return
@@ -755,17 +784,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     if (isDiagonal) entityDir = (entityDir + 1) % 8
   } else if (type == "splitter") {
     if (bpState.isFlipped) {
-      // flip splitter priorities
-      if (value.input_priority || value.output_priority) {
-        passedValue = mutableShallowCopy(value)
-        assume<Mutable<BlueprintEntity>>(passedValue)
-        if (passedValue.input_priority) {
-          passedValue.input_priority = passedValue.input_priority == "left" ? "right" : "left"
-        }
-        if (passedValue.output_priority) {
-          passedValue.output_priority = passedValue.output_priority == "left" ? "right" : "left"
-        }
-      }
+      passedValue = editPassedValue(value, flipSplitterPriority)
     }
   } else if (type == "inserter") {
     if (passedValue.pickup_position || passedValue.drop_position) {

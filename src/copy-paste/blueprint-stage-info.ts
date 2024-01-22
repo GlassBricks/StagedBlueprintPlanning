@@ -25,7 +25,8 @@ export function isBpNilPlaceholder(value: AnyNotNil): value is BlueprintNilPlace
 export type BlueprintStageDiff<E extends Entity = Entity> = {
   readonly [P in keyof E]?: E[P] | BlueprintNilPlaceholder
 }
-export type BpStageDiffs<E extends Entity = Entity> = PRRecord<`${number}`, BlueprintStageDiff<E>>
+// type might be a string of a number instead, in case of "sparse" array
+export type BpStageDiffs<E extends Entity = Entity> = PRRecord<StageNumber | `${number}`, BlueprintStageDiff<E>>
 
 let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
@@ -41,7 +42,7 @@ export function toBpStageDiffs(diffs: StageDiffs): BpStageDiffs {
     for (const [key, value] of pairs(diff)) {
       bpDiff[key] = value == nilPlaceholder ? blueprintNilPlaceholder : value
     }
-    ret[`${stage}`] = bpDiff
+    ret[stage] = bpDiff
   }
   return ret
 }

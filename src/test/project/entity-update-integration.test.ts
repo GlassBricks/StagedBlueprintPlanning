@@ -1553,7 +1553,7 @@ test.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", (sta
           name: "fast-inserter",
         },
         stageDiffs: {
-          "3": {
+          3: {
             name: "inserter",
           },
         },

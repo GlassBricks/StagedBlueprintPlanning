@@ -32,7 +32,7 @@ test("toBpStageDiffs", () => {
     },
   }
   const expected = {
-    "2": {
+    2: {
       a: 1,
       b: {},
       c: { __nil: true },
