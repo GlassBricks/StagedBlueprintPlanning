@@ -12,7 +12,7 @@
 import { BlueprintEntity, BoundingBox, LuaPlayer } from "factorio:runtime"
 import { isEmpty, Mutable } from "../lib"
 import { Stage } from "../project/ProjectDef"
-import { BpStageInfo, BpStageInfoTags, toBpStageDiffs } from "./blueprint-stage-info"
+import { BpStagedInfo, BpStagedInfoTags, toBpStageDiffs } from "./blueprint-stage-info"
 
 export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): void {
   const stack = player.cursor_stack
@@ -36,7 +36,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
   for (const [number, luaEntity] of pairs(entityMapping)) {
     const projectEntity = content.findExact(luaEntity, luaEntity.position, stageNumber)
     if (!projectEntity) continue
-    const info: BpStageInfo = {
+    const info: BpStagedInfo = {
       firstStage: projectEntity.firstStage,
     }
     const diffs = projectEntity.stageDiffs
@@ -44,7 +44,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
       info.firstValue = projectEntity.firstValue
       info.stageDiffs = toBpStageDiffs(diffs)
     }
-    blueprintEntities[number - 1].tags = { bp100: info } satisfies BpStageInfoTags
+    blueprintEntities[number - 1].tags = { bp100: info } satisfies BpStagedInfoTags
   }
 
   stack.set_blueprint_entities(blueprintEntities)

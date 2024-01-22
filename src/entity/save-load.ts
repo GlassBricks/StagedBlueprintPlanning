@@ -366,6 +366,7 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mut
   bpEntity.direction = nil
   bpEntity.neighbours = nil
   bpEntity.connections = nil
+  bpEntity.tags = nil
   return bpEntity
 }
 

@@ -11,7 +11,7 @@
 
 import { Entity } from "../entity/Entity"
 import { StageDiffs, StageNumber } from "../entity/ProjectEntity"
-import { Events, PRecord } from "../lib"
+import { Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 
 export type BlueprintNilPlaceholder = {
@@ -25,7 +25,7 @@ export function isBpNilPlaceholder(value: AnyNotNil): value is BlueprintNilPlace
 export type BlueprintStageDiff<E extends Entity = Entity> = {
   readonly [P in keyof E]?: E[P] | BlueprintNilPlaceholder
 }
-export type BlueprintStageDiffs<E extends Entity = Entity> = PRecord<`${number}`, BlueprintStageDiff<E>>
+export type BpStageDiffs<E extends Entity = Entity> = PRRecord<`${number}`, BlueprintStageDiff<E>>
 
 let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
@@ -34,8 +34,8 @@ Events.onInitOrLoad(() => {
 
 const blueprintNilPlaceholder: BlueprintNilPlaceholder = { __nil: true }
 
-export function toBpStageDiffs(diffs: StageDiffs): BlueprintStageDiffs {
-  const ret: BlueprintStageDiffs = {}
+export function toBpStageDiffs(diffs: StageDiffs): BpStageDiffs {
+  const ret: Mutable<BpStageDiffs> = {}
   for (const [stage, diff] of pairs(diffs)) {
     const bpDiff: any = {}
     for (const [key, value] of pairs(diff)) {
@@ -45,13 +45,24 @@ export function toBpStageDiffs(diffs: StageDiffs): BlueprintStageDiffs {
   }
   return ret
 }
-
-export interface BpStageInfo<E extends Entity = Entity> {
-  firstStage: StageNumber
-  firstValue?: E
-  stageDiffs?: BlueprintStageDiffs<E>
+export function fromBpStageDiffs(diffs: BpStageDiffs): StageDiffs {
+  const ret: Mutable<StageDiffs> = {}
+  for (const [stage, diff] of pairs(diffs)) {
+    const stageDiff: any = {}
+    for (const [key, value] of pairs(diff)) {
+      stageDiff[key] = isBpNilPlaceholder(value) ? nilPlaceholder : value
+    }
+    ret[tonumber(stage)!] = stageDiff
+  }
+  return ret
 }
 
-export interface BpStageInfoTags {
-  bp100: BpStageInfo
+export interface BpStagedInfo<E extends Entity = Entity> {
+  firstStage: StageNumber
+  firstValue?: E
+  stageDiffs?: BpStageDiffs<E>
+}
+
+export interface BpStagedInfoTags<E extends Entity = Entity> {
+  bp100: BpStagedInfo<E>
 }

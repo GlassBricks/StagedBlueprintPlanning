@@ -12,7 +12,7 @@
 import { LuaPlayer, SurfaceCreateEntity, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
-import { BpStageInfo, BpStageInfoTags } from "../../copy-paste/blueprint-stage-info"
+import { BpStagedInfo, BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
 import { createBlueprintWithStageInfo } from "../../copy-paste/create-blueprint-with-stage-info"
 import { AssemblingMachineEntity, Entity } from "../../entity/Entity"
 import { StageNumber } from "../../entity/ProjectEntity"
@@ -57,7 +57,7 @@ test("create blueprint of simple entity", () => {
   expect(entities[0].name).toBe("stone-furnace")
   expect(entities[0].tags).toEqual({
     bp100: { firstStage: 2 },
-  } satisfies BpStageInfoTags)
+  } satisfies BpStagedInfoTags)
 })
 
 test("create blueprint of entity with stage diff", () => {
@@ -91,7 +91,7 @@ test("create blueprint of entity with stage diff", () => {
         recipe: { __nil: true },
       },
     },
-  } satisfies BpStageInfo<AssemblingMachineEntity>)
+  } satisfies BpStagedInfo<AssemblingMachineEntity>)
 })
 test("does not clear stack if no entities selected", () => {
   player.cursor_stack?.set_stack(Prototypes.StagedCopyTool)

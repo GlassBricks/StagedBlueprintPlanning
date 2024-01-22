@@ -10,6 +10,7 @@
  */
 
 import { BlueprintEntity, LuaEntity } from "factorio:runtime"
+import { BpStagedInfo, fromBpStageDiffs } from "../copy-paste/blueprint-stage-info"
 import { maybeSetEmptyControlBehavior } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import { areUpgradeableTypes } from "../entity/entity-prototype-info"
@@ -139,11 +140,37 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       }
     }
   }
-  function addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity<any> | nil {
-    const saved = saveEntity(entity, knownValue)
-    if (!saved) return nil
-    const { content } = project
-    const projectEntity = createProjectEntityNoCopy(saved, entity.position, entity.direction, stage)
+
+  /**
+   * If is a knownValue with stageInfo tags, uses the stageInfo instead of the entity
+   */
+  function createNewProjectEntity(
+    entity: LuaEntity,
+    stage: StageNumber,
+    knownValue: BlueprintEntity | nil,
+  ): ProjectEntity | nil {
+    const stageInfo = knownValue?.tags?.bp100 as BpStagedInfo | nil
+    if (!stageInfo) {
+      const saved = saveEntity(entity, knownValue)
+      if (!saved) return nil
+      return createProjectEntityNoCopy(saved, entity.position, entity.direction, stage)
+    }
+    const projectEntity = createProjectEntityNoCopy(
+      stageInfo.firstValue ?? saveEntity(entity, knownValue)!,
+      entity.position,
+      entity.direction,
+      stageInfo.firstStage,
+    )
+    const diffs = stageInfo.stageDiffs
+    if (diffs) {
+      projectEntity.setStageDiffs(fromBpStageDiffs(diffs))
+    }
+    return projectEntity
+  }
+
+  function addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil {
+    const projectEntity = createNewProjectEntity(entity, stage, knownValue)
+    if (!projectEntity) return nil
     projectEntity.replaceWorldEntity(stage, entity)
     content.add(projectEntity)
 

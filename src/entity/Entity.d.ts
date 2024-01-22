@@ -35,6 +35,7 @@ export interface UndergroundBeltEntity extends Entity {
 }
 export type LoaderEntity = UndergroundBeltEntity
 export interface InserterEntity extends Entity {
+  override_stack_size?: number
   drop_position?: Position
   pickup_position?: Position
 }

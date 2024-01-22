@@ -10,7 +10,12 @@
  */
 
 import expect from "tstl-expect"
-import { isBpNilPlaceholder, toBpStageDiffs } from "../../copy-paste/blueprint-stage-info"
+import {
+  BpStageDiffs,
+  fromBpStageDiffs,
+  isBpNilPlaceholder,
+  toBpStageDiffs,
+} from "../../copy-paste/blueprint-stage-info"
 import { StageDiffs } from "../../entity/ProjectEntity"
 import { getNilPlaceholder } from "../../utils/diff-value"
 
@@ -34,4 +39,21 @@ test("toBpStageDiffs", () => {
     },
   }
   expect(toBpStageDiffs(value)).toEqual(expected)
+})
+test("fromBpStageDiffs", () => {
+  const value: BpStageDiffs<any> = {
+    "2": {
+      a: 1,
+      b: {},
+      c: { __nil: true },
+    },
+  }
+  const expected: StageDiffs<any> = {
+    2: {
+      a: 1,
+      b: {},
+      c: getNilPlaceholder(),
+    },
+  }
+  expect(fromBpStageDiffs(value)).toEqual(expected)
 })

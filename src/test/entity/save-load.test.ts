@@ -47,6 +47,29 @@ test("can save an entity", () => {
   expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
   expect(entity.direction).toBe(defines.direction.east)
 })
+
+test("saving an entity with knownValue", () => {
+  const entity = surface.create_entity({
+    name: "inserter",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.east,
+  })!
+  const knownValue: BlueprintEntity = {
+    entity_number: 1,
+    direction: 0,
+    tags: { foo: "bar" },
+    position: { x: 0, y: 0 },
+    neighbours: [],
+    connections: {},
+
+    name: "inserter",
+    override_stack_size: 2,
+  }
+  const saved = saveEntity(entity, knownValue)
+  expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
+})
+
 const directions = Object.values(defines.direction) as defines.direction[]
 test.each(directions)("can saved a curved rail in all directions", (direction) => {
   const entity = surface.create_entity({

@@ -32,7 +32,7 @@ import direction = defines.direction
 let project: UserProject & {
   actions: mock.MockedObjectNoSelf<ProjectActions>
 }
-let CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, true)
+const CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, true)
 let surface: LuaSurface
 let player: LuaPlayer
 const pos = Pos(0.5, 0.5)

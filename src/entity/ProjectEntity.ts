@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LuaEntity, RealOrientation } from "factorio:runtime"
+import { LuaEntity, nil, RealOrientation } from "factorio:runtime"
 import { oppositedirection } from "util"
 import {
   deepCompare,
@@ -87,6 +87,7 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
   readonly stageDiffs?: StageDiffs<T>
+  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
 
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
@@ -315,6 +316,9 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   getStageDiff(stage: StageNumber): StageDiff<T> | nil {
     const { stageDiffs } = this
     return stageDiffs && stageDiffs[stage]
+  }
+  public setStageDiffs(stageDiffs: StageDiffs<T> | nil): void {
+    this.stageDiffs = stageDiffs
   }
   private getStageDiffProp<K extends keyof T>(
     stage: StageNumber,

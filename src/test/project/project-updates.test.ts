@@ -18,7 +18,8 @@ import {
 } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
-import { UndergroundBeltEntity } from "../../entity/Entity"
+import { BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
+import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   createProjectEntityNoCopy,
   ProjectEntity,
@@ -242,6 +243,42 @@ describe("addNewEntity", () => {
     expect(found).toBe(entityUpgraded)
 
     assertOneEntity()
+    assertNewUpdated(entityUpgraded)
+  })
+
+  test("addNewEntity with known value, with stored stage info", () => {
+    const luaEntity = createEntity(2)
+    const entityUpgraded = projectUpdates.addNewEntity<InserterEntity>(luaEntity, 2, {
+      entity_number: 1,
+      direction: 0,
+      position: { x: 0, y: 0 },
+      name: "fast-inserter",
+      neighbours: [2],
+      tags: {
+        bp100: {
+          firstStage: 1,
+          firstValue: {
+            name: "inserter",
+          },
+          stageDiffs: {
+            "2": {
+              name: "fast-inserter",
+              override_stack_size: 2,
+            },
+          },
+        },
+      } satisfies BpStagedInfoTags<InserterEntity>,
+    })!
+
+    expect(entityUpgraded).toBeAny()
+    expect(entityUpgraded.firstValue).toEqual({ name: "inserter" })
+    expect(entityUpgraded.firstStage).toBe(1)
+    expect(entityUpgraded.stageDiffs).toEqual({
+      2: {
+        name: "fast-inserter",
+        override_stack_size: 2,
+      },
+    })
     assertNewUpdated(entityUpgraded)
   })
 })
