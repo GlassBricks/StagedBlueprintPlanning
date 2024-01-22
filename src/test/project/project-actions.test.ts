@@ -377,6 +377,7 @@ describe("onEntityPossiblyUpdated", () => {
     const { luaEntity, entity } = addEntity(2)
     const stagedInfo: BpStagedInfo<any> = {
       firstStage: 1,
+      lastStage: nil,
       firstValue: { foo: "bar" },
     }
     const knownValue = {

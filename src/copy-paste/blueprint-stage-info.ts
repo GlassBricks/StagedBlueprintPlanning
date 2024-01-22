@@ -60,6 +60,7 @@ export function fromBpStageDiffs<E extends Entity = Entity>(diffs: BpStageDiffs<
 
 export interface BpStagedInfo<E extends Entity = Entity> {
   firstStage: StageNumber
+  lastStage: StageNumber | nil
   firstValue?: E
   stageDiffs?: BpStageDiffs<E>
 }

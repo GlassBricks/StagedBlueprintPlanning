@@ -109,10 +109,9 @@ function assertUpdateCalled(
   }
 }
 
-function assertUpdateOnLastStageChangedCalled(entity: ProjectEntity, startStage: StageNumber) {
+function assertUpdateOnLastStageChangedCalled(entity: ProjectEntity, oldLastStage: StageNumber | nil) {
   expectedWuCalls++
-  expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.updateWorldEntitiesOnLastStageChanged).toHaveBeenCalledWith(entity, startStage)
+  expect(worldEntityUpdates.updateWorldEntitiesOnLastStageChanged).toHaveBeenCalledWith(entity, oldLastStage)
 }
 
 function assertRefreshCalled(entity: ProjectEntity, stage: StageNumber) {
@@ -258,6 +257,7 @@ describe("addNewEntity", () => {
         tags: {
           bp100: {
             firstStage: 1,
+            lastStage: 5,
             firstValue: withDiffs
               ? {
                   name: "inserter",
@@ -278,6 +278,7 @@ describe("addNewEntity", () => {
       expect(entityUpgraded).toBeAny()
       expect(entityUpgraded.firstValue).toEqual({ name: withDiffs ? "inserter" : "fast-inserter" })
       expect(entityUpgraded.firstStage).toBe(1)
+      expect(entityUpgraded.lastStage).toBe(5)
       assertNewUpdated(entityUpgraded)
       if (withDiffs) {
         expect(entityUpgraded.stageDiffs).toEqual({
@@ -717,6 +718,7 @@ describe("updateFromBpStagedInfo", () => {
     const { entity } = addEntity(1)
     const info: BpStagedInfo = {
       firstStage: 2,
+      lastStage: 5,
       firstValue: { name: "fast-inserter" },
       stageDiffs: { "3": { name: "filter-inserter" } },
     }
@@ -724,18 +726,20 @@ describe("updateFromBpStagedInfo", () => {
     expect(ret).toBe(StageMoveResult.Updated)
 
     expect(entity.firstStage).toBe(2)
+    expect(entity.lastStage).toBe(5)
     expect(entity.firstValue.name).toBe("fast-inserter")
     expect(entity.stageDiffs).toEqual({
       3: { name: "filter-inserter" },
     })
     assertOneEntity()
-    assertUpdateCalled(entity, 1)
+    assertUpdateOnLastStageChangedCalled(entity, nil)
+    assertUpdateCalled(entity, 1, 1)
   })
 
   test("clears stage diff if info has no diffs", () => {
     const { entity } = addEntity(1)
     entity._applyDiffAtStage(2, { name: "fast-inserter" })
-    const info: BpStagedInfo = { firstStage: 2 }
+    const info: BpStagedInfo = { firstStage: 2, lastStage: 5 }
     const value = {
       name: "fast-inserter",
     } as BlueprintEntity
@@ -743,10 +747,12 @@ describe("updateFromBpStagedInfo", () => {
     expect(ret).toBe(StageMoveResult.Updated)
 
     expect(entity.firstStage).toBe(2)
+    expect(entity.lastStage).toBe(5)
     expect(entity.firstValue.name).toBe("fast-inserter")
     expect(entity.stageDiffs).toBeNil()
     assertOneEntity()
-    assertUpdateCalled(entity, 1)
+    assertUpdateOnLastStageChangedCalled(entity, nil)
+    assertUpdateCalled(entity, 1, 1)
   })
 })
 

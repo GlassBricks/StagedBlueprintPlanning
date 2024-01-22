@@ -38,6 +38,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
     if (!projectEntity) continue
     const info: BpStagedInfo = {
       firstStage: projectEntity.firstStage,
+      lastStage: projectEntity.lastStage,
     }
     const diffs = projectEntity.stageDiffs
     if (diffs) {

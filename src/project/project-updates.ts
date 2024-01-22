@@ -164,6 +164,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       entity.direction,
       stageInfo.firstStage,
     )
+    projectEntity.setLastStageUnchecked(stageInfo.lastStage)
     const diffs = stageInfo.stageDiffs
     if (diffs) {
       projectEntity.setStageDiffs(fromBpStageDiffs(diffs))
@@ -549,6 +550,17 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       if (result != StageMoveResult.Updated) return result
       entity.setFirstStageUnchecked(targetStage)
     }
+    const lastStage = info.lastStage
+    const oldLastStage = entity.lastStage
+    if (lastStage != oldLastStage) {
+      const result = checkCanSetLastStage(entity, lastStage)
+      if (result != StageMoveResult.Updated) return result
+      entity.setLastStageUnchecked(lastStage)
+
+      // delete entities from oldLastStage to newLastStage if applicable
+      if (lastStage != nil && (oldLastStage == nil || lastStage < oldLastStage))
+        updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+    }
 
     const oldStageDiffs = entity.stageDiffs
 
@@ -604,7 +616,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     return result
   }
 
-  function checkSetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
+  function checkCanSetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
     if (entity.isSettingsRemnant) return StageMoveResult.NoChange
     const oldLastStage = entity.lastStage
     if (oldLastStage == stage) return StageMoveResult.NoChange
@@ -620,7 +632,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
 
   function trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
     if (entity.isSettingsRemnant) return StageMoveResult.NoChange
-    const result = checkSetLastStage(entity, stage)
+    const result = checkCanSetLastStage(entity, stage)
     if (result == StageMoveResult.Updated) {
       const oldLastStage = entity.lastStage
       entity.setLastStageUnchecked(stage)

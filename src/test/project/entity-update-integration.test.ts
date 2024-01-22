@@ -1550,6 +1550,7 @@ describe.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", 
       tags: {
         bp100: {
           firstStage: 2,
+          lastStage: 5,
           firstValue: {
             name: "fast-inserter",
           },
@@ -1586,6 +1587,7 @@ describe.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", 
 
     const projEntity = project.content.findCompatibleWithLuaEntity(inserter, nil, 1)!
     expect(projEntity.firstStage).toBe(2)
+    expect(projEntity.lastStage).toBe(5)
     expect(projEntity.stageDiffs).toEqual({
       3: { name: "inserter" },
     })

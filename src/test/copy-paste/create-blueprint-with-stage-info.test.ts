@@ -41,11 +41,12 @@ function addEntity<E extends Entity = Entity>(stage: StageNumber, args: SurfaceC
 }
 
 test("create blueprint of simple entity", () => {
-  addEntity(2, {
+  const entity = addEntity(2, {
     name: "stone-furnace",
     position: Pos(0, 0),
     force: "player",
   })
+  entity.setLastStageUnchecked(3)
 
   createBlueprintWithStageInfo(player, project.getStage(3)!, {
     left_top: Pos(-1, -1),
@@ -56,7 +57,7 @@ test("create blueprint of simple entity", () => {
   expect(entities).toHaveLength(1)
   expect(entities[0].name).toBe("stone-furnace")
   expect(entities[0].tags).toEqual({
-    bp100: { firstStage: 2 },
+    bp100: { firstStage: 2, lastStage: 3 },
   } satisfies BpStagedInfoTags)
 })
 
@@ -81,6 +82,7 @@ test("create blueprint of entity with stage diff", () => {
   expect(entities).toHaveLength(1)
   expect(entities[0].tags?.bp100).toEqual({
     firstStage: 2,
+    lastStage: nil,
     firstValue: {
       name: "assembling-machine-1",
       recipe: "iron-gear-wheel",
