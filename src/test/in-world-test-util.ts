@@ -84,3 +84,12 @@ commands.add_command("bpinfo", "", () => {
   }
   game.print(serpent.block(saveEntity(entity)))
 })
+
+commands.add_command("stackinfo", "", () => {
+  const bp = game.player!.cursor_stack
+  if (!bp || !bp.valid_for_read || !bp.is_blueprint_setup()) {
+    game.print("not a blueprint")
+    return
+  }
+  game.print(serpent.block(bp.get_blueprint_entities()))
+})

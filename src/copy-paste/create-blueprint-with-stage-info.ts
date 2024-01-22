@@ -10,23 +10,29 @@
  */
 
 import { BlueprintEntity, BoundingBox, LuaPlayer } from "factorio:runtime"
-import { Mutable } from "../lib"
+import { isEmpty, Mutable } from "../lib"
 import { Stage } from "../project/ProjectDef"
-import { BpStageInfo, BpStageInfoTags } from "./blueprint-stage-info"
+import { BpStageInfo, BpStageInfoTags, toBpStageDiffs } from "./blueprint-stage-info"
 
-export function takeBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): void {
+export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): void {
   const stack = player.cursor_stack
   if (!stack) error("cannot create blueprint without cursor stack")
 
+  const oldStack = stack.valid_for_read ? stack.name : nil
   stack.set_stack("blueprint")
   const entityMapping = stack.create_blueprint({
     surface: stage.surface,
     force: player.force_index,
     area,
   })
+  if (isEmpty(entityMapping)) {
+    stack.set_stack(oldStack)
+    return
+  }
   const blueprintEntities = stack.get_blueprint_entities() as Mutable<BlueprintEntity>[]
   const content = stage.project.content
   const stageNumber = stage.stageNumber
+
   for (const [number, luaEntity] of pairs(entityMapping)) {
     const projectEntity = content.findExact(luaEntity, luaEntity.position, stageNumber)
     if (!projectEntity) continue
@@ -36,13 +42,12 @@ export function takeBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area
     const diffs = projectEntity.stageDiffs
     if (diffs) {
       info.firstValue = projectEntity.firstValue
+      info.stageDiffs = toBpStageDiffs(diffs)
     }
-    blueprintEntities[number - 1].tags = {
-      bp100: {
-        firstStage: projectEntity.firstStage,
-      },
-    } satisfies BpStageInfoTags
+    blueprintEntities[number - 1].tags = { bp100: info } satisfies BpStageInfoTags
   }
 
   stack.set_blueprint_entities(blueprintEntities)
 }
+
+export const _mockable = true

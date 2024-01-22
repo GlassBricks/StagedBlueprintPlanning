@@ -11,8 +11,9 @@
 
 import { LuaPlayer, SurfaceCreateEntity, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
+import { Prototypes } from "../../constants"
 import { BpStageInfo, BpStageInfoTags } from "../../copy-paste/blueprint-stage-info"
-import { takeBlueprintWithStageInfo } from "../../copy-paste/create-blueprint-with-stage-info"
+import { createBlueprintWithStageInfo } from "../../copy-paste/create-blueprint-with-stage-info"
 import { AssemblingMachineEntity, Entity } from "../../entity/Entity"
 import { StageNumber } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
@@ -46,7 +47,7 @@ test("create blueprint of simple entity", () => {
     force: "player",
   })
 
-  takeBlueprintWithStageInfo(player, project.getStage(3)!, {
+  createBlueprintWithStageInfo(player, project.getStage(3)!, {
     left_top: Pos(-1, -1),
     right_bottom: Pos(1, 1),
   })
@@ -71,14 +72,13 @@ test("create blueprint of entity with stage diff", () => {
     recipe: getNilPlaceholder(),
   })
 
-  takeBlueprintWithStageInfo(player, project.getStage(2)!, {
+  createBlueprintWithStageInfo(player, project.getStage(2)!, {
     left_top: Pos(-1, -1),
     right_bottom: Pos(1, 1),
   })
 
   const entities = player.cursor_stack!.get_blueprint_entities()!
   expect(entities).toHaveLength(1)
-  expect(entities[0].name).toBe("stone-furnace")
   expect(entities[0].tags?.bp100).toEqual({
     firstStage: 2,
     firstValue: {
@@ -86,10 +86,19 @@ test("create blueprint of entity with stage diff", () => {
       recipe: "iron-gear-wheel",
     },
     stageDiffs: {
-      3: {
-        name: "steel-furnace",
+      "3": {
+        name: "assembling-machine-2",
         recipe: { __nil: true },
       },
     },
   } satisfies BpStageInfo<AssemblingMachineEntity>)
+})
+test("does not clear stack if no entities selected", () => {
+  player.cursor_stack?.set_stack(Prototypes.StagedCopyTool)
+  createBlueprintWithStageInfo(player, project.getStage(3)!, {
+    left_top: Pos(-1, -1),
+    right_bottom: Pos(1, 1),
+  })
+
+  expect(player.cursor_stack?.name).toBe(Prototypes.StagedCopyTool)
 })

@@ -10,37 +10,15 @@
  */
 
 import expect from "tstl-expect"
-import {
-  BlueprintStageDiff,
-  convertToBpStageDiffs,
-  fromBlueprintStageDiff,
-  isBpNilPlaceholder,
-  toBlueprintStageDiff,
-} from "../../copy-paste/blueprint-stage-info"
+import { isBpNilPlaceholder, toBpStageDiffs } from "../../copy-paste/blueprint-stage-info"
 import { StageDiffs } from "../../entity/ProjectEntity"
-import { StageDiff } from "../../entity/stage-diff"
 import { getNilPlaceholder } from "../../utils/diff-value"
 
 test("isNilPlaceholder", () => {
   expect(isBpNilPlaceholder({})).toBe(false)
   expect(isBpNilPlaceholder({ __nil: true })).toBe(true)
 })
-
-test("toBlueprintStageDiff", () => {
-  const value: StageDiff<any> = {
-    a: 1,
-    b: {},
-    c: getNilPlaceholder(),
-  }
-  const expected = {
-    a: 1,
-    b: {},
-    c: { __nil: true },
-  }
-  expect(toBlueprintStageDiff(value)).toEqual(expected)
-})
-
-test("convertToBpStageDiffs", () => {
+test("toBpStageDiffs", () => {
   const value: StageDiffs<any> = {
     2: {
       a: 1,
@@ -49,25 +27,11 @@ test("convertToBpStageDiffs", () => {
     },
   }
   const expected = {
-    2: {
+    "2": {
       a: 1,
       b: {},
       c: { __nil: true },
     },
   }
-  expect(convertToBpStageDiffs(value)).toEqual(expected)
-})
-
-test("fromBlueprintStageDiff", () => {
-  const value: BlueprintStageDiff<any> = {
-    a: 1,
-    b: {},
-    c: { __nil: true },
-  }
-  const expected: StageDiff<any> = {
-    a: 1,
-    b: {},
-    c: getNilPlaceholder(),
-  }
-  expect(fromBlueprintStageDiff(value)).toEqual(expected)
+  expect(toBpStageDiffs(value)).toEqual(expected)
 })

@@ -34,6 +34,7 @@ import {
 } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes, Settings } from "../constants"
+import { createBlueprintWithStageInfo } from "../copy-paste/create-blueprint-with-stage-info"
 import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
 import {
@@ -1019,11 +1020,24 @@ function selectionToolUsed(
   registerUndoActionGroup(undoActions)
 }
 
+// staged copy, cut
+function stagedCopyToolUsed(event: OnPlayerSelectedAreaEvent): void {
+  const player = game.get_player(event.player_index)!
+  const stage = getStageAtSurface(event.surface.index)
+  if (!stage) {
+    return player.print([L_Interaction.NotInAnProject])
+  }
+  createBlueprintWithStageInfo(player, stage, event.area)
+}
+
 Events.on_player_selected_area((e) => {
-  if (e.item == Prototypes.StageMoveTool) {
+  const item = e.item
+  if (item == Prototypes.StageMoveTool) {
     stageMoveToolUsed(e)
-  } else if (e.item == Prototypes.StageDeconstructTool) {
+  } else if (item == Prototypes.StageDeconstructTool) {
     selectionToolUsed(e, "onStageDeleteUsed")
+  } else if (item == Prototypes.StagedCopyTool) {
+    stagedCopyToolUsed(e)
   }
 })
 

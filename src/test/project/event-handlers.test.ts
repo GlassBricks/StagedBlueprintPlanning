@@ -13,6 +13,7 @@ import { BlueprintEntity, CustomEventId, LuaEntity, LuaPlayer, LuaSurface, Playe
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes } from "../../constants"
+import * as _createBpWithStageInfo from "../../copy-paste/create-blueprint-with-stage-info"
 import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../../declarations/mods"
 import { getTempBpItemStack } from "../../entity/save-load"
 import { Events, Mutable } from "../../lib"
@@ -24,12 +25,14 @@ import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo, UndoHandler } from "../../project/undo"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { fStub } from "../f-mock"
+import { moduleMock } from "../module-mock"
 import { reviveGhost } from "../reviveGhost"
 import direction = defines.direction
 
 let project: UserProject & {
   actions: mock.MockedObjectNoSelf<ProjectActions>
 }
+let CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, true)
 let surface: LuaSurface
 let player: LuaPlayer
 const pos = Pos(0.5, 0.5)
@@ -63,6 +66,11 @@ after_each(() => {
   let totalCalls = 0
   const calls = new LuaMap<string, number>()
   for (const [key, value] of pairs(project.actions)) {
+    if (!mock.isMock(value)) continue
+    totalCalls += value.calls.length
+    calls.set(key, value.calls.length)
+  }
+  for (const [key, value] of pairs(CreateBpWithStageInfo)) {
     if (!mock.isMock(value)) continue
     totalCalls += value.calls.length
     calls.set(key, value.calls.length)
@@ -601,6 +609,25 @@ describe("stage move tool", () => {
     expect(undoFn).toHaveBeenCalledWith("send to stage 2")
 
     expectedNumCalls = 2
+  })
+})
+
+describe("staged copy/cut", () => {
+  test("staged copy", () => {
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [],
+      tiles: [],
+      item: Prototypes.StagedCopyTool,
+      player_index: player.index,
+    })
+
+    expect(CreateBpWithStageInfo.createBlueprintWithStageInfo).toHaveBeenCalledWith(
+      player,
+      project.getStage(1)!,
+      BBox.around(pos, 10),
+    )
   })
 })
 

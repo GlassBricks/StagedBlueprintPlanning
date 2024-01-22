@@ -13,16 +13,6 @@ export declare const enum L_ItemName {
   /** Stage deconstruction tool */
   StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
 }
-export declare const enum L_ShortcutName {
-  /** [Staged BP planning] cleanup tool */
-  CleanupTool = "shortcut-name.bp100:cleanup-tool",
-  /** Stage move tool */
-  StageMoveTool = "shortcut-name.bp100:stage-move-tool",
-  /** Filtered stage move tool */
-  FilteredStageMoveTool = "shortcut-name.bp100:filtered-stage-move-tool",
-  /** Stage deconstruction tool */
-  StageDeconstructTool = "shortcut-name.bp100:stage-deconstruct-tool",
-}
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
   EntityMarker = "entity-name.bp100:entity-marker",

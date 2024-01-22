@@ -40,6 +40,7 @@ function selectionToolToShortcut(
     icon,
     style,
     associated_control_input: associatedControl,
+    localised_name: prototype.localised_name ?? ["item-name." + prototype.name],
   }
 }
 function selectionToolToInput(
@@ -219,6 +220,7 @@ Object.assign(stageCopyTool, {
   name: Prototypes.StagedCopyTool,
   subgroup: "tool",
   order: "z[bp100]-b[staged-copy-tool]",
+  flags: ["spawnable", "not-stackable"],
   selection_mode: ["blueprint"],
   alt_selection_mode: ["any-entity"],
   localised_name: [L_Bp100.StagedTool, ["item-name.copy-paste-tool"]],
@@ -230,35 +232,28 @@ Object.assign(stageCutTool, {
   name: Prototypes.StagedCutTool,
   subgroup: "tool",
   order: "z[bp100]-b[staged-cut-tool]",
+  flags: ["spawnable", "not-stackable"],
   selection_mode: ["blueprint"],
   localised_name: [L_Bp100.StagedTool, ["item-name.cut-paste-tool"]],
   alt_selection_mode: ["any-entity"],
 } satisfies Partial<SelectionToolPrototype>)
 
-const stageCopyShortcut = table.deepcopy(data.raw["shortcut"]["copy"]!)
-delete stageCopyShortcut.technology_to_unlock
-Object.assign(stageCopyShortcut, {
-  name: Prototypes.StagedCopyTool,
-  associated_control_input: Prototypes.StagedCopyTool,
-  localised_name: [L_Bp100.StagedTool, ["shortcut.copy"]],
-  order: "z[bp100]-b[staged-copy-tool]",
-  style: "blue",
-} satisfies Partial<ShortcutPrototype>)
-const stageCutShortcut = table.deepcopy(data.raw["shortcut"]["cut"]!)
-delete stageCutShortcut.technology_to_unlock
-Object.assign(stageCutShortcut, {
-  name: Prototypes.StagedCutTool,
-  associated_control_input: Prototypes.StagedCutTool,
-  localised_name: [L_Bp100.StagedTool, ["shortcut.cut"]],
-  order: "z[bp100]-b[staged-cut-tool]",
-  style: "blue",
-} satisfies Partial<ShortcutPrototype>)
-
 data.extend([
   stageCopyTool,
   stageCutTool,
-  stageCopyShortcut,
-  stageCutShortcut,
+  selectionToolToShortcut(
+    stageCopyTool,
+    table.deepcopy(data.raw["shortcut"]["copy"]!.icon),
+    Prototypes.StagedCopyTool,
+    "blue",
+  ),
+  selectionToolToShortcut(
+    stageCutTool,
+    table.deepcopy(data.raw["shortcut"]["cut"]!.icon),
+    Prototypes.StagedCutTool,
+    "blue",
+  ),
+
   selectionToolToInput(stageCopyTool, "CONTROL + SHIFT + C"),
   selectionToolToInput(stageCutTool, "CONTROL + SHIFT + X"),
 ])
