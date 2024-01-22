@@ -20,10 +20,11 @@ import {
   LoaderProjectEntity,
   ProjectEntity,
   RollingStockProjectEntity,
+  StageDiffs,
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
+import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { Pos } from "../lib/geometry"
@@ -65,11 +66,12 @@ export interface ProjectUpdates {
   forceDeleteEntity(entity: ProjectEntity): void
 
   tryReviveSettingsRemnant(entity: ProjectEntity, stage: StageNumber): StageMoveResult
-
   tryUpdateEntityFromWorld(entity: ProjectEntity, stage: StageNumber, knownValue?: BlueprintEntity): EntityUpdateResult
   tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult
+
+  setValueFromStagedInfo(entity: ProjectEntity, info: BpStagedInfo, value: BlueprintEntity): StageMoveResult
 
   trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult
   trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult
@@ -109,6 +111,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     tryRotateEntityFromWorld,
     tryUpgradeEntityFromWorld,
     updateWiresFromWorld,
+    setValueFromStagedInfo,
     trySetFirstStage,
     trySetLastStage,
     resetProp,
@@ -156,7 +159,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       return createProjectEntityNoCopy(saved, entity.position, entity.direction, stage)
     }
     const projectEntity = createProjectEntityNoCopy(
-      stageInfo.firstValue ?? saveEntity(entity, knownValue)!,
+      stageInfo.firstValue ?? copyKnownValue(knownValue!),
       entity.position,
       entity.direction,
       stageInfo.firstStage,
@@ -252,6 +255,10 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     stage: StageNumber,
     knownValue?: BlueprintEntity,
   ): EntityUpdateResult {
+    if (knownValue?.tags?.bp100) {
+      error("Should call setValueFromStagedInfo instead")
+    }
+
     const entitySource = entity.getWorldEntity(stage)
     if (!entitySource) return EntityUpdateResult.NoChange
     return handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, knownValue)
@@ -512,6 +519,50 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       return WireUpdateResult.MaxConnectionsExceeded
     }
     return WireUpdateResult.Updated
+  }
+
+  function handleUndergroundBeltValueSet(
+    entity: UndergroundBeltProjectEntity,
+    oldStageDiffs: StageDiffs | nil,
+    stageDiffs: StageDiffs | nil,
+  ): void {
+    const possiblyUpdatedStages = newLuaSet<StageNumber>()
+    if (oldStageDiffs) {
+      for (const [stage] of pairs(oldStageDiffs)) possiblyUpdatedStages.add(stage)
+    }
+    if (stageDiffs) {
+      for (const [stage] of pairs(stageDiffs)) possiblyUpdatedStages.add(stage)
+    }
+    const ugPairs = newLuaSet<UndergroundBeltProjectEntity>()
+    for (const stage of possiblyUpdatedStages) {
+      const pair = findUndergroundPair(content, entity, stage)
+      if (pair) ugPairs.add(pair)
+    }
+    for (const pair of ugPairs) {
+      updateAllHighlights(pair)
+    }
+  }
+  function setValueFromStagedInfo(entity: ProjectEntity, info: BpStagedInfo, value: BlueprintEntity): StageMoveResult {
+    const targetStage = info.firstStage
+    if (targetStage != entity.firstStage) {
+      const result = checkCanSetFirstStage(entity, targetStage)
+      if (result != StageMoveResult.Updated) return result
+      entity.setFirstStageUnchecked(targetStage)
+    }
+
+    const oldStageDiffs = entity.stageDiffs
+
+    const firstValue = info.firstValue ?? copyKnownValue(value)
+    entity.setFirstValue(firstValue)
+    const stageDiffs = info.stageDiffs ? fromBpStageDiffs(info.stageDiffs) : nil
+    entity.setStageDiffs(stageDiffs)
+
+    updateWorldEntities(entity, 1)
+
+    if (entity.isUndergroundBelt()) {
+      handleUndergroundBeltValueSet(entity, oldStageDiffs, stageDiffs)
+    }
+    return StageMoveResult.Updated
   }
 
   function firstStageChangeWillIntersect(entity: ProjectEntity, newStage: StageNumber): boolean {

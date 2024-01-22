@@ -87,8 +87,10 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
   readonly stageDiffs?: StageDiffs<T>
-  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
+
+  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void
+  setFirstValue(value: T): void
 
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
   /** Returns the first stage after the given stage number with a stage diff, or `nil` if none. */
@@ -235,7 +237,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
 
   firstStage: StageNumber
   lastStage: StageNumber | nil
-  readonly firstValue: Mutable<T>
+  firstValue: Mutable<T>
   stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
 
   _next: ProjectEntityImpl<T> | nil;
@@ -319,6 +321,9 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   }
   public setStageDiffs(stageDiffs: StageDiffs<T> | nil): void {
     this.stageDiffs = stageDiffs
+  }
+  public setFirstValue(value: T): void {
+    this.firstValue = value
   }
   private getStageDiffProp<K extends keyof T>(
     stage: StageNumber,

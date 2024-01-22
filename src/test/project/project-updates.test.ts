@@ -18,7 +18,7 @@ import {
 } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
-import { BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
+import { BpStagedInfo, BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
 import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   createProjectEntityNoCopy,
@@ -28,7 +28,7 @@ import {
   StageNumber,
 } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
-import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "../../project/project-updates"
+import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { WorldEntityUpdates } from "../../project/world-entity-updates"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
@@ -701,18 +701,53 @@ describe("updateWiresFromWorld", () => {
     assertUpdateCalled(entity1, 2, 1)
     assertUpdateCalled(entity2, 1, 2)
   })
-  // test.todo(
-  //   "if max connections exceeded, notifies and calls update",
-  //   // , () => {
-  //   // const { entity } = addEntity(1)
-  //   // wireSaver.saveWireConnections.returnsOnce(true as any)
-  //   // const ret = projectUpdates.updateWiresFromWorld( entity, 2)
-  //   // expect(ret).toBe("max-connections-exceeded")
-  //   //
-  //   // assertOneEntity()
-  //   // assertUpdateCalled(entity, 1, nil)
-  //   // }
-  // )
+  test("if max connections exceeded, notifies and calls update", () => {
+    const { entity } = addEntity(1)
+    wireSaver.saveWireConnections.returnsOnce(true, true, nil)
+    const ret = projectUpdates.updateWiresFromWorld(entity, 2)
+    expect(ret).toBe(WireUpdateResult.MaxConnectionsExceeded)
+
+    assertOneEntity()
+    assertUpdateCalled(entity, 1, nil)
+  })
+})
+
+describe("updateFromBpStagedInfo", () => {
+  test("can update from bp info", () => {
+    const { entity } = addEntity(1)
+    const info: BpStagedInfo = {
+      firstStage: 2,
+      firstValue: { name: "fast-inserter" },
+      stageDiffs: { "3": { name: "filter-inserter" } },
+    }
+    const ret = projectUpdates.setValueFromStagedInfo(entity, info, info.firstValue as any)
+    expect(ret).toBe(StageMoveResult.Updated)
+
+    expect(entity.firstStage).toBe(2)
+    expect(entity.firstValue.name).toBe("fast-inserter")
+    expect(entity.stageDiffs).toEqual({
+      3: { name: "filter-inserter" },
+    })
+    assertOneEntity()
+    assertUpdateCalled(entity, 1)
+  })
+
+  test("clears stage diff if info has no diffs", () => {
+    const { entity } = addEntity(1)
+    entity._applyDiffAtStage(2, { name: "fast-inserter" })
+    const info: BpStagedInfo = { firstStage: 2 }
+    const value = {
+      name: "fast-inserter",
+    } as BlueprintEntity
+    const ret = projectUpdates.setValueFromStagedInfo(entity, info, value)
+    expect(ret).toBe(StageMoveResult.Updated)
+
+    expect(entity.firstStage).toBe(2)
+    expect(entity.firstValue.name).toBe("fast-inserter")
+    expect(entity.stageDiffs).toBeNil()
+    assertOneEntity()
+    assertUpdateCalled(entity, 1)
+  })
 })
 
 describe("trySetFirstStage", () => {

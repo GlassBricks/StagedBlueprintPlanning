@@ -46,8 +46,8 @@ export function toBpStageDiffs(diffs: StageDiffs): BpStageDiffs {
   }
   return ret
 }
-export function fromBpStageDiffs(diffs: BpStageDiffs): StageDiffs {
-  const ret: Mutable<StageDiffs> = {}
+export function fromBpStageDiffs<E extends Entity = Entity>(diffs: BpStageDiffs<E>): StageDiffs<E> {
+  const ret: Mutable<StageDiffs<E>> = {}
   for (const [stage, diff] of pairs(diffs)) {
     const stageDiff: any = {}
     for (const [key, value] of pairs(diff)) {

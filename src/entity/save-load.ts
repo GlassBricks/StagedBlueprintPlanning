@@ -355,12 +355,7 @@ function updateRollingStock(luaEntity: LuaEntity, value: BlueprintEntity): void 
   }
 }
 
-/**
- * Position and direction are ignored.
- */
-export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<Entity> | nil {
-  const bpEntity = knownValue ? mutableShallowCopy(knownValue) : blueprintEntity(entity)
-  if (!bpEntity) return nil
+function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<BlueprintEntity> {
   bpEntity.entity_number = nil!
   bpEntity.position = nil!
   bpEntity.direction = nil
@@ -368,6 +363,19 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mut
   bpEntity.connections = nil
   bpEntity.tags = nil
   return bpEntity
+}
+
+export function copyKnownValue(value: BlueprintEntity): Mutable<Entity> {
+  return removeExtraProperties(mutableShallowCopy(value))
+}
+
+/**
+ * Position and direction are ignored.
+ */
+export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<Entity> | nil {
+  if (knownValue) return copyKnownValue(knownValue)
+  const bpEntity = blueprintEntity(entity)
+  if (bpEntity) return removeExtraProperties(bpEntity)
 }
 
 export function updateEntity(
