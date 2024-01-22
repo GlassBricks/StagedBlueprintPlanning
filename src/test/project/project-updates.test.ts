@@ -720,7 +720,7 @@ describe("updateFromBpStagedInfo", () => {
       firstValue: { name: "fast-inserter" },
       stageDiffs: { "3": { name: "filter-inserter" } },
     }
-    const ret = projectUpdates.setValueFromStagedInfo(entity, info, info.firstValue as any)
+    const ret = projectUpdates.setValueFromStagedInfo(entity, info.firstValue as any, info)
     expect(ret).toBe(StageMoveResult.Updated)
 
     expect(entity.firstStage).toBe(2)
@@ -739,7 +739,7 @@ describe("updateFromBpStagedInfo", () => {
     const value = {
       name: "fast-inserter",
     } as BlueprintEntity
-    const ret = projectUpdates.setValueFromStagedInfo(entity, info, value)
+    const ret = projectUpdates.setValueFromStagedInfo(entity, value, info)
     expect(ret).toBe(StageMoveResult.Updated)
 
     expect(entity.firstStage).toBe(2)

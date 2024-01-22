@@ -71,7 +71,7 @@ export interface ProjectUpdates {
   tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult
 
-  setValueFromStagedInfo(entity: ProjectEntity, info: BpStagedInfo, value: BlueprintEntity): StageMoveResult
+  setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: BpStagedInfo): StageMoveResult
 
   trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult
   trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult
@@ -542,7 +542,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       updateAllHighlights(pair)
     }
   }
-  function setValueFromStagedInfo(entity: ProjectEntity, info: BpStagedInfo, value: BlueprintEntity): StageMoveResult {
+  function setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: BpStagedInfo): StageMoveResult {
     const targetStage = info.firstStage
     if (targetStage != entity.firstStage) {
       const result = checkCanSetFirstStage(entity, targetStage)

@@ -11,6 +11,7 @@
 
 import { BlueprintEntity, LuaEntity, PlayerIndex } from "factorio:runtime"
 import { Colors, L_Game } from "../constants"
+import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { LuaEntityInfo } from "../entity/Entity"
 import { allowOverlapDifferentDirection } from "../entity/entity-prototype-info"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
@@ -170,12 +171,13 @@ export function ProjectActions(
     addNewEntity,
     deleteEntityOrCreateSettingsRemnant,
     forceDeleteEntity,
+    tryUpdateEntityFromWorld,
     tryUpgradeEntityFromWorld,
     tryReviveSettingsRemnant,
     tryRotateEntityFromWorld,
     trySetFirstStage,
     trySetLastStage,
-    tryUpdateEntityFromWorld,
+    setValueFromStagedInfo,
     updateWiresFromWorld,
   } = projectUpdates
 
@@ -278,7 +280,7 @@ export function ProjectActions(
   }
 
   /** Also asserts that stage > entity's first stage. */
-  function getCompatibleEntityOrAdd(
+  function getCompatibleAtCurrentStageOrAdd(
     worldEntity: LuaEntity,
     stage: StageNumber,
     previousDirection: defines.direction | nil,
@@ -300,7 +302,7 @@ export function ProjectActions(
     return compatible
   }
 
-  function notifyIfError(result: EntityUpdateResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil) {
+  function notifyIfUpdateError(result: EntityUpdateResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil) {
     if (result == "no-change" || result == "updated") return
     if (result == "cannot-rotate") {
       createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
@@ -357,6 +359,32 @@ export function ProjectActions(
     deleteEntityOrCreateSettingsRemnant(projectEntity)
   }
 
+  function handlePasteValue(
+    entity: LuaEntity,
+    stage: StageNumber,
+    previousDirection: defines.direction | nil,
+    byPlayer: PlayerIndex | nil,
+    knownBpValue: BlueprintEntity,
+    stagedInfo: BpStagedInfo,
+  ): ProjectEntity | nil {
+    const compatible = content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
+    if (!compatible) {
+      tryAddNewEntity(entity, stage, byPlayer, knownBpValue)
+      return nil
+    }
+    if (compatible.isSettingsRemnant) {
+      // just delete it
+      forceDeleteEntity(compatible)
+      tryAddNewEntity(entity, stage, byPlayer, knownBpValue)
+      return nil
+    }
+
+    // set value
+    const result = setValueFromStagedInfo(compatible, knownBpValue, stagedInfo)
+    notifyIfMoveError(result, compatible, byPlayer)
+    return compatible
+  }
+
   /**
    * Handles when an entity has its properties updated.
    * Does not handle wires.
@@ -371,11 +399,16 @@ export function ProjectActions(
     byPlayer: PlayerIndex | nil,
     knownBpValue?: BlueprintEntity,
   ): ProjectEntity | nil {
-    const projectEntity = getCompatibleEntityOrAdd(entity, stage, previousDirection, byPlayer, knownBpValue)
+    const stagedInfo = knownBpValue?.tags?.bp100 as BpStagedInfo | nil
+    if (stagedInfo) {
+      return handlePasteValue(entity, stage, previousDirection, byPlayer, knownBpValue!, stagedInfo)
+    }
+
+    const projectEntity = getCompatibleAtCurrentStageOrAdd(entity, stage, previousDirection, byPlayer, knownBpValue)
     if (!projectEntity) return
 
     const result = tryUpdateEntityFromWorld(projectEntity, stage, knownBpValue)
-    notifyIfError(result, projectEntity, byPlayer)
+    notifyIfUpdateError(result, projectEntity, byPlayer)
     return projectEntity
   }
 
@@ -386,12 +419,12 @@ export function ProjectActions(
     byPlayer: PlayerIndex | nil,
   ) {
     const result = tryRotateEntityFromWorld(projectEntity, stage)
-    notifyIfError(result, projectEntity, byPlayer)
+    notifyIfUpdateError(result, projectEntity, byPlayer)
 
     if (projectEntity.isUndergroundBelt()) {
       const worldPair = worldEntity.neighbours as LuaEntity | nil
       if (!worldPair) return
-      const pairEntity = getCompatibleEntityOrAdd(worldPair, stage, nil, byPlayer)
+      const pairEntity = getCompatibleAtCurrentStageOrAdd(worldPair, stage, nil, byPlayer)
       if (!pairEntity) return
       const expectedPair = findUndergroundPair(content, projectEntity, stage)
       if (pairEntity != expectedPair) {
@@ -406,7 +439,7 @@ export function ProjectActions(
     previousDirection: defines.direction,
     byPlayer: PlayerIndex | nil,
   ): void {
-    const projectEntity = getCompatibleEntityOrAdd(entity, stage, previousDirection, byPlayer)
+    const projectEntity = getCompatibleAtCurrentStageOrAdd(entity, stage, previousDirection, byPlayer)
     if (projectEntity) {
       handleRotate(entity, projectEntity, stage, byPlayer)
     }
@@ -419,7 +452,7 @@ export function ProjectActions(
   }
 
   function onWiresPossiblyUpdated(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
-    const projectEntity = getCompatibleEntityOrAdd(entity, stage, nil, byPlayer)
+    const projectEntity = getCompatibleAtCurrentStageOrAdd(entity, stage, nil, byPlayer)
     if (!projectEntity) return
     const result = updateWiresFromWorld(projectEntity, stage)
     if (result == "max-connections-exceeded") {
@@ -429,11 +462,11 @@ export function ProjectActions(
     }
   }
   function onEntityMarkedForUpgrade(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
-    const projectEntity = getCompatibleEntityOrAdd(entity, stage, nil, byPlayer)
+    const projectEntity = getCompatibleAtCurrentStageOrAdd(entity, stage, nil, byPlayer)
     if (!projectEntity) return
 
     const result = tryUpgradeEntityFromWorld(projectEntity, stage)
-    notifyIfError(result, projectEntity, byPlayer)
+    notifyIfUpdateError(result, projectEntity, byPlayer)
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }
   function onCleanupToolUsed(entity: LuaEntity, stage: StageNumber): void {

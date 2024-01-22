@@ -232,7 +232,7 @@ function assertIsSettingsRemnant(entity: ProjectEntity) {
   expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
 }
 
-function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): ProjectEntity<BlueprintEntity> {
+function addEntityToProject(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): ProjectEntity<BlueprintEntity> {
   const luaEntity = createEntity(stage, args)
   const entity = updates.addNewEntity(luaEntity, stage) as ProjectEntity<BlueprintEntity>
   assert(entity)
@@ -242,26 +242,26 @@ function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): P
 }
 
 test("creating an entity", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   assertEntityCorrect(entity, false)
 })
 
 test("clear entity at stage", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   project.entityUpdates.clearWorldEntityAtStage(entity, 4)
   assertEntityCorrect(entity, 4)
 })
 
 test("entity can not be placed at stage", () => {
   createEntity(4, { name: "stone-wall" }) // blocker
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   expect(isPreviewEntity(entity.getWorldOrPreviewEntity(4)!)).toBe(true)
   assertEntityCorrect(entity, 4)
 })
 
 test("refresh missing entity", () => {
   const blocker = createEntity(4, { name: "stone-wall" })
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   project.entityUpdates.clearWorldEntityAtStage(entity, 4)
   blocker.destroy()
   project.entityUpdates.refreshWorldEntityAtStage(entity, 4)
@@ -269,7 +269,7 @@ test("refresh missing entity", () => {
 })
 
 test("replacing missing entity matches", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const newEntity = createEntity(4, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(4, newEntity)
 
@@ -278,7 +278,7 @@ test("replacing missing entity matches", () => {
 })
 
 test("move via preview replace", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const placedEntity = createEntity(2, { name: "inserter", direction: defines.direction.south })
   entity.replaceWorldEntity(2, placedEntity)
   updates.trySetFirstStage(entity, 2)
@@ -287,7 +287,7 @@ test("move via preview replace", () => {
 })
 
 test("disallowing entity deletion", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(4)!
   project.entityUpdates.rebuildWorldEntityAtStage(entity, 4)
   expect(worldEntity.valid).toBe(false) // replaced
@@ -295,13 +295,13 @@ test("disallowing entity deletion", () => {
 })
 
 test("delete entity", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   updates.deleteEntityOrCreateSettingsRemnant(entity)
   assertEntityNotPresent(entity)
 })
 
 test("delete to create settings remnant", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -310,7 +310,7 @@ test("delete to create settings remnant", () => {
 })
 describe("revive integration test", () => {
   test.each([1, 2, 3, 4, 5, 6])("settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
-    const entity = buildEntity(1)
+    const entity = addEntityToProject(1)
     entity._applyDiffAtStage(3, { override_stack_size: 2 })
     entity._applyDiffAtStage(5, { override_stack_size: 3 })
     updates.deleteEntityOrCreateSettingsRemnant(entity)
@@ -335,7 +335,7 @@ describe("revive integration test", () => {
   })
 
   test("settings remnant 2->3, revive at stage 1", () => {
-    const entity = buildEntity(2)
+    const entity = addEntityToProject(2)
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     updates.deleteEntityOrCreateSettingsRemnant(entity)
     assertIsSettingsRemnant(entity)
@@ -352,7 +352,7 @@ describe("revive integration test", () => {
 })
 
 test("force deleting entity", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -361,7 +361,7 @@ test("force deleting entity", () => {
 })
 
 test("updating first value from world", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.inserter_stack_size_override = 2
   const ret = updates.tryUpdateEntityFromWorld(entity, 3)
@@ -371,7 +371,7 @@ test("updating first value from world", () => {
 })
 
 test("updating higher value from world", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.inserter_stack_size_override = 2
   const ret = updates.tryUpdateEntityFromWorld(entity, 4)
@@ -384,7 +384,7 @@ test("updating higher value from world", () => {
 })
 
 test("rotating first value from world via update", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
   const ret = updates.tryUpdateEntityFromWorld(entity, 3)
@@ -394,7 +394,7 @@ test("rotating first value from world via update", () => {
 })
 
 test("rotating first value from world via rotate", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(3)!
   worldEntity.direction = defines.direction.south
   updates.tryRotateEntityFromWorld(entity, 3)
@@ -408,7 +408,7 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
   const eastType = !flipped ? "output" : "input"
   let westUnderground: ProjectEntity<BlueprintEntity>
   before_each(() => {
-    westUnderground = buildEntity(4, {
+    westUnderground = addEntityToProject(4, {
       name: "underground-belt",
       direction: expectedDirection,
       type: westType,
@@ -419,7 +419,7 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
 
   test("placing underground", () => {
     // place underground belt facing west (input), should snap to east output
-    const placedUnderground = buildEntity(3, {
+    const placedUnderground = addEntityToProject(3, {
       name: "underground-belt",
       direction: defines.direction.west,
       type: "input",
@@ -470,19 +470,19 @@ describe("underground belt inconsistencies", () => {
     let rightUnderground: ProjectEntity<BlueprintEntity>
     let middleUnderground: ProjectEntity<BlueprintEntity>
     before_each(() => {
-      leftUnderground = buildEntity(1, {
+      leftUnderground = addEntityToProject(1, {
         name: "underground-belt",
         type: "input",
         direction: defines.direction.east,
         position: pos.add(-1, 0),
       }) as UndergroundBeltProjectEntity
-      rightUnderground = buildEntity(1, {
+      rightUnderground = addEntityToProject(1, {
         name: "underground-belt",
         type: "output",
         direction: defines.direction.east,
         position: pos.add(1, 0),
       })
-      middleUnderground = buildEntity(2, {
+      middleUnderground = addEntityToProject(2, {
         name: "underground-belt",
         type: "output",
         direction: defines.direction.east,
@@ -665,7 +665,7 @@ describe("underground belt inconsistencies", () => {
     let rightUnderground: ProjectEntity<UndergroundBeltEntity>
     let leftWorldEntity: LuaEntity
     before_each(() => {
-      leftUnderground = buildEntity(1, {
+      leftUnderground = addEntityToProject(1, {
         name: "underground-belt",
         type: "input",
         direction: defines.direction.east,
@@ -673,7 +673,7 @@ describe("underground belt inconsistencies", () => {
 
       if (hasMiddle) {
         // make an error entity in the middle
-        const middle = buildEntity(1, {
+        const middle = addEntityToProject(1, {
           name: "underground-belt",
           type: "output",
           direction: defines.direction.east,
@@ -681,7 +681,7 @@ describe("underground belt inconsistencies", () => {
         })
         middle.destroyAllWorldOrPreviewEntities()
       }
-      rightUnderground = buildEntity(1, {
+      rightUnderground = addEntityToProject(1, {
         name: "underground-belt",
         type: "output",
         direction: defines.direction.east,
@@ -750,7 +750,7 @@ describe("underground belt inconsistencies", () => {
     })
   })
   test("calling refresh entity on an broken underground fixes it", () => {
-    const underground = buildEntity(1, {
+    const underground = addEntityToProject(1, {
       name: "underground-belt",
       type: "input",
       direction: defines.direction.east,
@@ -764,7 +764,7 @@ describe("underground belt inconsistencies", () => {
     assertEntityCorrect(underground, false)
   })
   test("using cleanup tool on an broken underground fixes it", () => {
-    const underground = buildEntity(1, {
+    const underground = addEntityToProject(1, {
       name: "underground-belt",
       type: "input",
       direction: defines.direction.east,
@@ -785,12 +785,12 @@ describe("underground belt inconsistencies", () => {
     assertEntityCorrect(underground, false)
   })
   test("using cleanup tool on broken pair fixes it", () => {
-    const left = buildEntity(1, {
+    const left = addEntityToProject(1, {
       name: "underground-belt",
       type: "input",
       direction: defines.direction.east,
     })
-    const right = buildEntity(1, {
+    const right = addEntityToProject(1, {
       name: "underground-belt",
       type: "output",
       direction: defines.direction.east,
@@ -848,13 +848,13 @@ describe("underground belt inconsistencies", () => {
     })
 
     test.each([false, true])("pasting an underground belt that gets flipped works, with middle %s", (hasMiddle) => {
-      buildEntity(1, {
+      addEntityToProject(1, {
         name: "underground-belt",
         type: "input",
         direction: defines.direction.east,
       })
       if (hasMiddle) {
-        const entity = buildEntity(1, {
+        const entity = addEntityToProject(1, {
           name: "underground-belt",
           type: "output",
           direction: defines.direction.east,
@@ -887,7 +887,7 @@ describe("underground belt inconsistencies", () => {
     let underground: UndergroundBeltProjectEntity
     before_each(() => {
       player.mod_settings[Settings.UpgradeOnPaste] = { value: true }
-      underground = buildEntity(1, {
+      underground = addEntityToProject(1, {
         name: "underground-belt",
         type: "input",
         direction: defines.direction.east,
@@ -950,7 +950,7 @@ describe("underground belt inconsistencies", () => {
 })
 
 test("rotation forbidden at higher stage", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
   const ret = updates.tryUpdateEntityFromWorld(entity, 4)
@@ -960,7 +960,7 @@ test("rotation forbidden at higher stage", () => {
 })
 
 test("rotation forbidden at higher stage via rotate", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.direction = defines.direction.south
   updates.tryRotateEntityFromWorld(entity, 4)
@@ -969,7 +969,7 @@ test("rotation forbidden at higher stage via rotate", () => {
 })
 
 test("creating upgrade via fast replace", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const replacedEntity = createEntity(4, { name: "stack-filter-inserter" })
   entity.replaceWorldEntity(4, replacedEntity)
   updates.tryUpdateEntityFromWorld(entity, 4)
@@ -980,7 +980,7 @@ test("creating upgrade via fast replace", () => {
 })
 
 test("refreshing and rebuilding an entity with diffs", () => {
-  const entity = buildEntity(2)
+  const entity = addEntityToProject(2)
   entity._applyDiffAtStage(5, { name: "stack-filter-inserter" })
   entity._applyDiffAtStage(3, { override_stack_size: 2 })
   project.entityUpdates.refreshAllWorldEntities(entity)
@@ -1003,7 +1003,7 @@ test("refreshing and rebuilding an entity with diffs", () => {
 
 test("update with upgrade and blocker", () => {
   createEntity(5, { name: "stone-wall" })
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
 
   let preview = entity.getWorldOrPreviewEntity(5)!
   expect(isPreviewEntity(preview)).toBe(true)
@@ -1022,7 +1022,7 @@ test("update with upgrade and blocker", () => {
 })
 
 test("creating upgrade via apply upgrade target", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.order_upgrade({
     force: worldEntity.force,
@@ -1036,7 +1036,7 @@ test("creating upgrade via apply upgrade target", () => {
 })
 
 test("moving entity up", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   assertEntityCorrect(entity, false)
   updates.trySetFirstStage(entity, 4)
   expect(entity.firstStage).toBe(4)
@@ -1044,14 +1044,14 @@ test("moving entity up", () => {
 })
 
 test("moving entity down", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   updates.trySetFirstStage(entity, 2)
   expect(entity.firstStage).toBe(2)
   assertEntityCorrect(entity, false)
 })
 
 test("dolly entity", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   const worldEntity = entity.getWorldEntity(3)!
   expect(worldEntity.teleport(1, 0)).toBe(true)
   const newPosition = worldEntity.position
@@ -1062,7 +1062,7 @@ test("dolly entity", () => {
 })
 
 test("resetProp", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -1073,7 +1073,7 @@ test("resetProp", () => {
 })
 
 test("movePropDown", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
   })
@@ -1084,7 +1084,7 @@ test("movePropDown", () => {
 })
 
 test("resetAllProps", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
     filter_mode: "blacklist",
@@ -1097,7 +1097,7 @@ test("resetAllProps", () => {
 })
 
 test("moveAllPropsDown", () => {
-  const entity = buildEntity(3)
+  const entity = addEntityToProject(3)
   entity._applyDiffAtStage(4, {
     override_stack_size: 2,
     filter_mode: "blacklist",
@@ -1111,7 +1111,7 @@ test("moveAllPropsDown", () => {
 
 // with wire connections
 function setupole(stage: StageNumber, args: Partial<SurfaceCreateEntity> = {}) {
-  return buildEntity(stage, { name: "medium-electric-pole", position: pos.minus(Pos(0, 1)), ...args })
+  return addEntityToProject(stage, { name: "medium-electric-pole", position: pos.minus(Pos(0, 1)), ...args })
 }
 function setupole2(stage: StageNumber) {
   return setupole(stage, {
@@ -1158,7 +1158,7 @@ test("disconnect and connect cables", () => {
 })
 
 test("connect and disconnect circuit wires", () => {
-  const inserter = buildEntity(3) // is filter inserter
+  const inserter = addEntityToProject(3) // is filter inserter
   const pole = setupole(3)
   pole.getWorldEntity(3)!.connect_neighbour({
     wire: defines.wire_type.red,
@@ -1208,8 +1208,8 @@ test("train entity error", () => {
 })
 
 test("adding wire in higher stage sets empty control behavior", () => {
-  const inserter = buildEntity(3) // is filter inserter
-  const belt = buildEntity(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
+  const inserter = addEntityToProject(3) // is filter inserter
+  const belt = addEntityToProject(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
   project.entityUpdates.refreshWorldEntityAtStage(inserter, 4)
   project.entityUpdates.refreshWorldEntityAtStage(belt, 4)
   const inserter4 = inserter.getWorldEntity(4)!
@@ -1246,9 +1246,9 @@ test("adding wire in higher stage sets empty control behavior", () => {
 })
 
 test.each([1, 2])("paste a chain of circuit wires over existing power poles, stage %s", (stage) => {
-  const pole1 = buildEntity(stage, { name: "small-electric-pole", position: pos })
-  const pole2 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
-  const pole3 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(8, 0)) })
+  const pole1 = addEntityToProject(stage, { name: "small-electric-pole", position: pos })
+  const pole2 = addEntityToProject(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
+  const pole3 = addEntityToProject(stage, { name: "small-electric-pole", position: pos.plus(Pos(8, 0)) })
 
   const bpEntities: BlueprintEntity[] = [
     {
@@ -1319,7 +1319,7 @@ test.each([true, false])("can maybe upgrade entity via blueprint, with setting %
     position: Pos(0.5, 0.5),
     direction: direction.west,
   }
-  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  const entity = addEntityToProject(1, { name: "inserter", position: pos, direction: direction.west })
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
   stack.blueprint_snap_to_grid = [1, 1]
@@ -1366,7 +1366,7 @@ test("can upgrade entity with wires via blueprint", () => {
       },
     },
   }
-  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  const entity = addEntityToProject(1, { name: "inserter", position: pos, direction: direction.west })
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
   stack.blueprint_snap_to_grid = [1, 1]
@@ -1540,51 +1540,57 @@ test("pasting rotate blueprint with a rotated fluid tank", () => {
   assertEntityCorrect(entity1, false)
 })
 
-test.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", (stage) => {
-  const entity: BlueprintEntity = {
-    entity_number: 1,
-    name: "inserter", // intentionally different from firstValue
-    position: Pos(0, 0),
-    direction: direction.south,
-    tags: {
-      bp100: {
-        firstStage: 2,
-        firstValue: {
-          name: "fast-inserter",
-        },
-        stageDiffs: {
-          3: {
-            name: "inserter",
+describe.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", (stage) => {
+  test.each(["", "on top of existing"])("%s", (onTop) => {
+    const entity: BlueprintEntity = {
+      entity_number: 1,
+      name: "inserter", // intentionally different from firstValue
+      position: Pos(0, 0),
+      direction: direction.south,
+      tags: {
+        bp100: {
+          firstStage: 2,
+          firstValue: {
+            name: "fast-inserter",
+          },
+          stageDiffs: {
+            3: {
+              name: "inserter",
+            },
           },
         },
-      },
-    } satisfies BpStagedInfoTags,
-  }
-  const stack = player.cursor_stack!
-  stack.set_stack("blueprint")
-  stack.set_blueprint_entities([entity])
+      } satisfies BpStagedInfoTags,
+    }
+    const stack = player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities([entity])
 
-  const pos = Pos(4.5, 4.5)
-  player.teleport([0, 0], surfaces[stage - 1])
-  player.build_from_cursor({ position: pos, direction: direction.west, alt: true })
-  const wrongInserter = surfaces[1].find_entity("inserter", pos)!
-  expect(wrongInserter).toBeNil()
+    const pos = Pos(4.5, 4.5)
+    if (onTop == "on top of existing") {
+      addEntityToProject(2, { name: "inserter", position: pos, direction: direction.east })
+    }
 
-  const inserter = surfaces[1].find_entity("fast-inserter", pos)!
-  expect(inserter).not.toBeNil()
-  expect(inserter.direction).toBe(direction.east) // total rotation
+    player.teleport([0, 0], surfaces[stage - 1])
+    player.build_from_cursor({ position: pos, direction: direction.west, alt: true })
+    const wrongInserter = surfaces[1].find_entity("inserter", pos)!
+    expect(wrongInserter).toBeNil()
 
-  const projEntity = project.content.findCompatibleWithLuaEntity(inserter, nil, 1)!
-  expect(projEntity.firstStage).toBe(2)
-  expect(projEntity.stageDiffs).toEqual({
-    3: { name: "inserter" },
+    const inserter = surfaces[1].find_entity("fast-inserter", pos)!
+    expect(inserter).not.toBeNil()
+    expect(inserter.direction).toBe(direction.east) // total rotation
+
+    const projEntity = project.content.findCompatibleWithLuaEntity(inserter, nil, 1)!
+    expect(projEntity.firstStage).toBe(2)
+    expect(projEntity.stageDiffs).toEqual({
+      3: { name: "inserter" },
+    })
+
+    assertEntityCorrect(projEntity, false)
   })
-
-  assertEntityCorrect(projEntity, false)
 })
 
 test("can paste a power pole at a lower stage to move", () => {
-  const pole = buildEntity(3, { name: "medium-electric-pole", position: Pos(0.5, 0.5) })
+  const pole = addEntityToProject(3, { name: "medium-electric-pole", position: Pos(0.5, 0.5) })
 
   const entity: BlueprintEntity = {
     entity_number: 1,
@@ -1610,8 +1616,8 @@ test("can paste a power pole at a lower stage to move", () => {
 })
 
 test("connecting power switch", () => {
-  const pole = buildEntity(2, { name: "medium-electric-pole", position: Pos(0, 0) })
-  const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
+  const pole = addEntityToProject(2, { name: "medium-electric-pole", position: Pos(0, 0) })
+  const powerSwitch = addEntityToProject(1, { name: "power-switch", position: Pos(2, 0) })
 
   const poleLuaEntity = pole.getWorldEntity(2)!
   poleLuaEntity.connect_neighbour({
@@ -1627,9 +1633,9 @@ test("connecting power switch", () => {
 })
 
 test("connecting power switch to new pole in higher stage", () => {
-  const pole1 = buildEntity(1, { name: "medium-electric-pole", position: Pos(0, 0) })
-  const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
-  const pole2 = buildEntity(2, { name: "medium-electric-pole", position: Pos(4, 0) })
+  const pole1 = addEntityToProject(1, { name: "medium-electric-pole", position: Pos(0, 0) })
+  const powerSwitch = addEntityToProject(1, { name: "power-switch", position: Pos(2, 0) })
+  const pole2 = addEntityToProject(2, { name: "medium-electric-pole", position: Pos(4, 0) })
 
   const pole1LuaEntity = pole1.getWorldEntity(1)!
   pole1LuaEntity.connect_neighbour({
@@ -1657,7 +1663,7 @@ test("connecting power switch to new pole in higher stage", () => {
 })
 
 test("using stage delete tool", () => {
-  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  const entity = addEntityToProject(1, { name: "inserter", position: pos, direction: direction.west })
   Events.raiseFakeEventNamed("on_player_selected_area", {
     player_index: player.index,
     item: Prototypes.StageDeconstructTool,
@@ -1672,7 +1678,7 @@ test("using stage delete tool", () => {
 })
 
 test("using stage delete tool alt select", () => {
-  const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+  const entity = addEntityToProject(1, { name: "inserter", position: pos, direction: direction.west })
   project.actions.userSetLastStageWithUndo(entity, 3, player.index)
 
   Events.raiseFakeEventNamed("on_player_alt_selected_area", {
@@ -1693,9 +1699,13 @@ test("using stage delete tool alt select", () => {
 })
 
 test("rebuildStage", () => {
-  const entityPresent = buildEntity(2, { name: "inserter", position: pos.add(1, 0), direction: direction.west })
-  const entityPreview = buildEntity(3, { name: "inserter", position: pos.add(2, 0), direction: direction.west })
-  const entityPastLastStage = buildEntity(1, { name: "inserter", position: pos.add(3, 0), direction: direction.west })
+  const entityPresent = addEntityToProject(2, { name: "inserter", position: pos.add(1, 0), direction: direction.west })
+  const entityPreview = addEntityToProject(3, { name: "inserter", position: pos.add(2, 0), direction: direction.west })
+  const entityPastLastStage = addEntityToProject(1, {
+    name: "inserter",
+    position: pos.add(3, 0),
+    direction: direction.west,
+  })
   expect(updates.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
   entityPresent._applyDiffAtStage(4, { name: "stack-filter-inserter" })
   project.entityUpdates.refreshAllWorldEntities(entityPresent)
@@ -1752,7 +1762,7 @@ if ("bobinserters" in script.active_mods) {
   })
 
   test("when rotating an inserter, the pickup and drop positions also rotate", () => {
-    const entity = buildEntity(3, {
+    const entity = addEntityToProject(3, {
       name: "inserter",
       position: pos,
       direction: direction.north,

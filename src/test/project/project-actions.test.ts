@@ -9,9 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LocalisedString, LuaEntity, PlayerIndex, SurfaceCreateEntity } from "factorio:runtime"
+import { BlueprintEntity, LocalisedString, LuaEntity, PlayerIndex, SurfaceCreateEntity } from "factorio:runtime"
 import expect from "tstl-expect"
 import { L_Game, Prototypes } from "../../constants"
+import { BpStagedInfo } from "../../copy-paste/blueprint-stage-info"
 import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
@@ -51,6 +52,10 @@ before_each(() => {
   })
   projectUpdates.trySetLastStage.invokes((entity, stage) => {
     entity.setLastStageUnchecked(stage)
+    return StageMoveResult.Updated
+  })
+  projectUpdates.setValueFromStagedInfo.invokes((entity, stage, stagedInfo) => {
+    entity.setFirstStageUnchecked(stagedInfo.firstStage)
     return StageMoveResult.Updated
   })
 })
@@ -338,9 +343,7 @@ describe("onEntityPossiblyUpdated", () => {
   test.each(resultMessages)('calls tryUpdateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     const knownValue: any = { foo: "bar" }
-    projectUpdates.tryUpdateEntityFromWorld.invokes(() => {
-      return result
-    })
+    projectUpdates.tryUpdateEntityFromWorld.returns(result)
     userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, knownValue)
 
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(entity, 2, knownValue)
@@ -361,15 +364,32 @@ describe("onEntityPossiblyUpdated", () => {
 
   test("works with upgrade-compatible entity (fast-replace) with different direction", () => {
     const { luaEntity, entity } = addEntity(2)
-    projectUpdates.tryUpdateEntityFromWorld.invokes(() => {
-      return EntityUpdateResult.Updated
-    })
+    projectUpdates.tryUpdateEntityFromWorld.returns(EntityUpdateResult.Updated)
     const oldDirection = luaEntity.direction
     luaEntity.destroy()
     const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter", direction: defines.direction.south })
     userActions.onEntityPossiblyUpdated(luaEntity2, 2, oldDirection, playerIndex)
 
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
+  })
+
+  test("calls setValueFromStagedInfo if known value has stagedInfo", () => {
+    const { luaEntity, entity } = addEntity(2)
+    const stagedInfo: BpStagedInfo<any> = {
+      firstStage: 1,
+      firstValue: { foo: "bar" },
+    }
+    const knownValue = {
+      entity_number: 1,
+      name: "filter-inserter",
+      position: pos,
+      direction: defines.direction.north,
+      tags: {
+        bp100: stagedInfo,
+      },
+    } as BlueprintEntity
+    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, knownValue)
+    expect(projectUpdates.setValueFromStagedInfo).toHaveBeenCalledWith(entity, knownValue, stagedInfo)
   })
 })
 

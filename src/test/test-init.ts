@@ -133,7 +133,6 @@ if ("factorio-test" in script.active_mods) {
       }
     },
     log_passed_tests: false,
-    log_skipped_tests: true,
     sound_effects: true,
     // test_pattern: "integration%-test",
   } satisfies Partial<FactorioTest.Config>)
