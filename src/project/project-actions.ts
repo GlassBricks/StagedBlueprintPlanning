@@ -298,7 +298,7 @@ export function ProjectActions(
       return nil
     }
 
-    compatible.replaceWorldEntity(stage, worldEntity) // just in case
+    compatible.replaceWorldEntity(stage, worldEntity)
     return compatible
   }
 
@@ -369,6 +369,7 @@ export function ProjectActions(
   ): ProjectEntity | nil {
     const compatible = content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
     if (!compatible) {
+      game.print("compatible not found")
       tryAddNewEntity(entity, stage, byPlayer, knownBpValue)
       return nil
     }
@@ -379,7 +380,9 @@ export function ProjectActions(
       return nil
     }
 
-    // set value
+    // this line is important, in case we just pasted over a preview
+    compatible.replaceWorldEntity(stage, entity)
+
     const result = setValueFromStagedInfo(compatible, knownBpValue, stagedInfo)
     notifyIfMoveError(result, compatible, byPlayer)
     return compatible

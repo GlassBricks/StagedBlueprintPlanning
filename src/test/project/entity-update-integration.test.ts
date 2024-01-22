@@ -1570,6 +1570,11 @@ describe.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", 
       addEntityToProject(2, { name: "inserter", position: pos, direction: direction.east })
     }
 
+    if (stage == 1) {
+      const wrongInserter = surfaces[0].find_entity("inserter", pos)! || surfaces[0].find_entity("fast-inserter", pos)!
+      expect(wrongInserter).toBeNil()
+    }
+
     player.teleport([0, 0], surfaces[stage - 1])
     player.build_from_cursor({ position: pos, direction: direction.west, alt: true })
     const wrongInserter = surfaces[1].find_entity("inserter", pos)!
@@ -1585,6 +1590,7 @@ describe.each([1, 2, 3])("pasting an entity with stage info tags, on stage %s", 
       3: { name: "inserter" },
     })
 
+    expect(project.content.countNumEntities()).toBe(1)
     assertEntityCorrect(projEntity, false)
   })
 })

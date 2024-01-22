@@ -721,20 +721,17 @@ function flipSplitterPriority(entity: Mutable<BlueprintEntity>) {
     entity.output_priority = entity.output_priority == "left" ? "right" : "left"
   }
 }
-function editPassedValue(
-  entity: BlueprintEntity,
-  transformation: (entity: Mutable<BlueprintEntity>) => void,
-): BlueprintEntity {
+function editPassedValue(entity: BlueprintEntity, edit: (entity: Mutable<BlueprintEntity>) => void): BlueprintEntity {
   const passedValue = mutableShallowCopy(entity)
   assume<Mutable<BlueprintEntity>>(passedValue)
   const stageInfoTags = passedValue.tags?.bp100 as BpStagedInfo | nil
   if (!stageInfoTags?.firstValue) {
-    transformation(passedValue)
+    edit(passedValue)
   } else {
-    transformation(stageInfoTags.firstValue as Mutable<BlueprintEntity>)
+    edit(stageInfoTags.firstValue as Mutable<BlueprintEntity>)
     if (stageInfoTags?.stageDiffs) {
       for (const [, value] of pairs(stageInfoTags.stageDiffs)) {
-        transformation(value as Mutable<BlueprintEntity>)
+        edit(value as Mutable<BlueprintEntity>)
       }
     }
   }
