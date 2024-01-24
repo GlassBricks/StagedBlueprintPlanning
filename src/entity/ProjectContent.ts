@@ -230,7 +230,7 @@ class ProjectContentImpl implements MutableProjectContent {
     const { x, y } = entity.position
     this.byPosition.add(x, y, entity)
 
-    entity.addIngoingConnections()
+    entity.addOrPruneIngoingConnections(entities)
   }
 
   delete(entity: ProjectEntity): void {

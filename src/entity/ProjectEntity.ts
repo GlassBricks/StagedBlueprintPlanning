@@ -96,7 +96,7 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   addOneWayCircuitConnection(connection: ProjectCircuitConnection): boolean
   removeOneWayCircuitConnection(connection: ProjectCircuitConnection): void
 
-  addIngoingConnections(): void
+  addOrPruneIngoingConnections(existingEntities: ReadonlyLuaSet<ProjectEntity>): void
   removeIngoingConnections(): void
 
   isRollingStock(): this is RollingStockProjectEntity
@@ -370,20 +370,32 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     }
   }
 
-  addIngoingConnections(): void {
+  addOrPruneIngoingConnections(existing: ReadonlyLuaSet<ProjectEntity>): void {
     const cableConnections = this.cableConnections
-    if (cableConnections)
+    if (cableConnections) {
       for (const otherEntity of cableConnections) {
-        otherEntity.tryAddOneWayCableConnection(this)
-      }
-
-    const circuitConnections = this.circuitConnections
-    if (circuitConnections)
-      for (const [otherEntity, connections] of circuitConnections) {
-        for (const connection of connections) {
-          otherEntity.addOneWayCircuitConnection(connection)
+        if (!existing.has(otherEntity)) {
+          cableConnections.delete(otherEntity)
+        } else {
+          otherEntity.tryAddOneWayCableConnection(this)
         }
       }
+      if (cableConnections.isEmpty()) delete this.cableConnections
+    }
+
+    const circuitConnections = this.circuitConnections
+    if (circuitConnections) {
+      for (const [otherEntity, connections] of circuitConnections) {
+        if (!existing.has(otherEntity)) {
+          circuitConnections.delete(otherEntity)
+        } else {
+          for (const connection of connections) {
+            otherEntity.addOneWayCircuitConnection(connection)
+          }
+        }
+      }
+      if (circuitConnections.isEmpty()) delete this.circuitConnections
+    }
   }
   removeIngoingConnections(): void {
     const cableConnections = this.cableConnections

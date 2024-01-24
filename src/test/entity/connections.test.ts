@@ -102,6 +102,23 @@ describe("connections", () => {
       content.add(entity1)
       expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
       expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
+
+      content.delete(entity1)
+      content.delete(entity2)
+      content.add(entity2)
+      content.add(entity1)
+      expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
+    })
+
+    test("won't restore connection to deleted entity", () => {
+      const connection = createCircuitConnection(entity1, entity2)
+      addCircuitConnection(connection)
+      content.delete(entity1)
+      content.delete(entity2)
+      content.add(entity1)
+      expect(entity1.circuitConnections).toEqual(nil)
+      expect(entity2.circuitConnections).toEqual(nil)
     })
   })
 
@@ -137,6 +154,23 @@ describe("connections", () => {
       content.add(entity1)
       expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
       expect(entity2.cableConnections).toEqual(newLuaSet(entity1))
+
+      content.delete(entity1)
+      content.delete(entity2)
+      content.add(entity2)
+      content.add(entity1)
+
+      expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
+      expect(entity2.cableConnections).toEqual(newLuaSet(entity1))
+    })
+
+    test("won't restore connection to deleted entity", () => {
+      entity1.tryAddDualCableConnection(entity2)
+      content.delete(entity1)
+      content.delete(entity2)
+      content.add(entity1)
+      expect(entity1.cableConnections).toEqual(nil)
+      expect(entity2.cableConnections).toEqual(nil)
     })
 
     test("can't add cable to itself", () => {
