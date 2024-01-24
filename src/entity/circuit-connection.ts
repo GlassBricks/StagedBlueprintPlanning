@@ -10,7 +10,7 @@
  */
 
 import { LuaEntity } from "factorio:runtime"
-import { ProjectEntity } from "./ProjectEntity"
+import type { ProjectEntity } from "./ProjectEntity"
 
 export type AnyConnectionId = defines.circuit_connector_id | defines.wire_connection_id
 

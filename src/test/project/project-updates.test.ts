@@ -21,6 +21,7 @@ import { oppositedirection } from "util"
 import { BpStagedInfo, BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
 import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
+  addCircuitConnection,
   createProjectEntityNoCopy,
   ProjectEntity,
   RollingStockProjectEntity,
@@ -174,7 +175,7 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
 function assertNewUpdated(entity: ProjectEntity) {
   expect(worldEntityUpdates.updateNewWorldEntitiesWithoutWires).toHaveBeenCalledWith(entity)
   expectedWuCalls = 1
-  if (project.content.getCircuitConnections(entity) || project.content.getCableConnections(entity)) {
+  if (entity.circuitConnections || entity.cableConnections) {
     expect(worldEntityUpdates.updateWireConnections).toHaveBeenCalledWith(entity)
     expectedWuCalls++
   }
@@ -362,7 +363,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     const { entity } = addEntity(1)
     const otherEntity = createProjectEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
     project.content.add(otherEntity)
-    project.content.addCircuitConnection({
+    addCircuitConnection({
       fromEntity: otherEntity,
       toEntity: entity,
       fromId: 1,
@@ -380,7 +381,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     const { entity } = addEntity(1)
     const otherEntity = createProjectEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
     project.content.add(otherEntity)
-    project.content.addCircuitConnection({
+    addCircuitConnection({
       fromEntity: otherEntity,
       toEntity: entity,
       fromId: 1,
@@ -685,7 +686,7 @@ describe("updateWiresFromWorld", () => {
     const { entity: entity2, luaEntity: luaEntity2 } = addEntity(1, {
       position: pos.plus({ x: 1, y: 0 }),
     })
-    project.content.addCircuitConnection({
+    addCircuitConnection({
       fromEntity: entity1,
       toEntity: entity2,
       fromId: 1,

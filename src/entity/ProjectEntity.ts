@@ -25,6 +25,7 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
+import { circuitConnectionEquals, getDirectionalInfo, ProjectCircuitConnection } from "./circuit-connection"
 import { Entity, InserterEntity, LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./Entity"
 import {
   EntityPrototypeInfo,
@@ -44,6 +45,16 @@ OnEntityPrototypesLoaded.addListener((info) => {
 
 /** 1 indexed */
 export type StageNumber = number
+
+export type CableConnections = ReadonlyLuaSet<ProjectEntity>
+export type CircuitConnections = ReadonlyLuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>
+
+export const enum CableAddResult {
+  MaybeAdded = "Added",
+  Error = "Error",
+  MaxConnectionsReached = "MaxConnectionsReached",
+}
+const MaxCableConnections = 5 // hard-coded in game
 
 /**
  * All the data about one entity in a project, across all stages.
@@ -69,6 +80,24 @@ export interface ProjectEntity<out T extends Entity = Entity> {
 
   isInStage(stage: StageNumber): boolean
   isPastLastStage(stage: StageNumber): boolean
+
+  readonly cableConnections?: CableConnections
+  readonly circuitConnections?: CircuitConnections
+
+  canAddCableConnection(): boolean
+
+  tryAddOneWayCableConnection(entity: ProjectEntity): boolean
+
+  tryAddDualCableConnection(entity: ProjectEntity): CableAddResult
+
+  removeOneWayCableConnection(entity: ProjectEntity): void
+  removeDualCableConnection(entity: ProjectEntity): void
+
+  addOneWayCircuitConnection(connection: ProjectCircuitConnection): boolean
+  removeOneWayCircuitConnection(connection: ProjectCircuitConnection): void
+
+  addIngoingConnections(): void
+  removeIngoingConnections(): void
 
   isRollingStock(): this is RollingStockProjectEntity
   isUndergroundBelt(): this is UndergroundBeltProjectEntity
@@ -224,6 +253,9 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   firstValue: Mutable<T>
   stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
 
+  cableConnections?: LuaSet<ProjectEntity>
+  circuitConnections?: LuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>
+
   _next: ProjectEntityImpl<T> | nil;
 
   [stage: StageNumber]: LuaEntity | nil // world entities and preview entities are stored in the same table
@@ -279,6 +311,93 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
       (worldEntity.type == "underground-belt" &&
         worldEntity.belt_to_ground_type != (this.firstValue as unknown as UndergroundBeltEntity).type)
     )
+  }
+
+  canAddCableConnection() {
+    const cableConnections = this.cableConnections
+    return cableConnections == nil || table_size(cableConnections) < MaxCableConnections
+  }
+  tryAddOneWayCableConnection(entity: ProjectEntity): boolean {
+    if (this == entity || !this.canAddCableConnection()) return false
+    ;(this.cableConnections ??= newLuaSet()).add(entity)
+    return true
+  }
+  tryAddDualCableConnection(entity: ProjectEntity): CableAddResult {
+    if (this == entity) return CableAddResult.Error
+    if (!(this.canAddCableConnection() && entity.canAddCableConnection())) return CableAddResult.MaxConnectionsReached
+    ;(this.cableConnections ??= newLuaSet()).add(entity)
+    ;((entity as ProjectEntityImpl).cableConnections ??= newLuaSet()).add(this)
+    return CableAddResult.MaybeAdded
+  }
+
+  removeOneWayCableConnection(entity: ProjectEntity): void {
+    const connections = this.cableConnections
+    if (!connections) return
+    connections.delete(entity)
+    if (connections.isEmpty()) delete this.cableConnections
+  }
+  removeDualCableConnection(entity: ProjectEntity): void {
+    this.removeOneWayCableConnection(entity)
+    entity.removeOneWayCableConnection(this)
+  }
+
+  addOneWayCircuitConnection(connection: ProjectCircuitConnection): boolean {
+    const [toEntity] = getDirectionalInfo(connection, this)
+    let connections = this.circuitConnections
+    if (connections) {
+      const existingConnections = connections.get(toEntity)
+      if (existingConnections)
+        for (const existingConnection of existingConnections) {
+          if (circuitConnectionEquals(existingConnection, connection)) return false
+        }
+    }
+    connections ??= this.circuitConnections = new LuaMap()
+    const existingConnections = connections.get(toEntity)
+    if (existingConnections) existingConnections.add(connection)
+    else connections.set(toEntity, newLuaSet(connection))
+    return true
+  }
+  removeOneWayCircuitConnection(connection: ProjectCircuitConnection): void {
+    const [toEntity] = getDirectionalInfo(connection, this)
+    const connections = this.circuitConnections
+    if (!connections) return
+    const existingConnections = connections.get(toEntity)
+    if (!existingConnections) return
+    existingConnections.delete(connection)
+    if (existingConnections.isEmpty()) {
+      connections.delete(toEntity)
+      if (connections.isEmpty()) delete this.circuitConnections
+    }
+  }
+
+  addIngoingConnections(): void {
+    const cableConnections = this.cableConnections
+    if (cableConnections)
+      for (const otherEntity of cableConnections) {
+        otherEntity.tryAddOneWayCableConnection(this)
+      }
+
+    const circuitConnections = this.circuitConnections
+    if (circuitConnections)
+      for (const [otherEntity, connections] of circuitConnections) {
+        for (const connection of connections) {
+          otherEntity.addOneWayCircuitConnection(connection)
+        }
+      }
+  }
+  removeIngoingConnections(): void {
+    const cableConnections = this.cableConnections
+    if (cableConnections)
+      for (const otherEntity of cableConnections) {
+        otherEntity.removeOneWayCableConnection(this)
+      }
+    const circuitConnections = this.circuitConnections
+    if (circuitConnections)
+      for (const [otherEntity, connections] of circuitConnections) {
+        for (const connection of connections) {
+          otherEntity.removeOneWayCircuitConnection(connection)
+        }
+      }
   }
 
   setTypeProperty(this: ProjectEntityImpl<UndergroundBeltEntity>, direction: "input" | "output"): void {
@@ -813,6 +932,17 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     if (!this.hasStageDiff(stage)) return
     this.adjustValueAtStage(stage - 1, this.getValueAtStage(stage)!)
   }
+}
+
+export function addCircuitConnection(connection: ProjectCircuitConnection): void {
+  const { fromEntity, toEntity } = connection
+  fromEntity.addOneWayCircuitConnection(connection)
+  toEntity.addOneWayCircuitConnection(connection)
+}
+export function removeCircuitConnection(connection: ProjectCircuitConnection): void {
+  const { fromEntity, toEntity } = connection
+  fromEntity.removeOneWayCircuitConnection(connection)
+  toEntity.removeOneWayCircuitConnection(connection)
 }
 
 /** nil direction means the default direction of north */

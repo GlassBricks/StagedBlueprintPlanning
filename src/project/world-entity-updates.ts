@@ -342,13 +342,13 @@ export function WorldEntityUpdates(project: Project, highlights: EntityHighlight
     startStage: StageNumber,
     endStage: StageNumber,
   ): boolean {
-    const cableConnected = content.getCableConnections(entity)
+    const cableConnected = entity.cableConnections
     if (cableConnected) {
       for (const other of cableConnected) {
         if (!other.hasWorldEntityInRange(startStage, endStage)) return false
       }
     }
-    const circuitConnections = content.getCircuitConnections(entity)
+    const circuitConnections = entity.circuitConnections
     if (circuitConnections) {
       for (const [other] of circuitConnections) {
         if (!other.hasWorldEntityInRange(startStage, endStage)) return false

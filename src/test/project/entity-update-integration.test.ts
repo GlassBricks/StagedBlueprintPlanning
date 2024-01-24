@@ -143,7 +143,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
   assertNoHighlightsAfterLastStage(entity, project.numStages())
 
   // cables
-  const cableConnections = project.content.getCableConnections(entity)
+  const cableConnections = entity.cableConnections
   const isElectricPole = game.entity_prototypes[entity.firstValue.name].type == "electric-pole"
   if (!cableConnections) {
     if (isElectricPole) {
@@ -175,7 +175,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
   }
 
   // circuit wires
-  const wireConnections = project.content.getCircuitConnections(entity)
+  const wireConnections = entity.circuitConnections
   if (!wireConnections) {
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
       const worldEntity = entity.getWorldEntity(stage)
@@ -1122,8 +1122,8 @@ function setupole2(stage: StageNumber) {
 test("saves initial cable connections", () => {
   const pole1 = setupole(3)
   const pole2 = setupole2(3)
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
+  expect(pole1.cableConnections?.has(pole2)).toBe(true)
+  expect(pole2.cableConnections?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 })
@@ -1131,8 +1131,8 @@ test("saves initial cable connections", () => {
 test("saves initial cable connections to a pole in higher stage", () => {
   const pole1 = setupole(4)
   const pole2 = setupole2(3) // should connect to pole1
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
+  expect(pole1.cableConnections?.has(pole2)).toBe(true)
+  expect(pole2.cableConnections?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 })
@@ -1143,16 +1143,16 @@ test("disconnect and connect cables", () => {
   pole1.getWorldEntity(3)!.disconnect_neighbour(pole2.getWorldEntity(3))
   updates.updateWiresFromWorld(pole1, 3)
 
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBeFalsy()
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBeFalsy()
+  expect(pole1.cableConnections?.has(pole2)).toBeFalsy()
+  expect(pole2.cableConnections?.has(pole1)).toBeFalsy()
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 
   pole1.getWorldEntity(3)!.connect_neighbour(pole2.getWorldEntity(3)!)
   updates.updateWiresFromWorld(pole1, 3)
 
-  expect(project.content.getCableConnections(pole1)?.has(pole2)).toBe(true)
-  expect(project.content.getCableConnections(pole2)?.has(pole1)).toBe(true)
+  expect(pole1.cableConnections?.has(pole2)).toBe(true)
+  expect(pole2.cableConnections?.has(pole1)).toBe(true)
   assertEntityCorrect(pole1, false)
   assertEntityCorrect(pole2, false)
 })
@@ -1166,9 +1166,7 @@ test("connect and disconnect circuit wires", () => {
   })
   updates.updateWiresFromWorld(pole, 3)
 
-  const expectedConnection = next(
-    project.content.getCircuitConnections(inserter)!.get(pole)!,
-  )[0] as ProjectCircuitConnection
+  const expectedConnection = next(inserter.circuitConnections!.get(pole)!)[0] as ProjectCircuitConnection
   expect(expectedConnection).toBeAny()
   expect(
     circuitConnectionEquals(
@@ -1221,7 +1219,7 @@ test("adding wire in higher stage sets empty control behavior", () => {
   })
   updates.updateWiresFromWorld(inserter, 4)
 
-  const connections = project.content.getCircuitConnections(inserter)!
+  const connections = inserter.circuitConnections!
   expect(connections).toBeAny()
   const connection = next(connections.get(belt)!)[0] as ProjectCircuitConnection
   expect(connection).toBeAny()
@@ -1279,13 +1277,13 @@ test.each([1, 2])("paste a chain of circuit wires over existing power poles, sta
 
   // should have 2 cable connections
 
-  const connection1 = project.content.getCircuitConnections(pole1)?.get(pole2)
+  const connection1 = pole1.circuitConnections?.get(pole2)
   expect(connection1).not.toBeNil()
-  const connection21 = project.content.getCircuitConnections(pole2)?.get(pole1)
+  const connection21 = pole2.circuitConnections?.get(pole1)
   expect(connection21).not.toBeNil()
-  const connection23 = project.content.getCircuitConnections(pole2)?.get(pole3)
+  const connection23 = pole2.circuitConnections?.get(pole3)
   expect(connection23).not.toBeNil()
-  const connection3 = project.content.getCircuitConnections(pole3)?.get(pole2)
+  const connection3 = pole3.circuitConnections?.get(pole2)
   expect(connection3).not.toBeNil()
 
   assertEntityCorrect(pole1, false)
@@ -1379,7 +1377,7 @@ test("can upgrade entity with wires via blueprint", () => {
   const expected = "fast-inserter"
   expect(entity.firstValue).toMatchTable({ name: expected })
   expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
-  expect(project.content.getCircuitConnections(entity)).not.toBeNil()
+  expect(entity.circuitConnections).not.toBeNil()
 })
 
 describe.each([defines.direction.north, defines.direction.northeast])("with rail direction %d", (diag) => {

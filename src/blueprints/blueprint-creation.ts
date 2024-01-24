@@ -84,7 +84,7 @@ namespace BlueprintMethods {
           result.get(stage)!.add(entity)
         }
       }
-      const circuitConnections = content.getCircuitConnections(entity)
+      const circuitConnections = entity.circuitConnections
       if (circuitConnections) {
         for (const [otherEntity] of circuitConnections) {
           firstStageMap.add(otherEntity)

@@ -14,6 +14,7 @@ import expect from "tstl-expect"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
 import { forceDollyEntity } from "../../entity/picker-dollies"
 import {
+  addCircuitConnection,
   createProjectEntityNoCopy,
   ProjectEntity,
   StageNumber,
@@ -381,7 +382,7 @@ describe("tryMoveEntity", () => {
     })
 
     test("can't move if cable connected missing in all stages", () => {
-      project.content.addCableConnection(entity, otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
+      entity.tryAddDualCableConnection(otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
       expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
       const result = worldEntityUpdates.tryDollyEntities(entity, 1)
@@ -389,7 +390,7 @@ describe("tryMoveEntity", () => {
     })
 
     test("can't move if circuit connected missing in all stages", () => {
-      project.content.addCircuitConnection({
+      addCircuitConnection({
         fromEntity: entity,
         toEntity: otherEntity,
         fromId: 1,
@@ -403,8 +404,8 @@ describe("tryMoveEntity", () => {
     })
 
     test("can move if entity present in at least one stage", () => {
-      project.content.addCableConnection(entity, otherEntity)
-      project.content.addCircuitConnection({
+      entity.tryAddDualCableConnection(otherEntity)
+      addCircuitConnection({
         fromEntity: entity,
         toEntity: otherEntity,
         fromId: 1,
@@ -643,7 +644,7 @@ describe("circuit wires", () => {
   }
 
   function addWireToProject() {
-    project.content.addCircuitConnection({
+    addCircuitConnection({
       fromEntity: entity1,
       toEntity: entity2,
       wire: defines.wire_type.red,

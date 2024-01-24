@@ -12,9 +12,9 @@
 import { BoundingBox, LuaEntity } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
-import { isEmpty, RegisterClass } from "../lib"
+import { isEmpty, Mutable, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
-import { circuitConnectionEquals, ProjectCircuitConnection } from "./circuit-connection"
+import { ProjectCircuitConnection } from "./circuit-connection"
 import { EntityIdentification } from "./Entity"
 import {
   EntityPrototypeInfo,
@@ -54,10 +54,6 @@ export interface ProjectContent {
 
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): ProjectEntity | nil
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
-
-  getCircuitConnections(entity: ProjectEntity): ProjectEntityCircuitConnections | nil
-  getCableConnections(entity: ProjectEntity): ProjectEntityCableConnections | nil
-
   countNumEntities(): number
   iterateAllEntities(): LuaPairsKeyIterable<ProjectEntity>
 
@@ -67,34 +63,15 @@ export interface ProjectContent {
   computeBoundingBox(): BoundingBox | nil
 }
 
-export const enum CableAddResult {
-  Added = "Added",
-  Error = "Error",
-  AlreadyExists = "AlreadyExists",
-  MaxConnectionsReached = "MaxConnectionsReached",
-}
-const MaxCableConnections = 5 // hard-coded in game
-
 export interface MutableProjectContent extends ProjectContent {
   add(entity: ProjectEntity): void
   delete(entity: ProjectEntity): void
 
   changePosition(entity: ProjectEntity, position: Position): boolean
-
-  /** Returns if connection was successfully added. */
-  addCircuitConnection(circuitConnection: ProjectCircuitConnection): boolean
-  removeCircuitConnection(circuitConnection: ProjectCircuitConnection): void
-
-  addCableConnection(entity1: ProjectEntity, entity2: ProjectEntity): CableAddResult
-  removeCableConnection(entity1: ProjectEntity, entity2: ProjectEntity): void
-
   /** Modifies all entities */
   insertStage(stageNumber: StageNumber): void
   deleteStage(stageNumber: StageNumber): void
 }
-
-export type ProjectEntityCircuitConnections = LuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>
-export type ProjectEntityCableConnections = LuaSet<ProjectEntity>
 
 let nameToType: EntityPrototypeInfo["nameToType"]
 let nameToCategory: EntityPrototypeInfo["nameToCategory"]
@@ -107,8 +84,6 @@ OnEntityPrototypesLoaded.addListener((i) => {
 class ProjectContentImpl implements MutableProjectContent {
   readonly byPosition: Map2D<ProjectEntity> = newMap2D()
   entities = new LuaSet<ProjectEntity>()
-  circuitConnections = new LuaMap<ProjectEntity, ProjectEntityCircuitConnections>()
-  cableConnections = new LuaMap<ProjectEntity, ProjectEntityCableConnections>()
 
   has(entity: ProjectEntity): boolean {
     return this.entities.has(entity)
@@ -254,6 +229,8 @@ class ProjectContentImpl implements MutableProjectContent {
     entities.add(entity)
     const { x, y } = entity.position
     this.byPosition.add(x, y, entity)
+
+    entity.addIngoingConnections()
   }
 
   delete(entity: ProjectEntity): void {
@@ -263,8 +240,7 @@ class ProjectContentImpl implements MutableProjectContent {
     const { x, y } = entity.position
     this.byPosition.delete(x, y, entity)
 
-    this.removeAllConnections(entity, this.circuitConnections)
-    this.removeAllConnections(entity, this.cableConnections)
+    entity.removeIngoingConnections()
   }
 
   changePosition(entity: ProjectEntity, position: Position): boolean {
@@ -277,155 +253,6 @@ class ProjectContentImpl implements MutableProjectContent {
     entity.setPositionUnchecked(position)
     byPosition.add(newX, newY, entity)
     return true
-  }
-
-  private removeAllConnections(
-    entity: ProjectEntity,
-    map: LuaMap<ProjectEntity, ProjectEntityCircuitConnections> | LuaMap<ProjectEntity, ProjectEntityCableConnections>,
-  ) {
-    const entityData = map.get(entity)
-    if (!entityData) return
-    map.delete(entity)
-
-    for (const otherEntity of entityData as LuaSet<ProjectEntity>) {
-      const otherData = map.get(otherEntity)
-      if (otherData) {
-        otherData.delete(entity)
-        if (isEmpty(otherData)) map.delete(otherEntity)
-      }
-    }
-  }
-
-  getCircuitConnections(entity: ProjectEntity): ProjectEntityCircuitConnections | nil {
-    return this.circuitConnections.get(entity)
-  }
-  addCircuitConnection(circuitConnection: ProjectCircuitConnection): boolean {
-    const { entities, circuitConnections } = this
-    const { fromEntity, toEntity } = circuitConnection
-    if (!entities.has(fromEntity) || !entities.has(toEntity)) return false
-
-    let fromConnections = circuitConnections.get(fromEntity)
-
-    if (fromConnections) {
-      const fromSet = fromConnections.get(toEntity)
-      if (fromSet) {
-        for (const otherConnection of fromSet) {
-          if (circuitConnectionEquals(circuitConnection, otherConnection)) {
-            return false
-          }
-        }
-      }
-    }
-
-    if (!fromConnections) {
-      fromConnections = new LuaMap()
-      circuitConnections.set(fromEntity, fromConnections)
-    }
-
-    let toConnections = circuitConnections.get(toEntity)
-    if (!toConnections) {
-      toConnections = new LuaMap()
-      circuitConnections.set(toEntity, toConnections)
-    }
-
-    const fromSet = fromConnections.get(toEntity),
-      toSet = toConnections.get(fromEntity)
-
-    if (fromSet) {
-      fromSet.add(circuitConnection)
-    } else {
-      fromConnections.set(toEntity, newLuaSet(circuitConnection))
-    }
-    if (toSet) {
-      toSet.add(circuitConnection)
-    } else {
-      toConnections.set(fromEntity, newLuaSet(circuitConnection))
-    }
-    return true
-  }
-
-  removeCircuitConnection(circuitConnection: ProjectCircuitConnection): void {
-    const { circuitConnections } = this
-    const { fromEntity, toEntity } = circuitConnection
-
-    const fromConnections = circuitConnections.get(fromEntity),
-      toConnections = circuitConnections.get(toEntity)
-    if (!fromConnections || !toConnections) return
-    const fromSet = fromConnections.get(toEntity)
-    if (fromSet) {
-      fromSet.delete(circuitConnection)
-      if (isEmpty(fromSet)) {
-        fromConnections.delete(toEntity)
-        if (isEmpty(fromConnections)) {
-          circuitConnections.delete(fromEntity)
-        }
-      }
-    }
-    const toSet = toConnections.get(fromEntity)
-    if (toSet) {
-      toSet.delete(circuitConnection)
-      if (isEmpty(toSet)) {
-        toConnections.delete(fromEntity)
-        if (isEmpty(toConnections)) {
-          circuitConnections.delete(toEntity)
-        }
-      }
-    }
-  }
-
-  getCableConnections(entity: ProjectEntity): ProjectEntityCableConnections | nil {
-    return this.cableConnections.get(entity)
-  }
-
-  addCableConnection(entity1: ProjectEntity, entity2: ProjectEntity): CableAddResult {
-    if (entity1 == entity2) return CableAddResult.Error
-    const { entities, cableConnections } = this
-    if (!entities.has(entity1) || !entities.has(entity2)) return CableAddResult.Error
-    let data1 = cableConnections.get(entity1)
-    let data2 = cableConnections.get(entity2)
-
-    if (data1) {
-      if (data1.has(entity2)) return CableAddResult.AlreadyExists
-      if (table_size(data1) >= MaxCableConnections) return CableAddResult.MaxConnectionsReached
-    }
-    if (data2) {
-      if (data2.has(entity1)) return CableAddResult.AlreadyExists
-      if (table_size(data2) >= MaxCableConnections) return CableAddResult.MaxConnectionsReached
-    }
-
-    if (data1) {
-      data1.add(entity2)
-    } else {
-      data1 = newLuaSet(entity2)
-      cableConnections.set(entity1, data1)
-    }
-
-    if (data2) {
-      data2.add(entity1)
-    } else {
-      data2 = newLuaSet(entity1)
-      cableConnections.set(entity2, data2)
-    }
-
-    return CableAddResult.Added
-  }
-
-  removeCableConnection(entity1: ProjectEntity, entity2: ProjectEntity): void {
-    const { cableConnections } = this
-    const data1 = cableConnections.get(entity1)
-    if (data1) {
-      data1.delete(entity2)
-      if (isEmpty(data1)) {
-        cableConnections.delete(entity1)
-      }
-    }
-    const data2 = cableConnections.get(entity2)
-    if (data2) {
-      data2.delete(entity1)
-      if (isEmpty(data2)) {
-        cableConnections.delete(entity2)
-      }
-    }
   }
 
   insertStage(stageNumber: StageNumber): void {
@@ -446,23 +273,21 @@ class ProjectContentImpl implements MutableProjectContent {
 export function _assertCorrect(content: ProjectContent): void {
   assume<ProjectContentImpl>(content)
   const { entities } = content
-  for (const [entity, points] of content.circuitConnections) {
-    assert(entities.has(entity))
-
-    for (const [otherEntity, connections] of points) {
-      assert(entities.has(otherEntity))
-      for (const connection of connections) {
-        assert(content.circuitConnections.get(otherEntity)!.get(entity)!.has(connection))
+  for (const entity of entities) {
+    const points = entity.circuitConnections
+    if (points) {
+      for (const [otherEntity, connections] of points) {
+        assert(entities.has(otherEntity))
+        for (const connection of connections) {
+          assert(otherEntity.circuitConnections?.get(entity)?.has(connection))
+        }
       }
     }
-  }
-
-  for (const [entity, connections] of content.cableConnections) {
-    assert(entities.has(entity))
-
-    for (const otherEntity of connections) {
-      assert(entities.has(otherEntity))
-      assert(content.cableConnections.get(otherEntity)!.has(entity))
+    if (entity.cableConnections) {
+      for (const otherEntity of entity.cableConnections) {
+        assert(entities.has(otherEntity))
+        assert(otherEntity.cableConnections?.has(entity))
+      }
     }
   }
 }
@@ -473,4 +298,21 @@ export function newProjectContent(): MutableProjectContent {
 
 export function _migrateProjectContent_0_18_0(content: MutableProjectContent): void {
   _migrateMap2DToLinkedList((content as ProjectContentImpl).byPosition)
+}
+
+export function _migrateWireConnections(content: MutableProjectContent): void {
+  assume<ProjectContentImpl>(content)
+  assume<
+    ProjectContentImpl & {
+      circuitConnections: LuaMap<ProjectEntity, LuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>>
+      cableConnections: LuaMap<ProjectEntity, LuaSet<ProjectEntity>>
+    }
+  >(content)
+  const { circuitConnections, cableConnections } = content
+  for (const [entity, connections] of cableConnections) {
+    ;(entity as Mutable<ProjectEntity>).cableConnections = connections
+  }
+  for (const [entity, connections] of circuitConnections) {
+    ;(entity as Mutable<ProjectEntity>).circuitConnections = connections
+  }
 }

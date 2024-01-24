@@ -10,7 +10,7 @@
  */
 
 import { getEntityPrototypeInfo } from "../entity/entity-prototype-info"
-import { _migrateProjectContent_0_18_0 } from "../entity/ProjectContent"
+import { _migrateProjectContent_0_18_0, _migrateWireConnections } from "../entity/ProjectContent"
 import { _migrateEntity_0_17_0, StageNumber } from "../entity/ProjectEntity"
 import { Migrations } from "../lib/migration"
 import { UserProject } from "./ProjectDef"
@@ -40,6 +40,19 @@ Migrations.to("0.14.3", () => {
         project.entityUpdates.updateWorldEntities(entity, 1)
       }
     }
+  }
+})
+
+Migrations.priority(7, "0.22.0", () => {
+  for (const [, project] of global.projects) {
+    for (const entity of project.content.iterateAllEntities()) {
+      entity.direction ??= 0
+    }
+  }
+})
+Migrations.priority(7, "0.25.0", () => {
+  for (const [, project] of global.projects) {
+    _migrateWireConnections(project.content)
   }
 })
 
@@ -76,14 +89,6 @@ Migrations.to("0.20.0", () => {
       if (nameToType.get(entity.firstValue.name) == "power-switch") {
         project.updates.updateWiresFromWorld(entity, project.lastStageFor(entity))
       }
-    }
-  }
-})
-
-Migrations.priority(7, "0.22.0", () => {
-  for (const [, project] of global.projects) {
-    for (const entity of project.content.iterateAllEntities()) {
-      entity.direction ??= 0
     }
   }
 })

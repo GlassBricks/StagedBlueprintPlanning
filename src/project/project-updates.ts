@@ -204,7 +204,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
 
   function shouldMakeSettingsRemnant(entity: ProjectEntity) {
     if (entity.hasStageDiff()) return true
-    const connections = content.getCircuitConnections(entity)
+    const connections = entity.circuitConnections
     if (!connections) return false
     const stage = entity.firstStage
     for (const [otherEntity] of connections) {
@@ -496,7 +496,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     )
     if (!connectionsChanged) return WireUpdateResult.NoChange
 
-    const circuitConnections = content.getCircuitConnections(entity)
+    const circuitConnections = entity.circuitConnections
     // check setting no-op control behavior
     if (circuitConnections) maybeApplyEmptyControlBehavior(entity, stage)
     updateWorldEntities(entity, entity.firstStage)
