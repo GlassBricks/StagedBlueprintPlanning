@@ -20,7 +20,7 @@ import { L_Interaction } from "../../locale"
 import { ProjectActions } from "../../project/project-actions"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
-import { _doUndoAction } from "../../project/undo"
+import { performUndoAction } from "../../project/undo"
 import { WorldEntityUpdates } from "../../project/world-entity-updates"
 import { fMock } from "../f-mock"
 import { moduleMock } from "../module-mock"
@@ -247,7 +247,7 @@ describe("onEntityCreated", () => {
     expect(undoAction).not.toBeNil()
     ignoreNotification()
 
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
     assertNotified(entity, [L_Interaction.EntityMovedBackToStage, "mock stage 3"], false)
 
@@ -263,7 +263,7 @@ describe("onEntityCreated", () => {
     project.content.delete(entity)
 
     const { entity: entity2 } = addEntity(2)
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity2, 3)
     assertNotified(entity2, [L_Interaction.EntityMovedBackToStage, "mock stage 3"], false)
 
@@ -280,7 +280,7 @@ describe("onEntityCreated", () => {
     project.content.delete(entity)
 
     addEntity(3)
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledTimes(1)
   })
 })
@@ -511,8 +511,14 @@ describe("onCleanupToolUsed", () => {
 
 test("onEntityForceDeleted calls forceDeleteEntity", () => {
   const { luaEntity, entity } = addEntity(2)
-  userActions.onEntityForceDeleteUsed(createPreview(luaEntity), 2)
+  const undoAction = userActions.onEntityForceDeleteUsed(createPreview(luaEntity), 2, 1 as PlayerIndex)
   expect(projectUpdates.forceDeleteEntity).toHaveBeenCalledWith(entity)
+  expect(undoAction).not.toBeNil()
+
+  performUndoAction(undoAction!)
+  expect(projectUpdates.readdDeletedEntity).toHaveBeenCalledWith(entity)
+
+  expectedNumCalls = 2
 })
 
 test("onEntityDied calls clearEntityAtStage", () => {
@@ -555,7 +561,7 @@ describe("onMoveEntityToStageCustomInput", () => {
     if (result == "updated") {
       expect(undoAction).not.toBeNil()
 
-      _doUndoAction(undoAction!)
+      performUndoAction(undoAction!)
       expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
       assertNotified(entity, [L_Interaction.EntityMovedBackToStage, "mock stage 3"], false)
 
@@ -573,7 +579,7 @@ describe("onSendToStageUsed", () => {
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 1)
     expect(undoAction).not.toBeNil()
 
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 2)
     assertIndicatorCreated(entity, ">>")
 
@@ -588,7 +594,7 @@ describe("onSendToStageUsed", () => {
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
     expect(undoAction).not.toBeNil()
 
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 2)
 
     expectedNumCalls = 2
@@ -624,7 +630,7 @@ describe("onBringToStageUsed", () => {
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
     expect(undoAction).not.toBeNil()
 
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 2)
     assertIndicatorCreated(entity, "<<")
 
@@ -639,7 +645,7 @@ describe("onBringToStageUsed", () => {
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 1)
     expect(undoAction).not.toBeNil()
 
-    _doUndoAction(undoAction)
+    performUndoAction(undoAction)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 2)
 
     expectedNumCalls = 2
@@ -678,7 +684,7 @@ describe("onBringDownToStageUsed", () => {
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 2)
     expect(undoAction).not.toBeNil()
 
-    _doUndoAction(undoAction)
+    performUndoAction(undoAction)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
 
     expectedNumCalls = 2
@@ -704,7 +710,7 @@ describe("onStageDeleteUsed", () => {
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 2)
 
     expect(undoAction).not.toBeNil()
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, nil)
 
     expectedNumCalls = 2
@@ -718,7 +724,7 @@ describe("onStageDeleteUsed", () => {
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 2)
 
     expect(undoAction).not.toBeNil()
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 3)
 
     expectedNumCalls = 2
@@ -745,7 +751,7 @@ describe("onStageDeleteCancelUsed", () => {
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, nil)
 
     expect(undoAction).not.toBeNil()
-    _doUndoAction(undoAction!)
+    performUndoAction(undoAction!)
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 2)
 
     expectedNumCalls = 2

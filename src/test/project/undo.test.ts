@@ -11,7 +11,7 @@
 
 import { PlayerIndex } from "factorio:runtime"
 import expect, { mock, MockNoSelf } from "tstl-expect"
-import { _simulateUndo, UndoHandler } from "../../project/undo"
+import { _simulateUndo, registerGroupUndoAction, UndoHandler } from "../../project/undo"
 
 let fn: MockNoSelf<(playerIndex: PlayerIndex, data: string) => void>
 const TestUndo = UndoHandler("<undo test>", (player, data: string) => {
@@ -50,4 +50,17 @@ test("can register future undo actions", () => {
 
     expect(fn).toHaveBeenCalledWith(1, "test data")
   })
+})
+
+test("group undo actions", () => {
+  const player = game.players[1]
+  const index1 = TestUndo.createAction(player.index, "test data 1")
+  const index2 = TestUndo.createAction(player.index, "test data 2")
+
+  registerGroupUndoAction([index1, index2])
+
+  _simulateUndo(player)
+
+  expect(fn).toHaveBeenNthCalledWith(1, 1, "test data 2")
+  expect(fn).toHaveBeenNthCalledWith(2, 1, "test data 1")
 })

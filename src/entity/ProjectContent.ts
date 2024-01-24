@@ -65,6 +65,7 @@ export interface ProjectContent {
 
 export interface MutableProjectContent extends ProjectContent {
   add(entity: ProjectEntity): void
+  /** Deleted entities should be able to be re-added, preserving connections. */
   delete(entity: ProjectEntity): void
 
   changePosition(entity: ProjectEntity, position: Position): boolean

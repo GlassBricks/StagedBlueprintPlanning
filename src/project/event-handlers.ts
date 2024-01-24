@@ -56,8 +56,8 @@ import { Stage } from "./ProjectDef"
 import { getStageAtSurface } from "./stage-surface"
 import {
   onUndoReferenceBuilt,
+  registerGroupUndoAction,
   registerUndoAction,
-  registerUndoActionGroup,
   registerUndoActionLater,
   UndoAction,
 } from "./undo"
@@ -971,13 +971,17 @@ function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
 }
 function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   if (e.item != Prototypes.CleanupTool) return
+  const playerIndex = e.player_index
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const onEntityForceDeleteUsed = stage.actions.onEntityForceDeleteUsed
   const stageNumber = stage.stageNumber
+  const undoActions: UndoAction[] = []
   for (const entity of e.entities) {
-    onEntityForceDeleteUsed(entity, stageNumber)
+    const undoAction = onEntityForceDeleteUsed(entity, stageNumber, playerIndex)
+    if (undoAction) undoActions.push(undoAction)
   }
+  registerGroupUndoAction(undoActions)
 }
 
 Events.onAll({
@@ -989,14 +993,17 @@ Events.onAll({
 // Custom inputs
 
 Events.on(CustomInputs.ForceDelete, (e) => {
-  const player = game.get_player(e.player_index)!
+  const playerIndex = e.player_index
+  const player = game.get_player(playerIndex)!
   const entity = player.selected
   if (!entity) return
   const stage = getStageAtEntityOrPreview(entity)
   if (!stage) return
   const { name, position } = entity
-  if (stage.actions.onEntityForceDeleteUsed(entity, stage.stageNumber)) {
+  const undoAction = stage.actions.onEntityForceDeleteUsed(entity, stage.stageNumber, playerIndex)
+  if (undoAction) {
     player.play_sound({ path: "entity-mined/" + name, position })
+    registerUndoAction(undoAction)
   }
 })
 
@@ -1037,7 +1044,7 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
     const undoAction = onSendToStageUsed(entity, stageNumber, targetStage, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
-  registerUndoActionGroup(undoActions)
+  registerGroupUndoAction(undoActions)
 }
 
 function selectionToolUsed(
@@ -1056,7 +1063,7 @@ function selectionToolUsed(
     if (undoAction) undoActions.push(undoAction)
   }
 
-  registerUndoActionGroup(undoActions)
+  registerGroupUndoAction(undoActions)
 }
 
 // staged copy, cut
@@ -1134,7 +1141,7 @@ Events.on_player_deconstructed_area((e) => {
   }
   const undoActions = state.accumulatedUndoActions
   if (undoActions) {
-    registerUndoActionGroup(undoActions)
+    registerGroupUndoAction(undoActions)
     delete state.accumulatedUndoActions
   }
 })

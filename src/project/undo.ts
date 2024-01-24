@@ -112,7 +112,7 @@ export function registerUndoActionLater(action: UndoAction): void {
   if (player) registerUndoLater(action.handlerName, player, action.data)
 }
 
-export function registerUndoActionGroup(actions: UndoAction[]): void {
+export function registerGroupUndoAction(actions: UndoAction[]): void {
   if (actions.length == 0) return
   if (actions.length == 1) return registerUndoAction(actions[0])
   const playerIndex = actions[0].playerIndex
@@ -161,7 +161,11 @@ function doUndoEntryAtIndex(playerIndex: PlayerIndex, undoIndex: number): void {
 }
 
 UndoHandler("_undoGroup", (player, actions: UndoAction[]) => {
-  for (const action of actions) doUndoEntry(player, action)
+  // for (const action of actions) doUndoEntry(player, action)
+  // do actions in reverse
+  for (const i of $range(actions.length, 1, -1)) {
+    doUndoEntry(player, actions[i - 1])
+  }
 })
 
 export function onUndoReferenceBuilt(this: void, playerIndex: PlayerIndex, entity: LuaEntity): void {
@@ -180,6 +184,6 @@ export function _simulateUndo(player: LuaPlayer, index = _lastUndoIndex ?? error
   doUndoEntryAtIndex(player.index, index)
   _lastUndoIndex = nil
 }
-export function _doUndoAction(action: UndoAction): void {
+export function performUndoAction(action: UndoAction): void {
   doUndoEntry(game.get_player(action.playerIndex)!, action)
 }

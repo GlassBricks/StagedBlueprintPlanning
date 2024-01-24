@@ -63,7 +63,12 @@ export interface ProjectUpdates {
   addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil
 
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
+  /**
+   * Deleted entities should be able to be re-added via readdDeletedEntity
+   * @param entity
+   */
   forceDeleteEntity(entity: ProjectEntity): void
+  readdDeletedEntity(value: ProjectEntity): void
 
   tryReviveSettingsRemnant(entity: ProjectEntity, stage: StageNumber): StageMoveResult
   tryUpdateEntityFromWorld(entity: ProjectEntity, stage: StageNumber, knownValue?: BlueprintEntity): EntityUpdateResult
@@ -106,6 +111,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     addNewEntity,
     deleteEntityOrCreateSettingsRemnant,
     forceDeleteEntity,
+    readdDeletedEntity,
     tryReviveSettingsRemnant,
     tryUpdateEntityFromWorld,
     tryRotateEntityFromWorld,
@@ -225,9 +231,15 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       deleteWorldEntities(entity)
     }
   }
+
   function forceDeleteEntity(entity: ProjectEntity): void {
     content.delete(entity)
     deleteWorldEntities(entity)
+  }
+
+  function readdDeletedEntity(entity: ProjectEntity): void {
+    content.add(entity)
+    updateWorldEntities(entity, 1)
   }
 
   function tryReviveSettingsRemnant(entity: ProjectEntity, stage: StageNumber): StageMoveResult {

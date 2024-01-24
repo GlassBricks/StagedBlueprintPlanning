@@ -53,7 +53,7 @@ export interface ProjectActions {
 
   onCleanupToolUsed(entity: LuaEntity, stage: StageNumber): void
   onTryFixEntity(previewEntity: LuaEntity, stage: StageNumber, deleteSettingsRemnants?: boolean): void
-  onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber): boolean
+  onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
 
   onEntityDied(entity: LuaEntityInfo, stage: StageNumber): void
   onEntityDollied(entity: LuaEntity, stage: StageNumber, oldPosition: Position, byPlayer: PlayerIndex | nil): void
@@ -111,8 +111,12 @@ interface InternalProject extends UserProject {
   actions: InternalProjectActions
 }
 
-const undoManualStageMove = UndoHandler("stage move", (player, { project, entity, oldStage }: StageChangeRecord) => {
-  // todo: remove
+const undoDeleteEntity = UndoHandler<ProjectEntityRecord>("delete entity", (_, { project, entity }) => {
+  const updates = (project as InternalProject).updates
+  updates.readdDeletedEntity(entity)
+})
+
+const undoManualStageMove = UndoHandler<StageChangeRecord>("stage move", (player, { project, entity, oldStage }) => {
   const actions = (project as InternalProject).actions
   const actualEntity = actions.findCompatibleEntityForUndo(entity)
   if (actualEntity) {
@@ -120,7 +124,7 @@ const undoManualStageMove = UndoHandler("stage move", (player, { project, entity
   }
 })
 
-const undoSendToStage = UndoHandler("send to stage", (player, { project, entity, oldStage }: StageChangeRecord) => {
+const undoSendToStage = UndoHandler<StageChangeRecord>("send to stage", (player, { project, entity, oldStage }) => {
   const actions = (project as InternalProject).actions
   const actualEntity = actions.findCompatibleEntityForUndo(entity)
   if (actualEntity) {
@@ -128,7 +132,7 @@ const undoSendToStage = UndoHandler("send to stage", (player, { project, entity,
   }
 })
 
-const undoBringToStage = UndoHandler("bring to stage", (player, { project, entity, oldStage }: StageChangeRecord) => {
+const undoBringToStage = UndoHandler<StageChangeRecord>("bring to stage", (player, { project, entity, oldStage }) => {
   const actions = (project as InternalProject).actions
   const actualEntity = actions.findCompatibleEntityForUndo(entity)
   if (actualEntity) {
@@ -475,13 +479,13 @@ export function ProjectActions(
   function onCleanupToolUsed(entity: LuaEntity, stage: StageNumber): void {
     onTryFixEntity(entity, stage, true)
   }
-  function onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber): boolean {
+  function onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
     const projectEntity = content.findCompatibleFromLuaEntityOrPreview(entity, stage)
     if (projectEntity) {
       forceDeleteEntity(projectEntity)
-      return true
+      return undoDeleteEntity.createAction(byPlayer, { project, entity: projectEntity })
     }
-    return false
+    return nil
   }
   function onEntityDied(entity: LuaEntityInfo, stage: StageNumber): void {
     const projectEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)

@@ -438,7 +438,7 @@ describe("Cleanup tool", () => {
       entities: [entity],
       tiles: [],
     })
-    expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1)
+    expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
   })
 })
 
@@ -491,7 +491,7 @@ test("force delete custom input", () => {
     player_index: player.index,
     cursor_position: player.position,
   })
-  expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity!, 1)
+  expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity!, 1, 1)
 })
 
 describe("stage move tool", () => {
