@@ -50,49 +50,49 @@ export type StageNumber = number
  */
 export interface ProjectEntity<out T extends Entity = Entity> {
   readonly position: Position
-  direction: defines.direction
-  /**
-   * If this is rolling stock, the direction is based off of orientation instead.
-   */
-  getPreviewDirection(): defines.direction
-
   setPositionUnchecked(position: Position): void
+
+  direction: defines.direction
+
+  readonly firstValue: Readonly<T>
+  setFirstValue(value: T): void
 
   isSettingsRemnant?: true
 
   readonly firstStage: StageNumber
   readonly lastStage: StageNumber | nil
-  readonly firstValue: Readonly<T>
 
-  /** Linked list for Map2D */
-  _next: ProjectEntity | nil
+  /** Sets the first stage. If moving up, deletes/merges stage diffs from old stage to new stage. */
+  setFirstStageUnchecked(stage: StageNumber): void
+  /** Sets the last stage. If moving down, delete all diffs after the new last stage. */
+  setLastStageUnchecked(stage: StageNumber | nil): void
+
+  isInStage(stage: StageNumber): boolean
+  isPastLastStage(stage: StageNumber): boolean
 
   isRollingStock(): this is RollingStockProjectEntity
   isUndergroundBelt(): this is UndergroundBeltProjectEntity
   isInserter(): this is InserterProjectEntity
 
-  // inFirstStageOnly(): boolean
-
-  isInStage(stage: StageNumber): boolean
-
-  isPastLastStage(stage: StageNumber): boolean
-
-  hasErrorAt(stage: StageNumber): boolean
-
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
   setDropPosition(this: InserterProjectEntity, position: Position | nil): void
   setPickupPosition(this: InserterProjectEntity, position: Position | nil): void
 
+  /** If this is a rolling stock, the direction is based off of orientation instead. */
+  getPreviewDirection(): defines.direction
+
+  hasErrorAt(stage: StageNumber): boolean
+
+  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): StageDiff<T> | nil
   readonly stageDiffs?: StageDiffs<T>
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
-
-  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void
-  setFirstValue(value: T): void
-
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
+
+  /** Linked list for Map2D */
+  _next: ProjectEntity | nil
   /** Returns the first stage after the given stage number with a stage diff, or `nil` if none. */
   nextStageWithDiff(stage: StageNumber): StageNumber | nil
   /** Returns the first stage before the given stage number with a stage diff, or `nil` if none. */
@@ -102,11 +102,6 @@ export interface ProjectEntity<out T extends Entity = Entity> {
   getValueAtStage(stage: StageNumber): Readonly<T> | nil
   /** @return the value of a property at a given stage, or at the first stage if below the first stage. Also returns the stage in which the property is affected. */
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
-
-  /**
-   * Gets the entity name at the given stage. If below the first stage, this returns the first entity name.
-   * Similar to `getPropAtStage("name", stage)`.
-   */
   getNameAtStage(stage: StageNumber): string
   /**
    * Iterates the values of stages in the given range. More efficient than repeated calls to getValueAtStage.
@@ -134,7 +129,7 @@ export interface ProjectEntity<out T extends Entity = Entity> {
    * @return true if the value changed.
    */
   setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean
-  /** Alias for `setPropAtStage("name", stage, name)`. */
+  /** Same as `setPropAtStage("name", stage, name)`. */
   applyUpgradeAtStage(stage: StageNumber, newName: string): boolean
 
   /**
@@ -157,17 +152,6 @@ export interface ProjectEntity<out T extends Entity = Entity> {
    * @return the stage number that the property was applied to, or nil if no property or applicable stage.
    */
   movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
-
-  /**
-   * Sets the first stage. If moving up, deletes/merges stage diffs from old stage to new stage.
-   * @return the previous first stage
-   */
-  setFirstStageUnchecked(stage: StageNumber): StageNumber
-
-  /**
-   * Sets the last stage. If moving down, delete all diffs after the new last stage.
-   */
-  setLastStageUnchecked(stage: StageNumber | nil): void
 
   getWorldEntity(stage: StageNumber): LuaEntity | nil
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
@@ -608,12 +592,11 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     return nil
   }
 
-  setFirstStageUnchecked(stage: StageNumber): StageNumber {
+  setFirstStageUnchecked(stage: StageNumber): void {
     const { firstStage, lastStage } = this
     if (lastStage) assert(stage <= lastStage, "stage must be <= last stage")
     if (stage > firstStage) this.moveFirstStageUp(stage)
     this.firstStage = stage
-    return firstStage
   }
   private moveFirstStageUp(newFirstStage: StageNumber): void {
     const { stageDiffs } = this
