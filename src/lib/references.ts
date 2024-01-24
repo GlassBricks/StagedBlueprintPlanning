@@ -37,7 +37,7 @@ function registerClass(name: string, item: Class<any>) {
   for (const [key, value] of pairs(item)) {
     // noinspection SuspiciousTypeOfGuard
     if (typeof value == "function" && typeof key == "string") {
-      Functions.registerRaw(name + "." + key, value)
+      Functions.registerAs(name + "." + key, value)
     }
   }
 }
@@ -77,7 +77,7 @@ export function registerFunctions(prefix: string, functions: Functions): void {
 }
 export function registerFunctionsCustomPrefix(prefix: string, functions: Functions): void {
   for (const [name, func] of pairs(functions)) {
-    Functions.registerRaw(prefix + name, func)
+    Functions.registerAs(prefix + name, func)
   }
 }
 

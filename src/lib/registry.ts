@@ -20,7 +20,7 @@ export class Registry<T extends AnyNotNil> {
     protected getDebugDescription: (item: T) => string,
   ) {}
 
-  registerRaw(name: string, item: T): void {
+  registerAs(name: string, item: T): void {
     if (game != nil) {
       error("This operation must only be done during script load.")
     }

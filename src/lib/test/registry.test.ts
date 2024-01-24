@@ -30,15 +30,15 @@ describe("registering", () => {
 
   test("Can register function", () => {
     const testFuncName = "foo"
-    registry.registerRaw(testFuncName, "foo")
+    registry.registerAs(testFuncName, "foo")
     expect(registry.get(testFuncName)).toEqual("foo")
     expect(registry.nameOf("foo")).toEqual(testFuncName)
   })
 
   test("error on duplicate name", () => {
     expect(() => {
-      registry.registerRaw("foo", "bar")
-      registry.registerRaw("foo", "baz")
+      registry.registerAs("foo", "bar")
+      registry.registerAs("foo", "baz")
     }).toError()
   })
 
@@ -54,6 +54,6 @@ describe("registering", () => {
 test("Error when registering after load", () => {
   expect(() => {
     const registry = new Registry<string>("string", (x) => x)
-    registry.registerRaw("foo", "bar")
+    registry.registerAs("foo", "bar")
   }).toError()
 })
