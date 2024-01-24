@@ -107,7 +107,7 @@ class UserProjectImpl implements UserProject {
   private static getDisplayName(this: void, id: ProjectId, name: string): LocalisedString {
     return name != "" ? name : [L_Bp100.UnnamedProject, id]
   }
-  public displayName(): Property<LocalisedString> {
+  displayName(): Property<LocalisedString> {
     return this.name.map(bind(UserProjectImpl.getDisplayName, this.id))
   }
 
@@ -379,9 +379,9 @@ class StageImpl implements Stage {
   getBlueprintBBox(): BBox {
     return this.project.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
   }
-  public constructor(
+  constructor(
     public project: UserProjectImpl,
-    public readonly surface: LuaSurface,
+    readonly surface: LuaSurface,
     public stageNumber: StageNumber,
     name: string,
   ) {

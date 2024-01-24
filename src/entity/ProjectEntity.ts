@@ -214,10 +214,10 @@ const { raise_script_destroy } = script
 
 @RegisterClass("AssemblyEntity")
 class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
-  public position: Position
-  public direction: defines.direction
+  position: Position
+  direction: defines.direction
 
-  public isSettingsRemnant: true | nil
+  isSettingsRemnant: true | nil
 
   firstStage: StageNumber
   lastStage: StageNumber | nil
@@ -241,7 +241,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     }
   }
 
-  public getPreviewDirection(): defines.direction {
+  getPreviewDirection(): defines.direction {
     if (this.isRollingStock()) {
       return orientationToDirection((this.firstValue as RollingStockEntity).orientation)
     }
@@ -303,10 +303,10 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     const { stageDiffs } = this
     return stageDiffs && stageDiffs[stage]
   }
-  public setStageDiffs(stageDiffs: StageDiffs<T> | nil): void {
+  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void {
     this.stageDiffs = stageDiffs
   }
-  public setFirstValue(value: T): void {
+  setFirstValue(value: T): void {
     this.firstValue = value
   }
   private getStageDiffProp<K extends keyof T>(
@@ -611,7 +611,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     }
   }
 
-  public setLastStageUnchecked(stage: StageNumber | nil): void {
+  setLastStageUnchecked(stage: StageNumber | nil): void {
     assert(!stage || stage >= this.firstStage, "stage must be >= first stage")
     const { lastStage } = this
     if (stage && (lastStage == nil || stage < lastStage)) this.moveLastStageDown(stage)
@@ -738,7 +738,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     if (isEmpty(stageProperties)) delete this.stageProperties
   }
 
-  public hasAnyExtraEntities(type: ExtraEntityType): boolean {
+  hasAnyExtraEntities(type: ExtraEntityType): boolean {
     const { stageProperties } = this
     return stageProperties != nil && stageProperties[type] != nil
   }

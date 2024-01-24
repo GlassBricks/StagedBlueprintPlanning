@@ -75,7 +75,7 @@ export class Subscription implements Unsubscribable, ObserveOnlySubscription {
     }
   }
 
-  public tryClose(): UnsubscriptionError | nil {
+  tryClose(): UnsubscriptionError | nil {
     const { _children } = this
     if (!_children) return
 

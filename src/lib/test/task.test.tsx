@@ -26,7 +26,7 @@ class TestTask extends LoopTask {
   constructor() {
     super(5)
   }
-  public override getTitle(): LocalisedString {
+  override getTitle(): LocalisedString {
     return "Test task"
   }
   protected doStep(i: number): void {
@@ -38,7 +38,7 @@ class TestTask extends LoopTask {
   protected override done(): void {
     actions.push("done")
   }
-  public override cancel(): void {
+  override cancel(): void {
     actions.push("cancelled")
   }
 }
@@ -48,7 +48,7 @@ class TestEnumeratedTask extends EnumeratedItemsTask<string> {
   constructor() {
     super(["a", "b", "c"])
   }
-  public override getTitle(): LocalisedString {
+  override getTitle(): LocalisedString {
     return "Test task"
   }
   protected doTask(i: string): void {
@@ -57,7 +57,7 @@ class TestEnumeratedTask extends EnumeratedItemsTask<string> {
   protected override getTitleForTask(task: string): LocalisedString {
     return "step " + task
   }
-  public override cancel(): void {
+  override cancel(): void {
     actions.push("cancelled")
   }
   protected override done(): void {

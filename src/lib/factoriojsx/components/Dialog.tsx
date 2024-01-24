@@ -34,7 +34,7 @@ export class Dialog extends Component<DialogProps> {
   private onBackFn?: Func<(player: LuaPlayer) => void>
   private onConfirmFn?: Func<(player: LuaPlayer) => void>
   private redConfirm?: boolean
-  public override render(props: DialogProps): Element {
+  override render(props: DialogProps): Element {
     assert(props.backCaption || props.confirmCaption, "Dialog requires at least one button")
 
     this.onBackFn = props.onBack
@@ -78,7 +78,7 @@ export class Dialog extends Component<DialogProps> {
     destroy(this.element)
   }
 
-  public onConfirm(e: { player_index: PlayerIndex }): void {
+  onConfirm(e: { player_index: PlayerIndex }): void {
     this.onConfirmFn?.invoke(game.players[e.player_index])
     destroy(this.element)
   }

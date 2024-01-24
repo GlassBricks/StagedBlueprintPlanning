@@ -46,7 +46,7 @@ export interface Task {
 export abstract class LoopTask implements Task {
   private nextStep: number = 0
 
-  protected constructor(public readonly steps: number) {}
+  protected constructor(readonly steps: number) {}
 
   abstract getTitle(): LocalisedString
   protected abstract doStep(i: number): void
@@ -62,7 +62,7 @@ export abstract class LoopTask implements Task {
   cancel(): void {
     // default no-op
   }
-  public getNextStepTitle(): LocalisedString | nil {
+  getNextStepTitle(): LocalisedString | nil {
     if (this.isDone()) return nil
     return this.getTitleForStep(this.nextStep)
   }
@@ -170,7 +170,7 @@ class CurrentTaskGui extends Component<{
   task: Task
 }> {
   mainFrame!: FrameGuiElement
-  public override render(
+  override render(
     {
       task,
     }: {

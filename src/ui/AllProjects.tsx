@@ -67,7 +67,7 @@ class AllProjects extends Component {
   playerIndex!: PlayerIndex
   scrollPane!: ScrollPaneGuiElement
 
-  public override render(_: EmptyProps, context: RenderContext): Element {
+  override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
     const currentStage = playerCurrentStage(this.playerIndex)
     return (

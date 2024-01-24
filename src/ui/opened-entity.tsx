@@ -71,7 +71,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   updates!: ProjectUpdates
   entity!: ProjectEntity
 
-  public override render(props: EntityStageInfoProps, context: RenderContext): Element {
+  override render(props: EntityStageInfoProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
     const { stage, projectEntity: entity } = props
     this.stage = stage

@@ -68,7 +68,7 @@ class RebuildAllStagesTask extends LoopTask {
   constructor(private project: Project) {
     super(project.numStages())
   }
-  public override getTitle(): LocalisedString {
+  override getTitle(): LocalisedString {
     return [L_GuiTasks.RebuildAllStages]
   }
   protected override doStep(i: number): void {

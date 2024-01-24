@@ -30,7 +30,7 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   private elementSubscription?: Subscription
   private element!: DropDownGuiElement | ListBoxGuiElement
 
-  public override render(props: StageSelectorProps<T>, context: RenderContext): Element {
+  override render(props: StageSelectorProps<T>, context: RenderContext): Element {
     this.project = props.project
 
     this.trackerSubscription = context.getSubscription()

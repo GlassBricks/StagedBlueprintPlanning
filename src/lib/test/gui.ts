@@ -120,7 +120,14 @@ export function simulateEvent<T extends GuiEvent>(
 
 // fluent API of above
 export class ElementWrapper<T extends GuiElementType = GuiElementType> {
-  constructor(public readonly element: Extract<LuaGuiElement, { type: T }>) {}
+  constructor(
+    readonly element: Extract<
+      LuaGuiElement,
+      {
+        type: T
+      }
+    >,
+  ) {}
 
   simulateEvent<T extends GuiEvent>(event: Omit<T, "element" | "tick" | "player_index">): void {
     simulateEvent(this.element, event)

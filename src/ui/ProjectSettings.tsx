@@ -139,7 +139,7 @@ class ProjectSettings extends Component<{
   project!: UserProject
   playerIndex!: PlayerIndex
 
-  public override render(
+  override render(
     props: {
       project: UserProject
     },
@@ -548,7 +548,7 @@ export class StageSettings extends Component<{
 }> {
   playerIndex!: PlayerIndex
   stage!: Stage
-  public override render(
+  override render(
     props: {
       stage: Stage
     },

@@ -109,13 +109,13 @@ export interface MutableProperty<T> extends Property<T> {
 
 @RegisterClass("MutableState")
 class MutablePropertyImpl<T> extends BasicProperty<T> implements MutableProperty<T> {
-  public constructor(private value: T) {
+  constructor(private value: T) {
     super()
   }
   get(): T {
     return this.value
   }
-  public set(value: T): void {
+  set(value: T): void {
     const oldValue = this.value
     this.value = value
     if (oldValue != value) {
@@ -140,7 +140,7 @@ class MappedProperty<T, U> extends BasicProperty<U> {
   private sourceSubscription: Subscription | nil
   private curValue: U | nil
 
-  public constructor(
+  constructor(
     private readonly source: Property<T>,
     private readonly mapper: Mapper<T, U>,
   ) {
@@ -197,7 +197,7 @@ class CustomProperty<U> extends BasicProperty<U> {
   private subscriptions: Subscription[] | nil
   private curValue: U | nil
 
-  public constructor(
+  constructor(
     private readonly sources: Property<unknown>[],
     private readonly func: Func<() => U>,
   ) {
@@ -275,7 +275,7 @@ export class FlatMappedProperty<T, U> extends BasicProperty<U> {
   private nestedSubscription: Subscription | nil
   private curValue: U | nil
 
-  public constructor(
+  constructor(
     private readonly source: Property<T>,
     private readonly mapper: Mapper<T, MaybeProperty<U>>,
   ) {

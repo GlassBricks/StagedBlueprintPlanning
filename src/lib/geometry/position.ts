@@ -95,7 +95,7 @@ namespace Pos {
     flipHorizontal: boolean,
     flipVertical: boolean,
     rotation: defines.direction | nil,
-  ) {
+  ): PositionClass {
     let x = pos.x
     let y = pos.y
     if (flipHorizontal) x = -x

@@ -227,7 +227,7 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
   ) {
     super(steps)
   }
-  public override getTitle(): LocalisedString {
+  override getTitle(): LocalisedString {
     return this.title
   }
 
@@ -272,7 +272,7 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
   protected override done(): void {
     if (this.inventory?.valid) this.inventory.destroy()
   }
-  public override cancel(): void {
+  override cancel(): void {
     this.done()
   }
 }
@@ -314,7 +314,7 @@ class BlueprintCreationTaskBuilder {
     }
   }
 
-  public queueBlueprintTask(
+  queueBlueprintTask(
     stage: Stage,
     stack: LuaItemStack,
   ):
@@ -353,7 +353,7 @@ class BlueprintCreationTaskBuilder {
     return this
   }
 
-  public build(taskTitle: (LocalisedString & object) | nil): BlueprintCreationTask {
+  build(taskTitle: (LocalisedString & object) | nil): BlueprintCreationTask {
     return new BlueprintCreationTask(this.tasks, this.inventory, taskTitle)
   }
 
