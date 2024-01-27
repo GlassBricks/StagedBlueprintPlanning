@@ -212,7 +212,7 @@ function assertIsSettingsRemnant(entity: ProjectEntity) {
   expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
   expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
 }
-let defaultName: string = "inserter"
+let defaultName = "inserter"
 before_each(() => {
   defaultName = "inserter"
 })
@@ -432,7 +432,7 @@ describe.each([
   test("can upgrade at first stage via fast replace", () => {
     const dir = direction.east
     const entity = buildEntity(3)
-    player.teleport(player.position, project.getSurface(3)!)
+    player.teleport(player.position, project.getSurface(3))
     player.cursor_stack!.set_stack(upgradeName)
     player.build_from_cursor({ position: pos, direction: dir })
 
