@@ -1020,16 +1020,27 @@ test("update with upgrade and blocker", () => {
   assertEntityCorrect(entity, 5)
 })
 
-test("creating upgrade via apply upgrade target", () => {
-  const entity = buildEntity(3)
+test.each([
+  ["transport-belt", "fast-transport-belt"],
+  ["fast-transport-belt", "transport-belt"],
+  ["filter-inserter", "stack-filter-inserter"],
+  ["assembling-machine-1", "assembling-machine-2"],
+  ["assembling-machine-3", "assembling-machine-1"],
+  ["wooden-chest", "iron-chest"],
+  ["underground-belt", "fast-underground-belt"],
+])("creating upgrade from %s to %s", (from, to) => {
+  const entity = buildEntity(3, { name: from })
   const worldEntity = entity.getWorldEntity(4)!
   worldEntity.order_upgrade({
     force: worldEntity.force,
-    target: "stack-filter-inserter",
+    target: to,
+    player,
   })
-  updates.tryUpgradeEntityFromWorld(entity, 4)
-  expect(entity.firstValue.name).toBe("filter-inserter")
-  expect(entity.getStageDiff(4)).toEqual({ name: "stack-filter-inserter" })
+
+  expect(entity.firstValue.name).toBe(from)
+  expect(entity.getStageDiff(4)).toEqual({ name: to })
+  expect(entity.getWorldEntity(4)!.name).toBe(to)
+  expect(entity.getWorldEntity(5)!.name).toBe(to)
 
   assertEntityCorrect(entity, false)
 })
