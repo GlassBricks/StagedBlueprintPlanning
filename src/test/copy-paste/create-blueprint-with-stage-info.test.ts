@@ -48,12 +48,13 @@ test("create blueprint of simple entity", () => {
   })
   entity.setLastStageUnchecked(3)
 
-  createBlueprintWithStageInfo(player, project.getStage(3)!, {
+  const stack = createBlueprintWithStageInfo(player, project.getStage(3)!, {
     left_top: Pos(-1, -1),
     right_bottom: Pos(1, 1),
-  })
+  })!
 
-  const entities = player.cursor_stack!.get_blueprint_entities()!
+  expect(stack).toBeAny()
+  const entities = stack.get_blueprint_entities()!
   expect(entities).toHaveLength(1)
   expect(entities[0].name).toBe("stone-furnace")
   expect(entities[0].tags).toEqual({
@@ -73,12 +74,13 @@ test("create blueprint of entity with stage diff", () => {
     recipe: getNilPlaceholder(),
   })
 
-  createBlueprintWithStageInfo(player, project.getStage(2)!, {
+  const stack = createBlueprintWithStageInfo(player, project.getStage(2)!, {
     left_top: Pos(-1, -1),
     right_bottom: Pos(1, 1),
-  })
+  })!
 
-  const entities = player.cursor_stack!.get_blueprint_entities()!
+  expect(stack).toBeAny()
+  const entities = stack.get_blueprint_entities()!
   expect(entities).toHaveLength(1)
   expect(entities[0].tags?.bp100).toEqual({
     firstStage: 2,

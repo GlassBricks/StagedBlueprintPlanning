@@ -9,25 +9,32 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, BoundingBox, LuaPlayer } from "factorio:runtime"
+import { BlueprintEntity, BoundingBox, LuaInventory, LuaItemStack, LuaPlayer } from "factorio:runtime"
 import { isEmpty, Mutable } from "../lib"
 import { Stage } from "../project/ProjectDef"
 import { BpStagedInfo, BpStagedInfoTags, toBpStageDiffs } from "./blueprint-stage-info"
 
-export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): void {
-  const stack = player.cursor_stack
-  if (!stack) error("cannot create blueprint without cursor stack")
+declare global {
+  interface PlayerData {
+    tempBpInventory?: LuaInventory
+  }
+}
+declare const global: GlobalWithPlayers
 
-  const oldStack = stack.valid_for_read ? stack.name : nil
+export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): LuaItemStack | nil {
+  const inventory = (global.players[player.index].tempBpInventory ??= game.create_inventory(1))
+  const stack = inventory[0]
+  stack.clear()
   stack.set_stack("blueprint")
+
   const entityMapping = stack.create_blueprint({
     surface: stage.surface,
     force: player.force_index,
     area,
   })
   if (isEmpty(entityMapping)) {
-    stack.set_stack(oldStack)
-    return
+    stack.clear()
+    return nil
   }
   const blueprintEntities = stack.get_blueprint_entities() as Mutable<BlueprintEntity>[]
   const content = stage.project.content
@@ -49,6 +56,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
   }
 
   stack.set_blueprint_entities(blueprintEntities)
+  return stack
 }
 
 export const _mockable = true

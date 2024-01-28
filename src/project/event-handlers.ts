@@ -20,6 +20,7 @@ import {
   CustomEventId,
   LuaEntity,
   LuaItemPrototype,
+  LuaItemStack,
   LuaPlayer,
   LuaSurface,
   MapPosition,
@@ -1042,19 +1043,48 @@ addSelectionToolHandlers(Prototypes.StageDeconstructTool, {
   onAltSelected: (e) => selectionToolUsed(e, "onStageDeleteCancelUsed"),
 })
 
-// staged copy, staged cut; force delete
+declare global {
+  interface PlayerData {
+    blueprintToSetup?: LuaItemStack
+  }
+}
 
+// staged copy, staged cut; force delete
 function stagedCopyToolUsed(event: OnPlayerSelectedAreaEvent): void {
   const player = game.get_player(event.player_index)!
   const stage = getStageAtSurface(event.surface.index)
   if (!stage) {
     return player.print([L_Interaction.NotInAnProject])
   }
-  createBlueprintWithStageInfo(player, stage, event.area)
+  const stack = createBlueprintWithStageInfo(player, stage, event.area)
+  if (!stack) return
+  if (event.name != defines.events.on_player_alt_selected_area) {
+    player.add_to_clipboard(stack)
+    player.activate_paste()
+  } else {
+    player.clear_cursor()
+    player.opened = stack
+    global.players[event.player_index].blueprintToSetup = stack
+  }
 }
+
+Events.on_gui_closed((e) => {
+  const playerData = global.players[e.player_index]
+  const stack = playerData.blueprintToSetup
+  if (!stack) return
+  delete playerData.blueprintToSetup
+  const player = game.get_player(e.player_index)!
+  if (!(stack?.valid && stack.valid_for_read)) return
+  if (stack.valid_for_read && stack.is_blueprint && stack.is_blueprint_setup()) {
+    player.add_to_clipboard(stack)
+    player.activate_paste()
+  }
+  stack.clear()
+})
 
 addSelectionToolHandlers(Prototypes.StagedCopyTool, {
   onSelected: stagedCopyToolUsed,
+  onAltSelected: stagedCopyToolUsed,
 })
 
 function forceDeleteToolUsed(event: OnPlayerSelectedAreaEvent): void {
@@ -1072,6 +1102,7 @@ function forceDeleteToolUsed(event: OnPlayerSelectedAreaEvent): void {
 
 addSelectionToolHandlers(Prototypes.ForceDeleteTool, {
   onSelected: forceDeleteToolUsed,
+  onAltSelected: forceDeleteToolUsed,
 })
 
 function cutToolUsed(event: OnPlayerSelectedAreaEvent): void {
@@ -1081,6 +1112,7 @@ function cutToolUsed(event: OnPlayerSelectedAreaEvent): void {
 
 addSelectionToolHandlers(Prototypes.StagedCutTool, {
   onSelected: cutToolUsed,
+  onAltSelected: cutToolUsed,
 })
 
 // Filtered stage move tool

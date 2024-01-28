@@ -320,20 +320,25 @@ function createRailPreview(
 data.extend(previews)
 
 const previewNames = previews.map((preview) => preview.name)
-const cleanupTool = data.raw["selection-tool"][Prototypes.CleanupTool]!
-cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
+const entityOrPreviewNames = [...buildableNames, ...previewNames]
 
+const cleanupTool = data.raw["selection-tool"][Prototypes.CleanupTool]!
 const stageMoveTool = data.raw["selection-tool"][Prototypes.StageMoveTool]!
 const stagedCopyTool = data.raw["selection-tool"][Prototypes.StagedCopyTool]!
 const stagedCutTool = data.raw["selection-tool"][Prototypes.StagedCutTool]!
+const forceDeleteTool = data.raw["selection-tool"][Prototypes.ForceDeleteTool]!
 
-const entityOrPreviewNames = [...buildableNames, ...previewNames]
+cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
+
 stageMoveTool.entity_filters = buildableNames
 stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = entityOrPreviewNames
 stageMoveTool.alt_reverse_entity_filters = previewNames
 
-stagedCopyTool.alt_entity_filters = entityOrPreviewNames
-stagedCutTool.alt_entity_filters = entityOrPreviewNames
+stagedCopyTool.entity_filters = stagedCopyTool.alt_entity_filters = buildableNames
+stagedCutTool.entity_filters = stagedCutTool.alt_entity_filters = buildableNames
+
+forceDeleteTool.entity_filters = buildableNames
+forceDeleteTool.alt_entity_filters = entityOrPreviewNames
 
 const twoDirectionOnlyTanks: string[] = []
 for (const [name, tank] of pairs(data.raw["storage-tank"])) {

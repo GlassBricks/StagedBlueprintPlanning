@@ -83,6 +83,7 @@ if ("factorio-test" in script.active_mods) {
           }
         }
       }
+      player.get_main_inventory()!.clear()
     }
     for (const [, surface] of game.surfaces) {
       if (surface.index != 1) game.delete_surface(surface)

@@ -222,7 +222,7 @@ Object.assign(stageCopyTool, {
   order: "z[bp100]-b[staged-copy-tool]",
   flags: ["spawnable", "not-stackable"],
   selection_mode: ["blueprint"],
-  alt_selection_mode: ["any-entity"],
+  alt_selection_mode: ["blueprint"],
   localised_name: [L_Bp100.StagedTool, ["item-name.copy-paste-tool"]],
 } satisfies Partial<SelectionToolPrototype>)
 
@@ -234,8 +234,8 @@ Object.assign(stageCutTool, {
   order: "z[bp100]-b[staged-cut-tool]",
   flags: ["spawnable", "not-stackable"],
   selection_mode: ["blueprint"],
+  alt_selection_mode: ["blueprint"],
   localised_name: [L_Bp100.StagedTool, ["item-name.cut-paste-tool"]],
-  alt_selection_mode: ["any-entity"],
 } satisfies Partial<SelectionToolPrototype>)
 
 data.extend([
@@ -260,7 +260,7 @@ data.extend([
 
 const deconstructionPlanner = table.deepcopy(data.raw["deconstruction-item"]["deconstruction-planner"]!)
 
-const forceDeconstructTool: SelectionToolPrototype = {
+const forceDeleteTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.ForceDeleteTool,
   icon: "__base__/graphics/icons/deconstruction-planner.png",
@@ -273,24 +273,24 @@ const forceDeconstructTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-c[force-deconstruct-tool]",
 
-  selection_mode: ["deconstruct"],
+  selection_mode: ["blueprint"],
   selection_color: deconstructionPlanner.selection_color,
   selection_cursor_box_type: "not-allowed",
 
   alt_selection_mode: ["any-entity"],
-  alt_selection_color: deconstructionPlanner.alt_selection_color,
+  alt_selection_color: deconstructionPlanner.selection_color,
   alt_selection_cursor_box_type: "not-allowed",
 }
 
 data.extend([
-  forceDeconstructTool,
+  forceDeleteTool,
   selectionToolToShortcut(
-    forceDeconstructTool,
+    forceDeleteTool,
     table.deepcopy(data.raw["shortcut"]["give-deconstruction-planner"]!.icon),
     Prototypes.ForceDeleteTool,
     "red",
   ),
-  selectionToolToInput(forceDeconstructTool),
+  selectionToolToInput(forceDeleteTool),
 ])
 
 // stage delete tool

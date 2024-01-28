@@ -32,7 +32,7 @@ import direction = defines.direction
 let project: UserProject & {
   actions: mock.MockedObjectNoSelf<ProjectActions>
 }
-const CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, true)
+const CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, false)
 let surface: LuaSurface
 let player: LuaPlayer
 const pos = Pos(0.5, 0.5)
@@ -620,6 +620,16 @@ describe("stage move tool", () => {
 })
 
 describe("staged copy, delete, cut", () => {
+  let entity: LuaEntity
+  before_each(() => {
+    // copy followed by delete
+    entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    expect(entity).toBeAny()
+  })
   test("staged copy", () => {
     Events.raiseFakeEventNamed("on_player_selected_area", {
       surface,
@@ -635,13 +645,39 @@ describe("staged copy, delete, cut", () => {
       project.getStage(1)!,
       BBox.around(pos, 10),
     )
+    expect(player.is_cursor_blueprint()).toBe(true)
+    const entities = player.get_blueprint_entities()!
+    expect(entities).toHaveLength(1)
+    expect(entities[0].name).toBe("inserter")
+
+    expect(player.blueprint_to_setup.is_blueprint).toBe(false)
   })
+  test("staged copy, alt select", () => {
+    Events.raiseFakeEventNamed("on_player_alt_selected_area", {
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [],
+      tiles: [],
+      item: Prototypes.StagedCopyTool,
+      player_index: player.index,
+    })
+    expect(CreateBpWithStageInfo.createBlueprintWithStageInfo).toHaveBeenCalledWith(
+      player,
+      project.getStage(1)!,
+      BBox.around(pos, 10),
+    )
+
+    expect(player.cursor_stack?.valid_for_read).toBe(false)
+
+    player.opened = nil
+
+    expect(player.is_cursor_blueprint()).toBe(true)
+    const entities = player.get_blueprint_entities()!
+    expect(entities).toHaveLength(1)
+    expect(entities[0].name).toBe("inserter")
+  })
+
   test("force delete", () => {
-    const entity = surface.create_entity({
-      name: "inserter",
-      position: pos,
-      force: "player",
-    })!
     Events.raiseFakeEventNamed("on_player_selected_area", {
       surface,
       area: BBox.around(pos, 10),
@@ -658,12 +694,6 @@ describe("staged copy, delete, cut", () => {
   })
 
   test("staged cut", () => {
-    // copy followed by delete
-    const entity = surface.create_entity({
-      name: "inserter",
-      position: pos,
-      force: "player",
-    })!
     Events.raiseFakeEventNamed("on_player_selected_area", {
       surface,
       area: BBox.around(pos, 10),
@@ -681,6 +711,11 @@ describe("staged copy, delete, cut", () => {
 
     project.actions.onEntityForceDeleteUsed.invokes(() => TestUndo.createAction(player.index, "force delete"))
     expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
+
+    expect(player.is_cursor_blueprint()).toBe(true)
+    const entities = player.get_blueprint_entities()!
+    expect(entities).toHaveLength(1)
+    expect(entities[0].name).toBe("inserter")
 
     _simulateUndo(player)
     expect(undoFn).toHaveBeenCalledWith("force delete")

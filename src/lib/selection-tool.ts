@@ -29,7 +29,7 @@ const globalHandlers = {
   on_player_alt_reverse_selected_area: new LuaMap<string, SelectHandler>(),
 } satisfies PRecord<keyof typeof defines.events, LuaMap<string, SelectHandler>>
 
-export function addSelectionToolHandlers(prototype: string, handlers: SelectHandlers) {
+export function addSelectionToolHandlers(prototype: string, handlers: SelectHandlers): void {
   if (handlers.onSelected) globalHandlers.on_player_selected_area.set(prototype, handlers.onSelected)
   if (handlers.onAltSelected) globalHandlers.on_player_alt_selected_area.set(prototype, handlers.onAltSelected)
   if (handlers.onReverseSelected)
