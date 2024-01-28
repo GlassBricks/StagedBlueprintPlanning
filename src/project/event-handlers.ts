@@ -50,6 +50,7 @@ import {
 import { isWorldEntityProjectEntity } from "../entity/ProjectEntity"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
+import { addSelectionToolHandlers } from "../lib/selection-tool"
 import { L_Interaction } from "../locale"
 import { getProjectPlayerData } from "./player-project-data"
 import { Stage } from "./ProjectDef"
@@ -951,8 +952,7 @@ Events.on_selected_entity_changed((e) => {
 
 // Cleanup tool
 
-function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
-  if (e.item != Prototypes.CleanupTool) return
+function onCleanupToolSelected(e: OnPlayerSelectedAreaEvent): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
   const updateLater: LuaEntity[] = []
@@ -969,8 +969,7 @@ function checkCleanupTool(e: OnPlayerSelectedAreaEvent): void {
     onCleanupToolUsed(entity, stageNumber)
   }
 }
-function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
-  if (e.item != Prototypes.CleanupTool) return
+function onCleanupToolReverseSelected(e: OnPlayerSelectedAreaEvent): void {
   const playerIndex = e.player_index
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
@@ -984,45 +983,10 @@ function checkCleanupToolReverse(e: OnPlayerSelectedAreaEvent): void {
   registerGroupUndoAction(undoActions)
 }
 
-Events.onAll({
-  on_player_selected_area: checkCleanupTool,
-  on_player_alt_selected_area: checkCleanupTool,
-  on_player_reverse_selected_area: checkCleanupToolReverse,
-})
-
-// Custom inputs
-
-Events.on(CustomInputs.ForceDelete, (e) => {
-  const playerIndex = e.player_index
-  const player = game.get_player(playerIndex)!
-  const entity = player.selected
-  if (!entity) return
-  const stage = getStageAtEntityOrPreview(entity)
-  if (!stage) return
-  const { name, position } = entity
-  const undoAction = stage.actions.onEntityForceDeleteUsed(entity, stage.stageNumber, playerIndex)
-  if (undoAction) {
-    player.play_sound({ path: "entity-mined/" + name, position })
-    registerUndoAction(undoAction)
-  }
-})
-
-Events.on(CustomInputs.MoveToThisStage, (e) => {
-  const player = game.get_player(e.player_index)!
-  const entity = player.selected
-  if (!entity) return
-  const stage = getStageAtEntityOrPreview(entity)
-  if (!stage) {
-    // should this be in project-actions.ts instead?
-    player.create_local_flying_text({
-      text: [L_Interaction.NotInAnProject],
-      create_at_cursor: true,
-    })
-    return
-  }
-
-  const undoAction = stage.actions.onMoveEntityToStageCustomInput(entity, stage.stageNumber, e.player_index)
-  if (undoAction) registerUndoAction(undoAction)
+addSelectionToolHandlers(Prototypes.CleanupTool, {
+  onSelected: onCleanupToolSelected,
+  onAltSelected: onCleanupToolSelected,
+  onReverseSelected: onCleanupToolReverseSelected,
 })
 
 // Stage move tool, stage deconstruct tool
@@ -1066,7 +1030,20 @@ function selectionToolUsed(
   registerGroupUndoAction(undoActions)
 }
 
-// staged copy, cut
+addSelectionToolHandlers(Prototypes.StageMoveTool, {
+  onSelected: stageMoveToolUsed,
+  onAltSelected: (e) => selectionToolUsed(e, "onBringToStageUsed"),
+  onReverseSelected: (e) => selectionToolUsed(e, "onBringToStageUsed"),
+  onAltReverseSelected: (e) => selectionToolUsed(e, "onBringDownToStageUsed"),
+})
+
+addSelectionToolHandlers(Prototypes.StageDeconstructTool, {
+  onSelected: (e) => selectionToolUsed(e, "onStageDeleteUsed"),
+  onAltSelected: (e) => selectionToolUsed(e, "onStageDeleteCancelUsed"),
+})
+
+// staged copy, staged cut; force delete
+
 function stagedCopyToolUsed(event: OnPlayerSelectedAreaEvent): void {
   const player = game.get_player(event.player_index)!
   const stage = getStageAtSurface(event.surface.index)
@@ -1076,34 +1053,34 @@ function stagedCopyToolUsed(event: OnPlayerSelectedAreaEvent): void {
   createBlueprintWithStageInfo(player, stage, event.area)
 }
 
-Events.on_player_selected_area((e) => {
-  const item = e.item
-  if (item == Prototypes.StageMoveTool) {
-    stageMoveToolUsed(e)
-  } else if (item == Prototypes.StageDeconstructTool) {
-    selectionToolUsed(e, "onStageDeleteUsed")
-  } else if (item == Prototypes.StagedCopyTool) {
-    stagedCopyToolUsed(e)
-  }
+addSelectionToolHandlers(Prototypes.StagedCopyTool, {
+  onSelected: stagedCopyToolUsed,
 })
 
-Events.on_player_alt_selected_area((e) => {
-  if (e.item == Prototypes.StageMoveTool) {
-    selectionToolUsed(e, "onBringToStageUsed")
-  } else if (e.item == Prototypes.StageDeconstructTool) {
-    selectionToolUsed(e, "onStageDeleteCancelUsed")
+function forceDeleteToolUsed(event: OnPlayerSelectedAreaEvent): void {
+  const stage = getStageAtSurface(event.surface.index)
+  if (!stage) return
+  const { stageNumber } = stage
+  const undoActions: UndoAction[] = []
+  const onEntityForceDeleteUsed = stage.actions.onEntityForceDeleteUsed
+  for (const entity of event.entities) {
+    const undoAction = onEntityForceDeleteUsed(entity, stageNumber, event.player_index)
+    if (undoAction) undoActions.push(undoAction)
   }
-})
-Events.on_player_reverse_selected_area((e) => {
-  if (e.item == Prototypes.StageMoveTool) {
-    selectionToolUsed(e, "onBringToStageUsed")
-  }
+  registerGroupUndoAction(undoActions)
+}
+
+addSelectionToolHandlers(Prototypes.ForceDeleteTool, {
+  onSelected: forceDeleteToolUsed,
 })
 
-Events.on_player_alt_reverse_selected_area((e) => {
-  if (e.item == Prototypes.StageMoveTool) {
-    selectionToolUsed(e, "onBringDownToStageUsed")
-  }
+function cutToolUsed(event: OnPlayerSelectedAreaEvent): void {
+  stagedCopyToolUsed(event)
+  forceDeleteToolUsed(event)
+}
+
+addSelectionToolHandlers(Prototypes.StagedCutTool, {
+  onSelected: cutToolUsed,
 })
 
 // Filtered stage move tool
@@ -1146,7 +1123,43 @@ Events.on_player_deconstructed_area((e) => {
   }
 })
 
+// Custom inputs
+
+Events.on(CustomInputs.ForceDelete, (e) => {
+  const playerIndex = e.player_index
+  const player = game.get_player(playerIndex)!
+  const entity = player.selected
+  if (!entity) return
+  const stage = getStageAtEntityOrPreview(entity)
+  if (!stage) return
+  const { name, position } = entity
+  const undoAction = stage.actions.onEntityForceDeleteUsed(entity, stage.stageNumber, playerIndex)
+  if (undoAction) {
+    player.play_sound({ path: "entity-mined/" + name, position })
+    registerUndoAction(undoAction)
+  }
+})
+
+Events.on(CustomInputs.MoveToThisStage, (e) => {
+  const player = game.get_player(e.player_index)!
+  const entity = player.selected
+  if (!entity) return
+  const stage = getStageAtEntityOrPreview(entity)
+  if (!stage) {
+    // should this be in project-actions.ts instead?
+    player.create_local_flying_text({
+      text: [L_Interaction.NotInAnProject],
+      create_at_cursor: true,
+    })
+    return
+  }
+
+  const undoAction = stage.actions.onMoveEntityToStageCustomInput(entity, stage.stageNumber, e.player_index)
+  if (undoAction) registerUndoAction(undoAction)
+})
+
 // Generated chunks
+
 Events.on_chunk_generated((e) => {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return

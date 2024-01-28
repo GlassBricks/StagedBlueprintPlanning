@@ -423,13 +423,13 @@ describe("Cleanup tool", () => {
     })
     expect(project.actions.onCleanupToolUsed).toHaveBeenCalledWith(entity, 1)
   })
-  test("force-delete", () => {
+  test("force delete", () => {
     const entity = surface.create_entity({
       name: "iron-chest",
       position: pos,
       force: "player",
     })!
-    // alt select
+    project.actions.onEntityForceDeleteUsed.invokes(() => TestUndo.createAction(player.index, "force delete"))
     Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
       player_index: 1 as PlayerIndex,
       item: Prototypes.CleanupTool,
@@ -439,6 +439,9 @@ describe("Cleanup tool", () => {
       tiles: [],
     })
     expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
+
+    _simulateUndo(player)
+    expect(undoFn).toHaveBeenCalledWith("force delete")
   })
 })
 
@@ -491,7 +494,11 @@ test("force delete custom input", () => {
     player_index: player.index,
     cursor_position: player.position,
   })
+  project.actions.onEntityForceDeleteUsed.invokes(() => TestUndo.createAction(player.index, "force delete"))
   expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity!, 1, 1)
+
+  _simulateUndo(player)
+  expect(undoFn).toHaveBeenCalledWith("force delete")
 })
 
 describe("stage move tool", () => {
@@ -612,7 +619,7 @@ describe("stage move tool", () => {
   })
 })
 
-describe("staged copy/cut", () => {
+describe("staged copy, delete, cut", () => {
   test("staged copy", () => {
     Events.raiseFakeEventNamed("on_player_selected_area", {
       surface,
@@ -628,6 +635,57 @@ describe("staged copy/cut", () => {
       project.getStage(1)!,
       BBox.around(pos, 10),
     )
+  })
+  test("force delete", () => {
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+      item: Prototypes.ForceDeleteTool,
+      player_index: player.index,
+    })
+    project.actions.onEntityForceDeleteUsed.invokes(() => TestUndo.createAction(player.index, "force delete"))
+    expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
+
+    _simulateUndo(player)
+    expect(undoFn).toHaveBeenCalledWith("force delete")
+  })
+
+  test("staged cut", () => {
+    // copy followed by delete
+    const entity = surface.create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+      item: Prototypes.StagedCutTool,
+      player_index: player.index,
+    })
+
+    expect(CreateBpWithStageInfo.createBlueprintWithStageInfo).toHaveBeenCalledWith(
+      player,
+      project.getStage(1)!,
+      BBox.around(pos, 10),
+    )
+
+    project.actions.onEntityForceDeleteUsed.invokes(() => TestUndo.createAction(player.index, "force delete"))
+    expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
+
+    _simulateUndo(player)
+    expect(undoFn).toHaveBeenCalledWith("force delete")
+
+    expectedNumCalls = 2
   })
 })
 
