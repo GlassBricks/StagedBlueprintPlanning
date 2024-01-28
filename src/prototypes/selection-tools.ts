@@ -258,8 +258,42 @@ data.extend([
   selectionToolToInput(stageCutTool, "CONTROL + SHIFT + X"),
 ])
 
-// stage delete tool
 const deconstructionPlanner = table.deepcopy(data.raw["deconstruction-item"]["deconstruction-planner"]!)
+
+const forceDeconstructTool: SelectionToolPrototype = {
+  type: "selection-tool",
+  name: Prototypes.ForceDeleteTool,
+  icon: "__base__/graphics/icons/deconstruction-planner.png",
+  icon_size: 64,
+  flags: ["spawnable", "not-stackable", "only-in-cursor"],
+  stack_size: 1,
+
+  draw_label_for_cursor_render: true,
+
+  subgroup: "tool",
+  order: "z[bp100]-c[force-deconstruct-tool]",
+
+  selection_mode: ["deconstruct"],
+  selection_color: deconstructionPlanner.selection_color,
+  selection_cursor_box_type: "not-allowed",
+
+  alt_selection_mode: ["any-entity"],
+  alt_selection_color: deconstructionPlanner.alt_selection_color,
+  alt_selection_cursor_box_type: "not-allowed",
+}
+
+data.extend([
+  forceDeconstructTool,
+  selectionToolToShortcut(
+    forceDeconstructTool,
+    table.deepcopy(data.raw["shortcut"]["give-deconstruction-planner"]!.icon),
+    Prototypes.ForceDeleteTool,
+    "red",
+  ),
+  selectionToolToInput(forceDeconstructTool),
+])
+
+// stage delete tool
 function shiftedBlueprintSprite(shift: MapPositionArray, filename: string): IconData {
   return {
     icon: filename,
