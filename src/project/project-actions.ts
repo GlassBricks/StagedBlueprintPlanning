@@ -373,7 +373,6 @@ export function ProjectActions(
   ): ProjectEntity | nil {
     const compatible = content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
     if (!compatible) {
-      game.print("compatible not found")
       tryAddNewEntity(entity, stage, byPlayer, knownBpValue)
       return nil
     }
