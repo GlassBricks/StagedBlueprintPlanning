@@ -247,12 +247,12 @@ let upgradeEntityVersion = 0
 function upgradeEntity(oldEntity: LuaEntity, name: string): LuaEntity {
   if (upgradeEntityVersion != entityVersion) {
     upgradeEntityVersion = entityVersion
-    oldEntity.minable = true
     upgradeEntityParams.name = name
     upgradeEntityParams.position = oldEntity.position
     upgradeEntityParams.direction = oldEntity.direction
     upgradeEntityParams.type = oldEntity.type == "underground-belt" ? oldEntity.belt_to_ground_type : nil
   }
+  oldEntity.minable = true
   const newEntity = oldEntity.surface.create_entity(upgradeEntityParams)
   if (!newEntity) return oldEntity
   if (oldEntity.valid) oldEntity.destroy()
