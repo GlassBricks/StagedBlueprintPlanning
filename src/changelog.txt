@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.28.0
-Date: ????
+Date: 2024-01-29
   Changes:
     - Alt-select with the stage move tool now also _sends_ entities to stages, but allows the source entity to be from any stage. Reverse selecting still has the old behavior (same as old alt-select).
   Features:
