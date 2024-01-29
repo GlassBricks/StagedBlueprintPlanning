@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2024 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,22 +9,21 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destroy } from "../lib/factoriojsx"
-import { Migrations } from "../lib/migration"
-import "./AllProjects"
-import "./editor-fix"
-import "./opened-entity"
-import "./player-navigation"
-import "./ProjectSettings"
-import "./stage-move-tool"
-import "./toggle-staged-copy"
+import expect from "tstl-expect"
+import { CustomInputs, Prototypes } from "../../constants"
+import { Events } from "../../lib"
+import { getPlayer } from "../../lib/test/misc"
 
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    const opened = player.opened
-    if (opened && opened.object_name == "LuaGuiElement" && opened.get_mod() == script.mod_name) {
-      destroy(opened)
-      player.opened = nil
-    }
-  }
+test.each([
+  ["copy-paste-tool", Prototypes.StagedCopyTool],
+  ["cut-paste-tool", Prototypes.StagedCutTool],
+  [Prototypes.StagedCopyTool, "copy-paste-tool"],
+  [Prototypes.StagedCutTool, "cut-paste-tool"],
+  ["blueprint", "blueprint"],
+])("using toggle staged copy from %s to %s", (from, to) => {
+  const player = getPlayer()
+  const cursorStack = player.cursor_stack!
+  cursorStack.set_stack(from)
+  Events.raiseFakeEvent(CustomInputs.ToggleStagedCopy, { player_index: player.index })
+  expect(cursorStack.name).toBe(to)
 })

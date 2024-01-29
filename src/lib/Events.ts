@@ -11,8 +11,8 @@
 
 /** @noSelfInFile */
 
-import { ConfigurationChangedData, CustomInputEvent, EventData, EventId } from "factorio:runtime"
-import { Mutable, PRecord } from "./util-types"
+import { ConfigurationChangedData, CustomInputEvent, EventData, EventId, MapPosition } from "factorio:runtime"
+import { PRecord } from "./util-types"
 
 export interface ScriptEvents {
   on_init: nil
@@ -64,7 +64,9 @@ export interface EventsObj extends EventsRegistration {
   raiseFakeEvent<E extends EventId<any, any>>(event: E, data: Omit<E["_eventData"], keyof EventData>): void
   raiseFakeEvent(
     event: string,
-    data: Omit<CustomInputEvent, keyof EventData | "input_name" | "cursor_display_location">,
+    data: Omit<CustomInputEvent, keyof EventData | "input_name" | "cursor_display_location" | "cursor_position"> & {
+      cursor_position?: MapPosition
+    },
   ): void
   raiseFakeEvent<E extends EventId<any, any> | string>(event: E, data: Omit<EventDataOf<E>, keyof EventData>): void
   raiseFakeEventNamed<E extends keyof NamedEventTypes>(event: E, data: Omit<NamedEventTypes[E], keyof EventData>): void
@@ -136,7 +138,8 @@ function raiseFakeEvent(id: keyof any, data: any) {
       name: typeof id != "object" ? id : nil,
     })
     if (typeof id == "string") {
-      ;(data as Mutable<CustomInputEvent>).input_name = id
+      data.input_name = id
+      data.cursor_position ??= { x: 0, y: 0 }
     }
   }
   for (const handler of handlers) {

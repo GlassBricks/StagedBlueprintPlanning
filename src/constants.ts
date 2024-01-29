@@ -82,6 +82,8 @@ export const enum CustomInputs {
   StageSelectNext = "bp100:stage-select-next",
   StageSelectPrevious = "bp100:stage-select-previous",
 
+  ToggleStagedCopy = "bp100:toggle-staged-copy",
+
   NextProject = "bp100:next-project",
   PreviousProject = "bp100:previous-project",
 }

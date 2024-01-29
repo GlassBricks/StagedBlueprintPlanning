@@ -72,6 +72,8 @@ export declare const enum L_Controls {
   StageSelectNext = "controls.bp100:stage-select-next",
   /** Stage move tool: select previous stage */
   StageSelectPrevious = "controls.bp100:stage-select-previous",
+  /** Switch to staged copy tool */
+  ToggleStagedCopy = "controls.bp100:toggle-staged-copy",
   /** Staged deconstruction tool */
   StageDeconstructTool = "controls.bp100:stage-deconstruct-tool",
   /** Force delete tool */
@@ -80,6 +82,8 @@ export declare const enum L_Controls {
 export declare const enum L_ControlsDescription {
   /** Delete an entity even if not in its the current stage. */
   ForceDelete = "controls-description.bp100:force-delete",
+  /** When holding a copy or cut tool, switch to the staged copy or cut tool. */
+  ToggleStagedCopy = "controls-description.bp100:toggle-staged-copy",
 }
 export declare const enum L_Bp100 {
   /** __1__ (preview) */

@@ -90,6 +90,14 @@ const stageSelectPrevious: CustomInputPrototype = {
   key_sequence: "SHIFT + mouse-wheel-up",
   order: "d[tools]-a[stage-move-tool]-b[previous]",
 }
+const toggleStagedCopy: CustomInputPrototype = {
+  name: CustomInputs.ToggleStagedCopy,
+  type: "custom-input",
+
+  action: "lua",
+  key_sequence: "CONTROL + A",
+  order: "d[tools]-b[staged-copy-toggle]",
+}
 
 const nextProject: CustomInputPrototype = {
   name: CustomInputs.NextProject,
@@ -111,11 +119,12 @@ const previousProject: CustomInputPrototype = {
 data.extend([
   nextStage,
   previousStage,
-  nextProject,
-  previousProject,
   goToFirstStage,
   moveToThisStage,
   forceDelete,
   stageSelectNext,
   stageSelectPrevious,
+  toggleStagedCopy,
+  nextProject,
+  previousProject,
 ])
