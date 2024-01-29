@@ -80,7 +80,7 @@ const cleanupTool: SelectionToolPrototype = {
   stack_size: 1,
 
   subgroup: "tool",
-  order: "z[bp100]-c[cleanup]",
+  order: "z[bp100]-a[a-tools]-a[cleanup-tool]",
 
   selection_mode: ["any-entity"],
   selection_color: cleanupToolColor,
@@ -125,7 +125,7 @@ const stageMoveTool: SelectionToolPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-a[stage-move-tool]",
+  order: "z[bp100]-a[a-tools]-b[stage-move-tool]",
 
   selection_color: stageMoveToolColor,
   selection_cursor_box_type: "copy",
@@ -183,7 +183,7 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-b[stage-move-tool-filtered]",
+  order: "z[bp100]-a[a-tools]-c[filtered-stage-move-tool]",
 
   selection_color: stageMoveToolColor,
   selection_cursor_box_type: "copy",
@@ -224,7 +224,7 @@ const stageCopyTool: SelectionToolPrototype = {
   icon_mipmaps: 2,
 
   subgroup: "tool",
-  order: "z[bp100]-b[staged-copy-tool]",
+  order: "z[bp100]-b[b-tools]-a[staged-copy-tool]",
 
   flags: ["spawnable", "not-stackable"],
   stack_size: 1,
@@ -241,6 +241,7 @@ const stageCopyTool: SelectionToolPrototype = {
 const stageCutTool: SelectionToolPrototype = table.deepcopy(stageCopyTool)
 Object.assign(stageCutTool, {
   name: Prototypes.StagedCutTool,
+  order: "z[bp100]-b[b-tools]-b[staged-cut-tool]",
   localised_name: [L_Bp100.StagedTool, ["item-name.cut-paste-tool"]],
   icon: "__bp100__/graphics/icons/staged-cut-tool.png",
 } as Partial<SelectionToolPrototype>)
@@ -286,7 +287,7 @@ const forceDeleteTool: SelectionToolPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-c[force-delete-tool]",
+  order: "z[bp100]-a[a-tools]-d[force-delete-tool]",
 
   selection_mode: ["blueprint"],
   selection_color: deconstructionPlanner.selection_color,
@@ -336,7 +337,7 @@ const stagedDeconstructTool: SelectionToolPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-c[stage-deconstruct-tool]",
+  order: "z[bp100]-a[a-tools]-e[stage-deconstruct-tool]",
 
   selection_color: deconstructionPlanner.selection_color,
   selection_cursor_box_type: "not-allowed",

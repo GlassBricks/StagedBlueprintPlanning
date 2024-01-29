@@ -80,7 +80,7 @@ const stageSelectNext: CustomInputPrototype = {
 
   action: "lua",
   key_sequence: "SHIFT + mouse-wheel-down",
-  order: "d[tools]-g[stage-move-tool]-a[next]",
+  order: "d[tools]-a[stage-move-tool]-a[next]",
 }
 const stageSelectPrevious: CustomInputPrototype = {
   name: CustomInputs.StageSelectPrevious,
@@ -88,7 +88,7 @@ const stageSelectPrevious: CustomInputPrototype = {
 
   action: "lua",
   key_sequence: "SHIFT + mouse-wheel-up",
-  order: "d[tools]-g[stage-move-tool]-b[previous]",
+  order: "d[tools]-a[stage-move-tool]-b[previous]",
 }
 
 const nextProject: CustomInputPrototype = {
