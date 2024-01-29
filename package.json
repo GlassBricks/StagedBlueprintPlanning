@@ -25,8 +25,8 @@
     "nodemon": "^3.0.3",
     "prettier": "^3.2.4",
     "semver": "^7.5.4",
-    "ts-node": "^10.9.2",
     "tstl-expect": "^0.4.4",
+    "tsx": "^4.7.0",
     "typed-factorio": "^2.6.0",
     "typescript": "^5.3.3",
     "typescript-to-lua": "^1.23.0",
@@ -35,8 +35,8 @@
   "type": "module",
   "scripts": {
     "clean": "del-cli \"src/**/*.lua\" \"src/**/*.map\" \"!**/*.def.lua\"",
-    "build:locale": "ts-node --esm scripts/gen-locale-defs.ts",
-    "build:gui-specs": "ts-node --esm scripts/gen-gui-specs.ts",
+    "build:locale": "tsx scripts/gen-locale-defs.ts",
+    "build:gui-specs": "tsx scripts/gen-gui-specs.ts",
     "build:tstlPlugin": "tsc -p tstlPlugin/tsconfig.json",
     "build:scripts": "conc \"npm:build:locale\" \"npm:build:gui-specs\" \"npm:build:tstlPlugin\"",
     "build:release": "npm run clean && npm run build:scripts && tstl -p tsconfig-release.json && npm run check-clean-tree",
@@ -51,7 +51,7 @@
     "test": "factorio-test run ./src -- --graphics-quality very-low --cache-sprite-atlas true --disable-audio",
     "check-clean-tree": "git diff --exit-code HEAD --",
     "check": "npm run format:check && npm run lint && npm run test && npm run check-clean-tree",
-    "version-minor": "ts-node --esm scripts/bump-version.ts minor"
+    "version-minor": "tsx --esm scripts/bump-version.ts minor"
   },
   "nodemonConfig": {
     "watch": [
@@ -59,7 +59,7 @@
     ],
     "ext": "*",
     "execMap": {
-      "ts": "ts-node --esm"
+      "ts": "tsx"
     }
   }
 }
