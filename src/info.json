@@ -4,7 +4,7 @@
   "version": "0.28.0",
   "title": "Staged Blueprint Planning",
   "description": "The ultimate mod for designing staged blueprints.",
-  "source": "https://github.com/GlassBricks/StagedBlueprintPlanning/",
+  "homepage": "https://github.com/GlassBricks/StagedBlueprintPlanning/",
   "author": "GlassBricks",
   "factorio_version": "1.1",
   "package": {
