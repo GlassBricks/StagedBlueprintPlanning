@@ -20,7 +20,7 @@
       "compile": "npm run build:release",
       "prepackage": "npm run prepackage",
       "prepublish": "npm run check",
-      "postpublish": "npm run postpublish"
+      "postpackage": "npm run postpackage"
     },
     "git_publish_branch": "main",
     "ignore": ["**/test/**/*", "**/*.xcf", "**/*.svg", "mod-portal/**/*", "**/*.ts", "**/*.tsx"],
