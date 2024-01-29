@@ -134,8 +134,6 @@ tstlPlugin/*.map
 
 factorio/
 
-*.xcf
-
 src/**/*.hide.*
 
 factorio-test-data/**/*

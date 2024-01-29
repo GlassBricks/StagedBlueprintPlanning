@@ -212,44 +212,59 @@ data.extend([
 ])
 
 // staged copy and cut tools
-const stageCopyTool = table.deepcopy(
-  data.raw["copy-paste-tool"]["copy-paste-tool"]!,
-) as unknown as SelectionToolPrototype
-Object.assign(stageCopyTool, {
+const copyTool = table.deepcopy(data.raw["copy-paste-tool"]["copy-paste-tool"]!)
+
+const stageCopyTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.StagedCopyTool,
+  localised_name: [L_Bp100.StagedTool, ["item-name.copy-paste-tool"]],
+
+  icon: "__bp100__/graphics/icons/staged-copy-tool.png",
+  icon_size: 64,
+  icon_mipmaps: 2,
+
   subgroup: "tool",
   order: "z[bp100]-b[staged-copy-tool]",
-  flags: ["spawnable", "not-stackable"],
-  selection_mode: ["blueprint"],
-  alt_selection_mode: ["blueprint"],
-  localised_name: [L_Bp100.StagedTool, ["item-name.copy-paste-tool"]],
-} satisfies Partial<SelectionToolPrototype>)
 
-const stageCutTool = table.deepcopy(data.raw["copy-paste-tool"]["cut-paste-tool"]!) as unknown as SelectionToolPrototype
-Object.assign(stageCutTool, {
-  type: "selection-tool",
-  name: Prototypes.StagedCutTool,
-  subgroup: "tool",
-  order: "z[bp100]-b[staged-cut-tool]",
   flags: ["spawnable", "not-stackable"],
+  stack_size: 1,
+
   selection_mode: ["blueprint"],
+  selection_color: copyTool.selection_color,
+  selection_cursor_box_type: "copy",
+
   alt_selection_mode: ["blueprint"],
+  alt_selection_color: copyTool.alt_selection_color,
+  alt_selection_cursor_box_type: "copy",
+}
+
+const stageCutTool: SelectionToolPrototype = table.deepcopy(stageCopyTool)
+Object.assign(stageCutTool, {
+  name: Prototypes.StagedCutTool,
   localised_name: [L_Bp100.StagedTool, ["item-name.cut-paste-tool"]],
-} satisfies Partial<SelectionToolPrototype>)
+  icon: "__bp100__/graphics/icons/staged-cut-tool.png",
+} as Partial<SelectionToolPrototype>)
 
 data.extend([
   stageCopyTool,
   stageCutTool,
   selectionToolToShortcut(
     stageCopyTool,
-    table.deepcopy(data.raw["shortcut"]["copy"]!.icon),
+    {
+      filename: "__bp100__/graphics/icons/staged-copy-white.png",
+      size: 32,
+      mipmap_count: 2,
+    },
     Prototypes.StagedCopyTool,
     "blue",
   ),
   selectionToolToShortcut(
     stageCutTool,
-    table.deepcopy(data.raw["shortcut"]["cut"]!.icon),
+    {
+      filename: "__bp100__/graphics/icons/staged-cut-white.png",
+      size: 32,
+      mipmap_count: 2,
+    },
     Prototypes.StagedCutTool,
     "blue",
   ),
@@ -263,7 +278,7 @@ const deconstructionPlanner = table.deepcopy(data.raw["deconstruction-item"]["de
 const forceDeleteTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.ForceDeleteTool,
-  icon: "__base__/graphics/icons/deconstruction-planner.png",
+  icon: "__bp100__/graphics/icons/force-delete-tool.png",
   icon_size: 64,
   flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
@@ -271,7 +286,7 @@ const forceDeleteTool: SelectionToolPrototype = {
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
-  order: "z[bp100]-c[force-deconstruct-tool]",
+  order: "z[bp100]-c[force-delete-tool]",
 
   selection_mode: ["blueprint"],
   selection_color: deconstructionPlanner.selection_color,
@@ -286,7 +301,11 @@ data.extend([
   forceDeleteTool,
   selectionToolToShortcut(
     forceDeleteTool,
-    table.deepcopy(data.raw["shortcut"]["give-deconstruction-planner"]!.icon),
+    {
+      filename: "__bp100__/graphics/icons/force-delete-tool-new.png",
+      size: 32,
+      mipmap_count: 2,
+    },
     Prototypes.ForceDeleteTool,
     "red",
   ),
@@ -303,21 +322,13 @@ function shiftedBlueprintSprite(shift: MapPositionArray, filename: string): Icon
   }
 }
 
-const deconstructionPlannerImage = "__base__/graphics/icons/deconstruction-planner.png"
 // staged delete tool
-const stageDeleteTool: SelectionToolPrototype = {
+const stagedDeconstructTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.StageDeconstructTool,
-  icons: [
-    {
-      icon: deconstructionPlannerImage,
-      icon_size: 64,
-      tint: [0, 0, 0, 0],
-    },
-    shiftedBlueprintSprite([-3, -3], deconstructionPlannerImage),
-    shiftedBlueprintSprite([0, 0], deconstructionPlannerImage),
-    shiftedBlueprintSprite([3, 3], deconstructionPlannerImage),
-  ],
+  icon: "__bp100__/graphics/icons/staged-deconstruct-tool.png",
+  icon_size: 64,
+  icon_mipmaps: 2,
 
   flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
@@ -341,17 +352,17 @@ const stageDeleteTool: SelectionToolPrototype = {
 }
 
 data.extend([
-  stageDeleteTool,
+  stagedDeconstructTool,
   selectionToolToShortcut(
-    stageDeleteTool,
+    stagedDeconstructTool,
     {
-      filename: "__bp100__/graphics/icons/new-stage-deconstruction-planner.png",
+      filename: "__bp100__/graphics/icons/staged-deconstruct-tool-new.png",
       size: 32,
     },
     Prototypes.StageDeconstructTool,
     "red",
   ),
-  selectionToolToInput(stageDeleteTool),
+  selectionToolToInput(stagedDeconstructTool),
 ])
 
 // blueprint filters
