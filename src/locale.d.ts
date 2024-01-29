@@ -4,14 +4,20 @@
 export declare const enum L_ItemName {
   /** Cleanup tool */
   CleanupTool = "item-name.bp100:cleanup-tool",
+  /** Blueprint filters */
+  BlueprintFilters = "item-name.bp100:blueprint-filters",
   /** Stage move tool */
   StageMoveTool = "item-name.bp100:stage-move-tool",
   /** Filtered stage move tool */
   FilteredStageMoveTool = "item-name.bp100:filtered-stage-move-tool",
-  /** Blueprint filters */
-  BlueprintFilters = "item-name.bp100:blueprint-filters",
-  /** Stage deconstruction tool */
+  /** Staged deconstruction */
   StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
+  /** Force delete (in staged project) */
+  ForceDeleteTool = "item-name.bp100:force-delete-tool",
+  /** Copy (with stage info) */
+  StagedCopyTool = "item-name.bp100:staged-copy-tool",
+  /** Cut (with stage info) */
+  StagedCutTool = "item-name.bp100:staged-cut-tool",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */
@@ -66,6 +72,10 @@ export declare const enum L_Controls {
   StageSelectNext = "controls.bp100:stage-select-next",
   /** Stage move tool: select previous stage */
   StageSelectPrevious = "controls.bp100:stage-select-previous",
+  /** Staged deconstruction tool */
+  StageDeconstructTool = "controls.bp100:stage-deconstruct-tool",
+  /** Force delete tool */
+  ForceDeleteTool = "controls.bp100:force-delete-tool",
 }
 export declare const enum L_ControlsDescription {
   /** Delete an entity even if not in its the current stage. */
@@ -76,8 +86,6 @@ export declare const enum L_Bp100 {
   PreviewEntity = "bp100.preview-entity",
   /** <Unnamed project __1__> */
   UnnamedProject = "bp100.unnamed-project",
-  /** Staged __1__ */
-  StagedTool = "bp100.staged-tool",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
