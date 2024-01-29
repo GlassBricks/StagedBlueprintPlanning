@@ -268,7 +268,7 @@ const stageCopyTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-b[b-tools]-a[staged-copy-tool]",
 
-  flags: ["spawnable", "not-stackable"],
+  flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
 
   selection_mode: ["blueprint"],
@@ -284,8 +284,8 @@ const stageCutTool: SelectionToolPrototype = table.deepcopy(stageCopyTool)
 Object.assign(stageCutTool, {
   name: Prototypes.StagedCutTool,
   order: "z[bp100]-b[b-tools]-b[staged-cut-tool]",
-  con: "__bp100__/graphics/icons/staged-cut-tool.png",
-} as Partial<SelectionToolPrototype>)
+  icon: "__bp100__/graphics/icons/staged-cut-tool.png",
+} satisfies Partial<SelectionToolPrototype>)
 
 data.extend([
   stageCopyTool,
