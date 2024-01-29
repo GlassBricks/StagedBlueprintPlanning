@@ -21,7 +21,7 @@
       "prepublish": "npm run check"
     },
     "git_publish_branch": "main",
-    "ignore": ["readme.md", "**/test/", "**/*.xcf", "**/*.svg", "mod-portal/**/*"],
+    "ignore": ["**/test/**/*", "**/*.xcf", "**/*.svg", "mod-portal/**/*"],
     "removeZipAfterPackage": true,
     "no_git_tag": true,
     "sync_portal_details": true
