@@ -4,6 +4,7 @@
   "version": "0.28.0",
   "title": "Staged Blueprint Planning",
   "description": "The ultimate mod for designing staged blueprints.",
+  "source": "https://github.com/GlassBricks/StagedBlueprintPlanning/",
   "author": "GlassBricks",
   "factorio_version": "1.1",
   "package": {
@@ -18,10 +19,12 @@
     ],
     "scripts": {
       "compile": "npm run build:release",
-      "prepublish": "npm run check"
+      "prepackage": "npm run prepackage",
+      "prepublish": "npm run check",
+      "postpublish": "npm run postpublish"
     },
     "git_publish_branch": "main",
-    "ignore": ["**/test/**/*", "**/*.xcf", "**/*.svg", "mod-portal/**/*"],
+    "ignore": ["**/test/**/*", "**/*.xcf", "**/*.svg", "mod-portal/**/*", "**/*.ts", "**/*.tsx"],
     "removeZipAfterPackage": true,
     "no_git_tag": true,
     "sync_portal_details": true

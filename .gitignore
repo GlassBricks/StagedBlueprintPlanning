@@ -140,3 +140,7 @@ factorio-test-data/**/*
 !factorio-test-data/mods
 factorio-test-data/mods/*
 !factorio-test-data/mods/factorio-test_*.zip
+
+# license files are in root; copied to src for packaging only
+src/COPYING*
+src/*.zip
