@@ -50,7 +50,7 @@ Migrations.priority(7, "0.22.0", () => {
     }
   }
 })
-Migrations.priority(7, "0.25.0", () => {
+Migrations.priority(7, "0.28.0", () => {
   for (const [, project] of global.projects) {
     _migrateWireConnections(project.content)
   }

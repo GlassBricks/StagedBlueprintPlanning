@@ -302,18 +302,21 @@ export function _migrateProjectContent_0_18_0(content: MutableProjectContent): v
 }
 
 export function _migrateWireConnections(content: MutableProjectContent): void {
-  assume<ProjectContentImpl>(content)
   assume<
     ProjectContentImpl & {
-      circuitConnections: LuaMap<ProjectEntity, LuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>>
-      cableConnections: LuaMap<ProjectEntity, LuaSet<ProjectEntity>>
+      circuitConnections?: LuaMap<ProjectEntity, LuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>>
+      cableConnections?: LuaMap<ProjectEntity, LuaSet<ProjectEntity>>
     }
   >(content)
   const { circuitConnections, cableConnections } = content
-  for (const [entity, connections] of cableConnections) {
-    ;(entity as Mutable<ProjectEntity>).cableConnections = connections
-  }
-  for (const [entity, connections] of circuitConnections) {
-    ;(entity as Mutable<ProjectEntity>).circuitConnections = connections
-  }
+  if (cableConnections)
+    for (const [entity, connections] of cableConnections) {
+      ;(entity as Mutable<ProjectEntity>).cableConnections = connections
+    }
+  if (circuitConnections)
+    for (const [entity, connections] of circuitConnections) {
+      ;(entity as Mutable<ProjectEntity>).circuitConnections = connections
+    }
+  delete content.circuitConnections
+  delete content.cableConnections
 }
