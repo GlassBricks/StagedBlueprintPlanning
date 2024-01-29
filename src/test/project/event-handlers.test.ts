@@ -530,8 +530,8 @@ describe("stage move tool", () => {
       entities: [entity, entity2],
       tiles: [],
     })
-    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity, 1, 2, 1)
-    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity2, 1, 2, 1)
+    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity, 1, 2, true, 1)
+    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity2, 1, 2, true, 1)
 
     _simulateUndo(player)
     expect(undoFn).toHaveBeenCalledWith("send to stage 1")
@@ -539,8 +539,10 @@ describe("stage move tool", () => {
 
     expectedNumCalls = 2
   })
-  test("bring to this stage (alt)", () => {
+  test("send to stage (alt)", () => {
     player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
+    getProjectPlayerData(player.index, project)!.moveTargetStage = 2
+
     Events.raiseFakeEventNamed("on_player_alt_selected_area", {
       player_index: 1 as PlayerIndex,
       item: Prototypes.StageMoveTool,
@@ -550,11 +552,13 @@ describe("stage move tool", () => {
       tiles: [],
     })
 
-    expect(project.actions.onBringToStageUsed).toHaveBeenCalledWith(entity, 1, 1)
+    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity, 1, 2, false, 1)
+    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity2, 1, 2, false, 1)
 
     _simulateUndo(player)
-    expect(undoFn).toHaveBeenCalledWith("bring to stage 1")
-    expect(undoFn).toHaveBeenCalledWith("bring to stage 2")
+    expect(undoFn).toHaveBeenCalledWith("send to stage 1")
+    expect(undoFn).toHaveBeenCalledWith("send to stage 2")
+
     expectedNumCalls = 2
   })
   test("bring to this stage (reverse)", () => {
@@ -608,7 +612,7 @@ describe("stage move tool", () => {
       alt: false,
     })
 
-    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity, 1, 2, 1)
+    expect(project.actions.onSendToStageUsed).toHaveBeenCalledWith(entity, 1, 2, true, 1)
 
     _simulateUndo(player)
 

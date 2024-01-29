@@ -110,7 +110,8 @@ data.extend([
 
 // Move to stage tool
 const stageMoveToolColor = Colors.Orange
-const stageMoveToolAltColor = Colors.Blueish
+const stageMoveToolAltColor = Colors.Orange2
+const stageMoveToolReverseColor = Colors.Blueish
 
 const stageMoveTool: SelectionToolPrototype = {
   type: "selection-tool",
@@ -131,14 +132,14 @@ const stageMoveTool: SelectionToolPrototype = {
   selection_mode: ["deconstruct"],
 
   alt_selection_color: stageMoveToolAltColor,
-  alt_selection_cursor_box_type: "electricity",
+  alt_selection_cursor_box_type: "copy",
   alt_selection_mode: ["any-entity"],
 
-  reverse_selection_color: stageMoveToolAltColor,
+  reverse_selection_color: stageMoveToolReverseColor,
   reverse_selection_cursor_box_type: "electricity",
   reverse_selection_mode: ["any-entity"],
 
-  alt_reverse_selection_color: stageMoveToolAltColor,
+  alt_reverse_selection_color: stageMoveToolReverseColor,
   alt_reverse_selection_cursor_box_type: "electricity",
   alt_reverse_selection_mode: ["any-entity"],
 }

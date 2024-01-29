@@ -66,6 +66,7 @@ export interface ProjectActions {
     entity: LuaEntity,
     fromStage: StageNumber,
     toStage: StageNumber,
+    onlyIfMatchesFirstStage: boolean,
     byPlayer: PlayerIndex,
   ): UndoAction | nil
   onMoveEntityToStageCustomInput(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
@@ -604,11 +605,17 @@ export function ProjectActions(
     entity: LuaEntity,
     fromStage: StageNumber,
     toStage: StageNumber,
+    onlyIfMatchesFirstStage: boolean,
     byPlayer: PlayerIndex,
   ): UndoAction | nil {
     if (fromStage == toStage) return
     const projectEntity = content.findExact(entity, entity.position, fromStage)
-    if (!projectEntity || projectEntity.firstStage != fromStage || projectEntity.isSettingsRemnant) return
+    if (
+      !projectEntity ||
+      projectEntity.isSettingsRemnant ||
+      (onlyIfMatchesFirstStage && projectEntity.firstStage != fromStage)
+    )
+      return
 
     if (userSendEntityToStage(projectEntity, fromStage, toStage, byPlayer)) {
       return undoSendToStage.createAction(byPlayer, { project, entity: projectEntity, oldStage: fromStage })

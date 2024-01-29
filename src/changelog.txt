@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.28.0
 Date: ????
+  Changes:
+    - Alt-select with the stage move tool now also _sends_ entities to stages, but allows the source entity to be from any stage. Reverse selecting still has the old behavior (same as old alt-select).
   Features:
     - Added Copy and Cut with stage info! Allows moving entities while preserving stage updates/other stage info. See the mod portal description/readme for more info.
     - Added a Force delete selection planner.

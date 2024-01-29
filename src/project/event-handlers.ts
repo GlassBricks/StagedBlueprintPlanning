@@ -52,7 +52,7 @@ import { isWorldEntityProjectEntity } from "../entity/ProjectEntity"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
-import { L_Interaction } from "../locale"
+import { L_Bp100, L_Interaction } from "../locale"
 import { getProjectPlayerData } from "./player-project-data"
 import { Stage } from "./ProjectDef"
 import { getStageAtSurface } from "./stage-surface"
@@ -824,10 +824,10 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (type == "underground-belt") {
     const valueType = value.type ?? "input"
     if (luaEntity) {
-      // make sure is also correct belt_to_ground_type, else would match opposite direction
+      // make sure is also correct belt_to_ground_type, else would match the opposite direction
       if (luaEntity.belt_to_ground_type != valueType) return
     } else {
-      // entity not found, check for opposite type and opposite direction
+      // entity was not found, check for the opposite type and direction
       entityDir = oppositedirection(entityDir)
       luaEntity = luaEntities.find((e) => e.direction == entityDir && e.belt_to_ground_type != valueType)
     }
@@ -1005,8 +1005,9 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
   const { stageNumber } = stage
   const undoActions: UndoAction[] = []
   const onSendToStageUsed = stage.actions.onSendToStageUsed
+  const onlyIfMatchesFirstStage = e.name != defines.events.on_player_alt_selected_area
   for (const entity of e.entities) {
-    const undoAction = onSendToStageUsed(entity, stageNumber, targetStage, playerIndex)
+    const undoAction = onSendToStageUsed(entity, stageNumber, targetStage, onlyIfMatchesFirstStage, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
   registerGroupUndoAction(undoActions)
@@ -1033,7 +1034,7 @@ function selectionToolUsed(
 
 addSelectionToolHandlers(Prototypes.StageMoveTool, {
   onSelected: stageMoveToolUsed,
-  onAltSelected: (e) => selectionToolUsed(e, "onBringToStageUsed"),
+  onAltSelected: stageMoveToolUsed,
   onReverseSelected: (e) => selectionToolUsed(e, "onBringToStageUsed"),
   onAltReverseSelected: (e) => selectionToolUsed(e, "onBringDownToStageUsed"),
 })
@@ -1131,7 +1132,7 @@ Events.on_marked_for_deconstruction((e) => {
   if (!playerData) return
   const targetStage = playerData.moveTargetStage
   if (!targetStage) return
-  const undoAction = stage.actions.onSendToStageUsed(entity, stage.stageNumber, targetStage, playerIndex)
+  const undoAction = stage.actions.onSendToStageUsed(entity, stage.stageNumber, targetStage, true, playerIndex)
   if (undoAction) {
     ;(state.accumulatedUndoActions ??= []).push(undoAction)
   }
@@ -1268,3 +1269,27 @@ export const _assertInValidState = (): void => {
     assert(!v, `${k} was not cleaned up`)
   }
 }
+
+declare global {
+  interface PlayerData {
+    needs028MoveToolNotification?: boolean
+  }
+}
+
+// Migrations.to("0.28.0", () => {
+Events.on_init(() => {
+  for (const [, playerData] of pairs(global.players)) {
+    playerData.needs028MoveToolNotification = true
+  }
+})
+
+Events.on_player_cursor_stack_changed((e) => {
+  const playerData = global.players[e.player_index]
+  if (!playerData?.needs028MoveToolNotification) return
+  const player = game.get_player(e.player_index)!
+  const stack = player.cursor_stack
+  if (stack && stack.valid && stack.valid_for_read && stack.name == Prototypes.StageMoveTool) {
+    playerData.needs028MoveToolNotification = false
+    player.print([L_Bp100.StageMoveTool028ChangedNotification])
+  }
+})

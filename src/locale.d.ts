@@ -90,11 +90,13 @@ export declare const enum L_Bp100 {
   PreviewEntity = "bp100.preview-entity",
   /** <Unnamed project __1__> */
   UnnamedProject = "bp100.unnamed-project",
+  /** The stage move tool has changed in v0.28:\nAlt select (__CONTROL__select-for-cancel-deconstruct__) now [font=default-large-bold]sends[/font] entities to the target stage, but selects entities from all stages, not just the current stage.\nReverse select (__CONTROL__reverse-select__) has the same behavior (identical to the old alt-select behavior). */
+  StageMoveTool028ChangedNotification = "bp100.stage-move-tool-028-changed-notification",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
   UnexpectedError = "bp100.interaction.unexpected-error",
-  /** WARNING: pasting from the blueprint [font=default-bold]library[/font] into a staged BP project may cause issues.\nTo fix, make a copy of the blueprint, and paste again using the copy. */
+  /** WARNING: pasting from the blueprint [font=default-large-bold]library[/font] into a staged BP project may cause issues.\nTo fix, make a copy of the blueprint, and paste again using the copy. */
   BlueprintNotHandled = "bp100.interaction.blueprint-not-handled",
   /** Entity moved from __1__ */
   EntityMovedFromStage = "bp100.interaction.entity-moved-from-stage",

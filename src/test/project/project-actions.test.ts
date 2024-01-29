@@ -573,7 +573,7 @@ describe("onSendToStageUsed", () => {
   test("calls trySetFirstStage and notifies if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onSendToStageUsed(luaEntity, 2, 1, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(luaEntity, 2, 1, true, playerIndex)
 
     assertIndicatorCreated(entity, "<<")
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 1)
@@ -588,7 +588,7 @@ describe("onSendToStageUsed", () => {
   test("calls trySetFirstStage and does not notify if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onSendToStageUsed(luaEntity, 2, 3, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(luaEntity, 2, 3, true, playerIndex)
 
     expect(notifications.createIndicator).not.toHaveBeenCalled()
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
@@ -602,11 +602,27 @@ describe("onSendToStageUsed", () => {
   test("ignores if not in current stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onSendToStageUsed(luaEntity, 3, 1, playerIndex)
+    const undoAction = userActions.onSendToStageUsed(luaEntity, 3, 1, true, playerIndex)
 
     expect(projectUpdates.trySetFirstStage).not.toHaveBeenCalled()
     expect(undoAction).toBeNil()
     expectedNumCalls = 0
+  })
+  test("allows not in current stage if onlyIfMatchesFirstSTage is false", () => {
+    const { entity, luaEntity } = addEntity(2)
+    entity.replaceWorldEntity(3, luaEntity)
+    const undoAction = userActions.onSendToStageUsed(luaEntity, 3, 1, false, playerIndex)
+
+    expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 1)
+    expect(undoAction).not.toBeNil()
+    assertIndicatorCreated(entity, "<<")
+
+    performUndoAction(undoAction!)
+
+    expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
+    assertIndicatorCreated(entity, ">>")
+
+    expectedNumCalls = 2
   })
   test.each<[StageMoveResult, LocalisedString]>([
     [StageMoveResult.CannotMovePastLastStage, [L_Interaction.CannotMovePastLastStage]],
@@ -615,7 +631,7 @@ describe("onSendToStageUsed", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     projectUpdates.trySetFirstStage.returns(result)
-    userActions.onSendToStageUsed(luaEntity, 2, 3, playerIndex)
+    userActions.onSendToStageUsed(luaEntity, 2, 3, true, playerIndex)
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledWith(entity, 3)
     assertNotified(entity, message, true)
   })
