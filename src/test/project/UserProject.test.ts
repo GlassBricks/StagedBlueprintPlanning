@@ -279,6 +279,33 @@ describe("new stage name", () => {
       ])
     })
 
+    test("Icons ok when sublisting if non-contiguous icons", () => {
+      project.getStage(1)!.name.set("Foo 3")
+      project.getStage(2)!.name.set("Foo 4")
+
+      project.getStage(1)!.stageBlueprintSettings.icons.set([
+        { index: 2, signal: { type: "virtual", name: "signal-2" } },
+        { index: 3, signal: { type: "virtual", name: "signal-3" } },
+      ])
+
+      const stage = project.insertStage(2)
+      expect(stage.name.get()).toEqual("Foo 3.1")
+      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
+        {
+          index: 1,
+          signal: { type: "virtual", name: "signal-2" },
+        },
+        {
+          index: 2,
+          signal: { type: "virtual", name: "signal-3" },
+        },
+        {
+          index: 3,
+          signal: { type: "virtual", name: "signal-1" },
+        },
+      ])
+    })
+
     test("detects and uses numerical separator if next stage already has that name", () => {
       project.getStage(1)!.name.set("Foo 3--2")
       project.getStage(2)!.name.set("Foo 3--3")

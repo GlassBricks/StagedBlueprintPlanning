@@ -168,6 +168,11 @@ class UserProjectImpl implements UserProject {
         ;(lastIcon.signal as Mutable<SignalID>).name = `signal-${lastNumber}`
       }
     } else if (strategy == "sublist" && icons.length < 4 && lastNumber && lastNumber >= 0 && lastNumber <= 9) {
+      let i = 1
+      for (const icon of icons) {
+        assume<Mutable<BlueprintSignalIcon>>(icon)
+        icon.index = i++
+      }
       icons.push({
         index: icons.length + 1,
         signal: { type: "virtual", name: `signal-${lastNumber}` },

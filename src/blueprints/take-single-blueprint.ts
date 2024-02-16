@@ -13,7 +13,6 @@ import {
   BlueprintEntity,
   BlueprintInfinitySettings,
   BlueprintItemStack,
-  BlueprintSignalIcon,
   InfinityPipeFilter,
   LuaEntity,
   LuaItemStack,
@@ -262,7 +261,7 @@ export function takeSingleBlueprint(
     stack.set_blueprint_entities(entities)
   }
 
-  stack.blueprint_icons = params.icons ?? (stack.default_icons as unknown as BlueprintSignalIcon[])
+  stack.blueprint_icons = params.icons ?? stack.default_icons
   if (forEdit) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }
