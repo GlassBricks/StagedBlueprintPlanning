@@ -35,8 +35,7 @@ import {
 } from "./entity-prototype-info"
 import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { getUndergroundDirection } from "./underground-belt"
-import build_check_ghost_revive = defines.build_check_type.ghost_revive
-import build_check_manual = defines.build_check_type.manual
+import build_check_manual_ghost = defines.build_check_type.manual_ghost
 import floor = math.floor
 
 declare const global: {
@@ -128,9 +127,11 @@ function pasteEntity(
   return ghosts[0]
 }
 
-function removeIntersectingItemsOnGround(surface: LuaSurface, area: BoundingBox) {
+function removeIntersectingEntities(surface: LuaSurface, area: BoundingBox) {
   const items = surface.find_entities_filtered({ type: "item-entity", area })
-  for (const item of items) item.destroy()
+  for (const entity of items) entity.destroy()
+  const treesAndRocks = surface.find_entities_filtered({ type: ["tree", "simple-entity"], area, force: "neutral" })
+  for (const entity of treesAndRocks) entity.destroy()
 }
 
 const tryCreateEntityParams: Mutable<
@@ -143,7 +144,8 @@ const tryCreateEntityParams: Mutable<
   type: nil!,
   force: "player",
   create_build_effect_smoke: false,
-  build_check_type: build_check_ghost_revive,
+  build_check_type: nil,
+  forced: true,
 }
 
 let tryCreateVersion = 0
@@ -163,23 +165,21 @@ function tryCreateUnconfiguredEntity(
     tryCreateEntityParams.orientation = orientation
     tryCreateEntityParams.type = entity.type
   }
-  tryCreateEntityParams.build_check_type = build_check_ghost_revive
+  tryCreateEntityParams.build_check_type = nil
 
   const canPlaceEntity = surface.can_place_entity
   if (canPlaceEntity(tryCreateEntityParams)) {
     return surface.create_entity(tryCreateEntityParams)
   }
   // try manual
-  tryCreateEntityParams.build_check_type = build_check_manual
-  if (!canPlaceEntity(tryCreateEntityParams)) return
-  // try creating via manual
-  const createdEntity = surface.create_entity(tryCreateEntityParams)
-  if (!createdEntity) return
-
-  removeIntersectingItemsOnGround(surface, createdEntity.bounding_box)
-  if (createdEntity.secondary_bounding_box)
-    removeIntersectingItemsOnGround(surface, createdEntity.secondary_bounding_box)
-  return createdEntity
+  tryCreateEntityParams.build_check_type = build_check_manual_ghost
+  if (canPlaceEntity(tryCreateEntityParams)) {
+    const createdEntity = surface.create_entity(tryCreateEntityParams)
+    if (!createdEntity) return
+    removeIntersectingEntities(surface, createdEntity.bounding_box)
+    if (createdEntity.secondary_bounding_box) removeIntersectingEntities(surface, createdEntity.secondary_bounding_box)
+    return createdEntity
+  }
 }
 
 let nameToType: EntityPrototypeInfo["nameToType"]

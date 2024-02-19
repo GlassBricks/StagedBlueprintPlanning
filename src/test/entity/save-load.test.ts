@@ -226,6 +226,32 @@ test("can rotate an assembler with no fluid recipe", () => {
   expect(entity.direction).toBe(defines.direction.south)
 })
 
+test("can delete tree in the way", () => {
+  const tree = surface.create_entity({
+    name: "tree-01",
+    position: { x: 0.5, y: 0.5 },
+  })!
+  expect(tree).toBeAny()
+  const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
+    name: "assembling-machine-1",
+  })!
+  expect(newEntity).toBeAny()
+  expect(tree.valid).toBe(false)
+})
+
+test("can delete rocks in the way", () => {
+  const rock = surface.create_entity({
+    name: "rock-huge",
+    position: { x: 0.5, y: 0.5 },
+  })!
+  expect(rock).toBeAny()
+  const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
+    name: "assembling-machine-1",
+  })!
+  expect(newEntity).toBeAny()
+  expect(rock.valid).toBe(false)
+})
+
 describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   const type = flipped ? "output" : "input"
   const otherType = flipped ? "input" : "output"
