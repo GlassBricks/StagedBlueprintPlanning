@@ -122,6 +122,11 @@ The "Blueprints" tab provides many settings for creating blueprints.
 
 See the tooltips on options for more details.
 
+### Map settings; set-seed map
+
+You can set the map generation settings for your project, for example to design blueprints for a set-seed map.
+See the "Sync map gen settings" button in the "Other" tab of the settings window for more details.
+
 ### Miscellaneous
 
 If an entity overlaps with another in a higher stage, a red outline will appear where the entity should be, and a warning indicator will appear in all other stages. Use the `Staged Build Cleanup Tool` to attempt to revive these.
