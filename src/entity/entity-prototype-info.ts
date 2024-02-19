@@ -15,7 +15,6 @@ import { list_to_map, merge } from "util"
 import { Prototypes } from "../constants"
 import { Events, globalEvent, PRecord } from "../lib"
 import { BBox } from "../lib/geometry"
-import { PassedPrototypeInfo } from "../passed-prototype-info"
 
 export type CategoryName = string & {
   _categoryName: never
@@ -61,11 +60,16 @@ Events.on_load(() => {
   }
 })
 
+interface PassedPrototypeInfo {
+  twoDirectionOnlyTanks: string[]
+}
+
 function getPassedPrototypeInfo(): PassedPrototypeInfo {
-  const fakeItem = game.item_prototypes[Prototypes.PassedPrototypeInfo]
-  const [success, value] = serpent.load<PassedPrototypeInfo>(fakeItem.localised_description as string)
-  if (!success) error("Failed to parse passed prototype info.")
-  return value
+  const selectionTool = game.item_prototypes[Prototypes.PassedPrototypeInfo]
+  const filters = selectionTool.entity_filters
+  return {
+    twoDirectionOnlyTanks: Object.keys(filters as object),
+  }
 }
 
 function computeEntityPrototypeInfo(): EntityPrototypeInfo {

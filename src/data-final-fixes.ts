@@ -14,10 +14,10 @@ import {
   BoundingBox,
   Color,
   EntityPrototype,
-  ItemPrototype,
   ItemToPlace,
   RailPieceLayers,
   RailRemnantsPrototype,
+  SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
   Sprite,
   Sprite4Way,
@@ -31,7 +31,6 @@ import { BuildableEntityType, Prototypes } from "./constants"
 import { emptySprite16 } from "./data-util"
 import { BBox } from "./lib/geometry"
 import { L_Bp100 } from "./locale"
-import type { PassedPrototypeInfo } from "./passed-prototype-info"
 import direction = defines.direction
 import ceil = math.ceil
 import max = math.max
@@ -347,16 +346,21 @@ for (const [name, tank] of pairs(data.raw["storage-tank"])) {
   }
 }
 
-const prototypeInfo: PassedPrototypeInfo = { twoDirectionOnlyTanks }
-
-data.extend<ItemPrototype>([
+data.extend<SelectionToolPrototype>([
   {
     name: Prototypes.PassedPrototypeInfo,
-    type: "item",
-    localised_description: serpent.dump(prototypeInfo),
+    type: "selection-tool",
     flags: ["hidden"],
     icon: empty_sprite().filename,
     icon_size: 1,
     stack_size: 1,
+    entity_filters: twoDirectionOnlyTanks,
+
+    selection_mode: ["any-entity"],
+    selection_color: [0, 0, 0],
+    selection_cursor_box_type: "entity",
+    alt_selection_mode: ["any-entity"],
+    alt_selection_color: [0, 0, 0],
+    alt_selection_cursor_box_type: "entity",
   },
 ])
