@@ -19,7 +19,7 @@ describe("line", () => {
       surface: 1 as SurfaceIdentification,
       from: { x: 1, y: 1 },
       to: { x: 2, y: 2 },
-      color: [],
+      color: [0, 0, 0],
       width: 1,
     })
     expect(obj.valid).toBe(true)
