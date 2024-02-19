@@ -46,6 +46,7 @@ import {
   ProgressBarGuiElement,
   RadioButtonGuiElement,
   ScrollPaneGuiElement,
+  ScrollPolicy,
   SignalID,
   SizeArray,
   SliderGuiElement,
@@ -55,6 +56,7 @@ import {
   StyleValuesArray,
   SurfaceIndex,
   SwitchGuiElement,
+  SwitchState,
   TabGuiElement,
   TabbedPaneGuiElement,
   TableGuiElement,
@@ -133,12 +135,8 @@ export interface ListBoxElement extends BaseElement {
 
 export interface ScrollPaneElement extends BaseElement {
   type: "scroll-pane"
-  horizontal_scroll_policy?: MaybeProperty<
-    "auto" | "never" | "always" | "auto-and-reserve-space" | "dont-show-but-allow-scrolling"
-  >
-  vertical_scroll_policy?: MaybeProperty<
-    "auto" | "never" | "always" | "auto-and-reserve-space" | "dont-show-but-allow-scrolling"
-  >
+  horizontal_scroll_policy?: MaybeProperty<ScrollPolicy>
+  vertical_scroll_policy?: MaybeProperty<ScrollPolicy>
   onCreate?: OnCreateHandler<ScrollPaneGuiElement>
   styleMod?: ScrollPaneStyleMod
 }
@@ -286,7 +284,7 @@ export interface SpriteElement extends BaseElement {
 
 export interface SwitchElement extends BaseElement {
   type: "switch"
-  switch_state?: MaybeMutableProperty<string>
+  switch_state?: MaybeMutableProperty<SwitchState>
   allow_none_state?: MaybeProperty<boolean>
   left_label_caption?: MaybeProperty<LocalisedString>
   left_label_tooltip?: MaybeProperty<LocalisedString>
