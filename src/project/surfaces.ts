@@ -15,8 +15,9 @@ import { BBox } from "../lib/geometry"
 const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
 
 export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurface): void {
-  toSurface.map_gen_settings = fromSurface.map_gen_settings
-  toSurface.generate_with_lab_tiles = fromSurface.generate_with_lab_tiles
+  const generateWithLabTiles = fromSurface.generate_with_lab_tiles
+  toSurface.generate_with_lab_tiles = generateWithLabTiles
+  if (!generateWithLabTiles) toSurface.map_gen_settings = fromSurface.map_gen_settings
 }
 
 function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSurface | nil): void {
@@ -43,7 +44,7 @@ function createNewStageSurface(area: BBox = defaultPreparedArea, copySettingsFro
 }
 
 export function prepareArea(surface: LuaSurface, area: BBox): void {
-  const { is_chunk_generated, set_chunk_generated_status } = surface
+  const { is_chunk_generated, set_chunk_generated_status, request_to_generate_chunks } = surface
   const status = defines.chunk_generated_status.entities
   const pos = { x: 0, y: 0 }
   const chunkArea = BBox.scale(area, 1 / 32).roundTile()
@@ -58,7 +59,11 @@ export function prepareArea(surface: LuaSurface, area: BBox): void {
     const actualArea = chunkArea.scale(32)
     surface.build_checkerboard(actualArea)
   } else {
-    surface.request_to_generate_chunks([0, 0], BBox.size(chunkArea).x / 32)
+    for (const [x, y] of chunkArea.iterateTiles()) {
+      pos.x = x * 32
+      pos.y = y * 32
+      request_to_generate_chunks(pos)
+    }
   }
 }
 

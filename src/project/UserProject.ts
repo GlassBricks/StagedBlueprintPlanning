@@ -92,7 +92,7 @@ class UserProjectImpl implements UserProject {
     this.name = property(name)
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
-      const stage = StageImpl.create(this, i, `Stage ${i}`)
+      const stage = StageImpl.create(this, i, `Stage ${i}`, nil)
       this.stages[i] = stage
       if (i <= 9) {
         stage.stageBlueprintSettings.icons.set([
@@ -145,7 +145,8 @@ class UserProjectImpl implements UserProject {
     assert(stage >= 1 && stage <= this.numStages() + 1, "Invalid new stage number")
 
     const { name, strategy, lastNumber, previousLastNumber } = this._getNewStageName(stage)
-    const newStage = StageImpl.create(this, stage, name)
+    const prevStage = this.stages[stage == 1 ? 1 : stage - 1]
+    const newStage = StageImpl.create(this, stage, name, prevStage.surface)
     // copy/update icons
     const copyStage = this.stages[stage == 1 ? 1 : stage - 1]
 
@@ -396,9 +397,14 @@ class StageImpl implements Stage {
     this.actions = project.actions
   }
 
-  static create(project: UserProjectImpl, stageNumber: StageNumber, name: string): StageImpl {
+  static create(
+    project: UserProjectImpl,
+    stageNumber: StageNumber,
+    name: string,
+    copySettingsFrom: LuaSurface | nil,
+  ): StageImpl {
     const area = project.content.computeBoundingBox()
-    const surface = createStageSurface(area)
+    const surface = createStageSurface(area, copySettingsFrom)
     return new StageImpl(project, surface, stageNumber, name)
   }
 

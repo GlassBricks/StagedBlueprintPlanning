@@ -48,7 +48,7 @@
       "adjustMods": {
         "bp100": true,
         "WiderNoticeTextBoxes": true,
-        "factorio-test": false,
+        "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true,
         "bobinserters": true
@@ -65,7 +65,17 @@
         "${workspaceRoot}/factorio-test-data/config.ini"
       ],
       "modsPath": "${workspaceRoot}/factorio-test-data/mods",
-      "checkGlobals": false,
+      "adjustModSettings": [
+        {
+          "scope": "startup",
+          "name": "factorio-test-auto-start",
+          "value": true
+        }, {
+          "scope": "runtime-global",
+          "name": "factorio-test-mod-to-test",
+          "value": "bp100"
+        }
+      ],
       "hookControl": true,
       "hookMode": "profile"
     }, {
