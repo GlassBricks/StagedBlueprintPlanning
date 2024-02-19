@@ -1202,9 +1202,9 @@ Events.on_chunk_generated((e) => {
   })
   const { stageNumber, project } = stage
 
-  const onTryFixEntity = stage.actions.onTryFixEntity
+  const onChunkGenerated = stage.actions.onChunkGeneratedForEntity
   for (const entity of entities) {
-    if (entity.valid) onTryFixEntity(entity, stageNumber)
+    if (entity.valid) onChunkGenerated(entity, stageNumber)
   }
 
   const status = defines.chunk_generated_status.entities
@@ -1213,11 +1213,10 @@ Events.on_chunk_generated((e) => {
     if (!surface.is_chunk_generated(position)) {
       if (surface.generate_with_lab_tiles) {
         surface.build_checkerboard(e.area)
+        surface.set_chunk_generated_status(position, status)
       } else {
         surface.request_to_generate_chunks(position, 1)
-        surface.force_generate_chunk_requests()
       }
-      surface.set_chunk_generated_status(position, status)
     }
   }
 })
@@ -1292,4 +1291,10 @@ Events.on_player_cursor_stack_changed((e) => {
     playerData.needs028MoveToolNotification = false
     player.print([L_Bp100.StageMoveTool028ChangedNotification])
   }
+})
+
+Events.on_surface_cleared((e) => {
+  const stage = getStageAtSurface(e.surface_index)
+  if (!stage) return
+  stage.actions.onSurfaceCleared(stage.stageNumber)
 })

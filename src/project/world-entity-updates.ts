@@ -125,7 +125,7 @@ export function WorldEntityUpdates(project: Project, highlights: EntityHighlight
   }
 
   function clearWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
-    const previewName = Prototypes.PreviewEntityPrefix + entity.firstValue.name
+    const previewName = Prototypes.PreviewEntityPrefix + entity.getNameAtStage(stage)
     makePreviewEntity(stage, entity, entity.getPreviewDirection(), previewName)
     updateAllHighlights(entity)
   }

@@ -14,17 +14,31 @@ import { BBox } from "../lib/geometry"
 
 const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
 
-function createNewStageSurface(area: BBox = defaultPreparedArea): LuaSurface {
+export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurface): void {
+  toSurface.map_gen_settings = fromSurface.map_gen_settings
+  toSurface.generate_with_lab_tiles = fromSurface.generate_with_lab_tiles
+}
+
+function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSurface | nil): void {
+  if (!copySettingsFrom) {
+    surface.generate_with_lab_tiles = true
+  } else {
+    copyMapGenSettings(copySettingsFrom, surface)
+  }
+  surface.always_day = true
+  surface.show_clouds = false
+
+  const newName = "bp100-stage-" + surface.index
+  if (surface.name != newName) surface.name = newName
+
+  prepareArea(surface, area)
+}
+function createNewStageSurface(area: BBox = defaultPreparedArea, copySettingsFrom: LuaSurface | nil): LuaSurface {
   const surface = game.create_surface("bp100-stage-temp", {
     width: 10000,
     height: 10000,
   } as MapGenSettingsWrite)
-  surface.generate_with_lab_tiles = true
-  surface.always_day = true
-  surface.show_clouds = false
-  surface.name = "bp100-stage-" + surface.index
-
-  prepareArea(surface, area)
+  prepareSurface(surface, area, copySettingsFrom)
   return surface
 }
 
@@ -33,15 +47,19 @@ export function prepareArea(surface: LuaSurface, area: BBox): void {
   const status = defines.chunk_generated_status.entities
   const pos = { x: 0, y: 0 }
   const chunkArea = BBox.scale(area, 1 / 32).roundTile()
-  for (const [x, y] of chunkArea.iterateTiles()) {
-    pos.x = x
-    pos.y = y
-    if (!is_chunk_generated(pos)) {
-      set_chunk_generated_status(pos, status)
+  if (surface.generate_with_lab_tiles) {
+    for (const [x, y] of chunkArea.iterateTiles()) {
+      pos.x = x
+      pos.y = y
+      if (!is_chunk_generated(pos)) {
+        set_chunk_generated_status(pos, status)
+      }
     }
+    const actualArea = chunkArea.scale(32)
+    surface.build_checkerboard(actualArea)
+  } else {
+    surface.request_to_generate_chunks([0, 0], BBox.size(chunkArea).x / 32)
   }
-  const actualArea = chunkArea.scale(32)
-  surface.build_checkerboard(actualArea)
 }
 
 declare const global: {
@@ -50,7 +68,7 @@ declare const global: {
 
 /** @noSelf */
 interface SurfaceCreator {
-  createSurface(preparedArea?: BBox): LuaSurface
+  createSurface(preparedArea?: BBox, copySettingsFrom?: LuaSurface): LuaSurface
   destroySurface(surface: LuaSurface): void
 }
 
@@ -62,18 +80,19 @@ if (!script.active_mods["factorio-test"]) {
   }
 } else {
   surfaceCreator = {
-    createSurface: (area = defaultPreparedArea) => {
+    createSurface: (area = defaultPreparedArea, copySettingsFrom) => {
       if (!global.freeSurfaces) {
         global.freeSurfaces = []
       }
       while (global.freeSurfaces.length > 0) {
         const surface = global.freeSurfaces.pop()!
         if (surface.valid) {
-          prepareArea(surface, area)
+          surface.destroy_decoratives({})
+          prepareSurface(surface, area, copySettingsFrom)
           return surface
         }
       }
-      return createNewStageSurface(area)
+      return createNewStageSurface(area, copySettingsFrom)
     },
     destroySurface: (surface) => {
       if (!surface.valid) return

@@ -63,10 +63,7 @@ export interface ProjectUpdates {
   addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil
 
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
-  /**
-   * Deleted entities should be able to be re-added via readdDeletedEntity
-   * @param entity
-   */
+  /** Deleted entities should be able to be re-added via readdDeletedEntity */
   forceDeleteEntity(entity: ProjectEntity): void
   readdDeletedEntity(value: ProjectEntity): void
 

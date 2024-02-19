@@ -131,6 +131,9 @@ if ("factorio-test" in script.active_mods) {
         setupManualTests(project)
 
         player.play_sound({ path: "utility/game_won" })
+
+        player.cursor_stack?.clear()
+        player.get_main_inventory()?.clear()
       }
     },
     log_passed_tests: false,

@@ -23,6 +23,7 @@ import { createIndicator, createNotification } from "./notifications"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-updates"
 
 import { Project, UserProject } from "./ProjectDef"
+import { prepareArea } from "./surfaces"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
 import { ProjectEntityDollyResult, WorldEntityUpdates } from "./world-entity-updates"
 
@@ -53,6 +54,7 @@ export interface ProjectActions {
 
   onCleanupToolUsed(entity: LuaEntity, stage: StageNumber): void
   onTryFixEntity(previewEntity: LuaEntity, stage: StageNumber, deleteSettingsRemnants?: boolean): void
+  onChunkGeneratedForEntity(previewEntity: LuaEntity, stage: StageNumber): void
   onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
 
   onEntityDied(entity: LuaEntityInfo, stage: StageNumber): void
@@ -70,6 +72,8 @@ export interface ProjectActions {
     byPlayer: PlayerIndex,
   ): UndoAction | nil
   onMoveEntityToStageCustomInput(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
+
+  onSurfaceCleared(stage: StageNumber): void
 
   userRevivedSettingsRemnant(entity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): void
   userMoveEntityToStageWithUndo(entity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex): void
@@ -205,6 +209,7 @@ export function ProjectActions(
     onEntityMarkedForUpgrade,
     onCleanupToolUsed,
     onTryFixEntity,
+    onChunkGeneratedForEntity,
     onEntityForceDeleteUsed,
     onEntityDied,
     onEntityDollied,
@@ -214,6 +219,7 @@ export function ProjectActions(
     onBringDownToStageUsed,
     onSendToStageUsed,
     onMoveEntityToStageCustomInput,
+    onSurfaceCleared,
     userRevivedSettingsRemnant,
     userMoveEntityToStageWithUndo,
     userSetLastStageWithUndo,
@@ -329,6 +335,11 @@ export function ProjectActions(
     } else if (existing.hasErrorAt(stage)) {
       refreshAllWorldEntities(existing)
     }
+  }
+  function onChunkGeneratedForEntity(previewEntity: LuaEntity, stage: StageNumber): void {
+    const existing = content.findCompatibleFromLuaEntityOrPreview(previewEntity, stage)
+    if (!existing || existing.isSettingsRemnant) return
+    refreshWorldEntityAtStage(existing, stage)
   }
 
   function getCompatibleAtPositionOrAdd(
@@ -713,5 +724,13 @@ export function ProjectActions(
     if (message != nil) {
       createNotification(projectEntity, byPlayer, [message, ["entity-name." + entity.name]], true)
     }
+  }
+
+  function onSurfaceCleared(stage: StageNumber): void {
+    const area = content.computeBoundingBox()
+    for (const entity of content.iterateAllEntities()) {
+      clearWorldEntityAtStage(entity, stage)
+    }
+    if (area) prepareArea(project.getSurface(stage)!, area)
   }
 }

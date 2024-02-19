@@ -288,6 +288,10 @@ export declare const enum L_GuiProjectSettings {
   ExportBlueprintBookStringToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-string-to-file-tooltip",
   /** Rebuild all stages */
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
+  /** Sync map gen settings [img=info] */
+  SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
+  /** Changes map gen settings for all stages to match the current stage settings.\nTo change map gen settings, */
+  SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
   /** Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
   /** Are you sure you want to delete project __1__? */

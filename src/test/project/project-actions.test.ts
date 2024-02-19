@@ -831,3 +831,11 @@ describe("onEntityDollied", () => {
     assertNotified(entity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
   })
 })
+
+describe("on surface cleared", () => {
+  test("rebuilds all entities with previews", () => {
+    const { entity } = addEntity(2)
+    userActions.onSurfaceCleared(2)
+    expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(entity, 2)
+  })
+})

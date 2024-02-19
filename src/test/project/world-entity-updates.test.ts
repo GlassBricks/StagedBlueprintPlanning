@@ -11,6 +11,7 @@
 
 import { CircuitConnectionDefinition, LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
+import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
 import { forceDollyEntity } from "../../entity/picker-dollies"
 import {
@@ -462,11 +463,13 @@ test("updateWireConnections", () => {
   }
 })
 
-test("clearWorldEntity", () => {
+test("clearWorldEntityAtStage", () => {
+  entity.applyUpgradeAtStage(2, "fast-inserter")
   worldEntityUpdates.updateWorldEntities(entity, 1)
   worldEntityUpdates.clearWorldEntityAtStage(entity, 2)
   expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   expect(findMainEntity(2)).toBeNil()
+  expect(findPreviewEntity(2)?.name).toBe(Prototypes.PreviewEntityPrefix + "fast-inserter")
   assertEntityCorrect(1)
   assertEntityCorrect(3)
 })

@@ -61,7 +61,10 @@ export function debugPrint(...values: unknown[]): void {
   global.__lastDebugPrintCall = sourceString
 
   const message: LocalisedString = ["", sourceString, ": ", valueStrings.join(", ")]
-  game?.print(message)
+  game?.print(message, {
+    sound: defines.print_sound.never,
+    skip: defines.print_skip.never,
+  })
   log(message)
 }
 

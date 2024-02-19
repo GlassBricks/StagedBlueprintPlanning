@@ -44,6 +44,7 @@ import {
 } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSettings, L_Interaction } from "../locale"
+import { syncMapGenSettings } from "../project/map-gen"
 import { Stage, UserProject } from "../project/ProjectDef"
 import {
   setCheckerboard,
@@ -477,6 +478,12 @@ class ProjectSettings extends Component<{
           styleMod={{ width: OtherSettingsButtonWidth }}
           on_gui_click={ibind(this.rebuildAllStages)}
         />
+        <button
+          caption={[L_GuiProjectSettings.SyncMapGenSettings]}
+          tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
+          styleMod={{ width: OtherSettingsButtonWidth }}
+          on_gui_click={ibind(this.syncMapGenSettings)}
+        />
         <line />
         <button
           style="red_button"
@@ -491,6 +498,10 @@ class ProjectSettings extends Component<{
   }
   private rebuildAllStages() {
     this.project.entityUpdates.rebuildAllStages()
+  }
+  private syncMapGenSettings() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (stage) syncMapGenSettings(stage)
   }
   private beginDelete() {
     const player = game.get_player(this.playerIndex)

@@ -1321,3 +1321,10 @@ if (remote.interfaces.bobinserters && remote.interfaces.bobinserters.get_changed
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, nil, nil, nil)
   })
 }
+
+test("calls onSurfaceCleared", () => {
+  surface.clear()
+  after_ticks(5, () => {
+    expect(project.actions.onSurfaceCleared).toHaveBeenCalledWith(1)
+  })
+})

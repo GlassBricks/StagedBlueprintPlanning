@@ -33,6 +33,7 @@ import { addPowerSwitchConnections } from "../../entity/wires"
 import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
+import { syncMapGenSettings } from "../../project/map-gen"
 import { EntityUpdateResult, StageMoveResult } from "../../project/project-updates"
 
 import { UserProject } from "../../project/ProjectDef"
@@ -70,7 +71,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
   let hasError: number | false = false
   for (const stage of $range(1, project.lastStageFor(entity))) {
     const worldEntity = entity.getWorldOrPreviewEntity(stage)!
-    assert(worldEntity, `entity exists at stage ${stage}`)
+    assert(worldEntity, `entity does not exist at stage ${stage}`)
     const isPreview = isPreviewEntity(worldEntity)
     const value = entity.getValueAtStage(stage)
     if (value == nil) {
@@ -1770,3 +1771,16 @@ if ("bobinserters" in script.active_mods) {
     assertEntityCorrect(entity, false)
   })
 }
+
+describe("map gen settings", () => {
+  test("rebuild stage after sync map gen settings", () => {
+    const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+    assertEntityCorrect(entity, false)
+    surfaces[0].generate_with_lab_tiles = false
+    player.teleport(pos, surfaces[0])
+    syncMapGenSettings(project.getStage(1)!)
+    after_ticks(60, () => {
+      assertEntityCorrect(entity, false)
+    })
+  })
+})
