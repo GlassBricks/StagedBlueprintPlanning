@@ -12,7 +12,10 @@
 import * as util from "util"
 import { Mutable, PRecord } from "./util-types"
 
-export function shallowCopy<T extends object>(obj: T): T {
+const type = _G.type
+
+export function shallowCopy<T>(obj: T): T {
+  if (type(obj) != "table") return obj
   const result: Partial<T> = {}
   for (const [k, v] of pairs(obj)) {
     result[k] = v

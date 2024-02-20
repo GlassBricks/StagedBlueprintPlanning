@@ -42,7 +42,7 @@ export function getEntityDiff<E extends Entity>(below: E, above: E): Mutable<Sta
   return changes
 }
 
-export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: StageDiff<E>): void {
+export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>, diff: StageDiff<E>): E {
   for (const [key, value] of pairs(diff as StageDiffInternal<E>)) {
     if (value == nilPlaceholder) {
       delete entity[key]
@@ -50,6 +50,7 @@ export function applyDiffToEntity<E extends Entity = Entity>(entity: Mutable<E>,
       entity[key] = value as any
     }
   }
+  return entity
 }
 
 export function getDiffDiff<T extends Entity>(

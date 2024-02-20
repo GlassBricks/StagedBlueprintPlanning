@@ -15,7 +15,6 @@ import {
   deepCompare,
   isEmpty,
   Mutable,
-  mutableShallowCopy,
   PRecord,
   PRRecord,
   RegisterClass,
@@ -36,6 +35,7 @@ import {
 } from "./entity-prototype-info"
 import { registerEntity } from "./registration"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
+import { BaseStagedEntity, StagedValue } from "./StagedValue"
 import floor = math.floor
 
 let nameToType: EntityPrototypeInfo["nameToType"]
@@ -59,27 +59,18 @@ const MaxCableConnections = 5 // hard-coded in game
 /**
  * All the data about one entity in a project, across all stages.
  */
-export interface ProjectEntity<out T extends Entity = Entity> {
+export interface ProjectEntity<out T extends Entity = Entity> extends StagedValue<T, StageDiff<T>> {
   readonly position: Position
   setPositionUnchecked(position: Position): void
 
   direction: defines.direction
 
-  readonly firstValue: Readonly<T>
-  setFirstValue(value: T): void
-
   isSettingsRemnant?: true
-
-  readonly firstStage: StageNumber
-  readonly lastStage: StageNumber | nil
 
   /** Sets the first stage. If moving up, deletes/merges stage diffs from old stage to new stage. */
   setFirstStageUnchecked(stage: StageNumber): void
   /** Sets the last stage. If moving down, delete all diffs after the new last stage. */
   setLastStageUnchecked(stage: StageNumber | nil): void
-
-  isInStage(stage: StageNumber): boolean
-  isPastLastStage(stage: StageNumber): boolean
 
   readonly cableConnections?: CableConnections
   readonly circuitConnections?: CircuitConnections
@@ -112,23 +103,12 @@ export interface ProjectEntity<out T extends Entity = Entity> {
 
   hasErrorAt(stage: StageNumber): boolean
 
-  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void
-  /** @return if this entity has any changes at the given stage, or any stage if nil */
-  hasStageDiff(stage?: StageNumber): boolean
-  getStageDiff(stage: StageNumber): StageDiff<T> | nil
-  readonly stageDiffs?: StageDiffs<T>
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
 
   /** Linked list for Map2D */
   _next: ProjectEntity | nil
-  /** Returns the first stage after the given stage number with a stage diff, or `nil` if none. */
-  nextStageWithDiff(stage: StageNumber): StageNumber | nil
-  /** Returns the first stage before the given stage number with a stage diff, or `nil` if none. */
-  prevStageWithDiff(stage: StageNumber): StageNumber | nil
 
-  /** @return the value at a given stage. Nil if below the first stage. The result is a new table. */
-  getValueAtStage(stage: StageNumber): Readonly<T> | nil
   /** @return the value of a property at a given stage, or at the first stage if below the first stage. Also returns the stage in which the property is affected. */
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
   getNameAtStage(stage: StageNumber): string
@@ -232,8 +212,6 @@ export type InserterProjectEntity = ProjectEntity<InserterEntity>
 
 type StageData = ExtraEntities & StageProperties
 
-type MutableStageDiff<T extends Entity> = Partial<Mutable<StageDiff<T>>>
-
 export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
   if (orientation == nil) return 0
   return floor(orientation * 8 + 0.5) % 8
@@ -242,16 +220,14 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
 const { raise_script_destroy } = script
 
 @RegisterClass("AssemblyEntity")
-class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
+class ProjectEntityImpl<T extends Entity = Entity>
+  extends BaseStagedEntity<T, StageDiff<T>>
+  implements ProjectEntity<T>
+{
   position: Position
   direction: defines.direction
 
   isSettingsRemnant: true | nil
-
-  firstStage: StageNumber
-  lastStage: StageNumber | nil
-  firstValue: Mutable<T>
-  stageDiffs?: PRecord<StageNumber, MutableStageDiff<T>>
 
   cableConnections?: LuaSet<ProjectEntity>
   circuitConnections?: LuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>
@@ -264,10 +240,9 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   }
 
   constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
+    super(firstStage, firstValue)
     this.position = position
     this.direction = direction ?? 0
-    this.firstValue = firstValue
-    this.firstStage = firstStage
     if (this.isRollingStock()) {
       this.lastStage = firstStage
     }
@@ -284,7 +259,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     this.position = position
   }
 
-  isRollingStock(): boolean {
+  isRollingStock(): this is RollingStockProjectEntity {
     return isRollingStockType(this.firstValue.name)
   }
   isUndergroundBelt(): this is UndergroundBeltProjectEntity {
@@ -292,14 +267,6 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   }
   isInserter(): this is InserterProjectEntity {
     return nameToType.get(this.firstValue.name) == "inserter"
-  }
-
-  isInStage(stage: StageNumber): boolean {
-    return stage >= this.firstStage && !this.isPastLastStage(stage)
-  }
-
-  isPastLastStage(stage: StageNumber): boolean {
-    return this.lastStage != nil && stage > this.lastStage
   }
 
   hasErrorAt(stage: StageNumber): boolean {
@@ -423,23 +390,6 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
   setPickupPosition(this: ProjectEntityImpl<InserterEntity>, position: Position | nil): void {
     this.firstValue.pickup_position = position
   }
-
-  hasStageDiff(stage?: StageNumber): boolean {
-    const { stageDiffs } = this
-    if (!stageDiffs) return false
-    if (stage) return stageDiffs[stage] != nil
-    return next(stageDiffs)[0] != nil
-  }
-  getStageDiff(stage: StageNumber): StageDiff<T> | nil {
-    const { stageDiffs } = this
-    return stageDiffs && stageDiffs[stage]
-  }
-  setStageDiffs(stageDiffs: StageDiffs<T> | nil): void {
-    this.stageDiffs = stageDiffs
-  }
-  setFirstValue(value: T): void {
-    this.firstValue = value
-  }
   private getStageDiffProp<K extends keyof T>(
     stage: StageNumber,
     prop: K,
@@ -485,44 +435,6 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     }
   }
 
-  nextStageWithDiff(stage: StageNumber): StageNumber | nil {
-    if (stage < this.firstStage) return nil
-    const { stageDiffs } = this
-    if (!stageDiffs) return nil
-    for (const [curStage] of pairs(stageDiffs)) {
-      if (curStage > stage) return curStage
-    }
-    return nil
-  }
-
-  prevStageWithDiff(stage: StageNumber): StageNumber | nil {
-    if (stage <= this.firstStage) return nil
-    const { stageDiffs } = this
-    if (!stageDiffs) return nil
-    let result: StageNumber | nil
-    for (const [curStage] of pairs(stageDiffs)) {
-      if (curStage >= stage) break
-      result = curStage
-    }
-    return result
-  }
-
-  getValueAtStage(stage: StageNumber): Readonly<T> | nil {
-    // assert(stage >= 1, "stage must be >= 1")
-    if (!this.isInStage(stage)) return nil
-    const { firstStage } = this
-    if (stage < firstStage) return nil
-    const { stageDiffs } = this
-    if (!stageDiffs) return this.firstValue
-
-    const value = mutableShallowCopy(this.firstValue)
-    for (const [changedStage, diff] of pairs(stageDiffs)) {
-      if (changedStage > stage) break
-      applyDiffToEntity(value, diff)
-    }
-    return value
-  }
-
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]> {
     let value: T[K] = this.firstValue[prop]
     let resultStage = this.firstStage
@@ -542,43 +454,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     return this.getPropAtStage(stage, "name")[0]
   }
 
-  iterateValues(
-    start: StageNumber,
-    end: StageNumber,
-  ): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil, changed: boolean]>>
-  iterateValues(start: StageNumber, end: StageNumber) {
-    const stageDiffs = this.stageDiffs
-    if (!stageDiffs) return this.iterateValuesNoDiffs(start, end)
-
-    const { firstStage, firstValue } = this
-    const lastStage = this.lastStage ?? end
-    let value = this.getValueAtStage(start - 1) as T
-    function iterNext(stageDiffs: StageDiffs | nil, prevStage: StageNumber) {
-      const nextStage = prevStage + 1
-      if (nextStage > end) return $multi()
-      if (nextStage < firstStage || nextStage > lastStage) return $multi(nextStage, nil, false)
-      if (nextStage == firstStage) {
-        value = shallowCopy(firstValue)
-        return $multi(nextStage, value, true)
-      }
-      const diff = stageDiffs && stageDiffs[nextStage]
-      if (diff) applyDiffToEntity(value, diff)
-      return $multi(nextStage, value, diff != nil || nextStage == start)
-    }
-    return $multi<any>(iterNext, stageDiffs, start - 1)
-  }
-
-  private iterateValuesNoDiffs(start: StageNumber, end: StageNumber) {
-    const { firstStage, firstValue } = this
-    const lastStage = this.lastStage ?? end
-    function next(_: any, prevStage: StageNumber) {
-      const stage = prevStage + 1
-      if (stage > end) return $multi()
-      if (stage < firstStage || stage > lastStage) return $multi(stage, nil, false)
-      return $multi(stage, firstValue, stage == firstStage || stage == start)
-    }
-    return $multi<any>(next, nil, start - 1)
-  }
+  applyDiff = applyDiffToEntity
 
   adjustValueAtStage(stage: StageNumber, value: T): boolean {
     const { firstStage } = this
@@ -657,7 +533,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
       let { stageDiffs } = this
       if (newDiffValue != nil) {
         stageDiffs ??= this.stageDiffs = {}
-        const stageDiff: MutableStageDiff<T> = stageDiffs[stage] ?? (stageDiffs[stage] = {})
+        const stageDiff: Mutable<StageDiff<T>> = stageDiffs[stage] ?? (stageDiffs[stage] = {} as any)
         stageDiff[prop] = newDiffValue
       } else if (stageDiffs) {
         delete stageDiffs[stage]?.[prop]
@@ -721,42 +597,6 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     const stageToApply = this.prevStageWithDiff(stage) ?? this.firstStage
     if (this.adjustValueAtStage(stageToApply, this.getValueAtStage(stage)!)) return stageToApply
     return nil
-  }
-
-  setFirstStageUnchecked(stage: StageNumber): void {
-    const { firstStage, lastStage } = this
-    if (lastStage) assert(stage <= lastStage, "stage must be <= last stage")
-    if (stage > firstStage) this.moveFirstStageUp(stage)
-    this.firstStage = stage
-  }
-  private moveFirstStageUp(newFirstStage: StageNumber): void {
-    const { stageDiffs } = this
-    if (stageDiffs) {
-      const { firstValue } = this
-      for (const [stage, diff] of pairs(stageDiffs)) {
-        if (stage > newFirstStage) break
-        applyDiffToEntity(firstValue, diff)
-        delete stageDiffs[stage]
-      }
-      if (isEmpty(stageDiffs)) delete this.stageDiffs
-    }
-  }
-
-  setLastStageUnchecked(stage: StageNumber | nil): void {
-    assert(!stage || stage >= this.firstStage, "stage must be >= first stage")
-    const { lastStage } = this
-    if (stage && (lastStage == nil || stage < lastStage)) this.moveLastStageDown(stage)
-    this.lastStage = stage
-  }
-
-  private moveLastStageDown(stage: number): void {
-    const { stageDiffs } = this
-    if (stageDiffs && (this.lastStage == nil || stage < this.lastStage)) {
-      for (const [stageNumber] of pairs(stageDiffs)) {
-        if (stageNumber > stage) delete stageDiffs[stageNumber]
-      }
-      if (isEmpty(stageDiffs)) delete this.stageDiffs
-    }
   }
 
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
@@ -911,12 +751,8 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     delete stageProperties[key]
   }
 
-  insertStage(stageNumber: StageNumber): void {
-    if (this.firstStage >= stageNumber) this.firstStage++
-    if (this.lastStage && this.lastStage >= stageNumber) this.lastStage++
-
-    shiftNumberKeysUp(this, stageNumber)
-    if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
+  override insertStage(stageNumber: StageNumber): void {
+    super.insertStage(stageNumber)
     const { stageProperties } = this
     if (stageProperties)
       for (const [, byType] of pairs(stageProperties)) {
@@ -924,25 +760,13 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
       }
   }
 
-  deleteStage(stageNumber: StageNumber): void {
-    const stageToMerge = stageNumber == 1 ? 2 : stageNumber
-    this.mergeStageDiffWithBelow(stageToMerge)
-
-    if (this.firstStage >= stageToMerge) this.firstStage--
-    if (this.lastStage && this.lastStage >= stageNumber) this.lastStage--
-
-    shiftNumberKeysDown(this, stageNumber)
-    if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)
+  override deleteStage(stageNumber: StageNumber): void {
+    super.deleteStage(stageNumber)
     const { stageProperties } = this
     if (stageProperties)
       for (const [, byType] of pairs(stageProperties)) {
         shiftNumberKeysDown(byType, stageNumber)
       }
-  }
-  private mergeStageDiffWithBelow(stage: StageNumber): void {
-    if (stage <= this.firstStage) return
-    if (!this.hasStageDiff(stage)) return
-    this.adjustValueAtStage(stage - 1, this.getValueAtStage(stage)!)
   }
 }
 
