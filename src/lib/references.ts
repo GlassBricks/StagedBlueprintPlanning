@@ -22,19 +22,20 @@ export interface Class<T> {
 }
 
 const registeredClasses = new LuaSet<Class<any>>()
-function registerClass(name: string, item: Class<any>) {
-  script.register_metatable(name, item.prototype)
-  if (registeredClasses.has(item)) {
+function registerClass(name: string, _class: Class<any>) {
+  script.register_metatable(name, _class.prototype)
+  if (registeredClasses.has(_class)) {
     error(`Class ${name} is already registered`)
   }
-  registeredClasses.add(item)
+  registeredClasses.add(_class)
 
-  const prototype = item.prototype
+  const prototype = _class.prototype
   // make sure __call meta-method works for subclasses
   rawset(prototype, "__call", prototype.__call)
+  flattenPrototypes(_class)
 
   // register static functions
-  for (const [key, value] of pairs(item)) {
+  for (const [key, value] of pairs(_class)) {
     // noinspection SuspiciousTypeOfGuard
     if (typeof value == "function" && typeof key == "string") {
       Functions.registerAs(name + "." + key, value)
@@ -50,6 +51,19 @@ export function RegisterClass(name: string): (this: unknown, _class: Class<any>)
 export function assertIsRegisteredClass(item: Class<any>): void {
   if (!registeredClasses.has(item)) {
     error(`Class ${item.name} is not registered: ` + serpent.block(item))
+  }
+}
+
+function flattenPrototypes(_class: Class<any>) {
+  let index = _class.prototype.__index
+  for (;;) {
+    const superMt = getmetatable(index)?.__index
+    if (!superMt || typeof superMt != "object") break
+    for (const [key] of pairs(superMt)) {
+      // eslint-disable-next-line no-self-assign
+      index[key] = index[key] // the second get uses __index; assigning flattens the prototype chain
+    }
+    index = superMt
   }
 }
 

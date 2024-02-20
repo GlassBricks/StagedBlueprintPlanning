@@ -19,6 +19,7 @@ declare const global: {
   __ref1: Func
   __ref2: Func
   __ref3: Func
+  __ref4: Func
 }
 
 describe("classes", () => {
@@ -43,6 +44,9 @@ describe("classes", () => {
 
     static override foo2() {
       // noop
+    }
+    nonOverridden() {
+      return "non overridden"
     }
   }
 
@@ -84,6 +88,7 @@ describe("classes", () => {
     expect(global.__ref1.invoke()).toBe("12")
     expect(global.__ref2.invoke()).toBe("23")
     expect(global.__ref3.invoke()).toBe("35")
+    expect(global.__ref4.invoke()).toBe("non overridden")
   }
   test("class and boundMethod survives reload", () => {
     const instance = new TestClass("1")
@@ -96,6 +101,7 @@ describe("classes", () => {
     global.__ref1 = ibind(instance.foo)
     global.__ref2 = ibind(subclassInstance.foo)
     global.__ref3 = ibind(subclass2Instance.foo)
+    global.__ref4 = ibind(subclass2Instance.nonOverridden)
     assertRefsCorrect()
   }).after_mod_reload(() => {
     assertRefsCorrect()
