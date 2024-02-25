@@ -48,10 +48,12 @@ export function shallowCompare<T>(a: T, b: T): boolean {
   return true
 }
 
-const next: (obj: object) => any = _G.next
-
 export function isEmpty(obj: object): boolean {
-  return next(obj) == nil
+  return next(obj)[0] == nil
+}
+
+export function first<T extends AnyNotNil>(iterable: LuaPairsKeyIterable<T>): T | nil {
+  return next(iterable)[0]
 }
 
 export function assertNever(value: never): never {

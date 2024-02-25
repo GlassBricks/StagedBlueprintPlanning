@@ -19,6 +19,7 @@ import {
   createProjectEntityNoCopy,
   ProjectEntity,
 } from "../../entity/ProjectEntity"
+import { saveWireConnections } from "../../entity/wires"
 import { shallowCompare } from "../../lib"
 import { setupTestSurfaces } from "../project/Project-mock"
 
@@ -32,9 +33,9 @@ before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
 })
 
-import handler = require("../../entity/wires")
+import Wires = require("../../entity/wires")
 
-describe("getPowerSwitchConnectionSide", () => {
+describe("power switches", () => {
   let pole1: LuaEntity
   let pole2: LuaEntity
   let powerSwitch: LuaEntity
@@ -88,6 +89,41 @@ describe("getPowerSwitchConnectionSide", () => {
     } else {
       expect((powerSwitch.neighbours as any).copper).toEqual([pole1])
     }
+  })
+  test("removeExistingPowerSwitchCopperConnection only removes copper cable", () => {
+    pole1.connect_neighbour({
+      target_entity: powerSwitch,
+      wire: defines.wire_type.copper,
+      target_wire_id: defines.wire_connection_id.power_switch_right,
+    })
+    pole2.connect_neighbour({
+      target_entity: powerSwitch,
+      wire: defines.wire_type.red,
+      target_wire_id: defines.wire_connection_id.power_switch_left,
+    })
+
+    const pole1ProjectEntity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pole1.position, nil, 1)
+    const pole2ProjectEntity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pole2.position, nil, 1)
+    const powerSwitchProjectEntity = createProjectEntityNoCopy({ name: "power-switch" }, powerSwitch.position, nil, 1)
+    pole1ProjectEntity.replaceWorldEntity(1, pole1)
+    pole2ProjectEntity.replaceWorldEntity(1, pole2)
+    powerSwitchProjectEntity.replaceWorldEntity(1, powerSwitch)
+    content.add(pole1ProjectEntity)
+    content.add(pole2ProjectEntity)
+    content.add(powerSwitchProjectEntity)
+
+    saveWireConnections(content, powerSwitchProjectEntity, 1)
+    expect(powerSwitchProjectEntity.circuitConnections?.get(pole1ProjectEntity)).toBeAny()
+    expect(powerSwitchProjectEntity.circuitConnections?.get(pole2ProjectEntity)).toBeAny()
+
+    Wires.removeExistingPowerSwitchCopperConnection(
+      powerSwitchProjectEntity,
+      defines.wire_connection_id.power_switch_right,
+    )
+
+    // only removes pole1 (copper) connection
+    expect(powerSwitchProjectEntity.circuitConnections?.get(pole1ProjectEntity)).toBeNil()
+    expect(powerSwitchProjectEntity.circuitConnections?.get(pole2ProjectEntity)).toBeAny()
   })
 })
 
@@ -164,7 +200,7 @@ describe("circuit wires", () => {
     test("can remove wires", () => {
       addWire1()
       addWire2()
-      handler.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1)
       expect(luaEntity1.circuit_connection_definitions ?? []).toEqual([])
       expect(luaEntity2.circuit_connection_definitions ?? []).toEqual([])
     })
@@ -180,20 +216,20 @@ describe("circuit wires", () => {
     }
     test("can add wires", () => {
       addCircuitConnection(getExpectedWire1())
-      handler.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1)
       assertWire1Matches()
     })
     test("can update wires", () => {
       addWire1()
       addWire2()
       addCircuitConnection(getExpectedWire1())
-      handler.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1)
       assertWire1Matches()
     })
     test("ignores entities not in the project", () => {
       addWire1() // entity1 -> entity2
       content.delete(entity2)
-      handler.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1)
       // wire should still be there
       assertWire1Matches()
     })
@@ -207,7 +243,7 @@ describe("circuit wires", () => {
         toId: defines.circuit_connector_id.combinator_output,
       }
       addCircuitConnection(wire1)
-      handler.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1)
 
       expect(luaEntity1.circuit_connection_definitions).toEqual([
         {
@@ -241,7 +277,7 @@ describe("circuit wires", () => {
       for (const number of existing) addCircuitConnection(wires[number - 1])
       for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
+      const [hasDiff, maxConnectionsReached] = Wires.saveWireConnections(content, entity1, 1)
       expect(hasDiff).toBe(!shallowCompare(existing, world))
       expect(maxConnectionsReached).toBeNil() // not relevant for circuit wires
 
@@ -296,7 +332,7 @@ describe("power switch connections", () => {
         wire: defines.wire_type.copper,
         target_wire_id: defines.wire_connection_id.power_switch_right,
       })
-      handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      Wires.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
       expect((pole.neighbours as any).copper).toEqual([])
       expect((powerSwitch.neighbours as any).copper).toEqual([])
     })
@@ -310,7 +346,7 @@ describe("power switch connections", () => {
         toId: defines.wire_connection_id.power_switch_right,
       })
 
-      handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      Wires.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
       expect((pole.neighbours as any).copper).toEqual([powerSwitch])
       expect((powerSwitch.neighbours as any).copper).toEqual([pole])
       const side = pole.copper_connection_definitions.find((c) => c.target_entity == powerSwitch)!.target_wire_connector
@@ -334,7 +370,7 @@ describe("power switch connections", () => {
         toId: defines.wire_connection_id.electric_pole,
       })
 
-      handler.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      Wires.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
       expect((pole.neighbours as any).copper).toEqual([powerSwitch])
       expect((powerSwitch.neighbours as any).copper).toEqual([pole])
       const side2 = pole.copper_connection_definitions.find(
@@ -349,7 +385,7 @@ describe("power switch connections", () => {
         target_wire_id: defines.wire_connection_id.power_switch_right,
       })
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(
+      const [hasDiff, maxConnectionsReached] = Wires.saveWireConnections(
         content,
         from == "pole" ? poleEntity : powerSwitchEntity,
         1,
@@ -385,7 +421,7 @@ describe("power switch connections", () => {
           target_wire_id: side,
         })
       }
-      const [hasDiff, maxConnectionsReached, additional] = handler.saveWireConnections(
+      const [hasDiff, maxConnectionsReached, additional] = Wires.saveWireConnections(
         content,
         from == "pole" ? poleEntity : powerSwitchEntity,
         1,
@@ -432,7 +468,7 @@ describe("power switch connections", () => {
         target_wire_id: defines.wire_connection_id.power_switch_right,
       })
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(
+      const [hasDiff, maxConnectionsReached] = Wires.saveWireConnections(
         content,
         from == "pole" ? poleEntity : powerSwitchEntity,
         1,
@@ -446,7 +482,7 @@ describe("power switch connections", () => {
         target_wire_id: defines.wire_connection_id.power_switch_right,
       })
 
-      const [hasDiff2, maxConnectionsReached2, additionalEntitiesToUpdate] = handler.saveWireConnections(
+      const [hasDiff2, maxConnectionsReached2, additionalEntitiesToUpdate] = Wires.saveWireConnections(
         content,
         from == "pole" ? otherPoleEntity : powerSwitchEntity,
         2,
@@ -499,7 +535,7 @@ describe("power switch connections", () => {
     })
     poleEntity.destroyWorldOrPreviewEntity(1)
 
-    handler.updateWireConnectionsAtStage(content, powerSwitchEntity, 1)
+    Wires.updateWireConnectionsAtStage(content, powerSwitchEntity, 1)
     expect((pole2.neighbours as any).copper).toEqual([])
   })
 })
@@ -528,7 +564,7 @@ describe("cable connections", () => {
 
   test("can add cables", () => {
     entity1.tryAddDualCableConnection(entity2)
-    handler.updateWireConnectionsAtStage(content, entity1, 1)
+    Wires.updateWireConnectionsAtStage(content, entity1, 1)
     expect(
       (
         luaEntity1.neighbours as {
@@ -547,7 +583,7 @@ describe("cable connections", () => {
 
   test("can remove cables", () => {
     luaEntity1.connect_neighbour(luaEntity2)
-    handler.updateWireConnectionsAtStage(content, entity1, 1)
+    Wires.updateWireConnectionsAtStage(content, entity1, 1)
     expect(
       (
         luaEntity1.neighbours as {
@@ -567,7 +603,7 @@ describe("cable connections", () => {
   test("can update cables", () => {
     entity1.tryAddDualCableConnection(entity2) // 1-2
     luaEntity2.connect_neighbour(luaEntity3)
-    handler.updateWireConnectionsAtStage(content, entity2, 1)
+    Wires.updateWireConnectionsAtStage(content, entity2, 1)
     // should now only have 1-2
     expect(
       (
@@ -595,7 +631,7 @@ describe("cable connections", () => {
   test("ignores entities not in the project", () => {
     luaEntity1.connect_neighbour(luaEntity2)
     content.delete(entity2)
-    handler.updateWireConnectionsAtStage(content, entity1, 1)
+    Wires.updateWireConnectionsAtStage(content, entity1, 1)
     // cable should still be there
     expect(
       (
@@ -620,7 +656,7 @@ describe("cable connections", () => {
       if (world.includes(1)) luaEntity1.connect_neighbour(luaEntity2)
       if (world.includes(2)) luaEntity2.connect_neighbour(luaEntity3)
 
-      const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
+      const [hasDiff, maxConnectionsReached] = Wires.saveWireConnections(content, entity2, 1)
       expect(hasDiff).toBe(!shallowCompare(existing, world))
       expect(maxConnectionsReached).toBeNil()
 
@@ -643,7 +679,7 @@ describe("cable connections", () => {
       otherLuaEntity2.connect_neighbour(otherLuaEntity3)
       luaEntity2.connect_neighbour(luaEntity1)
       // should connect both 1-2 and 2-3
-      handler.saveWireConnections(content, entity2, 1, 2)
+      Wires.saveWireConnections(content, entity2, 1, 2)
 
       const connections = entity2.cableConnections
       expect(Object.keys(connections ?? {})).toEqual([entity1, entity3])
@@ -669,14 +705,14 @@ describe("cable connections", () => {
       luaEntity1.connect_neighbour(luaEntity2)
       // saving should fail
       {
-        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity1, 1)
+        const [hasDiff, maxConnectionsReached] = Wires.saveWireConnections(content, entity1, 1)
         expect(hasDiff).toBe(true)
         expect(maxConnectionsReached).toBe(true)
         expect(entity2.cableConnections).toBeNil()
         expect(entity1.cableConnections!.has(entity2)).toBe(false)
       }
       {
-        const [hasDiff, maxConnectionsReached] = handler.saveWireConnections(content, entity2, 1)
+        const [hasDiff, maxConnectionsReached] = Wires.saveWireConnections(content, entity2, 1)
         expect(hasDiff).toBe(true)
         expect(maxConnectionsReached).toBe(true)
         expect(entity2.cableConnections).toBeNil()

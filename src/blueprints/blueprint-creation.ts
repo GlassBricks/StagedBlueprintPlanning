@@ -74,7 +74,7 @@ namespace BlueprintMethods {
       result.set(i, new LuaSet())
     }
     const content = project.content
-    for (const entity of content.iterateAllEntities()) {
+    for (const entity of content.allEntities()) {
       const firstStageMap = result.get(entity.firstStage)!
       firstStageMap.add(entity)
 
@@ -130,7 +130,7 @@ namespace BlueprintMethods {
       ]),
     )
     const result = new LuaMap<UnitNumber, Record<string, number>>()
-    for (const entity of project.content.iterateAllEntities()) {
+    for (const entity of project.content.allEntities()) {
       const firstValue = entity.firstValue
       if (firstValue.items || !assemblingMachineNames.has(firstValue.name)) continue
       const [firstDiffStage, newItems] = entity.getFirstStageDiffForProp("items")

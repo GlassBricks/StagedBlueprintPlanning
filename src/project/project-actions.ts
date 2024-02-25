@@ -728,7 +728,7 @@ export function ProjectActions(
 
   function onSurfaceCleared(stage: StageNumber): void {
     const area = content.computeBoundingBox()
-    for (const entity of content.iterateAllEntities()) {
+    for (const entity of content.allEntities()) {
       clearWorldEntityAtStage(entity, stage)
     }
     if (area) prepareArea(project.getSurface(stage)!, area)

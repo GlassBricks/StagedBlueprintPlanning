@@ -284,7 +284,7 @@ class ProjectEntityImpl<T extends Entity = Entity> implements ProjectEntity<T> {
     this.position = position
   }
 
-  isRollingStock(): boolean {
+  isRollingStock(): this is RollingStockProjectEntity {
     return isRollingStockType(this.firstValue.name)
   }
   isUndergroundBelt(): this is UndergroundBeltProjectEntity {
