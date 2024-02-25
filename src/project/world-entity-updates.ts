@@ -426,7 +426,7 @@ export function WorldEntityUpdates(project: Project, highlights: EntityHighlight
       // see also: isPreviewEntity
     }
     const updateLater: RollingStockProjectEntity[] = []
-    for (const entity of content.iterateAllEntities()) {
+    for (const entity of content.allEntities()) {
       if (entity.isRollingStock()) {
         updateLater.push(entity)
       } else {

@@ -55,7 +55,7 @@ export interface ProjectContent {
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): ProjectEntity | nil
   findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
   countNumEntities(): number
-  iterateAllEntities(): LuaPairsKeyIterable<ProjectEntity>
+  allEntities(): ReadonlyLuaSet<ProjectEntity>
 
   /**
    * Will return slightly larger than actual
@@ -204,7 +204,7 @@ class ProjectContentImpl implements MutableProjectContent {
   countNumEntities(): number {
     return table_size(this.entities)
   }
-  iterateAllEntities(): LuaPairsKeyIterable<ProjectEntity> {
+  allEntities(): ReadonlyLuaSet<ProjectEntity> {
     return this.entities
   }
 

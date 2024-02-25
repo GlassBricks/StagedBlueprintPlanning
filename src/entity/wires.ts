@@ -221,11 +221,11 @@ function saveCircuitConnections(
     // power switches have only one connection per side; replace existing connections to the same side if they exist
     if (definition.wire == defines.wire_type.copper) {
       if (luaEntity.type == "power-switch") {
-        removeExistingConnectionsToPowerSwitchSide(entity, definition.source_circuit_id as wire_connection_id)
+        removeExistingPowerSwitchCopperConnection(entity, definition.source_circuit_id as wire_connection_id)
       } else {
         assert(luaEntity.type == "electric-pole")
         if (
-          removeExistingConnectionsToPowerSwitchSide(otherEntity, definition.target_circuit_id as wire_connection_id)
+          removeExistingPowerSwitchCopperConnection(otherEntity, definition.target_circuit_id as wire_connection_id)
         ) {
           ;(additionalEntitiesToUpdate ??= []).push(otherEntity)
         }
@@ -242,7 +242,7 @@ function saveCircuitConnections(
   return $multi(hasDiff, additionalEntitiesToUpdate)
 }
 
-function removeExistingConnectionsToPowerSwitchSide(
+export function removeExistingPowerSwitchCopperConnection(
   powerSwitchEntity: ProjectEntity,
   side: defines.wire_connection_id,
 ): true | nil {
@@ -250,6 +250,7 @@ function removeExistingConnectionsToPowerSwitchSide(
   if (!connections) return
   for (const [, otherConnections] of connections) {
     for (const connection of otherConnections) {
+      if (connection.wire != wire_type.copper) continue
       const [, fromId] = getDirectionalInfo(connection, powerSwitchEntity)
       if (fromId == side) {
         removeCircuitConnection(connection)
