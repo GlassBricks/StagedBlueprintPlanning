@@ -547,7 +547,7 @@ class ProjectSettings extends Component<{
     if (this.sssCount >= 3) {
       const player = game.get_player(this.playerIndex)
       if (!player) return
-      player.play_sound({ path: Prototypes.BANANA })
+      player.play_sound({ path: Prototypes.BANANA, override_sound_type: "alert" })
       this.sssCount = 0
     }
   }

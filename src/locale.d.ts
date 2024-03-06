@@ -290,7 +290,7 @@ export declare const enum L_GuiProjectSettings {
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
   /** Sync map gen settings [img=info] */
   SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
-  /** Sets map gen settings for all stages to match the current stage. Also regenerates all surfaces.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Furfaces" tab\n - Click "map settings".\n - Possibly un-check "Generate new chunks with lab tiles".\n - Click this button again to regenerate surfaces. */
+  /** Sets map gen settings for all stages to match the current stage. Also regenerates all surfaces.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings".\n - Possibly un-check "Generate new chunks with lab tiles".\n - Click this button again to regenerate surfaces. */
   SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
   /** Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
