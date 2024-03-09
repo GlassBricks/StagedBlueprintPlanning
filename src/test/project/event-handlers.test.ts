@@ -20,9 +20,9 @@ import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { _assertInValidState } from "../../project/event-handlers"
 import { getProjectPlayerData } from "../../project/player-project-data"
-import { ProjectActions } from "../../project/project-actions"
 import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo, UndoHandler } from "../../project/undo"
+import { UserActions } from "../../project/user-actions"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { fStub } from "../f-mock"
 import { moduleMock } from "../module-mock"
@@ -30,7 +30,7 @@ import { reviveGhost } from "../reviveGhost"
 import direction = defines.direction
 
 let project: UserProject & {
-  actions: mock.MockedObjectNoSelf<ProjectActions>
+  actions: mock.MockedObjectNoSelf<UserActions>
 }
 const CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, false)
 let surface: LuaSurface

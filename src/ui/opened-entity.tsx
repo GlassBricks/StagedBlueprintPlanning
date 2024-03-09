@@ -28,9 +28,9 @@ import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../li
 import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
 import { checkForEntityUpdates } from "../project/event-handlers"
-import { ProjectActions } from "../project/project-actions"
 import { ProjectUpdates } from "../project/project-updates"
 import { Stage } from "../project/ProjectDef"
+import { UserActions } from "../project/user-actions"
 
 import { getProjectEntityOfEntity } from "./entity-util"
 import { PlayerChangedStageEvent, teleportToStage } from "./player-current-stage"
@@ -67,7 +67,7 @@ function SmallToolButton(props: ElemProps<"sprite-button">) {
 class EntityProjectInfo extends Component<EntityStageInfoProps> {
   playerIndex!: PlayerIndex
   stage!: Stage
-  actions!: ProjectActions
+  actions!: UserActions
   updates!: ProjectUpdates
   entity!: ProjectEntity
 

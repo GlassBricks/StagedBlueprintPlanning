@@ -20,9 +20,9 @@ import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { PropertiesTable } from "../utils/properties-obj"
-
-import { ProjectActions } from "./project-actions"
 import { ProjectUpdates } from "./project-updates"
+
+import { UserActions } from "./user-actions"
 import { WorldEntityUpdates } from "./world-entity-updates"
 
 export type ProjectId = number & {
@@ -39,7 +39,7 @@ export interface Project {
   readonly valid: boolean
 
   // Refs to modules, handling all possible updates
-  actions: ProjectActions
+  actions: UserActions
   updates: ProjectUpdates
   entityUpdates: WorldEntityUpdates
 }
@@ -74,7 +74,7 @@ export interface Stage {
   readonly project: UserProject
 
   /** Same value as project.actions */
-  readonly actions: ProjectActions
+  readonly actions: UserActions
 
   readonly stageBlueprintSettings: StageBlueprintSettingsTable
   getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings>

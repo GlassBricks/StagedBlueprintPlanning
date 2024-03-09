@@ -41,11 +41,11 @@ import {
   PropertiesTable,
 } from "../utils/properties-obj"
 import { EntityHighlights } from "./entity-highlights"
-import { ProjectActions } from "./project-actions"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, UserProject } from "./ProjectDef"
 import { getStageAtSurface } from "./stage-surface"
 import { createStageSurface, destroySurface } from "./surfaces"
+import { UserActions } from "./user-actions"
 import { WorldEntityUpdates } from "./world-entity-updates"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 import min = math.min
@@ -80,7 +80,7 @@ class UserProjectImpl implements UserProject {
   valid = true
   private readonly stages: Record<number, StageImpl> = {}
 
-  actions = ProjectActionsClass({ project: this })
+  actions = UserActionsClass({ project: this })
   updates = ProjectUpdatesClass({ project: this })
   entityUpdates = WorldEntityUpdatesClass({ project: this })
 
@@ -306,8 +306,8 @@ interface HasProject {
   project: UserProject
 }
 
-const ProjectActionsClass = LazyLoadClass<HasProject, ProjectActions>("ProjectActions", ({ project }) =>
-  ProjectActions(project, project.updates, project.entityUpdates),
+const UserActionsClass = LazyLoadClass<HasProject, UserActions>("UserActions", ({ project }) =>
+  UserActions(project, project.updates, project.entityUpdates),
 )
 const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUpdates", ({ project }) =>
   ProjectUpdates(project, project.entityUpdates),
@@ -373,7 +373,7 @@ class StageImpl implements Stage {
 
   stageBlueprintSettings = createEmptyStageBlueprintSettings()
 
-  actions: ProjectActions
+  actions: UserActions
 
   getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings> {
     return {
@@ -451,7 +451,7 @@ Migrations.priority(2, "0.16.0", () => {
 })
 Migrations.priority(2, "0.27.0", () => {
   for (const project of global.projects) {
-    project.actions = ProjectActionsClass({ project })
+    project.actions = UserActionsClass({ project })
     project.updates = ProjectUpdatesClass({ project })
     project.entityUpdates = WorldEntityUpdatesClass({ project })
     for (const stage of project.getAllStages()) {

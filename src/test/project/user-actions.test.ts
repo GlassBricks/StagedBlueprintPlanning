@@ -17,10 +17,10 @@ import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../ent
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
-import { ProjectActions } from "../../project/project-actions"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { performUndoAction } from "../../project/undo"
+import { UserActions } from "../../project/user-actions"
 import { WorldEntityUpdates } from "../../project/world-entity-updates"
 import { fMock } from "../f-mock"
 import { moduleMock } from "../module-mock"
@@ -35,13 +35,13 @@ let project: Project
 
 const projectUpdates = fMock<ProjectUpdates>()
 const worldUpdates = fMock<WorldEntityUpdates>()
-let userActions: ProjectActions
+let userActions: UserActions
 
 before_each(() => {
   project = createMockProject(surfaces)
   project.entityUpdates = worldUpdates
   project.updates = projectUpdates
-  project.actions = userActions = ProjectActions(project, projectUpdates, worldUpdates)
+  project.actions = userActions = UserActions(project, projectUpdates, worldUpdates)
 })
 
 before_each(() => {

@@ -32,7 +32,7 @@ import { ProjectEntityDollyResult, WorldEntityUpdates } from "./world-entity-upd
  *
  * @noSelf
  */
-export interface ProjectActions {
+export interface UserActions {
   onEntityCreated(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): UndoAction | nil
   onEntityDeleted(entity: LuaEntityInfo, stage: StageNumber, byPlayer: PlayerIndex | nil): void
   onEntityPossiblyUpdated(
@@ -88,7 +88,7 @@ export interface ProjectActions {
 }
 
 /** @noSelf */
-interface InternalProjectActions extends ProjectActions {
+interface InternalUserActions extends UserActions {
   findCompatibleEntityForUndo(entity: ProjectEntity): ProjectEntity | nil
   userTryMoveEntityToStage(
     entity: ProjectEntity,
@@ -113,7 +113,7 @@ interface StageChangeRecord extends ProjectEntityRecord {
 }
 
 interface InternalProject extends UserProject {
-  actions: InternalProjectActions
+  actions: InternalUserActions
 }
 
 const undoDeleteEntity = UndoHandler<ProjectEntityRecord>("delete entity", (_, { project, entity }) => {
@@ -170,11 +170,11 @@ const moveResultMessage: Record<ProjectEntityDollyResult, L_Interaction | nil> =
   "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
 }
 
-export function ProjectActions(
+export function UserActions(
   project: Project,
   projectUpdates: ProjectUpdates,
   worldEntityUpdates: WorldEntityUpdates,
-): ProjectActions {
+): UserActions {
   const content = project.content
   const {
     addNewEntity,
@@ -199,7 +199,7 @@ export function ProjectActions(
     updateAllHighlights,
   } = worldEntityUpdates
 
-  const result: InternalProjectActions = {
+  const result: InternalUserActions = {
     onEntityCreated,
     onEntityDeleted,
     onEntityPossiblyUpdated,
