@@ -35,7 +35,7 @@ import {
 } from "./entity-prototype-info"
 import { registerEntity } from "./registration"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
-import { BaseStagedEntity, StagedValue } from "./StagedValue"
+import { BaseStagedValue, StagedValue } from "./StagedValue"
 import floor = math.floor
 
 let nameToType: EntityPrototypeInfo["nameToType"]
@@ -221,7 +221,7 @@ const { raise_script_destroy } = script
 
 @RegisterClass("AssemblyEntity")
 class ProjectEntityImpl<T extends Entity = Entity>
-  extends BaseStagedEntity<T, StageDiff<T>>
+  extends BaseStagedValue<T, StageDiff<T>>
   implements ProjectEntity<T>
 {
   position: Position

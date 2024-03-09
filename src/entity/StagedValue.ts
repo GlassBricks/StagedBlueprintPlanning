@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { nil } from "factorio:runtime"
 import {
   isEmpty,
   Mutable,
@@ -71,7 +70,7 @@ export interface StagedValue<T, D> {
   deleteStage(stageNumber: StageNumber): void
 }
 
-export abstract class BaseStagedEntity<T, D> implements StagedValue<T, D> {
+export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
   stageDiffs?: PRecord<StageNumber, Mutable<D>>
   protected constructor(
     public firstStage: StageNumber,
