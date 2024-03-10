@@ -1,5 +1,6 @@
 import { BlueprintSignalIcon, SignalID } from "factorio:runtime"
 import { Position } from "../lib/geometry"
+import { L_GuiProjectSettings } from "../locale"
 import { createPropertiesTable, PropertiesTable, PropertyOverrideTable } from "../utils/properties-obj"
 
 export interface BlueprintGridSettings {
@@ -17,7 +18,7 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
   readonly 3: SignalID | nil
   readonly 4: SignalID | nil
 
-  readonly appendNumbersToIcons: boolean
+  readonly appendStageNumbersToIcons: boolean
 
   /** If not nil, only include entities changed in the last x stages */
   readonly stageLimit: number | nil
@@ -51,14 +52,12 @@ export function setIconsInSettings(settings: BlueprintSettingsTable, icons: Blue
     settings[key].set(toSet[key])
   }
 }
-export function getIconsAsSparseArray(settings: BlueprintSettingsTable | BlueprintOverrideSettings): SignalID[] {
+
+export function getIconsAsCompactArray(settings: BlueprintSettingsTable): SignalID[] {
   const result: SignalID[] = []
-  for (const [index, signal] of pairs(settings)) {
-    if (type(index) == "number") {
-      result[index as number] = signal.get() as SignalID
-    } else {
-      break
-    }
+  for (const key of signalKeys) {
+    const signal = settings[key].get()
+    if (signal) result.push(signal)
   }
   return result
 }
@@ -68,27 +67,30 @@ export function getIconsAsSparseArray(settings: BlueprintSettingsTable | Bluepri
  */
 export function getIconsFromSettings(settings: BlueprintTakeSettings, stageName?: string): BlueprintSignalIcon[] | nil {
   const result: BlueprintSignalIcon[] = []
-  const appendNumbers = settings.appendNumbersToIcons && stageName
-  let index = 1
+  const appendNumbers = settings.appendStageNumbersToIcons && stageName
+  let largestIndex = 0
   for (const key of signalKeys) {
     const signal = settings[key]
     if (signal) {
-      result.push({ index: appendNumbers ? index : key, signal })
-      index++
+      result.push({ index: key, signal })
+      largestIndex = key
     }
   }
 
   if (appendNumbers) {
     for (const [number] of string.gmatch(stageName, "%d")) {
+      largestIndex++
+      if (largestIndex > 4) {
+        game.print([L_GuiProjectSettings.NotEnoughIconSlots, stageName])
+        break
+      }
       result.push({
-        index,
+        index: largestIndex,
         signal: {
           type: "virtual",
           name: "signal-" + number,
         },
       })
-      index++
-      if (index > 4) break
     }
   }
 
@@ -107,7 +109,7 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
     2: nil,
     3: nil,
     4: nil,
-    appendNumbersToIcons: false,
+    appendStageNumbersToIcons: true,
     autoLandfill: false,
     positionOffset: nil,
     snapToGrid: nil,

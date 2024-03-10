@@ -79,6 +79,7 @@ export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   static selectFn<V>(this: void, ifTrue: V, ifFalse: V, value: unknown): V {
     return value ? ifTrue : ifFalse
   }
+  // maybe a better name is ITE?
   select<V>(ifTrue: MaybeProperty<V>, ifFalse: MaybeProperty<V>): Property<V> {
     return this.flatMap(bind(Property.selectFn<MaybeProperty<V>>, ifTrue, ifFalse))
   }

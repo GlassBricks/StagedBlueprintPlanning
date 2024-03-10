@@ -43,6 +43,10 @@ export class DiffedProperty<T> extends Property<T> implements MutableProperty<T>
   closeAll(): void {
     this.resultValue.closeAll()
   }
+
+  isOverridden(): Property<boolean> {
+    return this.overrideValue.notNil()
+  }
 }
 function coloredIfNotNil(value: unknown): Color | ColorArray {
   return value != nil ? Colors.OverrideHighlight : [1, 1, 1]

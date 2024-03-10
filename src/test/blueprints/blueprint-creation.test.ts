@@ -51,6 +51,7 @@ function createEntity(stage: Stage, pos: MapPositionArray = [0.5, 0.5], name: st
 test("can take single blueprint using stage settings", () => {
   project.defaultBlueprintSettings.snapToGrid.set(Pos(2, 3))
   project.defaultBlueprintSettings.positionRelativeToGrid.set(Pos(4, 5))
+  project.defaultBlueprintSettings.appendStageNumbersToIcons.set(true)
 
   const stage = project.getStage(1)!
   const stack = player.cursor_stack!
@@ -71,6 +72,8 @@ test("can take single blueprint using stage settings", () => {
   const entities = stack.get_blueprint_entities()!
   expect(entities).toHaveLength(1)
   expect(entities[0].name).toBe("iron-chest")
+
+  expect(stack.blueprint_icons).toMatchTable([{ index: 1, signal: { type: "virtual", name: "signal-1" } }])
 })
 
 describe("set tiles", () => {

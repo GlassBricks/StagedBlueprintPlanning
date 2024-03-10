@@ -10,10 +10,11 @@
  */
 
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
-import { getIconsAsSparseArray } from "../../blueprints/blueprint-settings"
+import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
 import { getStageAtSurface } from "../../project/stage-surface"
 import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
+import { getCurrentValues } from "../../utils/properties-obj"
 
 let eventListener: MockNoSelf<AnySelflessFun>
 before_each(() => {
@@ -196,14 +197,14 @@ describe("new stage name", () => {
       const stage = project.insertStage(1)
 
       expect(stage.name.get()).toEqual("New Stage")
-      expect(getIconsAsSparseArray(stage.stageBlueprintSettings)).toEqual([])
+      expect(getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()))).toBeNil()
     })
 
     test("is next number minus 1 if numbered naming convention", () => {
       project.getStage(1)!.name.set("Foo 1")
       const stage = project.insertStage(1)
       expect(stage.name.get()).toEqual("Foo 0")
-      expect(getIconsAsSparseArray(stage.stageBlueprintSettings)).toEqual([])
+      expect(getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()))).toBeNil()
     })
   })
 

@@ -516,12 +516,12 @@ Migrations.to("0.30.0", () => {
     for (const key of [1, 2, 3, 4] as const) {
       asMutable(project.defaultBlueprintSettings)[key] ??= property(nil)
     }
-    asMutable(project.defaultBlueprintSettings).appendNumbersToIcons ??= property(false)
+    asMutable(project.defaultBlueprintSettings).appendStageNumbersToIcons ??= property(false)
     for (const stage of project.getAllStages()) {
       for (const key of [1, 2, 3, 4] as const) {
         asMutable(stage.stageBlueprintSettings)[key] ??= property(nil)
       }
-      asMutable(stage.stageBlueprintSettings).appendNumbersToIcons ??= property(false)
+      asMutable(stage.stageBlueprintSettings).appendStageNumbersToIcons ??= property(false)
       assume<{
         icons?: Property<BlueprintSignalIcon[] | nil>
       }>(stage.stageBlueprintSettings)

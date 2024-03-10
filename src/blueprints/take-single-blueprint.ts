@@ -273,9 +273,11 @@ export function takeSingleBlueprint({
   }
 
   stack.blueprint_icons = getIconsFromSettings(params, stageName) ?? stack.default_icons
+
   if (setOrigPositionTag) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }
+
   return {
     effectivePositionOffset,
     entities,

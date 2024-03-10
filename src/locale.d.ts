@@ -240,6 +240,12 @@ export declare const enum L_GuiProjectSettings {
   Icons = "bp100.gui.project-settings.icons",
   /** Blueprint icons.\nIn stage settings, [font=default-bold]Control-right click[/font] to reset an overridden icon. */
   IconsTooltip = "bp100.gui.project-settings.icons-tooltip",
+  /** Add numbers from stage name to icons [img=info] */
+  AppendNumbersFromStage = "bp100.gui.project-settings.append-numbers-from-stage",
+  /** e.g. if the stage name is "Stage 3.2", adds "3" and "2" to the blueprint icons.\nThere must be empty icon slots at the end for this to work. */
+  AppendNumbersFromStageTooltip = "bp100.gui.project-settings.append-numbers-from-stage-tooltip",
+  /** In stage __1__: not enough icon slots to add stage numbers! */
+  NotEnoughIconSlots = "bp100.gui.project-settings.not-enough-icon-slots",
   /** Edit */
   Edit = "bp100.gui.project-settings.edit",
   /** Entity filters */

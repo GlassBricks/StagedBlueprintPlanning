@@ -50,7 +50,7 @@ test("can take blueprint with settings applied", () => {
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },
     positionRelativeToGrid: { x: 4, y: 5 },
-    appendNumbersToIcons: true,
+    appendStageNumbersToIcons: true,
   } satisfies StageBlueprintSettings
 
   const { chest, belt } = createSampleEntities()
@@ -72,16 +72,12 @@ test("can take blueprint with settings applied", () => {
 
   expect(stack.blueprint_icons).toEqual([
     {
-      index: 1,
+      index: 3,
       signal: { type: "item", name: "iron-plate" },
     },
     {
-      index: 2,
+      index: 4,
       signal: { type: "virtual", name: "signal-1" } as SignalID,
-    },
-    {
-      index: 3,
-      signal: { type: "virtual", name: "signal-0" },
     },
   ])
   expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
@@ -146,6 +142,21 @@ test("forEdit position offset still works when first entity is blacklisted", () 
   expect(tiles).toBeAny()
   expect(tiles).toHaveLength(1)
   expect(tiles[0].position).toEqual(settings.positionOffset)
+})
+
+test("default icons used when no icons are set", () => {
+  const settings = getDefaultBlueprintSettings() satisfies StageBlueprintSettings
+
+  createSampleEntities()
+  surface.set_tiles([{ name: "landfill", position: [0, 0] }])
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+
+  const ret = takeSingleBlueprint({ stack, settings, surface, bbox, unitNumberFilter: nil })
+  expect(ret).toBeTruthy()
+
+  expect(stack.blueprint_icons).toEqual(stack.default_icons)
 })
 
 test("applies blacklist", () => {

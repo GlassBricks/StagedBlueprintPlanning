@@ -15,7 +15,8 @@ import { ibind, RegisterClass } from "../lib"
 import { Component, Element, FactorioJsx } from "../lib/factoriojsx"
 import { HorizontalSpacer } from "../lib/factoriojsx/components"
 import { L_GuiProjectSettings } from "../locale"
-import { DiffedProperty } from "../utils/DiffedProperty"
+import { DiffedProperty, highlightIfOverriden } from "../utils/DiffedProperty"
+import { MaybeRevertButton } from "../utils/RevertButton"
 
 export interface IconsEditProps {
   settings: BlueprintSettingsTable
@@ -27,29 +28,39 @@ export class IconsEdit extends Component<IconsEditProps> {
   override render({ settings }: IconsEditProps): Element {
     this.settings = settings
     return (
-      <flow styleMod={{ vertical_align: "center" }}>
-        <label caption={[L_GuiProjectSettings.Icons]} tooltip={[L_GuiProjectSettings.IconsTooltip]} />
-        <HorizontalSpacer width={10} />
-        <frame style="slot_button_deep_frame">
-          {([1, 2, 3, 4] as const).map((i) => {
-            return (
-              <choose-elem-button
-                styleMod={{}}
-                style={
-                  (settings[i] instanceof DiffedProperty
-                    ? (settings[i] as DiffedProperty<unknown>).overrideValue
-                        .notNil()
-                        .select("slot_sized_button_green", "slot_button")
-                    : "slot_button") as any
-                }
-                elem_type="signal"
-                elem_value={settings[i]}
-                tags={{ index: i }}
-                on_gui_click={ibind(this.revertOverride)}
-              />
-            )
-          })}
-        </frame>
+      <flow direction="vertical">
+        <flow styleMod={{ vertical_align: "center" }}>
+          <label caption={[L_GuiProjectSettings.Icons]} tooltip={[L_GuiProjectSettings.IconsTooltip]} />
+          <HorizontalSpacer width={10} />
+          <frame style="slot_button_deep_frame">
+            {([1, 2, 3, 4] as const).map((i) => {
+              const iconValue = settings[i]
+              return (
+                <choose-elem-button
+                  styleMod={{}}
+                  style={
+                    (iconValue instanceof DiffedProperty
+                      ? iconValue.isOverridden().select("slot_sized_button_green", "slot_button")
+                      : "slot_button") as any
+                  }
+                  elem_type="signal"
+                  elem_value={iconValue}
+                  tags={{ index: i }}
+                  on_gui_click={ibind(this.revertOverride)}
+                />
+              )
+            })}
+          </frame>
+        </flow>
+        <flow styleMod={{ vertical_align: "center" }}>
+          <checkbox
+            state={settings.appendStageNumbersToIcons}
+            caption={[L_GuiProjectSettings.AppendNumbersFromStage]}
+            tooltip={[L_GuiProjectSettings.AppendNumbersFromStageTooltip]}
+            styleMod={highlightIfOverriden(settings.appendStageNumbersToIcons)}
+          />
+          {MaybeRevertButton(settings.appendStageNumbersToIcons)}
+        </flow>
       </flow>
     )
   }

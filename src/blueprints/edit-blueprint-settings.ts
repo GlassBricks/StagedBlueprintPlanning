@@ -53,7 +53,7 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
     2: settings[2].get(),
     3: settings[3].get(),
     4: settings[4].get(),
-    appendNumbersToIcons: settings.appendNumbersToIcons.get(),
+    appendStageNumbersToIcons: settings.appendStageNumbersToIcons.get(),
   }
 }
 

@@ -154,15 +154,17 @@ namespace BlueprintMethods {
     settings: OverrideableBlueprintSettings,
   ): void {
     const { stage, bbox } = stagePlan
+    const stageName = stage.name.get()
     const result = takeSingleBlueprint({
       stack: actualStack,
       settings,
       surface: stage.surface,
       bbox,
       unitNumberFilter: stagePlan.unitNumberFilter,
+      stageName,
     })
     stagePlan.result = result
-    actualStack.label = stage.name.get()
+    actualStack.label = stageName
 
     if (result && settings.useModulePreloading) {
       const moduleOverrides = stagePlan.projectPlan.moduleOverrides!.get()
