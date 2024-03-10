@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isEmpty, visitAll } from "../_util"
+import { isEmpty, mutableShallowCopy, visitAll } from "../_util"
 import { Migrations } from "../migration"
 import { bind, Callback, Func, funcRef, ibind, RegisterClass, registerFunctions } from "../references"
 import { Event, Subscribable } from "./Event"
@@ -81,6 +81,14 @@ export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   }
   select<V>(ifTrue: MaybeProperty<V>, ifFalse: MaybeProperty<V>): Property<V> {
     return this.flatMap(bind(Property.selectFn<MaybeProperty<V>>, ifTrue, ifFalse))
+  }
+
+  sub<K extends keyof T>(this: MutableProperty<T>, key: K): MutableProperty<T[K]> {
+    return new KeyProperty(this as MutableProperty<any>, key)
+  }
+
+  index<T>(this: MutableProperty<T[]>, index: number): MutableProperty<T> {
+    return this.sub(index + 1)
   }
 }
 
@@ -357,6 +365,60 @@ export class FlatMappedProperty<T, U> extends BasicProperty<U> {
 
   __tostring(): string {
     return `FlatMappedState(${tostring(this.source)})`
+  }
+}
+
+type AnyTable<T> = Record<keyof any, T>
+@RegisterClass("KeyProperty")
+export class KeyProperty<T> extends BasicProperty<T> implements MutableProperty<T> {
+  private sourceSubscription: Subscription | nil
+
+  constructor(
+    private readonly source: MutableProperty<AnyTable<T>>,
+    private readonly key: keyof any,
+  ) {
+    super()
+  }
+
+  get(): T {
+    return this.source.get()[this.key]
+  }
+
+  private subscribeToSource() {
+    this.sourceSubscription?.close()
+    this.sourceSubscription = this.source._subscribeIndependently(ibind(this.sourceListener))
+  }
+  private unsubscribeFromSource() {
+    this.sourceSubscription?.close()
+    this.sourceSubscription = nil
+  }
+  private sourceListener(newValue: AnyTable<T>, oldValue: AnyTable<T>) {
+    if (isEmpty(this.event)) return this.unsubscribeFromSource()
+
+    const { key } = this
+    const newSubValue = newValue[key]
+    const oldSubValue = oldValue[key]
+    if (newSubValue != oldSubValue) this.event.raise(newSubValue, oldSubValue)
+  }
+
+  set(value: T): void {
+    const source = this.source.get()
+    if (source[this.key] == value) return
+    const newValue = mutableShallowCopy(source)
+    newValue[this.key] = value
+    this.source.set(newValue)
+  }
+
+  checkEmpty(): void {
+    if (isEmpty(this.event)) this.unsubscribeFromSource()
+  }
+  _checkEmpty = ibind(this.checkEmpty)
+
+  override _subscribeIndependently(observer: ChangeObserver<T>): Subscription {
+    if (!this.sourceSubscription) this.subscribeToSource()
+    const subscription = super._subscribeIndependently(observer)
+    subscription.add(this._checkEmpty)
+    return subscription
   }
 }
 

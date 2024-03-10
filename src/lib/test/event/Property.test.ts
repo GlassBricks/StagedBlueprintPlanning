@@ -246,3 +246,55 @@ describe("flatMap", () => {
     expect(mapped.get()).toEqual(8)
   })
 })
+
+describe("sub", () => {
+  test("can get value", () => {
+    const val = property({ a: 1 })
+    const sub = val.sub("a")
+    expect(sub.get()).toEqual(1)
+    val.set({ a: 2 })
+  })
+  test("can set value", () => {
+    const val = property({ a: 1 })
+    const sub = val.sub("a")
+    sub.set(2)
+    expect(val.get()).toEqual({ a: 2 })
+  })
+
+  test("index uses correct lua indexing", () => {
+    const val = property([1, 2, 3])
+    expect(val.index(0).get()).toEqual(1)
+    expect(val.index(1).get()).toEqual(2)
+  })
+
+  test("can subscribe", () => {
+    const val = property({ a: 1 })
+    const sub = val.sub("a")
+    const fn = mock.fn()
+    sub._subscribeIndependentlyAndRaise({ invoke: fn })
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(fn).toHaveBeenCalledWith(1, nil)
+    val.set({ a: 2 })
+    expect(fn).toHaveBeenCalledTimes(2)
+    expect(fn).toHaveBeenCalledWith(2, 1)
+    sub.set(3)
+    expect(fn).toHaveBeenCalledTimes(3)
+    expect(fn).toHaveBeenCalledWith(3, 2)
+  })
+
+  test("closes subscriptions when all observers are removed", () => {
+    const val1 = property({ a: 1 })
+    const val2 = val1.sub("a")
+
+    const sub = val2._subscribeIndependently({
+      invoke: () => 0,
+    })
+    expect(_numObservers(val1)).toEqual(1)
+    expect(_numObservers(val2)).toEqual(1)
+
+    sub.close()
+
+    expect(_numObservers(val1)).toEqual(0)
+    expect(_numObservers(val2)).toEqual(0)
+  })
+})
