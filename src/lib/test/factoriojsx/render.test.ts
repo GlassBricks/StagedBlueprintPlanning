@@ -20,6 +20,7 @@ import {
 import expect, { mock } from "tstl-expect"
 import { _numObservers, property } from "../../event"
 import {
+  ButtonElement,
   ChooseElemButtonElement,
   ClassComponent,
   Component,
@@ -66,6 +67,18 @@ describe("create", () => {
     expect(element.caption).toBe("one")
     v.set("two")
     expect(element.caption).toBe("two")
+  })
+
+  test("can change style using style property", () => {
+    const prop = property("mod_gui_button")
+    const spec: ButtonElement = {
+      type: "button",
+      style: prop,
+    }
+    const element = testRender(spec).element
+    expect(element.style.name).toBe("mod_gui_button")
+    prop.set("mini_button")
+    expect(element.style.name).toBe("mini_button")
   })
 
   test("Call method property", () => {
@@ -191,6 +204,26 @@ describe("styleMod", () => {
     expect(element.style.left_padding).toEqual(1)
     value.set(2)
     expect(element.style.left_padding).toEqual(2)
+  })
+
+  test("persists after style change", () => {
+    const styleValue = property("mod_gui_button")
+    const value = property(1)
+    const spec: ButtonElement = {
+      type: "button",
+      style: styleValue,
+      styleMod: {
+        padding: value,
+        margin: 2,
+      },
+    }
+
+    const element = testRender(spec).element
+    expect(element.style.left_padding).toEqual(1)
+    expect(element.style.left_margin).toEqual(2)
+    styleValue.set("mini_button")
+    expect(element.style.left_padding).toEqual(1)
+    expect(element.style.left_margin).toEqual(2)
   })
 })
 

@@ -77,7 +77,7 @@ export interface BaseElement {
   enabled?: MaybeProperty<boolean>
   visible?: MaybeProperty<boolean>
   ignored_by_interaction?: MaybeProperty<boolean>
-  style?: string
+  style?: MaybeProperty<string>
   tags?: Tags
   anchor?: MaybeProperty<GuiAnchor | nil>
   game_controller_interaction?: MaybeProperty<defines.game_controller_interaction>
@@ -94,7 +94,7 @@ export interface ChooseElemButtonElement extends BaseElement {
   type: "choose-elem-button"
   elem_type: ChooseElemButtonType
   elem_filters?: MaybeProperty<ChooseElemButtonFilters[this["elem_type"]] | nil>
-  elem_value?: MaybeMutableProperty<(this["elem_type"] extends "signal" ? SignalID : string) | nil>
+  elem_value?: MaybeMutableProperty<MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>>
   locked?: MaybeProperty<boolean>
   on_gui_elem_changed?: GuiEventHandler<OnGuiElemChangedEvent>
   onCreate?: OnCreateHandler<ChooseElemButtonGuiElement>

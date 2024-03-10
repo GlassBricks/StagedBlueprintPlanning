@@ -29,6 +29,7 @@ import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
 import { PRecord } from "../util-types"
 import {
+  BaseStyleMod,
   ClassComponent,
   Component,
   Element,
@@ -49,18 +50,36 @@ interface ElementInstance {
   readonly events: PRecord<GuiEventName, Func<any>>
 
   readonly componentInstance?: Component<any>
+  readonly styleMod?: BaseStyleMod
 }
 
 function setStateFunc(state: MutableProperty<unknown>, key: string, event: GuiEvent) {
   state.set((event as any)[key] || event.element![key])
 }
-function setValueObserver(elem: LuaGuiElement | LuaStyle, key: string, value: any) {
-  if (!elem.valid) return
-  if (elem.object_name == "LuaGuiElement") {
-    const info = propInfo[key as keyof typeof propInfo]
-    if (info && info[2] && (elem as any)[key] == value) return
+
+function reapplyStyleMod(element: LuaGuiElement, styleMod: BaseStyleMod): void {
+  const style: any = element.style
+  for (const [key, value] of pairs(styleMod)) {
+    style[key] = value instanceof Property ? value.get() : value
   }
+}
+
+function setPropObserver(elem: LuaGuiElement, key: string, value: unknown) {
+  if (!elem.valid) return
+  const isState = propInfo[key as keyof typeof propInfo]?.[2]
+  if (isState && (elem as any)[key] == value) return
   ;(elem as any)[key] = value
+
+  if (key == "style") {
+    const styleMod = getInstance(elem)?.styleMod
+    if (styleMod) {
+      reapplyStyleMod(elem, styleMod)
+    }
+  }
+}
+function setStylePropObserver(elem: LuaGuiElement, key: keyof LuaStyle, value: unknown) {
+  if (!elem.valid) return
+  ;(elem.style as any)[key] = value
 }
 
 function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
@@ -76,7 +95,12 @@ function callSetterObserver(elem: LuaGuiElement, key: string, value: any) {
   }
 }
 
-registerFunctions("factoriojsx render", { setValueObserver, callSetterObserver, setStateFunc })
+registerFunctions("factoriojsx render", {
+  setPropObserver,
+  setStylePropObserver,
+  callSetterObserver,
+  setStateFunc,
+})
 
 interface InternalRenderContext extends RenderContext {
   componentInstance?: Component<any>
@@ -241,6 +265,7 @@ function renderElement(
 
   const factorioElement = parent.add(guiSpec as GuiSpec)
 
+  let hasChangingStyle = false
   for (const [key, value] of elemProps) {
     // this is currently one hardcoded exception
     if (key == "selected_tab_index") continue
@@ -249,7 +274,8 @@ function renderElement(
       let observer: SimpleObserver<unknown>
       let name: string
       if (typeof key != "object") {
-        observer = bind(setValueObserver, factorioElement, key)
+        observer = bind(setPropObserver, factorioElement, key)
+        if (key == "style") hasChangingStyle = true
         name = key
       } else {
         name = key[0]
@@ -267,12 +293,11 @@ function renderElement(
 
   const styleMod = element.styleMod
   if (styleMod) {
-    const style = factorioElement.style
     for (const [key, value] of pairs(styleMod)) {
       if (value instanceof Property) {
-        value.subscribeAndRaise(context.getSubscription(), bind(setValueObserver, style, key))
+        value.subscribeAndRaise(context.getSubscription(), bind(setStylePropObserver, factorioElement, key))
       } else {
-        ;(style as any)[key] = value
+        ;(factorioElement.style as any)[key] = value
       }
     }
   }
@@ -316,6 +341,7 @@ function renderElement(
       events,
       subscription,
       componentInstance,
+      styleMod: hasChangingStyle ? styleMod : nil,
     }
   }
   return factorioElement

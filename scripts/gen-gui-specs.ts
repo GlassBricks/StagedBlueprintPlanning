@@ -141,9 +141,11 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
     for (const member of _interface.members) {
       if (!(ts.isPropertySignature(member) || ts.isSetAccessorDeclaration(member))) continue
       const name = (member.name as ts.Identifier).text
-      if (ts.isSetAccessorDeclaration(member) && name === "style") continue
       if (skipReadonly && member.modifiers?.some((x) => x.kind === ts.SyntaxKind.ReadonlyKeyword)) continue
-      let type = (ts.isPropertySignature(member) ? member.type : member.parameters[0].type)!.getText(classesDtsFile)
+      let type =
+        ts.isSetAccessorDeclaration(member) && name === "style"
+          ? "string"
+          : (ts.isPropertySignature(member) ? member.type : member.parameters[0].type)!.getText(classesDtsFile)
       if (name === "type" && type.includes("|")) {
         type = `"${guiType}"`
       }
@@ -228,6 +230,8 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
     type: "double",
     optional: false,
   }
+  elements["choose-elem-button"]["elem_value"].type =
+    "MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>"
 
   // gui events
 
@@ -266,7 +270,7 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
     const spec = specs[type]
     const element = elements[type]
     if (!spec) throw new Error(`Spec def for ${type} not found`)
-    if (!elements) throw new Error(`Element def for ${type} not found`)
+    if (!element) throw new Error(`Element def for ${type} not found`)
 
     const result: ElementDefinition = {}
 

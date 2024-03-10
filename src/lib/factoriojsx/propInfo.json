@@ -7,7 +7,7 @@
   "enabled": [true, true],
   "visible": [true, true],
   "ignored_by_interaction": [true, true],
-  "style": [true, false],
+  "style": [true, true],
   "tags": [true, false],
   "anchor": [true, true],
   "game_controller_interaction": [true, true],
