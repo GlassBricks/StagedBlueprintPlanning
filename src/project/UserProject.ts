@@ -503,6 +503,7 @@ Migrations.to("0.25.0", () => {
     }
   }
 })
+
 Migrations.to("0.27.0", () => {
   for (const project of global.projects) {
     assume<Mutable<UserProjectImpl>>(project)
@@ -515,10 +516,12 @@ Migrations.to("0.30.0", () => {
     for (const key of [1, 2, 3, 4] as const) {
       asMutable(project.defaultBlueprintSettings)[key] ??= property(nil)
     }
+    asMutable(project.defaultBlueprintSettings).appendNumbersToIcons ??= property(false)
     for (const stage of project.getAllStages()) {
       for (const key of [1, 2, 3, 4] as const) {
         asMutable(stage.stageBlueprintSettings)[key] ??= property(nil)
       }
+      asMutable(stage.stageBlueprintSettings).appendNumbersToIcons ??= property(false)
       assume<{
         icons?: Property<BlueprintSignalIcon[] | nil>
       }>(stage.stageBlueprintSettings)
@@ -528,5 +531,8 @@ Migrations.to("0.30.0", () => {
         setIconsInSettings(stage.getBlueprintSettingsView(), oldValue)
       }
     }
+    // try to determine from old settings if:
+    // - appendNumbersToIcons should be true
+    // - what default icons should be
   }
 })

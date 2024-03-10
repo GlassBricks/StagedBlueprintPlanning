@@ -203,7 +203,7 @@ describe("new stage name", () => {
       project.getStage(1)!.name.set("Foo 1")
       const stage = project.insertStage(1)
       expect(stage.name.get()).toEqual("Foo 0")
-      expect(getIconsAsSparseArray(stage.stageBlueprintSettings)).toEqual({})
+      expect(getIconsAsSparseArray(stage.stageBlueprintSettings)).toEqual([])
     })
   })
 

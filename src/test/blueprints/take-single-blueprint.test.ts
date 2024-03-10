@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintControlBehavior, LuaPlayer, LuaSurface, UnitNumber } from "factorio:runtime"
+import { BlueprintControlBehavior, LuaPlayer, LuaSurface, SignalID, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
 import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
@@ -45,11 +45,12 @@ function createSampleEntities() {
 test("can take blueprint with settings applied", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    1: { type: "item", name: "iron-plate" },
+    3: { type: "item", name: "iron-plate" },
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },
     positionRelativeToGrid: { x: 4, y: 5 },
+    appendNumbersToIcons: true,
   } satisfies StageBlueprintSettings
 
   const { chest, belt } = createSampleEntities()
@@ -58,13 +59,29 @@ test("can take blueprint with settings applied", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
+  const ret = takeSingleBlueprint({
+    stack,
+    settings,
+    surface,
+    bbox,
+    unitNumberFilter: nil,
+    setOrigPositionTag: true,
+    stageName: "foo bar 1.0",
+  })
   expect(ret).toBeTruthy()
 
   expect(stack.blueprint_icons).toEqual([
     {
       index: 1,
       signal: { type: "item", name: "iron-plate" },
+    },
+    {
+      index: 2,
+      signal: { type: "virtual", name: "signal-1" } as SignalID,
+    },
+    {
+      index: 3,
+      signal: { type: "virtual", name: "signal-0" },
     },
   ])
   expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
@@ -111,7 +128,7 @@ test("forEdit position offset still works when first entity is blacklisted", () 
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
+  const ret = takeSingleBlueprint({ stack, settings, surface, bbox, unitNumberFilter: nil, setOrigPositionTag: true })
   expect(ret).toBeTruthy()
 
   expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
@@ -143,7 +160,7 @@ test("applies blacklist", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, false)
+  const ret = takeSingleBlueprint({ stack, settings, surface, bbox, unitNumberFilter: nil })
   expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
@@ -161,7 +178,7 @@ test("applies unit number filter", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, filter, false)
+  const ret = takeSingleBlueprint({ stack, settings, surface, bbox, unitNumberFilter: filter })
   expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
@@ -181,7 +198,7 @@ test("applies unit number filter as well as whitelist", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const ret = takeSingleBlueprint(stack, settings, surface, bbox, filter, false)
+  const ret = takeSingleBlueprint({ stack, settings, surface, bbox, unitNumberFilter: filter })
   expect(ret).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!
@@ -236,7 +253,13 @@ test("replace infinity entities with constant combinators", () => {
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
 
-  const res = takeSingleBlueprint(stack, settings, surface, BBox.around({ x: 0, y: 0 }, 10), nil, false)
+  const res = takeSingleBlueprint({
+    stack,
+    settings,
+    surface,
+    bbox: BBox.around({ x: 0, y: 0 }, 10),
+    unitNumberFilter: nil,
+  })
   expect(res).toBeTruthy()
 
   const entities = stack.get_blueprint_entities()!

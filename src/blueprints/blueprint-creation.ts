@@ -154,7 +154,13 @@ namespace BlueprintMethods {
     settings: OverrideableBlueprintSettings,
   ): void {
     const { stage, bbox } = stagePlan
-    const result = takeSingleBlueprint(actualStack, settings, stage.surface, bbox, stagePlan.unitNumberFilter, false)
+    const result = takeSingleBlueprint({
+      stack: actualStack,
+      settings,
+      surface: stage.surface,
+      bbox,
+      unitNumberFilter: stagePlan.unitNumberFilter,
+    })
     stagePlan.result = result
     actualStack.label = stage.name.get()
 

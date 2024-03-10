@@ -143,12 +143,6 @@ function replaceInfinityEntitiesWithCombinators(entities: Record<number, Mutable
   return anyReplaced
 }
 
-export interface BlueprintTakeResult {
-  effectivePositionOffset: Position
-  entities: PRecord<number, BlueprintEntity>
-  bpMapping: Record<number, LuaEntity>
-}
-
 function contains2x2Grid(bp: BlueprintItemStack): boolean {
   bp.blueprint_snap_to_grid = [1, 1]
   const { x, y } = bp.blueprint_snap_to_grid!
@@ -167,17 +161,34 @@ function alignPosTo2x2(pos: Position, isOdd: boolean): Position {
   }
 }
 
+export interface TakeSingleBlueprintParams {
+  stack: LuaItemStack
+  settings: BlueprintTakeSettings
+  surface: LuaSurface
+  bbox: BBox
+  unitNumberFilter: ReadonlyLuaSet<UnitNumber> | nil
+  setOrigPositionTag?: boolean
+  stageName?: string
+}
+
+export interface BlueprintTakeResult {
+  effectivePositionOffset: Position
+  entities: PRecord<number, BlueprintEntity>
+  bpMapping: Record<number, LuaEntity>
+}
+
 /**
  * If forEdit is true, sets the first entity's original position tag.
  */
-export function takeSingleBlueprint(
-  stack: LuaItemStack,
-  params: BlueprintTakeSettings,
-  surface: LuaSurface,
-  bbox: BBox,
-  unitNumberFilter: ReadonlyLuaSet<UnitNumber> | nil,
-  forEdit: boolean,
-): BlueprintTakeResult | nil {
+export function takeSingleBlueprint({
+  stack,
+  settings: params,
+  surface,
+  bbox,
+  unitNumberFilter,
+  setOrigPositionTag,
+  stageName,
+}: TakeSingleBlueprintParams): BlueprintTakeResult | nil {
   stack.set_stack("blueprint")
   stack.clear_blueprint()
   const bpMapping = stack.create_blueprint({
@@ -261,8 +272,8 @@ export function takeSingleBlueprint(
     stack.set_blueprint_entities(entities)
   }
 
-  stack.blueprint_icons = getIconsFromSettings(params) ?? stack.default_icons
-  if (forEdit) {
+  stack.blueprint_icons = getIconsFromSettings(params, stageName) ?? stack.default_icons
+  if (setOrigPositionTag) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }
   return {

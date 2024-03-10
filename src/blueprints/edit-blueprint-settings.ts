@@ -53,6 +53,7 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
     2: settings[2].get(),
     3: settings[3].get(),
     4: settings[4].get(),
+    appendNumbersToIcons: settings.appendNumbersToIcons.get(),
   }
 }
 
@@ -66,8 +67,16 @@ export function editInItemBlueprintSettings(
   clearOpenedItem(player.index)
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
+  const took = takeSingleBlueprint({
+    stack: blueprint,
+    settings: getBasicBlueprintTakeParams(settings),
+    surface,
+    bbox,
+    unitNumberFilter: nil,
+    setOrigPositionTag: true,
+    stageName: bpName,
+  })
 
-  const took = takeSingleBlueprint(blueprint, getBasicBlueprintTakeParams(settings), surface, bbox, nil, true)
   if (!took) {
     inventory.destroy()
     return

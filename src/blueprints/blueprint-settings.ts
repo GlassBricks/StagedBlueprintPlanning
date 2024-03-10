@@ -1,5 +1,4 @@
 import { BlueprintSignalIcon, SignalID } from "factorio:runtime"
-import { Mutable } from "../lib"
 import { Position } from "../lib/geometry"
 import { createPropertiesTable, PropertiesTable, PropertyOverrideTable } from "../utils/properties-obj"
 
@@ -17,6 +16,8 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
   readonly 2: SignalID | nil
   readonly 3: SignalID | nil
   readonly 4: SignalID | nil
+
+  readonly appendNumbersToIcons: boolean
 
   /** If not nil, only include entities changed in the last x stages */
   readonly stageLimit: number | nil
@@ -50,7 +51,6 @@ export function setIconsInSettings(settings: BlueprintSettingsTable, icons: Blue
     settings[key].set(toSet[key])
   }
 }
-
 export function getIconsAsSparseArray(settings: BlueprintSettingsTable | BlueprintOverrideSettings): SignalID[] {
   const result: SignalID[] = []
   for (const [index, signal] of pairs(settings)) {
@@ -62,28 +62,38 @@ export function getIconsAsSparseArray(settings: BlueprintSettingsTable | Bluepri
   }
   return result
 }
-export function setIconsFromSparseArray(settings: BlueprintSettingsTable, icons: Array<SignalID | nil>): void {
-  for (const index of signalKeys) {
-    settings[index].set(icons[index])
-  }
-}
 
-export function getIconsFromSettings(settings: BlueprintTakeSettings): BlueprintSignalIcon[] | nil {
+/**
+ * Stage name is used for the "append numbers to icons" feature.
+ */
+export function getIconsFromSettings(settings: BlueprintTakeSettings, stageName?: string): BlueprintSignalIcon[] | nil {
   const result: BlueprintSignalIcon[] = []
+  const appendNumbers = settings.appendNumbersToIcons && stageName
+  let index = 1
   for (const key of signalKeys) {
     const signal = settings[key]
-    if (signal) result.push({ index: key, signal })
+    if (signal) {
+      result.push({ index: appendNumbers ? index : key, signal })
+      index++
+    }
   }
+
+  if (appendNumbers) {
+    for (const [number] of string.gmatch(stageName, "%d")) {
+      result.push({
+        index,
+        signal: {
+          type: "virtual",
+          name: "signal-" + number,
+        },
+      })
+      index++
+      if (index > 4) break
+    }
+  }
+
   if (result.length == 0) return nil
   return result
-}
-
-export function compactIcons(icons: Mutable<BlueprintSignalIcon>[]): void {
-  let index = 1
-  for (const icon of icons) {
-    icon.index = index
-    index++
-  }
 }
 
 export type StageBlueprintSettings = OverrideableBlueprintSettings
@@ -97,6 +107,7 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
     2: nil,
     3: nil,
     4: nil,
+    appendNumbersToIcons: false,
     autoLandfill: false,
     positionOffset: nil,
     snapToGrid: nil,
