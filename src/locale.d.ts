@@ -228,7 +228,7 @@ export declare const enum L_GuiProjectSettings {
   BlueprintSettingsDefaults = "bp100.gui.project-settings.blueprint-settings-defaults",
   /** Settings: Current stage [img=info] */
   BlueprintSettingsCurrentStage = "bp100.gui.project-settings.blueprint-settings-current-stage",
-  /** These settings override the default settings for the current stage. Overriden settings are highlighted. */
+  /** These settings override the default settings for the current stage. Overridden settings are highlighted. */
   BlueprintSettingsCurrentStageTooltip = "bp100.gui.project-settings.blueprint-settings-current-stage-tooltip",
   /** Defaults */
   EditingDefaults = "bp100.gui.project-settings.editing-defaults",
@@ -236,7 +236,7 @@ export declare const enum L_GuiProjectSettings {
   EditingForStage = "bp100.gui.project-settings.editing-for-stage",
   /** Grid settings: */
   GridSettings = "bp100.gui.project-settings.grid-settings",
-  /** Icons[img=info] */
+  /** Icons [img=info] */
   Icons = "bp100.gui.project-settings.icons",
   /** Blueprint icons.\nIn stage settings, [font=default-bold]Control-right click[/font] to reset an overridden icon. */
   IconsTooltip = "bp100.gui.project-settings.icons-tooltip",
@@ -248,7 +248,7 @@ export declare const enum L_GuiProjectSettings {
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */
   IncludeEntitiesInTheNextNStages2 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-2",
-  /** Only new entities or entities with setting changes in the last "n" stages will be included in the blueprint.\n[font=default-bold]Notes:[/font]\n  Consider adding assembling machines to the whitelist below, so previously unresearched recipes can still be pasted by later blueprints.\n  Consider adding alignment entities to the whitelist, such as rails and roboports, to assist in pasting blueprints. */
+  /** Only new entities or entities with setting changes in the last given stages will be included in the blueprint.\n - Consider adding assembling machines to the whitelist, so previously unresearched recipes can be pasted by later blueprints.\n - Consider adding alignment entities such as rails or roboports to the whitelist, to help with aligning blueprints. */
   IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-tooltip",
   /** or in whitelist: */
   OrInWhitelist = "bp100.gui.project-settings.or-in-whitelist",
@@ -262,7 +262,7 @@ export declare const enum L_GuiProjectSettings {
   UseModulePreloadingTooltip = "bp100.gui.project-settings.use-module-preloading-tooltip",
   /** Replace infinity chests/pipes with combinators [img=info] */
   ReplaceInfinityWithCombinators = "bp100.gui.project-settings.replace-infinity-with-combinators",
-  /** In blueprints, replaces infinity chests/pipes with constant combinators having the same icons when viewed in alt-mode. */
+  /** In blueprints, replaces infinity chests and pipes with constant combinators, which have the same icons when viewed in alt-mode. */
   ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.project-settings.replace-infinity-with-combinators-tooltip",
   /** Tiles */
   Tiles = "bp100.gui.project-settings.tiles",
@@ -290,7 +290,7 @@ export declare const enum L_GuiProjectSettings {
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
   /** Sync map gen settings [img=info] */
   SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
-  /** Sets map gen settings for all stages to match the current stage. Also regenerates all surfaces.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings".\n - Possibly un-check "Generate new chunks with lab tiles".\n - Click this button again to regenerate surfaces. */
+  /** Sets map gen settings for all stages to match the current stage, then regenerates all stages.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings".\n - Possibly un-check "Generate new chunks with lab tiles".\n - Click this button to regenerate all stages. */
   SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
   /** Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
