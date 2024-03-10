@@ -1,7 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.30.0
 Date: ????
-  Changes:
+  Features:
+    - Improved blueprint icon settings.
+    - There are now default icons for a whole project, and each icon slot individually can be overridden per stage.
+    - Added "Add numbers from stage name to icons" blueprint setting.
+    - Added a reset button for overridden blueprint settings.
 ---------------------------------------------------------------------------------------------------
 Version: 0.29.3
 Date: 2024-03-08
