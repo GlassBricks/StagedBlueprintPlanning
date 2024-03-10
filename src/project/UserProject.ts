@@ -9,12 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintSignalIcon, LocalisedString, LuaSurface, SurfaceIndex } from "factorio:runtime"
+import { BlueprintSignalIcon, LocalisedString, LuaSurface, SignalID, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
   BlueprintOverrideSettings,
   BlueprintSettingsTable,
+  BlueprintTakeSettings,
   createNewBlueprintSettings,
+  getIconsAsCompactArray,
   OverrideableBlueprintSettings,
   setIconsInSettings,
   StageBlueprintSettings,
@@ -24,6 +26,8 @@ import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import {
   asMutable,
   bind,
+  deepCompare,
+  deepCopy,
   Events,
   globalEvent,
   Mutable,
@@ -499,7 +503,7 @@ Migrations.to("0.25.0", () => {
     project.defaultBlueprintSettings.useModulePreloading = property(false)
     for (const stage of project.getAllStages()) {
       assume<Mutable<BlueprintOverrideSettings>>(stage.stageBlueprintSettings)
-      stage.stageBlueprintSettings.useModulePreloading = property(false)
+      stage.stageBlueprintSettings.useModulePreloading = property(nil)
     }
   }
 })
@@ -521,7 +525,7 @@ Migrations.to("0.30.0", () => {
       for (const key of [1, 2, 3, 4] as const) {
         asMutable(stage.stageBlueprintSettings)[key] ??= property(nil)
       }
-      asMutable(stage.stageBlueprintSettings).appendStageNumbersToIcons ??= property(false)
+      asMutable(stage.stageBlueprintSettings).appendStageNumbersToIcons ??= property(nil)
       assume<{
         icons?: Property<BlueprintSignalIcon[] | nil>
       }>(stage.stageBlueprintSettings)
@@ -531,8 +535,82 @@ Migrations.to("0.30.0", () => {
         setIconsInSettings(stage.getBlueprintSettingsView(), oldValue)
       }
     }
+
     // try to determine from old settings if:
-    // - appendNumbersToIcons should be true
+    // - appendStageNumbersToIcons should be true
     // - what default icons should be
+    function iconsEndsWithNumbers(icons: SignalID[], numbers: number[]) {
+      let j = icons.length - 1
+      for (let i = numbers.length - 1; i >= 0; i--) {
+        if (j < 0 || !deepCompare(icons[j], { type: "virtual", name: "signal-" + numbers[i] })) return false
+        j--
+      }
+      return true
+    }
+    const canUseAppendNumberStages: Record<StageNumber, number[]> = {}
+    for (const stage of project.getAllStages()) {
+      const name = stage.name.get()
+      const numbers: number[] = []
+      for (const [number] of string.gmatch(name, "%d")) {
+        numbers.push(tonumber(number)!)
+      }
+      const icons = getIconsAsCompactArray(stage.getBlueprintSettingsView())
+      if (!numbers || (icons && iconsEndsWithNumbers(icons, numbers))) {
+        canUseAppendNumberStages[stage.stageNumber] = numbers
+      }
+    }
+    if (table_size(canUseAppendNumberStages) >= project.numStages() / 2) {
+      project.defaultBlueprintSettings.appendStageNumbersToIcons.set(true)
+      for (const stage of project.getAllStages()) {
+        stage.stageBlueprintSettings.appendStageNumbersToIcons.set(false) // default false, we'll activate true below
+      }
+
+      for (const [stageNum, numbers] of pairs(canUseAppendNumberStages)) {
+        const stage = project.getStage(stageNum)!
+        stage.stageBlueprintSettings.appendStageNumbersToIcons.set(nil) // set to default, which is true
+        let toRemove = numbers.length
+        for (const key of [4, 3, 2, 1] as const) {
+          if (toRemove <= 0) break
+          if (stage.stageBlueprintSettings[key].get() != nil) {
+            stage.stageBlueprintSettings[key].set(nil)
+            toRemove--
+          }
+        }
+      }
+    }
+
+    function findMajority(prop: keyof BlueprintTakeSettings): unknown {
+      const counts: [unknown, number][] = []
+      for (const stage of project.getAllStages()) {
+        const value = stage.stageBlueprintSettings[prop].get()
+        const thisCount = counts.find(([v]) => deepCompare(v, value))
+        let count: number
+        if (thisCount) {
+          thisCount[1]++
+          count = thisCount[1]
+        } else {
+          counts.push([value, 1])
+          count = 1
+        }
+        if (count >= project.numStages() / 2) {
+          return typeof value == "object" ? deepCopy(value) : value
+        }
+      }
+      return nil
+    }
+    function setDefaultToMajorityValue(prop: keyof BlueprintTakeSettings) {
+      const value = findMajority(prop)
+      if (value != nil) {
+        project.defaultBlueprintSettings[prop].set(value as never)
+        for (const stage of project.getAllStages()) {
+          const view = stage.getBlueprintSettingsView()
+          view[prop].set(view[prop].get() as never)
+        }
+      }
+    }
+    setDefaultToMajorityValue(1)
+    setDefaultToMajorityValue(2)
+    setDefaultToMajorityValue(3)
+    setDefaultToMajorityValue(4)
   }
 })
