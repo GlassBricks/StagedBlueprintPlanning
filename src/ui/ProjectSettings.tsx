@@ -55,6 +55,7 @@ import {
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { ManualRevertButton, MaybeRevertButton } from "../utils/RevertButton"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
+import { IconsEdit } from "./IconEdit"
 import { ItemRename } from "./ItemRename"
 import {
   exitProject,
@@ -295,6 +296,7 @@ class ProjectSettings extends Component<{
         />
         <line />
 
+        <IconsEdit settings={settings} />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label
             caption={[L_GuiProjectSettings.GridSettings]}
@@ -390,7 +392,7 @@ class ProjectSettings extends Component<{
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const stageToUse = stage ?? this.project.getStage(this.project.numStages())!
-    const name = stage ? stage.name.get() : "Defaults (only grid settings saved)"
+    const name = stage?.name.get() ?? "Defaults"
     const successful = editInItemBlueprintSettings(
       player,
       settings,

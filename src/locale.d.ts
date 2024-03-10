@@ -234,10 +234,12 @@ export declare const enum L_GuiProjectSettings {
   EditingDefaults = "bp100.gui.project-settings.editing-defaults",
   /** Overrides for stage: __1__ */
   EditingForStage = "bp100.gui.project-settings.editing-for-stage",
-  /** Grid settings[img=info]: */
+  /** Grid settings: */
   GridSettings = "bp100.gui.project-settings.grid-settings",
-  /** Icons can only be edited in the current stage settings. */
-  GridSettingsTooltip = "bp100.gui.project-settings.grid-settings-tooltip",
+  /** Icons[img=info] */
+  Icons = "bp100.gui.project-settings.icons",
+  /** Blueprint icons.\nIn stage settings, [font=default-bold]Control-right click[/font] to reset an overridden icon. */
+  IconsTooltip = "bp100.gui.project-settings.icons-tooltip",
   /** Edit */
   Edit = "bp100.gui.project-settings.edit",
   /** Entity filters */

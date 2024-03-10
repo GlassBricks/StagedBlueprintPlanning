@@ -513,7 +513,7 @@ Migrations.to("0.27.0", () => {
 Migrations.to("0.30.0", () => {
   for (const project of global.projects) {
     for (const key of [1, 2, 3, 4] as const) {
-      asMutable(project.defaultBlueprintSettings)[key] = property(nil)
+      asMutable(project.defaultBlueprintSettings)[key] ??= property(nil)
     }
     for (const stage of project.getAllStages()) {
       for (const key of [1, 2, 3, 4] as const) {
