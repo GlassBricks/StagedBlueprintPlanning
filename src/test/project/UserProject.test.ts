@@ -195,12 +195,7 @@ describe("new stage name", () => {
       const stage = project.insertStage(1)
 
       expect(stage.name.get()).toEqual("New Stage")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        {
-          index: 1,
-          signal: { type: "virtual", name: "signal-1" },
-        },
-      ])
+      expect(stage.stageBlueprintSettings.icons.get()).toEqual([{ type: "virtual", name: "signal-1" }])
     })
 
     test("is next number minus 1 if numbered naming convention", () => {
@@ -215,36 +210,20 @@ describe("new stage name", () => {
 
       const stage = project.insertStage(1)
       expect(stage.name.get()).toEqual("Foo 0")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        {
-          index: 1,
-          signal: { type: "virtual", name: "signal-0" },
-        },
-      ])
+      expect(stage.stageBlueprintSettings.icons.get()).toEqual([{ type: "virtual", name: "signal-0" }])
     })
   })
 
   describe("other stages", () => {
     test('adds " 1" if no naming convention', () => {
       project.getStage(1)!.name.set("Foo")
-      project.getStage(1)!.stageBlueprintSettings.icons.set([
-        {
-          index: 1,
-          signal: { type: "item", name: "iron-plate" },
-        },
-      ])
+      project.getStage(1)!.stageBlueprintSettings.icons.set([{ type: "item", name: "iron-plate" }])
 
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 1")
       expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        {
-          index: 1,
-          signal: { type: "item", name: "iron-plate" },
-        },
-        {
-          index: 2,
-          signal: { type: "virtual", name: "signal-1" },
-        },
+        { type: "item", name: "iron-plate" },
+        { type: "virtual", name: "signal-1" },
       ])
     })
 
@@ -253,12 +232,7 @@ describe("new stage name", () => {
 
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 2")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        {
-          index: 1,
-          signal: { type: "virtual", name: "signal-2" },
-        },
-      ])
+      expect(stage.stageBlueprintSettings.icons.get()).toEqual([{ type: "virtual", name: "signal-2" }])
     })
 
     test('adds ".1" if numbered naming convention, but next stage already has that name', () => {
@@ -268,14 +242,8 @@ describe("new stage name", () => {
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 3.1")
       expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        {
-          index: 1,
-          signal: { type: "virtual", name: "signal-1" },
-        },
-        {
-          index: 2,
-          signal: { type: "virtual", name: "signal-1" },
-        },
+        { type: "virtual", name: "signal-1" },
+        { type: "virtual", name: "signal-1" },
       ])
     })
 
@@ -283,26 +251,20 @@ describe("new stage name", () => {
       project.getStage(1)!.name.set("Foo 3")
       project.getStage(2)!.name.set("Foo 4")
 
-      project.getStage(1)!.stageBlueprintSettings.icons.set([
-        { index: 2, signal: { type: "virtual", name: "signal-2" } },
-        { index: 3, signal: { type: "virtual", name: "signal-3" } },
-      ])
+      project
+        .getStage(1)!
+        .stageBlueprintSettings.icons.set([
+          nil,
+          { type: "virtual", name: "signal-2" },
+          { type: "virtual", name: "signal-3" },
+        ])
 
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 3.1")
       expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        {
-          index: 1,
-          signal: { type: "virtual", name: "signal-2" },
-        },
-        {
-          index: 2,
-          signal: { type: "virtual", name: "signal-3" },
-        },
-        {
-          index: 3,
-          signal: { type: "virtual", name: "signal-1" },
-        },
+        { type: "virtual", name: "signal-2" },
+        { type: "virtual", name: "signal-3" },
+        { type: "virtual", name: "signal-1" },
       ])
     })
 
@@ -312,14 +274,8 @@ describe("new stage name", () => {
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 3--2--1")
       expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        {
-          index: 1,
-          signal: { type: "virtual", name: "signal-1" },
-        },
-        {
-          index: 2,
-          signal: { type: "virtual", name: "signal-1" },
-        },
+        { type: "virtual", name: "signal-1" },
+        { type: "virtual", name: "signal-1" },
       ])
     })
   })

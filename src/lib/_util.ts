@@ -114,3 +114,11 @@ export function getKeySet<T extends AnyNotNil>(keys: LuaPairsIterable<T, unknown
   for (const [key] of keys) result.add(key)
   return result
 }
+
+export function asMutable<T extends object>(obj: T): Mutable<T> {
+  return obj
+}
+
+export function asLuaArray<T>(array: T[]): PRecord<number, T> {
+  return array
+}

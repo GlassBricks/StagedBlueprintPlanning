@@ -11,7 +11,11 @@
 
 import { BlueprintControlBehavior, LuaPlayer, LuaSurface, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
-import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
+import {
+  getDefaultBlueprintSettings,
+  iconsToBpFormat,
+  StageBlueprintSettings,
+} from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
 import { BBox, Pos } from "../../lib/geometry"
 
@@ -45,7 +49,7 @@ function createSampleEntities() {
 test("can take blueprint with settings applied", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    icons: [{ signal: { type: "item", name: "iron-plate" }, index: 1 }],
+    icons: [{ type: "item", name: "iron-plate" }],
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },
@@ -61,7 +65,7 @@ test("can take blueprint with settings applied", () => {
   const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
   expect(ret).toBeTruthy()
 
-  expect(stack.blueprint_icons).toEqual(settings.icons)
+  expect(stack.blueprint_icons).toEqual(iconsToBpFormat(settings.icons))
   expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
   expect(stack.blueprint_absolute_snapping).toBe(settings.absoluteSnapping)
   expect(stack.blueprint_position_relative_to_grid).toEqual(settings.positionRelativeToGrid)
@@ -92,7 +96,7 @@ test("can take blueprint with settings applied", () => {
 test("forEdit position offset still works when first entity is blacklisted", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    icons: [{ signal: { type: "item", name: "iron-plate" }, index: 1 }],
+    icons: [{ type: "item", name: "iron-plate" }],
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },
@@ -129,7 +133,6 @@ test("forEdit position offset still works when first entity is blacklisted", () 
 test("applies blacklist", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    icons: nil,
     blacklist: newLuaSet("iron-chest"),
   } satisfies StageBlueprintSettings
 
@@ -152,10 +155,7 @@ test("applies unit number filter", () => {
   const { chest } = createSampleEntities()
   const filter = newLuaSet(chest.unit_number!)
 
-  const settings: StageBlueprintSettings = {
-    ...getDefaultBlueprintSettings(),
-    icons: nil,
-  }
+  const settings: StageBlueprintSettings = getDefaultBlueprintSettings()
 
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
@@ -174,7 +174,6 @@ test("applies unit number filter as well as whitelist", () => {
 
   const settings: StageBlueprintSettings = {
     ...getDefaultBlueprintSettings(),
-    icons: nil,
     additionalWhitelist: newLuaSet(belt.name),
   }
 
@@ -230,7 +229,6 @@ test("replace infinity entities with constant combinators", () => {
 
   const settings = {
     ...getDefaultBlueprintSettings(),
-    icons: nil,
     replaceInfinityEntitiesWithCombinators: true,
   } satisfies StageBlueprintSettings
 

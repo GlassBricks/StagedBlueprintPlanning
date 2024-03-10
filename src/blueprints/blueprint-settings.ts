@@ -1,4 +1,5 @@
-import { BlueprintSignalIcon } from "factorio:runtime"
+import { BlueprintSignalIcon, SignalID } from "factorio:runtime"
+import { asLuaArray, isEmpty, PRecord } from "../lib"
 import { Position } from "../lib/geometry"
 import { createPropertiesTable, PropertiesTable, PropertyOverrideTable } from "../utils/properties-obj"
 
@@ -11,6 +12,8 @@ export interface BlueprintGridSettings {
 }
 
 export interface BlueprintTakeSettings extends BlueprintGridSettings {
+  readonly icons: BlueprintIcons
+
   /** If not nil, only include entities changed in the last x stages */
   readonly stageLimit: number | nil
 
@@ -31,26 +34,39 @@ export interface OverrideableBlueprintSettings extends BlueprintTakeSettings {
   readonly useNextStageTiles: boolean
 }
 
-export interface AdditionalBlueprintItemSettings {
-  readonly icons: BlueprintSignalIcon[] | nil
+export type BlueprintIcons = [a?: SignalID | nil, b?: SignalID | nil, c?: SignalID | nil, d?: SignalID | nil]
+export function iconsFromBpFormat(icons: BlueprintSignalIcon[] | nil): BlueprintIcons {
+  const result: BlueprintIcons = []
+  if (icons)
+    for (const icon of icons) {
+      result[icon.index - 1] = icon.signal
+    }
+  return result
+}
+export function iconsToBpFormat(icons: BlueprintIcons): BlueprintSignalIcon[] | nil {
+  if (isEmpty(icons)) return nil
+  const result: BlueprintSignalIcon[] = []
+  for (const [luaIndex, value] of pairs<PRecord<number, SignalID>>(icons)) {
+    result.push({ index: luaIndex, signal: value })
+  }
+  return result
+}
+export function compactIcons(icons: BlueprintIcons): BlueprintIcons {
+  const result: BlueprintIcons = []
+  for (const [, icon] of pairs(asLuaArray(icons))) {
+    result.push(icon)
+  }
+  return result
 }
 
-export interface BlueprintTakeParameters extends BlueprintTakeSettings, Partial<AdditionalBlueprintItemSettings> {}
+export type StageBlueprintSettings = OverrideableBlueprintSettings
 
-/** The actual values of a stage's blueprint settings. */
-export interface StageBlueprintSettings extends OverrideableBlueprintSettings, AdditionalBlueprintItemSettings {}
-
-/** The stored information about a stage's blueprint settings, in property (possibly overrides) form */
-export interface StageBlueprintSettingsTable
-  extends PropertyOverrideTable<OverrideableBlueprintSettings>,
-    PropertiesTable<AdditionalBlueprintItemSettings> {}
-
-export interface ProjectOrStageBlueprintSettings
-  extends PropertiesTable<OverrideableBlueprintSettings>,
-    Partial<PropertiesTable<AdditionalBlueprintItemSettings>> {}
+export type BlueprintSettingsTable = PropertiesTable<OverrideableBlueprintSettings>
+export type BlueprintOverrideSettings = PropertyOverrideTable<OverrideableBlueprintSettings>
 
 export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
   return {
+    icons: [],
     autoLandfill: false,
     positionOffset: nil,
     snapToGrid: nil,

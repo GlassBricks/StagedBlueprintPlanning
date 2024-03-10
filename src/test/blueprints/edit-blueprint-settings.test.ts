@@ -9,14 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintSignalIcon, LuaEntity, LuaPlayer, LuaSurface, SurfaceIndex } from "factorio:runtime"
+import { LuaEntity, LuaPlayer, LuaSurface, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
-import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
+import { BlueprintSettingsTable, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../../blueprints/edit-blueprint-settings"
 import { Prototypes } from "../../constants"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
-import { createPropertiesTable, getCurrentValues, PropertiesTable } from "../../utils/properties-obj"
+import { createPropertiesTable, getCurrentValues } from "../../utils/properties-obj"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 let player: LuaPlayer
@@ -29,15 +29,12 @@ before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
 })
 
-function createStageBlueprintSettings(): PropertiesTable<StageBlueprintSettings> {
-  return createPropertiesTable(keys<PropertiesTable<StageBlueprintSettings>>(), {
-    ...getDefaultBlueprintSettings(),
-    icons: nil,
-  })
+function createStageBlueprintSettings(): BlueprintSettingsTable {
+  return createPropertiesTable(keys<BlueprintSettingsTable>(), getDefaultBlueprintSettings())
 }
 
 describe("in-item blueprint settings", () => {
-  let settings: PropertiesTable<StageBlueprintSettings>
+  let settings: BlueprintSettingsTable
   let entity1: LuaEntity
   let entity2: LuaEntity
   before_each(() => {
@@ -57,28 +54,11 @@ describe("in-item blueprint settings", () => {
     assert(entity2)
   })
 
-  test("loads icons settings", () => {
-    const icons: BlueprintSignalIcon[] = [
-      {
-        index: 1,
-        signal: { type: "item", name: "iron-chest" },
-      },
-    ]
-    settings.icons.set(icons)
-    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
-    expect(stack).toBeAny()
-    expect(stack.label).toEqual("Test")
-    expect(stack.valid_for_read && stack.is_blueprint).toBe(true)
-    expect(stack.blueprint_icons).toEqual(icons)
-  })
-
   test("can edit settings", () => {
     const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
     expect(stack).toBeAny()
     expect(stack.valid_for_read && stack.is_blueprint).toBe(true)
 
-    const icons: BlueprintSignalIcon[] = [{ signal: { type: "item", name: "iron-plate" }, index: 1 }]
-    stack.blueprint_icons = icons
     stack.blueprint_snap_to_grid = [2, 3]
     stack.blueprint_absolute_snapping = true
     stack.blueprint_position_relative_to_grid = [4, 5]
@@ -102,7 +82,6 @@ describe("in-item blueprint settings", () => {
 
     const newSettings = getCurrentValues(settings)
     expect(newSettings).toMatchTable({
-      icons,
       snapToGrid: { x: 2, y: 3 },
       absoluteSnapping: true,
       positionRelativeToGrid: { x: 4, y: 5 },

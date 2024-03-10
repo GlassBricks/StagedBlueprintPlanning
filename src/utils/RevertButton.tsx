@@ -32,6 +32,10 @@ export function RevertButton(
   )
 }
 
+export function ManualRevertButton(props: ElemProps<"sprite-button">) {
+  return <sprite-button style="mini_button" sprite="utility/reset" tooltip={[L_Game.Reset]} {...props} />
+}
+
 export function MaybeRevertButton(property: Property<unknown>): Element | nil {
   if (property instanceof DiffedProperty) {
     return <RevertButton property={property} />

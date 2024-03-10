@@ -15,7 +15,7 @@ import {
   submitProjectBlueprintBookTask,
   takeStageBlueprint,
 } from "../blueprints/blueprint-creation"
-import { ProjectOrStageBlueprintSettings } from "../blueprints/blueprint-settings"
+import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Colors, Prototypes } from "../constants"
 import { getStageToMerge } from "../entity/ProjectEntity"
@@ -53,7 +53,7 @@ import {
   setTilesForStage,
 } from "../project/set-tiles"
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
-import { MaybeRevertButton } from "../utils/RevertButton"
+import { ManualRevertButton, MaybeRevertButton } from "../utils/RevertButton"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { ItemRename } from "./ItemRename"
 import {
@@ -277,7 +277,7 @@ class ProjectSettings extends Component<{
   }
 
   private BpSettings(stage: Stage | nil): Element {
-    const settings: ProjectOrStageBlueprintSettings =
+    const settings: BlueprintSettingsTable =
       stage == nil ? this.project.defaultBlueprintSettings : stage.getBlueprintSettingsView()
 
     return (
@@ -297,10 +297,16 @@ class ProjectSettings extends Component<{
 
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label
-            caption={stage == nil ? [L_GuiProjectSettings.GridSettings] : [L_GuiProjectSettings.GridSettingsAndIcons]}
+            caption={[L_GuiProjectSettings.GridSettings]}
             styleMod={stage && highlightIfNotNil(this.anyGridSettingsChanged(stage))}
           />
           <EditButton on_gui_click={bind(ibind(this.editGridSettings), settings, stage)} />
+          {stage && (
+            <ManualRevertButton
+              visible={this.anyGridSettingsChanged(stage).truthy()}
+              on_gui_click={ibind(this.revertAllGridSettings)}
+            />
+          )}
         </flow>
 
         <label caption={[L_GuiProjectSettings.EntityFilters]} style="caption_label" />
@@ -380,7 +386,7 @@ class ProjectSettings extends Component<{
     return [L_GuiProjectSettings.EditingForStage, name]
   }
 
-  private editGridSettings(settings: ProjectOrStageBlueprintSettings, stage: Stage | nil) {
+  private editGridSettings(settings: BlueprintSettingsTable, stage: Stage | nil) {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const stageToUse = stage ?? this.project.getStage(this.project.numStages())!
@@ -401,7 +407,7 @@ class ProjectSettings extends Component<{
     }
   }
 
-  private editFilter(settings: ProjectOrStageBlueprintSettings, type: "additionalWhitelist" | "blacklist") {
+  private editFilter(settings: BlueprintSettingsTable, type: "additionalWhitelist" | "blacklist") {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     editBlueprintFilters(player, settings, type)
@@ -417,6 +423,16 @@ class ProjectSettings extends Component<{
       stageSettings.positionRelativeToGrid,
     )
   }
+  private revertAllGridSettings() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage) return
+    const stageSettings = stage.stageBlueprintSettings
+    stageSettings.snapToGrid.set(nil)
+    stageSettings.positionOffset.set(nil)
+    stageSettings.absoluteSnapping.set(nil)
+    stageSettings.positionRelativeToGrid.set(nil)
+  }
+
   private static anyNotNil(this: void, a: unknown, b: unknown, c: unknown, d: unknown) {
     return a || b || c || d
   }

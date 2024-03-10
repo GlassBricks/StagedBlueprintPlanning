@@ -22,7 +22,7 @@ import {
 } from "factorio:runtime"
 import { getKeySet, isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { BlueprintTakeParameters } from "./blueprint-settings"
+import { BlueprintTakeSettings, iconsToBpFormat } from "./blueprint-settings"
 
 export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(
@@ -172,7 +172,7 @@ function alignPosTo2x2(pos: Position, isOdd: boolean): Position {
  */
 export function takeSingleBlueprint(
   stack: LuaItemStack,
-  params: BlueprintTakeParameters,
+  params: BlueprintTakeSettings,
   surface: LuaSurface,
   bbox: BBox,
   unitNumberFilter: ReadonlyLuaSet<UnitNumber> | nil,
@@ -261,7 +261,7 @@ export function takeSingleBlueprint(
     stack.set_blueprint_entities(entities)
   }
 
-  stack.blueprint_icons = params.icons ?? stack.default_icons
+  stack.blueprint_icons = iconsToBpFormat(params.icons) ?? stack.default_icons
   if (forEdit) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }

@@ -12,14 +12,20 @@
 import { BlueprintSignalIcon, LocalisedString, LuaSurface, SignalID, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
+  BlueprintIcons,
+  BlueprintOverrideSettings,
+  BlueprintSettingsTable,
+  compactIcons,
   createNewBlueprintSettings,
+  iconsFromBpFormat,
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
-  StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
 import { newProjectContent } from "../entity/ProjectContent"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import {
+  asLuaArray,
+  asMutable,
   bind,
   deepCopy,
   Events,
@@ -35,6 +41,7 @@ import { BBox, Position } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
+import { getResultValue } from "../utils/diff-value"
 import {
   createdDiffedPropertyTableView,
   createEmptyPropertyOverrideTable,
@@ -95,12 +102,7 @@ class UserProjectImpl implements UserProject {
       const stage = StageImpl.create(this, i, `Stage ${i}`, nil)
       this.stages[i] = stage
       if (i <= 9) {
-        stage.stageBlueprintSettings.icons.set([
-          {
-            index: 1,
-            signal: { type: "virtual", name: `signal-${i}` },
-          },
-        ])
+        stage.stageBlueprintSettings.icons.set([{ type: "virtual", name: `signal-${i}` }])
       }
     }
   }
@@ -150,7 +152,8 @@ class UserProjectImpl implements UserProject {
     // copy/update icons
     const copyStage = this.stages[stage == 1 ? 1 : stage - 1]
 
-    const icons = deepCopy(copyStage.stageBlueprintSettings.icons.get() ?? [])
+    const iconsValue = getResultValue(nil, copyStage.stageBlueprintSettings.icons.get())
+    let icons: BlueprintIcons = iconsValue ? deepCopy(iconsValue) : []
     if (
       (strategy == "increment" || strategy == "decrement") &&
       previousLastNumber &&
@@ -161,23 +164,12 @@ class UserProjectImpl implements UserProject {
       lastNumber <= 9
     ) {
       const lastIcon = this.findLastIcon(icons)
-      if (
-        lastIcon != nil &&
-        lastIcon.signal.type == "virtual" &&
-        lastIcon.signal.name == `signal-${previousLastNumber}`
-      ) {
-        ;(lastIcon.signal as Mutable<SignalID>).name = `signal-${lastNumber}`
+      if (lastIcon != nil && lastIcon.type == "virtual" && lastIcon.name == `signal-${previousLastNumber}`) {
+        ;(lastIcon as Mutable<SignalID>).name = `signal-${lastNumber}`
       }
     } else if (strategy == "sublist" && icons.length < 4 && lastNumber && lastNumber >= 0 && lastNumber <= 9) {
-      let i = 1
-      for (const icon of icons) {
-        assume<Mutable<BlueprintSignalIcon>>(icon)
-        icon.index = i++
-      }
-      icons.push({
-        index: icons.length + 1,
-        signal: { type: "virtual", name: `signal-${lastNumber}` },
-      })
+      icons = compactIcons(icons)
+      icons.push({ type: "virtual", name: `signal-${lastNumber}` })
     }
 
     newStage.stageBlueprintSettings.icons.set(icons[0] && icons)
@@ -193,13 +185,10 @@ class UserProjectImpl implements UserProject {
     return newStage
   }
 
-  private findLastIcon(icons: BlueprintSignalIcon[]): BlueprintSignalIcon | nil {
-    let icon = icons[0]
-    if (icon == nil) return nil
-    for (const i of $range(2, luaLength(icons))) {
-      if (icons[i - 1].index > icon.index) {
-        icon = icons[i - 1]
-      }
+  private findLastIcon(icons: BlueprintIcons): SignalID | nil {
+    let icon: SignalID | nil
+    for (const [, signal] of pairs(asLuaArray(icons))) {
+      icon = signal
     }
     return icon
   }
@@ -357,11 +346,8 @@ export function moveProjectDown(project: UserProject): boolean {
   return true
 }
 
-function createEmptyStageBlueprintSettings(): StageBlueprintSettingsTable {
-  return {
-    ...createEmptyPropertyOverrideTable<OverrideableBlueprintSettings>(keys<OverrideableBlueprintSettings>()),
-    icons: property(nil),
-  }
+function createEmptyStageBlueprintSettings(): BlueprintOverrideSettings {
+  return createEmptyPropertyOverrideTable<StageBlueprintSettings>(keys<StageBlueprintSettings>())
 }
 
 @RegisterClass("Stage")
@@ -375,11 +361,8 @@ class StageImpl implements Stage {
 
   actions: UserActions
 
-  getBlueprintSettingsView(): PropertiesTable<StageBlueprintSettings> {
-    return {
-      ...createdDiffedPropertyTableView(this.project.defaultBlueprintSettings, this.stageBlueprintSettings),
-      icons: this.stageBlueprintSettings.icons,
-    }
+  getBlueprintSettingsView(): BlueprintSettingsTable {
+    return createdDiffedPropertyTableView(this.project.defaultBlueprintSettings, this.stageBlueprintSettings)
   }
 
   getBlueprintBBox(): BBox {
@@ -553,7 +536,8 @@ Migrations.to("0.16.0", () => {
 
       const view = stage.getBlueprintSettingsView()
       copyFromOldStageSettings(view, oldSettings)
-      stage.stageBlueprintSettings.icons.set(oldSettings.icons)
+      stage.stageBlueprintSettings.icons.set(iconsFromBpFormat(oldSettings.icons))
+      // note: changed to match 0.30.0
     }
   }
 })
@@ -568,7 +552,7 @@ Migrations.to("0.25.0", () => {
     assume<Mutable<PropertiesTable<OverrideableBlueprintSettings>>>(project.defaultBlueprintSettings)
     project.defaultBlueprintSettings.useModulePreloading = property(false)
     for (const stage of project.getAllStages()) {
-      assume<Mutable<StageBlueprintSettingsTable>>(stage.stageBlueprintSettings)
+      assume<Mutable<BlueprintOverrideSettings>>(stage.stageBlueprintSettings)
       stage.stageBlueprintSettings.useModulePreloading = property(false)
     }
   }
@@ -577,5 +561,20 @@ Migrations.to("0.27.0", () => {
   for (const project of global.projects) {
     assume<Mutable<UserProjectImpl>>(project)
     project.landfillTile = property("landfill")
+  }
+})
+
+Migrations.to("0.30.0", () => {
+  for (const project of global.projects) {
+    asMutable(project.defaultBlueprintSettings).icons ??= property([])
+    for (const stage of project.getAllStages()) {
+      const oldValue = stage.stageBlueprintSettings.icons.get()
+      if (oldValue == nil) continue
+      assume<BlueprintSignalIcon[]>(oldValue)
+      const [, firstValue] = next(oldValue)
+      if ("index" in firstValue) {
+        stage.stageBlueprintSettings.icons.set(iconsFromBpFormat(oldValue))
+      }
+    }
   }
 })

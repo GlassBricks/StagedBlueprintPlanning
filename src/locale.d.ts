@@ -238,8 +238,6 @@ export declare const enum L_GuiProjectSettings {
   GridSettings = "bp100.gui.project-settings.grid-settings",
   /** Icons can only be edited in the current stage settings. */
   GridSettingsTooltip = "bp100.gui.project-settings.grid-settings-tooltip",
-  /** Icons and grid settings: */
-  GridSettingsAndIcons = "bp100.gui.project-settings.grid-settings-and-icons",
   /** Edit */
   Edit = "bp100.gui.project-settings.edit",
   /** Entity filters */
