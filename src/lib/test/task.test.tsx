@@ -199,7 +199,7 @@ describe("task gui", () => {
   test("can cancel from gui", () => {
     after_ticks(3, () => {
       const button = frame.find("button")
-      button.simulateClick()
+      button.click()
 
       expect(isTaskRunning()).toBe(false)
       expect(actions).toEqual([0, 1, 2, "cancelled"])

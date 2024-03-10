@@ -133,7 +133,7 @@ export class ElementWrapper<T extends GuiElementType = GuiElementType> {
     simulateEvent(this.element, event)
   }
 
-  simulateClick(
+  click(
     modifiers: {
       button?: defines.mouse_button_type
       alt?: boolean

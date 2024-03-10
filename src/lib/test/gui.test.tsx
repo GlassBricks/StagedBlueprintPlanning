@@ -82,6 +82,6 @@ test("simulateEvent", () => {
   const fn = mock.fn<GuiEventHandler["invoke"]>()
   const button = testRender(<button on_gui_click={{ invoke: fn }} />)
   expect(fn).not.toHaveBeenCalled()
-  button.simulateClick()
+  button.click()
   expect(fn).toHaveBeenCalledTimes(1)
 })

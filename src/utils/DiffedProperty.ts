@@ -22,8 +22,7 @@ export class DiffedProperty<T> extends Property<T> implements MutableProperty<T>
     readonly defaultValue: Property<T>,
   ) {
     super()
-    // prettier-ignore
-    this.resultValue = overrideValue.flatMap(bind((getResultValue<MaybeProperty<T>>), defaultValue))
+    this.resultValue = overrideValue.flatMap(bind(getResultValue<MaybeProperty<T>>, defaultValue))
   }
 
   _subscribeIndependently(observer: ChangeObserver<T>): Subscription {

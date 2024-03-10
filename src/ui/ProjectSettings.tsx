@@ -53,6 +53,7 @@ import {
   setTilesForStage,
 } from "../project/set-tiles"
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
+import { MaybeRevertButton } from "../utils/RevertButton"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { ItemRename } from "./ItemRename"
 import {
@@ -306,6 +307,7 @@ class ProjectSettings extends Component<{
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label caption={[L_GuiProjectSettings.Blacklist]} styleMod={highlightIfOverriden(settings.blacklist)} />
           <EditButton on_gui_click={bind(ibind(this.editFilter), settings, "blacklist")} />
+          {MaybeRevertButton(settings.blacklist)}
         </flow>
         <flow direction="vertical" styleMod={{ vertical_spacing: 0 }}>
           <CheckboxTextfield
@@ -327,36 +329,49 @@ class ProjectSettings extends Component<{
               on_gui_click={bind(ibind(this.editFilter), settings, "additionalWhitelist")}
               enabled={settings.stageLimit.truthy()}
             />
+            {MaybeRevertButton(settings.additionalWhitelist)}
           </flow>
         </flow>
 
         <label caption={[L_GuiProjectSettings.EntityEdits]} style="caption_label" />
-        <checkbox
-          state={settings.useModulePreloading}
-          caption={[L_GuiProjectSettings.UseModulePreloading]}
-          tooltip={[L_GuiProjectSettings.UseModulePreloadingTooltip]}
-          styleMod={highlightIfOverriden(settings.useModulePreloading)}
-        />
-        <checkbox
-          state={settings.replaceInfinityEntitiesWithCombinators}
-          caption={[L_GuiProjectSettings.ReplaceInfinityWithCombinators]}
-          tooltip={[L_GuiProjectSettings.ReplaceInfinityWithCombinatorsTooltip]}
-          styleMod={highlightIfOverriden(settings.replaceInfinityEntitiesWithCombinators)}
-        />
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <checkbox
+            state={settings.useModulePreloading}
+            caption={[L_GuiProjectSettings.UseModulePreloading]}
+            tooltip={[L_GuiProjectSettings.UseModulePreloadingTooltip]}
+            styleMod={highlightIfOverriden(settings.useModulePreloading)}
+          />
+          {MaybeRevertButton(settings.useModulePreloading)}
+        </flow>
 
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <checkbox
+            state={settings.replaceInfinityEntitiesWithCombinators}
+            caption={[L_GuiProjectSettings.ReplaceInfinityWithCombinators]}
+            tooltip={[L_GuiProjectSettings.ReplaceInfinityWithCombinatorsTooltip]}
+            styleMod={highlightIfOverriden(settings.replaceInfinityEntitiesWithCombinators)}
+          />
+          {MaybeRevertButton(settings.replaceInfinityEntitiesWithCombinators)}
+        </flow>
         <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
-        <checkbox
-          state={settings.autoLandfill}
-          caption={[L_GuiProjectSettings.AutoLandfill]}
-          tooltip={[L_GuiProjectSettings.AutoLandfillTooltip]}
-          styleMod={highlightIfOverriden(settings.autoLandfill)}
-        />
-        <checkbox
-          state={settings.useNextStageTiles}
-          caption={[L_GuiProjectSettings.UseNextStageTiles]}
-          tooltip={[L_GuiProjectSettings.UseNextStageTilesTooltip]}
-          styleMod={highlightIfOverriden(settings.useNextStageTiles)}
-        />
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <checkbox
+            state={settings.autoLandfill}
+            caption={[L_GuiProjectSettings.AutoLandfill]}
+            tooltip={[L_GuiProjectSettings.AutoLandfillTooltip]}
+            styleMod={highlightIfOverriden(settings.autoLandfill)}
+          />
+          {MaybeRevertButton(settings.autoLandfill)}
+        </flow>
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <checkbox
+            state={settings.useNextStageTiles}
+            caption={[L_GuiProjectSettings.UseNextStageTiles]}
+            tooltip={[L_GuiProjectSettings.UseNextStageTilesTooltip]}
+            styleMod={highlightIfOverriden(settings.useNextStageTiles)}
+          />
+          {MaybeRevertButton(settings.useNextStageTiles)}
+        </flow>
       </flow>
     )
   }

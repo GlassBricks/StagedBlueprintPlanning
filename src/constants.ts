@@ -160,6 +160,7 @@ export type BuildableEntityType = keyof typeof BuildableEntityTypesDef
 
 export const enum L_Game {
   CantBeRotated = "cant-be-rotated",
+  Reset = "gui.reset",
 }
 
 export namespace Colors {

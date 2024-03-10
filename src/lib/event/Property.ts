@@ -64,6 +64,12 @@ export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   truthy(): Property<boolean> {
     return this.map(funcRef(Property.truthyFn))
   }
+  static notNilFn(this: void, value: unknown): boolean {
+    return value != nil
+  }
+  notNil(): Property<boolean> {
+    return this.map(funcRef(Property.notNilFn))
+  }
   static andFn<V>(this: void, outValue: V, thisValue: unknown): V | nil {
     return thisValue ? outValue : nil
   }

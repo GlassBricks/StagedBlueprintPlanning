@@ -19,6 +19,7 @@ import {
 import { ibind, MutableProperty, RegisterClass } from "../../lib"
 import { Component, Element, FactorioJsx } from "../../lib/factoriojsx"
 import { getDefaultValueIfIsOverridenProp, highlightIfOverriden } from "../../utils/DiffedProperty"
+import { MaybeRevertButton } from "../../utils/RevertButton"
 
 export interface CheckboxTextfieldProps {
   captionBefore: LocalisedString
@@ -66,6 +67,7 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
           styleMod={{ width: 50 }}
         />
         <label caption={captionAfter} tooltip={props.tooltip} styleMod={highlightStyleMod} />
+        {MaybeRevertButton(value)}
       </flow>
     )
   }
