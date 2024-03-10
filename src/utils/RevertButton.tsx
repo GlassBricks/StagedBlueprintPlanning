@@ -32,7 +32,7 @@ export function RevertButton(
   )
 }
 
-export function ManualRevertButton(props: ElemProps<"sprite-button">) {
+export function ManualRevertButton(props: ElemProps<"sprite-button">): Element {
   return <sprite-button style="mini_button" sprite="utility/reset" tooltip={[L_Game.Reset]} {...props} />
 }
 
