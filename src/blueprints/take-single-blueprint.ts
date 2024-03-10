@@ -22,7 +22,7 @@ import {
 } from "factorio:runtime"
 import { getKeySet, isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { BlueprintTakeSettings, iconsToBpFormat } from "./blueprint-settings"
+import { BlueprintTakeSettings, getIconsFromSettings } from "./blueprint-settings"
 
 export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(
@@ -261,7 +261,7 @@ export function takeSingleBlueprint(
     stack.set_blueprint_entities(entities)
   }
 
-  stack.blueprint_icons = iconsToBpFormat(params.icons) ?? stack.default_icons
+  stack.blueprint_icons = getIconsFromSettings(params) ?? stack.default_icons
   if (forEdit) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }

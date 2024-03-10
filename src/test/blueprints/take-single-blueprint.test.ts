@@ -11,11 +11,7 @@
 
 import { BlueprintControlBehavior, LuaPlayer, LuaSurface, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
-import {
-  getDefaultBlueprintSettings,
-  iconsToBpFormat,
-  StageBlueprintSettings,
-} from "../../blueprints/blueprint-settings"
+import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
 import { BBox, Pos } from "../../lib/geometry"
 
@@ -49,7 +45,7 @@ function createSampleEntities() {
 test("can take blueprint with settings applied", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    icons: [{ type: "item", name: "iron-plate" }],
+    1: { type: "item", name: "iron-plate" },
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },
@@ -65,7 +61,12 @@ test("can take blueprint with settings applied", () => {
   const ret = takeSingleBlueprint(stack, settings, surface, bbox, nil, true)
   expect(ret).toBeTruthy()
 
-  expect(stack.blueprint_icons).toEqual(iconsToBpFormat(settings.icons))
+  expect(stack.blueprint_icons).toEqual([
+    {
+      index: 1,
+      signal: { type: "item", name: "iron-plate" },
+    },
+  ])
   expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
   expect(stack.blueprint_absolute_snapping).toBe(settings.absoluteSnapping)
   expect(stack.blueprint_position_relative_to_grid).toEqual(settings.positionRelativeToGrid)
@@ -96,7 +97,7 @@ test("can take blueprint with settings applied", () => {
 test("forEdit position offset still works when first entity is blacklisted", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    icons: [{ type: "item", name: "iron-plate" }],
+    1: { type: "item", name: "iron-plate" },
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },

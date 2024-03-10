@@ -9,25 +9,21 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintSignalIcon, LocalisedString, LuaSurface, SignalID, SurfaceIndex } from "factorio:runtime"
+import { BlueprintSignalIcon, LocalisedString, LuaSurface, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
-  BlueprintIcons,
   BlueprintOverrideSettings,
   BlueprintSettingsTable,
-  compactIcons,
   createNewBlueprintSettings,
-  iconsFromBpFormat,
   OverrideableBlueprintSettings,
+  setIconsInSettings,
   StageBlueprintSettings,
 } from "../blueprints/blueprint-settings"
 import { newProjectContent } from "../entity/ProjectContent"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import {
-  asLuaArray,
   asMutable,
   bind,
-  deepCopy,
   Events,
   globalEvent,
   Mutable,
@@ -41,7 +37,6 @@ import { BBox, Position } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { Migrations } from "../lib/migration"
 import { L_Bp100 } from "../locale"
-import { getResultValue } from "../utils/diff-value"
 import {
   createdDiffedPropertyTableView,
   createEmptyPropertyOverrideTable,
@@ -101,9 +96,6 @@ class UserProjectImpl implements UserProject {
     for (const i of $range(1, initialNumStages)) {
       const stage = StageImpl.create(this, i, `Stage ${i}`, nil)
       this.stages[i] = stage
-      if (i <= 9) {
-        stage.stageBlueprintSettings.icons.set([{ type: "virtual", name: `signal-${i}` }])
-      }
     }
   }
   private static getDisplayName(this: void, id: ProjectId, name: string): LocalisedString {
@@ -146,33 +138,10 @@ class UserProjectImpl implements UserProject {
     this.assertValid()
     assert(stage >= 1 && stage <= this.numStages() + 1, "Invalid new stage number")
 
-    const { name, strategy, lastNumber, previousLastNumber } = this._getNewStageName(stage)
+    const name = this._getNewStageName(stage)
     const prevStage = this.stages[stage == 1 ? 1 : stage - 1]
     const newStage = StageImpl.create(this, stage, name, prevStage.surface)
     // copy/update icons
-    const copyStage = this.stages[stage == 1 ? 1 : stage - 1]
-
-    const iconsValue = getResultValue(nil, copyStage.stageBlueprintSettings.icons.get())
-    let icons: BlueprintIcons = iconsValue ? deepCopy(iconsValue) : []
-    if (
-      (strategy == "increment" || strategy == "decrement") &&
-      previousLastNumber &&
-      previousLastNumber >= 0 &&
-      previousLastNumber <= 9 &&
-      lastNumber &&
-      lastNumber >= 0 &&
-      lastNumber <= 9
-    ) {
-      const lastIcon = this.findLastIcon(icons)
-      if (lastIcon != nil && lastIcon.type == "virtual" && lastIcon.name == `signal-${previousLastNumber}`) {
-        ;(lastIcon as Mutable<SignalID>).name = `signal-${lastNumber}`
-      }
-    } else if (strategy == "sublist" && icons.length < 4 && lastNumber && lastNumber >= 0 && lastNumber <= 9) {
-      icons = compactIcons(icons)
-      icons.push({ type: "virtual", name: `signal-${lastNumber}` })
-    }
-
-    newStage.stageBlueprintSettings.icons.set(icons[0] && icons)
 
     table.insert(this.stages as unknown as Stage[], stage, newStage)
     // update stages
@@ -183,14 +152,6 @@ class UserProjectImpl implements UserProject {
 
     this.raiseEvent({ type: "stage-added", project: this, stage: newStage })
     return newStage
-  }
-
-  private findLastIcon(icons: BlueprintIcons): SignalID | nil {
-    let icon: SignalID | nil
-    for (const [, signal] of pairs(asLuaArray(icons))) {
-      icon = signal
-    }
-    return icon
   }
 
   deleteStage(index: StageNumber): void {
@@ -225,12 +186,7 @@ class UserProjectImpl implements UserProject {
     this.localEvents.closeAll()
   }
 
-  _getNewStageName(stage: StageNumber): {
-    name: string
-    strategy: "increment" | "decrement" | "sublist" | "none"
-    lastNumber?: number
-    previousLastNumber?: number
-  } {
+  _getNewStageName(stage: StageNumber): string {
     // try to detect naming convention:
     // (Anything)(number)
 
@@ -249,27 +205,14 @@ class UserProjectImpl implements UserProject {
         const candidateName = name + newNum
         const nextName = this.stages[stage]?.name.get()
         if (candidateName != nextName) {
-          return {
-            name: candidateName,
-            strategy: stage == 1 ? "decrement" : "increment",
-            lastNumber: newNum,
-            previousLastNumber: num,
-          }
+          return candidateName
         }
       }
     }
 
-    if (stage == 1)
-      return {
-        name: "New Stage",
-        strategy: "none",
-      }
+    if (stage == 1) return "New Stage"
     const sep = string.match(previousName, "^.*%d+([^%d]+)%d+$")[0] ?? (foundNumber ? "." : " ")
-    return {
-      name: previousName + sep + "1",
-      strategy: "sublist",
-      lastNumber: 1,
-    }
+    return previousName + sep + "1"
   }
 
   private raiseEvent(event: LocalProjectEvent): void {
@@ -536,8 +479,11 @@ Migrations.to("0.16.0", () => {
 
       const view = stage.getBlueprintSettingsView()
       copyFromOldStageSettings(view, oldSettings)
-      stage.stageBlueprintSettings.icons.set(iconsFromBpFormat(oldSettings.icons))
       // note: changed to match 0.30.0
+      for (const key of [1, 2, 3, 4] as const) {
+        asMutable(stage.stageBlueprintSettings)[key] = property(nil)
+      }
+      setIconsInSettings(view, oldSettings.icons)
     }
   }
 })
@@ -566,14 +512,20 @@ Migrations.to("0.27.0", () => {
 
 Migrations.to("0.30.0", () => {
   for (const project of global.projects) {
-    asMutable(project.defaultBlueprintSettings).icons ??= property([])
+    for (const key of [1, 2, 3, 4] as const) {
+      asMutable(project.defaultBlueprintSettings)[key] = property(nil)
+    }
     for (const stage of project.getAllStages()) {
-      const oldValue = stage.stageBlueprintSettings.icons.get()
-      if (oldValue == nil) continue
-      assume<BlueprintSignalIcon[]>(oldValue)
-      const [, firstValue] = next(oldValue)
-      if ("index" in firstValue) {
-        stage.stageBlueprintSettings.icons.set(iconsFromBpFormat(oldValue))
+      for (const key of [1, 2, 3, 4] as const) {
+        asMutable(stage.stageBlueprintSettings)[key] ??= property(nil)
+      }
+      assume<{
+        icons?: Property<BlueprintSignalIcon[] | nil>
+      }>(stage.stageBlueprintSettings)
+      const oldValue = stage.stageBlueprintSettings.icons?.get()
+      delete stage.stageBlueprintSettings.icons
+      if (oldValue) {
+        setIconsInSettings(stage.getBlueprintSettingsView(), oldValue)
       }
     }
   }

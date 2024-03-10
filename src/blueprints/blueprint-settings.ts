@@ -1,5 +1,5 @@
 import { BlueprintSignalIcon, SignalID } from "factorio:runtime"
-import { asLuaArray, isEmpty, PRecord } from "../lib"
+import { Mutable } from "../lib"
 import { Position } from "../lib/geometry"
 import { createPropertiesTable, PropertiesTable, PropertyOverrideTable } from "../utils/properties-obj"
 
@@ -12,7 +12,11 @@ export interface BlueprintGridSettings {
 }
 
 export interface BlueprintTakeSettings extends BlueprintGridSettings {
-  readonly icons: BlueprintIcons
+  // kinda dumb, but works for now
+  readonly 1: SignalID | nil
+  readonly 2: SignalID | nil
+  readonly 3: SignalID | nil
+  readonly 4: SignalID | nil
 
   /** If not nil, only include entities changed in the last x stages */
   readonly stageLimit: number | nil
@@ -33,30 +37,53 @@ export interface OverrideableBlueprintSettings extends BlueprintTakeSettings {
 
   readonly useNextStageTiles: boolean
 }
+const signalKeys = [1, 2, 3, 4] as const
 
-export type BlueprintIcons = [a?: SignalID | nil, b?: SignalID | nil, c?: SignalID | nil, d?: SignalID | nil]
-export function iconsFromBpFormat(icons: BlueprintSignalIcon[] | nil): BlueprintIcons {
-  const result: BlueprintIcons = []
-  if (icons)
+export function setIconsInSettings(settings: BlueprintSettingsTable, icons: BlueprintSignalIcon[] | nil): void {
+  const toSet: Record<number, SignalID> = {}
+  if (icons) {
     for (const icon of icons) {
-      result[icon.index - 1] = icon.signal
+      toSet[icon.index] = icon.signal
     }
+  }
+  for (const key of signalKeys) {
+    settings[key].set(toSet[key])
+  }
+}
+
+export function getIconsAsSparseArray(settings: BlueprintSettingsTable | BlueprintOverrideSettings): SignalID[] {
+  const result: SignalID[] = []
+  for (const [index, signal] of pairs(settings)) {
+    if (type(index) == "number") {
+      result[index as number] = signal.get() as SignalID
+    } else {
+      break
+    }
+  }
   return result
 }
-export function iconsToBpFormat(icons: BlueprintIcons): BlueprintSignalIcon[] | nil {
-  if (isEmpty(icons)) return nil
+export function setIconsFromSparseArray(settings: BlueprintSettingsTable, icons: Array<SignalID | nil>): void {
+  for (const index of signalKeys) {
+    settings[index].set(icons[index])
+  }
+}
+
+export function getIconsFromSettings(settings: BlueprintTakeSettings): BlueprintSignalIcon[] | nil {
   const result: BlueprintSignalIcon[] = []
-  for (const [luaIndex, value] of pairs<PRecord<number, SignalID>>(icons)) {
-    result.push({ index: luaIndex, signal: value })
+  for (const key of signalKeys) {
+    const signal = settings[key]
+    if (signal) result.push({ index: key, signal })
   }
+  if (result.length == 0) return nil
   return result
 }
-export function compactIcons(icons: BlueprintIcons): BlueprintIcons {
-  const result: BlueprintIcons = []
-  for (const [, icon] of pairs(asLuaArray(icons))) {
-    result.push(icon)
+
+export function compactIcons(icons: Mutable<BlueprintSignalIcon>[]): void {
+  let index = 1
+  for (const icon of icons) {
+    icon.index = index
+    index++
   }
-  return result
 }
 
 export type StageBlueprintSettings = OverrideableBlueprintSettings
@@ -66,7 +93,10 @@ export type BlueprintOverrideSettings = PropertyOverrideTable<OverrideableBluepr
 
 export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
   return {
-    icons: [],
+    1: nil,
+    2: nil,
+    3: nil,
+    4: nil,
     autoLandfill: false,
     positionOffset: nil,
     snapToGrid: nil,

@@ -10,6 +10,7 @@
  */
 
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
+import { getIconsAsSparseArray } from "../../blueprints/blueprint-settings"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
 import { getStageAtSurface } from "../../project/stage-surface"
 import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
@@ -195,36 +196,23 @@ describe("new stage name", () => {
       const stage = project.insertStage(1)
 
       expect(stage.name.get()).toEqual("New Stage")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([{ type: "virtual", name: "signal-1" }])
+      expect(getIconsAsSparseArray(stage.stageBlueprintSettings)).toEqual([])
     })
 
     test("is next number minus 1 if numbered naming convention", () => {
       project.getStage(1)!.name.set("Foo 1")
-
-      // expect(project._getNewStageName(1)).toEqual({
-      //   name: "Foo 2",
-      //   strategy: "decrement",
-      //   lastNumber: 2,
-      //   previousLastNumber: 3,
-      // })
-
       const stage = project.insertStage(1)
       expect(stage.name.get()).toEqual("Foo 0")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([{ type: "virtual", name: "signal-0" }])
+      expect(getIconsAsSparseArray(stage.stageBlueprintSettings)).toEqual({})
     })
   })
 
   describe("other stages", () => {
     test('adds " 1" if no naming convention', () => {
       project.getStage(1)!.name.set("Foo")
-      project.getStage(1)!.stageBlueprintSettings.icons.set([{ type: "item", name: "iron-plate" }])
 
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 1")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        { type: "item", name: "iron-plate" },
-        { type: "virtual", name: "signal-1" },
-      ])
     })
 
     test("increments number if numbered naming convention", () => {
@@ -232,7 +220,6 @@ describe("new stage name", () => {
 
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 2")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([{ type: "virtual", name: "signal-2" }])
     })
 
     test('adds ".1" if numbered naming convention, but next stage already has that name', () => {
@@ -241,31 +228,6 @@ describe("new stage name", () => {
 
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 3.1")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        { type: "virtual", name: "signal-1" },
-        { type: "virtual", name: "signal-1" },
-      ])
-    })
-
-    test("Icons ok when sublisting if non-contiguous icons", () => {
-      project.getStage(1)!.name.set("Foo 3")
-      project.getStage(2)!.name.set("Foo 4")
-
-      project
-        .getStage(1)!
-        .stageBlueprintSettings.icons.set([
-          nil,
-          { type: "virtual", name: "signal-2" },
-          { type: "virtual", name: "signal-3" },
-        ])
-
-      const stage = project.insertStage(2)
-      expect(stage.name.get()).toEqual("Foo 3.1")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        { type: "virtual", name: "signal-2" },
-        { type: "virtual", name: "signal-3" },
-        { type: "virtual", name: "signal-1" },
-      ])
     })
 
     test("detects and uses numerical separator if next stage already has that name", () => {
@@ -273,10 +235,6 @@ describe("new stage name", () => {
       project.getStage(2)!.name.set("Foo 3--3")
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 3--2--1")
-      expect(stage.stageBlueprintSettings.icons.get()).toEqual([
-        { type: "virtual", name: "signal-1" },
-        { type: "virtual", name: "signal-1" },
-      ])
     })
   })
 })
