@@ -16,7 +16,7 @@ import {
   takeStageBlueprint,
 } from "../blueprints/blueprint-creation"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
-import { editBlueprintFilters, editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
+import { editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Colors, Prototypes } from "../constants"
 import { getStageToMerge } from "../entity/ProjectEntity"
 import {
@@ -55,6 +55,7 @@ import {
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { ManualRevertButton, MaybeRevertButton } from "../utils/RevertButton"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
+import { editBlueprintFilters } from "./edit-blueprint-filters"
 import { IconsEdit } from "./IconEdit"
 import { ItemRename } from "./ItemRename"
 import {
@@ -412,7 +413,7 @@ class ProjectSettings extends Component<{
   private editFilter(settings: BlueprintSettingsTable, type: "additionalWhitelist" | "blacklist") {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    editBlueprintFilters(player, settings, type)
+    editBlueprintFilters(player, settings[type])
   }
 
   private anyGridSettingsChanged(stage: Stage): Property<unknown> {

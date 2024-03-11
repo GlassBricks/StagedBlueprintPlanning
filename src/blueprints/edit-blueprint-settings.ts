@@ -10,7 +10,6 @@
  */
 
 import { BlueprintItemStack, LuaInventory, LuaItemStack, LuaPlayer, LuaSurface, PlayerIndex } from "factorio:runtime"
-import { Prototypes } from "../constants"
 import { Events, isEmpty, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -91,32 +90,6 @@ export function editInItemBlueprintSettings(
   player.opened = blueprint
 
   return blueprint
-}
-
-export function editBlueprintFilters(
-  player: LuaPlayer,
-  settings: BlueprintSettingsTable,
-  type: "additionalWhitelist" | "blacklist",
-): LuaItemStack {
-  clearOpenedItem(player.index)
-  const inventory = game.create_inventory(1)
-  const stack = inventory[0]
-  stack.set_stack(Prototypes.BlueprintFilters)
-
-  const property: MutableProperty<ReadonlyLuaSet<string> | nil> = settings[type]
-  const currentFilters = property.get()
-  if (currentFilters) {
-    stack.entity_filters = Object.keys(currentFilters)
-  }
-
-  global.players[player.index].blueprintEditInfo = {
-    blueprintInventory: inventory,
-    settings,
-    editType: type,
-  }
-  player.opened = stack
-
-  return stack
 }
 
 function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {

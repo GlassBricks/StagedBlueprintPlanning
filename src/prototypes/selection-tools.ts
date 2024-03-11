@@ -352,16 +352,3 @@ data.extend([
   ),
   selectionToolToInput(forceDeleteTool, nil, false),
 ])
-
-// blueprint filters
-
-const blueprintFilters = table.deepcopy(deconstructionPlanner)
-deconstructionPlanner.tile_filter_count = nil
-Object.assign(blueprintFilters, {
-  ...deconstructionPlanner,
-  name: Prototypes.BlueprintFilters,
-  flags: ["hidden", "not-stackable", "spawnable"],
-  entity_filter_count: 80,
-})
-
-data.extend([blueprintFilters])

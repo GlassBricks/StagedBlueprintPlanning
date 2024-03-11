@@ -18,6 +18,7 @@ import "./player-navigation"
 import "./ProjectSettings"
 import "./stage-move-tool"
 import "./toggle-staged-copy"
+import "./edit-blueprint-filters"
 
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {

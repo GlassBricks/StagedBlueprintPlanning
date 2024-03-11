@@ -12,12 +12,10 @@
 import { LuaEntity, LuaPlayer, LuaSurface, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { BlueprintSettingsTable, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
-import { editBlueprintFilters, editInItemBlueprintSettings } from "../../blueprints/edit-blueprint-settings"
-import { Prototypes } from "../../constants"
+import { editInItemBlueprintSettings } from "../../blueprints/edit-blueprint-settings"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import { createPropertiesTable, getCurrentValues } from "../../utils/properties-obj"
-import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 
 let player: LuaPlayer
 let surface: LuaSurface
@@ -112,36 +110,4 @@ describe("in-item blueprint settings", () => {
       positionRelativeToGrid: nil,
     })
   })
-})
-test.each(["additionalWhitelist", "blacklist"] as const)("can edit blueprint filters", (type) => {
-  const settings = createStageBlueprintSettings()
-  const stack = editBlueprintFilters(player, settings, type)
-  expect(stack).toMatchTable({
-    valid_for_read: true,
-    name: Prototypes.BlueprintFilters,
-  })
-
-  stack.entity_filters = ["iron-chest", "steel-chest"]
-  stack.entity_filter_mode = entity_filter_mode.blacklist
-
-  player.opened = nil
-
-  expect(settings[type].get()).toEqual(newLuaSet("iron-chest", "steel-chest"))
-})
-
-test.each(["additionalWhitelist", "blacklist"] as const)("can clear blueprint filters", (type) => {
-  const settings = createStageBlueprintSettings()
-  settings[type].set(newLuaSet("iron-chest", "steel-chest"))
-  const stack = editBlueprintFilters(player, settings, type)
-  expect(stack).toMatchTable({
-    valid_for_read: true,
-    name: Prototypes.BlueprintFilters,
-  })
-
-  stack.set_entity_filter(1, nil)
-  stack.set_entity_filter(2, nil)
-
-  player.opened = nil
-
-  expect(settings[type].get()).toBeNil()
 })

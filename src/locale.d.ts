@@ -4,8 +4,6 @@
 export declare const enum L_ItemName {
   /** Cleanup tool */
   CleanupTool = "item-name.bp100:cleanup-tool",
-  /** Blueprint filters */
-  BlueprintFilters = "item-name.bp100:blueprint-filters",
   /** Stage move tool */
   StageMoveTool = "item-name.bp100:stage-move-tool",
   /** Filtered stage move tool */
@@ -150,6 +148,10 @@ export declare const enum L_Interaction {
   FilteredStageMoveToolWarning = "bp100.interaction.filtered-stage-move-tool-warning",
   /** Blueprint book exported to script-output/__1__ */
   BlueprintBookExported = "bp100.interaction.blueprint-book-exported",
+}
+export declare const enum L_Gui {
+  /** Blueprint filters */
+  BlueprintFilters = "bp100.gui.blueprint-filters",
 }
 export declare const enum L_GuiProjectSelector {
   /** Staged BP projects */
