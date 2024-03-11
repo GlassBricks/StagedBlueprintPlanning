@@ -454,7 +454,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
     return this.getPropAtStage(stage, "name")[0]
   }
 
-  applyDiff = applyDiffToEntity
+  declare applyDiff: <T extends Entity>(this: void, value: T, diff: StageDiff<T>) => Mutable<T>
 
   adjustValueAtStage(stage: StageNumber, value: T): boolean {
     const { firstStage } = this
@@ -769,6 +769,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
       }
   }
 }
+ProjectEntityImpl.prototype.applyDiff = applyDiffToEntity
 
 export function addCircuitConnection(connection: ProjectCircuitConnection): void {
   const { fromEntity, toEntity } = connection
