@@ -33,13 +33,11 @@ export class Dialog extends Component<DialogProps> {
   private element!: FrameGuiElementMembers
   private onBackFn?: Func<(player: LuaPlayer) => void>
   private onConfirmFn?: Func<(player: LuaPlayer) => void>
-  private redConfirm?: boolean
   override render(props: DialogProps): Element {
     assert(props.backCaption || props.confirmCaption, "Dialog requires at least one button")
 
     this.onBackFn = props.onBack
     this.onConfirmFn = props.onConfirm
-    this.redConfirm = props.redConfirm
 
     return (
       <frame

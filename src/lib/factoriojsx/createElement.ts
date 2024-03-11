@@ -20,7 +20,7 @@ function flattenChildren(...children: Array<false | nil | Element | Array<false 
   let childArray: typeof children
   if (childrenLen == 1) {
     // optimize for the common case
-    const [child] = children
+    const [child] = [...children]
     if (!child) return nil
     if (!Array.isArray(child)) {
       if (child.type == "fragment") return child.children
@@ -63,13 +63,14 @@ function flattenChildrenToProp(...children: Array<false | nil | Element>): unkno
   const childrenLen = _select("#", ...children)
   if (childrenLen == 0) return nil
   if (childrenLen == 1) {
-    const [child] = children
+    const [child] = [...children]
     if (child && child.type == "fragment") return child.children ?? []
     return child
   }
+  const children2 = [...children]
   const result: unknown[] = []
   for (const i of $range(1, childrenLen)) {
-    const child = children[i - 1]
+    const child = children2[i - 1]
     if (child && child.type == "fragment") {
       if (child.children) {
         result.push(...child.children)
