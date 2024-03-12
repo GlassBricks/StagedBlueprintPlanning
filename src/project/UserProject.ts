@@ -379,7 +379,8 @@ Migrations.priority(2, "0.16.0", () => {
   const oldProjects = global.projects as unknown as LuaMap<ProjectId, UserProjectImpl>
   global.projects = Object.values(oldProjects)
 })
-Migrations.priority(2, "0.27.0", () => {
+// just always run this?
+Migrations.priority(2, script.active_mods[script.mod_name]!, () => {
   for (const project of global.projects) {
     project.actions = UserActionsClass({ project })
     project.updates = ProjectUpdatesClass({ project })
@@ -614,3 +615,15 @@ Migrations.to("0.30.0", () => {
     setDefaultToMajorityValue(4)
   }
 })
+
+// Migrations.priority(2, "0.30.3", () => {
+//   for (const project of global.projects) {
+//     project.actions = UserActionsClass({ project })
+//     project.updates = ProjectUpdatesClass({ project })
+//     project.entityUpdates = WorldEntityUpdatesClass({ project })
+//
+//     for (const stage of project.getAllStages()) {
+//       stage.actions = project.actions
+//     }
+//   }
+// })
