@@ -140,6 +140,10 @@ Any comments, criticisms, and suggestions are greatly appreciated!
 
 You can contact me (GlassBricks) on the AntiElitz speedrunning discord, or use the mod portal forums.
 
+If you like what you see, consider supporting me on Ko-fi!
+
+[![Buy Me a Coffee at ko-fi.com](https://storage.ko-fi.com/cdn/kofi2.png?v=3)](https://ko-fi.com/Z8Z1VI6P8)
+
 ## Acknowledgements
 
 Gallery images are from AntiElitz's recent 100% blueprints.
