@@ -35,9 +35,9 @@ import { getUndergroundDirection } from "./underground-belt"
  * Also keeps track of info spanning multiple entities (wire/circuit connections).
  */
 export interface ProjectContent {
-  has(entity: ProjectEntity): boolean
+  hasEntity(entity: ProjectEntity): boolean
 
-  findCompatibleByProps(
+  findCompatibleEntity(
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
@@ -49,11 +49,11 @@ export interface ProjectContent {
     stage: StageNumber,
   ): ProjectEntity | nil
   findCompatibleWithExistingEntity(entity: ProjectEntity, stage: StageNumber): ProjectEntity | nil
-
-  findExact(entity: LuaEntity, position: Position, stage: StageNumber): ProjectEntity | nil
+  findEntityExact(entity: LuaEntity, position: Position, stage: StageNumber): ProjectEntity | nil
 
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): ProjectEntity | nil
-  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
+  findCompatibleFromPreviewOrLuaEntity(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
+
   countNumEntities(): number
   allEntities(): ReadonlyLuaSet<ProjectEntity>
 
@@ -86,11 +86,11 @@ class ProjectContentImpl implements MutableProjectContent {
   readonly byPosition: Map2D<ProjectEntity> = newMap2D()
   entities = new LuaSet<ProjectEntity>()
 
-  has(entity: ProjectEntity): boolean {
+  hasEntity(entity: ProjectEntity): boolean {
     return this.entities.has(entity)
   }
 
-  findCompatibleByProps(
+  findCompatibleEntity(
     entityName: string,
     position: Position,
     direction: defines.direction | nil,
@@ -125,7 +125,7 @@ class ProjectContentImpl implements MutableProjectContent {
   ): ProjectEntity | nil {
     const type = entity.type
     if (type == "underground-belt") {
-      const found = this.findCompatibleByProps(type, entity.position, nil, stage)
+      const found = this.findCompatibleEntity(type, entity.position, nil, stage)
       if (
         found &&
         getUndergroundDirection(found.direction, (found as UndergroundBeltProjectEntity).firstValue.type) ==
@@ -145,21 +145,21 @@ class ProjectContentImpl implements MutableProjectContent {
     const name = entity.name
     const pasteRotatableType = pasteCompatibleRotations.get(name)
     if (pasteRotatableType == nil) {
-      return this.findCompatibleByProps(name, entity.position, previousDirection ?? entity.direction, stage)
+      return this.findCompatibleEntity(name, entity.position, previousDirection ?? entity.direction, stage)
     }
     if (pasteRotatableType == RotationType.AnyDirection) {
-      return this.findCompatibleByProps(name, entity.position, nil, stage)
+      return this.findCompatibleEntity(name, entity.position, nil, stage)
     }
     if (pasteRotatableType == RotationType.Flippable) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
       if (direction % 2 == 1) {
         // if diagonal, we _do_ care about the direction
-        return this.findCompatibleByProps(name, position, direction, stage)
+        return this.findCompatibleEntity(name, position, direction, stage)
       }
       return (
-        this.findCompatibleByProps(name, position, direction, stage) ??
-        this.findCompatibleByProps(name, position, oppositedirection(direction), stage)
+        this.findCompatibleEntity(name, position, direction, stage) ??
+        this.findCompatibleEntity(name, position, oppositedirection(direction), stage)
       )
     }
   }
@@ -182,17 +182,17 @@ class ProjectContentImpl implements MutableProjectContent {
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): ProjectEntity | nil {
     const actualName = previewEntity.name.substring(Prototypes.PreviewEntityPrefix.length)
     const direction = isRollingStockType(actualName) ? 0 : previewEntity.direction
-    return this.findCompatibleByProps(actualName, previewEntity.position, direction, stage)
+    return this.findCompatibleEntity(actualName, previewEntity.position, direction, stage)
   }
 
-  findCompatibleFromLuaEntityOrPreview(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil {
+  findCompatibleFromPreviewOrLuaEntity(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil {
     if (isPreviewEntity(entity)) {
       return this.findCompatibleFromPreview(entity, stage)
     }
     return this.findCompatibleWithLuaEntity(entity, nil, stage)
   }
 
-  findExact(entity: LuaEntity, position: Position, stage: StageNumber): ProjectEntity | nil {
+  findEntityExact(entity: LuaEntity, position: Position, stage: StageNumber): ProjectEntity | nil {
     let cur = this.byPosition.get(position.x, position.y)
     while (cur != nil) {
       if (cur.getWorldOrPreviewEntity(stage) == entity) return cur

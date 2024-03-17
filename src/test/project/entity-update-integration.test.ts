@@ -65,7 +65,7 @@ const pos = Pos(10.5, 10.5)
 
 function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | false) {
   expect(entity.isSettingsRemnant).toBeFalsy()
-  const found = project.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
+  const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBe(entity)
 
   let hasError: number | false = false
@@ -190,7 +190,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
 }
 
 function assertEntityNotPresent(entity: ProjectEntity) {
-  const found = project.content.findCompatibleByProps(entity.firstValue.name, entity.position, entity.direction, 1)
+  const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBeNil()
 
   for (const stage of $range(1, project.lastStageFor(entity))) {
@@ -881,7 +881,7 @@ describe("underground belt inconsistencies", () => {
 
       player.mine_entity(middleUnderground.getWorldEntity(1)!, true)
 
-      expect(project.content.has(middleUnderground)).toBe(false)
+      expect(project.content.hasEntity(middleUnderground)).toBe(false)
 
       expect(leftUnderground.hasErrorAt(1)).toBe(true)
 

@@ -40,7 +40,7 @@ describe("findCompatible", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(entity)
+    expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(entity)
   })
 
   test("does not match if passed stage is higher than entity's last stage", () => {
@@ -48,7 +48,7 @@ describe("findCompatible", () => {
     content.add(entity)
     entity.setLastStageUnchecked(2)
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBeNil()
+    expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBeNil()
   })
 
   test.each(["12", "21"])("if multiple matches, finds one with smallest firstStage, order %s", (o) => {
@@ -65,22 +65,22 @@ describe("findCompatible", () => {
       content.add(e2)
     }
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 2)).toBe(e1)
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBe(e2)
+    expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 2)).toBe(e1)
+    expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBe(e2)
   })
 
   test("if direction is nil, matches any direction", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByProps("foo", { x: 0, y: 0 }, nil, 1)).toBe(entity)
+    expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, nil, 1)).toBe(entity)
   })
 
   test("matches if different name in same category", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
     content.add(entity)
 
-    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(
+    expect(content.findCompatibleEntity("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(
       entity,
     )
   })
@@ -94,16 +94,16 @@ describe("findCompatible", () => {
     )
     content.add(entity)
 
-    expect(content.findCompatibleByProps("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).toBe(entity)
+    expect(content.findCompatibleEntity("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).toBe(entity)
   })
 
   test("not compatible", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
     entity.setLastStageUnchecked(2)
-    expect(content.findCompatibleByProps("test2", entity.position, defines.direction.north, 2)).toBeNil()
-    expect(content.findCompatibleByProps("foo", entity.position, defines.direction.south, 2)).toBeNil()
-    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 2)).toBeNil()
-    expect(content.findCompatibleByProps("foo", { x: 1, y: 0 }, defines.direction.north, 3)).toBeNil()
+    expect(content.findCompatibleEntity("test2", entity.position, defines.direction.north, 2)).toBeNil()
+    expect(content.findCompatibleEntity("foo", entity.position, defines.direction.south, 2)).toBeNil()
+    expect(content.findCompatibleEntity("foo", { x: 1, y: 0 }, defines.direction.north, 2)).toBeNil()
+    expect(content.findCompatibleEntity("foo", { x: 1, y: 0 }, defines.direction.north, 3)).toBeNil()
   })
 })
 
@@ -112,9 +112,9 @@ test("findExact", () => {
   const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
   content.add(entity)
   entity.replaceWorldEntity(2, luaEntity)
-  expect(content.findExact(luaEntity, luaEntity.position, 2)).toBe(entity)
+  expect(content.findEntityExact(luaEntity, luaEntity.position, 2)).toBe(entity)
   luaEntity.teleport(1, 1)
-  expect(content.findExact(luaEntity, { x: 0, y: 0 }, 2)).toBe(entity)
+  expect(content.findEntityExact(luaEntity, { x: 0, y: 0 }, 2)).toBe(entity)
 })
 
 describe("findCompatibleWithLuaEntity", () => {
@@ -256,5 +256,5 @@ test("changePosition", () => {
   content.changePosition(entity, { x: 1, y: 1 })
   expect(entity.position.x).toBe(1)
   expect(entity.position.y).toBe(1)
-  expect(content.findCompatibleByProps("foo", { x: 1, y: 1 }, defines.direction.north, 1)).toBe(entity)
+  expect(content.findCompatibleEntity("foo", { x: 1, y: 1 }, defines.direction.north, 1)).toBe(entity)
 })

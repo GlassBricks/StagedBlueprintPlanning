@@ -53,7 +53,7 @@ export function findUndergroundPair(
   for (const i of $range(1, reach)) {
     curPos.x = x + i * dx
     curPos.y = y + i * dy
-    const candidate = content.findCompatibleByProps(name, curPos, nil, stage) as UndergroundBeltProjectEntity | nil
+    const candidate = content.findCompatibleEntity(name, curPos, nil, stage) as UndergroundBeltProjectEntity | nil
     if (!candidate || candidate.getNameAtStage(stage) != name || candidate.firstStage >= shadowStage) continue
     const candidateDirection = getUndergroundDirection(candidate.direction, candidate.firstValue.type)
     if (candidateDirection == direction) {

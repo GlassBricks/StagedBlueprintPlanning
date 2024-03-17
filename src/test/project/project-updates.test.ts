@@ -1377,7 +1377,7 @@ describe("rolling stock", () => {
 
     assertNEntities(1)
 
-    const found = project.content.findCompatibleByProps(rollingStock.name, rollingStock.position, nil, 1)!
+    const found = project.content.findCompatibleEntity(rollingStock.name, rollingStock.position, nil, 1)!
     expect(found).toBeAny()
     expect(found).toBe(result)
 

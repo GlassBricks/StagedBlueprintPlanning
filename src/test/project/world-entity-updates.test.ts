@@ -332,7 +332,7 @@ describe("tryMoveEntity", () => {
     expect(entity.position).toEqual(newPos)
     expect(entity.direction).toBe(newDir)
 
-    expect(project.content.findCompatibleByProps(entity.getNameAtStage(1), newPos, newDir, 1)).toBe(entity)
+    expect(project.content.findCompatibleEntity(entity.getNameAtStage(1), newPos, newDir, 1)).toBe(entity)
   }
 
   function assertNotMoved() {
@@ -345,7 +345,7 @@ describe("tryMoveEntity", () => {
     expect(entity.position).toEqual(origPos)
     expect(entity.direction).toBe(origDir)
 
-    expect(project.content.findCompatibleByProps(entity.getNameAtStage(1), origPos, origDir, 1)).toBe(entity)
+    expect(project.content.findCompatibleEntity(entity.getNameAtStage(1), origPos, origDir, 1)).toBe(entity)
   }
 
   test("can move entity if moved in first stage", () => {

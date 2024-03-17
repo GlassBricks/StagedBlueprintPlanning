@@ -41,7 +41,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
   const stageNumber = stage.stageNumber
 
   for (const [number, luaEntity] of pairs(entityMapping)) {
-    const projectEntity = content.findExact(luaEntity, luaEntity.position, stageNumber)
+    const projectEntity = content.findEntityExact(luaEntity, luaEntity.position, stageNumber)
     if (!projectEntity) continue
     const info: BpStagedInfo = {
       firstStage: projectEntity.firstStage,

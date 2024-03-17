@@ -277,7 +277,7 @@ export function UserActions(
     knownBpValue?: BlueprintEntity,
   ): UndoAction | nil {
     if (!allowOverlapDifferentDirection.has(entity.type) && entity.supports_direction) {
-      const existingDifferentDirection = content.findCompatibleByProps(entity.name, entity.position, nil, stage)
+      const existingDifferentDirection = content.findCompatibleEntity(entity.name, entity.position, nil, stage)
       if (existingDifferentDirection) {
         entity.destroy()
         createNotification(existingDifferentDirection, byPlayer, [L_Interaction.CannotBuildDifferentDirection], false)
@@ -325,7 +325,7 @@ export function UserActions(
   }
 
   function onTryFixEntity(previewEntity: LuaEntity, stage: StageNumber, deleteSettingsRemnants?: boolean): void {
-    const existing = content.findCompatibleFromLuaEntityOrPreview(previewEntity, stage)
+    const existing = content.findCompatibleFromPreviewOrLuaEntity(previewEntity, stage)
     if (!existing) return
     if (existing.isSettingsRemnant) {
       if (deleteSettingsRemnants) {
@@ -337,7 +337,7 @@ export function UserActions(
     }
   }
   function onChunkGeneratedForEntity(previewEntity: LuaEntity, stage: StageNumber): void {
-    const existing = content.findCompatibleFromLuaEntityOrPreview(previewEntity, stage)
+    const existing = content.findCompatibleFromPreviewOrLuaEntity(previewEntity, stage)
     if (!existing || existing.isSettingsRemnant) return
     refreshWorldEntityAtStage(existing, stage)
   }
@@ -348,7 +348,7 @@ export function UserActions(
     oldPosition: Position,
     byPlayer: PlayerIndex | nil,
   ): ProjectEntity | nil {
-    const existing = content.findExact(entity, oldPosition, stage)
+    const existing = content.findEntityExact(entity, oldPosition, stage)
     if (existing) return existing
     onEntityCreated(entity, stage, byPlayer)
     return nil
@@ -491,7 +491,7 @@ export function UserActions(
     onTryFixEntity(entity, stage, true)
   }
   function onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
-    const projectEntity = content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+    const projectEntity = content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (projectEntity) {
       forceDeleteEntity(projectEntity)
       return undoDeleteEntity.createAction(byPlayer, { project, entity: projectEntity })
@@ -530,7 +530,7 @@ export function UserActions(
   function findCompatibleEntityForUndo(entity: ProjectEntity): ProjectEntity | nil {
     if (!project.valid) return nil
 
-    if (!content.has(entity)) {
+    if (!content.hasEntity(entity)) {
       const matching = content.findCompatibleWithExistingEntity(entity, entity.firstStage)
       if (!matching || entity.firstStage != matching.firstStage || !deepCompare(entity.firstValue, matching.firstValue))
         return nil
@@ -574,7 +574,7 @@ export function UserActions(
     stage: StageNumber,
     byPlayer: PlayerIndex,
   ): UndoAction | nil {
-    const entity = content.findCompatibleFromLuaEntityOrPreview(entityOrPreviewEntity, stage)
+    const entity = content.findCompatibleFromPreviewOrLuaEntity(entityOrPreviewEntity, stage)
     if (!entity || entity.isSettingsRemnant) return
     return userTryMoveEntityToStageWithUndo(entity, stage, byPlayer)
   }
@@ -620,7 +620,7 @@ export function UserActions(
     byPlayer: PlayerIndex,
   ): UndoAction | nil {
     if (fromStage == toStage) return
-    const projectEntity = content.findExact(entity, entity.position, fromStage)
+    const projectEntity = content.findEntityExact(entity, entity.position, fromStage)
     if (
       !projectEntity ||
       projectEntity.isSettingsRemnant ||
@@ -647,7 +647,7 @@ export function UserActions(
   }
 
   function onBringToStageUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
-    const projectEntity = content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+    const projectEntity = content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (!projectEntity || projectEntity.isSettingsRemnant) return
     const oldStage = projectEntity.firstStage
     if (userBringEntityToStage(projectEntity, stage, byPlayer)) {
@@ -656,7 +656,7 @@ export function UserActions(
   }
 
   function onBringDownToStageUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
-    const projectEntity = content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+    const projectEntity = content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (!projectEntity || projectEntity.isSettingsRemnant) return
     if (projectEntity.firstStage <= stage) return
     const oldStage = projectEntity.firstStage
@@ -665,7 +665,7 @@ export function UserActions(
     }
   }
   function onStageDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
-    const projectEntity = content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+    const projectEntity = content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (!projectEntity || projectEntity.isSettingsRemnant) return
     const newLastStage = stage - 1
     const oldLastStage = projectEntity.lastStage
@@ -695,7 +695,7 @@ export function UserActions(
   }
 
   function onStageDeleteCancelUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
-    const projectEntity = content.findCompatibleFromLuaEntityOrPreview(entity, stage)
+    const projectEntity = content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (!projectEntity || projectEntity.isSettingsRemnant || projectEntity.lastStage != stage) return
     return userTrySetLastStageWithUndo(projectEntity, nil, byPlayer)
   }
