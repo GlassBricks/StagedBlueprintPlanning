@@ -184,15 +184,6 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
-
-  /** Modifies to be consistent with an inserted stage. */
-  insertStage(stageNumber: StageNumber): void
-
-  /**
-   * Modifies to be consistent with a deleted stage.
-   * Stage contents will be merged with a previous stage. If stage is 1, will be merged with the next stage instead.
-   */
-  deleteStage(stageNumber: StageNumber): void
 }
 
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>

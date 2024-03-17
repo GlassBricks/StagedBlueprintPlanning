@@ -23,7 +23,8 @@ import { StageNumber } from "./ProjectEntity"
 
 export interface StagedValue<T, D> {
   readonly firstValue: Readonly<T>
-  setFirstValue(value: T): void
+  /** May not correctly update diffs. */
+  setFirstValueDirectly(value: T): void
 
   readonly firstStage: StageNumber
   readonly lastStage: StageNumber | nil
@@ -36,7 +37,8 @@ export interface StagedValue<T, D> {
   isPastLastStage(stage: StageNumber): boolean
 
   readonly stageDiffs?: PRRecord<StageNumber, D>
-  setStageDiffs(stageDiffs: PRRecord<StageNumber, D> | nil): void
+  /** Does not validate stage diffs. */
+  setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, D> | nil): void
   /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): D | nil
@@ -76,7 +78,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     public firstStage: StageNumber,
     public firstValue: Mutable<T>,
   ) {}
-  setFirstValue(value: T): void {
+  setFirstValueDirectly(value: T): void {
     this.firstValue = value
   }
 
@@ -89,7 +91,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     return this.lastStage != nil && stage > this.lastStage
   }
 
-  protected abstract applyDiff: (this: void, value: Mutable<T>, diff: D) => Mutable<T>
+  protected abstract applyDiff(this: void, value: Mutable<T>, diff: D): Mutable<T>
 
   setFirstStageUnchecked(stage: StageNumber): void {
     const { firstStage, lastStage } = this
@@ -129,7 +131,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     }
   }
 
-  setStageDiffs(stageDiffs: PRRecord<StageNumber, D> | nil): void {
+  setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, D> | nil): void {
     this.stageDiffs = stageDiffs
   }
   hasStageDiff(stage?: StageNumber): boolean {

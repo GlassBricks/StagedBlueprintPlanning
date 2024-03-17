@@ -170,7 +170,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     projectEntity.setLastStageUnchecked(stageInfo.lastStage)
     const diffs = stageInfo.stageDiffs
     if (diffs) {
-      projectEntity.setStageDiffs(fromBpStageDiffs(diffs))
+      projectEntity.setStageDiffsDirectly(fromBpStageDiffs(diffs))
     }
     return projectEntity
   }
@@ -574,9 +574,9 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     const oldStageDiffs = entity.stageDiffs
 
     const firstValue = info.firstValue ?? copyKnownValue(value)
-    entity.setFirstValue(firstValue)
+    entity.setFirstValueDirectly(firstValue)
     const stageDiffs = info.stageDiffs ? fromBpStageDiffs(info.stageDiffs) : nil
-    entity.setStageDiffs(stageDiffs)
+    entity.setStageDiffsDirectly(stageDiffs)
 
     updateWorldEntities(entity, 1)
 
