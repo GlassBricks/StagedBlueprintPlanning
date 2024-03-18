@@ -36,4 +36,8 @@ describe("getCategoryName", () => {
   test("normal storage tanks are two-directional", () => {
     expect(getPrototypeInfo().twoDirectionTanks).toHaveKey("storage-tank")
   })
+
+  test("blueprintableTiles includes concrete", () => {
+    expect(getPrototypeInfo().blueprintableTiles).toHaveKey("concrete")
+  })
 })

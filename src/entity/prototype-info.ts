@@ -26,6 +26,7 @@ export interface PrototypeInfo {
   selectionBoxes: ReadonlyLuaMap<string, BBox>
   nameToType: ReadonlyLuaMap<string, keyof PrototypeMap>
   twoDirectionTanks: ReadonlyLuaSet<string>
+  blueprintableTiles: ReadonlyLuaSet<string>
 }
 /**
  * Compatible rotations for pasting entities.
@@ -150,6 +151,11 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
       for (const name of category) nameToCategory.delete(name)
     }
   }
+  const blueprintableTilePrototypes = game.get_filtered_tile_prototypes([{ filter: "blueprintable" }])
+  const blueprintableTiles = new LuaSet<string>()
+  for (const [name] of blueprintableTilePrototypes) {
+    blueprintableTiles.add(name)
+  }
 
   return {
     nameToCategory,
@@ -158,6 +164,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     selectionBoxes,
     nameToType,
     twoDirectionTanks,
+    blueprintableTiles,
   }
 }
 const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
