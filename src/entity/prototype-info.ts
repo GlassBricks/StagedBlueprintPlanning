@@ -19,7 +19,7 @@ import { BBox } from "../lib/geometry"
 export type CategoryName = string & {
   _categoryName: never
 }
-export interface EntityPrototypeInfo {
+export interface PrototypeInfo {
   nameToCategory: ReadonlyLuaMap<string, CategoryName>
   categories: ReadonlyLuaMap<CategoryName, string[]>
   rotationTypes: ReadonlyLuaMap<string, RotationType>
@@ -40,11 +40,11 @@ export const enum RotationType {
 }
 
 declare const global: {
-  entityPrototypeInfo: EntityPrototypeInfo
+  entityPrototypeInfo: PrototypeInfo
 }
 
-let entityPrototypeInfo: EntityPrototypeInfo
-export const OnEntityPrototypesLoaded = globalEvent<[info: EntityPrototypeInfo]>()
+let entityPrototypeInfo: PrototypeInfo
+export const OnEntityPrototypesLoaded = globalEvent<[info: PrototypeInfo]>()
 Events.on_configuration_changed(() => {
   entityPrototypeInfo = global.entityPrototypeInfo = computeEntityPrototypeInfo()
   OnEntityPrototypesLoaded.raise(entityPrototypeInfo)
@@ -72,7 +72,7 @@ function getPassedPrototypeInfo(): PassedPrototypeInfo {
   }
 }
 
-function computeEntityPrototypeInfo(): EntityPrototypeInfo {
+function computeEntityPrototypeInfo(): PrototypeInfo {
   log("Processing blueprint-able entity prototypes")
   const compatibleTypes: PRecord<keyof PrototypeMap, keyof PrototypeMap> = {
     "logistic-container": "container",
@@ -168,14 +168,14 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
 
 export const allowOverlapDifferentDirection = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
-export function getEntityPrototypeInfo(): EntityPrototypeInfo {
+export function getEntityPrototypeInfo(): PrototypeInfo {
   return entityPrototypeInfo
 }
 
-let nameToCategory: EntityPrototypeInfo["nameToCategory"]
-let nameToType: EntityPrototypeInfo["nameToType"]
-let categories: EntityPrototypeInfo["categories"]
-let rotationTypes: EntityPrototypeInfo["rotationTypes"]
+let nameToCategory: PrototypeInfo["nameToCategory"]
+let nameToType: PrototypeInfo["nameToType"]
+let categories: PrototypeInfo["categories"]
+let rotationTypes: PrototypeInfo["rotationTypes"]
 OnEntityPrototypesLoaded.addListener((info) => {
   ;({ nameToCategory, categories, rotationTypes, nameToType } = info)
 })

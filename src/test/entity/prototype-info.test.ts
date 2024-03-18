@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { getEntityPrototypeInfo } from "../../entity/entity-prototype-info"
+import { getEntityPrototypeInfo } from "../../entity/prototype-info"
 
 describe("getCategoryName", () => {
   function getEntityCategory(name: string): string {

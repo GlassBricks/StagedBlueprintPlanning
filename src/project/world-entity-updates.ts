@@ -11,7 +11,6 @@
 
 import { LocalisedString, LuaEntity } from "factorio:runtime"
 import { Prototypes } from "../constants"
-import { isPreviewEntity } from "../entity/entity-prototype-info"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import {
   isWorldEntityProjectEntity,
@@ -20,6 +19,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
+import { isPreviewEntity } from "../entity/prototype-info"
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
 import { RegisterClass } from "../lib"

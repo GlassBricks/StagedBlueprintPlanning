@@ -13,7 +13,6 @@ import { BlueprintEntity, LuaEntity } from "factorio:runtime"
 import { BpStagedInfo, fromBpStageDiffs } from "../copy-paste/blueprint-stage-info"
 import { maybeSetEmptyControlBehavior } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
-import { areUpgradeableTypes } from "../entity/entity-prototype-info"
 import {
   createProjectEntityNoCopy,
   InserterProjectEntity,
@@ -24,6 +23,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
+import { areUpgradeableTypes } from "../entity/prototype-info"
 import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"

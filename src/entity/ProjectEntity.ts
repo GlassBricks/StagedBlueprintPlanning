@@ -27,18 +27,18 @@ import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-va
 import { circuitConnectionEquals, getDirectionalInfo, ProjectCircuitConnection } from "./circuit-connection"
 import { Entity, InserterEntity, LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./Entity"
 import {
-  EntityPrototypeInfo,
   isPreviewEntity,
   isRollingStockType,
   OnEntityPrototypesLoaded,
+  PrototypeInfo,
   rollingStockTypes,
-} from "./entity-prototype-info"
+} from "./prototype-info"
 import { registerEntity } from "./registration"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
 import { BaseStagedValue, StagedValue } from "./StagedValue"
 import floor = math.floor
 
-let nameToType: EntityPrototypeInfo["nameToType"]
+let nameToType: PrototypeInfo["nameToType"]
 OnEntityPrototypesLoaded.addListener((info) => {
   nameToType = info.nameToType
 })

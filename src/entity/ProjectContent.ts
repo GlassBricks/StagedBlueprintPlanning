@@ -16,17 +16,17 @@ import { isEmpty, Mutable, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { ProjectCircuitConnection } from "./circuit-connection"
 import { EntityIdentification } from "./Entity"
-import {
-  EntityPrototypeInfo,
-  isPreviewEntity,
-  isRollingStockType,
-  OnEntityPrototypesLoaded,
-  rollingStockTypes,
-  RotationType,
-} from "./entity-prototype-info"
 import { _migrateMap2DToLinkedList, LinkedMap2D, Map2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { ProjectTile } from "./ProjectTile"
+import {
+  isPreviewEntity,
+  isRollingStockType,
+  OnEntityPrototypesLoaded,
+  PrototypeInfo,
+  rollingStockTypes,
+  RotationType,
+} from "./prototype-info"
 import { getRegisteredProjectEntity } from "./registration"
 import { getUndergroundDirection } from "./underground-belt"
 
@@ -79,9 +79,9 @@ export interface MutableProjectContent extends ProjectContent {
   readonly tiles: Map2D<ProjectTile>
 }
 
-let nameToType: EntityPrototypeInfo["nameToType"]
-let nameToCategory: EntityPrototypeInfo["nameToCategory"]
-let pasteCompatibleRotations: EntityPrototypeInfo["rotationTypes"]
+let nameToType: PrototypeInfo["nameToType"]
+let nameToCategory: PrototypeInfo["nameToCategory"]
+let pasteCompatibleRotations: PrototypeInfo["rotationTypes"]
 OnEntityPrototypesLoaded.addListener((i) => {
   ;({ nameToType, nameToCategory, rotationTypes: pasteCompatibleRotations } = i)
 })

@@ -20,8 +20,8 @@ import {
   SpritePath,
   Vector,
 } from "factorio:runtime"
-import { EntityPrototypeInfo, OnEntityPrototypesLoaded } from "../entity/entity-prototype-info"
 import { ExtraEntities, ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { OnEntityPrototypesLoaded, PrototypeInfo } from "../entity/prototype-info"
 import { AnyRender, assertNever, SpriteRender } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { createHighlightBox, createSprite } from "./create-highlight"
@@ -113,7 +113,7 @@ const highlightConfigs: {
   },
 }
 
-let selectionBoxes: EntityPrototypeInfo["selectionBoxes"]
+let selectionBoxes: PrototypeInfo["selectionBoxes"]
 OnEntityPrototypesLoaded.addListener((info) => {
   ;({ selectionBoxes } = info)
 })

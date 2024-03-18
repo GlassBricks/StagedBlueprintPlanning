@@ -11,9 +11,9 @@
 
 import expect from "tstl-expect"
 import { LuaEntityInfo } from "../../entity/Entity"
-import { getPrototypeRotationType, RotationType } from "../../entity/entity-prototype-info"
 import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { createProjectEntityNoCopy, ProjectEntity } from "../../entity/ProjectEntity"
+import { getPrototypeRotationType, RotationType } from "../../entity/prototype-info"
 import { setupTestSurfaces } from "../project/Project-mock"
 import { createRollingStocks } from "./createRollingStock"
 

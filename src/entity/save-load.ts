@@ -26,14 +26,14 @@ import { Migrations } from "../lib/migration"
 import { getStageAtSurface } from "../project/stage-surface"
 
 import { Entity } from "./Entity"
+import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
-  EntityPrototypeInfo,
   getPrototypeRotationType,
   OnEntityPrototypesLoaded,
+  PrototypeInfo,
   rollingStockTypes,
   RotationType,
-} from "./entity-prototype-info"
-import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
+} from "./prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
 import build_check_manual_ghost = defines.build_check_type.manual_ghost
 import floor = math.floor
@@ -182,7 +182,7 @@ function tryCreateUnconfiguredEntity(
   }
 }
 
-let nameToType: EntityPrototypeInfo["nameToType"]
+let nameToType: PrototypeInfo["nameToType"]
 OnEntityPrototypesLoaded.addListener((info) => {
   nameToType = info.nameToType
 })

@@ -39,16 +39,16 @@ import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { createBlueprintWithStageInfo } from "../copy-paste/create-blueprint-with-stage-info"
 import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
+import { isWorldEntityProjectEntity } from "../entity/ProjectEntity"
 import {
   areUpgradeableTypes,
-  EntityPrototypeInfo,
   getCompatibleNames,
   getPrototypeRotationType,
   isPreviewEntity,
   OnEntityPrototypesLoaded,
+  PrototypeInfo,
   RotationType,
-} from "../entity/entity-prototype-info"
-import { isWorldEntityProjectEntity } from "../entity/ProjectEntity"
+} from "../entity/prototype-info"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
@@ -713,8 +713,8 @@ function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] |
   }
 }
 
-let nameToType: EntityPrototypeInfo["nameToType"]
-let twoDirectionTanks: EntityPrototypeInfo["twoDirectionTanks"]
+let nameToType: PrototypeInfo["nameToType"]
+let twoDirectionTanks: PrototypeInfo["twoDirectionTanks"]
 OnEntityPrototypesLoaded.addListener((e) => {
   nameToType = e.nameToType
   twoDirectionTanks = e.twoDirectionTanks

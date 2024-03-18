@@ -20,13 +20,13 @@ import {
 } from "../../entity/circuit-connection"
 import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
-import { isPreviewEntity } from "../../entity/entity-prototype-info"
 import {
   ProjectEntity,
   RollingStockProjectEntity,
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
+import { isPreviewEntity } from "../../entity/prototype-info"
 import { checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { addPowerSwitchConnections } from "../../entity/wires"

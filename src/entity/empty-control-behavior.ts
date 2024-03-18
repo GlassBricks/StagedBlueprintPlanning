@@ -10,8 +10,8 @@
  */
 
 import { BlueprintControlBehavior } from "factorio:runtime"
-import { OnEntityPrototypesLoaded } from "./entity-prototype-info"
 import { ProjectEntity, StageNumber } from "./ProjectEntity"
+import { OnEntityPrototypesLoaded } from "./prototype-info"
 
 export const emptyBeltControlBehavior: BlueprintControlBehavior = {
   circuit_enable_disable: false,

@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getEntityPrototypeInfo } from "../entity/entity-prototype-info"
 import { _migrateAddTiles, _migrateProjectContent_0_18_0, _migrateWireConnections } from "../entity/ProjectContent"
 import { _migrateEntity_0_17_0, StageNumber } from "../entity/ProjectEntity"
+import { getEntityPrototypeInfo } from "../entity/prototype-info"
 import { Migrations } from "../lib/migration"
 import { UserProject } from "./ProjectDef"
 

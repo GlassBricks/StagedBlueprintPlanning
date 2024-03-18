@@ -14,8 +14,8 @@ import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
-import { isPreviewEntity } from "../../entity/entity-prototype-info"
 import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
+import { isPreviewEntity } from "../../entity/prototype-info"
 import {
   canBeAnyDirection,
   checkUndergroundPairFlippable,
