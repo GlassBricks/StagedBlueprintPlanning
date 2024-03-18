@@ -42,7 +42,9 @@ function transformAccessSplitCall(context: TransformationContext, node: ts.CallE
   return luaCall
 }
 // noinspection JSUnusedGlobalSymbols
-export default function plugin(options: { hasTests: boolean }): Plugin {
+export default function plugin(options: {
+  hasTests: boolean
+}): Plugin {
   const visitors: Visitors = {
     [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       const type = context.checker.getTypeAtLocation(node.expression)
@@ -75,6 +77,10 @@ export default function plugin(options: { hasTests: boolean }): Plugin {
   const beforeEmit: Plugin["beforeEmit"] = function beforeEmit(program, __, ___, files) {
     if (files.length === 0) return // also if there are errors and noEmitOnError
     for (const file of files) {
+      if (file.outputPath.endsWith("lualib_bundle.lua")) {
+        file.code = "local coroutine = {} -- temp workaround for tstl bug\n" + file.code
+        continue
+      }
       const outPath = file.outputPath
       if (!outPath.endsWith(".lua")) continue
       const fileName = path.basename(outPath, ".lua")
