@@ -10,7 +10,7 @@
  */
 
 import { getEntityPrototypeInfo } from "../entity/entity-prototype-info"
-import { _migrateProjectContent_0_18_0, _migrateWireConnections } from "../entity/ProjectContent"
+import { _migrateAddTiles, _migrateProjectContent_0_18_0, _migrateWireConnections } from "../entity/ProjectContent"
 import { _migrateEntity_0_17_0, StageNumber } from "../entity/ProjectEntity"
 import { Migrations } from "../lib/migration"
 import { UserProject } from "./ProjectDef"
@@ -100,5 +100,10 @@ Migrations.to("0.23.1", () => {
         project.entityUpdates.updateAllHighlights(entity)
       }
     }
+  }
+})
+Migrations.to($CURRENT_VERSION, () => {
+  for (const [, project] of global.projects) {
+    _migrateAddTiles(project.content)
   }
 })

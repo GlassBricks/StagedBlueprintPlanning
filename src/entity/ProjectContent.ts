@@ -24,8 +24,9 @@ import {
   rollingStockTypes,
   RotationType,
 } from "./entity-prototype-info"
-import { _migrateMap2DToLinkedList, Map2D, newMap2D } from "./map2d"
+import { _migrateMap2DToLinkedList, LinkedMap2D, Map2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
+import { ProjectTile } from "./ProjectTile"
 import { getRegisteredProjectEntity } from "./registration"
 import { getUndergroundDirection } from "./underground-belt"
 
@@ -57,6 +58,8 @@ export interface ProjectContent {
   countNumEntities(): number
   allEntities(): ReadonlyLuaSet<ProjectEntity>
 
+  // getTile(x: number, y: number): ProjectTile | nil
+  readonly tiles: ReadonlyMap2D<ProjectTile>
   /**
    * Will return slightly larger than actual
    */
@@ -72,6 +75,8 @@ export interface MutableProjectContent extends ProjectContent {
   /** Modifies all entities */
   insertStage(stageNumber: StageNumber): void
   deleteStage(stageNumber: StageNumber): void
+
+  readonly tiles: Map2D<ProjectTile>
 }
 
 let nameToType: EntityPrototypeInfo["nameToType"]
@@ -83,8 +88,10 @@ OnEntityPrototypesLoaded.addListener((i) => {
 
 @RegisterClass("EntityMap")
 class ProjectContentImpl implements MutableProjectContent {
-  readonly byPosition: Map2D<ProjectEntity> = newMap2D()
+  readonly byPosition: LinkedMap2D<ProjectEntity> = newLinkedMap2d()
   entities = new LuaSet<ProjectEntity>()
+
+  tiles = newMap2d<ProjectTile>()
 
   hasEntity(entity: ProjectEntity): boolean {
     return this.entities.has(entity)
@@ -319,4 +326,9 @@ export function _migrateWireConnections(content: MutableProjectContent): void {
     }
   delete content.circuitConnections
   delete content.cableConnections
+}
+
+export function _migrateAddTiles(content: MutableProjectContent): void {
+  assume<ProjectContentImpl>(content)
+  content.tiles ??= newMap2d()
 }
