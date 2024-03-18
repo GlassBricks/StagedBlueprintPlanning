@@ -45,7 +45,7 @@ import {
   getCompatibleNames,
   getPrototypeRotationType,
   isPreviewEntity,
-  OnEntityPrototypesLoaded,
+  OnPrototypeInfoLoaded,
   PrototypeInfo,
   RotationType,
 } from "../entity/prototype-info"
@@ -715,7 +715,7 @@ function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] |
 
 let nameToType: PrototypeInfo["nameToType"]
 let twoDirectionTanks: PrototypeInfo["twoDirectionTanks"]
-OnEntityPrototypesLoaded.addListener((e) => {
+OnPrototypeInfoLoaded.addListener((e) => {
   nameToType = e.nameToType
   twoDirectionTanks = e.twoDirectionTanks
 })

@@ -29,7 +29,7 @@ import { Entity } from "./Entity"
 import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
   getPrototypeRotationType,
-  OnEntityPrototypesLoaded,
+  OnPrototypeInfoLoaded,
   PrototypeInfo,
   rollingStockTypes,
   RotationType,
@@ -183,7 +183,7 @@ function tryCreateUnconfiguredEntity(
 }
 
 let nameToType: PrototypeInfo["nameToType"]
-OnEntityPrototypesLoaded.addListener((info) => {
+OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 

@@ -22,7 +22,7 @@ import { ProjectTile } from "./ProjectTile"
 import {
   isPreviewEntity,
   isRollingStockType,
-  OnEntityPrototypesLoaded,
+  OnPrototypeInfoLoaded,
   PrototypeInfo,
   rollingStockTypes,
   RotationType,
@@ -82,7 +82,7 @@ export interface MutableProjectContent extends ProjectContent {
 let nameToType: PrototypeInfo["nameToType"]
 let nameToCategory: PrototypeInfo["nameToCategory"]
 let pasteCompatibleRotations: PrototypeInfo["rotationTypes"]
-OnEntityPrototypesLoaded.addListener((i) => {
+OnPrototypeInfoLoaded.addListener((i) => {
   ;({ nameToType, nameToCategory, rotationTypes: pasteCompatibleRotations } = i)
 })
 

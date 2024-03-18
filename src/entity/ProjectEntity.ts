@@ -29,7 +29,7 @@ import { Entity, InserterEntity, LoaderEntity, RollingStockEntity, UndergroundBe
 import {
   isPreviewEntity,
   isRollingStockType,
-  OnEntityPrototypesLoaded,
+  OnPrototypeInfoLoaded,
   PrototypeInfo,
   rollingStockTypes,
 } from "./prototype-info"
@@ -39,7 +39,7 @@ import { BaseStagedValue, StagedValue } from "./StagedValue"
 import floor = math.floor
 
 let nameToType: PrototypeInfo["nameToType"]
-OnEntityPrototypesLoaded.addListener((info) => {
+OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 

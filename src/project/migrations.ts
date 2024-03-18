@@ -11,7 +11,7 @@
 
 import { _migrateAddTiles, _migrateProjectContent_0_18_0, _migrateWireConnections } from "../entity/ProjectContent"
 import { _migrateEntity_0_17_0, StageNumber } from "../entity/ProjectEntity"
-import { getEntityPrototypeInfo } from "../entity/prototype-info"
+import { getPrototypeInfo } from "../entity/prototype-info"
 import { Migrations } from "../lib/migration"
 import { UserProject } from "./ProjectDef"
 
@@ -83,7 +83,7 @@ Migrations.to("0.18.0", () => {
 
 Migrations.to("0.20.0", () => {
   // update all power switches
-  const nameToType = getEntityPrototypeInfo().nameToType
+  const nameToType = getPrototypeInfo().nameToType
   for (const [, project] of global.projects) {
     for (const entity of project.content.allEntities()) {
       if (nameToType.get(entity.firstValue.name) == "power-switch") {

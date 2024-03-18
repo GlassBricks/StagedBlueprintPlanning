@@ -40,23 +40,24 @@ export const enum RotationType {
 }
 
 declare const global: {
+  // has "entity" in name for legacy reasons
   entityPrototypeInfo: PrototypeInfo
 }
 
-let entityPrototypeInfo: PrototypeInfo
-export const OnEntityPrototypesLoaded = globalEvent<[info: PrototypeInfo]>()
+let prototypeInfo: PrototypeInfo
+export const OnPrototypeInfoLoaded = globalEvent<[info: PrototypeInfo]>()
 Events.on_configuration_changed(() => {
-  entityPrototypeInfo = global.entityPrototypeInfo = computeEntityPrototypeInfo()
-  OnEntityPrototypesLoaded.raise(entityPrototypeInfo)
+  prototypeInfo = global.entityPrototypeInfo = computeEntityPrototypeInfo()
+  OnPrototypeInfoLoaded.raise(prototypeInfo)
 })
 Events.on_init(() => {
-  entityPrototypeInfo = global.entityPrototypeInfo = computeEntityPrototypeInfo()
-  OnEntityPrototypesLoaded.raise(entityPrototypeInfo)
+  prototypeInfo = global.entityPrototypeInfo = computeEntityPrototypeInfo()
+  OnPrototypeInfoLoaded.raise(prototypeInfo)
 })
 Events.on_load(() => {
-  entityPrototypeInfo = global.entityPrototypeInfo
-  if (entityPrototypeInfo != nil) {
-    OnEntityPrototypesLoaded.raise(entityPrototypeInfo)
+  prototypeInfo = global.entityPrototypeInfo
+  if (prototypeInfo != nil) {
+    OnPrototypeInfoLoaded.raise(prototypeInfo)
   }
 })
 
@@ -168,15 +169,15 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
 
 export const allowOverlapDifferentDirection = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
 
-export function getEntityPrototypeInfo(): PrototypeInfo {
-  return entityPrototypeInfo
+export function getPrototypeInfo(): PrototypeInfo {
+  return prototypeInfo
 }
 
 let nameToCategory: PrototypeInfo["nameToCategory"]
 let nameToType: PrototypeInfo["nameToType"]
 let categories: PrototypeInfo["categories"]
 let rotationTypes: PrototypeInfo["rotationTypes"]
-OnEntityPrototypesLoaded.addListener((info) => {
+OnPrototypeInfoLoaded.addListener((info) => {
   ;({ nameToCategory, categories, rotationTypes, nameToType } = info)
 })
 

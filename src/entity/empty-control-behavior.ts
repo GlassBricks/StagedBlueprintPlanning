@@ -11,7 +11,7 @@
 
 import { BlueprintControlBehavior } from "factorio:runtime"
 import { ProjectEntity, StageNumber } from "./ProjectEntity"
-import { OnEntityPrototypesLoaded } from "./prototype-info"
+import { OnPrototypeInfoLoaded } from "./prototype-info"
 
 export const emptyBeltControlBehavior: BlueprintControlBehavior = {
   circuit_enable_disable: false,
@@ -23,7 +23,7 @@ export const emptyInserterControlBehavior: BlueprintControlBehavior = {
 }
 
 let nameToType: ReadonlyLuaMap<string, string>
-OnEntityPrototypesLoaded.addListener((info) => {
+OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 

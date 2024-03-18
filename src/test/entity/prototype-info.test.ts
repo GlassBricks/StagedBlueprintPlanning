@@ -10,11 +10,11 @@
  */
 
 import expect from "tstl-expect"
-import { getEntityPrototypeInfo } from "../../entity/prototype-info"
+import { getPrototypeInfo } from "../../entity/prototype-info"
 
 describe("getCategoryName", () => {
   function getEntityCategory(name: string): string {
-    return getEntityPrototypeInfo().nameToCategory.get(name) ?? "unknown"
+    return getPrototypeInfo().nameToCategory.get(name) ?? "unknown"
   }
   test("same type", () => {
     expect(getEntityCategory("inserter")).toBe(getEntityCategory("inserter"))
@@ -34,6 +34,6 @@ describe("getCategoryName", () => {
     expect(getEntityCategory("fast-transport-belt")).not.toInclude("|transport-belt|")
   })
   test("normal storage tanks are two-directional", () => {
-    expect(getEntityPrototypeInfo().twoDirectionTanks).toHaveKey("storage-tank")
+    expect(getPrototypeInfo().twoDirectionTanks).toHaveKey("storage-tank")
   })
 })
