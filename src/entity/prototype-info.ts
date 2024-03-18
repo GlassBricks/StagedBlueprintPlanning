@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { PrototypeMap } from "factorio:prototype"
+import { EntityType, PrototypeMap } from "factorio:prototype"
 import { LuaEntity, LuaEntityPrototype } from "factorio:runtime"
 import { list_to_map, merge } from "util"
 import { Prototypes } from "../constants"
@@ -24,7 +24,7 @@ export interface PrototypeInfo {
   categories: ReadonlyLuaMap<CategoryName, string[]>
   rotationTypes: ReadonlyLuaMap<string, RotationType>
   selectionBoxes: ReadonlyLuaMap<string, BBox>
-  nameToType: ReadonlyLuaMap<string, keyof PrototypeMap>
+  nameToType: ReadonlyLuaMap<string, EntityType>
   twoDirectionTanks: ReadonlyLuaSet<string>
   blueprintableTiles: ReadonlyLuaSet<string>
 }
@@ -126,7 +126,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     }
   }
 
-  const nameToType = new LuaMap<string, keyof PrototypeMap>()
+  const nameToType = new LuaMap<string, EntityType>()
 
   for (const [name, prototype] of game.get_filtered_entity_prototypes([{ filter: "blueprintable" }])) {
     const categoryName = getCategory(prototype)
@@ -142,7 +142,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
 
     selectionBoxes.set(name, BBox.from(prototype.selection_box))
 
-    nameToType.set(name, prototype.type as keyof PrototypeMap)
+    nameToType.set(name, prototype.type)
   }
 
   for (const [categoryName, category] of categories) {

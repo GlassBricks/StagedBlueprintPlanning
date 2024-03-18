@@ -738,7 +738,7 @@ describe("get/set properties", () => {
 
 describe("insert/deleting stages", () => {
   test("insert stage after base", () => {
-    const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "test" })
+    const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
     const entity = createProjectEntityNoCopy({ name: luaEntity.name, override_stack_size: 1 }, Pos(0, 0), nil, 1)
     entity.replaceWorldEntity(2, luaEntity)
     entity.replaceWorldEntity(3, luaEntity)
@@ -790,7 +790,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage after base", () => {
-    const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "test" })
+    const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
         name: "filter-inserter",
