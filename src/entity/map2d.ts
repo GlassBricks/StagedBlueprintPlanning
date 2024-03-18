@@ -9,18 +9,39 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { PRecord, RegisterClass } from "../lib"
+import { PRecord, PRRecord, RegisterClass } from "../lib"
 import { ProjectEntity } from "./ProjectEntity"
 
-export interface Map2D<T extends { _next?: T }> {
-  [x: number]: PRecord<number, T | nil>
+export interface LinkedMap2D<
+  T extends {
+    _next?: T
+  },
+> {
+  [x: number]: PRecord<number, T | nil> | nil
   get(x: number, y: number): T | nil
   add(x: number, y: number, value: T): void
   delete(x: number, y: number, value: T): void
 }
 
+export interface Map2D<T> {
+  [x: number]: PRecord<number, T | nil> | nil
+  get(x: number, y: number): T | nil
+  set(x: number, y: number, value: T): void
+  delete(x: number, y: number): void
+}
+
+export interface ReadonlyMap2D<T> {
+  [x: number]: PRRecord<number, T | nil> | nil
+  get(x: number, y: number): T | nil
+}
+
 @RegisterClass("Map2D")
-class Map2DImpl<T extends { _next?: T }> implements Map2D<T> {
+class LinkedMap2DImpl<
+  T extends {
+    _next?: T
+  },
+> implements LinkedMap2D<T>
+{
   [x: number]: PRecord<number, T | nil>
   get(x: number, y: number): T | nil {
     const byX = this[x]
@@ -73,7 +94,37 @@ class Map2DImpl<T extends { _next?: T }> implements Map2D<T> {
   }
 }
 
-export function newMap2D<T extends { _next: T | nil }>(): Map2D<T> {
+export function newLinkedMap2d<
+  T extends {
+    _next: T | nil
+  },
+>(): LinkedMap2D<T> {
+  return new LinkedMap2DImpl<T>()
+}
+
+@RegisterClass("uMap2D")
+class Map2DImpl<T> implements Map2D<T> {
+  [x: number]: PRecord<number, T | nil>
+  get(x: number, y: number): T | nil {
+    const byX = this[x]
+    return byX && byX[y]
+  }
+
+  set(x: number, y: number, value: T): void {
+    ;(this[x] ??= {})[y] = value
+  }
+
+  delete(x: number, y: number): void {
+    const byX = this[x]
+    if (byX == nil) return
+    delete byX[y]
+    if (next(byX)[0] == nil) {
+      delete this[x]
+    }
+  }
+}
+
+export function newMap2d<T>(): Map2D<T> {
   return new Map2DImpl<T>()
 }
 
@@ -81,7 +132,7 @@ function isArray<T>(value: T | T[]): value is T[] {
   return (value as ProjectEntity).firstStage == nil
 }
 
-export function _migrateMap2DToLinkedList(map: Map2D<any>): void {
+export function _migrateMap2DToLinkedList(map: LinkedMap2D<any>): void {
   for (const [, byX] of pairs(map as Record<number, PRecord<number, any>>)) {
     for (const [y, value] of pairs(byX)) {
       if (isArray(value)) {

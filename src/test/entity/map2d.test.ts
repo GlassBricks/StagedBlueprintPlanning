@@ -10,84 +10,131 @@
  */
 
 import expect from "tstl-expect"
-import { Map2D, newMap2D } from "../../entity/map2d"
+import { LinkedMap2D, Map2D, newLinkedMap2d, newMap2d } from "../../entity/map2d"
 
 interface Foo {
   [x: number]: string
   _next?: Foo
 }
 
-let map2d: Map2D<Foo>
+describe("LinkedMap2D", () => {
+  let lMap2D: LinkedMap2D<Foo>
 
-before_each(() => {
-  map2d = newMap2D()
-})
+  before_each(() => {
+    lMap2D = newLinkedMap2d()
+  })
 
-test("add and get", () => {
-  map2d.add(1, 1, ["a"])
-  expect(map2d.get(1, 1)).toEqual(["a"])
-})
+  test("add and get", () => {
+    lMap2D.add(1, 1, ["a"])
+    expect(lMap2D.get(1, 1)).toEqual(["a"])
+  })
 
-test("add and get multiple", () => {
-  map2d.add(1, 1, ["a"])
-  map2d.add(1, 1, ["b"])
-  expect(map2d.get(1, 1)).toEqual({
-    [1]: "b",
-    _next: ["a"],
+  test("add and get multiple", () => {
+    lMap2D.add(1, 1, ["a"])
+    lMap2D.add(1, 1, ["b"])
+    expect(lMap2D.get(1, 1)).toEqual({
+      [1]: "b",
+      _next: ["a"],
+    })
+  })
+
+  test("add in multiple coords", () => {
+    lMap2D.add(1, 1, ["a"])
+    lMap2D.add(2, 2, ["b"])
+    expect(lMap2D.get(1, 1)).toEqual(["a"])
+    expect(lMap2D.get(2, 2)).toEqual(["b"])
+  })
+
+  test("remove and get first", () => {
+    const va: Foo = ["a"]
+    lMap2D.add(1, 1, va)
+    lMap2D.add(1, 1, ["b"])
+    lMap2D.delete(1, 1, va)
+    expect(lMap2D.get(1, 1)).toEqual(["b"])
+  })
+
+  test("remove and get second", () => {
+    const va: Foo = ["a"]
+    lMap2D.add(1, 1, ["b"])
+    lMap2D.add(1, 1, va)
+    expect(va._next).toBeAny()
+    lMap2D.delete(1, 1, va)
+    expect(va._next).toBeNil()
+    expect(lMap2D.get(1, 1)).toEqual(["b"])
+  })
+
+  test("three elements, removing second", () => {
+    const vb: Foo = ["b"]
+    lMap2D.add(1, 1, ["a"])
+    lMap2D.add(1, 1, vb)
+    lMap2D.add(1, 1, ["c"])
+    lMap2D.delete(1, 1, vb)
+    expect(lMap2D.get(1, 1)).toEqual({
+      [1]: "c",
+      _next: ["a"],
+    })
+    expect(vb._next).toBeNil()
+  })
+
+  test("removes empty entries", () => {
+    const va = ["a"]
+    lMap2D.add(1, 1, va)
+    lMap2D.delete(1, 1, va)
+    expect(lMap2D).toEqual({})
+  })
+
+  test("removes empty from multiple values", () => {
+    const va = ["a"]
+    const vb = ["b"]
+    lMap2D.add(1, 1, va)
+    lMap2D.add(1, 1, vb)
+    lMap2D.delete(1, 1, va)
+    lMap2D.delete(1, 1, vb)
+    expect(lMap2D).toEqual({})
   })
 })
 
-test("add in multiple coords", () => {
-  map2d.add(1, 1, ["a"])
-  map2d.add(2, 2, ["b"])
-  expect(map2d.get(1, 1)).toEqual(["a"])
-  expect(map2d.get(2, 2)).toEqual(["b"])
-})
+describe("map2d", () => {
+  let map: Map2D<string>
 
-test("remove and get first", () => {
-  const va: Foo = ["a"]
-  map2d.add(1, 1, va)
-  map2d.add(1, 1, ["b"])
-  map2d.delete(1, 1, va)
-  expect(map2d.get(1, 1)).toEqual(["b"])
-})
-
-test("remove and get second", () => {
-  const va: Foo = ["a"]
-  map2d.add(1, 1, ["b"])
-  map2d.add(1, 1, va)
-  expect(va._next).toBeAny()
-  map2d.delete(1, 1, va)
-  expect(va._next).toBeNil()
-  expect(map2d.get(1, 1)).toEqual(["b"])
-})
-
-test("three elements, removing second", () => {
-  const vb: Foo = ["b"]
-  map2d.add(1, 1, ["a"])
-  map2d.add(1, 1, vb)
-  map2d.add(1, 1, ["c"])
-  map2d.delete(1, 1, vb)
-  expect(map2d.get(1, 1)).toEqual({
-    [1]: "c",
-    _next: ["a"],
+  before_each(() => {
+    map = newMap2d()
   })
-  expect(vb._next).toBeNil()
-})
 
-test("removes empty entries", () => {
-  const va = ["a"]
-  map2d.add(1, 1, va)
-  map2d.delete(1, 1, va)
-  expect(map2d).toEqual({})
-})
+  test("set and get", () => {
+    map.set(1, 1, "a")
+    expect(map.get(1, 1)).toEqual("a")
+    expect(map[1]![1]).toEqual("a")
+    expect(map.get(2, 1)).toBeNil()
+    expect(map[2]).toBeNil()
+  })
 
-test("removes empty from multiple values", () => {
-  const va = ["a"]
-  const vb = ["b"]
-  map2d.add(1, 1, va)
-  map2d.add(1, 1, vb)
-  map2d.delete(1, 1, va)
-  map2d.delete(1, 1, vb)
-  expect(map2d).toEqual({})
+  test("set and get at same position", () => {
+    map.set(1, 1, "a")
+    map.set(1, 1, "b")
+    expect(map[1]![1]).toEqual("b")
+    expect(map.get(1, 1)).toEqual("b")
+  })
+
+  test("delete", () => {
+    map.set(1, 1, "a")
+    map.delete(1, 1)
+    expect(map.get(1, 1)).toBeNil()
+    expect(map[1]).toBeNil()
+  })
+
+  test("delete with other value at same x", () => {
+    map.set(1, 1, "a")
+    map.set(1, 2, "b")
+    map.delete(1, 1)
+    expect(map.get(1, 1)).toBeNil()
+    expect(map[1]![2]).toEqual("b")
+  })
+
+  test("set at multiple positions", () => {
+    map.set(1, 1, "a")
+    map.set(2, 2, "b")
+    expect(map[1]![1]).toEqual("a")
+    expect(map[2]![2]).toEqual("b")
+  })
 })
