@@ -13,8 +13,13 @@
 {
   pcall(require, "test.module-mock")
   // require("__debugadapter__/debugadapter.lua")
+  $CURRENT_VERSION = script.active_mods[script.mod_name]!
+}
+declare global {
+  let $CURRENT_VERSION: VersionString
 }
 
+import { VersionString } from "factorio:common"
 import { Events } from "./lib"
 import { formatVersion, Migrations } from "./lib/migration"
 import "./project"
