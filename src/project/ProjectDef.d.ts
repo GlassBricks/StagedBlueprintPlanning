@@ -16,7 +16,8 @@ import {
   OverrideableBlueprintSettings,
 } from "../blueprints/blueprint-settings"
 import { MutableProjectContent } from "../entity/ProjectContent"
-import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { StageNumber } from "../entity/ProjectEntity"
+import { StagedValue } from "../entity/StagedValue"
 import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { PropertiesTable } from "../utils/properties-obj"
@@ -30,7 +31,7 @@ export type ProjectId = number & {
 }
 export interface Project {
   numStages(): StageNumber
-  lastStageFor(entity: ProjectEntity): StageNumber
+  lastStageFor(entity: StagedValue<AnyNotNil, AnyNotNil>): StageNumber
 
   getStageName(stage: StageNumber): LocalisedString
   getSurface(stage: StageNumber): LuaSurface | nil

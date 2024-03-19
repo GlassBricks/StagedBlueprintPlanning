@@ -22,7 +22,8 @@ import {
   StageBlueprintSettings,
 } from "../blueprints/blueprint-settings"
 import { newProjectContent } from "../entity/ProjectContent"
-import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { StageNumber } from "../entity/ProjectEntity"
+import { StagedValue } from "../entity/StagedValue"
 import {
   asMutable,
   bind,
@@ -126,8 +127,8 @@ class UserProjectImpl implements UserProject {
   numStages(): StageNumber {
     return luaLength(this.stages)
   }
-  lastStageFor(entity: ProjectEntity): StageNumber {
-    if (entity.lastStage != nil) return min(entity.lastStage, this.numStages())
+  lastStageFor(value: StagedValue<any, any>): StageNumber {
+    if (value.lastStage != nil) return min(value.lastStage, this.numStages())
     return this.numStages()
   }
 

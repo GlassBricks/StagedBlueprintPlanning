@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LocalisedString, LuaEntity } from "factorio:runtime"
+import { LocalisedString, LuaEntity, TilePosition, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import {
@@ -19,10 +19,11 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
+import { ProjectTile } from "../entity/ProjectTile"
 import { isPreviewEntity } from "../entity/prototype-info"
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
-import { RegisterClass } from "../lib"
+import { Mutable, RegisterClass } from "../lib"
 import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
@@ -41,23 +42,31 @@ export interface WorldUpdates {
   updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void
 
   updateWireConnections(entity: ProjectEntity): void
+
   clearWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
+
   refreshWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
   refreshAllWorldEntities(entity: ProjectEntity): void
+
+  rebuildWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
 
   makeSettingsRemnant(entity: ProjectEntity): void
   reviveSettingsRemnant(entity: ProjectEntity): void
 
-  rebuildWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
-
   disableAllEntitiesInStage(stage: StageNumber): void
   enableAllEntitiesInStage(stage: StageNumber): void
+
   deleteWorldEntities(entity: ProjectEntity): void
+
   tryDollyEntities(entity: ProjectEntity, stage: StageNumber): ProjectEntityDollyResult
   resetUnderground(entity: UndergroundBeltProjectEntity, stage: StageNumber): void
 
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
+
+  updateTilesInVisibleStages(tile: ProjectTile): void
+  updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void
+  resetTiles(tile: ProjectTile): void
 
   // passed from EntityHighlights
   updateAllHighlights(entity: ProjectEntity): void
@@ -107,6 +116,9 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     resetUnderground,
     rebuildAllStages,
     updateAllHighlights,
+    updateTilesInVisibleStages,
+    updateTilesOnMovedUp,
+    resetTiles,
   }
 
   function makePreviewEntity(
@@ -440,5 +452,41 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
 
   function rebuildAllStages(): void {
     submitTask(new RebuildAllStagesTask(project))
+  }
+
+  function updateTilesInVisibleStages(tile: ProjectTile): void {
+    const position = tile.position
+    const tileWrite: Mutable<TileWrite> = {
+      position,
+      name: tile.firstValue,
+    }
+    const tileWriteArr = [tileWrite]
+    for (const [stage, value] of tile.iterateValues(tile.firstStage, project.lastStageFor(tile))) {
+      const surface = project.getSurface(stage)!
+      if (value) {
+        tileWrite.name = value
+        surface.set_tiles(tileWriteArr)
+      }
+    }
+  }
+  function updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void {
+    resetTilesInRange(tile.position, oldFirstStage, tile.firstStage - 1)
+  }
+  function resetTiles(tile: ProjectTile): void {
+    resetTilesInRange(tile.position, tile.firstStage, project.lastStageFor(tile))
+  }
+  function resetTilesInRange(position: TilePosition, startStage: StageNumber, endStage: StageNumber): void {
+    const tileWrite: Mutable<TileWrite> = {
+      position,
+      name: nil!,
+    }
+    const tileWriteArr = [tileWrite]
+    for (const stage of $range(startStage, endStage)) {
+      const surface = project.getSurface(stage)!
+      const tile =
+        surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
+      tileWrite.name = tile
+      surface.set_tiles(tileWriteArr)
+    }
   }
 }

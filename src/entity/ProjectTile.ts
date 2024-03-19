@@ -67,6 +67,10 @@ class ProjectTileImpl extends BaseStagedValue<string, string> implements Project
   protected override applyDiff(this: void, _value: string, diff: string): string {
     return diff
   }
+
+  override setLastStageUnchecked(): void {
+    error("TODO")
+  }
 }
 
 export function createProjectTile(firstValue: string, position: Position, firstStage: StageNumber): ProjectTile {

@@ -21,8 +21,9 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
+import { createProjectTile } from "../../entity/ProjectTile"
 import { createEntity, saveEntity } from "../../entity/save-load"
-import { Pos } from "../../lib/geometry"
+import { BBox, Pos, Position } from "../../lib/geometry"
 import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
 import { WorldUpdates } from "../../project/world-updates"
@@ -684,5 +685,54 @@ describe("circuit wires", () => {
     addExtraWires(entities)
     worldUpdates.refreshWorldEntityAtStage(entity1, 1)
     assertSingleWire(entities)
+  })
+})
+
+describe("tiles", () => {
+  function setTilesOnAllSurfaces(position: Position, tile: string) {
+    for (const s of surfaces) {
+      s.set_tiles([
+        {
+          name: tile,
+          position,
+        },
+      ])
+    }
+  }
+  before_each(() => {
+    for (const s of surfaces) {
+      s.build_checkerboard(BBox.coords(-2, -2, 2, 2))
+    }
+  })
+  test("can set tiles", () => {
+    setTilesOnAllSurfaces(Pos(0, 0), "lab-white")
+    const projectTile = createProjectTile("concrete", Pos(0, 0), 2)
+    worldUpdates.updateTilesInVisibleStages(projectTile)
+
+    expect(project.getSurface(1)?.get_tile(0, 0).name).toBe("lab-white")
+    expect(project.getSurface(2)?.get_tile(0, 0).name).toBe("concrete")
+    expect(project.getSurface(3)?.get_tile(0, 0).name).toBe("concrete")
+  })
+
+  test("can clear tiles when moved up", () => {
+    setTilesOnAllSurfaces(Pos(0, 0), "lab-white")
+    const projectTile = createProjectTile("concrete", Pos(0, 0), 2)
+    worldUpdates.updateTilesInVisibleStages(projectTile)
+    projectTile.setFirstStageUnchecked(3)
+    worldUpdates.updateTilesOnMovedUp(projectTile, 2)
+
+    expect(project.getSurface(1)?.get_tile(0, 0).name).toBe("lab-white")
+    expect(project.getSurface(2)?.get_tile(0, 0).name).toBe("lab-white")
+    expect(project.getSurface(3)?.get_tile(0, 0).name).toBe("concrete")
+  })
+
+  test("can reset tiles", () => {
+    setTilesOnAllSurfaces(Pos(0, 0), "lab-white")
+    const projectTile = createProjectTile("concrete", Pos(0, 0), 2)
+    worldUpdates.updateTilesInVisibleStages(projectTile)
+    worldUpdates.resetTiles(projectTile)
+    for (const s of surfaces) {
+      expect(s.get_tile(0, 0).name).toBe("lab-white")
+    }
   })
 })

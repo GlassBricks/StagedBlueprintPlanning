@@ -22,7 +22,7 @@ import {
 import { StageNumber } from "./ProjectEntity"
 
 export interface StagedValue<T, D> {
-  readonly firstValue: Readonly<T>
+  readonly firstValue: T
   /** May not correctly update diffs. */
   setFirstValueDirectly(value: T): void
 
