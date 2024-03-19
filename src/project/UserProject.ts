@@ -82,7 +82,9 @@ class UserProjectImpl implements UserProject {
   localEvents = new SimpleEvent<LocalProjectEvent>()
 
   defaultBlueprintSettings = createNewBlueprintSettings()
+
   landfillTile = property<string | nil>("landfill")
+  stagedTilesEnabled = property(true)
 
   valid = true
   private readonly stages: Record<number, StageImpl> = {}
@@ -401,6 +403,23 @@ Migrations.early("0.23.0", () => {
 Migrations.early("0.26.0", () => {
   for (const project of global.projects) {
     project.displayName = nil!
+  }
+})
+Migrations.early($CURRENT_VERSION, () => {
+  let anyProjectMigrated = false
+  for (const project of global.projects) {
+    if (project.stagedTilesEnabled == nil) {
+      project.stagedTilesEnabled = property(false)
+      anyProjectMigrated = true
+    }
+  }
+  if (anyProjectMigrated) {
+    game.print([
+      "",
+      "Staged tiles support was added in ",
+      $CURRENT_VERSION,
+      "To enable staged tiles for old projects, go to project settings -> Other.",
+    ])
   }
 })
 Migrations.to("0.26.1", () => {

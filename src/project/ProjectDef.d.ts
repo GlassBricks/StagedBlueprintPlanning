@@ -55,6 +55,7 @@ export interface UserProject extends Project {
 
   // this may become a per-stage setting in the future
   readonly landfillTile: MutableProperty<string | nil>
+  readonly stagedTilesEnabled: MutableProperty<boolean>
 
   displayName(): Property<LocalisedString>
   getStage(stageNumber: StageNumber): Stage | nil
