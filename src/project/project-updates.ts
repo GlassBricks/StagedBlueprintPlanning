@@ -23,11 +23,12 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
+import { createProjectTile, ProjectTile } from "../entity/ProjectTile"
 import { areUpgradeableTypes } from "../entity/prototype-info"
 import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
-import { Pos } from "../lib/geometry"
+import { Pos, Position } from "../lib/geometry"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
 import min = math.min
@@ -85,6 +86,8 @@ export interface ProjectUpdates {
 
   resetTrain(entity: RollingStockProjectEntity): void
   setTrainLocationToCurrent(entity: RollingStockProjectEntity): void
+
+  setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile
 }
 
 export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): ProjectUpdates {
@@ -102,6 +105,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     updateWorldEntities,
     updateWorldEntitiesOnLastStageChanged,
     updateAllHighlights,
+    updateTilesInVisibleStages,
+    updateTilesOnMovedUp,
+    resetTiles,
   } = WorldUpdates
 
   return {
@@ -123,6 +129,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     moveAllPropsDown,
     resetTrain,
     setTrainLocationToCurrent,
+    setNewTile,
   }
 
   function fixNewUndergroundBelt(
@@ -718,5 +725,16 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
         addNewEntity(luaEntity, stage)
       }
     }
+  }
+
+  function setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile {
+    const newTile = createProjectTile(firstValue, position, firstStage)
+    const oldTile = content.tiles.get(position.x, position.y)
+    if (oldTile) {
+      resetTiles(oldTile)
+    }
+    content.setTile(newTile)
+    updateTilesInVisibleStages(newTile)
+    return newTile
   }
 }

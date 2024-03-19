@@ -1445,3 +1445,33 @@ describe("trains", () => {
     })
   })
 })
+
+describe("tiles", () => {
+  test("adding new tile", () => {
+    const pos = { x: 1, y: 2 }
+    const tile = projectUpdates.setNewTile(pos, 2, "concrete")
+
+    expect(project.content.tiles.get(pos.x, pos.y)).toBe(tile)
+    expect(tile).toMatchTable({
+      firstStage: 2,
+      firstValue: "concrete",
+    })
+    expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(tile)
+
+    expectedWuCalls = 1
+  })
+  test("setNewTile may delete old tile if it exists", () => {
+    const pos = { x: 1, y: 2 }
+    const oldTile = projectUpdates.setNewTile(pos, 2, "concrete")
+    mock.clear(worldUpdates)
+
+    const newTile = projectUpdates.setNewTile(pos, 2, "stone-path")
+    expect(project.content.tiles.get(pos.x, pos.y)).toMatchTable({
+      firstStage: 2,
+      firstValue: "stone-path",
+    })
+    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(oldTile)
+    expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(newTile)
+    expectedWuCalls = 2
+  })
+})
