@@ -300,7 +300,7 @@ export declare const enum L_GuiProjectSettings {
   EnableStagedTilesTooltip = "bp100.gui.project-settings.enable-staged-tiles-tooltip",
   /** Scan existing tiles [img=info] */
   ScanExistingTiles = "bp100.gui.project-settings.scan-existing-tiles",
-  /** Scans all already placed tiles in the project, and adds it to staged tiles. */
+  /** Scans already placed tiles in the project and updates them appropriately across stages. */
   ScanExistingTilesTooltip = "bp100.gui.project-settings.scan-existing-tiles-tooltip",
   /** Rebuild all stages */
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
