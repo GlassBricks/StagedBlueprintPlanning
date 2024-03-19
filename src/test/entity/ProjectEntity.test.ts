@@ -774,22 +774,29 @@ describe("insert/deleting stages", () => {
     })
   })
 
-  test("insert stage before base", () => {
+  test("if inserting stage right above last stage, last stage increases", () => {
+    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    entity.setLastStageUnchecked(3)
+
+    entity.insertStage(4)
+    expect(entity.lastStage).toBe(4)
+  })
+  test("if inserting stage well after last stage, last stage stays the same", () => {
+    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    entity.setLastStageUnchecked(3)
+
+    entity.insertStage(5)
+    expect(entity.lastStage).toBe(3)
+  })
+
+  test("insert stage before firstStage", () => {
     const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
 
     entity.insertStage(1)
     expect(entity.firstStage).toBe(3)
   })
 
-  test("insert stage after last stage", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
-    entity.setLastStageUnchecked(3)
-
-    entity.insertStage(4)
-    expect(entity.lastStage).toBe(3)
-  })
-
-  test("delete stage after base", () => {
+  test("delete stage after firstStage", () => {
     const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
