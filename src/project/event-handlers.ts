@@ -26,10 +26,14 @@ import {
   MapPosition,
   OnBuiltEntityEvent,
   OnPlayerAltSelectedAreaEvent,
+  OnPlayerBuiltTileEvent,
   OnPlayerMinedEntityEvent,
+  OnPlayerMinedTileEvent,
   OnPlayerReverseSelectedAreaEvent,
   OnPlayerSelectedAreaEvent,
   OnPreBuildEvent,
+  OnRobotBuiltTileEvent,
+  OnRobotMinedTileEvent,
   PlayerIndex,
   Tags,
 } from "factorio:runtime"
@@ -1191,6 +1195,51 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   if (undoAction) registerUndoAction(undoAction)
 })
 
+// Tiles
+
+function onTileBuilt(e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent, playerIndex?: PlayerIndex): void {
+  const stage = getStageAtSurface(e.surface_index)
+  if (!stage || !stage.project.stagedTilesEnabled.get()) return
+  const { stageNumber } = stage
+  const name = e.tile.name
+  const onTileBuilt = stage.actions.onTileBuilt
+  for (const posData of e.tiles) {
+    onTileBuilt(posData.position, name, stageNumber, playerIndex)
+  }
+}
+Events.on_player_built_tile((e) => {
+  onTileBuilt(e, e.player_index)
+})
+Events.on_robot_built_tile((e) => {
+  onTileBuilt(e)
+})
+
+Events.script_raised_set_tiles((e) => {
+  if (e.mod_name == script.mod_name) return
+  const stage = getStageAtSurface(e.surface_index)
+  if (!stage || !stage.project.stagedTilesEnabled.get()) return
+  const { stageNumber } = stage
+  const onTileBuilt = stage.actions.onTileBuilt
+  for (const posData of e.tiles) {
+    onTileBuilt(posData.position, posData.name, stageNumber, nil)
+  }
+})
+function onTileMined(e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent, playerIndex?: PlayerIndex): void {
+  const stage = getStageAtSurface(e.surface_index)
+  if (!stage || !stage.project.stagedTilesEnabled.get()) return
+  const { stageNumber } = stage
+  const onTileMined = stage.actions.onTileMined
+  for (const posData of e.tiles) {
+    onTileMined(posData.position, stageNumber, playerIndex)
+  }
+}
+Events.on_player_mined_tile((e) => {
+  onTileMined(e, e.player_index)
+})
+Events.on_robot_mined_tile((e) => {
+  onTileMined(e)
+})
+
 // Generated chunks
 
 Events.on_chunk_generated((e) => {
@@ -1274,13 +1323,6 @@ declare global {
     needs028MoveToolNotification?: boolean
   }
 }
-
-// Migrations.to("0.28.0", () => {
-Events.on_init(() => {
-  for (const [, playerData] of pairs(global.players)) {
-    playerData.needs028MoveToolNotification = true
-  }
-})
 
 Events.on_player_cursor_stack_changed((e) => {
   const playerData = global.players[e.player_index]

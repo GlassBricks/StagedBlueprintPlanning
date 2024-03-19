@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity, LuaTile, nil, PlayerIndex, Tile } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, nil, PlayerIndex } from "factorio:runtime"
 import { Colors, L_Game } from "../constants"
 import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { LuaEntityInfo } from "../entity/Entity"
@@ -86,8 +86,10 @@ export interface UserActions {
     byPlayer: PlayerIndex,
   ): boolean
 
-  onTileBuilt(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
-  onTileMined(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
+  // onTileBuilt(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
+  // onTileMined(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
+  onTileBuilt(position: Position, value: string, stage: StageNumber, byPlayer: PlayerIndex | nil): void
+  onTileMined(position: Position, stage: StageNumber, byPlayer: PlayerIndex | nil): void
 }
 
 /** @noSelf */
@@ -742,28 +744,26 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     if (area) prepareArea(project.getSurface(stage)!, area)
   }
 
-  function onTileBuilt(tile: LuaTile, stage: StageNumber): void {
-    const { position, name } = tile
+  function onTileBuilt(position: Position, name: string, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
     const existingTile = content.tiles.get(position.x, position.y)
     if (!blueprintableTiles.has(name)) {
       if (existingTile) {
-        onTileMined(tile, stage, nil)
+        onTileMined(position, stage, byPlayer)
       }
       return
     }
     if (!existingTile) {
-      setNewTile(position, stage, tile.name)
+      setNewTile(position, stage, name)
       return
     }
     if (stage < existingTile.firstStage) {
       moveTileDown(existingTile, stage)
     } else {
-      setTileValueAtStage(existingTile, stage, tile.name)
+      setTileValueAtStage(existingTile, stage, name)
     }
   }
 
-  function onTileMined(tile: LuaTile, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
-    const position = tile.position
+  function onTileMined(position: Position, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
     const existingTile = content.tiles.get(position.x, position.y)
     if (existingTile) {
       if (stage == existingTile.firstStage) {

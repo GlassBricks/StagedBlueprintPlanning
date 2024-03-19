@@ -58,6 +58,7 @@ before_each(() => {
   expectedNumCalls = 1
   surface.find_entities().forEach((e) => e.destroy())
   project.actions.onEntityPossiblyUpdated.returns({} as any)
+  mock.clear(project.actions)
 })
 after_each(() => {
   _assertInValidState()
@@ -93,6 +94,14 @@ before_each(() => {
 const TestUndo = UndoHandler("event listener test undo", (_, data: string) => undoFn(data))
 
 describe("add", () => {
+  test("tick buffer", () => {
+    after_ticks(60, () => {
+      // this is just so game has time to catch up with building tiles
+      mock.clear(project.actions)
+      expectedNumCalls = 0
+      expect(project.stagedTilesEnabled.get()).toBe(false)
+    })
+  })
   test("player built entity", () => {
     project.actions.onEntityCreated.invokes(
       (_a, _b, byPlayer) => byPlayer && TestUndo.createAction(byPlayer, "overbuild preview"),
@@ -1281,6 +1290,153 @@ test("splitter has correct values when not flipped", () => {
 
   expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
   expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, entity)
+})
+
+// tiles
+describe("tiles", () => {
+  const pos = Pos(1, 2)
+  describe("if tiles enabled", () => {
+    before_each(() => {
+      project.stagedTilesEnabled.set(true)
+    })
+    after_each(() => {
+      project.stagedTilesEnabled.set(false)
+    })
+
+    test("player built tile", () => {
+      Events.raiseFakeEventNamed("on_player_built_tile", {
+        tile: game.tile_prototypes["stone-path"],
+        item: nil!,
+        stack: nil!,
+        tiles: [
+          {
+            position: pos,
+            old_tile: nil!,
+          },
+        ],
+        player_index: player.index,
+        surface_index: surface.index,
+      })
+
+      expect(project.actions.onTileBuilt).toHaveBeenCalledWith(pos, "stone-path", 1, 1)
+    })
+    test("robot built tile", () => {
+      Events.raiseFakeEventNamed("on_robot_built_tile", {
+        surface_index: surface.index,
+        tile: game.tile_prototypes["stone-path"],
+        robot: nil!,
+        stack: nil!,
+        item: nil!,
+        tiles: [
+          {
+            position: pos,
+            old_tile: nil!,
+          },
+        ],
+      })
+
+      expect(project.actions.onTileBuilt).toHaveBeenCalledWith(pos, "stone-path", 1, nil)
+    })
+
+    test("script built tile", () => {
+      Events.raiseFakeEventNamed("script_raised_set_tiles", {
+        surface_index: surface.index,
+        tiles: [
+          {
+            position: pos,
+            name: "stone-path",
+          },
+        ],
+      })
+      expect(project.actions.onTileBuilt).toHaveBeenCalledWith(pos, "stone-path", 1)
+    })
+
+    test("player mined tile", () => {
+      surface.set_tiles([{ name: "stone-path", position: pos }], false, false, false, false)
+      player.mine_tile(surface.get_tile(pos.x, pos.y))
+      expect(project.actions.onTileMined).toHaveBeenCalledWith(pos, 1, 1)
+    })
+    test("robot mined tile", () => {
+      surface.set_tiles([{ name: "stone-path", position: pos }], false, false, false, false)
+      Events.raiseFakeEventNamed("on_robot_mined_tile", {
+        surface_index: surface.index,
+        tiles: [
+          {
+            position: pos,
+            old_tile: nil!,
+          },
+        ],
+        robot: nil!,
+      })
+      expect(project.actions.onTileMined).toHaveBeenCalledWith(pos, 1, nil)
+    })
+  })
+  describe("if tiles disabled", () => {
+    before_each(() => {
+      project.stagedTilesEnabled.set(false)
+    })
+    after_each(() => {
+      expectedNumCalls = 0
+    })
+    test("player built tile", () => {
+      Events.raiseFakeEventNamed("on_player_built_tile", {
+        tile: game.tile_prototypes["stone-path"],
+        item: nil!,
+        stack: nil!,
+        tiles: [
+          {
+            position: pos,
+            old_tile: nil!,
+          },
+        ],
+        player_index: player.index,
+        surface_index: surface.index,
+      })
+    })
+    test("robot built tile", () => {
+      Events.raiseFakeEventNamed("on_robot_built_tile", {
+        surface_index: surface.index,
+        tile: game.tile_prototypes["stone-path"],
+        robot: nil!,
+        stack: nil!,
+        item: nil!,
+        tiles: [
+          {
+            position: pos,
+            old_tile: nil!,
+          },
+        ],
+      })
+    })
+    test("script built tile", () => {
+      Events.raiseFakeEventNamed("script_raised_set_tiles", {
+        surface_index: surface.index,
+        tiles: [
+          {
+            position: pos,
+            name: "stone-path",
+          },
+        ],
+      })
+    })
+    test("player mined tile", () => {
+      surface.set_tiles([{ name: "stone-path", position: pos }], false, false, false, false)
+      player.mine_tile(surface.get_tile(pos.x, pos.y))
+    })
+    test("robot mined tile", () => {
+      surface.set_tiles([{ name: "stone-path", position: pos }], false, false, false, false)
+      Events.raiseFakeEventNamed("on_robot_mined_tile", {
+        surface_index: surface.index,
+        tiles: [
+          {
+            position: pos,
+            old_tile: nil!,
+          },
+        ],
+        robot: nil!,
+      })
+    })
+  })
 })
 
 // mod support

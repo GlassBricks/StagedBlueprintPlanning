@@ -84,7 +84,9 @@ class UserProjectImpl implements UserProject {
   defaultBlueprintSettings = createNewBlueprintSettings()
 
   landfillTile = property<string | nil>("landfill")
-  stagedTilesEnabled = property(true)
+  // disable tiles by default in tests, since its slow
+  // the appropriate tests will enable it
+  stagedTilesEnabled = property(!("factorio-test" in script.active_mods))
 
   valid = true
   private readonly stages: Record<number, StageImpl> = {}
