@@ -269,8 +269,11 @@ test("replaceTile", () => {
 test("deleteTile", () => {
   const tile = createProjectTile("foo", { x: 1, y: 2 }, 1)
   content.setTile(tile)
-  content.deleteTile(1, 2)
+  const ret = content.deleteTile(tile)
   expect(content.tiles.get(1, 2)).toBeNil()
+  expect(ret).toBe(true)
+  const ret2 = content.deleteTile(tile)
+  expect(ret2).toBe(false)
 })
 
 test("insertStage", () => {

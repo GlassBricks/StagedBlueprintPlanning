@@ -9,11 +9,20 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LocalisedString, LuaEntity, PlayerIndex, SurfaceCreateEntity } from "factorio:runtime"
+import {
+  BlueprintEntity,
+  LocalisedString,
+  LuaEntity,
+  PlayerIndex,
+  SurfaceCreateEntity,
+  Tile,
+  TilePosition,
+} from "factorio:runtime"
 import expect from "tstl-expect"
 import { L_Game, Prototypes } from "../../constants"
 import { BpStagedInfo } from "../../copy-paste/blueprint-stage-info"
 import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
+import { createProjectTile, ProjectTile } from "../../entity/ProjectTile"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
@@ -118,7 +127,7 @@ function addEntity(
 
 let numNotifications = 0
 let numIndicators = 0
-function assertNotified(entity: ProjectEntity, message: LocalisedString, errorSound: boolean) {
+function assertNotified(entity: ProjectEntity | ProjectTile, message: LocalisedString, errorSound: boolean) {
   expect(notifications.createNotification).toHaveBeenCalledTimes(++numNotifications)
   expect(notifications.createNotification).toHaveBeenLastCalledWith(entity, playerIndex, message, errorSound)
 }
@@ -837,5 +846,76 @@ describe("on surface cleared", () => {
     const { entity } = addEntity(2)
     userActions.onSurfaceCleared(2)
     expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(entity, 2)
+  })
+})
+
+describe("tiles", () => {
+  function addTile(name: string, position: TilePosition, stage: StageNumber) {
+    const tile = createProjectTile(name, position, stage)
+    project.content.setTile(tile)
+    return tile
+  }
+  describe("building tiles", () => {
+    const position = { x: 1, y: 1 }
+    test("building a completely new tile calls setNewTile", () => {
+      const tile: Tile = { name: "concrete", position }
+      userActions.onTileBuilt(tile, 2, playerIndex)
+      expect(projectUpdates.setNewTile).toHaveBeenCalledWith(tile.position, 2, "concrete")
+    })
+
+    test("building a non-blueprintable tile on previously empty spot does nothing", () => {
+      const tile: Tile = { name: "water", position }
+      userActions.onTileBuilt(tile, 2, playerIndex)
+      expect(projectUpdates.setNewTile).not.toHaveBeenCalled()
+      expectedNumCalls = 0
+    })
+
+    test("building a tile underneath an existing tile calls moveTileDown", () => {
+      const tile = addTile("concrete", position, 2)
+      userActions.onTileBuilt({ name: "refined-concrete", position }, 1, playerIndex)
+      expect(projectUpdates.moveTileDown).toHaveBeenCalledWith(tile, 1)
+      expect(projectUpdates.setNewTile).not.toHaveBeenCalled()
+    })
+    test("building a tile at the first stage updates the tile", () => {
+      const tile = addTile("concrete", position, 2)
+      userActions.onTileBuilt({ name: "refined-concrete", position }, 2, playerIndex)
+      expect(projectUpdates.setTileValueAtStage).toHaveBeenCalledWith(tile, 2, "refined-concrete")
+    })
+    test("building a tile at higher stage updates the tile", () => {
+      const tile = addTile("concrete", position, 2)
+      userActions.onTileBuilt({ name: "refined-concrete", position }, 3, playerIndex)
+      expect(projectUpdates.setTileValueAtStage).toHaveBeenCalledWith(tile, 3, "refined-concrete")
+    })
+    test("building a non-blueprintable tile on existing tile same as mining", () => {
+      const tile = addTile("concrete", position, 2)
+      userActions.onTileBuilt({ name: "water", position }, 2, playerIndex)
+      expect(projectUpdates.deleteTile).toHaveBeenCalledWith(tile)
+      expectedNumCalls = 1
+    })
+  })
+  describe("mining tiles", () => {
+    test("mining a tile does nothing if not in project", () => {
+      userActions.onTileMined({ name: "concrete", position: { x: 1, y: 1 } }, 2, playerIndex)
+      expectedNumCalls = 0
+    })
+    test("if mining at first stage, calls deleteTile", () => {
+      const tile = addTile("concrete", { x: 1, y: 1 }, 2)
+      userActions.onTileMined({ name: "concrete", position: { x: 1, y: 1 } }, 2, playerIndex)
+      expect(projectUpdates.deleteTile).toHaveBeenCalledWith(tile)
+      expectedNumCalls = 1
+    })
+    test("if mining at lower stage, that's strange, does nothing", () => {
+      addTile("concrete", { x: 1, y: 1 }, 2)
+      userActions.onTileMined({ name: "concrete", position: { x: 1, y: 1 } }, 1, playerIndex)
+      expect(projectUpdates.deleteTile).not.toHaveBeenCalled()
+      expectedNumCalls = 0
+    })
+    test("if mining at higher stage, forbids and notifies", () => {
+      const tile = addTile("concrete", { x: 1, y: 1 }, 2)
+      userActions.onTileMined({ name: "concrete", position: { x: 1, y: 1 } }, 3, playerIndex)
+      expect(worldUpdates.updateTileAtStage).toHaveBeenCalledWith(tile, 3)
+      assertNotified(tile, [L_Game.CantBeMined], true)
+      expectedNumCalls = 1
+    })
   })
 })

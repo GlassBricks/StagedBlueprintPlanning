@@ -158,6 +158,7 @@ export type BuildableEntityType = keyof typeof BuildableEntityTypesDef
 
 export const enum L_Game {
   CantBeRotated = "cant-be-rotated",
+  CantBeMined = "cant-be-mined",
   Reset = "gui.reset",
 }
 

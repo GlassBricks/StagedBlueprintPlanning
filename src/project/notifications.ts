@@ -11,10 +11,11 @@
 
 import { Color, ColorArray, LocalisedString, LuaSurface, PlayerIndex } from "factorio:runtime"
 import { ProjectEntity } from "../entity/ProjectEntity"
+import { ProjectTile } from "../entity/ProjectTile"
 import { Position } from "../lib/geometry"
 
 export function createNotification(
-  entity: ProjectEntity,
+  entity: ProjectEntity | ProjectTile,
   playerIndex: PlayerIndex | nil,
   message: LocalisedString,
   errorSound: boolean,

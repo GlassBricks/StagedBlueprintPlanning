@@ -88,6 +88,9 @@ export interface ProjectUpdates {
   setTrainLocationToCurrent(entity: RollingStockProjectEntity): void
 
   setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile
+  moveTileDown(tile: ProjectTile, stage: StageNumber): void
+  setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void
+  deleteTile(tile: ProjectTile): void
 }
 
 export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): ProjectUpdates {
@@ -106,7 +109,6 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     updateWorldEntitiesOnLastStageChanged,
     updateAllHighlights,
     updateTilesInVisibleStages,
-    updateTilesOnMovedUp,
     resetTiles,
   } = WorldUpdates
 
@@ -130,6 +132,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     resetTrain,
     setTrainLocationToCurrent,
     setNewTile,
+    moveTileDown,
+    setTileValueAtStage,
+    deleteTile,
   }
 
   function fixNewUndergroundBelt(
@@ -736,5 +741,18 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     content.setTile(newTile)
     updateTilesInVisibleStages(newTile)
     return newTile
+  }
+  function moveTileDown(tile: ProjectTile, stage: StageNumber): void {
+    tile.setFirstStageUnchecked(stage)
+    updateTilesInVisibleStages(tile)
+  }
+  function setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void {
+    const updated = tile.adjustValueAtStage(stage, value)
+    if (updated) updateTilesInVisibleStages(tile)
+  }
+  function deleteTile(tile: ProjectTile): void {
+    if (content.deleteTile(tile)) {
+      resetTiles(tile)
+    }
   }
 }

@@ -72,7 +72,7 @@ export interface MutableProjectContent extends ProjectContent {
   deleteEntity(entity: ProjectEntity): void
 
   setTile(tile: ProjectTile): void
-  deleteTile(x: number, y: number): void
+  deleteTile(tile: ProjectTile): boolean
 
   changeEntityPosition(entity: ProjectEntity, position: Position): boolean
   /** Modifies all entities */
@@ -265,8 +265,11 @@ class ProjectContentImpl implements MutableProjectContent {
     this.tiles.set(x, y, tile)
   }
 
-  deleteTile(x: number, y: number): void {
+  deleteTile(tile: ProjectTile): boolean {
+    const { x, y } = tile.position
+    if (this.tiles[x]?.[y] != tile) return false
     this.tiles.delete(x, y)
+    return true
   }
 
   changeEntityPosition(entity: ProjectEntity, position: Position): boolean {

@@ -9,12 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity, PlayerIndex } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, LuaTile, nil, PlayerIndex, Tile } from "factorio:runtime"
 import { Colors, L_Game } from "../constants"
 import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { LuaEntityInfo } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
-import { allowOverlapDifferentDirection } from "../entity/prototype-info"
+import { allowOverlapDifferentDirection, getPrototypeInfo } from "../entity/prototype-info"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { assertNever, deepCompare } from "../lib"
 import { Position } from "../lib/geometry"
@@ -85,6 +85,9 @@ export interface UserActions {
     toStage: StageNumber,
     byPlayer: PlayerIndex,
   ): boolean
+
+  onTileBuilt(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
+  onTileMined(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
 }
 
 /** @noSelf */
@@ -184,6 +187,10 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     trySetLastStage,
     setValueFromStagedInfo,
     updateWiresFromWorld,
+    setNewTile,
+    moveTileDown,
+    setTileValueAtStage,
+    deleteTile,
   } = projectUpdates
 
   const {
@@ -193,7 +200,10 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     refreshWorldEntityAtStage,
     tryDollyEntities,
     updateAllHighlights,
+    updateTileAtStage,
   } = WorldUpdates
+
+  const { blueprintableTiles } = getPrototypeInfo()
 
   const result: InternalUserActions = {
     onEntityCreated,
@@ -224,6 +234,8 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     userTryMoveEntityToStage,
     findCompatibleEntityForUndo,
     userTrySetLastStage,
+    onTileBuilt,
+    onTileMined,
   }
   return result
 
@@ -728,5 +740,38 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
       clearWorldEntityAtStage(entity, stage)
     }
     if (area) prepareArea(project.getSurface(stage)!, area)
+  }
+
+  function onTileBuilt(tile: LuaTile, stage: StageNumber): void {
+    const { position, name } = tile
+    const existingTile = content.tiles.get(position.x, position.y)
+    if (!blueprintableTiles.has(name)) {
+      if (existingTile) {
+        onTileMined(tile, stage, nil)
+      }
+      return
+    }
+    if (!existingTile) {
+      setNewTile(position, stage, tile.name)
+      return
+    }
+    if (stage < existingTile.firstStage) {
+      moveTileDown(existingTile, stage)
+    } else {
+      setTileValueAtStage(existingTile, stage, tile.name)
+    }
+  }
+
+  function onTileMined(tile: LuaTile, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
+    const position = tile.position
+    const existingTile = content.tiles.get(position.x, position.y)
+    if (existingTile) {
+      if (stage == existingTile.firstStage) {
+        deleteTile(existingTile)
+      } else if (stage > existingTile.firstStage) {
+        updateTileAtStage(existingTile, stage)
+        createNotification(existingTile, byPlayer, [L_Game.CantBeMined], true)
+      }
+    }
   }
 }

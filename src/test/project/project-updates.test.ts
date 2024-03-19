@@ -1474,4 +1474,42 @@ describe("tiles", () => {
     expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(newTile)
     expectedWuCalls = 2
   })
+  test("moveTileDown", () => {
+    const oldTile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
+    mock.clear(worldUpdates)
+
+    projectUpdates.moveTileDown(oldTile, 1)
+    expect(oldTile.firstStage).toBe(1)
+    expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(oldTile)
+
+    expectedWuCalls = 1
+  })
+
+  test("updateTileAtStage", () => {
+    const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
+    mock.clear(worldUpdates)
+
+    projectUpdates.setTileValueAtStage(tile, 2, "refined-concrete")
+    expect(tile.firstValue).toBe("refined-concrete")
+    expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(tile)
+
+    projectUpdates.setTileValueAtStage(tile, 3, "stone-path")
+    expect(tile.getValueAtStage(1)).toBe(nil)
+    expect(tile.getValueAtStage(2)).toBe("refined-concrete")
+    expect(tile.getValueAtStage(3)).toBe("stone-path")
+    expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(tile)
+
+    expectedWuCalls = 2
+  })
+
+  test("deleteTile", () => {
+    const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
+    mock.clear(worldUpdates)
+
+    projectUpdates.deleteTile(tile)
+    expect(project.content.tiles.get(1, 2)).toBe(nil)
+    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(tile)
+
+    expectedWuCalls = 1
+  })
 })

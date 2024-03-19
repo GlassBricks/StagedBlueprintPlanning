@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { CircuitConnectionDefinition, LuaEntity, LuaSurface } from "factorio:runtime"
+import { CircuitConnectionDefinition, EventData, LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
@@ -23,6 +23,7 @@ import {
 } from "../../entity/ProjectEntity"
 import { createProjectTile } from "../../entity/ProjectTile"
 import { createEntity, saveEntity } from "../../entity/save-load"
+import { Events } from "../../lib"
 import { BBox, Pos, Position } from "../../lib/geometry"
 import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
@@ -704,6 +705,20 @@ describe("tiles", () => {
       s.build_checkerboard(BBox.coords(-2, -2, 2, 2))
     }
   })
+  let running = false
+  let events: EventData[] = []
+  before_each(() => {
+    running = true
+  })
+  Events.script_raised_set_tiles((e) => {
+    if (running) {
+      events.push(e)
+    }
+  })
+  after_each(() => {
+    running = false
+    events = []
+  })
   test("can set tiles", () => {
     setTilesOnAllSurfaces(Pos(0, 0), "lab-white")
     const projectTile = createProjectTile("concrete", Pos(0, 0), 2)
@@ -712,27 +727,67 @@ describe("tiles", () => {
     expect(project.getSurface(1)?.get_tile(0, 0).name).toBe("lab-white")
     expect(project.getSurface(2)?.get_tile(0, 0).name).toBe("concrete")
     expect(project.getSurface(3)?.get_tile(0, 0).name).toBe("concrete")
+    expect(events[0]).toMatchTable({
+      tiles: [
+        {
+          name: "concrete",
+          position: { x: 0, y: 0 },
+        },
+      ],
+      surface_index: project.getSurface(2)!.index,
+    })
+    expect(events[1]).toMatchTable({
+      tiles: [
+        {
+          name: "concrete",
+          position: { x: 0, y: 0 },
+        },
+      ],
+      surface_index: project.getSurface(3)!.index,
+    })
   })
 
   test("can clear tiles when moved up", () => {
     setTilesOnAllSurfaces(Pos(0, 0), "lab-white")
     const projectTile = createProjectTile("concrete", Pos(0, 0), 2)
     worldUpdates.updateTilesInVisibleStages(projectTile)
+    events = []
+
     projectTile.setFirstStageUnchecked(3)
     worldUpdates.updateTilesOnMovedUp(projectTile, 2)
 
     expect(project.getSurface(1)?.get_tile(0, 0).name).toBe("lab-white")
     expect(project.getSurface(2)?.get_tile(0, 0).name).toBe("lab-white")
     expect(project.getSurface(3)?.get_tile(0, 0).name).toBe("concrete")
+    expect(events[0]).toMatchTable({
+      tiles: [
+        {
+          name: "lab-white",
+          position: { x: 0, y: 0 },
+        },
+      ],
+      surface_index: project.getSurface(2)!.index,
+    })
   })
 
   test("can reset tiles", () => {
     setTilesOnAllSurfaces(Pos(0, 0), "lab-white")
     const projectTile = createProjectTile("concrete", Pos(0, 0), 2)
     worldUpdates.updateTilesInVisibleStages(projectTile)
+    events = []
+
     worldUpdates.resetTiles(projectTile)
     for (const s of surfaces) {
       expect(s.get_tile(0, 0).name).toBe("lab-white")
     }
+    expect(events[0]).toMatchTable({
+      tiles: [
+        {
+          name: "lab-white",
+          position: { x: 0, y: 0 },
+        },
+      ],
+      surface_index: project.getSurface(2)!.index,
+    })
   })
 })

@@ -65,6 +65,7 @@ export interface WorldUpdates {
   rebuildAllStages(): void
 
   updateTilesInVisibleStages(tile: ProjectTile): void
+  updateTileAtStage(tile: ProjectTile, stage: StageNumber): void
   updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void
   resetTiles(tile: ProjectTile): void
 
@@ -87,6 +88,8 @@ class RebuildAllStagesTask extends LoopTask {
     return [L_GuiTasks.RebuildingStage, this.project.getStageName(step + 1)]
   }
 }
+
+const raise_script_set_tiles = script.raise_script_set_tiles
 
 export function WorldUpdates(project: Project, highlights: EntityHighlights): WorldUpdates {
   const content = project.content
@@ -117,6 +120,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     rebuildAllStages,
     updateAllHighlights,
     updateTilesInVisibleStages,
+    updateTileAtStage,
     updateTilesOnMovedUp,
     resetTiles,
   }
@@ -466,8 +470,20 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
       if (value) {
         tileWrite.name = value
         surface.set_tiles(tileWriteArr)
+        raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
       }
     }
+  }
+  function updateTileAtStage(tile: ProjectTile, stage: StageNumber): void {
+    const value = tile.getValueAtStage(stage)
+    if (!value) return
+    const surface = project.getSurface(stage)!
+    surface.set_tiles([
+      {
+        position: tile.position,
+        name: value,
+      },
+    ])
   }
   function updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void {
     resetTilesInRange(tile.position, oldFirstStage, tile.firstStage - 1)
@@ -487,6 +503,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
         surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
       tileWrite.name = tile
       surface.set_tiles(tileWriteArr)
+      raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
     }
   }
 }

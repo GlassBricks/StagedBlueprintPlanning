@@ -10,15 +10,15 @@
  */
 
 /** @noSelfInFile */
-import { SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { _setCanRegister, Events } from "../Events"
 
-const eventId = defines.events.script_raised_set_tiles
+const eventId = defines.events.script_raised_teleported
 after_each(() => {
   Events.clearHandlers(eventId)
 })
 before_each(() => {
+  Events.clearHandlers(eventId)
   _setCanRegister(true)
 })
 after_each(() => {
@@ -43,20 +43,20 @@ test("Can register multiple", () => {
   Events.on(eventId, () => {
     actions.push(3)
   })
-  script.raise_script_set_tiles({ surface_index: 1 as SurfaceIndex, tiles: [] })
+  Events.raiseFakeEvent(eventId, {} as any)
   expect(actions).toEqual([1, 2, 3])
 })
 
 test("Shorthand register", () => {
   const func = () => {}
-  Events.script_raised_set_tiles(func)
+  Events.script_raised_teleported(func)
   expect(script.get_event_handler(eventId)).toBe(func)
 })
 
 test("Object register", () => {
   const func = () => {}
   Events.onAll({
-    script_raised_set_tiles: func,
+    script_raised_teleported: func,
   })
   expect(script.get_event_handler(eventId)).toBe(func)
 })
