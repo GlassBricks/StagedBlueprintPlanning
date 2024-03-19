@@ -316,8 +316,8 @@ describe("tryMoveEntity", () => {
     entities.forEach((e, i) => {
       entity.replaceWorldEntity(i + 1, e)
     })
-    project.content.add(entity)
-    project.content.changePosition(entity, origPos)
+    project.content.addEntity(entity)
+    project.content.changeEntityPosition(entity, origPos)
   })
   const newPos = Pos(1.5, 2)
   const newDir = defines.direction.north
@@ -379,7 +379,7 @@ describe("tryMoveEntity", () => {
         defines.direction.north,
         1,
       )
-      project.content.add(otherEntity)
+      project.content.addEntity(otherEntity)
     })
 
     test("can't move if cable connected missing in all stages", () => {
@@ -434,7 +434,7 @@ describe("tryMoveEntity", () => {
 describe("updateNewEntityWithoutWires", () => {
   test("can update", () => {
     const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
-    project.content.add(entity)
+    project.content.addEntity(entity)
     worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity)
     expect(entityHighlights.updateAllHighlights).not.toHaveBeenCalled()
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
@@ -442,7 +442,7 @@ describe("updateNewEntityWithoutWires", () => {
   })
   test("updates highlights if there are errors", () => {
     const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
-    project.content.add(entity)
+    project.content.addEntity(entity)
     surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
     worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity)
     expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
@@ -454,7 +454,7 @@ describe("updateNewEntityWithoutWires", () => {
 
 test("updateWireConnections", () => {
   const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
-  project.content.add(entity)
+  project.content.addEntity(entity)
   // note: actually updating the first stage, so below works
   worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity) //
   worldEntityUpdates.updateWireConnections(entity)
@@ -510,7 +510,7 @@ describe("underground pair", () => {
       defines.direction.east,
       1,
     ) as UndergroundBeltProjectEntity
-    project.content.add(rightUg)
+    project.content.addEntity(rightUg)
     worldEntityUpdates.updateWorldEntities(rightUg, 1)
 
     expect(rightUg.getWorldEntity(1)).toMatchTable({
@@ -590,9 +590,9 @@ test("rebuildStage", () => {
   const entity1 = createProjectEntityNoCopy({ name: "transport-belt" }, Pos(0, 0), nil, 1)
   const entity2 = createProjectEntityNoCopy({ name: "iron-chest" }, Pos(1, 1), nil, 2)
   const entity3 = createProjectEntityNoCopy({ name: "iron-chest" }, Pos(1, 1), nil, 2)
-  project.content.add(entity1)
-  project.content.add(entity2)
-  project.content.add(entity3)
+  project.content.addEntity(entity1)
+  project.content.addEntity(entity2)
+  project.content.addEntity(entity3)
 
   const surface = project.getSurface(2)!
   const chest = surface.create_entity({
@@ -619,8 +619,8 @@ describe("circuit wires", () => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
     entity2 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
-    project.content.add(entity1)
-    project.content.add(entity2)
+    project.content.addEntity(entity1)
+    project.content.addEntity(entity2)
   })
 
   function doAdd() {

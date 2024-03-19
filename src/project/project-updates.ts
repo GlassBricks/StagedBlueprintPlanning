@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, nil } from "factorio:runtime"
 import { BpStagedInfo, fromBpStageDiffs } from "../copy-paste/blueprint-stage-info"
 import { maybeSetEmptyControlBehavior } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
@@ -179,7 +179,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     const projectEntity = createNewProjectEntity(entity, stage, knownValue)
     if (!projectEntity) return nil
     projectEntity.replaceWorldEntity(stage, entity)
-    content.add(projectEntity)
+    content.addEntity(projectEntity)
 
     fixNewUndergroundBelt(projectEntity, entity, stage, knownValue)
 
@@ -224,18 +224,18 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       entity.isSettingsRemnant = true
       makeSettingsRemnant(entity)
     } else {
-      content.delete(entity)
+      content.deleteEntity(entity)
       deleteWorldEntities(entity)
     }
   }
 
   function forceDeleteEntity(entity: ProjectEntity): void {
-    content.delete(entity)
+    content.deleteEntity(entity)
     deleteWorldEntities(entity)
   }
 
   function readdDeletedEntity(entity: ProjectEntity): void {
-    content.add(entity)
+    content.addEntity(entity)
     updateWorldEntities(entity, 1)
   }
 
@@ -711,7 +711,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     for (const luaEntity of entities) {
       const projectEntity = content.findCompatibleWithLuaEntity(luaEntity, nil, stage)
       if (projectEntity) {
-        content.changePosition(projectEntity, luaEntity.position)
+        content.changeEntityPosition(projectEntity, luaEntity.position)
         rebuildWorldEntityAtStage(projectEntity, stage)
       } else {
         // add

@@ -9,10 +9,11 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import expect from "tstl-expect"
+import expect, { mock } from "tstl-expect"
 import { LuaEntityInfo } from "../../entity/Entity"
 import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { createProjectEntityNoCopy, ProjectEntity } from "../../entity/ProjectEntity"
+import { createProjectTile } from "../../entity/ProjectTile"
 import { getPrototypeRotationType, RotationType } from "../../entity/prototype-info"
 import { setupTestSurfaces } from "../project/Project-mock"
 import { createRollingStocks } from "./createRollingStock"
@@ -29,23 +30,23 @@ const surfaces = setupTestSurfaces(1)
 test("countNumEntities", () => {
   const entity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
   expect(content.countNumEntities()).toBe(0)
-  content.add(entity)
+  content.addEntity(entity)
   expect(content.countNumEntities()).toBe(1)
-  content.delete(entity)
+  content.deleteEntity(entity)
   expect(content.countNumEntities()).toBe(0)
 })
 
 describe("findCompatible", () => {
   test("matches name and direction", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(entity)
   })
 
   test("does not match if passed stage is higher than entity's last stage", () => {
     const entity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-    content.add(entity)
+    content.addEntity(entity)
     entity.setLastStageUnchecked(2)
 
     expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBeNil()
@@ -58,11 +59,11 @@ describe("findCompatible", () => {
     e2.setLastStageUnchecked(4)
 
     if (o == "21") {
-      content.add(e2)
-      content.add(e1)
+      content.addEntity(e2)
+      content.addEntity(e1)
     } else {
-      content.add(e1)
-      content.add(e2)
+      content.addEntity(e1)
+      content.addEntity(e2)
     }
 
     expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 2)).toBe(e1)
@@ -71,14 +72,14 @@ describe("findCompatible", () => {
 
   test("if direction is nil, matches any direction", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, nil, 1)).toBe(entity)
   })
 
   test("matches if different name in same category", () => {
     const entity: ProjectEntity = createProjectEntityNoCopy({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleEntity("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(
       entity,
@@ -92,7 +93,7 @@ describe("findCompatible", () => {
       defines.direction.east,
       1,
     )
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleEntity("assembling-machine-2", { x: 0, y: 0 }, nil, 1)).toBe(entity)
   })
@@ -110,7 +111,7 @@ describe("findCompatible", () => {
 test("findExact", () => {
   const entity: ProjectEntity = createProjectEntityNoCopy({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
   const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
-  content.add(entity)
+  content.addEntity(entity)
   entity.replaceWorldEntity(2, luaEntity)
   expect(content.findEntityExact(luaEntity, luaEntity.position, 2)).toBe(entity)
   luaEntity.teleport(1, 1)
@@ -121,7 +122,7 @@ describe("findCompatibleWithLuaEntity", () => {
   test("matches simple", () => {
     const entity = createProjectEntityNoCopy({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
     const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
@@ -129,7 +130,7 @@ describe("findCompatibleWithLuaEntity", () => {
   test("matches if is compatible", () => {
     const entity = createProjectEntityNoCopy({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
     const luaEntity = assert(surfaces[0].create_entity({ name: "steel-furnace", position: { x: 0, y: 0 } }))
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
@@ -141,7 +142,7 @@ describe("findCompatibleWithLuaEntity", () => {
     const luaEntity = assert(
       surfaces[0].create_entity({ name: "boiler", position: { x: 0.5, y: 0 }, direction: defines.direction.south }),
     )
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
@@ -166,7 +167,7 @@ describe("findCompatibleWithLuaEntity", () => {
         recipe: "fast-transport-belt", // fluid, so direction applies
       }),
     )
-    content.add(entity)
+    content.addEntity(entity)
 
     expect(content.findCompatibleWithLuaEntity(luaEntity, nil, 1)).toBe(entity)
   })
@@ -197,7 +198,7 @@ describe("findCompatibleWithLuaEntity", () => {
       defines.direction.west,
       1,
     )
-    content.add(projectEntity)
+    content.addEntity(projectEntity)
 
     expect(content.findCompatibleWithLuaEntity(same, nil, 1)).toBe(projectEntity)
     expect(content.findCompatibleWithLuaEntity(flipped, nil, 1)).toBe(projectEntity)
@@ -206,7 +207,7 @@ describe("findCompatibleWithLuaEntity", () => {
   test("rolling stock only matches if is exact same entity", () => {
     const entity = createProjectEntityNoCopy({ name: "locomotive" }, { x: 0, y: 0 }, nil, 1)
     const [a1, a2] = createRollingStocks(surfaces[0], "locomotive", "locomotive")
-    content.add(entity)
+    content.addEntity(entity)
     entity.replaceWorldEntity(1, a1)
 
     expect(content.findCompatibleWithLuaEntity(a1, nil, 1)).toBe(entity)
@@ -241,8 +242,8 @@ describe("findCompatibleWithLuaEntity", () => {
         direction: defines.direction.south,
       }),
     )
-    content.add(entity1)
-    content.add(entity2)
+    content.addEntity(entity1)
+    content.addEntity(entity2)
     // diagonal, so should have no match
     expect(content.findCompatibleWithLuaEntity(luaEntity1, nil, 1)).toBe(nil)
     // orthogonal, so should have a match
@@ -252,9 +253,46 @@ describe("findCompatibleWithLuaEntity", () => {
 
 test("changePosition", () => {
   const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
-  content.add(entity)
-  content.changePosition(entity, { x: 1, y: 1 })
+  content.addEntity(entity)
+  content.changeEntityPosition(entity, { x: 1, y: 1 })
   expect(entity.position.x).toBe(1)
   expect(entity.position.y).toBe(1)
   expect(content.findCompatibleEntity("foo", { x: 1, y: 1 }, defines.direction.north, 1)).toBe(entity)
+})
+
+test("replaceTile", () => {
+  const tile = createProjectTile("foo", { x: 1, y: 2 }, 1)
+  content.setTile(tile)
+  expect(content.tiles.get(1, 2)).toBe(tile)
+})
+
+test("deleteTile", () => {
+  const tile = createProjectTile("foo", { x: 1, y: 2 }, 1)
+  content.setTile(tile)
+  content.deleteTile(1, 2)
+  expect(content.tiles.get(1, 2)).toBeNil()
+})
+
+test("insertStage", () => {
+  const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
+  content.addEntity(entity)
+  content.setTile(tile)
+  entity.insertStage = mock.fn()
+  tile.insertStage = mock.fn()
+  content.insertStage(2)
+  expect(entity.insertStage).toHaveBeenCalledWith(2)
+  expect(tile.insertStage).toHaveBeenCalledWith(2)
+})
+
+test("deleteStage", () => {
+  const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
+  content.addEntity(entity)
+  content.setTile(tile)
+  entity.deleteStage = mock.fn()
+  tile.deleteStage = mock.fn()
+  content.deleteStage(2)
+  expect(entity.deleteStage).toHaveBeenCalledWith(2)
+  expect(tile.deleteStage).toHaveBeenCalledWith(2)
 })

@@ -362,7 +362,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
   test("creates settings remnant if entity has circuit connections", () => {
     const { entity } = addEntity(1)
     const otherEntity = createProjectEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
-    project.content.add(otherEntity)
+    project.content.addEntity(otherEntity)
     addCircuitConnection({
       fromEntity: otherEntity,
       toEntity: entity,
@@ -380,7 +380,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
   test("deletes if entity has with circuit connections, but connections have world entity", () => {
     const { entity } = addEntity(1)
     const otherEntity = createProjectEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
-    project.content.add(otherEntity)
+    project.content.addEntity(otherEntity)
     addCircuitConnection({
       fromEntity: otherEntity,
       toEntity: entity,
@@ -1415,7 +1415,7 @@ describe("trains", () => {
         1,
       )
       aEntity.replaceWorldEntity(1, e)
-      project.content.add(aEntity)
+      project.content.addEntity(aEntity)
       e.connect_rolling_stock(defines.rail_direction.front)
       return aEntity
     })

@@ -112,7 +112,7 @@ function addEntity(
   const luaEntity = createWorldEntity(stage, args)
   const value = saveEntity(luaEntity)!
   const projectEntity = createProjectEntityNoCopy(value, luaEntity.position, luaEntity.direction, stage)
-  project.content.add(projectEntity)
+  project.content.addEntity(projectEntity)
   return { luaEntity, entity: projectEntity }
 }
 
@@ -260,7 +260,7 @@ describe("onEntityCreated", () => {
     expect(undoAction).not.toBeNil()
     ignoreNotification()
 
-    project.content.delete(entity)
+    project.content.deleteEntity(entity)
 
     const { entity: entity2 } = addEntity(2)
     performUndoAction(undoAction!)
@@ -277,7 +277,7 @@ describe("onEntityCreated", () => {
     expect(projectUpdates.trySetFirstStage).toHaveBeenCalledTimes(1)
     ignoreNotification()
 
-    project.content.delete(entity)
+    project.content.deleteEntity(entity)
 
     addEntity(3)
     performUndoAction(undoAction!)

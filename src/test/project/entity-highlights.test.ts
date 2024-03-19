@@ -140,7 +140,7 @@ describe("undergrounds", () => {
       defines.direction.east,
       2,
     )
-    project.content.add(undergroundEntity)
+    project.content.addEntity(undergroundEntity)
     undergroundEntity.replaceWorldOrPreviewEntity(
       1,
       createPreview(1, {

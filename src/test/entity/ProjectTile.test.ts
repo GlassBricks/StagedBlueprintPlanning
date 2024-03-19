@@ -14,7 +14,7 @@ import { createProjectTile } from "../../entity/ProjectTile"
 
 describe("setValueAtStage", () => {
   test("can set value at first stage", () => {
-    const tile = createProjectTile(1, "a", { x: 0, y: 0 })
+    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
     expect(tile.firstValue).toBe("a")
     expect(tile.hasStageDiff()).toBe(false)
     expect(tile.getValueAtStage(1)).toBe("a")
@@ -28,7 +28,7 @@ describe("setValueAtStage", () => {
   })
 
   test("creates stage diff when setting value at stage > first stage", () => {
-    const tile = createProjectTile(1, "a", { x: 0, y: 0 })
+    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
     tile.adjustValueAtStage(2, "b")
     expect(tile.firstValue).toBe("a")
     expect(tile.stageDiffs).toEqual({ [2]: "b" })
@@ -39,7 +39,7 @@ describe("setValueAtStage", () => {
   })
 
   test("removes stage diff when setting to old value", () => {
-    const tile = createProjectTile(1, "a", { x: 0, y: 0 })
+    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
     tile.adjustValueAtStage(2, "b")
     tile.adjustValueAtStage(2, "a")
     expect(tile.firstValue).toBe("a")
@@ -51,7 +51,7 @@ describe("setValueAtStage", () => {
   })
 
   test("setting value at first stage may remove stage diff", () => {
-    const tile = createProjectTile(1, "a", { x: 0, y: 0 })
+    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
     tile.adjustValueAtStage(2, "b")
     tile.adjustValueAtStage(1, "b")
 
@@ -60,7 +60,7 @@ describe("setValueAtStage", () => {
   })
 
   test("partially removes stage diff when setting to value different at previous stage", () => {
-    const tile = createProjectTile(1, "a", { x: 0, y: 0 })
+    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
     tile.adjustValueAtStage(3, "b")
     tile.adjustValueAtStage(2, "b")
 

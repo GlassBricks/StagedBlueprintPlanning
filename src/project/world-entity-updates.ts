@@ -388,7 +388,7 @@ export function WorldEntityUpdates(project: Project, highlights: EntityHighlight
       forceDollyEntity(movedEntity, entity.position, entity.direction)
     } else {
       entity.direction = movedEntity.direction
-      const posChanged = content.changePosition(entity, movedEntity.position)
+      const posChanged = content.changeEntityPosition(entity, movedEntity.position)
       assert(posChanged, "failed to change position in content")
       deleteAllHighlights(entity)
       updateAllHighlights(entity)

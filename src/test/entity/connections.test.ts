@@ -36,8 +36,8 @@ describe("connections", () => {
   before_each(() => {
     entity1 = makeProjectEntity(1)
     entity2 = makeProjectEntity(2)
-    content.add(entity1)
-    content.add(entity2)
+    content.addEntity(entity1)
+    content.addEntity(entity2)
   })
   describe("circuit connections", () => {
     function createCircuitConnection(
@@ -90,7 +90,7 @@ describe("connections", () => {
     test("deleting entity removes ingoing connections only", () => {
       const connection = createCircuitConnection(entity1, entity2)
       addCircuitConnection(connection)
-      content.delete(entity1)
+      content.deleteEntity(entity1)
       expect(entity2.circuitConnections).toEqual(nil)
       expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
     })
@@ -98,15 +98,15 @@ describe("connections", () => {
     test("adding back a deleted entity restores connections", () => {
       const connection = createCircuitConnection(entity1, entity2)
       addCircuitConnection(connection)
-      content.delete(entity1)
-      content.add(entity1)
+      content.deleteEntity(entity1)
+      content.addEntity(entity1)
       expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
       expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
 
-      content.delete(entity1)
-      content.delete(entity2)
-      content.add(entity2)
-      content.add(entity1)
+      content.deleteEntity(entity1)
+      content.deleteEntity(entity2)
+      content.addEntity(entity2)
+      content.addEntity(entity1)
       expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
       expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
     })
@@ -114,9 +114,9 @@ describe("connections", () => {
     test("won't restore connection to deleted entity", () => {
       const connection = createCircuitConnection(entity1, entity2)
       addCircuitConnection(connection)
-      content.delete(entity1)
-      content.delete(entity2)
-      content.add(entity1)
+      content.deleteEntity(entity1)
+      content.deleteEntity(entity2)
+      content.addEntity(entity1)
       expect(entity1.circuitConnections).toEqual(nil)
       expect(entity2.circuitConnections).toEqual(nil)
     })
@@ -143,22 +143,22 @@ describe("connections", () => {
 
     test("deleting entity removes ingoing connections only", () => {
       entity1.tryAddDualCableConnection(entity2)
-      content.delete(entity1)
+      content.deleteEntity(entity1)
       expect(entity2.cableConnections).toEqual(nil)
       expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
     })
 
     test("adding back a deleted entity restores connections", () => {
       entity1.tryAddDualCableConnection(entity2)
-      content.delete(entity1)
-      content.add(entity1)
+      content.deleteEntity(entity1)
+      content.addEntity(entity1)
       expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
       expect(entity2.cableConnections).toEqual(newLuaSet(entity1))
 
-      content.delete(entity1)
-      content.delete(entity2)
-      content.add(entity2)
-      content.add(entity1)
+      content.deleteEntity(entity1)
+      content.deleteEntity(entity2)
+      content.addEntity(entity2)
+      content.addEntity(entity1)
 
       expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
       expect(entity2.cableConnections).toEqual(newLuaSet(entity1))
@@ -166,9 +166,9 @@ describe("connections", () => {
 
     test("won't restore connection to deleted entity", () => {
       entity1.tryAddDualCableConnection(entity2)
-      content.delete(entity1)
-      content.delete(entity2)
-      content.add(entity1)
+      content.deleteEntity(entity1)
+      content.deleteEntity(entity2)
+      content.addEntity(entity1)
       expect(entity1.cableConnections).toEqual(nil)
       expect(entity2.cableConnections).toEqual(nil)
     })
@@ -185,7 +185,7 @@ describe("connections", () => {
     test("won't add if max connections is reached", () => {
       for (let i = 3; i < 3 + 5; i++) {
         const entity = makeProjectEntity(i)
-        content.add(entity)
+        content.addEntity(entity)
         expect(entity1.tryAddDualCableConnection(entity)).toBe(CableAddResult.MaybeAdded)
       }
       expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.MaxConnectionsReached)

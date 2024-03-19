@@ -108,9 +108,9 @@ describe("power switches", () => {
     pole1ProjectEntity.replaceWorldEntity(1, pole1)
     pole2ProjectEntity.replaceWorldEntity(1, pole2)
     powerSwitchProjectEntity.replaceWorldEntity(1, powerSwitch)
-    content.add(pole1ProjectEntity)
-    content.add(pole2ProjectEntity)
-    content.add(powerSwitchProjectEntity)
+    content.addEntity(pole1ProjectEntity)
+    content.addEntity(pole2ProjectEntity)
+    content.addEntity(powerSwitchProjectEntity)
 
     saveWireConnections(content, powerSwitchProjectEntity, 1)
     expect(powerSwitchProjectEntity.circuitConnections?.get(pole1ProjectEntity)).toBeAny()
@@ -139,8 +139,8 @@ describe("circuit wires", () => {
     entity2 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
     entity1.replaceWorldEntity(1, luaEntity1)
     entity2.replaceWorldEntity(1, luaEntity2)
-    content.add(entity1)
-    content.add(entity2)
+    content.addEntity(entity1)
+    content.addEntity(entity2)
   })
 
   function addWire1(): void {
@@ -228,7 +228,7 @@ describe("circuit wires", () => {
     })
     test("ignores entities not in the project", () => {
       addWire1() // entity1 -> entity2
-      content.delete(entity2)
+      content.deleteEntity(entity2)
       Wires.updateWireConnectionsAtStage(content, entity1, 1)
       // wire should still be there
       assertWire1Matches()
@@ -305,8 +305,8 @@ describe("power switch connections", () => {
     powerSwitchEntity = createProjectEntityNoCopy({ name: "power-switch" }, powerSwitch.position, nil, 1)
     poleEntity.replaceWorldEntity(1, pole)
     powerSwitchEntity.replaceWorldEntity(1, powerSwitch)
-    content.add(poleEntity)
-    content.add(powerSwitchEntity)
+    content.addEntity(poleEntity)
+    content.addEntity(powerSwitchEntity)
   })
 
   describe.each(["pole", "power switch"])("from %s", (from) => {
@@ -454,7 +454,7 @@ describe("power switch connections", () => {
       const otherPole = extraSurfaces[0].create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
       const otherPoleEntity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, otherPole.position, nil, 1)
       otherPoleEntity.replaceWorldEntity(2, otherPole)
-      content.add(otherPoleEntity)
+      content.addEntity(otherPoleEntity)
 
       const powerSwitch2 = extraSurfaces[0].create_entity({
         name: "power-switch",
@@ -518,7 +518,7 @@ describe("power switch connections", () => {
     const pole2 = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
     const pole2Entity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pole2.position, nil, 1)
     pole2Entity.replaceWorldEntity(1, pole2)
-    content.add(pole2Entity)
+    content.addEntity(pole2Entity)
 
     pole2.connect_neighbour({
       target_entity: powerSwitch,
@@ -553,7 +553,7 @@ describe("cable connections", () => {
     luaEntity.disconnect_neighbour()
     const entity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pos, nil, 1)
     entity.replaceWorldEntity(1, luaEntity)
-    content.add(entity)
+    content.addEntity(entity)
     return { luaEntity, entity }
   }
   before_each(() => {
@@ -630,7 +630,7 @@ describe("cable connections", () => {
 
   test("ignores entities not in the project", () => {
     luaEntity1.connect_neighbour(luaEntity2)
-    content.delete(entity2)
+    content.deleteEntity(entity2)
     Wires.updateWireConnectionsAtStage(content, entity1, 1)
     // cable should still be there
     expect(
@@ -698,7 +698,7 @@ describe("cable connections", () => {
           1,
         )
         // no lua entity
-        content.add(entity)
+        content.addEntity(entity)
         const result = entity1.tryAddDualCableConnection(entity)
         expect(result).toBe(CableAddResult.MaybeAdded)
       }

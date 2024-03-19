@@ -32,7 +32,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
       direction,
       stage,
     )
-    content.add(underground)
+    content.addEntity(underground)
     return underground
   }
   function checkPair(

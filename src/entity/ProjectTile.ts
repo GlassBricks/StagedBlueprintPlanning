@@ -69,10 +69,6 @@ class ProjectTileImpl extends BaseStagedValue<string, string> implements Project
   }
 }
 
-export function createProjectTile(firstStage: StageNumber, firstValue: string, position: Position): ProjectTile {
+export function createProjectTile(firstValue: string, position: Position, firstStage: StageNumber): ProjectTile {
   return new ProjectTileImpl(firstStage, firstValue, position)
-}
-
-export function isWorldTileProjectTile(tile: string): boolean {
-  return game.tile_prototypes[tile]?.items_to_place_this != nil
 }

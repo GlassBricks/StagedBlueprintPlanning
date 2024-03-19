@@ -12,11 +12,11 @@
 import { BoundingBox, LuaEntity } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
-import { isEmpty, Mutable, RegisterClass } from "../lib"
+import { isEmpty, Mutable, PRecord, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { ProjectCircuitConnection } from "./circuit-connection"
 import { EntityIdentification } from "./Entity"
-import { _migrateMap2DToLinkedList, LinkedMap2D, Map2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
+import { _migrateMap2DToLinkedList, LinkedMap2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { ProjectTile } from "./ProjectTile"
 import {
@@ -67,16 +67,17 @@ export interface ProjectContent {
 }
 
 export interface MutableProjectContent extends ProjectContent {
-  add(entity: ProjectEntity): void
+  addEntity(entity: ProjectEntity): void
   /** Deleted entities should be able to be re-added, preserving connections. */
-  delete(entity: ProjectEntity): void
+  deleteEntity(entity: ProjectEntity): void
 
-  changePosition(entity: ProjectEntity, position: Position): boolean
+  setTile(tile: ProjectTile): void
+  deleteTile(x: number, y: number): void
+
+  changeEntityPosition(entity: ProjectEntity, position: Position): boolean
   /** Modifies all entities */
   insertStage(stageNumber: StageNumber): void
   deleteStage(stageNumber: StageNumber): void
-
-  readonly tiles: Map2D<ProjectTile>
 }
 
 let nameToType: PrototypeInfo["nameToType"]
@@ -228,10 +229,18 @@ class ProjectContentImpl implements MutableProjectContent {
       if (x > maxX) maxX = x
       if (y > maxY) maxY = y
     }
+    for (const [x, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(this.tiles)) {
+      for (const [y] of pairs(row)) {
+        if (x < minX) minX = x
+        if (y < minY) minY = y
+        if (x > maxX) maxX = x
+        if (y > maxY) maxY = y
+      }
+    }
     return BBox.expand(BBox.coords(minX, minY, maxX, maxY), 20)
   }
 
-  add(entity: ProjectEntity): void {
+  addEntity(entity: ProjectEntity): void {
     const { entities } = this
     if (entities.has(entity)) return
     entities.add(entity)
@@ -241,7 +250,7 @@ class ProjectContentImpl implements MutableProjectContent {
     entity.addOrPruneIngoingConnections(entities)
   }
 
-  delete(entity: ProjectEntity): void {
+  deleteEntity(entity: ProjectEntity): void {
     const { entities } = this
     if (!entities.has(entity)) return
     entities.delete(entity)
@@ -251,7 +260,16 @@ class ProjectContentImpl implements MutableProjectContent {
     entity.removeIngoingConnections()
   }
 
-  changePosition(entity: ProjectEntity, position: Position): boolean {
+  setTile(tile: ProjectTile): void {
+    const { x, y } = tile.position
+    this.tiles.set(x, y, tile)
+  }
+
+  deleteTile(x: number, y: number): void {
+    this.tiles.delete(x, y)
+  }
+
+  changeEntityPosition(entity: ProjectEntity, position: Position): boolean {
     if (!this.entities.has(entity)) return false
     const { x, y } = entity.position
     const { x: newX, y: newY } = position
@@ -267,10 +285,20 @@ class ProjectContentImpl implements MutableProjectContent {
     for (const entity of this.entities) {
       entity.insertStage(stageNumber)
     }
+    for (const [, r] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(this.tiles)) {
+      for (const [, tile] of pairs(r)) {
+        tile.insertStage(stageNumber)
+      }
+    }
   }
   deleteStage(stageNumber: StageNumber): void {
     for (const entity of this.entities) {
       entity.deleteStage(stageNumber)
+    }
+    for (const [, r] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(this.tiles)) {
+      for (const [, tile] of pairs(r)) {
+        tile.deleteStage(stageNumber)
+      }
     }
   }
 

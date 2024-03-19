@@ -412,7 +412,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         defines.direction.south,
         1,
       )
-      project.content.add(projectEntity)
+      project.content.addEntity(projectEntity)
 
       expect(checkUndergroundPairFlippable(entity)).toEqual([projectEntity, false])
     })
@@ -434,7 +434,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         defines.direction.south,
         1,
       )
-      project.content.add(projectEntity)
+      project.content.addEntity(projectEntity)
 
       expect(checkUndergroundPairFlippable(entity)).toEqual([projectEntity, true])
     })
@@ -467,7 +467,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       rightUnderground.direction,
       1,
     )
-    project.content.add(rightEntity)
+    project.content.addEntity(rightEntity)
 
     expect(checkUndergroundPairFlippable(rightUnderground)).toMatchTable([expect.anything(), false])
 
