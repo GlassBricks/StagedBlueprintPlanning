@@ -25,7 +25,7 @@ import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-u
 import { Project, UserProject } from "./ProjectDef"
 import { prepareArea } from "./surfaces"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
-import { ProjectEntityDollyResult, WorldEntityUpdates } from "./world-entity-updates"
+import { ProjectEntityDollyResult, WorldUpdates } from "./world-updates"
 
 /**
  * Entry point for actions that can be performed on a project, from user input.
@@ -170,11 +170,7 @@ const moveResultMessage: Record<ProjectEntityDollyResult, L_Interaction | nil> =
   "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
 }
 
-export function UserActions(
-  project: Project,
-  projectUpdates: ProjectUpdates,
-  worldEntityUpdates: WorldEntityUpdates,
-): UserActions {
+export function UserActions(project: Project, projectUpdates: ProjectUpdates, WorldUpdates: WorldUpdates): UserActions {
   const content = project.content
   const {
     addNewEntity,
@@ -197,7 +193,7 @@ export function UserActions(
     refreshWorldEntityAtStage,
     tryDollyEntities,
     updateAllHighlights,
-  } = worldEntityUpdates
+  } = WorldUpdates
 
   const result: InternalUserActions = {
     onEntityCreated,

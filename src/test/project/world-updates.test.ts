@@ -25,7 +25,7 @@ import { createEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
-import { WorldEntityUpdates } from "../../project/world-entity-updates"
+import { WorldUpdates } from "../../project/world-updates"
 import { createRollingStock } from "../entity/createRollingStock"
 import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { fMock } from "../f-mock"
@@ -48,10 +48,10 @@ const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
 
-let worldEntityUpdates: WorldEntityUpdates
+let worldUpdates: WorldUpdates
 before_each(() => {
   project = createMockProject(surfaces)
-  project.entityUpdates = worldEntityUpdates = WorldEntityUpdates(project, entityHighlights)
+  project.worldUpdates = worldUpdates = WorldUpdates(project, entityHighlights)
   entity = createProjectEntityNoCopy(
     {
       name: "inserter",
@@ -110,24 +110,24 @@ describe("updateWorldEntities", () => {
       })
     }
     test.each([1, 2, 3, 4])("can create one entity at stage %d", (stage) => {
-      worldEntityUpdates.refreshWorldEntityAtStage(entity, stage)
+      worldUpdates.refreshWorldEntityAtStage(entity, stage)
       assertEntityCorrect(stage)
     })
     test("can create all entities", () => {
-      worldEntityUpdates.updateWorldEntities(entity, 1)
+      worldUpdates.updateWorldEntities(entity, 1)
       for (let i = 1; i <= 4; i++) assertEntityCorrect(i)
     })
 
     test("does not create entities past lastStage", () => {
       entity.setLastStageUnchecked(3)
-      worldEntityUpdates.updateWorldEntities(entity, 1)
+      worldUpdates.updateWorldEntities(entity, 1)
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
       assertNothingPresent(4)
     })
 
     test("if first stage passed is past last stage, does nothing", () => {
       entity.setLastStageUnchecked(3)
-      worldEntityUpdates.updateWorldEntities(entity, 4)
+      worldUpdates.updateWorldEntities(entity, 4)
       for (let i = 1; i <= 4; i++) assertNothingPresent(i)
     })
 
@@ -137,7 +137,7 @@ describe("updateWorldEntities", () => {
         override_stack_size: 3,
       } as TestEntity)!
       entity.replaceWorldEntity(2, replaced)
-      worldEntityUpdates.refreshWorldEntityAtStage(entity, 2)
+      worldUpdates.refreshWorldEntityAtStage(entity, 2)
       const val = assertEntityCorrect(2)
       expect(replaced).toEqual(val)
     })
@@ -145,41 +145,41 @@ describe("updateWorldEntities", () => {
     test("attempting to refresh world entity past last stage deletes entity if it exists", () => {
       entity.setLastStageUnchecked(3)
       entity.replaceWorldOrPreviewEntity(4, {} as any)
-      worldEntityUpdates.refreshWorldEntityAtStage(entity, 4)
+      worldUpdates.refreshWorldEntityAtStage(entity, 4)
       assertNothingPresent(4)
     })
 
     test("replaces deleted entity", () => {
-      worldEntityUpdates.refreshWorldEntityAtStage(entity, 3)
+      worldUpdates.refreshWorldEntityAtStage(entity, 3)
       entity.getWorldEntity(3)!.destroy()
       assertNothingPresent(3)
-      worldEntityUpdates.refreshWorldEntityAtStage(entity, 3)
+      worldUpdates.refreshWorldEntityAtStage(entity, 3)
       assertEntityCorrect(3)
     })
 
     test("can upgrade entities", () => {
-      worldEntityUpdates.refreshWorldEntityAtStage(entity, 1)
+      worldUpdates.refreshWorldEntityAtStage(entity, 1)
       entity._applyDiffAtStage(1, { name: "fast-inserter" })
-      worldEntityUpdates.refreshWorldEntityAtStage(entity, 1)
+      worldUpdates.refreshWorldEntityAtStage(entity, 1)
       assertEntityCorrect(1)
     })
   })
 
   test("does nothing if range is empty", () => {
-    worldEntityUpdates.updateWorldEntities(entity, 5)
+    worldUpdates.updateWorldEntities(entity, 5)
     for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   })
 
   test("creates preview entities in stages below first stage", () => {
     entity.setFirstStageUnchecked(3)
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
     assertEntityCorrect(3)
   })
 
   test("calls wireUpdater", () => {
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     for (let i = 1; i <= 3; i++)
       expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, i)
   })
@@ -199,7 +199,7 @@ describe("updateWorldEntities", () => {
       } as TestEntity)!
       entity.replaceWorldEntity(3, luaEntity)
     }
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
 
     assertDestructible(assertEntityCorrect(2), true)
     assertDestructible(assertEntityCorrect(3), false)
@@ -207,9 +207,9 @@ describe("updateWorldEntities", () => {
   })
 
   test("can handle entity moving up", () => {
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     entity.setFirstStageUnchecked(2)
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
 
     expect(findMainEntity(1)).toBeNil()
     assertHasPreview(1)
@@ -218,21 +218,21 @@ describe("updateWorldEntities", () => {
   })
 
   test("can rotate entities", () => {
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     entity.direction = defines.direction.west
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
   test("can un-rotate entities", () => {
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     entity.getWorldEntity(2)!.direction = defines.direction.west
-    worldEntityUpdates.refreshWorldEntityAtStage(entity, 2)
+    worldUpdates.refreshWorldEntityAtStage(entity, 2)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
   test("calls updateHighlights", () => {
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   })
 
@@ -242,7 +242,7 @@ describe("updateWorldEntities", () => {
     entity = createProjectEntityNoCopy(value, rollingStock.position, rollingStock.direction, 2) as any
     rollingStock.destroy()
 
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
 
     assertHasPreview(1)
     const worldEntity = expect(findMainEntity(2)).toBeAny().getValue()
@@ -253,15 +253,15 @@ describe("updateWorldEntities", () => {
 
   test("refreshWorldEntityAtStage also builds previews", () => {
     entity.setFirstStageUnchecked(2)
-    worldEntityUpdates.refreshWorldEntityAtStage(entity, 1)
+    worldUpdates.refreshWorldEntityAtStage(entity, 1)
     assertHasPreview(1)
   })
 })
 
 test("rebuildWorldEntityAtStage replaces old value", () => {
-  worldEntityUpdates.refreshWorldEntityAtStage(entity, 2)
+  worldUpdates.refreshWorldEntityAtStage(entity, 2)
   const value = assertEntityCorrect(2)
-  worldEntityUpdates.rebuildWorldEntityAtStage(entity, 2)
+  worldUpdates.rebuildWorldEntityAtStage(entity, 2)
   expect(value.valid).toBe(false)
   assertEntityCorrect(2)
 })
@@ -270,7 +270,7 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
   test("moving up creates entities", () => {
     entity.setFirstStageUnchecked(2)
     entity.setLastStageUnchecked(2)
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertNothingPresent(3)
@@ -279,7 +279,7 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
     clearModuleMock(_wireHandler)
 
     entity.setLastStageUnchecked(3)
-    worldEntityUpdates.updateWorldEntitiesOnLastStageChanged(entity, 2)
+    worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, 2)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertEntityCorrect(3)
@@ -292,14 +292,14 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
   test("moving down destroys entities", () => {
     entity.setFirstStageUnchecked(2)
     entity.setLastStageUnchecked(3)
-    worldEntityUpdates.updateWorldEntities(entity, 1)
+    worldUpdates.updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertEntityCorrect(3)
     assertNothingPresent(4)
 
     entity.setLastStageUnchecked(2)
-    worldEntityUpdates.updateWorldEntitiesOnLastStageChanged(entity, 3)
+    worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, 3)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertNothingPresent(3)
@@ -350,14 +350,14 @@ describe("tryMoveEntity", () => {
 
   test("can move entity if moved in first stage", () => {
     expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-    const result = worldEntityUpdates.tryDollyEntities(entity, 1)
+    const result = worldUpdates.tryDollyEntities(entity, 1)
     expect(result).toBe("success")
     assertMoved()
   })
 
   test("can't move entity if moved in later stage", () => {
     expect(forceDollyEntity(entities[1], newPos, newDir)).toBe(true)
-    const result = worldEntityUpdates.tryDollyEntities(entity, 2)
+    const result = worldUpdates.tryDollyEntities(entity, 2)
     expect(result).toBe("cannot-move")
     assertNotMoved()
   })
@@ -365,7 +365,7 @@ describe("tryMoveEntity", () => {
   test("can't move if world entities are missing in any stage", () => {
     expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
     entity.getWorldEntity(2)!.destroy()
-    const result = worldEntityUpdates.tryDollyEntities(entity, 1)
+    const result = worldUpdates.tryDollyEntities(entity, 1)
     expect(result).toBe("entities-missing")
     assertNotMoved()
   })
@@ -386,7 +386,7 @@ describe("tryMoveEntity", () => {
       entity.tryAddDualCableConnection(otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
 
       expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-      const result = worldEntityUpdates.tryDollyEntities(entity, 1)
+      const result = worldUpdates.tryDollyEntities(entity, 1)
       expect(result).toBe("connected-entities-missing")
     })
 
@@ -400,7 +400,7 @@ describe("tryMoveEntity", () => {
       })
 
       expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-      const result = worldEntityUpdates.tryDollyEntities(entity, 1)
+      const result = worldUpdates.tryDollyEntities(entity, 1)
       expect(result).toBe("connected-entities-missing")
     })
 
@@ -424,7 +424,7 @@ describe("tryMoveEntity", () => {
         }),
       )
 
-      const result = worldEntityUpdates.tryDollyEntities(entity, 1)
+      const result = worldUpdates.tryDollyEntities(entity, 1)
       expect(result).toBe("success")
       assertMoved()
     })
@@ -435,7 +435,7 @@ describe("updateNewEntityWithoutWires", () => {
   test("can update", () => {
     const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.addEntity(entity)
-    worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity)
+    worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
     expect(entityHighlights.updateAllHighlights).not.toHaveBeenCalled()
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
@@ -444,7 +444,7 @@ describe("updateNewEntityWithoutWires", () => {
     const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.addEntity(entity)
     surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
-    worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity)
+    worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
     expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
@@ -456,8 +456,8 @@ test("updateWireConnections", () => {
   const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
   project.content.addEntity(entity)
   // note: actually updating the first stage, so below works
-  worldEntityUpdates.updateNewWorldEntitiesWithoutWires(entity) //
-  worldEntityUpdates.updateWireConnections(entity)
+  worldUpdates.updateNewWorldEntitiesWithoutWires(entity) //
+  worldUpdates.updateWireConnections(entity)
   for (const i of $range(2, project.lastStageFor(entity))) {
     expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, i)
   }
@@ -465,8 +465,8 @@ test("updateWireConnections", () => {
 
 test("clearWorldEntityAtStage", () => {
   entity.applyUpgradeAtStage(2, "fast-inserter")
-  worldEntityUpdates.updateWorldEntities(entity, 1)
-  worldEntityUpdates.clearWorldEntityAtStage(entity, 2)
+  worldUpdates.updateWorldEntities(entity, 1)
+  worldUpdates.clearWorldEntityAtStage(entity, 2)
   expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   expect(findMainEntity(2)).toBeNil()
   expect(findPreviewEntity(2)?.name).toBe(Prototypes.PreviewEntityPrefix + "fast-inserter")
@@ -475,8 +475,8 @@ test("clearWorldEntityAtStage", () => {
 })
 
 test("deleteWorldEntities", () => {
-  worldEntityUpdates.updateWorldEntities(entity, 1)
-  worldEntityUpdates.deleteWorldEntities(entity)
+  worldUpdates.updateWorldEntities(entity, 1)
+  worldUpdates.deleteWorldEntities(entity)
   for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   expect(entityHighlights.deleteAllHighlights).toHaveBeenCalledWith(entity)
 })
@@ -500,7 +500,7 @@ describe("underground pair", () => {
       defines.direction.east,
       1,
     ) as UndergroundBeltProjectEntity
-    worldEntityUpdates.updateWorldEntities(middleUg, 1)
+    worldUpdates.updateWorldEntities(middleUg, 1)
     const middleWorldEntity = middleUg.getWorldEntity(1)!
     assert(middleWorldEntity)
 
@@ -511,14 +511,14 @@ describe("underground pair", () => {
       1,
     ) as UndergroundBeltProjectEntity
     project.content.addEntity(rightUg)
-    worldEntityUpdates.updateWorldEntities(rightUg, 1)
+    worldUpdates.updateWorldEntities(rightUg, 1)
 
     expect(rightUg.getWorldEntity(1)).toMatchTable({
       neighbours: middleWorldEntity,
     })
   })
   test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
-    worldEntityUpdates.deleteWorldEntities(middleUg)
+    worldUpdates.deleteWorldEntities(middleUg)
     expect(rightUg.getWorldEntity(1)).toMatchTable({
       neighbours: leftWorldEntity,
     })
@@ -536,7 +536,7 @@ describe("underground pair", () => {
     expect(rightUg.hasErrorAt(1)).toBe(true)
 
     middleUg.getWorldEntity(1)!.rotate()
-    worldEntityUpdates.refreshWorldEntityAtStage(middleUg, 1)
+    worldUpdates.refreshWorldEntityAtStage(middleUg, 1)
 
     // expect rotated back
     expect(rightUg).toMatchTable({
@@ -561,14 +561,14 @@ describe("underground pair", () => {
 
 test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
-  worldEntityUpdates.makeSettingsRemnant(entity)
+  worldUpdates.makeSettingsRemnant(entity)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
   expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
 
 test("updateWorldEntities calls makeSettingsRemnant", () => {
   entity.isSettingsRemnant = true
-  worldEntityUpdates.updateWorldEntities(entity, 1)
+  worldUpdates.updateWorldEntities(entity, 1)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
   expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
@@ -576,10 +576,10 @@ test("updateWorldEntities calls makeSettingsRemnant", () => {
 test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tryReviveSettingsRemnant", () => {
   entity.setFirstStageUnchecked(2)
   entity.isSettingsRemnant = true
-  worldEntityUpdates.makeSettingsRemnant(entity)
+  worldUpdates.makeSettingsRemnant(entity)
 
   entity.isSettingsRemnant = nil
-  worldEntityUpdates.reviveSettingsRemnant(entity)
+  worldUpdates.reviveSettingsRemnant(entity)
   assertHasPreview(1)
   assertEntityCorrect(2)
   assertEntityCorrect(3)
@@ -600,7 +600,7 @@ test("rebuildStage", () => {
     position: Pos(0, 0),
   })!
 
-  worldEntityUpdates.rebuildStage(2)
+  worldUpdates.rebuildStage(2)
 
   expect(chest.valid).toBe(false)
   expect(entity1.getWorldEntity(2)).toBeAny()
@@ -624,8 +624,8 @@ describe("circuit wires", () => {
   })
 
   function doAdd() {
-    worldEntityUpdates.updateWorldEntities(entity1, 1)
-    worldEntityUpdates.updateWorldEntities(entity2, 1)
+    worldUpdates.updateWorldEntities(entity1, 1)
+    worldUpdates.updateWorldEntities(entity2, 1)
     const luaEntity1 = entity1.getWorldEntity(1)!
     const luaEntity2 = entity2.getWorldEntity(1)!
     return { luaEntity1, luaEntity2 }
@@ -670,7 +670,7 @@ describe("circuit wires", () => {
   test("can remove circuit wires", () => {
     const { luaEntity1, luaEntity2 } = doAdd()
     addExtraWires({ luaEntity1, luaEntity2 })
-    worldEntityUpdates.refreshWorldEntityAtStage(entity1, 1)
+    worldUpdates.refreshWorldEntityAtStage(entity1, 1)
     expect(luaEntity1.circuit_connection_definitions ?? []).toEqual([])
     expect(luaEntity2.circuit_connection_definitions ?? []).toEqual([])
   })
@@ -682,7 +682,7 @@ describe("circuit wires", () => {
     addWireToProject()
     const entities = doAdd()
     addExtraWires(entities)
-    worldEntityUpdates.refreshWorldEntityAtStage(entity1, 1)
+    worldUpdates.refreshWorldEntityAtStage(entity1, 1)
     assertSingleWire(entities)
   })
 })

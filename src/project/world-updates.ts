@@ -35,7 +35,7 @@ export type ProjectEntityDollyResult =
   | "connected-entities-missing"
 
 /** @noSelf */
-export interface WorldEntityUpdates {
+export interface WorldUpdates {
   updateWorldEntities(entity: ProjectEntity, startStage: StageNumber, updateHighlights?: boolean): void
   updateWorldEntitiesOnLastStageChanged(entity: ProjectEntity, oldLastStage: StageNumber | nil): void
   updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void
@@ -72,14 +72,14 @@ class RebuildAllStagesTask extends LoopTask {
     return [L_GuiTasks.RebuildAllStages]
   }
   protected override doStep(i: number): void {
-    this.project.entityUpdates.rebuildStage(i + 1)
+    this.project.worldUpdates.rebuildStage(i + 1)
   }
   protected getTitleForStep(step: number): LocalisedString {
     return [L_GuiTasks.RebuildingStage, this.project.getStageName(step + 1)]
   }
 }
 
-export function WorldEntityUpdates(project: Project, highlights: EntityHighlights): WorldEntityUpdates {
+export function WorldUpdates(project: Project, highlights: EntityHighlights): WorldUpdates {
   const content = project.content
   const {
     updateAllHighlights,

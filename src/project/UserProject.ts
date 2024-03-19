@@ -52,7 +52,7 @@ import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, UserProject } 
 import { getStageAtSurface } from "./stage-surface"
 import { createStageSurface, destroySurface } from "./surfaces"
 import { UserActions } from "./user-actions"
-import { WorldEntityUpdates } from "./world-entity-updates"
+import { WorldUpdates } from "./world-updates"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 import min = math.min
 
@@ -88,7 +88,7 @@ class UserProjectImpl implements UserProject {
 
   actions = UserActionsClass({ project: this })
   updates = ProjectUpdatesClass({ project: this })
-  entityUpdates = WorldEntityUpdatesClass({ project: this })
+  worldUpdates = WorldUpdatesClass({ project: this })
 
   constructor(
     readonly id: ProjectId,
@@ -243,13 +243,13 @@ interface HasProject {
 }
 
 const UserActionsClass = LazyLoadClass<HasProject, UserActions>("UserActions", ({ project }) =>
-  UserActions(project, project.updates, project.entityUpdates),
+  UserActions(project, project.updates, project.worldUpdates),
 )
 const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUpdates", ({ project }) =>
-  ProjectUpdates(project, project.entityUpdates),
+  ProjectUpdates(project, project.worldUpdates),
 )
-const WorldEntityUpdatesClass = LazyLoadClass<HasProject, WorldEntityUpdates>("WorldEntityUpdates", ({ project }) =>
-  WorldEntityUpdates(project, EntityHighlights(project)),
+const WorldUpdatesClass = LazyLoadClass<HasProject, WorldUpdates>("WorldUpdates", ({ project }) =>
+  WorldUpdates(project, EntityHighlights(project)),
 )
 
 export function createUserProject(name: string, initialNumStages: number): UserProject {
@@ -384,7 +384,7 @@ Migrations.priority(2, script.active_mods[script.mod_name]!, () => {
   for (const project of global.projects) {
     project.actions = UserActionsClass({ project })
     project.updates = ProjectUpdatesClass({ project })
-    project.entityUpdates = WorldEntityUpdatesClass({ project })
+    project.worldUpdates = WorldUpdatesClass({ project })
     for (const stage of project.getAllStages()) {
       stage.actions = project.actions
     }
@@ -615,15 +615,11 @@ Migrations.to("0.30.0", () => {
     setDefaultToMajorityValue(4)
   }
 })
-
-// Migrations.priority(2, "0.30.3", () => {
-//   for (const project of global.projects) {
-//     project.actions = UserActionsClass({ project })
-//     project.updates = ProjectUpdatesClass({ project })
-//     project.entityUpdates = WorldEntityUpdatesClass({ project })
-//
-//     for (const stage of project.getAllStages()) {
-//       stage.actions = project.actions
-//     }
-//   }
-// })
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of global.projects) {
+    assume<{
+      entityUpdates?: WorldUpdates
+    }>(project)
+    delete project.entityUpdates
+  }
+})

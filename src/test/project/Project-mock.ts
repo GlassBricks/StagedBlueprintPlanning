@@ -27,7 +27,7 @@ export function createMockProject(stages: number | LuaSurface[]): Project {
     valid: true,
     actions: "actions not mocked" as any,
     updates: "updates not mocked" as any,
-    entityUpdates: "entityUpdates not mocked" as any,
+    worldUpdates: "entityUpdates not mocked" as any,
   }
 }
 

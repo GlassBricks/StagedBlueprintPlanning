@@ -21,7 +21,7 @@ import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult }
 import { Project } from "../../project/ProjectDef"
 import { performUndoAction } from "../../project/undo"
 import { UserActions } from "../../project/user-actions"
-import { WorldEntityUpdates } from "../../project/world-entity-updates"
+import { WorldUpdates } from "../../project/world-updates"
 import { fMock } from "../f-mock"
 import { moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
@@ -34,12 +34,12 @@ const surfaces = setupTestSurfaces(6)
 let project: Project
 
 const projectUpdates = fMock<ProjectUpdates>()
-const worldUpdates = fMock<WorldEntityUpdates>()
+const worldUpdates = fMock<WorldUpdates>()
 let userActions: UserActions
 
 before_each(() => {
   project = createMockProject(surfaces)
-  project.entityUpdates = worldUpdates
+  project.worldUpdates = worldUpdates
   project.updates = projectUpdates
   project.actions = userActions = UserActions(project, projectUpdates, worldUpdates)
 })

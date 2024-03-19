@@ -31,7 +31,7 @@ import {
 import { Pos } from "../../lib/geometry"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
-import { WorldEntityUpdates } from "../../project/world-entity-updates"
+import { WorldUpdates } from "../../project/world-updates"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { fMock } from "../f-mock"
 import { moduleMock } from "../module-mock"
@@ -45,14 +45,14 @@ const pos = Pos(10.5, 10.5)
 let project: Project
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
 
-const worldEntityUpdates = fMock<WorldEntityUpdates>()
+const worldUpdates = fMock<WorldUpdates>()
 const wireSaver = moduleMock(_wireHandler, true)
 
 let projectUpdates: ProjectUpdates
 before_each(() => {
   project = createMockProject(surfaces)
-  project.entityUpdates = worldEntityUpdates
-  project.updates = projectUpdates = ProjectUpdates(project, project.entityUpdates)
+  project.worldUpdates = worldUpdates
+  project.updates = projectUpdates = ProjectUpdates(project, project.worldUpdates)
 })
 
 let expectedWuCalls: number
@@ -66,7 +66,7 @@ before_each(() => {
 
 function numWuCalls(): number {
   let worldUpdaterCalls = 0
-  for (const [, mock] of pairs(worldEntityUpdates)) {
+  for (const [, mock] of pairs(worldUpdates)) {
     worldUpdaterCalls += mock.numCalls
   }
   return worldUpdaterCalls
@@ -76,7 +76,7 @@ after_each(() => {
   if (expectedWuCalls == worldUpdaterCalls) return
 
   let message = `expected ${expectedWuCalls} calls to worldUpdater, got ${worldUpdaterCalls}\n`
-  for (const [key, fn] of pairs(worldEntityUpdates)) {
+  for (const [key, fn] of pairs(worldUpdates)) {
     if (fn.calls.length > 0) {
       message += `  ${key} called ${fn.calls.length} times\n`
     }
@@ -85,13 +85,13 @@ after_each(() => {
 })
 
 function clearMocks(): void {
-  mock.clear(worldEntityUpdates)
+  mock.clear(worldUpdates)
   mock.clear(wireSaver)
   expectedWuCalls = 0
 }
 
 function assertWUNotCalled() {
-  for (const [, spy] of pairs(worldEntityUpdates)) {
+  for (const [, spy] of pairs(worldUpdates)) {
     expect(spy).not.toHaveBeenCalled()
   }
 }
@@ -103,44 +103,44 @@ function assertUpdateCalled(
 ): void {
   expectedWuCalls++
   if (n == nil) expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.updateWorldEntities).toHaveBeenNthCalledWith(n ?? 1, entity, startStage, updateHighlights)
+  expect(worldUpdates.updateWorldEntities).toHaveBeenNthCalledWith(n ?? 1, entity, startStage, updateHighlights)
   if (updateHighlights == false) {
-    expect(worldEntityUpdates.updateAllHighlights).toHaveBeenCalledWith(entity)
+    expect(worldUpdates.updateAllHighlights).toHaveBeenCalledWith(entity)
     expectedWuCalls++
   }
 }
 
 function assertUpdateOnLastStageChangedCalled(entity: ProjectEntity, oldLastStage: StageNumber | nil) {
   expectedWuCalls++
-  expect(worldEntityUpdates.updateWorldEntitiesOnLastStageChanged).toHaveBeenCalledWith(entity, oldLastStage)
+  expect(worldUpdates.updateWorldEntitiesOnLastStageChanged).toHaveBeenCalledWith(entity, oldLastStage)
 }
 
 function assertRefreshCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldEntityUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(entity, stage)
+  expect(worldUpdates.refreshWorldEntityAtStage).toHaveBeenCalledWith(entity, stage)
 }
 function assertResetUndergroundRotationCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldEntityUpdates.resetUnderground).toHaveBeenCalledWith(entity, stage)
+  expect(worldUpdates.resetUnderground).toHaveBeenCalledWith(entity, stage)
 }
 function assertReplaceCalled(entity: ProjectEntity, stage: StageNumber) {
   expectedWuCalls++
-  expect(worldEntityUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(entity, stage)
+  expect(worldUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(entity, stage)
 }
 function assertDeleteWorldEntityCalled(entity: ProjectEntity) {
   expectedWuCalls++
   expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.deleteWorldEntities).toHaveBeenCalledWith(entity)
+  expect(worldUpdates.deleteWorldEntities).toHaveBeenCalledWith(entity)
 }
 function assertMakeSettingsRemnantCalled(entity: ProjectEntity) {
   expectedWuCalls++
   expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.makeSettingsRemnant).toHaveBeenCalledWith(entity)
+  expect(worldUpdates.makeSettingsRemnant).toHaveBeenCalledWith(entity)
 }
 function assertReviveSettingsRemnantCalled(entity: ProjectEntity) {
   expectedWuCalls++
   expect(numWuCalls()).toBe(1)
-  expect(worldEntityUpdates.reviveSettingsRemnant).toHaveBeenCalledWith(entity)
+  expect(worldUpdates.reviveSettingsRemnant).toHaveBeenCalledWith(entity)
 }
 
 function assertOneEntity() {
@@ -173,10 +173,10 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
   return entity
 }
 function assertNewUpdated(entity: ProjectEntity) {
-  expect(worldEntityUpdates.updateNewWorldEntitiesWithoutWires).toHaveBeenCalledWith(entity)
+  expect(worldUpdates.updateNewWorldEntitiesWithoutWires).toHaveBeenCalledWith(entity)
   expectedWuCalls = 1
   if (entity.circuitConnections || entity.cableConnections) {
-    expect(worldEntityUpdates.updateWireConnections).toHaveBeenCalledWith(entity)
+    expect(worldUpdates.updateWireConnections).toHaveBeenCalledWith(entity)
     expectedWuCalls++
   }
 }
@@ -288,10 +288,10 @@ describe("addNewEntity", () => {
             override_stack_size: 2,
           },
         })
-        expect(worldEntityUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
+        expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
         expectedWuCalls++
       } else {
-        expect(worldEntityUpdates.updateAllHighlights).not.toHaveBeenCalled()
+        expect(worldUpdates.updateAllHighlights).not.toHaveBeenCalled()
       }
     })
   })
@@ -1271,7 +1271,7 @@ describe("undergrounds", () => {
       force: luaEntity.force,
       direction: direction.west,
     })
-    worldEntityUpdates.updateWorldEntities.invokes((pEntity, stage) => {
+    worldUpdates.updateWorldEntities.invokes((pEntity, stage) => {
       if (entity == pEntity && stage == 1) {
         luaEntity.rotate()
       }

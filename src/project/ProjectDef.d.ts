@@ -23,7 +23,7 @@ import { PropertiesTable } from "../utils/properties-obj"
 import { ProjectUpdates } from "./project-updates"
 
 import { UserActions } from "./user-actions"
-import { WorldEntityUpdates } from "./world-entity-updates"
+import { WorldUpdates } from "./world-updates"
 
 export type ProjectId = number & {
   _projectIdBrand: never
@@ -41,7 +41,7 @@ export interface Project {
   // Refs to modules, handling all possible updates
   actions: UserActions
   updates: ProjectUpdates
-  entityUpdates: WorldEntityUpdates
+  worldUpdates: WorldUpdates
 }
 
 export interface UserProject extends Project {

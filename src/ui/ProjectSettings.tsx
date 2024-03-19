@@ -531,7 +531,7 @@ class ProjectSettings extends Component<{
     )
   }
   private rebuildAllStages() {
-    this.project.entityUpdates.rebuildAllStages()
+    this.project.worldUpdates.rebuildAllStages()
   }
   private syncMapGenSettings() {
     const stage = playerCurrentStage(this.playerIndex).get()
@@ -700,7 +700,7 @@ export class StageSettings extends Component<{
 
   private resetStage() {
     const stage = this.stage
-    if (stage.valid) stage.project.entityUpdates.rebuildStage(stage.stageNumber)
+    if (stage.valid) stage.project.worldUpdates.rebuildStage(stage.stageNumber)
   }
 
   private setLabTiles() {
@@ -734,13 +734,13 @@ export class StageSettings extends Component<{
   private disableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    stage.project.entityUpdates.disableAllEntitiesInStage(stage.stageNumber)
+    stage.project.worldUpdates.disableAllEntitiesInStage(stage.stageNumber)
   }
 
   private enableAllEntities() {
     const stage = this.stage
     if (!stage.valid) return
-    stage.project.entityUpdates.enableAllEntitiesInStage(stage.stageNumber)
+    stage.project.worldUpdates.enableAllEntitiesInStage(stage.stageNumber)
   }
 
   private beginDelete() {

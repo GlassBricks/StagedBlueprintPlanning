@@ -29,7 +29,7 @@ import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { Pos } from "../lib/geometry"
 import { Project } from "./ProjectDef"
-import { WorldEntityUpdates } from "./world-entity-updates"
+import { WorldUpdates } from "./world-updates"
 import min = math.min
 
 export declare const enum EntityUpdateResult {
@@ -87,7 +87,7 @@ export interface ProjectUpdates {
   setTrainLocationToCurrent(entity: RollingStockProjectEntity): void
 }
 
-export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntityUpdates): ProjectUpdates {
+export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): ProjectUpdates {
   const content = project.content
 
   const {
@@ -102,7 +102,7 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
     updateWorldEntities,
     updateWorldEntitiesOnLastStageChanged,
     updateAllHighlights,
-  } = worldEntityUpdates
+  } = WorldUpdates
 
   return {
     addNewEntity,
