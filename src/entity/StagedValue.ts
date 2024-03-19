@@ -221,7 +221,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
 
   insertStage(stageNumber: StageNumber): void {
     if (this.firstStage >= stageNumber) this.firstStage++
-    if (this.lastStage && this.lastStage >= stageNumber) this.lastStage++
+    if (this.lastStage && this.lastStage >= stageNumber - 1) this.lastStage++
 
     shiftNumberKeysUp(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
