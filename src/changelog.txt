@@ -2,6 +2,7 @@
 Version: 0.30.4
 Date: ????
   Changes:
+    - When inserting a new stage, the new stage will now include entities deconstructed immediately after that stage.
 ---------------------------------------------------------------------------------------------------
 Version: 0.30.3
 Date: 2024-03-12
