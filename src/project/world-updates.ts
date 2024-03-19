@@ -23,7 +23,7 @@ import { ProjectTile } from "../entity/ProjectTile"
 import { isPreviewEntity } from "../entity/prototype-info"
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
-import { Mutable, RegisterClass } from "../lib"
+import { Mutable, PRecord, RegisterClass } from "../lib"
 import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
@@ -451,6 +451,11 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     }
     for (const entity of updateLater) {
       refreshWorldEntityAtStage(entity, stage)
+    }
+    for (const [, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {
+      for (const [, tile] of pairs(row)) {
+        updateTileAtStage(tile, stage)
+      }
     }
   }
 

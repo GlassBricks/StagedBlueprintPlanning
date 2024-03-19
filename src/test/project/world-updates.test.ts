@@ -596,6 +596,9 @@ test("rebuildStage", () => {
   project.content.addEntity(entity2)
   project.content.addEntity(entity3)
 
+  const tile1 = createProjectTile("concrete", Pos(0, 0), 1)
+  project.content.setTile(tile1)
+
   const surface = project.getSurface(2)!
   const chest = surface.create_entity({
     name: "iron-chest",
@@ -609,6 +612,8 @@ test("rebuildStage", () => {
   expect(entity2.getWorldEntity(2)).toBeAny()
   expect(entity3.getWorldOrPreviewEntity(2)).toBeAny()
   expect(entity3.getWorldEntity(2)).toBeNil()
+
+  expect(surface.get_tile(0, 0).name).toBe("concrete")
 })
 
 // this duplicates WireHandler test a bit
