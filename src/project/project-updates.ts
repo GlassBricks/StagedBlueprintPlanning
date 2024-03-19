@@ -24,7 +24,7 @@ import {
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../entity/ProjectTile"
-import { areUpgradeableTypes } from "../entity/prototype-info"
+import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
@@ -91,6 +91,8 @@ export interface ProjectUpdates {
   moveTileDown(tile: ProjectTile, stage: StageNumber): void
   setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void
   deleteTile(tile: ProjectTile): void
+
+  scanProjectForExistingTiles(): void
 }
 
 export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): ProjectUpdates {
@@ -135,6 +137,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     moveTileDown,
     setTileValueAtStage,
     deleteTile,
+    scanProjectForExistingTiles,
   }
 
   function fixNewUndergroundBelt(
@@ -753,6 +756,37 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   function deleteTile(tile: ProjectTile): void {
     if (content.deleteTile(tile)) {
       resetTiles(tile)
+    }
+  }
+
+  function scanProjectForExistingTiles(): void {
+    const bbox = content.computeBoundingBox()
+    const tilesToUpdate = new LuaSet<ProjectTile>()
+    for (const stage of $range(1, project.numStages())) {
+      const surface = project.getSurface(stage)!
+      const tiles = surface.find_tiles_filtered({
+        area: bbox,
+        name: Object.keys(getPrototypeInfo().blueprintableTiles),
+      })
+      for (const tile of tiles) {
+        const position = tile.position
+        const existing = content.tiles.get(position.x, position.y)
+        if (!existing) {
+          const newTile = createProjectTile(tile.name, position, stage)
+          content.setTile(newTile)
+          tilesToUpdate.add(newTile)
+        } else if (stage < existing.firstStage) {
+          existing.setFirstStageUnchecked(stage)
+          tilesToUpdate.add(existing)
+        } else if (stage >= existing.firstStage) {
+          if (existing.adjustValueAtStage(stage, tile.name)) {
+            tilesToUpdate.add(existing)
+          }
+        }
+      }
+    }
+    for (const tile of tilesToUpdate) {
+      updateTilesInVisibleStages(tile)
     }
   }
 }

@@ -294,6 +294,14 @@ export declare const enum L_GuiProjectSettings {
   ExportBlueprintBookStringToFile = "bp100.gui.project-settings.export-blueprint-book-string-to-file",
   /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
   ExportBlueprintBookStringToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-string-to-file-tooltip",
+  /** Enable staged tiles [img=info] */
+  EnableStagedTiles = "bp100.gui.project-settings.enable-staged-tiles",
+  /** Enables (basic) support for staged tiles, like entities.\nIf enabling for the first time, you may want to click "Scan existing tiles" below. */
+  EnableStagedTilesTooltip = "bp100.gui.project-settings.enable-staged-tiles-tooltip",
+  /** Scan existing tiles [img=info] */
+  ScanExistingTiles = "bp100.gui.project-settings.scan-existing-tiles",
+  /** Scans all already placed tiles in the project, and adds it to staged tiles. */
+  ScanExistingTilesTooltip = "bp100.gui.project-settings.scan-existing-tiles-tooltip",
   /** Rebuild all stages */
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
   /** Sync map gen settings [img=info] */

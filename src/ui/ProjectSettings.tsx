@@ -507,6 +507,19 @@ class ProjectSettings extends Component<{
   private OtherTab() {
     return (
       <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
+        <checkbox
+          state={this.project.stagedTilesEnabled}
+          caption={[L_GuiProjectSettings.EnableStagedTiles]}
+          tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
+        />
+        <button
+          caption={[L_GuiProjectSettings.ScanExistingTiles]}
+          tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
+          styleMod={{ width: OtherSettingsButtonWidth }}
+          on_gui_click={ibind(this.scanExistingTiles)}
+        />
+
+        <line />
         <button
           caption={[L_GuiProjectSettings.RebuildAllStages]}
           styleMod={{ width: OtherSettingsButtonWidth }}
@@ -529,6 +542,10 @@ class ProjectSettings extends Component<{
         <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
       </flow>
     )
+  }
+  private scanExistingTiles() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (stage) stage.project.updates.scanProjectForExistingTiles()
   }
   private rebuildAllStages() {
     this.project.worldUpdates.rebuildAllStages()
