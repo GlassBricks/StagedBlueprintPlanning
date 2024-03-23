@@ -224,14 +224,14 @@ export function ProjectUpdates(project: Project, worldEntityUpdates: WorldEntity
       entity.isSettingsRemnant = true
       makeSettingsRemnant(entity)
     } else {
-      content.delete(entity)
       deleteWorldEntities(entity)
+      content.delete(entity)
     }
   }
 
   function forceDeleteEntity(entity: ProjectEntity): void {
-    content.delete(entity)
     deleteWorldEntities(entity)
+    content.delete(entity)
   }
 
   function readdDeletedEntity(entity: ProjectEntity): void {
