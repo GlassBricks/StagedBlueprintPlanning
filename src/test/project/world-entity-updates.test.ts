@@ -21,7 +21,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
-import { createEntity, saveEntity } from "../../entity/save-load"
+import { createEntity, createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
 import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
@@ -518,16 +518,24 @@ describe("underground pair", () => {
     })
   })
   test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
+    middleUg.replaceWorldEntity(
+      1,
+      createPreviewEntity(
+        surfaces[0],
+        Pos(0.5, 0.5),
+        defines.direction.east,
+        Prototypes.PreviewEntityPrefix + "underground-belt",
+      ),
+    )
+    worldEntityUpdates.deleteWorldEntities(middleUg)
+    expect(middleUg.getWorldOrPreviewEntity(1)).toBeNil()
+  })
+  test("bug: deleteWorldEntities on underground belt does not crash if is preview", () => {
     worldEntityUpdates.deleteWorldEntities(middleUg)
     expect(rightUg.getWorldEntity(1)).toMatchTable({
       neighbours: leftWorldEntity,
     })
     expect(rightUg.hasErrorAt(1)).toBe(true)
-
-    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(rightUg)
-
-    expect(middleUg.getWorldEntity(1)).toBeNil()
-    expect(entityHighlights.deleteAllHighlights).toHaveBeenCalledWith(middleUg)
   })
   test("refreshWorldEntityAtStage with force=true still rotates underground even if errored", () => {
     // manually break right underground

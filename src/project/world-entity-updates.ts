@@ -316,7 +316,7 @@ export function WorldEntityUpdates(project: Project, highlights: EntityHighlight
   function deleteUndergroundBelt(entity: ProjectEntity, project: Project): void {
     const pairsToUpdate = new LuaSet<UndergroundBeltProjectEntity>()
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const worldEntity = entity.getWorldOrPreviewEntity(stage)
+      const worldEntity = entity.getWorldEntity(stage)
       if (!worldEntity) continue
       const pair = worldEntity.neighbours as LuaEntity | nil
       if (!pair) continue
