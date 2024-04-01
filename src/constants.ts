@@ -14,6 +14,8 @@ import { Color } from "factorio:prototype"
 export const enum Settings {
   EntityInfoLocation = "bp100:entity-info-location",
   FlexibleOffshorePumpPlacement = "bp100:flexible-offshore-pump-placement",
+  MinableLandfill = "bp100:minable-landfill",
+  LandLandfill = "bp100:land-landfill",
   UpgradeOnPaste = "bp100:upgrade-on-paste",
 }
 

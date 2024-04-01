@@ -94,9 +94,8 @@ export function createWhiteSprite(
 }
 
 const entityToItemBuild = new LuaMap<string, string>()
-const itemTypes = ["item", "item-with-entity-data", "rail-planner"] as const
-for (const type of itemTypes) {
-  const prototypes = data.raw[type]
+for (const type in defines.prototypes.item) {
+  const prototypes = data.raw[type as keyof typeof defines.prototypes.item]
   if (prototypes == nil) continue
   for (const [name, itemPrototype] of pairs(prototypes)) {
     if (itemPrototype.place_result) entityToItemBuild.set(itemPrototype.place_result, name)

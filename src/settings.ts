@@ -17,6 +17,28 @@ declare const data: SettingsData
 
 data.extend<StringSettingDefinition | BoolSettingDefinition>([
   {
+    name: Settings.FlexibleOffshorePumpPlacement,
+    type: "string-setting",
+    setting_type: "startup",
+    allowed_values: Object.values(FlexibleOffshorePumpPlacement),
+    default_value: FlexibleOffshorePumpPlacement.Disabled,
+    order: "a",
+  },
+  {
+    name: Settings.MinableLandfill,
+    type: "bool-setting",
+    setting_type: "startup",
+    default_value: false,
+    order: "b",
+  },
+  {
+    name: Settings.LandLandfill,
+    type: "bool-setting",
+    setting_type: "startup",
+    default_value: false,
+    order: "c",
+  },
+  {
     name: Settings.EntityInfoLocation,
     type: "string-setting",
     setting_type: "runtime-per-user",
@@ -25,18 +47,10 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     order: "a",
   },
   {
-    name: Settings.FlexibleOffshorePumpPlacement,
-    type: "string-setting",
-    setting_type: "startup",
-    allowed_values: Object.values(FlexibleOffshorePumpPlacement),
-    default_value: FlexibleOffshorePumpPlacement.Disabled,
-    order: "b",
-  },
-  {
     name: Settings.UpgradeOnPaste,
     type: "bool-setting",
     setting_type: "runtime-per-user",
     default_value: false,
-    order: "c",
+    order: "b",
   },
 ])

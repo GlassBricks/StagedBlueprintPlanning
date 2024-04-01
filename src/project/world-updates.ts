@@ -474,7 +474,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
       const surface = project.getSurface(stage)!
       if (value) {
         tileWrite.name = value
-        surface.set_tiles(tileWriteArr)
+        surface.set_tiles(tileWriteArr, true, false)
         raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
       }
     }
@@ -483,12 +483,16 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     const value = tile.getValueAtStage(stage)
     if (!value) return
     const surface = project.getSurface(stage)!
-    surface.set_tiles([
-      {
-        position: tile.position,
-        name: value,
-      },
-    ])
+    surface.set_tiles(
+      [
+        {
+          position: tile.position,
+          name: value,
+        },
+      ],
+      true,
+      false,
+    )
   }
   function updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void {
     resetTilesInRange(tile.position, oldFirstStage, tile.firstStage - 1)
@@ -508,7 +512,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
       const tile =
         surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
       tileWrite.name = tile
-      surface.set_tiles(tileWriteArr)
+      surface.set_tiles(tileWriteArr, true, false)
       raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
     }
   }
