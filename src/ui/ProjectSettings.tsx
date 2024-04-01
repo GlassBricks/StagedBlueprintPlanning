@@ -37,9 +37,9 @@ import {
   ExpandButton,
   Fn,
   HorizontalPusher,
+  HorizontalSpacer,
   showDialog,
   TitleBar,
-  TrashButton,
   VerticalPusher,
 } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
@@ -86,6 +86,7 @@ const StageListBoxWidth = 140
 const NewStageBarHeight = 100
 
 const StageSettingsButtonWidth = 180
+const LandfillButtonWidth = 220
 const OtherSettingsButtonWidth = 180
 const BpSettingsButtonWidth = 220
 
@@ -188,10 +189,10 @@ class ProjectSettings extends Component<{
             >
               <tab caption={[L_GuiProjectSettings.Stage]} />
               {this.StagesTab()}
+              <tab caption={[L_GuiProjectSettings.EntitiesAndTiles]} />
+              {this.EntitiesAndTiles()}
               <tab caption={[L_GuiProjectSettings.Blueprints]} />
               {this.BlueprintSettingsTab()}
-              <tab caption={[L_GuiProjectSettings.Other]} />
-              {this.OtherTab()}
             </tabbed-pane>
           </frame>
         </flow>
@@ -199,12 +200,144 @@ class ProjectSettings extends Component<{
     )
   }
 
+  private EntitiesAndTiles() {
+    const selectedTile = this.project.landfillTile
+    const selectedTileValue = selectedTile.get()
+    const tileIsNotBlueprintable = selectedTileValue && !game.tile_prototypes[selectedTileValue]?.items_to_place_this
+    const allowNonBlueprintable = property<boolean>(!!tileIsNotBlueprintable)
+
+    return (
+      <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
+        <label caption={[L_GuiProjectSettings.Entities]} style="caption_label" />
+        <flow>
+          <button
+            styleMod={{ width: StageSettingsButtonWidth }}
+            caption={[L_GuiProjectSettings.DisableAllEntities]}
+            on_gui_click={ibind(this.disableAllEntities)}
+          />
+          <button
+            styleMod={{ width: StageSettingsButtonWidth }}
+            caption={[L_GuiProjectSettings.EnableAllEntities]}
+            on_gui_click={ibind(this.enableAllEntities)}
+          />
+        </flow>
+        <line />
+        <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
+        <flow styleMod={{ vertical_align: "center" }}>
+          <flow
+            direction="horizontal"
+            styleMod={{
+              width: StageSettingsButtonWidth,
+              vertical_align: "center",
+            }}
+          >
+            <label caption={[L_GuiProjectSettings.SelectedTile]} />
+            <choose-elem-button
+              elem_type="tile"
+              elem_value={selectedTile}
+              elem_filters={allowNonBlueprintable.select(nil, [
+                { filter: "item-to-place" } satisfies TilePrototypeFilter,
+              ])}
+            />
+          </flow>
+          <checkbox state={allowNonBlueprintable} caption={[L_GuiProjectSettings.AllowNonBlueprintableTiles]} />
+        </flow>
+        <button
+          styleMod={{ width: LandfillButtonWidth }}
+          caption={[L_GuiProjectSettings.SetLabTiles]}
+          on_gui_click={ibind(this.setLabTiles)}
+        />
+        <button
+          styleMod={{ width: LandfillButtonWidth }}
+          caption={[L_GuiProjectSettings.SetSelectedTile]}
+          on_gui_click={ibind(this.setSelectedTile)}
+        />
+        <button
+          styleMod={{ width: LandfillButtonWidth }}
+          caption={[L_GuiProjectSettings.SetSelectedTileAndLab]}
+          tooltip={[L_GuiProjectSettings.SetSelectedTileAndLabTooltip]}
+          on_gui_click={ibind(this.setLandfillAndLabTiles)}
+        />
+        <button
+          styleMod={{ width: LandfillButtonWidth }}
+          caption={[L_GuiProjectSettings.SetSelectedTileAndWater]}
+          tooltip={[L_GuiProjectSettings.SetSelectedTileAndWaterTooltip]}
+          on_gui_click={ibind(this.setLandfillAndWater)}
+        />
+        <line />
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <checkbox
+            state={this.project.stagedTilesEnabled}
+            caption={[L_GuiProjectSettings.EnableStagedTiles]}
+            tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
+          />
+          <HorizontalSpacer width={10} />
+          <button
+            styleMod={{ width: StageSettingsButtonWidth }}
+            caption={[L_GuiProjectSettings.ScanExistingTiles]}
+            tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
+            enabled={this.project.stagedTilesEnabled}
+            on_gui_click={ibind(this.scanExistingTiles)}
+          />
+        </flow>
+        <VerticalPusher />
+        <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
+      </flow>
+    )
+  }
+  private rebuildStage() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!(stage && stage.valid)) return
+    stage.project.worldUpdates.rebuildStage(stage.stageNumber)
+  }
+
+  private disableAllEntities() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || !stage.valid) return
+    stage.project.worldUpdates.disableAllEntitiesInStage(stage.stageNumber)
+  }
+
+  private enableAllEntities() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || !stage.valid) return
+    stage.project.worldUpdates.enableAllEntitiesInStage(stage.stageNumber)
+  }
+
+  private setLabTiles() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || !stage.valid) return
+    setCheckerboard(stage.surface, stage.getBlueprintBBox())
+  }
+
+  private setSelectedTile() {
+    this.trySetLandfillTile(setTilesForStage)
+  }
+
+  private setLandfillAndWater() {
+    this.trySetLandfillTile(setTilesAndWaterForStage)
+  }
+
+  private setLandfillAndLabTiles() {
+    this.trySetLandfillTile(setTilesAndCheckerboardForStage)
+  }
+
+  private trySetLandfillTile(fn: typeof setTilesAndWaterForStage) {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || !stage.valid) return
+    const success = fn(stage)
+    if (!success) {
+      game.get_player(this.playerIndex)?.create_local_flying_text({
+        text: [L_GuiProjectSettings.FailedToSetTiles],
+        create_at_cursor: true,
+      })
+    }
+  }
+
   private StagesTab() {
-    const currentStage = playerCurrentStage(this.playerIndex)
     return (
       <Fn
         uses="frame"
-        from={currentStage}
+        from={playerCurrentStage(this.playerIndex)}
         map={ibind(this.renderStageSettings)}
         direction="vertical"
         style="inside_shallow_frame"
@@ -215,6 +348,13 @@ class ProjectSettings extends Component<{
       />
     )
   }
+  private renderStageSettings(stage: Stage | nil): Element | nil {
+    if (stage && stage.project == this.project) {
+      return this.StageSettings(stage)
+    }
+    return nil
+  }
+
   private NewStageBox() {
     return (
       <frame
@@ -240,12 +380,6 @@ class ProjectSettings extends Component<{
         />
       </frame>
     )
-  }
-  private renderStageSettings(stage: Stage | nil): Element | nil {
-    if (stage && stage.project == this.project) {
-      return <StageSettings stage={stage} />
-    }
-    return nil
   }
 
   private BlueprintSettingsTab() {
@@ -504,45 +638,6 @@ class ProjectSettings extends Component<{
     }
   }
 
-  private OtherTab() {
-    return (
-      <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
-        <checkbox
-          state={this.project.stagedTilesEnabled}
-          caption={[L_GuiProjectSettings.EnableStagedTiles]}
-          tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
-        />
-        <button
-          caption={[L_GuiProjectSettings.ScanExistingTiles]}
-          tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
-          styleMod={{ width: OtherSettingsButtonWidth }}
-          on_gui_click={ibind(this.scanExistingTiles)}
-        />
-
-        <line />
-        <button
-          caption={[L_GuiProjectSettings.RebuildAllStages]}
-          styleMod={{ width: OtherSettingsButtonWidth }}
-          on_gui_click={ibind(this.rebuildAllStages)}
-        />
-        <button
-          caption={[L_GuiProjectSettings.SyncMapGenSettings]}
-          tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
-          styleMod={{ width: OtherSettingsButtonWidth }}
-          on_gui_click={ibind(this.syncMapGenSettings)}
-        />
-        <line />
-        <button
-          style="red_button"
-          caption={[L_GuiProjectSettings.DeleteProject]}
-          styleMod={{ width: OtherSettingsButtonWidth }}
-          on_gui_click={ibind(this.beginDelete)}
-        />
-        <VerticalPusher />
-        <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
-      </flow>
-    )
-  }
   private scanExistingTiles() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (stage) stage.project.updates.scanProjectForExistingTiles()
@@ -553,26 +648,6 @@ class ProjectSettings extends Component<{
   private syncMapGenSettings() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (stage) syncMapGenSettings(stage)
-  }
-  private beginDelete() {
-    const player = game.get_player(this.playerIndex)
-    if (!player) return
-    showDialog(player, {
-      title: [L_GuiProjectSettings.DeleteProject],
-      message: [
-        [L_GuiProjectSettings.DeleteProjectConfirmation1, this.project.displayName().get()],
-        [L_GuiProjectSettings.DeleteProjectConfirmation2],
-      ],
-      redConfirm: true,
-      backCaption: ["gui.cancel"],
-      confirmCaption: ["gui.delete"],
-      onConfirm: ibind(this.deleteProject),
-    })
-  }
-
-  private deleteProject() {
-    this.project.delete()
-    exitProject(game.get_player(this.playerIndex)!)
   }
 
   private newStageAfter() {
@@ -591,184 +666,91 @@ class ProjectSettings extends Component<{
     teleportToStage(game.get_player(this.playerIndex)!, stage)
   }
 
-  private sssCount = 0
-
-  private sss() {
-    this.sssCount++
-    if (this.sssCount >= 3) {
-      const player = game.get_player(this.playerIndex)
-      if (!player) return
-      player.play_sound({ path: Prototypes.BANANA, override_sound_type: "alert" })
-      this.sssCount = 0
-    }
-  }
-}
-
-@RegisterClass("gui:StageSettings")
-export class StageSettings extends Component<{
-  stage: Stage
-}> {
-  playerIndex!: PlayerIndex
-  stage!: Stage
-  override render(
-    props: {
-      stage: Stage
-    },
-    context: RenderContext,
-  ): Element {
-    this.stage = props.stage
-    this.playerIndex = context.playerIndex
-
-    const selectedTile = this.stage.project.landfillTile
-    const selectedTileValue = selectedTile.get()
-    const tileIsNotBlueprintable = selectedTileValue && !game.tile_prototypes[selectedTileValue]?.items_to_place_this
-
-    const allowNonBlueprintable = property<boolean>(!!tileIsNotBlueprintable)
-
+  private StageSettings(stage: Stage) {
     return (
       <>
         <frame style="subheader_frame" direction="horizontal">
           <ItemRename
-            name={props.stage.name}
-            displayName={props.stage.name}
+            name={stage.name}
+            displayName={stage.name}
             renameTooltip={[L_GuiProjectSettings.RenameStage]}
             maximalWidth={ProjectSettingsTabWidth}
           />
           <HorizontalPusher />
-          <TrashButton
-            tooltip={[L_GuiProjectSettings.DeleteStage]}
-            enabled={this.stage.project.numStages() > 1}
-            on_gui_click={ibind(this.beginDelete)}
-          />
         </frame>
         <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
-          <label style="caption_label" caption={[L_GuiProjectSettings.Entities]} />
+          <button
+            style="red_button"
+            caption={[L_GuiProjectSettings.DeleteStage]}
+            styleMod={{ width: OtherSettingsButtonWidth }}
+            enabled={stage.stageNumber > 1}
+            on_gui_click={ibind(this.beginDelete)}
+          />
+          <line />
+          <label caption={[L_GuiProjectSettings.Rebuild]} style="caption_label" />
           <button
             styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.ResetStage]}
-            tooltip={[L_GuiProjectSettings.ResetStageTooltip]}
-            on_gui_click={ibind(this.resetStage)}
+            caption={[L_GuiProjectSettings.RebuildStage]}
+            tooltip={[L_GuiProjectSettings.RebuildStageTooltip]}
+            on_gui_click={ibind(this.rebuildStage)}
           />
-          <flow>
-            <button
-              styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.DisableAllEntities]}
-              on_gui_click={ibind(this.disableAllEntities)}
-            />
-            <button
-              styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.EnableAllEntities]}
-              on_gui_click={ibind(this.enableAllEntities)}
-            />
-          </flow>
-
+          <button
+            styleMod={{ width: StageSettingsButtonWidth }}
+            caption={[L_GuiProjectSettings.RebuildAllStages]}
+            on_gui_click={ibind(this.rebuildAllStages)}
+          />
           <line />
-
-          <label style="caption_label" caption={[L_GuiProjectSettings.SetTiles]} />
-          <flow styleMod={{ vertical_align: "center" }}>
-            <flow
-              direction="horizontal"
-              styleMod={{
-                width: StageSettingsButtonWidth,
-                vertical_align: "center",
-              }}
-            >
-              <label caption={[L_GuiProjectSettings.SelectedTile]} />
-              <choose-elem-button
-                elem_type="tile"
-                elem_value={selectedTile}
-                elem_filters={allowNonBlueprintable.select(nil, [
-                  { filter: "item-to-place" } satisfies TilePrototypeFilter,
-                ])}
-              />
-            </flow>
-            <checkbox state={allowNonBlueprintable} caption={[L_GuiProjectSettings.AllowNonBlueprintableTiles]} />
-          </flow>
-          <flow>
-            <button
-              styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.SetLabTiles]}
-              on_gui_click={ibind(this.setLabTiles)}
-            />
-            <button
-              styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.SetSelectedTile]}
-              on_gui_click={ibind(this.setSelectedTile)}
-            />
-          </flow>
-          <flow>
-            <button
-              styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.SetSelectedTileAndLab]}
-              tooltip={[L_GuiProjectSettings.SetSelectedTileAndLabTooltip]}
-              on_gui_click={ibind(this.setLandfillAndLabTiles)}
-            />
-            <button
-              styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.SetSelectedTileAndWater]}
-              tooltip={[L_GuiProjectSettings.SetSelectedTileAndWaterTooltip]}
-              on_gui_click={ibind(this.setLandfillAndWater)}
-            />
-          </flow>
+          <button
+            styleMod={{ width: StageSettingsButtonWidth }}
+            caption={[L_GuiProjectSettings.SyncMapGenSettings]}
+            tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
+            on_gui_click={ibind(this.syncMapGenSettings)}
+          />
+          <VerticalPusher />
+          <button
+            style="red_button"
+            caption={[L_GuiProjectSettings.DeleteProject]}
+            styleMod={{ width: OtherSettingsButtonWidth }}
+            on_gui_click={ibind(this.beginDeleteProject)}
+          />
         </flow>
       </>
     )
   }
 
-  private resetStage() {
-    const stage = this.stage
-    if (stage.valid) stage.project.worldUpdates.rebuildStage(stage.stageNumber)
+  private beginDeleteProject() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    const project = this.project
+    showDialog(player, {
+      title: [L_GuiProjectSettings.DeleteProject],
+      message: [
+        [L_GuiProjectSettings.DeleteProjectConfirmation1, project.displayName().get()],
+        [L_GuiProjectSettings.DeleteProjectConfirmation2],
+      ],
+      redConfirm: true,
+      backCaption: ["gui.cancel"],
+      confirmCaption: ["gui.delete"],
+      onConfirm: bind(ibind(this.deleteProject), project),
+    })
   }
 
-  private setLabTiles() {
-    setCheckerboard(this.stage.surface, this.stage.getBlueprintBBox())
-  }
-
-  private setSelectedTile() {
-    this.trySetLandfillTile(setTilesForStage)
-  }
-
-  private setLandfillAndWater() {
-    this.trySetLandfillTile(setTilesAndWaterForStage)
-  }
-
-  private setLandfillAndLabTiles() {
-    this.trySetLandfillTile(setTilesAndCheckerboardForStage)
-  }
-
-  private trySetLandfillTile(fn: typeof setTilesAndWaterForStage) {
-    const stage = this.stage
-    if (!stage.valid) return
-    const success = fn(stage)
-    if (!success) {
-      game.get_player(this.playerIndex)?.create_local_flying_text({
-        text: [L_GuiProjectSettings.FailedToSetTiles],
-        create_at_cursor: true,
-      })
-    }
-  }
-
-  private disableAllEntities() {
-    const stage = this.stage
-    if (!stage.valid) return
-    stage.project.worldUpdates.disableAllEntitiesInStage(stage.stageNumber)
-  }
-
-  private enableAllEntities() {
-    const stage = this.stage
-    if (!stage.valid) return
-    stage.project.worldUpdates.enableAllEntitiesInStage(stage.stageNumber)
+  private deleteProject(project: UserProject) {
+    exitProject(game.get_player(this.playerIndex)!)
+    project.delete()
   }
 
   private beginDelete() {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const { isFirst, toMerge } = this.getStageToMerge()
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage) return
+    const { isFirst, toMerge } = this.getStageToMerge(stage)
     if (!toMerge) return
     showDialog(player, {
       title: [L_GuiProjectSettings.DeleteStage],
       message: [
-        [L_GuiProjectSettings.DeleteStageConfirmation1, this.stage.name.get()],
+        [L_GuiProjectSettings.DeleteStageConfirmation1, stage.name.get()],
         [
           isFirst
             ? L_GuiProjectSettings.DeleteStageConfirmation2First
@@ -779,22 +761,34 @@ export class StageSettings extends Component<{
       redConfirm: true,
       backCaption: ["gui.cancel"],
       confirmCaption: ["gui.delete"],
-      onConfirm: ibind(this.deleteStage),
+      onConfirm: bind(ibind(this.deleteStage), stage),
     })
   }
-  private getStageToMerge() {
-    const stageNumber = this.stage.stageNumber
+  private getStageToMerge(stage: Stage) {
+    const stageNumber = stage.stageNumber
     const isFirst = stageNumber == 1
-    const toMerge = this.stage.project.getStage(getStageToMerge(stageNumber))
+    const toMerge = stage.project.getStage(getStageToMerge(stageNumber))
     return { isFirst, toMerge }
   }
-  private deleteStage() {
-    const { toMerge } = this.getStageToMerge()
+  private deleteStage(stage: Stage) {
+    const { toMerge } = this.getStageToMerge(stage)
     if (!toMerge) return
     const player = game.get_player(this.playerIndex)!
     recordPlayerLastPosition(player)
-    this.stage.deleteInProject()
+    stage.deleteInProject()
     teleportToStage(player, toMerge)
+  }
+
+  private sssCount = 0
+
+  private sss() {
+    this.sssCount++
+    if (this.sssCount >= 3) {
+      const player = game.get_player(this.playerIndex)
+      if (!player) return
+      player.play_sound({ path: Prototypes.BANANA, override_sound_type: "alert" })
+      this.sssCount = 0
+    }
   }
 }
 

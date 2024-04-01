@@ -180,6 +180,16 @@ export declare const enum L_GuiProjectSettings {
   AtFront = "bp100.gui.project-settings.at-front",
   /** Rename */
   RenameProject = "bp100.gui.project-settings.rename-project",
+  /** Entities and tiles */
+  EntitiesAndTiles = "bp100.gui.project-settings.entities-and-tiles",
+  /** Entities */
+  Entities = "bp100.gui.project-settings.entities",
+  /** Tiles */
+  Tiles = "bp100.gui.project-settings.tiles",
+  /** Rebuild */
+  Rebuild = "bp100.gui.project-settings.rebuild",
+  /** Current stage */
+  CurrentStage = "bp100.gui.project-settings.current-stage",
   /** Stage */
   Stage = "bp100.gui.project-settings.stage",
   /** Blueprints */
@@ -188,37 +198,37 @@ export declare const enum L_GuiProjectSettings {
   Other = "bp100.gui.project-settings.other",
   /** Rename stage */
   RenameStage = "bp100.gui.project-settings.rename-stage",
-  /** Entities */
-  Entities = "bp100.gui.project-settings.entities",
-  /** Rebuild stage [img=info] */
-  ResetStage = "bp100.gui.project-settings.reset-stage",
-  /** Deletes and replaces all entities to match the stored state.\nThis may resolve inconsistencies due to bugs. */
-  ResetStageTooltip = "bp100.gui.project-settings.reset-stage-tooltip",
+  /** Rebuild all stages */
+  RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
+  /** Rebuild current stage [img=info] */
+  RebuildStage = "bp100.gui.project-settings.rebuild-stage",
+  /** Rebuilds all entities (and tiles, if staged tiles are enabled) to match the stored state.\nThis may resolve inconsistencies due to bugs. */
+  RebuildStageTooltip = "bp100.gui.project-settings.rebuild-stage-tooltip",
   /** Disable all entities */
   DisableAllEntities = "bp100.gui.project-settings.disable-all-entities",
   /** Enable all entities */
   EnableAllEntities = "bp100.gui.project-settings.enable-all-entities",
   /** Set tiles */
   SetTiles = "bp100.gui.project-settings.set-tiles",
-  /** Selected tile: */
+  /** Landfill tile: */
   SelectedTile = "bp100.gui.project-settings.selected-tile",
   /** Allow non-blueprintable tiles */
   AllowNonBlueprintableTiles = "bp100.gui.project-settings.allow-non-blueprintable-tiles",
-  /** Lab tiles */
+  /** Fill with lab tiles */
   SetLabTiles = "bp100.gui.project-settings.set-lab-tiles",
-  /** Selected tile */
+  /** Fill with landfill tile */
   SetSelectedTile = "bp100.gui.project-settings.set-selected-tile",
-  /** Selected tile and lab tiles [img=info] */
+  /** Fill with landfill with lab tiles [img=info] */
   SetSelectedTileAndLab = "bp100.gui.project-settings.set-selected-tile-and-lab",
-  /** Selected tile and water [img=info] */
+  /** Fill with landfill and water [img=info] */
   SetSelectedTileAndWater = "bp100.gui.project-settings.set-selected-tile-and-water",
-  /** Tiles underneath entities will be set to the selected tile\nOther tiles will be set to lab tiles. Useful for landfill */
+  /** Tiles underneath entities will be set to the selected tile\nOther tiles will be set to lab tiles. */
   SetSelectedTileAndLabTooltip = "bp100.gui.project-settings.set-selected-tile-and-lab-tooltip",
-  /** Tiles underneath entities will be set to the selected tile\nOther tiles will be set to water. Useful for landfill */
+  /** Tiles underneath entities will be set to the selected tile\nOther tiles will be set to water. */
   SetSelectedTileAndWaterTooltip = "bp100.gui.project-settings.set-selected-tile-and-water-tooltip",
   /** No tile selected */
   FailedToSetTiles = "bp100.gui.project-settings.failed-to-set-tiles",
-  /** Delete stage */
+  /** Delete current stage */
   DeleteStage = "bp100.gui.project-settings.delete-stage",
   /** Are you sure you want to delete stage __1__? */
   DeleteStageConfirmation1 = "bp100.gui.project-settings.delete-stage-confirmation1",
@@ -256,7 +266,7 @@ export declare const enum L_GuiProjectSettings {
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */
   IncludeEntitiesInTheNextNStages2 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-2",
-  /** Only new entities or entities with setting changes in the last given stages will be included in the blueprint.\n - Consider adding assembling machines to the whitelist, so previously unresearched recipes can be pasted by later blueprints.\n - Consider adding alignment entities such as rails or roboports to the whitelist, to help with aligning blueprints. */
+  /** Only new entities or entities with setting changes in the last given stages will be included in the blueprint.\n - Consider adding entities to help align blueprints to the below whitelist, such as rails or roboports.\n - Consider adding assembling machines to the whitelist, so previously unresearched recipes can be pasted by later blueprints.\n */
   IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-tooltip",
   /** or in whitelist: */
   OrInWhitelist = "bp100.gui.project-settings.or-in-whitelist",
@@ -272,8 +282,6 @@ export declare const enum L_GuiProjectSettings {
   ReplaceInfinityWithCombinators = "bp100.gui.project-settings.replace-infinity-with-combinators",
   /** In blueprints, replaces infinity chests and pipes with constant combinators, which have the same icons when viewed in alt-mode. */
   ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.project-settings.replace-infinity-with-combinators-tooltip",
-  /** Tiles */
-  Tiles = "bp100.gui.project-settings.tiles",
   /** Auto-landfill [img=info] */
   AutoLandfill = "bp100.gui.project-settings.auto-landfill",
   /** Automatically set landfill tiles before taking a blueprint. */
@@ -294,16 +302,14 @@ export declare const enum L_GuiProjectSettings {
   ExportBlueprintBookStringToFile = "bp100.gui.project-settings.export-blueprint-book-string-to-file",
   /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
   ExportBlueprintBookStringToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-string-to-file-tooltip",
-  /** Enable staged tiles [img=info] */
+  /** Enable staged tiles (beta) [img=info] */
   EnableStagedTiles = "bp100.gui.project-settings.enable-staged-tiles",
-  /** Enables (basic) support for staged tiles, like entities.\nIf enabling for the first time, you may want to click "Scan existing tiles" below. */
+  /** Enables (basic) support for staged tiles. Placing a blueprintable tile will affect all later stages. \nIf enabling for the first time, you may want to click "Scan existing tiles". */
   EnableStagedTilesTooltip = "bp100.gui.project-settings.enable-staged-tiles-tooltip",
   /** Scan existing tiles [img=info] */
   ScanExistingTiles = "bp100.gui.project-settings.scan-existing-tiles",
-  /** Scans already placed tiles in the project and updates them appropriately across stages. */
+  /** Scans already placed tiles in the project and updates stages appropriately. */
   ScanExistingTilesTooltip = "bp100.gui.project-settings.scan-existing-tiles-tooltip",
-  /** Rebuild all stages */
-  RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
   /** Sync map gen settings [img=info] */
   SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
   /** Sets map gen settings for all stages to match the current stage, then regenerates all stages.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings".\n - Possibly un-check "Generate new chunks with lab tiles".\n - Click this button to regenerate all stages. */

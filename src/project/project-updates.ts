@@ -29,7 +29,6 @@ import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } f
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { Pos, Position } from "../lib/geometry"
-import { debugPrint } from "../lib/test/misc"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
 import min = math.min
@@ -781,7 +780,6 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   function ensureTileNotPresentAtStage(position: Position, stage: StageNumber): void {
     const tile = content.tiles.get(position.x, position.y)
     if (!tile || tile.firstStage > stage) {
-      debugPrint(tile)
       return
     }
 
