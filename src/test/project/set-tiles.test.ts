@@ -31,7 +31,7 @@ after_each(() => {
 })
 
 let eventCount = 0
-Events.script_raised_set_tiles((e) => {
+Events.script_raised_set_tiles(() => {
   eventCount++
 })
 before_each(() => {
