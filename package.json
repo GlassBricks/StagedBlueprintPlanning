@@ -30,6 +30,7 @@
     "tsx": "^4.7.1",
     "typed-factorio": "^2.8.0",
     "typescript": "^5.4.2",
+    "typescript-to-lua": "^1.25.1",
     "typescript-tstl-plugin": "^0.3.2"
   },
   "type": "module",
