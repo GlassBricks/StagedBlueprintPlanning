@@ -11,8 +11,9 @@
 
 import { LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
+import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
-import { setTilesAndCheckerboard, setTilesAndWater } from "../../project/set-tiles"
+import { setTiles, setTilesAndCheckerboard, setTilesAndWater } from "../../project/set-tiles"
 
 let surface: LuaSurface
 before_each(() => {
@@ -25,6 +26,24 @@ const bbox = BBox.around({ x: 0, y: 0 }, 10)
 after_each(() => {
   surface.build_checkerboard(bbox.expand(20))
   surface.find_entities().forEach((entity) => entity.destroy())
+})
+
+let eventCount = 0
+Events.script_raised_set_tiles(() => {
+  eventCount++
+})
+before_each(() => {
+  eventCount = 0
+})
+test("setTiles", () => {
+  const result = setTiles(surface, bbox, "stone-path")
+  expect(result).toBe(true)
+  for (const tile of surface.find_tiles_filtered({ area: bbox })) {
+    expect(tile).toMatchTable({
+      name: "stone-path",
+    })
+  }
+  expect(eventCount).toBe(1)
 })
 
 test("setTilesAndWater", () => {

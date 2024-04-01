@@ -27,11 +27,10 @@ function getTiles(area: BoundingBox, tile: string): [Mutable<TileWrite>[], numbe
   return [tiles, i]
 }
 
-// TODO: handle with staged tiles
 export function setTiles(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
   if (!(tile in game.tile_prototypes)) return false
   const [tiles] = getTiles(area, tile)
-  surface.set_tiles(tiles, true, "abort_on_collision")
+  surface.set_tiles(tiles, true, "abort_on_collision", true, true)
   return true
 }
 
