@@ -13,7 +13,9 @@ import { LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
-import { setTiles, setTilesAndCheckerboard, setTilesAndWater } from "../../project/set-tiles"
+import { setTiles, setTilesAndCheckerboard, setTilesAndWater, setTilesAndWaterForStage } from "../../project/set-tiles"
+import { createUserProject } from "../../project/UserProject"
+import { fStub } from "../f-mock"
 
 let surface: LuaSurface
 before_each(() => {
@@ -29,7 +31,7 @@ after_each(() => {
 })
 
 let eventCount = 0
-Events.script_raised_set_tiles(() => {
+Events.script_raised_set_tiles((e) => {
   eventCount++
 })
 before_each(() => {
@@ -47,14 +49,16 @@ test("setTiles", () => {
 })
 
 test("setTilesAndWater", () => {
+  setTiles(surface, bbox, "lab-white")
+  eventCount = 0
   assert(
     surface.create_entity({
       name: "iron-chest",
       position: { x: 0.5, y: 0.5 },
     }),
   )
-  setTiles(surface, bbox, "lab-white")
-  const result = setTilesAndWater(surface, bbox, "stone-path")
+
+  const [result, freeTiles] = setTilesAndWater(surface, bbox, "stone-path")
   expect(result).toBe(true)
   for (const tile of surface.find_tiles_filtered({ area: bbox })) {
     const expectedTile = Pos.isZero(tile.position) ? "stone-path" : "water"
@@ -62,22 +66,36 @@ test("setTilesAndWater", () => {
       name: expectedTile,
     })
   }
+  expect(freeTiles).not.toContainEqual(
+    expect.tableContaining({
+      position: { x: 0, y: 0 },
+    }),
+  )
+  expect(freeTiles).toContainEqual(
+    expect.tableContaining({
+      position: { x: 0, y: 1 },
+    }),
+  )
+
+  expect(eventCount).toBe(1)
 })
 
 test("setTilesAndWater, nonexistent tile", () => {
   const result = setTilesAndWater(surface, bbox, "this doesn't exist")
-  expect(result).toBe(false)
+  expect(result).toEqual([false])
 })
 
 test("setTilesAndCheckerboard", () => {
+  setTiles(surface, bbox, "lab-white")
   assert(
     surface.create_entity({
       name: "iron-chest",
       position: { x: 0.5, y: 0.5 },
     }),
   )
-  setTiles(surface, bbox, "lab-white")
-  const result = setTilesAndCheckerboard(surface, bbox, "stone-path")
+  eventCount = 0
+
+  const [result, freeTiles] = setTilesAndCheckerboard(surface, bbox, "stone-path")
   expect(result).toBe(true)
   for (const tile of surface.find_tiles_filtered({ area: bbox })) {
     rawset(tile, "position", tile.position)
@@ -91,4 +109,26 @@ test("setTilesAndCheckerboard", () => {
       })
     }
   }
+
+  expect(freeTiles).not.toContainEqual(
+    expect.tableContaining({
+      position: { x: 0, y: 0 },
+    }),
+  )
+  expect(freeTiles).toContainEqual(
+    expect.tableContaining({
+      position: { x: 0, y: 1 },
+    }),
+  )
+
+  expect(eventCount).toBe(1)
+})
+
+test("setTilesAndWater with staged tiles enabled", () => {
+  const project = createUserProject("test", 2)
+  const updates = fStub(project.updates)
+  project.stagedTilesEnabled.set(true)
+
+  setTilesAndWaterForStage(project.getStage(1)!)
+  expect(updates.ensureAllTilesNotPresentAtStage).toHaveBeenCalledWith(expect.anything(), 1)
 })

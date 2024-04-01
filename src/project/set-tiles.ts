@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BoundingBox, LuaSurface, TileWrite } from "factorio:runtime"
+import { BoundingBox, LuaSurface, Tile, TileWrite } from "factorio:runtime"
 import { newMap2d } from "../entity/map2d"
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
@@ -34,8 +34,8 @@ function getTilesFilteredByUnderEntity(
   area: BoundingBox,
   resetWaterTiles: boolean,
 ): {
-  underEntityTiles: Mutable<TileWrite>[]
-  freeTiles: Mutable<TileWrite>[]
+  underEntityTiles: Mutable<Tile>[]
+  freeTiles: Mutable<Tile>[]
 } {
   const oldTiles = surface.find_tiles_filtered({ area })
   const oldTileMap = newMap2d<string>()
@@ -47,7 +47,7 @@ function getTilesFilteredByUnderEntity(
 
   surface.set_tiles(getTiles(area, "water"), false, "abort_on_collision")
 
-  const freeTiles: Mutable<TileWrite>[] = []
+  const freeTiles: Mutable<Tile>[] = []
   for (const freeTile of surface.find_tiles_filtered({ area, name: "water" })) {
     const { x, y } = freeTile.position
     const oldTile = oldTileMap.get(x, y)
@@ -61,7 +61,7 @@ function getTilesFilteredByUnderEntity(
     surface.set_tiles(freeTiles, true, "abort_on_collision")
   }
 
-  const underEntityTiles: Mutable<TileWrite>[] = []
+  const underEntityTiles: Mutable<Tile>[] = []
 
   for (const [x, row] of pairs(oldTileMap.asRecord())) {
     for (const [y, name] of pairs(row)) {
@@ -81,26 +81,34 @@ export function setTiles(surface: LuaSurface, area: BoundingBox, tile: string): 
   return true
 }
 
-export function setTilesAndWater(surface: LuaSurface, area: BoundingBox, tileName: string): boolean {
-  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return false
-  const { underEntityTiles } = getTilesFilteredByUnderEntity(surface, area, false)
+export function setTilesAndWater(
+  surface: LuaSurface,
+  area: BoundingBox,
+  tileName: string,
+): LuaMultiReturn<[boolean, freeTiles?: Mutable<Tile>[]]> {
+  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return $multi(false)
+  const { underEntityTiles, freeTiles } = getTilesFilteredByUnderEntity(surface, area, false)
   for (const tile of underEntityTiles) {
     tile.name = tileName
   }
   surface.set_tiles(underEntityTiles, true, "abort_on_collision", true, true)
 
-  return true
+  return $multi(true, freeTiles)
 }
 
-export function setTilesAndCheckerboard(surface: LuaSurface, area: BoundingBox, tileName: string): boolean {
-  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return false
+export function setTilesAndCheckerboard(
+  surface: LuaSurface,
+  area: BoundingBox,
+  tileName: string,
+): LuaMultiReturn<[boolean, freeTiles?: Mutable<Tile>[]]> {
+  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return $multi(false)
   withTileEventsDisabled(surface.build_checkerboard, area)
-  const { underEntityTiles } = getTilesFilteredByUnderEntity(surface, area, true)
+  const { underEntityTiles, freeTiles } = getTilesFilteredByUnderEntity(surface, area, true)
   for (const tile of underEntityTiles) {
     tile.name = tileName
   }
-  surface.set_tiles(underEntityTiles, true, "abort_on_collision")
-  return true
+  surface.set_tiles(underEntityTiles, true, "abort_on_collision", true, true)
+  return $multi(true, freeTiles)
 }
 
 export function setTilesForStage(stage: Stage): boolean {
@@ -109,13 +117,33 @@ export function setTilesForStage(stage: Stage): boolean {
 }
 
 export function setTilesAndWaterForStage(stage: Stage): boolean {
-  const tile = stage.project.landfillTile.get()
-  return tile != nil && setTilesAndWater(stage.surface, stage.getBlueprintBBox(), tile)
+  return setTilesUnderEntities(stage, setTilesAndWater)
 }
 
 export function setTilesAndCheckerboardForStage(stage: Stage): boolean {
-  const tile = stage.project.landfillTile.get()
-  return tile != nil && setTilesAndCheckerboard(stage.surface, stage.getBlueprintBBox(), tile)
+  return setTilesUnderEntities(stage, setTilesAndCheckerboard)
+}
+
+// refactor of above
+function setTilesUnderEntities(
+  stage: Stage,
+  fn: (
+    surface: LuaSurface,
+    area: BoundingBox,
+    tileName: string,
+  ) => LuaMultiReturn<[boolean, freeTiles?: Mutable<Tile>[]]>,
+): boolean {
+  const project = stage.project
+  const tile = project.landfillTile.get()
+  if (tile == nil) return false
+  const [success, freeTiles] = fn(stage.surface, stage.getBlueprintBBox(), tile)
+  if (!success) return false
+
+  if (freeTiles && project.stagedTilesEnabled.get()) {
+    project.updates.ensureAllTilesNotPresentAtStage(freeTiles, stage.stageNumber)
+  }
+
+  return true
 }
 
 export function setCheckerboard(surface: LuaSurface, area: BoundingBox): void {

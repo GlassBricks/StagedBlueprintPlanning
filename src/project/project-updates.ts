@@ -29,6 +29,7 @@ import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } f
 import { findUndergroundPair } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { Pos, Position } from "../lib/geometry"
+import { debugPrint } from "../lib/test/misc"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
 import min = math.min
@@ -95,6 +96,12 @@ export interface ProjectUpdates {
 
   moveTileUp(tile: ProjectTile, stage: StageNumber): void
   ensureTileNotPresentAtStage(position: Position, stage: StageNumber): void
+  ensureAllTilesNotPresentAtStage(
+    positions: {
+      position: Position
+    }[],
+    stage: StageNumber,
+  ): void
 
   deleteTile(tile: ProjectTile): void
 
@@ -144,7 +151,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     moveTileDown,
     setTileValueAtStage,
     moveTileUp,
-    ensureTileNotPresentAtStage: ensureTileAboveStage,
+    ensureTileNotPresentAtStage,
+    ensureAllTilesNotPresentAtStage,
     deleteTile,
     scanProjectForExistingTiles,
   }
@@ -770,15 +778,28 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     tile.setFirstStageUnchecked(stage)
     updateTilesOnMovedUp(tile, oldFirstStage)
   }
-  function ensureTileAboveStage(position: Position, stage: StageNumber): void {
+  function ensureTileNotPresentAtStage(position: Position, stage: StageNumber): void {
     const tile = content.tiles.get(position.x, position.y)
-    if (!tile || tile.firstStage > stage) return
+    if (!tile || tile.firstStage > stage) {
+      debugPrint(tile)
+      return
+    }
 
     const newStage = stage + 1
     if (newStage <= project.numStages()) {
       moveTileUp(tile, newStage)
     } else {
       deleteTile(tile)
+    }
+  }
+  function ensureAllTilesNotPresentAtStage(
+    positions: {
+      position: Position
+    }[],
+    stage: StageNumber,
+  ): void {
+    for (const { position } of positions) {
+      ensureTileNotPresentAtStage(position, stage)
     }
   }
 
