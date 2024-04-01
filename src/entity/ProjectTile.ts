@@ -33,7 +33,7 @@ class ProjectTileImpl extends BaseStagedValue<string, string> implements Project
   moveDownWithValue(newFirstStage: StageNumber, newValue: string): void {
     const oldFirstStage = this.firstStage
     const oldValue = this.firstValue
-    assert(newFirstStage < oldFirstStage, "newFirstStage must be <= firstStage")
+    assert(newFirstStage < oldFirstStage, "newFirstStage must be < old first stage")
     this.firstStage = newFirstStage
     if (newValue == oldValue) return
 

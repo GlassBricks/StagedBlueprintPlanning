@@ -93,6 +93,9 @@ export interface ProjectUpdates {
   moveTileDown(tile: ProjectTile, stage: StageNumber, newValue: string): void
   setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void
 
+  moveTileUp(tile: ProjectTile, stage: StageNumber): void
+  ensureTileNotPresentAtStage(position: Position, stage: StageNumber): void
+
   deleteTile(tile: ProjectTile): void
 
   scanProjectForExistingTiles(): void
@@ -114,6 +117,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     updateWorldEntitiesOnLastStageChanged,
     updateAllHighlights,
     updateTilesInVisibleStages,
+    updateTilesOnMovedUp,
     resetTiles,
   } = WorldUpdates
 
@@ -139,6 +143,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     setNewTile,
     moveTileDown,
     setTileValueAtStage,
+    moveTileUp,
+    ensureTileNotPresentAtStage: ensureTileAboveStage,
     deleteTile,
     scanProjectForExistingTiles,
   }
@@ -749,13 +755,33 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     return newTile
   }
   function moveTileDown(tile: ProjectTile, stage: StageNumber, newValue: string): void {
+    assert(stage < tile.firstStage)
     tile.moveDownWithValue(stage, newValue)
     updateTilesInVisibleStages(tile)
   }
   function setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void {
+    assert(stage >= tile.firstStage)
     const updated = tile.adjustValueAtStage(stage, value)
     if (updated) updateTilesInVisibleStages(tile)
   }
+  function moveTileUp(tile: ProjectTile, stage: StageNumber): void {
+    const oldFirstStage = tile.firstStage
+    assert(oldFirstStage < stage)
+    tile.setFirstStageUnchecked(stage)
+    updateTilesOnMovedUp(tile, oldFirstStage)
+  }
+  function ensureTileAboveStage(position: Position, stage: StageNumber): void {
+    const tile = content.tiles.get(position.x, position.y)
+    if (!tile || tile.firstStage > stage) return
+
+    const newStage = stage + 1
+    if (newStage <= project.numStages()) {
+      moveTileUp(tile, newStage)
+    } else {
+      deleteTile(tile)
+    }
+  }
+
   function deleteTile(tile: ProjectTile): void {
     if (content.deleteTile(tile)) {
       resetTiles(tile)

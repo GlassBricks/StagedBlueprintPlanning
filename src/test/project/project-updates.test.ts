@@ -309,11 +309,10 @@ function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
 test("moving entity on preview replace", () => {
   const { entity } = addEntity(2)
 
-  // assert(projectUpdates.moveFirstStageDownOnPreviewReplace( entity, 1))
   expect(projectUpdates.trySetFirstStage(entity, 1)).toBe(StageMoveResult.Updated)
 
   expect(entity.firstStage).toEqual(1)
-  expect((entity.firstValue as BlueprintEntity).override_stack_size).toBe(1)
+  expect(entity.firstValue.override_stack_size).toBe(1)
   expect(entity.hasStageDiff()).toBe(false)
   assertOneEntity()
   assertUpdateCalled(entity, 1)
@@ -1475,14 +1474,14 @@ describe("tiles", () => {
     expectedWuCalls = 2
   })
   test("moveTileDown", () => {
-    const oldTile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
+    const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
     mock.clear(worldUpdates)
 
-    projectUpdates.moveTileDown(oldTile, 1, "stone-path")
-    expect(oldTile.firstStage).toBe(1)
-    expect(oldTile.getValueAtStage(1)).toBe("stone-path")
-    expect(oldTile.getValueAtStage(2)).toBe("concrete")
-    expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(oldTile)
+    projectUpdates.moveTileDown(tile, 1, "stone-path")
+    expect(tile.firstStage).toBe(1)
+    expect(tile.getValueAtStage(1)).toBe("stone-path")
+    expect(tile.getValueAtStage(2)).toBe("concrete")
+    expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(tile)
 
     expectedWuCalls = 1
   })
@@ -1502,6 +1501,41 @@ describe("tiles", () => {
     expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(tile)
 
     expectedWuCalls = 2
+  })
+
+  test("moveTileUp", () => {
+    const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
+    mock.clear(worldUpdates)
+
+    projectUpdates.moveTileUp(tile, 3)
+    expect(tile.firstStage).toBe(3)
+
+    expect(worldUpdates.updateTilesOnMovedUp).toHaveBeenCalledWith(tile, 2)
+
+    expectedWuCalls = 1
+  })
+
+  test("ensureTileNotPresentAtStage", () => {
+    const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
+    mock.clear(worldUpdates)
+    projectUpdates.ensureTileNotPresentAtStage(tile.position, 1)
+    expect(tile.firstStage).toBe(2)
+    projectUpdates.ensureTileNotPresentAtStage(tile.position, 2)
+    expect(tile.firstStage).toBe(3)
+
+    expect(worldUpdates.updateTilesOnMovedUp).toHaveBeenCalledWith(tile, 2)
+
+    expectedWuCalls = 1
+  })
+
+  test("ensureTileNotPresentAtStage when tile is already at last stage", () => {
+    const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, project.numStages(), "concrete")
+    mock.clear(worldUpdates)
+    projectUpdates.ensureTileNotPresentAtStage(tile.position, project.numStages())
+    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(tile)
+    expect(project.content.tiles.get(1, 2)).toBe(nil)
+
+    expectedWuCalls = 1
   })
 
   test("deleteTile", () => {
