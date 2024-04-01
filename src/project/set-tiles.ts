@@ -10,11 +10,13 @@
  */
 
 import { BoundingBox, LuaSurface, TileWrite } from "factorio:runtime"
+import { newMap2d } from "../entity/map2d"
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Stage } from "./ProjectDef"
+import { withTileEventsDisabled } from "./tile-events"
 
-function getTiles(area: BoundingBox, tile: string): [Mutable<TileWrite>[], number] {
+function getTiles(area: BoundingBox, tile: string): Mutable<TileWrite>[] {
   const tiles: TileWrite[] = []
   let i = 0
   for (const [x, y] of BBox.roundTile(area).iterateTiles()) {
@@ -24,39 +26,80 @@ function getTiles(area: BoundingBox, tile: string): [Mutable<TileWrite>[], numbe
       position: { x, y },
     }
   }
-  return [tiles, i]
+  return tiles
+}
+
+function getTilesFilteredByUnderEntity(
+  surface: LuaSurface,
+  area: BoundingBox,
+  resetWaterTiles: boolean,
+): {
+  underEntityTiles: Mutable<TileWrite>[]
+  freeTiles: Mutable<TileWrite>[]
+} {
+  const oldTiles = surface.find_tiles_filtered({ area })
+  const oldTileMap = newMap2d<string>()
+  for (const {
+    name,
+    position: { x, y },
+  } of oldTiles)
+    oldTileMap.set(x, y, name)
+
+  surface.set_tiles(getTiles(area, "water"), false, "abort_on_collision")
+
+  const freeTiles: Mutable<TileWrite>[] = []
+  for (const freeTile of surface.find_tiles_filtered({ area, name: "water" })) {
+    const { x, y } = freeTile.position
+    const oldTile = oldTileMap.get(x, y)
+    oldTileMap.delete(x, y)
+    freeTiles.push({
+      name: oldTile ?? "water",
+      position: { x, y },
+    })
+  }
+  if (resetWaterTiles) {
+    surface.set_tiles(freeTiles, true, "abort_on_collision")
+  }
+
+  const underEntityTiles: Mutable<TileWrite>[] = []
+
+  for (const [x, row] of pairs(oldTileMap.asRecord())) {
+    for (const [y, name] of pairs(row)) {
+      underEntityTiles.push({
+        name,
+        position: { x, y },
+      })
+    }
+  }
+  return { underEntityTiles, freeTiles }
 }
 
 export function setTiles(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
   if (!(tile in game.tile_prototypes)) return false
-  const [tiles] = getTiles(area, tile)
+  const tiles = getTiles(area, tile)
   surface.set_tiles(tiles, true, "abort_on_collision", true, true)
   return true
 }
 
-export function setTilesAndWater(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
-  if (!("water" in game.tile_prototypes && tile in game.tile_prototypes)) return false
-  const [tiles, count] = getTiles(area, tile)
-  surface.set_tiles(tiles, true, "abort_on_collision")
+export function setTilesAndWater(surface: LuaSurface, area: BoundingBox, tileName: string): boolean {
+  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return false
+  const { underEntityTiles } = getTilesFilteredByUnderEntity(surface, area, false)
+  for (const tile of underEntityTiles) {
+    tile.name = tileName
+  }
+  surface.set_tiles(underEntityTiles, true, "abort_on_collision", true, true)
 
-  for (const k of $range(1, count)) tiles[k - 1].name = "water"
-
-  surface.set_tiles(tiles, true, "abort_on_collision")
   return true
 }
 
-export function setTilesAndCheckerboard(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
-  if (!setTilesAndWater(surface, area, tile)) return false
-  const nonWaterTiles = surface.find_tiles_filtered({
-    area: BBox.expand(area, 1),
-    name: tile,
-  })
-  const tiles = nonWaterTiles.map((luaTile) => ({
-    name: tile,
-    position: luaTile.position,
-  }))
-  surface.build_checkerboard(area)
-  surface.set_tiles(tiles, true, "abort_on_collision")
+export function setTilesAndCheckerboard(surface: LuaSurface, area: BoundingBox, tileName: string): boolean {
+  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return false
+  withTileEventsDisabled(surface.build_checkerboard, area)
+  const { underEntityTiles } = getTilesFilteredByUnderEntity(surface, area, true)
+  for (const tile of underEntityTiles) {
+    tile.name = tileName
+  }
+  surface.set_tiles(underEntityTiles, true, "abort_on_collision")
   return true
 }
 

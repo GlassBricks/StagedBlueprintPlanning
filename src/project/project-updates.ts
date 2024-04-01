@@ -88,8 +88,11 @@ export interface ProjectUpdates {
   setTrainLocationToCurrent(entity: RollingStockProjectEntity): void
 
   setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile
-  moveTileDown(tile: ProjectTile, stage: StageNumber): void
+
+  // todo: can/should the following 2 functions be merged into one?
+  moveTileDown(tile: ProjectTile, stage: StageNumber, newValue: string): void
   setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void
+
   deleteTile(tile: ProjectTile): void
 
   scanProjectForExistingTiles(): void
@@ -745,8 +748,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     updateTilesInVisibleStages(newTile)
     return newTile
   }
-  function moveTileDown(tile: ProjectTile, stage: StageNumber): void {
-    tile.setFirstStageUnchecked(stage)
+  function moveTileDown(tile: ProjectTile, stage: StageNumber, newValue: string): void {
+    tile.moveDownWithValue(stage, newValue)
     updateTilesInVisibleStages(tile)
   }
   function setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void {

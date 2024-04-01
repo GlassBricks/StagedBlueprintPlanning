@@ -68,3 +68,13 @@ describe("setValueAtStage", () => {
     expect(tile.stageDiffs).toEqual({ [2]: "b" })
   })
 })
+test("moveDownWithValue", () => {
+  const tile = createProjectTile("a", { x: 0, y: 0 }, 2)
+  tile.moveDownWithValue(1, "b")
+
+  expect(tile.firstValue).toBe("b")
+  expect(tile.hasStageDiff()).toBe(true)
+  expect(tile.getValueAtStage(1)).toBe("b")
+  expect(tile.getValueAtStage(2)).toBe("a")
+  expect(tile.getValueAtStage(3)).toBe("a")
+})

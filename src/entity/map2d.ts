@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { nil } from "factorio:runtime"
 import { PRecord, PRRecord, RegisterClass } from "../lib"
 import { ProjectEntity } from "./ProjectEntity"
 
@@ -28,6 +29,8 @@ export interface Map2D<T> {
   get(x: number, y: number): T | nil
   set(x: number, y: number, value: T): void
   delete(x: number, y: number): void
+
+  asRecord(): Record<number, Record<number, T | nil>>
 }
 
 export interface ReadonlyMap2D<T> {
@@ -121,6 +124,10 @@ class Map2DImpl<T> implements Map2D<T> {
     if (next(byX)[0] == nil) {
       delete this[x]
     }
+  }
+
+  asRecord(): Record<number, Record<number, nil | T>> {
+    return this
   }
 }
 

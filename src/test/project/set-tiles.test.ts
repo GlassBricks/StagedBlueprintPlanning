@@ -53,6 +53,7 @@ test("setTilesAndWater", () => {
       position: { x: 0.5, y: 0.5 },
     }),
   )
+  setTiles(surface, bbox, "lab-white")
   const result = setTilesAndWater(surface, bbox, "stone-path")
   expect(result).toBe(true)
   for (const tile of surface.find_tiles_filtered({ area: bbox })) {
@@ -75,6 +76,7 @@ test("setTilesAndCheckerboard", () => {
       position: { x: 0.5, y: 0.5 },
     }),
   )
+  setTiles(surface, bbox, "lab-white")
   const result = setTilesAndCheckerboard(surface, bbox, "stone-path")
   expect(result).toBe(true)
   for (const tile of surface.find_tiles_filtered({ area: bbox })) {

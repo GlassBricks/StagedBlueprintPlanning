@@ -1478,8 +1478,10 @@ describe("tiles", () => {
     const oldTile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
     mock.clear(worldUpdates)
 
-    projectUpdates.moveTileDown(oldTile, 1)
+    projectUpdates.moveTileDown(oldTile, 1, "stone-path")
     expect(oldTile.firstStage).toBe(1)
+    expect(oldTile.getValueAtStage(1)).toBe("stone-path")
+    expect(oldTile.getValueAtStage(2)).toBe("concrete")
     expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(oldTile)
 
     expectedWuCalls = 1

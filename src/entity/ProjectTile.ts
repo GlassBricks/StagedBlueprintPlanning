@@ -16,6 +16,9 @@ import { BaseStagedValue, StagedValue } from "./StagedValue"
 
 export interface ProjectTile extends StagedValue<string, string> {
   readonly position: Position
+
+  // this method may be moved to StagedValue in the future
+  moveDownWithValue(newFirstStage: StageNumber, newValue: string): void
 }
 @RegisterClass("ProjectTile")
 class ProjectTileImpl extends BaseStagedValue<string, string> implements ProjectTile {
@@ -26,6 +29,19 @@ class ProjectTileImpl extends BaseStagedValue<string, string> implements Project
   ) {
     super(firstStage, firstValue)
   }
+
+  moveDownWithValue(newFirstStage: StageNumber, newValue: string): void {
+    const oldFirstStage = this.firstStage
+    const oldValue = this.firstValue
+    assert(newFirstStage < oldFirstStage, "newFirstStage must be <= firstStage")
+    this.firstStage = newFirstStage
+    if (newValue == oldValue) return
+
+    this.firstValue = newValue
+    const diffs = (this.stageDiffs ??= {})
+    diffs[oldFirstStage] = oldValue
+  }
+
   adjustValueAtStage(stage: StageNumber, value: string): boolean {
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")

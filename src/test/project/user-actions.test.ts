@@ -870,7 +870,7 @@ describe("tiles", () => {
     test("building a tile underneath an existing tile calls moveTileDown", () => {
       const tile = addTile("concrete", position, 2)
       userActions.onTileBuilt(position, "refined-concrete", 1, playerIndex)
-      expect(projectUpdates.moveTileDown).toHaveBeenCalledWith(tile, 1)
+      expect(projectUpdates.moveTileDown).toHaveBeenCalledWith(tile, 1, "refined-concrete")
       expect(projectUpdates.setNewTile).not.toHaveBeenCalled()
     })
     test("building a tile at the first stage updates the tile", () => {

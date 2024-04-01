@@ -86,8 +86,6 @@ export interface UserActions {
     byPlayer: PlayerIndex,
   ): boolean
 
-  // onTileBuilt(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
-  // onTileMined(tile: Tile, stage: StageNumber, byPlayer: PlayerIndex | nil): void
   onTileBuilt(position: Position, value: string, stage: StageNumber, byPlayer: PlayerIndex | nil): void
   onTileMined(position: Position, stage: StageNumber, byPlayer: PlayerIndex | nil): void
 }
@@ -757,7 +755,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
       return
     }
     if (stage < existingTile.firstStage) {
-      moveTileDown(existingTile, stage)
+      moveTileDown(existingTile, stage, name)
     } else {
       setTileValueAtStage(existingTile, stage, name)
     }

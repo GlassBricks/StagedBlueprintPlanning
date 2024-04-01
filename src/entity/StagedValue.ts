@@ -60,6 +60,8 @@ export interface StagedValue<T, D> {
    * Adjusts stage diffs so that the value at the given stage matches the given value.
    * @return true if the value changed.
    */
+  // todo: can there be a shared default impl of this?
+  // see also: moveDownWithValue in ProjectTile
   adjustValueAtStage(stage: StageNumber, value: T): boolean
 
   /** Modifies to be consistent with an inserted stage. */

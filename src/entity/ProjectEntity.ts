@@ -67,11 +67,6 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
 
   isSettingsRemnant?: true
 
-  /** Sets the first stage. If moving up, deletes/merges stage diffs from old stage to new stage. */
-  setFirstStageUnchecked(stage: StageNumber): void
-  /** Sets the last stage. If moving down, delete all diffs after the new last stage. */
-  setLastStageUnchecked(stage: StageNumber | nil): void
-
   readonly cableConnections?: CableConnections
   readonly circuitConnections?: CircuitConnections
 
@@ -112,17 +107,6 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   /** @return the value of a property at a given stage, or at the first stage if below the first stage. Also returns the stage in which the property is affected. */
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
   getNameAtStage(stage: StageNumber): string
-  /**
-   * Iterates the values of stages in the given range. More efficient than repeated calls to getValueAtStage.
-   * The same instance will be returned for each stage; its value is ephemeral.
-   *
-   * Changed: if the value returned is the same value as last iteration.
-   * Undefined value on very first iteration.
-   */
-  iterateValues(
-    start: StageNumber,
-    end: StageNumber,
-  ): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil, changed: boolean]>>
 
   /**
    * Adjusts stage diffs so that the value at the given stage matches the given value.
