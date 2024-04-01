@@ -51,24 +51,6 @@ for (const [name, key] of pairs(defines.events)) {
   })
 }
 
-// todo: make this work
-// for (const [k, v] of pairs(WorldListener)) {
-//   assume<MockedFunctionTable>(v)
-//   const orig = v.original
-//   v.original = (...args: any[]) => {
-//     if (global.printEvents) {
-//       global.lastEventTick = game.tick
-//       global.eventCount = (global.eventCount || 0) + 1
-//       game.print(
-//         `(${(game.tick % 1000).toString().padStart(3, " ")}) ${global.eventCount
-//           .toString()
-//           .padStart(2, "0")}:  [color=green]WorldListener.${k}[/color]`,
-//       )
-//     }
-//     return orig(...args)
-//   }
-// }
-//
 // noinspection SpellCheckingInspection
 commands.add_command("printev", "", (e) => {
   global.printEvents = e.parameter == nil

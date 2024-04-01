@@ -67,7 +67,6 @@ export interface UndoHandler<T> {
 
 const undoHandlers: Record<string, (this: void, player: LuaPlayer, data: any) => void> = {}
 
-// TODO: migrations
 export function UndoHandler<T>(name: string, fn: UndoFn<T>): UndoHandler<T> {
   if (name in undoHandlers) error(`Undo handler already registered: ${name}`)
   undoHandlers[name] = fn
