@@ -765,7 +765,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     const existingTile = content.tiles.get(position.x, position.y)
     if (existingTile) {
       if (stage == existingTile.firstStage) {
-        deleteTile(existingTile)
+        deleteTile(existingTile, true)
       } else if (stage > existingTile.firstStage) {
         updateTileAtStage(existingTile, stage)
         createNotification(existingTile, byPlayer, [L_Game.CantBeMined], true)

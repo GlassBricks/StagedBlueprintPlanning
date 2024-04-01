@@ -1469,7 +1469,7 @@ describe("tiles", () => {
       firstStage: 2,
       firstValue: "stone-path",
     })
-    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(oldTile)
+    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(oldTile, false)
     expect(worldUpdates.updateTilesInVisibleStages).toHaveBeenCalledWith(newTile)
     expectedWuCalls = 2
   })
@@ -1532,7 +1532,7 @@ describe("tiles", () => {
     const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, project.numStages(), "concrete")
     mock.clear(worldUpdates)
     projectUpdates.ensureTileNotPresentAtStage(tile.position, project.numStages())
-    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(tile)
+    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(tile, false)
     expect(project.content.tiles.get(1, 2)).toBe(nil)
 
     expectedWuCalls = 1
@@ -1542,9 +1542,9 @@ describe("tiles", () => {
     const tile = projectUpdates.setNewTile({ x: 1, y: 2 }, 2, "concrete")
     mock.clear(worldUpdates)
 
-    projectUpdates.deleteTile(tile)
+    projectUpdates.deleteTile(tile, true)
     expect(project.content.tiles.get(1, 2)).toBe(nil)
-    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(tile)
+    expect(worldUpdates.resetTiles).toHaveBeenCalledWith(tile, true)
 
     expectedWuCalls = 1
   })

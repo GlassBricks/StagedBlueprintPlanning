@@ -67,7 +67,7 @@ export interface WorldUpdates {
   updateTilesInVisibleStages(tile: ProjectTile): void
   updateTileAtStage(tile: ProjectTile, stage: StageNumber): void
   updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void
-  resetTiles(tile: ProjectTile): void
+  resetTiles(tile: ProjectTile, ignoreFirstStage: boolean): void
 
   // passed from EntityHighlights
   updateAllHighlights(entity: ProjectEntity): void
@@ -493,8 +493,9 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   function updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void {
     resetTilesInRange(tile.position, oldFirstStage, tile.firstStage - 1)
   }
-  function resetTiles(tile: ProjectTile): void {
-    resetTilesInRange(tile.position, tile.firstStage, project.lastStageFor(tile))
+  function resetTiles(tile: ProjectTile, ignoreFirstStage: boolean): void {
+    const startStage = ignoreFirstStage ? tile.firstStage + 1 : tile.firstStage
+    resetTilesInRange(tile.position, startStage, project.lastStageFor(tile))
   }
   function resetTilesInRange(position: TilePosition, startStage: StageNumber, endStage: StageNumber): void {
     const tileWrite: Mutable<TileWrite> = {

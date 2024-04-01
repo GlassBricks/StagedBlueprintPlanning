@@ -886,7 +886,7 @@ describe("tiles", () => {
     test("building a non-blueprintable tile on existing tile same as mining", () => {
       const tile = addTile("concrete", position, 2)
       userActions.onTileBuilt(position, "water", 2, playerIndex)
-      expect(projectUpdates.deleteTile).toHaveBeenCalledWith(tile)
+      expect(projectUpdates.deleteTile).toHaveBeenCalledWith(tile, true)
       expectedNumCalls = 1
     })
   })
@@ -898,7 +898,7 @@ describe("tiles", () => {
     test("if mining at first stage, calls deleteTile", () => {
       const tile = addTile("concrete", { x: 1, y: 1 }, 2)
       userActions.onTileMined({ x: 1, y: 1 }, 2, playerIndex)
-      expect(projectUpdates.deleteTile).toHaveBeenCalledWith(tile)
+      expect(projectUpdates.deleteTile).toHaveBeenCalledWith(tile, true)
       expectedNumCalls = 1
     })
     test("if mining at lower stage, that's strange, does nothing", () => {

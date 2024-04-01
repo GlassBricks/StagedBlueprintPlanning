@@ -789,7 +789,7 @@ describe("tiles", () => {
     worldUpdates.updateTilesInVisibleStages(projectTile)
     events = []
 
-    worldUpdates.resetTiles(projectTile)
+    worldUpdates.resetTiles(projectTile, false)
     for (const s of surfaces) {
       expect(s.get_tile(0, 0).name).toBe("lab-white")
     }

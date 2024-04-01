@@ -102,7 +102,7 @@ export interface ProjectUpdates {
     stage: StageNumber,
   ): void
 
-  deleteTile(tile: ProjectTile): void
+  deleteTile(tile: ProjectTile, ignoreFirstStage: boolean): void
 
   scanProjectForExistingTiles(): void
 }
@@ -755,7 +755,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const newTile = createProjectTile(firstValue, position, firstStage)
     const oldTile = content.tiles.get(position.x, position.y)
     if (oldTile) {
-      resetTiles(oldTile)
+      resetTiles(oldTile, false)
     }
     content.setTile(newTile)
     updateTilesInVisibleStages(newTile)
@@ -787,7 +787,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (newStage <= project.numStages()) {
       moveTileUp(tile, newStage)
     } else {
-      deleteTile(tile)
+      deleteTile(tile, false)
     }
   }
   function ensureAllTilesNotPresentAtStage(
@@ -801,9 +801,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     }
   }
 
-  function deleteTile(tile: ProjectTile): void {
+  function deleteTile(tile: ProjectTile, ignoreFirstStage: boolean): void {
     if (content.deleteTile(tile)) {
-      resetTiles(tile)
+      resetTiles(tile, ignoreFirstStage)
     }
   }
 
