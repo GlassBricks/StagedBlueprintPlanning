@@ -30,7 +30,9 @@ export declare const enum L_ItemGroupName {
 export declare const enum L_ModSettingName {
   /** Place offshore pumps anywhere */
   FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
-  /** Landfill on land */
+  /** Allow landfill to be mined */
+  MinableLandfill = "mod-setting-name.bp100:minable-landfill",
+  /** Allow placing landfill outside of water */
   LandLandfill = "mod-setting-name.bp100:land-landfill",
   /** Location of Entity info gui */
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
@@ -40,8 +42,6 @@ export declare const enum L_ModSettingName {
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps anywhere, without need for a water source. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
-  /** Allow placing (and mining) landfill outside of water. Also allows entities to be placed on top of water (prevents mining landfill from deleting entities). */
-  LandLandfill = "mod-setting-description.bp100:land-landfill",
   /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged project. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
 }
