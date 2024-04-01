@@ -17,6 +17,7 @@ import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 export type BlueprintNilPlaceholder = {
   __nil: true
 }
+const blueprintNilPlaceholder: BlueprintNilPlaceholder = { __nil: true }
 
 export function isBpNilPlaceholder(value: AnyNotNil): value is BlueprintNilPlaceholder {
   return typeof value == "object" && "__nil" in value
@@ -32,8 +33,6 @@ let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
   nilPlaceholder = getNilPlaceholder()
 })
-
-const blueprintNilPlaceholder: BlueprintNilPlaceholder = { __nil: true }
 
 export function toBpStageDiffs(diffs: StageDiffs): BpStageDiffs {
   const ret: Mutable<BpStageDiffs> = {}

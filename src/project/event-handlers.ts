@@ -26,14 +26,10 @@ import {
   MapPosition,
   OnBuiltEntityEvent,
   OnPlayerAltSelectedAreaEvent,
-  OnPlayerBuiltTileEvent,
   OnPlayerMinedEntityEvent,
-  OnPlayerMinedTileEvent,
   OnPlayerReverseSelectedAreaEvent,
   OnPlayerSelectedAreaEvent,
   OnPreBuildEvent,
-  OnRobotBuiltTileEvent,
-  OnRobotMinedTileEvent,
   PlayerIndex,
   Tags,
 } from "factorio:runtime"
@@ -60,6 +56,7 @@ import { L_Bp100, L_Interaction } from "../locale"
 import { getProjectPlayerData } from "./player-project-data"
 import { Stage } from "./ProjectDef"
 import { getStageAtSurface } from "./stage-surface"
+import { withTileEventsDisabled } from "./tile-events"
 import {
   onUndoReferenceBuilt,
   registerGroupUndoAction,
@@ -67,6 +64,8 @@ import {
   registerUndoActionLater,
   UndoAction,
 } from "./undo"
+
+import "./tile-events"
 import transform = Pos.applyTransformation
 
 const Events = ProtectedEvents
@@ -1195,51 +1194,6 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   if (undoAction) registerUndoAction(undoAction)
 })
 
-// Tiles
-
-function onTileBuilt(e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent, playerIndex?: PlayerIndex): void {
-  const stage = getStageAtSurface(e.surface_index)
-  if (!stage || !stage.project.stagedTilesEnabled.get()) return
-  const { stageNumber } = stage
-  const name = e.tile.name
-  const onTileBuilt = stage.actions.onTileBuilt
-  for (const posData of e.tiles) {
-    onTileBuilt(posData.position, name, stageNumber, playerIndex)
-  }
-}
-Events.on_player_built_tile((e) => {
-  onTileBuilt(e, e.player_index)
-})
-Events.on_robot_built_tile((e) => {
-  onTileBuilt(e)
-})
-
-Events.script_raised_set_tiles((e) => {
-  if (e.mod_name == script.mod_name) return
-  const stage = getStageAtSurface(e.surface_index)
-  if (!stage || !stage.project.stagedTilesEnabled.get()) return
-  const { stageNumber } = stage
-  const onTileBuilt = stage.actions.onTileBuilt
-  for (const posData of e.tiles) {
-    onTileBuilt(posData.position, posData.name, stageNumber, nil)
-  }
-})
-function onTileMined(e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent, playerIndex?: PlayerIndex): void {
-  const stage = getStageAtSurface(e.surface_index)
-  if (!stage || !stage.project.stagedTilesEnabled.get()) return
-  const { stageNumber } = stage
-  const onTileMined = stage.actions.onTileMined
-  for (const posData of e.tiles) {
-    onTileMined(posData.position, stageNumber, playerIndex)
-  }
-}
-Events.on_player_mined_tile((e) => {
-  onTileMined(e, e.player_index)
-})
-Events.on_robot_mined_tile((e) => {
-  onTileMined(e)
-})
-
 // Generated chunks
 
 Events.on_chunk_generated((e) => {
@@ -1261,7 +1215,7 @@ Events.on_chunk_generated((e) => {
     const position = e.position
     if (!surface.is_chunk_generated(position)) {
       if (surface.generate_with_lab_tiles) {
-        surface.build_checkerboard(e.area)
+        withTileEventsDisabled(surface.build_checkerboard, e.area)
         surface.set_chunk_generated_status(position, status)
       } else {
         surface.request_to_generate_chunks(position, 1)

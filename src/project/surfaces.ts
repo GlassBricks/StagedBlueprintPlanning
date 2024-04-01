@@ -11,6 +11,7 @@
 
 import { LuaSurface, MapGenSettingsWrite } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
+import { withTileEventsDisabled } from "./tile-events"
 
 const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
 
@@ -57,7 +58,7 @@ export function prepareArea(surface: LuaSurface, area: BBox): void {
       }
     }
     const actualArea = chunkArea.scale(32)
-    surface.build_checkerboard(actualArea)
+    withTileEventsDisabled(surface.build_checkerboard, actualArea)
   } else {
     for (const [x, y] of chunkArea.iterateTiles()) {
       pos.x = x * 32
