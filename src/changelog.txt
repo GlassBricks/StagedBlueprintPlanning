@@ -1,6 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.31.0
 Date: ????
+  Features:
+    - Added minable landfill and landfill-on-land startup options.
+    - Added basic support for staged tiles!
+  Gui:
+    - Reorganized the settings gui.
+---------------------------------------------------------------------------------------------------
+Version: 0.30.5
+Date: 2024-03-24
   Bugfixes:
     - Fix possible crash when deleting an underground belt.
 ---------------------------------------------------------------------------------------------------
