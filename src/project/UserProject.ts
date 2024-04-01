@@ -407,7 +407,7 @@ Migrations.early("0.26.0", () => {
     project.displayName = nil!
   }
 })
-Migrations.early($CURRENT_VERSION, () => {
+Migrations.early("0.31.0", () => {
   let anyProjectMigrated = false
   for (const project of global.projects) {
     if (project.stagedTilesEnabled == nil) {
@@ -419,7 +419,7 @@ Migrations.early($CURRENT_VERSION, () => {
     game.print([
       "",
       "Staged tiles support was added in ",
-      $CURRENT_VERSION,
+      "0.31.0",
       "To enable staged tiles for old projects, go to project settings -> Other.",
     ])
   }
@@ -637,7 +637,7 @@ Migrations.to("0.30.0", () => {
     setDefaultToMajorityValue(4)
   }
 })
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("0.31.0", () => {
   for (const project of global.projects) {
     assume<{
       entityUpdates?: WorldUpdates

@@ -102,7 +102,7 @@ Migrations.to("0.23.1", () => {
     }
   }
 })
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("0.31.0", () => {
   for (const [, project] of global.projects) {
     _migrateAddTiles(project.content)
   }
