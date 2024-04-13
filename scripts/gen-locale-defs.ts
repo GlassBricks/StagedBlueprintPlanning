@@ -96,5 +96,5 @@ const result = await format(header + printResult, {
   semi: false,
 })
 
-const outfile = path.join(__dirname, "../src/locale.d.ts")
+const outfile = path.join(__dirname, "../src/locale/index.d.ts")
 fs.writeFileSync(outfile, result)
