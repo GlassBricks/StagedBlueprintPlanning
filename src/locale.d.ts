@@ -10,11 +10,11 @@ export declare const enum L_ItemName {
   FilteredStageMoveTool = "item-name.bp100:filtered-stage-move-tool",
   /** Staged deconstruction */
   StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
-  /** Force delete (in staged project) */
+  /** Force delete (in project) */
   ForceDeleteTool = "item-name.bp100:force-delete-tool",
-  /** Copy (with stage info) */
+  /** Copy with stage info */
   StagedCopyTool = "item-name.bp100:staged-copy-tool",
-  /** Cut (with stage info) */
+  /** Cut with stage info */
   StagedCutTool = "item-name.bp100:staged-cut-tool",
 }
 export declare const enum L_EntityName {
@@ -280,7 +280,7 @@ export declare const enum L_GuiProjectSettings {
   EntityEdits = "bp100.gui.project-settings.entity-edits",
   /** Use module preloading [img=info] */
   UseModulePreloading = "bp100.gui.project-settings.use-module-preloading",
-  /** If an assembling machine has modules added at later stage, the modules are included in blueprints in earlier stages [font=default-bold]even if[/font] the machine is not high enough tier or has the wrong recipe.\nThis is useful to still bot requests for modules that will be added later.\nThe machine may need upgrading or having the correct recipe set [font=default-bold]before[/font] bots arrive to insert modules successfully.\n\n It is possible to create these blueprints without mods. */
+  /** If an assembling machine has modules added at later stage, the modules are included in blueprints in earlier stages [font=default-bold]even if[/font] the machine is not high enough tier or has the wrong recipe.\nThis is useful to have bot requests for modules that will be added later.\nThe machine may need to be upgraded or have the correct recipe set [font=default-bold]before[/font] bots arrive to insert modules successfully.\n\n It is possible to create these blueprints without mods. */
   UseModulePreloadingTooltip = "bp100.gui.project-settings.use-module-preloading-tooltip",
   /** Replace infinity chests/pipes with combinators [img=info] */
   ReplaceInfinityWithCombinators = "bp100.gui.project-settings.replace-infinity-with-combinators",
