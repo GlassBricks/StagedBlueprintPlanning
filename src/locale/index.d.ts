@@ -16,6 +16,8 @@ export declare const enum L_ItemName {
   StagedCopyTool = "item-name.bp100:staged-copy-tool",
   /** Cut with stage info */
   StagedCutTool = "item-name.bp100:staged-cut-tool",
+  /** Stage reference */
+  StageReference = "item-name.bp100:stage-reference",
 }
 export declare const enum L_EntityName {
   /** Blueprint entity marker */

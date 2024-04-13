@@ -45,6 +45,8 @@ export const enum Prototypes {
   StagedCutTool = "bp100:staged-cut-tool",
   ForceDeleteTool = "bp100:force-delete-tool",
 
+  StageReference = "bp100:blueprint-reference",
+
   PassedPrototypeInfo = "bp100:passed-prototype-info",
 
   BANANA = "bp100:banana",
