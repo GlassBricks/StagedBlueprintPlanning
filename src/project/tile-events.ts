@@ -17,7 +17,7 @@ import {
   PlayerIndex,
 } from "factorio:runtime"
 import { ProtectedEvents } from "../lib"
-import { getStageAtSurface } from "./stage-surface"
+import { getStageAtSurface } from "./project-refs"
 
 const Events = ProtectedEvents
 

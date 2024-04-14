@@ -18,7 +18,7 @@ import {
 } from "../../blueprints/stage-reference"
 import { Prototypes } from "../../constants"
 import { getPlayer } from "../../lib/test/misc"
-import { getStageAtSurface } from "../../project/stage-surface"
+import { getStageAtSurface } from "../../project/project-refs"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { temporaryItemStack } from "../test-util"
 

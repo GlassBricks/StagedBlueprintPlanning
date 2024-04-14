@@ -11,9 +11,10 @@
 
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
+import { getStageFromStageReference } from "../../blueprints/stage-reference"
+import { getProjectById, getStageAtSurface } from "../../project/project-refs"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
-import { getStageAtSurface } from "../../project/stage-surface"
-import { _deleteAllProjects, createUserProject, getProjectById, ProjectEvents } from "../../project/UserProject"
+import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
 import { getCurrentValues } from "../../utils/properties-obj"
 
 let eventListener: MockNoSelf<AnySelflessFun>
@@ -242,5 +243,43 @@ describe("new stage name", () => {
       const stage = project.insertStage(2)
       expect(stage.name.get()).toEqual("Foo 3--2--1")
     })
+  })
+})
+
+describe("blueprintBookTemplate", () => {
+  test("initially nil", () => {
+    const project = createUserProject("Test", 0)
+    expect(project.blueprintBookTemplate()).toBeNil()
+  })
+
+  test("can be set", () => {
+    const project = createUserProject("Test", 0)
+    const book = project.ensureBlueprintBookTemplate()
+    expect(project.blueprintBookTemplate()).toEqual(book)
+
+    assert(book.is_blueprint_book)
+    expect(book.label).toEqual(project.name.get())
+    const inv = book.get_inventory(defines.inventory.item_main)!
+    expect(inv.length).toEqual(project.numStages())
+    for (const i of $range(1, project.numStages())) {
+      const referencedStage = getStageFromStageReference(inv[i - 1])
+      expect(referencedStage).toBe(project.getStage(i))
+    }
+  })
+  test("can be reset", () => {
+    const project = createUserProject("Test", 0)
+    const book = project.ensureBlueprintBookTemplate()
+    project.resetBlueprintBookTemplate()
+    expect(project.blueprintBookTemplate()).toBeNil()
+    expect(book.valid).toBe(false)
+  })
+
+  test("can be fixed if deleted", () => {
+    const project = createUserProject("Test", 0)
+    const book = project.ensureBlueprintBookTemplate()
+    book.clear()
+    expect(project.blueprintBookTemplate()).toBe(nil)
+    const newBook = project.ensureBlueprintBookTemplate()
+    assert(newBook.is_blueprint_book)
   })
 })

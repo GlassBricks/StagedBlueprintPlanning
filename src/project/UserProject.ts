@@ -9,7 +9,16 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintSignalIcon, LocalisedString, LuaSurface, nil, SignalID, SurfaceIndex } from "factorio:runtime"
+import {
+  BlueprintSignalIcon,
+  LocalisedString,
+  LuaInventory,
+  LuaItemStack,
+  LuaSurface,
+  nil,
+  SignalID,
+  SurfaceIndex,
+} from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
   BlueprintOverrideSettings,
@@ -21,6 +30,8 @@ import {
   setIconsInSettings,
   StageBlueprintSettings,
 } from "../blueprints/blueprint-settings"
+import { createStageReference } from "../blueprints/stage-reference"
+import { Prototypes } from "../constants"
 import { newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
 import { StagedValue } from "../entity/StagedValue"
@@ -48,9 +59,9 @@ import {
   PropertiesTable,
 } from "../utils/properties-obj"
 import { EntityHighlights } from "./entity-highlights"
+import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
-import { getStageAtSurface } from "./stage-surface"
 import { createStageSurface, destroySurface } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
@@ -95,6 +106,8 @@ class UserProjectImpl implements UserProject {
   actions = UserActionsClass({ project: this })
   updates = ProjectUpdatesClass({ project: this })
   worldUpdates = WorldUpdatesClass({ project: this })
+
+  blueprintBookTemplateInv?: LuaInventory
 
   constructor(
     readonly id: ProjectId,
@@ -191,9 +204,46 @@ class UserProjectImpl implements UserProject {
 
     this.raiseEvent({ type: "stage-deleted", project: this, stage })
   }
+
+  blueprintBookTemplate(): LuaItemStack | nil {
+    if (!this.blueprintBookTemplateInv?.valid) {
+      return nil
+    }
+    const stack = this.blueprintBookTemplateInv[0]
+    if (stack.valid_for_read && stack.is_blueprint_book) return stack
+  }
+
+  ensureBlueprintBookTemplate(): LuaItemStack {
+    if (this.blueprintBookTemplateInv == nil) {
+      this.blueprintBookTemplateInv = game.create_inventory(1)
+    }
+    const stack = this.blueprintBookTemplateInv[0]
+    if (!stack.valid_for_read || !stack.is_blueprint_book) {
+      this.setInitialBlueprintBookTemplate(stack)
+    }
+    return stack
+  }
+
+  resetBlueprintBookTemplate(): void {
+    this.blueprintBookTemplateInv?.destroy()
+    this.blueprintBookTemplateInv = nil
+  }
+
+  private setInitialBlueprintBookTemplate(stack: LuaItemStack): void {
+    stack.set_stack("blueprint-book")
+    const inventory = stack.get_inventory(defines.inventory.item_main)!
+    for (const stage of this.getAllStages()) {
+      inventory.insert(Prototypes.StageReference)
+      const bpStack = inventory[inventory.length - 1]
+      createStageReference(bpStack, stage)
+    }
+    stack.label = this.name.get()
+  }
+
   delete() {
     if (!this.valid) return
     remove_from_list(global.projects, this)
+    this.blueprintBookTemplateInv?.destroy()
     this.valid = false
     for (const [, stage] of pairs(this.stages)) {
       stage._doDelete()
@@ -266,14 +316,6 @@ const WorldUpdatesClass = LazyLoadClass<HasProject, WorldUpdates>("WorldUpdates"
 
 export function createUserProject(name: string, initialNumStages: number): UserProject {
   return UserProjectImpl.create(name, initialNumStages)
-}
-
-export function getProjectById(id: ProjectId): UserProject | nil {
-  // yes, quadratic, but not a big deal
-  for (const project of global.projects) {
-    if (project.id == id) return project
-  }
-  return nil
 }
 
 export function _deleteAllProjects(): void {

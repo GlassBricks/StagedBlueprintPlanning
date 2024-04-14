@@ -14,8 +14,8 @@ import { CustomInputs, Prototypes } from "../constants"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
 import { getProjectPlayerData, ProjectPlayerData } from "../project/player-project-data"
+import { getStageAtSurface } from "../project/project-refs"
 import { Stage } from "../project/ProjectDef"
-import { getStageAtSurface } from "../project/stage-surface"
 
 import { PlayerChangedStageEvent, playerCurrentStage } from "./player-current-stage"
 

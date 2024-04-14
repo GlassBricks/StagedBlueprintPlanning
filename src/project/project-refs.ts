@@ -9,13 +9,22 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { SurfaceIndex } from "factorio:runtime"
-import { Stage } from "./ProjectDef"
+// This file is needed to avoid circular dependencies
+import { nil, SurfaceIndex } from "factorio:runtime"
+import { ProjectId, Stage, UserProject } from "./ProjectDef"
 
 declare const global: {
   surfaceIndexToStage: ReadonlyLuaMap<SurfaceIndex, Stage>
+  projects: Record<number, UserProject>
 }
 
 export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
   return global.surfaceIndexToStage.get(surfaceIndex)
+}
+export function getProjectById(id: ProjectId): UserProject | nil {
+  // yes, quadratic, but not a big deal
+  for (const [, project] of pairs(global.projects)) {
+    if (project.id == id) return project
+  }
+  return nil
 }

@@ -11,10 +11,8 @@
 
 import { LuaItemStack } from "factorio:runtime"
 import { Prototypes } from "../constants"
-import { Events } from "../lib"
+import { getProjectById } from "../project/project-refs"
 import { ProjectId, Stage, StageId } from "../project/ProjectDef"
-import { getProjectById } from "../project/UserProject"
-import { teleportToStage } from "../ui/player-current-stage"
 import { getCurrentValues } from "../utils/properties-obj"
 import { getIconsFromSettings } from "./blueprint-settings"
 
@@ -64,14 +62,3 @@ export function correctStageReference(stack: LuaItemStack): Stage | nil {
   createStageReference(stack, stage, false)
   return stage
 }
-
-Events.on_gui_opened((e) => {
-  const item = e.item
-  if (!item) return
-  const stage = correctStageReference(item)
-  if (stage) {
-    const player = game.get_player(e.player_index)!
-    teleportToStage(player, stage)
-    player.opened = nil
-  }
-})

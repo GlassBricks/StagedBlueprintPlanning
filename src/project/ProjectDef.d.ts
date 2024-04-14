@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LocalisedString, LuaSurface } from "factorio:runtime"
+import { LocalisedString, LuaItemStack, LuaSurface } from "factorio:runtime"
 import {
   BlueprintOverrideSettings,
   BlueprintSettingsTable,
@@ -55,11 +55,15 @@ export interface UserProject extends Project {
   readonly content: MutableProjectContent
   readonly localEvents: SimpleSubscribable<LocalProjectEvent>
 
+  // settings
   readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
-
   // this may become a per-stage setting in the future
   readonly landfillTile: MutableProperty<string | nil>
   readonly stagedTilesEnabled: MutableProperty<boolean>
+
+  blueprintBookTemplate(): LuaItemStack | nil
+  ensureBlueprintBookTemplate(): LuaItemStack
+  resetBlueprintBookTemplate(): void
 
   displayName(): Property<LocalisedString>
   getStage(stageNumber: StageNumber): Stage | nil

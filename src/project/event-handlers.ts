@@ -54,8 +54,8 @@ import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
 import { L_Bp100, L_Interaction } from "../locale"
 import { getProjectPlayerData } from "./player-project-data"
+import { getStageAtSurface } from "./project-refs"
 import { Stage } from "./ProjectDef"
-import { getStageAtSurface } from "./stage-surface"
 import { withTileEventsDisabled } from "./tile-events"
 import {
   onUndoReferenceBuilt,
