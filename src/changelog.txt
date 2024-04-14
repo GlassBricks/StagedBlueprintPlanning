@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.32.0
 Date: ????
-  Changes:
+  Features:
+    - You can now customize the layout and content of exported blueprint books. View the buttons in "Blueprints > Export" for more info.
 ---------------------------------------------------------------------------------------------------
 Version: 0.31.0
 Date: 2024-04-01
