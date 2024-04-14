@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintSignalIcon, LocalisedString, LuaSurface, SignalID, SurfaceIndex } from "factorio:runtime"
+import { BlueprintSignalIcon, LocalisedString, LuaSurface, nil, SignalID, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
   BlueprintOverrideSettings,
@@ -49,7 +49,7 @@ import {
 } from "../utils/properties-obj"
 import { EntityHighlights } from "./entity-highlights"
 import { ProjectUpdates } from "./project-updates"
-import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, UserProject } from "./ProjectDef"
+import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
 import { getStageAtSurface } from "./stage-surface"
 import { createStageSurface, destroySurface } from "./surfaces"
 import { UserActions } from "./user-actions"
@@ -62,6 +62,7 @@ declare const global: {
   // projects: LuaMap<ProjectId, UserProjectImpl>
   projects: UserProjectImpl[]
   surfaceIndexToStage: LuaMap<SurfaceIndex, StageImpl>
+  nextStageId?: StageId
 }
 Events.on_init(() => {
   global.nextProjectId = 1 as ProjectId
@@ -141,6 +142,12 @@ class UserProjectImpl implements UserProject {
   }
   getStageName(stageNumber: StageNumber): LocalisedString {
     return this.stages[stageNumber].name.get()
+  }
+  getStageById(stageId: StageId): Stage | nil {
+    for (const [, stage] of pairs(this.stages)) {
+      if (stage.id == stageId) return stage
+    }
+    return nil
   }
 
   insertStage(stage: StageNumber): Stage {
@@ -261,10 +268,20 @@ export function createUserProject(name: string, initialNumStages: number): UserP
   return UserProjectImpl.create(name, initialNumStages)
 }
 
-export function _deleteAllProjects(): void {
+export function getProjectById(id: ProjectId): UserProject | nil {
+  // yes, quadratic, but not a big deal
   for (const project of global.projects) {
-    project.delete()
+    if (project.id == id) return project
   }
+  return nil
+}
+
+export function _deleteAllProjects(): void {
+  while (global.projects.length > 0) {
+    global.projects[0].delete()
+  }
+  assert(global.projects.length == 0)
+  global.nextStageId = nil
   global.nextProjectId = 1 as ProjectId
 }
 export function getAllProjects(): readonly UserProject[] {
@@ -313,13 +330,8 @@ class StageImpl implements Stage {
 
   actions: UserActions
 
-  getBlueprintSettingsView(): BlueprintSettingsTable {
-    return createdDiffedPropertyTableView(this.project.defaultBlueprintSettings, this.stageBlueprintSettings)
-  }
+  id?: StageId
 
-  getBlueprintBBox(): BBox {
-    return this.project.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
-  }
   constructor(
     public project: UserProjectImpl,
     readonly surface: LuaSurface,
@@ -331,7 +343,6 @@ class StageImpl implements Stage {
     if (project.id != 0) global.surfaceIndexToStage.set(this.surfaceIndex, this)
     this.actions = project.actions
   }
-
   static create(
     project: UserProjectImpl,
     stageNumber: StageNumber,
@@ -341,6 +352,22 @@ class StageImpl implements Stage {
     const area = project.content.computeBoundingBox()
     const surface = createStageSurface(area, copySettingsFrom)
     return new StageImpl(project, surface, stageNumber, name)
+  }
+
+  getBlueprintSettingsView(): BlueprintSettingsTable {
+    return createdDiffedPropertyTableView(this.project.defaultBlueprintSettings, this.stageBlueprintSettings)
+  }
+
+  getBlueprintBBox(): BBox {
+    return this.project.content.computeBoundingBox() ?? BBox.coords(-20, -20, 20, 20)
+  }
+
+  getID(): StageId {
+    if (this.id == nil) {
+      this.id = (global.nextStageId ?? 1) as StageId
+      global.nextStageId = (this.id + 1) as StageId
+    }
+    return this.id
   }
 
   deleteInProject(): void {

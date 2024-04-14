@@ -13,7 +13,7 @@ import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
 import { getStageAtSurface } from "../../project/stage-surface"
-import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
+import { _deleteAllProjects, createUserProject, getProjectById, ProjectEvents } from "../../project/UserProject"
 import { getCurrentValues } from "../../utils/properties-obj"
 
 let eventListener: MockNoSelf<AnySelflessFun>
@@ -32,6 +32,11 @@ test("project created calls event", () => {
     type: "project-created",
     project,
   } as ProjectCreatedEvent)
+})
+
+test("getProjectById", () => {
+  const project = createUserProject("Test2", 0)
+  expect(getProjectById(project.id)).toBe(project)
 })
 
 test("getStageAtSurface", () => {

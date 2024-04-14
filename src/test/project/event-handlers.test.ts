@@ -26,7 +26,7 @@ import { UserActions } from "../../project/user-actions"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { fStub } from "../f-mock"
 import { moduleMock } from "../module-mock"
-import { reviveGhost } from "../reviveGhost"
+import { reviveGhost } from "../test-util"
 import direction = defines.direction
 
 let project: UserProject & {

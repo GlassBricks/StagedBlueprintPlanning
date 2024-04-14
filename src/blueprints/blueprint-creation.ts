@@ -27,7 +27,7 @@ import {
 import { BlueprintTakeResult, takeSingleBlueprint } from "./take-single-blueprint"
 import max = math.max
 
-class PseudoPromise<T extends AnyNotNil> {
+class Ref<T extends AnyNotNil> {
   private value?: T
   set(value: T) {
     assert(!this.value, "value already set")
@@ -44,8 +44,8 @@ interface ProjectBlueprintPlan {
   // other stuff will go here eventually
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
 
-  changedEntities?: PseudoPromise<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
-  moduleOverrides?: PseudoPromise<LuaMap<UnitNumber, Record<string, number>>>
+  changedEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
+  moduleOverrides?: Ref<LuaMap<UnitNumber, Record<string, number>>>
 }
 
 interface StageBlueprintPlan {
@@ -405,13 +405,13 @@ class BlueprintCreationTaskBuilder {
 
   private ensureHasComputeChangedEntities(projectInfo: ProjectBlueprintPlan): void {
     if (!projectInfo.changedEntities) {
-      projectInfo.changedEntities = new PseudoPromise()
+      projectInfo.changedEntities = new Ref()
       this.tasks.push({ name: "computeChangedEntities", args: [projectInfo] })
     }
   }
   private ensureHasComputeModuleOverrides(projectInfo: ProjectBlueprintPlan): void {
     if (!projectInfo.moduleOverrides) {
-      projectInfo.moduleOverrides = new PseudoPromise()
+      projectInfo.moduleOverrides = new Ref()
       this.tasks.push({ name: "computeModuleOverrides", args: [projectInfo] })
     }
   }

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { GhostEntity, LuaEntity } from "factorio:runtime"
+import { GhostEntity, LuaEntity, LuaItemStack } from "factorio:runtime"
 
 export function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   if (!ghost.valid) return
@@ -37,4 +37,10 @@ export function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   }
   requestProxy.destroy()
   return entity
+}
+
+export function temporaryItemStack(): LuaItemStack {
+  const inventory = game.create_inventory(1)
+  after_test(() => inventory.destroy())
+  return inventory[0]
 }

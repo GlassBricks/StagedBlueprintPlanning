@@ -29,6 +29,10 @@ import { WorldUpdates } from "./world-updates"
 export type ProjectId = number & {
   _projectIdBrand: never
 }
+export type StageId = number & {
+  _stageIdBrand: never
+}
+
 export interface Project {
   numStages(): StageNumber
   lastStageFor(entity: StagedValue<AnyNotNil, AnyNotNil>): StageNumber
@@ -60,6 +64,7 @@ export interface UserProject extends Project {
   displayName(): Property<LocalisedString>
   getStage(stageNumber: StageNumber): Stage | nil
   getAllStages(): readonly Stage[]
+  getStageById(stageId: StageId): Stage | nil
 
   insertStage(index: StageNumber): Stage
   deleteStage(index: StageNumber): void
@@ -74,6 +79,8 @@ export interface Stage {
 
   readonly stageNumber: StageNumber
   readonly project: UserProject
+
+  getID(): StageId
 
   /** Same value as project.actions */
   readonly actions: UserActions

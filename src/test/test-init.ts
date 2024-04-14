@@ -10,6 +10,7 @@
  */
 
 import * as mod_gui from "mod-gui"
+import { createStageReference } from "../blueprints/stage-reference"
 import { destroyAllRenders, Events } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
@@ -261,4 +262,16 @@ commands.add_command("perf", "", () => {
   })
   stack.clear()
   remote.call("profiler", "dump")
+})
+
+commands.add_command("createStageRef", "", (e) => {
+  if (!e.player_index) return
+  const player = game.get_player(e.player_index)!
+  const stage = getStageAtSurface(player.surface_index)
+  if (!stage) {
+    player.print("Not in stage")
+    return
+  }
+
+  createStageReference(player.cursor_stack!, stage)
 })
