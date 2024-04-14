@@ -359,7 +359,7 @@ stageReference.subgroup = undefined
 Object.assign(stageReference, {
   name: Prototypes.StageReference,
   icon: "__bp100__/graphics/icons/purple-blueprint.png",
-  flags: ["hidden", "not-stackable"],
+  flags: ["hidden", "not-stackable", "spawnable"],
   inventory_size: 1,
   extends_inventory_by_default: false,
 } satisfies Partial<BlueprintBookPrototype>)

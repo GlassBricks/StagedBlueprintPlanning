@@ -11,10 +11,14 @@
 
 import { LuaPlayer } from "factorio:runtime"
 import expect from "tstl-expect"
-import { correctStageReference, createStageReference, getReferencedStage } from "../../blueprints/stage-reference"
+import {
+  correctStageReference,
+  correctStageReferenceRecursive,
+  createStageReference,
+  getReferencedStage,
+} from "../../blueprints/stage-reference"
 import { Prototypes } from "../../constants"
 import { getPlayer } from "../../lib/test/misc"
-import { getStageAtSurface } from "../../project/project-refs"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { temporaryItemStack } from "../test-util"
 
@@ -43,7 +47,8 @@ test("createStageReference", () => {
   createStageReference(stack, stage)
   expect(stack.valid).toBe(true)
   expect(stack.name).toBe(Prototypes.StageReference)
-  expect(stack.label).toBe(stage.name.get())
+  expect(stack.label).toBe("Template: " + stage.name.get())
+  expect(stack.allow_manual_label_change).toBe(false)
   expect(stack.blueprint_icons).toEqual([
     {
       signal: {
@@ -103,6 +108,21 @@ test("correctStageReference updates stack if stage changed", () => {
   expect(retrievedStage).toBe(stage)
 })
 
+test("correctStageReferenceRecursive", () => {
+  const project = createUserProject("Test", 3)
+  const stage = project.getStage(2)!
+
+  const book = temporaryItemStack()
+  book.set_stack("blueprint-book")
+  const inv = book.get_inventory(defines.inventory.item_main)!
+  inv.insert("blueprint")
+  createStageReference(inv[0], stage)
+
+  correctStageReferenceRecursive(book)
+  const retrievedStage = getReferencedStage(inv[0])
+  expect(retrievedStage).toBe(stage)
+})
+
 describe("opening a stage reference", () => {
   test("opening a broken stage reference deletes it", () => {
     const project = createUserProject("Test", 3)
@@ -117,18 +137,5 @@ describe("opening a stage reference", () => {
 
     expect(stack.valid_for_read).toBe(false)
     expect(player.opened).toBe(null)
-  })
-
-  test("opening a stage reference instead teleports", () => {
-    const project = createUserProject("Test", 3)
-    const stage = project.getStage(2)!
-    const player = getPlayer()
-    const stack = player.get_main_inventory()![0]
-    createStageReference(stack, stage)
-
-    player.opened = stack
-
-    expect(getStageAtSurface(player.surface_index)).toBe(stage)
-    expect(player.opened_gui_type).toBe(defines.gui_type.none)
   })
 })

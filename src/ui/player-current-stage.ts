@@ -10,7 +10,6 @@
  */
 
 import { LuaPlayer, LuaSurface, PlayerIndex, SurfaceIndex } from "factorio:runtime"
-import { correctStageReference } from "../blueprints/stage-reference"
 import { assertNever, Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
 import { Pos, Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
@@ -124,19 +123,6 @@ export function exitProject(player: LuaPlayer): void {
     player.teleport([0, 0], 1 as SurfaceIndex)
   }
 }
-
-// opening a stage reference
-// needs to be here instead of in blueprints/stage-reference.ts because of circular dependencies
-Events.on_gui_opened((e) => {
-  const item = e.item
-  if (!item) return
-  const stage = correctStageReference(item)
-  if (stage) {
-    const player = game.get_player(e.player_index)!
-    teleportToStage(player, stage)
-    player.opened = nil
-  }
-})
 
 Migrations.early("0.23.0", () => {
   for (const [, player] of game.players) {

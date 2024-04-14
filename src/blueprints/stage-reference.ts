@@ -11,21 +11,23 @@
 
 import { LuaItemStack } from "factorio:runtime"
 import { Prototypes } from "../constants"
+import { Events } from "../lib"
 import { getProjectById } from "../project/project-refs"
 import { ProjectId, Stage, StageId } from "../project/ProjectDef"
 import { getCurrentValues } from "../utils/properties-obj"
 import { getIconsFromSettings } from "./blueprint-settings"
 
 export function createStageReference(stack: LuaItemStack, stage: Stage): void {
-  stack.set_stack(Prototypes.StageReference)
+  if (!stack.valid) return
+  if (!stack.valid_for_read || stack.name != Prototypes.StageReference) stack.set_stack(Prototypes.StageReference)
   const name = stage.name.get()
-  stack.label = name
+  stack.label = `Template: ${name}`
+  stack.allow_manual_label_change = false
   const inventory = assert(stack.get_inventory(defines.inventory.item_main))
-  inventory.clear()
   const innerStack = inventory[0]
   innerStack.set_stack("blueprint")
   innerStack.allow_manual_label_change = false
-  innerStack.label = stage.project.id + ";" + stage.getID()
+  innerStack.label = `INTERNAL, do not tamper: ${stage.project.id};${stage.getID()}`
 
   stack.blueprint_icons = getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()), name) ?? []
 }
@@ -36,10 +38,10 @@ export function createStageReference(stack: LuaItemStack, stage: Stage): void {
 export function getReferencedStage(stack: LuaItemStack): Stage | nil {
   if (!stack.valid || !stack.valid_for_read || stack.name != Prototypes.StageReference) return nil
   const innerStack = stack.get_inventory(defines.inventory.item_main)![0]
-  if (!innerStack.valid || innerStack.name != "blueprint") return nil
+  if (!innerStack.valid || innerStack.name != "blueprint") return
   const label = innerStack.label
   if (!label) return
-  const [projectIdStr, stageIdStr] = string.match(label, "^(%d+);(%d+)$")
+  const [projectIdStr, stageIdStr] = string.match(label, "(%d+);(%d+)$")
   const projectId = tonumber(projectIdStr)
   const stageId = tonumber(stageIdStr)
   if (!(projectId && stageId)) return
@@ -52,7 +54,7 @@ export function getReferencedStage(stack: LuaItemStack): Stage | nil {
  * If is a blueprint reference, makes sure it is consistent with the referenced stage, or clears it.
  */
 export function correctStageReference(stack: LuaItemStack): Stage | nil {
-  if (!(stack.valid && stack.name == Prototypes.StageReference)) return nil
+  if (!(stack.valid && stack.valid_for_read && stack.name == Prototypes.StageReference)) return nil
   const stage = getReferencedStage(stack)
   if (!stage) {
     stack.clear()
@@ -61,3 +63,25 @@ export function correctStageReference(stack: LuaItemStack): Stage | nil {
   createStageReference(stack, stage)
   return stage
 }
+
+export function correctStageReferenceRecursive(stack: LuaItemStack): void {
+  if (!(stack.valid && stack.valid_for_read)) return
+  if (stack.name == Prototypes.StageReference) {
+    correctStageReference(stack)
+    return
+  }
+  if (stack.is_blueprint_book) {
+    const inv = stack.get_inventory(defines.inventory.item_main)!
+    if (inv.is_empty()) return
+    for (let i = 1; i <= inv.length; i++) {
+      correctStageReferenceRecursive(inv[i - 1])
+    }
+  }
+}
+
+// opening a stage reference
+// needs to be here instead of in blueprints/stage-reference.ts because of circular dependencies
+Events.on_gui_opened((e) => {
+  const item = e.item
+  if (item) correctStageReferenceRecursive(item)
+})
