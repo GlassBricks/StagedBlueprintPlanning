@@ -40,6 +40,6 @@
       }
     ]
   },
-  "include": ["src", "tstlPlugin/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tstlPlugin/*.d.ts"],
   "exclude": ["**/node_modules/"]
 }
