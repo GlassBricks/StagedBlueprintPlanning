@@ -10,55 +10,45 @@
  */
 
 import { PrototypeData } from "factorio:common"
-import { ItemPrototype, SimpleEntityWithOwnerPrototype, Sprite } from "factorio:prototype"
-import { empty_sprite } from "util"
+import { BlueprintItemPrototype, ItemPrototype, SimpleEntityWithOwnerPrototype, Sprite } from "factorio:prototype"
+import { empty_sprite, table } from "util"
 import { Prototypes } from "../constants"
 
 declare const data: PrototypeData
 
-const entityMarker: SimpleEntityWithOwnerPrototype = {
-  type: "simple-entity-with-owner",
-  name: Prototypes.EntityMarker,
-  icon: "__core__/graphics/spawn-flag.png",
-  icon_size: 64,
-  subgroup: Prototypes.BlueprintSubgroup,
-  picture: empty_sprite() as Sprite,
-  flags: ["hidden", "player-creation", "placeable-off-grid"],
-  collision_mask: [],
+function createHiddenEntity(name: string): (SimpleEntityWithOwnerPrototype | ItemPrototype)[] {
+  return [
+    {
+      type: "simple-entity-with-owner",
+      name,
+      icon: "__core__/graphics/spawn-flag.png",
+      icon_size: 64,
+      subgroup: Prototypes.BlueprintSubgroup,
+      picture: empty_sprite() as Sprite,
+      flags: ["hidden", "player-creation", "placeable-off-grid"],
+      collision_mask: [],
+    } satisfies SimpleEntityWithOwnerPrototype,
+    {
+      type: "item",
+      name,
+      icon: "__core__/graphics/spawn-flag.png",
+      icon_size: 64,
+      stack_size: 1,
+      flags: ["hidden"],
+      place_result: name,
+    } satisfies ItemPrototype,
+  ]
 }
+data.extend(createHiddenEntity(Prototypes.EntityMarker))
+data.extend(createHiddenEntity(Prototypes.UndoReference))
 
-const entityMarkerItem: ItemPrototype = {
-  type: "item",
-  name: Prototypes.EntityMarker,
-  icon: "__core__/graphics/spawn-flag.png",
-  icon_size: 64,
-  stack_size: 1,
-  flags: ["hidden"],
-  place_result: Prototypes.EntityMarker,
-}
+const stageReference = table.deepcopy(data.raw.blueprint.blueprint!)
+stageReference.subgroup = undefined
+Object.assign(stageReference, {
+  name: Prototypes.StageReference,
+  icon: "__bp100__/graphics/icons/purple-blueprint.png",
+  flags: ["hidden", "not-stackable"],
+} satisfies Partial<BlueprintItemPrototype>)
 
-data.extend([entityMarker, entityMarkerItem])
-
-// undo reference
-const undoReference: SimpleEntityWithOwnerPrototype = {
-  type: "simple-entity-with-owner",
-  name: Prototypes.UndoReference,
-  icon: "__core__/graphics/spawn-flag.png",
-  icon_size: 64,
-  subgroup: Prototypes.BlueprintSubgroup,
-  picture: empty_sprite() as Sprite,
-  flags: ["hidden", "player-creation", "placeable-off-grid"],
-  collision_mask: [],
-}
-
-const undoReferenceItem: ItemPrototype = {
-  type: "item",
-  name: Prototypes.UndoReference,
-  icon: "__core__/graphics/spawn-flag.png",
-  icon_size: 64,
-  stack_size: 1,
-  flags: ["hidden"],
-  place_result: Prototypes.UndoReference,
-}
-
-data.extend([undoReference, undoReferenceItem])
+data.extend([stageReference])
+data.extend(createHiddenEntity(Prototypes.StageReferenceData))

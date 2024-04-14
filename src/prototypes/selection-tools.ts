@@ -11,7 +11,7 @@
 
 import { PrototypeData } from "factorio:common"
 import {
-  BlueprintBookPrototype,
+  BlueprintItemPrototype,
   CustomInputPrototype,
   DeconstructionItemPrototype,
   SelectionToolPrototype,
@@ -354,14 +354,12 @@ data.extend([
   selectionToolToInput(forceDeleteTool, nil, false),
 ])
 
-const stageReference = table.deepcopy(data.raw["blueprint-book"]["blueprint-book"]!)
-stageReference.subgroup = undefined
+const stageReference = table.deepcopy(data.raw["blueprint"]["blueprint"])!
+stageReference.subgroup = nil
 Object.assign(stageReference, {
   name: Prototypes.StageReference,
   icon: "__bp100__/graphics/icons/purple-blueprint.png",
   flags: ["hidden", "not-stackable", "spawnable"],
-  inventory_size: 1,
-  extends_inventory_by_default: false,
-} satisfies Partial<BlueprintBookPrototype>)
+} satisfies Partial<BlueprintItemPrototype>)
 
 data.extend([stageReference])

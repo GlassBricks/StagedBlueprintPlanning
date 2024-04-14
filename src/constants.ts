@@ -46,6 +46,7 @@ export const enum Prototypes {
   ForceDeleteTool = "bp100:force-delete-tool",
 
   StageReference = "bp100:blueprint-reference",
+  StageReferenceData = "bp100:blueprint-reference-data",
 
   PassedPrototypeInfo = "bp100:passed-prototype-info",
 

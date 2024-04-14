@@ -18,12 +18,20 @@ export declare const enum L_ItemName {
   StagedCutTool = "item-name.bp100:staged-cut-tool",
   /** Stage reference */
   StageReference = "item-name.bp100:stage-reference",
+  /** Stage reference-data */
+  StageReferenceData = "item-name.bp100:stage-reference-data",
 }
 export declare const enum L_EntityName {
-  /** Blueprint entity marker */
+  /** Entity marker */
   EntityMarker = "entity-name.bp100:entity-marker",
   /** Undo reference */
   UndoReference = "entity-name.bp100:undo-reference",
+  /** INTERNAL: please don't touch me, else blueprint templates will not work! */
+  BlueprintReferenceData = "entity-name.bp100:blueprint-reference-data",
+}
+export declare const enum L_EntityDescription {
+  /** Reference to a stage. Will be replaced with the actual blueprint when the template is compiled. */
+  StageReference = "entity-description.bph00:stage-reference",
 }
 export declare const enum L_ItemGroupName {
   /** Staged bp planning: utility entities */

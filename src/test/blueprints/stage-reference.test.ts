@@ -85,7 +85,7 @@ test("correctStageReference deletes stack if tags are invalid", () => {
   const stage = project.getStage(2)!
   const stack = temporaryItemStack()
   createStageReference(stack, stage)
-  stack.get_inventory(defines.inventory.item_main)![0].label = "invalid"
+  stack.set_blueprint_entity_tags(1, {})
 
   const ret = correctStageReference(stack)
   expect(ret).toBe(nil)

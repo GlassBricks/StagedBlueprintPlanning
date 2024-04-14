@@ -17,19 +17,33 @@ import { ProjectId, Stage, StageId } from "../project/ProjectDef"
 import { getCurrentValues } from "../utils/properties-obj"
 import { getIconsFromSettings } from "./blueprint-settings"
 
+const StageReferenceTag = "bp100StageReference"
+
 export function createStageReference(stack: LuaItemStack, stage: Stage): boolean {
   if (!stack.valid) return false
   if (!stack.valid_for_read || stack.name != Prototypes.StageReference) stack.set_stack(Prototypes.StageReference)
   const name = stage.name.get()
   stack.label = `[[ ${name} ]]`
   stack.allow_manual_label_change = false
-  const inventory = assert(stack.get_inventory(defines.inventory.item_main))
-  const innerStack = inventory[0]
-  innerStack.set_stack("blueprint")
-  innerStack.allow_manual_label_change = false
-  innerStack.label = `INTERNAL, don't touch ${stage.project.id};${stage.getID()}`
+  stack.set_blueprint_entities([
+    {
+      name: Prototypes.StageReferenceData,
+      entity_number: 1,
+      position: { x: 0, y: 0 },
+      tags: {
+        [StageReferenceTag]: true,
+        projectId: stage.project.id,
+        stageId: stage.getID(),
+      },
+    },
+  ])
+  stack.blueprint_icons = getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()), name) ?? [
+    {
+      index: 1,
+      signal: { type: "item", name: Prototypes.StageReference },
+    },
+  ]
 
-  stack.blueprint_icons = getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()), name) ?? []
   return true
 }
 
@@ -38,17 +52,14 @@ export function createStageReference(stack: LuaItemStack, stage: Stage): boolean
  */
 export function getReferencedStage(stack: LuaItemStack): Stage | nil {
   if (!stack.valid || !stack.valid_for_read || stack.name != Prototypes.StageReference) return nil
-  const innerStack = stack.get_inventory(defines.inventory.item_main)![0]
-  if (!innerStack.valid || innerStack.name != "blueprint") return
-  const label = innerStack.label
-  if (!label) return
-  const [projectIdStr, stageIdStr] = string.match(label, "(%d+);(%d+)$")
-  const projectId = tonumber(projectIdStr)
-  const stageId = tonumber(stageIdStr)
-  if (!(projectId && stageId)) return
-  const stage = getProjectById(projectId as ProjectId)?.getStageById(stageId as StageId)
-
-  return stage
+  const tags = stack.get_blueprint_entity_tags(1)
+  if (
+    !(tags && tags[StageReferenceTag] == true && typeof tags.projectId == "number" && typeof tags.stageId == "number")
+  )
+    return
+  const projectId = tags.projectId as ProjectId
+  const stageId = tags.stageId as StageId
+  return getProjectById(projectId)?.getStageById(stageId)
 }
 
 /**
