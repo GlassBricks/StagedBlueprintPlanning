@@ -489,7 +489,7 @@ function addCompileBookTemplateTasks(
 }
 
 function addBlueprintBookTasks(project: UserProject, builder: BlueprintingTaskBuilder, stack: LuaItemStack): void {
-  const template = project.blueprintBookTemplate()
+  const template = project.getBlueprintBookTemplate()
   if (template) {
     addCompileBookTemplateTasks(builder, template, stack)
   } else {

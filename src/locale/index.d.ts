@@ -158,6 +158,8 @@ export declare const enum L_Interaction {
 export declare const enum L_Gui {
   /** Blueprint filters */
   BlueprintFilters = "bp100.gui.blueprint-filters",
+  /** Get template */
+  GetStageTemplate = "bp100.gui.get-stage-template",
 }
 export declare const enum L_GuiProjectSelector {
   /** Staged BP projects */
@@ -304,6 +306,12 @@ export declare const enum L_GuiProjectSettings {
   MakeBlueprintBook = "bp100.gui.project-settings.make-blueprint-book",
   /** Creates a blueprint book containing all stages. */
   MakeBlueprintBookTooltip = "bp100.gui.project-settings.make-blueprint-book-tooltip",
+  /** Edit blueprint book template [img=info] */
+  EditBlueprintBookTemplate = "bp100.gui.project-settings.edit-blueprint-book-template",
+  /** Edit the contents or icons/settings of the blueprint book.\nYou can also add other blueprints, deconstruction planners, etc. to the template, and they will be present in the final blueprint book. */
+  EditBlueprintBookTemplateTooltip = "bp100.gui.project-settings.edit-blueprint-book-template-tooltip",
+  /** Reset blueprint book template */
+  ResetBlueprintBookTemplate = "bp100.gui.project-settings.reset-blueprint-book-template",
   /** Export book to file [img=info] */
   ExportBlueprintBookStringToFile = "bp100.gui.project-settings.export-blueprint-book-string-to-file",
   /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */

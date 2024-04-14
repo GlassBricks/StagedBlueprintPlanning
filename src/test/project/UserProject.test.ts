@@ -249,13 +249,13 @@ describe("new stage name", () => {
 describe("blueprintBookTemplate", () => {
   test("initially nil", () => {
     const project = createUserProject("Test", 0)
-    expect(project.blueprintBookTemplate()).toBeNil()
+    expect(project.getBlueprintBookTemplate()).toBeNil()
   })
 
   test("can be set", () => {
     const project = createUserProject("Test", 0)
-    const book = project.ensureBlueprintBookTemplate()
-    expect(project.blueprintBookTemplate()).toEqual(book)
+    const book = project.getOrCreateBlueprintBookTemplate()
+    expect(project.getBlueprintBookTemplate()).toEqual(book)
 
     assert(book.is_blueprint_book)
     expect(book.label).toEqual(project.name.get())
@@ -268,18 +268,18 @@ describe("blueprintBookTemplate", () => {
   })
   test("can be reset", () => {
     const project = createUserProject("Test", 0)
-    const book = project.ensureBlueprintBookTemplate()
+    const book = project.getOrCreateBlueprintBookTemplate()
     project.resetBlueprintBookTemplate()
-    expect(project.blueprintBookTemplate()).toBeNil()
+    expect(project.getBlueprintBookTemplate()).toBeNil()
     expect(book.valid).toBe(false)
   })
 
   test("can be fixed if deleted", () => {
     const project = createUserProject("Test", 0)
-    const book = project.ensureBlueprintBookTemplate()
+    const book = project.getOrCreateBlueprintBookTemplate()
     book.clear()
-    expect(project.blueprintBookTemplate()).toBe(nil)
-    const newBook = project.ensureBlueprintBookTemplate()
+    expect(project.getBlueprintBookTemplate()).toBe(nil)
+    const newBook = project.getOrCreateBlueprintBookTemplate()
     assert(newBook.is_blueprint_book)
   })
 })

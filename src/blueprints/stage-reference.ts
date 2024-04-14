@@ -17,19 +17,20 @@ import { ProjectId, Stage, StageId } from "../project/ProjectDef"
 import { getCurrentValues } from "../utils/properties-obj"
 import { getIconsFromSettings } from "./blueprint-settings"
 
-export function createStageReference(stack: LuaItemStack, stage: Stage): void {
-  if (!stack.valid) return
+export function createStageReference(stack: LuaItemStack, stage: Stage): boolean {
+  if (!stack.valid) return false
   if (!stack.valid_for_read || stack.name != Prototypes.StageReference) stack.set_stack(Prototypes.StageReference)
   const name = stage.name.get()
-  stack.label = `Template: ${name}`
+  stack.label = `[[ ${name} ]]`
   stack.allow_manual_label_change = false
   const inventory = assert(stack.get_inventory(defines.inventory.item_main))
   const innerStack = inventory[0]
   innerStack.set_stack("blueprint")
   innerStack.allow_manual_label_change = false
-  innerStack.label = `INTERNAL, do not tamper: ${stage.project.id};${stage.getID()}`
+  innerStack.label = `INTERNAL, don't touch ${stage.project.id};${stage.getID()}`
 
   stack.blueprint_icons = getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()), name) ?? []
+  return true
 }
 
 /**

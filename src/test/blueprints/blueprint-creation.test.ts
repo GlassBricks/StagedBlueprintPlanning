@@ -233,7 +233,7 @@ test("make blueprint book using template", () => {
   for (const i of $range(1, project.numStages())) {
     createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])
   }
-  const templateInv = project.ensureBlueprintBookTemplate().get_inventory(defines.inventory.item_main)!
+  const templateInv = project.getOrCreateBlueprintBookTemplate().get_inventory(defines.inventory.item_main)!
   const stageMapping = [3, 2, 1, 2, 3]
   for (let i = 0; i < stageMapping.length; i++) {
     if (i >= templateInv.length) templateInv.insert("blueprint")

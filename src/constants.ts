@@ -66,6 +66,7 @@ export const enum Sprites {
   CollapseLeft = "bp100:collapse-left",
   CollapseLeftDark = "bp100:collapse-left-dark",
   BlueprintStages = "bp100:blueprint-stages",
+  NewBlueprint = "bp100:new-blueprint",
 }
 
 export const enum CustomInputs {

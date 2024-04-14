@@ -61,8 +61,8 @@ export interface UserProject extends Project {
   readonly landfillTile: MutableProperty<string | nil>
   readonly stagedTilesEnabled: MutableProperty<boolean>
 
-  blueprintBookTemplate(): LuaItemStack | nil
-  ensureBlueprintBookTemplate(): LuaItemStack
+  getBlueprintBookTemplate(): LuaItemStack | nil
+  getOrCreateBlueprintBookTemplate(): LuaItemStack
   resetBlueprintBookTemplate(): void
 
   displayName(): Property<LocalisedString>

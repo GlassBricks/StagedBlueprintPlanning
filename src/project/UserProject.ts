@@ -205,7 +205,7 @@ class UserProjectImpl implements UserProject {
     this.raiseEvent({ type: "stage-deleted", project: this, stage })
   }
 
-  blueprintBookTemplate(): LuaItemStack | nil {
+  getBlueprintBookTemplate(): LuaItemStack | nil {
     if (!this.blueprintBookTemplateInv?.valid) {
       return nil
     }
@@ -213,7 +213,7 @@ class UserProjectImpl implements UserProject {
     if (stack.valid_for_read && stack.is_blueprint_book) return stack
   }
 
-  ensureBlueprintBookTemplate(): LuaItemStack {
+  getOrCreateBlueprintBookTemplate(): LuaItemStack {
     if (this.blueprintBookTemplateInv == nil) {
       this.blueprintBookTemplateInv = game.create_inventory(1)
     }

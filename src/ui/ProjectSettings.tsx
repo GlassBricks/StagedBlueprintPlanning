@@ -65,6 +65,7 @@ import {
   recordPlayerLastPosition,
   teleportToStage,
 } from "./player-current-stage"
+import { renderStageReferencePanel } from "./StageReferencesBox"
 import { StageSelector } from "./StageSelector"
 
 declare global {
@@ -582,13 +583,25 @@ class ProjectSettings extends Component<{
           styleMod={{ width: BpSettingsButtonWidth }}
           on_gui_click={ibind(this.getBlueprint)}
         />
-        <line />
         <button
           caption={[L_GuiProjectSettings.MakeBlueprintBook]}
           tooltip={[L_GuiProjectSettings.MakeBlueprintBookTooltip]}
           styleMod={{ width: BpSettingsButtonWidth }}
           on_gui_click={ibind(this.makeBlueprintBook)}
         />
+        <line />
+        <button
+          caption={[L_GuiProjectSettings.EditBlueprintBookTemplate]}
+          tooltip={[L_GuiProjectSettings.EditBlueprintBookTemplateTooltip]}
+          styleMod={{ width: BpSettingsButtonWidth }}
+          on_gui_click={ibind(this.editBlueprintBookTemplate)}
+        />
+        <button
+          caption={[L_GuiProjectSettings.ResetBlueprintBookTemplate]}
+          styleMod={{ width: BpSettingsButtonWidth }}
+          on_gui_click={ibind(this.resetBlueprintBookTemplate)}
+        />
+        <line />
         <button
           caption={[L_GuiProjectSettings.ExportBlueprintBookStringToFile]}
           tooltip={[L_GuiProjectSettings.ExportBlueprintBookStringToFileTooltip]}
@@ -622,6 +635,17 @@ class ProjectSettings extends Component<{
     const stack = player.cursor_stack
     if (!stack) return
     submitProjectBlueprintBookTask(this.project, stack)
+  }
+
+  private editBlueprintBookTemplate() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    renderStageReferencePanel(player, this.project)
+    player.opened = this.project.getOrCreateBlueprintBookTemplate()
+  }
+
+  private resetBlueprintBookTemplate() {
+    this.project.resetBlueprintBookTemplate()
   }
 
   private exportBlueprintBookStringToFile() {

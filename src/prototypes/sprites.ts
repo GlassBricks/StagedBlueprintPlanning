@@ -22,7 +22,7 @@ function createSprite(name: string, filename: string, size: number, mipmaps?: nu
     name,
     filename,
     size,
-    flags: ["icon"],
+    flags: ["gui-icon"],
     mipmap_count: mipmaps,
   }
 }
@@ -43,7 +43,7 @@ function shiftedBlueprintSprite(shift: MapPositionArray, filename: string): Spri
 }
 
 const blueprintImage = "__base__/graphics/icons/blueprint.png"
-data.extend([
+data.extend<SpritePrototype>([
   {
     type: "sprite",
     name: Sprites.BlueprintStages,
@@ -59,4 +59,8 @@ data.extend([
       shiftedBlueprintSprite([6, 6], blueprintImage),
     ],
   },
+])
+
+data.extend<SpritePrototype>([
+  createSprite(Sprites.NewBlueprint, "__base__/graphics/icons/shortcut-toolbar/mip/new-blueprint-x32-white.png", 32, 2),
 ])

@@ -47,7 +47,7 @@ test("createStageReference", () => {
   createStageReference(stack, stage)
   expect(stack.valid).toBe(true)
   expect(stack.name).toBe(Prototypes.StageReference)
-  expect(stack.label).toBe("Template: " + stage.name.get())
+  expect(stack.label).toBe(`[[ ${stage.name.get()} ]]`)
   expect(stack.allow_manual_label_change).toBe(false)
   expect(stack.blueprint_icons).toEqual([
     {
