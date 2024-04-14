@@ -68,6 +68,7 @@ export abstract class LoopTask implements Task {
   }
   protected abstract getTitleForStep(step: number): LocalisedString
   getProgress(): number {
+    if (this.steps == 0) return 1
     return this.nextStep / this.steps
   }
 }
@@ -95,6 +96,7 @@ export abstract class EnumeratedItemsTask<T> implements Task {
   }
   protected abstract getTitleForTask(task: T): LocalisedString
   getProgress(): number {
+    if (this.tasks.length == 0) return 1
     return this.nextIndex / this.tasks.length
   }
 }

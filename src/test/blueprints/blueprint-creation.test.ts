@@ -16,9 +16,10 @@ import {
   submitProjectBlueprintBookTask,
   takeStageBlueprint,
 } from "../../blueprints/blueprint-creation"
+import { createStageReference, getReferencedStage } from "../../blueprints/stage-reference"
 import { ProjectEntity } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
-import { cancelCurrentTask, isTaskRunning } from "../../lib/task"
+import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
 import { Stage, UserProject } from "../../project/ProjectDef"
 import * as _setTiles from "../../project/set-tiles"
@@ -226,4 +227,40 @@ test("export blueprint book to file", () => {
   expect(result).toEqual("staged-blueprints/test")
 
   cancelCurrentTask()
+})
+
+test("make blueprint book using template", () => {
+  for (const i of $range(1, project.numStages())) {
+    createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])
+  }
+  const templateInv = project.ensureBlueprintBookTemplate().get_inventory(defines.inventory.item_main)!
+  const stageMapping = [3, 2, 1, 2, 3]
+  for (let i = 0; i < stageMapping.length; i++) {
+    if (i >= templateInv.length) templateInv.insert("blueprint")
+    createStageReference(templateInv[i], project.getStage(stageMapping[i])!)
+  }
+  templateInv.insert("deconstruction-planner")
+
+  const stack = player.cursor_stack!
+  submitProjectBlueprintBookTask(project, stack)
+  runEntireCurrentTask()
+
+  // make sure template not changed
+  expect(getReferencedStage(templateInv[0])).toBe(project.getStage(3))
+
+  expect(stack.is_blueprint_book).toBe(true)
+  expect(stack.label).toBe(project.name.get())
+  const inventory = stack.get_inventory(defines.inventory.item_main)!
+  expect(inventory).toHaveLength(stageMapping.length + 1)
+  for (const i of $range(1, stageMapping.length)) {
+    const stageNum = stageMapping[i - 1]
+    const stage = project.getStage(stageNum)!
+    const stack = inventory[i - 1]
+    expect(stack.is_blueprint).comment(`Stage ${i}`).toBe(true)
+    expect(stack.label).toBe(stage.name.get())
+    const entities = stack.get_blueprint_entities()!
+    expect(entities).comment(`Stage ${i}`).toHaveLength(stageNum)
+    expect(entities[0].name).toBe("iron-chest")
+  }
+  expect(inventory[stageMapping.length].is_deconstruction_item).toBe(true)
 })

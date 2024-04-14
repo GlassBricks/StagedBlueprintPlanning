@@ -11,7 +11,7 @@
 
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
-import { getStageFromStageReference } from "../../blueprints/stage-reference"
+import { getReferencedStage } from "../../blueprints/stage-reference"
 import { getProjectById, getStageAtSurface } from "../../project/project-refs"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
 import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
@@ -262,7 +262,7 @@ describe("blueprintBookTemplate", () => {
     const inv = book.get_inventory(defines.inventory.item_main)!
     expect(inv.length).toEqual(project.numStages())
     for (const i of $range(1, project.numStages())) {
-      const referencedStage = getStageFromStageReference(inv[i - 1])
+      const referencedStage = getReferencedStage(inv[i - 1])
       expect(referencedStage).toBe(project.getStage(i))
     }
   })

@@ -16,8 +16,7 @@ import { ProjectId, Stage, StageId } from "../project/ProjectDef"
 import { getCurrentValues } from "../utils/properties-obj"
 import { getIconsFromSettings } from "./blueprint-settings"
 
-export function createStageReference(stack: LuaItemStack, stage: Stage, clearStack: boolean = true): void {
-  if (clearStack) stack.clear()
+export function createStageReference(stack: LuaItemStack, stage: Stage): void {
   stack.set_stack(Prototypes.StageReference)
   const name = stage.name.get()
   stack.label = name
@@ -34,8 +33,8 @@ export function createStageReference(stack: LuaItemStack, stage: Stage, clearSta
 /**
  * If is a blueprint reference, gets the stage it references.
  */
-export function getStageFromStageReference(stack: LuaItemStack): Stage | nil {
-  if (!stack.valid || stack.name != Prototypes.StageReference) return nil
+export function getReferencedStage(stack: LuaItemStack): Stage | nil {
+  if (!stack.valid || !stack.valid_for_read || stack.name != Prototypes.StageReference) return nil
   const innerStack = stack.get_inventory(defines.inventory.item_main)![0]
   if (!innerStack.valid || innerStack.name != "blueprint") return nil
   const label = innerStack.label
@@ -54,11 +53,11 @@ export function getStageFromStageReference(stack: LuaItemStack): Stage | nil {
  */
 export function correctStageReference(stack: LuaItemStack): Stage | nil {
   if (!(stack.valid && stack.name == Prototypes.StageReference)) return nil
-  const stage = getStageFromStageReference(stack)
+  const stage = getReferencedStage(stack)
   if (!stage) {
     stack.clear()
     return
   }
-  createStageReference(stack, stage, false)
+  createStageReference(stack, stage)
   return stage
 }

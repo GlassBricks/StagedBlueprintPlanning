@@ -11,11 +11,7 @@
 
 import { LuaPlayer } from "factorio:runtime"
 import expect from "tstl-expect"
-import {
-  correctStageReference,
-  createStageReference,
-  getStageFromStageReference,
-} from "../../blueprints/stage-reference"
+import { correctStageReference, createStageReference, getReferencedStage } from "../../blueprints/stage-reference"
 import { Prototypes } from "../../constants"
 import { getPlayer } from "../../lib/test/misc"
 import { getStageAtSurface } from "../../project/project-refs"
@@ -58,7 +54,7 @@ test("createStageReference", () => {
     },
   ])
 
-  const retrievedStage = getStageFromStageReference(stack)
+  const retrievedStage = getReferencedStage(stack)
   expect(retrievedStage).toBe(stage)
 })
 
@@ -70,7 +66,7 @@ test("correctStageReference deletes stack if stage not found", () => {
 
   stage.deleteInProject()
 
-  const retrievedStage = getStageFromStageReference(stack)
+  const retrievedStage = getReferencedStage(stack)
   expect(retrievedStage).toBe(undefined)
 
   const ret = correctStageReference(stack)
@@ -103,7 +99,7 @@ test("correctStageReference updates stack if stage changed", () => {
 
   expect(ret).toBe(stage)
 
-  const retrievedStage = getStageFromStageReference(stack)
+  const retrievedStage = getReferencedStage(stack)
   expect(retrievedStage).toBe(stage)
 })
 
