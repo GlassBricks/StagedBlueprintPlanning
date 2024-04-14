@@ -316,10 +316,12 @@ export declare const enum L_GuiProjectSettings {
   MakeBlueprintBookTooltip = "bp100.gui.project-settings.make-blueprint-book-tooltip",
   /** Edit blueprint book template [img=info] */
   EditBlueprintBookTemplate = "bp100.gui.project-settings.edit-blueprint-book-template",
-  /** Edit the contents and icons of the blueprint book.\nYou can also add other blueprints, books, deconstruction planners, etc. to the template, and they will be present in the final blueprint book. */
+  /** Edit the contents and icons of the blueprint book.\nYou can also add other blueprints, books, deconstruction planners, and upgrade planners to the template, and they will be present in the final blueprint book. */
   EditBlueprintBookTemplateTooltip = "bp100.gui.project-settings.edit-blueprint-book-template-tooltip",
   /** Reset template to default */
   ResetBlueprintBookTemplate = "bp100.gui.project-settings.reset-blueprint-book-template",
+  /** Are you sure you want to reset the blueprint book template? */
+  ResetBlueprintBookTemplateConfirmation = "bp100.gui.project-settings.reset-blueprint-book-template-confirmation",
   /** Export book to file [img=info] */
   ExportBlueprintBookStringToFile = "bp100.gui.project-settings.export-blueprint-book-string-to-file",
   /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */

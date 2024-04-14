@@ -599,7 +599,7 @@ class ProjectSettings extends Component<{
         <button
           caption={[L_GuiProjectSettings.ResetBlueprintBookTemplate]}
           styleMod={{ width: BpSettingsButtonWidth }}
-          on_gui_click={ibind(this.resetBlueprintBookTemplate)}
+          on_gui_click={ibind(this.beginResetBlueprintBookTemplate)}
         />
         <line />
         <button
@@ -642,6 +642,19 @@ class ProjectSettings extends Component<{
     if (!player) return
     renderStageReferencePanel(player, this.project)
     player.opened = this.project.getOrCreateBlueprintBookTemplate()
+  }
+
+  private beginResetBlueprintBookTemplate() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    showDialog(player, {
+      title: [L_GuiProjectSettings.ResetBlueprintBookTemplate],
+      message: [[L_GuiProjectSettings.ResetBlueprintBookTemplateConfirmation]],
+      redConfirm: true,
+      backCaption: ["gui.cancel"],
+      confirmCaption: ["gui.reset"],
+      onConfirm: ibind(this.resetBlueprintBookTemplate),
+    })
   }
 
   private resetBlueprintBookTemplate() {
