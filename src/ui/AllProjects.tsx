@@ -11,8 +11,8 @@
 
 import { LuaGuiElement, LuaPlayer, OnGuiClickEvent, PlayerIndex, ScrollPaneGuiElement } from "factorio:runtime"
 import * as mod_gui from "mod-gui"
-import { OtherConstants, Sprites, Styles } from "../constants"
-import { bind, funcRef, ibind, onPlayerInitSince, RegisterClass, registerFunctions } from "../lib"
+import { OtherConstants, Styles } from "../constants"
+import { bind, ibind, RegisterClass } from "../lib"
 import {
   Component,
   destroy,
@@ -25,7 +25,7 @@ import {
   RenderContext,
   renderNamed,
 } from "../lib/factoriojsx"
-import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
+import { closeParentAtLevel, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSelector } from "../locale"
 import { ProjectCreatedEvent, ProjectDeletedEvent, ProjectsReorderedEvent, UserProject } from "../project/ProjectDef"
@@ -41,23 +41,11 @@ import { bringSettingsWindowToFront } from "./ProjectSettings"
 import mouse_button_type = defines.mouse_button_type
 
 declare const global: GlobalWithPlayers
-
-function ModButton() {
-  return (
-    <sprite-button
-      style={mod_gui.button_style}
-      sprite={Sprites.BlueprintStages}
-      tooltip={[L_GuiProjectSelector.ShowAllProjects]}
-      on_gui_click={funcRef(onModButtonClick)}
-    />
-  )
+declare global {
+  interface PlayerData {
+    researchTechPromptDismissed?: true
+  }
 }
-
-const ModButtonName = script.mod_name + ":all-projects"
-onPlayerInitSince("0.15.1", (playerIndex) => {
-  const player = game.get_player(playerIndex)!
-  renderNamed(<ModButton />, mod_gui.get_button_flow(player), ModButtonName)
-})
 
 const AllProjectsName = script.mod_name + ":all-projects"
 const AllProjectsWidth = 260
@@ -70,39 +58,71 @@ class AllProjects extends Component {
   override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
     const currentStage = playerCurrentStage(this.playerIndex)
+    const playerData = global.players[this.playerIndex]
     return (
-      <frame direction="vertical">
-        <SimpleTitleBar title={[L_GuiProjectSelector.AllProjects]} />
+      <flow direction="vertical">
         <frame
           direction="vertical"
-          style="inside_deep_frame"
-          styleMod={{ vertically_stretchable: true, bottom_margin: 8 }}
+          styleMod={{
+            horizontally_stretchable: false,
+          }}
         >
-          <scroll-pane
-            style={Styles.FakeListBox}
+          <SimpleTitleBar title={[L_GuiProjectSelector.AllProjects]} frameLevel={3} />
+          <frame
+            direction="vertical"
+            style="inside_deep_frame"
             styleMod={{
-              width: AllProjectsWidth,
-              height: AllProjectsHeight,
-            }}
-            onCreate={(e) => {
-              this.scrollPane = e
-              this.scrollToCurrentProject()
+              vertically_stretchable: true,
+              bottom_margin: 8,
             }}
           >
-            {getAllProjects().map((project) => this.projectButtonFlow(project))}
-          </scroll-pane>
+            <scroll-pane
+              style={Styles.FakeListBox}
+              styleMod={{
+                width: AllProjectsWidth,
+                height: AllProjectsHeight,
+              }}
+              onCreate={(e) => {
+                this.scrollPane = e
+                this.scrollToCurrentProject()
+              }}
+            >
+              {getAllProjects().map((project) => this.projectButtonFlow(project))}
+            </scroll-pane>
+          </frame>
+          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+            <button caption={[L_GuiProjectSelector.NewProject]} on_gui_click={ibind(this.newProject)} />
+            <HorizontalPusher />
+            <button
+              caption={[L_GuiProjectSelector.ExitProject]}
+              enabled={currentStage.truthy()}
+              on_gui_click={ibind(this.exitProject)}
+            />
+          </flow>
         </frame>
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <button caption={[L_GuiProjectSelector.NewProject]} on_gui_click={ibind(this.newProject)} />
-          <HorizontalPusher />
-          <button
-            caption={[L_GuiProjectSelector.ExitProject]}
-            enabled={currentStage.truthy()}
-            on_gui_click={ibind(this.exitProject)}
-          />
-        </flow>
-      </frame>
+        {playerData?.researchTechPromptDismissed != true && (
+          <frame direction="horizontal" caption={[L_GuiProjectSelector.ResearchAllTechPrompt]}>
+            <button
+              caption={[L_GuiProjectSelector.NoResearchAllTech]}
+              on_gui_click={ibind(this.dismissResearchTechPrompt)}
+            />
+            <HorizontalPusher />
+            <button caption={[L_GuiProjectSelector.YesResearchAllTech]} on_gui_click={ibind(this.researchAllTech)} />
+          </frame>
+        )}
+      </flow>
     )
+  }
+
+  private dismissResearchTechPrompt(event: OnGuiClickEvent): void {
+    global.players[this.playerIndex].researchTechPromptDismissed = true
+    closeParentAtLevel(1, event)
+  }
+
+  private researchAllTech(event: OnGuiClickEvent): void {
+    game.forces.player.research_all_technologies()
+    global.players[this.playerIndex].researchTechPromptDismissed = true
+    closeParentAtLevel(1, event)
   }
 
   private projectButtonFlow(project: UserProject) {
@@ -146,19 +166,21 @@ class AllProjects extends Component {
     }
     const playerIndex = event.player_index
     const player = game.get_player(playerIndex)!
-    closeAllProjects(playerIndex)
+    closeAllProjects(player)
     teleportToProject(player, project)
     bringSettingsWindowToFront(player)
   }
 
   private newProject(): void {
-    closeAllProjects(this.playerIndex)
-    createNewProject(game.get_player(this.playerIndex)!)
+    const player = game.get_player(this.playerIndex)!
+    closeAllProjects(player)
+    createNewProject(player)
   }
 
   private exitProject(): void {
-    closeAllProjects(this.playerIndex)
-    exitProject(game.get_player(this.playerIndex)!)
+    const player = game.get_player(this.playerIndex)!
+    closeAllProjects(player)
+    exitProject(player)
   }
 
   projectChangedEvent(e: ProjectCreatedEvent | ProjectDeletedEvent | ProjectsReorderedEvent) {
@@ -203,14 +225,12 @@ function createNewProject(player: LuaPlayer): void {
   teleportToProject(player, project)
 }
 
-function getFrameFlow(playerIndex: PlayerIndex) {
-  return mod_gui.get_frame_flow(game.get_player(playerIndex)!)
+export function closeAllProjects(player: LuaPlayer): void {
+  destroy(mod_gui.get_frame_flow(player)[AllProjectsName])
 }
-export function closeAllProjects(playerIndex: PlayerIndex): void {
-  destroy(getFrameFlow(playerIndex)[AllProjectsName])
-}
-function toggleAllProjects(playerIndex: PlayerIndex): void {
-  const flow = getFrameFlow(playerIndex)
+
+export function toggleAllProjects(player: LuaPlayer): void {
+  const flow = mod_gui.get_frame_flow(player)
   const allProjects = flow[AllProjectsName]
   if (allProjects) {
     destroy(allProjects)
@@ -218,15 +238,11 @@ function toggleAllProjects(playerIndex: PlayerIndex): void {
     renderNamed(<AllProjects />, flow, AllProjectsName)
   }
 }
-function onModButtonClick(event: OnGuiClickEvent) {
-  toggleAllProjects(event.player_index)
-}
-registerFunctions("gui:project-selector", { onModButtonClick })
 
 ProjectEvents.addListener((e) => {
   if (e.type == "project-created" || e.type == "project-deleted" || e.type == "projects-reordered") {
     for (const [, player] of game.players) {
-      const element = getFrameFlow(player.index)[AllProjectsName]
+      const element = mod_gui.get_frame_flow(player)[AllProjectsName]
       if (!element) continue
       const component = getComponentInstance<AllProjects>(element)
       if (component) component.projectChangedEvent(e)
@@ -237,7 +253,7 @@ PlayerChangedStageEvent.addListener((player, oldStage, newStage) => {
   const oldProject = oldStage?.project
   const newProject = newStage?.project
   if (oldProject != newProject) {
-    const element = getFrameFlow(player.index)[AllProjectsName]
+    const element = mod_gui.get_frame_flow(player)[AllProjectsName]
     if (!element) return
     const component = getComponentInstance<AllProjects>(element)
     if (component) component.playerProjectChanged(oldProject, newProject)
@@ -255,22 +271,5 @@ Migrations.to("0.15.1", () => {
     destroy(oldPlayerData?.currentAssembliesGui?.mainFlow)
     const player = game.get_player(playerIndex)
     destroy(player?.gui.left[`${script.mod_name}:current-assembly`])
-  }
-})
-Migrations.fromAny(() => {
-  for (const [, player] of game.players) {
-    closeAllProjects(player.index)
-    const flow = mod_gui.get_button_flow(player)
-    if (flow[ModButtonName] == nil) renderNamed(<ModButton />, flow, ModButtonName)
-  }
-})
-Migrations.early("0.23.0", () => {
-  const oldModButtonName = script.mod_name + ":all-assemblies"
-  const oldAllProjectsName = script.mod_name + ":all-assemblies"
-  for (const [, player] of game.players) {
-    const flow = mod_gui.get_button_flow(player)
-    destroy(flow[oldModButtonName])
-    const frameFlow = mod_gui.get_frame_flow(player)
-    destroy(frameFlow[oldAllProjectsName])
   }
 })

@@ -170,6 +170,22 @@ export declare const enum L_Gui {
   GetStageTemplate = "bp100.gui.get-stage-template",
 }
 export declare const enum L_GuiProjectSelector {
+  /** Staged Blueprint Planning is meant to be used in sandbox or in /editor, */
+  EditorModeOnlyMessage1 = "bp100.gui.project-selector.editor-mode-only-message-1",
+  /** in a separate "planning" save. */
+  EditorModeOnlyMessage2 = "bp100.gui.project-selector.editor-mode-only-message-2",
+  /** Switch to editor mode to enable this mod. */
+  EditorModeOnlyMessage3 = "bp100.gui.project-selector.editor-mode-only-message-3",
+  /** Toggle editor mode (must be admin) */
+  SwitchToEditorMode = "bp100.gui.project-selector.switch-to-editor-mode",
+  /** Staged Blueprint Planning: All recipes have been unlocked. */
+  AllRecipiesUnlocked = "bp100.gui.project-selector.all-recipies-unlocked",
+  /** Would you like to have all technologies researched? */
+  ResearchAllTechPrompt = "bp100.gui.project-selector.research-all-tech-prompt",
+  /** Yes, all tech please */
+  YesResearchAllTech = "bp100.gui.project-selector.yes-research-all-tech",
+  /** No thanks */
+  NoResearchAllTech = "bp100.gui.project-selector.no-research-all-tech",
   /** Staged BP projects */
   ShowAllProjects = "bp100.gui.project-selector.show-all-projects",
   /** Staged BP projects */

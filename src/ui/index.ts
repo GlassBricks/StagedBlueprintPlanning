@@ -19,6 +19,7 @@ import "./ProjectSettings"
 import "./stage-move-tool"
 import "./toggle-staged-copy"
 import "./edit-blueprint-filters"
+import "./mod-button"
 
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {

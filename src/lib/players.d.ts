@@ -9,10 +9,14 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-interface PlayerData {}
-type GlobalPlayerData = {
-  readonly [P in import("factorio:runtime").PlayerIndex]: PlayerData
-}
-interface GlobalWithPlayers {
-  readonly players: GlobalPlayerData
+import { PlayerIndex } from "factorio:runtime"
+
+declare global {
+  interface PlayerData {}
+  type GlobalPlayerData = {
+    readonly [P in PlayerIndex]: PlayerData
+  }
+  interface GlobalWithPlayers {
+    readonly players: GlobalPlayerData
+  }
 }

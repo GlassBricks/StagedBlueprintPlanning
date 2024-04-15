@@ -28,12 +28,6 @@ import "./blueprints"
 
 pcall(require, "test.test-init")
 
-Events.on_init(() => {
-  const force = game.forces.player
-  force.research_all_technologies()
-  force.enable_all_recipes()
-})
-
 // note this handler runs last, so other files can do other migrations first
 Events.on_configuration_changed((data) => {
   const thisChange = data.mod_changes[script.mod_name]

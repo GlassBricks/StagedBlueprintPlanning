@@ -9,9 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LocalisedString, OnGuiClickEvent } from "factorio:runtime"
+import { LocalisedString, LuaGuiElement, OnGuiClickEvent } from "factorio:runtime"
 import { MaybeProperty } from "../../event"
-import { funcRef, registerFunctions } from "../../index"
+import { bind, registerFunctions } from "../../index"
 import { ClickEventHandler, destroy, Element, ElementChildren, FactorioJsx, GuiEvent } from "../index"
 import { CloseButton } from "./buttons"
 import { HorizontalPusher } from "./misc"
@@ -47,26 +47,38 @@ export function DraggableSpace(): Element {
   )
 }
 
-export function closeParentParent(e: OnGuiClickEvent): void {
-  const parent = e.element.parent!.parent!
-  if (parent.type == "frame") destroy(parent)
-}
 export function closeSelf(e: GuiEvent): void {
   destroy(e.element)
 }
+export function closeParentParent(e: OnGuiClickEvent): void {
+  closeParentAtLevel(2, e)
+}
+export function closeParentAtLevel(level: number, e: OnGuiClickEvent): void {
+  let current: LuaGuiElement = e.element
+  for (let i = 0; i < level; i++) {
+    const parent = current.parent
+    if (parent == nil) return
+    current = parent
+  }
+  if (current != nil) {
+    destroy(current)
+  }
+}
 
-registerFunctions("gui:TitleBar", { closeParentParent, closeSelf })
+registerFunctions("gui:TitleBar", { closeSelf, closeParentAtLevel, closeParentParent })
 
 export function SimpleTitleBar(props: {
-  title: MaybeProperty<LocalisedString>
+  title?: MaybeProperty<LocalisedString>
   onClose?: ClickEventHandler
   useDraggableSpace?: boolean // default true
+  frameLevel?: number
 }): Element {
+  const frameLevel = (props.frameLevel ?? 1) + 1
   return (
     <TitleBar>
-      <label caption={props.title} style="frame_title" ignored_by_interaction />
+      {props.title != nil && <label caption={props.title} style="frame_title" ignored_by_interaction />}
       {props.useDraggableSpace != false ? <DraggableSpace /> : <HorizontalPusher />}
-      <CloseButton on_gui_click={props.onClose ?? funcRef(closeParentParent)} />
+      <CloseButton on_gui_click={props.onClose ?? bind(closeParentAtLevel, frameLevel)} />
     </TitleBar>
   )
 }
