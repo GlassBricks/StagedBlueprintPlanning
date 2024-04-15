@@ -131,7 +131,7 @@ Migrations.fromAny(() => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("0.32.1", () => {
   if (getAllProjects().length > 0) {
     for (const [, data] of pairs(global.players)) {
       data.confirmedEditorMode = true
