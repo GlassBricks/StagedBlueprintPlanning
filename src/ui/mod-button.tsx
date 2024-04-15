@@ -90,9 +90,6 @@ function openProjectListFirstTime(player: LuaPlayer) {
   const frameFlow = mod_gui.get_frame_flow(player)
   destroy(frameFlow[EditorModeConfirmationName])
 
-  game.forces.player.enable_all_recipes()
-  game.print([L_GuiProjectSelector.AllRecipiesUnlocked])
-
   toggleAllProjects(player)
 }
 
