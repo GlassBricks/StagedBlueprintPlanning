@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.32.2
-Date: ????
+Date: 2024-04-15
   Changes:
     - The mod unlocks all recipes (not all tech) when creating the first project, instead of when opening the project list.
 ---------------------------------------------------------------------------------------------------
