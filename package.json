@@ -55,7 +55,8 @@
     "check-clean-tree": "git diff --exit-code HEAD --",
     "check": "npm run format:check && npm run lint && npm run test && npm run check-clean-tree",
     "subst-current-version": "tsx scripts/subst-current-version.ts",
-    "version-minor": "tsx scripts/bump-version.ts minor"
+    "version-minor": "tsx scripts/bump-version.ts minor",
+    "publish-mod": "export $(xargs <.env) && cd src && fmtk publish"
   },
   "nodemonConfig": {
     "watch": [
