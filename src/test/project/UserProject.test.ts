@@ -229,6 +229,18 @@ describe("new stage name", () => {
       expect(stage.name.get()).toEqual("Foo 2")
     })
 
+    test("increments 19 to 20 and 239 to 240", () => {
+      project.getStage(1)!.name.set("Foo 19")
+
+      const stage = project.insertStage(2)
+      expect(stage.name.get()).toEqual("Foo 20")
+
+      project.getStage(2)!.name.set("Foo 239")
+
+      const stage2 = project.insertStage(3)
+      expect(stage2.name.get()).toEqual("Foo 240")
+    })
+
     test('adds ".1" if numbered naming convention, but next stage already has that name', () => {
       project.getStage(1)!.name.set("Foo 3")
       project.getStage(2)!.name.set("Foo 4")

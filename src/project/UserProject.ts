@@ -261,14 +261,14 @@ class UserProjectImpl implements UserProject {
     const otherStageNum = stage == 1 ? 1 : stage - 1
     const otherStage = this.stages[otherStageNum]
     const previousName = otherStage.name.get()
-    const [name, numStr] = string.match(previousName, "^(.*)(%d+)$")
+    const [name, numStr] = string.match(previousName, "^(.-)(%d+)$")
     const num = tonumber(numStr)
 
     const foundNumber = name != nil && num != nil
     if (foundNumber) {
       // see if there is a previous number and separator, before the last number
       // follow naming convention
-      const newNum = tonumber(numStr)! + (stage == 1 ? -1 : 1)
+      const newNum = num + (stage == 1 ? -1 : 1)
       if (newNum >= 0) {
         const candidateName = name + newNum
         const nextName = this.stages[stage]?.name.get()
