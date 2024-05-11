@@ -272,10 +272,12 @@ function createRailPreview(
     flags.push("building-direction-8-way")
   }
 
+  const oldLocalisedName = prototype.localised_name ?? ["entity-name." + prototype.name]
+
   const result = {
     name: Prototypes.PreviewEntityPrefix + prototype.name,
     type: "rail-remnants",
-    localised_name: [L_Bp100.PreviewEntity, ["entity-name." + prototype.name]],
+    localised_name: [L_Bp100.PreviewEntity, oldLocalisedName],
 
     bending_type: isCurved ? "turn" : "straight",
 
