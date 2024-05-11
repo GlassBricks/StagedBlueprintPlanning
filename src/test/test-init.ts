@@ -107,8 +107,8 @@ if ("factorio-test" in script.active_mods) {
       reinit()
       global.lastCompileTimestamp = lastCompileTime
       const force = game.forces.player
+      force.enable_all_technologies()
       force.research_all_technologies()
-      force.enable_all_recipes()
       const player = game.players[1]
       if (player.controller_type != defines.controllers.editor) player.toggle_map_editor()
 
@@ -165,7 +165,7 @@ Events.on_tick(() => {
     Migrations.doMigrations(script.active_mods[script.mod_name]!)
   }
 
-  const ticks = math.ceil((__DebugAdapter ? 8 : 3) * 60 * game.speed)
+  const ticks = math.ceil((__DebugAdapter ? 8 : 2) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod == 0) {
     global.lastCompileTimestamp = lastCompileTime

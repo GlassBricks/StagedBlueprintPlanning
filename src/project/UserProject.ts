@@ -52,7 +52,7 @@ import {
 import { BBox, Position } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { Migrations } from "../lib/migration"
-import { L_Bp100, L_GuiProjectSelector } from "../locale"
+import { L_Bp100 } from "../locale"
 import {
   createdDiffedPropertyTableView,
   createEmptyPropertyOverrideTable,
@@ -75,7 +75,7 @@ declare const global: {
   surfaceIndexToStage: LuaMap<SurfaceIndex, StageImpl>
   nextStageId?: StageId
 
-  allRecipesPromptShown?: true
+  allRecipesPromptShown?: never
 }
 Events.on_init(() => {
   global.nextProjectId = 1 as ProjectId
@@ -317,11 +317,6 @@ const WorldUpdatesClass = LazyLoadClass<HasProject, WorldUpdates>("WorldUpdates"
 )
 
 export function createUserProject(name: string, initialNumStages: number): UserProject {
-  if (!global.allRecipesPromptShown) {
-    game.forces.player.enable_all_recipes()
-    game.print([L_GuiProjectSelector.AllRecipiesUnlocked])
-    global.allRecipesPromptShown = true
-  }
   return UserProjectImpl.create(name, initialNumStages)
 }
 
@@ -720,4 +715,7 @@ Migrations.to("0.31.0", () => {
     }>(project)
     delete project.entityUpdates
   }
+})
+Migrations.to($CURRENT_VERSION, () => {
+  delete global.allRecipesPromptShown
 })

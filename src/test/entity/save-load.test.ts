@@ -136,6 +136,27 @@ test("can create an entity", () => {
   } satisfies Partial<ScriptRaisedBuiltEvent>)
 })
 
+test("can set recipe of assembling machine even if not researched", () => {
+  game.forces.player.recipes["rocket-fuel"].enabled = false
+  after_test(() => (game.forces.player.recipes["rocket-fuel"].enabled = true))
+  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
+    name: "assembling-machine-3",
+    recipe: "rocket-fuel",
+  } as Entity)!
+
+  expect(luaEntity).toBeAny()
+  expect(luaEntity.get_recipe()?.name).toBe("rocket-fuel")
+})
+
+test("doesn't crash if setting to non-existent recipe", () => {
+  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
+    name: "assembling-machine-3",
+    recipe: "foobar@",
+  } as Entity)!
+  expect(luaEntity).toBeAny()
+  expect(luaEntity.get_recipe()).toBeNil()
+})
+
 test("returns nil if entity becomes invalid via script", () => {
   destroyOnBuilt = true
   const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
@@ -187,6 +208,26 @@ test("can update an entity", () => {
   )[0]
   expect(newEntity).toBe(entity)
   expect(entity.get_inventory(defines.inventory.chest)!.get_bar() - 1).toBe(4)
+})
+
+test("can set recipe of assembling machine even if not researched", () => {
+  game.forces.player.recipes["rocket-fuel"].enabled = false
+  after_test(() => (game.forces.player.recipes["rocket-fuel"].enabled = true))
+  const entity = surface.create_entity({
+    name: "assembling-machine-3",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+  })!
+  const newEntity = updateEntity(
+    entity,
+    {
+      name: "assembling-machine-3",
+      recipe: "rocket-fuel",
+    } as Entity,
+    defines.direction.north,
+  )[0]
+  expect(newEntity).toBe(entity)
+  expect(entity.get_recipe()?.name).toBe("rocket-fuel")
 })
 
 test("can upgrade an entity", () => {

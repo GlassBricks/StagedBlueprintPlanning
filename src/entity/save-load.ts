@@ -54,6 +54,10 @@ Events.on_load(() => {
   bpStack = global.tempBPInventory[0]
 })
 
+const rawset = _G.rawset
+const { raise_script_built } = script
+const pcall = _G.pcall
+
 export function getTempBpItemStack(): BlueprintItemStack {
   return bpStack
 }
@@ -94,7 +98,10 @@ function setBlueprintEntity(
   entity.position = position
   entity.direction = direction
   entity.entity_number = 1
+  const oldRecipe = entity.recipe
+  entity.recipe = nil
   stack.set_blueprint_entities([entity])
+  entity.recipe = oldRecipe
   entity.position = nil!
   entity.direction = nil!
   entity.entity_number = nil!
@@ -108,6 +115,7 @@ function pasteEntity(
   position: MapPosition,
   direction: defines.direction,
   entity: BlueprintEntity,
+  target: LuaEntity,
 ): LuaEntity | nil {
   const tilePosition = { x: floor(position.x), y: floor(position.y) }
 
@@ -124,6 +132,9 @@ function pasteEntity(
     force: "player",
     position: tilePosition,
   })
+  if (target.type == "assembling-machine") {
+    pcall(target.set_recipe, entity.recipe)
+  }
   return ghosts[0]
 }
 
@@ -186,10 +197,6 @@ let nameToType: PrototypeInfo["nameToType"]
 OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
-
-const rawset = _G.rawset
-
-const { raise_script_built } = script
 /**
  * If changed is false, the code assumes that the last time this was called [entity] is the same.
  * This is a performance optimization to use with care.
@@ -216,7 +223,7 @@ export function createEntity(
     luaEntity.direction = direction
   }
   if (entityHasSettings(entity)) {
-    const ghost = pasteEntity(surface, position, direction, entity)
+    const ghost = pasteEntity(surface, position, direction, entity, luaEntity)
     ghost?.destroy()
   }
   if (entity.items) {
@@ -403,7 +410,7 @@ export function updateEntity(
   }
   luaEntity.direction = direction
 
-  const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value)
+  const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, luaEntity)
   if (ghost) ghost.destroy() // should not happen?
   matchItems(luaEntity, value)
 

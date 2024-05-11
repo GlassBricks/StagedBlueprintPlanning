@@ -178,8 +178,6 @@ export declare const enum L_GuiProjectSelector {
   EditorModeOnlyMessage3 = "bp100.gui.project-selector.editor-mode-only-message-3",
   /** Toggle editor mode (must be admin) */
   SwitchToEditorMode = "bp100.gui.project-selector.switch-to-editor-mode",
-  /** Staged Blueprint Planning: All recipes have been unlocked. */
-  AllRecipiesUnlocked = "bp100.gui.project-selector.all-recipies-unlocked",
   /** Would you like to have all technologies researched? */
   ResearchAllTechPrompt = "bp100.gui.project-selector.research-all-tech-prompt",
   /** Yes, all tech please */
