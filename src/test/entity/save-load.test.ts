@@ -722,3 +722,32 @@ test("canBeAnyDirection", () => {
   })!
   expect(canBeAnyDirection(entity2)).toBe(false)
 })
+
+describe("EditorExtensions support", () => {
+  assert("EditorExtensions" in script.active_mods)
+
+  test("can create and update infinity loader", () => {
+    const loader = createEntity(surface, { x: 12.5, y: 12 }, defines.direction.east, {
+      name: "ee-infinity-loader",
+      type: "input",
+      filters: [{ index: 1, name: "iron-plate" }],
+    } satisfies Partial<BlueprintEntity> as Entity)!
+    expect(loader).toBeAny()
+    expect(loader.name).toBe("ee-infinity-loader")
+    expect(loader.get_filter(1)).toBe("iron-plate")
+
+    const updated = updateEntity(
+      loader,
+      {
+        name: "ee-infinity-loader",
+        type: "output",
+        filters: [{ index: 1, name: "copper-plate" }],
+      } satisfies Partial<BlueprintEntity> as Entity,
+      defines.direction.east,
+    )[0]!
+
+    expect(updated).toBeAny()
+    expect(updated.name).toBe("ee-infinity-loader")
+    expect(updated.get_filter(1)).toBe("copper-plate")
+  })
+})

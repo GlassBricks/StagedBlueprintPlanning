@@ -14,7 +14,8 @@
         "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true,
-        "bobinserters": true
+        "bobinserters": true,
+        "EditorExtensions": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -51,7 +52,8 @@
         "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true,
-        "bobinserters": true
+        "bobinserters": true,
+        "EditorExtensions": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -88,7 +90,8 @@
         "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true,
-        "bobinserters": true
+        "bobinserters": true,
+        "EditorExtensions": true
       },
       "disableExtraMods": true,
       "factorioArgs": [

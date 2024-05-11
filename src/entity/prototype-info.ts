@@ -24,7 +24,11 @@ export interface PrototypeInfo {
   categories: ReadonlyLuaMap<CategoryName, string[]>
   rotationTypes: ReadonlyLuaMap<string, RotationType>
   selectionBoxes: ReadonlyLuaMap<string, BBox>
+  /** Entities that require rebuilding when updating; mainly for some modded entities. */
+  requiresRebuild: ReadonlyLuaSet<string>
+
   nameToType: ReadonlyLuaMap<string, EntityType>
+
   twoDirectionTanks: ReadonlyLuaSet<string>
   blueprintableTiles: ReadonlyLuaSet<string>
 }
@@ -83,16 +87,6 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
   }
   const ignoreFastReplaceGroup = newLuaSet("transport-belt", "underground-belt", "splitter")
 
-  const nameToCategory = new LuaMap<string, CategoryName>()
-  const categories = new LuaMap<CategoryName, string[]>()
-  const rotationTypes = new LuaMap<string, RotationType>()
-  const selectionBoxes = new LuaMap<string, BBox>()
-
-  const passedPrototypeInfo = getPassedPrototypeInfo()
-  const twoDirectionTanks = list_to_map(passedPrototypeInfo.twoDirectionOnlyTanks)
-
-  const pasteRotatableEntityTypes = newLuaSet("assembling-machine", "boiler", "generator")
-
   function getCategory(prototype: LuaEntityPrototype): CategoryName | nil {
     const { fast_replaceable_group, type, collision_box } = prototype
     assume<keyof PrototypeMap>(type)
@@ -104,7 +98,12 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     return [actualType, actualFastReplaceGroup, lx, ly, rx, ry].join("|") as CategoryName
   }
 
-  function getPasteCompatibleRotation(prototype: LuaEntityPrototype): RotationType | nil {
+  function requiresRebuild(prototype: LuaEntityPrototype): boolean {
+    return prototype.name.startsWith("ee-infinity")
+  }
+
+  const pasteRotatableEntityTypes = newLuaSet("assembling-machine", "boiler", "generator")
+  function getRotationType(prototype: LuaEntityPrototype): RotationType | nil {
     if (!prototype.supports_direction || prototype.has_flag("not-rotatable")) {
       return RotationType.AnyDirection
     }
@@ -127,6 +126,11 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
   }
 
   const nameToType = new LuaMap<string, EntityType>()
+  const nameToCategory = new LuaMap<string, CategoryName>()
+  const categories = new LuaMap<CategoryName, string[]>()
+  const rotationTypes = new LuaMap<string, RotationType>()
+  const selectionBoxes = new LuaMap<string, BBox>()
+  const requiresRebuildNames = new LuaSet<string>()
 
   for (const [name, prototype] of game.get_filtered_entity_prototypes([{ filter: "blueprintable" }])) {
     const categoryName = getCategory(prototype)
@@ -137,7 +141,11 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
       category.push(name)
     }
 
-    const pasteRotationType = getPasteCompatibleRotation(prototype)
+    if (requiresRebuild(prototype)) {
+      requiresRebuildNames.add(name)
+    }
+
+    const pasteRotationType = getRotationType(prototype)
     if (pasteRotationType != nil) rotationTypes.set(name, pasteRotationType)
 
     selectionBoxes.set(name, BBox.from(prototype.selection_box))
@@ -163,7 +171,8 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     rotationTypes,
     selectionBoxes,
     nameToType,
-    twoDirectionTanks,
+    requiresRebuild: requiresRebuildNames,
+    twoDirectionTanks: list_to_map(getPassedPrototypeInfo().twoDirectionOnlyTanks),
     blueprintableTiles,
   }
 }

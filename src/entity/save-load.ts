@@ -55,7 +55,7 @@ Events.on_load(() => {
 })
 
 const rawset = _G.rawset
-const { raise_script_built } = script
+const { raise_script_built, raise_script_destroy } = script
 const pcall = _G.pcall
 
 export function getTempBpItemStack(): BlueprintItemStack {
@@ -194,8 +194,10 @@ function tryCreateUnconfiguredEntity(
 }
 
 let nameToType: PrototypeInfo["nameToType"]
+let requiresRebuild: PrototypeInfo["requiresRebuild"]
 OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
+  requiresRebuild = info.requiresRebuild
 })
 /**
  * If changed is false, the code assumes that the last time this was called [entity] is the same.
@@ -392,6 +394,15 @@ export function updateEntity(
   changed: boolean = true,
 ): LuaMultiReturn<[updated: LuaEntity | nil, updatedNeighbors?: ProjectEntity]> {
   assume<BlueprintEntity>(value)
+  if (requiresRebuild.has(value.name)) {
+    const surface = luaEntity.surface
+    const position = luaEntity.position
+    raise_script_destroy({ entity: luaEntity })
+    luaEntity.destroy()
+    const entity = createEntity(surface, position, direction, value, changed)
+    return $multi(entity)
+  }
+
   if (changed) entityVersion++
 
   if (luaEntity.name != value.name) {
