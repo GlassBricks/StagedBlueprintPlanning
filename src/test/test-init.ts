@@ -14,7 +14,7 @@ import { createStageReference } from "../blueprints/stage-reference"
 import { destroyAllRenders, Events } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
-import { debugPrint } from "../lib/test/misc"
+import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
 import { getStageAtSurface } from "../project/project-refs"
 import { UserProject } from "../project/ProjectDef"
 import { deleteAllFreeSurfaces, prepareArea } from "../project/surfaces"
@@ -113,6 +113,7 @@ if ("factorio-test" in script.active_mods) {
       if (player.controller_type != defines.controllers.editor) player.toggle_map_editor()
 
       deleteAllFreeSurfaces()
+      getLastDebugPrintCall()
     },
     after_test_run() {
       // game.speed = __DebugAdapter ? 1 : 1 / 6
