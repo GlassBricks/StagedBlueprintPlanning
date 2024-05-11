@@ -2,6 +2,7 @@
 Version: 0.32.4
 Date: ????
   Changes:
+    - Removed need to automatically unlock all recipes to use the mod.
 ---------------------------------------------------------------------------------------------------
 Version: 0.32.3
 Date: 2024-04-22
