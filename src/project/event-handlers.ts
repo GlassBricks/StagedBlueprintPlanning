@@ -1259,6 +1259,7 @@ Events.onInitOrLoad(() => {
 })
 
 // modded GUIs
+
 Events.on_gui_closed((e) => {
   const entity = e.entity
 
@@ -1268,8 +1269,16 @@ Events.on_gui_closed((e) => {
     if (oldEntity.original.valid) {
       luaEntityPossiblyUpdated(oldEntity.original, e.player_index)
     } else {
-      const stage = getStageAtSurface(oldEntity.surface.index)
-      stage?.actions.onEntityPossiblyUpdatedByInfo(oldEntity, stage.stageNumber, e.player_index)
+      const foundEntity = oldEntity.surface.find_entities_filtered({
+        position: oldEntity.position,
+        radius: 0,
+        type: oldEntity.type,
+        direction: oldEntity.direction,
+        limit: 1,
+      })[0]
+      if (foundEntity != nil) {
+        luaEntityPossiblyUpdated(foundEntity, e.player_index)
+      }
     }
   }
 
@@ -1277,8 +1286,9 @@ Events.on_gui_closed((e) => {
 
   if (
     entity &&
-    getStageAtSurface(entity.surface.index) != nil &&
+    entity.valid &&
     mayHaveModdedGui.has(entity.name) &&
+    getStageAtSurface(entity.surface.index) != nil &&
     isWorldEntityProjectEntity(entity)
   ) {
     playerData.possiblyOpenedModdedEntity = {

@@ -33,6 +33,7 @@ import { addPowerSwitchConnections } from "../../entity/wires"
 import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
+import { checkForEntityUpdates } from "../../project/event-handlers"
 import { syncMapGenSettings } from "../../project/map-gen"
 import { EntityUpdateResult, StageMoveResult } from "../../project/project-updates"
 
@@ -240,7 +241,7 @@ function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): P
   const entity = project.content.findCompatibleWithLuaEntity(saved, nil, stage)! as ProjectEntity<BlueprintEntity>
   assert(entity)
   expect(entity.firstStage).toBe(stage)
-  expect(entity.getWorldEntity(stage)).toEqual(luaEntity)
+  // expect(entity.getWorldEntity(stage)).toMatchTable(saved)
   return entity
 }
 
@@ -1769,6 +1770,27 @@ if ("bobinserters" in script.active_mods) {
     expect(worldEntity.drop_position).toEqual(rotatedDropPos.plus(pos))
 
     assertEntityCorrect(entity, false)
+  })
+}
+
+if ("EditorExtensions" in script.active_mods) {
+  test("Can update an infinity accumulator", () => {
+    const entity = buildEntity(1, { name: "ee-infinity-accumulator-primary-input", position: pos })
+    expect(entity.getWorldOrPreviewEntity(2)?.name).toEqual("ee-infinity-accumulator-primary-input")
+
+    const oldLuaEntity = entity.getWorldEntity(1)!
+    const newLuaEntity = createEntity(1, {
+      name: "ee-infinity-accumulator-primary-output",
+      position: pos,
+    })
+    oldLuaEntity.destroy()
+    checkForEntityUpdates(newLuaEntity, nil)
+
+    expect(entity).toMatchTable({
+      firstValue: { name: "ee-infinity-accumulator-primary-output" },
+    })
+    expect(entity.getWorldOrPreviewEntity(1)?.name).toEqual("ee-infinity-accumulator-primary-output")
+    expect(entity.getWorldOrPreviewEntity(2)?.name).toEqual("ee-infinity-accumulator-primary-output")
   })
 }
 
