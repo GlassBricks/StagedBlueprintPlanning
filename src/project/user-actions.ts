@@ -42,6 +42,13 @@ export interface UserActions {
     byPlayer: PlayerIndex | nil,
     knownBpValue?: BlueprintEntity,
   ): ProjectEntity | nil
+
+  onEntityPossiblyUpdatedByInfo(
+    entity: LuaEntityInfo,
+    stage: StageNumber,
+    byPlayer: PlayerIndex | nil,
+  ): ProjectEntity | nil
+
   onEntityRotated(
     entity: LuaEntity,
     stage: StageNumber,
@@ -209,6 +216,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     onEntityCreated,
     onEntityDeleted,
     onEntityPossiblyUpdated,
+    onEntityPossiblyUpdatedByInfo,
     onEntityRotated,
     onUndergroundBeltDragRotated,
     onWiresPossiblyUpdated,
@@ -434,6 +442,19 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     if (!projectEntity) return
 
     const result = tryUpdateEntityFromWorld(projectEntity, stage, knownBpValue)
+    notifyIfUpdateError(result, projectEntity, byPlayer)
+    return projectEntity
+  }
+
+  function onEntityPossiblyUpdatedByInfo(
+    entity: LuaEntityInfo,
+    stage: StageNumber,
+    byPlayer: PlayerIndex | nil,
+  ): ProjectEntity | nil {
+    const projectEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)
+    if (!projectEntity) return
+
+    const result = tryUpdateEntityFromWorld(projectEntity, stage)
     notifyIfUpdateError(result, projectEntity, byPlayer)
     return projectEntity
   }

@@ -29,6 +29,7 @@ export interface EntityIdentification {
 export interface LuaEntityInfo extends EntityIdentification {
   readonly surface: LuaSurface
   readonly position: Position
+  readonly valid?: boolean
 }
 export interface UndergroundBeltEntity extends Entity {
   type: "input" | "output"

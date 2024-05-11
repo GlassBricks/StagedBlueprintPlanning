@@ -39,7 +39,7 @@ import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { createBlueprintWithStageInfo } from "../copy-paste/create-blueprint-with-stage-info"
 import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
-import { isWorldEntityProjectEntity } from "../entity/ProjectEntity"
+import { isWorldEntityProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
 import {
   areUpgradeableTypes,
   getCompatibleNames,
@@ -275,6 +275,10 @@ let state: {
 declare global {
   interface PlayerData {
     lastWireAffectedEntity?: LuaEntity
+    possiblyOpenedModdedEntity?: LuaEntityInfo & {
+      original: LuaEntity
+    }
+    confirmedModdedEntityOpen?: true
   }
 }
 declare const global: GlobalWithPlayers & {
@@ -718,9 +722,11 @@ function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] |
 
 let nameToType: PrototypeInfo["nameToType"]
 let twoDirectionTanks: PrototypeInfo["twoDirectionTanks"]
+let mayHaveModdedGui: PrototypeInfo["mayHaveModdedGui"]
 OnPrototypeInfoLoaded.addListener((e) => {
   nameToType = e.nameToType
   twoDirectionTanks = e.twoDirectionTanks
+  mayHaveModdedGui = e.mayHaveModdedGui
 })
 
 const rawset = _G.rawset
@@ -1251,6 +1257,63 @@ Events.onInitOrLoad(() => {
     }
   }
 })
+
+// modded GUIs
+Events.on_gui_closed((e) => {
+  const entity = e.entity
+
+  const playerData = global.players[e.player_index]
+  const oldEntity = playerData.possiblyOpenedModdedEntity
+  if (e.gui_type == defines.gui_type.custom && oldEntity && playerData.confirmedModdedEntityOpen) {
+    if (oldEntity.original.valid) {
+      luaEntityPossiblyUpdated(oldEntity.original, e.player_index)
+    } else {
+      const stage = getStageAtSurface(oldEntity.surface.index)
+      stage?.actions.onEntityPossiblyUpdatedByInfo(oldEntity, stage.stageNumber, e.player_index)
+    }
+  }
+
+  playerData.possiblyOpenedModdedEntity = nil
+
+  if (
+    entity &&
+    getStageAtSurface(entity.surface.index) != nil &&
+    mayHaveModdedGui.has(entity.name) &&
+    isWorldEntityProjectEntity(entity)
+  ) {
+    playerData.possiblyOpenedModdedEntity = {
+      belt_to_ground_type: nil, // assuming there won't be underground belts with modded guis
+      direction: entity.direction,
+      name: entity.name,
+      position: entity.position,
+      surface: entity.surface,
+      type: entity.type,
+      original: entity,
+    }
+  }
+})
+Events.on_gui_opened((e) => {
+  const playerData = global.players[e.player_index]
+  if (
+    playerData.possiblyOpenedModdedEntity &&
+    (e.element || (playerData.confirmedModdedEntityOpen && e.entity == playerData.possiblyOpenedModdedEntity.original))
+  ) {
+    playerData.confirmedModdedEntityOpen = true
+  } else {
+    playerData.possiblyOpenedModdedEntity = nil
+    playerData.possiblyOpenedModdedEntity = nil
+  }
+})
+
+export function getCurrentlyOpenedModdedGui(player: LuaPlayer): ProjectEntity | nil {
+  const playerData = global.players[player.index]
+  const entity = playerData.possiblyOpenedModdedEntity
+  if (!entity || !playerData.confirmedModdedEntityOpen) return nil
+  const stage = getStageAtSurface(entity.surface.index)
+  if (!stage) return nil
+  const toMatch = entity.original.valid ? entity.original : entity
+  return stage.project.content.findCompatibleWithLuaEntity(toMatch, nil, stage.stageNumber)
+}
 
 /**
  * For manual calls from other parts of the code

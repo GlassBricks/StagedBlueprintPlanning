@@ -24,13 +24,16 @@ export interface PrototypeInfo {
   categories: ReadonlyLuaMap<CategoryName, string[]>
   rotationTypes: ReadonlyLuaMap<string, RotationType>
   selectionBoxes: ReadonlyLuaMap<string, BBox>
-  /** Entities that require rebuilding when updating; mainly for some modded entities. */
-  requiresRebuild: ReadonlyLuaSet<string>
 
   nameToType: ReadonlyLuaMap<string, EntityType>
 
   twoDirectionTanks: ReadonlyLuaSet<string>
   blueprintableTiles: ReadonlyLuaSet<string>
+
+  /** Entities that require rebuilding when updating; mainly for some modded entities. */
+  requiresRebuild: ReadonlyLuaSet<string>
+  mayHaveModdedGui: ReadonlyLuaSet<string>
+  excludedNames: ReadonlyLuaSet<string>
 }
 /**
  * Compatible rotations for pasting entities.
@@ -88,6 +91,9 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
   const ignoreFastReplaceGroup = newLuaSet("transport-belt", "underground-belt", "splitter")
 
   function getCategory(prototype: LuaEntityPrototype): CategoryName | nil {
+    if (prototype.name.startsWith("ee-infinity-accumulator")) {
+      return "ee-infinity-accumulator" as CategoryName
+    }
     const { fast_replaceable_group, type, collision_box } = prototype
     assume<keyof PrototypeMap>(type)
     const actualFastReplaceGroup = ignoreFastReplaceGroup.has(type) ? "" : fast_replaceable_group
@@ -172,6 +178,8 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     selectionBoxes,
     nameToType,
     requiresRebuild: requiresRebuildNames,
+    mayHaveModdedGui: requiresRebuildNames,
+    excludedNames: newLuaSet("ee-linked-belt", "ee-infinity-cargo-wagon", "ee-infinity-fluid-wagon"),
     twoDirectionTanks: list_to_map(getPassedPrototypeInfo().twoDirectionOnlyTanks),
     blueprintableTiles,
   }

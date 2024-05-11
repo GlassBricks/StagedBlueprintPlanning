@@ -14,6 +14,7 @@
         "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true,
+        "flib": true,
         "bobinserters": true,
         "EditorExtensions": true
       },
@@ -52,6 +53,7 @@
         "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true,
+        "flib": true,
         "bobinserters": true,
         "EditorExtensions": true
       },
@@ -90,6 +92,7 @@
         "factorio-test": true,
         "PickerDollies": true,
         "stdlib": true,
+        "flib": true,
         "bobinserters": true,
         "EditorExtensions": true
       },

@@ -27,7 +27,7 @@ import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, ren
 import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
-import { checkForEntityUpdates } from "../project/event-handlers"
+import { checkForEntityUpdates, getCurrentlyOpenedModdedGui } from "../project/event-handlers"
 import { ProjectUpdates } from "../project/project-updates"
 import { Stage } from "../project/ProjectDef"
 import { UserActions } from "../project/user-actions"
@@ -37,18 +37,25 @@ import { PlayerChangedStageEvent, teleportToStage } from "./player-current-stage
 import relative_gui_position = defines.relative_gui_position
 import relative_gui_type = defines.relative_gui_type
 
-PlayerChangedStageEvent.addListener((player, stage) => {
-  const entity = player.opened
-  if (!entity || entity.object_name != "LuaEntity") return
-
-  const [oldStage, projectEntity] = getProjectEntityOfEntity(entity)
+PlayerChangedStageEvent.addListener((player, stage, oldStage) => {
   if (!oldStage || oldStage == stage) return
+  const entity = player.opened
+  if (!entity) return
+  let projectEntity: ProjectEntity | undefined
+  if (entity.object_name == "LuaEntity") {
+    ;[, projectEntity] = getProjectEntityOfEntity(entity)
+  } else if (entity.object_name == "LuaGuiElement") {
+    projectEntity = getCurrentlyOpenedModdedGui(player)
+    if (projectEntity) {
+      player.opened = nil // close gui, possibly updating entity
+    }
+  }
+  if (!projectEntity) return
   if (stage == nil || oldStage.project != stage.project) {
     player.opened = nil
-    return
+  } else {
+    player.opened = projectEntity.getWorldOrPreviewEntity(stage.stageNumber)
   }
-
-  player.opened = projectEntity.getWorldOrPreviewEntity(stage.stageNumber)
 })
 
 const StageButtonWidth = 100

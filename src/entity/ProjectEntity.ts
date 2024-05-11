@@ -39,8 +39,10 @@ import { BaseStagedValue, StagedValue } from "./StagedValue"
 import floor = math.floor
 
 let nameToType: PrototypeInfo["nameToType"]
+let excludedNames: PrototypeInfo["excludedNames"]
 OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
+  excludedNames = info.excludedNames
 })
 
 /** 1 indexed */
@@ -780,7 +782,8 @@ export function isWorldEntityProjectEntity(luaEntity: LuaEntity): boolean {
     luaEntity.valid &&
     luaEntity.is_entity_with_owner &&
     luaEntity.has_flag("player-creation") &&
-    !excludedTypes[luaEntity.type]
+    !excludedTypes[luaEntity.type] &&
+    !excludedNames.has(luaEntity.name)
   )
 }
 
