@@ -716,6 +716,6 @@ Migrations.to("0.31.0", () => {
     delete project.entityUpdates
   }
 })
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("0.32.4", () => {
   delete global.allRecipesPromptShown
 })
