@@ -95,7 +95,7 @@ const toggleStagedCopy: CustomInputPrototype = {
   type: "custom-input",
 
   action: "lua",
-  key_sequence: "CONTROL + A",
+  key_sequence: "",
   order: "d[tools]-b[staged-copy-toggle]",
 }
 
