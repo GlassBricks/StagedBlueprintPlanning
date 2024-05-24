@@ -48,6 +48,8 @@ export declare const enum L_ModSettingName {
   EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
   /** Allow blueprint paste to upgrade entities */
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
+  /** Teleport to stage when clicking a GPS tag */
+  GpsTagTeleport = "mod-setting-name.bp100:gps-tag-teleport",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps anywhere, without need for a water source. */

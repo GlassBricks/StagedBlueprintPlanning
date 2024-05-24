@@ -17,6 +17,7 @@ export const enum Settings {
   MinableLandfill = "bp100:minable-landfill",
   LandLandfill = "bp100:land-landfill",
   UpgradeOnPaste = "bp100:upgrade-on-paste",
+  GpsTagTeleport = "bp100:gps-tag-teleport",
 }
 
 // noinspection JSUnusedGlobalSymbols

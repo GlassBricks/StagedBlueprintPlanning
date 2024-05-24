@@ -20,6 +20,7 @@ import "./stage-move-tool"
 import "./toggle-staged-copy"
 import "./edit-blueprint-filters"
 import "./mod-button"
+import "./gps-tag"
 
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {
