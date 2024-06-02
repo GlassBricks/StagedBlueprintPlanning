@@ -294,4 +294,52 @@ describe("blueprintBookTemplate", () => {
     const newBook = project.getOrCreateBlueprintBookTemplate()
     assert(newBook.is_blueprint_book)
   })
+
+  describe("inserting stage", () => {
+    test("inserts template into new stage in middle", () => {
+      const project = createUserProject("Test", 3)
+      const book = project.getOrCreateBlueprintBookTemplate()
+      for (const insertStage of [2, 4, 1, 7]) {
+        project.insertStage(insertStage)
+        for (const stage of $range(1, project.numStages())) {
+          const referencedStage = getReferencedStage(book.get_inventory(defines.inventory.item_main)![stage - 1])
+          expect(referencedStage).toBe(project.getStage(stage))
+        }
+      }
+    })
+
+    test("inserts template into empty space if exists", () => {
+      const project = createUserProject("Test", 3)
+      const book = project.getOrCreateBlueprintBookTemplate()
+      const inventory = book.get_inventory(defines.inventory.item_main)!
+      inventory[2 - 1].clear()
+      project.insertStage(2)
+      const referencedStage = getReferencedStage(inventory[2 - 1])
+      expect(referencedStage).toBe(project.getStage(2))
+    })
+
+    test("only pushes in template until the next empty space", () => {
+      const project = createUserProject("Test", 5)
+      const book = project.getOrCreateBlueprintBookTemplate()
+      const inventory = book.get_inventory(defines.inventory.item_main)!
+      inventory[4 - 1].clear()
+      project.insertStage(2)
+      expect(getReferencedStage(inventory[2 - 1])).toBe(project.getStage(2))
+      expect(getReferencedStage(inventory[3 - 1])).toBe(project.getStage(3))
+      expect(getReferencedStage(inventory[4 - 1])).toBe(project.getStage(4))
+    })
+
+    test("can push past last stage with empty slots", () => {
+      const project = createUserProject("Test", 5)
+      const book = project.getOrCreateBlueprintBookTemplate()
+      const inventory = book.get_inventory(defines.inventory.item_main)!
+      inventory[2 - 1].clear()
+      inventory[3 - 1].clear()
+      project.insertStage(5)
+      expect(getReferencedStage(inventory[5 - 1])).toBe(project.getStage(5))
+      expect(getReferencedStage(inventory[6 - 1])).toBe(project.getStage(6))
+      expect(inventory[2 - 1].valid_for_read).toBe(false)
+      expect(inventory[3 - 1].valid_for_read).toBe(false)
+    })
+  })
 })

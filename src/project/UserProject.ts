@@ -30,7 +30,7 @@ import {
   setIconsInSettings,
   StageBlueprintSettings,
 } from "../blueprints/blueprint-settings"
-import { createStageReference } from "../blueprints/stage-reference"
+import { createStageReference, getReferencedStage } from "../blueprints/stage-reference"
 import { Prototypes } from "../constants"
 import { newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
@@ -181,6 +181,11 @@ class UserProjectImpl implements UserProject {
     }
     this.content.insertStage(stage)
 
+    const template = this.getBlueprintBookTemplate()
+    if (template) {
+      this.addStageToBlueprintBookTemplate(stage, template)
+    }
+
     this.raiseEvent({ type: "stage-added", project: this, stage: newStage })
     return newStage
   }
@@ -240,6 +245,48 @@ class UserProjectImpl implements UserProject {
       createStageReference(bpStack, stage)
     }
     stack.label = this.name.get()
+  }
+
+  private addStageToBlueprintBookTemplate(newStage: StageNumber, stack: LuaItemStack): void {
+    if (!stack.valid || !stack.valid_for_read || !stack.is_blueprint_book) return
+    const inventory = stack.get_inventory(defines.inventory.item_main)!
+    let prevStageIndex = -1
+    for (const i of $range(inventory.length, 1, -1)) {
+      const bookStack = inventory[i - 1]
+      const stage = getReferencedStage(bookStack)
+      if (stage != nil && stage.project == this && stage.stageNumber <= newStage) {
+        prevStageIndex = i - 1
+        break
+      }
+    }
+
+    this.pushBpBookInventory(inventory, prevStageIndex + 1)
+    createStageReference(inventory[prevStageIndex + 1], this.stages[newStage])
+  }
+  private pushBpBookInventory(inventory: LuaInventory, index: number): void {
+    // while there is a stack at index, moves it to the next index
+    let nextFreeSlot: number | nil = index
+    while (nextFreeSlot < inventory.length && inventory[nextFreeSlot].valid_for_read) nextFreeSlot++
+    const needsExpansion = nextFreeSlot == inventory.length
+    if (needsExpansion) {
+      // do some finagling to expand the book inventory
+      const freeSlots = inventory.get_insertable_count(Prototypes.StageReference)
+      inventory.insert({
+        name: Prototypes.StageReference,
+        count: freeSlots + 1,
+      })
+    }
+    for (let i = nextFreeSlot - 1; i >= index; i--) {
+      assert(inventory[i].swap_stack(inventory[i + 1]))
+    }
+    if (needsExpansion) {
+      for (const i of $range(1, inventory.length - 1)) {
+        const stack = inventory[i - 1]
+        if (stack.valid_for_read && stack.name == Prototypes.StageReference && !stack.is_blueprint_setup()) {
+          stack.clear()
+        }
+      }
+    }
   }
 
   delete() {
