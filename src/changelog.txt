@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.33.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - When inserting a new stage, the stage will also be inserted in the blueprint book template (if it exists).
 ---------------------------------------------------------------------------------------------------
 Version: 0.33.0
 Date: ????
