@@ -17,6 +17,7 @@ import {
 } from "../blueprints/blueprint-creation"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
+import { correctStageReferenceRecursive } from "../blueprints/stage-reference"
 import { Colors, Prototypes } from "../constants"
 import { getStageToMerge } from "../entity/ProjectEntity"
 import {
@@ -641,7 +642,9 @@ class ProjectSettings extends Component<{
     const player = game.get_player(this.playerIndex)
     if (!player) return
     renderStageReferencePanel(player, this.project)
-    player.opened = this.project.getOrCreateBlueprintBookTemplate()
+    const stack = this.project.getOrCreateBlueprintBookTemplate()
+    correctStageReferenceRecursive(stack)
+    player.opened = stack
   }
 
   private beginResetBlueprintBookTemplate() {

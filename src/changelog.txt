@@ -4,6 +4,7 @@ Date: ????
   Changes:
     - If using a blueprint book template, if the book template's name is not changed from default, it will match the project name.
     - Improved alignment of "Get reference" window in blueprint template gui.
+    - Icons in blueprint book templates are updated when stage's icons are updated.
 ---------------------------------------------------------------------------------------------------
 Version: 0.33.1
 Date: 2024-06-02
