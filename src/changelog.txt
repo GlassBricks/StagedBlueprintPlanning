@@ -2,6 +2,8 @@
 Version: 0.33.2
 Date: ????
   Changes:
+    - If using a blueprint book template, if the book template's name is not changed from default, it will match the project name.
+    - Improved alignment of "Get reference" window in blueprint template gui.
 ---------------------------------------------------------------------------------------------------
 Version: 0.33.1
 Date: 2024-06-02

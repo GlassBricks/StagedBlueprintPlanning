@@ -295,6 +295,21 @@ describe("blueprintBookTemplate", () => {
     assert(newBook.is_blueprint_book)
   })
 
+  test("changing project name changes book label", () => {
+    const project = createUserProject("Test", 0)
+    const book = project.getOrCreateBlueprintBookTemplate()
+    project.name.set("New Name")
+    expect(book.label).toEqual("New Name")
+  })
+
+  test("changing project name does not change book label if book label is different", () => {
+    const project = createUserProject("Test", 0)
+    const book = project.getOrCreateBlueprintBookTemplate()
+    book.label = "Different"
+    project.name.set("New Name")
+    expect(book.label).toEqual("Different")
+  })
+
   describe("inserting stage", () => {
     test("inserts template into new stage in middle", () => {
       const project = createUserProject("Test", 3)

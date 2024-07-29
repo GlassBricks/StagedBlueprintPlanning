@@ -42,12 +42,14 @@ import {
   deepCopy,
   Events,
   globalEvent,
+  ibind,
   Mutable,
   MutableProperty,
   property,
   Property,
   RegisterClass,
   SimpleEvent,
+  Subscription,
 } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
@@ -109,7 +111,7 @@ class UserProjectImpl implements UserProject {
   updates = ProjectUpdatesClass({ project: this })
   worldUpdates = WorldUpdatesClass({ project: this })
 
-  blueprintBookTemplateInv?: LuaInventory
+  private blueprintBookTemplateInv?: LuaInventory
 
   constructor(
     readonly id: ProjectId,
@@ -133,8 +135,24 @@ class UserProjectImpl implements UserProject {
   static create(name: string, initialNumStages: number): UserProjectImpl {
     const project = new UserProjectImpl(global.nextProjectId++ as ProjectId, name, initialNumStages)
     UserProjectImpl.onProjectCreated(project)
+    project.registerEvents()
 
     return project
+  }
+
+  private subscription?: Subscription
+  registerEvents() {
+    if (this.subscription) return
+    this.subscription = new Subscription()
+
+    this.name.subscribe(this.subscription, ibind(this.onNameChange))
+  }
+
+  private onNameChange(newValue: string, oldValue: string) {
+    const template = this.getBlueprintBookTemplate()
+    if (template != nil && template.label == oldValue) {
+      template.label = newValue
+    }
   }
 
   getSurface(stageNum: StageNumber): LuaSurface | nil {
@@ -299,6 +317,8 @@ class UserProjectImpl implements UserProject {
     }
     this.raiseEvent({ type: "project-deleted", project: this })
     this.localEvents.closeAll()
+    this.subscription?.close()
+    delete this.subscription
   }
 
   _getNewStageName(stage: StageNumber): string {
@@ -765,4 +785,10 @@ Migrations.to("0.31.0", () => {
 })
 Migrations.to("0.32.4", () => {
   delete global.allRecipesPromptShown
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of global.projects) {
+    project.registerEvents()
+  }
 })

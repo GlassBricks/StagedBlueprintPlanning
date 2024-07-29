@@ -7,7 +7,6 @@ import {
   ButtonGuiElement,
   CameraGuiElement,
   CheckboxGuiElement,
-  ChooseElemButtonFilters,
   ChooseElemButtonGuiElement,
   ChooseElemButtonType,
   Color,
@@ -44,6 +43,7 @@ import {
   OnGuiTextChangedEvent,
   OnGuiValueChangedEvent,
   ProgressBarGuiElement,
+  PrototypeFilterWrite,
   RadioButtonGuiElement,
   ScrollPaneGuiElement,
   ScrollPolicy,
@@ -93,7 +93,7 @@ export interface BaseElement {
 export interface ChooseElemButtonElement extends BaseElement {
   type: "choose-elem-button"
   elem_type: ChooseElemButtonType
-  elem_filters?: MaybeProperty<ChooseElemButtonFilters[this["elem_type"]] | nil>
+  elem_filters?: MaybeProperty<PrototypeFilterWrite | nil>
   elem_value?: MaybeMutableProperty<MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>>
   locked?: MaybeProperty<boolean>
   on_gui_elem_changed?: GuiEventHandler<OnGuiElemChangedEvent>
