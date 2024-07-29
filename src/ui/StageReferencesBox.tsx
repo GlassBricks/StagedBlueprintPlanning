@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LuaPlayer, OnGuiClickEvent, ScrollPaneGuiElement } from "factorio:runtime"
+import { LuaPlayer, OnGuiClickEvent, TableGuiElement } from "factorio:runtime"
 import { createStageReference } from "../blueprints/stage-reference"
 import { Sprites } from "../constants"
 import { Events, ibind, RegisterClass, Subscription } from "../lib"
@@ -19,11 +19,10 @@ import {
   destroyChildren,
   Element,
   FactorioJsx,
-  render,
   RenderContext,
+  renderMultiple,
   renderNamed,
 } from "../lib/factoriojsx"
-import { HorizontalSpacer } from "../lib/factoriojsx/components"
 import { L_Gui } from "../locale"
 import { UserProject } from "../project/ProjectDef"
 
@@ -33,7 +32,7 @@ class StageReferencePanel extends Component<{
 }> {
   private project!: UserProject
   private subscription!: Subscription
-  private element!: ScrollPaneGuiElement
+  private element!: TableGuiElement
   override render(
     props: {
       project: UserProject
@@ -58,28 +57,35 @@ class StageReferencePanel extends Component<{
             padding: 10,
           }}
         >
-          <scroll-pane onCreate={(e) => (this.element = e)} />
+          <scroll-pane>
+            <table
+              column_count={2}
+              onCreate={(e) => (this.element = e)}
+              styleMod={{
+                horizontal_spacing: 10,
+              }}
+            />
+          </scroll-pane>
         </frame>
       </frame>
     )
   }
 
   private setup() {
-    const scrollPane = this.element
-    destroyChildren(scrollPane)
+    const table = this.element
+    destroyChildren(table)
     for (const stage of this.project.getAllStages()) {
-      render(
-        <flow direction="horizontal">
-          <label caption={stage.name} />
-          <HorizontalSpacer width={10} />
+      renderMultiple(
+        <>
+          <label caption={stage.name} styleMod={{ width: 80 }} />
           <sprite-button
             style="frame_action_button"
             sprite={Sprites.NewBlueprint}
             tags={{ stage: stage.stageNumber }}
             on_gui_click={ibind(this.newBlueprintRef)}
           />
-        </flow>,
-        scrollPane,
+        </>,
+        table,
       )
     }
   }
