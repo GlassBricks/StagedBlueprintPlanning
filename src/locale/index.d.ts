@@ -324,24 +324,30 @@ export declare const enum L_GuiProjectSettings {
   UseNextStageTilesTooltip = "bp100.gui.project-settings.use-next-stage-tiles-tooltip",
   /** Export */
   BpExport = "bp100.gui.project-settings.bp-export",
-  /** Get blueprint for current stage */
+  /** Export current stage */
   GetBlueprintForCurrentStage = "bp100.gui.project-settings.get-blueprint-for-current-stage",
-  /** Make blueprint book [img=info] */
-  MakeBlueprintBook = "bp100.gui.project-settings.make-blueprint-book",
-  /** Creates a blueprint book containing all stages. */
-  MakeBlueprintBookTooltip = "bp100.gui.project-settings.make-blueprint-book-tooltip",
-  /** Edit blueprint book template [img=info] */
+  /** Blueprint book */
+  BlueprintBook = "bp100.gui.project-settings.blueprint-book",
+  /** Export blueprint book [img=info] */
+  ExportBlueprintBook = "bp100.gui.project-settings.export-blueprint-book",
+  /** Creates a blueprint book with all stages. */
+  ExportBlueprintBookTooltip = "bp100.gui.project-settings.export-blueprint-book-tooltip",
+  /** Edit book template [img=info] */
   EditBlueprintBookTemplate = "bp100.gui.project-settings.edit-blueprint-book-template",
-  /** Edit the contents, icons, or description of the blueprint book.\nYou can also add other blueprints, books, deconstruction planners, or upgrade planners to the template, and they will be present in the final blueprint book. */
+  /** Edit the contents, icons, or description of the blueprint book.\nHandles nested blueprint books.\nYou can also add other blueprints, books, deconstruction planners, or upgrade planners to the template, and they will be present in the exported blueprint book. */
   EditBlueprintBookTemplateTooltip = "bp100.gui.project-settings.edit-blueprint-book-template-tooltip",
-  /** Reset template to default */
+  /** Reset book template */
   ResetBlueprintBookTemplate = "bp100.gui.project-settings.reset-blueprint-book-template",
   /** Are you sure you want to reset the blueprint book template? */
   ResetBlueprintBookTemplateConfirmation = "bp100.gui.project-settings.reset-blueprint-book-template-confirmation",
-  /** Export book to file [img=info] */
-  ExportBlueprintBookStringToFile = "bp100.gui.project-settings.export-blueprint-book-string-to-file",
-  /** Exports the blueprint book string to a file (located in <user-data-directory>/script-output). */
-  ExportBlueprintBookStringToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-string-to-file-tooltip",
+  /** Export to file [img=info] */
+  ExportBlueprintBookToFile = "bp100.gui.project-settings.export-blueprint-book-to-file",
+  /** Exports the blueprint book string to a file located in <user-data-directory>/script-output. */
+  ExportBlueprintBookToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-to-file-tooltip",
+  /** Export to string [img=info] */
+  ExportBlueprintBookToString = "bp100.gui.project-settings.export-blueprint-book-to-string",
+  /** Exports the blueprint book string, which you can copy. */
+  ExportBlueprintBookToStringTooltip = "bp100.gui.project-settings.export-blueprint-book-to-string-tooltip",
   /** Enable staged tiles (beta) [img=info] */
   EnableStagedTiles = "bp100.gui.project-settings.enable-staged-tiles",
   /** Enables (basic) support for staged tiles. Placing a blueprintable tile will affect all later stages. \nIf enabling for the first time, you may want to click "Scan existing tiles". */
@@ -360,6 +366,8 @@ export declare const enum L_GuiProjectSettings {
   DeleteProjectConfirmation1 = "bp100.gui.project-settings.delete-project-confirmation1",
   /** This cannot be undone. */
   DeleteProjectConfirmation2 = "bp100.gui.project-settings.delete-project-confirmation2",
+  /** Blueprint string for __1__ */
+  BlueprintStringFor = "bp100.gui.project-settings.blueprint-string-for",
 }
 export declare const enum L_GuiTasks {
   /** Cancel */
@@ -384,8 +392,8 @@ export declare const enum L_GuiBlueprintBookTask {
   SetNextStageTiles = "bp100.gui.blueprint-book-task.set-next-stage-tiles",
   /** Finishing up */
   FinalizeBlueprintBook = "bp100.gui.blueprint-book-task.finalize-blueprint-book",
-  /** Exporting book to file */
-  ExportBlueprintBookToFile = "bp100.gui.blueprint-book-task.export-blueprint-book-to-file",
+  /** Exporting blueprint book */
+  ExportBlueprintBook = "bp100.gui.blueprint-book-task.export-blueprint-book",
 }
 export declare const enum L_GuiEntityInfo {
   /** Stage info */

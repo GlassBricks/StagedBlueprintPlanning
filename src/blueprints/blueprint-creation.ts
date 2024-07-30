@@ -24,6 +24,7 @@ import {
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
 } from "./blueprint-settings"
+import { showBlueprintString } from "./ShowBlueprintString"
 import { getReferencedStage } from "./stage-reference"
 import { BlueprintTakeResult, takeSingleBlueprint } from "./take-single-blueprint"
 import max = math.max
@@ -69,8 +70,10 @@ function getCurrentBpSettings(stage: Stage): StageBlueprintSettings {
   return getCurrentValues(stage.getBlueprintSettingsView())
 }
 
-namespace BlueprintMethods {
-  export function computeChangedEntities(projectPlan: ProjectBlueprintPlan): void {
+type BlueprintMethod<A extends any[]> = (this: void, ...args: A) => void
+
+const BlueprintMethods = {
+  computeChangedEntities(projectPlan: ProjectBlueprintPlan): void {
     const project = projectPlan.project
     const result = new LuaMap<StageNumber, LuaSet<ProjectEntity>>()
     for (const i of $range(1, project.numStages())) {
@@ -96,13 +99,9 @@ namespace BlueprintMethods {
     }
 
     projectPlan.changedEntities!.set(result)
-  }
+  },
 
-  export function computeUnitNumberFilter(
-    projectPlan: ProjectBlueprintPlan,
-    stagePlan: StageBlueprintPlan,
-    stageLimit: number,
-  ): void {
+  computeUnitNumberFilter(projectPlan: ProjectBlueprintPlan, stagePlan: StageBlueprintPlan, stageLimit: number): void {
     const stageNumber = stagePlan.stage.stageNumber
     const minStage = max(1, stageNumber - stageLimit + 1)
     const maxStage = stageNumber
@@ -120,9 +119,8 @@ namespace BlueprintMethods {
     }
 
     stagePlan.unitNumberFilter = result
-  }
-
-  export function computeModuleOverrides(projectPlan: ProjectBlueprintPlan): void {
+  },
+  computeModuleOverrides(projectPlan: ProjectBlueprintPlan): void {
     const project = projectPlan.project
     const assemblingMachineNames = getKeySet(
       game.get_filtered_entity_prototypes([
@@ -147,11 +145,11 @@ namespace BlueprintMethods {
       }
     }
     projectPlan.moduleOverrides!.set(result)
-  }
+  },
 
-  export const setLandfill = setTilesAndCheckerboardForStage
+  setLandfill: setTilesAndCheckerboardForStage,
 
-  export function takeStageBlueprint(
+  takeStageBlueprint(
     stagePlan: StageBlueprintPlan,
     actualStack: LuaItemStack,
     settings: OverrideableBlueprintSettings,
@@ -189,9 +187,8 @@ namespace BlueprintMethods {
         stack.set_stack(actualStack)
       }
     }
-  }
-
-  export function setNextStageTiles(curStage: StageBlueprintPlan, nextStage: StageBlueprintPlan): void {
+  },
+  setNextStageTiles(curStage: StageBlueprintPlan, nextStage: StageBlueprintPlan): void {
     if (!curStage.result || !nextStage.result) return
 
     const nextStageTiles = nextStage.stack!.get_blueprint_tiles()
@@ -209,15 +206,20 @@ namespace BlueprintMethods {
       }
     }
     curStage.stack!.set_blueprint_tiles(nextStageTiles)
-  }
-
-  export function exportBlueprintBookToFile(stack: LuaItemStack, fileName: string, player: LuaPlayer): void {
+  },
+  exportBlueprintBookToFile(stack: LuaItemStack, fileName: string, player: LuaPlayer): void {
     const [projectFileName] = string.gsub(fileName, "[^%w%-%_%.]", "_")
     const filename = `staged-builds/${projectFileName}.txt`
     const data = stack.export_stack()
     game.write_file(filename, data, false, player.index)
-  }
-}
+  },
+  showBlueprintBookString(stack: LuaItemStack, player: LuaPlayer): void {
+    const title = stack.label ?? "<unnamed>"
+    const blueprintString = stack.export_stack()
+    stack.export_stack()
+    showBlueprintString(player, title, blueprintString)
+  },
+} satisfies Record<string, BlueprintMethod<any>>
 
 type BlueprintStep = {
   [K in keyof typeof BlueprintMethods]: {
@@ -226,6 +228,37 @@ type BlueprintStep = {
   }
 }[keyof typeof BlueprintMethods]
 
+function getStepTitle(task: BlueprintStep): LocalisedString {
+  switch (task.name) {
+    case "takeStageBlueprint": {
+      const stagePlan = task.args[0]
+      return [L_GuiBlueprintBookTask.TakeStageBlueprint, stagePlan.stage.name.get()]
+    }
+    case "computeChangedEntities":
+    case "computeModuleOverrides": {
+      const projectPlan = task.args[0]
+      return [L_GuiBlueprintBookTask.PreparingProject, projectPlan.project.displayName().get()]
+    }
+    case "computeUnitNumberFilter": {
+      const stagePlan = task.args[1]
+      return [L_GuiBlueprintBookTask.PreparingStage, stagePlan.stage.name.get()]
+    }
+    case "setLandfill": {
+      const stage = task.args[0]
+      return [L_GuiBlueprintBookTask.SetLandfillTiles, stage.name.get()]
+    }
+    case "setNextStageTiles": {
+      const curStage = task.args[0]
+      return [L_GuiBlueprintBookTask.SetNextStageTiles, curStage.stage.name.get()]
+    }
+    case "exportBlueprintBookToFile":
+    case "showBlueprintBookString": {
+      return [L_GuiBlueprintBookTask.ExportBlueprintBook]
+    }
+    default:
+      assertNever(task)
+  }
+}
 @RegisterClass("BlueprintCreationTask")
 class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
   constructor(
@@ -245,34 +278,7 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
   }
 
   protected override getTitleForTask(task: BlueprintStep): LocalisedString {
-    switch (task.name) {
-      case "takeStageBlueprint": {
-        const stagePlan = task.args[0]
-        return [L_GuiBlueprintBookTask.TakeStageBlueprint, stagePlan.stage.name.get()]
-      }
-      case "computeChangedEntities":
-      case "computeModuleOverrides": {
-        const projectPlan = task.args[0]
-        return [L_GuiBlueprintBookTask.PreparingProject, projectPlan.project.displayName().get()]
-      }
-      case "computeUnitNumberFilter": {
-        const stagePlan = task.args[1]
-        return [L_GuiBlueprintBookTask.PreparingStage, stagePlan.stage.name.get()]
-      }
-      case "setLandfill": {
-        const stage = task.args[0]
-        return [L_GuiBlueprintBookTask.SetLandfillTiles, stage.name.get()]
-      }
-      case "setNextStageTiles": {
-        const curStage = task.args[0]
-        return [L_GuiBlueprintBookTask.SetNextStageTiles, curStage.stage.name.get()]
-      }
-      case "exportBlueprintBookToFile": {
-        return [L_GuiBlueprintBookTask.ExportBlueprintBookToFile]
-      }
-      default:
-        assertNever(task)
-    }
+    return getStepTitle(task)
   }
   protected override done(): void {
     if (this.inventory?.valid) this.inventory.destroy()
@@ -394,7 +400,6 @@ class BlueprintingTaskBuilder {
       this.tasks.push({ name: "setLandfill", args: [stage] })
     }
 
-    // let unitNumberFilter: LuaSet<UnitNumber> | nil
     if (settings.stageLimit != nil) {
       this.ensureHasComputeChangedEntities(projectPlan)
       this.tasks.push({ name: "computeUnitNumberFilter", args: [projectPlan, stagePlan, settings.stageLimit] })
@@ -524,4 +529,20 @@ export function exportBlueprintBookToFile(project: UserProject, player: LuaPlaye
   submitTask(task)
 
   return name
+}
+
+export function exportBlueprintBookToString(project: UserProject, player: LuaPlayer): void {
+  const builder = new BlueprintingTaskBuilder()
+  const stack = builder.getNewTempStack()
+  stack.set_stack("blueprint-book")
+
+  addBlueprintBookTasks(project, builder, stack)
+
+  builder.addTask({
+    name: "showBlueprintBookString",
+    args: [stack, player],
+  })
+
+  const task = builder.build([L_GuiBlueprintBookTask.AssemblingBlueprintBook])
+  submitTask(task)
 }

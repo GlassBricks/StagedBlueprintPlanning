@@ -12,6 +12,7 @@
 import { LocalisedString, LuaPlayer, OnGuiClickEvent, PlayerIndex, TilePrototypeFilter } from "factorio:runtime"
 import {
   exportBlueprintBookToFile,
+  exportBlueprintBookToString,
   submitProjectBlueprintBookTask,
   takeStageBlueprint,
 } from "../blueprints/blueprint-creation"
@@ -90,7 +91,7 @@ const NewStageBarHeight = 100
 const StageSettingsButtonWidth = 180
 const LandfillButtonWidth = 220
 const OtherSettingsButtonWidth = 180
-const BpSettingsButtonWidth = 220
+const BpSettingsButtonWidth = 180
 
 const ProjectSettingsTabWidth = 420
 
@@ -584,31 +585,41 @@ class ProjectSettings extends Component<{
           styleMod={{ width: BpSettingsButtonWidth }}
           on_gui_click={ibind(this.getBlueprint)}
         />
+        <label style="caption_label" caption={[L_GuiProjectSettings.BlueprintBook]} />
         <button
-          caption={[L_GuiProjectSettings.MakeBlueprintBook]}
-          tooltip={[L_GuiProjectSettings.MakeBlueprintBookTooltip]}
+          caption={[L_GuiProjectSettings.ExportBlueprintBook]}
+          tooltip={[L_GuiProjectSettings.ExportBlueprintBookTooltip]}
           styleMod={{ width: BpSettingsButtonWidth }}
-          on_gui_click={ibind(this.makeBlueprintBook)}
+          on_gui_click={ibind(this.exportBlueprintBook)}
         />
+        <flow direction="horizontal">
+          <button
+            caption={[L_GuiProjectSettings.ExportBlueprintBookToString]}
+            tooltip={[L_GuiProjectSettings.ExportBlueprintBookToStringTooltip]}
+            styleMod={{ width: BpSettingsButtonWidth }}
+            on_gui_click={ibind(this.exportBookToString)}
+          />
+          <button
+            caption={[L_GuiProjectSettings.ExportBlueprintBookToFile]}
+            tooltip={[L_GuiProjectSettings.ExportBlueprintBookToFileTooltip]}
+            styleMod={{ width: BpSettingsButtonWidth }}
+            on_gui_click={ibind(this.exportBookToFile)}
+          />
+        </flow>
         <line />
-        <button
-          caption={[L_GuiProjectSettings.EditBlueprintBookTemplate]}
-          tooltip={[L_GuiProjectSettings.EditBlueprintBookTemplateTooltip]}
-          styleMod={{ width: BpSettingsButtonWidth }}
-          on_gui_click={ibind(this.editBlueprintBookTemplate)}
-        />
-        <button
-          caption={[L_GuiProjectSettings.ResetBlueprintBookTemplate]}
-          styleMod={{ width: BpSettingsButtonWidth }}
-          on_gui_click={ibind(this.beginResetBlueprintBookTemplate)}
-        />
-        <line />
-        <button
-          caption={[L_GuiProjectSettings.ExportBlueprintBookStringToFile]}
-          tooltip={[L_GuiProjectSettings.ExportBlueprintBookStringToFileTooltip]}
-          styleMod={{ width: BpSettingsButtonWidth }}
-          on_gui_click={ibind(this.exportBlueprintBookStringToFile)}
-        />
+        <flow direction="horizontal">
+          <button
+            caption={[L_GuiProjectSettings.EditBlueprintBookTemplate]}
+            tooltip={[L_GuiProjectSettings.EditBlueprintBookTemplateTooltip]}
+            styleMod={{ width: BpSettingsButtonWidth }}
+            on_gui_click={ibind(this.editBlueprintBookTemplate)}
+          />
+          <button
+            caption={[L_GuiProjectSettings.ResetBlueprintBookTemplate]}
+            styleMod={{ width: BpSettingsButtonWidth }}
+            on_gui_click={ibind(this.beginResetBlueprintBookTemplate)}
+          />
+        </flow>
       </flow>
     )
   }
@@ -630,7 +641,7 @@ class ProjectSettings extends Component<{
     }
   }
 
-  private makeBlueprintBook() {
+  private exportBlueprintBook() {
     const player = game.get_player(this.playerIndex)
     if (!player || !player.clear_cursor()) return
     const stack = player.cursor_stack
@@ -664,7 +675,13 @@ class ProjectSettings extends Component<{
     this.project.resetBlueprintBookTemplate()
   }
 
-  private exportBlueprintBookStringToFile() {
+  private exportBookToString() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    exportBlueprintBookToString(this.project, player)
+  }
+
+  private exportBookToFile() {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const fileName = exportBlueprintBookToFile(this.project, player)
