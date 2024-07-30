@@ -19,7 +19,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.2.1",
     "factorio-test": "^1.1.1",
-    "factorio-test-cli": "^1.0.5",
+    "factorio-test-cli": "^1.0.6",
     "factoriomod-debug": "^1.1.44",
     "gb-tstl-utils": "^1.0.2",
     "lua-types": "^2.13.1",
