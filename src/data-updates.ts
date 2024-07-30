@@ -46,7 +46,7 @@ if (landfillOnLand || minableLandfill) {
         if (buildSound)
           tile.mined_sound ??=
             "small" in buildSound || "medium" in buildSound || "large" in buildSound
-              ? buildSound.small ?? buildSound.medium ?? buildSound.large
+              ? (buildSound.small ?? buildSound.medium ?? buildSound.large)
               : (buildSound as Sound)
       }
       if (landfillOnLand) {
