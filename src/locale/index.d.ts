@@ -324,17 +324,17 @@ export declare const enum L_GuiProjectSettings {
   UseNextStageTilesTooltip = "bp100.gui.project-settings.use-next-stage-tiles-tooltip",
   /** Export */
   BpExport = "bp100.gui.project-settings.bp-export",
-  /** Export current stage */
+  /** Get current stage blueprint */
   GetBlueprintForCurrentStage = "bp100.gui.project-settings.get-blueprint-for-current-stage",
   /** Blueprint book */
   BlueprintBook = "bp100.gui.project-settings.blueprint-book",
-  /** Export blueprint book [img=info] */
+  /** Get blueprint book [img=info] */
   ExportBlueprintBook = "bp100.gui.project-settings.export-blueprint-book",
-  /** Creates a blueprint book with all stages. */
+  /** Creates a blueprint book containing all stages. */
   ExportBlueprintBookTooltip = "bp100.gui.project-settings.export-blueprint-book-tooltip",
   /** Edit book template [img=info] */
   EditBlueprintBookTemplate = "bp100.gui.project-settings.edit-blueprint-book-template",
-  /** Edit the contents, icons, or description of the blueprint book.\nHandles nested blueprint books.\nYou can also add other blueprints, books, deconstruction planners, or upgrade planners to the template, and they will be present in the exported blueprint book. */
+  /** Edit the layout, contents, icons, or description of the blueprint book.\nHandles nested blueprint books.\nYou can also add other blueprints, books, deconstruction planners, or upgrade planners to the template, and they will be present in the exported blueprint book. */
   EditBlueprintBookTemplateTooltip = "bp100.gui.project-settings.edit-blueprint-book-template-tooltip",
   /** Reset book template */
   ResetBlueprintBookTemplate = "bp100.gui.project-settings.reset-blueprint-book-template",

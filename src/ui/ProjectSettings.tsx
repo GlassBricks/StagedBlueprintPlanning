@@ -91,7 +91,7 @@ const NewStageBarHeight = 100
 const StageSettingsButtonWidth = 180
 const LandfillButtonWidth = 220
 const OtherSettingsButtonWidth = 180
-const BpSettingsButtonWidth = 180
+const BpExportButtonWidth = 200
 
 const ProjectSettingsTabWidth = 420
 
@@ -582,27 +582,27 @@ class ProjectSettings extends Component<{
       <flow direction="vertical" styleMod={{ padding: 10 }}>
         <button
           caption={[L_GuiProjectSettings.GetBlueprintForCurrentStage]}
-          styleMod={{ width: BpSettingsButtonWidth }}
+          styleMod={{ width: BpExportButtonWidth }}
           on_gui_click={ibind(this.getBlueprint)}
         />
         <label style="caption_label" caption={[L_GuiProjectSettings.BlueprintBook]} />
         <button
           caption={[L_GuiProjectSettings.ExportBlueprintBook]}
           tooltip={[L_GuiProjectSettings.ExportBlueprintBookTooltip]}
-          styleMod={{ width: BpSettingsButtonWidth }}
+          styleMod={{ width: BpExportButtonWidth }}
           on_gui_click={ibind(this.exportBlueprintBook)}
         />
         <flow direction="horizontal">
           <button
             caption={[L_GuiProjectSettings.ExportBlueprintBookToString]}
             tooltip={[L_GuiProjectSettings.ExportBlueprintBookToStringTooltip]}
-            styleMod={{ width: BpSettingsButtonWidth }}
+            styleMod={{ width: BpExportButtonWidth }}
             on_gui_click={ibind(this.exportBookToString)}
           />
           <button
             caption={[L_GuiProjectSettings.ExportBlueprintBookToFile]}
             tooltip={[L_GuiProjectSettings.ExportBlueprintBookToFileTooltip]}
-            styleMod={{ width: BpSettingsButtonWidth }}
+            styleMod={{ width: BpExportButtonWidth }}
             on_gui_click={ibind(this.exportBookToFile)}
           />
         </flow>
@@ -611,12 +611,12 @@ class ProjectSettings extends Component<{
           <button
             caption={[L_GuiProjectSettings.EditBlueprintBookTemplate]}
             tooltip={[L_GuiProjectSettings.EditBlueprintBookTemplateTooltip]}
-            styleMod={{ width: BpSettingsButtonWidth }}
+            styleMod={{ width: BpExportButtonWidth }}
             on_gui_click={ibind(this.editBlueprintBookTemplate)}
           />
           <button
             caption={[L_GuiProjectSettings.ResetBlueprintBookTemplate]}
-            styleMod={{ width: BpSettingsButtonWidth }}
+            styleMod={{ width: BpExportButtonWidth }}
             on_gui_click={ibind(this.beginResetBlueprintBookTemplate)}
           />
         </flow>
