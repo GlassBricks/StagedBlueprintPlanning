@@ -787,7 +787,7 @@ Migrations.to("0.32.4", () => {
   delete global.allRecipesPromptShown
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("0.33.2", () => {
   for (const project of global.projects) {
     project.registerEvents()
   }
