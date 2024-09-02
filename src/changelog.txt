@@ -2,6 +2,7 @@
 Version: 0.34.2
 Date: ????
   Changes:
+    - Improved handling of upgrading underground belt.
 ---------------------------------------------------------------------------------------------------
 Version: 0.34.1
 Date: 2024-10-02

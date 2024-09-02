@@ -11,7 +11,7 @@
 
 import { direction_vectors, oppositedirection } from "util"
 import { Mutable } from "../lib"
-import { Position } from "../lib/geometry"
+import { Pos, Position } from "../lib/geometry"
 import { ProjectContent } from "./ProjectContent"
 import { StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import min = math.min
@@ -27,14 +27,22 @@ export function getUndergroundDirection(
   return direction
 }
 
-/**
- * Finds an underground pair. If there are multiple possible pairs, returns the first one, and true as the second return value.
- */
+export function undergroundCanReach(
+  entity1: UndergroundBeltProjectEntity,
+  entity2: UndergroundBeltProjectEntity,
+  ugName: string,
+): boolean {
+  const reach = game.entity_prototypes[ugName].max_underground_distance
+  if (!reach) return false
+  return Pos.manhattanDistance(entity1.position, entity2.position) <= reach
+}
+
 export function findUndergroundPair(
   content: ProjectContent,
   member: UndergroundBeltProjectEntity,
   stage: StageNumber,
   name: string = member.getNameAtStage(stage),
+  ignore?: UndergroundBeltProjectEntity,
 ): UndergroundBeltProjectEntity | nil {
   const reach = game.entity_prototypes[name].max_underground_distance
   if (!reach) return
@@ -45,8 +53,8 @@ export function findUndergroundPair(
   const { x, y } = member.position
   const [dx, dy] = direction_vectors[direction]
 
-  // find pair: first by stage, then by closeness
-
+  // find pair
+  // If multiple possible, break ties first by stage, then by closeness
   let currentPair: UndergroundBeltProjectEntity | nil = nil
   let shadowStage: StageNumber = Infinity
   const curPos = {} as Mutable<Position>
@@ -54,7 +62,13 @@ export function findUndergroundPair(
     curPos.x = x + i * dx
     curPos.y = y + i * dy
     const candidate = content.findCompatibleEntity(name, curPos, nil, stage) as UndergroundBeltProjectEntity | nil
-    if (!candidate || candidate.getNameAtStage(stage) != name || candidate.firstStage >= shadowStage) continue
+    if (
+      !candidate ||
+      candidate.getNameAtStage(stage) != name ||
+      candidate.firstStage >= shadowStage ||
+      candidate == ignore
+    )
+      continue
     const candidateDirection = getUndergroundDirection(candidate.direction, candidate.firstValue.type)
     if (candidateDirection == direction) {
       // same direction and type; can shadow
@@ -65,7 +79,6 @@ export function findUndergroundPair(
       if (candidate.firstStage <= stage) return candidate
       if (currentPair == nil || candidate.firstStage < currentPair.firstStage) currentPair = candidate
     }
-    // if <= firstStage, can't get any better, and is closest
   }
   return currentPair
 }

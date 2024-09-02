@@ -26,7 +26,7 @@ import {
 import { createProjectTile, ProjectTile } from "../entity/ProjectTile"
 import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
-import { findUndergroundPair } from "../entity/underground-belt"
+import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { Pos, Position } from "../lib/geometry"
 import { Project } from "./ProjectDef"
@@ -451,63 +451,75 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function doUndergroundBeltUpdate(
-    entity: UndergroundBeltProjectEntity,
+    thisUg: UndergroundBeltProjectEntity,
     worldEntity: LuaEntity,
     pair: UndergroundBeltProjectEntity | nil,
     stage: StageNumber,
     targetDirection: defines.direction | nil,
     targetUpgrade: string,
   ): EntityUpdateResult {
-    const rotated = targetDirection && targetDirection != entity.direction
+    const rotated = targetDirection && targetDirection != thisUg.direction
 
-    const oldName = entity.getNameAtStage(stage)
+    const oldName = thisUg.getNameAtStage(stage)
     const upgraded = targetUpgrade != oldName
 
     if (!rotated && !upgraded) {
       if (!targetDirection) return EntityUpdateResult.NoChange
-      return handleUndergroundFlippedBack(entity, worldEntity, stage, targetDirection, pair)
+      return handleUndergroundFlippedBack(thisUg, worldEntity, stage, targetDirection, pair)
     }
 
-    const isSelfOrPairFirstStage = stage == entity.firstStage || (pair && pair.firstStage == stage)
+    const isSelfOrPairFirstStage = stage == thisUg.firstStage || (pair && pair.firstStage == stage)
 
     if (rotated) {
       const rotateAllowed = isSelfOrPairFirstStage
       if (!rotateAllowed) {
-        resetUnderground(entity, stage)
+        resetUnderground(thisUg, stage)
         return EntityUpdateResult.CannotRotate
       }
 
-      entity.direction = targetDirection
-      const oldType = entity.firstValue.type
+      thisUg.direction = targetDirection
+      const oldType = thisUg.firstValue.type
       const newType = oldType == "input" ? "output" : "input"
-      entity.setTypeProperty(newType)
+      thisUg.setTypeProperty(newType)
       if (pair) {
         pair.direction = targetDirection
         pair.setTypeProperty(oldType)
       }
     }
 
-    const applyStage = isSelfOrPairFirstStage ? entity.firstStage : stage
+    const applyStage = isSelfOrPairFirstStage ? thisUg.firstStage : stage
     const pairApplyStage = pair && isSelfOrPairFirstStage ? pair.firstStage : stage
     let cannotUpgradeChangedPair = false
+    let newPair: UndergroundBeltProjectEntity | nil = nil
     if (upgraded) {
-      entity.applyUpgradeAtStage(applyStage, targetUpgrade)
-      pair?.applyUpgradeAtStage(pairApplyStage, targetUpgrade)
-      const newPair = findUndergroundPair(content, entity, stage)
-      cannotUpgradeChangedPair = newPair != pair
+      thisUg.applyUpgradeAtStage(applyStage, targetUpgrade)
+      newPair = findUndergroundPair(content, thisUg, stage, targetUpgrade)
+      if (pair == nil) {
+        if (newPair != nil) {
+          const pairPair = findUndergroundPair(content, newPair, stage, nil, thisUg)
+          cannotUpgradeChangedPair = pairPair != nil && pairPair != thisUg
+        }
+      } else {
+        cannotUpgradeChangedPair = newPair != nil && newPair != pair
+      }
       if (cannotUpgradeChangedPair) {
-        entity.applyUpgradeAtStage(stage, oldName)
-        pair?.applyUpgradeAtStage(pairApplyStage, oldName)
+        thisUg.applyUpgradeAtStage(stage, oldName)
+      } else if (pair) {
+        if (undergroundCanReach(thisUg, pair, targetUpgrade)) {
+          pair.applyUpgradeAtStage(pairApplyStage, targetUpgrade)
+        } else {
+          pair = nil
+        }
       }
     }
 
     if (cannotUpgradeChangedPair && !rotated) {
-      refreshWorldEntityAtStage(entity, stage)
+      refreshWorldEntityAtStage(thisUg, stage)
       if (pair) refreshWorldEntityAtStage(pair, stage)
     } else if (!pair) {
-      updateWorldEntities(entity, applyStage)
+      updateWorldEntities(thisUg, applyStage)
     } else {
-      updatePair(entity, applyStage, pair, pairApplyStage)
+      updatePair(thisUg, applyStage, pair, pairApplyStage)
     }
     return cannotUpgradeChangedPair ? EntityUpdateResult.CannotUpgradeChangedPair : EntityUpdateResult.Updated
   }

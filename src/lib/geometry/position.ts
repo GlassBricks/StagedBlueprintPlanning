@@ -79,6 +79,9 @@ namespace Pos {
   export function isZero(pos: Position): boolean {
     return pos.x == 0 && pos.y == 0
   }
+  export function manhattanDistance(pos1: Position, pos2: Position): number {
+    return math.abs(pos1.x - pos2.x) + math.abs(pos1.y - pos2.y)
+  }
   export function rotateAboutOrigin(pos: Position, direction: defines.direction | nil): PositionClass {
     if (direction == nil || direction == defines.direction.north) return Pos.from(pos)
     if (direction == defines.direction.south) return Pos(-pos.x, -pos.y)

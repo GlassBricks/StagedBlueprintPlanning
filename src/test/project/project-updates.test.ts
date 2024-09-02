@@ -28,6 +28,7 @@ import {
   StageDiffsInternal,
   StageNumber,
 } from "../../entity/ProjectEntity"
+import { findUndergroundPair } from "../../entity/underground-belt"
 import { Pos } from "../../lib/geometry"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
@@ -1137,6 +1138,7 @@ describe("undergrounds", () => {
       const { entity: entity3 } = createUndergroundBelt(1, {
         position: Pos.plus(pos, { x: -2, y: 0 }),
         name: "fast-underground-belt",
+        type: "output",
       })
       luaEntity1.order_upgrade({
         target: "fast-underground-belt",
@@ -1176,12 +1178,58 @@ describe("undergrounds", () => {
       assertNEntities(3)
       assertRefreshCalled(entity3, 1)
     })
+
+    test("can upgrade to connect underground without pair", () => {
+      const { entity: entity1, luaEntity: luaEntity1 } = createUndergroundBelt(1)
+      const { entity: entity2 } = createUndergroundBelt(1, {
+        position: Pos.plus(pos, { x: -6, y: 0 }),
+        type: "output",
+        name: "fast-underground-belt",
+      })
+      const oldPair = findUndergroundPair(project.content, entity1, 1)
+      expect(oldPair).toBe(nil)
+      luaEntity1.order_upgrade({
+        target: "fast-underground-belt",
+        force: luaEntity1.force,
+      })
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity1, 1)
+      expect(ret).toBe("updated")
+      const pair = findUndergroundPair(project.content, entity1, 1)
+      expect(pair).toBe(entity2)
+      assertUpdateCalled(entity1, 1)
+    })
+
+    test("can upgrade to disconnect underground pair", () => {
+      const { entity: entity1, luaEntity: luaEntity1 } = createUndergroundBelt(1, {
+        name: "fast-underground-belt",
+      })
+      const { entity: entity2 } = createUndergroundBelt(1, {
+        position: Pos.plus(pos, { x: -6, y: 0 }),
+        type: "output",
+        name: "fast-underground-belt",
+      })
+      const oldPair = findUndergroundPair(project.content, entity1, 1)
+      expect(oldPair).toBe(entity2)
+      luaEntity1.order_upgrade({
+        target: "underground-belt",
+        force: luaEntity1.force,
+      })
+      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity1, 1)
+      expect(ret).toBe("updated")
+      const pair = findUndergroundPair(project.content, entity1, 1)
+      expect(pair).toBe(nil)
+      expect(entity2.getNameAtStage(1)).toBe("fast-underground-belt")
+
+      assertUpdateCalled(entity1, 1)
+    })
+
     test("if rotate allowed but not upgrade, still does rotate", () => {
       const { entity1, luaEntity1, entity2 } = createUndergroundBeltPair(1, 1)
       // just to forbid upgrade
       createUndergroundBelt(1, {
         position: Pos.plus(pos, { x: -2, y: 0 }),
         name: "fast-underground-belt",
+        type: "output",
       })
       luaEntity1.order_upgrade({
         target: "fast-underground-belt",
