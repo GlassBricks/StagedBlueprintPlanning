@@ -64,10 +64,10 @@ Events.on_entity_destroyed((e) => {
     global.surfaceByUnitNumber.delete(eNumber)
   }
 })
-Migrations.since($CURRENT_VERSION, () => {
+Migrations.since("0.33.4", () => {
   global.surfaceByUnitNumber = new LuaMap()
 })
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("0.33.4", () => {
   for (const [unitNumber, entity] of global.entityByUnitNumber) {
     for (const [key, value] of pairs<unknown>(entity)) {
       if (typeof key != "number") break
