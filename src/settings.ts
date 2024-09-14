@@ -39,6 +39,13 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     order: "c",
   },
   {
+    name: Settings.UnhideInfinityItems,
+    type: "bool-setting",
+    setting_type: "startup",
+    default_value: true,
+    order: "d",
+  },
+  {
     name: Settings.EntityInfoLocation,
     type: "string-setting",
     setting_type: "runtime-per-user",

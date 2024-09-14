@@ -63,3 +63,15 @@ if (landfillOnLand || minableLandfill) {
     }
   }
 }
+
+if (settings.startup[Settings.UnhideInfinityItems].value) {
+  function removeHiddenFlag(prototype: ItemPrototype | nil): void {
+    if (prototype) prototype.flags = prototype.flags?.filter((flag) => flag != "hidden")
+  }
+  removeHiddenFlag(data.raw.item["electric-energy-interface"])
+  removeHiddenFlag(data.raw.item["linked-chest"])
+  removeHiddenFlag(data.raw.item["linked-belt"])
+  removeHiddenFlag(data.raw.item["heat-interface"])
+  removeHiddenFlag(data.raw.item["infinity-chest"])
+  removeHiddenFlag(data.raw.item["infinity-pipe"])
+}

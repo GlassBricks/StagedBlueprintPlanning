@@ -18,6 +18,7 @@ export const enum Settings {
   LandLandfill = "bp100:land-landfill",
   UpgradeOnPaste = "bp100:upgrade-on-paste",
   GpsTagTeleport = "bp100:gps-tag-teleport",
+  UnhideInfinityItems = "bp100:unhide-infinity-items",
 }
 
 // noinspection JSUnusedGlobalSymbols

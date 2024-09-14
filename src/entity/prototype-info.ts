@@ -85,8 +85,10 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
   log("Processing blueprint-able entity prototypes")
   const compatibleTypes: PRecord<keyof PrototypeMap, keyof PrototypeMap> = {
     "logistic-container": "container",
+    "infinity-container": "container",
     "rail-chain-signal": "rail-signal",
     "storage-tank": "pipe",
+    "infinity-pipe": "pipe",
   }
   const ignoreFastReplaceGroup = newLuaSet("transport-belt", "underground-belt", "splitter")
 
