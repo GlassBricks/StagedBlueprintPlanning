@@ -610,8 +610,8 @@ class ProjectEntityImpl<T extends Entity = Entity>
     if (existing && existing.valid) {
       raise_script_destroy({ entity: existing })
       existing.destroy()
-      delete this[stage]
     }
+    delete this[stage]
   }
 
   destroyAllWorldOrPreviewEntities(): void {

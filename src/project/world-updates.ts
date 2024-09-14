@@ -266,7 +266,6 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     }
 
     updateWorldEntitiesInRange(entity, stage, stage)
-    // updateWiresInRange(project, entity, stage, stage)
     updateWireConnectionsAtStage(content, entity, stage)
     updateAllHighlights(entity)
   }
@@ -432,8 +431,12 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   function rebuildStage(stage: StageNumber): void {
     const surface = project.getSurface(stage)
     if (!surface) return
+    const raise_destroy = script.raise_script_destroy
     for (const entity of surface.find_entities()) {
-      if (isWorldEntityProjectEntity(entity)) entity.destroy()
+      if (isWorldEntityProjectEntity(entity)) {
+        raise_destroy({ entity })
+        entity.destroy()
+      }
     }
     for (const entity of surface.find_entities_filtered({
       type: ["simple-entity-with-owner", "rail-remnants"],

@@ -1844,3 +1844,20 @@ test("deleting train by removing rail under it", () => {
     expect(project.content.hasEntity(train)).toBe(false)
   })
 })
+
+test("rebuilding stage does not delete train", () => {
+  const trainEntity = createRollingStock(surfaces[0], nil, true)
+  let train: ProjectEntity | nil
+  for (const entity of project.content.allEntities()) {
+    if (entity.firstValue.name == "locomotive") {
+      train = entity
+      break
+    }
+  }
+  assert(train)
+  project.worldUpdates.rebuildStage(1)
+  expect(trainEntity.valid).toBe(false)
+  expect(project.content.hasEntity(train)).toBe(true)
+  const newTrain = surfaces[0].find_entities_filtered({ name: "locomotive" })[0]
+  expect(newTrain).not.toBeNil()
+})

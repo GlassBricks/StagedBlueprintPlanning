@@ -47,7 +47,16 @@ export function getRegisteredProjectEntityFromUnitNumber(unitNumber?: UnitNumber
 export function getStageFromUnitNumber(unitNumber?: UnitNumber): SurfaceIndex | nil {
   return unitNumber && global.surfaceByUnitNumber.get(unitNumber)
 }
-
+// detect when _we_ delete an entity; remove it
+// this way event_handlers doesn't re-handle the entity deletion, causing a loop/other issues
+Events.script_raised_destroy((e) => {
+  if (e.mod_name != script.mod_name) return
+  const eNumber = e.entity.unit_number
+  if (eNumber) {
+    global.entityByUnitNumber.delete(eNumber)
+    global.surfaceByUnitNumber.delete(eNumber)
+  }
+})
 Events.on_entity_destroyed((e) => {
   const eNumber = e.unit_number
   if (eNumber) {
