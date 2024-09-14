@@ -1,11 +1,12 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.33.4
+Version: 0.34.0
 Date: ????
-  Changes:
----------------------------------------------------------------------------------------------------
-Version: 0.33.3
-Date: 2024-09-02
-  Changes:
+  Minor Features:
+    - Added "unhide infinity items" startup option, which makes infinity chests/pipes compatible with upgrade planner,
+      and reveals infinity items in filters/deconstruction planner.
+  Bugfixes:
+    - Fixed that trains would sometimes not be deleted.
+
 ---------------------------------------------------------------------------------------------------
 Version: 0.33.2
 Date: 2024-07-30
