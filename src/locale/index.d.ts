@@ -50,12 +50,16 @@ export declare const enum L_ModSettingName {
   UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
   /** Teleport to stage when clicking a GPS tag */
   GpsTagTeleport = "mod-setting-name.bp100:gps-tag-teleport",
+  /** Unhide infinity items (allows use in upgrade planner) */
+  UnhideInfinityItems = "mod-setting-name.bp100:unhide-infinity-items",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps anywhere, without need for a water source. */
   FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
   /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged project. */
   UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
+  /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
+  UnhideInfinityItems = "mod-setting-description.bp100:unhide-infinity-items",
 }
 export declare const enum L_StringModSetting {
   /** Top */
