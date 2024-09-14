@@ -21,6 +21,10 @@ before_each(() => {
 })
 after_each(() => {
   project.delete()
+  surfaces.forEach((s) => {
+    s.generate_with_lab_tiles = true
+    s.clear()
+  })
 })
 
 test("sync map gen settings", () => {

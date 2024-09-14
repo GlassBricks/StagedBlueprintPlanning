@@ -1805,6 +1805,10 @@ describe("map gen settings", () => {
     after_ticks(60, () => {
       assertEntityCorrect(entity, false)
     })
+    after_test(() => {
+      surfaces[0].generate_with_lab_tiles = true
+      surfaces[0].clear()
+    })
   })
   test("adding a new stage gets the same map settings as previous stage", () => {
     surfaces[2].map_gen_settings = {
@@ -1812,12 +1816,15 @@ describe("map gen settings", () => {
       seed: 42,
     }
     surfaces[2].generate_with_lab_tiles = false
+    after_test(() => {
+      surfaces[2].generate_with_lab_tiles = true
+      surfaces[2].clear()
+    })
     project.insertStage(4)
     expect(project.getSurface(4)).toMatchTable({
       map_gen_settings: { seed: 42 },
       generate_with_lab_tiles: false,
     })
-    surfaces[2].generate_with_lab_tiles = true
   })
 })
 
