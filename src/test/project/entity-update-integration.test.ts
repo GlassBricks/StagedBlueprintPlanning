@@ -53,7 +53,6 @@ import direction = defines.direction
 let project: UserProject
 let surfaces: LuaSurface[]
 let player: LuaPlayer
-declare const global: any
 before_each(() => {
   project = createUserProject("test", 6)
   surfaces = project.getAllStages().map((stage) => stage.surface)
