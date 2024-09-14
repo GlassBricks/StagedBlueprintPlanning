@@ -12,6 +12,7 @@
 import { EventId } from "factorio:runtime"
 import {
   AnyHandler,
+  EventDataOf,
   EventHandlers,
   Events,
   EventsRegistration,
@@ -40,6 +41,9 @@ const ProtectedEvents = {
   },
   onInitOrLoad(f: () => void): void {
     Events.onInitOrLoad(f)
+  },
+  registerEarly<E extends EventId<any, any> | string>(event: E, f: (data: EventDataOf<E>) => void): void {
+    Events.registerEarly(event, wrapFunction(f))
   },
 } as EventsRegistration
 setmetatable(ProtectedEvents, {

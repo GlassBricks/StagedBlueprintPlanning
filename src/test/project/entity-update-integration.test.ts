@@ -53,6 +53,7 @@ import direction = defines.direction
 let project: UserProject
 let surfaces: LuaSurface[]
 let player: LuaPlayer
+declare const global: any
 before_each(() => {
   project = createUserProject("test", 6)
   surfaces = project.getAllStages().map((stage) => stage.surface)
@@ -1817,5 +1818,22 @@ describe("map gen settings", () => {
       generate_with_lab_tiles: false,
     })
     surfaces[2].generate_with_lab_tiles = true
+  })
+})
+
+test("deleting train by removing rail under it", () => {
+  const trainEntity = createRollingStock(surfaces[0], nil, true)
+  let train: ProjectEntity | nil
+  for (const entity of project.content.allEntities()) {
+    if (entity.firstValue.name == "locomotive") {
+      train = entity
+      break
+    }
+  }
+  assert(train)
+  assert(trainEntity.destroy({ raise_destroy: false }))
+  expect(trainEntity.valid).toBe(false)
+  after_ticks(1, () => {
+    expect(project.content.hasEntity(train)).toBe(false)
   })
 })

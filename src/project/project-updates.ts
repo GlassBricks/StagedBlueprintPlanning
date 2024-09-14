@@ -63,7 +63,9 @@ export interface ProjectUpdates {
   ): ProjectEntity<E> | nil
   addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil
 
+  maybeDeleteProjectEntity(entity: ProjectEntity, stage: StageNumber): void
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
+
   /** Deleted entities should be able to be re-added via readdDeletedEntity */
   forceDeleteEntity(entity: ProjectEntity): void
   readdDeletedEntity(value: ProjectEntity): void
@@ -129,6 +131,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   return {
     addNewEntity,
+    maybeDeleteProjectEntity,
     deleteEntityOrCreateSettingsRemnant,
     forceDeleteEntity,
     readdDeletedEntity,
@@ -249,7 +252,19 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     }
     return false
   }
+  function maybeDeleteProjectEntity(projectEntity: ProjectEntity, stage: number): void {
+    const firstStage = projectEntity.firstStage
 
+    if (firstStage != stage) {
+      if (firstStage < stage) {
+        rebuildWorldEntityAtStage(projectEntity, stage)
+      }
+      // else: stage > existingStage; bug, ignore
+      return
+    }
+
+    deleteEntityOrCreateSettingsRemnant(projectEntity)
+  }
   function deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void {
     if (shouldMakeSettingsRemnant(entity)) {
       entity.isSettingsRemnant = true

@@ -178,7 +178,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
   const content = project.content
   const {
     addNewEntity,
-    deleteEntityOrCreateSettingsRemnant,
+    maybeDeleteProjectEntity,
     forceDeleteEntity,
     tryUpdateEntityFromWorld,
     tryUpgradeEntityFromWorld,
@@ -370,18 +370,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     _byPlayer: PlayerIndex | nil,
   ): void {
     const projectEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)
-    if (!projectEntity) return
-    const firstStage = projectEntity.firstStage
-
-    if (firstStage != stage) {
-      if (firstStage < stage) {
-        rebuildWorldEntityAtStage(projectEntity, stage)
-      }
-      // else: stage > existingStage; bug, ignore
-      return
-    }
-
-    deleteEntityOrCreateSettingsRemnant(projectEntity)
+    if (projectEntity) maybeDeleteProjectEntity(projectEntity, stage)
   }
 
   function handlePasteValue(

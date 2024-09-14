@@ -49,6 +49,7 @@ import {
   PrototypeInfo,
   RotationType,
 } from "../entity/prototype-info"
+import { getRegisteredProjectEntityFromUnitNumber, getStageFromUnitNumber } from "../entity/registration"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
@@ -214,6 +215,17 @@ Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 Events.script_raised_destroy((e) => {
   if (e.mod_name != modName) luaEntityDeleted(e.entity, nil)
 })
+
+Events.registerEarly(defines.events.on_entity_destroyed, (e) => {
+  const entity = getRegisteredProjectEntityFromUnitNumber(e.unit_number)
+  if (!entity) return
+  const surfaceIndex = getStageFromUnitNumber(e.unit_number)
+  if (!surfaceIndex) return
+  const stage = getStageAtSurface(surfaceIndex)
+  if (!stage) return
+  stage.project.updates.maybeDeleteProjectEntity(entity, stage.stageNumber)
+})
+
 Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
 
 Events.on_entity_died((e) => luaEntityDied(e.entity))

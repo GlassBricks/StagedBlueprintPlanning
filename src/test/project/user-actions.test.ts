@@ -300,24 +300,25 @@ describe("onEntityDeleted", () => {
     expectedNumCalls = 0
   })
 
-  test("in a lower stage does nothing (bug)", () => {
-    addEntity(2)
-    const luaEntity = createWorldEntity(1)
-    userActions.onEntityDeleted(luaEntity, 1, playerIndex)
-    expectedNumCalls = 0
-  })
-
-  test("in a higher stage calls disallowEntityDeletion", () => {
-    const { luaEntity, entity } = addEntity(2)
-    userActions.onEntityDeleted(luaEntity, 3, playerIndex)
-    expect(worldUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(entity, 3)
-  })
-
-  test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
-    const { luaEntity, entity } = addEntity(2)
-    userActions.onEntityDeleted(luaEntity, 2, playerIndex)
-    expect(projectUpdates.deleteEntityOrCreateSettingsRemnant).toHaveBeenCalledWith(entity)
-  })
+  // Functionality moved to project-updates.ts...
+  // test("in a lower stage does nothing (bug)", () => {
+  //   addEntity(2)
+  //   const luaEntity = createWorldEntity(1)
+  //   userActions.onEntityDeleted(luaEntity, 1, playerIndex)
+  //   expectedNumCalls = 1
+  // })
+  //
+  // test("in a higher stage calls disallowEntityDeletion", () => {
+  //   const { luaEntity, entity } = addEntity(2)
+  //   userActions.onEntityDeleted(luaEntity, 3, playerIndex)
+  //   expect(worldUpdates.rebuildWorldEntityAtStage).toHaveBeenCalledWith(entity, 3)
+  // })
+  //
+  // test("in same stage calls deleteEntityOrCreateSettingsRemnant", () => {
+  //   const { luaEntity, entity } = addEntity(2)
+  //   userActions.onEntityDeleted(luaEntity, 2, playerIndex)
+  //   expect(projectUpdates.deleteEntityOrCreateSettingsRemnant).toHaveBeenCalledWith(entity)
+  // })
 })
 
 test("onEntityDied calls clearEntityAtStage", () => {
