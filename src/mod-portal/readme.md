@@ -66,9 +66,9 @@ You can move entities between stages using:
 - Using the stage move tool (accessed via the shortcuts menu right of the quick-bar, or via a custom shortcut).
     - Use `Shift + scroll wheel` (default keybinding) to change the target stage.
     - Select entities to move entities from the current stage to the target stage.
-    - Reverse select to move entities from _any_ stage to the target stage.
-    - Reverse-select entities to move entities to the _current_ stage.
-    - Alt-reverse select to bring entities to the current stage, only if they are from a higher stage.
+  - Alt-select (select for deconstruction cancellation) to move entities from _any_ stage to the target stage.
+  - Reverse-select to bring entities to the _current_ stage.
+  - Alternative-reverse-select to bring entities to the current stage only if they are from a later stage.
 
 All these actions are compatible with undo!
 
