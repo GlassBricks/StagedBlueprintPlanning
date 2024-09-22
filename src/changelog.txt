@@ -1,9 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.33.5
 Date: ????
-  Changes:
+  Features:
+    - Added "exclude from future blueprints" feature. This can be used to "ignore" all entities in a stage, in later blueprints.
 ---------------------------------------------------------------------------------------------------
-Version: 0.34.0
+Version: 0.33.4
 Date: ????
   Minor Features:
     - Added "unhide infinity items" startup option, which makes infinity chests/pipes compatible with upgrade planner,
