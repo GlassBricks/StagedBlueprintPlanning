@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.33.5
+Version: 0.34.0
 Date: ????
   Features:
     - Added "exclude from future blueprints" feature. This can be used to "ignore" all entities in a stage, in later blueprints.
