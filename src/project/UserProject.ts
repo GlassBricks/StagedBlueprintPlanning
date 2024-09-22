@@ -792,7 +792,7 @@ Migrations.to("0.33.2", () => {
     project.registerEvents()
   }
 })
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("0.34.0", () => {
   for (const project of global.projects) {
     asMutable(project.defaultBlueprintSettings).excludeFromFutureBlueprints ??= property(false)
     for (const stage of project.getAllStages()) {
