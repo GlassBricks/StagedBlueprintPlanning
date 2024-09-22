@@ -44,6 +44,7 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
     positionRelativeToGrid: settings.positionRelativeToGrid.get(),
     absoluteSnapping: settings.absoluteSnapping.get(),
     stageLimit: nil,
+    excludeFromFutureBlueprints: false,
     additionalWhitelist: nil,
     blacklist: settings.blacklist.get(),
     replaceInfinityEntitiesWithCombinators: settings.replaceInfinityEntitiesWithCombinators.get(),

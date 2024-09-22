@@ -22,6 +22,7 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
 
   /** If not nil, only include entities changed in the last x stages */
   readonly stageLimit: number | nil
+  readonly excludeFromFutureBlueprints: boolean
 
   /** If not nil, also include whitelisted entities in addition to [stageLimit]. Ignored if [stageLimit] is nil. */
   readonly additionalWhitelist: ReadonlyLuaSet<string> | nil
@@ -119,6 +120,7 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
     additionalWhitelist: nil,
     blacklist: nil,
     stageLimit: nil,
+    excludeFromFutureBlueprints: false,
     replaceInfinityEntitiesWithCombinators: false,
     useModulePreloading: false,
   }

@@ -43,9 +43,11 @@ class Ref<T extends AnyNotNil> {
 
 interface ProjectBlueprintPlan {
   project: UserProject
-  // other stuff will go here eventually
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
 
+  excludeFromFutureBlueprintStages: LuaSet<StageNumber>
+
+  firstStageEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
   changedEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
   moduleOverrides?: Ref<LuaMap<UnitNumber, Record<string, number>>>
 }
@@ -75,38 +77,48 @@ type BlueprintMethod<A extends any[]> = (this: void, ...args: A) => void
 const BlueprintMethods = {
   computeChangedEntities(projectPlan: ProjectBlueprintPlan): void {
     const project = projectPlan.project
-    const result = new LuaMap<StageNumber, LuaSet<ProjectEntity>>()
+    const changedEntities = new LuaMap<StageNumber, LuaSet<ProjectEntity>>()
+    const firstStageEntities = new LuaMap<StageNumber, LuaSet<ProjectEntity>>()
     for (const i of $range(1, project.numStages())) {
-      result.set(i, new LuaSet())
+      changedEntities.set(i, new LuaSet())
+      firstStageEntities.set(i, new LuaSet())
     }
     const content = project.content
     for (const entity of content.allEntities()) {
-      const firstStageMap = result.get(entity.firstStage)!
+      const firstStageMap = firstStageEntities.get(entity.firstStage)!
       firstStageMap.add(entity)
 
-      const diffs = entity.stageDiffs
-      if (diffs) {
-        for (const [stage] of pairs(diffs)) {
-          result.get(stage)!.add(entity)
-        }
-      }
       const circuitConnections = entity.circuitConnections
       if (circuitConnections) {
         for (const [otherEntity] of circuitConnections) {
           firstStageMap.add(otherEntity)
         }
       }
+
+      const diffs = entity.stageDiffs
+      if (diffs) {
+        for (const [stage] of pairs(diffs)) {
+          changedEntities.get(stage)!.add(entity)
+        }
+      }
     }
 
-    projectPlan.changedEntities!.set(result)
+    projectPlan.changedEntities!.set(changedEntities)
+    projectPlan.firstStageEntities!.set(firstStageEntities)
   },
 
-  computeUnitNumberFilter(projectPlan: ProjectBlueprintPlan, stagePlan: StageBlueprintPlan, stageLimit: number): void {
+  computeUnitNumberFilter(
+    projectPlan: ProjectBlueprintPlan,
+    stagePlan: StageBlueprintPlan,
+    stageLimit: number | nil,
+  ): void {
     const stageNumber = stagePlan.stage.stageNumber
+    stageLimit ??= Infinity
     const minStage = max(1, stageNumber - stageLimit + 1)
     const maxStage = stageNumber
 
     const changedEntities = projectPlan.changedEntities!.get()
+    const firstStageEntities = projectPlan.firstStageEntities!.get()
 
     const result = new LuaSet<UnitNumber>()
     for (const stage of $range(minStage, maxStage)) {
@@ -115,6 +127,14 @@ const BlueprintMethods = {
         if (!luaEntity) continue
         const unitNumber = luaEntity.unit_number
         if (unitNumber) result.add(unitNumber)
+      }
+      if (stage == stageNumber || !projectPlan.excludeFromFutureBlueprintStages.has(stage)) {
+        for (const entity of firstStageEntities.get(stage)!) {
+          const luaEntity = entity.getWorldOrPreviewEntity(stageNumber)
+          if (!luaEntity) continue
+          const unitNumber = luaEntity.unit_number
+          if (unitNumber) result.add(unitNumber)
+        }
       }
     }
 
@@ -295,7 +315,16 @@ class BlueprintingTaskBuilder {
 
   private getPlanForProject(project: UserProject): ProjectBlueprintPlan {
     if (!this.projectPlans.has(project)) {
-      this.projectPlans.set(project, { project, stagePlans: new LuaMap() })
+      const plan: ProjectBlueprintPlan = {
+        project,
+        stagePlans: new LuaMap(),
+        excludeFromFutureBlueprintStages: new LuaSet(),
+      }
+      for (const stage of project.getAllStages()) {
+        if (stage.getBlueprintSettingsView().excludeFromFutureBlueprints.get())
+          plan.excludeFromFutureBlueprintStages.add(stage.stageNumber)
+      }
+      this.projectPlans.set(project, plan)
     }
     return this.projectPlans.get(project)!
   }
@@ -400,7 +429,7 @@ class BlueprintingTaskBuilder {
       this.tasks.push({ name: "setLandfill", args: [stage] })
     }
 
-    if (settings.stageLimit != nil) {
+    if (settings.stageLimit != nil || !projectPlan.excludeFromFutureBlueprintStages.isEmpty()) {
       this.ensureHasComputeChangedEntities(projectPlan)
       this.tasks.push({ name: "computeUnitNumberFilter", args: [projectPlan, stagePlan, settings.stageLimit] })
     }
@@ -413,6 +442,7 @@ class BlueprintingTaskBuilder {
   private ensureHasComputeChangedEntities(projectInfo: ProjectBlueprintPlan): void {
     if (!projectInfo.changedEntities) {
       projectInfo.changedEntities = new Ref()
+      projectInfo.firstStageEntities = new Ref()
       this.tasks.push({ name: "computeChangedEntities", args: [projectInfo] })
     }
   }

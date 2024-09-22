@@ -298,6 +298,10 @@ export declare const enum L_GuiProjectSettings {
   Edit = "bp100.gui.project-settings.edit",
   /** Entity filters */
   EntityFilters = "bp100.gui.project-settings.entity-filters",
+  /** Exclude from future blueprints [img=info] */
+  ExcludeFromFutureBlueprints = "bp100.gui.project-settings.exclude-from-future-blueprints",
+  /** Entities in this stage will not be present in later stage blueprints. Entity _changes_ may still be present, however. */
+  ExcludeFromFutureBlueprintsTooltip = "bp100.gui.project-settings.exclude-from-future-blueprints-tooltip",
   /** Only include entities changed in the last */
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */

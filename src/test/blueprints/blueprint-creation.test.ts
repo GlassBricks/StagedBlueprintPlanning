@@ -165,6 +165,32 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   )
 })
 
+test("excludeFromFutureBlueprints: entities are not included in future blueprints", () => {
+  const [stage1, stage2, stage3] = project.getAllStages()
+  const e1 = createEntity(stage1) // should be excluded
+  stage1.stageBlueprintSettings.excludeFromFutureBlueprints.set(true)
+  const e2 = createEntity(stage2, [1.5, 1.5]) // should be included
+  const e3 = createEntity(stage3, [2.5, 2.5]) // should be included
+
+  const stack = player.cursor_stack!
+
+  const ret = takeStageBlueprint(stage3, stack)
+  expect(ret).toBe(true)
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities).toHaveLength(2)
+  expect(entities.map((e) => e.position).sort((a, b) => a.x - b.x)).toEqual(
+    [e2, e3].map((e) => e.position).sort((a, b) => a.x - b.x),
+  )
+
+  // should still ben in stage1 blueprint
+  const ret2 = takeStageBlueprint(stage1, stack)
+  expect(ret2).toBe(true)
+  const entities2 = stack.get_blueprint_entities()!
+  expect(entities2).toHaveLength(1)
+  expect(entities2[0].position).toEqual(e1.position)
+})
+
 test("moduleOverrides: uses modules later stage if updated", () => {
   const stage1 = project.getStage(1)!
   const e1 = createEntity(stage1, nil, "assembling-machine-1")
