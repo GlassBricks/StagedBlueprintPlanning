@@ -217,6 +217,30 @@ test("applies unit number filter as well as whitelist", () => {
   expect(entities[0].name).toEqual(belt.name)
 })
 
+test("always includes ghosts", () => {
+  const ghost = surface.create_entity({
+    name: "entity-ghost",
+    inner_name: "transport-belt",
+    position: [0.5, 0.5],
+    force: "player",
+  })!
+  expect(ghost).toBeAny()
+  expect(ghost.name).toEqual("entity-ghost")
+
+  const settings: StageBlueprintSettings = getDefaultBlueprintSettings()
+  const unitNumberFilter = newLuaSet(ghost.unit_number!)
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+
+  const ret = takeSingleBlueprint({ stack, settings, surface, bbox, unitNumberFilter })
+  expect(ret).toBeTruthy()
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities.length).toBe(1)
+  expect(entities[0].name).toEqual("transport-belt")
+})
+
 test("replace infinity entities with constant combinators", () => {
   // chest
   const chest = surface.create_entity({

@@ -68,6 +68,7 @@ function filterEntities(
   let anyDeleted: true | nil
   let firstNotDeletedLuaIndex: number | nil
   let un: UnitNumber | nil
+  let luaEntity: LuaEntity | nil
   for (const i of $range(1, entities.length)) {
     const entity = entities[i - 1]
 
@@ -75,7 +76,10 @@ function filterEntities(
     const name = entity.name
     if (
       blacklist.has(name) ||
-      (unitNumbers && !additionalWhitelist.has(name) && !((un = bpMapping[i].unit_number) && unitNumbers.has(un)))
+      (unitNumbers &&
+        !additionalWhitelist.has(name) &&
+        !((luaEntity = bpMapping[i]) && (un = luaEntity.unit_number) && unitNumbers.has(un)) &&
+        luaEntity.type != "entity-ghost")
     ) {
       delete entities[i - 1]
       anyDeleted = true
