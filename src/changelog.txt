@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.34.3
-Date: ????
+Date: 2024-10-04
   Bugfixes:
     - Avoid factorio crash when disabling snap-to-grid in blueprint setting overrides.
     - Also include power pole cable neighbors in "only include entities changed in last x stages" option.
