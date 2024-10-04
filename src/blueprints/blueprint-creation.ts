@@ -94,6 +94,12 @@ const BlueprintMethods = {
           firstStageMap.add(otherEntity)
         }
       }
+      const cableConnections = entity.cableConnections
+      if (cableConnections) {
+        for (const otherEntity of cableConnections) {
+          firstStageMap.add(otherEntity)
+        }
+      }
 
       const diffs = entity.stageDiffs
       if (diffs) {

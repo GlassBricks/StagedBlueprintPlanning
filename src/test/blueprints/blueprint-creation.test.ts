@@ -146,7 +146,15 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   e5stage3.connect_neighbour({ wire: defines.wire_type.red, target_entity: e3 })
   checkForCircuitWireUpdates(e5stage3, nil)
 
-  const includedEntities = [e1, e2, e3, e4, e5]
+  const pole1 = createEntity(stage3, [7.5, 7.5], "small-electric-pole") // included, is in stage 3
+  const pole2 = createEntity(stage1, [8.5, 8.5], "small-electric-pole") // included, has connection with pole1
+  const pole1Project = project.content.findCompatibleWithLuaEntity(pole1, nil, 1)!
+  const pole2Project = project.content.findCompatibleWithLuaEntity(pole2, nil, 1)!
+  pole1Project.tryAddDualCableConnection(pole2Project)
+
+  createEntity(stage1, [20.5, 20.5], "small-electric-pole") // not included, no connections
+
+  const includedEntities = [e1, e2, e3, e4, e5, pole1, pole2]
 
   const stack = player.cursor_stack!
   const stageBlueprintSettings = stage3.stageBlueprintSettings
