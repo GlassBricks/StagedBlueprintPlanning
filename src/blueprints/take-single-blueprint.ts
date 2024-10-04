@@ -267,9 +267,11 @@ export function takeSingleBlueprint({
   }
 
   stack.blueprint_snap_to_grid = snapToGrid
-  stack.blueprint_absolute_snapping = absoluteSnapping
-  if (absoluteSnapping) {
-    stack.blueprint_position_relative_to_grid = positionRelativeToGrid
+  if (snapToGrid) {
+    stack.blueprint_absolute_snapping = absoluteSnapping
+    if (absoluteSnapping) {
+      stack.blueprint_position_relative_to_grid = positionRelativeToGrid
+    }
   }
 
   if (entitiesAdjusted) {

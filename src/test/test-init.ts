@@ -195,6 +195,7 @@ commands.add_command("rr", "", (e) => {
   } else {
     game.print("Expected 'test', 'only', 'off' or nothing")
   }
+  game.print("Rerun mode: " + global.rerunMode)
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
