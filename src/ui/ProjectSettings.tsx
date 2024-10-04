@@ -450,11 +450,6 @@ class ProjectSettings extends Component<{
         </flow>
 
         <label caption={[L_GuiProjectSettings.EntityFilters]} style="caption_label" />
-        <checkbox
-          state={settings.excludeFromFutureBlueprints}
-          caption={[L_GuiProjectSettings.ExcludeFromFutureBlueprints]}
-          tooltip={[L_GuiProjectSettings.ExcludeFromFutureBlueprintsTooltip]}
-        />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label caption={[L_GuiProjectSettings.Blacklist]} styleMod={highlightIfOverriden(settings.blacklist)} />
           <EditButton on_gui_click={bind(ibind(this.editFilter), settings, "blacklist")} />
@@ -483,6 +478,11 @@ class ProjectSettings extends Component<{
             {MaybeRevertButton(settings.additionalWhitelist)}
           </flow>
         </flow>
+        <checkbox
+          state={settings.excludeFromFutureBlueprints}
+          caption={[L_GuiProjectSettings.ExcludeFromFutureBlueprints]}
+          tooltip={[L_GuiProjectSettings.ExcludeFromFutureBlueprintsTooltip]}
+        />
 
         <label caption={[L_GuiProjectSettings.EntityEdits]} style="caption_label" />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
