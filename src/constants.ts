@@ -79,7 +79,21 @@ export const enum CustomInputs {
 
   NextStage = "bp100:next-stage",
   PreviousStage = "bp100:previous-stage",
-  GoToFirstStage = "bp100:go-to-first-stage",
+  GoToEntityFirstStage = "bp100:go-to-first-stage",
+  GoToProjectFirstStage = "bp100:go-to-project-first-stage",
+  GoToProjectLastStage = "bp100:go-to-project-last-stage",
+
+  ExitProject = "bp100:exit-project",
+  ReturnToLastProject = "bp100:return-to-last-project",
+
+  NextProject = "bp100:next-project",
+  PreviousProject = "bp100:previous-project",
+
+  GetStageBlueprint = "bp100:get-stage-blueprint",
+  GetBlueprintBook = "bp100:get-blueprint-book",
+
+  NewStageAfterCurrent = "bp100:new-stage-after-current",
+  NewStageAtFront = "bp100:new-stage-at-front",
 
   MoveToThisStage = "bp100:move-to-this-stage",
 
@@ -89,9 +103,6 @@ export const enum CustomInputs {
   StageSelectPrevious = "bp100:stage-select-previous",
 
   ToggleStagedCopy = "bp100:toggle-staged-copy",
-
-  NextProject = "bp100:next-project",
-  PreviousProject = "bp100:previous-project",
 }
 
 // noinspection JSUnusedGlobalSymbols

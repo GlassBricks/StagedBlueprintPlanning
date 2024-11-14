@@ -25,6 +25,7 @@ declare global {
       surface: LuaSurface
       position: Position
     }
+    lastProjectSurface?: LuaSurface
   }
 }
 declare const global: GlobalWithPlayers
@@ -70,12 +71,13 @@ ProjectEvents.addListener((e) => {
 })
 
 export function teleportToStage(player: LuaPlayer, stage: Stage): void {
+  recordPlayerLastPosition(player)
+
   const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage && currentStage.project == stage.project) {
     if (currentStage != stage) player.teleport(player.position, stage.surface)
     return
   }
-  recordPlayerLastPosition(player)
 
   const newPosition = getProjectPlayerData(player.index, stage.project)?.lastPosition ?? { x: 0, y: 0 }
   player.teleport(newPosition, stage.surface)
@@ -100,28 +102,43 @@ export function teleportToProject(player: LuaPlayer, project: UserProject): void
 }
 
 export function recordPlayerLastPosition(player: LuaPlayer): void {
+  const globalPlayerData = global.players[player.index]
   const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage) {
     const playerData = getProjectPlayerData(player.index, currentStage.project)
     if (!playerData) return
     playerData.lastStage = currentStage.stageNumber
     playerData.lastPosition = player.position
-  } else {
-    const data = global.players[player.index]
-    if (data != nil)
-      data.lastNonProjectLocation = {
-        surface: player.surface,
-        position: player.position,
-      }
+  } else if (globalPlayerData != nil) {
+    globalPlayerData.lastNonProjectLocation = {
+      surface: player.surface,
+      position: player.position,
+    }
+  }
+  if (globalPlayerData != nil) {
+    if (currentStage) globalPlayerData.lastProjectSurface = player.surface
   }
 }
+
 export function exitProject(player: LuaPlayer): void {
+  recordPlayerLastPosition(player)
   const data = global.players[player.index]
   if (data?.lastNonProjectLocation?.surface.valid) {
     player.teleport(data.lastNonProjectLocation.position, data.lastNonProjectLocation.surface)
   } else {
     player.teleport([0, 0], 1 as SurfaceIndex)
   }
+}
+export function enterLastProject(player: LuaPlayer): void {
+  const data = global.players[player.index]
+  if (data?.lastProjectSurface?.valid) {
+    const stage = getStageAtSurface(data.lastProjectSurface.index)
+    if (stage) {
+      teleportToStage(player, stage)
+      return
+    }
+  }
+  player.print("No known valid last project location")
 }
 
 Migrations.early("0.23.0", () => {

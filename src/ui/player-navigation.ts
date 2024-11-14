@@ -20,7 +20,13 @@ import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
 import { getAllProjects } from "../project/UserProject"
 import { getProjectEntityOfEntity } from "./entity-util"
-import { playerCurrentStage, teleportToProject, teleportToStage } from "./player-current-stage"
+import {
+  enterLastProject,
+  exitProject,
+  playerCurrentStage,
+  teleportToProject,
+  teleportToStage,
+} from "./player-current-stage"
 
 const Events = ProtectedEvents
 
@@ -55,7 +61,21 @@ Events.on(CustomInputs.PreviousStage, (e) => {
   goToStageRelative(e, -1, L_Interaction.NoPreviousStage)
 })
 
-Events.on(CustomInputs.GoToFirstStage, (e) => {
+Events.on(CustomInputs.GoToProjectFirstStage, (e) => {
+  const player = game.get_player(e.player_index)!
+  const stage = playerCurrentStage(e.player_index).get()
+  if (!stage) return
+  teleportToStage(player, stage.project.getStage(1)!)
+})
+
+Events.on(CustomInputs.GoToProjectLastStage, (e) => {
+  const player = game.get_player(e.player_index)!
+  const stage = playerCurrentStage(e.player_index).get()
+  if (!stage) return
+  teleportToStage(player, stage.project.getStage(stage.project.numStages())!)
+})
+
+Events.on(CustomInputs.GoToEntityFirstStage, (e) => {
   const player = game.get_player(e.player_index)!
   const entity = player.selected
   if (!entity) return
@@ -64,7 +84,7 @@ Events.on(CustomInputs.GoToFirstStage, (e) => {
   const firstStageNum = projectEntity.firstStage
   const currentStage = stage!.stageNumber
   if (firstStageNum == currentStage) {
-    return notifyError(player, [L_Interaction.AlreadyAtFirstStage], true)
+    return notifyError(player, [L_Interaction.AlreadyAtFirstStage], false)
   }
   const firstStage = stage!.project.getStage(firstStageNum)
   assert(firstStage, "First stage not found")
@@ -101,4 +121,12 @@ Events.on(CustomInputs.NextProject, (e) => {
 
 Events.on(CustomInputs.PreviousProject, (e) => {
   goToBuildRelative(e, -1, L_Interaction.NoPreviousProject)
+})
+
+Events.on(CustomInputs.ExitProject, (e) => {
+  exitProject(game.get_player(e.player_index)!)
+})
+
+Events.on(CustomInputs.ReturnToLastProject, (e) => {
+  enterLastProject(game.get_player(e.player_index)!)
 })

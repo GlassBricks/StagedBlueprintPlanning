@@ -76,12 +76,28 @@ export declare const enum L_Controls {
   NextStage = "controls.bp100:next-stage",
   /** Go to previous stage */
   PreviousStage = "controls.bp100:previous-stage",
+  /** Go to entity first stage */
+  GoToFirstStage = "controls.bp100:go-to-first-stage",
+  /** Go to project first stage */
+  GoToProjectFirstStage = "controls.bp100:go-to-project-first-stage",
+  /** Go to project last stage */
+  GoToProjectLastStage = "controls.bp100:go-to-project-last-stage",
+  /** Exit project */
+  ExitProject = "controls.bp100:exit-project",
+  /** Return to last project/stage */
+  ReturnToLastProject = "controls.bp100:return-to-last-project",
   /** Go to next project */
   NextProject = "controls.bp100:next-project",
   /** Go to previous project */
   PreviousProject = "controls.bp100:previous-project",
-  /** Go to entity first stage */
-  GoToFirstStage = "controls.bp100:go-to-first-stage",
+  /** Get blueprint for current stage */
+  GetStageBlueprint = "controls.bp100:get-stage-blueprint",
+  /** Get blueprint book for project */
+  GetBlueprintBook = "controls.bp100:get-blueprint-book",
+  /** New stage after current */
+  NewStageAfterCurrent = "controls.bp100:new-stage-after-current",
+  /** New stage at front */
+  NewStageAtFront = "controls.bp100:new-stage-at-front",
   /** Move entity to current stage */
   MoveToThisStage = "controls.bp100:move-to-this-stage",
   /** Force delete entity */
@@ -102,6 +118,8 @@ export declare const enum L_ControlsDescription {
   ForceDelete = "controls-description.bp100:force-delete",
   /** When holding a copy or cut tool, switch to the staged copy or cut tool. */
   ToggleStagedCopy = "controls-description.bp100:toggle-staged-copy",
+  /** Return to the last project/stage you were in. Works together with "Exit project". */
+  ReturnToLastProject = "controls-description.bp100:return-to-last-project",
 }
 export declare const enum L_Bp100 {
   /** __1__ (preview) */

@@ -14,7 +14,6 @@ import {
   exportBlueprintBookToFile,
   exportBlueprintBookToString,
   submitProjectBlueprintBookTask,
-  takeStageBlueprint,
 } from "../blueprints/blueprint-creation"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
@@ -57,6 +56,7 @@ import {
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { ManualRevertButton, MaybeRevertButton } from "../utils/RevertButton"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
+import { createStageBlueprint } from "./create-stage-blueprint"
 import { editBlueprintFilters } from "./edit-blueprint-filters"
 import { IconsEdit } from "./IconEdit"
 import { ItemRename } from "./ItemRename"
@@ -630,20 +630,8 @@ class ProjectSettings extends Component<{
   }
 
   private getBlueprint() {
-    const stage = playerCurrentStage(this.playerIndex).get()
-    if (!stage || stage.project != this.project) return
     const player = game.get_player(this.playerIndex)
-    if (!player || !player.clear_cursor()) return
-    const stack = player.cursor_stack
-    if (!stack) return
-    const successful = takeStageBlueprint(stage, stack)
-    if (!successful) {
-      player.create_local_flying_text({
-        text: [L_Interaction.BlueprintEmpty],
-        create_at_cursor: true,
-      })
-      return
-    }
+    if (player) createStageBlueprint(player)
   }
 
   private exportBlueprintBook() {
