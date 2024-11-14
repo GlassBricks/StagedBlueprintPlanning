@@ -32,6 +32,8 @@ Events.on_player_clicked_gps_tag((e) => {
       position: player.position,
     }
     player.teleport(e.position, targetSurface)
-    player.close_map()
+    player.set_controller({
+      type: defines.controllers.editor,
+    })
   }
 })
