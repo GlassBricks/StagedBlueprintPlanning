@@ -70,7 +70,7 @@ import { WorldUpdates } from "./world-updates"
 import entity_filter_mode = defines.deconstruction_item.entity_filter_mode
 import min = math.min
 
-declare const global: {
+declare const storage: {
   nextProjectId: ProjectId
   // projects: LuaMap<ProjectId, UserProjectImpl>
   projects: UserProjectImpl[]
@@ -80,9 +80,9 @@ declare const global: {
   allRecipesPromptShown?: never
 }
 Events.on_init(() => {
-  global.nextProjectId = 1 as ProjectId
-  global.projects = []
-  global.surfaceIndexToStage = new LuaMap()
+  storage.nextProjectId = 1 as ProjectId
+  storage.projects = []
+  storage.surfaceIndexToStage = new LuaMap()
 })
 
 const GlobalProjectEvents = globalEvent<[GlobalProjectEvent]>()
@@ -133,7 +133,7 @@ class UserProjectImpl implements UserProject {
   }
 
   static create(name: string, initialNumStages: number): UserProjectImpl {
-    const project = new UserProjectImpl(global.nextProjectId++ as ProjectId, name, initialNumStages)
+    const project = new UserProjectImpl(storage.nextProjectId++ as ProjectId, name, initialNumStages)
     UserProjectImpl.onProjectCreated(project)
     project.registerEvents()
 
@@ -309,7 +309,7 @@ class UserProjectImpl implements UserProject {
 
   delete() {
     if (!this.valid) return
-    remove_from_list(global.projects, this)
+    remove_from_list(storage.projects, this)
     this.blueprintBookTemplateInv?.destroy()
     this.valid = false
     for (const [, stage] of pairs(this.stages)) {
@@ -364,7 +364,7 @@ class UserProjectImpl implements UserProject {
   }
 
   static onProjectCreated(project: UserProjectImpl): void {
-    global.projects.push(project)
+    storage.projects.push(project)
     GlobalProjectEvents.raise({ type: "project-created", project })
   }
 }
@@ -388,19 +388,19 @@ export function createUserProject(name: string, initialNumStages: number): UserP
 }
 
 export function _deleteAllProjects(): void {
-  while (global.projects.length > 0) {
-    global.projects[0].delete()
+  while (storage.projects.length > 0) {
+    storage.projects[0].delete()
   }
-  assert(global.projects.length == 0)
-  global.nextStageId = nil
-  global.nextProjectId = 1 as ProjectId
+  assert(storage.projects.length == 0)
+  storage.nextStageId = nil
+  storage.nextProjectId = 1 as ProjectId
 }
 export function getAllProjects(): readonly UserProject[] {
-  return global.projects
+  return storage.projects
 }
 
 function swapProjects(index1: number, index2: number): void {
-  const projects = global.projects
+  const projects = storage.projects
   const temp = projects[index1]
   projects[index1] = projects[index2]
   projects[index2] = temp
@@ -412,7 +412,7 @@ function swapProjects(index1: number, index2: number): void {
 }
 export function moveProjectUp(project: UserProject): boolean {
   // up means lower index
-  const index = global.projects.indexOf(project as UserProjectImpl)
+  const index = storage.projects.indexOf(project as UserProjectImpl)
   if (index <= 0) return false
   swapProjects(index - 1, index)
   return true
@@ -420,8 +420,8 @@ export function moveProjectUp(project: UserProject): boolean {
 
 export function moveProjectDown(project: UserProject): boolean {
   // down means higher index
-  const index = global.projects.indexOf(project as UserProjectImpl)
-  if (index < 0 || index >= global.projects.length - 1) return false
+  const index = storage.projects.indexOf(project as UserProjectImpl)
+  if (index < 0 || index >= storage.projects.length - 1) return false
   swapProjects(index, index + 1)
   return true
 }
@@ -451,7 +451,7 @@ class StageImpl implements Stage {
   ) {
     this.name = property(name)
     this.surfaceIndex = surface.index
-    if (project.id != 0) global.surfaceIndexToStage.set(this.surfaceIndex, this)
+    if (project.id != 0) storage.surfaceIndexToStage.set(this.surfaceIndex, this)
     this.actions = project.actions
   }
   static create(
@@ -475,8 +475,8 @@ class StageImpl implements Stage {
 
   getID(): StageId {
     if (this.id == nil) {
-      this.id = (global.nextStageId ?? 1) as StageId
-      global.nextStageId = (this.id + 1) as StageId
+      this.id = (storage.nextStageId ?? 1) as StageId
+      storage.nextStageId = (this.id + 1) as StageId
     }
     return this.id
   }
@@ -489,7 +489,7 @@ class StageImpl implements Stage {
   _doDelete(): void {
     if (!this.valid) return
     ;(this as Mutable<Stage>).valid = false
-    global.surfaceIndexToStage.delete(this.surfaceIndex)
+    storage.surfaceIndexToStage.delete(this.surfaceIndex)
     if (this.surface.valid) destroySurface(this.surface)
   }
 
@@ -506,9 +506,9 @@ Events.on_pre_surface_deleted((e) => {
 Migrations.priority(1, "0.23.0", () => {
   assume<{
     assemblies?: Record<number, UserProjectImpl>
-  }>(global)
-  global.projects = global.assemblies! as any
-  for (const [, project] of pairs(global.assemblies!)) {
+  }>(storage)
+  storage.projects = storage.assemblies! as any
+  for (const [, project] of pairs(storage.assemblies!)) {
     for (const stage of project.getAllStages()) {
       assume<{
         assembly?: UserProjectImpl
@@ -519,12 +519,12 @@ Migrations.priority(1, "0.23.0", () => {
   }
 })
 Migrations.priority(2, "0.16.0", () => {
-  const oldProjects = global.projects as unknown as LuaMap<ProjectId, UserProjectImpl>
-  global.projects = Object.values(oldProjects)
+  const oldProjects = storage.projects as unknown as LuaMap<ProjectId, UserProjectImpl>
+  storage.projects = Object.values(oldProjects)
 })
 // just always run this?
 Migrations.priority(2, script.active_mods[script.mod_name]!, () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     project.actions = UserActionsClass({ project })
     project.updates = ProjectUpdatesClass({ project })
     project.worldUpdates = WorldUpdatesClass({ project })
@@ -536,18 +536,18 @@ Migrations.priority(2, script.active_mods[script.mod_name]!, () => {
 Migrations.early("0.23.0", () => {
   assume<{
     nextAssemblyId: any
-  }>(global)
-  global.nextProjectId = global.nextAssemblyId
-  delete global.nextAssemblyId
+  }>(storage)
+  storage.nextProjectId = storage.nextAssemblyId
+  delete storage.nextAssemblyId
 })
 Migrations.early("0.26.0", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     project.displayName = nil!
   }
 })
 Migrations.early("0.31.0", () => {
   let anyProjectMigrated = false
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     if (project.stagedTilesEnabled == nil) {
       project.stagedTilesEnabled = property(false)
       anyProjectMigrated = true
@@ -563,7 +563,7 @@ Migrations.early("0.31.0", () => {
   }
 })
 Migrations.to("0.26.1", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     for (const stage of project.getAllStages()) {
       assume<{
         assembly?: UserProjectImpl
@@ -611,7 +611,7 @@ Migrations.to("0.16.0", () => {
     newSettings.absoluteSnapping.set(oldSettings.absoluteSnapping)
   }
 
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     assume<Mutable<UserProjectImpl>>(project)
     assume<OldProject>(project)
 
@@ -654,12 +654,12 @@ Migrations.to("0.16.0", () => {
 })
 
 Migrations.to("0.23.1", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     project.name.forceNotify()
   }
 })
 Migrations.to("0.25.0", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     assume<Mutable<PropertiesTable<OverrideableBlueprintSettings>>>(project.defaultBlueprintSettings)
     project.defaultBlueprintSettings.useModulePreloading = property(false)
     for (const stage of project.getAllStages()) {
@@ -670,14 +670,14 @@ Migrations.to("0.25.0", () => {
 })
 
 Migrations.to("0.27.0", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     assume<Mutable<UserProjectImpl>>(project)
     project.landfillTile = property("landfill")
   }
 })
 
 Migrations.to("0.30.0", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     for (const key of [1, 2, 3, 4] as const) {
       asMutable(project.defaultBlueprintSettings)[key] ??= property(nil)
     }
@@ -776,7 +776,7 @@ Migrations.to("0.30.0", () => {
   }
 })
 Migrations.to("0.31.0", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     assume<{
       entityUpdates?: WorldUpdates
     }>(project)
@@ -784,16 +784,16 @@ Migrations.to("0.31.0", () => {
   }
 })
 Migrations.to("0.32.4", () => {
-  delete global.allRecipesPromptShown
+  delete storage.allRecipesPromptShown
 })
 
 Migrations.to("0.33.2", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     project.registerEvents()
   }
 })
 Migrations.to("0.34.0", () => {
-  for (const project of global.projects) {
+  for (const project of storage.projects) {
     asMutable(project.defaultBlueprintSettings).excludeFromFutureBlueprints ??= property(false)
     for (const stage of project.getAllStages()) {
       asMutable(stage.stageBlueprintSettings).excludeFromFutureBlueprints ??= property(nil)

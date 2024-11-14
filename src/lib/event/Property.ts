@@ -458,10 +458,10 @@ function _migrateCheckEmpty(
   property.checkEmpty()
 }
 
-declare const global: object
+declare const storage: object
 function migrateCheckEmpty(): void {
   const metatables = newLuaSet<object>(MappedProperty.prototype, FlatMappedProperty.prototype, CustomProperty.prototype)
-  visitAll(global, (obj) => {
+  visitAll(storage, (obj) => {
     const metatable = getmetatable(obj)
     if (metatable && metatables.has(metatable)) {
       _migrateCheckEmpty(obj as any)

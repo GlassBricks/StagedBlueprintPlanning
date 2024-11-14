@@ -12,7 +12,7 @@ declare global {
     }
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 
 Events.on_player_clicked_gps_tag((e) => {
   const player = game.get_player(e.player_index)!
@@ -27,7 +27,7 @@ Events.on_player_clicked_gps_tag((e) => {
     player.controller_type == defines.controllers.god ||
     player.controller_type == defines.controllers.spectator
   ) {
-    global.players[player.index].lastTeleportLocation = {
+    storage.players[player.index].lastTeleportLocation = {
       surface: player.surface,
       position: player.position,
     }

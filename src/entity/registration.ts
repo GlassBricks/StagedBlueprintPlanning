@@ -14,13 +14,13 @@ import { Events } from "../lib"
 import { Migrations } from "../lib/migration"
 import type { ProjectEntity } from "./ProjectEntity"
 
-declare const global: {
+declare const storage: {
   entityByUnitNumber: LuaMap<UnitNumber, ProjectEntity>
   surfaceByUnitNumber: LuaMap<UnitNumber, SurfaceIndex>
 }
 
 Events.on_init(() => {
-  global.entityByUnitNumber = new LuaMap()
+  storage.entityByUnitNumber = new LuaMap()
 })
 
 /** Currently only used for rolling stock (train) entities. */
@@ -28,10 +28,10 @@ export function registerEntity(luaEntity: LuaEntity, projectEntity: ProjectEntit
   if (!luaEntity.valid) return false
   const unitNumber = luaEntity.unit_number
   if (!unitNumber) return false
-  const entry = global.entityByUnitNumber.get(unitNumber)
+  const entry = storage.entityByUnitNumber.get(unitNumber)
   if (entry) return true
-  global.entityByUnitNumber.set(unitNumber, projectEntity)
-  global.surfaceByUnitNumber.set(unitNumber, luaEntity.surface_index)
+  storage.entityByUnitNumber.set(unitNumber, projectEntity)
+  storage.surfaceByUnitNumber.set(unitNumber, luaEntity.surface_index)
   script.register_on_entity_destroyed(luaEntity)
   return true
 }
@@ -39,13 +39,13 @@ export function registerEntity(luaEntity: LuaEntity, projectEntity: ProjectEntit
 export function getRegisteredProjectEntity(entity: LuaEntity): ProjectEntity | nil {
   if (!entity.valid) return nil
   const unitNumber = entity.unit_number
-  return unitNumber && global.entityByUnitNumber.get(unitNumber)
+  return unitNumber && storage.entityByUnitNumber.get(unitNumber)
 }
 export function getRegisteredProjectEntityFromUnitNumber(unitNumber?: UnitNumber): ProjectEntity | nil {
-  return unitNumber && global.entityByUnitNumber.get(unitNumber)
+  return unitNumber && storage.entityByUnitNumber.get(unitNumber)
 }
 export function getStageFromUnitNumber(unitNumber?: UnitNumber): SurfaceIndex | nil {
-  return unitNumber && global.surfaceByUnitNumber.get(unitNumber)
+  return unitNumber && storage.surfaceByUnitNumber.get(unitNumber)
 }
 // detect when _we_ delete an entity; remove it
 // this way event_handlers doesn't re-handle the entity deletion, causing a loop/other issues
@@ -53,22 +53,22 @@ Events.script_raised_destroy((e) => {
   if (e.mod_name != script.mod_name) return
   const eNumber = e.entity.unit_number
   if (eNumber) {
-    global.entityByUnitNumber.delete(eNumber)
-    global.surfaceByUnitNumber.delete(eNumber)
+    storage.entityByUnitNumber.delete(eNumber)
+    storage.surfaceByUnitNumber.delete(eNumber)
   }
 })
 Events.on_entity_destroyed((e) => {
   const eNumber = e.unit_number
   if (eNumber) {
-    global.entityByUnitNumber.delete(eNumber)
-    global.surfaceByUnitNumber.delete(eNumber)
+    storage.entityByUnitNumber.delete(eNumber)
+    storage.surfaceByUnitNumber.delete(eNumber)
   }
 })
 Migrations.since("0.33.4", () => {
-  global.surfaceByUnitNumber = new LuaMap()
+  storage.surfaceByUnitNumber = new LuaMap()
 })
 Migrations.to("0.33.4", () => {
-  for (const [unitNumber, entity] of global.entityByUnitNumber) {
+  for (const [unitNumber, entity] of storage.entityByUnitNumber) {
     for (const [key, value] of pairs<unknown>(entity)) {
       if (typeof key != "number") break
       if (
@@ -77,7 +77,7 @@ Migrations.to("0.33.4", () => {
         (value as LuaEntity).valid &&
         (value as LuaEntity).unit_number == unitNumber
       ) {
-        global.surfaceByUnitNumber.set(unitNumber, (value as LuaEntity).surface_index)
+        storage.surfaceByUnitNumber.set(unitNumber, (value as LuaEntity).surface_index)
       }
     }
   }

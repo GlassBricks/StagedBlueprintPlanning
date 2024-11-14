@@ -20,7 +20,7 @@ import { L_GuiProjectSelector } from "../locale"
 import { getAllProjects } from "../project/UserProject"
 import { closeAllProjects, toggleAllProjects } from "./AllProjects"
 
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 declare global {
   interface PlayerData {
     confirmedEditorMode?: true
@@ -41,7 +41,7 @@ function ModButton() {
 function onModButtonClick(event: OnGuiClickEvent) {
   const playerIndex = event.player_index
   const player = game.get_player(playerIndex)!
-  const playerData = global.players[playerIndex]
+  const playerData = storage.players[playerIndex]
   if (!playerData.confirmedEditorMode) {
     toggleConfirmEditorModeGui(player)
   } else {
@@ -85,7 +85,7 @@ function switchToEditorMode(event: OnGuiClickEvent) {
 }
 
 function openProjectListFirstTime(player: LuaPlayer) {
-  const playerData = global.players[player.index]
+  const playerData = storage.players[player.index]
   playerData.confirmedEditorMode = true
   const frameFlow = mod_gui.get_frame_flow(player)
   destroy(frameFlow[EditorModeConfirmationName])
@@ -94,7 +94,7 @@ function openProjectListFirstTime(player: LuaPlayer) {
 }
 
 Events.on_player_toggled_map_editor((event) => {
-  const playerData = global.players[event.player_index]
+  const playerData = storage.players[event.player_index]
   const player = game.get_player(event.player_index)!
   if (playerData.confirmedEditorMode || player.controller_type != defines.controllers.editor) return
   const frameFlow = mod_gui.get_frame_flow(player)
@@ -130,7 +130,7 @@ Migrations.fromAny(() => {
 
 Migrations.to("0.32.1", () => {
   if (getAllProjects().length > 0) {
-    for (const [, data] of pairs(global.players)) {
+    for (const [, data] of pairs(storage.players)) {
       data.confirmedEditorMode = true
       data.researchTechPromptDismissed = true
     }
@@ -139,7 +139,7 @@ Migrations.to("0.32.1", () => {
 
 if ("debugadapter" in script.active_mods) {
   commands.add_command("reset-confirm-editor-mode", "Reset confirm editor mode", () => {
-    for (const [, data] of pairs(global.players)) {
+    for (const [, data] of pairs(storage.players)) {
       data.confirmedEditorMode = nil
       data.researchTechPromptDismissed = nil
     }

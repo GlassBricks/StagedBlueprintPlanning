@@ -47,7 +47,7 @@ export const enum RotationType {
   AnyDirection,
 }
 
-declare const global: {
+declare const storage: {
   // has "entity" in name for legacy reasons
   entityPrototypeInfo: PrototypeInfo
 }
@@ -55,15 +55,15 @@ declare const global: {
 let prototypeInfo: PrototypeInfo
 export const OnPrototypeInfoLoaded = globalEvent<[info: PrototypeInfo]>()
 Events.on_configuration_changed(() => {
-  prototypeInfo = global.entityPrototypeInfo = computeEntityPrototypeInfo()
+  prototypeInfo = storage.entityPrototypeInfo = computeEntityPrototypeInfo()
   OnPrototypeInfoLoaded.raise(prototypeInfo)
 })
 Events.on_init(() => {
-  prototypeInfo = global.entityPrototypeInfo = computeEntityPrototypeInfo()
+  prototypeInfo = storage.entityPrototypeInfo = computeEntityPrototypeInfo()
   OnPrototypeInfoLoaded.raise(prototypeInfo)
 })
 Events.on_load(() => {
-  prototypeInfo = global.entityPrototypeInfo
+  prototypeInfo = storage.entityPrototypeInfo
   if (prototypeInfo != nil) {
     OnPrototypeInfoLoaded.raise(prototypeInfo)
   }

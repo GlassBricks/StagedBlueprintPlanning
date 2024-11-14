@@ -40,7 +40,7 @@ import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToPro
 import { bringSettingsWindowToFront } from "./ProjectSettings"
 import mouse_button_type = defines.mouse_button_type
 
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 declare global {
   interface PlayerData {
     researchTechPromptDismissed?: true
@@ -58,7 +58,7 @@ class AllProjects extends Component {
   override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
     const currentStage = playerCurrentStage(this.playerIndex)
-    const playerData = global.players[this.playerIndex]
+    const playerData = storage.players[this.playerIndex]
     return (
       <flow direction="vertical">
         <frame
@@ -115,13 +115,13 @@ class AllProjects extends Component {
   }
 
   private dismissResearchTechPrompt(event: OnGuiClickEvent): void {
-    global.players[this.playerIndex].researchTechPromptDismissed = true
+    storage.players[this.playerIndex].researchTechPromptDismissed = true
     closeParentAtLevel(1, event)
   }
 
   private researchAllTech(event: OnGuiClickEvent): void {
     game.forces.player.research_all_technologies()
-    global.players[this.playerIndex].researchTechPromptDismissed = true
+    storage.players[this.playerIndex].researchTechPromptDismissed = true
     closeParentAtLevel(1, event)
   }
 
@@ -221,7 +221,7 @@ class AllProjects extends Component {
 
 function createNewProject(player: LuaPlayer): void {
   const project = createUserProject("", OtherConstants.DefaultNumStages)
-  global.players[player.index].compactProjectSettings = nil
+  storage.players[player.index].compactProjectSettings = nil
   teleportToProject(player, project)
 }
 
@@ -266,7 +266,7 @@ Migrations.to("0.15.1", () => {
       mainFlow?: LuaGuiElement
     }
   }
-  for (const [playerIndex, playerData] of pairs(global.players)) {
+  for (const [playerIndex, playerData] of pairs(storage.players)) {
     const oldPlayerData = playerData as OldPlayerData
     destroy(oldPlayerData?.currentAssembliesGui?.mainFlow)
     const player = game.get_player(playerIndex)

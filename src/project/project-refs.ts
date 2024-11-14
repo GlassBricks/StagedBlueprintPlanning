@@ -13,17 +13,17 @@
 import { nil, SurfaceIndex } from "factorio:runtime"
 import { ProjectId, Stage, UserProject } from "./ProjectDef"
 
-declare const global: {
+declare const storage: {
   surfaceIndexToStage: ReadonlyLuaMap<SurfaceIndex, Stage>
   projects: Record<number, UserProject>
 }
 
 export function getStageAtSurface(surfaceIndex: SurfaceIndex): Stage | nil {
-  return global.surfaceIndexToStage.get(surfaceIndex)
+  return storage.surfaceIndexToStage.get(surfaceIndex)
 }
 export function getProjectById(id: ProjectId): UserProject | nil {
   // yes, quadratic, but not a big deal
-  for (const [, project] of pairs(global.projects)) {
+  for (const [, project] of pairs(storage.projects)) {
     if (project.id == id) return project
   }
   return nil

@@ -26,10 +26,10 @@ declare global {
     blueprintEditInfo?: BlueprintEditInfo
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 
 function clearOpenedItem(playerIndex: PlayerIndex): void {
-  const data = global.players[playerIndex]
+  const data = storage.players[playerIndex]
   if (data && data.blueprintEditInfo) {
     const inventory = data.blueprintEditInfo.blueprintInventory
     if (inventory && inventory.valid) inventory.destroy()
@@ -83,7 +83,7 @@ export function editInItemBlueprintSettings(
   }
   blueprint.label = bpName
 
-  global.players[player.index].blueprintEditInfo = {
+  storage.players[player.index].blueprintEditInfo = {
     blueprintInventory: inventory,
     settings,
     editType: "blueprint-item",
@@ -150,7 +150,7 @@ function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): v
 }
 Events.on_gui_closed((e) => {
   const playerIndex = e.player_index
-  const data = global.players[playerIndex]
+  const data = storage.players[playerIndex]
   const info = data.blueprintEditInfo
   if (!info) return
   delete data.blueprintEditInfo

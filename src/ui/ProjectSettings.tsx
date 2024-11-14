@@ -76,10 +76,10 @@ declare global {
     projectSettingsSelectedTab: Property<number>
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 
 onPlayerInitSince("0.23.0", (playerIndex) => {
-  const data = global.players[playerIndex]
+  const data = storage.players[playerIndex]
   data.projectSettingsSelectedTab = property(1)
 })
 
@@ -156,7 +156,7 @@ class ProjectSettings extends Component<{
     this.project = props.project
     this.playerIndex = context.playerIndex
 
-    const selectedTabIndex = global.players[this.playerIndex].projectSettingsSelectedTab
+    const selectedTabIndex = storage.players[this.playerIndex].projectSettingsSelectedTab
 
     return (
       <frame direction="vertical">
@@ -882,7 +882,7 @@ function renderGuiForProject(player: LuaPlayer, currentProject: UserProject | ni
     return renderPlaceholder(player)
   }
 
-  if (global.players[player.index].compactProjectSettings) {
+  if (storage.players[player.index].compactProjectSettings) {
     renderCompactSettings(player, currentProject)
   } else {
     renderFullSettings(player, currentProject)
@@ -895,12 +895,12 @@ function updateGui(player: LuaPlayer) {
 }
 
 function expandSettings({ player_index }: OnGuiClickEvent) {
-  global.players[player_index].compactProjectSettings = nil
+  storage.players[player_index].compactProjectSettings = nil
   updateGui(game.get_player(player_index)!)
 }
 
 function collapseSettings({ player_index }: OnGuiClickEvent) {
-  global.players[player_index].compactProjectSettings = true
+  storage.players[player_index].compactProjectSettings = true
   updateGui(game.get_player(player_index)!)
 }
 
@@ -935,7 +935,7 @@ Migrations.to("0.15.1", () => {
     interface OldPlayerData {
       currentShownAssembly?: UserProject
     }
-    const playerData = global.players[player.index] as OldPlayerData | nil
+    const playerData = storage.players[player.index] as OldPlayerData | nil
     delete playerData?.currentShownAssembly
   }
 })

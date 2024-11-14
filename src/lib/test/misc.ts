@@ -18,7 +18,7 @@ export function getPlayer(): LuaPlayer {
 declare global {
   let __TS__sourcemap: Record<string, Record<string, number | Source> | nil> | nil
 }
-declare const global: {
+declare const storage: {
   __lastDebugPrintCall: string | nil
 }
 export interface Source {
@@ -58,7 +58,7 @@ export function debugPrint(...values: unknown[]): void {
           })
   }
 
-  global.__lastDebugPrintCall = sourceString
+  storage.__lastDebugPrintCall = sourceString
 
   const message: LocalisedString = ["", sourceString, ": ", valueStrings.join(", ")]
   game?.print(message, {
@@ -69,8 +69,8 @@ export function debugPrint(...values: unknown[]): void {
 }
 
 export function getLastDebugPrintCall(): string | nil {
-  const res = global.__lastDebugPrintCall
-  global.__lastDebugPrintCall = nil
+  const res = storage.__lastDebugPrintCall
+  storage.__lastDebugPrintCall = nil
   return res
 }
 

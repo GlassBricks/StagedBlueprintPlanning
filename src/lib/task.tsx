@@ -101,21 +101,21 @@ export abstract class EnumeratedItemsTask<T> implements Task {
   }
 }
 
-declare const global: {
+declare const storage: {
   currentTask?: Task
 }
 
 export function submitTask(task: Task): void {
-  if (global.currentTask) {
-    global.currentTask.cancel()
+  if (storage.currentTask) {
+    storage.currentTask.cancel()
   }
   if (!game.tick_paused) {
-    global.currentTask = task
+    storage.currentTask = task
     renderTaskGui(task)
   } else {
     // run the entire task in one tick
     destroyTaskGui()
-    global.currentTask = nil
+    storage.currentTask = nil
     runEntireTask(task)
   }
 }
@@ -136,33 +136,33 @@ export function runEntireTask(task: Task): void {
 }
 
 export function cancelCurrentTask(): void {
-  if (global.currentTask) {
-    global.currentTask.cancel()
-    delete global.currentTask
+  if (storage.currentTask) {
+    storage.currentTask.cancel()
+    delete storage.currentTask
     destroyTaskGui()
   }
 }
 export function isTaskRunning(): boolean {
-  return global.currentTask != nil
+  return storage.currentTask != nil
 }
 export function runEntireCurrentTask(): void {
-  if (global.currentTask) {
-    runEntireTask(global.currentTask)
-    delete global.currentTask
+  if (storage.currentTask) {
+    runEntireTask(storage.currentTask)
+    delete storage.currentTask
     destroyTaskGui()
   }
 }
 
 registerFunctions("task", { cancelCurrentTask })
 Events.on_tick(() => {
-  const task = global.currentTask
+  const task = storage.currentTask
   if (!task) return
   const stepped = protectedAction(stepTask, task)
   if (!stepped) task.cancel()
   if (stepped && !task.isDone()) {
     updateTaskGui(task)
   } else {
-    delete global.currentTask
+    delete storage.currentTask
     destroyTaskGui()
   }
 })

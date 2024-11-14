@@ -154,9 +154,9 @@ declare global {
     guiElements: PRecord<GuiElementIndex, ElementInstance>
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 onPlayerInit((index) => {
-  global.players[index].guiElements = {}
+  storage.players[index].guiElements = {}
 })
 
 const type = _G.type
@@ -336,7 +336,7 @@ function renderElement(
   callOnMount(context, factorioElement)
   const { subscriptionContext: subscription, componentInstance } = context
   if (componentInstance || (subscription && subscription.hasActions()) || !isEmpty(events)) {
-    global.players[factorioElement.player_index].guiElements[factorioElement.index] = {
+    storage.players[factorioElement.player_index].guiElements[factorioElement.index] = {
       element: factorioElement,
       events,
       subscription,
@@ -418,7 +418,7 @@ export function renderOpened(player: LuaPlayer, spec: Element): LuaGuiElement | 
  * @param element
  */
 export function getComponentInstance<T extends Component<any>>(element: LuaGuiElement): T | nil {
-  const guiElement = global.players[element.player_index].guiElements[element.index]
+  const guiElement = storage.players[element.player_index].guiElements[element.index]
   if (guiElement) {
     return guiElement.componentInstance as T
   }
@@ -427,14 +427,14 @@ export function getComponentInstance<T extends Component<any>>(element: LuaGuiEl
 
 function getInstance(element: BaseGuiElement): ElementInstance | nil {
   if (!element.valid) return nil
-  return global.players[element.player_index].guiElements[element.index]
+  return storage.players[element.player_index].guiElements[element.index]
 }
 
 export function destroy(element: BaseGuiElement | nil, destroyElement = true): void {
   if (!element || !element.valid) return
   // is lua gui element
   const { player_index, index } = element
-  const guiElements = global.players[player_index].guiElements
+  const guiElements = storage.players[player_index].guiElements
   const instance = guiElements[index]
   if (!instance) {
     for (const child of element.children) {
@@ -483,7 +483,7 @@ for (const name of guiEventNames) {
 
 export function cleanGuiInstances(): number {
   let count = 0
-  for (const [, data] of pairs(global.players)) {
+  for (const [, data] of pairs(storage.players)) {
     for (const [, instance] of pairs(data.guiElements)) {
       const element = instance.element
       if (!element.valid) {

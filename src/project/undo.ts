@@ -27,22 +27,22 @@ declare global {
   }
 }
 
-declare const global: GlobalWithPlayers & {
+declare const storage: StorageWithPlayer & {
   futureUndoData: LuaMap<number, UndoEntry>
 }
 
 function undoInit() {
-  global.futureUndoData = new LuaMap()
-  setmetatable(global.futureUndoData, { __mode: "v" })
+  storage.futureUndoData = new LuaMap()
+  setmetatable(storage.futureUndoData, { __mode: "v" })
 }
 Events.on_init(undoInit)
 Migrations.fromAny(undoInit)
 Events.on_load(() => {
-  if (global.futureUndoData != nil) setmetatable(global.futureUndoData, { __mode: "v" })
+  if (storage.futureUndoData != nil) setmetatable(storage.futureUndoData, { __mode: "v" })
 })
 
 onPlayerInitSince("0.18.0", (player) => {
-  const playerData = global.players[player]
+  const playerData = storage.players[player]
   playerData.undoEntries = {}
   playerData.nextUndoEntryIndex = 1
 })
@@ -81,7 +81,7 @@ export function UndoHandler<T>(name: string, fn: UndoFn<T>): UndoHandler<T> {
 let _lastUndoIndex: number | nil
 
 function registerUndo(handlerName: string, player: LuaPlayer, data: unknown) {
-  const playerData = global.players[player.index]
+  const playerData = storage.players[player.index]
   const index = playerData.nextUndoEntryIndex
   const entity = player.surface.create_entity({
     name: "entity-ghost",
@@ -130,14 +130,14 @@ const FutureUndoTranslation = "bp100:future-undo-fake-translation"
 
 function registerUndoLater(handlerName: string, player: LuaPlayer, data: unknown) {
   const id = player.request_translation(FutureUndoTranslation)
-  if (id) global.futureUndoData.set(id, { handlerName, data })
+  if (id) storage.futureUndoData.set(id, { handlerName, data })
 }
 Events.on_string_translated((e) => {
   if (e.localised_string != FutureUndoTranslation) return
 
-  const entry = global.futureUndoData.get(e.id)
+  const entry = storage.futureUndoData.get(e.id)
   if (!entry) return
-  global.futureUndoData.delete(e.id)
+  storage.futureUndoData.delete(e.id)
 
   const player = game.get_player(e.player_index)!
   registerUndo(entry.handlerName, player, entry.data)
@@ -149,7 +149,7 @@ function doUndoEntry(player: LuaPlayer, entry: UndoEntry): void {
   handler(player, entry.data)
 }
 function doUndoEntryAtIndex(playerIndex: PlayerIndex, undoIndex: number): void {
-  const playerData = global.players[playerIndex]
+  const playerData = storage.players[playerIndex]
   const entry = playerData.undoEntries[undoIndex]
   if (!entry) return // ignore
   delete playerData.undoEntries[undoIndex]

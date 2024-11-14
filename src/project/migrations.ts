@@ -15,14 +15,14 @@ import { getPrototypeInfo } from "../entity/prototype-info"
 import { Migrations } from "../lib/migration"
 import { UserProject } from "./ProjectDef"
 
-declare const global: {
+declare const storage: {
   projects: LuaMap<number, UserProject>
 }
 
 // Many classes don't know about where they are used; so this file is needed to call their migrations, from global
 
 Migrations.to("0.14.0", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     for (const entity of project.content.allEntities()) {
       interface OldProjectEntity {
         oldStage?: StageNumber
@@ -33,7 +33,7 @@ Migrations.to("0.14.0", () => {
 })
 
 Migrations.to("0.14.3", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     for (const entity of project.content.allEntities()) {
       // re-generate previews, if not existing
       if (entity.isRollingStock()) {
@@ -44,20 +44,20 @@ Migrations.to("0.14.3", () => {
 })
 
 Migrations.priority(7, "0.22.0", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     for (const entity of project.content.allEntities()) {
       entity.direction ??= 0
     }
   }
 })
 Migrations.priority(7, "0.28.0", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     _migrateWireConnections(project.content)
   }
 })
 
 Migrations.early("0.17.0", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     for (const entity of project.content.allEntities()) {
       _migrateEntity_0_17_0(entity)
     }
@@ -65,13 +65,13 @@ Migrations.early("0.17.0", () => {
 })
 
 Migrations.early("0.18.0", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     _migrateProjectContent_0_18_0(project.content)
   }
 })
 
 Migrations.to("0.18.0", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     for (const entity of project.content.allEntities()) {
       if (entity.isRollingStock()) {
         entity.setLastStageUnchecked(entity.firstStage)
@@ -84,7 +84,7 @@ Migrations.to("0.18.0", () => {
 Migrations.to("0.20.0", () => {
   // update all power switches
   const nameToType = getPrototypeInfo().nameToType
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     for (const entity of project.content.allEntities()) {
       if (nameToType.get(entity.firstValue.name) == "power-switch") {
         project.updates.updateWiresFromWorld(entity, project.lastStageFor(entity))
@@ -94,7 +94,7 @@ Migrations.to("0.20.0", () => {
 })
 
 Migrations.to("0.23.1", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     for (const entity of project.content.allEntities()) {
       if (entity.hasStageDiff() || entity.lastStage != nil) {
         project.worldUpdates.updateAllHighlights(entity)
@@ -103,7 +103,7 @@ Migrations.to("0.23.1", () => {
   }
 })
 Migrations.to("0.31.0", () => {
-  for (const [, project] of global.projects) {
+  for (const [, project] of storage.projects) {
     _migrateAddTiles(project.content)
   }
 })

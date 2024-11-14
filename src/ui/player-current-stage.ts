@@ -28,16 +28,16 @@ declare global {
     lastProjectSurface?: LuaSurface
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 
 export function playerCurrentStage(index: PlayerIndex): Property<Stage | nil> {
-  return global.players[index].currentStage
+  return storage.players[index].currentStage
 }
 const PlayerChangedStageEvent = globalEvent<[player: LuaPlayer, stage: Stage | nil, oldStage: Stage | nil]>()
 export { PlayerChangedStageEvent }
 
 function updatePlayer(player: LuaPlayer): void {
-  const data = global.players[player.index]
+  const data = storage.players[player.index]
   if (data == nil) return
 
   const curStage = data.currentStage
@@ -48,7 +48,7 @@ function updatePlayer(player: LuaPlayer): void {
   PlayerChangedStageEvent.raise(player, newStage, oldStage)
 }
 onPlayerInit((index) => {
-  global.players[index].currentStage = property(nil)
+  storage.players[index].currentStage = property(nil)
 })
 
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
@@ -102,7 +102,7 @@ export function teleportToProject(player: LuaPlayer, project: UserProject): void
 }
 
 export function recordPlayerLastPosition(player: LuaPlayer): void {
-  const globalPlayerData = global.players[player.index]
+  const globalPlayerData = storage.players[player.index]
   const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage) {
     const playerData = getProjectPlayerData(player.index, currentStage.project)
@@ -122,7 +122,7 @@ export function recordPlayerLastPosition(player: LuaPlayer): void {
 
 export function exitProject(player: LuaPlayer): void {
   recordPlayerLastPosition(player)
-  const data = global.players[player.index]
+  const data = storage.players[player.index]
   if (data?.lastNonProjectLocation?.surface.valid) {
     player.teleport(data.lastNonProjectLocation.position, data.lastNonProjectLocation.surface)
   } else {
@@ -130,7 +130,7 @@ export function exitProject(player: LuaPlayer): void {
   }
 }
 export function enterLastProject(player: LuaPlayer): void {
-  const data = global.players[player.index]
+  const data = storage.players[player.index]
   if (data?.lastProjectSurface?.valid) {
     const stage = getStageAtSurface(data.lastProjectSurface.index)
     if (stage) {
@@ -143,7 +143,7 @@ export function enterLastProject(player: LuaPlayer): void {
 
 Migrations.early("0.23.0", () => {
   for (const [, player] of game.players) {
-    const playerData = global.players[player.index]
+    const playerData = storage.players[player.index]
     if (!playerData) continue
     assume<{
       lastNonAssemblyLocation: any

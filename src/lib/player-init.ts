@@ -15,7 +15,7 @@ import { Events } from "./Events"
 import { Migrations } from "./migration"
 import { Mutable } from "./util-types"
 
-declare const global: Mutable<GlobalWithPlayers>
+declare const storage: Mutable<StorageWithPlayer>
 /**
  * Called when player is initialized (both during on_init and on_player_created).
  */
@@ -45,11 +45,11 @@ export function onPlayerInitSince(version: VersionString, action: (player: Playe
   })
 }
 Events.on_init(() => {
-  global.players = {}
+  storage.players = {}
 })
 onPlayerInit((index) => {
-  global.players ??= {}
-  ;(global.players as Mutable<GlobalPlayerData>)[index] = {} as PlayerData
+  storage.players ??= {}
+  ;(storage.players as Mutable<GlobalPlayerData>)[index] = {} as PlayerData
 })
 
 const playerRemovedHandlers: Array<(playerIndex: PlayerIndex) => void> = []
@@ -63,5 +63,5 @@ Events.on_player_removed((e) => {
   for (const handler of playerRemovedHandlers) {
     handler(index)
   }
-  if (global.players != nil) delete (global.players as Mutable<GlobalPlayerData>)[index]
+  if (storage.players != nil) delete (storage.players as Mutable<GlobalPlayerData>)[index]
 })

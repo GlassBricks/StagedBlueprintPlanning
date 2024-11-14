@@ -341,13 +341,13 @@ declare global {
     entityToReopen?: LuaEntity
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 
 const fakeRerenderTranslationId = script.mod_name + ":rerender-fake-translation"
 function reopenEntity(player: LuaPlayer) {
   const opened = player.opened
   if (opened && opened.object_name == "LuaEntity") {
-    global.players[player.index].entityToReopen = opened
+    storage.players[player.index].entityToReopen = opened
     player.opened = nil
     player.request_translation([fakeRerenderTranslationId])
   }
@@ -355,7 +355,7 @@ function reopenEntity(player: LuaPlayer) {
 Events.on_string_translated((event) => {
   const str = event.localised_string
   if (!Array.isArray(str) || str[0] != fakeRerenderTranslationId) return
-  const playerData = global.players[event.player_index]
+  const playerData = storage.players[event.player_index]
   const entity = playerData.entityToReopen
   delete playerData.entityToReopen
   if (entity && entity.valid) {

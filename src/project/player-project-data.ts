@@ -29,13 +29,13 @@ declare global {
     projectPlayerData: LuaMap<ProjectId, ProjectPlayerData>
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 onPlayerInit((index) => {
-  global.players[index].projectPlayerData = new LuaMap()
+  storage.players[index].projectPlayerData = new LuaMap()
 })
 Migrations.early("0.23.0", () => {
   for (const [, player] of game.players) {
-    const playerData = global.players[player.index]
+    const playerData = storage.players[player.index]
     if (!playerData) continue
     assume<{
       assemblyPlayerData: any
@@ -47,13 +47,13 @@ Migrations.early("0.23.0", () => {
 ProjectEvents.addListener((e) => {
   if (e.type == "project-deleted") {
     for (const [, player] of game.players) {
-      global.players[player.index].projectPlayerData.delete(e.project.id)
+      storage.players[player.index].projectPlayerData.delete(e.project.id)
     }
   }
 })
 export function getProjectPlayerData(player: PlayerIndex, project: UserProject): ProjectPlayerData | nil {
   if (!project.valid) return nil
-  const map = global.players[player].projectPlayerData
+  const map = storage.players[player].projectPlayerData
   const id = project.id
   if (!map.has(id)) map.set(id, {})
   return map.get(id)

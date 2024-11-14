@@ -2,7 +2,7 @@ import { deepCompare, Events, registerFunctions } from "../lib"
 
 declare const NilPlaceholder: unique symbol
 export type NilPlaceholder = typeof NilPlaceholder
-declare const global: {
+declare const storage: {
   nilPlaceholder: NilPlaceholder
 }
 let nilPlaceholder: NilPlaceholder
@@ -10,10 +10,10 @@ export function getNilPlaceholder(): NilPlaceholder {
   return assert(nilPlaceholder)
 }
 Events.on_init(() => {
-  nilPlaceholder = global.nilPlaceholder = {} as any
+  nilPlaceholder = storage.nilPlaceholder = {} as any
 })
 Events.on_load(() => {
-  nilPlaceholder = global.nilPlaceholder
+  nilPlaceholder = storage.nilPlaceholder
 })
 export type DiffValue<T> = T | NilPlaceholder
 export function fromDiffValue<T>(value: DiffValue<T>): T {

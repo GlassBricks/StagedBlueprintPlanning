@@ -16,7 +16,7 @@ declare global {
   type GlobalPlayerData = {
     readonly [P in PlayerIndex]: PlayerData
   }
-  interface GlobalWithPlayers {
+  interface StorageWithPlayer {
     readonly players: GlobalPlayerData
   }
 }

@@ -68,7 +68,7 @@ export function prepareArea(surface: LuaSurface, area: BBox): void {
   }
 }
 
-declare const global: {
+declare const storage: {
   freeSurfaces?: LuaSurface[]
 }
 
@@ -87,11 +87,11 @@ if (!script.active_mods["factorio-test"]) {
 } else {
   surfaceCreator = {
     createSurface: (area = defaultPreparedArea, copySettingsFrom) => {
-      if (!global.freeSurfaces) {
-        global.freeSurfaces = []
+      if (!storage.freeSurfaces) {
+        storage.freeSurfaces = []
       }
-      while (global.freeSurfaces.length > 0) {
-        const surface = global.freeSurfaces.pop()!
+      while (storage.freeSurfaces.length > 0) {
+        const surface = storage.freeSurfaces.pop()!
         if (surface.valid) {
           surface.destroy_decoratives({})
           prepareSurface(surface, area, copySettingsFrom)
@@ -103,10 +103,10 @@ if (!script.active_mods["factorio-test"]) {
     destroySurface: (surface) => {
       if (!surface.valid) return
       surface.find_entities().forEach((entity) => entity.destroy())
-      if (!global.freeSurfaces) {
-        global.freeSurfaces = []
+      if (!storage.freeSurfaces) {
+        storage.freeSurfaces = []
       }
-      global.freeSurfaces.push(surface)
+      storage.freeSurfaces.push(surface)
       for (const id of rendering.get_all_ids(script.mod_name)) {
         if (rendering.get_surface(id) == surface) rendering.destroy(id)
       }
@@ -115,11 +115,11 @@ if (!script.active_mods["factorio-test"]) {
 }
 
 export function deleteAllFreeSurfaces(): void {
-  if (global.freeSurfaces) {
-    for (const surface of global.freeSurfaces) {
+  if (storage.freeSurfaces) {
+    for (const surface of storage.freeSurfaces) {
       if (surface.valid) game.delete_surface(surface)
     }
-    delete global.freeSurfaces
+    delete storage.freeSurfaces
   }
 }
 

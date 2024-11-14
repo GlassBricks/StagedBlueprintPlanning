@@ -12,7 +12,7 @@
 import expect from "tstl-expect"
 import { bind, Func, funcRef, Functions, ibind, RegisterClass, registerFunctions } from "../references"
 
-declare const global: {
+declare const storage: {
   __tbl1: object
   __tbl2: object
   __tbl3: object
@@ -78,30 +78,30 @@ describe("classes", () => {
   })
 
   function assertRefsCorrect() {
-    expect(global.__tbl1 instanceof TestClass).toBe(true)
-    expect(global.__tbl1 instanceof TestSubclass).toBe(false)
+    expect(storage.__tbl1 instanceof TestClass).toBe(true)
+    expect(storage.__tbl1 instanceof TestSubclass).toBe(false)
 
-    expect(global.__tbl2 instanceof TestSubclass).toBe(true)
+    expect(storage.__tbl2 instanceof TestSubclass).toBe(true)
 
-    expect(global.__tbl3 instanceof TestSubclass2).toBe(true)
+    expect(storage.__tbl3 instanceof TestSubclass2).toBe(true)
 
-    expect(global.__ref1.invoke()).toBe("12")
-    expect(global.__ref2.invoke()).toBe("23")
-    expect(global.__ref3.invoke()).toBe("35")
-    expect(global.__ref4.invoke()).toBe("non overridden")
+    expect(storage.__ref1.invoke()).toBe("12")
+    expect(storage.__ref2.invoke()).toBe("23")
+    expect(storage.__ref3.invoke()).toBe("35")
+    expect(storage.__ref4.invoke()).toBe("non overridden")
   }
   test("class and boundMethod survives reload", () => {
     const instance = new TestClass("1")
-    global.__tbl1 = instance
+    storage.__tbl1 = instance
     const subclassInstance = new TestSubclass("2")
-    global.__tbl2 = subclassInstance
+    storage.__tbl2 = subclassInstance
     const subclass2Instance = new TestSubclass2("3")
-    global.__tbl3 = subclass2Instance
+    storage.__tbl3 = subclass2Instance
 
-    global.__ref1 = ibind(instance.foo)
-    global.__ref2 = ibind(subclassInstance.foo)
-    global.__ref3 = ibind(subclass2Instance.foo)
-    global.__ref4 = ibind(subclass2Instance.nonOverridden)
+    storage.__ref1 = ibind(instance.foo)
+    storage.__ref2 = ibind(subclassInstance.foo)
+    storage.__ref3 = ibind(subclass2Instance.foo)
+    storage.__ref4 = ibind(subclass2Instance.nonOverridden)
     assertRefsCorrect()
   }).after_mod_reload(() => {
     assertRefsCorrect()
@@ -132,12 +132,12 @@ describe("functions", () => {
   })
 
   test("func ref survives reload", () => {
-    global.__ref1 = funcRef(func)
-    global.__ref2 = bind(func, 2)
-    expect(global.__ref1.invoke("foo")).toEqual(["foo"])
-    expect(global.__ref2.invoke("foo")).toEqual([2, "foo"])
+    storage.__ref1 = funcRef(func)
+    storage.__ref2 = bind(func, 2)
+    expect(storage.__ref1.invoke("foo")).toEqual(["foo"])
+    expect(storage.__ref2.invoke("foo")).toEqual([2, "foo"])
   }).after_mod_reload(() => {
-    expect(global.__ref1.invoke("foo")).toEqual(["foo"])
-    expect(global.__ref2.invoke("foo")).toEqual([2, "foo"])
+    expect(storage.__ref1.invoke("foo")).toEqual(["foo"])
+    expect(storage.__ref2.invoke("foo")).toEqual([2, "foo"])
   })
 })

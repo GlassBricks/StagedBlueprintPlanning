@@ -19,10 +19,10 @@ declare global {
     tempBpInventory?: LuaInventory
   }
 }
-declare const global: GlobalWithPlayers
+declare const storage: StorageWithPlayer
 
 export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): LuaItemStack | nil {
-  const inventory = (global.players[player.index].tempBpInventory ??= game.create_inventory(1))
+  const inventory = (storage.players[player.index].tempBpInventory ??= game.create_inventory(1))
   const stack = inventory[0]
   stack.clear()
   stack.set_stack("blueprint")

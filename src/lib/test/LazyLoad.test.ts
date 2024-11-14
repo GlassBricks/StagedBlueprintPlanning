@@ -46,16 +46,16 @@ test("still errors on non-function", () => {
   const foo = fooClass({ name: "foo" }) as any
   expect(() => foo.e1()).toThrow()
 })
-declare const global: {
+declare const storage: {
   _testFoo: Foo
 }
 
 test("works after reload", () => {
-  global._testFoo = fooClass({ name: "foo" })
-  global._testFoo.f1()
+  storage._testFoo = fooClass({ name: "foo" })
+  storage._testFoo.f1()
 }).after_mod_reload(() => {
-  expect(rawget(global._testFoo, "f1")).toBeNil()
-  global._testFoo.f2()
+  expect(rawget(storage._testFoo, "f1")).toBeNil()
+  storage._testFoo.f2()
 
-  global._testFoo = nil!
+  storage._testFoo = nil!
 })

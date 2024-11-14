@@ -38,20 +38,20 @@ import { getUndergroundDirection } from "./underground-belt"
 import build_check_manual_ghost = defines.build_check_type.manual_ghost
 import floor = math.floor
 
-declare const global: {
+declare const storage: {
   tempBPInventory: LuaInventory
 }
 Events.on_init(() => {
-  global.tempBPInventory = game.create_inventory(1)
+  storage.tempBPInventory = game.create_inventory(1)
 })
 
 let bpStack: BlueprintItemStack
 Migrations.since("0.17.0", () => {
-  bpStack = global.tempBPInventory[0]
+  bpStack = storage.tempBPInventory[0]
   bpStack.set_stack("blueprint")
 })
 Events.on_load(() => {
-  bpStack = global.tempBPInventory[0]
+  bpStack = storage.tempBPInventory[0]
 })
 
 const rawset = _G.rawset

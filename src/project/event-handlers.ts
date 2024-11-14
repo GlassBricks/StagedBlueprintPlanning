@@ -293,14 +293,14 @@ declare global {
     confirmedModdedEntityOpen?: true
   }
 }
-declare const global: GlobalWithPlayers & {
+declare const storage: StorageWithPlayer & {
   worldListenerState: typeof state
 }
 Events.on_init(() => {
-  state = global.worldListenerState = {}
+  state = storage.worldListenerState = {}
 })
 Events.on_load(() => {
-  state = global.worldListenerState
+  state = storage.worldListenerState
 })
 
 function clearToBeFastReplaced(player: PlayerIndex | nil): void {
@@ -939,7 +939,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
   const stage = getStageAtEntity(entity)
   if (!stage) return
 
-  const data = global.players[player.index]
+  const data = storage.players[player.index]
   const existingEntity = data.lastWireAffectedEntity
   if (existingEntity && existingEntity != entity) {
     stage.actions.onWiresPossiblyUpdated(entity, stage.stageNumber, player.index)
@@ -948,7 +948,7 @@ function markPlayerAffectedWires(player: LuaPlayer): void {
 }
 
 function clearPlayerAffectedWires(index: PlayerIndex): void {
-  const data = global.players[index]
+  const data = storage.players[index]
   const entity = data.lastWireAffectedEntity
   if (entity) {
     data.lastWireAffectedEntity = nil
@@ -1086,12 +1086,12 @@ function stagedCopyToolUsed(event: OnPlayerSelectedAreaEvent): void {
   } else {
     player.clear_cursor()
     player.opened = stack
-    global.players[event.player_index].blueprintToSetup = stack
+    storage.players[event.player_index].blueprintToSetup = stack
   }
 }
 
 Events.on_gui_closed((e) => {
-  const playerData = global.players[e.player_index]
+  const playerData = storage.players[e.player_index]
   const stack = playerData.blueprintToSetup
   if (!stack) return
   delete playerData.blueprintToSetup
@@ -1275,7 +1275,7 @@ Events.onInitOrLoad(() => {
 Events.on_gui_closed((e) => {
   const entity = e.entity
 
-  const playerData = global.players[e.player_index]
+  const playerData = storage.players[e.player_index]
   const oldEntity = playerData.possiblyOpenedModdedEntity
   if (e.gui_type == defines.gui_type.custom && oldEntity && playerData.confirmedModdedEntityOpen) {
     if (oldEntity.original.valid) {
@@ -1315,7 +1315,7 @@ Events.on_gui_closed((e) => {
   }
 })
 Events.on_gui_opened((e) => {
-  const playerData = global.players[e.player_index]
+  const playerData = storage.players[e.player_index]
   if (
     playerData.possiblyOpenedModdedEntity &&
     (e.element || (playerData.confirmedModdedEntityOpen && e.entity == playerData.possiblyOpenedModdedEntity.original))
@@ -1328,7 +1328,7 @@ Events.on_gui_opened((e) => {
 })
 
 export function getCurrentlyOpenedModdedGui(player: LuaPlayer): ProjectEntity | nil {
-  const playerData = global.players[player.index]
+  const playerData = storage.players[player.index]
   const entity = playerData.possiblyOpenedModdedEntity
   if (!entity || !playerData.confirmedModdedEntityOpen) return nil
   const stage = getStageAtSurface(entity.surface.index)
@@ -1364,7 +1364,7 @@ declare global {
 }
 
 Events.on_player_cursor_stack_changed((e) => {
-  const playerData = global.players[e.player_index]
+  const playerData = storage.players[e.player_index]
   if (!playerData?.needs028MoveToolNotification) return
   const player = game.get_player(e.player_index)!
   const stack = player.cursor_stack
