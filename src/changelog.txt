@@ -1,7 +1,18 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.34.4
+Version: 0.35.0
 Date: ????
-  Changes:
+  Features:
+    - Added shortcuts for all the following:
+    - Go to project's first stage
+    - Go to project's last stage
+    - Exit project
+    - Return to last project/stage
+    - Get blueprint for current stage
+    - Get blueprint book for project
+    - New stage after current
+    - New stage at front
+  Other:
+    - This will be the last release before Factorio v2.0 support.
 ---------------------------------------------------------------------------------------------------
 Version: 0.34.3
 Date: 2024-10-04
