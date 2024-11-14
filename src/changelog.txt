@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.35.0
-Date: ????
+Date: 2024-11-14
   Features:
     - Added shortcuts for all the following:
     - Go to project's first stage
