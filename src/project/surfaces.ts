@@ -107,8 +107,10 @@ if (!script.active_mods["factorio-test"]) {
         storage.freeSurfaces = []
       }
       storage.freeSurfaces.push(surface)
-      for (const id of rendering.get_all_ids(script.mod_name)) {
-        if (rendering.get_surface(id) == surface) rendering.destroy(id)
+      for (const render of rendering.get_all_objects(script.mod_name)) {
+        if (render.surface == surface) {
+          render.destroy()
+        }
       }
     },
   }

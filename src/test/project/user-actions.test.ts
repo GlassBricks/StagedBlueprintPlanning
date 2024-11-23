@@ -101,7 +101,7 @@ function createWorldEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEn
     ...args,
   }
   const entity = assert(surfaces[stageNum - 1].create_entity(params), "created entity")[0]
-  const proto = game.entity_prototypes[params.name]
+  const proto = prototypes.entity[params.name as string]
   if (proto.type == "inserter") {
     entity.inserter_stack_size_override = 1
     entity.inserter_filter_mode = "whitelist"
@@ -804,40 +804,6 @@ describe("onStageDeleteCancelUsed", () => {
     expectedNumCalls = 0
 
     expect(undoAction).toBeNil()
-  })
-})
-
-describe("onEntityDollied", () => {
-  test("if not in project, defaults to add behavior", () => {
-    const luaEntity = createWorldEntity(2)
-    userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
-    expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(luaEntity, 2)
-  })
-
-  test("calls tryMoveEntity and does not notify if returns nil", () => {
-    const { luaEntity, entity } = addEntity(2)
-    entity.replaceWorldEntity(2, luaEntity) // needed to detect entity
-    // projectUpdates.tryMoveEntity.invokes(() => {
-    //   totalCalls++
-    //   return nil
-    // })
-    // already returns nil
-    userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
-
-    expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(entity, 2)
-  })
-
-  test("calls tryMoveEntity and notifies if returns error", () => {
-    // just one example
-    const { luaEntity, entity } = addEntity(2)
-    entity.replaceWorldEntity(2, luaEntity)
-    worldUpdates.tryDollyEntities.invokes(() => {
-      return "entities-missing"
-    })
-    userActions.onEntityDollied(luaEntity, 2, luaEntity.position, playerIndex)
-
-    expect(worldUpdates.tryDollyEntities).toHaveBeenCalledWith(entity, 2)
-    assertNotified(entity, [L_Interaction.EntitiesMissing, ["entity-name.filter-inserter"]], true)
   })
 })
 

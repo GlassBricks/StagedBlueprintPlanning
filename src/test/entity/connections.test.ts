@@ -133,7 +133,7 @@ describe("connections", () => {
     })
 
     test("addCableConnection shows up in getCableConnections", () => {
-      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.MaybeAdded)
+      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.Added)
       expect(entity1.cableConnections!).toEqual(newLuaSet(entity2))
       expect(entity2.cableConnections!).toEqual(newLuaSet(entity1))
     })
@@ -183,17 +183,8 @@ describe("connections", () => {
     })
 
     test("adding same cable twice does nothing", () => {
-      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.MaybeAdded)
-      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.MaybeAdded)
-    })
-
-    test("won't add if max connections is reached", () => {
-      for (let i = 3; i < 3 + 5; i++) {
-        const entity = makeProjectEntity(i)
-        content.addEntity(entity)
-        expect(entity1.tryAddDualCableConnection(entity)).toBe(CableAddResult.MaybeAdded)
-      }
-      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.MaxConnectionsReached)
+      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.Added)
+      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.Added)
     })
   })
 })

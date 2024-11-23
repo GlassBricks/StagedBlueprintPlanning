@@ -12,7 +12,7 @@
 import { LuaEntity, ScriptRaisedBuiltEvent, ScriptRaisedDestroyEvent } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
-import { Entity, RollingStockEntity } from "../../entity/Entity"
+import { Entity } from "../../entity/Entity"
 import { createProjectEntityNoCopy, ExtraEntityType, ProjectEntity } from "../../entity/ProjectEntity"
 import { getRegisteredProjectEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
@@ -673,14 +673,6 @@ describe("rolling stock", () => {
 
     // expect(projectEntity.inFirstStageOnly()).toBe(true)
     expect(projectEntity.lastStage).toEqual(2)
-  })
-  test("cannot apply stage diffs to rolling stock beyond first stage", () => {
-    const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon" } as RollingStockEntity, Pos(0, 0), nil, 1)
-    const adjusted = projectEntity.adjustValueAtStage(1, { name: "cargo-wagon", items: { foo: 1 } })
-    expect(adjusted).toBe(true)
-    const adjusted2 = projectEntity.adjustValueAtStage(2, { name: "cargo-wagon", items: { foo: 2 } })
-    expect(adjusted2).toBe(false)
-    expect(projectEntity.getValueAtStage(1)).toEqual(projectEntity.firstValue)
   })
   test("apply stage diff ignores orientation changes", () => {
     const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon", orientation: 0.25 }, Pos(0, 0), nil, 1)

@@ -217,19 +217,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     fixNewUndergroundBelt(projectEntity, entity, stage, knownValue)
 
     updateNewWorldEntitiesWithoutWires(projectEntity)
-    const [hasDiff, , additionalToUpdate] = saveWireConnections(
-      content,
-      projectEntity,
-      stage,
-      project.lastStageFor(projectEntity),
-    )
+    const [hasDiff, ,] = saveWireConnections(content, projectEntity, stage, project.lastStageFor(projectEntity))
     if (hasDiff) {
       updateWireConnections(projectEntity)
-      if (additionalToUpdate) {
-        for (const otherEntity of additionalToUpdate) {
-          updateWireConnections(otherEntity)
-        }
-      }
     }
     if (projectEntity.stageDiffs) {
       updateAllHighlights(projectEntity)
@@ -539,23 +529,11 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult {
-    const [connectionsChanged, maxConnectionsExceeded, additionalEntitiesToUpdate] = saveWireConnections(
-      content,
-      entity,
-      stage,
-      stage,
-    )
+    const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(content, entity, stage, stage)
     if (!connectionsChanged) return WireUpdateResult.NoChange
 
     // check setting no-op control behavior
     updateWorldEntities(entity, entity.firstStage)
-
-    // update other entities as needed
-    if (additionalEntitiesToUpdate) {
-      for (const otherEntity of additionalEntitiesToUpdate) {
-        updateWireConnections(otherEntity)
-      }
-    }
 
     if (maxConnectionsExceeded) {
       // this is last, so other updates happen even if max connections exceeded

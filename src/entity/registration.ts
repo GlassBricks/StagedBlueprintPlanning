@@ -32,7 +32,7 @@ export function registerEntity(luaEntity: LuaEntity, projectEntity: ProjectEntit
   if (entry) return true
   storage.entityByUnitNumber.set(unitNumber, projectEntity)
   storage.surfaceByUnitNumber.set(unitNumber, luaEntity.surface_index)
-  script.register_on_entity_destroyed(luaEntity)
+  script.register_on_object_destroyed(luaEntity)
   return true
 }
 
@@ -57,8 +57,9 @@ Events.script_raised_destroy((e) => {
     storage.surfaceByUnitNumber.delete(eNumber)
   }
 })
-Events.on_entity_destroyed((e) => {
-  const eNumber = e.unit_number
+Events.on_object_destroyed((e) => {
+  if (e.type != defines.target_type.entity) return
+  const eNumber = e.useful_id as UnitNumber | nil
   if (eNumber) {
     storage.entityByUnitNumber.delete(eNumber)
     storage.surfaceByUnitNumber.delete(eNumber)
@@ -66,19 +67,4 @@ Events.on_entity_destroyed((e) => {
 })
 Migrations.since("0.33.4", () => {
   storage.surfaceByUnitNumber = new LuaMap()
-})
-Migrations.to("0.33.4", () => {
-  for (const [unitNumber, entity] of storage.entityByUnitNumber) {
-    for (const [key, value] of pairs<unknown>(entity)) {
-      if (typeof key != "number") break
-      if (
-        type(value) == "table" &&
-        (value as any).object_name == "LuaEntity" &&
-        (value as LuaEntity).valid &&
-        (value as LuaEntity).unit_number == unitNumber
-      ) {
-        storage.surfaceByUnitNumber.set(unitNumber, (value as LuaEntity).surface_index)
-      }
-    }
-  }
 })

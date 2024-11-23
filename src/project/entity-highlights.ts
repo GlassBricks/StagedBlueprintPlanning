@@ -15,6 +15,7 @@ import {
   CursorBoxRenderType,
   HighlightBoxEntity,
   LuaEntity,
+  LuaRenderObject,
   LuaSurface,
   RenderLayer,
   SpritePath,
@@ -22,17 +23,17 @@ import {
 } from "factorio:runtime"
 import { ExtraEntities, ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "../entity/prototype-info"
-import { AnyRender, assertNever, SpriteRender } from "../lib"
+import { assertNever } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { createHighlightBox, createSprite } from "./create-highlight"
 import { Project } from "./ProjectDef"
 
-export type HighlightEntity = HighlightBoxEntity | SpriteRender
+export type HighlightEntity = HighlightBoxEntity | LuaRenderObject
 export interface HighlightEntities {
   /** Error outline when an entity cannot be placed. Should be placed on preview entity. */
   errorOutline?: HighlightBoxEntity
   /** Indicator sprite when there is an error highlight in another stage. */
-  errorElsewhereIndicator?: SpriteRender
+  errorElsewhereIndicator?: LuaRenderObject
 
   /** White outline when a settings remnant entity is left behind. */
   settingsRemnantHighlight?: HighlightBoxEntity
@@ -40,13 +41,13 @@ export interface HighlightEntities {
   /** Blue/green outline when an entity's settings have changed; green if is upgrade */
   configChangedHighlight?: HighlightBoxEntity
   /** Blueprint sprite when an entity's settings have changed in a future stage. */
-  configChangedLaterHighlight?: SpriteRender
+  configChangedLaterHighlight?: LuaRenderObject
 
   /** Deconstruction planner sprite when an entity is deleted in the next stage (lastStage is set). Ignored if lastStage == firstStage. */
-  stageDeleteHighlight?: SpriteRender
+  stageDeleteHighlight?: LuaRenderObject
 }
 declare module "../entity/ProjectEntity" {
-  // noinspection JSUnusedGlobalSymbols
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   export interface ExtraEntities extends HighlightEntities {}
 }
 
@@ -131,13 +132,13 @@ function createHighlight<T extends keyof HighlightEntities>(
     existing &&
     config.type == "sprite" &&
     existing.valid &&
-    existing.object_name == "_RenderObj" &&
+    existing.object_name == "LuaRenderObject" &&
     existing.target == entityTarget
   )
     return existing
 
   const prototypeName = entity.firstValue.name
-  let result: LuaEntity | AnyRender | nil
+  let result: LuaEntity | LuaRenderObject | nil
   if (config.type == "highlight") {
     const { renderType } = config
     result = entityTarget && createHighlightBox(entityTarget, renderType)
@@ -154,7 +155,7 @@ function createHighlight<T extends keyof HighlightEntities>(
       result = createSprite({
         surface,
         target,
-        target_offset: offset,
+        oriented_offset: offset,
         x_scale: scale,
         y_scale: scale,
         sprite: config.sprite,
@@ -246,7 +247,7 @@ export function EntityHighlights(project: Project): EntityHighlights {
           lastStageWithHighlights,
           "configChangedLaterHighlight",
           true,
-        ) as SpriteRender
+        ) as LuaRenderObject
         highlight.sprite = sprite
       }
     }

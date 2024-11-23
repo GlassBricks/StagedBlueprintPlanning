@@ -37,7 +37,7 @@ export function createStageReference(stack: LuaItemStack, stage: Stage): boolean
       },
     },
   ])
-  stack.blueprint_icons = getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()), name) ?? [
+  stack.preview_icons = getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()), name) ?? [
     {
       index: 1,
       signal: { type: "item", name: Prototypes.StageReference },

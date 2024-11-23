@@ -17,7 +17,6 @@ import { destroy, FactorioJsx, renderNamed } from "../lib/factoriojsx"
 import { SimpleTitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSelector } from "../locale"
-import { getAllProjects } from "../project/UserProject"
 import { closeAllProjects, toggleAllProjects } from "./AllProjects"
 
 declare const storage: StorageWithPlayer
@@ -110,16 +109,6 @@ onPlayerInitSince("0.15.1", (playerIndex) => {
   const player = game.get_player(playerIndex)!
   renderNamed(<ModButton />, mod_gui.get_button_flow(player), ModButtonName)
 })
-Migrations.early("0.23.0", () => {
-  const oldModButtonName = script.mod_name + ":all-assemblies"
-  const oldAllProjectsName = script.mod_name + ":all-assemblies"
-  for (const [, player] of game.players) {
-    const flow = mod_gui.get_button_flow(player)
-    destroy(flow[oldModButtonName])
-    const frameFlow = mod_gui.get_frame_flow(player)
-    destroy(frameFlow[oldAllProjectsName])
-  }
-})
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {
     closeAllProjects(player)
@@ -127,16 +116,6 @@ Migrations.fromAny(() => {
     if (flow[ModButtonName] == nil) renderNamed(<ModButton />, flow, ModButtonName)
   }
 })
-
-Migrations.to("0.32.1", () => {
-  if (getAllProjects().length > 0) {
-    for (const [, data] of pairs(storage.players)) {
-      data.confirmedEditorMode = true
-      data.researchTechPromptDismissed = true
-    }
-  }
-})
-
 if ("debugadapter" in script.active_mods) {
   commands.add_command("reset-confirm-editor-mode", "Reset confirm editor mode", () => {
     for (const [, data] of pairs(storage.players)) {

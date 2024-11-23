@@ -9,7 +9,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LuaEntity } from "factorio:runtime"
 import type { ProjectEntity } from "./ProjectEntity"
 
 export interface ProjectCircuitConnection {
@@ -18,13 +17,6 @@ export interface ProjectCircuitConnection {
 
   readonly toEntity: ProjectEntity
   readonly toId: defines.wire_connector_id
-}
-
-export interface CircuitOrPowerSwitchConnection {
-  readonly wire: defines.wire_type
-  readonly target_entity: LuaEntity
-  readonly source_circuit_id: defines.wire_connector_id
-  readonly target_circuit_id: defines.wire_connector_id
 }
 
 export function circuitConnectionEquals(a: ProjectCircuitConnection, b: ProjectCircuitConnection): boolean {

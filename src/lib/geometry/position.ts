@@ -13,7 +13,7 @@
 
 import { MapPosition, MapPositionArray } from "factorio:runtime"
 import * as util from "util"
-import { WithMetatable } from "../util-types"
+import { WithMetatable } from "../_util"
 
 // Down is positive y, right is positive x
 

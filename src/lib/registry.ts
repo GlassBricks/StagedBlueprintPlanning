@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { PRecord } from "./util-types"
+import { PRecord } from "./_util"
 
 export class Registry<T extends AnyNotNil> {
   private nameToItem = {} as PRecord<string, T>

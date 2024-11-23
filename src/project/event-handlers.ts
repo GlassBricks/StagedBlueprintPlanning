@@ -11,12 +11,7 @@
 
 import {
   BaseItemStack,
-  BlueprintBookItemStack,
-  BlueprintCircuitConnection,
-  BlueprintConnectionData,
-  BlueprintConnectionPoint,
   BlueprintEntity,
-  BlueprintItemStack,
   CustomEventId,
   LuaEntity,
   LuaItemPrototype,
@@ -32,12 +27,13 @@ import {
   OnPreBuildEvent,
   PlayerIndex,
   Tags,
+  UnitNumber,
 } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes, Settings } from "../constants"
 import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { createBlueprintWithStageInfo } from "../copy-paste/create-blueprint-with-stage-info"
-import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../declarations/mods"
+import { BobInserterChangedPositionEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
 import { isWorldEntityProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
 import {
@@ -53,6 +49,7 @@ import { getRegisteredProjectEntityFromUnitNumber, getStageFromUnitNumber } from
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
+import { debugPrint } from "../lib/test/misc"
 import { L_Bp100, L_Interaction } from "../locale"
 import { getProjectPlayerData } from "./player-project-data"
 import { getStageAtSurface } from "./project-refs"
@@ -209,17 +206,19 @@ const modName = script.mod_name
 Events.script_raised_built((e) => {
   if (e.mod_name != modName) luaEntityCreated(e.entity, nil)
 })
-Events.on_robot_built_entity((e) => luaEntityCreated(e.created_entity, nil))
+Events.on_robot_built_entity((e) => luaEntityCreated(e.entity, nil))
 Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 
 Events.script_raised_destroy((e) => {
   if (e.mod_name != modName) luaEntityDeleted(e.entity, nil)
 })
 
-Events.registerEarly(defines.events.on_entity_destroyed, (e) => {
-  const entity = getRegisteredProjectEntityFromUnitNumber(e.unit_number)
+Events.registerEarly(defines.events.on_object_destroyed, (e) => {
+  if (e.type != defines.target_type.entity) return
+  const unitNumber = e.useful_id as UnitNumber
+  const entity = getRegisteredProjectEntityFromUnitNumber(unitNumber)
   if (!entity) return
-  const surfaceIndex = getStageFromUnitNumber(e.unit_number)
+  const surfaceIndex = getStageFromUnitNumber(unitNumber)
   if (!surfaceIndex) return
   const stage = getStageAtSurface(surfaceIndex)
   if (!stage) return
@@ -362,7 +361,7 @@ Events.on_pre_build((e) => {
   if (cursorStack && cursorStack.valid_for_read) {
     item = cursorStack.prototype
   } else {
-    item = player.cursor_ghost
+    item = player.cursor_ghost?.name
   }
   if (!item) return
   state.lastPreBuild = {
@@ -459,7 +458,7 @@ Events.on_player_mined_entity((e) => {
 })
 
 Events.on_built_entity((e) => {
-  const { created_entity: entity } = e
+  const { entity } = e
   if (!entity.valid) return
 
   const innerName = getInnerName(entity)
@@ -543,12 +542,12 @@ interface MarkerTags extends Tags {
   referencedName: string
 }
 
-function getInnerBlueprint(stack: BaseItemStack | nil): BlueprintItemStack | nil {
+function getInnerBlueprint(stack: BaseItemStack | nil): LuaItemStack | nil {
   if (!stack || !stack.valid_for_read) return nil
   const type = stack.type
-  if (type == "blueprint") return stack as BlueprintItemStack
+  if (type == "blueprint") return stack as LuaItemStack
   if (type == "blueprint-book") {
-    const active = (stack as BlueprintBookItemStack).active_index
+    const active = stack.active_index
     if (!active) return nil
     const innerStack = stack.get_inventory(defines.inventory.item_main)
     if (!innerStack) return nil
@@ -557,31 +556,20 @@ function getInnerBlueprint(stack: BaseItemStack | nil): BlueprintItemStack | nil
   return nil
 }
 
-function blueprintNeedsPreparation(stack: BlueprintItemStack): boolean {
+function blueprintNeedsPreparation(stack: LuaItemStack): boolean {
   return (
     stack.valid_for_read && stack.is_blueprint && stack.is_blueprint_setup() && stack.get_blueprint_entity_count() > 0
   )
-}
-
-function fixOldBlueprint(entities: BlueprintEntity[]): void {
-  // old blueprint, remove old markers
-  const firstEntityMarker = entities.findIndex((e) => e.name == Prototypes.EntityMarker)
-  // remove all entities after the first entity marker
-  for (const i of $range(firstEntityMarker + 1, entities.length)) {
-    entities[i - 1] = nil!
-  }
 }
 
 /**
  * Returns entities and original num entities if successful, nil otherwise
  * @param stack
  */
-function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiReturn<[BlueprintEntity[], number] | []> {
+function prepareBlueprintForStagePaste(stack: LuaItemStack): LuaMultiReturn<[BlueprintEntity[], number] | []> {
   if (!blueprintNeedsPreparation(stack)) return $multi()
   const entities = stack.get_blueprint_entities()
   if (!entities) return $multi()
-
-  if (stack.cost_to_build[Prototypes.EntityMarker] != nil) fixOldBlueprint(entities)
 
   const numEntities = entities.length
   let nextIndex = numEntities + 1
@@ -618,7 +606,7 @@ function prepareBlueprintForStagePaste(stack: BlueprintItemStack): LuaMultiRetur
   return $multi(entities, numEntities)
 }
 
-function revertPreparedBlueprint(stack: BlueprintItemStack): void {
+function revertPreparedBlueprint(stack: LuaItemStack): void {
   const current = assert(state.currentBlueprintPaste)
   const entities = current.entities
   for (const i of $range(entities.length, current.originalNumEntities + 1, -1)) {
@@ -662,7 +650,6 @@ function tryFixBlueprint(player: LuaPlayer): void {
   const lastTags = blueprint.get_blueprint_entity_tag(entityCount, IsLastEntity)
   if (lastTags != nil) {
     const entities = blueprint.get_blueprint_entities()!
-    fixOldBlueprint(entities)
     blueprint.set_blueprint_entities(entities)
   }
 }
@@ -688,48 +675,6 @@ function onEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity): void {
     if (tags[IsLastEntity] != nil) onLastEntityMarkerBuilt(e)
   }
   entity.destroy()
-}
-
-function manuallyConnectWires(
-  luaEntity: LuaEntity,
-  connections: BlueprintConnectionData[] | nil,
-  sourceId: number,
-  wireType: defines.wire_type,
-) {
-  if (!connections) return
-  const knownLuaEntities = state.currentBlueprintPaste!.knownLuaEntities
-  for (const { entity_id: otherId, circuit_id } of connections) {
-    const otherEntity = knownLuaEntities[otherId]
-    if (!otherEntity || !otherEntity.valid) continue
-    luaEntity.connect_neighbour({
-      wire: wireType,
-      target_entity: otherEntity,
-      source_circuit_id: sourceId,
-      target_circuit_id: circuit_id ?? 1,
-    })
-  }
-}
-
-function manuallyConnectPoint(luaEntity: LuaEntity, connection: BlueprintConnectionPoint | nil, sourceId: number) {
-  if (!connection) return
-  manuallyConnectWires(luaEntity, connection.red, sourceId, defines.wire_type.red)
-  manuallyConnectWires(luaEntity, connection.green, sourceId, defines.wire_type.green)
-}
-
-function manuallyConnectCircuits(luaEntity: LuaEntity, connections: BlueprintCircuitConnection | nil) {
-  if (!connections) return
-  manuallyConnectPoint(luaEntity, connections["1"], 1)
-  manuallyConnectPoint(luaEntity, connections["2"], 2)
-}
-
-function manuallyConnectNeighbours(luaEntity: LuaEntity, connections: number[] | nil) {
-  if (!connections || luaEntity.type != "electric-pole") return
-  const knownLuaEntities = state.currentBlueprintPaste!.knownLuaEntities
-  for (const otherId of connections) {
-    const otherEntity = knownLuaEntities[otherId]
-    if (!otherEntity || otherEntity.type != "electric-pole") continue
-    luaEntity.connect_neighbour(otherEntity)
-  }
 }
 
 let nameToType: PrototypeInfo["nameToType"]
@@ -806,7 +751,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     if (twoDirectionTanks.has(valueName)) {
       entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
     }
-  } else if (type == "curved-rail") {
+  } else if (type == "curved-rail-a" || type == "curved-rail-b") {
     const isDiagonal = ((value.direction ?? 0) % 2 == 1) != bpState.isFlipped
     if (isDiagonal) entityDir = (entityDir + 1) % 8
   } else if (type == "splitter") {
@@ -885,37 +830,37 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     passedValue,
   )
 
-  const { neighbours, connections } = value
-  if (!neighbours && !connections) return
+  if (value.wires) {
+    if (projectEntity != nil) {
+      // check for circuit wires
+      if (!luaEntity.valid) {
+        // must have been upgraded
+        luaEntity = projectEntity.getWorldEntity(stage.stageNumber)
+        if (!luaEntity) return
 
-  if (projectEntity != nil) {
-    // check for circuit wires
-    if (!luaEntity.valid) {
-      // must have been upgraded
-      luaEntity = projectEntity.getWorldEntity(stage.stageNumber)
-      if (!luaEntity) return
-
-      bpState.needsManualConnections.push(entityId)
-    } else if (luaEntity.type == "transport-belt") {
-      // factorio bug? transport belts don't save circuit connections immediately when pasted
-      bpState.needsManualConnections.push(entityId)
-    } else {
-      stage.actions.onWiresPossiblyUpdated(luaEntity, stage.stageNumber, e.player_index)
+        bpState.needsManualConnections.push(entityId)
+      } else if (luaEntity.type == "transport-belt") {
+        // factorio bug? transport belts don't save circuit connections immediately when pasted
+        bpState.needsManualConnections.push(entityId)
+      } else {
+        stage.actions.onWiresPossiblyUpdated(luaEntity, stage.stageNumber, e.player_index)
+      }
     }
+    bpState.knownLuaEntities[entityId] = luaEntity
   }
-
-  bpState.knownLuaEntities[entityId] = luaEntity // save the entity if it has wire-connections
 }
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   const { entities, knownLuaEntities, needsManualConnections, usedPasteUpgrade, stage } = state.currentBlueprintPaste!
 
   for (const entityId of needsManualConnections) {
-    const value = entities[entityId - 1]
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _value = entities[entityId - 1]
     const luaEntity = knownLuaEntities[entityId]
     if (!luaEntity) continue
-    manuallyConnectNeighbours(luaEntity, value.neighbours)
-    manuallyConnectCircuits(luaEntity, value.connections)
+    // manuallyConnectNeighbours(luaEntity, value.neighbours)
+    // manuallyConnectCircuits(luaEntity, value.connections)
+    debugPrint("TODO: manually connect wires")
     stage.actions.onWiresPossiblyUpdated(luaEntity, stage.stageNumber, e.player_index)
   }
 
@@ -1243,19 +1188,6 @@ Events.on_chunk_generated((e) => {
 })
 
 // Mod support
-
-// PickerDollies
-if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
-  Events.onInitOrLoad(() => {
-    const event = remote.call("PickerDollies", "dolly_moved_entity_id") as CustomEventId<DollyMovedEntityEvent>
-    Events.on(event, (e) => {
-      const stage = getStageAtEntityOrPreview(e.moved_entity)
-      if (stage) {
-        stage.project.actions.onEntityDollied(e.moved_entity, stage.stageNumber, e.start_pos, e.player_index)
-      }
-    })
-  })
-}
 
 // bob inserters
 Events.onInitOrLoad(() => {

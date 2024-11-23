@@ -9,16 +9,19 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, PlayerIndex, SurfaceCreateEntity } from "factorio:runtime"
+import {
+  BlueprintEntity,
+  LuaEntity,
+  LuaPlayer,
+  LuaSurface,
+  PlayerIndex,
+  SurfaceCreateEntity,
+  UnitNumber,
+} from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes, Settings } from "../../constants"
-import {
-  circuitConnectionEquals,
-  CircuitOrPowerSwitchConnection,
-  ProjectCircuitConnection,
-} from "../../entity/circuit-connection"
-import { emptyBeltControlBehavior, emptyInserterControlBehavior } from "../../entity/empty-control-behavior"
+import { circuitConnectionEquals, ProjectCircuitConnection } from "../../entity/circuit-connection"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   ProjectEntity,
@@ -29,7 +32,6 @@ import {
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
-import { addPowerSwitchConnections } from "../../entity/wires"
 import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
@@ -125,7 +127,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
 
   // cables
   const cableConnections = entity.cableConnections
-  const isElectricPole = game.entity_prototypes[entity.firstValue.name].type == "electric-pole"
+  const isElectricPole = prototypes.entity[entity.firstValue.name].type == "electric-pole"
   if (!cableConnections) {
     if (isElectricPole) {
       for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
@@ -161,31 +163,41 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
       const worldEntity = entity.getWorldEntity(stage)
       if (!worldEntity) continue
-      const wireNeighbors: CircuitOrPowerSwitchConnection[] | nil = worldEntity.circuit_connection_definitions
-      if (!wireNeighbors) continue
-      addPowerSwitchConnections(worldEntity, wireNeighbors)
-      expect(wireNeighbors).toEqual([])
+      // const wireNeighbors: CircuitOrPowerSwitchConnection[] | nil = worldEntity.circuit_connection_definitions
+      // if (!wireNeighbors) continue
+      // expect(wireNeighbors).toEqual([])
+      for (const [, connectionPoint] of pairs(worldEntity.get_wire_connectors(false))) {
+        expect(connectionPoint.connection_count).toBe(0)
+      }
     }
   } else {
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
       const thisWorldEntity = entity.getWorldEntity(stage)
       if (!thisWorldEntity) continue
-      const expectedNeighbors = Object.entries(wireConnections).flatMap(([entity, connections]) => {
+
+      const expectedConnections = Object.entries(wireConnections).flatMap(([entity, connections]) => {
         const otherWorldEntity = entity.getWorldEntity(stage)
         if (!otherWorldEntity) return []
         return Object.keys(connections).map((connection) => ({
-          wire: connection.wire,
+          toId: connection.toId,
           entities: newLuaSet(thisWorldEntity.unit_number!, otherWorldEntity.unit_number!),
         }))
       })
-      const actualNeighbors: CircuitOrPowerSwitchConnection[] = thisWorldEntity.circuit_connection_definitions ?? []
-      addPowerSwitchConnections(thisWorldEntity, actualNeighbors)
 
-      const actualNeighborsSet = actualNeighbors.map((x) => ({
-        wire: x.wire,
-        entities: newLuaSet(x.target_entity.unit_number!, thisWorldEntity.unit_number!),
-      }))
-      expect(actualNeighborsSet).toEqual(expectedNeighbors)
+      const actualConnections: {
+        toId: defines.wire_connector_id
+        entities: LuaSet<UnitNumber>
+      }[] = []
+      for (const [, connectionPoint] of pairs(thisWorldEntity.get_wire_connectors(false))) {
+        for (const connection of connectionPoint.connections) {
+          actualConnections.push({
+            toId: connection.target.wire_connector_id,
+            entities: newLuaSet(thisWorldEntity.unit_number!, connection.target.owner.unit_number!),
+          })
+        }
+      }
+
+      expect(actualConnections).toEqual(expectedConnections)
     }
   }
 }
@@ -227,7 +239,7 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   }
   const entity = surfaces[stage - 1].create_entity(params)
   assert(entity, "created entity")
-  const proto = game.entity_prototypes[params.name]
+  const proto = prototypes.entity[params.name as string]
   if (proto.type == "inserter") {
     entity.inserter_stack_size_override = 1
     entity.inserter_filter_mode = "whitelist"
@@ -495,19 +507,6 @@ describe.each([
     assertEntityCorrect(entity, false)
   })
 
-  if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
-    test("can dolly entity", () => {
-      const entity = buildEntity(3)
-      const worldEntity = entity.getWorldEntity(3)!
-      if (!worldEntity.teleport(1, 0)) return
-      const newPosition = worldEntity.position
-      project.actions.onEntityDollied(worldEntity, 3, pos, player.index)
-
-      expect(entity.position).toEqual(newPosition)
-      assertEntityCorrect(entity, false)
-    })
-  }
-
   if (diff) {
     if (!applyToEntity) error("applyToEntity not set")
     const [k] = Object.keys(diff)
@@ -677,7 +676,10 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
     ])
     player.teleport(pos, surfaces[3 - 1])
 
-    player.build_from_cursor({ position: pos, alt: true })
+    player.build_from_cursor({
+      position: pos,
+      build_mode: defines.build_mode.forced,
+    })
     const ghost = surfaces[3 - 1].find_entity("entity-ghost", pos)
     expect(ghost).toBeNil()
 
@@ -1146,7 +1148,7 @@ describe("underground belt inconsistencies", () => {
       player.mod_settings[Settings.UpgradeOnPaste] = { value: false }
     })
     test("can upgrade underground belt via paste", () => {
-      player.build_from_cursor({ position: pos, alt: true })
+      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
       expect(underground).toMatchTable({
         firstValue: { name: "fast-underground-belt", type: "input" },
         direction: defines.direction.east,
@@ -1159,7 +1161,7 @@ describe("underground belt inconsistencies", () => {
     })
     test("can upgrade underground in flipped direction", () => {
       underground.getWorldEntity(1)!.rotate({ by_player: player })
-      player.build_from_cursor({ position: pos, alt: true })
+      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
 
       expect(underground).toMatchTable({
         firstValue: { name: "fast-underground-belt", type: "output" },
@@ -1169,7 +1171,7 @@ describe("underground belt inconsistencies", () => {
     test("does not upgrade underground belt in wrong direction", () => {
       underground.setTypeProperty("output")
       project.worldUpdates.refreshAllWorldEntities(underground)
-      player.build_from_cursor({ position: pos, alt: true })
+      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
 
       expect(underground).toMatchTable({
         firstValue: { name: "underground-belt", type: "output" },
@@ -1207,10 +1209,22 @@ describe("poles and wire connections", () => {
     assertEntityCorrect(pole2, false)
   })
 
+  function disconnectPole(pole1: LuaEntity, pole2: LuaEntity) {
+    pole1
+      .get_wire_connector(defines.wire_connector_id.pole_copper, false)
+      .disconnect_from(pole2.get_wire_connector(defines.wire_connector_id.pole_copper, false))
+  }
+  function connectPole(pole1: LuaEntity, pole2: LuaEntity) {
+    pole1
+      .get_wire_connector(defines.wire_connector_id.pole_copper, true)
+      .connect_to(pole2.get_wire_connector(defines.wire_connector_id.pole_copper, true))
+  }
+
   test("disconnect and connect cables", () => {
     const pole1 = setupPole(3)
     const pole2 = setupPole2(3)
-    pole1.getWorldEntity(3)!.disconnect_neighbour(pole2.getWorldEntity(3))
+    // pole1.getWorldEntity(3)!.disconnect_neighbour(pole2.getWorldEntity(3))
+    disconnectPole(pole1.getWorldEntity(3)!, pole2.getWorldEntity(3)!)
     project.updates.updateWiresFromWorld(pole1, 3)
 
     expect(pole1.cableConnections?.has(pole2)).toBeFalsy()
@@ -1218,7 +1232,8 @@ describe("poles and wire connections", () => {
     assertEntityCorrect(pole1, false)
     assertEntityCorrect(pole2, false)
 
-    pole1.getWorldEntity(3)!.connect_neighbour(pole2.getWorldEntity(3)!)
+    // pole1.getWorldEntity(3)!.connect_neighbour(pole2.getWorldEntity(3)!)
+    connectPole(pole1.getWorldEntity(3)!, pole2.getWorldEntity(3)!)
     project.updates.updateWiresFromWorld(pole1, 3)
 
     expect(pole1.cableConnections?.has(pole2)).toBe(true)
@@ -1230,22 +1245,24 @@ describe("poles and wire connections", () => {
   test("connect and disconnect circuit wires", () => {
     const inserter = buildEntity(3) // is filter inserter
     const pole = setupPole(3)
-    pole.getWorldEntity(3)!.connect_neighbour({
-      wire: defines.wire_type.red,
-      target_entity: inserter.getWorldEntity(3)!,
-    })
-    project.updates.updateWiresFromWorld(pole, 3)
+    // pole.getWorldEntity(3)!.connect_neighbour({
+    //   wire: defines.wire_type.red,
+    //   target_entity: inserter.getWorldEntity(3)!,
+    // })
+    pole
+      .getWorldEntity(3)!
+      .get_wire_connector(defines.wire_connector_id.circuit_red, true)
+      .connect_to(inserter.getWorldEntity(3)!.get_wire_connector(defines.wire_connector_id.circuit_red, true))
 
     const expectedConnection = next(inserter.circuitConnections!.get(pole)!)[0] as ProjectCircuitConnection
     expect(expectedConnection).toBeAny()
     expect(
       circuitConnectionEquals(
         {
-          wire: defines.wire_type.red,
           fromEntity: pole,
           toEntity: inserter,
-          fromId: 1,
-          toId: 1,
+          fromId: defines.wire_connector_id.circuit_red,
+          toId: defines.wire_connector_id.circuit_red,
         },
         expectedConnection,
       ),
@@ -1279,44 +1296,6 @@ describe("train entities", () => {
 })
 
 describe("circuit connections", () => {
-  test("adding wire in higher stage sets empty control behavior", () => {
-    const inserter = buildEntity(3) // is filter inserter
-    const belt = buildEntity(2, { name: "transport-belt", position: pos.minus(Pos(0, 1)) })
-    project.worldUpdates.refreshWorldEntityAtStage(inserter, 4)
-    project.worldUpdates.refreshWorldEntityAtStage(belt, 4)
-    const inserter4 = inserter.getWorldEntity(4)!
-    const belt4 = belt.getWorldEntity(4)!
-
-    inserter4.connect_neighbour({
-      wire: defines.wire_type.red,
-      target_entity: belt4,
-    })
-    project.updates.updateWiresFromWorld(inserter, 4)
-
-    const connections = inserter.circuitConnections!
-    expect(connections).toBeAny()
-    const connection = next(connections.get(belt)!)[0] as ProjectCircuitConnection
-    expect(connection).toBeAny()
-    expect(
-      circuitConnectionEquals(connection, {
-        wire: defines.wire_type.red,
-        fromEntity: inserter,
-        toEntity: belt,
-        fromId: 1,
-        toId: 1,
-      }),
-    ).toBe(true)
-
-    expect(inserter.firstValue.control_behavior).toBe(emptyInserterControlBehavior)
-    expect(belt.firstValue.control_behavior).toBe(emptyBeltControlBehavior)
-
-    expect(inserter.getStageDiff(4)!.control_behavior).toBeTruthy()
-    expect(belt.getStageDiff(4)!.control_behavior).toBeTruthy()
-
-    assertEntityCorrect(inserter, false)
-    assertEntityCorrect(belt, false)
-  })
-
   test.each([1, 2])("paste a chain of circuit wires over existing power poles, stage %s", (stage) => {
     const pole1 = buildEntity(stage, { name: "small-electric-pole", position: pos })
     const pole2 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
@@ -1327,19 +1306,25 @@ describe("circuit connections", () => {
         entity_number: 1,
         name: "small-electric-pole",
         position: pos,
-        connections: { "1": { red: [{ entity_id: 2 }] } },
+        // connections: { "1": { red: [{ entity_id: 2 }] } },
+        wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
       },
       {
         entity_number: 2,
         name: "small-electric-pole",
         position: pos.plus(Pos(4, 0)),
-        connections: { "1": { red: [{ entity_id: 1 }, { entity_id: 3 }] } },
+        // connections: { "1": { red: [{ entity_id: 1 }, { entity_id: 3 }] } },
+        wires: [
+          [1, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red],
+          [1, defines.wire_connector_id.circuit_red, 3, defines.wire_connector_id.circuit_red],
+        ],
       },
       {
         entity_number: 3,
         name: "small-electric-pole",
         position: pos.plus(Pos(8, 0)),
-        connections: { "1": { red: [{ entity_id: 2 }] } },
+        // connections: { "1": { red: [{ entity_id: 2 }] } },
+        wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
       },
     ]
     const stack = player.cursor_stack!
@@ -1408,7 +1393,7 @@ describe("blueprinting", () => {
     ])
 
     player.teleport([0, 0], surfaces[0])
-    player.build_from_cursor({ position: pos, alt: true })
+    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
 
     const expected = enabled ? "fast-inserter" : "inserter"
     expect(entity.firstValue).toMatchTable({ name: expected })
@@ -1422,22 +1407,24 @@ describe("blueprinting", () => {
       name: "fast-inserter",
       position: Pos(0.5, 0.5),
       direction: direction.west,
-      connections: {
-        1: {
-          red: [{ entity_id: 2, circuit_id: 1 }],
-        },
-      },
+      // connections: {
+      //   1: {
+      //     red: [{ entity_id: 2, circuit_id: 1 }],
+      //   },
+      // },
+      wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
     }
     const entity2: BlueprintEntity = {
       entity_number: 2,
       name: "transport-belt",
       position: Pos(0, 2),
       direction: direction.south,
-      connections: {
-        1: {
-          red: [{ entity_id: 1, circuit_id: 1 }],
-        },
-      },
+      // connections: {
+      //   1: {
+      //     red: [{ entity_id: 1, circuit_id: 1 }],
+      //   },
+      // },
+      wires: [[1, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red]],
     }
     const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
     const stack = player.cursor_stack!
@@ -1447,7 +1434,7 @@ describe("blueprinting", () => {
     stack.set_blueprint_entities([entity1, entity2])
 
     player.teleport([0, 0], surfaces[0])
-    player.build_from_cursor({ position: pos, alt: true })
+    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
 
     const expected = "fast-inserter"
     expect(entity.firstValue).toMatchTable({ name: expected })
@@ -1473,7 +1460,7 @@ describe("blueprinting", () => {
 
         const pos = Pos(5, 5)
         player.teleport([0, 0], surfaces[0])
-        player.build_from_cursor({ position: pos, direction, alt: true })
+        player.build_from_cursor({ position: pos, direction, build_mode: defines.build_mode.forced })
 
         const rail = surfaces[0].find_entity("straight-rail", pos)!
         expect(rail).not.toBeNil()
@@ -1507,7 +1494,11 @@ describe("blueprinting", () => {
     const pos = Pos(5, 5)
     player.teleport([0, 0], surfaces[0])
 
-    player.build_from_cursor({ position: pos, direction: defines.direction.north, alt: true })
+    player.build_from_cursor({
+      position: pos,
+      direction: defines.direction.north,
+      build_mode: defines.build_mode.forced,
+    })
     const rail = surfaces[0].find_entities_filtered({
       name: "straight-rail",
       position: pos,
@@ -1516,7 +1507,11 @@ describe("blueprinting", () => {
     })[0]
     expect(rail).not.toBeNil()
 
-    player.build_from_cursor({ position: pos, direction: defines.direction.south, alt: true })
+    player.build_from_cursor({
+      position: pos,
+      direction: defines.direction.south,
+      build_mode: defines.build_mode.forced,
+    })
     const rail2 = surfaces[0].find_entities_filtered({
       name: "straight-rail",
       position: pos,
@@ -1548,7 +1543,7 @@ describe("blueprinting", () => {
   ])("can paste %s", (entityName) => {
     describe.each([defines.direction.east, defines.direction.south])("at direction %d", (entityDirection) => {
       test.each([defines.direction.north, defines.direction.west])("pasted at direction %d", (pasteDirection) => {
-        const bboxSize = BBox.size(game.entity_prototypes[entityName].collision_box)
+        const bboxSize = BBox.size(prototypes.entity[entityName].collision_box)
         const pos = Pos(bboxSize.x % 2 == 0 ? 0 : 0.5, bboxSize.y % 2 == 0 ? 0 : 0.5)
 
         const entity: BlueprintEntity = {
@@ -1564,7 +1559,7 @@ describe("blueprinting", () => {
         player.build_from_cursor({
           position: Pos(0, 0),
           direction: pasteDirection,
-          alt: true,
+          build_mode: defines.build_mode.forced,
         })
         const luaEntity = surfaces[0].find_entity(entityName, pos)!
         expect(luaEntity).not.toBeNil()
@@ -1593,7 +1588,7 @@ describe("blueprinting", () => {
     const pos = Pos(5, 5)
 
     player.teleport([0, 0], surfaces[0])
-    player.build_from_cursor({ position: pos, direction: 2, alt: true })
+    player.build_from_cursor({ position: pos, direction: 2, build_mode: defines.build_mode.forced })
     const tank = surfaces[0].find_entity("storage-tank", pos)!
     expect(tank).not.toBeNil()
 
@@ -1621,7 +1616,7 @@ describe("blueprinting", () => {
     stack.set_blueprint_entities([entity])
 
     player.teleport([0, 0], surfaces[2 - 1])
-    player.build_from_cursor({ position: Pos(0.5, 0.5), direction: 0, alt: true })
+    player.build_from_cursor({ position: Pos(0.5, 0.5), direction: 0, build_mode: defines.build_mode.forced })
     // should move to stage 2
 
     const pole2 = surfaces[2 - 1].find_entity("medium-electric-pole", Pos(0.5, 0.5))!
@@ -1631,55 +1626,6 @@ describe("blueprinting", () => {
     expect(pole.getWorldEntity(2)).toEqual(pole2)
 
     assertEntityCorrect(pole, false)
-  })
-})
-
-describe("power switch", () => {
-  test("connecting power switch", () => {
-    const pole = buildEntity(2, { name: "medium-electric-pole", position: Pos(0, 0) })
-    const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
-
-    const poleLuaEntity = pole.getWorldEntity(2)!
-    poleLuaEntity.connect_neighbour({
-      wire: defines.wire_type.copper,
-      target_entity: powerSwitch.getWorldEntity(2)!,
-      target_wire_id: defines.wire_connection_id.power_switch_right,
-    })
-
-    project.actions.onWiresPossiblyUpdated(poleLuaEntity, 2, player.index)
-
-    assertEntityCorrect(pole, false)
-    assertEntityCorrect(powerSwitch, false)
-  })
-
-  test("connecting power switch to new pole in higher stage", () => {
-    const pole1 = buildEntity(1, { name: "medium-electric-pole", position: Pos(0, 0) })
-    const powerSwitch = buildEntity(1, { name: "power-switch", position: Pos(2, 0) })
-    const pole2 = buildEntity(2, { name: "medium-electric-pole", position: Pos(4, 0) })
-
-    const pole1LuaEntity = pole1.getWorldEntity(1)!
-    pole1LuaEntity.connect_neighbour({
-      wire: defines.wire_type.copper,
-      target_entity: powerSwitch.getWorldEntity(1)!,
-      target_wire_id: defines.wire_connection_id.power_switch_right,
-    })
-
-    project.actions.onWiresPossiblyUpdated(pole1LuaEntity, 1, player.index)
-    assertEntityCorrect(pole1, false)
-    assertEntityCorrect(pole2, false)
-    assertEntityCorrect(powerSwitch, false)
-
-    const pole2LuaEntity = pole2.getWorldEntity(3)!
-    pole2LuaEntity.connect_neighbour({
-      wire: defines.wire_type.copper,
-      target_entity: powerSwitch.getWorldEntity(3)!,
-      target_wire_id: defines.wire_connection_id.power_switch_right,
-    })
-
-    project.actions.onWiresPossiblyUpdated(pole2LuaEntity, 3, player.index)
-    assertEntityCorrect(pole1, false)
-    assertEntityCorrect(pole2, false)
-    assertEntityCorrect(powerSwitch, false)
   })
 })
 
@@ -1718,7 +1664,7 @@ if ("bobinserters" in script.active_mods) {
     ])
     player.teleport(pos, surfaces[3 - 1])
 
-    player.build_from_cursor({ position: pos, alt: true, direction: direction.west }) // rotated 90 CC
+    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced, direction: direction.west }) // rotated 90 CC
 
     const builtEntity = surfaces[3 - 1].find_entity("inserter", pos)!
     expect(builtEntity).toBeAny()

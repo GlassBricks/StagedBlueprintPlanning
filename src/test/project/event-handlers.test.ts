@@ -14,7 +14,7 @@ import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes } from "../../constants"
 import * as _createBpWithStageInfo from "../../copy-paste/create-blueprint-with-stage-info"
-import { BobInserterChangedPositionEvent, DollyMovedEntityEvent } from "../../declarations/mods"
+import { BobInserterChangedPositionEvent } from "../../declarations/mods"
 import { getTempBpItemStack } from "../../entity/save-load"
 import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
@@ -310,7 +310,6 @@ describe("upgrade", () => {
     entity.order_upgrade({
       force: "player",
       target: "inserter",
-      direction: defines.direction.east,
     })
     expect(project.actions.onEntityMarkedForUpgrade).toHaveBeenCalledWith(entity, 1, nil)
   })
@@ -330,8 +329,8 @@ describe("upgrade", () => {
     })!
     Events.raiseFakeEventNamed("on_built_entity", {
       player_index: 1 as PlayerIndex,
-      created_entity: newEntity,
-      stack: nil!,
+      entity: newEntity,
+      consumed_items: nil!,
     })
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(newEntity, 1, oldDirection, 1)
     expect(project.actions.onEntityDeleted).not.toHaveBeenCalled()
@@ -659,7 +658,7 @@ describe("staged copy, delete, cut", () => {
       BBox.around(pos, 10),
     )
     expect(player.is_cursor_blueprint()).toBe(true)
-    const entities = player.get_blueprint_entities()!
+    const entities = player.cursor_stack!.get_blueprint_entities()!
     expect(entities).toHaveLength(1)
     expect(entities[0].name).toBe("inserter")
 
@@ -685,7 +684,7 @@ describe("staged copy, delete, cut", () => {
     player.opened = nil
 
     expect(player.is_cursor_blueprint()).toBe(true)
-    const entities = player.get_blueprint_entities()!
+    const entities = player.cursor_stack!.get_blueprint_entities()!
     expect(entities).toHaveLength(1)
     expect(entities[0].name).toBe("inserter")
   })
@@ -726,7 +725,7 @@ describe("staged copy, delete, cut", () => {
     expect(project.actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
 
     expect(player.is_cursor_blueprint()).toBe(true)
-    const entities = player.get_blueprint_entities()!
+    const entities = player.cursor_stack!.get_blueprint_entities()!
     expect(entities).toHaveLength(1)
     expect(entities[0].name).toBe("inserter")
 
@@ -828,7 +827,7 @@ describe("blueprint paste", () => {
     player.toggle_map_editor()
     after_test(() => player.toggle_map_editor())
     setBlueprint()
-    player.build_from_cursor({ position: pos, alt: true })
+    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
     expectedNumCalls = 0
   })
 
@@ -852,17 +851,19 @@ describe("blueprint paste", () => {
       name: "inserter",
       position: Pos(1.5, 0.5),
       direction: direction.east,
-      connections: {
-        "1": {
-          red: [{ entity_id: 1 }],
-        },
-      },
+      // connections: {
+      //   "1": {
+      //     red: [{ entity_id: 1 }],
+      //   },
+      // },
+      wires: [[2, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red]],
     }
-    bpEntity1.connections = {
-      "1": {
-        red: [{ entity_id: 2 }],
-      },
-    }
+    // bpEntity1.connections = {
+    //   "1": {
+    //     red: [{ entity_id: 2 }],
+    //   },
+    // }
+    bpEntity1.wires = [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]]
     player.cursor_stack!.set_blueprint_entities([bpEntity1, bpEntity2])
 
     const inserter1 = surface.create_entity({
@@ -899,13 +900,15 @@ describe("blueprint paste", () => {
       entity_number: 1,
       name: "small-electric-pole",
       position: Pos(0.5, 0.5),
-      neighbours: [2],
+      // neighbours: [2],
+      wires: [[1, defines.wire_connector_id.pole_copper, 2, defines.wire_connector_id.pole_copper]],
     }
     const entity2: BlueprintEntity = {
       entity_number: 2,
       name: "small-electric-pole",
       position: Pos(1.5, 0.5),
-      neighbours: [1],
+      // neighbours: [1],
+      wires: [[2, defines.wire_connector_id.pole_copper, 1, defines.wire_connector_id.pole_copper]],
     }
     player.cursor_stack!.set_blueprint_entities([entity1, entity2])
 
@@ -932,34 +935,6 @@ describe("blueprint paste", () => {
       expectedNumCalls = 2
     }
   })
-
-  function fakeFlippedPaste(pos: Position) {
-    // fake the paste event, since no api for it yet
-    Events.raiseFakeEventNamed("on_pre_build", {
-      player_index: player.index,
-      position: pos,
-      shift_build: true,
-      direction: 0,
-      created_by_moving: false,
-      flip_vertical: false,
-      flip_horizontal: true,
-    })
-
-    expect(player.cursor_stack!.cost_to_build).toHaveKey(Prototypes.EntityMarker)
-
-    const entity = player.cursor_stack!.get_blueprint_entities()!.find((e) => e.name == Prototypes.EntityMarker)!
-
-    Events.raiseFakeEventNamed("on_built_entity", {
-      player_index: player.index,
-      created_entity: surface.create_entity({
-        name: entity.name,
-        position: pos,
-        direction: entity.direction,
-      })!,
-      stack: player.cursor_stack!,
-      tags: entity.tags,
-    })
-  }
 
   test("tank has correct direction when not flipped ", () => {
     const entity: BlueprintEntity = {
@@ -999,7 +974,10 @@ describe("blueprint paste", () => {
     })
     expect(tank).toBeAny()
 
-    fakeFlippedPaste(Pos(0.5, 0.5))
+    player.build_from_cursor({
+      position: Pos(0.5, 0.5),
+      mirror: true,
+    })
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, entity)
@@ -1022,7 +1000,7 @@ describe("blueprint paste", () => {
     })
     expect(splitter).toBeAny()
 
-    fakeFlippedPaste(Pos(0, 0.5))
+    player.build_from_cursor({ position: Pos(0, 0.5), mirror: true })
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, {
@@ -1035,25 +1013,6 @@ describe("blueprint paste", () => {
   // some more tricky cases handled in entity-update-integration.test.ts
 })
 
-test("Q-building", () => {
-  // this is technically a bug in the base game, but we are supporting it anyway
-  player.cursor_stack!.set_stack("transport-belt")
-  Events.raiseFakeEventNamed("on_pre_build", {
-    player_index: player.index,
-    position: Pos(0, 0),
-    shift_build: false,
-    direction: 0,
-    created_by_moving: false,
-    flip_vertical: false,
-    flip_horizontal: false,
-  })
-  Events.raiseFakeEventNamed("on_player_cursor_stack_changed", {
-    player_index: player.index,
-  })
-  expectedNumCalls = 0
-  _assertInValidState()
-})
-
 describe("belt dragging", () => {
   function fakeNoopDrag(belt: LuaEntity): void {
     Events.raiseFakeEventNamed("on_pre_build", {
@@ -1061,7 +1020,8 @@ describe("belt dragging", () => {
       position: belt.position,
       created_by_moving: true,
       direction: belt.direction,
-      shift_build: false,
+      build_mode: defines.build_mode.normal,
+      mirror: false,
       flip_vertical: false,
       flip_horizontal: false,
     })
@@ -1198,9 +1158,10 @@ describe("belt dragging", () => {
       position: u1.position,
       created_by_moving: true,
       direction,
-      shift_build: false,
+      build_mode: defines.build_mode.normal,
       flip_vertical: false,
       flip_horizontal: false,
+      mirror: false,
     })
   }
   describe("rotate underground by dragging calls onUndergroundBeltDragRotated", () => {
@@ -1305,9 +1266,8 @@ describe("tiles", () => {
 
     test("player built tile", () => {
       Events.raiseFakeEventNamed("on_player_built_tile", {
-        tile: game.tile_prototypes["stone-path"],
+        tile: prototypes.tile["stone-path"],
         item: nil!,
-        stack: nil!,
         tiles: [
           {
             position: pos,
@@ -1323,9 +1283,9 @@ describe("tiles", () => {
     test("robot built tile", () => {
       Events.raiseFakeEventNamed("on_robot_built_tile", {
         surface_index: surface.index,
-        tile: game.tile_prototypes["stone-path"],
+        tile: prototypes.tile["stone-path"],
+        inventory: nil!,
         robot: nil!,
-        stack: nil!,
         item: nil!,
         tiles: [
           {
@@ -1380,9 +1340,8 @@ describe("tiles", () => {
     })
     test("player built tile", () => {
       Events.raiseFakeEventNamed("on_player_built_tile", {
-        tile: game.tile_prototypes["stone-path"],
+        tile: prototypes.tile["stone-path"],
         item: nil!,
-        stack: nil!,
         tiles: [
           {
             position: pos,
@@ -1396,9 +1355,9 @@ describe("tiles", () => {
     test("robot built tile", () => {
       Events.raiseFakeEventNamed("on_robot_built_tile", {
         surface_index: surface.index,
-        tile: game.tile_prototypes["stone-path"],
+        tile: prototypes.tile["stone-path"],
         robot: nil!,
-        stack: nil!,
+        inventory: nil!,
         item: nil!,
         tiles: [
           {
@@ -1438,27 +1397,6 @@ describe("tiles", () => {
     })
   })
 })
-
-// mod support
-if (remote.interfaces.PickerDollies && remote.interfaces.PickerDollies.dolly_moved_entity_id) {
-  test("when dollied, calls onEntityDollied", () => {
-    const eventId = remote.call("PickerDollies", "dolly_moved_entity_id") as CustomEventId<DollyMovedEntityEvent>
-    const entity = surface.create_entity({
-      name: "iron-chest",
-      position: pos,
-      force: "player",
-    })!
-
-    entity.teleport(Pos(1.5, 0))
-    Events.raiseFakeEvent(eventId, {
-      player_index: player.index,
-      start_pos: pos,
-      moved_entity: entity,
-    })
-
-    expect(project.actions.onEntityDollied).toHaveBeenCalledWith(entity, 1, pos, 1)
-  })
-}
 
 if (remote.interfaces.bobinserters && remote.interfaces.bobinserters.get_changed_position_event_id) {
   test("when inserter changed position, calls onEntityPossiblyUpdated", () => {

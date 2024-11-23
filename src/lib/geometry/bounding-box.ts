@@ -13,7 +13,7 @@
 
 import { BoundingBox as PBoundingBox } from "factorio:prototype"
 import { BoundingBox, BoundingBoxArray, BoundingBoxWrite } from "factorio:runtime"
-import { WithMetatable } from "../util-types"
+import { WithMetatable } from "../_util"
 import { Pos, Position, PositionClass } from "./position"
 
 // Down is positive y, right is positive x

@@ -9,8 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { isEmpty, mutableShallowCopy, visitAll } from "../_util"
-import { Migrations } from "../migration"
+import { isEmpty, mutableShallowCopy } from "../_util"
 import { bind, Callback, Func, funcRef, ibind, RegisterClass, registerFunctions } from "../references"
 import { Event, Subscribable } from "./Event"
 import { Subscription } from "./Subscription"
@@ -459,13 +458,3 @@ function _migrateCheckEmpty(
 }
 
 declare const storage: object
-function migrateCheckEmpty(): void {
-  const metatables = newLuaSet<object>(MappedProperty.prototype, FlatMappedProperty.prototype, CustomProperty.prototype)
-  visitAll(storage, (obj) => {
-    const metatable = getmetatable(obj)
-    if (metatable && metatables.has(metatable)) {
-      _migrateCheckEmpty(obj as any)
-    }
-  })
-}
-Migrations.to("0.23.2", migrateCheckEmpty)

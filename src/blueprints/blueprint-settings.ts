@@ -29,9 +29,6 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
 
   /** If not nil, exclude these blacklisted entities. Always applied. */
   readonly blacklist: ReadonlyLuaSet<string> | nil
-
-  // (transformations)
-  readonly replaceInfinityEntitiesWithCombinators: boolean
 }
 
 export interface OverrideableBlueprintSettings extends BlueprintTakeSettings {
@@ -120,7 +117,6 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
     blacklist: nil,
     stageLimit: nil,
     excludeFromFutureBlueprints: false,
-    replaceInfinityEntitiesWithCombinators: false,
   }
 }
 

@@ -31,7 +31,7 @@ import {
   RegisterClass,
   registerFunctions,
 } from "../lib"
-import { Component, destroy, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
+import { Component, Element, ElemProps, FactorioJsx, RenderContext, renderNamed } from "../lib/factoriojsx"
 import {
   CollapseButton,
   DraggableSpace,
@@ -484,17 +484,6 @@ class ProjectSettings extends Component<{
           tooltip={[L_GuiProjectSettings.ExcludeFromFutureBlueprintsTooltip]}
         />
 
-        <label caption={[L_GuiProjectSettings.EntityEdits]} style="caption_label" />
-
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox
-            state={settings.replaceInfinityEntitiesWithCombinators}
-            caption={[L_GuiProjectSettings.ReplaceInfinityWithCombinators]}
-            tooltip={[L_GuiProjectSettings.ReplaceInfinityWithCombinatorsTooltip]}
-            styleMod={highlightIfOverriden(settings.replaceInfinityEntitiesWithCombinators)}
-          />
-          {MaybeRevertButton(settings.replaceInfinityEntitiesWithCombinators)}
-        </flow>
         <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <checkbox
@@ -920,20 +909,4 @@ export function refreshCurrentProject(): void {
     renderGuiForProject(player, currentStage?.project)
   }
 }
-Migrations.to("0.15.1", () => {
-  for (const [, player] of game.players) {
-    destroy(player.gui.screen["gui:AssemblySettingsFrame"])
-    interface OldPlayerData {
-      currentShownAssembly?: UserProject
-    }
-    const playerData = storage.players[player.index] as OldPlayerData | nil
-    delete playerData?.currentShownAssembly
-  }
-})
 Migrations.fromAny(refreshCurrentProject)
-Migrations.early("0.23.0", () => {
-  const oldProjectSettingsName = `${script.mod_name}:assembly-settings`
-  for (const [, player] of game.players) {
-    destroy(player.gui.screen[oldProjectSettingsName])
-  }
-})

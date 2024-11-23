@@ -25,8 +25,9 @@ function createHiddenEntity(name: string): (SimpleEntityWithOwnerPrototype | Ite
       icon_size: 64,
       subgroup: Prototypes.BlueprintSubgroup,
       picture: empty_sprite() as Sprite,
-      flags: ["hidden", "player-creation", "placeable-off-grid"],
-      collision_mask: [],
+      hidden: true,
+      flags: ["player-creation", "placeable-off-grid"],
+      collision_mask: { layers: {} },
     } satisfies SimpleEntityWithOwnerPrototype,
     {
       type: "item",
@@ -34,7 +35,8 @@ function createHiddenEntity(name: string): (SimpleEntityWithOwnerPrototype | Ite
       icon: "__core__/graphics/spawn-flag.png",
       icon_size: 64,
       stack_size: 1,
-      flags: ["hidden"],
+      hidden: true,
+      flags: [],
       place_result: name,
     } satisfies ItemPrototype,
   ]
@@ -47,7 +49,8 @@ stageReference.subgroup = undefined
 Object.assign(stageReference, {
   name: Prototypes.StageReference,
   icon: "__bp100__/graphics/icons/purple-blueprint.png",
-  flags: ["hidden", "not-stackable"],
+  hidden: true,
+  flags: ["not-stackable"],
 } satisfies Partial<BlueprintItemPrototype>)
 
 data.extend([stageReference])

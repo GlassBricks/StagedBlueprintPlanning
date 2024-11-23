@@ -10,7 +10,6 @@
  */
 
 import * as util from "util"
-import { Mutable, PRecord } from "./util-types"
 
 const type = _G.type
 
@@ -22,6 +21,7 @@ export function shallowCopy<T>(obj: T): T {
   }
   return result as T
 }
+
 export const mutableShallowCopy: <T extends object>(obj: T) => Mutable<T> = shallowCopy
 
 export const deepCopy = util.table.deepcopy
@@ -121,4 +121,17 @@ export function asMutable<T extends object>(obj: T): Mutable<T> {
 
 export function asLuaArray<T>(array: T[]): PRecord<number, T> {
   return array
+}
+
+export type PRecord<K extends keyof any, V> = {
+  [P in K]?: V
+}
+export type PRRecord<K extends keyof any, V> = {
+  readonly [P in K]?: V
+}
+export type Mutable<T> = {
+  -readonly [P in keyof T]: T[P]
+}
+export type WithMetatable<T, M> = T & {
+  [P in keyof M]: M[P] extends (self: T, ...args: infer A) => infer R ? (this: T, ...args: A) => R : M[P]
 }

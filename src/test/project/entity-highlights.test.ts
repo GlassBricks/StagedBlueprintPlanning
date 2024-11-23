@@ -56,7 +56,7 @@ function createPreview(stage: StageNumber, params: Partial<SurfaceCreateEntity> 
     surfaces[stage - 1].create_entity({
       position: Pos(1, 1),
       ...params,
-      name: Prototypes.PreviewEntityPrefix + (params?.name ?? "stone-furnace"),
+      name: Prototypes.PreviewEntityPrefix + tostring(params?.name ?? "stone-furnace"),
     }),
   )
 }

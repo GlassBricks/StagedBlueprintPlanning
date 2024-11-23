@@ -13,7 +13,6 @@ import { PlayerIndex } from "factorio:runtime"
 import { StageNumber } from "../entity/ProjectEntity"
 import { onPlayerInit } from "../lib"
 import { Position } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
 import { ProjectId, UserProject } from "./ProjectDef"
 import { ProjectEvents } from "./UserProject"
 
@@ -33,17 +32,7 @@ declare const storage: StorageWithPlayer
 onPlayerInit((index) => {
   storage.players[index].projectPlayerData = new LuaMap()
 })
-Migrations.early("0.23.0", () => {
-  for (const [, player] of game.players) {
-    const playerData = storage.players[player.index]
-    if (!playerData) continue
-    assume<{
-      assemblyPlayerData: any
-    }>(playerData)
-    playerData.projectPlayerData = playerData.assemblyPlayerData
-    delete playerData.assemblyPlayerData
-  }
-})
+
 ProjectEvents.addListener((e) => {
   if (e.type == "project-deleted") {
     for (const [, player] of game.players) {

@@ -30,9 +30,9 @@ import {
 } from "factorio:runtime"
 import { Subscription } from "../event"
 import { Func, RegisterClass } from "../references"
-import { FactorioElement } from "./factorio-elements"
+import type { FactorioElement } from "./factorio-elements"
 
-export * from "./factorio-elements"
+export type * from "./factorio-elements"
 
 export interface RenderContext {
   /**

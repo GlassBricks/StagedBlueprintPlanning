@@ -9,7 +9,13 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaSurface, ScriptRaisedBuiltEvent, TrainScheduleRecord } from "factorio:runtime"
+import {
+  BlueprintEntity,
+  BlueprintInsertPlanWrite,
+  LuaSurface,
+  ScheduleRecord,
+  ScriptRaisedBuiltEvent,
+} from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
@@ -60,9 +66,6 @@ test("saving an entity with knownValue", () => {
     direction: 0,
     tags: { foo: "bar" },
     position: { x: 0, y: 0 },
-    neighbours: [],
-    connections: {},
-
     name: "inserter",
     override_stack_size: 2,
   }
@@ -145,7 +148,7 @@ test("can set recipe of assembling machine even if not researched", () => {
   } as Entity)!
 
   expect(luaEntity).toBeAny()
-  expect(luaEntity.get_recipe()?.name).toBe("rocket-fuel")
+  expect(luaEntity.get_recipe()[0]?.name).toBe("rocket-fuel")
 })
 
 test("doesn't crash if setting to non-existent recipe", () => {
@@ -227,7 +230,7 @@ test("can set recipe of assembling machine even if not researched", () => {
     defines.direction.north,
   )[0]
   expect(newEntity).toBe(entity)
-  expect(entity.get_recipe()?.name).toBe("rocket-fuel")
+  expect(entity.get_recipe()[0]?.name).toBe("rocket-fuel")
 })
 
 test("can upgrade an entity", () => {
@@ -622,7 +625,47 @@ test("can flip loader", () => {
 
 test("can handle item changes", () => {
   const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
-  const newContents = { "productivity-module-2": 1, "speed-module": 1, "productivity-module": 2 }
+  // const newContents = { "productivity-module-2": 1, "speed-module": 1, "productivity-module": 2 }
+
+  const newContents: BlueprintInsertPlanWrite[] = [
+    {
+      id: { name: "productivity-module-2" },
+      items: {
+        in_inventory: [
+          {
+            inventory: defines.inventory.assembling_machine_modules,
+            stack: 1,
+          },
+          {
+            inventory: defines.inventory.assembling_machine_modules,
+            stack: 3,
+          },
+        ],
+      },
+    },
+    {
+      id: { name: "speed-module" },
+      items: {
+        in_inventory: [
+          {
+            inventory: defines.inventory.assembling_machine_modules,
+            stack: 1,
+          },
+        ],
+      },
+    },
+    {
+      id: { name: "productivity-module" },
+      items: {
+        in_inventory: [
+          {
+            inventory: defines.inventory.assembling_machine_modules,
+            stack: 2,
+          },
+        ],
+      },
+    },
+  ]
 
   const entity = surface.create_entity({
     name: "assembling-machine-3",
@@ -645,7 +688,7 @@ test("can handle item changes", () => {
 
 test("can set train schedule", () => {
   const [locomotive] = createRollingStocks(surface, "locomotive", "cargo-wagon")
-  const schedule: TrainScheduleRecord[] = [
+  const schedule: ScheduleRecord[] = [
     {
       station: "test1",
       wait_conditions: [
@@ -674,7 +717,7 @@ test("can set train schedule", () => {
   ;(schedule[1].wait_conditions![0] as any).ticks = 300
   const newValue: Partial<BlueprintEntity> = {
     name: "locomotive",
-    schedule,
+    schedule: { records: schedule },
   }
   const newEntity = updateEntity(locomotive, newValue as Entity, defines.direction.north)[0]!
   expect(newEntity).toBe(locomotive)
@@ -730,7 +773,7 @@ describe("EditorExtensions support", () => {
     const loader = createEntity(surface, { x: 12.5, y: 12 }, defines.direction.east, {
       name: "ee-infinity-loader",
       type: "input",
-      filters: [{ index: 1, name: "iron-plate" }],
+      filters: [{ index: 1, name: "iron-plate", count: 1 }],
     } satisfies Partial<BlueprintEntity> as Entity)!
     expect(loader).toBeAny()
     expect(loader.name).toBe("ee-infinity-loader")
@@ -741,7 +784,7 @@ describe("EditorExtensions support", () => {
       {
         name: "ee-infinity-loader",
         type: "output",
-        filters: [{ index: 1, name: "copper-plate" }],
+        filters: [{ index: 1, name: "copper-plate", count: 1 }],
       } satisfies Partial<BlueprintEntity> as Entity,
       defines.direction.east,
     )[0]!

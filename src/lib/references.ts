@@ -11,8 +11,8 @@
 
 // noinspection JSUnusedGlobalSymbols
 
+import { PRRecord } from "./_util"
 import { Registry } from "./registry"
-import { PRRecord } from "./util-types"
 
 // --- Classes ---
 

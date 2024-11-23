@@ -10,8 +10,8 @@
  */
 
 import { OnPlayerSelectedAreaEvent } from "factorio:runtime"
+import { PRecord } from "./_util"
 import { ProtectedEvents } from "./ProtectedEvents"
-import { PRecord } from "./util-types"
 
 /** @noSelf */
 export interface SelectHandlers {
@@ -41,6 +41,6 @@ export function addSelectionToolHandlers(prototype: string, handlers: SelectHand
 for (const [eventName, handlers] of pairs(globalHandlers)) {
   ProtectedEvents[eventName]((event) => {
     const handler = handlers.get(event.item)
-    handler?.(event)
+    handler?.(event as OnPlayerSelectedAreaEvent)
   })
 }

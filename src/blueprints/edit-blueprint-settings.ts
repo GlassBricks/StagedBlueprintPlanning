@@ -47,7 +47,6 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
     excludeFromFutureBlueprints: false,
     additionalWhitelist: nil,
     blacklist: settings.blacklist.get(),
-    replaceInfinityEntitiesWithCombinators: settings.replaceInfinityEntitiesWithCombinators.get(),
     1: settings[1].get(),
     2: settings[2].get(),
     3: settings[3].get(),

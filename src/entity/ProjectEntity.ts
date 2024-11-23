@@ -52,11 +52,9 @@ export type CableConnections = ReadonlyLuaSet<ProjectEntity>
 export type CircuitConnections = ReadonlyLuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>
 
 export const enum CableAddResult {
-  MaybeAdded = "Added",
+  Added = "Added",
   Error = "Error",
-  MaxConnectionsReached = "MaxConnectionsReached",
 }
-const MaxCableConnections = 5 // hard-coded in game
 
 /**
  * All the data about one entity in a project, across all stages.
@@ -71,8 +69,6 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
 
   readonly cableConnections?: CableConnections
   readonly circuitConnections?: CircuitConnections
-
-  canAddCableConnection(): boolean
 
   tryAddOneWayCableConnection(entity: ProjectEntity): boolean
 
@@ -175,6 +171,7 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
 export type StageDiffsInternal<E extends Entity = Entity> = PRRecord<StageNumber, StageDiffInternal<E>>
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ExtraEntities {}
 export type ExtraEntityType = keyof ExtraEntities
 
@@ -257,21 +254,16 @@ class ProjectEntityImpl<T extends Entity = Entity>
     )
   }
 
-  canAddCableConnection() {
-    const cableConnections = this.cableConnections
-    return cableConnections == nil || table_size(cableConnections) < MaxCableConnections
-  }
   tryAddOneWayCableConnection(entity: ProjectEntity): boolean {
-    if (this == entity || !this.canAddCableConnection()) return false
+    if (this == entity) return false
     ;(this.cableConnections ??= newLuaSet()).add(entity)
     return true
   }
   tryAddDualCableConnection(entity: ProjectEntity): CableAddResult {
     if (this == entity) return CableAddResult.Error
-    if (!(this.canAddCableConnection() && entity.canAddCableConnection())) return CableAddResult.MaxConnectionsReached
     ;(this.cableConnections ??= newLuaSet()).add(entity)
     ;((entity as ProjectEntityImpl).cableConnections ??= newLuaSet()).add(this)
-    return CableAddResult.MaybeAdded
+    return CableAddResult.Added
   }
 
   removeOneWayCableConnection(entity: ProjectEntity): void {
@@ -694,7 +686,6 @@ class ProjectEntityImpl<T extends Entity = Entity>
   iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {
     let lastKey: StageNumber | nil = nil
     return (() => {
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const nextKey = next(this, lastKey)[0]
         if (typeof nextKey != "number") return nil

@@ -12,7 +12,6 @@
 import { LuaPlayer, LuaSurface, PlayerIndex, SurfaceIndex } from "factorio:runtime"
 import { assertNever, Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
 import { Pos, Position } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { getStageAtSurface } from "../project/project-refs"
 import { Stage, UserProject } from "../project/ProjectDef"
@@ -140,15 +139,3 @@ export function enterLastProject(player: LuaPlayer): void {
   }
   player.print("No known valid last project location")
 }
-
-Migrations.early("0.23.0", () => {
-  for (const [, player] of game.players) {
-    const playerData = storage.players[player.index]
-    if (!playerData) continue
-    assume<{
-      lastNonAssemblyLocation: any
-    }>(playerData)
-    playerData.lastNonProjectLocation = playerData.lastNonAssemblyLocation
-    delete playerData.lastNonAssemblyLocation
-  }
-})

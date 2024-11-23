@@ -32,7 +32,7 @@ export function undergroundCanReach(
   entity2: UndergroundBeltProjectEntity,
   ugName: string,
 ): boolean {
-  const reach = game.entity_prototypes[ugName].max_underground_distance
+  const reach = prototypes.entity[ugName].max_underground_distance
   if (!reach) return false
   return Pos.manhattanDistance(entity1.position, entity2.position) <= reach
 }
@@ -44,7 +44,7 @@ export function findUndergroundPair(
   name: string = member.getNameAtStage(stage),
   ignore?: UndergroundBeltProjectEntity,
 ): UndergroundBeltProjectEntity | nil {
-  const reach = game.entity_prototypes[name].max_underground_distance
+  const reach = prototypes.entity[name].max_underground_distance
   if (!reach) return
 
   const direction = getUndergroundDirection(member.direction, member.firstValue.type)

@@ -11,9 +11,9 @@
 
 import { VersionString } from "factorio:common"
 import { PlayerIndex } from "factorio:runtime"
+import { Mutable } from "./_util"
 import { Events } from "./Events"
 import { Migrations } from "./migration"
-import { Mutable } from "./util-types"
 
 declare const storage: Mutable<StorageWithPlayer>
 /**

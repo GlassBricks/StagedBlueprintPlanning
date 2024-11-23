@@ -12,7 +12,7 @@
 /** @noSelfInFile */
 
 import { ConfigurationChangedData, CustomInputEvent, EventData, EventId, MapPosition } from "factorio:runtime"
-import { PRecord } from "./util-types"
+import { PRecord } from "./_util"
 
 export interface ScriptEvents {
   on_init: nil
@@ -68,8 +68,14 @@ export interface EventsObj extends EventsRegistration {
       cursor_position?: MapPosition
     },
   ): void
-  raiseFakeEvent<E extends EventId<any, any> | string>(event: E, data: Omit<EventDataOf<E>, keyof EventData>): void
-  raiseFakeEventNamed<E extends keyof NamedEventTypes>(event: E, data: Omit<NamedEventTypes[E], keyof EventData>): void
+  raiseFakeEvent<E extends EventId<any, any> | string>(
+    event: E,
+    data: Omit<EventDataOf<E>, keyof EventData | "quality">,
+  ): void
+  raiseFakeEventNamed<E extends keyof NamedEventTypes>(
+    event: E,
+    data: Omit<NamedEventTypes[E], keyof EventData | "quality">,
+  ): void
 }
 
 export const scriptEventIds: Record<keyof ScriptEvents, symbol> = {
@@ -140,6 +146,7 @@ function raiseFakeEvent(id: keyof any, data: any) {
     if (typeof id == "string") {
       data.input_name = id
       data.cursor_position ??= { x: 0, y: 0 }
+      data.quality ??= "normal"
     }
   }
   for (const handler of handlers) {

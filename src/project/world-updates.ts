@@ -11,7 +11,6 @@
 
 import { LocalisedString, LuaEntity, TilePosition, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
-import { EntityDollyResult, forceDollyEntity, tryDollyAllEntities } from "../entity/picker-dollies"
 import {
   isWorldEntityProjectEntity,
   ProjectEntity,
@@ -28,12 +27,6 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
-
-export type ProjectEntityDollyResult =
-  | EntityDollyResult
-  | "cannot-move"
-  | "entities-missing"
-  | "connected-entities-missing"
 
 /** @noSelf */
 export interface WorldUpdates {
@@ -58,7 +51,6 @@ export interface WorldUpdates {
 
   deleteWorldEntities(entity: ProjectEntity): void
 
-  tryDollyEntities(entity: ProjectEntity, stage: StageNumber): ProjectEntityDollyResult
   resetUnderground(entity: UndergroundBeltProjectEntity, stage: StageNumber): void
 
   rebuildStage(stage: StageNumber): void
@@ -115,7 +107,6 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     disableAllEntitiesInStage,
     enableAllEntitiesInStage,
     deleteWorldEntities,
-    tryDollyEntities,
     resetUnderground,
     rebuildAllStages,
     updateAllHighlights,
@@ -352,65 +343,6 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     deleteAllHighlights(entity)
   }
 
-  function checkConnectionWorldEntityExists(
-    entity: ProjectEntity,
-    startStage: StageNumber,
-    endStage: StageNumber,
-  ): boolean {
-    const cableConnected = entity.cableConnections
-    if (cableConnected) {
-      for (const other of cableConnected) {
-        if (!other.hasWorldEntityInRange(startStage, endStage)) return false
-      }
-    }
-    const circuitConnections = entity.circuitConnections
-    if (circuitConnections) {
-      for (const [other] of circuitConnections) {
-        if (!other.hasWorldEntityInRange(startStage, endStage)) return false
-      }
-    }
-    return true
-  }
-
-  function tryMoveOtherEntities(
-    entity: ProjectEntity,
-    stage: StageNumber,
-    movedEntity: LuaEntity,
-  ): ProjectEntityDollyResult {
-    if (entity.isUndergroundBelt() || entity.firstStage != stage) return "cannot-move"
-
-    if (!checkConnectionWorldEntityExists(entity, stage, project.lastStageFor(entity)))
-      return "connected-entities-missing"
-
-    const entities: LuaEntity[] = []
-    for (const stageNum of $range(1, entity.firstStage - 1)) {
-      entities.push(entity.getWorldOrPreviewEntity(stageNum)!)
-    }
-    for (const stageNum of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const worldEntity = entity.getWorldOrPreviewEntity(stageNum)
-      if (!worldEntity) return "entities-missing"
-      entities.push(worldEntity)
-    }
-
-    return tryDollyAllEntities(entities, movedEntity.position, movedEntity.direction)
-  }
-
-  function tryDollyEntities(entity: ProjectEntity, stage: StageNumber): ProjectEntityDollyResult {
-    const movedEntity = entity.getWorldOrPreviewEntity(stage)
-    if (!movedEntity) return "entities-missing"
-    const moveResult = tryMoveOtherEntities(entity, stage, movedEntity)
-    if (moveResult != "success") {
-      forceDollyEntity(movedEntity, entity.position, entity.direction)
-    } else {
-      entity.direction = movedEntity.direction
-      const posChanged = content.changeEntityPosition(entity, movedEntity.position)
-      assert(posChanged, "failed to change position in content")
-      deleteAllHighlights(entity)
-      updateAllHighlights(entity)
-    }
-
-    return moveResult
-  }
   function disableAllEntitiesInStage(stage: StageNumber): void {
     const surface = project.getSurface(stage)
     if (!surface) return

@@ -9,18 +9,8 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  BlueprintEntity,
-  BlueprintInfinitySettings,
-  BlueprintItemStack,
-  InfinityPipeFilter,
-  LuaEntity,
-  LuaItemStack,
-  LuaSurface,
-  MapPosition,
-  UnitNumber,
-} from "factorio:runtime"
-import { getKeySet, isEmpty, Mutable, PRecord } from "../lib"
+import { BlueprintEntity, LuaEntity, LuaItemStack, LuaSurface, MapPosition, UnitNumber } from "factorio:runtime"
+import { isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeSettings, getIconsFromSettings } from "./blueprint-settings"
 
@@ -81,7 +71,7 @@ function filterEntities(
         !((luaEntity = bpMapping[i]) && (un = luaEntity.unit_number) && unitNumbers.has(un)) &&
         luaEntity.type != "entity-ghost")
     ) {
-      delete entities[i - 1]
+      entities[i - 1] = nil!
       anyDeleted = true
     } else {
       firstNotDeletedLuaIndex ??= i
@@ -90,64 +80,7 @@ function filterEntities(
   return $multi(anyDeleted, firstNotDeletedLuaIndex)
 }
 
-function getInfinityEntityNames(): LuaMultiReturn<[chests: ReadonlyLuaSet<string>, pipes: ReadonlyLuaSet<string>]> {
-  const infinityChestNames = getKeySet(
-    game.get_filtered_entity_prototypes([
-      {
-        filter: "type",
-        type: "infinity-container",
-      },
-    ]),
-  )
-  const infinityPipeNames = getKeySet(
-    game.get_filtered_entity_prototypes([
-      {
-        filter: "type",
-        type: "infinity-pipe",
-      },
-    ]),
-  )
-  return $multi(infinityChestNames, infinityPipeNames)
-}
-
-function replaceInfinityEntitiesWithCombinators(entities: Record<number, Mutable<BlueprintEntity>>): boolean {
-  let anyReplaced = false
-  const [chests, pipes] = getInfinityEntityNames()
-  for (const [, entity] of pairs(entities)) {
-    const name = entity.name
-    if (chests.has(name)) {
-      const infinityFilters = (entity.infinity_settings as BlueprintInfinitySettings)?.filters
-      entity.name = "constant-combinator"
-      entity.control_behavior = {
-        filters:
-          infinityFilters &&
-          infinityFilters.map((f) => ({
-            index: f.index,
-            count: f.count ?? 1,
-            signal: { type: "item", name: f.name },
-          })),
-      }
-      entity.infinity_settings = nil
-      anyReplaced = true
-    } else if (pipes.has(name)) {
-      const settings = entity.infinity_settings as InfinityPipeFilter | nil
-      entity.name = "constant-combinator"
-      entity.control_behavior = {
-        filters: settings && [
-          {
-            index: 1,
-            count: math.ceil((settings.percentage ?? 0.01) * 100),
-            signal: { type: "fluid", name: settings.name },
-          },
-        ],
-      }
-    }
-    anyReplaced = true
-  }
-  return anyReplaced
-}
-
-function contains2x2Grid(bp: BlueprintItemStack): boolean {
+function contains2x2Grid(bp: LuaItemStack): boolean {
   bp.blueprint_snap_to_grid = [1, 1]
   const { x, y } = bp.blueprint_snap_to_grid!
   return x == 2 && y == 2
@@ -206,13 +139,7 @@ export function takeSingleBlueprint({
 
   if (isEmpty(bpMapping)) return nil
 
-  const {
-    snapToGrid,
-    additionalWhitelist,
-    blacklist,
-    replaceInfinityEntitiesWithCombinators: shouldReplaceInfinity,
-    absoluteSnapping,
-  } = params
+  const { snapToGrid, additionalWhitelist, blacklist, absoluteSnapping } = params
 
   let { positionOffset, positionRelativeToGrid } = params
 
@@ -257,10 +184,6 @@ export function takeSingleBlueprint({
     }
   }
 
-  if (shouldReplaceInfinity && replaceInfinityEntitiesWithCombinators(entities)) {
-    entitiesAdjusted = true
-  }
-
   if (isEmpty(entities)) {
     stack.clear_blueprint()
     return nil
@@ -278,7 +201,7 @@ export function takeSingleBlueprint({
     stack.set_blueprint_entities(entities)
   }
 
-  stack.blueprint_icons = getIconsFromSettings(params, stageName) ?? stack.default_icons
+  stack.preview_icons = getIconsFromSettings(params, stageName) ?? stack.default_icons
 
   if (setOrigPositionTag) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)

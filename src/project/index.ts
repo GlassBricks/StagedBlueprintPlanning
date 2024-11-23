@@ -10,6 +10,5 @@
  */
 
 import "./event-handlers"
-import "./migrations"
 import "./project-event-listener"
 import "./UserProject"

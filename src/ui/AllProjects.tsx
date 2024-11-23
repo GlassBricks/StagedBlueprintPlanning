@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { LuaGuiElement, LuaPlayer, OnGuiClickEvent, PlayerIndex, ScrollPaneGuiElement } from "factorio:runtime"
+import { LuaPlayer, OnGuiClickEvent, PlayerIndex, ScrollPaneGuiElement } from "factorio:runtime"
 import * as mod_gui from "mod-gui"
 import { OtherConstants, Styles } from "../constants"
 import { bind, ibind, RegisterClass } from "../lib"
@@ -26,7 +26,6 @@ import {
   renderNamed,
 } from "../lib/factoriojsx"
 import { closeParentAtLevel, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
-import { Migrations } from "../lib/migration"
 import { L_GuiProjectSelector } from "../locale"
 import { ProjectCreatedEvent, ProjectDeletedEvent, ProjectsReorderedEvent, UserProject } from "../project/ProjectDef"
 import {
@@ -257,19 +256,5 @@ PlayerChangedStageEvent.addListener((player, oldStage, newStage) => {
     if (!element) return
     const component = getComponentInstance<AllProjects>(element)
     if (component) component.playerProjectChanged(oldProject, newProject)
-  }
-})
-
-Migrations.to("0.15.1", () => {
-  interface OldPlayerData {
-    currentAssembliesGui?: {
-      mainFlow?: LuaGuiElement
-    }
-  }
-  for (const [playerIndex, playerData] of pairs(storage.players)) {
-    const oldPlayerData = playerData as OldPlayerData
-    destroy(oldPlayerData?.currentAssembliesGui?.mainFlow)
-    const player = game.get_player(playerIndex)
-    destroy(player?.gui.left[`${script.mod_name}:current-assembly`])
   }
 })

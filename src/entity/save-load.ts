@@ -11,10 +11,11 @@
 
 import {
   BlueprintEntity,
-  BlueprintItemStack,
+  BlueprintInsertPlan,
   BoundingBox,
   LuaEntity,
   LuaInventory,
+  LuaItemStack,
   LuaSurface,
   MapPosition,
   RollingStockSurfaceCreateEntity,
@@ -45,7 +46,7 @@ Events.on_init(() => {
   storage.tempBPInventory = game.create_inventory(1)
 })
 
-let bpStack: BlueprintItemStack
+let bpStack: LuaItemStack
 Migrations.since("0.17.0", () => {
   bpStack = storage.tempBPInventory[0]
   bpStack.set_stack("blueprint")
@@ -58,7 +59,7 @@ const rawset = _G.rawset
 const { raise_script_built, raise_script_destroy } = script
 const pcall = _G.pcall
 
-export function getTempBpItemStack(): BlueprintItemStack {
+export function getTempBpItemStack(): LuaItemStack {
   return bpStack
 }
 
@@ -89,7 +90,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
 }
 
 function setBlueprintEntity(
-  stack: BlueprintItemStack,
+  stack: LuaItemStack,
   entity: Mutable<BlueprintEntity>,
   position: Position,
   direction: defines.direction,
@@ -133,7 +134,7 @@ function pasteEntity(
     position: tilePosition,
   })
   if (target.type == "assembling-machine") {
-    pcall(target.set_recipe, entity.recipe)
+    pcall(target.set_recipe as any, entity.recipe)
   }
   return ghosts[0]
 }
@@ -268,10 +269,19 @@ function upgradeEntity(oldEntity: LuaEntity, name: string): LuaEntity {
   return newEntity
 }
 
-function createItems(luaEntity: LuaEntity, items: Record<string, number>): void {
-  const insertTarget = luaEntity.get_module_inventory() ?? luaEntity
-  for (const [name, count] of pairs(items)) {
-    insertTarget.insert({ name, count })
+function createItems(luaEntity: LuaEntity, insertItems: BlueprintInsertPlan[]): void {
+  // const insertTarget = luaEntity.get_module_inventory() ?? luaEntity
+  // for (const [name, count] of pairs(items)) {
+  //   insertTarget.insert({ name, count })
+  // }
+  for (const { id, items } of insertItems) {
+    if (items.in_inventory) {
+      for (const inv of items.in_inventory) {
+        luaEntity
+          .get_inventory(inv.inventory)
+          ?.[inv.stack - 1].set_stack({ name: id.name.name, quality: id.quality?.name, count: inv.count })
+      }
+    }
   }
 }
 
@@ -283,22 +293,7 @@ function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
     moduleInventory.clear()
     return
   }
-
-  // clear items that don't match
-  for (const [item, amount] of pairs(moduleInventory.get_contents())) {
-    const expected = items[item] ?? 0
-    if (amount > expected) {
-      moduleInventory.remove({ name: item, count: amount - expected })
-    }
-  }
-  // insert items that are missing
-  for (const [item, amount] of pairs(items)) {
-    const existing = moduleInventory.get_item_count(item)
-    if (amount > existing) {
-      moduleInventory.insert({ name: item, count: amount - existing })
-    }
-  }
-  moduleInventory.sort_and_merge()
+  createItems(luaEntity, items)
 }
 
 export function checkUndergroundPairFlippable(
@@ -342,7 +337,7 @@ function updateUndergroundRotation(
 export function forceFlipUnderground(luaEntity: LuaEntity): boolean {
   const wasRotatable = luaEntity.rotatable
   luaEntity.rotatable = true
-  const [rotated] = luaEntity.rotate()
+  const rotated = luaEntity.rotate()
   luaEntity.rotatable = wasRotatable
   return rotated
 }
@@ -359,7 +354,7 @@ function updateRollingStock(luaEntity: LuaEntity, value: BlueprintEntity): void 
     const oldScheduleCurrent = train.schedule?.current
     train.schedule = {
       current: oldScheduleCurrent ?? 1,
-      records: value.schedule,
+      records: schedule.records ?? [],
     }
   }
 }
@@ -368,8 +363,7 @@ function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<Blue
   bpEntity.entity_number = nil!
   bpEntity.position = nil!
   bpEntity.direction = nil
-  bpEntity.neighbours = nil
-  bpEntity.connections = nil
+  bpEntity.wires = nil
   bpEntity.tags = nil
   return bpEntity
 }

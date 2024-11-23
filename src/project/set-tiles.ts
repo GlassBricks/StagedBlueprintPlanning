@@ -75,7 +75,7 @@ function getTilesFilteredByUnderEntity(
 }
 
 export function setTiles(surface: LuaSurface, area: BoundingBox, tile: string): boolean {
-  if (!(tile in game.tile_prototypes)) return false
+  if (!(tile in prototypes.tile)) return false
   const tiles = getTiles(area, tile)
   surface.set_tiles(tiles, true, "abort_on_collision", true, true)
   return true
@@ -86,7 +86,7 @@ export function setTilesAndWater(
   area: BoundingBox,
   tileName: string,
 ): LuaMultiReturn<[boolean, freeTiles?: Mutable<Tile>[]]> {
-  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return $multi(false)
+  if (!("water" in prototypes.tile && tileName in prototypes.tile)) return $multi(false)
   const { underEntityTiles, freeTiles } = getTilesFilteredByUnderEntity(surface, area, false)
   for (const tile of underEntityTiles) {
     tile.name = tileName
@@ -101,7 +101,7 @@ export function setTilesAndCheckerboard(
   area: BoundingBox,
   tileName: string,
 ): LuaMultiReturn<[boolean, freeTiles?: Mutable<Tile>[]]> {
-  if (!("water" in game.tile_prototypes && tileName in game.tile_prototypes)) return $multi(false)
+  if (!("water" in prototypes.tile && tileName in prototypes.tile)) return $multi(false)
   withTileEventsDisabled(surface.build_checkerboard, area)
   const { underEntityTiles, freeTiles } = getTilesFilteredByUnderEntity(surface, area, true)
   for (const tile of underEntityTiles) {

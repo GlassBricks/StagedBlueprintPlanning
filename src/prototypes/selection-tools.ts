@@ -16,7 +16,6 @@ import {
   DeconstructionItemPrototype,
   SelectionToolPrototype,
   ShortcutPrototype,
-  Sprite,
 } from "factorio:prototype"
 import { table } from "util"
 import { Colors, Prototypes } from "../constants"
@@ -25,7 +24,7 @@ declare const data: PrototypeData
 
 function selectionToolToShortcut(
   prototype: SelectionToolPrototype | DeconstructionItemPrototype,
-  icon: Sprite,
+  icon: string,
   associatedControl: string | nil,
   style: ShortcutPrototype["style"],
 ): ShortcutPrototype {
@@ -82,30 +81,37 @@ const cleanupTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-a[cleanup-tool]",
 
-  selection_mode: ["any-entity"],
-  selection_color: cleanupToolColor,
-  selection_cursor_box_type: "entity",
-
-  alt_selection_mode: ["any-entity"],
-  alt_selection_color: cleanupToolColor,
-  alt_selection_cursor_box_type: "entity",
-
-  reverse_selection_mode: ["any-entity"],
-  reverse_selection_color: cleanupReverseToolColor,
-  reverse_selection_cursor_box_type: "not-allowed",
+  // selection_mode: ["any-entity"],
+  // selection_color: cleanupToolColor,
+  // selection_cursor_box_type: "entity",
+  //
+  // alt_selection_mode: ["any-entity"],
+  // alt_selection_color: cleanupToolColor,
+  // alt_selection_cursor_box_type: "entity",
+  //
+  // reverse_selection_mode: ["any-entity"],
+  // reverse_selection_color: cleanupReverseToolColor,
+  // reverse_selection_cursor_box_type: "not-allowed",
+  select: {
+    mode: ["any-entity"],
+    border_color: cleanupToolColor,
+    cursor_box_type: "entity",
+  },
+  alt_select: {
+    mode: ["any-entity"],
+    border_color: cleanupToolColor,
+    cursor_box_type: "entity",
+  },
+  reverse_select: {
+    mode: ["any-entity"],
+    border_color: cleanupReverseToolColor,
+    cursor_box_type: "not-allowed",
+  },
 }
 
 data.extend([
   cleanupTool,
-  selectionToolToShortcut(
-    cleanupTool,
-    {
-      filename: "__bp100__/graphics/icons/cleanup-white.png",
-      size: 64,
-    },
-    Prototypes.CleanupTool,
-    "blue",
-  ),
+  selectionToolToShortcut(cleanupTool, "__bp100__/graphics/icons/cleanup-white.png", Prototypes.CleanupTool, "blue"),
   selectionToolToInput(cleanupTool),
 ])
 
@@ -119,7 +125,6 @@ const stageMoveTool: SelectionToolPrototype = {
   name: Prototypes.StageMoveTool,
   icon: "__bp100__/graphics/icons/stage-move-tool.png",
   icon_size: 64,
-  icon_mipmaps: 4,
   flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
 
@@ -128,32 +133,49 @@ const stageMoveTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-b[stage-move-tool]",
 
-  selection_color: stageMoveToolColor,
-  selection_cursor_box_type: "copy",
-  selection_mode: ["deconstruct"],
+  // selection_color: stageMoveToolColor,
+  // selection_cursor_box_type: "copy",
+  // selection_mode: ["deconstruct"],
+  //
+  // alt_selection_color: stageMoveToolAltColor,
+  // alt_selection_cursor_box_type: "copy",
+  // alt_selection_mode: ["any-entity"],
+  //
+  // reverse_selection_color: stageMoveToolReverseColor,
+  // reverse_selection_cursor_box_type: "electricity",
+  // reverse_selection_mode: ["any-entity"],
+  //
+  // alt_reverse_selection_color: stageMoveToolReverseColor,
+  // alt_reverse_selection_cursor_box_type: "electricity",
+  // alt_reverse_selection_mode: ["any-entity"],
 
-  alt_selection_color: stageMoveToolAltColor,
-  alt_selection_cursor_box_type: "copy",
-  alt_selection_mode: ["any-entity"],
-
-  reverse_selection_color: stageMoveToolReverseColor,
-  reverse_selection_cursor_box_type: "electricity",
-  reverse_selection_mode: ["any-entity"],
-
-  alt_reverse_selection_color: stageMoveToolReverseColor,
-  alt_reverse_selection_cursor_box_type: "electricity",
-  alt_reverse_selection_mode: ["any-entity"],
+  select: {
+    mode: ["deconstruct"],
+    border_color: stageMoveToolColor,
+    cursor_box_type: "copy",
+  },
+  alt_select: {
+    mode: ["any-entity"],
+    border_color: stageMoveToolAltColor,
+    cursor_box_type: "copy",
+  },
+  reverse_select: {
+    mode: ["any-entity"],
+    border_color: stageMoveToolReverseColor,
+    cursor_box_type: "electricity",
+  },
+  alt_reverse_select: {
+    mode: ["any-entity"],
+    border_color: stageMoveToolReverseColor,
+    cursor_box_type: "electricity",
+  },
 }
 
 data.extend([
   stageMoveTool,
   selectionToolToShortcut(
     stageMoveTool,
-    {
-      filename: "__bp100__/graphics/icons/stage-move-tool-white.png",
-      size: 32,
-      mipmap_count: 2,
-    },
+    "__bp100__/graphics/icons/stage-move-tool-white.png",
     Prototypes.StageMoveTool,
     "blue",
   ),
@@ -167,12 +189,10 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
     {
       icon: "__bp100__/graphics/icons/purple-blueprint.png",
       icon_size: 64,
-      icon_mipmaps: 4,
     },
     {
       icon: "__bp100__/graphics/icons/stage-move-tool-white.png",
       icon_size: 32,
-      icon_mipmaps: 2,
       scale: 0.5,
     },
   ],
@@ -186,26 +206,31 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-c[filtered-stage-move-tool]",
 
-  selection_color: stageMoveToolColor,
-  selection_cursor_box_type: "copy",
-  selection_mode: ["deconstruct"],
+  // selection_color: stageMoveToolColor,
+  // selection_cursor_box_type: "copy",
+  // selection_mode: ["deconstruct"],
+  //
+  // alt_selection_color: [0, 0, 0],
+  // alt_selection_cursor_box_type: "not-allowed",
+  // alt_selection_mode: ["nothing"],
 
-  alt_selection_color: [0, 0, 0],
-  alt_selection_cursor_box_type: "not-allowed",
-  alt_selection_mode: ["nothing"],
-
-  // can't do anything about alt or reverse selection mode
+  select: {
+    mode: ["deconstruct"],
+    border_color: stageMoveToolColor,
+    cursor_box_type: "copy",
+  },
+  alt_select: {
+    mode: ["nothing"],
+    border_color: [0, 0, 0],
+    cursor_box_type: "not-allowed",
+  },
 }
 
 data.extend([
   filteredStagedMoveTool,
   selectionToolToShortcut(
     filteredStagedMoveTool,
-    {
-      filename: "__bp100__/graphics/icons/stage-move-tool-white.png",
-      size: 32,
-      mipmap_count: 2,
-    },
+    "__bp100__/graphics/icons/stage-move-tool-white.png",
     Prototypes.FilteredStageMoveTool,
     "red",
   ),
@@ -219,7 +244,6 @@ const stagedDeconstructTool: SelectionToolPrototype = {
   name: Prototypes.StageDeconstructTool,
   icon: "__bp100__/graphics/icons/staged-deconstruct-tool.png",
   icon_size: 64,
-  icon_mipmaps: 2,
 
   flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
@@ -229,27 +253,40 @@ const stagedDeconstructTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-e[stage-deconstruct-tool]",
 
-  selection_color: deconstructionPlanner.selection_color,
-  selection_cursor_box_type: "not-allowed",
-  selection_mode: ["blueprint"],
+  // selection_color: deconstructionPlanner.selection_color,
+  // selection_cursor_box_type: "not-allowed",
+  // selection_mode: ["blueprint"],
+  //
+  // alt_selection_color: deconstructionPlanner.alt_selection_color,
+  // alt_selection_cursor_box_type: "not-allowed",
+  // alt_selection_mode: ["blueprint"],
+  //
+  // reverse_selection_color: deconstructionPlanner.reverse_selection_color,
+  // reverse_selection_cursor_box_type: "not-allowed",
+  // reverse_selection_mode: ["nothing"],
 
-  alt_selection_color: deconstructionPlanner.alt_selection_color,
-  alt_selection_cursor_box_type: "not-allowed",
-  alt_selection_mode: ["blueprint"],
-
-  reverse_selection_color: deconstructionPlanner.reverse_selection_color,
-  reverse_selection_cursor_box_type: "not-allowed",
-  reverse_selection_mode: ["nothing"],
+  select: {
+    mode: ["blueprint"],
+    border_color: deconstructionPlanner.select.border_color,
+    cursor_box_type: "not-allowed",
+  },
+  alt_select: {
+    mode: ["blueprint"],
+    border_color: deconstructionPlanner.alt_select.border_color,
+    cursor_box_type: "not-allowed",
+  },
+  reverse_select: {
+    mode: ["nothing"],
+    border_color: deconstructionPlanner.reverse_select!.border_color,
+    cursor_box_type: "not-allowed",
+  },
 }
 
 data.extend([
   stagedDeconstructTool,
   selectionToolToShortcut(
     stagedDeconstructTool,
-    {
-      filename: "__bp100__/graphics/icons/staged-deconstruct-tool-new.png",
-      size: 32,
-    },
+    "__bp100__/graphics/icons/staged-deconstruct-tool-new.png",
     Prototypes.StageDeconstructTool,
     "red",
   ),
@@ -265,7 +302,6 @@ const stageCopyTool: SelectionToolPrototype = {
 
   icon: "__bp100__/graphics/icons/staged-copy-tool.png",
   icon_size: 64,
-  icon_mipmaps: 2,
 
   subgroup: "tool",
   order: "z[bp100]-b[b-tools]-a[staged-copy-tool]",
@@ -273,13 +309,24 @@ const stageCopyTool: SelectionToolPrototype = {
   flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
 
-  selection_mode: ["blueprint"],
-  selection_color: copyTool.selection_color,
-  selection_cursor_box_type: "copy",
+  // selection_mode: ["blueprint"],
+  // selection_color: copyTool.selection_color,
+  // selection_cursor_box_type: "copy",
+  //
+  // alt_selection_mode: ["blueprint"],
+  // alt_selection_color: copyTool.alt_selection_color,
+  // alt_selection_cursor_box_type: "copy",
 
-  alt_selection_mode: ["blueprint"],
-  alt_selection_color: copyTool.alt_selection_color,
-  alt_selection_cursor_box_type: "copy",
+  select: {
+    mode: ["blueprint"],
+    border_color: copyTool.select.border_color,
+    cursor_box_type: "copy",
+  },
+  alt_select: {
+    mode: ["blueprint"],
+    border_color: copyTool.alt_select.border_color,
+    cursor_box_type: "copy",
+  },
 }
 
 const stageCutTool: SelectionToolPrototype = table.deepcopy(stageCopyTool)
@@ -293,22 +340,14 @@ data.extend([
   stageCopyTool,
   selectionToolToShortcut(
     stageCopyTool,
-    {
-      filename: "__bp100__/graphics/icons/staged-copy-white.png",
-      size: 32,
-      mipmap_count: 2,
-    },
+    "__bp100__/graphics/icons/staged-copy-white.png",
     Prototypes.StagedCopyTool,
     "blue",
   ),
   stageCutTool,
   selectionToolToShortcut(
     stageCutTool,
-    {
-      filename: "__bp100__/graphics/icons/staged-cut-white.png",
-      size: 32,
-      mipmap_count: 2,
-    },
+    "__bp100__/graphics/icons/staged-cut-white.png",
     Prototypes.StagedCutTool,
     "blue",
   ),
@@ -330,24 +369,31 @@ const forceDeleteTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-b[b-tools]-c[force-delete-tool]",
 
-  selection_mode: ["blueprint"],
-  selection_color: deconstructionPlanner.selection_color,
-  selection_cursor_box_type: "not-allowed",
+  // selection_mode: ["blueprint"],
+  // selection_color: deconstructionPlanner.selection_color,
+  // selection_cursor_box_type: "not-allowed",
+  //
+  // alt_selection_mode: ["any-entity"],
+  // alt_selection_color: deconstructionPlanner.selection_color,
+  // alt_selection_cursor_box_type: "not-allowed",
 
-  alt_selection_mode: ["any-entity"],
-  alt_selection_color: deconstructionPlanner.selection_color,
-  alt_selection_cursor_box_type: "not-allowed",
+  select: {
+    mode: ["blueprint"],
+    border_color: deconstructionPlanner.select.border_color,
+    cursor_box_type: "not-allowed",
+  },
+  alt_select: {
+    mode: ["any-entity"],
+    border_color: deconstructionPlanner.select.border_color,
+    cursor_box_type: "not-allowed",
+  },
 }
 
 data.extend([
   forceDeleteTool,
   selectionToolToShortcut(
     forceDeleteTool,
-    {
-      filename: "__bp100__/graphics/icons/force-delete-tool-new.png",
-      size: 32,
-      mipmap_count: 2,
-    },
+    "__bp100__/graphics/icons/force-delete-tool-new.png",
     Prototypes.ForceDeleteTool,
     "red",
   ),
@@ -359,7 +405,8 @@ stageReference.subgroup = nil
 Object.assign(stageReference, {
   name: Prototypes.StageReference,
   icon: "__bp100__/graphics/icons/purple-blueprint.png",
-  flags: ["hidden", "not-stackable", "spawnable"],
+  hidden: true,
+  flags: ["not-stackable", "spawnable"],
 } satisfies Partial<BlueprintItemPrototype>)
 
 data.extend([stageReference])

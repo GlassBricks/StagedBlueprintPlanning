@@ -9,9 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { CursorBoxRenderType, LuaEntity } from "factorio:runtime"
-import { DrawParams, SpriteRender } from "../lib"
-import draw from "../lib/rendering"
+import { CursorBoxRenderType, LuaEntity, LuaRendering, LuaRenderObject } from "factorio:runtime"
 
 export function createHighlightBox(target: LuaEntity | nil, type: CursorBoxRenderType): LuaEntity | nil {
   if (!target) return nil
@@ -23,7 +21,7 @@ export function createHighlightBox(target: LuaEntity | nil, type: CursorBoxRende
     force: target.force,
   })
 }
-export function createSprite(params: DrawParams["sprite"]): SpriteRender {
-  return draw("sprite", params)
+export function createSprite(params: Parameters<LuaRendering["draw_sprite"]>[0]): LuaRenderObject {
+  return rendering.draw_sprite(params)
 }
 export const _mockable = true

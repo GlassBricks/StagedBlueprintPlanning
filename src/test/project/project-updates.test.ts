@@ -17,7 +17,6 @@ import {
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
-import { oppositedirection } from "util"
 import { BpStagedInfo, BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
 import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
@@ -39,7 +38,6 @@ import { moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 import _wireHandler = require("../../entity/wires")
 import direction = defines.direction
-import wire_type = defines.wire_type
 
 const pos = Pos(10.5, 10.5)
 
@@ -166,7 +164,7 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
     ...args,
   }
   const entity = assert(surfaces[stageNum - 1].create_entity(params), "created entity")[0]
-  const proto = game.entity_prototypes[params.name]
+  const proto = prototypes.entity[params.name as string]
   if (proto.type == "inserter") {
     entity.inserter_stack_size_override = 1
     entity.inserter_filter_mode = "whitelist"
@@ -208,7 +206,6 @@ describe("addNewEntity", () => {
         direction: 0,
         position: { x: 0, y: 0 },
         name: "filter-inserter",
-        neighbours: [2],
       })!
       expect(entity).toBeAny()
       expect(entity.firstValue).toEqual({
@@ -233,7 +230,6 @@ describe("addNewEntity", () => {
         direction: 0,
         position: { x: 0, y: 0 },
         name: "fast-inserter",
-        neighbours: [2],
       })!
       expect(entityUpgraded).toBeAny()
       expect(entityUpgraded.firstValue).toEqual({
@@ -255,7 +251,6 @@ describe("addNewEntity", () => {
         direction: 0,
         position: { x: 0, y: 0 },
         name: "fast-inserter",
-        neighbours: [2],
         tags: {
           bp100: {
             firstStage: 1,
@@ -366,9 +361,8 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     addCircuitConnection({
       fromEntity: otherEntity,
       toEntity: entity,
-      fromId: 1,
-      toId: 1,
-      wire: wire_type.green,
+      fromId: defines.wire_connector_id.circuit_green,
+      toId: defines.wire_connector_id.circuit_green,
     })
 
     projectUpdates.deleteEntityOrCreateSettingsRemnant(entity)
@@ -384,9 +378,11 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     addCircuitConnection({
       fromEntity: otherEntity,
       toEntity: entity,
-      fromId: 1,
-      toId: 1,
-      wire: wire_type.green,
+      // fromId: 1,
+      // toId: 1,
+      // wire: wire_type.green,
+      fromId: defines.wire_connector_id.circuit_green,
+      toId: defines.wire_connector_id.circuit_green,
     })
     otherEntity.replaceWorldEntity(
       1,
@@ -618,7 +614,6 @@ describe("tryUpgradeEntityFromWorld", () => {
     luaEntity.order_upgrade({
       force: luaEntity.force,
       target: luaEntity.name,
-      direction: direction.west,
     })
 
     const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
@@ -627,38 +622,6 @@ describe("tryUpgradeEntityFromWorld", () => {
     expect(entity.direction).toBe(direction.west)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
-  })
-  test("upgrade to rotate forbidden", () => {
-    const { luaEntity, entity } = addEntity(1)
-    luaEntity.order_upgrade({
-      force: luaEntity.force,
-      target: luaEntity.name,
-      direction: direction.west,
-    })
-    entity.replaceWorldEntity(2, luaEntity)
-    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
-    expect(ret).toBe("cannot-rotate")
-    expect(entity.direction).toBe(0)
-    assertOneEntity()
-    assertRefreshCalled(entity, 2)
-  })
-  test("upgrade to rotation allowed if is assembling machine with no fluid inputs", () => {
-    const { luaEntity, entity } = addEntity(1, {
-      name: "assembling-machine-2",
-      direction: defines.direction.east,
-      recipe: "express-transport-belt",
-    })
-    luaEntity.set_recipe(nil)
-    luaEntity.order_upgrade({
-      force: luaEntity.force,
-      target: "assembling-machine-3",
-      direction: direction.north,
-    })
-    entity.replaceWorldEntity(2, luaEntity)
-    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
-    expect(ret).toBe("updated")
-    assertOneEntity()
-    assertUpdateCalled(entity, 2)
   })
 })
 
@@ -689,9 +652,8 @@ describe("updateWiresFromWorld", () => {
     addCircuitConnection({
       fromEntity: entity1,
       toEntity: entity2,
-      fromId: 1,
-      toId: 1,
-      wire: defines.wire_type.green,
+      fromId: defines.wire_connector_id.circuit_green,
+      toId: defines.wire_connector_id.circuit_green,
     })
     wireSaver.saveWireConnections.returnsOnce(true as any)
     luaEntity2.destroy()
@@ -705,7 +667,7 @@ describe("updateWiresFromWorld", () => {
   })
   test("if max connections exceeded, notifies and calls update", () => {
     const { entity } = addEntity(1)
-    wireSaver.saveWireConnections.returnsOnce(true, true, nil)
+    wireSaver.saveWireConnections.returnsOnce(true, true)
     const ret = projectUpdates.updateWiresFromWorld(entity, 2)
     expect(ret).toBe(WireUpdateResult.MaxConnectionsExceeded)
 
@@ -928,7 +890,7 @@ describe("undergrounds", () => {
     test("lone underground belt in first stage rotates all entities", () => {
       const { luaEntity, entity } = createUndergroundBelt(1)
 
-      const [rotated] = luaEntity.rotate()
+      const rotated = luaEntity.rotate()
       assert(rotated)
 
       const ret = projectUpdates.tryRotateEntityFromWorld(entity, 1)
@@ -944,7 +906,7 @@ describe("undergrounds", () => {
     test("lone underground belt in higher stage forbids rotation", () => {
       const { luaEntity, entity } = createUndergroundBelt(1)
 
-      const [rotated] = luaEntity.rotate()
+      const rotated = luaEntity.rotate()
       assert(rotated)
 
       entity.replaceWorldEntity(2, luaEntity)
@@ -962,7 +924,7 @@ describe("undergrounds", () => {
       const { entity1, entity2 } = createUndergroundBeltPair(1, 2)
 
       const entity = which == "lower" ? entity1 : entity2
-      const [rotated] = entity.getWorldEntity(entity.firstStage)!.rotate()
+      const rotated = entity.getWorldEntity(entity.firstStage)!.rotate()
       assert(rotated)
 
       const ret = projectUpdates.tryRotateEntityFromWorld(entity, entity.firstStage)
@@ -985,7 +947,7 @@ describe("undergrounds", () => {
     test("cannot rotate if not in first stage", () => {
       const { entity1, entity2, luaEntity1 } = createUndergroundBeltPair(2, 1)
 
-      const [rotated1] = luaEntity1.rotate()
+      const rotated1 = luaEntity1.rotate()
       assert(rotated1)
 
       entity1.replaceWorldEntity(3, luaEntity1)
@@ -1040,52 +1002,11 @@ describe("undergrounds", () => {
       assertUpdateCalled(entity, 2)
     })
 
-    test("can apply rotate via upgrade to underground belt", () => {
-      const { luaEntity, entity } = createUndergroundBelt(1)
-      luaEntity.order_upgrade({
-        target: "underground-belt",
-        force: luaEntity.force,
-        direction: oppositedirection(luaEntity.direction),
-      })
-      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
-      expect(ret).toBe("updated")
-
-      expect(entity).toMatchTable({
-        firstValue: {
-          name: "underground-belt",
-          type: "output",
-        },
-        direction: direction.east,
-      })
-      assertOneEntity()
-      assertUpdateCalled(entity, 1)
-    })
-    test("can both rotate and upgrade", () => {
+    test("if not in first stage, forbids upgrade", () => {
       const { luaEntity, entity } = createUndergroundBelt(1)
       luaEntity.order_upgrade({
         target: "fast-underground-belt",
         force: luaEntity.force,
-        direction: oppositedirection(luaEntity.direction),
-      })
-      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
-      expect(ret).toBe("updated")
-
-      expect(entity).toMatchTable({
-        firstValue: {
-          name: "fast-underground-belt",
-          type: "output",
-        },
-        direction: direction.east,
-      })
-      assertOneEntity()
-      assertUpdateCalled(entity, 1)
-    })
-    test("if not in first stage, forbids both rotate and upgrade", () => {
-      const { luaEntity, entity } = createUndergroundBelt(1)
-      luaEntity.order_upgrade({
-        target: "fast-underground-belt",
-        force: luaEntity.force,
-        direction: oppositedirection(luaEntity.direction),
       })
       entity.replaceWorldEntity(2, luaEntity)
       const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
@@ -1222,38 +1143,8 @@ describe("undergrounds", () => {
 
       assertUpdateCalled(entity1, 1)
     })
-
-    test("if rotate allowed but not upgrade, still does rotate", () => {
-      const { entity1, luaEntity1, entity2 } = createUndergroundBeltPair(1, 1)
-      // just to forbid upgrade
-      createUndergroundBelt(1, {
-        position: Pos.plus(pos, { x: -2, y: 0 }),
-        name: "fast-underground-belt",
-        type: "output",
-      })
-      luaEntity1.order_upgrade({
-        target: "fast-underground-belt",
-        force: luaEntity1.force,
-        direction: oppositedirection(luaEntity1.direction),
-      })
-
-      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity1, 1)
-      expect(ret).toBe(EntityUpdateResult.CannotUpgradeChangedPair)
-
-      expect(entity1).toMatchTable({
-        firstValue: { name: "underground-belt", type: "output" },
-        direction: direction.east,
-      })
-      expect(entity2).toMatchTable({
-        firstValue: { name: "underground-belt", type: "input" },
-        direction: direction.east,
-      })
-
-      assertNEntities(3)
-      assertUpdateCalled(entity1, 1, 1, false)
-      assertUpdateCalled(entity2, 1, 2, false)
-    })
   })
+
   test("fast replace to upgrade also upgrades pair", () => {
     const { luaEntity1, entity1, entity2 } = createUndergroundBeltPair(1, 1)
     const newEntity = luaEntity1.surface.create_entity({
@@ -1304,31 +1195,6 @@ describe("undergrounds", () => {
     expect(entity.hasErrorAt(1)).toBe(false)
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 1)
     expect(ret).toBe(EntityUpdateResult.NoChange)
-
-    assertOneEntity()
-    assertUpdateCalled(entity, 1)
-  })
-  test("upgrade rotating to fix direction applies upgrade and updates entities", () => {
-    const { luaEntity, entity } = createUndergroundBelt(1)
-    luaEntity.rotate()
-    expect(entity.hasErrorAt(1)).toBe(true)
-
-    luaEntity.order_upgrade({
-      target: "underground-belt",
-      force: luaEntity.force,
-      direction: direction.west,
-    })
-    worldUpdates.updateWorldEntities.invokes((pEntity, stage) => {
-      if (entity == pEntity && stage == 1) {
-        luaEntity.rotate()
-      }
-    })
-
-    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
-    expect(ret).toBe(EntityUpdateResult.NoChange)
-
-    expect(luaEntity.direction).toBe(direction.west)
-    expect(luaEntity.direction).toBe(entity.direction)
 
     assertOneEntity()
     assertUpdateCalled(entity, 1)

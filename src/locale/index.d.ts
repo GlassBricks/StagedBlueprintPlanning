@@ -336,10 +336,6 @@ export declare const enum L_GuiProjectSettings {
   UseModulePreloading = "bp100.gui.project-settings.use-module-preloading",
   /** If an assembling machine has modules added at later stage, the modules are included in blueprints in earlier stages [font=default-bold]even if[/font] the machine is not high enough tier or has the wrong recipe.\nThis is useful to have bot requests for modules that will be added later.\nThe machine may need to be upgraded or have the correct recipe set [font=default-bold]before[/font] bots arrive to insert modules successfully.\n\n It is possible to create these blueprints without mods. */
   UseModulePreloadingTooltip = "bp100.gui.project-settings.use-module-preloading-tooltip",
-  /** Replace infinity chests/pipes with combinators [img=info] */
-  ReplaceInfinityWithCombinators = "bp100.gui.project-settings.replace-infinity-with-combinators",
-  /** In blueprints, replaces infinity chests and pipes with constant combinators, which have the same icons when viewed in alt-mode. */
-  ReplaceInfinityWithCombinatorsTooltip = "bp100.gui.project-settings.replace-infinity-with-combinators-tooltip",
   /** Auto-landfill [img=info] */
   AutoLandfill = "bp100.gui.project-settings.auto-landfill",
   /** Automatically set landfill tiles before taking a blueprint. */

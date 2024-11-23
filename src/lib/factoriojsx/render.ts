@@ -20,14 +20,13 @@ import {
   PlayerIndex,
   SliderGuiElement,
 } from "factorio:runtime"
-import { isEmpty } from "../_util"
+import { isEmpty, PRecord } from "../_util"
 import { isMutableProperty, MutableProperty, Property, SimpleObserver, Subscription } from "../event"
 import { Events } from "../Events"
 import { Migrations } from "../migration"
 import { onPlayerInit } from "../player-init"
 import { protectedAction } from "../protected-action"
 import { assertIsRegisteredClass, bind, Func, funcRef, registerFunctions, SelflessFun } from "../references"
-import { PRecord } from "../util-types"
 import {
   BaseStyleMod,
   ClassComponent,

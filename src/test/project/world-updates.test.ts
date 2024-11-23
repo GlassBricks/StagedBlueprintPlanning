@@ -9,11 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { CircuitConnectionDefinition, EventData, LuaEntity, LuaSurface } from "factorio:runtime"
+import { EventData, LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
-import { forceDollyEntity } from "../../entity/picker-dollies"
 import {
   addCircuitConnection,
   createProjectEntityNoCopy,
@@ -29,7 +28,6 @@ import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
 import { WorldUpdates } from "../../project/world-updates"
 import { createRollingStock } from "../entity/createRollingStock"
-import { setupEntityMoveTest } from "../entity/setup-entity-move-test"
 import { fMock } from "../f-mock"
 import { clearModuleMock, doModuleMock, moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
@@ -311,128 +309,6 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
   })
 })
 
-describe("tryMoveEntity", () => {
-  // use real entities
-  const { entities, origPos } = setupEntityMoveTest(4, nil, origDir)
-  before_each(() => {
-    entities.forEach((e, i) => {
-      entity.replaceWorldEntity(i + 1, e)
-    })
-    project.content.addEntity(entity)
-    project.content.changeEntityPosition(entity, origPos)
-  })
-  const newPos = Pos(1.5, 2)
-  const newDir = defines.direction.north
-
-  function assertMoved() {
-    for (let i = 0; i < 4; i++) {
-      const luaEntity = entities[i]
-      if (!luaEntity.valid) continue
-      expect(luaEntity.position).toEqual(newPos)
-      expect(luaEntity.direction).toBe(newDir)
-    }
-    expect(entity.position).toEqual(newPos)
-    expect(entity.direction).toBe(newDir)
-
-    expect(project.content.findCompatibleEntity(entity.getNameAtStage(1), newPos, newDir, 1)).toBe(entity)
-  }
-
-  function assertNotMoved() {
-    for (let i = 0; i < 4; i++) {
-      const luaEntity = entities[i]
-      if (!luaEntity.valid) continue
-      expect(luaEntity.position).toEqual(origPos)
-      expect(luaEntity.direction).toBe(origDir)
-    }
-    expect(entity.position).toEqual(origPos)
-    expect(entity.direction).toBe(origDir)
-
-    expect(project.content.findCompatibleEntity(entity.getNameAtStage(1), origPos, origDir, 1)).toBe(entity)
-  }
-
-  test("can move entity if moved in first stage", () => {
-    expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-    const result = worldUpdates.tryDollyEntities(entity, 1)
-    expect(result).toBe("success")
-    assertMoved()
-  })
-
-  test("can't move entity if moved in later stage", () => {
-    expect(forceDollyEntity(entities[1], newPos, newDir)).toBe(true)
-    const result = worldUpdates.tryDollyEntities(entity, 2)
-    expect(result).toBe("cannot-move")
-    assertNotMoved()
-  })
-
-  test("can't move if world entities are missing in any stage", () => {
-    expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-    entity.getWorldEntity(2)!.destroy()
-    const result = worldUpdates.tryDollyEntities(entity, 1)
-    expect(result).toBe("entities-missing")
-    assertNotMoved()
-  })
-
-  describe("with wire connections", () => {
-    let otherEntity: ProjectEntity
-    before_each(() => {
-      otherEntity = createProjectEntityNoCopy(
-        { name: "small-electric-pole" },
-        Pos(-0.5, 0.5),
-        defines.direction.north,
-        1,
-      )
-      project.content.addEntity(otherEntity)
-    })
-
-    test("can't move if cable connected missing in all stages", () => {
-      entity.tryAddDualCableConnection(otherEntity) // uh, this is a bit hacky, cable connection directly onto inserter?
-
-      expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-      const result = worldUpdates.tryDollyEntities(entity, 1)
-      expect(result).toBe("connected-entities-missing")
-    })
-
-    test("can't move if circuit connected missing in all stages", () => {
-      addCircuitConnection({
-        fromEntity: entity,
-        toEntity: otherEntity,
-        fromId: 1,
-        toId: 1,
-        wire: defines.wire_type.red,
-      })
-
-      expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-      const result = worldUpdates.tryDollyEntities(entity, 1)
-      expect(result).toBe("connected-entities-missing")
-    })
-
-    test("can move if entity present in at least one stage", () => {
-      entity.tryAddDualCableConnection(otherEntity)
-      addCircuitConnection({
-        fromEntity: entity,
-        toEntity: otherEntity,
-        fromId: 1,
-        toId: 1,
-        wire: defines.wire_type.red,
-      })
-      expect(forceDollyEntity(entities[0], newPos, newDir)).toBe(true)
-
-      otherEntity.replaceWorldEntity(
-        2,
-        surfaces[0].create_entity({
-          name: "small-electric-pole",
-          position: newPos,
-          direction: newDir,
-        }),
-      )
-
-      const result = worldUpdates.tryDollyEntities(entity, 1)
-      expect(result).toBe("success")
-      assertMoved()
-    })
-  })
-})
-
 describe("updateNewEntityWithoutWires", () => {
   test("can update", () => {
     const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
@@ -647,47 +523,67 @@ describe("circuit wires", () => {
   }
 
   function addExtraWires({ luaEntity1, luaEntity2 }: { luaEntity1: LuaEntity; luaEntity2: LuaEntity }) {
-    luaEntity1.connect_neighbour({
-      target_entity: luaEntity2,
-      wire: defines.wire_type.red,
-      source_circuit_id: defines.circuit_connector_id.combinator_input,
-      target_circuit_id: defines.circuit_connector_id.combinator_output,
-    })
-    luaEntity2.connect_neighbour({
-      target_entity: luaEntity1,
-      wire: defines.wire_type.green,
-      source_circuit_id: defines.circuit_connector_id.combinator_input,
-      target_circuit_id: defines.circuit_connector_id.combinator_output,
-    })
+    // luaEntity1.connect_neighbour({
+    //   target_entity: luaEntity2,
+    //   wire: defines.wire_type.red,
+    //   source_circuit_id: defines.circuit_connector_id.combinator_input,
+    //   target_circuit_id: defines.circuit_connector_id.combinator_output,
+    // })
+    // luaEntity2.connect_neighbour({
+    //   target_entity: luaEntity1,
+    //   wire: defines.wire_type.green,
+    //   source_circuit_id: defines.circuit_connector_id.combinator_input,
+    //   target_circuit_id: defines.circuit_connector_id.combinator_output,
+    // })
+    luaEntity1
+      .get_wire_connector(defines.wire_connector_id.combinator_input_red, true)
+      .connect_to(luaEntity2.get_wire_connector(defines.wire_connector_id.combinator_output_red, true))
+
+    luaEntity2
+      .get_wire_connector(defines.wire_connector_id.combinator_input_green, true)
+      .connect_to(luaEntity1.get_wire_connector(defines.wire_connector_id.combinator_output_green, true))
   }
 
   function addWireToProject() {
     addCircuitConnection({
       fromEntity: entity1,
       toEntity: entity2,
-      wire: defines.wire_type.red,
-      fromId: defines.circuit_connector_id.combinator_input,
-      toId: defines.circuit_connector_id.combinator_output,
+      // wire: defines.wire_type.red,
+      fromId: defines.wire_connector_id.combinator_input_red,
+      toId: defines.wire_connector_id.combinator_output_red,
     })
   }
 
   function assertSingleWire({ luaEntity1, luaEntity2 }: { luaEntity1: LuaEntity; luaEntity2: LuaEntity }): void {
-    expect(luaEntity1.circuit_connection_definitions).toEqual([
-      {
-        target_entity: luaEntity2,
-        wire: defines.wire_type.red,
-        source_circuit_id: defines.circuit_connector_id.combinator_input,
-        target_circuit_id: defines.circuit_connector_id.combinator_output,
-      } as CircuitConnectionDefinition,
-    ])
+    /* expect(luaEntity1.circuit_connection_definitions).toEqual([
+       {
+         target_entity: luaEntity2,
+         wire: defines.wire_type.red,
+         source_circuit_id: defines.circuit_connector_id.combinator_input,
+         target_circuit_id: defines.circuit_connector_id.combinator_output,
+       } as CircuitConnectionDefinition,
+     ])*/
+    expect(
+      luaEntity1
+        .get_wire_connector(defines.wire_connector_id.combinator_input_red, false)
+        .connections.map((c) => [c.target.owner, c.target.wire_connector_id]),
+    ).toEqual([[luaEntity2, defines.wire_connector_id.combinator_output_red]])
+  }
+
+  function assertNoConnections(entity: LuaEntity): void {
+    for (const [, connector] of pairs(entity.get_wire_connectors(false))) {
+      expect(connector.connections).toEqual([])
+    }
   }
 
   test("can remove circuit wires", () => {
     const { luaEntity1, luaEntity2 } = doAdd()
     addExtraWires({ luaEntity1, luaEntity2 })
     worldUpdates.refreshWorldEntityAtStage(entity1, 1)
-    expect(luaEntity1.circuit_connection_definitions ?? []).toEqual([])
-    expect(luaEntity2.circuit_connection_definitions ?? []).toEqual([])
+    // expect(luaEntity1.circuit_connection_definitions ?? []).toEqual([])
+    // expect(luaEntity2.circuit_connection_definitions ?? []).toEqual([])
+    assertNoConnections(luaEntity1)
+    assertNoConnections(luaEntity2)
   })
   test("can add circuit wires", () => {
     addWireToProject()

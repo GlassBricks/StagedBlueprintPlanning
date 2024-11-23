@@ -25,7 +25,7 @@ import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-u
 import { Project, UserProject } from "./ProjectDef"
 import { prepareArea } from "./surfaces"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
-import { ProjectEntityDollyResult, WorldUpdates } from "./world-updates"
+import { WorldUpdates } from "./world-updates"
 
 /**
  * Entry point for actions that can be performed on a project, from user input.
@@ -59,7 +59,6 @@ export interface UserActions {
   onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
 
   onEntityDied(entity: LuaEntityInfo, stage: StageNumber): void
-  onEntityDollied(entity: LuaEntity, stage: StageNumber, oldPosition: Position, byPlayer: PlayerIndex | nil): void
 
   onStageDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
   onStageDeleteCancelUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
@@ -164,16 +163,6 @@ const lastStageChangeUndo = UndoHandler(
   },
 )
 
-const moveResultMessage: Record<ProjectEntityDollyResult, L_Interaction | nil> = {
-  success: nil,
-  "connected-entities-missing": L_Interaction.ConnectedEntitiesMissing,
-  "entities-missing": L_Interaction.EntitiesMissing,
-  overlap: L_Interaction.NoRoomInAnotherStage,
-  "could-not-teleport": L_Interaction.CannotBeTeleportedInAnotherStage,
-  "cannot-move": L_Interaction.CannotMove,
-  "wires-cannot-reach": L_Interaction.WiresMaxedInAnotherStage,
-}
-
 export function UserActions(project: Project, projectUpdates: ProjectUpdates, WorldUpdates: WorldUpdates): UserActions {
   const content = project.content
   const {
@@ -199,7 +188,6 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     rebuildWorldEntityAtStage,
     refreshAllWorldEntities,
     refreshWorldEntityAtStage,
-    tryDollyEntities,
     updateAllHighlights,
     updateTileAtStage,
   } = WorldUpdates
@@ -219,7 +207,6 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     onChunkGeneratedForEntity,
     onEntityForceDeleteUsed,
     onEntityDied,
-    onEntityDollied,
     onStageDeleteUsed,
     onStageDeleteCancelUsed,
     onBringToStageUsed,
@@ -349,18 +336,6 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     const existing = content.findCompatibleFromPreviewOrLuaEntity(previewEntity, stage)
     if (!existing || existing.isSettingsRemnant) return
     refreshWorldEntityAtStage(existing, stage)
-  }
-
-  function getCompatibleAtPositionOrAdd(
-    entity: LuaEntity,
-    stage: StageNumber,
-    oldPosition: Position,
-    byPlayer: PlayerIndex | nil,
-  ): ProjectEntity | nil {
-    const existing = content.findEntityExact(entity, oldPosition, stage)
-    if (existing) return existing
-    onEntityCreated(entity, stage, byPlayer)
-    return nil
   }
 
   function onEntityDeleted(
@@ -706,22 +681,6 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     const result = trySetLastStage(projectEntity, newLastStage)
     notifyIfMoveError(result, projectEntity, byPlayer)
     return result == StageMoveResult.Updated
-  }
-
-  function onEntityDollied(
-    entity: LuaEntity,
-    stage: StageNumber,
-    oldPosition: Position,
-    byPlayer: PlayerIndex | nil,
-  ): void {
-    const projectEntity = getCompatibleAtPositionOrAdd(entity, stage, oldPosition, byPlayer)
-    if (!projectEntity) return
-    assert(!projectEntity.isSettingsRemnant && !projectEntity.isUndergroundBelt(), "cannot move this entity")
-    const result = tryDollyEntities(projectEntity, stage)
-    const message = moveResultMessage[result]
-    if (message != nil) {
-      createNotification(projectEntity, byPlayer, [message, ["entity-name." + entity.name]], true)
-    }
   }
 
   function onSurfaceCleared(stage: StageNumber): void {

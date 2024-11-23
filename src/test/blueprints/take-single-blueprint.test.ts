@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintControlBehavior, LuaPlayer, LuaSurface, SignalID, UnitNumber } from "factorio:runtime"
+import { LuaPlayer, LuaSurface, SignalID, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
 import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
@@ -70,7 +70,7 @@ test("can take blueprint with settings applied", () => {
   })
   expect(ret).toBeTruthy()
 
-  expect(stack.blueprint_icons).toEqual([
+  expect(stack.preview_icons).toEqual([
     {
       index: 3,
       signal: { type: "item", name: "iron-plate" },
@@ -156,7 +156,7 @@ test("default icons used when no icons are set", () => {
   const ret = takeSingleBlueprint({ stack, settings, surface, bbox, unitNumberFilter: nil })
   expect(ret).toBeTruthy()
 
-  expect(stack.blueprint_icons).toEqual(stack.default_icons)
+  expect(stack.preview_icons).toEqual(stack.default_icons)
 })
 
 test("applies blacklist", () => {
@@ -239,91 +239,4 @@ test("always includes ghosts", () => {
   const entities = stack.get_blueprint_entities()!
   expect(entities.length).toBe(1)
   expect(entities[0].name).toEqual("transport-belt")
-})
-
-test("replace infinity entities with constant combinators", () => {
-  // chest
-  const chest = surface.create_entity({
-    name: "infinity-chest",
-    position: [0.5, 0.5],
-    force: "player",
-  })!
-  expect(chest).toBeAny()
-  chest.infinity_container_filters = [
-    {
-      index: 1,
-      name: "iron-plate",
-      count: 60,
-    },
-    {
-      index: 2,
-      name: "copper-plate",
-      count: 80,
-    },
-  ]
-  // belt just for circuit connection
-  const belt = surface.create_entity({
-    name: "transport-belt",
-    position: [1.5, 0.5],
-    force: "player",
-  })!
-  expect(belt).toBeAny()
-  belt.connect_neighbour({ wire: defines.wire_type.red, target_entity: chest })
-  // infinity pipe
-  const pipe = surface.create_entity({
-    name: "infinity-pipe",
-    position: [0.5, 1.5],
-    force: "player",
-  })!
-  pipe.set_infinity_pipe_filter({
-    name: "water",
-    percentage: 0.4,
-  })
-
-  const settings = {
-    ...getDefaultBlueprintSettings(),
-    replaceInfinityEntitiesWithCombinators: true,
-  } satisfies StageBlueprintSettings
-
-  const stack = player.cursor_stack!
-  stack.set_stack("blueprint")
-
-  const res = takeSingleBlueprint({
-    stack,
-    settings,
-    surface,
-    bbox: BBox.around({ x: 0, y: 0 }, 10),
-    unitNumberFilter: nil,
-  })
-  expect(res).toBeTruthy()
-
-  const entities = stack.get_blueprint_entities()!
-  expect(entities.length).toBe(3)
-
-  expect(entities[0].position).toEqual(pipe.position)
-  expect(entities[0].name).toEqual("constant-combinator")
-  expect(entities[0].control_behavior).toEqual({
-    filters: [
-      {
-        index: 1,
-        count: 40,
-        signal: { type: "fluid", name: "water" },
-      },
-    ],
-  })
-
-  expect(entities[1].position).toEqual(belt.position)
-  expect(entities[1].name).toEqual("transport-belt")
-
-  expect(entities[2].position).toEqual(chest.position)
-  expect(entities[2].name).toEqual("constant-combinator")
-  expect(entities[2].control_behavior).toEqual({
-    filters: [
-      { index: 1, count: 60, signal: { type: "item", name: "iron-plate" } },
-      { index: 2, count: 80, signal: { type: "item", name: "copper-plate" } },
-    ],
-  } as BlueprintControlBehavior)
-  expect(entities[2].connections!["1"]).toEqual({
-    red: [{ entity_id: 2 }],
-  })
 })
