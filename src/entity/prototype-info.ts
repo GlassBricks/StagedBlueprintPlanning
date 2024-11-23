@@ -74,8 +74,8 @@ interface PassedPrototypeInfo {
 }
 
 function getPassedPrototypeInfo(): PassedPrototypeInfo {
-  const selectionTool = game.item_prototypes[Prototypes.PassedPrototypeInfo]
-  const filters = selectionTool.entity_filters
+  const selectionTool = prototypes.item[Prototypes.PassedPrototypeInfo]
+  const filters = selectionTool.get_entity_filters(defines.selection_mode.select)
   return {
     twoDirectionOnlyTanks: Object.keys(filters as object),
   }
@@ -140,7 +140,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
   const selectionBoxes = new LuaMap<string, BBox>()
   const requiresRebuildNames = new LuaSet<string>()
 
-  for (const [name, prototype] of game.get_filtered_entity_prototypes([{ filter: "blueprintable" }])) {
+  for (const [name, prototype] of prototypes.get_entity_filtered([{ filter: "blueprintable" }])) {
     const categoryName = getCategory(prototype)
     if (categoryName != nil) {
       nameToCategory.set(name, categoryName)
@@ -158,7 +158,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
 
     selectionBoxes.set(name, BBox.from(prototype.selection_box))
 
-    nameToType.set(name, prototype.type)
+    nameToType.set(name, prototype.type as EntityType)
   }
 
   for (const [categoryName, category] of categories) {
@@ -167,7 +167,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
       for (const name of category) nameToCategory.delete(name)
     }
   }
-  const blueprintableTilePrototypes = game.get_filtered_tile_prototypes([{ filter: "blueprintable" }])
+  const blueprintableTilePrototypes = prototypes.get_tile_filtered([{ filter: "blueprintable" }])
   const blueprintableTiles = new LuaSet<string>()
   for (const [name] of blueprintableTilePrototypes) {
     blueprintableTiles.add(name)

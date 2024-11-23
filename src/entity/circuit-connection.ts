@@ -12,28 +12,23 @@
 import { LuaEntity } from "factorio:runtime"
 import type { ProjectEntity } from "./ProjectEntity"
 
-export type AnyConnectionId = defines.circuit_connector_id | defines.wire_connection_id
-
 export interface ProjectCircuitConnection {
   readonly fromEntity: ProjectEntity
-  readonly fromId: AnyConnectionId
+  readonly fromId: defines.wire_connector_id
 
   readonly toEntity: ProjectEntity
-  readonly toId: AnyConnectionId
-
-  readonly wire: defines.wire_type
+  readonly toId: defines.wire_connector_id
 }
 
 export interface CircuitOrPowerSwitchConnection {
   readonly wire: defines.wire_type
   readonly target_entity: LuaEntity
-  readonly source_circuit_id: AnyConnectionId
-  readonly target_circuit_id: AnyConnectionId
+  readonly source_circuit_id: defines.wire_connector_id
+  readonly target_circuit_id: defines.wire_connector_id
 }
 
 export function circuitConnectionEquals(a: ProjectCircuitConnection, b: ProjectCircuitConnection): boolean {
   if (a == b) return true
-  if (a.wire != b.wire) return false
   return (
     (a.fromEntity == b.fromEntity && a.fromId == b.fromId && a.toEntity == b.toEntity && a.toId == b.toId) ||
     (a.fromEntity == b.toEntity && a.fromId == b.toId && a.toEntity == b.fromEntity && a.toId == b.fromId)
@@ -43,21 +38,19 @@ export function circuitConnectionEquals(a: ProjectCircuitConnection, b: ProjectC
 export function getDirectionalInfo(
   connection: ProjectCircuitConnection,
   fromEntity: ProjectEntity,
-): LuaMultiReturn<[otherEntity: ProjectEntity, fromId: AnyConnectionId, toId: AnyConnectionId]> {
+): LuaMultiReturn<[otherEntity: ProjectEntity, fromId: defines.wire_connector_id, toId: defines.wire_connector_id]> {
   if (connection.fromEntity == fromEntity) return $multi(connection.toEntity, connection.fromId, connection.toId)
   return $multi(connection.fromEntity, connection.toId, connection.fromId)
 }
 
 export function circuitConnectionMatches(
   connection: ProjectCircuitConnection,
-  wire: defines.wire_type,
   toEntity: ProjectEntity,
-  fromId: AnyConnectionId,
-  toId: AnyConnectionId,
+  fromId: defines.wire_connector_id,
+  toId: defines.wire_connector_id,
 ): boolean {
   return (
-    connection.wire == wire &&
-    ((connection.toEntity == toEntity && connection.fromId == fromId && connection.toId == toId) ||
-      (connection.fromEntity == toEntity && connection.toId == fromId && connection.fromId == toId))
+    (connection.toEntity == toEntity && connection.fromId == fromId && connection.toId == toId) ||
+    (connection.fromEntity == toEntity && connection.toId == fromId && connection.fromId == toId)
   )
 }

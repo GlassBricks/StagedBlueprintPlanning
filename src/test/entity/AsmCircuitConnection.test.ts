@@ -84,8 +84,8 @@ test("circuitConnectionMatches", () => {
     toId: 1,
     wire: defines.wire_type.red,
   }
-  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 1, 0)).toBe(true)
-  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityB, 0, 1)).toBe(true)
-  expect(circuitConnectionMatches(connection, defines.wire_type.green, entityA, 1, 0)).toBe(false)
-  expect(circuitConnectionMatches(connection, defines.wire_type.red, entityA, 0, 1)).toBe(false)
+  expect(circuitConnectionMatches(connection, entityA, 1, 0)).toBe(true)
+  expect(circuitConnectionMatches(connection, entityB, 0, 1)).toBe(true)
+  expect(circuitConnectionMatches(connection, entityA, 1, 0)).toBe(false)
+  expect(circuitConnectionMatches(connection, entityA, 0, 1)).toBe(false)
 })

@@ -9,13 +9,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintControlBehavior, LuaSurface, RealOrientation } from "factorio:runtime"
+import { BlueprintInsertPlan, LuaSurface, RealOrientation } from "factorio:runtime"
 import { Position } from "../lib/geometry"
 
 export interface Entity {
   readonly name: string
-  readonly items?: Record<string, number>
-  readonly control_behavior?: BlueprintControlBehavior
+  readonly items?: BlueprintInsertPlan[]
 }
 
 export interface EntityIdentification {

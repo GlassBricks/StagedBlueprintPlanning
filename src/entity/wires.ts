@@ -400,7 +400,7 @@ function findMatchingCircuitConnection(
   { source_circuit_id, target_circuit_id, wire }: CircuitOrPowerSwitchConnection,
 ): ProjectCircuitConnection | nil {
   for (const connection of connections) {
-    if (circuitConnectionMatches(connection, wire, toEntity, source_circuit_id, target_circuit_id)) {
+    if (circuitConnectionMatches(connection, toEntity, source_circuit_id, target_circuit_id)) {
       return connection
     }
   }

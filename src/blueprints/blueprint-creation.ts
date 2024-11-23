@@ -9,7 +9,15 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LocalisedString, LuaInventory, LuaItemStack, LuaPlayer, UnitNumber } from "factorio:runtime"
+import {
+  BlueprintEntity,
+  BlueprintInsertPlan,
+  LocalisedString,
+  LuaInventory,
+  LuaItemStack,
+  LuaPlayer,
+  UnitNumber,
+} from "factorio:runtime"
 import { Entity } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { assertNever, getKeySet, Mutable, RegisterClass } from "../lib"
@@ -49,7 +57,7 @@ interface ProjectBlueprintPlan {
 
   firstStageEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
   changedEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
-  moduleOverrides?: Ref<LuaMap<UnitNumber, Record<string, number>>>
+  moduleOverrides?: Ref<LuaMap<UnitNumber, BlueprintInsertPlan[]>>
 }
 
 interface StageBlueprintPlan {
@@ -149,14 +157,14 @@ const BlueprintMethods = {
   computeModuleOverrides(projectPlan: ProjectBlueprintPlan): void {
     const project = projectPlan.project
     const assemblingMachineNames = getKeySet(
-      game.get_filtered_entity_prototypes([
+      prototypes.get_entity_filtered([
         {
           filter: "type",
           type: "assembling-machine",
         },
       ]),
     )
-    const result = new LuaMap<UnitNumber, Record<string, number>>()
+    const result = new LuaMap<UnitNumber, BlueprintInsertPlan[]>()
     for (const entity of project.content.allEntities()) {
       const firstValue = entity.firstValue
       if (firstValue.items || !assemblingMachineNames.has(firstValue.name)) continue
@@ -237,7 +245,7 @@ const BlueprintMethods = {
     const [projectFileName] = string.gsub(fileName, "[^%w%-%_%.]", "_")
     const filename = `staged-builds/${projectFileName}.txt`
     const data = stack.export_stack()
-    game.write_file(filename, data, false, player.index)
+    helpers.write_file(filename, data, false, player.index)
   },
   showBlueprintBookString(stack: LuaItemStack, player: LuaPlayer): void {
     const title = stack.label ?? "<unnamed>"

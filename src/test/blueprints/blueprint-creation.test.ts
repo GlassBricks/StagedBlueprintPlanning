@@ -74,7 +74,7 @@ test("can take single blueprint using stage settings", () => {
   expect(entities).toHaveLength(1)
   expect(entities[0].name).toBe("iron-chest")
 
-  expect(stack.blueprint_icons).toMatchTable([{ index: 1, signal: { type: "virtual", name: "signal-1" } }])
+  expect(stack.preview_icons).toMatchTable([{ index: 1, signal: { type: "virtual", name: "signal-1" } }])
 })
 
 describe("set tiles", () => {
@@ -143,7 +143,9 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
 
   const e5 = createEntity(stage1, [6.5, 6.5], "iron-chest") // included, has wire-connection with e3
   const e5stage3 = project.content.findCompatibleWithLuaEntity(e5, nil, 1)!.getWorldEntity(3)!
-  e5stage3.connect_neighbour({ wire: defines.wire_type.red, target_entity: e3 })
+  e5stage3
+    .get_wire_connector(defines.wire_connector_id.circuit_red, true)
+    .connect_to(e3.get_wire_connector(defines.wire_connector_id.circuit_red, true))
   checkForCircuitWireUpdates(e5stage3, nil)
 
   const pole1 = createEntity(stage3, [7.5, 7.5], "small-electric-pole") // included, is in stage 3

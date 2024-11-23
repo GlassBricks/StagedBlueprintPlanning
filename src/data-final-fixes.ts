@@ -9,26 +9,21 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { PrototypeData } from "factorio:common"
+import { AnyPrototype, PrototypeData } from "factorio:common"
 import {
   BoundingBox,
   Color,
   EntityPrototype,
-  ItemToPlace,
-  RailPieceLayers,
-  RailRemnantsPrototype,
+  SelectionModeData,
   SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
   Sprite,
   Sprite4Way,
-  Sprite8Way,
-  SpriteSheet,
 } from "factorio:prototype"
-import { BoundingBoxArray, BoundingBoxWrite, EntityPrototypeFlags, MapPositionArray } from "factorio:runtime"
+import { BoundingBoxArray, BoundingBoxWrite, EntityPrototypeFlags } from "factorio:runtime"
 import * as util from "util"
 import { empty_sprite } from "util"
 import { BuildableEntityType, Prototypes } from "./constants"
-import { emptySprite16 } from "./data-util"
 import { BBox } from "./lib/geometry"
 import { L_Bp100 } from "./locale"
 import direction = defines.direction
@@ -116,7 +111,6 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
   "locomotive",
 )
 
-const railPrototypes = newLuaSet("straight-rail", "curved-rail")
 const previews: EntityPrototype[] = []
 const types = keys<Record<BuildableEntityType, true>>()
 
@@ -136,8 +130,8 @@ for (const type of types.sort()) {
     }
     if (!placeableBy) continue
 
+    prototype.hidden = true
     const flags = prototype.flags!.filter((flag) => flagsToTransfer.has(flag))
-    flags.push("hidden")
     flags.push("not-on-map")
 
     let selectionBox: BoundingBox = prototype.selection_box ?? [
@@ -149,175 +143,48 @@ for (const type of types.sort()) {
       selectionBox = BBox.expand(BBox.normalize(selectionBox), 0.3).asArray()
     }
 
-    const isRail = railPrototypes.has(type)
-    if (isRail) {
-      previews.push(createRailPreview(prototype, placeableBy, flags))
-    } else {
-      const color =
-        prototype.friendly_map_color ??
-        prototype.map_color ??
-        utilityConstants.chart.default_friendly_color_by_type![type] ??
-        utilityConstants.chart.default_friendly_color
+    const color =
+      prototype.friendly_map_color ??
+      prototype.map_color ??
+      utilityConstants.chart.default_friendly_color_by_type![type] ??
+      utilityConstants.chart.default_friendly_color
+    const preview: SimpleEntityWithOwnerPrototype = {
+      name: Prototypes.PreviewEntityPrefix + name,
+      type: "simple-entity-with-owner",
+      localised_name: [L_Bp100.PreviewEntity, ["entity-name." + name]],
 
-      const preview: SimpleEntityWithOwnerPrototype = {
-        name: Prototypes.PreviewEntityPrefix + name,
-        type: "simple-entity-with-owner",
-        localised_name: [L_Bp100.PreviewEntity, ["entity-name." + name]],
+      // copied from prototype
+      icons: prototype.icons,
+      icon_size: prototype.icon_size,
+      icon: prototype.icon,
 
-        // copied from prototype
-        icons: prototype.icons,
-        icon_size: prototype.icon_size,
-        icon_mipmaps: prototype.icon_mipmaps,
-        icon: prototype.icon,
+      selection_box: selectionBox,
+      collision_box: prototype.collision_box,
+      tile_height: prototype.tile_height,
+      tile_width: prototype.tile_width,
 
-        selection_box: selectionBox,
-        collision_box: prototype.collision_box,
-        tile_height: prototype.tile_height,
-        tile_width: prototype.tile_width,
+      collision_mask: {
+        layers: {},
+      },
 
-        collision_mask: [],
+      open_sound: prototype.open_sound,
+      close_sound: prototype.close_sound,
 
-        open_sound: prototype.open_sound,
-        close_sound: prototype.close_sound,
+      picture: createWhiteSprite(selectionBox, color) as Sprite,
 
-        picture: createWhiteSprite(selectionBox, color) as Sprite,
-
-        // other
-        flags,
-        placeable_by: placeableBy,
-        render_layer: "ground-patch-higher2",
-        secondary_draw_order: 100,
-        subgroup: Prototypes.PreviewEntitySubgroup,
-        create_ghost_on_death: false,
-      }
-      previews.push(preview)
+      // other
+      flags,
+      placeable_by: placeableBy,
+      render_layer: "ground-patch-higher2",
+      secondary_draw_order: 100,
+      subgroup: Prototypes.PreviewEntitySubgroup,
+      create_ghost_on_death: false,
     }
+    previews.push(preview)
   }
 }
 
-function spriteToRailPieceLayers(sprite: SpriteSheet): RailPieceLayers {
-  return {
-    metals: emptySprite16,
-    backplates: emptySprite16,
-    ties: emptySprite16,
-    stone_path: sprite,
-  }
-}
-function getCurvedRailSprite(pos: MapPositionArray, size: MapPositionArray, tint: Color): RailPieceLayers {
-  return spriteToRailPieceLayers({
-    filename: "__bp100__/graphics/rails/curved-rail.png",
-    priority: "extra-high",
-    position: pos,
-    size,
-    scale: 32,
-    tint,
-    flags: ["group=none"],
-  })
-}
-function getDiagonalRailSprite(n: number, tint: Color): RailPieceLayers {
-  return spriteToRailPieceLayers({
-    filename: "__bp100__/graphics/rails/diagonal-rail.png",
-    priority: "extra-high",
-    position: [n * 2, 0],
-    size: 2,
-    scale: 32,
-    tint,
-    flags: ["group=none"],
-  })
-}
-function getStraightRailSprite(tint: Color): RailPieceLayers {
-  // use top 2x2 pixels of lab-tile
-  return spriteToRailPieceLayers({
-    filename: whiteTile,
-    priority: "extra-high",
-    size: 2,
-    scale: 32,
-    tint,
-    flags: ["group=none"],
-  })
-}
-
-function createRailPictures(color: Color): RailRemnantsPrototype["pictures"] {
-  const tint = getPreviewTint(color)
-  const straight = getStraightRailSprite(tint)
-  return {
-    straight_rail_horizontal: straight,
-    straight_rail_vertical: straight,
-    straight_rail_diagonal_left_top: getDiagonalRailSprite(0, tint),
-    straight_rail_diagonal_right_top: getDiagonalRailSprite(1, tint),
-    straight_rail_diagonal_right_bottom: getDiagonalRailSprite(2, tint),
-    straight_rail_diagonal_left_bottom: getDiagonalRailSprite(3, tint),
-    curved_rail_vertical_left_top: getCurvedRailSprite([0, 0], [4, 8], tint),
-    curved_rail_vertical_right_top: getCurvedRailSprite([4, 0], [4, 8], tint),
-    curved_rail_vertical_right_bottom: getCurvedRailSprite([8, 0], [4, 8], tint),
-    curved_rail_vertical_left_bottom: getCurvedRailSprite([12, 0], [4, 8], tint),
-    curved_rail_horizontal_left_top: getCurvedRailSprite([0, 8], [8, 4], tint),
-    curved_rail_horizontal_right_top: getCurvedRailSprite([8, 8], [8, 4], tint),
-    curved_rail_horizontal_right_bottom: getCurvedRailSprite([0, 12], [8, 4], tint),
-    curved_rail_horizontal_left_bottom: getCurvedRailSprite([8, 12], [8, 4], tint),
-    rail_endings: {
-      sheet: emptySprite16,
-    } as Sprite8Way,
-  }
-}
-
-function createRailPreview(
-  prototype: EntityPrototype,
-  placeableBy: ItemToPlace | readonly ItemToPlace[],
-  flags: (keyof EntityPrototypeFlags)[],
-): RailRemnantsPrototype {
-  const isCurved = prototype.type == "curved-rail"
-  const color = prototype.friendly_map_color ?? prototype.map_color ?? utilityConstants.chart.rail_color
-  if (!flags.includes("building-direction-8-way")) {
-    flags.push("building-direction-8-way")
-  }
-
-  const oldLocalisedName = prototype.localised_name ?? ["entity-name." + prototype.name]
-
-  const result = {
-    name: Prototypes.PreviewEntityPrefix + prototype.name,
-    type: "rail-remnants",
-    localised_name: [L_Bp100.PreviewEntity, oldLocalisedName],
-
-    bending_type: isCurved ? "turn" : "straight",
-
-    // copied from prototype
-    icons: prototype.icons,
-    icon_size: prototype.icon_size,
-    icon_mipmaps: prototype.icon_mipmaps,
-    icon: prototype.icon,
-
-    tile_height: prototype.tile_height,
-    tile_width: prototype.tile_width,
-
-    collision_mask: ["not-colliding-with-itself"],
-    collision_box: prototype.collision_box,
-    secondary_collision_box: isCurved
-      ? [
-          [-0.65, -2.43],
-          [0.65, 2.43],
-        ]
-      : nil,
-
-    open_sound: prototype.open_sound,
-    close_sound: prototype.close_sound,
-
-    pictures: createRailPictures(color),
-    time_before_removed: 2000000,
-    remove_on_tile_placement: false,
-    remove_on_entity_placement: false,
-
-    flags,
-    placeable_by: placeableBy,
-    final_render_layer: "ground-patch-higher2",
-    subgroup: Prototypes.PreviewEntitySubgroup,
-  } satisfies RailRemnantsPrototype & {
-    secondary_collision_box?: BoundingBox
-  }
-  return result
-}
-
-data.extend(previews)
+data.extend(previews as AnyPrototype[])
 
 const previewNames = previews.map((preview) => preview.name)
 const entityOrPreviewNames = [...buildableNames, ...previewNames]
@@ -328,17 +195,32 @@ const stagedCopyTool = data.raw["selection-tool"][Prototypes.StagedCopyTool]!
 const stagedCutTool = data.raw["selection-tool"][Prototypes.StagedCutTool]!
 const forceDeleteTool = data.raw["selection-tool"][Prototypes.ForceDeleteTool]!
 
-cleanupTool.entity_filters = cleanupTool.alt_entity_filters = cleanupTool.reverse_entity_filters = previewNames
+function setEntityFilters(
+  tool: SelectionToolPrototype,
+  key: "select" | "alt_select" | "reverse_select" | "alt_reverse_select",
+  filters: string[],
+): void {
+  tool[key] = {
+    ...(tool[key] as SelectionModeData),
+    entity_filters: filters,
+  }
+}
+setEntityFilters(cleanupTool, "select", previewNames)
+setEntityFilters(cleanupTool, "alt_select", previewNames)
+setEntityFilters(cleanupTool, "reverse_select", previewNames)
 
-stageMoveTool.entity_filters = buildableNames
-stageMoveTool.alt_entity_filters = stageMoveTool.reverse_entity_filters = entityOrPreviewNames
-stageMoveTool.alt_reverse_entity_filters = previewNames
+setEntityFilters(stageMoveTool, "select", buildableNames)
+setEntityFilters(stageMoveTool, "alt_select", entityOrPreviewNames)
+setEntityFilters(stageMoveTool, "reverse_select", entityOrPreviewNames)
+setEntityFilters(stageMoveTool, "alt_reverse_select", previewNames)
 
-stagedCopyTool.entity_filters = stagedCopyTool.alt_entity_filters = buildableNames
-stagedCutTool.entity_filters = stagedCutTool.alt_entity_filters = buildableNames
+setEntityFilters(stagedCopyTool, "select", buildableNames)
+setEntityFilters(stagedCopyTool, "alt_select", buildableNames)
+setEntityFilters(stagedCutTool, "select", buildableNames)
+setEntityFilters(stagedCutTool, "alt_select", buildableNames)
 
-forceDeleteTool.entity_filters = buildableNames
-forceDeleteTool.alt_entity_filters = entityOrPreviewNames
+setEntityFilters(forceDeleteTool, "select", buildableNames)
+setEntityFilters(forceDeleteTool, "alt_select", entityOrPreviewNames)
 
 const twoDirectionOnlyTanks: string[] = []
 for (const [name, tank] of pairs(data.raw["storage-tank"])) {
@@ -351,17 +233,20 @@ data.extend<SelectionToolPrototype>([
   {
     name: Prototypes.PassedPrototypeInfo,
     type: "selection-tool",
-    flags: ["hidden"],
+    hidden: true,
     icon: empty_sprite().filename,
     icon_size: 1,
     stack_size: 1,
-    entity_filters: twoDirectionOnlyTanks,
-
-    selection_mode: ["any-entity"],
-    selection_color: [0, 0, 0],
-    selection_cursor_box_type: "entity",
-    alt_selection_mode: ["any-entity"],
-    alt_selection_color: [0, 0, 0],
-    alt_selection_cursor_box_type: "entity",
+    select: {
+      mode: ["any-entity"],
+      border_color: [0, 0, 0],
+      cursor_box_type: "entity",
+      entity_filters: twoDirectionOnlyTanks,
+    },
+    alt_select: {
+      mode: ["any-entity"],
+      border_color: [0, 0, 0],
+      cursor_box_type: "entity",
+    },
   },
 ])
