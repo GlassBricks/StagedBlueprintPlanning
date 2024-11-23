@@ -11,7 +11,6 @@
 
 import { BlueprintEntity, LuaEntity, nil } from "factorio:runtime"
 import { BpStagedInfo, fromBpStageDiffs } from "../copy-paste/blueprint-stage-info"
-import { maybeSetEmptyControlBehavior } from "../entity/empty-control-behavior"
 import { Entity } from "../entity/Entity"
 import {
   createProjectEntityNoCopy,
@@ -335,16 +334,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const entitySource = entity.getWorldEntity(stage)
     if (!entitySource) return EntityUpdateResult.NoChange
 
-    const overrideUpgradeTarget = entitySource.get_upgrade_target()?.name
-    return handleUpdate(
-      entity,
-      entitySource,
-      stage,
-      entitySource.get_upgrade_direction(),
-      overrideUpgradeTarget,
-      false,
-      nil,
-    )
+    const [overrideUpgradeTarget] = entitySource.get_upgrade_target()
+    return handleUpdate(entity, entitySource, stage, nil, overrideUpgradeTarget?.name, false, nil)
   }
 
   function handleUpdate(
@@ -547,13 +538,6 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     return updateResult
   }
 
-  function maybeApplyEmptyControlBehavior(entity: ProjectEntity, stage: StageNumber): boolean {
-    if (!maybeSetEmptyControlBehavior(entity, stage)) return false
-    const luaEntity = entity.getWorldEntity(stage)
-    if (luaEntity) applyValueFromWorld(stage, entity, luaEntity)
-    return true
-  }
-
   function updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult {
     const [connectionsChanged, maxConnectionsExceeded, additionalEntitiesToUpdate] = saveWireConnections(
       content,
@@ -563,17 +547,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     )
     if (!connectionsChanged) return WireUpdateResult.NoChange
 
-    const circuitConnections = entity.circuitConnections
     // check setting no-op control behavior
-    if (circuitConnections) maybeApplyEmptyControlBehavior(entity, stage)
     updateWorldEntities(entity, entity.firstStage)
-    if (circuitConnections) {
-      for (const [otherEntity] of circuitConnections) {
-        if (maybeApplyEmptyControlBehavior(otherEntity, stage)) {
-          updateWorldEntities(otherEntity, otherEntity.firstStage)
-        }
-      }
-    }
 
     // update other entities as needed
     if (additionalEntitiesToUpdate) {

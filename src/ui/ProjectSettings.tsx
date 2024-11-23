@@ -206,7 +206,7 @@ class ProjectSettings extends Component<{
   private EntitiesAndTiles() {
     const selectedTile = this.project.landfillTile
     const selectedTileValue = selectedTile.get()
-    const tileIsNotBlueprintable = selectedTileValue && !game.tile_prototypes[selectedTileValue]?.items_to_place_this
+    const tileIsNotBlueprintable = selectedTileValue && !prototypes.tile[selectedTileValue]?.items_to_place_this
     const allowNonBlueprintable = property<boolean>(!!tileIsNotBlueprintable)
 
     return (

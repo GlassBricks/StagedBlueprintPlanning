@@ -24,28 +24,25 @@ test("circuitConnectionEquals", () => {
 
   const circuitConnectionA: ProjectCircuitConnection = {
     fromEntity: entityA,
-    fromId: defines.circuit_connector_id.accumulator,
+    fromId: defines.wire_connector_id.circuit_red,
     toEntity: entityB,
-    toId: defines.circuit_connector_id.constant_combinator,
-    wire: defines.wire_type.red,
+    toId: defines.wire_connector_id.combinator_input_red,
   }
   const identical = shallowCopy(circuitConnectionA)
   const circuitConnectionB: ProjectCircuitConnection = {
     toEntity: entityA,
-    toId: defines.circuit_connector_id.accumulator,
+    toId: defines.wire_connector_id.circuit_red,
     fromEntity: entityB,
-    fromId: defines.circuit_connector_id.constant_combinator,
-    wire: defines.wire_type.red,
+    fromId: defines.wire_connector_id.combinator_input_red,
   }
   expect(circuitConnectionEquals(circuitConnectionA, identical)).toBe(true)
   expect(circuitConnectionEquals(circuitConnectionA, circuitConnectionB)).toBe(true)
 
   const different: ProjectCircuitConnection = {
     toEntity: entityA,
-    toId: defines.circuit_connector_id.constant_combinator,
+    toId: defines.wire_connector_id.combinator_input_red,
     fromEntity: entityA,
-    fromId: defines.circuit_connector_id.accumulator,
-    wire: defines.wire_type.red,
+    fromId: defines.wire_connector_id.circuit_red,
   }
   expect(circuitConnectionEquals(circuitConnectionA, different)).toBe(false)
   expect(circuitConnectionEquals(circuitConnectionB, different)).toBe(false)
@@ -57,20 +54,19 @@ test("getDirectionalInfo", () => {
 
   const circuitConnectionA: ProjectCircuitConnection = {
     fromEntity: entityA,
-    fromId: defines.circuit_connector_id.accumulator,
+    fromId: defines.wire_connector_id.circuit_red,
     toEntity: entityB,
-    toId: defines.circuit_connector_id.constant_combinator,
-    wire: defines.wire_type.red,
+    toId: defines.wire_connector_id.combinator_output_red,
   }
   expect(getDirectionalInfo(circuitConnectionA, entityA)).toEqual([
     entityB,
-    defines.circuit_connector_id.accumulator,
-    defines.circuit_connector_id.constant_combinator,
+    defines.wire_connector_id.circuit_red,
+    defines.wire_connector_id.combinator_output_red,
   ])
   expect(getDirectionalInfo(circuitConnectionA, entityB)).toEqual([
     entityA,
-    defines.circuit_connector_id.constant_combinator,
-    defines.circuit_connector_id.accumulator,
+    defines.wire_connector_id.combinator_output_red,
+    defines.wire_connector_id.circuit_red,
   ])
 })
 test("circuitConnectionMatches", () => {
@@ -82,7 +78,6 @@ test("circuitConnectionMatches", () => {
     fromId: 0,
     toEntity: entityB,
     toId: 1,
-    wire: defines.wire_type.red,
   }
   expect(circuitConnectionMatches(connection, entityA, 1, 0)).toBe(true)
   expect(circuitConnectionMatches(connection, entityB, 0, 1)).toBe(true)

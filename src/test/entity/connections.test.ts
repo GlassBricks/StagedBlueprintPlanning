@@ -48,9 +48,14 @@ describe("connections", () => {
       return {
         fromEntity,
         toEntity,
-        wire: wireType,
-        fromId: 0,
-        toId: 0,
+        fromId:
+          wireType == defines.wire_type.red
+            ? defines.wire_connector_id.circuit_red
+            : defines.wire_connector_id.circuit_green,
+        toId:
+          wireType == defines.wire_type.red
+            ? defines.wire_connector_id.circuit_red
+            : defines.wire_connector_id.circuit_green,
       }
     }
 
