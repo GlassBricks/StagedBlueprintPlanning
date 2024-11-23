@@ -11,33 +11,11 @@
 
 import { SettingsData } from "factorio:common"
 import { BoolSettingDefinition, StringSettingDefinition } from "factorio:settings"
-import { FlexibleOffshorePumpPlacement, Settings } from "./constants"
+import { Settings } from "./constants"
 
 declare const data: SettingsData
 
 data.extend<StringSettingDefinition | BoolSettingDefinition>([
-  {
-    name: Settings.FlexibleOffshorePumpPlacement,
-    type: "string-setting",
-    setting_type: "startup",
-    allowed_values: Object.values(FlexibleOffshorePumpPlacement),
-    default_value: FlexibleOffshorePumpPlacement.Disabled,
-    order: "a",
-  },
-  {
-    name: Settings.MinableLandfill,
-    type: "bool-setting",
-    setting_type: "startup",
-    default_value: false,
-    order: "b",
-  },
-  {
-    name: Settings.LandLandfill,
-    type: "bool-setting",
-    setting_type: "startup",
-    default_value: false,
-    order: "c",
-  },
   {
     name: Settings.UnhideInfinityItems,
     type: "bool-setting",
