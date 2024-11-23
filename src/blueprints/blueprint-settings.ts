@@ -32,7 +32,6 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
 
   // (transformations)
   readonly replaceInfinityEntitiesWithCombinators: boolean
-  readonly useModulePreloading: boolean
 }
 
 export interface OverrideableBlueprintSettings extends BlueprintTakeSettings {
@@ -122,7 +121,6 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
     stageLimit: nil,
     excludeFromFutureBlueprints: false,
     replaceInfinityEntitiesWithCombinators: false,
-    useModulePreloading: false,
   }
 }
 

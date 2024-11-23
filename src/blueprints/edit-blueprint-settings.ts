@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintItemStack, LuaInventory, LuaItemStack, LuaPlayer, LuaSurface, PlayerIndex } from "factorio:runtime"
+import { LuaInventory, LuaItemStack, LuaPlayer, LuaSurface, PlayerIndex } from "factorio:runtime"
 import { Events, isEmpty, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -48,7 +48,6 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
     additionalWhitelist: nil,
     blacklist: settings.blacklist.get(),
     replaceInfinityEntitiesWithCombinators: settings.replaceInfinityEntitiesWithCombinators.get(),
-    useModulePreloading: false,
     1: settings[1].get(),
     2: settings[2].get(),
     3: settings[3].get(),
@@ -102,7 +101,7 @@ function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {
     })
 }
 function updateBlueprintGridSettings(
-  blueprint: BlueprintItemStack,
+  blueprint: LuaItemStack,
   settings: BlueprintSettingsTable,
   playerIndex: PlayerIndex,
 ): void {

@@ -485,15 +485,6 @@ class ProjectSettings extends Component<{
         />
 
         <label caption={[L_GuiProjectSettings.EntityEdits]} style="caption_label" />
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox
-            state={settings.useModulePreloading}
-            caption={[L_GuiProjectSettings.UseModulePreloading]}
-            tooltip={[L_GuiProjectSettings.UseModulePreloadingTooltip]}
-            styleMod={highlightIfOverriden(settings.useModulePreloading)}
-          />
-          {MaybeRevertButton(settings.useModulePreloading)}
-        </flow>
 
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <checkbox

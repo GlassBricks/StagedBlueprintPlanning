@@ -9,18 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {
-  BlueprintEntity,
-  BlueprintInsertPlan,
-  LocalisedString,
-  LuaInventory,
-  LuaItemStack,
-  LuaPlayer,
-  UnitNumber,
-} from "factorio:runtime"
-import { Entity } from "../entity/Entity"
+import { LocalisedString, LuaInventory, LuaItemStack, LuaPlayer, UnitNumber } from "factorio:runtime"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
-import { assertNever, getKeySet, Mutable, RegisterClass } from "../lib"
+import { assertNever, Mutable, RegisterClass } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { L_GuiBlueprintBookTask } from "../locale"
@@ -57,7 +48,6 @@ interface ProjectBlueprintPlan {
 
   firstStageEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
   changedEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
-  moduleOverrides?: Ref<LuaMap<UnitNumber, BlueprintInsertPlan[]>>
 }
 
 interface StageBlueprintPlan {
@@ -154,33 +144,6 @@ const BlueprintMethods = {
 
     stagePlan.unitNumberFilter = result
   },
-  computeModuleOverrides(projectPlan: ProjectBlueprintPlan): void {
-    const project = projectPlan.project
-    const assemblingMachineNames = getKeySet(
-      prototypes.get_entity_filtered([
-        {
-          filter: "type",
-          type: "assembling-machine",
-        },
-      ]),
-    )
-    const result = new LuaMap<UnitNumber, BlueprintInsertPlan[]>()
-    for (const entity of project.content.allEntities()) {
-      const firstValue = entity.firstValue
-      if (firstValue.items || !assemblingMachineNames.has(firstValue.name)) continue
-      const [firstDiffStage, newItems] = entity.getFirstStageDiffForProp("items")
-      if (!firstDiffStage) continue
-      for (const stage of $range(entity.firstStage, firstDiffStage - 1)) {
-        const worldEntity = entity.getWorldEntity(stage)
-        if (!worldEntity) continue
-        const un = worldEntity.unit_number
-        if (!un) continue
-        result.set(un, newItems!)
-      }
-    }
-    projectPlan.moduleOverrides!.set(result)
-  },
-
   setLandfill: setTilesAndCheckerboardForStage,
 
   takeStageBlueprint(
@@ -200,21 +163,6 @@ const BlueprintMethods = {
     })
     stagePlan.result = result
     actualStack.label = stageName
-
-    if (result && settings.useModulePreloading) {
-      const moduleOverrides = stagePlan.projectPlan.moduleOverrides!.get()
-      const { entities, bpMapping } = result
-      for (const [entityNumber, luaEntity] of pairs(bpMapping)) {
-        const un = luaEntity.unit_number
-        if (!un) continue
-        const overrides = moduleOverrides.get(un)
-        if (!overrides) continue
-        const entity = entities[entityNumber]
-        if (!entity) continue
-        ;(entity as Mutable<Entity>).items = overrides
-      }
-      actualStack.set_blueprint_entities(entities as BlueprintEntity[])
-    }
 
     if (stagePlan.additionalBpStacks) {
       for (const stack of stagePlan.additionalBpStacks) {
@@ -268,8 +216,7 @@ function getStepTitle(task: BlueprintStep): LocalisedString {
       const stagePlan = task.args[0]
       return [L_GuiBlueprintBookTask.TakeStageBlueprint, stagePlan.stage.name.get()]
     }
-    case "computeChangedEntities":
-    case "computeModuleOverrides": {
+    case "computeChangedEntities": {
       const projectPlan = task.args[0]
       return [L_GuiBlueprintBookTask.PreparingProject, projectPlan.project.displayName().get()]
     }
@@ -447,9 +394,6 @@ class BlueprintingTaskBuilder {
       this.ensureHasComputeChangedEntities(projectPlan)
       this.tasks.push({ name: "computeUnitNumberFilter", args: [projectPlan, stagePlan, settings.stageLimit] })
     }
-    if (settings.useModulePreloading) {
-      this.ensureHasComputeModuleOverrides(projectPlan)
-    }
     this.tasks.push({ name: "takeStageBlueprint", args: [stagePlan, actualStack, settings] })
   }
 
@@ -458,12 +402,6 @@ class BlueprintingTaskBuilder {
       projectInfo.changedEntities = new Ref()
       projectInfo.firstStageEntities = new Ref()
       this.tasks.push({ name: "computeChangedEntities", args: [projectInfo] })
-    }
-  }
-  private ensureHasComputeModuleOverrides(projectInfo: ProjectBlueprintPlan): void {
-    if (!projectInfo.moduleOverrides) {
-      projectInfo.moduleOverrides = new Ref()
-      this.tasks.push({ name: "computeModuleOverrides", args: [projectInfo] })
     }
   }
 

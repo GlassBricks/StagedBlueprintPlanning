@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BlueprintEntity, LuaEntity, LuaPlayer, MapPositionArray } from "factorio:runtime"
+import { LuaEntity, LuaPlayer, MapPositionArray } from "factorio:runtime"
 import expect from "tstl-expect"
 import {
   exportBlueprintBookToFile,
@@ -17,7 +17,6 @@ import {
   takeStageBlueprint,
 } from "../../blueprints/blueprint-creation"
 import { createStageReference, getReferencedStage } from "../../blueprints/stage-reference"
-import { ProjectEntity } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
@@ -199,37 +198,6 @@ test("excludeFromFutureBlueprints: entities are not included in future blueprint
   const entities2 = stack.get_blueprint_entities()!
   expect(entities2).toHaveLength(1)
   expect(entities2[0].position).toEqual(e1.position)
-})
-
-test("moduleOverrides: uses modules later stage if updated", () => {
-  const stage1 = project.getStage(1)!
-  const e1 = createEntity(stage1, nil, "assembling-machine-1")
-  const projEntity = project.content.findCompatibleWithLuaEntity(e1, nil, 1) as ProjectEntity<BlueprintEntity>
-  projEntity._applyDiffAtStage(2, {
-    name: "assembling-machine-2",
-    recipe: "iron-gear-wheel",
-    items: {
-      "productivity-module": 2,
-    },
-  })
-  project.worldUpdates.refreshAllWorldEntities(projEntity)
-
-  const stack = player.cursor_stack!
-  const stageBlueprintSettings = stage1.stageBlueprintSettings
-  stageBlueprintSettings.useModulePreloading.set(true)
-
-  const ret = takeStageBlueprint(stage1, stack)
-
-  expect(ret).toBe(true)
-
-  const entities = stack.get_blueprint_entities()!
-  expect(entities).toHaveLength(1)
-  expect(entities[0]).toMatchTable({
-    name: "assembling-machine-1",
-    items: {
-      ["productivity-module"]: 2,
-    },
-  })
 })
 
 test("make blueprint book", () => {
