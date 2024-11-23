@@ -11,7 +11,7 @@
 
 import * as mod_gui from "mod-gui"
 import { createStageReference } from "../blueprints/stage-reference"
-import { destroyAllRenders, Events } from "../lib"
+import { Events } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
@@ -69,7 +69,9 @@ Events.on_player_created((p) => {
 if ("factorio-test" in script.active_mods) {
   require("@NoResolution:test.in-world-test-util")
   function reinit() {
-    destroyAllRenders()
+    for (const obj of rendering.get_all_objects(script.mod_name)) {
+      obj.destroy()
+    }
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories != nil) inventories.forEach((x) => x.destroy())
     const oldGlobal = global
