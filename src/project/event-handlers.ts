@@ -149,15 +149,6 @@ Fast replace:
   (on_player_mined_item)
   on_built_entity
 
-Underground fast replace:
-  on_pre_build
-  on_player_mined_entity, 1+x
-  on_built_entity
-
-Buggy Q-building:
-  on_pre_build (with belt)
-  on_player_cursor_stack_changed
-
 Blueprinting:
   on_pre_build
   // (nothing else)
@@ -252,9 +243,6 @@ Events.on_marked_for_upgrade((e) => luaEntityMarkedForUpgrade(e.entity, e.player
 
 interface ToBeFastReplacedEntity extends LuaEntityInfo {
   readonly stage: Stage
-
-  undergroundPair?: LuaEntity
-  undergroundPairValue?: ToBeFastReplacedEntity
 }
 // in global, so no desync in case of bugs
 let state: {
@@ -309,10 +297,6 @@ function clearToBeFastReplaced(player: PlayerIndex | nil): void {
     if (stage.valid) {
       const { stageNumber } = stage
       stage.actions.onEntityDeleted(toBeFastReplaced, stageNumber, player)
-      const { undergroundPairValue } = toBeFastReplaced
-      if (undergroundPairValue) {
-        stage.actions.onEntityDeleted(undergroundPairValue, stageNumber, player)
-      }
     }
     state.toBeFastReplaced = nil
   }
@@ -320,7 +304,6 @@ function clearToBeFastReplaced(player: PlayerIndex | nil): void {
 
 function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerIndex | nil): void {
   const isUnderground = entity.type == "underground-belt"
-  const oldValue = state.toBeFastReplaced
   const newValue: ToBeFastReplacedEntity = {
     name: entity.name,
     type: entity.type,
@@ -329,16 +312,6 @@ function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerInde
     surface: entity.surface,
     belt_to_ground_type: isUnderground ? entity.belt_to_ground_type : nil,
     stage,
-  }
-
-  if (isUnderground) {
-    if (oldValue && oldValue.undergroundPair == entity) {
-      oldValue.undergroundPair = nil
-      oldValue.undergroundPairValue = newValue
-      return
-    }
-    // else, is the first underground belt
-    newValue.undergroundPair = entity.neighbours as LuaEntity | nil
   }
 
   clearToBeFastReplaced(player)
@@ -413,10 +386,6 @@ function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent) {
   if (!lastPreBuild) return
 
   const { entity } = mineEvent
-  const toBeFastReplaced = state.toBeFastReplaced
-  if (toBeFastReplaced && toBeFastReplaced.undergroundPair == entity) {
-    return true
-  }
 
   const { event, item } = lastPreBuild
 
@@ -449,8 +418,8 @@ Events.on_player_mined_entity((e) => {
   const stage = getStageAtSurface(entitySurface.index)
   if (!stage || !isWorldEntityProjectEntity(entity)) return
 
+  // preMinedItem not called when using instant upgrade planner
   if (preMinedItemCalled == nil || isFastReplaceMine(e)) {
-    // this happens when using instant upgrade planner
     setToBeFastReplaced(entity, stage, e.player_index)
   } else {
     stage.actions.onEntityDeleted(entity, stage.stageNumber, e.player_index)
@@ -490,7 +459,16 @@ Events.on_built_entity((e) => {
   }
 
   // also handles instant upgrade planner
-  if (tryFastReplace(entity, stage, playerIndex)) return
+  const wasUnderground = entity.type == "underground-belt"
+  const pos = entity.position
+  if (tryFastReplace(entity, stage, playerIndex)) {
+    if (wasUnderground && lastPreBuild && !Pos.equals(pos, lastPreBuild.event.position)) {
+      // was pair being upgraded, restore lastPreBuild
+      state.lastPreBuild = lastPreBuild
+    }
+
+    return
+  }
 
   if (lastPreBuild == nil) {
     // editor mode build, marker entity, or multiple-entities in one build
@@ -508,17 +486,9 @@ function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex) {
   const { toBeFastReplaced } = state
   if (!toBeFastReplaced) return
 
-  const undergroundPairValue = toBeFastReplaced.undergroundPairValue
-
   if (isFastReplaceable(toBeFastReplaced, entity)) {
     stage.actions.onEntityPossiblyUpdated(entity, stage.stageNumber, toBeFastReplaced.direction, player)
-    state.toBeFastReplaced = undergroundPairValue // could be nil
-    return true
-  }
-  // check the underground pair value instead
-  if (undergroundPairValue && isFastReplaceable(undergroundPairValue, entity)) {
-    stage.actions.onEntityPossiblyUpdated(entity, stage.stageNumber, toBeFastReplaced.direction, player)
-    toBeFastReplaced.undergroundPairValue = nil
+    state.toBeFastReplaced = nil
     return true
   }
   // not fast replaceable, call delete on the stored value
