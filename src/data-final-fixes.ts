@@ -173,7 +173,6 @@ for (const type of types.sort()) {
 
       // other
       flags,
-      hidden: true,
       placeable_by: placeableBy,
       render_layer: "ground-patch-higher2",
       secondary_draw_order: 100,

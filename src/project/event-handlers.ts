@@ -656,8 +656,6 @@ OnPrototypeInfoLoaded.addListener((e) => {
   mayHaveModdedGui = e.mayHaveModdedGui
 })
 
-const rawset = _G.rawset
-
 function flipSplitterPriority(entity: Mutable<BlueprintEntity>) {
   if (entity.input_priority) {
     entity.input_priority = entity.input_priority == "left" ? "right" : "left"
@@ -719,11 +717,11 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   const type = nameToType.get(valueName)!
   if (type == "storage-tank") {
     if (twoDirectionTanks.has(valueName)) {
-      entityDir = (entityDir + (bpState.isFlipped ? 2 : 0)) % 4
+      entityDir = (entityDir + (bpState.isFlipped ? 4 : 0)) % 8
     }
   } else if (type == "curved-rail-a" || type == "curved-rail-b") {
-    const isDiagonal = ((value.direction ?? 0) % 2 == 1) != bpState.isFlipped
-    if (isDiagonal) entityDir = (entityDir + 1) % 8
+    const isDiagonal = (((value.direction ?? 0) / 2) % 2 == 1) != bpState.isFlipped
+    if (isDiagonal) entityDir = (entityDir + 2) % 16
   } else if (type == "splitter") {
     if (bpState.isFlipped) {
       passedValue = editPassedValue(value, flipSplitterPriority)
@@ -782,10 +780,6 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     }
     if (!luaEntity) return
   }
-
-  // performance hack: cache name, type
-  rawset(luaEntity, "name", luaEntity.name)
-  rawset(luaEntity, "type", type)
 
   if (usedPasteUpgrade) {
     bpState.usedPasteUpgrade = true

@@ -16,7 +16,7 @@ export function CloseButton(props: Partial<ElemProps<"sprite-button">>): Element
   return (
     <sprite-button
       style="frame_action_button"
-      sprite="utility/close_white"
+      sprite="utility/close"
       hovered_sprite="utility/close_black"
       clicked_sprite="utility/close_black"
       tooltip={["gui.close"]}

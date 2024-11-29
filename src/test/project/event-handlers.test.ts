@@ -48,6 +48,7 @@ before_all(() => {
 })
 before_each(() => {
   mock.clear(project.actions)
+  player.teleport(pos, surface)
 })
 after_all(() => {
   _deleteAllProjects()
@@ -358,7 +359,7 @@ describe("robot actions", () => {
     expect(roboport).toBeAny()
     roboport.insert("construction-robot")
     const storageChest = surface.find_entities_filtered({
-      name: "logistic-chest-storage",
+      name: "storage-chest",
       limit: 1,
     })[0]
     expect(storageChest).toBeAny()
@@ -820,15 +821,8 @@ describe("blueprint paste", () => {
       name: "inserter",
       limit: 1,
     })[0]
+    expect(inserter).toBeAny()
     assertCorrect(inserter)
-  })
-
-  test("doesn't break when creating ghost entity", () => {
-    player.toggle_map_editor()
-    after_test(() => player.toggle_map_editor())
-    setBlueprint()
-    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
-    expectedNumCalls = 0
   })
 
   test("update existing entity", () => {
@@ -838,10 +832,10 @@ describe("blueprint paste", () => {
       force: "player",
       direction: direction.west,
     })!
+    assert(inserter)
     player.build_from_cursor({ position: pos })
     assertCorrect(inserter)
   })
-
   test.each([true, false])("update existing entity with wires, already present %s", (alreadyPresent) => {
     const entities = player.cursor_stack!.get_blueprint_entities()!
     const bpEntity1 = entities[0] as Mutable<BlueprintEntity>
@@ -958,6 +952,35 @@ describe("blueprint paste", () => {
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, entity)
   })
 
+  function fakeFlippedPaste(pos: Position) {
+    // fake the paste event, since no api for it yet
+    Events.raiseFakeEventNamed("on_pre_build", {
+      player_index: player.index,
+      position: pos,
+      direction: 0,
+      created_by_moving: false,
+      flip_vertical: false,
+      flip_horizontal: true,
+      mirror: false,
+      build_mode: defines.build_mode.normal,
+    })
+
+    expect(player.cursor_stack!.cost_to_build).toContainEqual(expect.tableContaining({ name: Prototypes.EntityMarker }))
+
+    const marker = player.cursor_stack!.get_blueprint_entities()!.find((e) => e.name == Prototypes.EntityMarker)!
+
+    Events.raiseFakeEventNamed("on_built_entity", {
+      player_index: player.index,
+      entity: surface.create_entity({
+        name: marker.name,
+        position: pos,
+        direction: marker.direction,
+      })!,
+      tags: marker.tags,
+      consumed_items: nil!,
+    })
+  }
+
   test("tank has correct direction when flipped ", () => {
     const entity: BlueprintEntity = {
       entity_number: 1,
@@ -974,10 +997,7 @@ describe("blueprint paste", () => {
     })
     expect(tank).toBeAny()
 
-    player.build_from_cursor({
-      position: Pos(0.5, 0.5),
-      mirror: true,
-    })
+    fakeFlippedPaste(Pos(0.5, 0.5))
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, entity)
@@ -1000,7 +1020,8 @@ describe("blueprint paste", () => {
     })
     expect(splitter).toBeAny()
 
-    player.build_from_cursor({ position: Pos(0, 0.5), mirror: true })
+    // player.build_from_cursor({ position: Pos(0, 0.5), mirror: true })
+    fakeFlippedPaste(Pos(0, 0.5))
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, {
@@ -1008,6 +1029,18 @@ describe("blueprint paste", () => {
       input_priority: "left",
       output_priority: "right",
     })
+  })
+
+  test("doesn't break when creating ghost entity", () => {
+    player.toggle_map_editor()
+    after_test(() => {
+      player.set_controller({ type: defines.controllers.editor })
+      player.clear_cursor()
+    })
+    setBlueprint()
+    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
+    player.clear_cursor()
+    expectedNumCalls = 0
   })
 
   // some more tricky cases handled in entity-update-integration.test.ts
@@ -1033,7 +1066,6 @@ describe("belt dragging", () => {
       force: "player",
     })!
     player.cursor_stack!.set_stack("transport-belt")
-    const pos2 = Pos.plus(belt.position, Pos(0, 1))
 
     fakeNoopDrag(belt)
 
@@ -1041,6 +1073,7 @@ describe("belt dragging", () => {
     expect(project.actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
 
+    const pos2 = Pos.add(pos, 0, 1)
     player.build_from_cursor({ position: pos2, direction: belt.direction })
     const newBelt = surface.find_entity("transport-belt", pos2)!
     expect(newBelt).toBeAny()
