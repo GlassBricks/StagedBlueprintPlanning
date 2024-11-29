@@ -54,7 +54,7 @@ const styles = data.raw["gui-style"].default!
 
 styles[Styles.FakeListBox] = {
   type: "scroll_pane_style",
-  parent: "scroll_pane_with_dark_background_under_subheader",
+  parent: "scroll_pane_under_subheader",
   extra_right_padding_when_activated: -12,
   background_graphical_set: {
     position: [282, 17],

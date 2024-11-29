@@ -53,7 +53,7 @@ interface SourceMap {
 
 import lastCompileTime = require("last-compile-time")
 
-declare let global: {
+declare const storage: {
   lastCompileTimestamp?: string
   printEvents?: boolean
   migrateNextTick?: boolean
@@ -74,7 +74,7 @@ if ("factorio-test" in script.active_mods) {
     }
     const inventories = game.get_script_inventories(script.mod_name)[script.mod_name]
     if (inventories != nil) inventories.forEach((x) => x.destroy())
-    const oldGlobal = global
+    const oldGlobal = storage
     // global = {}
     for (const [, player] of game.players) {
       const { screen, left, center, relative } = player.gui
@@ -92,8 +92,8 @@ if ("factorio-test" in script.active_mods) {
       if (surface.index != 1) game.delete_surface(surface)
     }
     Events.raiseFakeEventNamed("on_init", nil!)
-    global.rerunMode = oldGlobal.rerunMode
-    global.printEvents = oldGlobal.printEvents
+    storage.rerunMode = oldGlobal.rerunMode
+    storage.printEvents = oldGlobal.printEvents
   }
 
   commands.add_command("reinit", "", reinit)
@@ -107,7 +107,7 @@ if ("factorio-test" in script.active_mods) {
     load_luassert: false,
     before_test_run() {
       reinit()
-      global.lastCompileTimestamp = lastCompileTime
+      storage.lastCompileTimestamp = lastCompileTime
       const force = game.forces.player
       force.enable_all_technologies()
       force.research_all_technologies()
@@ -160,24 +160,24 @@ function isTestsRunning() {
 }
 
 Events.on_tick(() => {
-  if (global.rerunMode == nil) global.rerunMode = "rerun"
-  if (global.rerunMode == "none" || isTestsRunning()) return
+  if (storage.rerunMode == nil) storage.rerunMode = "rerun"
+  if (storage.rerunMode == "none" || isTestsRunning()) return
 
-  if (global.migrateNextTick) {
-    global.migrateNextTick = nil
+  if (storage.migrateNextTick) {
+    storage.migrateNextTick = nil
     Migrations.doMigrations(script.active_mods[script.mod_name]!)
   }
 
   const ticks = math.ceil((__DebugAdapter ? 8 : 2) * 60 * game.speed)
   const mod = game.ticks_played % ticks
   if (mod == 0) {
-    global.lastCompileTimestamp = lastCompileTime
-    global.migrateNextTick = true
+    storage.lastCompileTimestamp = lastCompileTime
+    storage.migrateNextTick = true
     game.reload_mods()
-  } else if (global.lastCompileTimestamp != lastCompileTime && remote.interfaces["factorio-test"]?.runTests) {
-    global.lastCompileTimestamp = lastCompileTime
+  } else if (storage.lastCompileTimestamp != lastCompileTime && remote.interfaces["factorio-test"]?.runTests) {
+    storage.lastCompileTimestamp = lastCompileTime
     game.print("Reloaded: " + lastCompileTime)
-    if (global.rerunMode == "rerun") {
+    if (storage.rerunMode == "rerun") {
       remote.call("factorio-test", "runTests")
     } else {
       refreshCurrentProject()
@@ -187,17 +187,17 @@ Events.on_tick(() => {
 commands.add_command("rr", "", (e) => {
   const arg = e.parameter
   if (arg == "test") {
-    global.rerunMode = "rerun"
+    storage.rerunMode = "rerun"
   } else if (arg == "only") {
-    global.rerunMode = "reload"
+    storage.rerunMode = "reload"
   } else if (arg == "off") {
-    global.rerunMode = "none"
+    storage.rerunMode = "none"
   } else if (arg == nil) {
-    if (global.rerunMode == "none") game.reload_mods()
+    if (storage.rerunMode == "none") game.reload_mods()
   } else {
     game.print("Expected 'test', 'only', 'off' or nothing")
   }
-  game.print("Rerun mode: " + global.rerunMode)
+  game.print("Rerun mode: " + storage.rerunMode)
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

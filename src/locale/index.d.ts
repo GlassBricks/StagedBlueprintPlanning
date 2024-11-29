@@ -3,31 +3,31 @@
 
 export declare const enum L_ItemName {
   /** Cleanup tool */
-  CleanupTool = "item-name.bp100:cleanup-tool",
+  Bp100CleanupTool = "item-name.bp100_cleanup-tool",
   /** Stage move tool */
-  StageMoveTool = "item-name.bp100:stage-move-tool",
+  Bp100StageMoveTool = "item-name.bp100_stage-move-tool",
   /** Filtered stage move tool */
-  FilteredStageMoveTool = "item-name.bp100:filtered-stage-move-tool",
+  Bp100FilteredStageMoveTool = "item-name.bp100_filtered-stage-move-tool",
   /** Staged deconstruction */
-  StageDeconstructTool = "item-name.bp100:stage-deconstruct-tool",
+  Bp100StageDeconstructTool = "item-name.bp100_stage-deconstruct-tool",
   /** Force delete (in project) */
-  ForceDeleteTool = "item-name.bp100:force-delete-tool",
+  Bp100ForceDeleteTool = "item-name.bp100_force-delete-tool",
   /** Copy with stage info */
-  StagedCopyTool = "item-name.bp100:staged-copy-tool",
+  Bp100StagedCopyTool = "item-name.bp100_staged-copy-tool",
   /** Cut with stage info */
-  StagedCutTool = "item-name.bp100:staged-cut-tool",
+  Bp100StagedCutTool = "item-name.bp100_staged-cut-tool",
   /** Stage reference */
-  StageReference = "item-name.bp100:stage-reference",
+  Bp100StageReference = "item-name.bp100_stage-reference",
   /** Stage reference-data */
-  StageReferenceData = "item-name.bp100:stage-reference-data",
+  Bp100StageReferenceData = "item-name.bp100_stage-reference-data",
 }
 export declare const enum L_EntityName {
   /** Entity marker */
-  EntityMarker = "entity-name.bp100:entity-marker",
+  Bp100EntityMarker = "entity-name.bp100_entity-marker",
   /** Undo reference */
-  UndoReference = "entity-name.bp100:undo-reference",
+  Bp100UndoReference = "entity-name.bp100_undo-reference",
   /** INTERNAL: please don't touch me, else blueprint templates will not work! */
-  BlueprintReferenceData = "entity-name.bp100:blueprint-reference-data",
+  Bp100BlueprintReferenceData = "entity-name.bp100_blueprint-reference-data",
 }
 export declare const enum L_EntityDescription {
   /** Reference to a stage. Will be replaced with the actual blueprint when the template is compiled. */
@@ -35,91 +35,91 @@ export declare const enum L_EntityDescription {
 }
 export declare const enum L_ItemGroupName {
   /** Staged bp planning: utility entities */
-  Utility = "item-group-name.bp100:utility",
+  Bp100Utility = "item-group-name.bp100_utility",
 }
 export declare const enum L_ModSettingName {
   /** Place offshore pumps anywhere */
-  FlexibleOffshorePumpPlacement = "mod-setting-name.bp100:flexible-offshore-pump-placement",
+  Bp100FlexibleOffshorePumpPlacement = "mod-setting-name.bp100_flexible-offshore-pump-placement",
   /** Allow landfill to be mined */
-  MinableLandfill = "mod-setting-name.bp100:minable-landfill",
+  Bp100MinableLandfill = "mod-setting-name.bp100_minable-landfill",
   /** Allow placing landfill outside of water */
-  LandLandfill = "mod-setting-name.bp100:land-landfill",
+  Bp100LandLandfill = "mod-setting-name.bp100_land-landfill",
   /** Location of Entity info gui */
-  EntityInfoLocation = "mod-setting-name.bp100:entity-info-location",
+  Bp100EntityInfoLocation = "mod-setting-name.bp100_entity-info-location",
   /** Allow blueprint paste to upgrade entities */
-  UpgradeOnPaste = "mod-setting-name.bp100:upgrade-on-paste",
+  Bp100UpgradeOnPaste = "mod-setting-name.bp100_upgrade-on-paste",
   /** Teleport to stage when clicking a GPS tag */
-  GpsTagTeleport = "mod-setting-name.bp100:gps-tag-teleport",
+  Bp100GpsTagTeleport = "mod-setting-name.bp100_gps-tag-teleport",
   /** Unhide infinity items (allows use in upgrade planner) */
-  UnhideInfinityItems = "mod-setting-name.bp100:unhide-infinity-items",
+  Bp100UnhideInfinityItems = "mod-setting-name.bp100_unhide-infinity-items",
 }
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps anywhere, without need for a water source. */
-  FlexibleOffshorePumpPlacement = "mod-setting-description.bp100:flexible-offshore-pump-placement",
+  Bp100FlexibleOffshorePumpPlacement = "mod-setting-description.bp100_flexible-offshore-pump-placement",
   /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged project. */
-  UpgradeOnPaste = "mod-setting-description.bp100:upgrade-on-paste",
+  Bp100UpgradeOnPaste = "mod-setting-description.bp100_upgrade-on-paste",
   /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
-  UnhideInfinityItems = "mod-setting-description.bp100:unhide-infinity-items",
+  Bp100UnhideInfinityItems = "mod-setting-description.bp100_unhide-infinity-items",
 }
 export declare const enum L_StringModSetting {
   /** Top */
-  EntityInfoLocationTop = "string-mod-setting.bp100:entity-info-location-top",
+  Bp100EntityInfoLocationTop = "string-mod-setting.bp100_entity-info-location-top",
   /** Bottom */
-  EntityInfoLocationBottom = "string-mod-setting.bp100:entity-info-location-bottom",
+  Bp100EntityInfoLocationBottom = "string-mod-setting.bp100_entity-info-location-bottom",
   /** Left */
-  EntityInfoLocationLeft = "string-mod-setting.bp100:entity-info-location-left",
+  Bp100EntityInfoLocationLeft = "string-mod-setting.bp100_entity-info-location-left",
   /** Right */
-  EntityInfoLocationRight = "string-mod-setting.bp100:entity-info-location-right",
+  Bp100EntityInfoLocationRight = "string-mod-setting.bp100_entity-info-location-right",
 }
 export declare const enum L_Controls {
   /** Go to next stage */
-  NextStage = "controls.bp100:next-stage",
+  Bp100NextStage = "controls.bp100_next-stage",
   /** Go to previous stage */
-  PreviousStage = "controls.bp100:previous-stage",
+  Bp100PreviousStage = "controls.bp100_previous-stage",
   /** Go to entity first stage */
-  GoToFirstStage = "controls.bp100:go-to-first-stage",
+  Bp100GoToFirstStage = "controls.bp100_go-to-first-stage",
   /** Go to project first stage */
-  GoToProjectFirstStage = "controls.bp100:go-to-project-first-stage",
+  Bp100GoToProjectFirstStage = "controls.bp100_go-to-project-first-stage",
   /** Go to project last stage */
-  GoToProjectLastStage = "controls.bp100:go-to-project-last-stage",
+  Bp100GoToProjectLastStage = "controls.bp100_go-to-project-last-stage",
   /** Exit project */
-  ExitProject = "controls.bp100:exit-project",
+  Bp100ExitProject = "controls.bp100_exit-project",
   /** Return to last project/stage */
-  ReturnToLastProject = "controls.bp100:return-to-last-project",
+  Bp100ReturnToLastProject = "controls.bp100_return-to-last-project",
   /** Go to next project */
-  NextProject = "controls.bp100:next-project",
+  Bp100NextProject = "controls.bp100_next-project",
   /** Go to previous project */
-  PreviousProject = "controls.bp100:previous-project",
+  Bp100PreviousProject = "controls.bp100_previous-project",
   /** Get blueprint for current stage */
-  GetStageBlueprint = "controls.bp100:get-stage-blueprint",
+  Bp100GetStageBlueprint = "controls.bp100_get-stage-blueprint",
   /** Get blueprint book for project */
-  GetBlueprintBook = "controls.bp100:get-blueprint-book",
+  Bp100GetBlueprintBook = "controls.bp100_get-blueprint-book",
   /** New stage after current */
-  NewStageAfterCurrent = "controls.bp100:new-stage-after-current",
+  Bp100NewStageAfterCurrent = "controls.bp100_new-stage-after-current",
   /** New stage at front */
-  NewStageAtFront = "controls.bp100:new-stage-at-front",
+  Bp100NewStageAtFront = "controls.bp100_new-stage-at-front",
   /** Move entity to current stage */
-  MoveToThisStage = "controls.bp100:move-to-this-stage",
+  Bp100MoveToThisStage = "controls.bp100_move-to-this-stage",
   /** Force delete entity */
-  ForceDelete = "controls.bp100:force-delete",
+  Bp100ForceDelete = "controls.bp100_force-delete",
   /** Stage move tool: select next stage */
-  StageSelectNext = "controls.bp100:stage-select-next",
+  Bp100StageSelectNext = "controls.bp100_stage-select-next",
   /** Stage move tool: select previous stage */
-  StageSelectPrevious = "controls.bp100:stage-select-previous",
+  Bp100StageSelectPrevious = "controls.bp100_stage-select-previous",
   /** Switch to staged copy tool */
-  ToggleStagedCopy = "controls.bp100:toggle-staged-copy",
+  Bp100ToggleStagedCopy = "controls.bp100_toggle-staged-copy",
   /** Staged deconstruction tool */
-  StageDeconstructTool = "controls.bp100:stage-deconstruct-tool",
+  Bp100StageDeconstructTool = "controls.bp100_stage-deconstruct-tool",
   /** Force delete tool */
-  ForceDeleteTool = "controls.bp100:force-delete-tool",
+  Bp100ForceDeleteTool = "controls.bp100_force-delete-tool",
 }
 export declare const enum L_ControlsDescription {
   /** Delete an entity even if not in its the current stage. */
-  ForceDelete = "controls-description.bp100:force-delete",
+  Bp100ForceDelete = "controls-description.bp100_force-delete",
   /** When holding a copy or cut tool, switch to the staged copy or cut tool. */
-  ToggleStagedCopy = "controls-description.bp100:toggle-staged-copy",
+  Bp100ToggleStagedCopy = "controls-description.bp100_toggle-staged-copy",
   /** Return to the last project/stage you were in. Works together with "Exit project". */
-  ReturnToLastProject = "controls-description.bp100:return-to-last-project",
+  Bp100ReturnToLastProject = "controls-description.bp100_return-to-last-project",
 }
 export declare const enum L_Bp100 {
   /** __1__ (preview) */

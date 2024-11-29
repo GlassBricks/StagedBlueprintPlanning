@@ -62,5 +62,5 @@ data.extend<SpritePrototype>([
 ])
 
 data.extend<SpritePrototype>([
-  createSprite(Sprites.NewBlueprint, "__base__/graphics/icons/shortcut-toolbar/mip/new-blueprint-x32-white.png", 32, 2),
+  createSprite(Sprites.NewBlueprint, "__base__/graphics/icons/shortcut-toolbar/mip/new-blueprint-x24.png", 24, 2),
 ])

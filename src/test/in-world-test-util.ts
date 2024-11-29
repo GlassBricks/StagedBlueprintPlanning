@@ -12,7 +12,7 @@
 import { saveEntity } from "../entity/save-load"
 import { Events } from "../lib"
 
-declare let global: {
+declare const storage: {
   printEvents?: boolean
   lastEventTick?: number
   eventCount?: number
@@ -32,20 +32,20 @@ const eventBlacklist = newLuaSet<keyof typeof defines.events>(
 for (const [name, key] of pairs(defines.events)) {
   if (eventBlacklist.has(name)) continue
   Events.registerEarly(key, (event) => {
-    if (!global.printEvents) return
+    if (!storage.printEvents) return
     // if (isTestsRunning()) return
     const currentTick = game.tick
-    if (currentTick != global.lastEventTick) {
+    if (currentTick != storage.lastEventTick) {
       // game.print(currentTick)
-      global.eventCount = 0
-      if (!global.lastEventTick || currentTick - global.lastEventTick > 60) {
-        game.print(global.lastEventTick + "\n")
+      storage.eventCount = 0
+      if (!storage.lastEventTick || currentTick - storage.lastEventTick > 60) {
+        game.print(storage.lastEventTick + "\n")
       }
     }
-    global.lastEventTick = currentTick
-    global.eventCount = (global.eventCount || 0) + 1
+    storage.lastEventTick = currentTick
+    storage.eventCount = (storage.eventCount || 0) + 1
     game.print(
-      `(${(game.tick % 1000).toString().padStart(3, " ")}) ${global.eventCount.toString().padStart(2, "0")}: ${name}`,
+      `(${(game.tick % 1000).toString().padStart(3, " ")}) ${storage.eventCount.toString().padStart(2, "0")}: ${name}`,
     )
     log(`${name} ${serpent.block(event)}`)
   })
@@ -53,8 +53,8 @@ for (const [name, key] of pairs(defines.events)) {
 
 // noinspection SpellCheckingInspection
 commands.add_command("printev", "", (e) => {
-  global.printEvents = e.parameter == nil
-  game.print("printEvents: " + global.printEvents)
+  storage.printEvents = e.parameter == nil
+  game.print("printEvents: " + storage.printEvents)
 })
 
 // noinspection SpellCheckingInspection

@@ -35,6 +35,9 @@ function selectionToolToShortcut(
     action: "spawn-item",
     item_to_spawn: prototype.name,
     icon,
+    icon_size: 32,
+    small_icon: icon,
+    small_icon_size: 32,
     style,
     associated_control_input: associatedControl,
     localised_name: prototype.localised_name ?? ["item-name." + prototype.name],
@@ -253,18 +256,6 @@ const stagedDeconstructTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-e[stage-deconstruct-tool]",
 
-  // selection_color: deconstructionPlanner.selection_color,
-  // selection_cursor_box_type: "not-allowed",
-  // selection_mode: ["blueprint"],
-  //
-  // alt_selection_color: deconstructionPlanner.alt_selection_color,
-  // alt_selection_cursor_box_type: "not-allowed",
-  // alt_selection_mode: ["blueprint"],
-  //
-  // reverse_selection_color: deconstructionPlanner.reverse_selection_color,
-  // reverse_selection_cursor_box_type: "not-allowed",
-  // reverse_selection_mode: ["nothing"],
-
   select: {
     mode: ["blueprint"],
     border_color: deconstructionPlanner.select.border_color,
@@ -273,11 +264,6 @@ const stagedDeconstructTool: SelectionToolPrototype = {
   alt_select: {
     mode: ["blueprint"],
     border_color: deconstructionPlanner.alt_select.border_color,
-    cursor_box_type: "not-allowed",
-  },
-  reverse_select: {
-    mode: ["nothing"],
-    border_color: deconstructionPlanner.reverse_select!.border_color,
     cursor_box_type: "not-allowed",
   },
 }

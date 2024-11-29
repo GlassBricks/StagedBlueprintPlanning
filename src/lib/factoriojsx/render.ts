@@ -145,7 +145,7 @@ function callOnMount(context: InternalRenderContext, element: LuaGuiElement): vo
 }
 
 function isLuaGuiElement(element: unknown): element is LuaGuiElement {
-  return typeof element == "object" && (element as LuaGuiElement).object_name == "LuaGuiElement"
+  return type(element) == "userdata" && (element as LuaGuiElement).object_name == "LuaGuiElement"
 }
 
 declare global {
