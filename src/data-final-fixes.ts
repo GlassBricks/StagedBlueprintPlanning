@@ -130,7 +130,6 @@ for (const type of types.sort()) {
     }
     if (!placeableBy) continue
 
-    prototype.hidden = true
     const flags = prototype.flags!.filter((flag) => flagsToTransfer.has(flag))
     flags.push("not-on-map")
 
@@ -174,6 +173,7 @@ for (const type of types.sort()) {
 
       // other
       flags,
+      hidden: true,
       placeable_by: placeableBy,
       render_layer: "ground-patch-higher2",
       secondary_draw_order: 100,

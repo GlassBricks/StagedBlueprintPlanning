@@ -26,7 +26,6 @@
         "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
       "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
-      "checkGlobals": false,
       "hookControl": false,
       "adjustModSettings": [
         {
