@@ -86,15 +86,9 @@ const BlueprintMethods = {
       const firstStageMap = firstStageEntities.get(entity.firstStage)!
       firstStageMap.add(entity)
 
-      const circuitConnections = entity.circuitConnections
-      if (circuitConnections) {
-        for (const [otherEntity] of circuitConnections) {
-          firstStageMap.add(otherEntity)
-        }
-      }
-      const cableConnections = entity.cableConnections
-      if (cableConnections) {
-        for (const otherEntity of cableConnections) {
+      const wireConnections = entity.wireConnections
+      if (wireConnections) {
+        for (const [otherEntity] of wireConnections) {
           firstStageMap.add(otherEntity)
         }
       }

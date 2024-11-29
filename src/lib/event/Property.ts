@@ -443,18 +443,3 @@ export namespace Props {
     return bind(toggle, state)
   }
 }
-
-function _migrateCheckEmpty(
-  property: MappedProperty<any, any> | FlatMappedProperty<any, any> | CustomProperty<any>,
-): void {
-  property._checkEmpty = ibind(property.checkEmpty)
-  assume<{
-    event: LuaMap<Subscription>
-  }>(property)
-  for (const [subscription] of property.event) {
-    subscription.add(property._checkEmpty)
-  }
-  property.checkEmpty()
-}
-
-declare const storage: object

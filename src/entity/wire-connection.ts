@@ -11,7 +11,7 @@
 
 import type { ProjectEntity } from "./ProjectEntity"
 
-export interface ProjectCircuitConnection {
+export interface ProjectWireConnection {
   readonly fromEntity: ProjectEntity
   readonly fromId: defines.wire_connector_id
 
@@ -19,7 +19,7 @@ export interface ProjectCircuitConnection {
   readonly toId: defines.wire_connector_id
 }
 
-export function circuitConnectionEquals(a: ProjectCircuitConnection, b: ProjectCircuitConnection): boolean {
+export function wireConnectionEquals(a: ProjectWireConnection, b: ProjectWireConnection): boolean {
   if (a == b) return true
   return (
     (a.fromEntity == b.fromEntity && a.fromId == b.fromId && a.toEntity == b.toEntity && a.toId == b.toId) ||
@@ -28,15 +28,15 @@ export function circuitConnectionEquals(a: ProjectCircuitConnection, b: ProjectC
 }
 
 export function getDirectionalInfo(
-  connection: ProjectCircuitConnection,
+  connection: ProjectWireConnection,
   fromEntity: ProjectEntity,
 ): LuaMultiReturn<[otherEntity: ProjectEntity, fromId: defines.wire_connector_id, toId: defines.wire_connector_id]> {
   if (connection.fromEntity == fromEntity) return $multi(connection.toEntity, connection.fromId, connection.toId)
   return $multi(connection.fromEntity, connection.toId, connection.fromId)
 }
 
-export function circuitConnectionMatches(
-  connection: ProjectCircuitConnection,
+export function wireConnectionMatches(
+  connection: ProjectWireConnection,
   toEntity: ProjectEntity,
   fromId: defines.wire_connector_id,
   toId: defines.wire_connector_id,

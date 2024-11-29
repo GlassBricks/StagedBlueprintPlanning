@@ -42,7 +42,6 @@ export declare const enum EntityUpdateResult {
 export declare const enum WireUpdateResult {
   Updated = "updated",
   NoChange = "no-change",
-  MaxConnectionsExceeded = "max-connections-exceeded",
 }
 
 export declare const enum StageMoveResult {
@@ -217,7 +216,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     fixNewUndergroundBelt(projectEntity, entity, stage, knownValue)
 
     updateNewWorldEntitiesWithoutWires(projectEntity)
-    const [hasDiff, ,] = saveWireConnections(content, projectEntity, stage, project.lastStageFor(projectEntity))
+    const hasDiff = saveWireConnections(content, projectEntity, stage, project.lastStageFor(projectEntity))
     if (hasDiff) {
       updateWireConnections(projectEntity)
     }
@@ -230,7 +229,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function shouldMakeSettingsRemnant(entity: ProjectEntity) {
     if (entity.hasStageDiff()) return true
-    const connections = entity.circuitConnections
+    const connections = entity.wireConnections
     if (!connections) return false
     const stage = entity.firstStage
     for (const [otherEntity] of connections) {
@@ -529,16 +528,11 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult {
-    const [connectionsChanged, maxConnectionsExceeded] = saveWireConnections(content, entity, stage, stage)
+    const connectionsChanged = saveWireConnections(content, entity, stage, stage)
     if (!connectionsChanged) return WireUpdateResult.NoChange
 
     // check setting no-op control behavior
     updateWorldEntities(entity, entity.firstStage)
-
-    if (maxConnectionsExceeded) {
-      // this is last, so other updates happen even if max connections exceeded
-      return WireUpdateResult.MaxConnectionsExceeded
-    }
     return WireUpdateResult.Updated
   }
 

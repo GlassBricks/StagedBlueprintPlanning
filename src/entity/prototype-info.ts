@@ -75,9 +75,9 @@ interface PassedPrototypeInfo {
 
 function getPassedPrototypeInfo(): PassedPrototypeInfo {
   const selectionTool = prototypes.item[Prototypes.PassedPrototypeInfo]
-  const filters = selectionTool.get_entity_filters(defines.selection_mode.select)
+  const filters = selectionTool.get_entity_filters(defines.selection_mode.select)!
   return {
-    twoDirectionOnlyTanks: Object.keys(filters as object),
+    twoDirectionOnlyTanks: filters.map((filter) => filter.name),
   }
 }
 

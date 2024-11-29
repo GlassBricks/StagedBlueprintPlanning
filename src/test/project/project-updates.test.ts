@@ -20,7 +20,7 @@ import expect, { mock } from "tstl-expect"
 import { BpStagedInfo, BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
 import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
-  addCircuitConnection,
+  addWireConnection,
   createProjectEntityNoCopy,
   ProjectEntity,
   RollingStockProjectEntity,
@@ -29,7 +29,7 @@ import {
 } from "../../entity/ProjectEntity"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { Pos } from "../../lib/geometry"
-import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
+import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { WorldUpdates } from "../../project/world-updates"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
@@ -174,7 +174,7 @@ function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>
 function assertNewUpdated(entity: ProjectEntity) {
   expect(worldUpdates.updateNewWorldEntitiesWithoutWires).toHaveBeenCalledWith(entity)
   expectedWuCalls = 1
-  if (entity.circuitConnections || entity.cableConnections) {
+  if (entity.wireConnections) {
     expect(worldUpdates.updateWireConnections).toHaveBeenCalledWith(entity)
     expectedWuCalls++
   }
@@ -358,7 +358,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     const { entity } = addEntity(1)
     const otherEntity = createProjectEntityNoCopy({ name: "fast-inserter" }, Pos(0, 0), nil, 1)
     project.content.addEntity(otherEntity)
-    addCircuitConnection({
+    addWireConnection({
       fromEntity: otherEntity,
       toEntity: entity,
       fromId: defines.wire_connector_id.circuit_green,
@@ -375,7 +375,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
     const { entity } = addEntity(1)
     const otherEntity = createProjectEntityNoCopy({ name: "fast-inserter" }, Pos(0, 0), nil, 1)
     project.content.addEntity(otherEntity)
-    addCircuitConnection({
+    addWireConnection({
       fromEntity: otherEntity,
       toEntity: entity,
       // fromId: 1,
@@ -649,7 +649,7 @@ describe("updateWiresFromWorld", () => {
     const { entity: entity2, luaEntity: luaEntity2 } = addEntity(1, {
       position: pos.plus({ x: 1, y: 0 }),
     })
-    addCircuitConnection({
+    addWireConnection({
       fromEntity: entity1,
       toEntity: entity2,
       fromId: defines.wire_connector_id.circuit_green,
@@ -664,15 +664,6 @@ describe("updateWiresFromWorld", () => {
     assertNEntities(2)
     assertUpdateCalled(entity1, 2, 1)
     assertUpdateCalled(entity2, 1, 2)
-  })
-  test("if max connections exceeded, notifies and calls update", () => {
-    const { entity } = addEntity(1)
-    wireSaver.saveWireConnections.returnsOnce(true, true)
-    const ret = projectUpdates.updateWiresFromWorld(entity, 2)
-    expect(ret).toBe(WireUpdateResult.MaxConnectionsExceeded)
-
-    assertOneEntity()
-    assertUpdateCalled(entity, 1, nil)
   })
 })
 

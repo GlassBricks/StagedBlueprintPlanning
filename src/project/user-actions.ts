@@ -446,9 +446,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     const projectEntity = getCompatibleAtCurrentStageOrAdd(entity, stage, nil, byPlayer)
     if (!projectEntity) return
     const result = updateWiresFromWorld(projectEntity, stage)
-    if (result == "max-connections-exceeded") {
-      createNotification(projectEntity, byPlayer, [L_Interaction.MaxConnectionsReachedInAnotherStage], true)
-    } else if (result != "updated" && result != "no-change") {
+    if (result != "updated" && result != "no-change") {
       assertNever(result)
     }
   }

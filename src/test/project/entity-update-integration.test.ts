@@ -21,7 +21,6 @@ import {
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes, Settings } from "../../constants"
-import { circuitConnectionEquals, ProjectCircuitConnection } from "../../entity/circuit-connection"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   ProjectEntity,
@@ -32,6 +31,7 @@ import {
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
+import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
 import { assert, Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
@@ -125,40 +125,8 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
   assertLastStageHighlightCorrect(entity)
   assertNoHighlightsAfterLastStage(entity, project.numStages())
 
-  // cables
-  const cableConnections = entity.cableConnections
-  const isElectricPole = prototypes.entity[entity.firstValue.name].type == "electric-pole"
-  if (!cableConnections) {
-    if (isElectricPole) {
-      for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-        const pole = entity.getWorldEntity(stage)
-        if (!pole) continue
-        const cableNeighbors = (pole.neighbours as Record<"copper", LuaEntity[]>).copper.filter(
-          (x) => x.type != "power-switch",
-        )
-        expect(cableNeighbors).toEqual([])
-      }
-    }
-    // else, ok
-  } else {
-    expect(isElectricPole).toBe(true)
-    const otherNeighbors = Object.keys(cableConnections)
-    for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const expectedNeighbors = otherNeighbors
-        .map((o) => o.getWorldEntity(stage))
-        .filter((o) => o)
-        .map((o) => o?.unit_number)
-        .sort()
-      const actualNeighbors = (entity.getWorldEntity(stage)?.neighbours as Record<"copper", LuaEntity[]>).copper
-        .filter((x) => x.type != "power-switch")
-        .map((o) => o.unit_number)
-        .sort()
-      expect(actualNeighbors).toEqual(expectedNeighbors)
-    }
-  }
-
   // circuit wires
-  const wireConnections = entity.circuitConnections
+  const wireConnections = entity.wireConnections
   if (!wireConnections) {
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
       const worldEntity = entity.getWorldEntity(stage)
@@ -1194,8 +1162,8 @@ describe("poles and wire connections", () => {
   test("saves initial cable connections", () => {
     const pole1 = setupPole(3)
     const pole2 = setupPole2(3)
-    expect(pole1.cableConnections?.has(pole2)).toBe(true)
-    expect(pole2.cableConnections?.has(pole1)).toBe(true)
+    expect(pole1.wireConnections?.get(pole2)).toBeAny()
+    expect(pole2.wireConnections?.get(pole1)).toBeAny()
     assertEntityCorrect(pole1, false)
     assertEntityCorrect(pole2, false)
   })
@@ -1203,8 +1171,8 @@ describe("poles and wire connections", () => {
   test("saves initial cable connections to a pole in higher stage", () => {
     const pole1 = setupPole(4)
     const pole2 = setupPole2(3) // should connect to pole1
-    expect(pole1.cableConnections?.has(pole2)).toBe(true)
-    expect(pole2.cableConnections?.has(pole1)).toBe(true)
+    expect(pole1.wireConnections?.get(pole2)).toBeAny()
+    expect(pole2.wireConnections?.get(pole1)).toBeAny()
     assertEntityCorrect(pole1, false)
     assertEntityCorrect(pole2, false)
   })
@@ -1227,8 +1195,8 @@ describe("poles and wire connections", () => {
     disconnectPole(pole1.getWorldEntity(3)!, pole2.getWorldEntity(3)!)
     project.updates.updateWiresFromWorld(pole1, 3)
 
-    expect(pole1.cableConnections?.has(pole2)).toBeFalsy()
-    expect(pole2.cableConnections?.has(pole1)).toBeFalsy()
+    expect(pole1.wireConnections?.get(pole2)).toBeNil()
+    expect(pole2.wireConnections?.get(pole1)).toBeNil()
     assertEntityCorrect(pole1, false)
     assertEntityCorrect(pole2, false)
 
@@ -1236,8 +1204,10 @@ describe("poles and wire connections", () => {
     connectPole(pole1.getWorldEntity(3)!, pole2.getWorldEntity(3)!)
     project.updates.updateWiresFromWorld(pole1, 3)
 
-    expect(pole1.cableConnections?.has(pole2)).toBe(true)
-    expect(pole2.cableConnections?.has(pole1)).toBe(true)
+    // expect(pole1.cableConnections?.has(pole2)).toBe(true)
+    // expect(pole2.cableConnections?.has(pole1)).toBe(true)
+    expect(pole1.wireConnections?.get(pole2)).toBeAny()
+    expect(pole2.wireConnections?.get(pole1)).toBeAny()
     assertEntityCorrect(pole1, false)
     assertEntityCorrect(pole2, false)
   })
@@ -1254,10 +1224,10 @@ describe("poles and wire connections", () => {
       .get_wire_connector(defines.wire_connector_id.circuit_red, true)
       .connect_to(inserter.getWorldEntity(3)!.get_wire_connector(defines.wire_connector_id.circuit_red, true))
 
-    const expectedConnection = next(inserter.circuitConnections!.get(pole)!)[0] as ProjectCircuitConnection
+    const expectedConnection = next(inserter.wireConnections!.get(pole)!)[0] as ProjectWireConnection
     expect(expectedConnection).toBeAny()
     expect(
-      circuitConnectionEquals(
+      wireConnectionEquals(
         {
           fromEntity: pole,
           toEntity: inserter,
@@ -1336,13 +1306,13 @@ describe("circuit connections", () => {
 
     // should have 2 cable connections
 
-    const connection1 = pole1.circuitConnections?.get(pole2)
+    const connection1 = pole1.wireConnections?.get(pole2)
     expect(connection1).not.toBeNil()
-    const connection21 = pole2.circuitConnections?.get(pole1)
+    const connection21 = pole2.wireConnections?.get(pole1)
     expect(connection21).not.toBeNil()
-    const connection23 = pole2.circuitConnections?.get(pole3)
+    const connection23 = pole2.wireConnections?.get(pole3)
     expect(connection23).not.toBeNil()
-    const connection3 = pole3.circuitConnections?.get(pole2)
+    const connection3 = pole3.wireConnections?.get(pole2)
     expect(connection3).not.toBeNil()
 
     assertEntityCorrect(pole1, false)
@@ -1439,7 +1409,7 @@ describe("blueprinting", () => {
     const expected = "fast-inserter"
     expect(entity.firstValue).toMatchTable({ name: expected })
     expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
-    expect(entity.circuitConnections).not.toBeNil()
+    expect(entity.wireConnections).not.toBeNil()
   })
 
   describe.each([defines.direction.north, defines.direction.northeast])("with rail direction %d", (diag) => {
@@ -1646,78 +1616,6 @@ test("rebuildStage", () => {
     assertEntityCorrect(entityPastLastStage, false)
   }
 })
-
-// bobinserters support
-if ("bobinserters" in script.active_mods) {
-  test("when pasting a inserter with adjustable pickup/dropoff, it gets the correct values", () => {
-    const stack = player.cursor_stack!
-    stack.set_stack("blueprint")
-    stack.set_blueprint_entities([
-      {
-        entity_number: 1,
-        name: "inserter",
-        position: Pos(0.5, 0.5),
-        direction: direction.north,
-        pickup_position: Pos(2, 1),
-        drop_position: Pos(1, 2),
-      },
-    ])
-    player.teleport(pos, surfaces[3 - 1])
-
-    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced, direction: direction.west }) // rotated 90 CC
-
-    const builtEntity = surfaces[3 - 1].find_entity("inserter", pos)!
-    expect(builtEntity).toBeAny()
-
-    const projEntity = project.content.findCompatibleWithLuaEntity(builtEntity, nil, 1)!
-
-    const rotatedPickupPos = Pos(1, -2)
-    const rotatedDropPos = Pos(2, -1)
-
-    expect(projEntity).toBeAny()
-    expect(projEntity).toMatchTable({
-      firstValue: {
-        pickup_position: rotatedPickupPos,
-        drop_position: rotatedDropPos,
-      },
-      direction: direction.west,
-    })
-    expect(builtEntity.pickup_position).toEqual(rotatedPickupPos.plus(pos))
-    expect(builtEntity.drop_position).toEqual(rotatedDropPos.plus(pos))
-
-    assertEntityCorrect(projEntity, false)
-  })
-
-  test("when rotating an inserter, the pickup and drop positions also rotate", () => {
-    const entity = buildEntity(3, {
-      name: "inserter",
-      position: pos,
-      direction: direction.north,
-    })
-    entity.setPickupPosition(Pos(2, 1))
-    entity.setDropPosition(Pos(1, 2))
-    const worldEntity = entity.getWorldEntity(3)!
-    worldEntity.pickup_position = pos.plus(Pos(2, 1))
-    worldEntity.drop_position = pos.plus(Pos(1, 2))
-
-    worldEntity.rotate({ by_player: player, reverse: true })
-
-    const rotatedPickupPos = Pos(1, -2)
-    const rotatedDropPos = Pos(2, -1)
-
-    expect(entity).toMatchTable({
-      direction: direction.west,
-      firstValue: {
-        pickup_position: rotatedPickupPos,
-        drop_position: rotatedDropPos,
-      },
-    })
-    expect(worldEntity.pickup_position).toEqual(rotatedPickupPos.plus(pos))
-    expect(worldEntity.drop_position).toEqual(rotatedDropPos.plus(pos))
-
-    assertEntityCorrect(entity, false)
-  })
-}
 
 if ("EditorExtensions" in script.active_mods) {
   test("Can update an infinity accumulator", () => {

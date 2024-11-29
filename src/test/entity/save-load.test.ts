@@ -12,12 +12,12 @@
 import {
   BlueprintEntity,
   BlueprintInsertPlanWrite,
+  ItemWithQualityCounts,
   LuaSurface,
   ScheduleRecord,
   ScriptRaisedBuiltEvent,
 } from "factorio:runtime"
 import expect from "tstl-expect"
-import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
 import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
@@ -73,35 +73,33 @@ test("saving an entity with knownValue", () => {
   expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
 })
 
-const directions = Object.values(defines.direction) as defines.direction[]
-test.each(directions)("can saved a curved rail in all directions", (direction) => {
-  const entity = surface.create_entity({
-    name: "curved-rail",
-    position: { x: 12.5, y: 12.5 },
-    force: "player",
-    direction,
-  })!
-  expect(entity.direction).toBe(direction)
-
-  const saved = saveEntity(entity)
-  expect(saved).toEqual({ name: "curved-rail" })
-})
-
-test.each(directions)("can saved a straight rail in all directions", (direction) => {
-  const entity = surface.create_entity({
-    name: "straight-rail",
-    position: { x: 12.5, y: 12.5 },
-    force: "player",
-    direction,
-  })!
-
-  const saved = saveEntity(entity)
-  if (direction == defines.direction.south || direction == defines.direction.west) {
-    direction = oppositedirection(direction)
+function crossProduct<A, B>(a: A[], b: B[]): [A, B][] {
+  const result: [A, B][] = []
+  for (const a1 of a) {
+    for (const b1 of b) {
+      result.push([a1, b1])
+    }
   }
-  expect(entity.direction).toBe(direction)
-  expect(saved).toEqual({ name: "straight-rail" })
+  return result
+}
+
+const directions8 = (Object.values(defines.direction) as defines.direction[]).filter((a) => a % 2 == 0)
+const rails = ["straight-rail", "curved-rail-a", "curved-rail-b", "half-diagonal-rail"]
+test.each(crossProduct(rails, directions8))("can save %s in direction %s", (name, direction) => {
+  const entity = surface.create_entity({
+    name,
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction,
+  })!
+  const expectedDirection = name == "straight-rail" || name == "half-diagonal-rail" ? direction % 8 : direction
+
+  expect(entity.direction).toBe(expectedDirection)
+
+  const saved = saveEntity(entity)
+  expect(saved).toEqual({ name })
 })
+
 let events: ScriptRaisedBuiltEvent[] = []
 let running = false
 let destroyOnBuilt = false
@@ -157,7 +155,7 @@ test("doesn't crash if setting to non-existent recipe", () => {
     recipe: "foobar@",
   } as Entity)!
   expect(luaEntity).toBeAny()
-  expect(luaEntity.get_recipe()).toBeNil()
+  expect(luaEntity.get_recipe()[0]).toBeNil()
 })
 
 test("returns nil if entity becomes invalid via script", () => {
@@ -285,7 +283,7 @@ test("can delete tree in the way", () => {
 
 test("can delete rocks in the way", () => {
   const rock = surface.create_entity({
-    name: "rock-huge",
+    name: "huge-rock",
     position: { x: 0.5, y: 0.5 },
   })!
   expect(rock).toBeAny()
@@ -625,47 +623,32 @@ test("can flip loader", () => {
 
 test("can handle item changes", () => {
   const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
-  // const newContents = { "productivity-module-2": 1, "speed-module": 1, "productivity-module": 2 }
-
-  const newContents: BlueprintInsertPlanWrite[] = [
-    {
-      id: { name: "productivity-module-2" },
-      items: {
-        in_inventory: [
-          {
-            inventory: defines.inventory.assembling_machine_modules,
-            stack: 1,
-          },
-          {
-            inventory: defines.inventory.assembling_machine_modules,
-            stack: 3,
-          },
-        ],
-      },
-    },
-    {
-      id: { name: "speed-module" },
-      items: {
-        in_inventory: [
-          {
-            inventory: defines.inventory.assembling_machine_modules,
-            stack: 1,
-          },
-        ],
-      },
-    },
-    {
-      id: { name: "productivity-module" },
-      items: {
-        in_inventory: [
-          {
-            inventory: defines.inventory.assembling_machine_modules,
-            stack: 2,
-          },
-        ],
-      },
-    },
+  // const newContentsStr = ["speed-module", "speed-module-2", "speed-module-3"]
+  const newContents: ItemWithQualityCounts[] = [
+    { name: "speed-module", count: 1, quality: "normal" },
+    { name: "speed-module-2", count: 2, quality: "normal" },
+    { name: "productivity-module-2", count: 1, quality: "normal" },
   ]
+
+  const newContentsAsInsertPlan: BlueprintInsertPlanWrite[] = []
+  let index = 1
+  for (const item of newContents) {
+    for (let i = 0; i < item.count; i++) {
+      newContentsAsInsertPlan.push({
+        id: { name: item.name, quality: item.quality },
+        items: {
+          in_inventory: [
+            {
+              inventory: defines.inventory.assembling_machine_modules,
+              stack: index,
+              count: 1,
+            },
+          ],
+        },
+      })
+      index++
+    }
+  }
 
   const entity = surface.create_entity({
     name: "assembling-machine-3",
@@ -678,7 +661,7 @@ test("can handle item changes", () => {
     entity,
     {
       name: "assembling-machine-3",
-      items: newContents,
+      items: newContentsAsInsertPlan,
     } as Entity,
     defines.direction.north,
   )[0]
@@ -722,7 +705,7 @@ test("can set train schedule", () => {
   const newEntity = updateEntity(locomotive, newValue as Entity, defines.direction.north)[0]!
   expect(newEntity).toBe(locomotive)
   expect(newEntity.train?.schedule?.current).toEqual(2)
-  expect(newEntity.train?.schedule?.records).toEqual(newValue.schedule)
+  expect(newEntity.train?.schedule?.records).toEqual(newValue.schedule?.records)
 })
 
 test("createPreviewEntity", () => {
@@ -777,7 +760,7 @@ describe("EditorExtensions support", () => {
     } satisfies Partial<BlueprintEntity> as Entity)!
     expect(loader).toBeAny()
     expect(loader.name).toBe("ee-infinity-loader")
-    expect(loader.get_filter(1)).toBe("iron-plate")
+    expect(loader.get_filter(1)).toEqual({ name: "iron-plate" })
 
     const updated = updateEntity(
       loader,
@@ -791,6 +774,6 @@ describe("EditorExtensions support", () => {
 
     expect(updated).toBeAny()
     expect(updated.name).toBe("ee-infinity-loader")
-    expect(updated.get_filter(1)).toBe("copper-plate")
+    expect(updated.get_filter(1)).toEqual({ name: "copper-plate" })
   })
 })

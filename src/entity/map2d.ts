@@ -11,7 +11,6 @@
 
 import { nil } from "factorio:runtime"
 import { PRecord, PRRecord, RegisterClass } from "../lib"
-import { ProjectEntity } from "./ProjectEntity"
 
 export interface LinkedMap2D<
   T extends {
@@ -133,28 +132,4 @@ class Map2DImpl<T> implements Map2D<T> {
 
 export function newMap2d<T>(): Map2D<T> {
   return new Map2DImpl<T>()
-}
-
-function isArray<T>(value: T | T[]): value is T[] {
-  return (value as ProjectEntity).firstStage == nil
-}
-
-export function _migrateMap2DToLinkedList(map: LinkedMap2D<any>): void {
-  for (const [, byX] of pairs(map as Record<number, PRecord<number, any>>)) {
-    for (const [y, value] of pairs(byX)) {
-      if (isArray(value)) {
-        const first = value[0]
-        let prev = first
-        for (let i = 1; i < value.length; i++) {
-          const next = value[i]
-          prev._next = next
-          prev = next
-        }
-        byX[y] = first
-      } else {
-        value._next = nil
-        byX[y] = value
-      }
-    }
-  }
 }

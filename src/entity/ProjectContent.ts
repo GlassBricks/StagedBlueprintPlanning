@@ -12,11 +12,10 @@
 import { BoundingBox, LuaEntity } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
-import { isEmpty, Mutable, PRecord, RegisterClass } from "../lib"
+import { isEmpty, PRecord, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
-import { ProjectCircuitConnection } from "./circuit-connection"
 import { EntityIdentification } from "./Entity"
-import { _migrateMap2DToLinkedList, LinkedMap2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
+import { LinkedMap2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { ProjectTile } from "./ProjectTile"
 import {
@@ -247,7 +246,7 @@ class ProjectContentImpl implements MutableProjectContent {
     const { x, y } = entity.position
     this.byPosition.add(x, y, entity)
 
-    entity.addOrPruneIngoingConnections(entities)
+    entity.syncIngoingConnections(entities)
   }
 
   deleteEntity(entity: ProjectEntity): void {
@@ -313,19 +312,13 @@ export function _assertCorrect(content: ProjectContent): void {
   assume<ProjectContentImpl>(content)
   const { entities } = content
   for (const entity of entities) {
-    const points = entity.circuitConnections
+    const points = entity.wireConnections
     if (points) {
       for (const [otherEntity, connections] of points) {
         assert(entities.has(otherEntity))
         for (const connection of connections) {
-          assert(otherEntity.circuitConnections?.get(entity)?.has(connection))
+          assert(otherEntity.wireConnections?.get(entity)?.has(connection))
         }
-      }
-    }
-    if (entity.cableConnections) {
-      for (const otherEntity of entity.cableConnections) {
-        assert(entities.has(otherEntity))
-        assert(otherEntity.cableConnections?.has(entity))
       }
     }
   }
@@ -333,33 +326,4 @@ export function _assertCorrect(content: ProjectContent): void {
 
 export function newProjectContent(): MutableProjectContent {
   return new ProjectContentImpl()
-}
-
-export function _migrateProjectContent_0_18_0(content: MutableProjectContent): void {
-  _migrateMap2DToLinkedList((content as ProjectContentImpl).byPosition)
-}
-
-export function _migrateWireConnections(content: MutableProjectContent): void {
-  assume<
-    ProjectContentImpl & {
-      circuitConnections?: LuaMap<ProjectEntity, LuaMap<ProjectEntity, LuaSet<ProjectCircuitConnection>>>
-      cableConnections?: LuaMap<ProjectEntity, LuaSet<ProjectEntity>>
-    }
-  >(content)
-  const { circuitConnections, cableConnections } = content
-  if (cableConnections)
-    for (const [entity, connections] of cableConnections) {
-      ;(entity as Mutable<ProjectEntity>).cableConnections = connections
-    }
-  if (circuitConnections)
-    for (const [entity, connections] of circuitConnections) {
-      ;(entity as Mutable<ProjectEntity>).circuitConnections = connections
-    }
-  delete content.circuitConnections
-  delete content.cableConnections
-}
-
-export function _migrateAddTiles(content: MutableProjectContent): void {
-  assume<ProjectContentImpl>(content)
-  content.tiles ??= newMap2d()
 }

@@ -14,7 +14,7 @@ import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
-  addCircuitConnection,
+  addWireConnection,
   createProjectEntityNoCopy,
   ProjectEntity,
   StageNumber,
@@ -545,7 +545,7 @@ describe("circuit wires", () => {
   }
 
   function addWireToProject() {
-    addCircuitConnection({
+    addWireConnection({
       fromEntity: entity1,
       toEntity: entity2,
       // wire: defines.wire_type.red,
@@ -561,7 +561,7 @@ describe("circuit wires", () => {
          wire: defines.wire_type.red,
          source_circuit_id: defines.circuit_connector_id.combinator_input,
          target_circuit_id: defines.circuit_connector_id.combinator_output,
-       } as CircuitConnectionDefinition,
+       } as wireConnectionDefinition,
      ])*/
     expect(
       luaEntity1

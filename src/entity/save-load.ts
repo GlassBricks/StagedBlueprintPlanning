@@ -11,7 +11,7 @@
 
 import {
   BlueprintEntity,
-  BlueprintInsertPlan,
+  BlueprintInsertPlanWrite,
   BoundingBox,
   LuaEntity,
   LuaInventory,
@@ -55,7 +55,6 @@ Events.on_load(() => {
   bpStack = storage.tempBPInventory[0]
 })
 
-const rawset = _G.rawset
 const { raise_script_built, raise_script_destroy } = script
 const pcall = _G.pcall
 
@@ -266,17 +265,24 @@ function upgradeEntity(oldEntity: LuaEntity, name: string): LuaEntity {
   return newEntity
 }
 
-function createItems(luaEntity: LuaEntity, insertItems: BlueprintInsertPlan[]): void {
-  // const insertTarget = luaEntity.get_module_inventory() ?? luaEntity
-  // for (const [name, count] of pairs(items)) {
-  //   insertTarget.insert({ name, count })
-  // }
+interface WithName {
+  name: string
+}
+function getName(id: string | WithName): string
+function getName(id: string | WithName | undefined): string | undefined
+function getName(id: string | WithName | undefined): string | undefined {
+  if (id == nil) return
+  if (typeof id == "string") return id
+  return id.name
+}
+
+function createItems(luaEntity: LuaEntity, insertItems: BlueprintInsertPlanWrite[]): void {
   for (const { id, items } of insertItems) {
     if (items.in_inventory) {
       for (const inv of items.in_inventory) {
         luaEntity
           .get_inventory(inv.inventory)
-          ?.[inv.stack - 1].set_stack({ name: id.name.name, quality: id.quality?.name, count: inv.count })
+          ?.[inv.stack].set_stack({ name: getName(id.name), quality: getName(id.quality), count: inv.count })
       }
     }
   }

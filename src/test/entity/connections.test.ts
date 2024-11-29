@@ -10,15 +10,14 @@
  */
 
 import expect from "tstl-expect"
-import { ProjectCircuitConnection } from "../../entity/circuit-connection"
 import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import {
-  addCircuitConnection,
-  CableAddResult,
+  addWireConnection,
   createProjectEntityNoCopy,
   ProjectEntity,
-  removeCircuitConnection,
+  removeWireConnection,
 } from "../../entity/ProjectEntity"
+import { ProjectWireConnection } from "../../entity/wire-connection"
 
 let content: MutableProjectContent
 before_each(() => {
@@ -40,11 +39,11 @@ describe("connections", () => {
     content.addEntity(entity2)
   })
   describe("circuit connections", () => {
-    function createCircuitConnection(
+    function createwireConnection(
       fromEntity: ProjectEntity,
       toEntity: ProjectEntity,
       wireType: defines.wire_type = defines.wire_type.red,
-    ): ProjectCircuitConnection {
+    ): ProjectWireConnection {
       return {
         fromEntity,
         toEntity,
@@ -59,132 +58,71 @@ describe("connections", () => {
       }
     }
 
-    test("getCircuitConnections initially empty", () => {
-      expect(entity1.circuitConnections).toBeNil()
+    test("getwireConnections initially empty", () => {
+      expect(entity1.wireConnections).toBeNil()
     })
 
-    test("addCircuitConnection shows up in getCircuitConnections", () => {
-      const connection = createCircuitConnection(entity1, entity2)
-      addCircuitConnection(connection)
-      expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
-      expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
-      const connection2 = createCircuitConnection(entity1, entity2, defines.wire_type.green)
-      addCircuitConnection(connection2)
-      expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection, connection2))
-      expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection, connection2))
+    test("addwireConnection shows up in getwireConnections", () => {
+      const connection = createwireConnection(entity1, entity2)
+      addWireConnection(connection)
+      expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection))
+      const connection2 = createwireConnection(entity1, entity2, defines.wire_type.green)
+      addWireConnection(connection2)
+      expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection, connection2))
+      expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection, connection2))
     })
 
     test("does not add if identical connection is already present", () => {
-      const connection = createCircuitConnection(entity1, entity2)
-      const connection2 = createCircuitConnection(entity2, entity1)
-      addCircuitConnection(connection)
-      addCircuitConnection(connection2)
-      expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
-      expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
+      const connection = createwireConnection(entity1, entity2)
+      const connection2 = createwireConnection(entity2, entity1)
+      addWireConnection(connection)
+      addWireConnection(connection2)
+      expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection))
     })
 
-    test("removeCircuitConnection removes connection", () => {
-      const connection = createCircuitConnection(entity1, entity2)
-      addCircuitConnection(connection)
-      removeCircuitConnection(connection)
+    test("removewireConnection removes connection", () => {
+      const connection = createwireConnection(entity1, entity2)
+      addWireConnection(connection)
+      removeWireConnection(connection)
 
-      expect(entity1.circuitConnections).toBeNil()
-      expect(entity2.circuitConnections).toBeNil()
+      expect(entity1.wireConnections).toBeNil()
+      expect(entity2.wireConnections).toBeNil()
     })
 
     test("deleting entity removes ingoing connections only", () => {
-      const connection = createCircuitConnection(entity1, entity2)
-      addCircuitConnection(connection)
+      const connection = createwireConnection(entity1, entity2)
+      addWireConnection(connection)
       content.deleteEntity(entity1)
-      expect(entity2.circuitConnections).toEqual(nil)
-      expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(entity2.wireConnections).toEqual(nil)
+      expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
     })
 
     test("adding back a deleted entity restores connections", () => {
-      const connection = createCircuitConnection(entity1, entity2)
-      addCircuitConnection(connection)
+      const connection = createwireConnection(entity1, entity2)
+      addWireConnection(connection)
       content.deleteEntity(entity1)
       content.addEntity(entity1)
-      expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
-      expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
+      expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection))
 
       content.deleteEntity(entity1)
       content.deleteEntity(entity2)
       content.addEntity(entity2)
       content.addEntity(entity1)
-      expect(entity1.circuitConnections!.get(entity2)).toEqual(newLuaSet(connection))
-      expect(entity2.circuitConnections!.get(entity1)).toEqual(newLuaSet(connection))
+      expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
+      expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection))
     })
 
     test("won't restore connection to deleted entity", () => {
-      const connection = createCircuitConnection(entity1, entity2)
-      addCircuitConnection(connection)
+      const connection = createwireConnection(entity1, entity2)
+      addWireConnection(connection)
       content.deleteEntity(entity1)
       content.deleteEntity(entity2)
       content.addEntity(entity1)
-      expect(entity1.circuitConnections).toEqual(nil)
-      expect(entity2.circuitConnections).toEqual(nil)
-    })
-  })
-
-  describe("cable connections", () => {
-    test("getCableConnections initially empty", () => {
-      expect(entity1.cableConnections).toBeNil()
-    })
-
-    test("addCableConnection shows up in getCableConnections", () => {
-      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.Added)
-      expect(entity1.cableConnections!).toEqual(newLuaSet(entity2))
-      expect(entity2.cableConnections!).toEqual(newLuaSet(entity1))
-    })
-
-    test("removeCableConnection removes connection", () => {
-      entity1.tryAddDualCableConnection(entity2)
-      entity2.removeDualCableConnection(entity1)
-
-      expect(entity1.cableConnections).toEqual(nil)
-      expect(entity2.cableConnections).toEqual(nil)
-    })
-
-    test("deleting entity removes ingoing connections only", () => {
-      entity1.tryAddDualCableConnection(entity2)
-      content.deleteEntity(entity1)
-      expect(entity2.cableConnections).toEqual(nil)
-      expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
-    })
-
-    test("adding back a deleted entity restores connections", () => {
-      entity1.tryAddDualCableConnection(entity2)
-      content.deleteEntity(entity1)
-      content.addEntity(entity1)
-      expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
-      expect(entity2.cableConnections).toEqual(newLuaSet(entity1))
-
-      content.deleteEntity(entity1)
-      content.deleteEntity(entity2)
-      content.addEntity(entity2)
-      content.addEntity(entity1)
-
-      expect(entity1.cableConnections).toEqual(newLuaSet(entity2))
-      expect(entity2.cableConnections).toEqual(newLuaSet(entity1))
-    })
-
-    test("won't restore connection to deleted entity", () => {
-      entity1.tryAddDualCableConnection(entity2)
-      content.deleteEntity(entity1)
-      content.deleteEntity(entity2)
-      content.addEntity(entity1)
-      expect(entity1.cableConnections).toEqual(nil)
-      expect(entity2.cableConnections).toEqual(nil)
-    })
-
-    test("can't add cable to itself", () => {
-      expect(entity1.tryAddDualCableConnection(entity1)).toBe(CableAddResult.Error)
-    })
-
-    test("adding same cable twice does nothing", () => {
-      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.Added)
-      expect(entity1.tryAddDualCableConnection(entity2)).toBe(CableAddResult.Added)
+      expect(entity1.wireConnections).toEqual(nil)
+      expect(entity2.wireConnections).toEqual(nil)
     })
   })
 })

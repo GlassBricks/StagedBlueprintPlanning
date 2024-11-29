@@ -11,76 +11,77 @@
 
 import expect from "tstl-expect"
 import {
-  circuitConnectionEquals,
-  circuitConnectionMatches,
   getDirectionalInfo,
-  ProjectCircuitConnection,
-} from "../../entity/circuit-connection"
+  ProjectWireConnection,
+  wireConnectionEquals,
+  wireConnectionMatches,
+} from "../../entity/wire-connection"
 import { shallowCopy } from "../../lib"
 
-test("circuitConnectionEquals", () => {
+test("wireConnectionEquals", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const circuitConnectionA: ProjectCircuitConnection = {
+  const wireConnectionA: ProjectWireConnection = {
     fromEntity: entityA,
     fromId: defines.wire_connector_id.circuit_red,
     toEntity: entityB,
-    toId: defines.wire_connector_id.combinator_input_red,
+    toId: defines.wire_connector_id.circuit_green,
   }
-  const identical = shallowCopy(circuitConnectionA)
-  const circuitConnectionB: ProjectCircuitConnection = {
+  const identical = shallowCopy(wireConnectionA)
+  const wireConnectionB: ProjectWireConnection = {
     toEntity: entityA,
     toId: defines.wire_connector_id.circuit_red,
     fromEntity: entityB,
-    fromId: defines.wire_connector_id.combinator_input_red,
+    fromId: defines.wire_connector_id.circuit_green,
   }
-  expect(circuitConnectionEquals(circuitConnectionA, identical)).toBe(true)
-  expect(circuitConnectionEquals(circuitConnectionA, circuitConnectionB)).toBe(true)
+  expect(wireConnectionEquals(wireConnectionA, identical)).toBe(true)
+  expect(wireConnectionEquals(wireConnectionA, wireConnectionB)).toBe(true)
 
-  const different: ProjectCircuitConnection = {
+  const different: ProjectWireConnection = {
     toEntity: entityA,
     toId: defines.wire_connector_id.combinator_input_red,
     fromEntity: entityA,
     fromId: defines.wire_connector_id.circuit_red,
   }
-  expect(circuitConnectionEquals(circuitConnectionA, different)).toBe(false)
-  expect(circuitConnectionEquals(circuitConnectionB, different)).toBe(false)
+  expect(wireConnectionEquals(wireConnectionA, different)).toBe(false)
+  expect(wireConnectionEquals(wireConnectionB, different)).toBe(false)
 })
 
 test("getDirectionalInfo", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const circuitConnectionA: ProjectCircuitConnection = {
+  const wireConnectionA: ProjectWireConnection = {
     fromEntity: entityA,
     fromId: defines.wire_connector_id.circuit_red,
     toEntity: entityB,
     toId: defines.wire_connector_id.combinator_output_red,
   }
-  expect(getDirectionalInfo(circuitConnectionA, entityA)).toEqual([
+  expect(getDirectionalInfo(wireConnectionA, entityA)).toEqual([
     entityB,
     defines.wire_connector_id.circuit_red,
     defines.wire_connector_id.combinator_output_red,
   ])
-  expect(getDirectionalInfo(circuitConnectionA, entityB)).toEqual([
+  expect(getDirectionalInfo(wireConnectionA, entityB)).toEqual([
     entityA,
     defines.wire_connector_id.combinator_output_red,
     defines.wire_connector_id.circuit_red,
   ])
 })
-test("circuitConnectionMatches", () => {
+
+test("wireConnectionMatches", () => {
   const entityA = {} as any
   const entityB = {} as any
 
-  const connection: ProjectCircuitConnection = {
+  const connection: ProjectWireConnection = {
     fromEntity: entityA,
     fromId: 0,
     toEntity: entityB,
     toId: 1,
   }
-  expect(circuitConnectionMatches(connection, entityA, 1, 0)).toBe(true)
-  expect(circuitConnectionMatches(connection, entityB, 0, 1)).toBe(true)
-  expect(circuitConnectionMatches(connection, entityA, 1, 0)).toBe(false)
-  expect(circuitConnectionMatches(connection, entityA, 0, 1)).toBe(false)
+  expect(wireConnectionMatches(connection, entityA, 1, 0)).toBe(true)
+  expect(wireConnectionMatches(connection, entityB, 0, 1)).toBe(true)
+  expect(wireConnectionMatches(connection, entityB, 1, 0)).toBe(false)
+  expect(wireConnectionMatches(connection, entityA, 0, 1)).toBe(false)
 })

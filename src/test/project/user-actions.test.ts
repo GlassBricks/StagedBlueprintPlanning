@@ -467,7 +467,6 @@ describe("onWiresPossiblyUpdated", () => {
   test.each<[WireUpdateResult, string | false]>([
     [WireUpdateResult.NoChange, false],
     [WireUpdateResult.Updated, false],
-    [WireUpdateResult.MaxConnectionsExceeded, L_Interaction.MaxConnectionsReachedInAnotherStage],
   ])('calls updateWiresFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
     projectUpdates.updateWiresFromWorld.invokes(() => {
