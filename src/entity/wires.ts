@@ -52,13 +52,10 @@ function saveWireConnections(
   content: MutableProjectContent,
   entity: ProjectEntity,
   stage: StageNumber,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _higherStageForMerging?: StageNumber,
+  higherStageForMerging?: StageNumber,
 ): boolean {
   const luaEntity = entity.getWorldEntity(stage)
   if (!luaEntity) return false
-  const existingConnections = luaEntity.get_wire_connectors(false)
-  if (isEmpty(existingConnections)) return false
 
   const projectConnections = entity.wireConnections
   const [matchingConnections, extraConnections] = partitionExistingWireConnections(
@@ -92,6 +89,27 @@ function saveWireConnections(
       toId: definition.target.wire_connector_id,
     })
   }
+
+  if (higherStageForMerging) {
+    const higherEntity = entity.getWorldEntity(higherStageForMerging)
+    if (higherEntity) {
+      const [, extraConnectionsHigher] = partitionExistingWireConnections(
+        projectConnections,
+        higherEntity,
+        content,
+        higherStageForMerging,
+      )
+      for (const [definition, otherEntity] of extraConnectionsHigher) {
+        addWireConnection({
+          fromEntity: entity,
+          toEntity: otherEntity,
+          fromId: definition.sourceId,
+          toId: definition.target.wire_connector_id,
+        })
+      }
+    }
+  }
+
   return hasDiff
 }
 

@@ -1228,14 +1228,11 @@ describe("poles and wire connections", () => {
   test("connect and disconnect circuit wires", () => {
     const inserter = buildEntity(3) // is filter inserter
     const pole = setupPole(3)
-    // pole.getWorldEntity(3)!.connect_neighbour({
-    //   wire: defines.wire_type.red,
-    //   target_entity: inserter.getWorldEntity(3)!,
-    // })
     pole
       .getWorldEntity(3)!
       .get_wire_connector(defines.wire_connector_id.circuit_red, true)
       .connect_to(inserter.getWorldEntity(3)!.get_wire_connector(defines.wire_connector_id.circuit_red, true))
+    project.updates.updateWiresFromWorld(pole, 3)
 
     const expectedConnection = next(inserter.wireConnections!.get(pole)!)[0] as ProjectWireConnection
     expect(expectedConnection).toBeAny()

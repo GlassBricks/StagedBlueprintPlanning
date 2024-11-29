@@ -866,7 +866,7 @@ function clearPlayerAffectedWires(index: PlayerIndex): void {
   }
 }
 
-const wirePrototypes = newLuaSet("red-wire", "green-wire", "copper-cable")
+const wirePrototypes = newLuaSet("red-wire", "green-wire", "copper-wire")
 Events.on(CustomInputs.Build, (e) => {
   const player = game.get_player(e.player_index)!
   const playerStack = player.cursor_stack
