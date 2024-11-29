@@ -104,7 +104,7 @@ if ("factorio-test" in script.active_mods) {
   testNames.push("test.misc-test")
   require("__factorio-test__/init")(testNames, {
     tag_blacklist: tagBlacklist,
-    // test_pattern: "test/copy%-paste",
+    test_pattern: "test/entity",
     load_luassert: false,
     before_test_run() {
       reinit()

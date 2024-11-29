@@ -27,7 +27,7 @@ export function doCreateRollingStocks(surface: LuaSurface, raiseBuilt: boolean, 
     surface.create_entity({
       name: "straight-rail",
       position: Pos(i, 1),
-      direction: 2,
+      direction: 4,
       force: "player",
       raise_built: raiseBuilt,
     })

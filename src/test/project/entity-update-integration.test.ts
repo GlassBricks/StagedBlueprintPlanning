@@ -1579,7 +1579,7 @@ describe("blueprinting", () => {
       entity_number: 1,
       name: "storage-tank",
       position: Pos(0, 0),
-      direction: 2,
+      direction: 4,
     }
     const stack = player.cursor_stack!
     stack.set_stack("blueprint")
@@ -1588,7 +1588,7 @@ describe("blueprinting", () => {
     const pos = Pos(5, 5)
 
     player.teleport([0, 0], surfaces[0])
-    player.build_from_cursor({ position: pos, direction: 2, build_mode: defines.build_mode.forced })
+    player.build_from_cursor({ position: pos, direction: 4, build_mode: defines.build_mode.forced })
     const tank = surfaces[0].find_entity("storage-tank", pos)!
     expect(tank).not.toBeNil()
 

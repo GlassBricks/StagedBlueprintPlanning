@@ -970,7 +970,7 @@ describe("blueprint paste", () => {
       name: "storage-tank",
       position: Pos(0.5, 0.5),
       force: "player",
-      direction: 2,
+      direction: 4,
     })
     expect(tank).toBeAny()
 
