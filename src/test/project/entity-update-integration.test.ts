@@ -29,7 +29,7 @@ import {
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
-import { checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
+import { canBeAnyDirection, checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
 import { assert, Events } from "../../lib"
@@ -66,7 +66,7 @@ after_each(() => {
 
 const pos = Pos(10.5, 10.5)
 
-function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | false) {
+function assertEntityCorrect(entity: ProjectEntity, expectError: number | false) {
   expect(entity.isSettingsRemnant).toBeFalsy()
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBe(entity)
@@ -96,7 +96,9 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
     } else {
       const savedValue = saveEntity(worldEntity)
       expect(savedValue).toEqual(value)
-      expect(worldEntity.direction).toBe(entity.direction)
+      if (!canBeAnyDirection(worldEntity)) {
+        expect(worldEntity.direction).toBe(entity.direction)
+      }
     }
     if (isPreview) {
       expect(worldEntity.name).toBe(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)
@@ -106,14 +108,14 @@ function assertEntityCorrect(entity: ProjectEntity, expectedHasError: number | f
       expect(worldEntity.direction).toEqual(entity.getPreviewDirection())
     } else if (entity.isUndergroundBelt() && entity.hasErrorAt(stage)) {
       expect(worldEntity.direction).toEqual(oppositedirection(entity.direction))
-    } else {
+    } else if (!canBeAnyDirection(worldEntity)) {
       expect(worldEntity.direction).toEqual(entity.direction)
     }
 
     expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).toBeNil()
   }
 
-  expect(hasError).toBe(expectedHasError)
+  expect(hasError).toBe(expectError)
 
   // nothing after the last stage
   for (const stage of $range(project.lastStageFor(entity) + 1, project.numStages())) {
@@ -247,7 +249,11 @@ describe.each([
   [
     "assembling-machine-1",
     "assembling-machine-2",
-    { recipe: "iron-gear-wheel" },
+    {
+      recipe: "iron-gear-wheel",
+      // using any here to get around QualityID problem
+      recipe_quality: "normal" as any,
+    },
     (e: LuaEntity) => e.set_recipe("iron-gear-wheel"),
   ],
   [
@@ -395,7 +401,10 @@ describe.each([
     )
       return
     assert(worldEntity.rotate({ by_player: player }))
-    expect(entity.direction).toBe(defines.direction.south)
+
+    if (!canBeAnyDirection(worldEntity)) {
+      expect(entity.direction).toBe(defines.direction.south)
+    }
     assertEntityCorrect(entity, false)
   })
 
@@ -477,7 +486,7 @@ describe.each([
 
   if (diff) {
     if (!applyToEntity) error("applyToEntity not set")
-    const [k] = Object.keys(diff)
+    const keys = Object.keys(diff)
 
     test("can update value at first stage from world", () => {
       const entity = buildEntity(3)
@@ -527,7 +536,9 @@ describe.each([
     test("resetProp", () => {
       const entity = buildEntity(3)
       entity._applyDiffAtStage(4, diff)
-      project.updates.resetProp(entity, 4, k as keyof BlueprintEntity)
+      for (const key of keys) {
+        project.updates.resetProp(entity, 4, key as keyof BlueprintEntity)
+      }
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).not.toMatchTable(diff)
       expect(entity.hasStageDiff()).toBe(false)
@@ -537,7 +548,9 @@ describe.each([
     test("movePropDown", () => {
       const entity = buildEntity(3)
       entity._applyDiffAtStage(4, diff)
-      project.updates.movePropDown(entity, 4, k as keyof BlueprintEntity)
+      for (const key of keys) {
+        project.updates.movePropDown(entity, 4, key as keyof BlueprintEntity)
+      }
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).toMatchTable(diff)
       assertEntityCorrect(entity, false)

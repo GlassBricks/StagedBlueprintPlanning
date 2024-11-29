@@ -70,7 +70,7 @@ export function assertLastStageHighlightCorrect(entity: ProjectEntity): void {
   if (entity.lastStage != nil && entity.lastStage != entity.firstStage) {
     const highlight = expect(entity.getExtraEntity("stageDeleteHighlight", entity.lastStage)).toBeAny().getValue()!
     expect(highlight).toMatchTable({
-      object_name: "_RenderObj",
+      object_name: "LuaRenderObject",
       sprite: HighlightConstants.DeletedNextStage,
     })
   } else {
