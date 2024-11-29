@@ -44,4 +44,5 @@ export interface RollingStockEntity extends Entity {
 }
 export interface AssemblingMachineEntity extends Entity {
   recipe?: string
+  recipe_quality?: string
 }

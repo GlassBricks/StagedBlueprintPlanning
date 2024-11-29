@@ -217,9 +217,6 @@ export function createEntity(
   if (!luaEntity) return nil
   // const type = luaEntity.type
   const type = nameToType.get(entity.name)!
-  // performance hack: cache name, type
-  rawset(luaEntity, "name", entity.name)
-  rawset(luaEntity, "type", type)
 
   if (type == "loader" || type == "loader-1x1") {
     luaEntity.loader_type = entity.type ?? "output"

@@ -158,7 +158,7 @@ function assertStageDiffs(entity: ProjectEntity, changes: StageDiffsInternal<Blu
 
 function createEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {
   const params = {
-    name: "filter-inserter",
+    name: "fast-inserter",
     position: pos,
     force: "player",
     ...args,
@@ -185,7 +185,7 @@ describe("addNewEntity", () => {
     const luaEntity = createEntity(2)
     const entity = projectUpdates.addNewEntity(luaEntity, 2)!
     expect(entity).toBeAny()
-    expect(entity.firstValue.name).toBe("filter-inserter")
+    expect(entity.firstValue.name).toBe("fast-inserter")
     expect(entity.position).toEqual(pos)
     expect(entity.direction).toBe(0)
 
@@ -205,11 +205,11 @@ describe("addNewEntity", () => {
         entity_number: 1,
         direction: 0,
         position: { x: 0, y: 0 },
-        name: "filter-inserter",
+        name: "fast-inserter",
       })!
       expect(entity).toBeAny()
       expect(entity.firstValue).toEqual({
-        name: "filter-inserter",
+        name: "fast-inserter",
       })
       expect(entity.position).toEqual(pos)
       expect(entity.direction).toBe(0)
@@ -356,7 +356,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
   test("creates settings remnant if entity has circuit connections", () => {
     const { entity } = addEntity(1)
-    const otherEntity = createProjectEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
+    const otherEntity = createProjectEntityNoCopy({ name: "fast-inserter" }, Pos(0, 0), nil, 1)
     project.content.addEntity(otherEntity)
     addCircuitConnection({
       fromEntity: otherEntity,
@@ -373,7 +373,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
   test("deletes if entity has with circuit connections, but connections have world entity", () => {
     const { entity } = addEntity(1)
-    const otherEntity = createProjectEntityNoCopy({ name: "filter-inserter" }, Pos(0, 0), nil, 1)
+    const otherEntity = createProjectEntityNoCopy({ name: "fast-inserter" }, Pos(0, 0), nil, 1)
     project.content.addEntity(otherEntity)
     addCircuitConnection({
       fromEntity: otherEntity,
@@ -431,7 +431,7 @@ describe("tryUpdateEntityFromWorld", () => {
   test('with change in first stage and known value returns "updated" and updates all entities', () => {
     const { entity } = addEntity(2)
     const knownValue = {
-      name: "filter-inserter",
+      name: "fast-inserter",
       override_stack_size: 3,
     }
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2, knownValue as BlueprintEntity)
@@ -599,12 +599,12 @@ describe("tryUpgradeEntityFromWorld", () => {
     const { luaEntity, entity } = addEntity(1)
     luaEntity.order_upgrade({
       force: luaEntity.force,
-      target: "stack-filter-inserter",
+      target: "bulk-inserter",
     })
     const direction = luaEntity.direction
     const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
     expect(ret).toBe("updated")
-    expect(entity.firstValue.name).toBe("stack-filter-inserter")
+    expect(entity.firstValue.name).toBe("bulk-inserter")
     expect(entity.direction).toBe(direction)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
@@ -618,7 +618,7 @@ describe("tryUpgradeEntityFromWorld", () => {
 
     const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
     expect(ret).toBe("updated")
-    expect(entity.firstValue.name).toBe("filter-inserter")
+    expect(entity.firstValue.name).toBe("fast-inserter")
     expect(entity.direction).toBe(direction.west)
     assertOneEntity()
     assertUpdateCalled(entity, 1)
@@ -683,7 +683,7 @@ describe("updateFromBpStagedInfo", () => {
       firstStage: 2,
       lastStage: 5,
       firstValue: { name: "fast-inserter" },
-      stageDiffs: { "3": { name: "filter-inserter" } },
+      stageDiffs: { "3": { name: "fast-inserter" } },
     }
     const ret = projectUpdates.setValueFromStagedInfo(entity, info.firstValue as any, info)
     expect(ret).toBe(StageMoveResult.Updated)
@@ -692,7 +692,7 @@ describe("updateFromBpStagedInfo", () => {
     expect(entity.lastStage).toBe(5)
     expect(entity.firstValue.name).toBe("fast-inserter")
     expect(entity.stageDiffs).toEqual({
-      3: { name: "filter-inserter" },
+      3: { name: "fast-inserter" },
     })
     assertOneEntity()
     assertUpdateOnLastStageChangedCalled(entity, nil)

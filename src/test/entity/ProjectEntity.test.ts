@@ -24,7 +24,7 @@ import { simpleMock } from "../simple-mock"
 import { createRollingStock } from "./createRollingStock"
 
 interface InserterEntity extends Entity {
-  name: "filter-inserter" | "stack-filter-inserter"
+  name: "fast-inserter" | "bulk-inserter"
 
   override_stack_size?: number
   filter_mode?: "whitelist" | "blacklist"
@@ -61,7 +61,7 @@ let entity: InserterEntity
 let projectEntity: ProjectEntity<InserterEntity>
 before_each(() => {
   entity = {
-    name: "filter-inserter",
+    name: "fast-inserter",
     override_stack_size: 1,
   }
   projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
@@ -206,12 +206,12 @@ describe("getValueAtStage", () => {
   })
 
   test("getNameAtStage ", () => {
-    projectEntity._applyDiffAtStage(4, { name: "stack-filter-inserter" })
-    expect(projectEntity.getNameAtStage(1)).toEqual("filter-inserter")
-    expect(projectEntity.getNameAtStage(2)).toEqual("filter-inserter")
-    expect(projectEntity.getNameAtStage(3)).toEqual("filter-inserter")
-    expect(projectEntity.getNameAtStage(4)).toEqual("stack-filter-inserter")
-    expect(projectEntity.getNameAtStage(5)).toEqual("stack-filter-inserter")
+    projectEntity._applyDiffAtStage(4, { name: "bulk-inserter" })
+    expect(projectEntity.getNameAtStage(1)).toEqual("fast-inserter")
+    expect(projectEntity.getNameAtStage(2)).toEqual("fast-inserter")
+    expect(projectEntity.getNameAtStage(3)).toEqual("fast-inserter")
+    expect(projectEntity.getNameAtStage(4)).toEqual("bulk-inserter")
+    expect(projectEntity.getNameAtStage(5)).toEqual("bulk-inserter")
   })
 })
 
@@ -767,14 +767,14 @@ describe("insert/deleting stages", () => {
   })
 
   test("if inserting stage right above last stage, last stage increases", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), nil, 2)
     entity.setLastStageUnchecked(3)
 
     entity.insertStage(4)
     expect(entity.lastStage).toBe(4)
   })
   test("if inserting stage well after last stage, last stage stays the same", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), nil, 2)
     entity.setLastStageUnchecked(3)
 
     entity.insertStage(5)
@@ -782,7 +782,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("insert stage before firstStage", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "filter-inserter" }, Pos(0, 0), nil, 2)
+    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), nil, 2)
 
     entity.insertStage(1)
     expect(entity.firstStage).toBe(3)
@@ -792,7 +792,7 @@ describe("insert/deleting stages", () => {
     const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
-        name: "filter-inserter",
+        name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
@@ -834,7 +834,7 @@ describe("insert/deleting stages", () => {
   test("delete stage before base", () => {
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
-        name: "filter-inserter",
+        name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
@@ -849,7 +849,7 @@ describe("insert/deleting stages", () => {
   test("delete stage after last stage", () => {
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
-        name: "filter-inserter",
+        name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
@@ -865,7 +865,7 @@ describe("insert/deleting stages", () => {
   test("delete stage right after base applies stage diffs to first entity", () => {
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
-        name: "filter-inserter",
+        name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
@@ -882,7 +882,7 @@ describe("insert/deleting stages", () => {
   test("delete stage 1 merges with stage 2 instead", () => {
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
-        name: "filter-inserter",
+        name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
@@ -900,7 +900,7 @@ describe("insert/deleting stages", () => {
   test("delete stage 1 sets stage 1 properties to stage 2 properties", () => {
     const entity = createProjectEntityNoCopy<InserterEntity>(
       {
-        name: "filter-inserter",
+        name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),

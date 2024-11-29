@@ -10,25 +10,18 @@
  */
 /** Returns just a metatable for {@link LazyLoadClass}. */
 export function lazyLoadMt<V extends object, T extends object>(load: (self: V) => T): LuaMetatable<T> {
+  const instances = setmetatable(new LuaMap<V, T>(), { __mode: "k" })
   return {
-    __index(
-      this: T & {
-        _loaded?: () => void
-      },
-      key: keyof T,
-    ): any {
-      if (rawget(this, "_loaded")) return nil
-      const value = load(this as any)
-      for (const [k, v] of pairs(value)) {
-        if (type(v) != "function") {
-          error("LazyLoad only supports functions")
-        }
-        this[k] = v as any
+    __index(this: V, key: keyof T): any {
+      let instance = instances.get(this)
+      if (!instance) {
+        instance = load(this)
+        instances.set(this, instance)
       }
-      this._loaded = () => {} // cleared on reload
-      return value[key]
+      return instance[key]
     },
-  } satisfies LuaMetatable<T>
+    instances,
+  } as LuaMetatable<T>
 }
 
 /**

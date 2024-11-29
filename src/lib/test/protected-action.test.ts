@@ -12,6 +12,7 @@
 import expect, { mock } from "tstl-expect"
 import { L_Interaction } from "../../locale"
 import { protectedAction } from "../protected-action"
+import { proxyGlobalInTest } from "./proxy"
 
 test("Protected action with no error", () => {
   const result = protectedAction(() => "test")
@@ -19,9 +20,9 @@ test("Protected action with no error", () => {
 })
 
 test("Protected action with unexpected error", () => {
+  proxyGlobalInTest("game")
   const sp = mock.fnNoSelf()
   rawset(game, "print", sp)
-  after_test(() => rawset(game, "print", nil!))
 
   const result = protectedAction(() => error("test1231"))
   expect(result).toBeNil()

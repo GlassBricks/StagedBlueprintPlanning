@@ -100,7 +100,7 @@ const _nameToItem = Functions._nameToItem()
 class FuncRef implements Func {
   funcName: string
 
-  constructor(public func: SelflessFun) {
+  constructor(func: SelflessFun) {
     this.funcName = Functions.nameOf(func)
   }
 
@@ -229,7 +229,7 @@ class KeyFunc implements Func {
     if (fn == nil) {
       error(
         `Function with name ${tostring(this.key)} does not exist on ${tostring(this.instance)}\n` +
-          `Block: ${serpent.block(this.instance, { maxlevel: 1 })}\n` +
+          `Instance: ${serpent.block(this.instance, { maxlevel: 1 })}\n` +
           `Metatable: ${serpent.block(getmetatable(this.instance), { maxlevel: 1 })}`,
       )
     }

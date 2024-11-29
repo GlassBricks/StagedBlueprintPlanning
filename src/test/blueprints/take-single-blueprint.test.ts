@@ -73,7 +73,7 @@ test("can take blueprint with settings applied", () => {
   expect(stack.preview_icons).toEqual([
     {
       index: 3,
-      signal: { type: "item", name: "iron-plate" },
+      signal: { name: "iron-plate" },
     },
     {
       index: 4,

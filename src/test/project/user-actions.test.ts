@@ -95,7 +95,7 @@ after_each(() => {
 const pos = Pos(10.5, 10.5)
 function createWorldEntity(stageNum: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {
   const params = {
-    name: "filter-inserter",
+    name: "fast-inserter",
     position: pos,
     force: "player",
     ...args,
@@ -365,7 +365,7 @@ describe("onEntityPossiblyUpdated", () => {
       return EntityUpdateResult.Updated
     })
     luaEntity.destroy()
-    const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter" })
+    const luaEntity2 = createWorldEntity(2, { name: "bulk-inserter" })
     userActions.onEntityPossiblyUpdated(luaEntity2, 2, nil, playerIndex)
 
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
@@ -376,7 +376,7 @@ describe("onEntityPossiblyUpdated", () => {
     projectUpdates.tryUpdateEntityFromWorld.returns(EntityUpdateResult.Updated)
     const oldDirection = luaEntity.direction
     luaEntity.destroy()
-    const luaEntity2 = createWorldEntity(2, { name: "stack-filter-inserter", direction: defines.direction.south })
+    const luaEntity2 = createWorldEntity(2, { name: "bulk-inserter", direction: defines.direction.south })
     userActions.onEntityPossiblyUpdated(luaEntity2, 2, oldDirection, playerIndex)
 
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
@@ -391,7 +391,7 @@ describe("onEntityPossiblyUpdated", () => {
     }
     const knownValue = {
       entity_number: 1,
-      name: "filter-inserter",
+      name: "fast-inserter",
       position: pos,
       direction: defines.direction.north,
       tags: {

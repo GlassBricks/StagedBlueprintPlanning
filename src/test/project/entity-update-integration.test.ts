@@ -271,8 +271,8 @@ describe.each([
   ["transport-belt", "fast-transport-belt", false, false],
   ["underground-belt", "fast-underground-belt", false, false],
   [
-    "filter-inserter",
-    "stack-filter-inserter",
+    "fast-inserter",
+    "bulk-inserter",
     { override_stack_size: 2 },
     (e: LuaEntity): any => (e.inserter_stack_size_override = 2),
   ],
@@ -1634,7 +1634,7 @@ test("rebuildStage", () => {
   const entityPreview = buildEntity(3, { name: "inserter", position: pos.add(2, 0), direction: direction.west })
   const entityPastLastStage = buildEntity(1, { name: "inserter", position: pos.add(3, 0), direction: direction.west })
   expect(project.updates.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
-  entityPresent._applyDiffAtStage(4, { name: "stack-filter-inserter" })
+  entityPresent._applyDiffAtStage(4, { name: "bulk-inserter" })
   project.worldUpdates.refreshAllWorldEntities(entityPresent)
   assertEntityCorrect(entityPresent, false)
 

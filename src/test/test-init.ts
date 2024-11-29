@@ -86,7 +86,7 @@ if ("factorio-test" in script.active_mods) {
           }
         }
       }
-      player.get_main_inventory()!.clear()
+      player.get_main_inventory()?.clear()
     }
     for (const [, surface] of game.surfaces) {
       if (surface.index != 1) game.delete_surface(surface)
@@ -104,6 +104,7 @@ if ("factorio-test" in script.active_mods) {
   testNames.push("test.misc-test")
   require("__factorio-test__/init")(testNames, {
     tag_blacklist: tagBlacklist,
+    // test_pattern: "test/copy%-paste",
     load_luassert: false,
     before_test_run() {
       reinit()

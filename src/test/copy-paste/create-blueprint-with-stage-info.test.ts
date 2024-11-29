@@ -88,6 +88,7 @@ test("create blueprint of entity with stage diff", () => {
     firstValue: {
       name: "assembling-machine-1",
       recipe: "iron-gear-wheel",
+      recipe_quality: "normal",
     },
     stageDiffs: {
       "3": {

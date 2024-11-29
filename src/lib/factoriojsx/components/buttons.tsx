@@ -55,7 +55,7 @@ export function RenameButton(props: Partial<ElemProps<"sprite-button">>): Elemen
   return (
     <sprite-button
       style="mini_button_aligned_to_text_vertically_when_centered"
-      sprite="utility/rename_icon_small_black"
+      sprite="utility/rename_icon"
       mouse_button_filter={["left"]}
       {...props}
     />

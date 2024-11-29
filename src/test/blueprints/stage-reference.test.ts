@@ -52,7 +52,6 @@ test("createStageReference", () => {
   expect(stack.preview_icons).toEqual([
     {
       signal: {
-        type: "item",
         name: "iron-plate",
       },
       index: 1,

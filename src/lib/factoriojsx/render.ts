@@ -189,7 +189,7 @@ function renderFragment(
   const elements: LuaGuiElement[] = []
   for (const child of children) {
     const childResult = renderInternal(parent, child, usedTracker)
-    if (!childResult || isEmpty(childResult)) continue
+    if (!childResult || (typeof childResult == "object" && isEmpty(childResult))) continue
     usedTracker = newRootContext(usedTracker.playerIndex, nil)
     if (isLuaGuiElement(childResult)) {
       elements.push(childResult)
