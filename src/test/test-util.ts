@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { GhostEntity, LuaEntity, LuaItemStack, LuaQualityPrototype } from "factorio:runtime"
+import { GhostEntity, LuaEntity, LuaItemStack } from "factorio:runtime"
 
 export function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
   if (!ghost.valid) return
@@ -29,7 +29,7 @@ export function reviveGhost(ghost: GhostEntity): LuaEntity | nil {
     toInsert.insert({
       count: item.count,
       name: item.name,
-      quality: (item.quality as LuaQualityPrototype).name,
+      quality: item.quality,
     })
   }
   requestProxy.destroy()

@@ -10,12 +10,8 @@
       "name": "Test run",
       "adjustMods": {
         "bp100": true,
-        "WiderNoticeTextBoxes": true,
         "factorio-test": true,
-        "PickerDollies": true,
-        "stdlib": true,
         "flib": true,
-        "bobinserters": true,
         "EditorExtensions": true
       },
       "disableExtraMods": true,
@@ -27,9 +23,9 @@
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio-test-data/config.ini"
+        "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
+      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
       "checkGlobals": false,
       "hookControl": false,
       "adjustModSettings": [
@@ -49,12 +45,8 @@
       "name": "Profile",
       "adjustMods": {
         "bp100": true,
-        "WiderNoticeTextBoxes": true,
         "factorio-test": true,
-        "PickerDollies": true,
-        "stdlib": true,
         "flib": true,
-        "bobinserters": true,
         "EditorExtensions": true
       },
       "disableExtraMods": true,
@@ -66,9 +58,9 @@
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio-test-data/config.ini"
+        "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
+      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
       "adjustModSettings": [
         {
           "scope": "startup",
@@ -88,12 +80,8 @@
       "name": "Test debug",
       "adjustMods": {
         "bp100": true,
-        "WiderNoticeTextBoxes": true,
         "factorio-test": true,
-        "PickerDollies": true,
-        "stdlib": true,
         "flib": true,
-        "bobinserters": true,
         "EditorExtensions": true
       },
       "disableExtraMods": true,
@@ -105,9 +93,9 @@
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio-test-data/config.ini"
+        "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
+      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
       "checkGlobals": false,
       "hookControl": true
     }, {
@@ -116,8 +104,9 @@
       "name": "debug data",
       "adjustMods": {
         "bp100": true,
-        "WiderNoticeTextBoxes": true,
-        "factorio-test": true
+        "factorio-test": true,
+        "flib": true,
+        "EditorExtensions": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -128,9 +117,9 @@
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio-test-data/config.ini"
+        "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio-test-data/mods",
+      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
       "checkGlobals": false,
       "hookData": true,
       "hookControl": false

@@ -103,7 +103,7 @@ describe("classes", () => {
     storage.__ref3 = ibind(subclass2Instance.foo)
     storage.__ref4 = ibind(subclass2Instance.nonOverridden)
     assertRefsCorrect()
-  }).after_mod_reload(() => {
+  }).after_reload_mods(() => {
     assertRefsCorrect()
   })
 })
@@ -136,7 +136,7 @@ describe("functions", () => {
     storage.__ref2 = bind(func, 2)
     expect(storage.__ref1.invoke("foo")).toEqual(["foo"])
     expect(storage.__ref2.invoke("foo")).toEqual([2, "foo"])
-  }).after_mod_reload(() => {
+  }).after_reload_mods(() => {
     expect(storage.__ref1.invoke("foo")).toEqual(["foo"])
     expect(storage.__ref2.invoke("foo")).toEqual([2, "foo"])
   })

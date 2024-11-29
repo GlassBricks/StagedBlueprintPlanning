@@ -53,7 +53,7 @@ declare const storage: {
 test("works after reload", () => {
   storage._testFoo = fooClass({ name: "foo" })
   storage._testFoo.f1()
-}).after_mod_reload(() => {
+}).after_reload_mods(() => {
   expect(rawget(storage._testFoo, "f1")).toBeNil()
   storage._testFoo.f2()
 
