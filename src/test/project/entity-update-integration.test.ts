@@ -422,7 +422,7 @@ describe.each([
     assertEntityCorrect(entity, false)
   })
 
-  test("can create upgrade from %s to %s", () => {
+  test("can create upgrade", () => {
     const entity = buildEntity(3)
     const worldEntity = entity.getWorldEntity(4)!
     worldEntity.order_upgrade({
@@ -1639,6 +1639,12 @@ if ("EditorExtensions" in script.active_mods) {
 }
 
 describe("map gen settings", () => {
+  after_each(() => {
+    surfaces.forEach((s) => {
+      s.generate_with_lab_tiles = true
+      s.clear()
+    })
+  })
   test("rebuild stage after sync map gen settings", () => {
     const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
     assertEntityCorrect(entity, false)
@@ -1648,10 +1654,6 @@ describe("map gen settings", () => {
     after_ticks(60, () => {
       assertEntityCorrect(entity, false)
     })
-    after_test(() => {
-      surfaces[0].generate_with_lab_tiles = true
-      surfaces[0].clear()
-    })
   })
   test("adding a new stage gets the same map settings as previous stage", () => {
     surfaces[2].map_gen_settings = {
@@ -1659,10 +1661,6 @@ describe("map gen settings", () => {
       seed: 42,
     }
     surfaces[2].generate_with_lab_tiles = false
-    after_test(() => {
-      surfaces[2].generate_with_lab_tiles = true
-      surfaces[2].clear()
-    })
     project.insertStage(4)
     expect(project.getSurface(4)).toMatchTable({
       map_gen_settings: { seed: 42 },
