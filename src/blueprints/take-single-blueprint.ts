@@ -14,7 +14,7 @@ import { isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeSettings, getIconsFromSettings } from "./blueprint-settings"
 
-export const FirstEntityOriginalPositionTag = "bp100:FirstEntityOriginalPosition"
+export const FirstEntityOriginalPositionTag = "bp100_FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(
   stack: LuaItemStack,
   entities: BlueprintEntity[],

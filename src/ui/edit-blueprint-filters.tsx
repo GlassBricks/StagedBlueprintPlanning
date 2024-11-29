@@ -17,7 +17,7 @@ import { L_Gui } from "../locale"
 
 type FilterProp = MutableProperty<ReadonlyLuaSet<string> | nil>
 
-const EditBlueprintFilterGuiName = "bp100:EditBlueprintFilterGui"
+const EditBlueprintFilterGuiName = "bp100_EditBlueprintFilterGui"
 export function editBlueprintFilters(player: LuaPlayer, filters: FilterProp): void {
   renderNamed(<EditBlueprintFilterGui filters={filters} />, player.gui.relative, EditBlueprintFilterGuiName)
   player.opened = defines.gui_type.controller

@@ -228,7 +228,7 @@ class CurrentTaskGui extends Component<{
   }
 }
 
-const CurrentTaskGuiName = "bp100:CurrentTaskGui"
+const CurrentTaskGuiName = "bp100_CurrentTaskGui"
 function renderTaskGui(task: Task): void {
   for (const [, player] of game.players) {
     renderNamed(<CurrentTaskGui task={task} />, player.gui.screen, CurrentTaskGuiName)

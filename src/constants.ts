@@ -12,10 +12,10 @@
 import { Color } from "factorio:prototype"
 
 export const enum Settings {
-  EntityInfoLocation = "bp100:entity-info-location",
-  UpgradeOnPaste = "bp100:upgrade-on-paste",
-  GpsTagTeleport = "bp100:gps-tag-teleport",
-  UnhideInfinityItems = "bp100:unhide-infinity-items",
+  EntityInfoLocation = "bp100_entity-info-location",
+  UpgradeOnPaste = "bp100_upgrade-on-paste",
+  GpsTagTeleport = "bp100_gps-tag-teleport",
+  UnhideInfinityItems = "bp100_unhide-infinity-items",
 }
 
 // noinspection JSUnusedGlobalSymbols
@@ -26,30 +26,30 @@ export enum FlexibleOffshorePumpPlacement {
 
 export const enum Prototypes {
   // used to handle blueprints
-  EntityMarker = "bp100:entity-marker",
-  PreviewEntityPrefix = "bp100:preview-entity-",
-  UndoReference = "bp100:undo-reference",
+  EntityMarker = "bp100_entity-marker",
+  PreviewEntityPrefix = "bp100_preview-entity-",
+  UndoReference = "bp100_undo-reference",
 
-  UtilityGroup = "bp100:utility",
-  PreviewEntitySubgroup = "bp100:preview-entity",
-  BlueprintSubgroup = "bp100:blueprint-utility",
+  UtilityGroup = "bp100_utility",
+  PreviewEntitySubgroup = "bp100_preview-entity",
+  BlueprintSubgroup = "bp100_blueprint-utility",
 
-  CleanupTool = "bp100:cleanup-tool",
+  CleanupTool = "bp100_cleanup-tool",
 
-  StageMoveTool = "bp100:stage-move-tool",
-  FilteredStageMoveTool = "bp100:filtered-stage-move-tool",
-  StageDeconstructTool = "bp100:stage-deconstruct-tool",
+  StageMoveTool = "bp100_stage-move-tool",
+  FilteredStageMoveTool = "bp100_filtered-stage-move-tool",
+  StageDeconstructTool = "bp100_stage-deconstruct-tool",
 
-  StagedCopyTool = "bp100:staged-copy-tool",
-  StagedCutTool = "bp100:staged-cut-tool",
-  ForceDeleteTool = "bp100:force-delete-tool",
+  StagedCopyTool = "bp100_staged-copy-tool",
+  StagedCutTool = "bp100_staged-cut-tool",
+  ForceDeleteTool = "bp100_force-delete-tool",
 
-  StageReference = "bp100:blueprint-reference",
-  StageReferenceData = "bp100:blueprint-reference-data",
+  StageReference = "bp100_blueprint-reference",
+  StageReferenceData = "bp100_blueprint-reference-data",
 
-  PassedPrototypeInfo = "bp100:passed-prototype-info",
+  PassedPrototypeInfo = "bp100_passed-prototype-info",
 
-  BANANA = "bp100:banana",
+  BANANA = "bp100_banana",
 }
 
 export const enum Constants {
@@ -57,49 +57,49 @@ export const enum Constants {
 }
 
 export const enum Styles {
-  FakeListBox = "bp100:fake-list-box",
-  FakeListBoxItem = "bp100:fake-list-box-item",
-  FakeListBoxItemActive = "bp100:fake-list-box-item-active",
+  FakeListBox = "bp100_fake-list-box",
+  FakeListBoxItem = "bp100_fake-list-box-item",
+  FakeListBoxItemActive = "bp100_fake-list-box-item-active",
 }
 
 export const enum Sprites {
-  CollapseLeft = "bp100:collapse-left",
-  CollapseLeftDark = "bp100:collapse-left-dark",
-  BlueprintStages = "bp100:blueprint-stages",
-  NewBlueprint = "bp100:new-blueprint",
+  CollapseLeft = "bp100_collapse-left",
+  CollapseLeftDark = "bp100_collapse-left-dark",
+  BlueprintStages = "bp100_blueprint-stages",
+  NewBlueprint = "bp100_new-blueprint",
 }
 
 export const enum CustomInputs {
-  Build = "bp100:build",
-  RemovePoleCables = "bp100:remove-pole-cables",
-  ConfirmGui = "bp100:confirm-gui",
+  Build = "bp100_build",
+  RemovePoleCables = "bp100_remove-pole-cables",
+  ConfirmGui = "bp100_confirm-gui",
 
-  NextStage = "bp100:next-stage",
-  PreviousStage = "bp100:previous-stage",
-  GoToEntityFirstStage = "bp100:go-to-first-stage",
-  GoToProjectFirstStage = "bp100:go-to-project-first-stage",
-  GoToProjectLastStage = "bp100:go-to-project-last-stage",
+  NextStage = "bp100_next-stage",
+  PreviousStage = "bp100_previous-stage",
+  GoToEntityFirstStage = "bp100_go-to-first-stage",
+  GoToProjectFirstStage = "bp100_go-to-project-first-stage",
+  GoToProjectLastStage = "bp100_go-to-project-last-stage",
 
-  ExitProject = "bp100:exit-project",
-  ReturnToLastProject = "bp100:return-to-last-project",
+  ExitProject = "bp100_exit-project",
+  ReturnToLastProject = "bp100_return-to-last-project",
 
-  NextProject = "bp100:next-project",
-  PreviousProject = "bp100:previous-project",
+  NextProject = "bp100_next-project",
+  PreviousProject = "bp100_previous-project",
 
-  GetStageBlueprint = "bp100:get-stage-blueprint",
-  GetBlueprintBook = "bp100:get-blueprint-book",
+  GetStageBlueprint = "bp100_get-stage-blueprint",
+  GetBlueprintBook = "bp100_get-blueprint-book",
 
-  NewStageAfterCurrent = "bp100:new-stage-after-current",
-  NewStageAtFront = "bp100:new-stage-at-front",
+  NewStageAfterCurrent = "bp100_new-stage-after-current",
+  NewStageAtFront = "bp100_new-stage-at-front",
 
-  MoveToThisStage = "bp100:move-to-this-stage",
+  MoveToThisStage = "bp100_move-to-this-stage",
 
-  ForceDelete = "bp100:force-delete",
+  ForceDelete = "bp100_force-delete",
 
-  StageSelectNext = "bp100:stage-select-next",
-  StageSelectPrevious = "bp100:stage-select-previous",
+  StageSelectNext = "bp100_stage-select-next",
+  StageSelectPrevious = "bp100_stage-select-previous",
 
-  ToggleStagedCopy = "bp100:toggle-staged-copy",
+  ToggleStagedCopy = "bp100_toggle-staged-copy",
 }
 
 // noinspection JSUnusedGlobalSymbols

@@ -126,7 +126,7 @@ export function registerGroupUndoAction(actions: UndoAction[]): void {
   })
 }
 
-const FutureUndoTranslation = "bp100:future-undo-fake-translation"
+const FutureUndoTranslation = "bp100_future-undo-fake-translation"
 
 function registerUndoLater(handlerName: string, player: LuaPlayer, data: unknown) {
   const id = player.request_translation(FutureUndoTranslation)

@@ -103,7 +103,7 @@ class StageReferencePanel extends Component<{
   }
 }
 
-const stageReferenceBoxName = "bp100:stage-reference-box"
+const stageReferenceBoxName = "bp100_stage-reference-box"
 export function renderStageReferencePanel(player: LuaPlayer, project: UserProject): void {
   renderNamed(<StageReferencePanel project={project} />, player.gui.relative, stageReferenceBoxName)
 }
