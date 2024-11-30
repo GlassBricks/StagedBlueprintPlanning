@@ -16,6 +16,7 @@ import {
   FlowGuiElement,
   FrameGuiElement,
   GuiAnchor,
+  GuiDirection,
   GuiElementType,
   GuiLocation,
   GuiLocationArray,
@@ -93,6 +94,21 @@ export interface BaseElement {
 export interface ChooseElemButtonElement extends BaseElement {
   type: "choose-elem-button"
   elem_type: ElemType
+  item?: string
+  tile?: string
+  entity?: string
+  signal?: SignalID
+  fluid?: string
+  recipe?: string
+  decorative?: string
+  "item-group"?: string
+  achievement?: string
+  equipment?: string
+  technology?: string
+  "item-with-quality"?: string
+  "entity-with-quality"?: string
+  "recipe-with-quality"?: string
+  "equipment-with-quality"?: string
   elem_filters?: MaybeProperty<PrototypeFilterWrite | nil>
   elem_value?: MaybeMutableProperty<MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>>
   locked?: MaybeProperty<boolean>
@@ -166,7 +182,7 @@ export interface TabbedPaneElement extends BaseElement {
 export interface TextBoxElement extends BaseElement {
   type: "text-box"
   text?: MaybeMutableProperty<string>
-  clear_and_focus_on_right_click?: MaybeProperty<boolean>
+  icon_selector?: boolean
   selectable?: MaybeProperty<boolean>
   word_wrap?: MaybeProperty<boolean>
   read_only?: MaybeProperty<boolean>
@@ -204,7 +220,7 @@ export interface CheckboxElement extends BaseElement {
 
 export interface FlowElement extends BaseElement {
   type: "flow"
-  direction?: "horizontal" | "vertical"
+  direction?: GuiDirection
   drag_target?: MaybeProperty<FrameGuiElement | nil>
   onCreate?: OnCreateHandler<FlowGuiElement>
   styleMod?: FlowStyleMod
@@ -212,7 +228,7 @@ export interface FlowElement extends BaseElement {
 
 export interface FrameElement extends BaseElement {
   type: "frame"
-  direction?: "horizontal" | "vertical"
+  direction?: GuiDirection
   auto_center?: MaybeProperty<boolean>
   drag_target?: MaybeProperty<FrameGuiElement | nil>
   onCreate?: OnCreateHandler<FrameGuiElement>
@@ -228,7 +244,7 @@ export interface LabelElement extends BaseElement {
 
 export interface LineElement extends BaseElement {
   type: "line"
-  direction?: "horizontal" | "vertical"
+  direction?: GuiDirection
   onCreate?: OnCreateHandler<LineGuiElement>
   styleMod?: BaseStyleMod
 }
@@ -266,9 +282,9 @@ export interface SliderElement extends BaseElement {
   minimum_value?: MaybeProperty<double>
   maximum_value?: MaybeProperty<double>
   value_step?: MaybeProperty<double>
-  discrete_slider?: MaybeProperty<boolean>
   discrete_values?: MaybeProperty<boolean>
   slider_value?: MaybeMutableProperty<double>
+  discrete_slider?: MaybeProperty<boolean>
   on_gui_value_changed?: GuiEventHandler<OnGuiValueChangedEvent>
   onCreate?: OnCreateHandler<SliderGuiElement>
   styleMod?: BaseStyleMod
@@ -322,7 +338,7 @@ export interface TextFieldElement extends BaseElement {
   allow_negative?: MaybeProperty<boolean>
   is_password?: MaybeProperty<boolean>
   lose_focus_on_confirm?: MaybeProperty<boolean>
-  clear_and_focus_on_right_click?: MaybeProperty<boolean>
+  icon_selector?: boolean
   on_gui_confirmed?: GuiEventHandler<OnGuiConfirmedEvent>
   on_gui_text_changed?: GuiEventHandler<OnGuiTextChangedEvent>
   onCreate?: OnCreateHandler<TextFieldGuiElement>

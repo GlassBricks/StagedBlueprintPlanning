@@ -532,5 +532,5 @@ import {
 } from "factorio:runtime"
 `
 
-  await printFile("factorio-elements.d.ts", header, statements)
+  await printFile("factorio-elements.ts", header, statements)
 }
