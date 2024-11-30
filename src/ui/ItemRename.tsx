@@ -46,7 +46,6 @@ export class ItemRename extends Component<ItemRenameProps> {
     return isRenaming ? (
       <textfield
         text={this.item.name}
-        clear_and_focus_on_right_click
         lose_focus_on_confirm
         on_gui_confirmed={Props.setValueFn(this.isRenaming, false)}
         styleMod={{ maximal_width: this.item.maximalWidth ?? 200 }}

@@ -31,11 +31,7 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
   readonly blacklist: ReadonlyLuaSet<string> | nil
 }
 
-export interface OverrideableBlueprintSettings extends BlueprintTakeSettings {
-  readonly autoLandfill: boolean
-
-  readonly useNextStageTiles: boolean
-}
+export type OverrideableBlueprintSettings = BlueprintTakeSettings
 const signalKeys = [1, 2, 3, 4] as const
 
 export function setIconsInSettings(settings: BlueprintSettingsTable, icons: BlueprintSignalIcon[] | nil): void {
@@ -107,12 +103,10 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
     3: nil,
     4: nil,
     appendStageNumbersToIcons: true,
-    autoLandfill: false,
     positionOffset: nil,
     snapToGrid: nil,
     positionRelativeToGrid: nil,
     absoluteSnapping: true,
-    useNextStageTiles: false,
     additionalWhitelist: nil,
     blacklist: nil,
     stageLimit: nil,

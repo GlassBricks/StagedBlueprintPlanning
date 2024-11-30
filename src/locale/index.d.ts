@@ -40,10 +40,6 @@ export declare const enum L_ItemGroupName {
 export declare const enum L_ModSettingName {
   /** Place offshore pumps anywhere */
   Bp100FlexibleOffshorePumpPlacement = "mod-setting-name.bp100_flexible-offshore-pump-placement",
-  /** Allow landfill to be mined */
-  Bp100MinableLandfill = "mod-setting-name.bp100_minable-landfill",
-  /** Allow placing landfill outside of water */
-  Bp100LandLandfill = "mod-setting-name.bp100_land-landfill",
   /** Location of Entity info gui */
   Bp100EntityInfoLocation = "mod-setting-name.bp100_entity-info-location",
   /** Allow blueprint paste to upgrade entities */
@@ -336,10 +332,6 @@ export declare const enum L_GuiProjectSettings {
   UseModulePreloading = "bp100.gui.project-settings.use-module-preloading",
   /** If an assembling machine has modules added at later stage, the modules are included in blueprints in earlier stages [font=default-bold]even if[/font] the machine is not high enough tier or has the wrong recipe.\nThis is useful to have bot requests for modules that will be added later.\nThe machine may need to be upgraded or have the correct recipe set [font=default-bold]before[/font] bots arrive to insert modules successfully.\n\n It is possible to create these blueprints without mods. */
   UseModulePreloadingTooltip = "bp100.gui.project-settings.use-module-preloading-tooltip",
-  /** Auto-landfill [img=info] */
-  AutoLandfill = "bp100.gui.project-settings.auto-landfill",
-  /** Automatically set landfill tiles before taking a blueprint. */
-  AutoLandfillTooltip = "bp100.gui.project-settings.auto-landfill-tooltip",
   /** Use next stage's tiles [img=info] */
   UseNextStageTiles = "bp100.gui.project-settings.use-next-stage-tiles",
   /** Each blueprint will contain the next stage's tiles. Useful for landfill. */

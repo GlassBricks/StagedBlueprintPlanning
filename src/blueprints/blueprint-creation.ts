@@ -11,8 +11,8 @@
 
 import { LocalisedString, LuaInventory, LuaItemStack, LuaPlayer, UnitNumber } from "factorio:runtime"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
-import { assertNever, Mutable, RegisterClass } from "../lib"
-import { BBox, Pos, Position } from "../lib/geometry"
+import { assertNever, RegisterClass } from "../lib"
+import { BBox } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { L_GuiBlueprintBookTask } from "../locale"
 import { Stage, UserProject } from "../project/ProjectDef"
@@ -164,25 +164,6 @@ const BlueprintMethods = {
       }
     }
   },
-  setNextStageTiles(curStage: StageBlueprintPlan, nextStage: StageBlueprintPlan): void {
-    if (!curStage.result || !nextStage.result) return
-
-    const nextStageTiles = nextStage.stack!.get_blueprint_tiles()
-    if (!nextStageTiles) {
-      curStage.stack!.set_blueprint_tiles([])
-      return
-    }
-    const shift = Pos.minus(curStage.result.effectivePositionOffset, nextStage.result.effectivePositionOffset)
-    if (!Pos.isZero(shift)) {
-      const { x, y } = shift
-      for (const i of $range(1, nextStageTiles.length)) {
-        const pos = nextStageTiles[i - 1].position as Mutable<Position>
-        pos.x += x
-        pos.y += y
-      }
-    }
-    curStage.stack!.set_blueprint_tiles(nextStageTiles)
-  },
   exportBlueprintBookToFile(stack: LuaItemStack, fileName: string, player: LuaPlayer): void {
     const [projectFileName] = string.gsub(fileName, "[^%w%-%_%.]", "_")
     const filename = `staged-builds/${projectFileName}.txt`
@@ -221,10 +202,6 @@ function getStepTitle(task: BlueprintStep): LocalisedString {
     case "setLandfill": {
       const stage = task.args[0]
       return [L_GuiBlueprintBookTask.SetLandfillTiles, stage.name.get()]
-    }
-    case "setNextStageTiles": {
-      const curStage = task.args[0]
-      return [L_GuiBlueprintBookTask.SetNextStageTiles, curStage.stage.name.get()]
     }
     case "exportBlueprintBookToFile":
     case "showBlueprintBookString": {
@@ -329,11 +306,6 @@ class BlueprintingTaskBuilder {
     }
 
     const settings = existingStagePlan?.settings ?? getCurrentBpSettings(stage)
-    if (settings.useNextStageTiles) {
-      const nextStage = stage.project.getStage(stage.stageNumber + 1)
-      if (nextStage) this.ensureTilesTaken(projectPlan, nextStage)
-    }
-
     const plan = existingStagePlan ?? this.addNewStagePlan(projectPlan, stack, stage, settings)
     return plan
   }
@@ -343,7 +315,6 @@ class BlueprintingTaskBuilder {
       for (const [, stagePlan] of projectPlan.stagePlans) {
         this.addTakeBlueprintTasks(projectPlan, stagePlan)
       }
-      this.addSetNextStageTilesTask(projectPlan.stagePlans)
     }
     return this
   }
@@ -357,19 +328,8 @@ class BlueprintingTaskBuilder {
     return new BlueprintCreationTask(this.tasks, this.inventory, taskTitle)
   }
 
-  private addSetNextStageTilesTask(stagePlans: LuaMap<StageNumber, StageBlueprintPlan>): void {
-    for (const [stageNumber, curStage] of stagePlans) {
-      // factorio guarantees this loop is done in ascending stageNumber order (if <= 1024 stages)
-      if (curStage.settings.useNextStageTiles) {
-        const nextStagePlan = stagePlans.get(stageNumber + 1)!
-        if (!nextStagePlan) continue
-        this.tasks.push({ name: "setNextStageTiles", args: [curStage, nextStagePlan] })
-      }
-    }
-  }
-
   private addTakeBlueprintTasks(projectPlan: ProjectBlueprintPlan, stagePlan: StageBlueprintPlan): void {
-    const { stack, stage } = stagePlan
+    const { stack } = stagePlan
     let settings: OverrideableBlueprintSettings = stagePlan.settings
 
     let actualStack: LuaItemStack
@@ -380,10 +340,6 @@ class BlueprintingTaskBuilder {
     } else {
       actualStack = stack
     }
-    if (settings.autoLandfill) {
-      this.tasks.push({ name: "setLandfill", args: [stage] })
-    }
-
     if (settings.stageLimit != nil || !projectPlan.excludeFromFutureBlueprintStages.isEmpty()) {
       this.ensureHasComputeChangedEntities(projectPlan)
       this.tasks.push({ name: "computeUnitNumberFilter", args: [projectPlan, stagePlan, settings.stageLimit] })

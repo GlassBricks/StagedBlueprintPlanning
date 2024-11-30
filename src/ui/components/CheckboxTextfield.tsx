@@ -14,7 +14,6 @@ import {
   LocalisedString,
   OnGuiCheckedStateChangedEvent,
   OnGuiTextChangedEvent,
-  TextFieldGuiElement,
 } from "factorio:runtime"
 import { ibind, MutableProperty, RegisterClass } from "../../lib"
 import { Component, Element, FactorioJsx } from "../../lib/factoriojsx"
@@ -30,8 +29,6 @@ export interface CheckboxTextfieldProps {
 }
 @RegisterClass("gui:CheckboxTextfield")
 export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
-  private checkbox!: CheckboxGuiElement
-  private textfield!: TextFieldGuiElement
   private value!: MutableProperty<number | nil>
 
   override render(props: CheckboxTextfieldProps): Element {
@@ -52,18 +49,15 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
           caption={captionBefore}
           styleMod={highlightStyleMod}
           on_gui_checked_state_changed={ibind(this.onCheckboxChanged)}
-          onCreate={(e) => (this.checkbox = e)}
         />
         <textfield
           style="short_number_textfield"
-          numeric
-          clear_and_focus_on_right_click
+          numeric={true}
           allow_decimal={false}
           allow_negative={false}
           text={this.value.map(ibind(this.valueToText))}
           enabled={isTruthy}
           on_gui_text_changed={ibind(this.onTextChanged)}
-          onCreate={(e) => (this.textfield = e)}
           styleMod={{ width: 50 }}
         />
         <label caption={captionAfter} tooltip={props.tooltip} styleMod={highlightStyleMod} />

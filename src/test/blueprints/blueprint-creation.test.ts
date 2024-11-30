@@ -22,9 +22,7 @@ import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
 import { Stage, UserProject } from "../../project/ProjectDef"
-import * as _setTiles from "../../project/set-tiles"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
-import { moduleMock } from "../module-mock"
 
 let project: UserProject
 let player: LuaPlayer
@@ -75,56 +73,6 @@ test("can take single blueprint using stage settings", () => {
   expect(entities[0].name).toBe("iron-chest")
 
   expect(stack.preview_icons).toMatchTable([{ index: 1, signal: { type: "virtual", name: "signal-1" } }])
-})
-
-describe("set tiles", () => {
-  const setTiles = moduleMock(_setTiles, true)
-  test("calls setTiles if autoLandfill is true", () => {
-    const stage = project.getStage(1)!
-
-    const stack = player.cursor_stack!
-    createEntity(stage)
-
-    let ret = takeStageBlueprint(stage, stack)
-    expect(ret).toBe(true)
-    expect(setTiles.setTilesAndCheckerboardForStage).not.toHaveBeenCalled()
-
-    stage.stageBlueprintSettings.autoLandfill.set(true)
-
-    ret = takeStageBlueprint(stage, stack)
-    expect(ret).toBe(true)
-    expect(setTiles.setTilesAndCheckerboardForStage).toHaveBeenCalledWith(stage)
-  })
-})
-
-test.each([false, true])("can use next stage tiles, with next staging having grid %s", (stage2HasGrid) => {
-  const stage2 = project.getStage(2)!
-  const stage1 = project.getStage(1)!
-
-  stage1.stageBlueprintSettings.positionOffset.set(Pos(1, 1))
-  stage1.stageBlueprintSettings.snapToGrid.set(Pos(2, 2))
-  stage1.stageBlueprintSettings.useNextStageTiles.set(true)
-
-  if (stage2HasGrid) {
-    stage1.stageBlueprintSettings.snapToGrid.set(Pos(1, 5))
-    stage2.stageBlueprintSettings.positionOffset.set(Pos(2, 3))
-  }
-
-  stage2.surface.set_tiles([{ name: "landfill", position: [4, 5] }])
-
-  const stack = player.cursor_stack!
-  createEntity(stage1)
-
-  const ret = takeStageBlueprint(stage1, stack)
-  expect(ret).toBe(true)
-
-  const tiles = stack.get_blueprint_tiles()!
-  expect(tiles).toMatchTable([
-    {
-      name: "landfill",
-      position: Pos(4, 5).plus(Pos(1, 1)),
-    },
-  ])
 })
 
 test("stageLimit: only entities present in last x stages or in additionalWhitelist", () => {

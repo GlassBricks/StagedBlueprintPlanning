@@ -483,26 +483,6 @@ class ProjectSettings extends Component<{
           caption={[L_GuiProjectSettings.ExcludeFromFutureBlueprints]}
           tooltip={[L_GuiProjectSettings.ExcludeFromFutureBlueprintsTooltip]}
         />
-
-        <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox
-            state={settings.autoLandfill}
-            caption={[L_GuiProjectSettings.AutoLandfill]}
-            tooltip={[L_GuiProjectSettings.AutoLandfillTooltip]}
-            styleMod={highlightIfOverriden(settings.autoLandfill)}
-          />
-          {MaybeRevertButton(settings.autoLandfill)}
-        </flow>
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox
-            state={settings.useNextStageTiles}
-            caption={[L_GuiProjectSettings.UseNextStageTiles]}
-            tooltip={[L_GuiProjectSettings.UseNextStageTilesTooltip]}
-            styleMod={highlightIfOverriden(settings.useNextStageTiles)}
-          />
-          {MaybeRevertButton(settings.useNextStageTiles)}
-        </flow>
       </flow>
     )
   }
