@@ -49,12 +49,6 @@ export namespace Migrations {
       func,
     })
   }
-  /** Runs both during on_init and from an earlier version. */
-  export function since(version: VersionString, func: () => void): void {
-    Events.on_init(func)
-    to(version, func)
-  }
-
   export function early(version: VersionString, func: () => void): void {
     migrations.push({
       prio: 8,

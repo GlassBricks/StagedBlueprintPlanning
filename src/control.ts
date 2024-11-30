@@ -34,10 +34,10 @@ Events.on_configuration_changed((data) => {
   if (!thisChange) return
   const oldVersion = thisChange.old_version
   if (!oldVersion) return
-  if (formatVersion(oldVersion) < formatVersion("0.13.1")) {
+  if (formatVersion(oldVersion) < formatVersion("2.0.0")) {
     error(
-      "Staged blueprint planning: migrating from a version earlier than 0.13.1 is no longer supported after v0.16.0 " +
-        "Try installing version 0.15.x first (by downloading directly from the mod portal), loading/saving the game, THEN install the latest version.",
+      "Staged blueprint planning: sorry, migrations are not supported from versions before 2.0.0. " +
+        "Consider exporting your blueprints first, then manually importing them after updating.",
     )
   }
   Migrations.doMigrations(oldVersion)

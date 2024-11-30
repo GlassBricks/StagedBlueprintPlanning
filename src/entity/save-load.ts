@@ -23,7 +23,6 @@ import {
 } from "factorio:runtime"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { Migrations } from "../lib/migration"
 import { getStageAtSurface } from "../project/project-refs"
 
 import { Entity } from "./Entity"
@@ -47,7 +46,7 @@ Events.on_init(() => {
 })
 
 let bpStack: LuaItemStack
-Migrations.since("0.17.0", () => {
+Events.on_init(() => {
   bpStack = storage.tempBPInventory[0]
   bpStack.set_stack("blueprint")
 })

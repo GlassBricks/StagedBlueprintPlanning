@@ -11,7 +11,6 @@
 
 import { LuaEntity, SurfaceIndex, UnitNumber } from "factorio:runtime"
 import { Events } from "../lib"
-import { Migrations } from "../lib/migration"
 import type { ProjectEntity } from "./ProjectEntity"
 
 declare const storage: {
@@ -65,6 +64,6 @@ Events.on_object_destroyed((e) => {
     storage.surfaceByUnitNumber.delete(eNumber)
   }
 })
-Migrations.since("0.33.4", () => {
+Events.on_init(() => {
   storage.surfaceByUnitNumber = new LuaMap()
 })
