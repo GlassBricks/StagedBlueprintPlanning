@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.0.1
+Version: 2.0.0
 Date: ????
-  Changes:
+  Other:
+    - Factorio 2.0 support!
+    - Note that migrations from before 1.1 are not supported.
+    - Removed features made obsolete in Factorio 2.0.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2024-11-30
