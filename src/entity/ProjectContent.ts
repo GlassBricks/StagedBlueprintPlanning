@@ -160,7 +160,7 @@ class ProjectContentImpl implements MutableProjectContent {
     if (pasteRotatableType == RotationType.Flippable) {
       const direction = previousDirection ?? entity.direction
       const position = entity.position
-      if (direction % 2 == 1) {
+      if (direction % 4 == 2) {
         // if diagonal, we _do_ care about the direction
         return this.findCompatibleEntity(name, position, direction, stage)
       }

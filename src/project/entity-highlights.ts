@@ -18,8 +18,8 @@ import {
   LuaRenderObject,
   LuaSurface,
   RenderLayer,
+  ScriptRenderTargetTableWrite,
   SpritePath,
-  Vector,
 } from "factorio:runtime"
 import { ExtraEntities, ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "../entity/prototype-info"
@@ -149,13 +149,18 @@ function createHighlight<T extends keyof HighlightEntities>(
       const size = selectionBox.size()
       const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
       // const worldPosition = relativePosition.plus(entity.position)
-      const target = entityTarget ?? relativePosition.plus(entity.position)
-      const offset: Vector | nil = entityTarget && [relativePosition.x, relativePosition.y]
+      const target: ScriptRenderTargetTableWrite = entityTarget
+        ? {
+            entity: entityTarget,
+            offset: [relativePosition.x, relativePosition.y],
+          }
+        : {
+            position: relativePosition.plus(entity.position),
+          }
       const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
       result = createSprite({
         surface,
         target,
-        oriented_offset: offset,
         x_scale: scale,
         y_scale: scale,
         sprite: config.sprite,

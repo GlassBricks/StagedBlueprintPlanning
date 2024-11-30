@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 /*
  * Copyright (c) 2022-2023 GlassBricks
  * This file is part of Staged Blueprint Planning.

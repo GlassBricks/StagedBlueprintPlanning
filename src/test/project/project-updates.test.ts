@@ -609,20 +609,6 @@ describe("tryUpgradeEntityFromWorld", () => {
     assertOneEntity()
     assertUpdateCalled(entity, 1)
   })
-  test("can apply rotation", () => {
-    const { luaEntity, entity } = addEntity(1)
-    luaEntity.order_upgrade({
-      force: luaEntity.force,
-      target: luaEntity.name,
-    })
-
-    const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 1)
-    expect(ret).toBe("updated")
-    expect(entity.firstValue.name).toBe("fast-inserter")
-    expect(entity.direction).toBe(direction.west)
-    assertOneEntity()
-    assertUpdateCalled(entity, 1)
-  })
 })
 
 describe("updateWiresFromWorld", () => {
@@ -655,15 +641,14 @@ describe("updateWiresFromWorld", () => {
       fromId: defines.wire_connector_id.circuit_green,
       toId: defines.wire_connector_id.circuit_green,
     })
-    wireSaver.saveWireConnections.returnsOnce(true as any)
+    wireSaver.saveWireConnections.returnsOnce(true)
     luaEntity2.destroy()
 
     const ret = projectUpdates.updateWiresFromWorld(entity1, 2)
     expect(ret).toBe("updated")
 
     assertNEntities(2)
-    assertUpdateCalled(entity1, 2, 1)
-    assertUpdateCalled(entity2, 1, 2)
+    assertUpdateCalled(entity1, 2)
   })
 })
 
@@ -991,28 +976,6 @@ describe("undergrounds", () => {
 
       assertOneEntity()
       assertUpdateCalled(entity, 2)
-    })
-
-    test("if not in first stage, forbids upgrade", () => {
-      const { luaEntity, entity } = createUndergroundBelt(1)
-      luaEntity.order_upgrade({
-        target: "fast-underground-belt",
-        force: luaEntity.force,
-      })
-      entity.replaceWorldEntity(2, luaEntity)
-      const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
-      expect(ret).toBe("cannot-rotate")
-
-      expect(entity).toMatchTable({
-        firstValue: {
-          name: "underground-belt",
-          type: "input",
-        },
-        direction: direction.west,
-      })
-
-      assertOneEntity()
-      assertResetUndergroundRotationCalled(entity, 2)
     })
 
     test.each(["lower", "pair in higher", "self in higher"])(

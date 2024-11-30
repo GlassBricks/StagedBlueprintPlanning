@@ -34,19 +34,33 @@ test("playerCurrentStage", () => {
   const currentStage = playerCurrentStage(1 as PlayerIndex)
   expect(currentStage.get()).toBeNil()
 
-  for (const stage of project.getAllStages()) {
-    player.teleport(player.position, stage.surface)
-    expect(stage).toBe(currentStage.get())
-  }
+  expect(player.surface_index).not.toBe(project.getStage(1)!.surface.index)
 
-  project.deleteStage(project.numStages())
-  expect(currentStage.get()).toBeNil()
+  on_tick((t) => {
+    const stage = project.getStage(math.floor((t - 1) / 2) + 1)!
+    if (stage != nil) {
+      if (t % 2 == 1) {
+        player.teleport(player.position, stage.surface)
+      } else {
+        expect(currentStage.get()).comment(`Player should be on stage ${stage.stageNumber}`).toBe(stage)
+      }
+    } else {
+      project.deleteStage(project.numStages())
+      after_ticks(1, () => {
+        expect(currentStage.get()).toBeNil()
 
-  player.teleport(player.position, project.getStage(1)!.surface)
-  expect(project.getStage(1)!).toBe(currentStage.get())
+        player.teleport(player.position, project.getStage(1)!.surface)
+        after_ticks(2, () => {
+          expect(currentStage.get()).toBe(project.getStage(1))
 
-  project.delete()
-  expect(currentStage.get()).toBeNil()
+          project.delete()
+          expect(currentStage.get()).toBeNil()
+          done()
+        })
+      })
+      return false
+    }
+  })
 })
 
 describe("teleporting to stage/project", () => {
@@ -60,9 +74,14 @@ describe("teleporting to stage/project", () => {
   })
   test("can teleport to stage", () => {
     teleportToStage(player, project1.getStage(1)!)
-    expect(project1.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
-    teleportToStage(player, project1.getStage(2)!)
-    expect(project1.getStage(2)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
+    after_ticks(1, () => {
+      expect(project1.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
+      teleportToStage(player, project1.getStage(2)!)
+
+      after_ticks(1, () => {
+        expect(project1.getStage(2)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
+      })
+    })
   })
   test("keeps players position when teleporting from same project", () => {
     teleportToStage(player, project1.getStage(1)!)
@@ -81,9 +100,13 @@ describe("teleporting to stage/project", () => {
 
   test("can teleport to project", () => {
     teleportToProject(player, project1)
-    expect(project1.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
-    teleportToProject(player, project2)
-    expect(project2.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
+    after_ticks(1, () => {
+      expect(project1.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
+      teleportToProject(player, project2)
+      after_ticks(1, () => {
+        expect(project2.getStage(1)!).toBe(playerCurrentStage(1 as PlayerIndex).get())
+      })
+    })
   })
 
   test("teleport to project remembers last stage and position", () => {
@@ -93,15 +116,19 @@ describe("teleporting to stage/project", () => {
     teleportToStage(player, project2.getStage(1)!)
 
     teleportToProject(player, project1)
-    expect(player.position).toEqual(Pos(5, 10))
-    expect(playerCurrentStage(player.index).get()).toBe(project1.getStage(2))
+    after_ticks(1, () => {
+      expect(player.position).toEqual(Pos(5, 10))
+      expect(playerCurrentStage(player.index).get()).toBe(project1.getStage(2))
+    })
   })
 
   test("exitProject remembers last position when teleporting from outside project", () => {
     player.teleport(Pos(15, 20), 1 as SurfaceIndex)
     teleportToProject(player, project2)
     exitProject(player)
-    expect(player.position).toEqual(Pos(15, 20))
-    expect(player.surface_index).toEqual(1)
+    after_ticks(1, () => {
+      expect(player.position).toEqual(Pos(15, 20))
+      expect(player.surface_index).toEqual(1)
+    })
   })
 })

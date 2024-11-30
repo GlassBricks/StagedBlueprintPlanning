@@ -178,7 +178,7 @@ type StageData = ExtraEntities & StageProperties
 
 export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
   if (orientation == nil) return 0
-  return floor(orientation * 8 + 0.5) % 8
+  return floor(orientation * 16 + 0.5) % 16
 }
 
 const { raise_script_destroy } = script

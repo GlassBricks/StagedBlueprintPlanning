@@ -166,6 +166,8 @@ function assertEntityCorrect(entity: ProjectEntity, expectError: number | false)
           })
         }
       }
+      expectedConnections.sort((a, b) => a.toId - b.toId)
+      actualConnections.sort((a, b) => a.toId - b.toId)
 
       expect(actualConnections).toEqual(expectedConnections)
     }
@@ -1404,7 +1406,7 @@ describe("blueprinting", () => {
       //     red: [{ entity_id: 1, circuit_id: 1 }],
       //   },
       // },
-      wires: [[1, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red]],
+      wires: [[2, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red]],
     }
     const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
     const stack = player.cursor_stack!
@@ -1424,7 +1426,7 @@ describe("blueprinting", () => {
 
   describe.each([defines.direction.north, defines.direction.northeast])("with rail direction %d", (diag) => {
     test.each([defines.direction.east, defines.direction.south])(
-      "can paste a straight rail in all rotations",
+      "can paste a straight rail in blueprint direction %s",
       (direction) => {
         const entity: BlueprintEntity = {
           entity_number: 1,
@@ -1440,12 +1442,15 @@ describe("blueprinting", () => {
 
         const pos = Pos(5, 5)
         player.teleport([0, 0], surfaces[0])
-        player.build_from_cursor({ position: pos, direction, build_mode: defines.build_mode.forced })
+        player.build_from_cursor({ position: pos, direction, build_mode: defines.build_mode.normal })
 
-        const rail = surfaces[0].find_entity("straight-rail", pos)!
+        const rail = surfaces[0].find_entities_filtered({
+          name: "straight-rail",
+          area: BBox.around(pos, 4),
+          limit: 1,
+        })[0]
         expect(rail).not.toBeNil()
-        let expected = (diag + direction) % 8
-        if (expected == 4 || expected == 6) expected -= 4 // left=right, up=down
+        const expected = (diag + direction) % 8
         expect(rail.direction).toEqual(expected)
 
         const projectEntity = project.content.findCompatibleWithLuaEntity(rail, nil, 1)
@@ -1467,11 +1472,11 @@ describe("blueprinting", () => {
     }
     const stack = player.cursor_stack!
     stack.set_stack("blueprint")
-    stack.blueprint_snap_to_grid = [2, 2]
-    stack.blueprint_absolute_snapping = true
+    // stack.blueprint_snap_to_grid = [2, 2]
+    // stack.blueprint_absolute_snapping = true
     stack.set_blueprint_entities([entity])
 
-    const pos = Pos(5, 5)
+    const pos = Pos(4, 4)
     player.teleport([0, 0], surfaces[0])
 
     player.build_from_cursor({
@@ -1489,14 +1494,14 @@ describe("blueprinting", () => {
 
     player.build_from_cursor({
       position: pos,
-      direction: defines.direction.south,
+      direction: defines.direction.east,
       build_mode: defines.build_mode.forced,
     })
     const rail2 = surfaces[0].find_entities_filtered({
       name: "straight-rail",
       position: pos,
       radius: 0,
-      direction: defines.direction.southwest,
+      direction: defines.direction.southeast,
     })[0]
     expect(rail2).not.toBeNil()
 
@@ -1506,7 +1511,7 @@ describe("blueprinting", () => {
     expect(entity2).not.toBeNil()
 
     expect(entity1!.direction).toEqual(defines.direction.northeast)
-    expect(entity2!.direction).toEqual(defines.direction.southwest)
+    expect(entity2!.direction).toEqual(defines.direction.southeast)
 
     expect(entity1!.getWorldEntity(1)).toEqual(rail)
     expect(entity2!.getWorldEntity(1)).toEqual(rail2)

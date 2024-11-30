@@ -531,7 +531,6 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const connectionsChanged = saveWireConnections(content, entity, stage, stage)
     if (!connectionsChanged) return WireUpdateResult.NoChange
 
-    // check setting no-op control behavior
     updateWorldEntities(entity, entity.firstStage)
     return WireUpdateResult.Updated
   }

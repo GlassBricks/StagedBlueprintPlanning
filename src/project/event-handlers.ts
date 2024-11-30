@@ -12,6 +12,7 @@
 import {
   BaseItemStack,
   BlueprintEntity,
+  BlueprintWire,
   CustomEventId,
   LuaEntity,
   LuaItemPrototype,
@@ -49,7 +50,6 @@ import { getRegisteredProjectEntityFromUnitNumber, getStageFromUnitNumber } from
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
-import { debugPrint } from "../lib/test/misc"
 import { L_Bp100, L_Interaction } from "../locale"
 import { getProjectPlayerData } from "./player-project-data"
 import { getStageAtSurface } from "./project-refs"
@@ -748,9 +748,9 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       })
     }
   } else {
-    const isDiagonal = (value.direction ?? 0) % 2 == 1
+    const isDiagonal = (value.direction ?? 0) % 4 == 2
     if (isDiagonal) {
-      entityDir = (entityDir + (bpState.isFlipped ? 7 : 1)) % 8
+      entityDir = (entityDir + (bpState.isFlipped ? 14 : 2)) % 16
     }
   }
 
@@ -818,13 +818,10 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   const { entities, knownLuaEntities, needsManualConnections, usedPasteUpgrade, stage } = state.currentBlueprintPaste!
 
   for (const entityId of needsManualConnections) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _value = entities[entityId - 1]
+    const value = entities[entityId - 1]
     const luaEntity = knownLuaEntities[entityId]
     if (!luaEntity) continue
-    // manuallyConnectNeighbours(luaEntity, value.neighbours)
-    // manuallyConnectCircuits(luaEntity, value.connections)
-    debugPrint("TODO: manually connect wires")
+    manuallyConnectWires(value.wires, knownLuaEntities)
     stage.actions.onWiresPossiblyUpdated(luaEntity, stage.stageNumber, e.player_index)
   }
 
@@ -837,6 +834,16 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   const blueprint = getInnerBlueprint(player.cursor_stack)
   revertPreparedBlueprint(assert(blueprint))
   state.currentBlueprintPaste = nil
+}
+
+function manuallyConnectWires(wires: BlueprintWire[] | nil, knownLuaEntities: PRecord<number, LuaEntity>) {
+  if (!wires) return
+  for (const [fromNumber, fromId, toNumber, toId] of wires) {
+    const fromEntity = knownLuaEntities[fromNumber]
+    const toEntity = knownLuaEntities[toNumber]
+    if (!fromEntity || !toEntity) continue
+    fromEntity.get_wire_connector(fromId, true).connect_to(toEntity.get_wire_connector(toId, true))
+  }
 }
 
 // Circuit wires and cables

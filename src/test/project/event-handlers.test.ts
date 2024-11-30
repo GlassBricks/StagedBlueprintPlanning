@@ -1032,7 +1032,7 @@ describe("blueprint paste", () => {
   })
 
   test("doesn't break when creating ghost entity", () => {
-    player.toggle_map_editor()
+    player.set_controller({ type: defines.controllers.god })
     after_test(() => {
       player.set_controller({ type: defines.controllers.editor })
       player.clear_cursor()

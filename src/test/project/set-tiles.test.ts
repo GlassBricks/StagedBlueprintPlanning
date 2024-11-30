@@ -98,7 +98,6 @@ test("setTilesAndCheckerboard", () => {
   const [result, freeTiles] = setTilesAndCheckerboard(surface, bbox, "stone-path")
   expect(result).toBe(true)
   for (const tile of surface.find_tiles_filtered({ area: bbox })) {
-    rawset(tile, "position", tile.position)
     if (Pos.isZero(tile.position)) {
       expect(tile).toMatchTable({
         name: "stone-path",

@@ -55,38 +55,39 @@ test("item removed if not in project", () => {
 test("changing selected stage", () => {
   const project = createUserProject("Test", 3)
   player.teleport([0, 0], project.getSurface(2))
+  after_ticks(1, () => {
+    const projectPlayerData = getProjectPlayerData(player.index, project)!
+    player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
+    updateMoveToolInCursor(player)
 
-  const projectPlayerData = getProjectPlayerData(player.index, project)!
-  player.cursor_stack!.set_stack(Prototypes.StageMoveTool)
-  updateMoveToolInCursor(player)
+    expect(projectPlayerData.moveTargetStage).toBe(2)
+    expect(player.cursor_stack!.label).toBe("Send to Stage 2")
 
-  expect(projectPlayerData.moveTargetStage).toBe(2)
-  expect(player.cursor_stack!.label).toBe("Send to Stage 2")
+    Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
+    expect(projectPlayerData.moveTargetStage).toBe(3)
+    expect(player.cursor_stack!.label).toBe("Send to Stage 3")
+    Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
+    expect(projectPlayerData.moveTargetStage).toBe(3) // max stage
 
-  Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  expect(projectPlayerData.moveTargetStage).toBe(3)
-  expect(player.cursor_stack!.label).toBe("Send to Stage 3")
-  Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  expect(projectPlayerData.moveTargetStage).toBe(3) // max stage
-
-  Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
-    player_index: player.index,
-    cursor_position: { x: 0, y: 0 },
+    Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
+      player_index: player.index,
+      cursor_position: { x: 0, y: 0 },
+    })
+    expect(projectPlayerData.moveTargetStage).toBe(2)
+    expect(player.cursor_stack!.label).toBe("Send to Stage 2")
+    Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
+      player_index: player.index,
+      cursor_position: { x: 0, y: 0 },
+    })
+    expect(projectPlayerData.moveTargetStage).toBe(1)
+    expect(player.cursor_stack!.label).toBe("Send to Stage 1")
+    Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
+      player_index: player.index,
+      cursor_position: { x: 0, y: 0 },
+    })
+    expect(projectPlayerData.moveTargetStage).toBe(1)
+    expect(player.cursor_stack!.label).toBe("Send to Stage 1")
   })
-  expect(projectPlayerData.moveTargetStage).toBe(2)
-  expect(player.cursor_stack!.label).toBe("Send to Stage 2")
-  Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
-    player_index: player.index,
-    cursor_position: { x: 0, y: 0 },
-  })
-  expect(projectPlayerData.moveTargetStage).toBe(1)
-  expect(player.cursor_stack!.label).toBe("Send to Stage 1")
-  Events.raiseFakeEvent(CustomInputs.StageSelectPrevious, {
-    player_index: player.index,
-    cursor_position: { x: 0, y: 0 },
-  })
-  expect(projectPlayerData.moveTargetStage).toBe(1)
-  expect(player.cursor_stack!.label).toBe("Send to Stage 1")
 })
 
 test("filtered stage move tool name set to <Not in a staged BP project>", () => {
@@ -100,15 +101,16 @@ test("changing selected stage with filtered stage move tool", () => {
   // only test 3 stages
   const project = createUserProject("Test", 3)
   player.teleport([0, 0], project.getSurface(2))
+  after_ticks(1, () => {
+    const projectPlayerData = getProjectPlayerData(player.index, project)!
+    player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
+    updateMoveToolInCursor(player)
 
-  const projectPlayerData = getProjectPlayerData(player.index, project)!
-  player.cursor_stack!.set_stack(Prototypes.FilteredStageMoveTool)
-  updateMoveToolInCursor(player)
+    expect(projectPlayerData.moveTargetStage).toBe(2)
+    expect(player.cursor_stack!.label).toBe("Send to Stage 2")
 
-  expect(projectPlayerData.moveTargetStage).toBe(2)
-  expect(player.cursor_stack!.label).toBe("Send to Stage 2")
-
-  Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
-  expect(projectPlayerData.moveTargetStage).toBe(3)
-  expect(player.cursor_stack!.label).toBe("Send to Stage 3")
+    Events.raiseFakeEvent(CustomInputs.StageSelectNext, { player_index: player.index, cursor_position: { x: 0, y: 0 } })
+    expect(projectPlayerData.moveTargetStage).toBe(3)
+    expect(player.cursor_stack!.label).toBe("Send to Stage 3")
+  })
 })

@@ -113,7 +113,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     }
 
     return (
-      <frame anchor={props.anchor} style="inner_frame_in_outer_frame" direction="vertical">
+      <frame anchor={props.anchor} direction="vertical">
         <TitleBar>
           <label style="frame_title" caption={[L_GuiEntityInfo.Title]} />
           <DraggableSpace />
@@ -147,7 +147,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
             enabled={firstStageNum != currentStageNum}
           />
           {isRollingStock && [
-            <line direction="horizontal" style="control_behavior_window_line" />,
+            <line direction="horizontal" />,
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiEntityInfo.ResetTrain]}
@@ -159,12 +159,9 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
               on_gui_click={ibind(this.setTrainLocationHere)}
             />,
           ]}
-          {currentStageDiff && [
-            <line direction="horizontal" style="control_behavior_window_line" />,
-            this.renderStageDiffSettings(currentStageDiff),
-          ]}
+          {currentStageDiff && [<line direction="horizontal" />, this.renderStageDiffSettings(currentStageDiff)]}
           {isErrorEntity && [
-            <line direction="horizontal" style="control_behavior_window_line" />,
+            <line direction="horizontal" />,
             <button
               style="red_button"
               styleMod={{ horizontally_stretchable: true }}
