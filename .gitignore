@@ -136,6 +136,7 @@ factorio/
 
 src/**/*.hide.*
 
+factorio-test-data-dir/**/*
 factorio-test-data/**/*
 !factorio-test-data/mods
 factorio-test-data/mods/*
