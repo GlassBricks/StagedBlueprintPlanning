@@ -41,7 +41,7 @@ export function findUndergroundPair(
   content: ProjectContent,
   member: UndergroundBeltProjectEntity,
   stage: StageNumber,
-  name: string = member.getNameAtStage(stage),
+  name: string = member.getPropAtStage(stage, "name")[0],
   ignore?: UndergroundBeltProjectEntity,
 ): UndergroundBeltProjectEntity | nil {
   const reach = prototypes.entity[name].max_underground_distance
@@ -64,7 +64,7 @@ export function findUndergroundPair(
     const candidate = content.findCompatibleEntity(name, curPos, nil, stage) as UndergroundBeltProjectEntity | nil
     if (
       !candidate ||
-      candidate.getNameAtStage(stage) != name ||
+      candidate.getPropAtStage(stage, "name")[0] != name ||
       candidate.firstStage >= shadowStage ||
       candidate == ignore
     )

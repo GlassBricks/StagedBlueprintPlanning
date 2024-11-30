@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { getPrototypeInfo } from "../../entity/prototype-info"
+import { getPrototypeInfo, RotationType } from "../../entity/prototype-info"
 
 describe("getCategoryName", () => {
   function getEntityCategory(name: string): string {
@@ -39,5 +39,10 @@ describe("getCategoryName", () => {
 
   test("blueprintableTiles includes concrete", () => {
     expect(getPrototypeInfo().blueprintableTiles).toHaveKey("concrete")
+  })
+
+  test("inserters and underground pipe are paste rotatable", () => {
+    expect(getPrototypeInfo().rotationTypes.get("inserter")).toBe(RotationType.AnyDirection)
+    expect(getPrototypeInfo().rotationTypes.get("pipe-to-ground")).toBe(RotationType.AnyDirection)
   })
 })

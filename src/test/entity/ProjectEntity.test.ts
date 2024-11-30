@@ -207,11 +207,12 @@ describe("getValueAtStage", () => {
 
   test("getNameAtStage ", () => {
     projectEntity._applyDiffAtStage(4, { name: "bulk-inserter" })
-    expect(projectEntity.getNameAtStage(1)).toEqual("fast-inserter")
-    expect(projectEntity.getNameAtStage(2)).toEqual("fast-inserter")
-    expect(projectEntity.getNameAtStage(3)).toEqual("fast-inserter")
-    expect(projectEntity.getNameAtStage(4)).toEqual("bulk-inserter")
-    expect(projectEntity.getNameAtStage(5)).toEqual("bulk-inserter")
+    projectEntity._applyDiffAtStage(3, { quality: "uncommon" })
+    expect(projectEntity.getUpgradeAtStage(1)).toEqual({ name: "fast-inserter" })
+    expect(projectEntity.getUpgradeAtStage(2)).toEqual({ name: "fast-inserter" })
+    expect(projectEntity.getUpgradeAtStage(3)).toEqual({ name: "fast-inserter", quality: "uncommon" })
+    expect(projectEntity.getUpgradeAtStage(4)).toEqual({ name: "bulk-inserter", quality: "uncommon" })
+    expect(projectEntity.getUpgradeAtStage(5)).toEqual({ name: "bulk-inserter", quality: "uncommon" })
   })
 })
 
@@ -682,9 +683,9 @@ describe("rolling stock", () => {
   })
   test("cannot apply upgrade to rolling stock", () => {
     const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon" }, Pos(0, 0), nil, 1)
-    const adjusted = projectEntity.applyUpgradeAtStage(1, "cargo-wagon-2")
+    const adjusted = projectEntity.applyUpgradeAtStage(1, { name: "cargo-wagon-2" })
     expect(adjusted).toBe(false)
-    expect(projectEntity.getNameAtStage(1)).toBe("cargo-wagon")
+    expect(projectEntity.getUpgradeAtStage(1)).toEqual({ name: "cargo-wagon" })
   })
   test("setting a rolling stock world entity will register it in entity-registration", () => {
     const rollingStock = createRollingStock()

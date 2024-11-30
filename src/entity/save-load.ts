@@ -368,6 +368,7 @@ function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<Blue
   bpEntity.direction = nil
   bpEntity.wires = nil
   bpEntity.tags = nil
+  if (bpEntity.quality == "normal") bpEntity.quality = nil
   return bpEntity
 }
 

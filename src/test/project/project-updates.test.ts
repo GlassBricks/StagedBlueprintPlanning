@@ -1093,7 +1093,7 @@ describe("undergrounds", () => {
       expect(ret).toBe("updated")
       const pair = findUndergroundPair(project.content, entity1, 1)
       expect(pair).toBe(nil)
-      expect(entity2.getNameAtStage(1)).toBe("fast-underground-belt")
+      expect(entity2.getPropAtStage(1, "name")[0]).toBe("fast-underground-belt")
 
       assertUpdateCalled(entity1, 1)
     })

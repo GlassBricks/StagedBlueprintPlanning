@@ -132,7 +132,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   }
 
   function clearWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
-    const previewName = Prototypes.PreviewEntityPrefix + entity.getNameAtStage(stage)
+    const previewName = Prototypes.PreviewEntityPrefix + entity.getPropAtStage(stage, "name")[0]
     makePreviewEntity(stage, entity, entity.getPreviewDirection(), previewName)
     updateAllHighlights(entity)
   }
@@ -245,13 +245,13 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
         stage,
         entity,
         entity.getPreviewDirection(),
-        Prototypes.PreviewEntityPrefix + entity.getNameAtStage(stage),
+        Prototypes.PreviewEntityPrefix + entity.getPropAtStage(stage, "name")[0],
       )
       return
     }
     if (entity.isSettingsRemnant) {
       entity.destroyWorldOrPreviewEntity(stage)
-      makePreviewEntity(stage, entity, entity.getPreviewDirection(), entity.getNameAtStage(stage))
+      makePreviewEntity(stage, entity, entity.getPreviewDirection(), entity.getPropAtStage(stage, "name")[0])
       makeSettingsRemnantHighlights(entity)
       return
     }

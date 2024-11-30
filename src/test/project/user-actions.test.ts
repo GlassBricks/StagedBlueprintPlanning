@@ -221,7 +221,7 @@ describe("onEntityCreated", () => {
     },
   )
 
-  test("disallows building at earlier stage with different direction", () => {
+  test("if building at earlier stage with different direction, rotates", () => {
     const entity1 = addEntity(2, {
       name: "transport-belt",
       direction: defines.direction.east,
@@ -231,9 +231,9 @@ describe("onEntityCreated", () => {
       direction: defines.direction.north,
     })
     userActions.onEntityCreated(luaEntity2, 1, playerIndex)
-    assertNotified(entity1.entity, [L_Interaction.CannotBuildDifferentDirection], false)
+    assertNotified(entity1.entity, [L_Interaction.EntityMovedFromStage, "mock stage 2"], false)
 
-    expectedNumCalls = 0
+    expectedNumCalls = 1
   })
 
   test("can undo overbuilding preview", () => {

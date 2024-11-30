@@ -49,9 +49,14 @@ export type StageNumber = number
 
 export type WireConnections = ReadonlyLuaMap<ProjectEntity, LuaSet<ProjectWireConnection>>
 
-export const enum CableAddResult {
-  Added = "Added",
-  Error = "Error",
+export interface NameAndQuality {
+  name: string
+  quality?: string
+}
+
+export function getNameAndQuality(name: string, quality?: string): NameAndQuality {
+  if (quality == "normal") quality = nil
+  return { name, quality }
 }
 
 /**
@@ -94,7 +99,7 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
 
   /** @return the value of a property at a given stage, or at the first stage if below the first stage. Also returns the stage in which the property is affected. */
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
-  getNameAtStage(stage: StageNumber): string
+  getUpgradeAtStage(stage: StageNumber): NameAndQuality
 
   /**
    * Adjusts stage diffs so that the value at the given stage matches the given value.
@@ -111,7 +116,7 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
    */
   setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean
   /** Same as `setPropAtStage("name", stage, name)`. */
-  applyUpgradeAtStage(stage: StageNumber, newName: string): boolean
+  applyUpgradeAtStage(stage: StageNumber, newValue: NameAndQuality): boolean
 
   /**
    * Removes all stage-diffs at the given stage.
@@ -368,8 +373,11 @@ class ProjectEntityImpl<T extends Entity = Entity>
     }
     return $multi(value, resultStage)
   }
-  getNameAtStage(stage: StageNumber): string {
-    return this.getPropAtStage(stage, "name")[0]
+  getUpgradeAtStage(stage: StageNumber): NameAndQuality {
+    const [name] = this.getPropAtStage(stage, "name")
+    let [quality] = this.getPropAtStage(stage, "quality")
+    if (quality == "normal") quality = nil
+    return { name, quality }
   }
 
   declare applyDiff: <T extends Entity>(this: void, value: T, diff: StageDiff<T>) => Mutable<T>
@@ -462,8 +470,8 @@ class ProjectEntityImpl<T extends Entity = Entity>
     return true
   }
 
-  applyUpgradeAtStage(stage: StageNumber, newName: string): boolean {
-    return this.setPropAtStage(stage, "name", newName)
+  applyUpgradeAtStage(stage: StageNumber, newValue: NameAndQuality): boolean {
+    return this.setPropAtStage(stage, "name", newValue.name) || this.setPropAtStage(stage, "quality", newValue.quality)
   }
 
   private trimDiffs(stage: StageNumber, diff: StageDiff<T>): void {

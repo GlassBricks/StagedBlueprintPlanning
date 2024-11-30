@@ -14,6 +14,7 @@ import { Position } from "../lib/geometry"
 
 export interface Entity {
   readonly name: string
+  readonly quality?: string
   readonly items?: BlueprintInsertPlan[]
 }
 

@@ -342,7 +342,7 @@ test("updateWireConnections", () => {
 })
 
 test("clearWorldEntityAtStage", () => {
-  entity.applyUpgradeAtStage(2, "fast-inserter")
+  entity.applyUpgradeAtStage(2, { name: "fast-inserter" })
   worldUpdates.updateWorldEntities(entity, 1)
   worldUpdates.clearWorldEntityAtStage(entity, 2)
   expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)

@@ -131,7 +131,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
   test("if has upgrade, doesn't match if upgrade doesn't match", () => {
     const u1 = createUnderground(0, "input", 1)
     const u2 = createUnderground(1, "output", 1)
-    u2.applyUpgradeAtStage(2, "fast-underground-belt")
+    u2.applyUpgradeAtStage(2, { name: "fast-underground-belt" })
 
     checkPair(u1, u2, 1)
     checkPair(u1, nil, 2)
@@ -141,7 +141,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
   test("with name argument", () => {
     const u1 = createUnderground(0, "input", 1)
     const u2 = createUnderground(1, "output", 1)
-    u2.applyUpgradeAtStage(1, "fast-underground-belt")
+    u2.applyUpgradeAtStage(1, { name: "fast-underground-belt" })
     const pair = findUndergroundPair(content, u1, 1)
     expect(pair).toEqual(nil)
     const pair2 = findUndergroundPair(content, u1, 1, "fast-underground-belt")

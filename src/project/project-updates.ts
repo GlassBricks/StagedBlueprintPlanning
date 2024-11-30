@@ -14,8 +14,10 @@ import { BpStagedInfo, fromBpStageDiffs } from "../copy-paste/blueprint-stage-in
 import { Entity } from "../entity/Entity"
 import {
   createProjectEntityNoCopy,
+  getNameAndQuality,
   InserterProjectEntity,
   LoaderProjectEntity,
+  NameAndQuality,
   ProjectEntity,
   RollingStockProjectEntity,
   StageDiffs,
@@ -323,8 +325,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const entitySource = entity.getWorldEntity(stage)
     if (!entitySource) return EntityUpdateResult.NoChange
 
-    const [overrideUpgradeTarget] = entitySource.get_upgrade_target()
-    return handleUpdate(entity, entitySource, stage, nil, overrideUpgradeTarget?.name, false, nil)
+    const [upgradeName, upgradeQuality] = entitySource.get_upgrade_target()
+    const targetUpgrade = upgradeName && getNameAndQuality(upgradeName.name, upgradeQuality?.name)
+    return handleUpdate(entity, entitySource, stage, nil, targetUpgrade, false, nil)
   }
 
   function handleUpdate(
@@ -332,7 +335,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     entitySource: LuaEntity,
     stage: StageNumber,
     targetDirection: defines.direction | nil,
-    targetUpgrade: string | nil,
+    targetUpgrade: NameAndQuality | nil,
     getBpValue: boolean,
     knownBpValue: BlueprintEntity | nil,
   ): EntityUpdateResult {
@@ -342,7 +345,10 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
         entitySource,
         stage,
         targetDirection,
-        targetUpgrade ?? knownBpValue?.name ?? entitySource.name,
+        targetUpgrade ??
+          (knownBpValue
+            ? getNameAndQuality(knownBpValue.name, knownBpValue.quality)
+            : getNameAndQuality(entitySource.name, entitySource.quality.name)),
       )
     }
 
@@ -374,7 +380,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (getBpValue && applyValueFromWorld(stage, entity, entitySource, knownBpValue)) {
       hasDiff = true
     } else if (targetUpgrade) {
-      checkUpgradeType(entity, targetUpgrade)
+      checkUpgradeType(entity, targetUpgrade.name)
       if (entity.applyUpgradeAtStage(stage, targetUpgrade)) {
         hasDiff = true
       }
@@ -436,12 +442,13 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     pair: UndergroundBeltProjectEntity | nil,
     stage: StageNumber,
     targetDirection: defines.direction | nil,
-    targetUpgrade: string,
+    targetUpgrade: NameAndQuality,
   ): EntityUpdateResult {
     const rotated = targetDirection && targetDirection != thisUg.direction
 
-    const oldName = thisUg.getNameAtStage(stage)
-    const upgraded = targetUpgrade != oldName
+    const oldUpgrade = thisUg.getUpgradeAtStage(stage)
+    // const upgraded = targetUpgrade != oldUpgrade
+    const upgraded = targetUpgrade.name != oldUpgrade.name || targetUpgrade.quality != oldUpgrade.quality
 
     if (!rotated && !upgraded) {
       if (!targetDirection) return EntityUpdateResult.NoChange
@@ -473,7 +480,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     let newPair: UndergroundBeltProjectEntity | nil = nil
     if (upgraded) {
       thisUg.applyUpgradeAtStage(applyStage, targetUpgrade)
-      newPair = findUndergroundPair(content, thisUg, stage, targetUpgrade)
+      newPair = findUndergroundPair(content, thisUg, stage, targetUpgrade.name)
       if (pair == nil) {
         if (newPair != nil) {
           const pairPair = findUndergroundPair(content, newPair, stage, nil, thisUg)
@@ -483,9 +490,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
         cannotUpgradeChangedPair = newPair != nil && newPair != pair
       }
       if (cannotUpgradeChangedPair) {
-        thisUg.applyUpgradeAtStage(stage, oldName)
+        thisUg.applyUpgradeAtStage(stage, oldUpgrade)
       } else if (pair) {
-        if (undergroundCanReach(thisUg, pair, targetUpgrade)) {
+        if (undergroundCanReach(thisUg, pair, targetUpgrade.name)) {
           pair.applyUpgradeAtStage(pairApplyStage, targetUpgrade)
         } else {
           pair = nil
@@ -508,7 +515,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     worldEntity: LuaEntity,
     stage: StageNumber,
     targetDirection: defines.direction | nil,
-    targetUpgrade: string,
+    targetUpgrade: NameAndQuality,
   ): EntityUpdateResult {
     const pair = findUndergroundPair(content, entity, stage)
     const updateResult = doUndergroundBeltUpdate(entity, worldEntity, pair, stage, targetDirection, targetUpgrade)

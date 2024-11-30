@@ -14,7 +14,7 @@ import { LuaEntity, LuaEntityPrototype } from "factorio:runtime"
 import { list_to_map, merge } from "util"
 import { Prototypes } from "../constants"
 import { Events, globalEvent, PRecord } from "../lib"
-import { BBox } from "../lib/geometry"
+import { BBox, Pos } from "../lib/geometry"
 
 export type CategoryName = string & {
   _categoryName: never
@@ -110,10 +110,12 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     return prototype.name.startsWith("ee-infinity")
   }
 
-  const pasteRotatableEntityTypes = newLuaSet("assembling-machine", "boiler", "generator")
   function getRotationType(prototype: LuaEntityPrototype): RotationType | nil {
     if (!prototype.supports_direction || prototype.has_flag("not-rotatable")) {
       return RotationType.AnyDirection
+    }
+    if (prototype.has_flag("placeable-off-grid")) {
+      return nil
     }
 
     const type = prototype.type
@@ -122,15 +124,17 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
       return RotationType.Flippable
     }
 
-    if (pasteRotatableEntityTypes.has(type)) {
-      const collisionBox = prototype.collision_box
-      if (BBox.isCenteredSquare(collisionBox)) {
-        return RotationType.AnyDirection
-      }
-      if (BBox.isCenteredRectangle(collisionBox)) {
-        return RotationType.Flippable
-      }
+    const collisionBox = prototype.collision_box
+    const tileShift = Pos(prototype.tile_width % 2 == 1 ? 0.5 : 0, prototype.tile_height % 2 == 1 ? 0.5 : 0)
+    const collisionBoxAroundCenter = BBox.translate(collisionBox, tileShift).roundTile().translateNegative(tileShift)
+
+    if (collisionBoxAroundCenter.isCenteredSquare()) {
+      return RotationType.AnyDirection
     }
+    if (collisionBoxAroundCenter.isCenteredRectangle()) {
+      return RotationType.Flippable
+    }
+    return nil
   }
 
   const nameToType = new LuaMap<string, EntityType>()
