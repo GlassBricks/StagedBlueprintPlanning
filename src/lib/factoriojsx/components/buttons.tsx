@@ -31,8 +31,8 @@ export function ExpandButton(props: Partial<ElemProps<"sprite-button">>): Elemen
     <sprite-button
       style="frame_action_button"
       sprite="utility/expand"
-      hovered_sprite="utility/expand_dark"
-      clicked_sprite="utility/expand_dark"
+      hovered_sprite="utility/expand"
+      clicked_sprite="utility/expand"
       mouse_button_filter={["left"]}
       {...props}
     />
