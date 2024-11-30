@@ -5,10 +5,11 @@
   "license": "LGPL-3.0",
   "packageManager": "npm@9.5.0",
   "devDependencies": {
+    "@eslint/compat": "^1.2.3",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.16.0",
     "@tsconfig/node18": "^18.2.4",
     "@types/node": "^22.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.16.0",
-    "@typescript-eslint/parser": "^8.16.0",
     "concurrently": "^9.1.0",
     "copyfiles": "^2.4.1",
     "del-cli": "^6.0.0",
@@ -23,6 +24,7 @@
     "factoriomod-debug": "^2.0.3",
     "gb-tstl-utils": "^1.0.2",
     "lua-types": "^2.13.1",
+    "typescript-eslint": "^8.16.0",
     "nodemon": "^3.1.7",
     "prettier": "^3.4.1",
     "semver": "^7.6.3",
@@ -49,7 +51,7 @@
     "watch:release": "tstl --watch -p tsconfig-release.json",
     "format:fix": "prettier --write \"src/**/*.ts\" \"src/**/*.tsx\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.tsx\"",
-    "lint": "eslint --ext .ts,.tsx src",
+    "lint": "eslint",
     "pretest": "npm run clean && npm run build:test",
     "test": "factorio-test run ./src -- --graphics-quality very-low --cache-sprite-atlas true --disable-audio",
     "check-clean-tree": "git diff --exit-code HEAD --",
@@ -67,4 +69,5 @@
       "ts": "tsx"
     }
   }
+
 }

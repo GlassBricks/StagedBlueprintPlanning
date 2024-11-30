@@ -187,6 +187,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     start: StageNumber,
     end: StageNumber,
   ): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil, changed: boolean]>>
+  // eslint-disable-next-line no-dupe-class-members
   iterateValues(start: StageNumber, end: StageNumber): any {
     const stageDiffs = this.stageDiffs
     if (!stageDiffs) return this.iterateValuesNoDiffs(start, end)

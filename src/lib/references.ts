@@ -69,7 +69,7 @@ function flattenPrototypes(_class: Class<any>) {
 
 // -- functions --
 
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export type AnyFunction = Function
 export type ContextualFun = (this: any, ...args: any) => any
 export type SelflessFun = (this: void, ...args: any) => any

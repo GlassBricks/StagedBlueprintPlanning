@@ -23,6 +23,7 @@ const _ceil = math.ceil
 
 export type Position = MapPosition
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface PositionClass extends WithMetatable<Position, typeof Pos> {}
 
 function Pos(x: number, y: number): PositionClass {
