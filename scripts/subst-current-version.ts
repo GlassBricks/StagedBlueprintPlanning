@@ -16,7 +16,7 @@
 // git add all changed files
 import * as child_process from "child_process"
 import * as fsp from "fs/promises"
-import * as globby from "globby"
+import { globbyStream } from "globby"
 import * as path from "path"
 import { fileURLToPath } from "url"
 
@@ -29,7 +29,7 @@ const infoJson = fsp.readFile(infoJsonPath, "utf-8").then((content) => {
   return `"${JSON.parse(content).version}"`
 })
 
-const files = globby.stream(["**/*.{ts,tsx}", "!control.ts"], {
+const files = globbyStream(["**/*.{ts,tsx}", "!control.ts"], {
   cwd: srcDir,
   absolute: true,
   ignore: ["**/node_modules/**"],
