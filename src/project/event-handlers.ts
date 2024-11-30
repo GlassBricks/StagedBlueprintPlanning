@@ -31,7 +31,7 @@ import {
   UnitNumber,
 } from "factorio:runtime"
 import { oppositedirection } from "util"
-import { CustomInputs, Prototypes, Settings } from "../constants"
+import { CustomInputs, Prototypes } from "../constants"
 import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { createBlueprintWithStageInfo } from "../copy-paste/create-blueprint-with-stage-info"
 import { BobInserterChangedPositionEvent } from "../declarations/mods"
@@ -262,7 +262,6 @@ let state: {
     needsManualConnections: number[]
     originalNumEntities: number
     allowPasteUpgrades: boolean
-    usedPasteUpgrade?: boolean
     isFlipped: boolean
     flipVertical: boolean
     flipHorizontal: boolean
@@ -410,6 +409,7 @@ function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent) {
 }
 
 Events.on_player_mined_entity((e) => {
+  if (state.currentBlueprintPaste != nil) return
   const { entity } = e
 
   const preMinedItemCalled = state.preMinedItemCalled
@@ -603,7 +603,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
       knownLuaEntities: {},
       needsManualConnections: [],
       originalNumEntities: numEntities,
-      allowPasteUpgrades: player.mod_settings[Settings.UpgradeOnPaste].value as boolean,
+      allowPasteUpgrades: event.build_mode == defines.build_mode.superforced,
       isFlipped: event.flip_vertical != event.flip_horizontal,
       flipVertical: event.flip_vertical ?? false,
       flipHorizontal: event.flip_horizontal ?? false,
@@ -686,6 +686,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
   if (!referencedName) return
 
   const bpState = state.currentBlueprintPaste!
+  const allowPasteUpgrades = bpState.allowPasteUpgrades
 
   const { position, surface } = entity
   let luaEntities = entity.surface.find_entities_filtered({
@@ -693,9 +694,8 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     radius: 0,
     name: referencedName,
   })
-  let usedPasteUpgrade = false
   if (!next(luaEntities)[0]) {
-    if (!bpState.allowPasteUpgrades) return
+    if (!allowPasteUpgrades) return
     const compatible = getCompatibleNames(referencedName)
     if (!compatible) return
     luaEntities = surface.find_entities_filtered({
@@ -704,7 +704,6 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       name: compatible,
     })
     if (!next(luaEntities)[0]) return
-    usedPasteUpgrade = true
   }
 
   const entityId = tags.referencedLuaIndex
@@ -781,10 +780,6 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     if (!luaEntity) return
   }
 
-  if (usedPasteUpgrade) {
-    bpState.usedPasteUpgrade = true
-  }
-
   const stage = bpState.stage
   const projectEntity = stage.actions.onEntityPossiblyUpdated(
     luaEntity,
@@ -803,7 +798,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
         if (!luaEntity) return
 
         bpState.needsManualConnections.push(entityId)
-      } else if (luaEntity.type == "transport-belt") {
+      } else if (luaEntity.type == "transport-belt" || allowPasteUpgrades) {
         // factorio bug? transport belts don't save circuit connections immediately when pasted
         bpState.needsManualConnections.push(entityId)
       } else {
@@ -815,7 +810,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 }
 
 function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
-  const { entities, knownLuaEntities, needsManualConnections, usedPasteUpgrade, stage } = state.currentBlueprintPaste!
+  const { entities, knownLuaEntities, needsManualConnections, stage } = state.currentBlueprintPaste!
 
   for (const entityId of needsManualConnections) {
     const value = entities[entityId - 1]
@@ -826,10 +821,6 @@ function onLastEntityMarkerBuilt(e: OnBuiltEntityEvent): void {
   }
 
   const player = game.get_player(e.player_index)!
-
-  if (usedPasteUpgrade) {
-    player.print([L_Interaction.PasteUpgradeApplied])
-  }
 
   const blueprint = getInnerBlueprint(player.cursor_stack)
   revertPreparedBlueprint(assert(blueprint))

@@ -13,7 +13,6 @@ import { Color } from "factorio:prototype"
 
 export const enum Settings {
   EntityInfoLocation = "bp100_entity-info-location",
-  UpgradeOnPaste = "bp100_upgrade-on-paste",
   GpsTagTeleport = "bp100_gps-tag-teleport",
   UnhideInfinityItems = "bp100_unhide-infinity-items",
 }

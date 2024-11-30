@@ -32,13 +32,6 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     order: "a",
   },
   {
-    name: Settings.UpgradeOnPaste,
-    type: "bool-setting",
-    setting_type: "runtime-per-user",
-    default_value: false,
-    order: "b",
-  },
-  {
     name: Settings.GpsTagTeleport,
     type: "bool-setting",
     setting_type: "runtime-per-user",

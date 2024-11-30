@@ -20,7 +20,7 @@ import {
 } from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
-import { Prototypes, Settings } from "../../constants"
+import { Prototypes } from "../../constants"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   ProjectEntity,
@@ -1101,7 +1101,6 @@ describe("underground belt inconsistencies", () => {
   describe("upgrading underground via blueprint paste", () => {
     let underground: UndergroundBeltProjectEntity
     before_each(() => {
-      player.mod_settings[Settings.UpgradeOnPaste] = { value: true }
       underground = buildEntity(1, {
         name: "underground-belt",
         type: "input",
@@ -1127,11 +1126,8 @@ describe("underground belt inconsistencies", () => {
       stack.blueprint_absolute_snapping = true
       player.teleport(pos, surfaces[0])
     })
-    after_each(() => {
-      player.mod_settings[Settings.UpgradeOnPaste] = { value: false }
-    })
     test("can upgrade underground belt via paste", () => {
-      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
+      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
       expect(underground).toMatchTable({
         firstValue: { name: "fast-underground-belt", type: "input" },
         direction: defines.direction.east,
@@ -1144,17 +1140,17 @@ describe("underground belt inconsistencies", () => {
     })
     test("can upgrade underground in flipped direction", () => {
       underground.getWorldEntity(1)!.rotate({ by_player: player })
-      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
+      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
       expect(underground).toMatchTable({
-        firstValue: { name: "fast-underground-belt", type: "output" },
-        direction: defines.direction.west,
+        firstValue: { name: "fast-underground-belt", type: "input" },
+        direction: defines.direction.east,
       })
     })
     test("does not upgrade underground belt in wrong direction", () => {
       underground.setTypeProperty("output")
       project.worldUpdates.refreshAllWorldEntities(underground)
-      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
+      player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
       expect(underground).toMatchTable({
         firstValue: { name: "underground-belt", type: "output" },
@@ -1351,8 +1347,7 @@ describe("blueprinting", () => {
     })
   })
 
-  test.each([true, false])("can maybe upgrade entity via blueprint, with setting %s", (enabled) => {
-    player.mod_settings[Settings.UpgradeOnPaste] = { value: enabled }
+  test.each([true, false])("can maybe upgrade entity via blueprint, with super force build %s", (superForce) => {
     const bpEntity: BlueprintEntity = {
       entity_number: 1,
       name: "fast-inserter",
@@ -1375,25 +1370,22 @@ describe("blueprinting", () => {
     ])
 
     player.teleport([0, 0], surfaces[0])
-    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
+    player.build_from_cursor({
+      position: pos,
+      build_mode: superForce ? defines.build_mode.superforced : defines.build_mode.forced,
+    })
 
-    const expected = enabled ? "fast-inserter" : "inserter"
+    const expected = superForce ? "fast-inserter" : "inserter"
     expect(entity.firstValue).toMatchTable({ name: expected })
     expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
   })
 
   test("can upgrade entity with wires via blueprint", () => {
-    player.mod_settings[Settings.UpgradeOnPaste] = { value: true }
     const entity1: BlueprintEntity = {
       entity_number: 1,
       name: "fast-inserter",
       position: Pos(0.5, 0.5),
       direction: direction.west,
-      // connections: {
-      //   1: {
-      //     red: [{ entity_id: 2, circuit_id: 1 }],
-      //   },
-      // },
       wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
     }
     const entity2: BlueprintEntity = {
@@ -1401,11 +1393,6 @@ describe("blueprinting", () => {
       name: "transport-belt",
       position: Pos(0, 2),
       direction: direction.south,
-      // connections: {
-      //   1: {
-      //     red: [{ entity_id: 1, circuit_id: 1 }],
-      //   },
-      // },
       wires: [[2, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red]],
     }
     const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
@@ -1416,7 +1403,7 @@ describe("blueprinting", () => {
     stack.set_blueprint_entities([entity1, entity2])
 
     player.teleport([0, 0], surfaces[0])
-    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
+    player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
     const expected = "fast-inserter"
     expect(entity.firstValue).toMatchTable({ name: expected })

@@ -42,8 +42,6 @@ export declare const enum L_ModSettingName {
   Bp100FlexibleOffshorePumpPlacement = "mod-setting-name.bp100_flexible-offshore-pump-placement",
   /** Location of Entity info gui */
   Bp100EntityInfoLocation = "mod-setting-name.bp100_entity-info-location",
-  /** Allow blueprint paste to upgrade entities */
-  Bp100UpgradeOnPaste = "mod-setting-name.bp100_upgrade-on-paste",
   /** Teleport to stage when clicking a GPS tag */
   Bp100GpsTagTeleport = "mod-setting-name.bp100_gps-tag-teleport",
   /** Unhide infinity items (allows use in upgrade planner) */
@@ -52,8 +50,6 @@ export declare const enum L_ModSettingName {
 export declare const enum L_ModSettingDescription {
   /** Allow placing offshore pumps anywhere, without need for a water source. */
   Bp100FlexibleOffshorePumpPlacement = "mod-setting-description.bp100_flexible-offshore-pump-placement",
-  /** For example, if pasting a blueprint with a fast-inserter over a normal inserter, this will upgrade the inserter. This is different from vanilla behavior.\nThis setting only applies while within a staged project. */
-  Bp100UpgradeOnPaste = "mod-setting-description.bp100_upgrade-on-paste",
   /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
   Bp100UnhideInfinityItems = "mod-setting-description.bp100_unhide-infinity-items",
 }
@@ -158,8 +154,6 @@ export declare const enum L_Interaction {
   ConnectedEntitiesMissing = "bp100.interaction.connected-entities-missing",
   /** Cannot overlap existing entity in a different direction */
   CannotBuildDifferentDirection = "bp100.interaction.cannot-build-different-direction",
-  /** Note: some entities were upgraded (the upgrade on blueprint paste user setting is enabled) */
-  PasteUpgradeApplied = "bp100.interaction.paste-upgrade-applied",
   /** Not in a Staged BP project */
   NotInAnProject = "bp100.interaction.not-in-an-project",
   /** No next stage */
