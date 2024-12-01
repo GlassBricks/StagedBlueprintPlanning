@@ -77,7 +77,6 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
       area: BBox.around(position, radius),
       include_station_names: true,
       include_trains: true,
-      include_fuel: true,
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {
