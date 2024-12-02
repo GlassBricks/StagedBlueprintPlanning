@@ -38,7 +38,7 @@ export declare const enum L_ItemGroupName {
   Bp100Utility = "item-group-name.bp100_utility",
 }
 export declare const enum L_ModSettingName {
-  /** Place offshore pumps anywhere */
+  /** Allow placing offshore pumps anywhere */
   Bp100FlexibleOffshorePumpPlacement = "mod-setting-name.bp100_flexible-offshore-pump-placement",
   /** Location of Entity info gui */
   Bp100EntityInfoLocation = "mod-setting-name.bp100_entity-info-location",
@@ -48,7 +48,7 @@ export declare const enum L_ModSettingName {
   Bp100UnhideInfinityItems = "mod-setting-name.bp100_unhide-infinity-items",
 }
 export declare const enum L_ModSettingDescription {
-  /** Allow placing offshore pumps anywhere, without need for a water source. */
+  /** Pumps still need to be place on top of a fluid tile, to determine what fluid they pump. */
   Bp100FlexibleOffshorePumpPlacement = "mod-setting-description.bp100_flexible-offshore-pump-placement",
   /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
   Bp100UnhideInfinityItems = "mod-setting-description.bp100_unhide-infinity-items",
