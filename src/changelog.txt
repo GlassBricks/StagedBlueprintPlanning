@@ -3,7 +3,7 @@ Version: 2.1.0
 Date: ????
   Features:
     - Actually support new prototypes/entities added in 2.0.
-    - Added "flexible offshore pump placement" option. Note you still need to place an offshore pump on a liquid tile to
+    - Added "Place offshore pumps anywhere" option. Note you still need to place an offshore pump on a liquid tile to
       pump, as that determines which fluid to pump.
   Bugfixes:
     - Fixed that some entity types (like fluid pumps) didn't show the entity info gui.
