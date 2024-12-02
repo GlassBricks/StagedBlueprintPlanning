@@ -1619,26 +1619,25 @@ test("rebuildStage", () => {
   }
 })
 
-if ("EditorExtensions" in script.active_mods) {
-  test("Can update an infinity accumulator", () => {
-    const entity = buildEntity(1, { name: "ee-infinity-accumulator-primary-input", position: pos })
-    expect(entity.getWorldOrPreviewEntity(2)?.name).toEqual("ee-infinity-accumulator-primary-input")
+test("Can update an infinity accumulator", () => {
+  assert("EditorExtensions" in script.active_mods)
+  const entity = buildEntity(1, { name: "ee-infinity-accumulator-primary-input", position: pos })
+  expect(entity.getWorldOrPreviewEntity(2)?.name).toEqual("ee-infinity-accumulator-primary-input")
 
-    const oldLuaEntity = entity.getWorldEntity(1)!
-    const newLuaEntity = createEntity(1, {
-      name: "ee-infinity-accumulator-primary-output",
-      position: pos,
-    })
-    oldLuaEntity.destroy()
-    checkForEntityUpdates(newLuaEntity, nil)
-
-    expect(entity).toMatchTable({
-      firstValue: { name: "ee-infinity-accumulator-primary-output" },
-    })
-    expect(entity.getWorldOrPreviewEntity(1)?.name).toEqual("ee-infinity-accumulator-primary-output")
-    expect(entity.getWorldOrPreviewEntity(2)?.name).toEqual("ee-infinity-accumulator-primary-output")
+  const oldLuaEntity = entity.getWorldEntity(1)!
+  const newLuaEntity = createEntity(1, {
+    name: "ee-infinity-accumulator-primary-output",
+    position: pos,
   })
-}
+  oldLuaEntity.destroy()
+  checkForEntityUpdates(newLuaEntity, nil)
+
+  expect(entity).toMatchTable({
+    firstValue: { name: "ee-infinity-accumulator-primary-output" },
+  })
+  expect(entity.getWorldOrPreviewEntity(1)?.name).toEqual("ee-infinity-accumulator-primary-output")
+  expect(entity.getWorldOrPreviewEntity(2)?.name).toEqual("ee-infinity-accumulator-primary-output")
+})
 
 describe("map gen settings", () => {
   after_each(() => {
