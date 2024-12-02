@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.0
-Date: ????
+Date: 2024-12-02
   Features:
     - Actually support new prototypes/entities added in 2.0.
     - Added "Place offshore pumps anywhere" option. Note you still need to place an offshore pump on a liquid tile to
