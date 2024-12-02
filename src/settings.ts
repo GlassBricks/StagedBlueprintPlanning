@@ -17,13 +17,6 @@ declare const data: SettingsData
 
 data.extend<StringSettingDefinition | BoolSettingDefinition>([
   {
-    name: Settings.UnhideInfinityItems,
-    type: "bool-setting",
-    setting_type: "startup",
-    default_value: true,
-    order: "d",
-  },
-  {
     name: Settings.EntityInfoLocation,
     type: "string-setting",
     setting_type: "runtime-per-user",
@@ -37,5 +30,19 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     setting_type: "runtime-per-user",
     default_value: true,
     order: "c",
+  },
+  {
+    name: Settings.UnhideInfinityItems,
+    type: "bool-setting",
+    setting_type: "startup",
+    default_value: true,
+    order: "a",
+  },
+  {
+    name: Settings.FlexibleOffshorePumpPlacement,
+    type: "bool-setting",
+    setting_type: "startup",
+    default_value: false,
+    order: "b",
   },
 ])

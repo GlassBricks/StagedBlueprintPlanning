@@ -15,6 +15,8 @@ export const enum Settings {
   EntityInfoLocation = "bp100_entity-info-location",
   GpsTagTeleport = "bp100_gps-tag-teleport",
   UnhideInfinityItems = "bp100_unhide-infinity-items",
+
+  FlexibleOffshorePumpPlacement = "bp100_flexible-offshore-pump-placement",
 }
 
 // noinspection JSUnusedGlobalSymbols
