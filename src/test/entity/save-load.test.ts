@@ -697,7 +697,6 @@ test("can save an entity with modules", () => {
 
   entity.destroy()
 
-  // _breakpoint()
   const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, saved as Entity)!
   expect(newEntity).toBeAny()
   expect(newEntity.get_inventory(defines.inventory.lab_modules)!.get_contents()).toEqual([
