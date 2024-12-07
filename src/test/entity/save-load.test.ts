@@ -669,6 +669,46 @@ test("can handle item changes", () => {
   expect(entity.get_module_inventory()!.get_contents()).toEqual(newContents)
 })
 
+test.only("can save an entity with modules", () => {
+  const entity = surface.create_entity({
+    name: "lab",
+    position: { x: 0.5, y: 0.5 },
+    force: "player",
+  })!
+  assert(entity)
+  entity.get_inventory(defines.inventory.lab_modules)!.insert({ name: "speed-module", count: 2 })
+
+  const saved = saveEntity(entity)
+  expect(saved?.items?.[0]?.items).toEqual({
+    in_inventory: [
+      { inventory: defines.inventory.lab_modules, stack: 0 },
+      { inventory: defines.inventory.lab_modules, stack: 1 },
+    ],
+  })
+  expect(saved).toEqual({
+    name: "lab",
+    items: [
+      {
+        id: { name: "speed-module" },
+        items: expect.anything(),
+      },
+    ],
+  })
+
+  entity.destroy()
+
+  // _breakpoint()
+  const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, saved as Entity)!
+  expect(newEntity).toBeAny()
+  expect(newEntity.get_inventory(defines.inventory.lab_modules)!.get_contents()).toEqual([
+    {
+      name: "speed-module",
+      count: 2,
+      quality: "normal",
+    },
+  ])
+})
+
 test("can set train schedule", () => {
   const [locomotive] = createRollingStocks(surface, "locomotive", "cargo-wagon")
   const schedule: ScheduleRecord[] = [
