@@ -2,6 +2,7 @@
 Version: 2.1.2
 Date: ????
   Changes:
+    - Improved rendering of entity info GUI in trains.
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.1
 Date: 2024-12-07
