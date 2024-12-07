@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed soft crash when creating entities with modules
+    - which was due to the most absurd compiler bug you've never heard of: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1605
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.0
 Date: 2024-12-02
