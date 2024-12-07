@@ -631,7 +631,7 @@ test("can handle item changes", () => {
   ]
 
   const newContentsAsInsertPlan: BlueprintInsertPlanWrite[] = []
-  let index = 1
+  let index = 0
   for (const item of newContents) {
     for (let i = 0; i < item.count; i++) {
       newContentsAsInsertPlan.push({
@@ -669,7 +669,7 @@ test("can handle item changes", () => {
   expect(entity.get_module_inventory()!.get_contents()).toEqual(newContents)
 })
 
-test.only("can save an entity with modules", () => {
+test("can save an entity with modules", () => {
   const entity = surface.create_entity({
     name: "lab",
     position: { x: 0.5, y: 0.5 },
