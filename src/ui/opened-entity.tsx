@@ -12,6 +12,7 @@
 import {
   BlueprintEntity,
   GuiAnchor,
+  GuiLocationArray,
   LocalisedString,
   LuaEntity,
   LuaPlayer,
@@ -64,7 +65,8 @@ const StageButtonHeight = 28
 interface EntityStageInfoProps {
   projectEntity: ProjectEntity
   stage: Stage
-  anchor: GuiAnchor
+  anchor?: GuiAnchor
+  location?: GuiLocationArray
 }
 function SmallToolButton(props: ElemProps<"sprite-button">) {
   return <sprite-button style="mini_button" styleMod={{ size: [20, 20] }} {...props} />
@@ -113,7 +115,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     }
 
     return (
-      <frame anchor={props.anchor} direction="vertical">
+      <frame anchor={props.anchor} location={props.location} direction="vertical">
         <TitleBar>
           <label style="frame_title" caption={[L_GuiEntityInfo.Title]} />
           <DraggableSpace />
@@ -291,7 +293,18 @@ const EntityProjectInfoName = script.mod_name + ":EntityProjectInfo"
 const EntityProjectInfoName2 = script.mod_name + ":EntityProjectInfo2"
 function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, projectEntity: ProjectEntity, stage: Stage) {
   const guiType = entityTypeToGuiType[entity.type as BuildableEntityType]
-  if (!guiType) return
+  if (guiType == "screen") {
+    destroy(player.gui.relative[EntityProjectInfoName])
+    destroy(player.gui.relative[EntityProjectInfoName2])
+    renderNamed(
+      <EntityProjectInfo projectEntity={projectEntity} stage={stage} location={[900, 80]} />,
+      player.gui.screen,
+      EntityProjectInfoName,
+    )
+    return
+  }
+  destroy(player.gui.screen[EntityProjectInfoName])
+
   let mainGuiType: relative_gui_type
   if (Array.isArray(guiType)) {
     mainGuiType = guiType[0]
@@ -318,6 +331,7 @@ function destroyEntityStageInfo(player: LuaPlayer) {
   const relative = player.gui.relative
   destroy(relative[EntityProjectInfoName])
   destroy(relative[EntityProjectInfoName2])
+  destroy(player.gui.screen[EntityProjectInfoName])
 }
 
 function tryRenderExtraStageInfo(player: LuaPlayer, entity: LuaEntity): boolean {
@@ -398,7 +412,7 @@ Migrations.fromAny(() => {
 
 const entityTypeToGuiType: Record<
   BuildableEntityType | "rail-remnants",
-  relative_gui_type | [relative_gui_type, relative_gui_type] | nil
+  relative_gui_type | [relative_gui_type, relative_gui_type] | "screen"
 > = {
   "asteroid-collector": relative_gui_type.asteroid_collector_gui,
   accumulator: relative_gui_type.accumulator_gui,
@@ -479,7 +493,7 @@ const entityTypeToGuiType: Record<
   lab: relative_gui_type.lab_gui,
   lamp: relative_gui_type.lamp_gui,
   loader: relative_gui_type.loader_gui,
-  locomotive: relative_gui_type.train_gui,
+  locomotive: "screen",
   pump: relative_gui_type.pump_gui,
   reactor: relative_gui_type.reactor_gui,
   roboport: relative_gui_type.roboport_gui,
