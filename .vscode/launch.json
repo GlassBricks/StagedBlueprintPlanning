@@ -12,7 +12,9 @@
         "bp100": true,
         "factorio-test": true,
         "flib": true,
-        "EditorExtensions": true
+        "EditorExtensions": true,
+        "quality": true,
+        "elevated-rails": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -32,13 +34,15 @@
           "scope": "startup",
           "name": "factorio-test-auto-start",
           "value": true
-        }, {
+        },
+        {
           "scope": "runtime-global",
           "name": "factorio-test-mod-to-test",
           "value": "bp100"
         }
       ]
-    }, {
+    },
+    {
       "type": "factoriomod",
       "request": "launch",
       "name": "Profile",
@@ -46,7 +50,9 @@
         "bp100": true,
         "factorio-test": true,
         "flib": true,
-        "EditorExtensions": true
+        "EditorExtensions": true,
+        "quality": true,
+        "elevated-rails": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -65,7 +71,8 @@
           "scope": "startup",
           "name": "factorio-test-auto-start",
           "value": true
-        }, {
+        },
+        {
           "scope": "runtime-global",
           "name": "factorio-test-mod-to-test",
           "value": "bp100"
@@ -73,7 +80,8 @@
       ],
       "hookControl": true,
       "hookMode": "profile"
-    }, {
+    },
+    {
       "type": "factoriomod",
       "request": "launch",
       "name": "Test debug",
@@ -81,7 +89,9 @@
         "bp100": true,
         "factorio-test": true,
         "flib": true,
-        "EditorExtensions": true
+        "EditorExtensions": true,
+        "quality": true,
+        "elevated-rails": true
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -95,9 +105,9 @@
         "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
       "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
-      "checkGlobals": false,
       "hookControl": true
-    }, {
+    },
+    {
       "type": "factoriomod",
       "request": "launch",
       "name": "debug data",
@@ -105,7 +115,7 @@
         "bp100": true,
         "factorio-test": true,
         "flib": true,
-        "EditorExtensions": true
+        "EditorExtensions": true,
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -119,17 +129,19 @@
         "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
       "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
-      "checkGlobals": false,
       "hookData": true,
       "hookControl": false
-    }, {
+    },
+    {
       "type": "factoriomod",
       "request": "launch",
       "name": "debug only",
       "factorioArgs": [
-        "--cache-sprite-atlas", "true", "--graphics-quality", "low"
+        "--cache-sprite-atlas",
+        "true",
+        "--graphics-quality",
+        "low"
       ],
-      "checkGlobals": false,
       "hookControl": true
     }
   ]

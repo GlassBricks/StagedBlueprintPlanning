@@ -83,6 +83,18 @@ function crossProduct<A, B>(a: A[], b: B[]): [A, B][] {
   return result
 }
 
+test("saving an entity with higher quality", () => {
+  const entity = surface.create_entity({
+    name: "inserter",
+    quality: "legendary",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.east,
+  })
+  const saved = saveEntity(entity!)
+  expect(saved).toEqual({ name: "inserter", quality: "legendary" })
+})
+
 const directions8 = (Object.values(defines.direction) as defines.direction[]).filter((a) => a % 2 == 0)
 const rails = ["straight-rail", "curved-rail-a", "curved-rail-b", "half-diagonal-rail"]
 test.each(crossProduct(rails, directions8))("can save %s in direction %s", (name, direction) => {
@@ -135,6 +147,18 @@ test("can create an entity", () => {
     entity: luaEntity,
     mod_name: script.mod_name,
   } satisfies Partial<ScriptRaisedBuiltEvent>)
+})
+
+test("can create an entity with different quality", () => {
+  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
+    name: "iron-chest",
+    quality: "legendary",
+  })!
+  expect(luaEntity).toBeAny()
+  expect(luaEntity.name).toBe("iron-chest")
+  expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
+
+  expect(luaEntity.quality.name).toBe("legendary")
 })
 
 test("can set recipe of assembling machine even if not researched", () => {
@@ -242,6 +266,19 @@ test("can upgrade an entity", () => {
   const newEntity = updateEntity(entity, { name: "steel-chest" } as Entity, defines.direction.north)[0]!
   expect(newEntity.name).toBe("steel-chest")
   expect(entity.valid).toBe(false)
+})
+
+test("can upgrade an entity to a different quality", () => {
+  const entity = surface.create_entity({
+    name: "iron-chest",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+  })!
+  const newEntity = updateEntity(entity, { name: "iron-chest", quality: "legendary" }, defines.direction.north)[0]!
+  expect(newEntity).toMatchTable({
+    name: "iron-chest",
+    quality: { name: "legendary" },
+  })
 })
 
 test("can rotate entity", () => {

@@ -26,7 +26,7 @@ import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
 import { Entity } from "./Entity"
-import { ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
+import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
   getPrototypeRotationType,
   OnPrototypeInfoLoaded,
@@ -173,6 +173,7 @@ function tryCreateUnconfiguredEntity(
     tryCreateEntityParams.direction = direction
     tryCreateEntityParams.orientation = orientation
     tryCreateEntityParams.type = entity.type
+    tryCreateEntityParams.quality = entity.quality
   }
   tryCreateEntityParams.build_check_type = nil
 
@@ -248,10 +249,11 @@ const upgradeEntityParams: Mutable<RollingStockSurfaceCreateEntity & Underground
   type: nil,
 }
 let upgradeEntityVersion = 0
-function upgradeEntity(oldEntity: LuaEntity, name: string): LuaEntity {
+function upgradeEntity(oldEntity: LuaEntity, value: NameAndQuality): LuaEntity {
   if (upgradeEntityVersion != entityVersion) {
     upgradeEntityVersion = entityVersion
-    upgradeEntityParams.name = name
+    upgradeEntityParams.name = value.name
+    upgradeEntityParams.quality = value.quality
     upgradeEntityParams.position = oldEntity.position
     upgradeEntityParams.direction = oldEntity.direction
     upgradeEntityParams.type = oldEntity.type == "underground-belt" ? oldEntity.belt_to_ground_type : nil
@@ -403,8 +405,8 @@ export function updateEntity(
 
   if (changed) entityVersion++
 
-  if (luaEntity.name != value.name) {
-    luaEntity = upgradeEntity(luaEntity, value.name)
+  if (luaEntity.name != value.name || luaEntity.quality.name != (value.quality ?? "normal")) {
+    luaEntity = upgradeEntity(luaEntity, value)
   }
 
   const type = luaEntity.type
