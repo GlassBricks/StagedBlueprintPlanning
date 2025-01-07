@@ -16,7 +16,7 @@ import {
   ProjectEntity,
   RollingStockProjectEntity,
   StageNumber,
-  UndergroundBeltProjectEntity
+  UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
 import { ProjectTile } from "../entity/ProjectTile"
 import { isPreviewEntity, OnPrototypeInfoLoaded, PrototypeInfo, rollingStockTypes } from "../entity/prototype-info"
@@ -28,7 +28,6 @@ import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 import { EntityType } from "factorio:prototype"
-
 
 /** @noSelf */
 export interface WorldUpdates {
@@ -90,7 +89,6 @@ let nameToType: PrototypeInfo["nameToType"]
 OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
-
 
 export function WorldUpdates(project: Project, highlights: EntityHighlights): WorldUpdates {
   const content = project.content
@@ -387,10 +385,15 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     // rebuild order: everything, elevated rails, rolling stock
     const elevatedRails: ProjectEntity[] = []
     const rollingStock: RollingStockProjectEntity[] = []
-    const elevatedRailTypes = newLuaSet<EntityType>("elevated-straight-rail", "elevated-half-diagonal-rail", "elevated-curved-rail-a", "elevated-curved-rail-b")
+    const elevatedRailTypes = newLuaSet<EntityType>(
+      "elevated-straight-rail",
+      "elevated-half-diagonal-rail",
+      "elevated-curved-rail-a",
+      "elevated-curved-rail-b",
+    )
     for (const entity of content.allEntities()) {
       const type = nameToType.get(entity.firstValue.name) ?? ""
-      if(type in elevatedRailTypes) {
+      if (type in elevatedRailTypes) {
         elevatedRails.push(entity as RollingStockProjectEntity)
       } else if (type in rollingStockTypes) {
         rollingStock.push(entity as RollingStockProjectEntity)
