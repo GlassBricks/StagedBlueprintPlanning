@@ -426,6 +426,7 @@ const entityTypeToGuiType: Record<
   "curved-rail-b": relative_gui_type.additional_entity_info_gui,
   "elevated-curved-rail-a": relative_gui_type.additional_entity_info_gui,
   "elevated-curved-rail-b": relative_gui_type.additional_entity_info_gui,
+  "elevated-straight-rail": relative_gui_type.additional_entity_info_gui,
   "elevated-half-diagonal-rail": relative_gui_type.additional_entity_info_gui,
   "half-diagonal-rail": relative_gui_type.additional_entity_info_gui,
   "display-panel": relative_gui_type.display_panel_gui,
