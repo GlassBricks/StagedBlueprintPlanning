@@ -51,6 +51,7 @@ import {
   assertNoHighlightsAfterLastStage,
 } from "./entity-highlight-test-util"
 import direction = defines.direction
+import { debugPrint } from "../../lib/test/misc"
 
 let project: UserProject
 let surfaces: LuaSurface[]
@@ -1769,4 +1770,25 @@ test("rebuilding stage does not delete train", () => {
   expect(project.content.hasEntity(train)).toBe(true)
   const newTrain = surfaces[0].find_entities_filtered({ name: "locomotive" })[0]
   expect(newTrain).not.toBeNil()
+})
+
+test("rebuilding stage places wagon and elevated rails correctly", () => {
+  const bp = "0eNqVk+FugyAUhd+F39oIilZfZVkM6p0jQzCAdk3ju++iXdt0Ltl+kQsn3zlcLhfSqAlGK7Un1YU4LcbYm7i3sgv1J6loFpEzqbIlIqJxRk0e4iAbpe5J5e0EERmNk14aHVtQwssZnhjHFcEQIVujHale0Er2Wqgg0GIAUhErpCJBojsIvkv0iyh20zga6x/EbHmNCGiPKWDDr8W51tPQgEVa9E1ohe1NfBK90eSe/Bq0ONCSp5TxNTA90IIXRyyXQBeNglqZXjovW1ef3iXWg5nXRrwJ5bATxkp0FhsyObAsSZIckVlRHHmZlUVSJBtf6hmVxqKPnpQKt33KzG6ZQcEsPHRxO9kZl7UL4mf8fIuNaTtpod1OKNthp/9m02QPnu+ws2j3tX4Q09tUPADTHSD/I5DuEnmYDedN+1Hj8Olt+zqDYTfcCRXSw4AO9+8QkRms2xA5w7crOWc8Txldli/P6xAi"
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.import_stack(bp)
+
+  const wagon = surfaces[0].find_entities_filtered({ name: "cargo-wagon" })[0]
+  expect(wagon).toBeNil()
+
+  player.teleport([0, 0], surfaces[0])
+  player.build_from_cursor({ position: pos, direction: 0, build_mode: defines.build_mode.forced })
+
+  project.worldUpdates.rebuildAllStages()
+
+  const rail = surfaces[0].find_entities_filtered({ name: "elevated-curved-rail-a" })[0]
+  expect(rail).not.toBeNil()
+
+  const wagon2 = surfaces[0].find_entities_filtered({ name: "cargo-wagon" })[0]
+  expect(wagon2).not.toBeNil()
 })

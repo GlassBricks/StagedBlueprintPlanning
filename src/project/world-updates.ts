@@ -16,10 +16,10 @@ import {
   ProjectEntity,
   RollingStockProjectEntity,
   StageNumber,
-  UndergroundBeltProjectEntity,
+  UndergroundBeltProjectEntity
 } from "../entity/ProjectEntity"
 import { ProjectTile } from "../entity/ProjectTile"
-import { isPreviewEntity } from "../entity/prototype-info"
+import { isPreviewEntity, OnPrototypeInfoLoaded, PrototypeInfo, rollingStockTypes } from "../entity/prototype-info"
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
 import { Mutable, PRecord, RegisterClass } from "../lib"
@@ -27,6 +27,8 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
+import { EntityType } from "factorio:prototype"
+
 
 /** @noSelf */
 export interface WorldUpdates {
@@ -82,6 +84,13 @@ class RebuildAllStagesTask extends LoopTask {
 }
 
 const raise_script_set_tiles = script.raise_script_set_tiles
+const raise_destroy = script.raise_script_destroy
+
+let nameToType: PrototypeInfo["nameToType"]
+OnPrototypeInfoLoaded.addListener((info) => {
+  nameToType = info.nameToType
+})
+
 
 export function WorldUpdates(project: Project, highlights: EntityHighlights): WorldUpdates {
   const content = project.content
@@ -363,7 +372,6 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   function rebuildStage(stage: StageNumber): void {
     const surface = project.getSurface(stage)
     if (!surface) return
-    const raise_destroy = script.raise_script_destroy
     for (const entity of surface.find_entities()) {
       if (isWorldEntityProjectEntity(entity)) {
         raise_destroy({ entity })
@@ -376,15 +384,24 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
       if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) entity.destroy()
       // see also: isPreviewEntity
     }
-    const updateLater: RollingStockProjectEntity[] = []
+    // rebuild order: everything, elevated rails, rolling stock
+    const elevatedRails: ProjectEntity[] = []
+    const rollingStock: RollingStockProjectEntity[] = []
+    const elevatedRailTypes = newLuaSet<EntityType>("elevated-straight-rail", "elevated-half-diagonal-rail", "elevated-curved-rail-a", "elevated-curved-rail-b")
     for (const entity of content.allEntities()) {
-      if (entity.isRollingStock()) {
-        updateLater.push(entity)
+      const type = nameToType.get(entity.firstValue.name) ?? ""
+      if(type in elevatedRailTypes) {
+        elevatedRails.push(entity as RollingStockProjectEntity)
+      } else if (type in rollingStockTypes) {
+        rollingStock.push(entity as RollingStockProjectEntity)
       } else {
         refreshWorldEntityAtStage(entity, stage)
       }
     }
-    for (const entity of updateLater) {
+    for (const entity of elevatedRails) {
+      refreshWorldEntityAtStage(entity, stage)
+    }
+    for (const entity of rollingStock) {
       refreshWorldEntityAtStage(entity, stage)
     }
     for (const [, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {
