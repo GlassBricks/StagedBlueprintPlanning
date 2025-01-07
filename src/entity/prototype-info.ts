@@ -197,7 +197,18 @@ const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
   "locomotive",
 )
 
-export const allowOverlapDifferentDirection = merge([newLuaSet("straight-rail", "curved-rail"), rollingStockTypes])
+export const allowOverlapDifferentDirection = merge([newLuaSet<EntityType>(
+  "straight-rail",
+  "half-diagonal-rail",
+  "curved-rail-a",
+  "curved-rail-b",
+  "elevated-straight-rail",
+  "elevated-half-diagonal-rail",
+  "elevated-curved-rail-a",
+  "elevated-curved-rail-b",
+  "legacy-straight-rail",
+  "legacy-curved-rail",
+), rollingStockTypes])
 
 export function getPrototypeInfo(): PrototypeInfo {
   return prototypeInfo
