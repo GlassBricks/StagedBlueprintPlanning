@@ -77,10 +77,8 @@ export default tseslint.config(
         },
       ],
 
-      "prettier/prettier": "warn",
+      "prettier/prettier": "off",
       "no-template-curly-in-string": "error",
-      "no-else-return": "error",
-      "no-lonely-if": "error",
       "eslint-comments/no-unused-disable": "error",
 
       "eslint-comments/disable-enable-pair": [
