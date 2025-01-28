@@ -280,11 +280,11 @@ function createItems(luaEntity: LuaEntity, insertItems: BlueprintInsertPlanWrite
   for (const { id, items } of insertItems) {
     if (items.in_inventory) {
       for (const inv of items.in_inventory) {
-        luaEntity.get_inventory(inv.inventory)?.[
-          // +1 for now due to reaaally strange TSTL bug
-          // tests will catch this changing, right?
-          inv.stack + 1
-        ].set_stack({ name: getName(id.name), quality: getName(id.quality), count: inv.count })
+        luaEntity.get_inventory(inv.inventory)?.[inv.stack].set_stack({
+          name: getName(id.name),
+          quality: getName(id.quality),
+          count: inv.count,
+        })
       }
     }
   }
