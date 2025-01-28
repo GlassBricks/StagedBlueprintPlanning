@@ -57,12 +57,6 @@ describe("circuit wires", () => {
     }
   }
   function addWire2(): void {
-    // luaEntity2.connect_neighbour({
-    //   target_entity: luaEntity1,
-    //   wire: defines.wire_type.green,
-    //   source_circuit_id: defines.circuit_connector_id.combinator_input,
-    //   target_circuit_id: defines.circuit_connector_id.combinator_output,
-    // })
     luaEntity2
       .get_wire_connector(defines.wire_connector_id.combinator_input_green, true)
       .connect_to(luaEntity1.get_wire_connector(defines.wire_connector_id.combinator_output_green, true))
@@ -128,7 +122,6 @@ describe("circuit wires", () => {
       const wire1 = {
         fromEntity: entity1,
         toEntity: entity1,
-        // wire: defines.wire_type.red,
         fromId: defines.wire_connector_id.combinator_input_red,
         toId: defines.wire_connector_id.combinator_output_red,
       }
@@ -188,28 +181,7 @@ describe("power switch connections", () => {
   })
 
   describe.each(["pole", "power switch"])("from %s", (from) => {
-    // test.skip("modding api broken?", () => {
-    //   pole.connect_neighbour({
-    //     target_entity: powerSwitch,
-    //     wire: defines.wire_type.copper,
-    //     target_wire_id: defines.wire_connection_id.power_switch_right,
-    //   })
-    //   expect((pole.neighbours as any).copper).toEqual([powerSwitch])
-    //   pole.disconnect_neighbour({
-    //     target_entity: powerSwitch,
-    //     wire: defines.wire_type.copper,
-    //     target_wire_id: defines.wire_connection_id.power_switch_right,
-    //   })
-    //   expect((pole.neighbours as any).copper).toEqual([powerSwitch])
-    //   // ^ is a bug?
-    // })
-    //
     test("can remove wires", () => {
-      // pole.connect_neighbour({
-      //   target_entity: powerSwitch,
-      //   wire: defines.wire_type.copper,
-      //   target_wire_id: defines.wire_connection_id.power_switch_right,
-      // })
       pole
         .get_wire_connector(defines.wire_connector_id.pole_copper, true)
         .connect_to(powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_right_copper, true))
@@ -254,11 +226,6 @@ describe("power switch connections", () => {
       )
     })
     test("can save a connection", () => {
-      // pole.connect_neighbour({
-      //   target_entity: powerSwitch,
-      //   wire: defines.wire_type.copper,
-      //   target_wire_id: defines.wire_connection_id.power_switch_right,
-      // })
       pole
         .get_wire_connector(defines.wire_connector_id.pole_copper, true)
         .connect_to(powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_right_copper, true))
