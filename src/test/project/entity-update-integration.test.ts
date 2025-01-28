@@ -1792,3 +1792,22 @@ test("rebuilding stage places wagon and elevated rails correctly", () => {
   const wagon2 = surfaces[0].find_entities_filtered({ name: "cargo-wagon" })[0]
   expect(wagon2).not.toBeNil()
 })
+
+test("newly created train does not get set to automatic", () => {
+  const bp =
+    "0eNqtlNtuwyAMht/F16QqTUiavMpURTRlKRqBCkgPqvLugyRtt7WVfLE7bOzvx4B9ha3qxcFK7aG6gmyMdlB9XMHJVnMVfZp3AiqwXCoYCEi9E2eo6LAhILSXXoopYzQute67rbAhgNwyfUjVifPmAAQOxoUUoyM5YJKCwCXSCOykFc20RVcEnOeTAefGch2knyRWdwkXNdq9T8ZTvlNJf6tkL5ApGsmwyAyNTLFIhkZSLDK/I5VpTGe8PIpn3nJRpsWjcqH5VolamVY6LxtXn/Yy2J05St1C9cmVEwSMlUFsfs3lomAv5AtsReiC1lgi+tZLLBH9Nejyjmy4bU1y4m2IfQIW/3DtKxZ79xhcxgaO7pV6dSKKLRLdUhTdpiUaiW5T+ua/hOHlmr3Y9WqeXo9fH+38x34khUxjd/Nk/DuYNsOI86b5qsP81JPKLTh4x+7a8rigy1jO7I3PP7nzSJBedIH6GMgEjsK6UYvlqzIrS8YYXWd5NgzfVMfqjA=="
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  stack.import_stack(bp)
+
+  player.teleport([0, 0], surfaces[0])
+  player.build_from_cursor({ position: pos, direction: 0 })
+
+  const train = surfaces[0].find_entities_filtered({ name: "locomotive" })[0]
+  train.train!.manual_mode = false
+  expect(train).toBeAny()
+  after_ticks(2, () => {
+    expect(train.train?.manual_mode).toBe(true)
+    expect(train.train?.speed).toBe(0)
+  })
+})

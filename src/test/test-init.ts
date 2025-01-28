@@ -193,6 +193,7 @@ commands.add_command("rr", "", (e) => {
   } else if (arg == "off") {
     storage.rerunMode = "none"
   } else if (arg == nil) {
+    game.print("reloading")
     if (storage.rerunMode == "none") game.reload_mods()
   } else {
     game.print("Expected 'test', 'only', 'off' or nothing")
@@ -243,9 +244,8 @@ commands.add_command("print-bp-settings", "", () => {
   debugPrint(settings)
 })
 
-commands.add_command("createStageRef", "", (e) => {
-  if (!e.player_index) return
-  const player = game.get_player(e.player_index)!
+commands.add_command("createStageRef", "", () => {
+  const player = game.player!
   const stage = getStageAtSurface(player.surface_index)
   if (!stage) {
     player.print("Not in stage")
@@ -253,4 +253,12 @@ commands.add_command("createStageRef", "", (e) => {
   }
 
   createStageReference(player.cursor_stack!, stage)
+})
+
+commands.add_command("print-bp-entities", "", () => {
+  const player = game.player!
+  const stack = player.cursor_stack
+  if (!stack?.is_blueprint) return player.print("Not a blueprint")
+  const bp = stack.get_blueprint_entities()!
+  debugPrint(bp)
 })

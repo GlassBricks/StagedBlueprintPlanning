@@ -1450,7 +1450,8 @@ if (remote.interfaces.bobinserters && remote.interfaces.bobinserters.get_changed
 }
 
 test("calls onSurfaceCleared", () => {
-  surface.clear()
+  // surface.clear()
+  Events.raiseFakeEventNamed("on_surface_cleared", { surface_index: surface.index })
   after_ticks(5, () => {
     expect(project.actions.onSurfaceCleared).toHaveBeenCalledWith(1)
   })

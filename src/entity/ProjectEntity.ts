@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { EntityType } from "factorio:prototype"
 import { LuaEntity, nil, RealOrientation } from "factorio:runtime"
 import {
   deepCompare,
@@ -81,6 +82,9 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   isRollingStock(): this is RollingStockProjectEntity
   isUndergroundBelt(): this is UndergroundBeltProjectEntity
   isInserter(): this is InserterProjectEntity
+  getType(): EntityType | nil
+
+  isNewRollingStock?: true
 
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
   setDropPosition(this: InserterProjectEntity, position: Position | nil): void
@@ -235,6 +239,9 @@ class ProjectEntityImpl<T extends Entity = Entity>
   }
   isInserter(): this is InserterProjectEntity {
     return nameToType.get(this.firstValue.name) == "inserter"
+  }
+  getType(): EntityType | nil {
+    return nameToType.get(this.firstValue.name)
   }
 
   hasErrorAt(stage: StageNumber): boolean {
