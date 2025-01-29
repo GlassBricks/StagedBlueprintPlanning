@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 GlassBricks
+ * Copyright (c) 2024-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -33,6 +33,7 @@ test("sync map gen settings", () => {
     ...surface1.map_gen_settings,
     seed: 100,
   }
+  surface1.create_global_electric_network()
   surface1.generate_with_lab_tiles = false
   const surface2 = surfaces[1]
   surface2.map_gen_settings = {
@@ -46,10 +47,12 @@ test("sync map gen settings", () => {
   expect(surface1).toMatchTable({
     map_gen_settings: { seed: 100 },
     generate_with_lab_tiles: false,
+    has_global_electric_network: true,
   })
   expect(surface2).toMatchTable({
     map_gen_settings: { seed: 100 },
     generate_with_lab_tiles: false,
+    has_global_electric_network: true,
   })
 
   after_ticks(20, () => {

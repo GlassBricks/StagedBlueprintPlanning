@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -19,6 +19,10 @@ export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurfac
   const generateWithLabTiles = fromSurface.generate_with_lab_tiles
   toSurface.generate_with_lab_tiles = generateWithLabTiles
   if (!generateWithLabTiles) toSurface.map_gen_settings = fromSurface.map_gen_settings
+  if (fromSurface.has_global_electric_network != toSurface.has_global_electric_network) {
+    if (fromSurface.has_global_electric_network) toSurface.create_global_electric_network()
+    else toSurface.destroy_global_electric_network()
+  }
 }
 
 function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSurface | nil): void {

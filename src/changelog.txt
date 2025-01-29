@@ -10,6 +10,7 @@ Date: ????
     - Trains are now always present in only 1 stage, like in a version of this mod a while ago. It's possible to move trains to other stages without crying!
     - "Flexible offshore pump placement" is removed, as you can now always place them anywhere in editor mode.
     - Project surfaces now always have "ignore surface conditions" enabled, allowing you to place anything from any planet in Space Age.
+    - "Sync map gen settings" now also syncs the "Use global electric network" setting.
   Other:
     - I like trains
 ---------------------------------------------------------------------------------------------------
