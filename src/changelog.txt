@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.1.5
+Version: 2.2.0
 Date: ????
   Bugfixes:
     - Fix that train interrupts weren't properly saved and handled.
