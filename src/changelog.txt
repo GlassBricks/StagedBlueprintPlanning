@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.0
-Date: ????
+Date: 2025-01-29
   Bugfixes:
     - Fix that train interrupts weren't properly saved and handled.
     - Fix that some 2.0 curved-rail previews were in the wrong position, not allowing you to use tools and shortcuts on them.

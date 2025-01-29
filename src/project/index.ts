@@ -15,7 +15,7 @@ import "./UserProject"
 import { Migrations } from "../lib/migration"
 import { getAllProjects } from "./UserProject"
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.2.0", () => {
   for (const project of getAllProjects()) {
     for (const entity of project.content.allEntities()) {
       if (entity.isRollingStock()) {
