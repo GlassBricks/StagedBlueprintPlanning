@@ -1,7 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.5
 Date: ????
+  Bugfixes:
+    - Fix that train interrupts weren't properly saved and handled.
+    - Fix that some 2.0 curved-rail previews were in the wrong position, not allowing you to use tools and shortcuts on them.
+    - Fix that extraneous item request icons may appear on locomotives and other entities in some cases.
   Changes:
+    - Trains pasted in projects are now _not_ set to automatic on paste.
+    - Trains are now always present in only 1 stage, like in a version of this mod a while ago. It's possible to move trains to other stages without crying!
+  Other:
+    - I like trains
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.4
 Date: 2025-01-07
