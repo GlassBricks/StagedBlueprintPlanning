@@ -32,16 +32,19 @@ export function doCreateRollingStocks(surface: LuaSurface, raiseBuilt: boolean, 
       raise_built: raiseBuilt,
     })
   }
-  const entities = types.map((type, i) =>
-    assert(
-      surface.create_entity({
-        name: type,
-        position: Pos(7 * i + 2, 0.5),
-        orientation: 0.25,
-        force: "player",
-        raise_built: raiseBuilt,
-      }),
-    ),
-  )
+  const entities = types.map((type, i) => {
+    const pos = Pos(7 * i + 2, 0.5)
+    const entity = surface.create_entity({
+      name: type,
+      position: pos,
+      orientation: 0.25,
+      force: "player",
+      raise_built: raiseBuilt,
+    })
+    if (!raiseBuilt) {
+      return assert(entity)
+    }
+    return assert(surface.find_entity(type, pos))
+  })
   return entities
 }

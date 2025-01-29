@@ -773,17 +773,19 @@ test("can set train schedule", () => {
     },
   ]
   locomotive.train!.schedule = {
-    current: 2,
-    records: schedule,
+    current: 1,
+    records: [
+      {
+        station: "test3",
+      },
+    ],
   }
-  ;(schedule[1].wait_conditions![0] as any).ticks = 300
   const newValue: Partial<BlueprintEntity> = {
     name: "locomotive",
     schedule: { records: schedule },
+    orientation: 0.25,
   }
   const newEntity = updateEntity(locomotive, newValue as Entity, defines.direction.north)[0]!
-  expect(newEntity).toBe(locomotive)
-  expect(newEntity.train?.schedule?.current).toEqual(2)
   expect(newEntity.train?.schedule?.records).toEqual(newValue.schedule?.records)
 })
 

@@ -107,7 +107,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
   }
 
   function requiresRebuild(prototype: LuaEntityPrototype): boolean {
-    return prototype.name.startsWith("ee-infinity")
+    return prototype.type in rollingStockTypes || prototype.name.startsWith("ee-infinity")
   }
 
   function getRotationType(prototype: LuaEntityPrototype): RotationType | nil {

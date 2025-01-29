@@ -23,12 +23,17 @@ import {
 } from "factorio:runtime"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
-import { debugPrint } from "../lib/test/misc"
 import { getStageAtSurface } from "../project/project-refs"
 
 import { Entity } from "./Entity"
 import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
-import { getPrototypeRotationType, OnPrototypeInfoLoaded, PrototypeInfo, RotationType } from "./prototype-info"
+import {
+  getPrototypeRotationType,
+  OnPrototypeInfoLoaded,
+  PrototypeInfo,
+  rollingStockTypes,
+  RotationType,
+} from "./prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
 import build_check_manual_ghost = defines.build_check_type.manual_ghost
 import floor = math.floor
@@ -108,7 +113,7 @@ function pasteEntity(
   position: MapPosition,
   direction: defines.direction,
   entity: BlueprintEntity,
-  target: LuaEntity,
+  target: LuaEntity | nil,
 ): LuaEntity | nil {
   const tilePosition = { x: floor(position.x), y: floor(position.y) }
 
@@ -125,10 +130,10 @@ function pasteEntity(
     force: "player",
     position: tilePosition,
   })
-  if (target.type == "assembling-machine") {
+  if (target?.type == "assembling-machine") {
     pcall(target.set_recipe as any, entity.recipe)
   }
-  target.surface.find_entity("item-request-proxy", target.position)?.destroy()
+  surface.find_entity("item-request-proxy", position)?.destroy()
   return ghosts[0]
 }
 
@@ -207,16 +212,26 @@ export function createEntity(
 ): LuaEntity | nil {
   assume<BlueprintEntity>(entity)
   if (changed) entityVersion++
-  const luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity)
+  let luaEntity: LuaEntity | undefined
+  const isRollingStock = rollingStockTypes.has(entity.name)
+  if (isRollingStock) {
+    const ghost = pasteEntity(surface, position, direction, entity, nil)
+    if (!ghost) return nil
+    const [, newLuaEntity, proxy] = ghost.silent_revive()
+    proxy?.destroy()
+    luaEntity = newLuaEntity
+  } else {
+    luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity)
+  }
   if (!luaEntity) return nil
-  // const type = luaEntity.type
+
   const type = nameToType.get(entity.name)!
 
   if (type == "loader" || type == "loader-1x1") {
     luaEntity.loader_type = entity.type ?? "output"
     luaEntity.direction = direction
   }
-  if (entityHasSettings(entity)) {
+  if (!isRollingStock && entityHasSettings(entity)) {
     const ghost = pasteEntity(surface, position, direction, entity, luaEntity)
     ghost?.destroy()
   }
@@ -376,7 +391,6 @@ export function updateEntity(
   if (requiresRebuild.has(value.name)) {
     const surface = luaEntity.surface
     const position = luaEntity.position
-    debugPrint(luaEntity.train?.id)
     raise_script_destroy({ entity: luaEntity })
     luaEntity.destroy()
     const entity = createEntity(surface, position, direction, value, changed)
