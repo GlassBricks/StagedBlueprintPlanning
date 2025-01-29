@@ -123,7 +123,8 @@ if ("factorio-test" in script.active_mods) {
         status?: "passed" | "failed" | "todo"
         skipped: number
       }
-      if (result.status == "passed" && result.skipped == 0) {
+      const expectedSkipped = 1
+      if (result.status == "passed" && result.skipped == expectedSkipped) {
         game.surfaces[1].clear()
         const player = game.players[1]
         player.gui.screen["factorio-test-test-gui"]?.destroy()

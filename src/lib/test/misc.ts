@@ -42,7 +42,6 @@ export function getCallerSource(): Source | nil {
   return tryUseSourcemap(info.source, info.currentline)
 }
 
-// noinspection JSUnusedGlobalSymbols
 export function debugPrint(...values: unknown[]): void {
   const source = getCallerSource()
   const sourceString = source ? `${source.file}:${source.line ?? 1}` : "<unknown source>"

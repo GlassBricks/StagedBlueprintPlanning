@@ -422,7 +422,7 @@ describe("moving stage diff props", () => {
   })
 })
 
-describe("trySetFirstStage", () => {
+describe("setFirstStageUnchecked", () => {
   test("move down", () => {
     projectEntity.setFirstStageUnchecked(1)
     expect(projectEntity.firstValue).toEqual(entity)
@@ -441,6 +441,12 @@ describe("trySetFirstStage", () => {
     projectEntity.setLastStageUnchecked(4)
     expect(() => projectEntity.setFirstStageUnchecked(4)).not.toError()
     expect(() => projectEntity.setFirstStageUnchecked(5)).toError()
+  })
+
+  test("if is rolling stock, setting first stage also sets last stage", () => {
+    const projectEntity = createProjectEntityNoCopy({ name: "locomotive" }, Pos(0, 0), nil, 2)
+    projectEntity.setFirstStageUnchecked(3)
+    expect(projectEntity.lastStage).toBe(3)
   })
 })
 
@@ -463,6 +469,11 @@ describe("trySetLastStage", () => {
     const diffs = projectEntity.stageDiffs!
     expect(diffs).not.toHaveKey(7)
     expect(next(diffs)[0]).toBe(3)
+  })
+  test("if is rolling stock, setting last stage does nothing", () => {
+    const projectEntity = createProjectEntityNoCopy({ name: "locomotive" }, Pos(0, 0), nil, 2)
+    projectEntity.setLastStageUnchecked(3)
+    expect(projectEntity.lastStage).toBe(2)
   })
 })
 

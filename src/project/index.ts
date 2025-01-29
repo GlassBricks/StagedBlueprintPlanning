@@ -12,3 +12,20 @@
 import "./event-handlers"
 import "./project-event-listener"
 import "./UserProject"
+import { Migrations } from "../lib/migration"
+import { getAllProjects } from "./UserProject"
+
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of getAllProjects()) {
+    for (const entity of project.content.allEntities()) {
+      if (entity.isRollingStock()) {
+        const oldLastStage = entity.lastStage
+        if (oldLastStage != entity.firstStage) {
+          entity.setLastStageUnchecked(entity.firstStage)
+          project.worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+          project.updates.resetTrain(entity)
+        }
+      }
+    }
+  }
+})

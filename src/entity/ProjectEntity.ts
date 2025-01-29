@@ -389,6 +389,17 @@ class ProjectEntityImpl<T extends Entity = Entity>
 
   declare applyDiff: <T extends Entity>(this: void, value: T, diff: StageDiff<T>) => Mutable<T>
 
+  override setFirstStageUnchecked(stage: StageNumber): void {
+    if (this.isRollingStock()) {
+      this.lastStage = stage
+    }
+    super.setFirstStageUnchecked(stage)
+  }
+  public override setLastStageUnchecked(stage: StageNumber | nil): void {
+    if (this.isRollingStock()) return
+    super.setLastStageUnchecked(stage)
+  }
+
   adjustValueAtStage(stage: StageNumber, value: T): boolean {
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")

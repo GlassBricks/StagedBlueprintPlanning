@@ -1255,6 +1255,7 @@ describe("poles and wire connections", () => {
 
 describe("train entities", () => {
   function assertTrainEntityCorrect(entity: RollingStockProjectEntity, expectedHasError: number | false) {
+    expect(entity.lastStage).toBe(entity.firstStage)
     assertEntityCorrect(entity, expectedHasError)
   }
 

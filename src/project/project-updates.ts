@@ -622,6 +622,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function checkCanSetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
     if (entity.isSettingsRemnant || entity.firstStage == stage) return StageMoveResult.NoChange
+    if (entity.isRollingStock()) return StageMoveResult.Updated
     if (entity.lastStage && stage > entity.lastStage) return StageMoveResult.CannotMovePastLastStage
 
     if (!firstStageChangeWillIntersect(entity, stage)) {
@@ -633,15 +634,20 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   function trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
     const result = checkCanSetFirstStage(entity, stage)
     if (result == StageMoveResult.Updated) {
-      const stageToUpdate = min(entity.firstStage, stage)
+      const oldFirstStage = entity.firstStage
+      const stageToUpdate = min(oldFirstStage, stage)
+      const oldLastStage = entity.lastStage
       entity.setFirstStageUnchecked(stage)
+      if (entity.isRollingStock() && stage < oldFirstStage) {
+        updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+      }
       updateWorldEntities(entity, stageToUpdate)
     }
     return result
   }
 
   function checkCanSetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
-    if (entity.isSettingsRemnant) return StageMoveResult.NoChange
+    if (entity.isSettingsRemnant || entity.isRollingStock()) return StageMoveResult.NoChange
     const oldLastStage = entity.lastStage
     if (oldLastStage == stage) return StageMoveResult.NoChange
     // check firstStage <= lastStage
@@ -655,7 +661,6 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
-    if (entity.isSettingsRemnant) return StageMoveResult.NoChange
     const result = checkCanSetLastStage(entity, stage)
     if (result == StageMoveResult.Updated) {
       const oldLastStage = entity.lastStage

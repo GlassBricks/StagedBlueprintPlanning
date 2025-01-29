@@ -293,12 +293,22 @@ describe("addNewEntity", () => {
   })
 })
 
-function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
-  const luaEntity = createEntity(stage, args)
+function registerNewEntity(luaEntity: LuaEntity, stage: number): ProjectEntity<BlueprintEntity> {
   const entity = projectUpdates.addNewEntity(luaEntity, stage) as ProjectEntity<BlueprintEntity>
   expect(entity).toBeAny()
   clearMocks()
   entity.replaceWorldEntity(stage, luaEntity)
+  return entity
+}
+function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
+  const luaEntity = createEntity(stage, args)
+  const entity = registerNewEntity(luaEntity, stage)
+  return { entity, luaEntity }
+}
+
+function addRollingStock(stage: StageNumber) {
+  const luaEntity = createRollingStock(surfaces[stage - 1])
+  const entity = registerNewEntity(luaEntity, stage)
   return { entity, luaEntity }
 }
 
@@ -745,6 +755,27 @@ describe("trySetFirstStage", () => {
     const result = projectUpdates.trySetFirstStage(entity, 5)
     expect(result).toBe(StageMoveResult.CannotMovePastLastStage)
   })
+
+  test("moving a rolling stock to higher stage also sets last stage", () => {
+    const { entity } = addRollingStock(1)
+    const result = projectUpdates.trySetFirstStage(entity, 3)
+    expect(result).toBe("updated")
+    expect(entity.firstStage).toBe(3)
+    expect(entity.lastStage).toBe(3)
+    assertOneEntity()
+    assertUpdateCalled(entity, 1)
+  })
+
+  test("moving a rolling stock to lower stage also sets last stage, and calls onLastStageChanged", () => {
+    const { entity } = addRollingStock(3)
+    const result = projectUpdates.trySetFirstStage(entity, 1)
+    expect(result).toBe("updated")
+    expect(entity.firstStage).toBe(1)
+    expect(entity.lastStage).toBe(1)
+    assertOneEntity()
+    assertUpdateOnLastStageChangedCalled(entity, 3)
+    assertUpdateCalled(entity, 1, 1)
+  })
 })
 
 describe("trySetLastStage", () => {
@@ -783,6 +814,15 @@ describe("trySetLastStage", () => {
     const result = projectUpdates.trySetLastStage(entity, 2)
     expect(result).toBe(StageMoveResult.NoChange)
     expect(entity.lastStage).toBe(nil)
+    assertOneEntity()
+    assertWUNotCalled()
+  })
+
+  test("ignores rolling stock", () => {
+    const { entity } = addRollingStock(1)
+    const result = projectUpdates.trySetLastStage(entity, 3)
+    expect(result).toBe(StageMoveResult.NoChange)
+    expect(entity.lastStage).toBe(1)
     assertOneEntity()
     assertWUNotCalled()
   })

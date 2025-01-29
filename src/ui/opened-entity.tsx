@@ -99,7 +99,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     const stageDiffs = entity.stageDiffs
     const currentStageDiff = stageDiffs && stageDiffs[currentStageNum]
 
-    const lastStage = entity.lastStage
+    const lastStageDisplay = isRollingStock ? nil : entity.lastStage
 
     const isErrorEntity = entity.isInStage(currentStageNum) && entity.getWorldEntity(currentStageNum) == nil
 
@@ -131,11 +131,11 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
                 const stage = project.getStage(stageNum)!
                 return [StageButton(stage), <empty-widget />]
               })}
-            {lastStage != nil && <label caption={[L_GuiEntityInfo.LastStage]} />}
-            {lastStage != nil && StageButton(project.getStage(lastStage)!)}
+            {lastStageDisplay != nil && <label caption={[L_GuiEntityInfo.LastStage]} />}
+            {lastStageDisplay != nil && StageButton(project.getStage(lastStageDisplay)!)}
           </table>
 
-          {lastStage != nil && (
+          {lastStageDisplay != nil && (
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiEntityInfo.RemoveLastStage]}
