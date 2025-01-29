@@ -23,17 +23,12 @@ import {
 } from "factorio:runtime"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
+import { debugPrint } from "../lib/test/misc"
 import { getStageAtSurface } from "../project/project-refs"
 
 import { Entity } from "./Entity"
 import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
-import {
-  getPrototypeRotationType,
-  OnPrototypeInfoLoaded,
-  PrototypeInfo,
-  rollingStockTypes,
-  RotationType,
-} from "./prototype-info"
+import { getPrototypeRotationType, OnPrototypeInfoLoaded, PrototypeInfo, RotationType } from "./prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
 import build_check_manual_ghost = defines.build_check_type.manual_ghost
 import floor = math.floor
@@ -133,6 +128,7 @@ function pasteEntity(
   if (target.type == "assembling-machine") {
     pcall(target.set_recipe as any, entity.recipe)
   }
+  target.surface.find_entity("item-request-proxy", target.position)?.destroy()
   return ghosts[0]
 }
 
@@ -347,23 +343,6 @@ export function forceFlipUnderground(luaEntity: LuaEntity): boolean {
   return rotated
 }
 
-function updateRollingStock(luaEntity: LuaEntity, value: BlueprintEntity): void {
-  if (luaEntity.type != "locomotive") return
-
-  const train = luaEntity.train
-  if (!train) return
-  const schedule = value.schedule
-  if (!schedule) {
-    train.schedule = nil
-  } else {
-    const oldScheduleCurrent = train.schedule?.current
-    train.schedule = {
-      current: oldScheduleCurrent ?? 1,
-      records: schedule.records ?? [],
-    }
-  }
-}
-
 function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<BlueprintEntity> {
   bpEntity.entity_number = nil!
   bpEntity.position = nil!
@@ -397,6 +376,7 @@ export function updateEntity(
   if (requiresRebuild.has(value.name)) {
     const surface = luaEntity.surface
     const position = luaEntity.position
+    debugPrint(luaEntity.train?.id)
     raise_script_destroy({ entity: luaEntity })
     luaEntity.destroy()
     const entity = createEntity(surface, position, direction, value, changed)
@@ -415,9 +395,6 @@ export function updateEntity(
   }
   if (type == "loader" || type == "loader-1x1") {
     luaEntity.loader_type = value.type ?? "output"
-  } else if (rollingStockTypes.has(type)) {
-    updateRollingStock(luaEntity, value)
-    return $multi(luaEntity)
   }
   luaEntity.direction = direction
 

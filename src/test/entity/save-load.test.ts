@@ -40,6 +40,10 @@ before_each(() => {
   surface = game.surfaces[1]
   surface.find_entities().forEach((e) => e.destroy())
 })
+after_each(() => {
+  const requestProxy = surface.find_entities_filtered({ name: "item-request-proxy" })
+  expect(requestProxy).toHaveLength(0)
+})
 
 test("can save an entity", () => {
   const entity = surface.create_entity({
@@ -660,7 +664,6 @@ test("can flip loader", () => {
 
 test("can handle item changes", () => {
   const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
-  // const newContentsStr = ["speed-module", "speed-module-2", "speed-module-3"]
   const newContents: ItemWithQualityCounts[] = [
     { name: "speed-module", count: 1, quality: "normal" },
     { name: "speed-module-2", count: 2, quality: "normal" },
