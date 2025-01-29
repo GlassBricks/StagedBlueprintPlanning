@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -393,7 +393,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
     }
     super.setFirstStageUnchecked(stage)
   }
-  public override setLastStageUnchecked(stage: StageNumber | nil): void {
+  override setLastStageUnchecked(stage: StageNumber | nil): void {
     if (this.isRollingStock()) return
     super.setLastStageUnchecked(stage)
   }
