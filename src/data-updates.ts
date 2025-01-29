@@ -27,10 +27,10 @@ if (settings.startup[Settings.UnhideInfinityItems].value) {
   removeHiddenFlag(data.raw.item["infinity-pipe"])
 }
 
-if (settings.startup[Settings.FlexibleOffshorePumpPlacement].value) {
-  for (const [, pump] of pairs(data.raw["offshore-pump"])) {
-    pump.tile_buildability_rules = nil
-    pump.placeable_position_visualization = nil
-    pump.flags = pump.flags?.filter((f) => f != "filter-directions")
-  }
-}
+// if (settings.startup[Settings.FlexibleOffshorePumpPlacement].value) {
+//   for (const [, pump] of pairs(data.raw["offshore-pump"])) {
+//     pump.tile_buildability_rules = nil
+//     pump.placeable_position_visualization = nil
+//     pump.flags = pump.flags?.filter((f) => f != "filter-directions")
+//   }
+// }

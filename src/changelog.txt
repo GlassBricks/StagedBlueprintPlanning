@@ -8,6 +8,7 @@ Date: ????
   Changes:
     - Trains pasted in projects are now _not_ set to automatic on paste.
     - Trains are now always present in only 1 stage, like in a version of this mod a while ago. It's possible to move trains to other stages without crying!
+    - "Flexible offshore pump placement" is removed, as you can now always place them anywhere in editor mode.
   Other:
     - I like trains
 ---------------------------------------------------------------------------------------------------

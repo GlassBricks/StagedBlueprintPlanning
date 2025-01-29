@@ -38,11 +38,4 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     default_value: true,
     order: "a",
   },
-  {
-    name: Settings.FlexibleOffshorePumpPlacement,
-    type: "bool-setting",
-    setting_type: "startup",
-    default_value: false,
-    order: "b",
-  },
 ])
