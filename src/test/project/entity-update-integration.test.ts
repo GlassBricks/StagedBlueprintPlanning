@@ -105,7 +105,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectError: number | false)
     if (isPreview) {
       expect(worldEntity.name).toBe(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)
     }
-    expect(worldEntity.position).toEqual(entity.position)
+    expect(worldEntity.position).comment(`preview at stage ${stage}`).toEqual(entity.position)
     if (isPreview) {
       expect(worldEntity.direction).toEqual(entity.getPreviewDirection())
     } else if (entity.isUndergroundBelt() && entity.hasErrorAt(stage)) {
@@ -241,6 +241,7 @@ function recordEntity(luaEntity: LuaEntity): LuaEntityInfo {
     surface: luaEntity.surface,
   }
 }
+
 describe.each([
   ["transport-belt", "fast-transport-belt", false, false],
   ["underground-belt", "fast-underground-belt", false, false],
@@ -614,6 +615,21 @@ describe.each([
 
     expect(entity.lastStage).toBe(3)
   })
+})
+
+test.each([
+  "straight-rail",
+  "half-diagonal-rail",
+  "curved-rail-a",
+  "curved-rail-b",
+  "legacy-curved-rail",
+  "legacy-straight-rail",
+])("can create %s with correct previews", (name) => {
+  const pos = Pos(10.5, 10.5)
+  const entity = buildEntity(3, { name, position: pos })
+  const worldEntity = entity.getWorldEntity(3)!
+  expect(entity.position).toEqual(worldEntity.position)
+  assertEntityCorrect(entity, false)
 })
 
 describe.each([true, false])("underground snapping, with flipped %s", (flipped) => {

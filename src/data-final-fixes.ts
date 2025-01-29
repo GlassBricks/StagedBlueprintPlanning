@@ -132,6 +132,10 @@ for (const type of types.sort()) {
 
     const flags = prototype.flags!.filter((flag) => flagsToTransfer.has(flag))
     flags.push("not-on-map")
+    // hack for curved rails
+    if (prototype.name == "curved-rail-a" || prototype.name == "curved-rail-b") {
+      if (!flags.includes("placeable-off-grid")) flags.push("placeable-off-grid")
+    }
 
     let selectionBox: BoundingBox = prototype.selection_box ?? [
       [-0.5, -0.5],
