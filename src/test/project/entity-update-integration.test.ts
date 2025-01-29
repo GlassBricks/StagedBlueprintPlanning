@@ -1805,7 +1805,6 @@ test("newly created train does not get set to automatic", () => {
   player.build_from_cursor({ position: pos, direction: 0 })
 
   const train = surfaces[0].find_entities_filtered({ name: "locomotive" })[0]
-  train.train!.manual_mode = false
   expect(train).toBeAny()
   after_ticks(2, () => {
     expect(train.train?.manual_mode).toBe(true)

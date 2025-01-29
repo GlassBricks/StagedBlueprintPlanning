@@ -46,11 +46,7 @@ import {
   PrototypeInfo,
   RotationType,
 } from "../entity/prototype-info"
-import {
-  getRegisteredProjectEntity,
-  getRegisteredProjectEntityFromUnitNumber,
-  getStageFromUnitNumber,
-} from "../entity/registration"
+import { getRegisteredProjectEntityFromUnitNumber, getStageFromUnitNumber } from "../entity/registration"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
@@ -1276,31 +1272,4 @@ Events.on_surface_cleared((e) => {
   const stage = getStageAtSurface(e.surface_index)
   if (!stage) return
   stage.actions.onSurfaceCleared(stage.stageNumber)
-})
-
-const reverseMap: Record<defines.train_state, string> = {}
-for (const [k, v] of pairs(defines.train_state)) {
-  reverseMap[v] = k
-}
-Events.on_train_changed_state((e) => {
-  if (e.old_state != defines.train_state.no_schedule) return
-  const stocks = e.train.locomotives
-  let shouldStop = false
-  function checkLocomotive(locomotive: LuaEntity) {
-    const projectEntity = getRegisteredProjectEntity(locomotive)
-    if (projectEntity?.isNewRollingStock) {
-      shouldStop = true
-      projectEntity.isNewRollingStock = nil
-    }
-  }
-  for (const locomotive of stocks.front_movers) {
-    checkLocomotive(locomotive)
-  }
-  for (const locomotive of stocks.back_movers) {
-    checkLocomotive(locomotive)
-  }
-  if (shouldStop) {
-    e.train.manual_mode = true
-    e.train.speed = 0
-  }
 })
