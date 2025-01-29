@@ -27,5 +27,8 @@ Migrations.to($CURRENT_VERSION, () => {
         }
       }
     }
+    for (const stage of project.getAllStages()) {
+      stage.surface.ignore_surface_conditions = true
+    }
   }
 })

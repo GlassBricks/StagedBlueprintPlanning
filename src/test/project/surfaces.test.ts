@@ -19,6 +19,7 @@ test("generateStageSurface creates surface and generates chunks", () => {
   expect(surface.index).not.toEqual(1)
   expect(surface.always_day).toBe(true)
   expect(surface.generate_with_lab_tiles).toBe(true)
+  expect(surface.ignore_surface_conditions).toBe(true)
 
   const area = BBox.coords(0, 0, 1, 1)
   for (const [x, y] of area.iterateTiles()) {

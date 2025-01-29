@@ -29,6 +29,7 @@ function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSu
   }
   surface.always_day = true
   surface.show_clouds = false
+  surface.ignore_surface_conditions = true
 
   const newName = "bp100-stage-" + surface.index
   if (surface.name != newName) surface.name = newName
