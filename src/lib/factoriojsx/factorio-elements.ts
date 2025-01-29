@@ -45,10 +45,12 @@ import {
   OnGuiValueChangedEvent,
   ProgressBarGuiElement,
   PrototypeFilterWrite,
+  PrototypeWithQuality,
   RadioButtonGuiElement,
   ScrollPaneGuiElement,
   ScrollPolicy,
   SignalID,
+  SignalIDWrite,
   SizeArray,
   SliderGuiElement,
   SpriteButtonGuiElement,
@@ -97,7 +99,7 @@ export interface ChooseElemButtonElement extends BaseElement {
   item?: string
   tile?: string
   entity?: string
-  signal?: SignalID
+  signal?: SignalIDWrite
   fluid?: string
   recipe?: string
   decorative?: string
@@ -105,10 +107,10 @@ export interface ChooseElemButtonElement extends BaseElement {
   achievement?: string
   equipment?: string
   technology?: string
-  "item-with-quality"?: string
-  "entity-with-quality"?: string
-  "recipe-with-quality"?: string
-  "equipment-with-quality"?: string
+  "item-with-quality"?: PrototypeWithQuality
+  "entity-with-quality"?: PrototypeWithQuality
+  "recipe-with-quality"?: PrototypeWithQuality
+  "equipment-with-quality"?: PrototypeWithQuality
   elem_filters?: MaybeProperty<PrototypeFilterWrite | nil>
   elem_value?: MaybeMutableProperty<MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>>
   locked?: MaybeProperty<boolean>
