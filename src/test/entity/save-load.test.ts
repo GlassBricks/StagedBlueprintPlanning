@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -14,7 +14,6 @@ import {
   BlueprintInsertPlanWrite,
   ItemWithQualityCounts,
   LuaSurface,
-  ScheduleRecord,
   ScriptRaisedBuiltEvent,
 } from "factorio:runtime"
 import expect from "tstl-expect"
@@ -748,45 +747,17 @@ test("can save an entity with modules", () => {
   ])
 })
 
-test("can set train schedule", () => {
+test("updating rolling stock does nothing", () => {
   const [locomotive] = createRollingStocks(surface, "locomotive", "cargo-wagon")
-  const schedule: ScheduleRecord[] = [
-    {
-      station: "test1",
-      wait_conditions: [
-        {
-          type: "time",
-          compare_type: "and",
-          ticks: 100,
-        },
-      ],
-    },
-    {
-      station: "test2",
-      wait_conditions: [
-        {
-          type: "time",
-          compare_type: "and",
-          ticks: 200,
-        },
-      ],
-    },
-  ]
-  locomotive.train!.schedule = {
-    current: 1,
-    records: [
-      {
-        station: "test3",
-      },
-    ],
-  }
-  const newValue: Partial<BlueprintEntity> = {
+  const oldLocation = locomotive.position
+  const newValue = {
     name: "locomotive",
-    schedule: { records: schedule },
-    orientation: 0.25,
-  }
-  const newEntity = updateEntity(locomotive, newValue as Entity, defines.direction.north)[0]!
-  expect(newEntity.train?.schedule?.records).toEqual(newValue.schedule?.records)
+    orientation: 0,
+    position: { x: 0.5, y: 0.5 },
+  } as Entity
+  const newEntity = updateEntity(locomotive, newValue, defines.direction.north)[0]!
+  expect(newEntity).toBe(locomotive)
+  expect(locomotive.position).toEqual(oldLocation)
 })
 
 test("createPreviewEntity", () => {

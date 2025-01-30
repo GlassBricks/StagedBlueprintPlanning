@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -388,6 +388,11 @@ export function updateEntity(
   changed: boolean = true,
 ): LuaMultiReturn<[updated: LuaEntity | nil, updatedNeighbors?: ProjectEntity]> {
   assume<BlueprintEntity>(value)
+  const type = luaEntity.type
+  if (rollingStockTypes.has(type)) {
+    // since rolling stock only are present in one stage, we don't need to update anything.
+    return $multi(luaEntity)
+  }
   if (requiresRebuild.has(value.name)) {
     const surface = luaEntity.surface
     const position = luaEntity.position
@@ -403,11 +408,9 @@ export function updateEntity(
     luaEntity = upgradeEntity(luaEntity, value)
   }
 
-  const type = luaEntity.type
   if (type == "underground-belt") {
     return updateUndergroundRotation(luaEntity, value, direction)
-  }
-  if (type == "loader" || type == "loader-1x1") {
+  } else if (type == "loader" || type == "loader-1x1") {
     luaEntity.loader_type = value.type ?? "output"
   }
   luaEntity.direction = direction

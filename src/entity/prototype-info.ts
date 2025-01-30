@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -107,7 +107,7 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
   }
 
   function requiresRebuild(prototype: LuaEntityPrototype): boolean {
-    return prototype.type in rollingStockTypes || prototype.name.startsWith("ee-infinity")
+    return prototype.name.startsWith("ee-infinity")
   }
 
   function getRotationType(prototype: LuaEntityPrototype): RotationType | nil {
