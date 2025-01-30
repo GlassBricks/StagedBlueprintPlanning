@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fix that trains might jump around when interacted with when trains are moved from their original position.
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.0
 Date: 2025-01-29
