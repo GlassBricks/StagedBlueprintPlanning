@@ -84,6 +84,8 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   isInserter(): this is InserterProjectEntity
   getType(): EntityType | nil
 
+  isNewRollingStock?: true
+
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
   setDropPosition(this: InserterProjectEntity, position: Position | nil): void
   setPickupPosition(this: InserterProjectEntity, position: Position | nil): void

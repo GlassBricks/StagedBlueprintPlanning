@@ -217,6 +217,10 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
     fixNewUndergroundBelt(projectEntity, entity, stage, knownValue)
 
+    if (projectEntity.getType() == "locomotive") {
+      projectEntity.isNewRollingStock = true
+    }
+
     updateNewWorldEntitiesWithoutWires(projectEntity)
     const hasDiff = saveWireConnections(content, projectEntity, stage, project.lastStageFor(projectEntity))
     if (hasDiff) {
