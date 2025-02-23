@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -11,6 +11,7 @@
 
 import * as mod_gui from "mod-gui"
 import { createStageReference } from "../blueprints/stage-reference"
+import { Settings } from "../constants"
 import { Events } from "../lib"
 import { Migrations } from "../lib/migration"
 import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
@@ -86,6 +87,7 @@ if ("factorio-test" in script.active_mods) {
         }
       }
       player.get_main_inventory()?.clear()
+      player.mod_settings[Settings.DeleteAtNextStage] = { value: false }
     }
     for (const [, surface] of game.surfaces) {
       if (surface.index != 1) game.delete_surface(surface)
