@@ -53,7 +53,7 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.tsx\"",
     "lint": "eslint",
     "pretest": "npm run clean && npm run build:test",
-    "test": "factorio-test run ./src --mods EditorExtensions flib quality elevated-rails -- --graphics-quality very-low --cache-sprite-atlas true --disable-audio",
+    "test": "factorio-test run ./src --mods EditorExtensions flib quality elevated-rails space-age -- --graphics-quality very-low --cache-sprite-atlas true --disable-audio",
     "check-clean-tree": "git diff --exit-code HEAD --",
     "check": "npm run format:check && npm run lint && npm run test && npm run check-clean-tree",
     "subst-current-version": "tsx scripts/subst-current-version.ts",

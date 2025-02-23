@@ -14,7 +14,8 @@
         "flib": true,
         "EditorExtensions": true,
         "quality": true,
-        "elevated-rails": true
+        "elevated-rails": true,
+        "space-age": true,
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -52,7 +53,8 @@
         "flib": true,
         "EditorExtensions": true,
         "quality": true,
-        "elevated-rails": true
+        "elevated-rails": true,
+        "space-age": true,
       },
       "disableExtraMods": true,
       "factorioArgs": [
@@ -91,7 +93,8 @@
         "flib": true,
         "EditorExtensions": true,
         "quality": true,
-        "elevated-rails": true
+        "elevated-rails": true,
+        "space-age": true,
       },
       "disableExtraMods": true,
       "factorioArgs": [

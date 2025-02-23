@@ -194,6 +194,8 @@ export const enum L_Game {
   CantBeRotated = "cant-be-rotated",
   CantBeMined = "cant-be-mined",
   Reset = "gui.reset",
+  Confirm = "gui.confirm",
+  Cancel = "gui.cancel",
 }
 
 export namespace Colors {

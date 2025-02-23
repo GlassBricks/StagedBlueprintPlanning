@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -60,6 +60,7 @@ import { createStageBlueprint } from "./create-stage-blueprint"
 import { editBlueprintFilters } from "./edit-blueprint-filters"
 import { IconsEdit } from "./IconEdit"
 import { ItemRename } from "./ItemRename"
+import { openMapGenSettingsSelect } from "./MapGenSettings"
 import {
   exitProject,
   PlayerChangedStageEvent,
@@ -655,9 +656,15 @@ class ProjectSettings extends Component<{
   private rebuildAllStages() {
     this.project.worldUpdates.rebuildAllStages()
   }
+
   private syncMapGenSettings() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (stage) syncMapGenSettings(stage)
+  }
+  private openMapGenSettingsSelect() {
+    const player = game.get_player(this.playerIndex)
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (player && stage) openMapGenSettingsSelect(player, stage)
   }
 
   private newStageAfter() {
@@ -715,6 +722,11 @@ class ProjectSettings extends Component<{
             caption={[L_GuiProjectSettings.SyncMapGenSettings]}
             tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
             on_gui_click={ibind(this.syncMapGenSettings)}
+          />
+          <button
+            caption={[L_GuiProjectSettings.SetMapGenSettingsFromPlanet]}
+            tooltip={[L_GuiProjectSettings.SetMapGenSettingsFromPlanetTooltip]}
+            on_gui_click={ibind(this.openMapGenSettingsSelect)}
           />
           <VerticalPusher />
           <button

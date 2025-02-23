@@ -38,20 +38,20 @@ export declare const enum L_ItemGroupName {
   Bp100Utility = "item-group-name.bp100_utility",
 }
 export declare const enum L_ModSettingName {
-  /** Allow placing offshore pumps anywhere */
-  Bp100FlexibleOffshorePumpPlacement = "mod-setting-name.bp100_flexible-offshore-pump-placement",
   /** Location of Entity info gui */
   Bp100EntityInfoLocation = "mod-setting-name.bp100_entity-info-location",
   /** Teleport to stage when clicking a GPS tag */
   Bp100GpsTagTeleport = "mod-setting-name.bp100_gps-tag-teleport",
   /** Unhide infinity items (allows use in upgrade planner) */
   Bp100UnhideInfinityItems = "mod-setting-name.bp100_unhide-infinity-items",
+  /** Deconstruct at next stage */
+  Bp100DeleteAtNextStage = "mod-setting-name.bp100_delete-at-next-stage",
 }
 export declare const enum L_ModSettingDescription {
-  /** Pumps still need to be place on top of a fluid tile, to determine what fluid they pump. */
-  Bp100FlexibleOffshorePumpPlacement = "mod-setting-description.bp100_flexible-offshore-pump-placement",
   /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
   Bp100UnhideInfinityItems = "mod-setting-description.bp100_unhide-infinity-items",
+  /** When stage-deconstructing an entity, it will be deconstructed at the _next_ stage instead of the current stage. */
+  Bp100DeleteAtNextStage = "mod-setting-description.bp100_delete-at-next-stage",
 }
 export declare const enum L_StringModSetting {
   /** Top */
@@ -368,6 +368,10 @@ export declare const enum L_GuiProjectSettings {
   SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
   /** Sets map gen settings for all stages to match the current stage, then regenerates all stages.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings".\n - Possibly un-check "Generate new chunks with lab tiles".\n - Click this button to regenerate all stages. */
   SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
+  /** Set map settings from seed/planet [img=info] */
+  SetMapGenSettingsFromPlanet = "bp100.gui.project-settings.set-map-gen-settings-from-planet",
+  /** Sets map gen settings to match a planet/set seed. To further change map settings, see "Sync map gen settings". */
+  SetMapGenSettingsFromPlanetTooltip = "bp100.gui.project-settings.set-map-gen-settings-from-planet-tooltip",
   /** Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
   /** Are you sure you want to delete project __1__? */
@@ -430,4 +434,14 @@ export declare const enum L_GuiEntityInfo {
   ApplyToLowerStage = "bp100.gui.entity-info.apply-to-lower-stage",
   /** <All> */
   AllProps = "bp100.gui.entity-info.all-props",
+}
+export declare const enum L_GuiSetSeedSelect {
+  /** Set map gen settings */
+  Title = "bp100.gui.set-seed-select.title",
+  /** Seed [img=info] */
+  Seed = "bp100.gui.set-seed-select.seed",
+  /** Seed, on the initial save creation screen, or the Nauvis seed. (Internally, an offset is added to this seed for planets other than Nauvis). */
+  SeedTooltip = "bp100.gui.set-seed-select.seed-tooltip",
+  /** Planet */
+  Planet = "bp100.gui.set-seed-select.planet",
 }
