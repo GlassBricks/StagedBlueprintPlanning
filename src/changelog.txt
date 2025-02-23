@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.0
-Date: ????
+Date: 2025-02-23
   Features:
     - Added "Deconstruct at next stage" mod setting. This makes the stage deconstruction tool deconstruct entities in the next stage, rather than the current stage.
     - Added button to set a project's map settings from a set-seed, on a given planet.
