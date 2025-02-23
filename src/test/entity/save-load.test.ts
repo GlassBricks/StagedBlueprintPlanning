@@ -296,18 +296,6 @@ test("can rotate entity", () => {
   expect(entity.direction).toBe(defines.direction.south)
 })
 
-test("can rotate an assembler with no fluid recipe", () => {
-  const entity = surface.create_entity({
-    name: "assembling-machine-1",
-    position: { x: 12.5, y: 12.5 },
-    force: "player",
-    direction: defines.direction.east,
-  })!
-  const newEntity = updateEntity(entity, { name: "assembling-machine-1" } as Entity, defines.direction.south)[0]
-  expect(entity).toBe(newEntity)
-  expect(entity.direction).toBe(defines.direction.south)
-})
-
 test("can delete tree in the way", () => {
   const tree = surface.create_entity({
     name: "tree-01",

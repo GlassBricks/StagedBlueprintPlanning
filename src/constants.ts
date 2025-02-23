@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -15,6 +15,7 @@ export const enum Settings {
   EntityInfoLocation = "bp100_entity-info-location",
   GpsTagTeleport = "bp100_gps-tag-teleport",
   UnhideInfinityItems = "bp100_unhide-infinity-items",
+  DeleteAtNextStage = "bp100_delete-at-next-stage",
 }
 
 export const enum Prototypes {

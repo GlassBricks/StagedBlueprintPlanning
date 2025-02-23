@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.0
 Date: ????
-  Changes:
+  Features:
+    - Added "Deconstruct at next stage" mod setting. This makes the stage deconstruction tool deconstruct entities in the next stage, rather than the current stage.
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.1
 Date: 2025-01-30

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -18,12 +18,13 @@ import {
   TilePosition,
 } from "factorio:runtime"
 import expect from "tstl-expect"
-import { L_Game, Prototypes } from "../../constants"
+import { L_Game, Prototypes, Settings } from "../../constants"
 import { BpStagedInfo } from "../../copy-paste/blueprint-stage-info"
 import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../../entity/ProjectTile"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Pos } from "../../lib/geometry"
+import { getPlayer } from "../../lib/test/misc"
 import { L_Interaction } from "../../locale"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
@@ -714,11 +715,27 @@ describe("onBringDownToStageUsed", () => {
 })
 
 describe("onStageDeleteUsed", () => {
-  test("can set stage", () => {
+  test("can set last stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     const undoAction = userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
     expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 2)
+
+    expect(undoAction).not.toBeNil()
+    performUndoAction(undoAction!)
+    expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, nil)
+
+    expectedNumCalls = 2
+  })
+  after_each(() => {
+    getPlayer().mod_settings[Settings.DeleteAtNextStage] = { value: false }
+  })
+  test("sets last stage to current stage if deleteAtNextStage is true", () => {
+    const { entity, luaEntity } = addEntity(2)
+    entity.replaceWorldEntity(2, luaEntity)
+    getPlayer().mod_settings[Settings.DeleteAtNextStage] = { value: true }
+    const undoAction = userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
+    expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 3)
 
     expect(undoAction).not.toBeNil()
     performUndoAction(undoAction!)

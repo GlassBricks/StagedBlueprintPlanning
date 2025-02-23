@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 GlassBricks
+ * Copyright (c) 2022-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,7 +10,7 @@
  */
 
 import { BlueprintEntity, LuaEntity, nil, PlayerIndex } from "factorio:runtime"
-import { Colors, L_Game } from "../constants"
+import { Colors, L_Game, Settings } from "../constants"
 import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { LuaEntityInfo } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
@@ -635,10 +635,13 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
       return undoBringToStage.createAction(byPlayer, { project, entity: projectEntity, oldStage })
     }
   }
+
   function onStageDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
     const projectEntity = content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (!projectEntity || projectEntity.isSettingsRemnant) return
-    const newLastStage = stage - 1
+    const player = game.get_player(byPlayer)
+    const useNextStage = player?.mod_settings[Settings.DeleteAtNextStage]?.value as boolean | nil
+    const newLastStage = useNextStage ? stage : stage - 1
     const oldLastStage = projectEntity.lastStage
     if (userTrySetLastStage(projectEntity, newLastStage, byPlayer)) {
       return lastStageChangeUndo.createAction(byPlayer, { project, entity: projectEntity, oldLastStage })
