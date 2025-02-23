@@ -13,7 +13,8 @@ import { LuaSurface, MapGenSettingsWrite } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
 import { withTileEventsDisabled } from "./tile-events"
 
-const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, script.active_mods["factorio-test"] != nil ? 32 : 5 * 32)
+const inTest = script.active_mods["factorio-test"] != nil
+const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, inTest ? 32 : 5 * 32)
 
 export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurface): void {
   const generateWithLabTiles = fromSurface.generate_with_lab_tiles
@@ -41,9 +42,10 @@ function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSu
   prepareArea(surface, area)
 }
 function createNewStageSurface(area: BBox = defaultPreparedArea, copySettingsFrom: LuaSurface | nil): LuaSurface {
+  const size = inTest ? 32 * 2 : 10000
   const surface = game.create_surface("bp100-stage-temp", {
-    width: 10000,
-    height: 10000,
+    width: size,
+    height: size,
   } as MapGenSettingsWrite)
   prepareSurface(surface, area, copySettingsFrom)
   return surface
@@ -84,7 +86,7 @@ interface SurfaceCreator {
 }
 
 let surfaceCreator: SurfaceCreator
-if (!script.active_mods["factorio-test"]) {
+if (!inTest) {
   surfaceCreator = {
     createSurface: createNewStageSurface,
     destroySurface: (surface) => game.delete_surface(surface),
@@ -99,6 +101,7 @@ if (!script.active_mods["factorio-test"]) {
         const surface = storage.freeSurfaces.pop()!
         if (surface.valid) {
           surface.destroy_decoratives({})
+          for (const entity of surface.find_entities()) entity.destroy()
           prepareSurface(surface, area, copySettingsFrom)
           return surface
         }
