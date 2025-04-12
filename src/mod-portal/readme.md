@@ -4,8 +4,6 @@ The ultimate mod for designing multi-stage blueprints. A.K.A. the Nefrums-approv
 
 Separate your builds into stages. Edit entities in any stage, and changes will be applied to all later stages. Create a blueprint book of all stages in one click.
 
-This mod is in active development (new features are still being added!) Feedback is greatly appreciated.
-
 ## Getting started
 
 > Note that this mod is meant to be used in editor mode or a separate planning save, not with a normal game.
@@ -32,6 +30,8 @@ Here are some useful hotkeys. The default keybindings are listed in brackets.
 - [CTRL+SHIFT+Right mouse button] to _force_ delete an entity (in any stage)
 
 ## More details!
+
+Thedoh has also made a great video detailing the features of this mod in more detail. Check it out here: https://www.youtube.com/watch?v=e8XHsEVqtiY
 
 ### Changing entity settings
 
