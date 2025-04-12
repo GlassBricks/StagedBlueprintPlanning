@@ -1,11 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.2
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed that mirroring/flipping assembling machines didn't work in some cases.
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.1
 Date: 2025-03-06
-  Changes:
+  Bugfixes:
+    - Fixed "setting map settings from set seed" did not set the correct seed.
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.0
 Date: 2025-02-23
