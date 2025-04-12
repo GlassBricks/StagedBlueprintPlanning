@@ -1828,3 +1828,50 @@ test("newly created train does not get set to automatic", () => {
     expect(train.train?.speed).toBe(0)
   })
 })
+
+test("mirroring an entity", () => {
+  const chemPlant = buildEntity(1, {
+    name: "chemical-plant",
+    recipe: "light-oil-cracking",
+  })
+  const luaEntity = chemPlant.getWorldEntity(1)
+  assert(luaEntity)
+  luaEntity.mirroring = true
+  Events.raiseFakeEventNamed("on_player_flipped_entity", {
+    entity: luaEntity,
+    player_index: player.index,
+    horizontal: true,
+  })
+
+  const luaEntity2 = chemPlant.getWorldEntity(2)
+  expect(luaEntity2?.mirroring).toBe(true)
+})
+
+test("mirroring an entity by pasting mirrored", () => {
+  const chemPlant = buildEntity(1, {
+    name: "chemical-plant",
+    recipe: "light-oil-cracking",
+  })
+  const stack = player.cursor_stack!
+  stack.clear()
+  stack.set_stack("blueprint")
+
+  stack.set_blueprint_entities([
+    {
+      entity_number: 1,
+      position: [0, 0],
+      name: "chemical-plant",
+      recipe: "sulfuric-acid",
+    },
+  ])
+
+  player.teleport([0, 0], surfaces[0])
+
+  player.build_from_cursor({ position: chemPlant.position, mirror: false })
+  expect(chemPlant.getWorldEntity(1)?.mirroring).toBe(false)
+  expect(chemPlant.getWorldEntity(2)?.mirroring).toBe(false)
+
+  player.build_from_cursor({ position: chemPlant.position, mirror: true })
+  expect(chemPlant.getWorldEntity(1)?.mirroring).toBe(true)
+  expect(chemPlant.getWorldEntity(2)?.mirroring).toBe(true)
+})

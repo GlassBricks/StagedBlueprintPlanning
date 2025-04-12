@@ -26,7 +26,8 @@
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio-test-data-dir/config.ini"
+        "${workspaceRoot}/factorio-test-data-dir/config.ini",
+        "--disable-migration-window"
       ],
       "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
       "hookControl": false,
@@ -65,7 +66,8 @@
         "--graphics-quality",
         "low",
         "-c",
-        "${workspaceRoot}/factorio-test-data-dir/config.ini"
+        "${workspaceRoot}/factorio-test-data-dir/config.ini",
+        "--disable-migration-window"
       ],
       "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
       "adjustModSettings": [

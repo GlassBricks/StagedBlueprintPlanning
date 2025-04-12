@@ -1020,8 +1020,10 @@ describe("blueprint paste", () => {
     })
     expect(splitter).toBeAny()
 
-    // player.build_from_cursor({ position: Pos(0, 0.5), mirror: true })
-    fakeFlippedPaste(Pos(0, 0.5))
+    player.build_from_cursor({
+      position: Pos(0, 0.5),
+      mirror: true,
+    })
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, {
@@ -1454,5 +1456,22 @@ test("calls onSurfaceCleared", () => {
   Events.raiseFakeEventNamed("on_surface_cleared", { surface_index: surface.index })
   after_ticks(5, () => {
     expect(project.actions.onSurfaceCleared).toHaveBeenCalledWith(1)
+  })
+})
+
+describe("mirroring", () => {
+  test("horizontal", () => {
+    const chemPlant = surface.create_entity({
+      name: "chemical-plant",
+      position: pos,
+      force: "player",
+      recipe: "light-oil-cracking",
+    })!
+    chemPlant.mirroring = true
+    Events.raiseFakeEventNamed("on_player_flipped_entity", {
+      entity: chemPlant,
+      player_index: player.index,
+      horizontal: true,
+    })
   })
 })

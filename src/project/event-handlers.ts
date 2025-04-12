@@ -240,6 +240,7 @@ Events.on_player_cursor_stack_changed((e) => {
 })
 
 Events.on_player_rotated_entity((e) => luaEntityRotated(e.entity, e.previous_direction, e.player_index))
+Events.on_player_flipped_entity((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
 
 Events.on_marked_for_upgrade((e) => luaEntityMarkedForUpgrade(e.entity, e.player_index))
 
@@ -608,7 +609,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
       needsManualConnections: [],
       originalNumEntities: numEntities,
       allowPasteUpgrades: event.build_mode == defines.build_mode.superforced,
-      isFlipped: event.flip_vertical != event.flip_horizontal,
+      isFlipped: (event.flip_vertical != event.flip_horizontal) != event.mirror,
       flipVertical: event.flip_vertical ?? false,
       flipHorizontal: event.flip_horizontal ?? false,
       direction: event.direction,
@@ -668,6 +669,11 @@ function flipSplitterPriority(entity: Mutable<BlueprintEntity>) {
     entity.output_priority = entity.output_priority == "left" ? "right" : "left"
   }
 }
+
+function mirrorEntity(entity: Mutable<BlueprintEntity>) {
+  entity.mirror = entity.mirror ? nil : true
+}
+
 function editPassedValue(entity: BlueprintEntity, edit: (entity: Mutable<BlueprintEntity>) => void): BlueprintEntity {
   const passedValue = mutableShallowCopy(entity)
   assume<Mutable<BlueprintEntity>>(passedValue)
@@ -749,6 +755,10 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
           )
         }
       })
+    }
+  } else if (type == "assembling-machine") {
+    if (bpState.isFlipped) {
+      passedValue = editPassedValue(value, mirrorEntity)
     }
   } else {
     const isDiagonal = (value.direction ?? 0) % 4 == 2
