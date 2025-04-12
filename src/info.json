@@ -22,7 +22,7 @@
       "prepublish": "npm run check && npm run subst-current-version",
       "postpackage": "npm run postpackage"
     },
-    "git_publish_branch": "releases",
+    "git_publish_branch": "main",
     "ignore": [
       "**/test/**/*",
       "**/*.xcf",
