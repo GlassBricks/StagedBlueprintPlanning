@@ -71,7 +71,9 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
   }
 
   private setDropDownItem(stageNumber: StageNumber, name: LocalisedString) {
-    this.element.set_item(stageNumber, name)
+    if (this.element.valid) {
+      this.element.set_item(stageNumber, name)
+    }
   }
 
   private onSelectedIndexChanged() {
