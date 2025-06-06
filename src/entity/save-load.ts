@@ -105,6 +105,7 @@ function setBlueprintEntity(
   entity.entity_number = nil!
 }
 
+const buildModeForced = defines.build_mode.forced
 let entityVersion = 1
 
 let pasteEntityVersion = 0
@@ -129,6 +130,7 @@ function pasteEntity(
     surface,
     force: "player",
     position: tilePosition,
+    build_mode: buildModeForced,
   })
   if (target?.type == "assembling-machine") {
     pcall(target.set_recipe as any, entity.recipe)

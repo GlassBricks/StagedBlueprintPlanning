@@ -1729,7 +1729,7 @@ describe("map gen settings", () => {
       s.clear()
     })
   })
-  test.skip("rebuild stage after sync map gen settings", () => {
+  test("rebuild stage after sync map gen settings", () => {
     // skip due to hanging process for some reason
     const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
     assertEntityCorrect(entity, false)
