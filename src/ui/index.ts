@@ -33,7 +33,7 @@ Migrations.fromAny(() => {
   }
 })
 
-Migrations.since($CURRENT_VERSION, () => {
+Migrations.since("2.3.6", () => {
   for (const [, player] of game.players) {
     const isEditor = player.controller_type == defines.controllers.editor
     if (isEditor) {
