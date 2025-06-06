@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.5
-Date: ??????
+Date: 2025-06-06
   Bugfixes:
     - Fixed that rotated assembler with fluid input would not be handled properly in some cases.
     - Fixed that some entities may not be updated correctly after running sync map gen settings.
