@@ -132,6 +132,7 @@ function pasteEntity(
   })
   if (target?.type == "assembling-machine") {
     pcall(target.set_recipe as any, entity.recipe)
+    target.direction = direction
   }
   surface.find_entity("item-request-proxy", position)?.destroy()
   return ghosts[0]

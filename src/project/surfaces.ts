@@ -17,6 +17,7 @@ const inTest = script.active_mods["factorio-test"] != nil
 const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, inTest ? 32 : 5 * 32)
 
 export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurface): void {
+  if (fromSurface == toSurface) return
   const generateWithLabTiles = fromSurface.generate_with_lab_tiles
   toSurface.generate_with_lab_tiles = generateWithLabTiles
   toSurface.ignore_surface_conditions = fromSurface.ignore_surface_conditions

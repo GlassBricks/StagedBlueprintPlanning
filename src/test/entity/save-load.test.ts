@@ -164,6 +164,17 @@ test("can create an entity with different quality", () => {
   expect(luaEntity.quality.name).toBe("legendary")
 })
 
+test("can create an rotated assembler", () => {
+  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.east, {
+    name: "assembling-machine-3",
+    recipe: "rocket-fuel",
+  } as Entity)!
+  expect(luaEntity).toBeAny()
+  expect(luaEntity.name).toBe("assembling-machine-3")
+  expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
+  expect(luaEntity.direction).toBe(defines.direction.east)
+})
+
 test("can set recipe of assembling machine even if not researched", () => {
   game.forces.player.recipes["rocket-fuel"].enabled = false
   after_test(() => (game.forces.player.recipes["rocket-fuel"].enabled = true))

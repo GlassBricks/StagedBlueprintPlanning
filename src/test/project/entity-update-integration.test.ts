@@ -1875,3 +1875,32 @@ test("mirroring an entity by pasting mirrored", () => {
   expect(chemPlant.getWorldEntity(1)?.mirroring).toBe(true)
   expect(chemPlant.getWorldEntity(2)?.mirroring).toBe(true)
 })
+
+test("paste a rotated assembler", () => {
+  player.cursor_stack!.set_stack("blueprint")
+  player.cursor_stack!.set_blueprint_entities([
+    {
+      entity_number: 1,
+      position: [0, 0],
+      name: "assembling-machine-2",
+      recipe: "concrete",
+      direction: defines.direction.east,
+    },
+  ])
+
+  player.teleport([0, 0], surfaces[0])
+  player.build_from_cursor({ position: [0.5, 0.5] })
+
+  const asm2s = surfaces[1].find_entities_filtered({
+    name: "assembling-machine-2",
+    position: [0.5, 0.5],
+  })
+  expect(asm2s.length).toBe(1)
+  const asm2 = asm2s[0]
+
+  const projectAsm2 = project.content.findCompatibleWithLuaEntity(asm2, nil, 2)
+  expect(projectAsm2).not.toBeNil()
+  expect(projectAsm2?.direction).toBe(defines.direction.east)
+
+  expect(asm2.direction).toBe(defines.direction.east)
+})
