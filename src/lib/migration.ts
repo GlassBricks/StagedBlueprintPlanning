@@ -67,6 +67,12 @@ export namespace Migrations {
     })
   }
 
+  /** Runs both during on_init and from an earlier version. */
+  export function since(version: VersionString, func: () => void): void {
+    Events.on_init(func)
+    to(version, func)
+  }
+
   /** Runs during any migration from an earlier version. */
   export function fromAny(func: () => void): void {
     to(script.active_mods[script.mod_name]!, func)

@@ -1,14 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.6
 Date: ????
-  Changes:
+  Bugfixes:
+    - Editor ui no longer jumps around when navigating between stages.
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.5
 Date: 2025-06-06
   Bugfixes:
     - Fixed that rotated assembler with fluid input would not be handled properly in some cases.
     - Fixed that some entities may not be updated correctly after running sync map gen settings.
-    - Add more checks against potential soft crashes on StageSelector.
+    - Add more checks against po
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.3
 Date: 2025-05-31

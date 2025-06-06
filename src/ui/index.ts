@@ -12,7 +12,6 @@
 import { destroy } from "../lib/factoriojsx"
 import { Migrations } from "../lib/migration"
 import "./AllProjects"
-import "./editor-fix"
 import "./opened-entity"
 import "./player-navigation"
 import "./ProjectSettings"
@@ -30,6 +29,16 @@ Migrations.fromAny(() => {
     if (opened && opened.object_name == "LuaGuiElement" && opened.get_mod() == script.mod_name) {
       destroy(opened)
       player.opened = nil
+    }
+  }
+})
+
+Migrations.since($CURRENT_VERSION, () => {
+  for (const [, player] of game.players) {
+    const isEditor = player.controller_type == defines.controllers.editor
+    if (isEditor) {
+      player.gui.top.style.left_margin = 0
+      player.gui.left.style.left_margin = 0
     }
   }
 })
