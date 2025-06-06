@@ -49,6 +49,10 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
 
   private setup() {
     this.elementSubscription?.close()
+    if (!this.element.valid) {
+      this.trackerSubscription.close()
+      return
+    }
     const subscription = (this.elementSubscription = new Subscription())
     this.trackerSubscription.add(subscription)
 
