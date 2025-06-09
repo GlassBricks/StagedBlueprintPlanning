@@ -36,8 +36,6 @@ function lt(a: MigrationWithPriority, b: MigrationWithPriority): boolean {
 
 export namespace Migrations {
   let order = 0
-  // let migrations: Record<VersionString, (() => void)[]> = {}
-  // let earlyMigrations: Record<VersionString, (() => void)[]> = {}
   let migrations: MigrationWithPriority[] = []
 
   /** Runs when migrating from a version earlier than the specified version. */
