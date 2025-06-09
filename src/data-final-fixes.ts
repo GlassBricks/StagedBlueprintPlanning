@@ -179,7 +179,8 @@ for (const type of types.sort()) {
       flags,
       placeable_by: placeableBy,
       render_layer: "ground-patch-higher2",
-      secondary_draw_order: 100,
+      secondary_draw_order: 10,
+      selection_priority: 20,
       subgroup: Prototypes.PreviewEntitySubgroup,
       create_ghost_on_death: false,
     }
