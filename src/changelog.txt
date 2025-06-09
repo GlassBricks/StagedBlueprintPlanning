@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.7
-Date: ????
+Date: 2025-06-09
   Changes:
     - Decreased selection priority of previews. Other entities should be selected first if they overlap with previews.
 ---------------------------------------------------------------------------------------------------
