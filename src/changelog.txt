@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.8
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed being a bit mean to Po in the changelog.
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.7
 Date: 2025-06-09
@@ -18,7 +19,7 @@ Date: 2025-06-06
   Bugfixes:
     - Fixed that rotated assembler with fluid input would not be handled properly in some cases.
     - Fixed that some entities may not be updated correctly after running sync map gen settings.
-    - Add more checks against po
+    - Add more checks against possible crashes with StageSelector.
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.3
 Date: 2025-05-31
