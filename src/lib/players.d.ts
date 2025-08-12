@@ -12,6 +12,7 @@
 import { PlayerIndex } from "factorio:runtime"
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface PlayerData {}
   type GlobalPlayerData = {
     readonly [P in PlayerIndex]: PlayerData

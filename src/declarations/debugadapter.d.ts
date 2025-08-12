@@ -11,6 +11,7 @@
 
 /** @noSelf */
 interface DebugAdapter {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   stepIgnore(func: Function): void
   breakpoint(): void
 }
