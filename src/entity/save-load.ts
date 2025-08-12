@@ -139,7 +139,7 @@ function pasteEntity(
   })
   if (target?.type == "assembling-machine") {
     assume<AssemblingMachineBlueprintEntity>(entity)
-    pcall(target.set_recipe as any, entity.recipe)
+    pcall(target.set_recipe as any, entity.recipe, entity.recipe_quality)
     target.direction = direction
   }
   surface.find_entity("item-request-proxy", position)?.destroy()

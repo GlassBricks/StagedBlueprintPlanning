@@ -270,6 +270,29 @@ test("can set recipe of assembling machine even if not researched", () => {
   expect(entity.get_recipe()[0]?.name).toBe("rocket-fuel")
 })
 
+test("can set recipe with different quality than normal", () => {
+  game.forces.player.recipes["rocket-fuel"].enabled = false
+  after_test(() => (game.forces.player.recipes["rocket-fuel"].enabled = true))
+  const entity = surface.create_entity({
+    name: "assembling-machine-3",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+  })!
+  const newEntity = updateEntity(
+    entity,
+    {
+      name: "assembling-machine-3",
+      recipe: "rocket-fuel",
+      recipe_quality: "legendary",
+    } as Entity,
+    defines.direction.north,
+  )[0]
+  expect(newEntity).toBe(entity)
+  const [recipe, quality] = entity.get_recipe()
+  expect(recipe?.name).toBe("rocket-fuel")
+  expect(quality?.name).toBe("legendary")
+})
+
 test("can upgrade an entity", () => {
   const entity = surface.create_entity({
     name: "iron-chest",
