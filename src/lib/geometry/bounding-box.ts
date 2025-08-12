@@ -12,7 +12,7 @@
 /** @noSelfInFile */
 
 import { BoundingBox as PBoundingBox } from "factorio:prototype"
-import { BoundingBox, BoundingBoxArray, BoundingBoxWrite } from "factorio:runtime"
+import { BoundingBox } from "factorio:runtime"
 import { WithMetatable } from "../_util"
 import { Pos, Position, PositionClass } from "./position"
 
@@ -54,7 +54,7 @@ namespace BBox {
     return BBox({ x: point.x - radius, y: point.y - radius }, { x: point.x + radius, y: point.y + radius })
   }
 
-  export function normalize(box: BoundingBoxWrite | BoundingBoxArray): BBoxClass
+  export function normalize(box: PBoundingBox): BBoxClass
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   export function normalize(box: any): BBoxClass {
     return BBox(Pos.normalize(box.left_top || box[1]), Pos.normalize(box.right_bottom || box[2]))

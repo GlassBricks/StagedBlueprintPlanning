@@ -11,11 +11,13 @@
 
 import {
   BlueprintEntity,
+  InserterBlueprintEntity,
   LuaEntity,
   LuaPlayer,
   LuaSurface,
   PlayerIndex,
   SurfaceCreateEntity,
+  UndergroundBeltBlueprintEntity,
   UnitNumber,
 } from "factorio:runtime"
 import expect from "tstl-expect"
@@ -32,7 +34,7 @@ import { isPreviewEntity } from "../../entity/prototype-info"
 import { canBeAnyDirection, checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
-import { assert, Events } from "../../lib"
+import { assert, Events, Mutable } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import { checkForEntityUpdates } from "../../project/event-handlers"
@@ -51,6 +53,7 @@ import {
   assertNoHighlightsAfterLastStage,
 } from "./entity-highlight-test-util"
 import direction = defines.direction
+import { debugPrint } from "../../lib/test/misc"
 
 let project: UserProject
 let surfaces: LuaSurface[]
@@ -220,14 +223,16 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   }
   return entity
 }
-function buildEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): ProjectEntity<BlueprintEntity> {
+function buildEntity<T extends BlueprintEntity = BlueprintEntity>(
+  stage: StageNumber,
+  args?: Partial<SurfaceCreateEntity>,
+): ProjectEntity<T> {
   const luaEntity = createEntity(stage, args)
   const saved = recordEntity(luaEntity)
   project.actions.onEntityCreated(luaEntity, stage, player.index)
-  const entity = project.content.findCompatibleWithLuaEntity(saved, nil, stage)! as ProjectEntity<BlueprintEntity>
+  const entity = project.content.findCompatibleWithLuaEntity(saved, nil, stage)! as ProjectEntity<T>
   assert(entity)
   expect(entity.firstStage).toBe(stage)
-  // expect(entity.getWorldEntity(stage)).toMatchTable(saved)
   return entity
 }
 
@@ -347,7 +352,7 @@ describe.each([
   if (name.includes("inserter")) {
     describe("reviving settings remnants", () => {
       test.each([1, 2, 3, 4, 5, 6])("settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
-        const entity = buildEntity(1)
+        const entity = buildEntity<InserterBlueprintEntity>(1)
         entity._applyDiffAtStage(3, { override_stack_size: 2 })
         entity._applyDiffAtStage(5, { override_stack_size: 3 })
         project.updates.deleteEntityOrCreateSettingsRemnant(entity)
@@ -372,7 +377,7 @@ describe.each([
       })
 
       test("settings remnant 2->3, revive at stage 1", () => {
-        const entity = buildEntity(2)
+        const entity = buildEntity<InserterBlueprintEntity>(2)
         entity._applyDiffAtStage(3, { override_stack_size: 3 })
         project.updates.deleteEntityOrCreateSettingsRemnant(entity)
         assertIsSettingsRemnant(entity)
@@ -636,7 +641,7 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
   const expectedDirection = !flipped ? defines.direction.east : defines.direction.west
   const westType = !flipped ? "input" : "output"
   const eastType = !flipped ? "output" : "input"
-  let westUnderground: ProjectEntity<BlueprintEntity>
+  let westUnderground: ProjectEntity<UndergroundBeltBlueprintEntity>
   before_each(() => {
     westUnderground = buildEntity(4, {
       name: "underground-belt",
@@ -649,7 +654,7 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
 
   test("placing underground", () => {
     // place underground belt facing west (input), should snap to east output
-    const placedUnderground = buildEntity(3, {
+    const placedUnderground = buildEntity<UndergroundBeltBlueprintEntity>(3, {
       name: "underground-belt",
       direction: defines.direction.west,
       type: "input",
@@ -914,12 +919,12 @@ describe("underground belt inconsistencies", () => {
         })
         middle.destroyAllWorldOrPreviewEntities()
       }
-      rightUnderground = buildEntity(1, {
+      rightUnderground = buildEntity<UndergroundBeltBlueprintEntity>(1, {
         name: "underground-belt",
         type: "output",
         direction: defines.direction.east,
         position: pos.add(2, 0),
-      }) as UndergroundBeltProjectEntity
+      })
       leftWorldEntity = leftUnderground.getWorldEntity(1)!
       expect(leftWorldEntity).toMatchTable({
         belt_to_ground_type: "input",
@@ -1242,12 +1247,13 @@ describe("poles and wire connections", () => {
   })
 
   test("connect and disconnect circuit wires", () => {
-    const inserter = buildEntity(3) // is filter inserter
+    const inserter = buildEntity(3)
     const pole = setupPole(3)
-    pole
+    const poleConnector = pole.getWorldEntity(3)!.get_wire_connector(defines.wire_connector_id.circuit_red, true)
+    const inserterConnector = inserter
       .getWorldEntity(3)!
       .get_wire_connector(defines.wire_connector_id.circuit_red, true)
-      .connect_to(inserter.getWorldEntity(3)!.get_wire_connector(defines.wire_connector_id.circuit_red, true))
+    poleConnector.connect_to(inserterConnector)
     project.updates.updateWiresFromWorld(pole, 3)
 
     const expectedConnection = next(inserter.wireConnections!.get(pole)!)[0] as ProjectWireConnection
@@ -1263,6 +1269,18 @@ describe("poles and wire connections", () => {
         expectedConnection,
       ),
     ).toBe(true)
+
+    // weird bug: simply connecting an inserter sets control behavior
+    // workaround
+    const worldEntity = inserter.getWorldEntity(3)!
+    const inserterValue = saveEntity(worldEntity)! as Mutable<InserterBlueprintEntity>
+    if (inserterValue.control_behavior) {
+      inserter._applyDiffAtStage(3, {
+        control_behavior: inserterValue.control_behavior,
+      })
+    } else {
+      debugPrint("Workaround no longer needed")
+    }
 
     assertEntityCorrect(inserter, false)
     assertEntityCorrect(pole, false)

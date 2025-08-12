@@ -11,6 +11,7 @@
 
 import {
   BlueprintEntity,
+  BlueprintEntityWrite,
   BlueprintInsertPlanWrite,
   ItemWithQualityCounts,
   LuaSurface,
@@ -662,7 +663,7 @@ test("can flip loader", () => {
 
 test("can handle item changes", () => {
   const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
-  const newContents: ItemWithQualityCounts[] = [
+  const newContents: ItemWithQualityCounts = [
     { name: "speed-module", count: 1, quality: "normal" },
     { name: "speed-module-2", count: 2, quality: "normal" },
     { name: "productivity-module-2", count: 1, quality: "normal" },
@@ -807,8 +808,8 @@ describe("EditorExtensions support", () => {
     const loader = createEntity(surface, { x: 12.5, y: 12 }, defines.direction.east, {
       name: "ee-infinity-loader",
       type: "input",
-      filters: [{ index: 1, name: "iron-plate", count: 1 }],
-    } satisfies Partial<BlueprintEntity> as Entity)!
+      filters: [{ index: 1, name: "iron-plate" }],
+    } satisfies Partial<BlueprintEntityWrite> as Entity)!
     expect(loader).toBeAny()
     expect(loader.name).toBe("ee-infinity-loader")
     expect(loader.get_filter(1)).toEqual({ name: "iron-plate" })
@@ -818,8 +819,8 @@ describe("EditorExtensions support", () => {
       {
         name: "ee-infinity-loader",
         type: "output",
-        filters: [{ index: 1, name: "copper-plate", count: 1 }],
-      } satisfies Partial<BlueprintEntity> as Entity,
+        filters: [{ index: 1, name: "copper-plate" }],
+      } satisfies Partial<BlueprintEntityWrite> as Entity,
       defines.direction.east,
     )[0]!
 

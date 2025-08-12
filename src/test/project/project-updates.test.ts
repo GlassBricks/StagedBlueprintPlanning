@@ -10,7 +10,10 @@
  */
 
 import {
+  AssemblingMachineBlueprintEntity,
   BlueprintEntity,
+  InserterBlueprintEntity,
+  LoaderBlueprintEntity,
   LuaEntity,
   LuaSurface,
   SurfaceCreateEntity,
@@ -300,9 +303,12 @@ function registerNewEntity(luaEntity: LuaEntity, stage: number): ProjectEntity<B
   entity.replaceWorldEntity(stage, luaEntity)
   return entity
 }
-function addEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
+function addEntity<T extends BlueprintEntity>(
+  stage: StageNumber,
+  args?: Partial<SurfaceCreateEntity>,
+): { entity: ProjectEntity<T>; luaEntity: LuaEntity } {
   const luaEntity = createEntity(stage, args)
-  const entity = registerNewEntity(luaEntity, stage)
+  const entity = registerNewEntity(luaEntity, stage) as ProjectEntity<T>
   return { entity, luaEntity }
 }
 
@@ -313,7 +319,7 @@ function addRollingStock(stage: StageNumber) {
 }
 
 test("moving entity on preview replace", () => {
-  const { entity } = addEntity(2)
+  const { entity } = addEntity<InserterBlueprintEntity>(2)
 
   expect(projectUpdates.trySetFirstStage(entity, 1)).toBe(StageMoveResult.Updated)
 
@@ -428,7 +434,7 @@ describe("tryUpdateEntityFromWorld", () => {
   })
 
   test('with change in first stage returns "updated" and updates all entities', () => {
-    const { entity, luaEntity } = addEntity(2)
+    const { entity, luaEntity } = addEntity<InserterBlueprintEntity>(2)
     luaEntity.inserter_stack_size_override = 3
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2)
     expect(ret).toBe("updated")
@@ -439,7 +445,7 @@ describe("tryUpdateEntityFromWorld", () => {
     assertUpdateCalled(entity, 2)
   })
   test('with change in first stage and known value returns "updated" and updates all entities', () => {
-    const { entity } = addEntity(2)
+    const { entity } = addEntity<InserterBlueprintEntity>(2)
     const knownValue = {
       name: "fast-inserter",
       override_stack_size: 3,
@@ -481,7 +487,7 @@ describe("tryUpdateEntityFromWorld", () => {
   })
 
   test.each([false, true])("integration: in higher stage, with changes: %s", (withExistingChanges) => {
-    const { luaEntity, entity } = addEntity(1)
+    const { luaEntity, entity } = addEntity<InserterBlueprintEntity>(1)
     if (withExistingChanges) {
       entity._applyDiffAtStage(2, { override_stack_size: 2, filter_mode: "blacklist" })
       luaEntity.inserter_filter_mode = "blacklist"
@@ -543,7 +549,11 @@ describe("tryRotateEntityFromWorld", () => {
   })
 
   test("rotating loader also sets loader type", () => {
-    const { luaEntity, entity } = addEntity(1, { name: "loader", direction: direction.north, type: "input" })
+    const { luaEntity, entity } = addEntity<LoaderBlueprintEntity>(1, {
+      name: "loader",
+      direction: direction.north,
+      type: "input",
+    })
     luaEntity.rotate()
     const ret = projectUpdates.tryRotateEntityFromWorld(entity, 1)
     expect(ret).toBe("updated")
@@ -555,9 +565,9 @@ describe("tryRotateEntityFromWorld", () => {
 })
 
 describe("ignores assembling machine rotation if no fluid inputs", () => {
-  let luaEntity: LuaEntity, entity: ProjectEntity<BlueprintEntity>
+  let luaEntity: LuaEntity, entity: ProjectEntity<AssemblingMachineBlueprintEntity>
   before_each(() => {
-    ;({ luaEntity, entity } = addEntity(2, {
+    ;({ luaEntity, entity } = addEntity<AssemblingMachineBlueprintEntity>(2, {
       name: "assembling-machine-2",
       direction: defines.direction.east,
     }))

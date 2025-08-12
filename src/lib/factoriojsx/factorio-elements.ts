@@ -46,6 +46,7 @@ import {
   ProgressBarGuiElement,
   PrototypeFilterWrite,
   PrototypeWithQuality,
+  QualityID,
   RadioButtonGuiElement,
   ScrollPaneGuiElement,
   ScrollPolicy,
@@ -93,106 +94,6 @@ export interface BaseElement {
   on_gui_location_changed?: GuiEventHandler<OnGuiLocationChangedEvent>
 }
 
-export interface ChooseElemButtonElement extends BaseElement {
-  type: "choose-elem-button"
-  elem_type: ElemType
-  item?: string
-  tile?: string
-  entity?: string
-  signal?: SignalIDWrite
-  fluid?: string
-  recipe?: string
-  decorative?: string
-  "item-group"?: string
-  achievement?: string
-  equipment?: string
-  technology?: string
-  "item-with-quality"?: PrototypeWithQuality
-  "entity-with-quality"?: PrototypeWithQuality
-  "recipe-with-quality"?: PrototypeWithQuality
-  "equipment-with-quality"?: PrototypeWithQuality
-  elem_filters?: MaybeProperty<PrototypeFilterWrite | nil>
-  elem_value?: MaybeMutableProperty<MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>>
-  locked?: MaybeProperty<boolean>
-  on_gui_elem_changed?: GuiEventHandler<OnGuiElemChangedEvent>
-  onCreate?: OnCreateHandler<ChooseElemButtonGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface DropDownElement extends BaseElement {
-  type: "drop-down"
-  items?: MaybeProperty<LocalisedString[]>
-  selected_index?: MaybeMutableProperty<uint>
-  on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
-  onCreate?: OnCreateHandler<DropDownGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface EmptyWidgetElement extends BaseElement {
-  type: "empty-widget"
-  drag_target?: MaybeProperty<FrameGuiElement | nil>
-  onCreate?: OnCreateHandler<EmptyWidgetGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface EntityPreviewElement extends BaseElement {
-  type: "entity-preview"
-  entity?: MaybeProperty<LuaEntity | nil>
-  onCreate?: OnCreateHandler<EntityPreviewGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface ListBoxElement extends BaseElement {
-  type: "list-box"
-  items?: MaybeProperty<LocalisedString[]>
-  selected_index?: MaybeMutableProperty<uint>
-  on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
-  onCreate?: OnCreateHandler<ListBoxGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface ScrollPaneElement extends BaseElement {
-  type: "scroll-pane"
-  horizontal_scroll_policy?: MaybeProperty<ScrollPolicy>
-  vertical_scroll_policy?: MaybeProperty<ScrollPolicy>
-  onCreate?: OnCreateHandler<ScrollPaneGuiElement>
-  styleMod?: ScrollPaneStyleMod
-}
-
-export interface SpriteButtonElement extends BaseElement {
-  type: "sprite-button"
-  sprite?: MaybeProperty<SpritePath>
-  hovered_sprite?: MaybeProperty<SpritePath>
-  clicked_sprite?: MaybeProperty<SpritePath>
-  number?: MaybeProperty<double | nil>
-  show_percent_for_small_numbers?: MaybeProperty<boolean>
-  mouse_button_filter?: MaybeProperty<MouseButtonFlagsWrite>
-  auto_toggle?: MaybeProperty<boolean>
-  toggled?: MaybeProperty<boolean>
-  onCreate?: OnCreateHandler<SpriteButtonGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface TabbedPaneElement extends BaseElement {
-  type: "tabbed-pane"
-  selected_tab_index?: MaybeMutableProperty<uint | nil>
-  on_gui_selected_tab_changed?: GuiEventHandler<OnGuiSelectedTabChangedEvent>
-  onCreate?: OnCreateHandler<TabbedPaneGuiElement>
-  styleMod?: TabbedPaneStyleMod
-}
-
-export interface TextBoxElement extends BaseElement {
-  type: "text-box"
-  text?: MaybeMutableProperty<string>
-  icon_selector?: boolean
-  selectable?: MaybeProperty<boolean>
-  word_wrap?: MaybeProperty<boolean>
-  read_only?: MaybeProperty<boolean>
-  on_gui_text_changed?: GuiEventHandler<OnGuiTextChangedEvent>
-  onCreate?: OnCreateHandler<TextBoxGuiElement>
-  styleMod?: TextBoxStyleMod
-}
-
 export interface ButtonElement extends BaseElement {
   type: "button"
   mouse_button_filter?: MaybeProperty<MouseButtonFlagsWrite>
@@ -202,13 +103,18 @@ export interface ButtonElement extends BaseElement {
   styleMod?: ButtonStyleMod
 }
 
-export interface CameraElement extends BaseElement {
-  type: "camera"
-  position: MaybeProperty<MapPosition | MapPositionArray>
-  surface_index?: MaybeProperty<SurfaceIndex>
-  zoom?: MaybeProperty<double>
-  entity?: MaybeProperty<LuaEntity | nil>
-  onCreate?: OnCreateHandler<CameraGuiElement>
+export interface SpriteButtonElement extends BaseElement {
+  type: "sprite-button"
+  sprite?: MaybeProperty<SpritePath>
+  hovered_sprite?: MaybeProperty<SpritePath>
+  clicked_sprite?: MaybeProperty<SpritePath>
+  quality?: MaybeProperty<QualityID | nil>
+  number?: MaybeProperty<double | nil>
+  show_percent_for_small_numbers?: MaybeProperty<boolean>
+  mouse_button_filter?: MaybeProperty<MouseButtonFlagsWrite>
+  auto_toggle?: MaybeProperty<boolean>
+  toggled?: MaybeProperty<boolean>
+  onCreate?: OnCreateHandler<SpriteButtonGuiElement>
   styleMod?: BaseStyleMod
 }
 
@@ -251,73 +157,11 @@ export interface LineElement extends BaseElement {
   styleMod?: BaseStyleMod
 }
 
-export interface MinimapElement extends BaseElement {
-  type: "minimap"
-  position?: MaybeProperty<MapPosition | MapPositionArray>
-  surface_index?: MaybeProperty<SurfaceIndex>
-  chart_player_index?: uint
-  force?: MaybeProperty<string | nil>
-  zoom?: MaybeProperty<double>
-  minimap_player_index?: MaybeProperty<uint>
-  entity?: MaybeProperty<LuaEntity | nil>
-  onCreate?: OnCreateHandler<MinimapGuiElement>
-  styleMod?: BaseStyleMod
-}
-
 export interface ProgressBarElement extends BaseElement {
   type: "progressbar"
   value?: MaybeProperty<double>
   onCreate?: OnCreateHandler<ProgressBarGuiElement>
   styleMod?: ProgressBarStyleMod
-}
-
-export interface RadioButtonElement extends BaseElement {
-  type: "radiobutton"
-  state: MaybeMutableProperty<boolean>
-  on_gui_checked_state_changed?: GuiEventHandler<OnGuiCheckedStateChangedEvent>
-  onCreate?: OnCreateHandler<RadioButtonGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface SliderElement extends BaseElement {
-  type: "slider"
-  minimum_value?: MaybeProperty<double>
-  maximum_value?: MaybeProperty<double>
-  value_step?: MaybeProperty<double>
-  discrete_values?: MaybeProperty<boolean>
-  slider_value?: MaybeMutableProperty<double>
-  discrete_slider?: MaybeProperty<boolean>
-  on_gui_value_changed?: GuiEventHandler<OnGuiValueChangedEvent>
-  onCreate?: OnCreateHandler<SliderGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface SpriteElement extends BaseElement {
-  type: "sprite"
-  sprite?: MaybeProperty<SpritePath>
-  resize_to_sprite?: MaybeProperty<boolean>
-  onCreate?: OnCreateHandler<SpriteGuiElement>
-  styleMod?: SpriteStyleMod
-}
-
-export interface SwitchElement extends BaseElement {
-  type: "switch"
-  switch_state?: MaybeMutableProperty<SwitchState>
-  allow_none_state?: MaybeProperty<boolean>
-  left_label_caption?: MaybeProperty<LocalisedString>
-  left_label_tooltip?: MaybeProperty<LocalisedString>
-  right_label_caption?: MaybeProperty<LocalisedString>
-  right_label_tooltip?: MaybeProperty<LocalisedString>
-  on_gui_switch_state_changed?: GuiEventHandler<OnGuiSwitchStateChangedEvent>
-  onCreate?: OnCreateHandler<SwitchGuiElement>
-  styleMod?: BaseStyleMod
-}
-
-export interface TabElement extends BaseElement {
-  type: "tab"
-  badge_text?: MaybeProperty<LocalisedString>
-  onCreate?: OnCreateHandler<TabGuiElement>
-  styleMod?: TabStyleMod
 }
 
 export interface TableElement extends BaseElement {
@@ -347,32 +191,192 @@ export interface TextFieldElement extends BaseElement {
   styleMod?: TextFieldStyleMod
 }
 
+export interface RadioButtonElement extends BaseElement {
+  type: "radiobutton"
+  state: MaybeMutableProperty<boolean>
+  on_gui_checked_state_changed?: GuiEventHandler<OnGuiCheckedStateChangedEvent>
+  onCreate?: OnCreateHandler<RadioButtonGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface SpriteElement extends BaseElement {
+  type: "sprite"
+  sprite?: MaybeProperty<SpritePath>
+  resize_to_sprite?: MaybeProperty<boolean>
+  onCreate?: OnCreateHandler<SpriteGuiElement>
+  styleMod?: SpriteStyleMod
+}
+
+export interface ScrollPaneElement extends BaseElement {
+  type: "scroll-pane"
+  horizontal_scroll_policy?: MaybeProperty<ScrollPolicy>
+  vertical_scroll_policy?: MaybeProperty<ScrollPolicy>
+  onCreate?: OnCreateHandler<ScrollPaneGuiElement>
+  styleMod?: ScrollPaneStyleMod
+}
+
+export interface DropDownElement extends BaseElement {
+  type: "drop-down"
+  items?: MaybeProperty<LocalisedString[]>
+  selected_index?: MaybeMutableProperty<uint>
+  on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
+  onCreate?: OnCreateHandler<DropDownGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface ListBoxElement extends BaseElement {
+  type: "list-box"
+  items?: MaybeProperty<LocalisedString[]>
+  selected_index?: MaybeMutableProperty<uint>
+  on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
+  onCreate?: OnCreateHandler<ListBoxGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface CameraElement extends BaseElement {
+  type: "camera"
+  position: MaybeProperty<MapPosition | MapPositionArray>
+  surface_index?: MaybeProperty<SurfaceIndex>
+  zoom?: MaybeProperty<double>
+  entity?: MaybeProperty<LuaEntity | nil>
+  onCreate?: OnCreateHandler<CameraGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface ChooseElemButtonElement extends BaseElement {
+  type: "choose-elem-button"
+  elem_type: ElemType
+  item?: string
+  tile?: string
+  entity?: string
+  signal?: SignalIDWrite
+  fluid?: string
+  recipe?: string
+  decorative?: string
+  "item-group"?: string
+  achievement?: string
+  equipment?: string
+  technology?: string
+  "asteroid-chunk"?: string
+  "space-location"?: string
+  "item-with-quality"?: PrototypeWithQuality
+  "entity-with-quality"?: PrototypeWithQuality
+  "recipe-with-quality"?: PrototypeWithQuality
+  "equipment-with-quality"?: PrototypeWithQuality
+  elem_filters?: MaybeProperty<PrototypeFilterWrite | nil>
+  locked?: MaybeProperty<boolean>
+  elem_value?: MaybeMutableProperty<MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>>
+  on_gui_elem_changed?: GuiEventHandler<OnGuiElemChangedEvent>
+  onCreate?: OnCreateHandler<ChooseElemButtonGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface TextBoxElement extends BaseElement {
+  type: "text-box"
+  text?: MaybeMutableProperty<string>
+  icon_selector?: boolean
+  selectable?: MaybeProperty<boolean>
+  word_wrap?: MaybeProperty<boolean>
+  read_only?: MaybeProperty<boolean>
+  on_gui_text_changed?: GuiEventHandler<OnGuiTextChangedEvent>
+  onCreate?: OnCreateHandler<TextBoxGuiElement>
+  styleMod?: TextBoxStyleMod
+}
+
+export interface SliderElement extends BaseElement {
+  type: "slider"
+  minimum_value?: MaybeProperty<double>
+  maximum_value?: MaybeProperty<double>
+  value_step?: MaybeProperty<double>
+  discrete_values?: MaybeProperty<boolean>
+  slider_value?: MaybeMutableProperty<double>
+  discrete_slider?: MaybeProperty<boolean>
+  on_gui_value_changed?: GuiEventHandler<OnGuiValueChangedEvent>
+  onCreate?: OnCreateHandler<SliderGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface MinimapElement extends BaseElement {
+  type: "minimap"
+  position?: MaybeProperty<MapPosition | MapPositionArray>
+  surface_index?: MaybeProperty<SurfaceIndex>
+  chart_player_index?: uint
+  force?: MaybeProperty<string | nil>
+  zoom?: MaybeProperty<double>
+  minimap_player_index?: MaybeProperty<uint>
+  entity?: MaybeProperty<LuaEntity | nil>
+  onCreate?: OnCreateHandler<MinimapGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface EntityPreviewElement extends BaseElement {
+  type: "entity-preview"
+  entity?: MaybeProperty<LuaEntity | nil>
+  onCreate?: OnCreateHandler<EntityPreviewGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface EmptyWidgetElement extends BaseElement {
+  type: "empty-widget"
+  drag_target?: MaybeProperty<FrameGuiElement | nil>
+  onCreate?: OnCreateHandler<EmptyWidgetGuiElement>
+  styleMod?: BaseStyleMod
+}
+
+export interface TabbedPaneElement extends BaseElement {
+  type: "tabbed-pane"
+  selected_tab_index?: MaybeMutableProperty<uint | nil>
+  on_gui_selected_tab_changed?: GuiEventHandler<OnGuiSelectedTabChangedEvent>
+  onCreate?: OnCreateHandler<TabbedPaneGuiElement>
+  styleMod?: TabbedPaneStyleMod
+}
+
+export interface TabElement extends BaseElement {
+  type: "tab"
+  badge_text?: MaybeProperty<LocalisedString>
+  onCreate?: OnCreateHandler<TabGuiElement>
+  styleMod?: TabStyleMod
+}
+
+export interface SwitchElement extends BaseElement {
+  type: "switch"
+  switch_state?: MaybeMutableProperty<SwitchState>
+  allow_none_state?: MaybeProperty<boolean>
+  left_label_caption?: MaybeProperty<LocalisedString>
+  left_label_tooltip?: MaybeProperty<LocalisedString>
+  right_label_caption?: MaybeProperty<LocalisedString>
+  right_label_tooltip?: MaybeProperty<LocalisedString>
+  on_gui_switch_state_changed?: GuiEventHandler<OnGuiSwitchStateChangedEvent>
+  onCreate?: OnCreateHandler<SwitchGuiElement>
+  styleMod?: BaseStyleMod
+}
+
 export type FactorioElement =
-  | ChooseElemButtonElement
-  | DropDownElement
-  | EmptyWidgetElement
-  | EntityPreviewElement
-  | ListBoxElement
-  | ScrollPaneElement
-  | SpriteButtonElement
-  | TabbedPaneElement
-  | TextBoxElement
   | ButtonElement
-  | CameraElement
+  | SpriteButtonElement
   | CheckboxElement
   | FlowElement
   | FrameElement
   | LabelElement
   | LineElement
-  | MinimapElement
   | ProgressBarElement
-  | RadioButtonElement
-  | SliderElement
-  | SpriteElement
-  | SwitchElement
-  | TabElement
   | TableElement
   | TextFieldElement
+  | RadioButtonElement
+  | SpriteElement
+  | ScrollPaneElement
+  | DropDownElement
+  | ListBoxElement
+  | CameraElement
+  | ChooseElemButtonElement
+  | TextBoxElement
+  | SliderElement
+  | MinimapElement
+  | EntityPreviewElement
+  | EmptyWidgetElement
+  | TabbedPaneElement
+  | TabElement
+  | SwitchElement
 
 export interface BaseStyleMod {
   minimal_width?: MaybeProperty<int>
@@ -402,27 +406,6 @@ export interface BaseStyleMod {
   size?: MaybeProperty<int | SizeArray>
   padding?: MaybeProperty<int | StyleValuesArray>
   margin?: MaybeProperty<int | StyleValuesArray>
-}
-
-export interface ScrollPaneStyleMod extends BaseStyleMod {
-  extra_top_padding_when_activated?: MaybeProperty<int>
-  extra_bottom_padding_when_activated?: MaybeProperty<int>
-  extra_left_padding_when_activated?: MaybeProperty<int>
-  extra_right_padding_when_activated?: MaybeProperty<int>
-  extra_top_margin_when_activated?: MaybeProperty<int>
-  extra_bottom_margin_when_activated?: MaybeProperty<int>
-  extra_left_margin_when_activated?: MaybeProperty<int>
-  extra_right_margin_when_activated?: MaybeProperty<int>
-  extra_padding_when_activated?: MaybeProperty<int | StyleValuesArray>
-  extra_margin_when_activated?: MaybeProperty<int | StyleValuesArray>
-}
-
-export interface TabbedPaneStyleMod extends BaseStyleMod {
-  vertical_spacing?: MaybeProperty<int>
-}
-
-export interface TextBoxStyleMod extends BaseStyleMod {
-  rich_text_setting?: MaybeProperty<defines.rich_text_setting>
 }
 
 export interface ButtonStyleMod extends BaseStyleMod {
@@ -457,19 +440,6 @@ export interface ProgressBarStyleMod extends BaseStyleMod {
   color?: MaybeProperty<Color | ColorArray>
 }
 
-export interface SpriteStyleMod extends BaseStyleMod {
-  stretch_image_to_widget_size?: MaybeProperty<boolean>
-}
-
-export interface TabStyleMod extends BaseStyleMod {
-  disabled_font_color?: MaybeProperty<Color | ColorArray>
-  badge_font?: MaybeProperty<string>
-  badge_horizontal_spacing?: MaybeProperty<int>
-  default_badge_font_color?: MaybeProperty<Color | ColorArray>
-  selected_badge_font_color?: MaybeProperty<Color | ColorArray>
-  disabled_badge_font_color?: MaybeProperty<Color | ColorArray>
-}
-
 export interface TableStyleMod extends BaseStyleMod {
   top_cell_padding?: MaybeProperty<int>
   right_cell_padding?: MaybeProperty<int>
@@ -482,4 +452,38 @@ export interface TableStyleMod extends BaseStyleMod {
 
 export interface TextFieldStyleMod extends BaseStyleMod {
   rich_text_setting?: MaybeProperty<defines.rich_text_setting>
+}
+
+export interface SpriteStyleMod extends BaseStyleMod {
+  stretch_image_to_widget_size?: MaybeProperty<boolean>
+}
+
+export interface ScrollPaneStyleMod extends BaseStyleMod {
+  extra_top_padding_when_activated?: MaybeProperty<int>
+  extra_bottom_padding_when_activated?: MaybeProperty<int>
+  extra_left_padding_when_activated?: MaybeProperty<int>
+  extra_right_padding_when_activated?: MaybeProperty<int>
+  extra_top_margin_when_activated?: MaybeProperty<int>
+  extra_bottom_margin_when_activated?: MaybeProperty<int>
+  extra_left_margin_when_activated?: MaybeProperty<int>
+  extra_right_margin_when_activated?: MaybeProperty<int>
+  extra_padding_when_activated?: MaybeProperty<int | StyleValuesArray>
+  extra_margin_when_activated?: MaybeProperty<int | StyleValuesArray>
+}
+
+export interface TextBoxStyleMod extends BaseStyleMod {
+  rich_text_setting?: MaybeProperty<defines.rich_text_setting>
+}
+
+export interface TabbedPaneStyleMod extends BaseStyleMod {
+  vertical_spacing?: MaybeProperty<int>
+}
+
+export interface TabStyleMod extends BaseStyleMod {
+  disabled_font_color?: MaybeProperty<Color | ColorArray>
+  badge_font?: MaybeProperty<string>
+  badge_horizontal_spacing?: MaybeProperty<int>
+  default_badge_font_color?: MaybeProperty<Color | ColorArray>
+  selected_badge_font_color?: MaybeProperty<Color | ColorArray>
+  disabled_badge_font_color?: MaybeProperty<Color | ColorArray>
 }

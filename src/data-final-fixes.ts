@@ -20,7 +20,7 @@ import {
   Sprite,
   Sprite4Way,
 } from "factorio:prototype"
-import { BoundingBoxArray, BoundingBoxWrite, EntityPrototypeFlags } from "factorio:runtime"
+import { EntityPrototypeFlags } from "factorio:runtime"
 import * as util from "util"
 import { empty_sprite } from "util"
 import { BuildableEntityType, Prototypes } from "./constants"
@@ -37,10 +37,7 @@ const previewTint: Color = [0.5, 0.5, 0.5, 0.8]
 function getPreviewTint(color: Color | nil): Color {
   return color ? util.mix_color(color, previewTint) : previewTint
 }
-export function createWhiteSprite(
-  rawBBox: BoundingBoxWrite | BoundingBoxArray,
-  color: Color | nil,
-): Sprite | Sprite4Way {
+export function createWhiteSprite(rawBBox: BoundingBox, color: Color | nil): Sprite | Sprite4Way {
   let bbox = BBox.normalize(rawBBox)
 
   let size = bbox.size()

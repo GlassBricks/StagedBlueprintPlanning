@@ -17,12 +17,12 @@ const compat = new FlatCompat({
 
 export default tseslint.config(
   {
-    ignores: ["**/*.d.ts", "**/tstlPlugin/", "**/factorio-test-data-dir/", "**/*.js", "**/*.mjs"],
+    ignores: ["**/tstlPlugin/", "**/factorio-test-data-dir/", "**/*.js", "**/*.mjs", "**/node_modules"],
   },
   tseslint.configs.recommendedTypeChecked,
   ...compat.extends("eslint:recommended", "plugin:eslint-comments/recommended", "plugin:prettier/recommended"),
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ["src/**/*.ts", "src/**/*.tsx"],
     plugins: {
       import: fixupPluginRules(_import),
     },

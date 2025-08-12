@@ -12,8 +12,11 @@
 import {
   BaseItemStack,
   BlueprintEntity,
+  BlueprintEntityWrite,
   BlueprintWire,
   CustomEventId,
+  InserterBlueprintEntity,
+  InserterBlueprintEntityWrite,
   LuaEntity,
   LuaItemPrototype,
   LuaItemStack,
@@ -27,7 +30,9 @@ import {
   OnPlayerSelectedAreaEvent,
   OnPreBuildEvent,
   PlayerIndex,
+  SplitterBlueprintEntity,
   Tags,
+  UndergroundBeltBlueprintEntity,
   UnitNumber,
 } from "factorio:runtime"
 import { oppositedirection } from "util"
@@ -661,7 +666,7 @@ OnPrototypeInfoLoaded.addListener((e) => {
   mayHaveModdedGui = e.mayHaveModdedGui
 })
 
-function flipSplitterPriority(entity: Mutable<BlueprintEntity>) {
+function flipSplitterPriority(entity: Mutable<SplitterBlueprintEntity>) {
   if (entity.input_priority) {
     entity.input_priority = entity.input_priority == "left" ? "right" : "left"
   }
@@ -674,17 +679,17 @@ function mirrorEntity(entity: Mutable<BlueprintEntity>) {
   entity.mirror = entity.mirror ? nil : true
 }
 
-function editPassedValue(entity: BlueprintEntity, edit: (entity: Mutable<BlueprintEntity>) => void): BlueprintEntity {
+function editPassedValue<T extends BlueprintEntityWrite>(entity: T, edit: (entity: Mutable<T>) => void): T {
   const passedValue = mutableShallowCopy(entity)
-  assume<Mutable<BlueprintEntity>>(passedValue)
+  assume<Mutable<T>>(passedValue)
   const stageInfoTags = passedValue.tags?.bp100 as BpStagedInfo | nil
   if (!stageInfoTags?.firstValue) {
     edit(passedValue)
   } else {
-    edit(stageInfoTags.firstValue as Mutable<BlueprintEntity>)
+    edit(stageInfoTags.firstValue as Mutable<T>)
     if (stageInfoTags?.stageDiffs) {
       for (const [, value] of pairs(stageInfoTags.stageDiffs)) {
-        edit(value as Mutable<BlueprintEntity>)
+        edit(value as Mutable<T>)
       }
     }
   }
@@ -718,7 +723,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 
   const entityId = tags.referencedLuaIndex
   const value = bpState.entities[entityId - 1]
-  let passedValue: BlueprintEntity = value
+  let passedValue: BlueprintEntityWrite = value
 
   let entityDir = entity.direction
 
@@ -733,14 +738,16 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     if (isDiagonal) entityDir = (entityDir + 2) % 16
   } else if (type == "splitter") {
     if (bpState.isFlipped) {
+      assume<Mutable<SplitterBlueprintEntity>>(value)
       passedValue = editPassedValue(value, flipSplitterPriority)
     }
   } else if (type == "inserter") {
+    assume<InserterBlueprintEntity>(passedValue)
     if (passedValue.pickup_position || passedValue.drop_position) {
-      passedValue = editPassedValue(value, (inserter) => {
+      passedValue = editPassedValue<InserterBlueprintEntityWrite>(passedValue, (inserter) => {
         if (inserter.pickup_position) {
           inserter.pickup_position = transform(
-            inserter.pickup_position,
+            inserter.pickup_position as MapPosition,
             bpState.flipHorizontal,
             bpState.flipVertical,
             bpState.direction,
@@ -748,7 +755,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
         }
         if (inserter.drop_position) {
           inserter.drop_position = transform(
-            inserter.drop_position,
+            inserter.drop_position as MapPosition,
             bpState.flipHorizontal,
             bpState.flipVertical,
             bpState.direction,
@@ -769,7 +776,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 
   let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == entityDir)
   if (type == "underground-belt") {
-    const valueType = value.type ?? "input"
+    const valueType = (value as UndergroundBeltBlueprintEntity).type ?? "input"
     if (luaEntity) {
       // make sure is also correct belt_to_ground_type, else would match the opposite direction
       if (luaEntity.belt_to_ground_type != valueType) return
@@ -800,7 +807,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     stage.stageNumber,
     nil,
     e.player_index,
-    passedValue,
+    passedValue as BlueprintEntity,
   )
 
   if (value.wires) {

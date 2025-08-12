@@ -10,15 +10,19 @@
  */
 
 import {
+  AssemblingMachineBlueprintEntity,
   BlueprintEntity,
   BlueprintInsertPlanWrite,
   BoundingBox,
+  CargoWagonBlueprintEntity,
+  LoaderBlueprintEntity,
   LuaEntity,
   LuaInventory,
   LuaItemStack,
   LuaSurface,
   MapPosition,
   RollingStockSurfaceCreateEntity,
+  UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
 import { Events, Mutable, mutableShallowCopy } from "../lib"
@@ -92,6 +96,7 @@ function setBlueprintEntity(
   position: Position,
   direction: defines.direction,
 ): void {
+  assume<Mutable<AssemblingMachineBlueprintEntity>>(entity)
   // reuse the same table to avoid several allocations
   entity.position = position
   entity.direction = direction
@@ -133,6 +138,7 @@ function pasteEntity(
     build_mode: buildModeForced,
   })
   if (target?.type == "assembling-machine") {
+    assume<AssemblingMachineBlueprintEntity>(entity)
     pcall(target.set_recipe as any, entity.recipe)
     target.direction = direction
   }
@@ -168,10 +174,11 @@ function tryCreateUnconfiguredEntity(
   direction: defines.direction,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
+  assume<Mutable<CargoWagonBlueprintEntity & UndergroundBeltBlueprintEntity>>(entity)
   if (tryCreateVersion != entityVersion) {
     tryCreateVersion = entityVersion
     const orientation = entity.orientation
-    if (orientation) direction = nil!
+    if (orientation != nil) direction = nil!
     tryCreateEntityParams.name = entity.name
     tryCreateEntityParams.position = position
     tryCreateEntityParams.direction = direction
@@ -231,6 +238,7 @@ export function createEntity(
   const type = nameToType.get(entity.name)!
 
   if (type == "loader" || type == "loader-1x1") {
+    assume<LoaderBlueprintEntity>(entity)
     luaEntity.loader_type = entity.type ?? "output"
     luaEntity.direction = direction
   }
@@ -246,6 +254,7 @@ export function createEntity(
 }
 
 function entityHasSettings(entity: BlueprintEntity): boolean {
+  assume<UndergroundBeltBlueprintEntity>(entity)
   for (const [key] of pairs(entity)) {
     if (key != "name" && key != "items" && key != "type") return true
   }
@@ -329,7 +338,7 @@ export function checkUndergroundPairFlippable(
 }
 function updateUndergroundRotation(
   luaEntity: LuaEntity,
-  value: BlueprintEntity,
+  value: UndergroundBeltBlueprintEntity,
   direction: defines.direction,
 ): LuaMultiReturn<[updated: LuaEntity | nil, updatedNeighbors?: ProjectEntity]> {
   if (
@@ -412,14 +421,17 @@ export function updateEntity(
   }
 
   if (type == "underground-belt") {
+    assume<UndergroundBeltBlueprintEntity>(value)
     return updateUndergroundRotation(luaEntity, value, direction)
   } else if (type == "loader" || type == "loader-1x1") {
+    assume<LoaderBlueprintEntity>(value)
     luaEntity.loader_type = value.type ?? "output"
   }
   luaEntity.direction = direction
 
   const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, luaEntity)
   if (ghost) ghost.destroy() // should not happen?
+  assume<BlueprintEntity>(value)
   matchItems(luaEntity, value)
 
   return $multi(luaEntity)

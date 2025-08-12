@@ -19,34 +19,36 @@ import { fileURLToPath } from "url"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+const GuiElementTypes = [
+  "base",
+  "button",
+  "sprite-button",
+  "checkbox",
+  "flow",
+  "frame",
+  "label",
+  "line",
+  "progressbar",
+  "table",
+  "textfield",
+  "radiobutton",
+  "sprite",
+  "scroll-pane",
+  "drop-down",
+  "list-box",
+  "camera",
+  "choose-elem-button",
+  "text-box",
+  "slider",
+  "minimap",
+  "entity-preview",
+  "empty-widget",
+  "tabbed-pane",
+  "tab",
+  "switch",
+] as const
 
-type GuiElementType =
-  | "choose-elem-button"
-  | "drop-down"
-  | "empty-widget"
-  | "entity-preview"
-  | "list-box"
-  | "scroll-pane"
-  | "sprite-button"
-  | "tabbed-pane"
-  | "text-box"
-  | "button"
-  | "camera"
-  | "checkbox"
-  | "flow"
-  | "frame"
-  | "label"
-  | "line"
-  | "minimap"
-  | "progressbar"
-  | "radiobutton"
-  | "slider"
-  | "sprite"
-  | "switch"
-  | "tab"
-  | "table"
-  | "textfield"
-
+type GuiElementType = Exclude<(typeof GuiElementTypes)[number], "base">
 const guiEventsFileName = path.resolve(__dirname, "gui-events.ts")
 
 const program = ts.createProgram({
@@ -64,35 +66,6 @@ const classesDtsFile =
   program.getSourceFiles().find((f) => f.fileName.endsWith("typed-factorio/runtime/generated/classes.d.ts")) ??
   error("Could not find classes.d.ts")
 const guiEventsFile = program.getSourceFile(guiEventsFileName) ?? error("Could not find gui-events.ts")
-
-const GuiElementTypes: (GuiElementType | "base")[] = [
-  "base",
-  "choose-elem-button",
-  "drop-down",
-  "empty-widget",
-  "entity-preview",
-  "list-box",
-  "scroll-pane",
-  "sprite-button",
-  "tabbed-pane",
-  "text-box",
-  "button",
-  "camera",
-  "checkbox",
-  "flow",
-  "frame",
-  "label",
-  "line",
-  "minimap",
-  "progressbar",
-  "radiobutton",
-  "slider",
-  "sprite",
-  "switch",
-  "tab",
-  "table",
-  "textfield",
-]
 
 const knownCapitalization: Record<string, string> = {}
 function normalizeTypeName(name: string): string {
@@ -183,7 +156,7 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
       const elemType = normalizedTypeNames[normalizeTypeName(matchName)]
       let elemTypes: (GuiElementType | "base")[]
       if (elemType === "other") {
-        elemTypes = ["empty-widget", "entity-preview", "tabbed-pane", "label"]
+        elemTypes = ["label", "entity-preview", "empty-widget", "tabbed-pane"]
           .map(normalizeTypeName)
           .map((x) => normalizedTypeNames[x]) as (GuiElementType | "base")[]
       } else {
@@ -232,6 +205,9 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
   }
   elements["choose-elem-button"]["elem_value"].type =
     "MaybeMutableProperty<string | nil> | MaybeMutableProperty<SignalID | nil>"
+
+  specs["choose-elem-button"].locked = specs.base.locked
+  delete specs.base.locked
 
   // gui events
 
@@ -368,6 +344,11 @@ async function printFile(filename: string, header: string, statements: ts.Statem
             ", " +
             JSON.stringify(result[name]),
         )
+      if (Array.isArray(value)) {
+        const resultArr = result[name] as Array<unknown>
+        value[0] ||= resultArr[0]
+        value[1] ||= resultArr[1]
+      }
     } else {
       result[name] = value
     }

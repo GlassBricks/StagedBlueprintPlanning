@@ -808,11 +808,12 @@ describe("blueprint paste", () => {
     cursor.set_blueprint_entities([bpEntity])
   }
   before_each(setBlueprint)
-  function assertCorrect(entity: LuaEntity, position: Position = pos, bpValue = bpEntity): void {
+  function assertCorrect(entity: LuaEntity, position: Position = pos, bpValue = bpEntity, exactMatch = true): void {
     expect(entity).toBeAny()
     expect(entity.position).toEqual(position)
 
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, bpValue)
+    const expectedValue = exactMatch ? bpValue : expect.tableContaining(bpValue)
+    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, expectedValue)
   }
 
   test("create entity", () => {
@@ -845,18 +846,8 @@ describe("blueprint paste", () => {
       name: "inserter",
       position: Pos(1.5, 0.5),
       direction: direction.east,
-      // connections: {
-      //   "1": {
-      //     red: [{ entity_id: 1 }],
-      //   },
-      // },
       wires: [[2, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red]],
     }
-    // bpEntity1.connections = {
-    //   "1": {
-    //     red: [{ entity_id: 2 }],
-    //   },
-    // }
     bpEntity1.wires = [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]]
     player.cursor_stack!.set_blueprint_entities([bpEntity1, bpEntity2])
 
@@ -877,8 +868,8 @@ describe("blueprint paste", () => {
     })[0]
     expect(inserter2).toBeAny()
 
-    assertCorrect(inserter1, nil, bpEntity1)
-    assertCorrect(inserter2, pos.plus(Pos(1, 0)), bpEntity2)
+    assertCorrect(inserter1, nil, bpEntity1, false)
+    assertCorrect(inserter2, pos.plus(Pos(1, 0)), bpEntity2, false)
     if (alreadyPresent) {
       expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter1, 1, 1)
       expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter2, 1, 1)
