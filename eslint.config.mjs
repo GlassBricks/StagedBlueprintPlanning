@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 import js from "@eslint/js"
 import { FlatCompat } from "@eslint/eslintrc"
 import _import from "eslint-plugin-import"
+import globals from "globals"
 
 import tseslint from "typescript-eslint"
 
@@ -17,7 +18,7 @@ const compat = new FlatCompat({
 
 export default tseslint.config(
   {
-    ignores: ["**/tstlPlugin/", "**/factorio-test-data-dir/", "**/*.js", "**/*.mjs", "**/node_modules"],
+    ignores: ["**/tstlPlugin/", "**/factorio-test-data-dir/", "**/out/", "**/*.js", "**/*.mjs", "**/node_modules"],
   },
   tseslint.configs.recommendedTypeChecked,
   ...compat.extends("eslint:recommended", "plugin:eslint-comments/recommended", "plugin:prettier/recommended"),
@@ -30,7 +31,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: true,
-        project: ["tsconfig.json", "scripts/tsconfig.json"],
+        project: ["tsconfig.json"],
       },
     },
 
@@ -107,9 +108,18 @@ export default tseslint.config(
   },
   {
     files: ["scripts/**/*.ts"],
-
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      parserOptions: {
+        projectService: true,
+        project: ["scripts/tsconfig.json"],
+      },
+    },
     rules: {
       "import/no-nodejs-modules": "off",
+      "no-unused-vars": "off", // bug somewhere
     },
   },
 )

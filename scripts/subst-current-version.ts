@@ -26,6 +26,7 @@ const __dirname = path.dirname(__filename)
 const srcDir = path.join(__dirname, "..", "src")
 const infoJsonPath = path.join(srcDir, "info.json")
 const infoJson = fsp.readFile(infoJsonPath, "utf-8").then((content) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return `"${JSON.parse(content).version}"`
 })
 

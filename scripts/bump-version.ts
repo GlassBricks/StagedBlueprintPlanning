@@ -34,7 +34,7 @@ interface InfoJson {
   version: string
   [key: string]: unknown
 }
-const infoJson: InfoJson = JSON.parse(fs.readFileSync(infoJsonPath, "utf8"))
+const infoJson = JSON.parse(fs.readFileSync(infoJsonPath, "utf8")) as InfoJson
 const oldVersion = infoJson.version
 const version = semver.parse(oldVersion)
 assert.ok(version !== null, "Invalid version in info.json")
