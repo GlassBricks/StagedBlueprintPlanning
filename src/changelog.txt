@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.8
-Date: ????
+Date: 2025-08-12
   Bugfixes:
     - Fixed that you couldn't set a recipe with a different quality on an assembling machine... This should have been fixed earlier, sorry!
     - Fixed being a bit mean to Po in the changelog.
