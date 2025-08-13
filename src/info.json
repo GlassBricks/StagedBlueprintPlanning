@@ -23,20 +23,13 @@
       "postpackage": "npm run postpackage"
     },
     "git_publish_branch": "main",
-    "ignore": [
-      "**/test/**/*",
-      "**/*.xcf",
-      "**/*.svg",
-      "mod-portal/**/*",
-      "**/*.ts",
-      "**/*.tsx"
-    ],
+    "ignore": ["**/test/**/*", "**/*.xcf", "**/*.svg", "mod-portal/**/*", "**/*.ts", "**/*.tsx"],
     "removeZipAfterPackage": true,
     "no_git_tag": true,
     "sync_portal_details": true
   },
   "dependencies": [
-    "base >= 1.1.71",
+    "base >= 2.0.64",
     "? bobinserters >= 1.0.0",
     "? boblogistics >= 1.0.0",
     "? EditorExtensions >= 2.0.0"
