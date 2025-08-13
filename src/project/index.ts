@@ -36,7 +36,7 @@ Migrations.to("2.2.0", () => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.4.0", () => {
   interface OldStage {
     stageBlueprintSettings?: BlueprintSettingsOverrideTable
   }
