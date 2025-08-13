@@ -14,6 +14,9 @@ import "./project-event-listener"
 import "./UserProject"
 import { Migrations } from "../lib/migration"
 import { getAllProjects } from "./UserProject"
+import { BlueprintSettingsOverrideTable, createStageBlueprintSettingsTable } from "../blueprints/blueprint-settings"
+import { Mutable } from "../lib"
+import { Stage } from "./ProjectDef"
 
 Migrations.to("2.2.0", () => {
   for (const project of getAllProjects()) {
@@ -29,6 +32,21 @@ Migrations.to("2.2.0", () => {
     }
     for (const stage of project.getAllStages()) {
       stage.surface.ignore_surface_conditions = true
+    }
+  }
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  interface OldStage {
+    stageBlueprintSettings?: BlueprintSettingsOverrideTable
+  }
+  for (const project of getAllProjects()) {
+    for (const stage of project.getAllStages()) {
+      const oldStage = stage as unknown as OldStage
+      assume<Mutable<Stage>>(stage)
+      stage.blueprintOverrideSettings = oldStage.stageBlueprintSettings!
+      delete oldStage.stageBlueprintSettings
+      stage.stageBlueprintSettings = createStageBlueprintSettingsTable()
     }
   }
 })

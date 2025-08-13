@@ -11,11 +11,16 @@
 
 import { LuaEntity, LuaPlayer, LuaSurface, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
-import { BlueprintSettingsTable, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
+import {
+  BlueprintSettingsTable,
+  createBlueprintSettingsTable,
+  createStageBlueprintSettingsTable,
+  StageBlueprintSettingsTable,
+} from "../../blueprints/blueprint-settings"
 import { editInItemBlueprintSettings } from "../../blueprints/edit-blueprint-settings"
 import { BBox, Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
-import { createPropertiesTable, getCurrentValues } from "../../utils/properties-obj"
+import { getCurrentValues } from "../../utils/properties-obj"
 
 let player: LuaPlayer
 let surface: LuaSurface
@@ -27,16 +32,14 @@ before_each(() => {
   surface.find_entities().forEach((e) => e.destroy())
 })
 
-function createStageBlueprintSettings(): BlueprintSettingsTable {
-  return createPropertiesTable(keys<BlueprintSettingsTable>(), getDefaultBlueprintSettings())
-}
-
 describe("in-item blueprint settings", () => {
   let settings: BlueprintSettingsTable
+  let stageSettings: StageBlueprintSettingsTable
   let entity1: LuaEntity
   let entity2: LuaEntity
   before_each(() => {
-    settings = createStageBlueprintSettings()
+    settings = createBlueprintSettingsTable()
+    stageSettings = createStageBlueprintSettingsTable()
     player.teleport({ x: 0, y: 0 }, 1 as SurfaceIndex)
     entity1 = surface.create_entity({
       name: "iron-chest",
@@ -53,16 +56,18 @@ describe("in-item blueprint settings", () => {
   })
 
   test("can edit settings", () => {
-    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
+    const stack = editInItemBlueprintSettings(
+      player,
+      settings,
+      stageSettings,
+      surface,
+      BBox.around({ x: 0, y: 0 }, 10),
+      "Test",
+    )!
     expect(stack).toBeAny()
     expect(stack.valid_for_read && stack.is_blueprint).toBe(true)
-
-    stack.blueprint_snap_to_grid = [2, 3]
-    stack.blueprint_absolute_snapping = true
-    stack.blueprint_position_relative_to_grid = [4, 5]
     const entities = stack.get_blueprint_entities()!
     expect(entities).toHaveLength(2)
-
     expect(entities[1]).toMatchTable({
       name: entity1.name,
       position: entity1.position,
@@ -72,9 +77,17 @@ describe("in-item blueprint settings", () => {
       position: entity2.position,
     })
 
-    stack.set_blueprint_entities(entities.map((e) => ({ ...e, position: Pos.plus(e.position, { x: 1, y: 2 }) })))
+    {
+      stack.blueprint_snap_to_grid = [2, 3]
+      stack.blueprint_absolute_snapping = true
+      stack.blueprint_position_relative_to_grid = [4, 5]
+      stack.set_blueprint_entities(entities.map((e) => ({ ...e, position: Pos.plus(e.position, { x: 1, y: 2 }) })))
 
-    player.opened = nil
+      stack.blueprint_description = "Test"
+
+      // closing blueprint saves settings
+      player.opened = nil
+    }
 
     expect(stack.valid).toBe(false)
 
@@ -85,10 +98,24 @@ describe("in-item blueprint settings", () => {
       positionRelativeToGrid: { x: 4, y: 5 },
       positionOffset: { x: 1, y: 2 },
     })
+
+    if (stageSettings != nil) {
+      const stageSettingsValues = getCurrentValues(stageSettings)
+      expect(stageSettingsValues).toMatchTable({
+        description: "Test",
+      })
+    }
   })
 
   test("doesn't update grid settings if entities removed", () => {
-    const stack = editInItemBlueprintSettings(player, settings, surface, BBox.around({ x: 0, y: 0 }, 10), "Test")!
+    const stack = editInItemBlueprintSettings(
+      player,
+      settings,
+      stageSettings,
+      surface,
+      BBox.around({ x: 0, y: 0 }, 10),
+      "Test",
+    )!
     expect(stack).toMatchTable({
       valid_for_read: true,
       is_blueprint: true,

@@ -438,10 +438,12 @@ class ProjectSettings extends Component<{
         <IconsEdit settings={settings} />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label
-            caption={[L_GuiProjectSettings.GridSettings]}
+            caption={
+              stage == nil ? [L_GuiProjectSettings.GridSettings] : [L_GuiProjectSettings.GridSettingsAndDescription]
+            }
             styleMod={stage && highlightIfNotNil(this.anyGridSettingsChanged(stage))}
           />
-          <EditButton on_gui_click={bind(ibind(this.editGridSettings), settings, stage)} />
+          <EditButton on_gui_click={bind(ibind(this.editGridSettingsAndDescription), settings, stage)} />
           {stage && (
             <ManualRevertButton
               visible={this.anyGridSettingsChanged(stage).truthy()}
@@ -492,16 +494,17 @@ class ProjectSettings extends Component<{
     return [L_GuiProjectSettings.EditingForStage, name]
   }
 
-  private editGridSettings(settings: BlueprintSettingsTable, stage: Stage | nil) {
+  private editGridSettingsAndDescription(settings: BlueprintSettingsTable, stage: Stage | nil) {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const stageToUse = stage ?? this.project.getStage(this.project.numStages())!
+    const takeSettingsStage = stage ?? this.project.getStage(this.project.numStages())!
     const name = stage?.name.get() ?? "Defaults"
     const successful = editInItemBlueprintSettings(
       player,
       settings,
-      stageToUse.surface,
-      stageToUse.getBlueprintBBox(),
+      stage?.stageBlueprintSettings,
+      takeSettingsStage.surface,
+      takeSettingsStage.getBlueprintBBox(),
       name,
     )
 
@@ -520,7 +523,7 @@ class ProjectSettings extends Component<{
   }
 
   private anyGridSettingsChanged(stage: Stage): Property<unknown> {
-    const stageSettings = stage.stageBlueprintSettings
+    const stageSettings = stage.blueprintOverrideSettings
     return multiMap(
       funcRef(ProjectSettings.anyNotNil),
       stageSettings.snapToGrid,
@@ -532,7 +535,7 @@ class ProjectSettings extends Component<{
   private revertAllGridSettings() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!stage) return
-    const stageSettings = stage.stageBlueprintSettings
+    const stageSettings = stage.blueprintOverrideSettings
     stageSettings.snapToGrid.set(nil)
     stageSettings.positionOffset.set(nil)
     stageSettings.absoluteSnapping.set(nil)

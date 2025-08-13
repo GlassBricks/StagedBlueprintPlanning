@@ -15,13 +15,13 @@ import {
   BlueprintInsertPlanWrite,
   BoundingBox,
   CargoWagonBlueprintEntity,
+  CargoWagonSurfaceCreateEntity,
   LoaderBlueprintEntity,
   LuaEntity,
   LuaInventory,
   LuaItemStack,
   LuaSurface,
   MapPosition,
-  RollingStockSurfaceCreateEntity,
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
@@ -154,7 +154,7 @@ function removeIntersectingEntities(surface: LuaSurface, area: BoundingBox) {
 }
 
 const tryCreateEntityParams: Mutable<
-  RollingStockSurfaceCreateEntity & UndergroundBeltSurfaceCreateEntity & Parameters<LuaSurface["can_place_entity"]>[0]
+  UndergroundBeltSurfaceCreateEntity & Parameters<LuaSurface["can_place_entity"]>[0] & CargoWagonSurfaceCreateEntity
 > = {
   name: "",
   position: nil!,
@@ -261,7 +261,7 @@ function entityHasSettings(entity: BlueprintEntity): boolean {
   return false
 }
 
-const upgradeEntityParams: Mutable<RollingStockSurfaceCreateEntity & UndergroundBeltSurfaceCreateEntity> = {
+const upgradeEntityParams: Mutable<CargoWagonSurfaceCreateEntity & UndergroundBeltSurfaceCreateEntity> = {
   name: "",
   position: nil!,
   direction: nil,

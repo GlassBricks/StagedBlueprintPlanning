@@ -19,6 +19,7 @@ import { Stage, UserProject } from "../project/ProjectDef"
 import { setTilesAndCheckerboardForStage } from "../project/set-tiles"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
+  BlueprintTakeSettings,
   getDefaultBlueprintSettings,
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
@@ -59,15 +60,20 @@ interface StageBlueprintPlan {
   additionalBpStacks?: LuaItemStack[]
 
   bbox: BBox
-  settings: StageBlueprintSettings
+  overridableSettings: OverrideableBlueprintSettings
+  stageSettings: StageBlueprintSettings
 
   result: BlueprintTakeResult | nil
 
   unitNumberFilter?: LuaSet<UnitNumber> | nil
 }
 
-function getCurrentBpSettings(stage: Stage): StageBlueprintSettings {
+function getCurrentOverridableBpSettings(stage: Stage): OverrideableBlueprintSettings {
   return getCurrentValues(stage.getBlueprintSettingsView())
+}
+
+function getCurrentBpStageSettings(stage: Stage): StageBlueprintSettings {
+  return getCurrentValues(stage.stageBlueprintSettings)
 }
 
 type BlueprintMethod<A extends any[]> = (this: void, ...args: A) => void
@@ -143,13 +149,14 @@ const BlueprintMethods = {
   takeStageBlueprint(
     stagePlan: StageBlueprintPlan,
     actualStack: LuaItemStack,
-    settings: OverrideableBlueprintSettings,
+    overrideableSettings: OverrideableBlueprintSettings,
+    stageSettings: StageBlueprintSettings,
   ): void {
     const { stage, bbox } = stagePlan
     const stageName = stage.name.get()
     const result = takeSingleBlueprint({
       stack: actualStack,
-      settings,
+      settings: overrideableSettings satisfies BlueprintTakeSettings,
       surface: stage.surface,
       bbox,
       unitNumberFilter: stagePlan.unitNumberFilter,
@@ -157,6 +164,7 @@ const BlueprintMethods = {
     })
     stagePlan.result = result
     actualStack.label = stageName
+    actualStack.blueprint_description = stageSettings.description
 
     if (stagePlan.additionalBpStacks) {
       for (const stack of stagePlan.additionalBpStacks) {
@@ -265,14 +273,16 @@ class BlueprintingTaskBuilder {
     projectPlan: ProjectBlueprintPlan,
     stack: LuaItemStack | nil,
     stage: Stage,
-    settings: StageBlueprintSettings,
+    overridableSettings: OverrideableBlueprintSettings,
+    stageSettings: StageBlueprintSettings,
   ): StageBlueprintPlan {
     const plan: StageBlueprintPlan = {
       stack,
       stage,
       bbox: stage.getBlueprintBBox(),
       projectPlan,
-      settings,
+      overridableSettings,
+      stageSettings,
       result: nil,
     }
     projectPlan.stagePlans.set(stage.stageNumber, plan)
@@ -282,7 +292,13 @@ class BlueprintingTaskBuilder {
   private ensureTilesTaken(projectInfo: ProjectBlueprintPlan, stage: Stage) {
     const stagePlan = projectInfo.stagePlans.get(stage.stageNumber)
     if (!stagePlan) {
-      this.addNewStagePlan(projectInfo, nil, stage, getCurrentBpSettings(stage))
+      this.addNewStagePlan(
+        projectInfo,
+        nil,
+        stage,
+        getCurrentOverridableBpSettings(stage),
+        getCurrentBpStageSettings(stage),
+      )
     }
   }
 
@@ -305,8 +321,9 @@ class BlueprintingTaskBuilder {
       }
     }
 
-    const settings = existingStagePlan?.settings ?? getCurrentBpSettings(stage)
-    const plan = existingStagePlan ?? this.addNewStagePlan(projectPlan, stack, stage, settings)
+    const settings = existingStagePlan?.overridableSettings ?? getCurrentOverridableBpSettings(stage)
+    const stageSettings = existingStagePlan?.stageSettings ?? getCurrentBpStageSettings(stage)
+    const plan = existingStagePlan ?? this.addNewStagePlan(projectPlan, stack, stage, settings, stageSettings)
     return plan
   }
 
@@ -330,21 +347,27 @@ class BlueprintingTaskBuilder {
 
   private addTakeBlueprintTasks(projectPlan: ProjectBlueprintPlan, stagePlan: StageBlueprintPlan): void {
     const { stack } = stagePlan
-    let settings: OverrideableBlueprintSettings = stagePlan.settings
+    let blueprintTakeSettings: BlueprintTakeSettings = stagePlan.overridableSettings
 
     let actualStack: LuaItemStack
 
     if (!stack) {
       stagePlan.stack = actualStack = this.getNewTempStack()
-      settings = getDefaultBlueprintSettings()
+      blueprintTakeSettings = getDefaultBlueprintSettings()
     } else {
       actualStack = stack
     }
-    if (settings.stageLimit != nil || !projectPlan.excludeFromFutureBlueprintStages.isEmpty()) {
+    if (blueprintTakeSettings.stageLimit != nil || !projectPlan.excludeFromFutureBlueprintStages.isEmpty()) {
       this.ensureHasComputeChangedEntities(projectPlan)
-      this.tasks.push({ name: "computeUnitNumberFilter", args: [projectPlan, stagePlan, settings.stageLimit] })
+      this.tasks.push({
+        name: "computeUnitNumberFilter",
+        args: [projectPlan, stagePlan, blueprintTakeSettings.stageLimit],
+      })
     }
-    this.tasks.push({ name: "takeStageBlueprint", args: [stagePlan, actualStack, settings] })
+    this.tasks.push({
+      name: "takeStageBlueprint",
+      args: [stagePlan, actualStack, blueprintTakeSettings, stagePlan.stageSettings],
+    })
   }
 
   private ensureHasComputeChangedEntities(projectInfo: ProjectBlueprintPlan): void {

@@ -11,9 +11,10 @@
 
 import { LocalisedString, LuaItemStack, LuaSurface } from "factorio:runtime"
 import {
-  BlueprintOverrideSettings,
+  BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,
   OverrideableBlueprintSettings,
+  StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
 import { MutableProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
@@ -89,7 +90,8 @@ export interface Stage {
   /** Same value as project.actions */
   readonly actions: UserActions
 
-  readonly stageBlueprintSettings: BlueprintOverrideSettings
+  readonly blueprintOverrideSettings: BlueprintSettingsOverrideTable
+  readonly stageBlueprintSettings: StageBlueprintSettingsTable
   getBlueprintSettingsView(): BlueprintSettingsTable
 
   getBlueprintBBox(): BBox

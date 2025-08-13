@@ -1,4 +1,4 @@
-import { MutableProperty, property } from "../lib"
+import { Mutable, MutableProperty, property } from "../lib"
 import { DiffValue } from "./diff-value"
 import { DiffedProperty } from "./DiffedProperty"
 
@@ -18,8 +18,11 @@ export function getCurrentValues<T extends object>(propertiesTable: PropertiesTa
   return result
 }
 
-export function createPropertiesTable<T extends object>(keys: Array<keyof T>, values: T): PropertiesTable<T> {
-  const result = {} as Partial<PropertiesTable<T>>
+export function createPropertiesTable<T extends object>(
+  keys: Array<keyof T>,
+  values: T,
+  result: Partial<PropertiesTable<T>> = {},
+): PropertiesTable<T> {
   for (const key of keys) {
     const actualKey = (tonumber(key) as keyof T) ?? key
     result[actualKey] = property(values[actualKey])
@@ -36,6 +39,7 @@ export function createEmptyPropertyOverrideTable<T extends object>(keys: Array<k
   return result as PropertyOverrideTable<T>
 }
 
+// Uses keys in defaultValue
 export function createdDiffedPropertyTableView<T extends object>(
   defaultValues: PropertiesTable<T>,
   overrideValues: PropertyOverrideTable<T>,
@@ -45,4 +49,14 @@ export function createdDiffedPropertyTableView<T extends object>(
     result[key] = new DiffedProperty(overrideValues[key], defaultValue)
   }
   return result as PropertiesTable<T>
+}
+
+export function copyKeys<T extends object>(
+  source: PropertiesTable<T>,
+  target: Mutable<PropertiesTable<T>>,
+  keys: Array<keyof T>,
+): void {
+  for (const key of keys) {
+    target[key] = source[key]
+  }
 }

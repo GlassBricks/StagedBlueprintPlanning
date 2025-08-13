@@ -51,11 +51,12 @@ test("can take single blueprint using stage settings", () => {
   project.defaultBlueprintSettings.snapToGrid.set(Pos(2, 3))
   project.defaultBlueprintSettings.positionRelativeToGrid.set(Pos(4, 5))
   project.defaultBlueprintSettings.appendStageNumbersToIcons.set(true)
-
   const stage = project.getStage(1)!
-  const stack = player.cursor_stack!
+  stage.stageBlueprintSettings.description.set("Test")
 
+  const stack = player.cursor_stack!
   const ret = takeStageBlueprint(stage, stack)
+
   expect(ret).toBe(false)
 
   createEntity(stage)
@@ -65,8 +66,8 @@ test("can take single blueprint using stage settings", () => {
 
   expect(stack.blueprint_snap_to_grid).toEqual(Pos(2, 3))
   expect(stack.blueprint_position_relative_to_grid).toEqual(Pos(4, 5))
-
   expect(stack.label).toEqual(stage.name.get())
+  expect(stack.blueprint_description).toEqual("Test")
 
   const entities = stack.get_blueprint_entities()!
   expect(entities).toHaveLength(1)
@@ -112,7 +113,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   const includedEntities = [e1, e2, e3, e4, e5, pole1, pole2]
 
   const stack = player.cursor_stack!
-  const stageBlueprintSettings = stage3.stageBlueprintSettings
+  const stageBlueprintSettings = stage3.blueprintOverrideSettings
   stageBlueprintSettings.stageLimit.set(2)
   stageBlueprintSettings.snapToGrid.set(Pos(2, 2))
   stageBlueprintSettings.positionOffset.set(Pos(0, 0))
@@ -131,7 +132,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
 test("excludeFromFutureBlueprints: entities are not included in future blueprints", () => {
   const [stage1, stage2, stage3] = project.getAllStages()
   const e1 = createEntity(stage1) // should be excluded
-  stage1.stageBlueprintSettings.excludeFromFutureBlueprints.set(true)
+  stage1.blueprintOverrideSettings.excludeFromFutureBlueprints.set(true)
   const e2 = createEntity(stage2, [1.5, 1.5]) // should be included
   const e3 = createEntity(stage3, [2.5, 2.5]) // should be included
 

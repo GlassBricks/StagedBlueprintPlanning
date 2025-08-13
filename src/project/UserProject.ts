@@ -12,10 +12,12 @@
 import { LocalisedString, LuaInventory, LuaItemStack, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
-  BlueprintOverrideSettings,
+  BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,
-  createNewBlueprintSettings,
-  StageBlueprintSettings,
+  createBlueprintSettingsTable,
+  createStageBlueprintSettingsTable,
+  OverrideableBlueprintSettings,
+  StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
 import { createStageReference, getReferencedStage } from "../blueprints/stage-reference"
 import { Prototypes } from "../constants"
@@ -75,7 +77,7 @@ class UserProjectImpl implements UserProject {
   content = newProjectContent()
   localEvents = new SimpleEvent<LocalProjectEvent>()
 
-  defaultBlueprintSettings = createNewBlueprintSettings()
+  defaultBlueprintSettings = createBlueprintSettingsTable()
 
   landfillTile = property<string | nil>("landfill")
   // disable tiles by default in tests, since its slow
@@ -404,8 +406,8 @@ export function moveProjectDown(project: UserProject): boolean {
   return true
 }
 
-function createEmptyStageBlueprintSettings(): BlueprintOverrideSettings {
-  return createEmptyPropertyOverrideTable<StageBlueprintSettings>(keys<StageBlueprintSettings>())
+function createEmptyBlueprintOverrideSettings(): BlueprintSettingsOverrideTable {
+  return createEmptyPropertyOverrideTable<OverrideableBlueprintSettings>(keys<OverrideableBlueprintSettings>())
 }
 
 @RegisterClass("Stage")
@@ -415,7 +417,10 @@ class StageImpl implements Stage {
 
   readonly surfaceIndex: SurfaceIndex
 
-  stageBlueprintSettings = createEmptyStageBlueprintSettings()
+  // should be named blueprintOverrideSettings, kept this way for compatibility reasons
+  blueprintOverrideSettings: BlueprintSettingsOverrideTable = createEmptyBlueprintOverrideSettings()
+
+  stageBlueprintSettings: StageBlueprintSettingsTable = createStageBlueprintSettingsTable()
 
   actions: UserActions
 
@@ -444,7 +449,11 @@ class StageImpl implements Stage {
   }
 
   getBlueprintSettingsView(): BlueprintSettingsTable {
-    return createdDiffedPropertyTableView(this.project.defaultBlueprintSettings, this.stageBlueprintSettings)
+    const result = createdDiffedPropertyTableView(
+      this.project.defaultBlueprintSettings,
+      this.blueprintOverrideSettings,
+    ) as BlueprintSettingsTable
+    return result
   }
 
   getBlueprintBBox(): BBox {

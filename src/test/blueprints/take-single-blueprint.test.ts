@@ -11,7 +11,7 @@
 
 import { LuaPlayer, LuaSurface, SignalID, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
-import { getDefaultBlueprintSettings, StageBlueprintSettings } from "../../blueprints/blueprint-settings"
+import { BlueprintTakeSettings, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
 import { BBox, Pos } from "../../lib/geometry"
 
@@ -51,7 +51,7 @@ test("can take blueprint with settings applied", () => {
     positionOffset: { x: 1, y: 2 },
     positionRelativeToGrid: { x: 4, y: 5 },
     appendStageNumbersToIcons: true,
-  } satisfies StageBlueprintSettings
+  } satisfies BlueprintTakeSettings
 
   const { chest, belt } = createSampleEntities()
   surface.set_tiles([{ name: "landfill", position: [0, 0] }])
@@ -116,7 +116,7 @@ test("forEdit position offset still works when first entity is blacklisted", () 
     positionOffset: { x: 1, y: 2 },
     positionRelativeToGrid: { x: 4, y: 5 },
     blacklist: newLuaSet("transport-belt"),
-  } satisfies StageBlueprintSettings
+  } satisfies BlueprintTakeSettings
 
   const { chest } = createSampleEntities()
   surface.set_tiles([{ name: "landfill", position: [0, 0] }])
@@ -145,7 +145,7 @@ test("forEdit position offset still works when first entity is blacklisted", () 
 })
 
 test("default icons used when no icons are set", () => {
-  const settings = getDefaultBlueprintSettings() satisfies StageBlueprintSettings
+  const settings = getDefaultBlueprintSettings() satisfies BlueprintTakeSettings
 
   createSampleEntities()
   surface.set_tiles([{ name: "landfill", position: [0, 0] }])
@@ -163,7 +163,7 @@ test("applies blacklist", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
     blacklist: newLuaSet("iron-chest"),
-  } satisfies StageBlueprintSettings
+  } satisfies BlueprintTakeSettings
 
   const { belt } = createSampleEntities()
   surface.set_tiles([{ name: "landfill", position: [0, 0] }])
@@ -184,7 +184,7 @@ test("applies unit number filter", () => {
   const { chest } = createSampleEntities()
   const filter = newLuaSet(chest.unit_number!)
 
-  const settings: StageBlueprintSettings = getDefaultBlueprintSettings()
+  const settings: BlueprintTakeSettings = getDefaultBlueprintSettings()
 
   const stack = player.cursor_stack!
   stack.set_stack("blueprint")
@@ -201,7 +201,7 @@ test("applies unit number filter as well as whitelist", () => {
   const { belt } = createSampleEntities()
   const filter = newLuaSet(-1 as UnitNumber)
 
-  const settings: StageBlueprintSettings = {
+  const settings: BlueprintTakeSettings = {
     ...getDefaultBlueprintSettings(),
     additionalWhitelist: newLuaSet(belt.name),
   }
@@ -227,7 +227,7 @@ test("always includes ghosts", () => {
   expect(ghost).toBeAny()
   expect(ghost.name).toEqual("entity-ghost")
 
-  const settings: StageBlueprintSettings = getDefaultBlueprintSettings()
+  const settings: BlueprintTakeSettings = getDefaultBlueprintSettings()
   const unitNumberFilter = newLuaSet(ghost.unit_number!)
 
   const stack = player.cursor_stack!

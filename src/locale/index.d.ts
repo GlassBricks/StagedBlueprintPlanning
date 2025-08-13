@@ -292,6 +292,8 @@ export declare const enum L_GuiProjectSettings {
   EditingForStage = "bp100.gui.project-settings.editing-for-stage",
   /** Grid settings: */
   GridSettings = "bp100.gui.project-settings.grid-settings",
+  /** Grid settings and description: */
+  GridSettingsAndDescription = "bp100.gui.project-settings.grid-settings-and-description",
   /** Icons [img=info] */
   Icons = "bp100.gui.project-settings.icons",
   /** Blueprint icons.\nIn stage settings, [font=default-bold]Control-right click[/font] to reset an overridden icon. */

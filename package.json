@@ -29,7 +29,7 @@
     "semver": "^7.7.2",
     "tstl-expect": "^0.4.6",
     "tsx": "^4.20.3",
-    "typed-factorio": "^3.27.0",
+    "typed-factorio": "^3.28.0",
     "typescript": "5.8.2",
     "typescript-eslint": "^8.39.1",
     "typescript-to-lua": "^1.31.4",

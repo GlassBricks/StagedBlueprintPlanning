@@ -91,10 +91,14 @@ export function getIconsFromSettings(settings: BlueprintTakeSettings, stageName?
   return result
 }
 
-export type StageBlueprintSettings = OverrideableBlueprintSettings
+export interface StageBlueprintSettings {
+  description: string
+}
+
+export type StageBlueprintSettingsTable = PropertiesTable<StageBlueprintSettings>
 
 export type BlueprintSettingsTable = PropertiesTable<OverrideableBlueprintSettings>
-export type BlueprintOverrideSettings = PropertyOverrideTable<OverrideableBlueprintSettings>
+export type BlueprintSettingsOverrideTable = PropertyOverrideTable<OverrideableBlueprintSettings>
 
 export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
   return {
@@ -114,6 +118,16 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
   }
 }
 
-export function createNewBlueprintSettings(): PropertiesTable<OverrideableBlueprintSettings> {
+export function getDefaultStageBlueprintSettings(): StageBlueprintSettings {
+  return {
+    description: "",
+  }
+}
+
+export function createBlueprintSettingsTable(): PropertiesTable<OverrideableBlueprintSettings> {
   return createPropertiesTable(keys<OverrideableBlueprintSettings>(), getDefaultBlueprintSettings())
+}
+
+export function createStageBlueprintSettingsTable(): StageBlueprintSettingsTable {
+  return createPropertiesTable(keys<StageBlueprintSettings>(), getDefaultStageBlueprintSettings())
 }

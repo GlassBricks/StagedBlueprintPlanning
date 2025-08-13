@@ -13,12 +13,13 @@ import { LuaInventory, LuaItemStack, LuaPlayer, LuaSurface, PlayerIndex } from "
 import { Events, isEmpty, MutableProperty } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
-import { BlueprintSettingsTable, BlueprintTakeSettings } from "./blueprint-settings"
+import { BlueprintSettingsTable, BlueprintTakeSettings, StageBlueprintSettingsTable } from "./blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "./take-single-blueprint"
 
 interface BlueprintEditInfo {
   blueprintInventory: LuaInventory
   settings: BlueprintSettingsTable
+  stageSettings?: StageBlueprintSettingsTable
   editType: "blueprint-item" | "additionalWhitelist" | "blacklist"
 }
 declare global {
@@ -58,6 +59,7 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
 export function editInItemBlueprintSettings(
   player: LuaPlayer,
   settings: BlueprintSettingsTable,
+  stageSettings: StageBlueprintSettingsTable | nil,
   surface: LuaSurface,
   bbox: BBox,
   bpName: string,
@@ -80,10 +82,14 @@ export function editInItemBlueprintSettings(
     return
   }
   blueprint.label = bpName
+  if (stageSettings != nil) {
+    blueprint.blueprint_description = stageSettings.description.get()
+  }
 
   storage.players[player.index].blueprintEditInfo = {
     blueprintInventory: inventory,
     settings,
+    stageSettings,
     editType: "blueprint-item",
   }
   player.opened = blueprint
@@ -120,6 +126,20 @@ function updateBlueprintGridSettings(
   settings.positionRelativeToGrid.set(blueprint.blueprint_position_relative_to_grid)
   settings.positionOffset.set(Pos.minus(bpPosition, originalPosition))
 }
+
+function updateBlueprintSettings(
+  blueprint: LuaItemStack,
+  settings: BlueprintSettingsTable,
+  stageSettings: StageBlueprintSettingsTable | nil,
+  playerIndex: PlayerIndex,
+): void {
+  updateBlueprintGridSettings(blueprint, settings, playerIndex)
+
+  if (stageSettings) {
+    stageSettings.description.set(blueprint.blueprint_description)
+  }
+}
+
 function updateBlueprintFilters(stack: LuaItemStack, property: MutableProperty<ReadonlyLuaSet<string> | nil>): void {
   const filters = stack.entity_filters
   if (isEmpty(filters)) {
@@ -140,12 +160,13 @@ function tryUpdateSettings(playerIndex: PlayerIndex, info: BlueprintEditInfo): v
 
   if (info.editType == "blueprint-item") {
     if (!stack.is_blueprint) return
-    updateBlueprintGridSettings(stack, info.settings, playerIndex)
+    updateBlueprintSettings(stack, info.settings, info.stageSettings, playerIndex)
   } else if (info.editType == "additionalWhitelist" || info.editType == "blacklist") {
     assume<BlueprintSettingsTable>(info.settings)
     updateBlueprintFilters(stack, info.settings[info.editType])
   }
 }
+
 Events.on_gui_closed((e) => {
   const playerIndex = e.player_index
   const data = storage.players[playerIndex]
