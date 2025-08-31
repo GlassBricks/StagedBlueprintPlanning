@@ -24,6 +24,7 @@ import {
   render,
   RenderContext,
   renderNamed,
+  renderOpened,
 } from "../lib/factoriojsx"
 import { closeParentAtLevel, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiProjectSelector } from "../locale"
@@ -37,6 +38,7 @@ import {
 } from "../project/UserProject"
 import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./ProjectSettings"
+import { BlueprintImportDialog } from "./BlueprintImport"
 import mouse_button_type = defines.mouse_button_type
 
 declare const storage: StorageWithPlayer
@@ -91,6 +93,7 @@ class AllProjects extends Component {
           </frame>
           <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
             <button caption={[L_GuiProjectSelector.NewProject]} on_gui_click={ibind(this.newProject)} />
+            <button caption={["bp100.gui.project-selector.import-project"]} on_gui_click={ibind(this.importProject)} />
             <HorizontalPusher />
             <button
               caption={[L_GuiProjectSelector.ExitProject]}
@@ -180,6 +183,11 @@ class AllProjects extends Component {
     const player = game.get_player(this.playerIndex)!
     closeAllProjects(player)
     exitProject(player)
+  }
+
+  private importProject(): void {
+    const player = game.get_player(this.playerIndex)!
+    renderOpened(player, { type: BlueprintImportDialog, props: { playerIndex: this.playerIndex } })
   }
 
   projectChangedEvent(e: ProjectCreatedEvent | ProjectDeletedEvent | ProjectsReorderedEvent) {

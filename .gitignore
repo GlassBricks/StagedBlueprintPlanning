@@ -149,3 +149,5 @@ src/*.zip
 TODO.md
 CLAUDE.md
 .claude/settings.local.json
+copy_exclude.txt
+copy_to_mods.bat

@@ -33,16 +33,17 @@ function parseConfig(file: string): Record<string, Record<string, string>> {
 
   const lines = fs.readFileSync(file, "utf8").split("\n")
   for (const line of lines) {
-    if (line.startsWith("#")) continue
-    if (line.startsWith("[")) {
-      assert.ok(line.endsWith("]"))
-      const key = line.slice(1, -1)
+    const trimmedLine = line.trim()
+    if (trimmedLine.startsWith("#")) continue
+    if (trimmedLine.startsWith("[")) {
+      assert.ok(trimmedLine.endsWith("]"))
+      const key = trimmedLine.slice(1, -1)
       result[key] = currentContent = {}
     }
-    if (line.includes("=")) {
-      const index = line.indexOf("=")
-      const key = line.slice(0, index)
-      currentContent[key] = line.slice(index + 1)
+    if (trimmedLine.includes("=")) {
+      const index = trimmedLine.indexOf("=")
+      const key = trimmedLine.slice(0, index)
+      currentContent[key] = trimmedLine.slice(index + 1)
     }
   }
 

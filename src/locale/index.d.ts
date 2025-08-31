@@ -204,6 +204,8 @@ export declare const enum L_GuiProjectSelector {
   AllProjects = "bp100.gui.project-selector.all-projects",
   /** New project */
   NewProject = "bp100.gui.project-selector.new-project",
+  /** Import project */
+  ImportProject = "bp100.gui.project-selector.import-project",
   /** Exit project */
   ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
@@ -382,6 +384,26 @@ export declare const enum L_GuiProjectSettings {
   DeleteProjectConfirmation2 = "bp100.gui.project-settings.delete-project-confirmation2",
   /** Blueprint string for __1__ */
   BlueprintStringFor = "bp100.gui.project-settings.blueprint-string-for",
+}
+export declare const enum L_GuiBlueprintImport {
+  /** Import Blueprint Book */
+  ImportBlueprintBookDialogTitle = "bp100.gui.blueprint-import.import-blueprint-book-dialog-title",
+  /** Paste your blueprint book string below: */
+  ImportBlueprintBookDialogMessage = "bp100.gui.blueprint-import.import-blueprint-book-dialog-message",
+  /** Cannot import empty blueprint string */
+  ImportEmptyString = "bp100.gui.blueprint-import.import-empty-string",
+  /** Invalid blueprint string format */
+  ImportInvalidString = "bp100.gui.blueprint-import.import-invalid-string",
+  /** Blueprint string must be a blueprint book, not a single blueprint */
+  ImportNotBlueprintBook = "bp100.gui.blueprint-import.import-not-blueprint-book",
+  /** Blueprint book contains no valid blueprints */
+  ImportEmptyBook = "bp100.gui.blueprint-import.import-empty-book",
+  /** No valid blueprints provided */
+  ImportNoBlueprints = "bp100.gui.blueprint-import.import-no-blueprints",
+  /** Failed to create project */
+  ImportProjectCreationFailed = "bp100.gui.blueprint-import.import-project-creation-failed",
+  /** Too many blueprints (maximum 100 stages supported) */
+  ImportTooManyBlueprints = "bp100.gui.blueprint-import.import-too-many-blueprints",
 }
 export declare const enum L_GuiTasks {
   /** Cancel */
