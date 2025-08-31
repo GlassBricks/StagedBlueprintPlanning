@@ -2,7 +2,7 @@
 
 This file contains info for setting up and contributing to this project.
 
-We usen
+We use:
 
 - [TypescriptToLua](https://github.com/TypeScriptToLua/TypeScriptToLua)
 - [typed-factorio](https://github.com/GlassBricks/typed-factorio) for type definitions
@@ -47,7 +47,7 @@ This project strives to have as high test coverage as possible.
 
 These scripts are used to generate some files:
 
-- `build:locale`: generateds a `locale.d.ts` from `src/locale`. There is also `watch:locale` script for this.
+- `build:locale`: generates a `locale.d.ts` from `src/locale`. There is also `watch:locale` script for this.
 - `build:gui-specs`: Used for the factoriojsx framework (see `src/lib/factoriojsx`).
 - `build:tstlPlugin`: Builds the TSTL plugin which facilitates "storing" functions in global (in a consistent way). See `src/lib/references.ts` to see how this is done.
 
