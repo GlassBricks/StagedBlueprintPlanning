@@ -10,14 +10,18 @@
  */
 
 import expect from "tstl-expect"
-import { StageDiffs } from "../../entity/ProjectEntity"
+import { createProjectEntityNoCopy, StageDiffs } from "../../entity/ProjectEntity"
 import {
+  exportEntity,
+  ExportEntity,
   ExportStageDiffs,
   fromExportStageDiffs,
+  importEntity,
   isExportNilPlaceholder,
   toExportStageDiffs,
 } from "../../import-export/entity"
 import { getNilPlaceholder } from "../../utils/diff-value"
+import { BlueprintNilPlaceholder } from "../../copy-paste/blueprint-stage-info"
 
 test("isNilPlaceholder", () => {
   expect(isExportNilPlaceholder({})).toBe(false)
@@ -56,4 +60,68 @@ test("fromBpStageDiffs", () => {
     },
   }
   expect(fromExportStageDiffs(value)).toEqual(expected)
+})
+
+describe("exportEntity and importEntity", () => {
+  it("should export and import entity correctly", () => {
+    const initialEntity = {
+      name: "foo",
+      a: 2,
+      b: "hi",
+      c: "hello",
+    }
+    const entity = createProjectEntityNoCopy(initialEntity, { x: 1, y: 2 }, 4, 1)
+    entity.setLastStageUnchecked(5)
+    entity.setStageDiffsDirectly({
+      2: {
+        a: 1,
+        b: "test",
+        c: getNilPlaceholder(),
+      },
+    })
+
+    const exportedEntity: ExportEntity = exportEntity(entity)
+    expect(exportedEntity).toEqual({
+      position: { x: 1, y: 2 },
+      direction: 4,
+      firstValue: {
+        name: "foo",
+        a: 2,
+        b: "hi",
+        c: "hello",
+      },
+      stageDiffs: {
+        2: {
+          a: 1,
+          b: "test",
+          c: { __nil: true } satisfies BlueprintNilPlaceholder,
+        },
+      },
+      firstStage: 1,
+      lastStage: 5,
+    })
+    const imported = importEntity(exportedEntity)
+    expect(imported).toMatchTable({
+      position: { x: 1, y: 2 },
+      direction: 4,
+      firstValue: {
+        name: "foo",
+        a: 2,
+        b: "hi",
+        c: "hello",
+      },
+      stageDiffs: {
+        2: {
+          a: 1,
+          b: "test",
+          c: getNilPlaceholder(),
+        },
+      },
+    })
+  })
+  it("should handle optional direction being nil", () => {
+    const entity = createProjectEntityNoCopy({ name: "foo", a: 2, b: "hi", c: "hello" }, { x: 1, y: 2 }, undefined, 1)
+    const exported = exportEntity(entity)
+    expect(exported.direction).toBeNil()
+  })
 })

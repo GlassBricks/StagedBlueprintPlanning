@@ -9,10 +9,24 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { MapPosition } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
-import { StageDiffs, StageNumber } from "../entity/ProjectEntity"
+import { createProjectEntityNoCopy, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
 import { Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
+
+export interface ExportStageInfo<E extends Entity = Entity> {
+  firstStage: StageNumber
+  lastStage: StageNumber | nil
+  firstValue?: E
+  stageDiffs?: ExportStageDiffs<E>
+}
+
+export interface ExportEntity extends ExportStageInfo {
+  firstValue: Entity
+  position: MapPosition
+  direction?: defines.direction
+}
 
 export type ExportNilPlaceholder = {
   __nil: true
@@ -46,8 +60,8 @@ export function toExportStageDiffs(diffs: StageDiffs): ExportStageDiffs {
   return ret
 }
 
-export function fromExportStageDiffs<E extends Entity = Entity>(diffs: ExportStageDiffs<E>): StageDiffs<E> {
-  const ret: Mutable<StageDiffs<E>> = {}
+export function fromExportStageDiffs(diffs: ExportStageDiffs): StageDiffs {
+  const ret: Mutable<StageDiffs> = {}
   for (const [stage, diff] of pairs(diffs)) {
     const stageDiff: any = {}
     for (const [key, value] of pairs(diff)) {
@@ -58,9 +72,24 @@ export function fromExportStageDiffs<E extends Entity = Entity>(diffs: ExportSta
   return ret
 }
 
-export interface ExportStageInfo<E extends Entity = Entity> {
-  firstStage: StageNumber
-  lastStage: StageNumber | nil
-  firstValue?: E
-  stageDiffs?: ExportStageDiffs<E>
+export function exportEntity(entity: ProjectEntity): ExportEntity {
+  const stageDiffs = entity.stageDiffs && toExportStageDiffs(entity.stageDiffs)
+  return {
+    position: entity.position,
+    direction: entity.direction == 0 ? nil : entity.direction,
+    firstStage: entity.firstStage,
+    lastStage: entity.lastStage,
+    firstValue: entity.firstValue,
+    stageDiffs,
+  }
+}
+
+export function importEntity(info: ExportEntity): ProjectEntity {
+  const stageDiffs = info.stageDiffs && fromExportStageDiffs(info.stageDiffs)
+
+  const entity = createProjectEntityNoCopy(info.firstValue, info.position, info.direction, info.firstStage)
+  entity.setLastStageUnchecked(info.lastStage)
+  entity.setStageDiffsDirectly(stageDiffs)
+
+  return entity
 }
