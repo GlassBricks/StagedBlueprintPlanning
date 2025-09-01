@@ -13,12 +13,14 @@ import { BlueprintEntity, LuaItemStack, LuaPlayer } from "factorio:runtime"
 import { createUserProject } from "../project/UserProject"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { teleportToProject } from "../ui/player-current-stage"
-import { createProjectEntityNoCopy, ProjectEntity } from "../entity/ProjectEntity"
+import { createProjectEntityNoCopy, ProjectEntity, addWireConnection } from "../entity/ProjectEntity"
+import { updateWireConnectionsAtStage } from "../entity/wires"
 import { saveEntity } from "../entity/save-load"
 import { getEntityDiff } from "../entity/stage-diff"
 import { UserProject } from "../project/ProjectDef"
 import { Position } from "../lib/geometry"
 import { Entity, InserterEntity, RollingStockEntity, UndergroundBeltEntity, AssemblingMachineEntity } from "../entity/Entity"
+import { ProjectWireConnection } from "../entity/wire-connection"
 
 
 export interface ImportResult {
@@ -40,6 +42,7 @@ interface UniqueEntityInfo {
   lastStage: number
   entityData: BlueprintEntity
   stageValues: Record<number, BlueprintEntity>
+  projectEntity?: ProjectEntity  // Set after entity creation for wire mapping
 }
 
 /**
@@ -202,6 +205,9 @@ function createProjectFromBlueprints(projectName: string, blueprints: BlueprintI
   // Second pass: Create ProjectEntities with proper stage spans
   const content = project.content
   let totalEntitiesCreated = 0
+  
+  // Entity number to ProjectEntity mapping for wire connections
+  const entityNumberMap: Record<number, Record<number, ProjectEntity>> = {} // [stage][entity_number] = ProjectEntity
 
   for (const posKey in uniqueEntities) {
     const entityInfo = uniqueEntities[posKey]
@@ -255,6 +261,20 @@ function createProjectFromBlueprints(projectName: string, blueprints: BlueprintI
 
       // Add entity to project content
       content.addEntity(projectEntity)
+      
+      // Store reference for wire mapping
+      entityInfo.projectEntity = projectEntity
+      
+      // Build entity number mapping for each stage where this entity appears
+      for (let s = entityInfo.firstStage; s <= entityInfo.lastStage; s++) {
+        if (!entityNumberMap[s]) {
+          entityNumberMap[s] = {}
+        }
+        const stageEntityData = entityInfo.stageValues[s] || firstStageData
+        if (stageEntityData.entity_number != nil) {
+          entityNumberMap[s][stageEntityData.entity_number] = projectEntity
+        }
+      }
 
       // Build the entity in all stages where it should appear
       for (let s = entityInfo.firstStage; s <= entityInfo.lastStage; s++) {
@@ -269,6 +289,81 @@ function createProjectFromBlueprints(projectName: string, blueprints: BlueprintI
     player.create_local_flying_text({ text: "Warning: No entities imported - all blueprints are empty", create_at_cursor: true })
   }
 
+  // Third pass: Process wire connections and build into world
+  let totalWireConnectionsCreated = 0
+  const processedConnections = new Set<string>() // Track processed connections to avoid duplicates
+  const entitiesWithWires = new Set<ProjectEntity>() // Track entities that need wire updates
+  
+  
+  for (let i = 0; i < blueprints.length; i++) {
+    const bp = blueprints[i]
+    const stageNum = i + 1
+    const stageEntityMap = entityNumberMap[stageNum]
+    
+    if (!stageEntityMap) continue
+    
+    const entities = bp.stack.get_blueprint_entities()
+    if (!entities) continue
+    
+    // Read wire connections from each entity
+    for (const entity of entities) {
+      if (!entity.entity_number) continue
+      
+      // Cast to any to access wires property
+      const anyEntity = entity as any
+      if (!anyEntity.wires) continue
+      
+      const fromEntity = stageEntityMap[entity.entity_number]
+      if (!fromEntity) continue
+      
+      // Process wires array - format: {entity1_number, connector1_id, entity2_number, connector2_id}
+      const wires = anyEntity.wires
+      if (!Array.isArray(wires)) continue
+      
+      for (const wire of wires) {
+        if (!Array.isArray(wire) || wire.length < 4) continue
+        
+        const [entity1Num, connector1Id, entity2Num, connector2Id] = wire
+        
+        // Get both entities
+        const entity1 = stageEntityMap[entity1Num]
+        const entity2 = stageEntityMap[entity2Num]
+        if (!entity1 || !entity2) continue
+        
+        // Create unique key to avoid duplicate connections
+        const connectionKey = `${Math.min(entity1Num, entity2Num)}-${Math.max(entity1Num, entity2Num)}-${connector1Id}-${connector2Id}`
+        if (processedConnections.has(connectionKey)) continue
+        processedConnections.add(connectionKey)
+        
+        const wireConnection: ProjectWireConnection = {
+          fromEntity: entity1,
+          fromId: connector1Id as defines.wire_connector_id,
+          toEntity: entity2,
+          toId: connector2Id as defines.wire_connector_id,
+        }
+        
+        addWireConnection(wireConnection)
+        totalWireConnectionsCreated++
+        
+        // Track entities for wire world building
+        entitiesWithWires.add(entity1)
+        entitiesWithWires.add(entity2)
+      }
+    }
+    
+  }
+  
+  
+  // Build wire connections into world entities for all tracked entities
+  if (totalWireConnectionsCreated > 0) {
+    for (const entity of entitiesWithWires) {
+      const firstStage = entity.firstStage
+      const lastStage = entity.lastStage || blueprints.length
+      for (let stage = firstStage; stage <= lastStage; stage++) {
+        updateWireConnectionsAtStage(project.content, entity, stage)
+      }
+    }
+  }
 
   // Calculate center position for first blueprint only (for player positioning)
   let firstStagePosition: Position = { x: 0, y: 0 }
