@@ -1,4 +1,5 @@
 import { OverrideableBlueprintSettings, StageBlueprintSettings } from "../blueprints/blueprint-settings"
+import { MutableProjectContent } from "../entity/ProjectContent"
 import {
   NestedProjectSettings,
   NestedStageSettings,
@@ -9,7 +10,7 @@ import {
 } from "../project/ProjectDef"
 import { createUserProject } from "../project/UserProject"
 import { getCurrentValues, getCurrentValuesOf, OverrideTable, setCurrentValuesOf } from "../utils/properties-obj"
-import { EntityExport, exportAllEntities } from "./entity"
+import { EntityExport, exportAllEntities, importEntity } from "./entity"
 
 type NestedPartial<T> = {
   [K in keyof T]?: Partial<T[K]>
@@ -47,7 +48,7 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
   }
 }
 
-export function importProject(project: ProjectExport): UserProject {
+export function importProjectDataOnly(project: ProjectExport): UserProject {
   const result = createUserProject(project.name ?? "", project.stages?.length ?? 3)
   setCurrentValuesOf<ProjectSettings>(result, project, keys<ProjectSettings>())
   if (project.defaultBlueprintSettings != nil) {
@@ -60,7 +61,21 @@ export function importProject(project: ProjectExport): UserProject {
   for (const [i, stage] of ipairs(project.stages ?? [])) {
     setStageExport(stage, result.getStage(i)!)
   }
+  importEntities(result.content, project.entities)
+
   return result
+}
+
+export function importProject(project: ProjectExport): UserProject {
+  const result = importProjectDataOnly(project)
+  result.worldUpdates.rebuildAllStages()
+  return result
+}
+
+export function importEntities(content: MutableProjectContent, entities: EntitiesExport): void {
+  for (const entity of entities) {
+    content.addEntity(importEntity(entity))
+  }
 }
 
 export function setStageExport(stage: StageExport, stageToExport: Stage): void {

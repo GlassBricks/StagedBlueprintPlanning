@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { exportProject, importProject, ProjectExport } from "../../import-export/project"
+import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
 import { Entity } from "../../entity/Entity"
@@ -76,6 +76,6 @@ test("Basic export test", () => {
   } satisfies ProjectExport)
 
   // round trip test
-  const roundTrip = exportProject(importProject(result))
+  const roundTrip = exportProject(importProjectDataOnly(result))
   expect(roundTrip).toEqual(result)
 })
