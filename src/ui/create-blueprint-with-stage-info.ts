@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 GlassBricks
+ * Copyright (c) 2024-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,9 +10,10 @@
  */
 
 import { BlueprintEntity, BoundingBox, LuaInventory, LuaItemStack, LuaPlayer } from "factorio:runtime"
+import { Entity } from "../entity/Entity"
+import { ExportStageInfo, toExportStageDiffs } from "../import-export/entity"
 import { isEmpty, Mutable } from "../lib"
 import { Stage } from "../project/ProjectDef"
-import { BpStagedInfo, BpStagedInfoTags, toBpStageDiffs } from "./blueprint-stage-info"
 
 declare global {
   interface PlayerData {
@@ -20,6 +21,10 @@ declare global {
   }
 }
 declare const storage: StorageWithPlayer
+
+export interface BpStagedInfoTags<E extends Entity = Entity> {
+  bp100: ExportStageInfo<E>
+}
 
 export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): LuaItemStack | nil {
   const inventory = (storage.players[player.index].tempBpInventory ??= game.create_inventory(1))
@@ -43,14 +48,14 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
   for (const [number, luaEntity] of pairs(entityMapping)) {
     const projectEntity = content.findEntityExact(luaEntity, luaEntity.position, stageNumber)
     if (!projectEntity) continue
-    const info: BpStagedInfo = {
+    const info: ExportStageInfo = {
       firstStage: projectEntity.firstStage,
       lastStage: projectEntity.lastStage,
     }
     const diffs = projectEntity.stageDiffs
     if (diffs) {
       info.firstValue = projectEntity.firstValue
-      info.stageDiffs = toBpStageDiffs(diffs)
+      info.stageDiffs = toExportStageDiffs(diffs)
     }
     blueprintEntities[number - 1].tags = { bp100: info } satisfies BpStagedInfoTags
   }

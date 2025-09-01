@@ -11,11 +11,11 @@
 
 import { BlueprintEntity, LuaEntity, nil, PlayerIndex } from "factorio:runtime"
 import { Colors, L_Game, Settings } from "../constants"
-import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
 import { LuaEntityInfo } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { allowOverlapDifferentDirection, getPrototypeInfo } from "../entity/prototype-info"
 import { findUndergroundPair } from "../entity/underground-belt"
+import { ExportStageInfo } from "../import-export/entity"
 import { assertNever, deepCompare } from "../lib"
 import { Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
@@ -354,7 +354,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     previousDirection: defines.direction | nil,
     byPlayer: PlayerIndex | nil,
     knownBpValue: BlueprintEntity,
-    stagedInfo: BpStagedInfo,
+    stagedInfo: ExportStageInfo,
   ): ProjectEntity | nil {
     const compatible = content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
     if (!compatible) {
@@ -390,7 +390,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     byPlayer: PlayerIndex | nil,
     knownBpValue?: BlueprintEntity,
   ): ProjectEntity | nil {
-    const stagedInfo = knownBpValue?.tags?.bp100 as BpStagedInfo | nil
+    const stagedInfo = knownBpValue?.tags?.bp100 as ExportStageInfo | nil
     if (stagedInfo) {
       return handlePasteValue(entity, stage, previousDirection, byPlayer, knownBpValue!, stagedInfo)
     }

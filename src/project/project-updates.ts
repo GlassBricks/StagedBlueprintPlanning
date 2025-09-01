@@ -10,7 +10,6 @@
  */
 
 import { BlueprintEntity, LuaEntity, nil } from "factorio:runtime"
-import { BpStagedInfo, fromBpStageDiffs } from "../copy-paste/blueprint-stage-info"
 import { Entity } from "../entity/Entity"
 import {
   createProjectEntityNoCopy,
@@ -29,6 +28,7 @@ import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
+import { ExportStageInfo, fromExportStageDiffs } from "../import-export/entity"
 import { Pos, Position } from "../lib/geometry"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
@@ -76,7 +76,7 @@ export interface ProjectUpdates {
   tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult
 
-  setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: BpStagedInfo): StageMoveResult
+  setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: ExportStageInfo): StageMoveResult
 
   trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult
   trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult
@@ -189,7 +189,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     stage: StageNumber,
     knownValue: BlueprintEntity | nil,
   ): ProjectEntity | nil {
-    const stageInfo = knownValue?.tags?.bp100 as BpStagedInfo | nil
+    const stageInfo = knownValue?.tags?.bp100 as ExportStageInfo | nil
     if (!stageInfo) {
       const saved = saveEntity(entity, knownValue)
       if (!saved) return nil
@@ -204,7 +204,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     projectEntity.setLastStageUnchecked(stageInfo.lastStage)
     const diffs = stageInfo.stageDiffs
     if (diffs) {
-      projectEntity.setStageDiffsDirectly(fromBpStageDiffs(diffs))
+      projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
     }
     return projectEntity
   }
@@ -567,7 +567,11 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       updateAllHighlights(pair)
     }
   }
-  function setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: BpStagedInfo): StageMoveResult {
+  function setValueFromStagedInfo(
+    entity: ProjectEntity,
+    value: BlueprintEntity,
+    info: ExportStageInfo,
+  ): StageMoveResult {
     const targetStage = info.firstStage
     if (targetStage != entity.firstStage) {
       const result = checkCanSetFirstStage(entity, targetStage)
@@ -590,7 +594,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
     const firstValue = info.firstValue ?? copyKnownValue(value)
     entity.setFirstValueDirectly(firstValue)
-    const stageDiffs = info.stageDiffs ? fromBpStageDiffs(info.stageDiffs) : nil
+    const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
     entity.setStageDiffsDirectly(stageDiffs)
 
     updateWorldEntities(entity, 1)

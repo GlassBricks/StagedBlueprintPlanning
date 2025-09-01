@@ -37,8 +37,6 @@ import {
 } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { CustomInputs, Prototypes } from "../constants"
-import { BpStagedInfo } from "../copy-paste/blueprint-stage-info"
-import { createBlueprintWithStageInfo } from "../copy-paste/create-blueprint-with-stage-info"
 import { BobInserterChangedPositionEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
 import { isWorldEntityProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
@@ -56,10 +54,12 @@ import {
   getRegisteredProjectEntityFromUnitNumber,
   getStageFromUnitNumber,
 } from "../entity/registration"
+import { ExportStageInfo } from "../import-export/entity"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
 import { L_Bp100, L_Interaction } from "../locale"
+import { createBlueprintWithStageInfo } from "../ui/create-blueprint-with-stage-info"
 import { getProjectPlayerData } from "./player-project-data"
 import { getStageAtSurface } from "./project-refs"
 import { Stage } from "./ProjectDef"
@@ -682,7 +682,7 @@ function mirrorEntity(entity: Mutable<BlueprintEntity>) {
 function editPassedValue<T extends BlueprintEntityWrite>(entity: T, edit: (entity: Mutable<T>) => void): T {
   const passedValue = mutableShallowCopy(entity)
   assume<Mutable<T>>(passedValue)
-  const stageInfoTags = passedValue.tags?.bp100 as BpStagedInfo | nil
+  const stageInfoTags = passedValue.tags?.bp100 as ExportStageInfo | nil
   if (!stageInfoTags?.firstValue) {
     edit(passedValue)
   } else {
