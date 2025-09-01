@@ -28,7 +28,7 @@ import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
-import { ExportStageInfo, fromExportStageDiffs } from "../import-export/entity"
+import { StageInfoExport, fromExportStageDiffs } from "../import-export/entity"
 import { Pos, Position } from "../lib/geometry"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
@@ -76,7 +76,7 @@ export interface ProjectUpdates {
   tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult
 
-  setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: ExportStageInfo): StageMoveResult
+  setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: StageInfoExport): StageMoveResult
 
   trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult
   trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult
@@ -189,7 +189,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     stage: StageNumber,
     knownValue: BlueprintEntity | nil,
   ): ProjectEntity | nil {
-    const stageInfo = knownValue?.tags?.bp100 as ExportStageInfo | nil
+    const stageInfo = knownValue?.tags?.bp100 as StageInfoExport | nil
     if (!stageInfo) {
       const saved = saveEntity(entity, knownValue)
       if (!saved) return nil
@@ -570,7 +570,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   function setValueFromStagedInfo(
     entity: ProjectEntity,
     value: BlueprintEntity,
-    info: ExportStageInfo,
+    info: StageInfoExport,
   ): StageMoveResult {
     const targetStage = info.firstStage
     if (targetStage != entity.firstStage) {

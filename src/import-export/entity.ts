@@ -15,14 +15,14 @@ import { createProjectEntityNoCopy, ProjectEntity, StageDiffs, StageNumber } fro
 import { Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 
-export interface ExportStageInfo<E extends Entity = Entity> {
+export interface StageInfoExport<E extends Entity = Entity> {
   firstStage: StageNumber
   lastStage: StageNumber | nil
   firstValue?: E
-  stageDiffs?: ExportStageDiffs<E>
+  stageDiffs?: StageDiffsExport<E>
 }
 
-export interface ExportEntity extends ExportStageInfo {
+export interface EntityExport extends StageInfoExport {
   firstValue: Entity
   position: MapPosition
   direction?: defines.direction
@@ -37,19 +37,19 @@ export function isExportNilPlaceholder(value: AnyNotNil): value is ExportNilPlac
   return typeof value == "object" && "__nil" in value
 }
 
-export type ExportStageDiff<E extends Entity = Entity> = {
+export type StageDiffExport<E extends Entity = Entity> = {
   readonly [P in keyof E]?: E[P] | ExportNilPlaceholder
 }
 // type might be a string of a number instead, in case of "sparse" array
-export type ExportStageDiffs<E extends Entity = Entity> = PRRecord<StageNumber | `${number}`, ExportStageDiff<E>>
+export type StageDiffsExport<E extends Entity = Entity> = PRRecord<StageNumber | `${number}`, StageDiffExport<E>>
 
 let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
   nilPlaceholder = getNilPlaceholder()
 })
 
-export function toExportStageDiffs(diffs: StageDiffs): ExportStageDiffs {
-  const ret: Mutable<ExportStageDiffs> = {}
+export function toExportStageDiffs(diffs: StageDiffs): StageDiffsExport {
+  const ret: Mutable<StageDiffsExport> = {}
   for (const [stage, diff] of pairs(diffs)) {
     const bpDiff: any = {}
     for (const [key, value] of pairs(diff)) {
@@ -60,7 +60,7 @@ export function toExportStageDiffs(diffs: StageDiffs): ExportStageDiffs {
   return ret
 }
 
-export function fromExportStageDiffs(diffs: ExportStageDiffs): StageDiffs {
+export function fromExportStageDiffs(diffs: StageDiffsExport): StageDiffs {
   const ret: Mutable<StageDiffs> = {}
   for (const [stage, diff] of pairs(diffs)) {
     const stageDiff: any = {}
@@ -72,7 +72,7 @@ export function fromExportStageDiffs(diffs: ExportStageDiffs): StageDiffs {
   return ret
 }
 
-export function exportEntity(entity: ProjectEntity): ExportEntity {
+export function exportEntity(entity: ProjectEntity): EntityExport {
   const stageDiffs = entity.stageDiffs && toExportStageDiffs(entity.stageDiffs)
   return {
     position: entity.position,
@@ -84,7 +84,7 @@ export function exportEntity(entity: ProjectEntity): ExportEntity {
   }
 }
 
-export function importEntity(info: ExportEntity): ProjectEntity {
+export function importEntity(info: EntityExport): ProjectEntity {
   const stageDiffs = info.stageDiffs && fromExportStageDiffs(info.stageDiffs)
 
   const entity = createProjectEntityNoCopy(info.firstValue, info.position, info.direction, info.firstStage)
@@ -92,4 +92,15 @@ export function importEntity(info: ExportEntity): ProjectEntity {
   entity.setStageDiffsDirectly(stageDiffs)
 
   return entity
+}
+
+export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): EntityExport[] {
+  const result: EntityExport[] = []
+  for (const entity of entities) {
+    if (!entity.isSettingsRemnant) {
+      result.push(exportEntity(entity))
+    }
+  }
+  // todo: wires
+  return result
 }

@@ -11,7 +11,7 @@
 
 import { BlueprintEntity, BoundingBox, LuaInventory, LuaItemStack, LuaPlayer } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
-import { ExportStageInfo, toExportStageDiffs } from "../import-export/entity"
+import { StageInfoExport, toExportStageDiffs } from "../import-export/entity"
 import { isEmpty, Mutable } from "../lib"
 import { Stage } from "../project/ProjectDef"
 
@@ -23,7 +23,7 @@ declare global {
 declare const storage: StorageWithPlayer
 
 export interface BpStagedInfoTags<E extends Entity = Entity> {
-  bp100: ExportStageInfo<E>
+  bp100: StageInfoExport<E>
 }
 
 export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, area: BoundingBox): LuaItemStack | nil {
@@ -48,7 +48,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
   for (const [number, luaEntity] of pairs(entityMapping)) {
     const projectEntity = content.findEntityExact(luaEntity, luaEntity.position, stageNumber)
     if (!projectEntity) continue
-    const info: ExportStageInfo = {
+    const info: StageInfoExport = {
       firstStage: projectEntity.firstStage,
       lastStage: projectEntity.lastStage,
     }

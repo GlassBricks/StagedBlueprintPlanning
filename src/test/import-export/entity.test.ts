@@ -13,15 +13,15 @@ import expect from "tstl-expect"
 import { createProjectEntityNoCopy, StageDiffs } from "../../entity/ProjectEntity"
 import {
   exportEntity,
-  ExportEntity,
-  ExportStageDiffs,
+  EntityExport,
+  ExportNilPlaceholder,
+  StageDiffsExport,
   fromExportStageDiffs,
   importEntity,
   isExportNilPlaceholder,
   toExportStageDiffs,
 } from "../../import-export/entity"
 import { getNilPlaceholder } from "../../utils/diff-value"
-import { BlueprintNilPlaceholder } from "../../copy-paste/blueprint-stage-info"
 
 test("isNilPlaceholder", () => {
   expect(isExportNilPlaceholder({})).toBe(false)
@@ -45,7 +45,7 @@ test("toBpStageDiffs", () => {
   expect(toExportStageDiffs(value)).toEqual(expected)
 })
 test("fromBpStageDiffs", () => {
-  const value: ExportStageDiffs<any> = {
+  const value: StageDiffsExport<any> = {
     "2": {
       a: 1,
       b: {},
@@ -80,7 +80,7 @@ describe("exportEntity and importEntity", () => {
       },
     })
 
-    const exportedEntity: ExportEntity = exportEntity(entity)
+    const exportedEntity: EntityExport = exportEntity(entity)
     expect(exportedEntity).toEqual({
       position: { x: 1, y: 2 },
       direction: 4,
@@ -94,7 +94,7 @@ describe("exportEntity and importEntity", () => {
         2: {
           a: 1,
           b: "test",
-          c: { __nil: true } satisfies BlueprintNilPlaceholder,
+          c: { __nil: true } satisfies ExportNilPlaceholder,
         },
       },
       firstStage: 1,

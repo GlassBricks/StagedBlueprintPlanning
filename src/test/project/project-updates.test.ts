@@ -30,7 +30,7 @@ import {
   StageNumber,
 } from "../../entity/ProjectEntity"
 import { findUndergroundPair } from "../../entity/underground-belt"
-import { ExportStageInfo } from "../../import-export/entity"
+import { StageInfoExport } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
@@ -676,7 +676,7 @@ describe("updateWiresFromWorld", () => {
 describe("updateFromBpStagedInfo", () => {
   test("can update from bp info", () => {
     const { entity } = addEntity(1)
-    const info: ExportStageInfo = {
+    const info: StageInfoExport = {
       firstStage: 2,
       lastStage: 5,
       firstValue: { name: "fast-inserter" },
@@ -699,7 +699,7 @@ describe("updateFromBpStagedInfo", () => {
   test("clears stage diff if info has no diffs", () => {
     const { entity } = addEntity(1)
     entity._applyDiffAtStage(2, { name: "fast-inserter" })
-    const info: ExportStageInfo = { firstStage: 2, lastStage: 5 }
+    const info: StageInfoExport = { firstStage: 2, lastStage: 5 }
     const value = {
       name: "fast-inserter",
     } as BlueprintEntity

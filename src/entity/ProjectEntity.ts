@@ -192,6 +192,8 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
 
 const { raise_script_destroy } = script
 
+// kinda messy
+// 4 years ago was only so kind
 @RegisterClass("AssemblyEntity")
 class ProjectEntityImpl<T extends Entity = Entity>
   extends BaseStagedValue<T, StageDiff<T>>

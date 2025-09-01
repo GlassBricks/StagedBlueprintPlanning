@@ -14,7 +14,7 @@ import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { AssemblingMachineEntity, Entity } from "../../entity/Entity"
 import { StageNumber } from "../../entity/ProjectEntity"
-import { ExportStageInfo } from "../../import-export/entity"
+import { StageInfoExport } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import { UserProject } from "../../project/ProjectDef"
@@ -96,7 +96,7 @@ test("create blueprint of entity with stage diff", () => {
         recipe: { __nil: true },
       },
     },
-  } satisfies ExportStageInfo<AssemblingMachineEntity>)
+  } satisfies StageInfoExport<AssemblingMachineEntity>)
 })
 test("does not clear stack if no entities selected", () => {
   player.cursor_stack?.set_stack(Prototypes.StagedCopyTool)

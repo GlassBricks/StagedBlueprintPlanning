@@ -6,8 +6,16 @@ export type PropertiesTable<T extends object> = {
   readonly [K in keyof T]: MutableProperty<T[K]>
 }
 
+export type NestedPropertiesTable<T extends Record<keyof T, object>> = {
+  readonly [K in keyof T]: PropertiesTable<T[K]>
+}
+
 export type PropertyOverrideTable<T extends object> = {
   readonly [K in keyof T]: MutableProperty<DiffValue<T[K]> | nil>
+}
+
+export type OverrideTable<T extends object> = {
+  readonly [K in keyof T]: DiffValue<T[K]> | nil
 }
 
 export function getCurrentValues<T extends object>(propertiesTable: PropertiesTable<T>): T {
@@ -16,6 +24,27 @@ export function getCurrentValues<T extends object>(propertiesTable: PropertiesTa
     result[key] = value.get()
   }
   return result
+}
+
+export function getCurrentValuesOf<T extends object>(propertiesTable: PropertiesTable<T>, keys: Array<keyof T>): T {
+  const result = {} as T
+  for (const key of keys) {
+    const actualKey = (tonumber(key) as keyof T) ?? key
+    result[key] = propertiesTable[actualKey].get()
+  }
+  return result
+}
+
+export function setCurrentValuesOf<T extends object>(
+  propertiesTable: PropertiesTable<T>,
+  values: Partial<T>,
+  keys: Array<keyof T>,
+): void {
+  for (const key of keys) {
+    if (values[key] != nil) {
+      propertiesTable[key].set(values[key])
+    }
+  }
 }
 
 export function createPropertiesTable<T extends object>(

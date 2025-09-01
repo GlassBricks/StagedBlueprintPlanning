@@ -22,7 +22,7 @@ import { L_Game, Prototypes, Settings } from "../../constants"
 import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../../entity/ProjectTile"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
-import { ExportStageInfo } from "../../import-export/entity"
+import { StageInfoExport } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import { L_Interaction } from "../../locale"
@@ -372,7 +372,7 @@ describe("onEntityPossiblyUpdated", () => {
 
   test("calls setValueFromStagedInfo if known value has stagedInfo", () => {
     const { luaEntity, entity } = addEntity(2)
-    const stagedInfo: ExportStageInfo<any> = {
+    const stagedInfo: StageInfoExport<any> = {
       firstStage: 1,
       lastStage: nil,
       firstValue: { foo: "bar" },

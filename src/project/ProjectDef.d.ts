@@ -14,6 +14,7 @@ import {
   BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,
   OverrideableBlueprintSettings,
+  StageBlueprintSettings,
   StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
 import { MutableProjectContent } from "../entity/ProjectContent"
@@ -21,7 +22,7 @@ import { StageNumber } from "../entity/ProjectEntity"
 import { StagedValue } from "../entity/StagedValue"
 import { MutableProperty, Property, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
-import { PropertiesTable } from "../utils/properties-obj"
+import { NestedPropertiesTable, OverrideTable, PropertiesTable } from "../utils/properties-obj"
 import { ProjectUpdates } from "./project-updates"
 
 import { UserActions } from "./user-actions"
@@ -50,17 +51,33 @@ export interface Project {
   worldUpdates: WorldUpdates
 }
 
-export interface UserProject extends Project {
+export interface ProjectSettings {
+  readonly name: string
+  readonly landfillTile: string | nil
+  readonly stagedTilesEnabled: boolean
+}
+
+export interface NestedProjectSettings {
+  readonly defaultBlueprintSettings: OverrideableBlueprintSettings
+}
+
+export interface UserProject
+  extends Project,
+    PropertiesTable<ProjectSettings>,
+    NestedPropertiesTable<NestedProjectSettings> {
   readonly id: ProjectId
-  readonly name: MutableProperty<string>
-  readonly content: MutableProjectContent
-  readonly localEvents: SimpleSubscribable<LocalProjectEvent>
 
   // settings
+  readonly name: MutableProperty<string>
   readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
-  // this may become a per-stage setting in the future
   readonly landfillTile: MutableProperty<string | nil>
   readonly stagedTilesEnabled: MutableProperty<boolean>
+
+  // data
+  readonly content: MutableProjectContent
+
+  // transient
+  readonly localEvents: SimpleSubscribable<LocalProjectEvent>
 
   getBlueprintBookTemplate(): LuaItemStack | nil
   getOrCreateBlueprintBookTemplate(): LuaItemStack
@@ -78,11 +95,21 @@ export interface UserProject extends Project {
   delete(): void
 }
 
-export interface Stage {
-  readonly surface: LuaSurface
+export interface StageSettings {
+  name: string
+}
+
+export interface NestedStageSettings {
+  readonly blueprintOverrideSettings: OverrideTable<OverrideableBlueprintSettings>
+  readonly stageBlueprintSettings: StageBlueprintSettings
+}
+
+export interface Stage extends PropertiesTable<StageSettings>, NestedPropertiesTable<NestedStageSettings> {
   readonly name: MutableProperty<string>
 
   readonly stageNumber: StageNumber
+
+  readonly surface: LuaSurface
   readonly project: UserProject
 
   getID(): StageId

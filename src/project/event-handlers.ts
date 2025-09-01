@@ -54,7 +54,7 @@ import {
   getRegisteredProjectEntityFromUnitNumber,
   getStageFromUnitNumber,
 } from "../entity/registration"
-import { ExportStageInfo } from "../import-export/entity"
+import { StageInfoExport } from "../import-export/entity"
 import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
@@ -682,7 +682,7 @@ function mirrorEntity(entity: Mutable<BlueprintEntity>) {
 function editPassedValue<T extends BlueprintEntityWrite>(entity: T, edit: (entity: Mutable<T>) => void): T {
   const passedValue = mutableShallowCopy(entity)
   assume<Mutable<T>>(passedValue)
-  const stageInfoTags = passedValue.tags?.bp100 as ExportStageInfo | nil
+  const stageInfoTags = passedValue.tags?.bp100 as StageInfoExport | nil
   if (!stageInfoTags?.firstValue) {
     edit(passedValue)
   } else {
