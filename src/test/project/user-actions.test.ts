@@ -19,10 +19,10 @@ import {
 } from "factorio:runtime"
 import expect from "tstl-expect"
 import { L_Game, Prototypes, Settings } from "../../constants"
-import { BpStagedInfo } from "../../copy-paste/blueprint-stage-info"
 import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../../entity/ProjectTile"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
+import { ExportStageInfo } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import { L_Interaction } from "../../locale"
@@ -372,7 +372,7 @@ describe("onEntityPossiblyUpdated", () => {
 
   test("calls setValueFromStagedInfo if known value has stagedInfo", () => {
     const { luaEntity, entity } = addEntity(2)
-    const stagedInfo: BpStagedInfo<any> = {
+    const stagedInfo: ExportStageInfo<any> = {
       firstStage: 1,
       lastStage: nil,
       firstValue: { foo: "bar" },

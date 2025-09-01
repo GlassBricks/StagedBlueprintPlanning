@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 GlassBricks
+ * Copyright (c) 2024-2025 GlassBricks
  * This file is part of Staged Blueprint Planning.
  *
  * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -12,14 +12,14 @@
 import { LuaPlayer, SurfaceCreateEntity, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
-import { BpStagedInfo, BpStagedInfoTags } from "../../copy-paste/blueprint-stage-info"
-import { createBlueprintWithStageInfo } from "../../copy-paste/create-blueprint-with-stage-info"
 import { AssemblingMachineEntity, Entity } from "../../entity/Entity"
 import { StageNumber } from "../../entity/ProjectEntity"
+import { ExportStageInfo } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import { UserProject } from "../../project/ProjectDef"
 import { createUserProject } from "../../project/UserProject"
+import { BpStagedInfoTags, createBlueprintWithStageInfo } from "../../ui/create-blueprint-with-stage-info"
 import { getNilPlaceholder } from "../../utils/diff-value"
 
 let player: LuaPlayer
@@ -96,7 +96,7 @@ test("create blueprint of entity with stage diff", () => {
         recipe: { __nil: true },
       },
     },
-  } satisfies BpStagedInfo<AssemblingMachineEntity>)
+  } satisfies ExportStageInfo<AssemblingMachineEntity>)
 })
 test("does not clear stack if no entities selected", () => {
   player.cursor_stack?.set_stack(Prototypes.StagedCopyTool)
