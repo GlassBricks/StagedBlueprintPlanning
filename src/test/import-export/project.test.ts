@@ -64,6 +64,7 @@ test("Basic export test", () => {
     ],
     entities: [
       {
+        entityNumber: 1,
         firstValue: {
           name: "foo",
           someProp: "bar",

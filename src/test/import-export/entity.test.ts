@@ -20,8 +20,10 @@ import {
   importEntity,
   isExportNilPlaceholder,
   toExportStageDiffs,
+  exportAllEntities,
 } from "../../import-export/entity"
 import { getNilPlaceholder } from "../../utils/diff-value"
+import { ProjectWireConnection } from "../../entity/wire-connection"
 
 test("isNilPlaceholder", () => {
   expect(isExportNilPlaceholder({})).toBe(false)
@@ -80,8 +82,9 @@ describe("exportEntity and importEntity", () => {
       },
     })
 
-    const exportedEntity: EntityExport = exportEntity(entity)
+    const exportedEntity: EntityExport = exportEntity(entity, 17)
     expect(exportedEntity).toEqual({
+      entityNumber: 17,
       position: { x: 1, y: 2 },
       direction: 4,
       firstValue: {
@@ -124,4 +127,27 @@ describe("exportEntity and importEntity", () => {
     const exported = exportEntity(entity)
     expect(exported.direction).toBeNil()
   })
+})
+
+test("exportAllEntities", () => {
+  const entity1 = createProjectEntityNoCopy({ name: "foo" }, { x: 1, y: 2 }, 4, 1)
+  const entity2 = createProjectEntityNoCopy({ name: "bar" }, { x: 3, y: 4 }, 6, 2)
+  const fromId = 2
+  const toId = 4
+  const connection: ProjectWireConnection = {
+    fromEntity: entity1,
+    toEntity: entity2,
+    fromId,
+    toId,
+  }
+  entity1.addOneWayWireConnection(connection)
+  entity2.addOneWayWireConnection(connection)
+
+  const [export1, export2] = exportAllEntities(newLuaSet(entity1, entity2))
+
+  expect(export1).toMatchTable({ entityNumber: 1 })
+  expect(export2).toMatchTable({ entityNumber: 2 })
+
+  expect(export1.wires).toEqual([[1, fromId, 2, toId]])
+  expect(export2.wires).toEqual([[2, toId, 1, fromId]])
 })
