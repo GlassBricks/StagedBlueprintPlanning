@@ -18,9 +18,10 @@ import {
   isTableIndexExpression,
   Plugin,
   TransformationContext,
-  Visitors
+  Visitors,
 } from "typescript-to-lua"
 import { createSerialDiagnosticFactory } from "typescript-to-lua/dist/utils"
+import * as dgram from "dgram"
 
 const invalidAccessSplitCall = createSerialDiagnosticFactory((node: ts.Node) => ({
   file: ts.getOriginalNode(node).getSourceFile(),
@@ -42,9 +43,7 @@ function transformAccessSplitCall(context: TransformationContext, node: ts.CallE
   return luaCall
 }
 // noinspection JSUnusedGlobalSymbols
-export default function plugin(options: {
-  hasTests: boolean
-}): Plugin {
+export default function plugin(options: { hasTests: boolean }): Plugin {
   const visitors: Visitors = {
     [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       const type = context.checker.getTypeAtLocation(node.expression)
@@ -74,7 +73,7 @@ export default function plugin(options: {
     },
   }
 
-  const beforeEmit: Plugin["beforeEmit"] = function beforeEmit(program, __, ___, files) {
+  const beforeEmit: Plugin["beforeEmit"] = function (program, __, ___, files) {
     if (files.length === 0) return // also if there are errors and noEmitOnError
     for (const file of files) {
       if (file.outputPath.endsWith("lualib_bundle.lua")) {
@@ -92,18 +91,26 @@ export default function plugin(options: {
         console.warn(`Replaced ${fileName} with ${newFileName}, but tests are disabled.`)
       }
     }
+  }
 
-    if (options.hasTests) {
-      const currentTimestampString = new Date().toLocaleString()
-      const outDir = getEmitOutDir(program)
-      files.push({
-        outputPath: path.join(outDir, "last-compile-time.lua"),
-        code: `return ${JSON.stringify(currentTimestampString)}`,
+  const client = dgram.createSocket("udp4")
+  const afterEmit: Plugin["afterEmit"] = function (_, __, ___, files) {
+    if (!options.hasTests || files.length == 0) return
+    try {
+      const message = Buffer.from("rerun")
+      client.send(message, 14434, "localhost", (err) => {
+        if (err) {
+          console.error("Failed to send UDP packet:", err)
+        }
       })
+    } catch (e) {
+      console.warn("Failed to send UDP packet:", e)
     }
   }
+
   return {
     visitors,
     beforeEmit,
+    afterEmit,
   }
 }

@@ -51,14 +51,12 @@ interface SourceMap {
   }
 }
 
-import lastCompileTime = require("last-compile-time")
-
 declare const storage: {
-  lastCompileTimestamp?: string
   printEvents?: boolean
-  migrateNextTick?: boolean
-
   rerunMode?: "rerun" | "reload" | "none"
+
+  reloadPending?: boolean
+  reloadAction?: "tests" | "migrate"
 }
 
 Events.on_player_created((p) => {
@@ -109,7 +107,6 @@ if ("factorio-test" in script.active_mods) {
     load_luassert: false,
     before_test_run() {
       reinit()
-      storage.lastCompileTimestamp = lastCompileTime
       const force = game.forces.player
       force.enable_all_technologies()
       force.research_all_technologies()
@@ -162,31 +159,49 @@ function isTestsRunning() {
   return true
 }
 
-Events.on_tick(() => {
-  if (storage.rerunMode == nil) storage.rerunMode = "rerun"
-  if (storage.rerunMode == "none" || isTestsRunning()) return
-
-  if (storage.migrateNextTick) {
-    storage.migrateNextTick = nil
-    Migrations.doMigrations(script.active_mods[script.mod_name]!)
+Events.on_udp_packet_received((event) => {
+  debugPrint(event)
+  if (event.payload != "rerun") return
+  if (storage.rerunMode == "none") {
+    game.print("Rerun request ignored")
   }
 
-  const ticks = math.ceil((__DebugAdapter ? 8 : 2) * 60 * game.speed)
-  const mod = game.ticks_played % ticks
-  if (mod == 0) {
-    storage.lastCompileTimestamp = lastCompileTime
-    storage.migrateNextTick = true
+  if (storage.rerunMode == "rerun" || storage.rerunMode == nil) {
+    storage.reloadPending = true
+    storage.reloadAction = "tests"
+  } else if (storage.rerunMode == "reload") {
+    storage.reloadPending = true
+    storage.reloadAction = "migrate"
+  }
+})
+
+helpers.recv_udp()
+Events.on_tick(() => {
+  helpers.recv_udp()
+  if (isTestsRunning()) return
+  if (storage.reloadPending) {
+    storage.reloadPending = nil
     game.reload_mods()
-  } else if (storage.lastCompileTimestamp != lastCompileTime && remote.interfaces["factorio-test"]?.runTests) {
-    storage.lastCompileTimestamp = lastCompileTime
-    game.print("Reloaded: " + lastCompileTime)
-    if (storage.rerunMode == "rerun") {
-      remote.call("factorio-test", "runTests")
-    } else {
+    return
+  }
+  switch (storage.reloadAction) {
+    case "tests": {
+      if (remote.interfaces["factorio-test"]?.runTests) {
+        storage.reloadAction = nil
+        remote.call("factorio-test", "runTests")
+      }
+      break
+    }
+    case "migrate": {
+      game.print("Reloaded")
+      Migrations.doMigrations(script.active_mods[script.mod_name]!)
       refreshCurrentProject()
+      storage.reloadAction = nil
+      break
     }
   }
 })
+
 commands.add_command("rr", "", (e) => {
   const arg = e.parameter
   if (arg == "test") {

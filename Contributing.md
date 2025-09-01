@@ -33,8 +33,8 @@ Run `npm run watch` to watch for changes.
 
 Launch the `Test run` vscode launch configuration or `Test debug`, which is slower but allows debugging.
 
-Tests will automatically re-run each time the project is rebuilt.
-> This rerun mechanism works using a combination of the [tstlPlugin](tstlPlugin/plugin.cts) and logic in `src/test/test-init.ts`.
+If you launch Factorio factorio with --enable-lua-udp 14434, tests will rerun automatically (with the watch script).
+This is handled by the tstlPlugin and src/test/test-init.ts .
 
 ## Testing
 
