@@ -160,7 +160,6 @@ function isTestsRunning() {
 }
 
 Events.on_udp_packet_received((event) => {
-  debugPrint(event)
   if (event.payload != "rerun") return
   if (storage.rerunMode == "none") {
     game.print("Rerun request ignored")
