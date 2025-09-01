@@ -25,13 +25,6 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     order: "a",
   },
   {
-    name: Settings.GpsTagTeleport,
-    type: "bool-setting",
-    setting_type: "runtime-per-user",
-    default_value: true,
-    order: "c",
-  },
-  {
     name: Settings.DeleteAtNextStage,
     type: "bool-setting",
     setting_type: "runtime-per-user",

@@ -40,8 +40,6 @@ export declare const enum L_ItemGroupName {
 export declare const enum L_ModSettingName {
   /** Location of Entity info gui */
   Bp100EntityInfoLocation = "mod-setting-name.bp100_entity-info-location",
-  /** Teleport to stage when clicking a GPS tag */
-  Bp100GpsTagTeleport = "mod-setting-name.bp100_gps-tag-teleport",
   /** Unhide infinity items (allows use in upgrade planner) */
   Bp100UnhideInfinityItems = "mod-setting-name.bp100_unhide-infinity-items",
   /** Deconstruct at next stage */
