@@ -39,10 +39,11 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
     const entityNumToProjectEntity = new LuaMap<number, ProjectEntity>()
     for (const entity of entities) {
       const thisValue = makeCleanEntity(entity)
+      const entityDirection = entity.direction ?? 0
       const existingEntity = project.content.findCompatibleEntity(
         entity.name,
         entity.position,
-        entity.direction,
+        entityDirection,
         curStageNum,
       )
       let curEntity: ProjectEntity
@@ -51,7 +52,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
         unaccountedLastStageEntities.delete(existingEntity)
         curEntity = existingEntity
       } else {
-        const newEntity = createProjectEntityNoCopy(thisValue, entity.position, entity.direction, curStageNum)
+        const newEntity = createProjectEntityNoCopy(thisValue, entity.position, entityDirection, curStageNum)
         project.content.addEntity(newEntity)
         curEntity = newEntity
       }
