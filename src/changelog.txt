@@ -1,7 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.4.2
 Date: ????
-  Changes:
+  Features:
+    - Added ability to import/export an entire project to a shareable string!
+    - Added ability to import a project from a blueprint book (string), with a few caveats: requires the book to have snap-to-grid enabled on all blueprints.
+   Changes:
+    - Removed the "teleport on gps tag" feature. This is obsoleted by Editor setting "Move player to editor location on exit".
 ---------------------------------------------------------------------------------------------------
 Version: 2.4.1
 Date: 2025-08-13
