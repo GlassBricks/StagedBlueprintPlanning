@@ -1272,23 +1272,6 @@ export const _assertInValidState = (): void => {
   }
 }
 
-declare global {
-  interface PlayerData {
-    needs028MoveToolNotification?: boolean
-  }
-}
-
-Events.on_player_cursor_stack_changed((e) => {
-  const playerData = storage.players[e.player_index]
-  if (!playerData?.needs028MoveToolNotification) return
-  const player = game.get_player(e.player_index)!
-  const stack = player.cursor_stack
-  if (stack && stack.valid && stack.valid_for_read && stack.name == Prototypes.StageMoveTool) {
-    playerData.needs028MoveToolNotification = false
-    player.print([L_Bp100.StageMoveTool028ChangedNotification])
-  }
-})
-
 Events.on_surface_cleared((e) => {
   const stage = getStageAtSurface(e.surface_index)
   if (!stage) return
