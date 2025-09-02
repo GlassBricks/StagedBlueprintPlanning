@@ -12,14 +12,16 @@
 import expect from "tstl-expect"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
-import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
+import { addWireConnection, createProjectEntityNoCopy } from "../../entity/ProjectEntity"
 import { Entity } from "../../entity/Entity"
 
 after_each(() => {
   _deleteAllProjects()
 })
 
-test("Basic export test", () => {
+const fromId = 2
+const toId = 4
+function createSampleProject() {
   const project = createUserProject("name", 2)
   project.defaultBlueprintSettings.snapToGrid.set({ x: 4, y: 5 })
 
@@ -30,18 +32,37 @@ test("Basic export test", () => {
   stage1.blueprintOverrideSettings.snapToGrid.set({ x: 4, y: 5 })
   stage2.stageBlueprintSettings.description.set("Foo")
 
-  project.content.addEntity(
-    createProjectEntityNoCopy(
-      {
-        name: "foo",
-        someProp: "bar",
-      },
-      { x: 2, y: 3 },
-      4,
-      2,
-    ),
+  const entity1 = createProjectEntityNoCopy(
+    {
+      name: "foo",
+      someProp: "bar",
+    },
+    { x: 2, y: 3 },
+    4,
+    2,
   )
+  const entity2 = createProjectEntityNoCopy(
+    {
+      name: "baz",
+    },
+    { x: 5, y: 6 },
+    2,
+    1,
+  )
+  project.content.addEntity(entity1)
+  project.content.addEntity(entity2)
 
+  addWireConnection({
+    fromEntity: entity1,
+    toEntity: entity2,
+    fromId,
+    toId,
+  })
+  return project
+}
+
+test("Basic export test", () => {
+  const project = createSampleProject()
   const result = exportProject(project)
   expect(result).toMatchTable({
     name: "name",
@@ -72,11 +93,25 @@ test("Basic export test", () => {
         position: { x: 2, y: 3 },
         firstStage: 2,
         lastStage: nil,
+        wires: [[1, fromId, 2, toId]],
+      },
+      {
+        entityNumber: 2,
+        firstValue: {
+          name: "baz",
+        } as Entity,
+        position: { x: 5, y: 6 },
+        firstStage: 1,
+        lastStage: nil,
+        wires: [[2, toId, 1, fromId]],
       },
     ],
   } satisfies ProjectExport)
+})
 
-  // round trip test
+test("Round trip export test", () => {
+  const project = createSampleProject()
+  const result = exportProject(project)
   const roundTrip = exportProject(importProjectDataOnly(result))
   expect(roundTrip).toEqual(result)
 })

@@ -11,7 +11,13 @@
 
 import { BlueprintWire, MapPosition } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
-import { createProjectEntityNoCopy, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
+import {
+  addWireConnection,
+  createProjectEntityNoCopy,
+  ProjectEntity,
+  StageDiffs,
+  StageNumber,
+} from "../entity/ProjectEntity"
 import { Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 import { MutableProjectContent } from "../entity/ProjectContent"
@@ -119,11 +125,11 @@ export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): Enti
   // pass 2: wires
   thisEntityNumber = 0
   for (const thisEntity of entities) {
+    // lua set has consistent iteration order, so this is fine
     thisEntityNumber++
     const thisExport = result[thisEntityNumber - 1]
-    // lua set has consistent iteration order, so this is fine
-    if (!thisEntity.isSettingsRemnant) {
-      const wires = thisEntity.wireConnections
+    const wires = thisEntity.wireConnections
+    if (!thisEntity.isSettingsRemnant && wires) {
       if (!wires) continue
       const thisWires: BlueprintWire[] = (thisExport.wires = [])
       for (const [otherEntity, connections] of wires) {
@@ -140,8 +146,19 @@ export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): Enti
 }
 
 export function importAllEntities(content: MutableProjectContent, entities: EntitiesExport): void {
+  const entityNumberToResult = new LuaMap<number, ProjectEntity>()
   for (const entity of entities) {
-    content.addEntity(importEntity(entity))
+    const newEntity = importEntity(entity)
+    entityNumberToResult.set(entity.entityNumber, newEntity)
+    content.addEntity(newEntity)
   }
-  // todo wires
+  for (const entity of entities) {
+    if (!entity.wires) continue
+    for (const [fromEntityNumber, fromId, toEntityNumber, toId] of entity.wires) {
+      const fromEntity = entityNumberToResult.get(fromEntityNumber)
+      const toEntity = entityNumberToResult.get(toEntityNumber)
+      if (!fromEntity || !toEntity) continue
+      addWireConnection({ fromEntity, toEntity, fromId, toId })
+    }
+  }
 }

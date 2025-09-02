@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { createProjectEntityNoCopy, StageDiffs } from "../../entity/ProjectEntity"
+import { addWireConnection, createProjectEntityNoCopy, StageDiffs } from "../../entity/ProjectEntity"
 import {
   exportEntity,
   EntityExport,
@@ -23,7 +23,6 @@ import {
   exportAllEntities,
 } from "../../import-export/entity"
 import { getNilPlaceholder } from "../../utils/diff-value"
-import { ProjectWireConnection } from "../../entity/wire-connection"
 
 test("isNilPlaceholder", () => {
   expect(isExportNilPlaceholder({})).toBe(false)
@@ -134,14 +133,12 @@ test("exportAllEntities", () => {
   const entity2 = createProjectEntityNoCopy({ name: "bar" }, { x: 3, y: 4 }, 6, 2)
   const fromId = 2
   const toId = 4
-  const connection: ProjectWireConnection = {
+  addWireConnection({
     fromEntity: entity1,
     toEntity: entity2,
     fromId,
     toId,
-  }
-  entity1.addOneWayWireConnection(connection)
-  entity2.addOneWayWireConnection(connection)
+  })
 
   const [export1, export2] = exportAllEntities(newLuaSet(entity1, entity2))
 
