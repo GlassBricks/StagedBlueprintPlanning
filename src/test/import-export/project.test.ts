@@ -10,10 +10,10 @@
  */
 
 import expect from "tstl-expect"
+import { Entity } from "../../entity/Entity"
+import { addWireConnection, createProjectEntityNoCopy } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
-import { addWireConnection, createProjectEntityNoCopy } from "../../entity/ProjectEntity"
-import { Entity } from "../../entity/Entity"
 
 after_each(() => {
   _deleteAllProjects()

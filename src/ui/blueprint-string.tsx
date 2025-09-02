@@ -1,0 +1,159 @@
+/*
+ * Copyright (c) 2024 GlassBricks
+ * This file is part of Staged Blueprint Planning.
+ *
+ * Staged Blueprint Planning is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * Staged Blueprint Planning is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import { LocalisedString, LuaPlayer, PlayerIndex, TextBoxGuiElement } from "factorio:runtime"
+import { L_Game } from "../constants"
+import { exportProject, importProject, ProjectExport } from "../import-export/project"
+import { funcRef, ibind, RegisterClass } from "../lib"
+import {
+  Component,
+  destroy,
+  destroyOnClose,
+  Element,
+  FactorioJsx,
+  RenderContext,
+  renderNamed,
+} from "../lib/factoriojsx"
+import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
+import { debugPrint } from "../lib/test/misc"
+import { L_Gui, L_GuiProjectSettings } from "../locale"
+import { UserProject } from "../project/ProjectDef"
+import { teleportToProject } from "./player-current-stage"
+
+interface ShowBlueprintProps {
+  bookName: LocalisedString
+  blueprintString: string
+  title: L_GuiProjectSettings.BlueprintStringFor | L_GuiProjectSettings.ProjectStringFor
+}
+
+@RegisterClass("gui:ShowBlueprintString")
+class ShowBlueprintString extends Component<ShowBlueprintProps> {
+  render(props: ShowBlueprintProps): Element {
+    const { bookName, blueprintString, title } = props
+    return (
+      <frame auto_center direction="vertical" on_gui_closed={funcRef(destroyOnClose)}>
+        <SimpleTitleBar title={[title, bookName]} />
+        <text-box
+          word_wrap
+          read_only
+          styleMod={{ width: 400, height: 300 }}
+          text={blueprintString}
+          onCreate={(e) => {
+            e.select_all()
+            e.scroll_to_top()
+          }}
+        />
+      </frame>
+    )
+  }
+}
+
+export function exportProjectToString(player: LuaPlayer, project: UserProject): void {
+  const exported = exportProject(project)
+  const result = prefix + helpers.encode_string(helpers.table_to_json(exported))
+  if (!result) {
+    player.print("Encoding to bp string failed!!")
+  } else {
+    showBlueprintString(player, L_GuiProjectSettings.ProjectStringFor, project.displayName().get(), result)
+  }
+}
+
+@RegisterClass("gui:ImportBlueprintString")
+export class ImportBlueprintString extends Component {
+  private playerIndex!: PlayerIndex
+  private textBox!: TextBoxGuiElement
+  render(_: unknown, context: RenderContext): Element {
+    this.playerIndex = context.playerIndex
+    const player = game.get_player(this.playerIndex)!
+    return (
+      <frame
+        auto_center
+        direction="vertical"
+        on_gui_closed={funcRef(destroyOnClose)}
+        onCreate={(e) => (player.opened = e)}
+      >
+        <SimpleTitleBar title={[L_Gui.ImportProjectFromString]} />
+        <text-box
+          word_wrap
+          styleMod={{ minimal_width: 400, height: 300 }}
+          onCreate={(e) => {
+            this.textBox = e
+            e.select_all()
+          }}
+        />
+        <flow direction="horizontal">
+          <HorizontalPusher />
+          <button caption={[L_Game.Import]} on_gui_click={ibind(this.import)} />
+        </flow>
+      </frame>
+    )
+  }
+
+  private import() {
+    if (!this.textBox.valid) return
+    const player = game.players[this.playerIndex]
+    const string = this.textBox.text
+    if (!string) return
+    const success = doImportProjectFromString(player, string)
+    if (success) {
+      destroy(this.textBox.parent)
+    }
+  }
+}
+
+const ShowBlueprintStringName = "bp100-show-blueprint-string"
+
+export function showBlueprintString(
+  player: LuaPlayer,
+  title: L_GuiProjectSettings.BlueprintStringFor | L_GuiProjectSettings.ProjectStringFor,
+  bookName: LocalisedString,
+  blueprintString: string,
+): void {
+  player.opened = renderNamed(
+    <ShowBlueprintString bookName={bookName} blueprintString={blueprintString} title={title} />,
+    player.gui.screen,
+    ShowBlueprintStringName,
+  )
+}
+
+export function showImportBlueprintWindow(player: LuaPlayer): void {
+  player.opened = renderNamed(<ImportBlueprintString />, player.gui.screen, "bp100-import-blueprint-string")
+}
+
+const prefix = "staged blueprint project:"
+export function doImportProjectFromString(player: LuaPlayer, str: string): boolean {
+  if (str.startsWith(prefix)) {
+    return importRegularProject(player, str.slice(prefix.length))
+  }
+  if (str.startsWith("0")) {
+    debugPrint("TODO: blueprint book import")
+    return false
+  }
+  player.create_local_flying_text({ text: "Invalid blueprint string format!", create_at_cursor: true })
+  return false
+}
+
+function importRegularProject(player: LuaPlayer, str: string): boolean {
+  const json = helpers.decode_string(str)
+  const table = json ? (helpers.json_to_table(json) as ProjectExport | nil) : nil
+  if (!table) {
+    player.create_local_flying_text({ text: "Decoding string failed!", create_at_cursor: true })
+    return false
+  }
+  const result = importProject(table)
+  if (typeof result == "string") {
+    player.print(result)
+    return false
+  } else {
+    teleportToProject(player, result)
+    return true
+  }
+}

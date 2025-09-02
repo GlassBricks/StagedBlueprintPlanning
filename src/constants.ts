@@ -195,6 +195,7 @@ export const enum L_Game {
   Reset = "gui.reset",
   Confirm = "gui.confirm",
   Cancel = "gui.cancel",
+  Import = "gui-blueprint-library.import",
 }
 
 export namespace Colors {

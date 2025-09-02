@@ -70,6 +70,7 @@ import {
 } from "./player-current-stage"
 import { renderStageReferencePanel } from "./StageReferencesBox"
 import { StageSelector } from "./StageSelector"
+import { exportProjectToString } from "./blueprint-string"
 
 declare global {
   interface PlayerData {
@@ -197,6 +198,8 @@ class ProjectSettings extends Component<{
               {this.EntitiesAndTiles()}
               <tab caption={[L_GuiProjectSettings.Blueprints]} />
               {this.BlueprintSettingsTab()}
+              <tab caption={[L_GuiProjectSettings.Other]} />
+              {this.OtherTab()}
             </tabbed-pane>
           </frame>
         </flow>
@@ -211,7 +214,7 @@ class ProjectSettings extends Component<{
     const allowNonBlueprintable = property<boolean>(!!tileIsNotBlueprintable)
 
     return (
-      <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
+      <frame style="inside_shallow_frame" direction="vertical" styleMod={{ padding: [5, 10] }}>
         <label caption={[L_GuiProjectSettings.Entities]} style="caption_label" />
         <flow>
           <button
@@ -286,7 +289,7 @@ class ProjectSettings extends Component<{
         </flow>
         <VerticalPusher />
         <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
-      </flow>
+      </frame>
     )
   }
   private rebuildStage() {
@@ -548,7 +551,13 @@ class ProjectSettings extends Component<{
 
   private BpExportTab(): Element {
     return (
-      <flow direction="vertical" styleMod={{ padding: 10 }}>
+      <frame
+        style="inside_shallow_frame"
+        direction="vertical"
+        styleMod={{
+          padding: [5, 10],
+        }}
+      >
         <button
           caption={[L_GuiProjectSettings.GetBlueprintForCurrentStage]}
           styleMod={{ width: BpExportButtonWidth }}
@@ -589,7 +598,7 @@ class ProjectSettings extends Component<{
             on_gui_click={ibind(this.beginResetBlueprintBookTemplate)}
           />
         </flow>
-      </flow>
+      </frame>
     )
   }
 
@@ -731,16 +740,35 @@ class ProjectSettings extends Component<{
             tooltip={[L_GuiProjectSettings.SetMapGenSettingsFromPlanetTooltip]}
             on_gui_click={ibind(this.openMapGenSettingsSelect)}
           />
-          <VerticalPusher />
-          <button
-            style="red_button"
-            caption={[L_GuiProjectSettings.DeleteProject]}
-            styleMod={{ width: OtherSettingsButtonWidth }}
-            on_gui_click={ibind(this.beginDeleteProject)}
-          />
         </flow>
       </>
     )
+  }
+
+  private OtherTab() {
+    return (
+      <frame style="inside_shallow_frame" direction="vertical" styleMod={{ padding: 10 }}>
+        <button
+          caption={[L_GuiProjectSettings.ExportProject]}
+          tooltip={[L_GuiProjectSettings.ExportProjectTooltip]}
+          styleMod={{ width: OtherSettingsButtonWidth }}
+          on_gui_click={ibind(this.exportProject)}
+        />
+        <VerticalPusher />
+        <button
+          style="red_button"
+          caption={[L_GuiProjectSettings.DeleteProject]}
+          styleMod={{ width: OtherSettingsButtonWidth }}
+          on_gui_click={ibind(this.beginDeleteProject)}
+        />
+      </frame>
+    )
+  }
+
+  private exportProject() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    exportProjectToString(player, this.project)
   }
 
   private beginDeleteProject() {

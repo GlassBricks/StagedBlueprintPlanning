@@ -45,6 +45,7 @@ import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo } from "../../project/undo"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 
+import { debugPrint } from "../../lib/test/misc"
 import { createRollingStock } from "../entity/createRollingStock"
 import {
   assertConfigChangedHighlightsCorrect,
@@ -53,7 +54,6 @@ import {
   assertNoHighlightsAfterLastStage,
 } from "./entity-highlight-test-util"
 import direction = defines.direction
-import { debugPrint } from "../../lib/test/misc"
 
 let project: UserProject
 let surfaces: LuaSurface[]

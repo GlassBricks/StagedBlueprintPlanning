@@ -45,7 +45,7 @@ function createSampleEntities() {
 test("can take blueprint with settings applied", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    3: { type: "item", name: "iron-plate" },
+    "3": { type: "item", name: "iron-plate" },
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },

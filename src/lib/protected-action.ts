@@ -25,7 +25,7 @@ export function protectedAction<T, A extends any[]>(action: (...args: A) => T, .
   reportUnexpectedError(result)
 }
 
-function getErrorWithStacktrace(error: unknown): ErrorWithData {
+export function getErrorWithStacktrace(error: unknown): ErrorWithData {
   // if (__DebugAdapter) __DebugAdapter.breakpoint()
   const errorToString = tostring(error)
   return [errorToString, debug.traceback(errorToString, 3)]

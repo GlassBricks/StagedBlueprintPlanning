@@ -36,7 +36,7 @@ test("createStageReference", () => {
   const stage = project.getStage(2)!
 
   const settings = stage.getBlueprintSettingsView()
-  settings[1].set({
+  settings["1"].set({
     type: "item",
     name: "iron-plate",
   })

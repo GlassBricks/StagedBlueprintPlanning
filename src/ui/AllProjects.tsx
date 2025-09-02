@@ -11,6 +11,7 @@
 
 import { LuaPlayer, OnGuiClickEvent, PlayerIndex, ScrollPaneGuiElement } from "factorio:runtime"
 import * as mod_gui from "mod-gui"
+import { showImportBlueprintWindow } from "./blueprint-string"
 import { OtherConstants, Styles } from "../constants"
 import { bind, ibind, RegisterClass } from "../lib"
 import {
@@ -26,7 +27,7 @@ import {
   renderNamed,
 } from "../lib/factoriojsx"
 import { closeParentAtLevel, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
-import { L_GuiProjectSelector } from "../locale"
+import { L_Gui, L_GuiProjectSelector } from "../locale"
 import { ProjectCreatedEvent, ProjectDeletedEvent, ProjectsReorderedEvent, UserProject } from "../project/ProjectDef"
 import {
   createUserProject,
@@ -39,11 +40,8 @@ import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToPro
 import { bringSettingsWindowToFront } from "./ProjectSettings"
 import mouse_button_type = defines.mouse_button_type
 
-declare const storage: StorageWithPlayer
-declare global {
-  interface PlayerData {
-    researchTechPromptDismissed?: true
-  }
+declare const storage: StorageWithPlayer & {
+  researchTechPromptDismissed?: true
 }
 
 const AllProjectsName = script.mod_name + ":all-projects"
@@ -57,7 +55,6 @@ class AllProjects extends Component {
   override render(_: EmptyProps, context: RenderContext): Element {
     this.playerIndex = context.playerIndex
     const currentStage = playerCurrentStage(this.playerIndex)
-    const playerData = storage.players[this.playerIndex]
     return (
       <flow direction="vertical">
         <frame
@@ -98,8 +95,13 @@ class AllProjects extends Component {
               on_gui_click={ibind(this.exitProject)}
             />
           </flow>
+          <button
+            caption={[L_Gui.ImportProjectFromString]}
+            tooltip={[L_Gui.ImportProjectFromStringTooltip]}
+            on_gui_click={ibind(this.importProject)}
+          />
         </frame>
-        {playerData?.researchTechPromptDismissed != true && (
+        {storage.researchTechPromptDismissed != true && (
           <frame direction="horizontal" caption={[L_GuiProjectSelector.ResearchAllTechPrompt]}>
             <button
               caption={[L_GuiProjectSelector.NoResearchAllTech]}
@@ -114,13 +116,13 @@ class AllProjects extends Component {
   }
 
   private dismissResearchTechPrompt(event: OnGuiClickEvent): void {
-    storage.players[this.playerIndex].researchTechPromptDismissed = true
+    storage.researchTechPromptDismissed = true
     closeParentAtLevel(1, event)
   }
 
   private researchAllTech(event: OnGuiClickEvent): void {
     game.forces.player.research_all_technologies()
-    storage.players[this.playerIndex].researchTechPromptDismissed = true
+    storage.researchTechPromptDismissed = true
     closeParentAtLevel(1, event)
   }
 
@@ -182,6 +184,11 @@ class AllProjects extends Component {
     exitProject(player)
   }
 
+  private importProject(): void {
+    const player = game.get_player(this.playerIndex)!
+    showImportBlueprintWindow(player)
+  }
+
   projectChangedEvent(e: ProjectCreatedEvent | ProjectDeletedEvent | ProjectsReorderedEvent) {
     const element = this.scrollPane
     if (!element || !element.valid) return
@@ -223,7 +230,6 @@ function createNewProject(player: LuaPlayer): void {
   storage.players[player.index].compactProjectSettings = nil
   teleportToProject(player, project)
 }
-
 export function closeAllProjects(player: LuaPlayer): void {
   destroy(mod_gui.get_frame_flow(player)[AllProjectsName])
 }

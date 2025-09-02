@@ -29,8 +29,7 @@ export function getCurrentValues<T extends object>(propertiesTable: PropertiesTa
 export function getCurrentValuesOf<T extends object>(propertiesTable: PropertiesTable<T>, keys: Array<keyof T>): T {
   const result = {} as T
   for (const key of keys) {
-    const actualKey = (tonumber(key) as keyof T) ?? key
-    result[key] = propertiesTable[actualKey].get()
+    result[key] = propertiesTable[key].get()
   }
   return result
 }
@@ -53,8 +52,7 @@ export function createPropertiesTable<T extends object>(
   result: Partial<PropertiesTable<T>> = {},
 ): PropertiesTable<T> {
   for (const key of keys) {
-    const actualKey = (tonumber(key) as keyof T) ?? key
-    result[actualKey] = property(values[actualKey])
+    result[key] = property(values[key])
   }
   return result as PropertiesTable<T>
 }
@@ -62,8 +60,7 @@ export function createPropertiesTable<T extends object>(
 export function createEmptyPropertyOverrideTable<T extends object>(keys: Array<keyof T>): PropertyOverrideTable<T> {
   const result = {} as Partial<PropertyOverrideTable<T>>
   for (const key of keys) {
-    const actualKey = (tonumber(key) as keyof T) ?? key
-    result[actualKey] = property(nil)
+    result[key] = property(nil)
   }
   return result as PropertyOverrideTable<T>
 }

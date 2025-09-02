@@ -11,6 +11,7 @@
 
 import { BlueprintWire, MapPosition } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
+import { MutableProjectContent } from "../entity/ProjectContent"
 import {
   addWireConnection,
   createProjectEntityNoCopy,
@@ -18,11 +19,10 @@ import {
   StageDiffs,
   StageNumber,
 } from "../entity/ProjectEntity"
+import { getDirectionalInfo } from "../entity/wire-connection"
 import { Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
-import { MutableProjectContent } from "../entity/ProjectContent"
 import { EntitiesExport } from "./project"
-import { getDirectionalInfo } from "../entity/wire-connection"
 
 export interface StageInfoExport<E extends Entity = Entity> {
   firstStage: StageNumber
@@ -74,11 +74,13 @@ export function toExportStageDiffs(diffs: StageDiffs): StageDiffsExport {
 export function fromExportStageDiffs(diffs: StageDiffsExport): StageDiffs {
   const ret: Mutable<StageDiffs> = {}
   for (const [stage, diff] of pairs(diffs)) {
+    const key = tonumber(stage)
+    if (key == nil) continue
     const stageDiff: any = {}
     for (const [key, value] of pairs(diff)) {
       stageDiff[key] = isExportNilPlaceholder(value) ? nilPlaceholder : value
     }
-    ret[tonumber(stage)!] = stageDiff
+    ret[key] = stageDiff
   }
   return ret
 }

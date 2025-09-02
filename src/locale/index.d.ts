@@ -116,8 +116,6 @@ export declare const enum L_Bp100 {
   PreviewEntity = "bp100.preview-entity",
   /** <Unnamed project __1__> */
   UnnamedProject = "bp100.unnamed-project",
-  /** The stage move tool has changed in v0.28:\nAlt select (__CONTROL__select-for-cancel-deconstruct__) now [font=default-large-bold]sends[/font] entities to the target stage, but selects entities from all stages, not just the current stage.\nReverse select (__CONTROL__reverse-select__) has the same behavior (identical to the old alt-select behavior). */
-  StageMoveTool028ChangedNotification = "bp100.stage-move-tool-028-changed-notification",
 }
 export declare const enum L_Interaction {
   /** An unexpected error occurred: __1__. Additional details outputted to log. Please report this to the mod author! */
@@ -180,6 +178,10 @@ export declare const enum L_Gui {
   BlueprintFilters = "bp100.gui.blueprint-filters",
   /** Get reference */
   GetStageTemplate = "bp100.gui.get-stage-template",
+  /** Import project from string [img=info] */
+  ImportProjectFromString = "bp100.gui.import-project-from-string",
+  /** Import a project from:\n- An exported project string (see "Other" tab in Project Settings)\n- A blueprint book with blueprints. Each blueprint in order will become a stage (EXPERIMENTAL) */
+  ImportProjectFromStringTooltip = "bp100.gui.import-project-from-string-tooltip",
 }
 export declare const enum L_GuiProjectSelector {
   /** Staged Blueprint Planning is meant to be used in sandbox or in /editor, */
@@ -380,6 +382,12 @@ export declare const enum L_GuiProjectSettings {
   DeleteProjectConfirmation2 = "bp100.gui.project-settings.delete-project-confirmation2",
   /** Blueprint string for __1__ */
   BlueprintStringFor = "bp100.gui.project-settings.blueprint-string-for",
+  /** Project string for __1__ */
+  ProjectStringFor = "bp100.gui.project-settings.project-string-for",
+  /** Export project to string [img=info] */
+  ExportProject = "bp100.gui.project-settings.export-project",
+  /** Exports the project, including most settings, to a shareable string.\nImportable via the top left mod button menu. */
+  ExportProjectTooltip = "bp100.gui.project-settings.export-project-tooltip",
 }
 export declare const enum L_GuiTasks {
   /** Cancel */

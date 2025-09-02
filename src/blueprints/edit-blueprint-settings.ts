@@ -48,10 +48,10 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
     excludeFromFutureBlueprints: false,
     additionalWhitelist: nil,
     blacklist: settings.blacklist.get(),
-    1: settings[1].get(),
-    2: settings[2].get(),
-    3: settings[3].get(),
-    4: settings[4].get(),
+    "1": settings["1"].get(),
+    "2": settings["2"].get(),
+    "3": settings["3"].get(),
+    "4": settings["4"].get(),
     appendStageNumbersToIcons: settings.appendStageNumbersToIcons.get(),
   }
 }

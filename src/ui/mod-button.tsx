@@ -116,11 +116,3 @@ Migrations.fromAny(() => {
     if (flow[ModButtonName] == nil) renderNamed(<ModButton />, flow, ModButtonName)
   }
 })
-if ("debugadapter" in script.active_mods) {
-  commands.add_command("reset-confirm-editor-mode", "Reset confirm editor mode", () => {
-    for (const [, data] of pairs(storage.players)) {
-      data.confirmedEditorMode = nil
-      data.researchTechPromptDismissed = nil
-    }
-  })
-}

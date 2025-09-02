@@ -13,10 +13,10 @@ export interface BlueprintGridSettings {
 
 export interface BlueprintTakeSettings extends BlueprintGridSettings {
   // kinda dumb, but works for now
-  readonly 1: SignalID | nil
-  readonly 2: SignalID | nil
-  readonly 3: SignalID | nil
-  readonly 4: SignalID | nil
+  readonly "1": SignalID | nil
+  readonly "2": SignalID | nil
+  readonly "3": SignalID | nil
+  readonly "4": SignalID | nil
 
   readonly appendStageNumbersToIcons: boolean
 
@@ -32,7 +32,7 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
 }
 
 export type OverrideableBlueprintSettings = BlueprintTakeSettings
-const signalKeys = [1, 2, 3, 4] as const
+const signalKeys = ["1", "2", "3", "4"] as const
 
 export function setIconsInSettings(settings: BlueprintSettingsTable, icons: BlueprintSignalIcon[] | nil): void {
   const toSet: Record<number, SignalID> = {}
@@ -65,8 +65,9 @@ export function getIconsFromSettings(settings: BlueprintTakeSettings, stageName?
   for (const key of signalKeys) {
     const signal = settings[key]
     if (signal) {
-      result.push({ index: key, signal })
-      largestIndex = key
+      const keyNumber = tonumber(key)
+      result.push({ index: keyNumber!, signal })
+      largestIndex = keyNumber!
     }
   }
 

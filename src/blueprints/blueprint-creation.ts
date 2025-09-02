@@ -14,7 +14,7 @@ import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { assertNever, RegisterClass } from "../lib"
 import { BBox } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
-import { L_GuiBlueprintBookTask } from "../locale"
+import { L_GuiBlueprintBookTask, L_GuiProjectSettings } from "../locale"
 import { Stage, UserProject } from "../project/ProjectDef"
 import { setTilesAndCheckerboardForStage } from "../project/set-tiles"
 import { getCurrentValues } from "../utils/properties-obj"
@@ -24,7 +24,7 @@ import {
   OverrideableBlueprintSettings,
   StageBlueprintSettings,
 } from "./blueprint-settings"
-import { showBlueprintString } from "./ShowBlueprintString"
+import { showBlueprintString } from "../ui/blueprint-string"
 import { getReferencedStage } from "./stage-reference"
 import { BlueprintTakeResult, takeSingleBlueprint } from "./take-single-blueprint"
 import max = math.max
@@ -181,8 +181,7 @@ const BlueprintMethods = {
   showBlueprintBookString(stack: LuaItemStack, player: LuaPlayer): void {
     const title = stack.label ?? "<unnamed>"
     const blueprintString = stack.export_stack()
-    stack.export_stack()
-    showBlueprintString(player, title, blueprintString)
+    showBlueprintString(player, L_GuiProjectSettings.BlueprintStringFor, title, blueprintString)
   },
 } satisfies Record<string, BlueprintMethod<any>>
 
