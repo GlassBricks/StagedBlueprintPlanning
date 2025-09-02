@@ -105,11 +105,8 @@ function notifyFirstEntityRemoved(playerIndex: PlayerIndex): void {
       text: [L_Interaction.BlueprintFirstEntityRemoved],
     })
 }
-function updateBlueprintGridSettings(
-  blueprint: LuaItemStack,
-  settings: BlueprintSettingsTable,
-  playerIndex: PlayerIndex,
-): void {
+
+export function updateBasicBlueprintSettings(blueprint: LuaItemStack, settings: BlueprintSettingsTable): void {
   const snapToGrid = blueprint.blueprint_snap_to_grid
   if (snapToGrid == nil) {
     settings.snapToGrid.set(nil)
@@ -117,21 +114,31 @@ function updateBlueprintGridSettings(
     return
   }
 
-  const originalPosition = blueprint.get_blueprint_entity_tag(1, FirstEntityOriginalPositionTag) as Position | nil
-  if (!originalPosition) return notifyFirstEntityRemoved(playerIndex)
-
-  const bpPosition = blueprint.get_blueprint_entities()![0].position
   settings.snapToGrid.set(snapToGrid)
   settings.absoluteSnapping.set(blueprint.blueprint_absolute_snapping)
   settings.positionRelativeToGrid.set(blueprint.blueprint_position_relative_to_grid)
-  settings.positionOffset.set(Pos.minus(bpPosition, originalPosition))
+}
+
+function updateBlueprintGridSettings(
+  blueprint: LuaItemStack,
+  settings: BlueprintSettingsTable,
+  playerIndex: PlayerIndex | nil,
+): void {
+  if (playerIndex != nil) {
+    const originalPosition = blueprint.get_blueprint_entity_tag(1, FirstEntityOriginalPositionTag) as Position | nil
+    if (!originalPosition) return notifyFirstEntityRemoved(playerIndex)
+    const bpPosition = blueprint.get_blueprint_entities()![0].position
+    settings.positionOffset.set(Pos.minus(bpPosition, originalPosition))
+  }
+
+  updateBasicBlueprintSettings(blueprint, settings)
 }
 
 function updateBlueprintSettings(
   blueprint: LuaItemStack,
   settings: BlueprintSettingsTable,
   stageSettings: StageBlueprintSettingsTable | nil,
-  playerIndex: PlayerIndex,
+  playerIndex: PlayerIndex | nil,
 ): void {
   updateBlueprintGridSettings(blueprint, settings, playerIndex)
 

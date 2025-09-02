@@ -180,7 +180,7 @@ export declare const enum L_Gui {
   GetStageTemplate = "bp100.gui.get-stage-template",
   /** Import project from string [img=info] */
   ImportProjectFromString = "bp100.gui.import-project-from-string",
-  /** Import a project from:\n- An exported project string (see "Other" tab in Project Settings)\n- A blueprint book with blueprints. Each blueprint in order will become a stage (EXPERIMENTAL) */
+  /** Import a project from:\n- An exported project string (see "Other" tab in Project Settings)\n- A blueprint book; each blueprint will become a stage. This will probably only work if all blueprints have snap-to-grid on, and have the blueprint flag all at the same position. */
   ImportProjectFromStringTooltip = "bp100.gui.import-project-from-string-tooltip",
 }
 export declare const enum L_GuiProjectSelector {

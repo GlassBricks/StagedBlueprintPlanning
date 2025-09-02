@@ -1,5 +1,4 @@
 import { OverrideableBlueprintSettings, StageBlueprintSettings } from "../blueprints/blueprint-settings"
-import { getErrorWithStacktrace } from "../lib"
 import {
   NestedProjectSettings,
   NestedStageSettings,
@@ -17,8 +16,8 @@ type NestedPartial<T> = {
 }
 
 export interface ProjectExport extends Partial<ProjectSettings>, NestedPartial<NestedProjectSettings> {
-  stages: StageExport[]
-  entities: EntitiesExport
+  stages?: StageExport[]
+  entities?: EntitiesExport
 }
 
 export type EntitiesExport = EntityExport[]
@@ -50,7 +49,7 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
 
 export function importProjectDataOnly(project: ProjectExport): UserProject {
   const stages = project.stages
-  const result = createUserProject(project.name ?? "", stages.length)
+  const result = createUserProject(project.name ?? "", stages?.length ?? 3)
   setCurrentValuesOf<ProjectSettings>(result, project, keys<ProjectSettings>())
   if (project.defaultBlueprintSettings != nil) {
     setCurrentValuesOf<OverrideableBlueprintSettings>(
@@ -59,26 +58,14 @@ export function importProjectDataOnly(project: ProjectExport): UserProject {
       keys<OverrideableBlueprintSettings>(),
     )
   }
-  for (const [i, stage] of ipairs(stages)) {
-    setStageExport(stage, result.getStage(i)!)
+  if (stages != nil) {
+    for (const [i, stage] of ipairs(stages)) {
+      setStageExport(stage, result.getStage(i)!)
+    }
   }
   importAllEntities(result.content, assert(project.entities))
 
   return result
-}
-
-/**
- * On error, returns an error message.
- */
-export function importProject(project: ProjectExport): UserProject | string {
-  const [success, result] = xpcall(importProjectDataOnly, getErrorWithStacktrace, project)
-  if (success) {
-    result.worldUpdates.rebuildAllStages()
-    return result
-  }
-  const [msg, stacktrace] = result
-  log(`Failed to import project: ${stacktrace}`)
-  return `Failed to import project: ${tostring(msg)}\nPlease report this to the mod author if you think this is a bug.`
 }
 
 export function setStageExport(stage: StageExport, stageToExport: Stage): void {

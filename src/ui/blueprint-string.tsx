@@ -11,7 +11,8 @@
 
 import { LocalisedString, LuaPlayer, PlayerIndex, TextBoxGuiElement } from "factorio:runtime"
 import { L_Game } from "../constants"
-import { exportProject, importProject, ProjectExport } from "../import-export/project"
+import { convertBookToProject, importProject } from "../import-export"
+import { exportProject, ProjectExport } from "../import-export/project"
 import { funcRef, ibind, RegisterClass } from "../lib"
 import {
   Component,
@@ -23,7 +24,6 @@ import {
   renderNamed,
 } from "../lib/factoriojsx"
 import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
-import { debugPrint } from "../lib/test/misc"
 import { L_Gui, L_GuiProjectSettings } from "../locale"
 import { UserProject } from "../project/ProjectDef"
 import { teleportToProject } from "./player-current-stage"
@@ -102,7 +102,7 @@ export class ImportBlueprintString extends Component {
     const player = game.players[this.playerIndex]
     const string = this.textBox.text
     if (!string) return
-    const success = doImportProjectFromString(player, string)
+    const success = tryImportProjectFromStringUser(player, string)
     if (success) {
       destroy(this.textBox.parent)
     }
@@ -128,32 +128,44 @@ export function showImportBlueprintWindow(player: LuaPlayer): void {
   player.opened = renderNamed(<ImportBlueprintString />, player.gui.screen, "bp100-import-blueprint-string")
 }
 
-const prefix = "staged blueprint project:"
-export function doImportProjectFromString(player: LuaPlayer, str: string): boolean {
+const prefix = "staged-blueprint-project:"
+function tryImportProjectFromStringUser(player: LuaPlayer, str: string): boolean {
+  let result: UserProject | nil | string
   if (str.startsWith(prefix)) {
-    return importRegularProject(player, str.slice(prefix.length))
+    result = importProjectString(player, str.slice(prefix.length))
+  } else if (str.startsWith("0")) {
+    result = importProjectFromBook(player, str)
   }
-  if (str.startsWith("0")) {
-    debugPrint("TODO: blueprint book import")
-    return false
-  }
-  player.create_local_flying_text({ text: "Invalid blueprint string format!", create_at_cursor: true })
-  return false
-}
 
-function importRegularProject(player: LuaPlayer, str: string): boolean {
-  const json = helpers.decode_string(str)
-  const table = json ? (helpers.json_to_table(json) as ProjectExport | nil) : nil
-  if (!table) {
-    player.create_local_flying_text({ text: "Decoding string failed!", create_at_cursor: true })
-    return false
-  }
-  const result = importProject(table)
   if (typeof result == "string") {
     player.print(result)
+    return false
+  } else if (result == nil) {
+    player.create_local_flying_text({ text: "Decoding string failed!", create_at_cursor: true })
     return false
   } else {
     teleportToProject(player, result)
     return true
+  }
+}
+
+function importProjectString(player: LuaPlayer, str: string): UserProject | string {
+  const json = helpers.decode_string(str)
+  const table = json ? (helpers.json_to_table(json) as ProjectExport | nil) : nil
+  if (!table) {
+    return "Decoding string failed!"
+  }
+  return importProject(table)
+}
+
+function importProjectFromBook(player: LuaPlayer, str: string): UserProject | string {
+  const inventory = game.create_inventory(1)
+  try {
+    const stack = inventory[0]
+    const result = stack.import_stack(str)
+    if (result == 1) return "Failed to import string to blueprint book!"
+    return convertBookToProject(stack)
+  } finally {
+    inventory.destroy()
   }
 }
