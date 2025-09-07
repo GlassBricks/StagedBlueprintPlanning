@@ -57,7 +57,7 @@ Migrations.to("2.4.0", () => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.5.2", () => {
   interface OldBlueprintSettings {
     1: SignalID | nil
     2: SignalID | nil

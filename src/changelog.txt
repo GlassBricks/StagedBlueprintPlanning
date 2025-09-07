@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.5.2
-Date: ????
+Date: 2025-09-07
   Bugfixes:
     - Fixed several issues related to blueprint icon settings.
     - This may also fix crashes when creating a new stage, on a project created in an earlier version.
