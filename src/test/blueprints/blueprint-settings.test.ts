@@ -20,7 +20,7 @@ describe("getIconsFromSettings", () => {
   test("gets icons if appendStageNumbersToIcons is false", () => {
     const settings: BlueprintTakeSettings = {
       ...getDefaultBlueprintSettings(),
-      "3": { type: "item", name: "iron-plate" },
+      icon3: { type: "item", name: "iron-plate" },
     }
 
     const result = getIconsFromSettings(settings)
@@ -51,7 +51,7 @@ describe("getIconsFromSettings", () => {
     const settings: BlueprintTakeSettings = {
       ...getDefaultBlueprintSettings(),
       appendStageNumbersToIcons: true,
-      "2": { type: "item", name: "iron-plate" },
+      icon2: { type: "item", name: "iron-plate" },
     }
 
     const result = getIconsFromSettings(settings, "stage-1")

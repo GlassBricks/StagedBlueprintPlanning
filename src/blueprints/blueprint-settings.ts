@@ -13,10 +13,10 @@ export interface BlueprintGridSettings {
 
 export interface BlueprintTakeSettings extends BlueprintGridSettings {
   // kinda dumb, but works for now
-  readonly "1": SignalID | nil
-  readonly "2": SignalID | nil
-  readonly "3": SignalID | nil
-  readonly "4": SignalID | nil
+  readonly icon1: SignalID | nil
+  readonly icon2: SignalID | nil
+  readonly icon3: SignalID | nil
+  readonly icon4: SignalID | nil
 
   readonly appendStageNumbersToIcons: boolean
 
@@ -32,7 +32,8 @@ export interface BlueprintTakeSettings extends BlueprintGridSettings {
 }
 
 export type OverrideableBlueprintSettings = BlueprintTakeSettings
-const signalKeys = ["1", "2", "3", "4"] as const
+export type IconNumber = 1 | 2 | 3 | 4
+export const iconNumbers = [1, 2, 3, 4] as const
 
 export function setIconsInSettings(settings: BlueprintSettingsTable, icons: BlueprintSignalIcon[] | nil): void {
   const toSet: Record<number, SignalID> = {}
@@ -41,15 +42,15 @@ export function setIconsInSettings(settings: BlueprintSettingsTable, icons: Blue
       toSet[icon.index] = icon.signal
     }
   }
-  for (const key of signalKeys) {
-    settings[key].set(toSet[key])
+  for (const number of iconNumbers) {
+    settings[`icon${number}`].set(toSet[number])
   }
 }
 
 export function getIconsAsCompactArray(settings: BlueprintSettingsTable): SignalID[] {
   const result: SignalID[] = []
-  for (const key of signalKeys) {
-    const signal = settings[key].get()
+  for (const number of iconNumbers) {
+    const signal = settings[`icon${number}`].get()
     if (signal) result.push(signal)
   }
   return result
@@ -62,10 +63,10 @@ export function getIconsFromSettings(settings: BlueprintTakeSettings, stageName?
   const result: BlueprintSignalIcon[] = []
   const appendNumbers = settings.appendStageNumbersToIcons && stageName
   let largestIndex = 0
-  for (const key of signalKeys) {
-    const signal = settings[key]
+  for (const number of iconNumbers) {
+    const signal = settings[`icon${number}`]
     if (signal) {
-      const keyNumber = tonumber(key)
+      const keyNumber = tonumber(number)
       result.push({ index: keyNumber!, signal })
       largestIndex = keyNumber!
     }
@@ -103,10 +104,10 @@ export type BlueprintSettingsOverrideTable = PropertyOverrideTable<OverrideableB
 
 export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
   return {
-    1: nil,
-    2: nil,
-    3: nil,
-    4: nil,
+    icon1: nil,
+    icon2: nil,
+    icon3: nil,
+    icon4: nil,
     appendStageNumbersToIcons: true,
     positionOffset: nil,
     snapToGrid: nil,

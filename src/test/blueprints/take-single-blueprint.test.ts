@@ -45,7 +45,7 @@ function createSampleEntities() {
 test("can take blueprint with settings applied", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    "3": { type: "item", name: "iron-plate" },
+    icon3: { type: "item", name: "iron-plate" },
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },
@@ -110,7 +110,7 @@ test("can take blueprint with settings applied", () => {
 test("forEdit position offset still works when first entity is blacklisted", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
-    1: { type: "item", name: "iron-plate" },
+    icon1: { type: "item", name: "iron-plate" },
     snapToGrid: { x: 2, y: 3 },
     absoluteSnapping: true,
     positionOffset: { x: 1, y: 2 },

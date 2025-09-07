@@ -87,7 +87,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
     if (icons) {
       for (const icon of icons) {
         const index = tostring(icon.index) as "1" | "2" | "3" | "4"
-        stageSettings[index].set(icon.signal)
+        stageSettings[`icon${index}`].set(icon.signal)
       }
     }
     unaccountedLastStageEntities = thisStageEntities

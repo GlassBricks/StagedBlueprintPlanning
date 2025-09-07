@@ -10,7 +10,7 @@
  */
 
 import { ChooseElemButtonGuiElement, OnGuiClickEvent } from "factorio:runtime"
-import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
+import { BlueprintSettingsTable, IconNumber, iconNumbers } from "../blueprints/blueprint-settings"
 import { ibind, RegisterClass } from "../lib"
 import { Component, Element, FactorioJsx } from "../lib/factoriojsx"
 import { HorizontalSpacer } from "../lib/factoriojsx/components"
@@ -33,8 +33,8 @@ export class IconsEdit extends Component<IconsEditProps> {
           <label caption={[L_GuiProjectSettings.Icons]} tooltip={[L_GuiProjectSettings.IconsTooltip]} />
           <HorizontalSpacer width={10} />
           <frame style="slot_button_deep_frame">
-            {([1, 2, 3, 4] as const).map((i) => {
-              const iconValue = settings[i]
+            {iconNumbers.map((i) => {
+              const iconValue = settings[`icon${i}`]
               return (
                 <choose-elem-button
                   styleMod={{}}
@@ -69,7 +69,7 @@ export class IconsEdit extends Component<IconsEditProps> {
     const element = event.element as ChooseElemButtonGuiElement
     const index: unknown = element.tags?.index
     if (index && typeof index == "number" && index >= 1 && index <= 4) {
-      const setting = this.settings[index as 1 | 2 | 3 | 4]
+      const setting = this.settings[`icon${index as IconNumber}`]
       if (setting instanceof DiffedProperty) {
         setting.overrideValue.set(nil)
       }

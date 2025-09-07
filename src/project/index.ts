@@ -9,14 +9,20 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { SignalID } from "factorio:runtime"
+import {
+  BlueprintSettingsOverrideTable,
+  BlueprintTakeSettings,
+  createStageBlueprintSettingsTable,
+  iconNumbers,
+} from "../blueprints/blueprint-settings"
+import { Mutable } from "../lib"
+import { Migrations } from "../lib/migration"
 import "./event-handlers"
 import "./project-event-listener"
-import "./UserProject"
-import { Migrations } from "../lib/migration"
-import { getAllProjects } from "./UserProject"
-import { BlueprintSettingsOverrideTable, createStageBlueprintSettingsTable } from "../blueprints/blueprint-settings"
-import { Mutable } from "../lib"
 import { Stage } from "./ProjectDef"
+import "./UserProject"
+import { getAllProjects } from "./UserProject"
 
 Migrations.to("2.2.0", () => {
   for (const project of getAllProjects()) {
@@ -47,6 +53,28 @@ Migrations.to("2.4.0", () => {
       stage.blueprintOverrideSettings = oldStage.stageBlueprintSettings!
       delete oldStage.stageBlueprintSettings
       stage.stageBlueprintSettings = createStageBlueprintSettingsTable()
+    }
+  }
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  interface OldBlueprintSettings {
+    1: SignalID | nil
+    2: SignalID | nil
+    3: SignalID | nil
+    4: SignalID | nil
+  }
+  for (const project of getAllProjects()) {
+    const projectBpSettings = project.defaultBlueprintSettings
+    function migrateIconNumbers(table: Record<keyof BlueprintTakeSettings, unknown>) {
+      assume<Mutable<OldBlueprintSettings>>(table)
+      for (const number of iconNumbers) {
+        table[`icon${number}`] = table[number] || table[tostring(number) as "1" | "2" | "3" | "4"]
+      }
+    }
+    migrateIconNumbers(projectBpSettings)
+    for (const stage of project.getAllStages()) {
+      migrateIconNumbers(stage.blueprintOverrideSettings)
     }
   }
 })
