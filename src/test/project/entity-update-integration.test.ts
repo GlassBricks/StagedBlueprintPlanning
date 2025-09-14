@@ -99,7 +99,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectError: number | false)
       expect(entity.direction).toBe(oppositedirection(worldEntity.direction))
       expect(entity.firstValue.type).toBe(oppositeType)
     } else {
-      const savedValue = saveEntity(worldEntity)
+      const [savedValue, savedUnstagedValue] = saveEntity(worldEntity)
       expect(savedValue).toEqual(value)
       if (!canBeAnyDirection(worldEntity)) {
         expect(worldEntity.direction).toBe(entity.direction)
@@ -1273,7 +1273,7 @@ describe("poles and wire connections", () => {
     // weird bug: simply connecting an inserter sets control behavior
     // workaround
     const worldEntity = inserter.getWorldEntity(3)!
-    const inserterValue = saveEntity(worldEntity)! as Mutable<InserterBlueprintEntity>
+    const inserterValue = saveEntity(worldEntity)[0]! as Mutable<InserterBlueprintEntity>
     if (inserterValue.control_behavior) {
       inserter._applyDiffAtStage(3, {
         control_behavior: inserterValue.control_behavior,

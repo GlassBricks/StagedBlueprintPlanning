@@ -191,24 +191,14 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   ): ProjectEntity | nil {
     const stageInfo = knownValue?.tags?.bp100 as StageInfoExport | nil
     if (!stageInfo) {
-      const saved = saveEntity(entity, knownValue)
+      const [saved] = saveEntity(entity, knownValue)
+      // TODO: save non-staged value
       if (!saved) return nil
       return createProjectEntityNoCopy(saved, entity.position, entity.direction, stage)
     }
-    const projectEntity = createProjectEntityNoCopy(
-      stageInfo.firstValue ?? copyKnownValue(knownValue!),
-      entity.position,
-      entity.direction,
-      stageInfo.firstStage,
-    )
-    projectEntity.setLastStageUnchecked(stageInfo.lastStage)
-    const diffs = stageInfo.stageDiffs
-    if (diffs) {
-      projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
-    }
-    return projectEntity
-  }
 
+    return createProjectEntityFromStagedInfo(entity, stage, knownValue, stageInfo)
+  }
   function addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil {
     const projectEntity = createNewProjectEntity(entity, stage, knownValue)
     if (!projectEntity) return nil
@@ -296,7 +286,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     entitySource: LuaEntity,
     knownValue?: BlueprintEntity,
   ): boolean {
-    const newValue = saveEntity(entitySource, knownValue)
+    const [newValue, unstagedValue] = saveEntity(entitySource, knownValue)
+    // TODO: save non-staged value
     return newValue != nil && entity.adjustValueAtStage(stage, newValue)
   }
 
@@ -567,6 +558,30 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       updateAllHighlights(pair)
     }
   }
+
+  function createProjectEntityFromStagedInfo(
+    entity: LuaEntity,
+    stage: StageNumber,
+    knownValue: BlueprintEntity | nil,
+    stageInfo: StageInfoExport,
+  ): ProjectEntity {
+    const [value, unstagedValue] = copyKnownValue(knownValue!)
+    // TODO: save non-staged value
+
+    const projectEntity = createProjectEntityNoCopy(
+      stageInfo.firstValue ?? value,
+      entity.position,
+      entity.direction,
+      stageInfo.firstStage,
+    )
+    projectEntity.setLastStageUnchecked(stageInfo.lastStage)
+    const diffs = stageInfo.stageDiffs
+    if (diffs) {
+      projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
+    }
+    return projectEntity
+  }
+
   function setValueFromStagedInfo(
     entity: ProjectEntity,
     value: BlueprintEntity,
@@ -592,8 +607,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
     const oldStageDiffs = entity.stageDiffs
 
-    const firstValue = info.firstValue ?? copyKnownValue(value)
-    entity.setFirstValueDirectly(firstValue)
+    const [valueFromBp, unstagedValue] = copyKnownValue(value)
+    // TODO: save non-staged value
+    entity.setFirstValueDirectly(info.firstValue ?? valueFromBp)
     const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
     entity.setStageDiffsDirectly(stageDiffs)
 

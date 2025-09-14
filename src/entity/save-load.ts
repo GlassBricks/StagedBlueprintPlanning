@@ -478,17 +478,35 @@ function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<Blue
   return bpEntity
 }
 
-export function copyKnownValue(value: BlueprintEntity): Mutable<Entity> {
-  return removeExtraProperties(mutableShallowCopy(value))
+export type EntityResult = LuaMultiReturn<[entity: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]>
+export type NullableEntityResult = LuaMultiReturn<
+  [entity?: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]
+>
+
+export function copyKnownValue(value: BlueprintEntity): EntityResult {
+  const entity = removeExtraProperties(mutableShallowCopy(value))
+  if (!entity.items) return $multi(entity)
+
+  const [moduleRequests, nonModules] = partitionModulesFromRequests(entity.items, entity.name)
+  entity.items = moduleRequests
+  const unstagedProps = nonModules && {
+    items: nonModules,
+  }
+  return $multi(entity, unstagedProps)
 }
 
 /**
  * Position and direction are ignored.
  */
-export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Mutable<Entity> | nil {
+export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): NullableEntityResult {
   if (knownValue) return copyKnownValue(knownValue)
   const bpEntity = blueprintEntity(entity)
-  if (bpEntity) return removeExtraProperties(bpEntity)
+  if (!bpEntity) return $multi()
+  const itemRequests = getNonModuleRequests(entity)
+  const unstagedProps = itemRequests && {
+    items: itemRequests,
+  }
+  return $multi(removeExtraProperties(bpEntity), unstagedProps)
 }
 
 export function updateEntity(

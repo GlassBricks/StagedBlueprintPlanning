@@ -119,8 +119,8 @@ function addEntity(
   entity: ProjectEntity
 } {
   const luaEntity = createWorldEntity(stage, args)
-  const value = saveEntity(luaEntity)!
-  const projectEntity = createProjectEntityNoCopy(value, luaEntity.position, luaEntity.direction, stage)
+  const [value] = saveEntity(luaEntity)
+  const projectEntity = createProjectEntityNoCopy(value!, luaEntity.position, luaEntity.direction, stage)
   project.content.addEntity(projectEntity)
   return { luaEntity, entity: projectEntity }
 }

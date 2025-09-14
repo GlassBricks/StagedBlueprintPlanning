@@ -94,7 +94,7 @@ function assertHasPreview(i: StageNumber): void {
 
 function assertEntityCorrect(i: StageNumber): LuaEntity {
   const worldEntity = expect(findMainEntity(i)).toBeAny().getValue()
-  const value = saveEntity(worldEntity)
+  const [value] = saveEntity(worldEntity)
   const valueAtStage = entity.getValueAtStage(i)
   expect(valueAtStage).toEqual(value)
   expect(entity.direction).toBe(worldEntity.direction)
@@ -238,15 +238,15 @@ describe("updateWorldEntities", () => {
 
   test("entity preview in all previous stages if is rolling stock", () => {
     const rollingStock = createRollingStock(surfaces[2 - 1])
-    const value = saveEntity(rollingStock)!
-    entity = createProjectEntityNoCopy(value, rollingStock.position, rollingStock.direction, 2) as any
+    const [value] = saveEntity(rollingStock)
+    entity = createProjectEntityNoCopy(value!, rollingStock.position, rollingStock.direction, 2) as any
     rollingStock.destroy()
 
     worldUpdates.updateWorldEntities(entity, 1)
 
     assertHasPreview(1)
     const worldEntity = expect(findMainEntity(2)).toBeAny().getValue()
-    const foundValue = saveEntity(worldEntity)
+    const [foundValue] = saveEntity(worldEntity)
     expect(foundValue).toEqual(value)
     assertNothingPresent(3)
   })

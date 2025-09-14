@@ -57,7 +57,7 @@ test("can save an entity", () => {
     direction: defines.direction.east,
   })!
   entity.inserter_stack_size_override = 2
-  const saved = saveEntity(entity)
+  const [saved] = saveEntity(entity)
   expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
   expect(entity.direction).toBe(defines.direction.east)
 })
@@ -77,7 +77,7 @@ test("saving an entity with knownValue", () => {
     name: "inserter",
     override_stack_size: 2,
   }
-  const saved = saveEntity(entity, knownValue)
+  const [saved] = saveEntity(entity, knownValue)
   expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
 })
 
@@ -99,7 +99,7 @@ test("saving an entity with higher quality", () => {
     force: "player",
     direction: defines.direction.east,
   })
-  const saved = saveEntity(entity!)
+  const [saved] = saveEntity(entity!)
   expect(saved).toEqual({ name: "inserter", quality: "legendary" })
 })
 
@@ -116,7 +116,7 @@ test.each(crossProduct(rails, directions8))("can save %s in direction %s", (name
 
   expect(entity.direction).toBe(expectedDirection)
 
-  const saved = saveEntity(entity)
+  const [saved] = saveEntity(entity)
   expect(saved).toEqual({ name })
 })
 
@@ -527,7 +527,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     })!
     expect(entity.direction).toBe(defines.direction.south)
 
-    const saved = saveEntity(entity)
+    const [saved] = saveEntity(entity)
     expect(saved).toEqual({ name: "underground-belt", type })
   })
 
@@ -888,7 +888,7 @@ test("can save an entity with modules", () => {
   assert(entity)
   entity.get_inventory(defines.inventory.lab_modules)!.insert({ name: "speed-module", count: 2 })
 
-  const saved = saveEntity(entity)
+  const [saved] = saveEntity(entity)
   expect(saved?.items?.[0]?.items).toEqual({
     in_inventory: [
       { inventory: defines.inventory.lab_modules, stack: 0 },
