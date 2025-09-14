@@ -15,6 +15,12 @@ import { Position } from "../lib/geometry"
 export interface Entity {
   readonly name: string
   readonly quality?: string
+  // modules only
+  readonly items?: BlueprintInsertPlan[]
+}
+
+export interface UnstagedEntityProps {
+  // non-modules
   readonly items?: BlueprintInsertPlan[]
 }
 
