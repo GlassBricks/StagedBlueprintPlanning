@@ -44,11 +44,6 @@ import { getUndergroundDirection } from "./underground-belt"
 import build_check_manual_ghost = defines.build_check_type.manual_ghost
 import floor = math.floor
 
-declare module "./ProjectEntity" {
-  export interface StageProperties extends UnstagedEntityProps {
-    itemRequests?: BlueprintInsertPlan[]
-  }
-}
 declare const storage: {
   tempBPInventory: LuaInventory
 }

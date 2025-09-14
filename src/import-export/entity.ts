@@ -23,6 +23,8 @@ export interface StageInfoExport<E extends Entity = Entity> {
   lastStage: StageNumber | nil
   firstValue?: E
   stageDiffs?: StageDiffsExport<E>
+  // TODO: handle export
+  // unstagedValue?: Record<number, UnstagedEntityProps>
 }
 
 export interface EntityExport extends StageInfoExport {

@@ -68,6 +68,9 @@ before_each(() => {
   projectEntity._applyDiffAtStage(3, { override_stack_size: 2, filter_mode: "blacklist" })
   projectEntity._applyDiffAtStage(5, { override_stack_size: 3 })
   projectEntity._applyDiffAtStage(7, { filter_mode: getNilPlaceholder() })
+  projectEntity.setUnstagedValue(3, { _forTest: 3 })
+  projectEntity.setUnstagedValue(5, { _forTest: 5 })
+  projectEntity.setUnstagedValue(7, { _forTest: 7 })
 })
 
 test("getters", () => {
@@ -429,12 +432,14 @@ describe("setFirstStageUnchecked", () => {
     expect(projectEntity.firstStage).toBe(1)
   })
 
-  test("moving up; also merges stage diffs", () => {
+  test("moving up; also merges stage diffs and clears unstaged value", () => {
     const valueAt5 = projectEntity.getValueAtStage(5)
     projectEntity.setFirstStageUnchecked(5)
     expect(projectEntity.firstValue).toEqual(valueAt5)
     const diffs = projectEntity.stageDiffs!
     expect(next(diffs)[0]).toBe(7)
+    expect(projectEntity.getUnstagedValue(3)).toBe(nil)
+    expect(projectEntity.getUnstagedValue(5)).toBeAny()
   })
 
   test("cannot move past last stage", () => {
@@ -463,12 +468,14 @@ describe("trySetLastStage", () => {
   test("cannot move below first stage", () => {
     expect(() => projectEntity.setLastStageUnchecked(0)).toError()
   })
-  test("moving down deletes later stage diffs", () => {
+  test("moving down deletes later stage diffs and resets unstaged values", () => {
     projectEntity.setLastStageUnchecked(5)
     expect(projectEntity.lastStage).toBe(5)
     const diffs = projectEntity.stageDiffs!
     expect(diffs).not.toHaveKey(7)
     expect(next(diffs)[0]).toBe(3)
+    expect(projectEntity.getUnstagedValue(7)).toBeNil()
+    expect(projectEntity.getUnstagedValue(5)).toBeAny()
   })
   test("if is rolling stock, setting last stage does nothing", () => {
     const projectEntity = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
@@ -919,12 +926,52 @@ describe("insert/deleting stages", () => {
       0,
       1,
     )
-    entity.setProperty("foo", 1, "bar1")
-    entity.setProperty("foo", 2, "bar2")
-    entity.setProperty("foo", 3, "bar3")
+    expect(entity.setProperty("foo", 1, "bar1")).toBe(true)
+    expect(entity.setProperty("foo", 1, "bar1")).toBe(false) // setting to same value
+    expect(entity.setProperty("foo", 2, "bar2")).toBe(true)
+    expect(entity.setProperty("foo", 3, "bar3")).toBe(true)
 
     entity.deleteStage(1)
     expect(entity.getProperty("foo", 1)).toBe("bar2")
     expect(entity.getProperty("foo", 2)).toBe("bar3")
+  })
+})
+
+describe("unstaged values", () => {
+  test("can set and get unstaged values", () => {
+    const entity = newProjectEntity({ name: "iron-chest" }, Pos(0, 0), 0, 1)
+    const unstagedValue = { _forTest: "test-value" }
+
+    expect(entity.setUnstagedValue(1, unstagedValue)).toBe(true)
+    expect(entity.getUnstagedValue(1)).toEqual(unstagedValue)
+  })
+
+  test("setting same unstaged value returns false", () => {
+    const entity = newProjectEntity({ name: "iron-chest" }, Pos(0, 0), 0, 1)
+    const unstagedValue = { _forTest: "test-value" }
+
+    expect(entity.setUnstagedValue(1, unstagedValue)).toBe(true)
+    expect(entity.setUnstagedValue(1, unstagedValue)).toBe(false)
+  })
+
+  test("can clear unstaged values", () => {
+    const entity = newProjectEntity({ name: "iron-chest" }, Pos(0, 0), 0, 1)
+    const unstagedValue = { _forTest: "test-value" }
+
+    entity.setUnstagedValue(1, unstagedValue)
+    expect(entity.setUnstagedValue(1, nil)).toBe(true)
+    expect(entity.getUnstagedValue(1)).toBeNil()
+  })
+
+  test("clearing non-existent unstaged value returns false", () => {
+    const entity = newProjectEntity({ name: "iron-chest" }, Pos(0, 0), 0, 1)
+    expect(entity.setUnstagedValue(1, nil)).toBe(false)
+  })
+
+  test("newProjectEntity can be created with initial unstaged value", () => {
+    const unstagedValue = { _forTest: "initial-value" }
+    const entity = newProjectEntity({ name: "iron-chest" }, Pos(0, 0), 0, 1, unstagedValue)
+
+    expect(entity.getUnstagedValue(1)).toEqual(unstagedValue)
   })
 })

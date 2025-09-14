@@ -22,6 +22,7 @@ export interface Entity {
 export interface UnstagedEntityProps {
   // non-modules
   readonly items?: BlueprintInsertPlan[]
+  readonly _forTest?: unknown
 }
 
 export interface EntityIdentification {

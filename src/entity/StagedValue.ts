@@ -101,13 +101,12 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     if (stage > firstStage) this.moveFirstStageUp(stage)
     this.firstStage = stage
   }
-  private moveFirstStageUp(newFirstStage: StageNumber): void {
+  protected moveFirstStageUp(newFirstStage: StageNumber): void {
     const { stageDiffs } = this
     if (stageDiffs) {
       let { firstValue } = this
       for (const [stage, diff] of pairs(stageDiffs)) {
         if (stage > newFirstStage) break
-        // applyDiffToEntity(firstValue, diff)
         firstValue = this.applyDiff(firstValue, diff)
         delete stageDiffs[stage]
       }
@@ -123,11 +122,11 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     this.lastStage = stage
   }
 
-  private moveLastStageDown(stage: number): void {
+  protected moveLastStageDown(newLastStage: number): void {
     const { stageDiffs } = this
-    if (stageDiffs && (this.lastStage == nil || stage < this.lastStage)) {
+    if (stageDiffs && (this.lastStage == nil || newLastStage < this.lastStage)) {
       for (const [stageNumber] of pairs(stageDiffs)) {
-        if (stageNumber > stage) delete stageDiffs[stageNumber]
+        if (stageNumber > newLastStage) delete stageDiffs[stageNumber]
       }
       if (isEmpty(stageDiffs)) delete this.stageDiffs
     }

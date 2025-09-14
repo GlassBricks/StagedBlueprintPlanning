@@ -918,6 +918,20 @@ test("can save an entity with modules", () => {
   ])
 })
 
+// TODO: once adding functionality to create item requests, improve this test
+test("saveEntity returns unstaged values when present", () => {
+  const entity = surface.create_entity({
+    name: "assembling-machine-1",
+    position: { x: 0.5, y: 0.5 },
+    force: "player",
+  })!
+
+  const [saved, unstagedValue] = saveEntity(entity)
+  expect(saved).toEqual({ name: "assembling-machine-1" })
+  // In normal cases without item requests, unstaged value should be nil
+  expect(unstagedValue).toBeNil()
+})
+
 test("updating rolling stock does nothing", () => {
   const [locomotive] = createRollingStocks(surface, "locomotive", "cargo-wagon")
   const oldLocation = locomotive.position

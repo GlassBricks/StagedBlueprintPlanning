@@ -24,7 +24,14 @@ import {
 } from "../lib"
 import { Position } from "../lib/geometry"
 import { DiffValue, fromDiffValue, getDiff, toDiffValue } from "../utils/diff-value"
-import { Entity, InserterEntity, LoaderEntity, RollingStockEntity, UndergroundBeltEntity } from "./Entity"
+import {
+  Entity,
+  InserterEntity,
+  LoaderEntity,
+  RollingStockEntity,
+  UndergroundBeltEntity,
+  UnstagedEntityProps,
+} from "./Entity"
 import {
   isPreviewEntity,
   isRollingStockType,
@@ -143,6 +150,9 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
    */
   movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
 
+  setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
+  getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil
+
   getWorldEntity(stage: StageNumber): LuaEntity | nil
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
 
@@ -161,7 +171,7 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   destroyAllExtraEntities(type: ExtraEntityType): void
   hasAnyExtraEntities(type: ExtraEntityType): boolean
 
-  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): void
+  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
@@ -175,7 +185,7 @@ export interface ExtraEntities {}
 export type ExtraEntityType = keyof ExtraEntities
 
 export interface StageProperties {
-  _?: never
+  unstagedValue?: UnstagedEntityProps
 }
 
 export type RollingStockProjectEntity = ProjectEntity<RollingStockEntity>
@@ -402,6 +412,36 @@ class ProjectEntityImpl<T extends Entity = Entity>
     super.setLastStageUnchecked(stage)
   }
 
+  protected override moveFirstStageUp(newFirstStage: StageNumber): void {
+    const unstagedDiff = this.stageProperties?.unstagedValue
+    if (unstagedDiff) {
+      for (const [stage] of pairs(unstagedDiff)) {
+        if (stage < newFirstStage) {
+          delete unstagedDiff[stage]
+        }
+      }
+      if (isEmpty(unstagedDiff)) {
+        this.stageProperties!.unstagedValue = nil
+      }
+    }
+    super.moveFirstStageUp(newFirstStage)
+  }
+
+  protected override moveLastStageDown(newLastStage: number): void {
+    const unstagedDiff = this.stageProperties?.unstagedValue
+    if (unstagedDiff) {
+      for (const [stage] of pairs(unstagedDiff)) {
+        if (stage > newLastStage) {
+          delete unstagedDiff[stage]
+        }
+      }
+      if (isEmpty(unstagedDiff)) {
+        this.stageProperties!.unstagedValue = nil
+      }
+    }
+    super.moveLastStageDown(newLastStage)
+  }
+
   adjustValueAtStage(stage: StageNumber, value: T): boolean {
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
@@ -545,6 +585,14 @@ class ProjectEntityImpl<T extends Entity = Entity>
     return nil
   }
 
+  setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean {
+    return this.setProperty("unstagedValue", stage, value)
+  }
+
+  getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil {
+    return this.getProperty("unstagedValue", stage)
+  }
+
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
     const entity = this[stage]
     if (entity) {
@@ -674,11 +722,23 @@ class ProjectEntityImpl<T extends Entity = Entity>
     }) as any
   }
 
-  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): void {
-    const stageProperties = this.stageProperties ?? (this.stageProperties = {})
-    const byType: PRecord<StageNumber, StageProperties[T]> = stageProperties[key] || (stageProperties[key] = {})
-    byType[stage] = value
-    if (isEmpty(byType)) delete stageProperties[key]
+  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean {
+    if (value == nil) {
+      const stageProperties = this.stageProperties
+      if (!stageProperties) return false
+      const byType = stageProperties[key]
+      if (!byType) return false
+      const changed = byType[stage] != value
+      delete byType[stage]
+      if (isEmpty(byType)) delete stageProperties[key]
+      return changed
+    } else {
+      const stageProperties = this.stageProperties ?? (this.stageProperties = {})
+      const byType: PRecord<StageNumber, StageProperties[T]> = stageProperties[key] || (stageProperties[key] = {})
+      const changed = byType[stage] != value
+      byType[stage] = value
+      return changed
+    }
   }
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil {
     const stageProperties = this.stageProperties
@@ -732,8 +792,11 @@ export function newProjectEntity<E extends Entity>(
   position: Position,
   direction: defines.direction,
   stageNumber: StageNumber,
+  unstagedValue?: UnstagedEntityProps,
 ): ProjectEntity<E> {
-  return new ProjectEntityImpl(stageNumber, entity, position, direction)
+  const result = new ProjectEntityImpl(stageNumber, entity, position, direction)
+  if (unstagedValue) result.setUnstagedValue(stageNumber, unstagedValue)
+  return result
 }
 
 // vehicles and units

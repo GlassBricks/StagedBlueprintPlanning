@@ -12,6 +12,7 @@
 import {
   AssemblingMachineBlueprintEntity,
   BlueprintEntity,
+  BlueprintInsertPlan,
   InserterBlueprintEntity,
   LoaderBlueprintEntity,
   LuaEntity,
@@ -44,6 +45,20 @@ import _wireHandler = require("../../entity/wires")
 import direction = defines.direction
 
 const pos = Pos(10.5, 10.5)
+
+const NON_MODULE_REQUEST: BlueprintInsertPlan = {
+  id: {
+    name: "iron-plate",
+  },
+  items: {
+    in_inventory: [
+      {
+        inventory: defines.inventory.crafter_input,
+        stack: 2,
+      },
+    ],
+  },
+} as unknown as BlueprintInsertPlan
 
 let project: Project
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
@@ -246,6 +261,27 @@ describe("addNewEntity", () => {
 
       assertOneEntity()
       assertNewUpdated(entityUpgraded)
+    })
+
+    test("with knownValue containing non-module requests", () => {
+      const luaEntity = createEntity(2)
+      const entity = projectUpdates.addNewEntity(luaEntity, 2, {
+        entity_number: 1,
+        direction: 0,
+        position: { x: 0, y: 0 },
+        name: "fast-inserter",
+        items: [NON_MODULE_REQUEST],
+      })!
+      expect(entity).toBeAny()
+      expect(entity.firstValue).toEqual({
+        name: "fast-inserter",
+      })
+      expect(entity.getUnstagedValue(2)).toEqual({
+        items: [NON_MODULE_REQUEST],
+      })
+
+      assertOneEntity()
+      assertNewUpdated(entity)
     })
 
     test.each([false, true])("with stored stage info, having diffs %s", (withDiffs) => {
@@ -455,6 +491,25 @@ describe("tryUpdateEntityFromWorld", () => {
     expect(ret).toBe("updated")
 
     expect(entity.firstValue.override_stack_size).toBe(3)
+
+    assertOneEntity()
+    assertUpdateCalled(entity, 2)
+  })
+
+  test('with change and knownValue containing non-module requests returns "updated"', () => {
+    const { entity } = addEntity<InserterBlueprintEntity>(2)
+    const knownValue = {
+      name: "fast-inserter",
+      override_stack_size: 3,
+      items: [NON_MODULE_REQUEST],
+    }
+    const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2, knownValue as BlueprintEntity)
+    expect(ret).toBe("updated")
+
+    expect(entity.firstValue.override_stack_size).toBe(3)
+    expect(entity.getUnstagedValue(2)).toEqual({
+      items: [NON_MODULE_REQUEST],
+    })
 
     assertOneEntity()
     assertUpdateCalled(entity, 2)

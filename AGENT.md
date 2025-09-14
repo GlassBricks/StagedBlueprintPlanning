@@ -36,7 +36,8 @@ Since code compiles to Lua:
 - Explicit module boundary types required
 
 - Test files end with `.test.ts`
-- Tests and test-only utils located in `src/test/` and `src/lib/test/`.
+- Tests and test-only utils are located in `src/test/` or `src/lib/test/`.
+- Test file names usually mirror the file they test; e.g `/src/foo/bar.ts` -> `/src/test/foo/bar.test.ts`
 - Project strives for high test coverage. All new features should include tests.
 
 ## Architecture
@@ -79,9 +80,9 @@ src/
 `src/project/UserProject.ts`: full project & stage definition
 `src/ui/ProjectSettings.tsx`: one of the main user-facing components
 
-### "Main" event pipeline editing entities in projects
+### "Main" event pipeline, for editing entities in projects
 in `src/project`...
 `event-handlers.ts` "parses" Factorio Events into more useful ones
--> `user-actions.ts` takes events, decides what to do with them/player interactions
+-> `user-actions.ts` takes events, decides what to do with them; includes player interactions
 -> `project-updates.ts` actions for updating projects (typically ProjectContent)
 -> `world-updates.ts`, `entity-highlights.ts`: updates world state to match project changes
