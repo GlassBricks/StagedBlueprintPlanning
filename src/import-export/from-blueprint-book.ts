@@ -1,7 +1,7 @@
 import { BaseBlueprintEntity, LuaItemStack } from "factorio:runtime"
 import { updateBasicBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Entity } from "../entity/Entity"
-import { addWireConnection, createProjectEntityNoCopy, ProjectEntity } from "../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
 import { UserProject } from "../project/ProjectDef"
 import { createUserProject } from "../project/UserProject"
 
@@ -52,7 +52,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
         unaccountedLastStageEntities.delete(existingEntity)
         curEntity = existingEntity
       } else {
-        const newEntity = createProjectEntityNoCopy(thisValue, entity.position, entityDirection, curStageNum)
+        const newEntity = newProjectEntity(thisValue, entity.position, entityDirection, curStageNum)
         project.content.addEntity(newEntity)
         curEntity = newEntity
       }

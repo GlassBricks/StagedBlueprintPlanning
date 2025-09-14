@@ -21,7 +21,7 @@ import {
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
-import { createProjectEntityNoCopy } from "../../entity/ProjectEntity"
+import { newProjectEntity } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
 import {
   canBeAnyDirection,
@@ -656,7 +656,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type,
       })
       assert(entity)
-      const projectEntity = createProjectEntityNoCopy(
+      const projectEntity = newProjectEntity(
         {
           name: "underground-belt",
           type,
@@ -678,7 +678,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         type: otherType,
       })
       assert(entity)
-      const projectEntity = createProjectEntityNoCopy(
+      const projectEntity = newProjectEntity(
         {
           name: "underground-belt",
           type,
@@ -711,7 +711,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     })
     assert(rightUnderground)
     expect(leftUnderground.neighbours).toEqual(rightUnderground)
-    const rightEntity = createProjectEntityNoCopy(
+    const rightEntity = newProjectEntity(
       {
         name: "underground-belt",
         type: rightUnderground.belt_to_ground_type,

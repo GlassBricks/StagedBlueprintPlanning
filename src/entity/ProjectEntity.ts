@@ -213,10 +213,10 @@ class ProjectEntityImpl<T extends Entity = Entity>
     [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
   }
 
-  constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction | nil) {
+  constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction) {
     super(firstStage, firstValue)
     this.position = position
-    this.direction = direction ?? 0
+    this.direction = direction
     if (this.isRollingStock()) {
       this.lastStage = firstStage
     }
@@ -727,11 +727,10 @@ export function removeWireConnection(connection: ProjectWireConnection): void {
   toEntity.removeOneWayWireConnection(connection)
 }
 
-/** nil direction means the default direction of north */
-export function createProjectEntityNoCopy<E extends Entity>(
+export function newProjectEntity<E extends Entity>(
   entity: E,
   position: Position,
-  direction: defines.direction | nil,
+  direction: defines.direction,
   stageNumber: StageNumber,
 ): ProjectEntity<E> {
   return new ProjectEntityImpl(stageNumber, entity, position, direction)

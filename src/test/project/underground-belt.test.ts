@@ -13,7 +13,7 @@ import expect from "tstl-expect"
 import { direction_vectors } from "util"
 import { UndergroundBeltEntity } from "../../entity/Entity"
 import { MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
-import { createProjectEntityNoCopy, StageNumber, UndergroundBeltProjectEntity } from "../../entity/ProjectEntity"
+import { newProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../../entity/ProjectEntity"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { Pos } from "../../lib/geometry"
 import direction = defines.direction
@@ -26,7 +26,7 @@ before_each(() => {
 // describe.each([defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west])(
 describe.each([direction.north, direction.west])("findUndergroundPair, direction %s", (direction) => {
   function createUnderground(location: number, type: "input" | "output", stage: StageNumber) {
-    const underground = createProjectEntityNoCopy<UndergroundBeltEntity>(
+    const underground = newProjectEntity<UndergroundBeltEntity>(
       { name: "underground-belt", type },
       Pos.normalize(direction_vectors[direction]).times(location),
       direction,

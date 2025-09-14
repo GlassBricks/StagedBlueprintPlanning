@@ -15,7 +15,7 @@ import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   addWireConnection,
-  createProjectEntityNoCopy,
+  newProjectEntity,
   ProjectEntity,
   StageNumber,
   UndergroundBeltProjectEntity,
@@ -52,7 +52,7 @@ let worldUpdates: WorldUpdates
 before_each(() => {
   project = createMockProject(surfaces)
   project.worldUpdates = worldUpdates = WorldUpdates(project, entityHighlights)
-  entity = createProjectEntityNoCopy(
+  entity = newProjectEntity(
     {
       name: "inserter",
       override_stack_size: 1,
@@ -239,7 +239,7 @@ describe("updateWorldEntities", () => {
   test("entity preview in all previous stages if is rolling stock", () => {
     const rollingStock = createRollingStock(surfaces[2 - 1])
     const [value] = saveEntity(rollingStock)
-    entity = createProjectEntityNoCopy(value!, rollingStock.position, rollingStock.direction, 2) as any
+    entity = newProjectEntity(value!, rollingStock.position, rollingStock.direction, 2) as any
     rollingStock.destroy()
 
     worldUpdates.updateWorldEntities(entity, 1)
@@ -311,7 +311,7 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
 
 describe("updateNewEntityWithoutWires", () => {
   test("can update", () => {
-    const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
+    const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.addEntity(entity)
     worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
     expect(entityHighlights.updateAllHighlights).not.toHaveBeenCalled()
@@ -319,7 +319,7 @@ describe("updateNewEntityWithoutWires", () => {
     expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
   })
   test("updates highlights if there are errors", () => {
-    const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
+    const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.addEntity(entity)
     surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
     worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
@@ -331,7 +331,7 @@ describe("updateNewEntityWithoutWires", () => {
 })
 
 test("updateWireConnections", () => {
-  const entity = createProjectEntityNoCopy({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
+  const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
   project.content.addEntity(entity)
   // note: actually updating the first stage, so below works
   worldUpdates.updateNewWorldEntitiesWithoutWires(entity) //
@@ -372,7 +372,7 @@ describe("underground pair", () => {
       force: "player",
     })!
     assert(leftWorldEntity)
-    middleUg = createProjectEntityNoCopy(
+    middleUg = newProjectEntity(
       { name: "underground-belt", type: "input" },
       Pos(0.5, 0.5),
       defines.direction.east,
@@ -382,7 +382,7 @@ describe("underground pair", () => {
     const middleWorldEntity = middleUg.getWorldEntity(1)!
     assert(middleWorldEntity)
 
-    rightUg = createProjectEntityNoCopy(
+    rightUg = newProjectEntity(
       { name: "underground-belt", type: "output" },
       Pos(1.5, 0.5),
       defines.direction.east,
@@ -473,9 +473,9 @@ test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tr
 })
 
 test("rebuildStage", () => {
-  const entity1 = createProjectEntityNoCopy({ name: "transport-belt" }, Pos(0, 0), nil, 1)
-  const entity2 = createProjectEntityNoCopy({ name: "iron-chest" }, Pos(1, 1), nil, 2)
-  const entity3 = createProjectEntityNoCopy({ name: "iron-chest" }, Pos(1, 1), nil, 2)
+  const entity1 = newProjectEntity({ name: "transport-belt" }, Pos(0, 0), 0, 1)
+  const entity2 = newProjectEntity({ name: "iron-chest" }, Pos(1, 1), 0, 2)
+  const entity3 = newProjectEntity({ name: "iron-chest" }, Pos(1, 1), 0, 2)
   project.content.addEntity(entity1)
   project.content.addEntity(entity2)
   project.content.addEntity(entity3)
@@ -508,8 +508,8 @@ describe("circuit wires", () => {
   before_each(() => {
     doModuleMock(_wireHandler, false) // real wire handler
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
-    entity1 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, Pos(5.5, 6), nil, 1)
-    entity2 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, Pos(5.5, 8), nil, 1)
+    entity1 = newProjectEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), 0, 1)
+    entity2 = newProjectEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), 0, 1)
     project.content.addEntity(entity1)
     project.content.addEntity(entity2)
   })

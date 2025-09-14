@@ -12,7 +12,7 @@
 import expect, { mock } from "tstl-expect"
 import { LuaEntityInfo } from "../../entity/Entity"
 import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
-import { createProjectEntityNoCopy, ProjectEntity } from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { createProjectTile } from "../../entity/ProjectTile"
 import { getPrototypeRotationType, RotationType } from "../../entity/prototype-info"
 import { setupTestSurfaces } from "../project/Project-mock"
@@ -28,7 +28,7 @@ after_each(() => {
 const surfaces = setupTestSurfaces(1)
 
 test("countNumEntities", () => {
-  const entity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  const entity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   expect(content.countNumEntities()).toBe(0)
   content.addEntity(entity)
   expect(content.countNumEntities()).toBe(1)
@@ -38,14 +38,14 @@ test("countNumEntities", () => {
 
 describe("findCompatible", () => {
   test("matches name and direction", () => {
-    const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+    const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     content.addEntity(entity)
 
     expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(entity)
   })
 
   test("does not match if passed stage is higher than entity's last stage", () => {
-    const entity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+    const entity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     content.addEntity(entity)
     entity.setLastStageUnchecked(2)
 
@@ -53,9 +53,9 @@ describe("findCompatible", () => {
   })
 
   test.each(["12", "21"])("if multiple matches, finds one with smallest firstStage, order %s", (o) => {
-    const e1 = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+    const e1 = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     e1.setLastStageUnchecked(2)
-    const e2 = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 3)
+    const e2 = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 3)
     e2.setLastStageUnchecked(4)
 
     if (o == "21") {
@@ -71,14 +71,14 @@ describe("findCompatible", () => {
   })
 
   test("if direction is nil, matches any direction", () => {
-    const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
+    const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, defines.direction.east, 1)
     content.addEntity(entity)
 
     expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, nil, 1)).toBe(entity)
   })
 
   test("matches if different name in same category", () => {
-    const entity: ProjectEntity = createProjectEntityNoCopy({ name: "assembling-machine-1" }, { x: 0, y: 0 }, nil, 1)
+    const entity: ProjectEntity = newProjectEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, 0, 1)
     content.addEntity(entity)
 
     expect(content.findCompatibleEntity("assembling-machine-2", { x: 0, y: 0 }, defines.direction.north, 1)).toBe(
@@ -87,7 +87,7 @@ describe("findCompatible", () => {
   })
 
   test("if direction is nil, matches same category and any direction", () => {
-    const entity: ProjectEntity = createProjectEntityNoCopy(
+    const entity: ProjectEntity = newProjectEntity(
       { name: "assembling-machine-1" },
       { x: 0, y: 0 },
       defines.direction.east,
@@ -99,7 +99,7 @@ describe("findCompatible", () => {
   })
 
   test("not compatible", () => {
-    const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+    const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     entity.setLastStageUnchecked(2)
     expect(content.findCompatibleEntity("test2", entity.position, defines.direction.north, 2)).toBeNil()
     expect(content.findCompatibleEntity("foo", entity.position, defines.direction.south, 2)).toBeNil()
@@ -109,7 +109,7 @@ describe("findCompatible", () => {
 })
 
 test("findExact", () => {
-  const entity: ProjectEntity = createProjectEntityNoCopy({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
+  const entity: ProjectEntity = newProjectEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, 0, 1)
   const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
   content.addEntity(entity)
   entity.replaceWorldEntity(2, luaEntity)
@@ -120,7 +120,7 @@ test("findExact", () => {
 
 describe("findCompatibleWithLuaEntity", () => {
   test("matches simple", () => {
-    const entity = createProjectEntityNoCopy({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
+    const entity = newProjectEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, 0, 1)
     const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
     content.addEntity(entity)
 
@@ -128,7 +128,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("matches if is compatible", () => {
-    const entity = createProjectEntityNoCopy({ name: "stone-furnace" }, { x: 0, y: 0 }, nil, 1)
+    const entity = newProjectEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, 0, 1)
     const luaEntity = assert(surfaces[0].create_entity({ name: "steel-furnace", position: { x: 0, y: 0 } }))
     content.addEntity(entity)
 
@@ -137,7 +137,7 @@ describe("findCompatibleWithLuaEntity", () => {
 
   test("matches opposite direction if pasteRotatableType is rectangular", () => {
     assert(getPrototypeRotationType("boiler") == RotationType.Flippable)
-    const entity = createProjectEntityNoCopy({ name: "boiler" }, { x: 0.5, y: 0 }, defines.direction.north, 1)
+    const entity = newProjectEntity({ name: "boiler" }, { x: 0.5, y: 0 }, defines.direction.north, 1)
 
     const luaEntity = assert(
       surfaces[0].create_entity({ name: "boiler", position: { x: 0.5, y: 0 }, direction: defines.direction.south }),
@@ -150,7 +150,7 @@ describe("findCompatibleWithLuaEntity", () => {
   test("matches any direction if pasteRotatableType is square", () => {
     assert(getPrototypeRotationType("assembling-machine-1") == RotationType.AnyDirection)
 
-    const entity = createProjectEntityNoCopy(
+    const entity = newProjectEntity(
       { name: "assembling-machine-2" },
       {
         x: 0.5,
@@ -189,7 +189,7 @@ describe("findCompatibleWithLuaEntity", () => {
       direction: defines.direction.east,
       surface: nil!,
     }
-    const projectEntity = createProjectEntityNoCopy(
+    const projectEntity = newProjectEntity(
       { name: "underground-belt", type: "input" },
       {
         x: 0,
@@ -205,7 +205,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("rolling stock only matches if is exact same entity", () => {
-    const entity = createProjectEntityNoCopy({ name: "locomotive" }, { x: 0, y: 0 }, nil, 1)
+    const entity = newProjectEntity({ name: "locomotive" }, { x: 0, y: 0 }, 0, 1)
     const [a1, a2] = createRollingStocks(surfaces[0], "locomotive", "locomotive")
     content.addEntity(entity)
     entity.replaceWorldEntity(1, a1)
@@ -216,13 +216,13 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 
   test("rails at same position but opposite direction are treated different only if diagonal", () => {
-    const entity1: ProjectEntity = createProjectEntityNoCopy(
+    const entity1: ProjectEntity = newProjectEntity(
       { name: "straight-rail" },
       { x: 1, y: 1 },
       defines.direction.northeast,
       1,
     )
-    const entity2: ProjectEntity = createProjectEntityNoCopy(
+    const entity2: ProjectEntity = newProjectEntity(
       { name: "straight-rail" },
       { x: 1, y: 1 },
       defines.direction.north,
@@ -252,7 +252,7 @@ describe("findCompatibleWithLuaEntity", () => {
 })
 
 test("changePosition", () => {
-  const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   content.addEntity(entity)
   content.changeEntityPosition(entity, { x: 1, y: 1 })
   expect(entity.position.x).toBe(1)
@@ -277,7 +277,7 @@ test("deleteTile", () => {
 })
 
 test("insertStage", () => {
-  const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
   content.addEntity(entity)
   content.setTile(tile)
@@ -289,7 +289,7 @@ test("insertStage", () => {
 })
 
 test("deleteStage", () => {
-  const entity: ProjectEntity = createProjectEntityNoCopy({ name: "foo" }, { x: 0, y: 0 }, nil, 1)
+  const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
   content.addEntity(entity)
   content.setTile(tile)

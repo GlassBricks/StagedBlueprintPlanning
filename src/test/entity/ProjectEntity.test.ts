@@ -13,7 +13,7 @@ import { LuaEntity, ScriptRaisedBuiltEvent, ScriptRaisedDestroyEvent } from "fac
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
-import { createProjectEntityNoCopy, ExtraEntityType, ProjectEntity } from "../../entity/ProjectEntity"
+import { newProjectEntity, ExtraEntityType, ProjectEntity } from "../../entity/ProjectEntity"
 import { getRegisteredProjectEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
 import { deepCompare, deepCopy, Events, shallowCopy } from "../../lib"
@@ -64,7 +64,7 @@ before_each(() => {
     name: "fast-inserter",
     override_stack_size: 1,
   }
-  projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+  projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
   projectEntity._applyDiffAtStage(3, { override_stack_size: 2, filter_mode: "blacklist" })
   projectEntity._applyDiffAtStage(5, { override_stack_size: 3 })
   projectEntity._applyDiffAtStage(7, { filter_mode: getNilPlaceholder() })
@@ -105,18 +105,18 @@ test("isPastLastStage", () => {
 
 test("isRollingStock", () => {
   expect(projectEntity.isRollingStock()).toBe(false)
-  const projectEntity2 = createProjectEntityNoCopy({ name: "locomotive" }, Pos(0, 0), nil, 2)
+  const projectEntity2 = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
   expect(projectEntity2.isRollingStock()).toBe(true)
 })
 
 test("isUndergroundBelt", () => {
   expect(projectEntity.isUndergroundBelt()).toBe(false)
-  const projectEntity2 = createProjectEntityNoCopy({ name: "underground-belt" }, Pos(0, 0), nil, 2)
+  const projectEntity2 = newProjectEntity({ name: "underground-belt" }, Pos(0, 0), 0, 2)
   expect(projectEntity2.isUndergroundBelt()).toBe(true)
 })
 
 test("hasStageDiff", () => {
-  const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+  const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
   expect(projectEntity.hasStageDiff()).toBe(false)
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   expect(projectEntity.hasStageDiff()).toBe(true)
@@ -125,20 +125,20 @@ test("hasStageDiff", () => {
 })
 
 test("getStageDiff", () => {
-  const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+  const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
   expect(projectEntity.getStageDiff(3)).toBeNil()
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   expect(projectEntity.getStageDiff(3)).toEqual({ override_stack_size: 3 })
 })
 test("getNextStageDiffForProp", () => {
-  const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+  const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
   expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).toEqual([])
   projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
   expect(projectEntity.getFirstStageDiffForProp("override_stack_size")).toEqual([4, 3])
 })
 
 test("nextStageWithDiff", () => {
-  const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+  const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   projectEntity._applyDiffAtStage(5, { override_stack_size: 5 })
   expect(projectEntity.nextStageWithDiff(2)).toBe(3)
@@ -148,7 +148,7 @@ test("nextStageWithDiff", () => {
 })
 
 test("prevStageWithDiff", () => {
-  const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+  const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
   projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
   projectEntity._applyDiffAtStage(5, { override_stack_size: 5 })
   expect(projectEntity.prevStageWithDiff(6)).toBe(5)
@@ -270,7 +270,7 @@ describe("adjustValueAtStage", () => {
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity.adjustValueAtStage(1, { ...entity, override_stack_size: 3 })
     expect(projectEntity.firstValue).toEqual({ ...entity, override_stack_size: 3 })
@@ -278,7 +278,7 @@ describe("adjustValueAtStage", () => {
   })
 
   test("creates diff if set at higher stage", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity.adjustValueAtStage(2, { ...entity, override_stack_size: 3 })
     expect(projectEntity.firstValue).toEqual(entity)
     expect(projectEntity.hasStageDiff()).toBe(true)
@@ -296,7 +296,7 @@ describe("adjustValueAtStage", () => {
     const value2 = { ...firstValue, b: 2, c: 2 }
     const newValue2 = { ...firstValue, a: 2, b: 1, c: 5 }
     const value3 = { ...firstValue, a: 2, b: 2, c: 5 }
-    const projectEntity = createProjectEntityNoCopy(firstValue, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(firstValue, Pos(0, 0), 0, 1)
     projectEntity.adjustValueAtStage(2, value2)
     expect(projectEntity.firstValue).toEqual(firstValue)
     expect(projectEntity.getValueAtStage(2)).toEqual(value2)
@@ -324,7 +324,7 @@ describe("setPropAtStage", () => {
   })
 
   test("removes no longer effectual diffs after set at first value", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     expect(projectEntity.setPropAtStage(1, "override_stack_size", 3)).toBe(true)
@@ -333,7 +333,7 @@ describe("setPropAtStage", () => {
   })
 
   test("creates diff if set at higher stage", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     expect(projectEntity.setPropAtStage(3, "override_stack_size", 3)).toBe(true)
     expect(projectEntity.firstValue).toEqual(entity)
     expect(projectEntity.hasStageDiff(3)).toBe(true)
@@ -343,27 +343,27 @@ describe("setPropAtStage", () => {
 
 describe("moving stage diff props", () => {
   test("resetValue removes stage diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     expect(projectEntity.resetValue(3)).toBe(true)
     expect(projectEntity.getValueAtStage(3)).toEqual(entity)
     expect(projectEntity.hasStageDiff()).toBe(false)
   })
   test("returns false if no diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
     expect(projectEntity.resetValue(3)).toBe(false)
   })
 
   test("moveDiffDown can apply to first value", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     expect(projectEntity.moveValueDown(3)).toBe(1)
     expect(projectEntity.firstValue).toEqual({ ...entity, override_stack_size: 3 })
     expect(projectEntity.hasStageDiff()).toBe(false)
   })
   test("moveDiffDown can apply to next lower stage with diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     expect(projectEntity.moveValueDown(4)).toBe(3)
@@ -372,13 +372,13 @@ describe("moving stage diff props", () => {
   })
 
   test("moveDiffDown returns nil if no diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(4, { override_stack_size: 3 })
     expect(projectEntity.moveValueDown(3)).toBeNil()
   })
 
   test("resetProp removes prop from stage diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
     // is override_stack_size at stage 2
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity.resetProp(3, "override_stack_size")
@@ -387,14 +387,14 @@ describe("moving stage diff props", () => {
   })
 
   test("resetProp returns false if no diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 1)
     projectEntity._applyDiffAtStage(3, { filter_mode: "whitelist" })
     expect(projectEntity.resetProp(3, "override_stack_size")).toBe(false)
     expect(projectEntity.getValueAtStage(3)).toEqual({ ...entity, filter_mode: "whitelist" })
   })
 
   test("resetProp can get from next lower stage with diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     projectEntity.resetProp(4, "override_stack_size")
@@ -404,7 +404,7 @@ describe("moving stage diff props", () => {
   })
 
   test("movePropDown can apply a diff to first stage", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     expect(projectEntity.movePropDown(3, "override_stack_size")).toBe(2)
     expect(projectEntity.getValueAtStage(2)).toEqual({ ...entity, override_stack_size: 3 })
@@ -412,7 +412,7 @@ describe("moving stage diff props", () => {
   })
 
   test("movePropDown can apply a diff to next lower stage with diff", () => {
-    const projectEntity = createProjectEntityNoCopy(entity, Pos(0, 0), nil, 2)
+    const projectEntity = newProjectEntity(entity, Pos(0, 0), 0, 2)
     projectEntity._applyDiffAtStage(3, { override_stack_size: 3 })
     projectEntity._applyDiffAtStage(4, { override_stack_size: 4 })
     expect(projectEntity.movePropDown(4, "override_stack_size")).toBe(3)
@@ -444,7 +444,7 @@ describe("setFirstStageUnchecked", () => {
   })
 
   test("if is rolling stock, setting first stage also sets last stage", () => {
-    const projectEntity = createProjectEntityNoCopy({ name: "locomotive" }, Pos(0, 0), nil, 2)
+    const projectEntity = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
     projectEntity.setFirstStageUnchecked(3)
     expect(projectEntity.lastStage).toBe(3)
   })
@@ -471,7 +471,7 @@ describe("trySetLastStage", () => {
     expect(next(diffs)[0]).toBe(3)
   })
   test("if is rolling stock, setting last stage does nothing", () => {
-    const projectEntity = createProjectEntityNoCopy({ name: "locomotive" }, Pos(0, 0), nil, 2)
+    const projectEntity = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
     projectEntity.setLastStageUnchecked(3)
     expect(projectEntity.lastStage).toBe(2)
   })
@@ -486,7 +486,7 @@ describe("Get/set world entities", () => {
     const pos = Pos(0.5, 0.5)
     entity = surfaces[0].create_entity({ name: "iron-chest", position: pos })!
     previewEntity = surfaces[0].create_entity({ name: Prototypes.PreviewEntityPrefix + "iron-chest", position: pos })!
-    projectEntity = createProjectEntityNoCopy({ name: entity.name }, pos, nil, 1)
+    projectEntity = newProjectEntity({ name: entity.name }, pos, 0, 1)
   })
 
   test("get after replace returns the correct entity", () => {
@@ -619,7 +619,7 @@ describe("get/set extra entities", () => {
   let projectEntity: ProjectEntity
   before_each(() => {
     entity = simpleMock<LuaEntity>({ name: "test", position: Pos(0, 0) })
-    projectEntity = createProjectEntityNoCopy({ name: entity.name }, Pos(0, 0), nil, 1)
+    projectEntity = newProjectEntity({ name: entity.name }, Pos(0, 0), 0, 1)
   })
 
   test("get after replace returns the correct entity", () => {
@@ -678,7 +678,7 @@ describe("get/set extra entities", () => {
 
 describe("rolling stock", () => {
   test("rolling stock only appears in its first stage", () => {
-    const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon" }, Pos(0, 0), nil, 2)
+    const projectEntity = newProjectEntity({ name: "cargo-wagon" }, Pos(0, 0), 0, 2)
     expect(projectEntity.getValueAtStage(1)).toBeNil()
     expect(projectEntity.getValueAtStage(2)).toEqual(projectEntity.firstValue)
     expect(projectEntity.getValueAtStage(3)).toBeNil()
@@ -687,13 +687,13 @@ describe("rolling stock", () => {
     expect(projectEntity.lastStage).toEqual(2)
   })
   test("apply stage diff ignores orientation changes", () => {
-    const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon", orientation: 0.25 }, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity({ name: "cargo-wagon", orientation: 0.25 }, Pos(0, 0), 0, 1)
     const adjusted = projectEntity.adjustValueAtStage(1, { ...projectEntity.firstValue, orientation: 0.5 })
     expect(adjusted).toBe(false)
     expect(projectEntity.firstValue.orientation).toBe(0.25)
   })
   test("cannot apply upgrade to rolling stock", () => {
-    const projectEntity = createProjectEntityNoCopy({ name: "cargo-wagon" }, Pos(0, 0), nil, 1)
+    const projectEntity = newProjectEntity({ name: "cargo-wagon" }, Pos(0, 0), 0, 1)
     const adjusted = projectEntity.applyUpgradeAtStage(1, { name: "cargo-wagon-2" })
     expect(adjusted).toBe(false)
     expect(projectEntity.getUpgradeAtStage(1)).toEqual({ name: "cargo-wagon" })
@@ -743,7 +743,7 @@ describe("get/set properties", () => {
 describe("insert/deleting stages", () => {
   test("insert stage after base", () => {
     const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
-    const entity = createProjectEntityNoCopy({ name: luaEntity.name, override_stack_size: 1 }, Pos(0, 0), nil, 1)
+    const entity = newProjectEntity({ name: luaEntity.name, override_stack_size: 1 }, Pos(0, 0), 0, 1)
     entity.replaceWorldEntity(2, luaEntity)
     entity.replaceWorldEntity(3, luaEntity)
     entity.setProperty("foo", 2, "bar2")
@@ -779,14 +779,14 @@ describe("insert/deleting stages", () => {
   })
 
   test("if inserting stage right above last stage, last stage increases", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), nil, 2)
+    const entity = newProjectEntity<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), 0, 2)
     entity.setLastStageUnchecked(3)
 
     entity.insertStage(4)
     expect(entity.lastStage).toBe(4)
   })
   test("if inserting stage well after last stage, last stage stays the same", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), nil, 2)
+    const entity = newProjectEntity<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), 0, 2)
     entity.setLastStageUnchecked(3)
 
     entity.insertStage(5)
@@ -794,7 +794,7 @@ describe("insert/deleting stages", () => {
   })
 
   test("insert stage before firstStage", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), nil, 2)
+    const entity = newProjectEntity<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), 0, 2)
 
     entity.insertStage(1)
     expect(entity.firstStage).toBe(3)
@@ -802,13 +802,13 @@ describe("insert/deleting stages", () => {
 
   test("delete stage after firstStage", () => {
     const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
-    const entity = createProjectEntityNoCopy<InserterEntity>(
+    const entity = newProjectEntity<InserterEntity>(
       {
         name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
-      nil,
+      0,
       1,
     )
     entity.replaceWorldEntity(2, luaEntity)
@@ -844,13 +844,13 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage before base", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>(
+    const entity = newProjectEntity<InserterEntity>(
       {
         name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
-      nil,
+      0,
       3,
     )
 
@@ -859,13 +859,13 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage after last stage", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>(
+    const entity = newProjectEntity<InserterEntity>(
       {
         name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
-      nil,
+      0,
       3,
     )
     entity.setLastStageUnchecked(4)
@@ -875,13 +875,13 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage right after base applies stage diffs to first entity", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>(
+    const entity = newProjectEntity<InserterEntity>(
       {
         name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
-      nil,
+      0,
       1,
     )
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
@@ -892,13 +892,13 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage 1 merges with stage 2 instead", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>(
+    const entity = newProjectEntity<InserterEntity>(
       {
         name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
-      nil,
+      0,
       1,
     )
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
@@ -910,13 +910,13 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage 1 sets stage 1 properties to stage 2 properties", () => {
-    const entity = createProjectEntityNoCopy<InserterEntity>(
+    const entity = newProjectEntity<InserterEntity>(
       {
         name: "fast-inserter",
         override_stack_size: 1,
       },
       Pos(0, 0),
-      nil,
+      0,
       1,
     )
     entity.setProperty("foo", 1, "bar1")

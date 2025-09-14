@@ -11,7 +11,7 @@
 
 import expect from "tstl-expect"
 import { Entity } from "../../entity/Entity"
-import { addWireConnection, createProjectEntityNoCopy } from "../../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 
@@ -32,7 +32,7 @@ function createSampleProject() {
   stage1.blueprintOverrideSettings.snapToGrid.set({ x: 4, y: 5 })
   stage2.stageBlueprintSettings.description.set("Foo")
 
-  const entity1 = createProjectEntityNoCopy(
+  const entity1 = newProjectEntity(
     {
       name: "foo",
       someProp: "bar",
@@ -41,7 +41,7 @@ function createSampleProject() {
     4,
     2,
   )
-  const entity2 = createProjectEntityNoCopy(
+  const entity2 = newProjectEntity(
     {
       name: "baz",
     },

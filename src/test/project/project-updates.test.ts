@@ -23,7 +23,7 @@ import expect, { mock } from "tstl-expect"
 import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   addWireConnection,
-  createProjectEntityNoCopy,
+  newProjectEntity,
   ProjectEntity,
   RollingStockProjectEntity,
   StageDiffsInternal,
@@ -373,7 +373,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
   test("creates settings remnant if entity has circuit connections", () => {
     const { entity } = addEntity(1)
-    const otherEntity = createProjectEntityNoCopy({ name: "fast-inserter" }, Pos(0, 0), nil, 1)
+    const otherEntity = newProjectEntity({ name: "fast-inserter" }, Pos(0, 0), 0, 1)
     project.content.addEntity(otherEntity)
     addWireConnection({
       fromEntity: otherEntity,
@@ -390,7 +390,7 @@ describe("deleteEntityOrCreateSettingsRemnant", () => {
 
   test("deletes if entity has with circuit connections, but connections have world entity", () => {
     const { entity } = addEntity(1)
-    const otherEntity = createProjectEntityNoCopy({ name: "fast-inserter" }, Pos(0, 0), nil, 1)
+    const otherEntity = newProjectEntity({ name: "fast-inserter" }, Pos(0, 0), 0, 1)
     project.content.addEntity(otherEntity)
     addWireConnection({
       fromEntity: otherEntity,
@@ -1323,13 +1323,13 @@ describe("trains", () => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entities = createRollingStocks(game.surfaces[1], "locomotive", "cargo-wagon", "fluid-wagon")
     projectEntities = entities.map((e) => {
-      const aEntity = createProjectEntityNoCopy(
+      const aEntity = newProjectEntity(
         {
           name: e.name,
           orientation: e.orientation,
         },
         e.position,
-        nil,
+        0,
         1,
       )
       aEntity.replaceWorldEntity(1, e)

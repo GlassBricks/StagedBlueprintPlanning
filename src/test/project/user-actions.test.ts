@@ -19,7 +19,7 @@ import {
 } from "factorio:runtime"
 import expect from "tstl-expect"
 import { L_Game, Prototypes, Settings } from "../../constants"
-import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../../entity/ProjectTile"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { StageInfoExport } from "../../import-export/entity"
@@ -120,7 +120,7 @@ function addEntity(
 } {
   const luaEntity = createWorldEntity(stage, args)
   const [value] = saveEntity(luaEntity)
-  const projectEntity = createProjectEntityNoCopy(value!, luaEntity.position, luaEntity.direction, stage)
+  const projectEntity = newProjectEntity(value!, luaEntity.position, luaEntity.direction, stage)
   project.content.addEntity(projectEntity)
   return { luaEntity, entity: projectEntity }
 }

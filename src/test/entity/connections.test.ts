@@ -11,12 +11,7 @@
 
 import expect from "tstl-expect"
 import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
-import {
-  addWireConnection,
-  createProjectEntityNoCopy,
-  ProjectEntity,
-  removeWireConnection,
-} from "../../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity, ProjectEntity, removeWireConnection } from "../../entity/ProjectEntity"
 import { ProjectWireConnection } from "../../entity/wire-connection"
 
 let content: MutableProjectContent
@@ -30,7 +25,7 @@ describe("connections", () => {
   let entity1: ProjectEntity
   let entity2: ProjectEntity
   function makeProjectEntity(n: number): ProjectEntity {
-    return createProjectEntityNoCopy({ name: "foo" }, { x: n, y: 0 }, nil, 1)
+    return newProjectEntity({ name: "foo" }, { x: n, y: 0 }, 0, 1)
   }
   before_each(() => {
     entity1 = makeProjectEntity(1)

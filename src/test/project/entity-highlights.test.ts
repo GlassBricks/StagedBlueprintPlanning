@@ -13,7 +13,7 @@ import { SurfaceCreateEntity } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
-import { createProjectEntityNoCopy, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
 import { EntityHighlights, HighlightEntities } from "../../project/entity-highlights"
 
@@ -39,7 +39,7 @@ before_each(() => {
   project = createMockProject(surfaces)
   entityHighlights = EntityHighlights(project)
   highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
-  entity = createProjectEntityNoCopy({ name: "stone-furnace" }, Pos(1, 1), nil, 2)
+  entity = newProjectEntity({ name: "stone-furnace" }, Pos(1, 1), 0, 2)
 })
 
 function createEntity(stage: StageNumber, params?: Partial<SurfaceCreateEntity>) {
@@ -131,7 +131,7 @@ describe("undergrounds", () => {
   })
   test("creates error highlight if underground in wrong direction", () => {
     const pos = Pos(1.5, 1.5)
-    const undergroundEntity = createProjectEntityNoCopy(
+    const undergroundEntity = newProjectEntity(
       {
         name: "underground-belt",
         type: "input",

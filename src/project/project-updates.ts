@@ -12,7 +12,7 @@
 import { BlueprintEntity, LuaEntity, nil } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
 import {
-  createProjectEntityNoCopy,
+  newProjectEntity as newProjectEntity,
   getNameAndQuality,
   InserterProjectEntity,
   LoaderProjectEntity,
@@ -194,7 +194,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       const [saved] = saveEntity(entity, knownValue)
       // TODO: save non-staged value
       if (!saved) return nil
-      return createProjectEntityNoCopy(saved, entity.position, entity.direction, stage)
+      return newProjectEntity(saved, entity.position, entity.direction, stage)
     }
 
     return createProjectEntityFromStagedInfo(entity, stage, knownValue, stageInfo)
@@ -568,7 +568,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const [value, unstagedValue] = copyKnownValue(knownValue!)
     // TODO: save non-staged value
 
-    const projectEntity = createProjectEntityNoCopy(
+    const projectEntity = newProjectEntity(
       stageInfo.firstValue ?? value,
       entity.position,
       entity.direction,

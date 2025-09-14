@@ -12,13 +12,7 @@
 import { BlueprintWire, MapPosition } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
-import {
-  addWireConnection,
-  createProjectEntityNoCopy,
-  ProjectEntity,
-  StageDiffs,
-  StageNumber,
-} from "../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
 import { getDirectionalInfo } from "../entity/wire-connection"
 import { Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
@@ -103,7 +97,7 @@ export function exportEntity(entity: ProjectEntity, entityNumber: number = 0): E
 export function importEntity(info: EntityExport): ProjectEntity {
   const stageDiffs = info.stageDiffs && fromExportStageDiffs(info.stageDiffs)
 
-  const entity = createProjectEntityNoCopy(info.firstValue, info.position, info.direction, info.firstStage)
+  const entity = newProjectEntity(info.firstValue, info.position, info.direction ?? 0, info.firstStage)
   entity.setLastStageUnchecked(info.lastStage)
   entity.setStageDiffsDirectly(stageDiffs)
 

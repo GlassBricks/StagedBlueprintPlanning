@@ -12,7 +12,7 @@
 import { LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
-import { addWireConnection, createProjectEntityNoCopy, ProjectEntity } from "../../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
 import { shallowCompare } from "../../lib"
 
@@ -35,8 +35,8 @@ describe("circuit wires", () => {
   before_each(() => {
     luaEntity1 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 5.5, y: 6 } })!
     luaEntity2 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!
-    entity1 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, nil, 1)
-    entity2 = createProjectEntityNoCopy({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, nil, 1)
+    entity1 = newProjectEntity({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, 0, 1)
+    entity2 = newProjectEntity({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, 0, 1)
     entity1.replaceWorldEntity(1, luaEntity1)
     entity2.replaceWorldEntity(1, luaEntity2)
     content.addEntity(entity1)
@@ -172,8 +172,8 @@ describe("power switch connections", () => {
   before_each(() => {
     pole = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 5.5 } })!
     powerSwitch = surface.create_entity({ name: "power-switch", position: { x: 6, y: 7 } })!
-    poleEntity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pole.position, nil, 1)
-    powerSwitchEntity = createProjectEntityNoCopy({ name: "power-switch" }, powerSwitch.position, nil, 1)
+    poleEntity = newProjectEntity({ name: "medium-electric-pole" }, pole.position, 0, 1)
+    powerSwitchEntity = newProjectEntity({ name: "power-switch" }, powerSwitch.position, 0, 1)
     poleEntity.replaceWorldEntity(1, pole)
     powerSwitchEntity.replaceWorldEntity(1, powerSwitch)
     content.addEntity(poleEntity)
@@ -252,7 +252,7 @@ describe("power switch connections", () => {
 
   test("can remove connection if connected to different but not existing pole", () => {
     const pole2 = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
-    const pole2Entity = createProjectEntityNoCopy({ name: "medium-electric-pole" }, pole2.position, nil, 1)
+    const pole2Entity = newProjectEntity({ name: "medium-electric-pole" }, pole2.position, 0, 1)
     pole2Entity.replaceWorldEntity(1, pole2)
     content.addEntity(pole2Entity)
 

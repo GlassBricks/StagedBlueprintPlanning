@@ -10,7 +10,7 @@
  */
 
 import expect from "tstl-expect"
-import { addWireConnection, createProjectEntityNoCopy, StageDiffs } from "../../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
 import {
   exportEntity,
   EntityExport,
@@ -71,7 +71,7 @@ describe("exportEntity and importEntity", () => {
       b: "hi",
       c: "hello",
     }
-    const entity = createProjectEntityNoCopy(initialEntity, { x: 1, y: 2 }, 4, 1)
+    const entity = newProjectEntity(initialEntity, { x: 1, y: 2 }, 4, 1)
     entity.setLastStageUnchecked(5)
     entity.setStageDiffsDirectly({
       2: {
@@ -122,15 +122,15 @@ describe("exportEntity and importEntity", () => {
     })
   })
   it("should handle optional direction being nil", () => {
-    const entity = createProjectEntityNoCopy({ name: "foo", a: 2, b: "hi", c: "hello" }, { x: 1, y: 2 }, undefined, 1)
+    const entity = newProjectEntity({ name: "foo", a: 2, b: "hi", c: "hello" }, { x: 1, y: 2 }, 0, 1)
     const exported = exportEntity(entity)
     expect(exported.direction).toBeNil()
   })
 })
 
 test("exportAllEntities", () => {
-  const entity1 = createProjectEntityNoCopy({ name: "foo" }, { x: 1, y: 2 }, 4, 1)
-  const entity2 = createProjectEntityNoCopy({ name: "bar" }, { x: 3, y: 4 }, 6, 2)
+  const entity1 = newProjectEntity({ name: "foo" }, { x: 1, y: 2 }, 4, 1)
+  const entity2 = newProjectEntity({ name: "bar" }, { x: 3, y: 4 }, 6, 2)
   const fromId = 2
   const toId = 4
   addWireConnection({
