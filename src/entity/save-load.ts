@@ -9,6 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { EntityType } from "factorio:prototype"
 import {
   AssemblingMachineBlueprintEntity,
   BlueprintEntity,
@@ -26,8 +27,7 @@ import {
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { EntityType } from "factorio:prototype"
-import { Events, Mutable, mutableShallowCopy, PRecord } from "../lib"
+import { Events, Mutable, mutableShallowCopy, nullableConcat, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
@@ -94,22 +94,31 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
 
 function setBlueprintEntity(
   stack: LuaItemStack,
-  entity: Mutable<BlueprintEntity>,
+  value: Mutable<BlueprintEntity>,
+  unstagedValue: UnstagedEntityProps | nil,
   position: Position,
   direction: defines.direction,
 ): void {
-  assume<Mutable<AssemblingMachineBlueprintEntity>>(entity)
+  assume<Mutable<AssemblingMachineBlueprintEntity>>(value)
+
+  const oldItems = value.items
+  if (unstagedValue) {
+    value.items = nullableConcat(value.items, unstagedValue.items)
+  }
   // reuse the same table to avoid several allocations
-  entity.position = position
-  entity.direction = direction
-  entity.entity_number = 1
-  const oldRecipe = entity.recipe
-  entity.recipe = nil
-  stack.set_blueprint_entities([entity])
-  entity.recipe = oldRecipe
-  entity.position = nil!
-  entity.direction = nil!
-  entity.entity_number = nil!
+  value.position = position
+  value.direction = direction
+  value.entity_number = 1
+  const oldRecipe = value.recipe
+  value.recipe = nil
+
+  stack.set_blueprint_entities([value])
+
+  value.position = nil!
+  value.direction = nil!
+  value.entity_number = nil!
+  value.recipe = oldRecipe
+  value.items = oldItems
 }
 
 const buildModeForced = defines.build_mode.forced
@@ -120,7 +129,8 @@ function pasteEntity(
   surface: LuaSurface,
   position: MapPosition,
   direction: defines.direction,
-  entity: BlueprintEntity,
+  value: BlueprintEntity,
+  unstagedValue: UnstagedEntityProps | nil,
   target: LuaEntity | nil,
 ): LuaEntity | nil {
   const tilePosition = { x: floor(position.x), y: floor(position.y) }
@@ -128,7 +138,7 @@ function pasteEntity(
   if (pasteEntityVersion != entityVersion) {
     pasteEntityVersion = entityVersion
     const offsetPosition = Pos.minus(position, tilePosition)
-    setBlueprintEntity(bpStack, entity, offsetPosition, direction)
+    setBlueprintEntity(bpStack, value, unstagedValue, offsetPosition, direction)
     bpStack.blueprint_snap_to_grid = [1, 1]
     bpStack.blueprint_absolute_snapping = true
   }
@@ -140,11 +150,10 @@ function pasteEntity(
     build_mode: buildModeForced,
   })
   if (target?.type == "assembling-machine") {
-    assume<AssemblingMachineBlueprintEntity>(entity)
-    pcall(target.set_recipe as any, entity.recipe, entity.recipe_quality)
+    assume<AssemblingMachineBlueprintEntity>(value)
+    pcall(target.set_recipe as any, value.recipe, value.recipe_quality)
     target.direction = direction
   }
-  surface.find_entity("item-request-proxy", position)?.destroy()
   return ghosts[0]
 }
 
@@ -219,37 +228,37 @@ export function createEntity(
   surface: LuaSurface,
   position: MapPosition,
   direction: defines.direction,
-  entity: Entity,
+  value: Entity,
+  unstagedValue: UnstagedEntityProps | nil,
   changed: boolean = true,
 ): LuaEntity | nil {
-  assume<BlueprintEntity>(entity)
+  assume<BlueprintEntity>(value)
   if (changed) entityVersion++
   let luaEntity: LuaEntity | undefined
-  const isRollingStock = rollingStockTypes.has(entity.name)
+  const isRollingStock = rollingStockTypes.has(value.name)
   if (isRollingStock) {
-    const ghost = pasteEntity(surface, position, direction, entity, nil)
+    const ghost = pasteEntity(surface, position, direction, value, unstagedValue, nil)
     if (!ghost) return nil
-    const [, newLuaEntity, proxy] = ghost.silent_revive()
-    proxy?.destroy()
+    const [, newLuaEntity] = ghost.silent_revive()
     luaEntity = newLuaEntity
   } else {
-    luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, entity)
+    luaEntity = tryCreateUnconfiguredEntity(surface, position, direction, value)
   }
   if (!luaEntity) return nil
 
-  const type = nameToType.get(entity.name)!
+  const type = nameToType.get(value.name)!
 
   if (type == "loader" || type == "loader-1x1") {
-    assume<LoaderBlueprintEntity>(entity)
-    luaEntity.loader_type = entity.type ?? "output"
+    assume<LoaderBlueprintEntity>(value)
+    luaEntity.loader_type = value.type ?? "output"
     luaEntity.direction = direction
   }
-  if (!isRollingStock && entityHasSettings(entity)) {
-    const ghost = pasteEntity(surface, position, direction, entity, luaEntity)
+  if (!isRollingStock && entityHasSettings(value)) {
+    const ghost = pasteEntity(surface, position, direction, value, unstagedValue, luaEntity)
     ghost?.destroy()
   }
-  if (entity.items) {
-    createItems(luaEntity, entity.items)
+  if (value.items) {
+    matchModuleItems(luaEntity, value.items)
   }
   raise_script_built({ entity: luaEntity })
   if (luaEntity.valid) return luaEntity
@@ -301,29 +310,34 @@ function getName(id: string | WithName | nil): string | nil {
   return id.name
 }
 
-function createItems(luaEntity: LuaEntity, insertItems: BlueprintInsertPlanWrite[]): void {
-  for (const { id, items } of insertItems) {
+function matchModuleItems(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlanWrite[] | nil): void {
+  const inventory = luaEntity.get_module_inventory()
+  if (!inventory) return
+  inventory.clear()
+  if (!moduleItems) return
+  const moduleInvINdex = inventory.index!
+  for (const { id, items } of moduleItems) {
     if (items.in_inventory) {
       for (const inv of items.in_inventory) {
-        luaEntity.get_inventory(inv.inventory)?.[inv.stack].set_stack({
-          name: getName(id.name),
-          quality: getName(id.quality),
-          count: inv.count,
-        })
+        if (inv.inventory == moduleInvINdex) {
+          inventory[inv.stack].set_stack({
+            name: getName(id.name),
+            quality: getName(id.quality),
+            count: inv.count,
+          })
+        }
       }
     }
   }
-}
-
-function matchItems(luaEntity: LuaEntity, value: BlueprintEntity): void {
-  const items = value.items
-  const moduleInventory = luaEntity.get_module_inventory()
-  if (!moduleInventory) return
-  if (!items) {
-    moduleInventory.clear()
-    return
+  const itemRequestProxy = luaEntity.item_request_proxy
+  if (itemRequestProxy) {
+    const [, nonModules] = partitionInventoryFromRequests(itemRequestProxy.insert_plan, moduleInvINdex)
+    if (nonModules == nil) {
+      itemRequestProxy.destroy()
+    } else {
+      itemRequestProxy.insert_plan = nonModules
+    }
   }
-  createItems(luaEntity, items)
 }
 
 export function checkUndergroundPairFlippable(
@@ -350,7 +364,7 @@ function updateUndergroundRotation(
     const surface = luaEntity.surface
     const position = luaEntity.position
     luaEntity.destroy()
-    return $multi(createEntity(surface, position, direction, value, false))
+    return $multi(createEntity(surface, position, direction, value, nil, false))
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
@@ -507,6 +521,7 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Nul
 export function updateEntity(
   luaEntity: LuaEntity,
   value: Entity,
+  unstagedValue: UnstagedEntityProps | nil,
   direction: defines.direction,
   changed: boolean = true,
 ): LuaMultiReturn<[updated: LuaEntity | nil, updatedNeighbors?: ProjectEntity]> {
@@ -521,7 +536,7 @@ export function updateEntity(
     const position = luaEntity.position
     raise_script_destroy({ entity: luaEntity })
     luaEntity.destroy()
-    const entity = createEntity(surface, position, direction, value, changed)
+    const entity = createEntity(surface, position, direction, value, unstagedValue, changed)
     return $multi(entity)
   }
 
@@ -540,10 +555,10 @@ export function updateEntity(
   }
   luaEntity.direction = direction
 
-  const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, luaEntity)
+  const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, unstagedValue, luaEntity)
   if (ghost) ghost.destroy() // should not happen?
   assume<BlueprintEntity>(value)
-  matchItems(luaEntity, value)
+  matchModuleItems(luaEntity, value.items)
 
   return $multi(luaEntity)
 }

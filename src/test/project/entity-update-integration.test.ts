@@ -101,6 +101,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectError: number | false)
     } else {
       const [savedValue, savedUnstagedValue] = saveEntity(worldEntity)
       expect(savedValue).toEqual(value)
+      expect(savedUnstagedValue).toEqual(entity.getUnstagedValue(stage))
       if (!canBeAnyDirection(worldEntity)) {
         expect(worldEntity.direction).toBe(entity.direction)
       }

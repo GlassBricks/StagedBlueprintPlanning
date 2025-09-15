@@ -51,6 +51,12 @@ export function shallowCompare<T>(a: T, b: T): boolean {
   return true
 }
 
+export function nullableConcat<T>(a: T[] | nil, b: T[] | nil): T[] | nil {
+  if (!a) return b
+  if (!b) return a
+  return a.concat(b)
+}
+
 export function isEmpty(obj: object): boolean {
   return next(obj)[0] == nil
 }

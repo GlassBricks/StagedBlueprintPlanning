@@ -176,13 +176,13 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
         let luaEntity: LuaEntity | nil
         if (existingNormalEntity) {
           let updatedNeighbor: ProjectEntity | nil
-          ;[luaEntity, updatedNeighbor] = updateEntity(existingNormalEntity, value, direction, changed)
+          ;;[luaEntity, updatedNeighbor] = updateEntity(existingNormalEntity, value, nil, direction, changed)
           if (updatedNeighbor) {
             updatedNeighbors ??= new LuaSet()
             updatedNeighbors.add(updatedNeighbor)
           }
         } else {
-          luaEntity = createEntity(surface, entity.position, direction, value, changed)
+          luaEntity = createEntity(surface, entity.position, direction, value, nil, changed)
         }
 
         if (luaEntity) {

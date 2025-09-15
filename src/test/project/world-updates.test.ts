@@ -132,10 +132,16 @@ describe("updateWorldEntities", () => {
     })
 
     test("can refresh a single entity", () => {
-      const replaced = createEntity(project.getSurface(2)!, entity.position, entity.direction, {
-        name: "inserter",
-        override_stack_size: 3,
-      } as TestEntity)!
+      const replaced = createEntity(
+        project.getSurface(2)!,
+        entity.position,
+        entity.direction,
+        {
+          name: "inserter",
+          override_stack_size: 3,
+        } as TestEntity,
+        nil,
+      )!
       entity.replaceWorldEntity(2, replaced)
       worldUpdates.refreshWorldEntityAtStage(entity, 2)
       const val = assertEntityCorrect(2)
@@ -193,10 +199,16 @@ describe("updateWorldEntities", () => {
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
     entity.setFirstStageUnchecked(2)
     if (withExisting) {
-      const luaEntity = createEntity(project.getSurface(3)!, entity.position, entity.direction, {
-        name: "inserter",
-        override_stack_size: 3,
-      } as TestEntity)!
+      const luaEntity = createEntity(
+        project.getSurface(3)!,
+        entity.position,
+        entity.direction,
+        {
+          name: "inserter",
+          override_stack_size: 3,
+        } as TestEntity,
+        nil,
+      )!
       entity.replaceWorldEntity(3, luaEntity)
     }
     worldUpdates.updateWorldEntities(entity, 1)

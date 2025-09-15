@@ -10,11 +10,12 @@
  */
 
 import {
+  AssemblingMachineBlueprintEntity,
   BlueprintEntity,
   BlueprintEntityWrite,
   BlueprintInsertPlan,
   BlueprintInsertPlanWrite,
-  ItemWithQualityCounts,
+  InventoryPosition,
   LuaSurface,
   ScriptRaisedBuiltEvent,
 } from "factorio:runtime"
@@ -40,13 +41,19 @@ import { _deleteAllProjects, createUserProject } from "../../project/UserProject
 import { createRollingStocks } from "./createRollingStock"
 
 let surface: LuaSurface
+let itemRequestProxyExpected = false
 before_each(() => {
   surface = game.surfaces[1]
   surface.find_entities().forEach((e) => e.destroy())
 })
 after_each(() => {
   const requestProxy = surface.find_entities_filtered({ name: "item-request-proxy" })
-  expect(requestProxy).toHaveLength(0)
+  if (!itemRequestProxyExpected) {
+    expect(requestProxy).toHaveLength(0)
+  } else {
+    expect(requestProxy).not.toHaveLength(0)
+    itemRequestProxyExpected = false
+  }
 })
 
 test("can save an entity", () => {
@@ -142,10 +149,16 @@ Events.script_raised_built((e) => {
 })
 
 test("can create an entity", () => {
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "iron-chest",
-    bar: 3,
-  } as Entity)!
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "iron-chest",
+      bar: 3,
+    } as Entity,
+    nil,
+  )!
   expect(luaEntity).toBeAny()
   expect(luaEntity.name).toBe("iron-chest")
   expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
@@ -158,10 +171,16 @@ test("can create an entity", () => {
 })
 
 test("can create an entity with different quality", () => {
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "iron-chest",
-    quality: "legendary",
-  })!
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "iron-chest",
+      quality: "legendary",
+    },
+    nil,
+  )!
   expect(luaEntity).toBeAny()
   expect(luaEntity.name).toBe("iron-chest")
   expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
@@ -170,10 +189,16 @@ test("can create an entity with different quality", () => {
 })
 
 test("can create an rotated assembler", () => {
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.east, {
-    name: "assembling-machine-3",
-    recipe: "rocket-fuel",
-  } as Entity)!
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.east,
+    {
+      name: "assembling-machine-3",
+      recipe: "rocket-fuel",
+    } as Entity,
+    nil,
+  )!
   expect(luaEntity).toBeAny()
   expect(luaEntity.name).toBe("assembling-machine-3")
   expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
@@ -183,37 +208,61 @@ test("can create an rotated assembler", () => {
 test("can set recipe of assembling machine even if not researched", () => {
   game.forces.player.recipes["rocket-fuel"].enabled = false
   after_test(() => (game.forces.player.recipes["rocket-fuel"].enabled = true))
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "assembling-machine-3",
-    recipe: "rocket-fuel",
-  } as Entity)!
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "assembling-machine-3",
+      recipe: "rocket-fuel",
+    } as Entity,
+    nil,
+  )!
 
   expect(luaEntity).toBeAny()
   expect(luaEntity.get_recipe()[0]?.name).toBe("rocket-fuel")
 })
 
 test("doesn't crash if setting to non-existent recipe", () => {
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "assembling-machine-3",
-    recipe: "foobar@",
-  } as Entity)!
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "assembling-machine-3",
+      recipe: "foobar@",
+    } as Entity,
+    nil,
+  )!
   expect(luaEntity).toBeAny()
   expect(luaEntity.get_recipe()[0]).toBeNil()
 })
 
 test("returns nil if entity becomes invalid via script", () => {
   destroyOnBuilt = true
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "iron-chest",
-    bar: 3,
-  } as Entity)
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "iron-chest",
+      bar: 3,
+    } as Entity,
+    nil,
+  )
   expect(luaEntity).toBeNil()
 })
 
 test("can create an offshore pump anywhere", () => {
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "offshore-pump",
-  })!
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "offshore-pump",
+    },
+    nil,
+  )!
   expect(luaEntity).toBeAny()
   expect(luaEntity.name).toBe("offshore-pump")
   expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
@@ -227,9 +276,15 @@ test("can still place if there are items on the ground", () => {
   })
   expect(item).toBeAny()
 
-  const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "assembling-machine-1",
-  })!
+  const luaEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "assembling-machine-1",
+    },
+    nil,
+  )!
   expect(luaEntity).toBeAny()
   expect(luaEntity.name).toBe("assembling-machine-1")
   expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
@@ -248,6 +303,7 @@ test("can update an entity", () => {
       name: "iron-chest",
       bar: 4,
     } as Entity,
+    nil,
     defines.direction.north,
   )[0]
   expect(newEntity).toBe(entity)
@@ -268,6 +324,7 @@ test("can set recipe of assembling machine even if not researched", () => {
       name: "assembling-machine-3",
       recipe: "rocket-fuel",
     } as Entity,
+    nil,
     defines.direction.north,
   )[0]
   expect(newEntity).toBe(entity)
@@ -289,6 +346,7 @@ test("can set recipe with different quality than normal", () => {
       recipe: "rocket-fuel",
       recipe_quality: "legendary",
     } as Entity,
+    nil,
     defines.direction.north,
   )[0]
   expect(newEntity).toBe(entity)
@@ -305,7 +363,7 @@ test("can upgrade an entity", () => {
   })!
   entity.minable = false
   entity.destructible = false
-  const newEntity = updateEntity(entity, { name: "steel-chest" } as Entity, defines.direction.north)[0]!
+  const newEntity = updateEntity(entity, { name: "steel-chest" } as Entity, nil, defines.direction.north)[0]!
   expect(newEntity.name).toBe("steel-chest")
   expect(entity.valid).toBe(false)
 })
@@ -316,7 +374,7 @@ test("can upgrade an entity to a different quality", () => {
     position: { x: 12.5, y: 12.5 },
     force: "player",
   })!
-  const newEntity = updateEntity(entity, { name: "iron-chest", quality: "legendary" }, defines.direction.north)[0]!
+  const newEntity = updateEntity(entity, { name: "iron-chest", quality: "legendary" }, nil, defines.direction.north)[0]!
   expect(newEntity).toMatchTable({
     name: "iron-chest",
     quality: { name: "legendary" },
@@ -330,7 +388,7 @@ test("can rotate entity", () => {
     force: "player",
     direction: defines.direction.east,
   })!
-  const newEntity = updateEntity(entity, { name: "inserter" } as Entity, defines.direction.south)[0]
+  const newEntity = updateEntity(entity, { name: "inserter" } as Entity, nil, defines.direction.south)[0]
   expect(entity).toBe(newEntity)
   expect(entity.direction).toBe(defines.direction.south)
 })
@@ -341,9 +399,15 @@ test("can delete tree in the way", () => {
     position: { x: 0.5, y: 0.5 },
   })!
   expect(tree).toBeAny()
-  const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "assembling-machine-1",
-  })!
+  const newEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "assembling-machine-1",
+    },
+    nil,
+  )!
   expect(newEntity).toBeAny()
   expect(tree.valid).toBe(false)
 })
@@ -354,9 +418,15 @@ test("can delete rocks in the way", () => {
     position: { x: 0.5, y: 0.5 },
   })!
   expect(rock).toBeAny()
-  const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, {
-    name: "assembling-machine-1",
-  })!
+  const newEntity = createEntity(
+    surface,
+    { x: 0.5, y: 0.5 },
+    defines.direction.north,
+    {
+      name: "assembling-machine-1",
+    },
+    nil,
+  )!
   expect(newEntity).toBeAny()
   expect(rock.valid).toBe(false)
 })
@@ -532,10 +602,16 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   })
 
   test("creating an underground belt in output direction KEEPS direction", () => {
-    const luaEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.south, {
-      name: "underground-belt",
-      type,
-    } as Entity)!
+    const luaEntity = createEntity(
+      surface,
+      { x: 0.5, y: 0.5 },
+      defines.direction.south,
+      {
+        name: "underground-belt",
+        type,
+      } as Entity,
+      nil,
+    )!
     expect(luaEntity).toBeAny()
     expect(luaEntity.name).toBe("underground-belt")
     expect(luaEntity.position).toEqual({ x: 0.5, y: 0.5 })
@@ -565,6 +641,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "underground-belt",
         type: flipped ? "output" : "input",
       } as Entity,
+      nil,
     )!
     expect(eastUnderground).toBeAny()
     expect(surface.find_entity("underground-belt", { x: 1.5, y: 0.5 })).toBeAny()
@@ -587,6 +664,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "underground-belt",
         type: otherDir,
       } as Entity,
+      nil,
       defines.direction.east,
     )
     assert(updated)
@@ -625,6 +703,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "underground-belt",
         type: flipped ? "input" : "output",
       } as Entity,
+      nil,
       flipped ? defines.direction.east : defines.direction.west,
     )[0]
     assert(updated)
@@ -730,6 +809,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "underground-belt",
         type: otherType,
       } as Entity,
+      nil,
       flipped ? defines.direction.east : defines.direction.west,
     )
     expect(updated).toBe(leftUnderground)
@@ -761,6 +841,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "fast-underground-belt",
         type,
       } as Entity,
+      nil,
       defines.direction.west,
     )[0]!
     expect(updated).toBeAny()
@@ -784,6 +865,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
         name: "underground-belt",
         type,
       } as Entity,
+      nil,
       defines.direction.south,
     )[0]!
     expect(updated).toBeAny()
@@ -793,18 +875,30 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
 })
 
 test("can create loader", () => {
-  const entity = createEntity(surface, { x: 12.5, y: 12 }, defines.direction.east, {
-    name: "loader",
-    type: "output",
-  } as Entity)!
+  const entity = createEntity(
+    surface,
+    { x: 12.5, y: 12 },
+    defines.direction.east,
+    {
+      name: "loader",
+      type: "output",
+    } as Entity,
+    nil,
+  )!
   expect(entity.name).toBe("loader")
   expect(entity.direction).toBe(defines.direction.east)
   expect(entity.loader_type).toBe("output")
 
-  const entity2 = createEntity(surface, { x: 14.5, y: 12 }, defines.direction.east, {
-    name: "loader",
-    type: "input",
-  } as Entity)!
+  const entity2 = createEntity(
+    surface,
+    { x: 14.5, y: 12 },
+    defines.direction.east,
+    {
+      name: "loader",
+      type: "input",
+    } as Entity,
+    nil,
+  )!
   expect(entity2.name).toBe("loader")
   expect(entity2.direction).toBe(defines.direction.east)
   expect(entity2.loader_type).toBe("input")
@@ -825,6 +919,7 @@ test("can flip loader", () => {
       name: "loader",
       type: "output",
     } as Entity,
+    nil,
     defines.direction.east,
   )[0]!
   expect(updated).toBe(entity)
@@ -832,51 +927,169 @@ test("can flip loader", () => {
   expect(updated.rotatable).toBe(false)
 })
 
-test("can handle item changes", () => {
-  const oldContents = { "productivity-module": 1, "productivity-module-2": 2 }
-  const newContents: ItemWithQualityCounts = [
-    { name: "speed-module", count: 1, quality: "normal" },
-    { name: "speed-module-2", count: 2, quality: "normal" },
-    { name: "productivity-module-2", count: 1, quality: "normal" },
-  ]
-
-  const newContentsAsInsertPlan: BlueprintInsertPlanWrite[] = []
-  let index = 0
-  for (const item of newContents) {
-    for (let i = 0; i < item.count; i++) {
-      newContentsAsInsertPlan.push({
-        id: { name: item.name, quality: item.quality },
-        items: {
-          in_inventory: [
-            {
-              inventory: defines.inventory.assembling_machine_modules,
-              stack: index,
-              count: 1,
-            },
-          ],
-        },
-      })
-      index++
-    }
+describe("modules", () => {
+  function moduleInsertPlan(
+    inventory: defines.inventory,
+    numItems: number,
+    startIndex: number,
+    item: string,
+  ): BlueprintInsertPlan {
+    return {
+      id: { name: item },
+      items: {
+        in_inventory: Array.from(
+          { length: numItems },
+          (_, i) => ({ inventory, stack: startIndex + i }) satisfies InventoryPosition,
+        ),
+      },
+    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
   }
 
-  const entity = surface.create_entity({
-    name: "assembling-machine-3",
-    position: { x: 12.5, y: 12.5 },
-    force: "player",
-  })!
-  for (const [item, count] of pairs(oldContents)) entity.get_module_inventory()!.insert({ name: item, count })
+  const moduleInsertPlan1 = [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module")]
+  const moduleInsertPlan2 = [
+    moduleInsertPlan(defines.inventory.crafter_modules, 2, 0, "speed-module"),
+    moduleInsertPlan(defines.inventory.crafter_modules, 2, 2, "speed-module-2"),
+  ]
 
-  const newEntity = updateEntity(
-    entity,
-    {
-      name: "assembling-machine-3",
-      items: newContentsAsInsertPlan,
-    } as Entity,
-    defines.direction.north,
-  )[0]
-  expect(entity).toBe(newEntity)
-  expect(entity.get_module_inventory()!.get_contents()).toEqual(newContents)
+  test("can create an entity with modules", () => {
+    const luaEntity = createEntity(
+      surface,
+      { x: 0.5, y: 0.5 },
+      defines.direction.north,
+      {
+        name: "assembling-machine-3",
+        items: moduleInsertPlan1,
+      } as Entity,
+      nil,
+    )!
+
+    expect(luaEntity).toBeAny()
+    expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module")).toBe(4)
+    expect(luaEntity.item_request_proxy).toBeNil()
+  })
+
+  test("can change modules", () => {
+    const entity = createEntity(
+      surface,
+      { x: 0.5, y: 0.5 },
+      defines.direction.north,
+      {
+        name: "assembling-machine-3",
+        items: moduleInsertPlan1,
+      } as Entity,
+      nil,
+    )!
+
+    const newEntity = updateEntity(
+      entity,
+      {
+        name: "assembling-machine-3",
+        items: moduleInsertPlan2,
+      } as Entity,
+      nil,
+      defines.direction.north,
+    )[0]
+
+    expect(entity).toBe(newEntity)
+
+    const moduleInv = entity.get_module_inventory()!
+    expect(moduleInv.get_item_count()).toBe(4)
+    expect(moduleInv.get_item_count("speed-module")).toBe(2)
+    expect(moduleInv.get_item_count("speed-module-2")).toBe(2)
+    expect(entity.item_request_proxy).toBeNil()
+  })
+
+  function simpleInsertPlan(
+    inventory: defines.inventory,
+    item: string,
+    slot: number,
+    count?: number,
+  ): BlueprintInsertPlan {
+    return {
+      id: { name: item },
+      items: { in_inventory: [{ inventory, stack: slot, count }] },
+    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  }
+
+  const itemInsertPlan1 = simpleInsertPlan(defines.inventory.crafter_input, "iron-plate", 0, 2)
+  const itemInsertPlan2 = simpleInsertPlan(defines.inventory.crafter_input, "copper-cable", 1, 2)
+  test("can create modules and item requests", () => {
+    const luaEntity = createEntity(
+      surface,
+      { x: 0.5, y: 0.5 },
+      0,
+      {
+        name: "assembling-machine-3",
+        items: moduleInsertPlan1,
+        recipe: "electronic-circuit",
+      } as AssemblingMachineBlueprintEntity,
+      { items: [itemInsertPlan1] },
+    )!
+    expect(luaEntity).toBeAny()
+    expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module")).toBe(4)
+
+    itemRequestProxyExpected = true
+    const proxy = luaEntity.item_request_proxy!
+    expect(proxy.insert_plan).toEqual([itemInsertPlan1])
+  })
+
+  test("can change modules and item requests", () => {
+    const luaEntity = createEntity(
+      surface,
+      { x: 0.5, y: 0.5 },
+      0,
+      {
+        name: "assembling-machine-3",
+        items: moduleInsertPlan1,
+        recipe: "electronic-circuit",
+      } as AssemblingMachineBlueprintEntity,
+      { items: [itemInsertPlan1] },
+    )!
+
+    const newEntity = updateEntity(
+      luaEntity,
+      {
+        name: "assembling-machine-3",
+        items: moduleInsertPlan2,
+        recipe: "advanced-circuit",
+      } as AssemblingMachineBlueprintEntity,
+      { items: [itemInsertPlan2] },
+      0,
+    )[0]
+
+    expect(newEntity).toBe(luaEntity)
+    const moduleInv = luaEntity.get_module_inventory()!
+    expect(moduleInv.get_item_count()).toBe(4)
+    expect(moduleInv.get_item_count("speed-module")).toBe(2)
+    expect(moduleInv.get_item_count("speed-module-2")).toBe(2)
+
+    itemRequestProxyExpected = true
+    const proxy = luaEntity.item_request_proxy!
+    expect(proxy.insert_plan).toEqual([itemInsertPlan2])
+  })
+
+  test("can remove item requests", () => {
+    const luaEntity = createEntity(
+      surface,
+      { x: 0.5, y: 0.5 },
+      0,
+      { name: "assembling-machine-3" } as AssemblingMachineBlueprintEntity,
+      { items: [itemInsertPlan1] },
+    )!
+    const newEntity = updateEntity(
+      luaEntity,
+      {
+        name: "assembling-machine-3",
+        items: moduleInsertPlan2,
+        recipe: "advanced-circuit",
+      } as AssemblingMachineBlueprintEntity,
+      nil,
+      0,
+    )[0]
+
+    expect(newEntity).toBe(luaEntity)
+    expect(luaEntity.item_request_proxy).toBeNil()
+  })
 })
 
 test("can save an entity with modules", () => {
@@ -907,7 +1120,7 @@ test("can save an entity with modules", () => {
 
   entity.destroy()
 
-  const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, saved as Entity)!
+  const newEntity = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, saved as Entity, nil)!
   expect(newEntity).toBeAny()
   expect(newEntity.get_inventory(defines.inventory.lab_modules)!.get_contents()).toEqual([
     {
@@ -940,7 +1153,7 @@ test("updating rolling stock does nothing", () => {
     orientation: 0,
     position: { x: 0.5, y: 0.5 },
   } as Entity
-  const newEntity = updateEntity(locomotive, newValue, defines.direction.north)[0]!
+  const newEntity = updateEntity(locomotive, newValue, nil, defines.direction.north)[0]!
   expect(newEntity).toBe(locomotive)
   expect(locomotive.position).toEqual(oldLocation)
 })
@@ -990,11 +1203,17 @@ describe("EditorExtensions support", () => {
   assert("EditorExtensions" in script.active_mods)
 
   test("can create and update infinity loader", () => {
-    const loader = createEntity(surface, { x: 12.5, y: 12 }, defines.direction.east, {
-      name: "ee-infinity-loader",
-      type: "input",
-      filters: [{ index: 1, name: "iron-plate" }],
-    } satisfies Partial<BlueprintEntityWrite> as Entity)!
+    const loader = createEntity(
+      surface,
+      { x: 12.5, y: 12 },
+      defines.direction.east,
+      {
+        name: "ee-infinity-loader",
+        type: "input",
+        filters: [{ index: 1, name: "iron-plate" }],
+      } satisfies Partial<BlueprintEntityWrite> as Entity,
+      nil,
+    )!
     expect(loader).toBeAny()
     expect(loader.name).toBe("ee-infinity-loader")
     expect(loader.get_filter(1)).toEqual({ name: "iron-plate" })
@@ -1006,6 +1225,7 @@ describe("EditorExtensions support", () => {
         type: "output",
         filters: [{ index: 1, name: "copper-plate" }],
       } satisfies Partial<BlueprintEntityWrite> as Entity,
+      nil,
       defines.direction.east,
     )[0]!
 
