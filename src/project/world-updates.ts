@@ -22,12 +22,13 @@ import { ProjectTile } from "../entity/ProjectTile"
 import { isPreviewEntity, OnPrototypeInfoLoaded, PrototypeInfo, rollingStockTypes } from "../entity/prototype-info"
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
-import { Mutable, PRecord, RegisterClass } from "../lib"
+import { deepCompare, Mutable, PRecord, RegisterClass } from "../lib"
 import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 import { EntityType } from "factorio:prototype"
+import { UnstagedEntityProps } from "../entity/Entity"
 
 /** @noSelf */
 export interface WorldUpdates {
@@ -165,24 +166,35 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
 
     let updatedNeighbors: LuaSet<ProjectEntity> | nil
 
-    for (const [stage, value, changed] of entity.iterateValues(startStage, endStage)) {
+    let lastUnstagedValue: UnstagedEntityProps | nil = nil
+    for (const [stage, value, diffChanged] of entity.iterateValues(startStage, endStage)) {
       const surface = project.getSurface(stage)!
       const existing = entity.getWorldOrPreviewEntity(stage)
       const wasPreviewEntity = existing && isPreviewEntity(existing)
       const existingNormalEntity = !wasPreviewEntity && existing
+
+      const unstagedValue = entity.getUnstagedValue(stage)
+      const actuallyChanged = diffChanged || !deepCompare(lastUnstagedValue, unstagedValue)
+      lastUnstagedValue = unstagedValue
 
       if (value != nil) {
         // create entity or updating existing entity
         let luaEntity: LuaEntity | nil
         if (existingNormalEntity) {
           let updatedNeighbor: ProjectEntity | nil
-          ;;[luaEntity, updatedNeighbor] = updateEntity(existingNormalEntity, value, nil, direction, changed)
+          ;[luaEntity, updatedNeighbor] = updateEntity(
+            existingNormalEntity,
+            value,
+            unstagedValue,
+            direction,
+            actuallyChanged,
+          )
           if (updatedNeighbor) {
             updatedNeighbors ??= new LuaSet()
             updatedNeighbors.add(updatedNeighbor)
           }
         } else {
-          luaEntity = createEntity(surface, entity.position, direction, value, nil, changed)
+          luaEntity = createEntity(surface, entity.position, direction, value, unstagedValue, actuallyChanged)
         }
 
         if (luaEntity) {

@@ -253,7 +253,7 @@ export function createEntity(
     luaEntity.loader_type = value.type ?? "output"
     luaEntity.direction = direction
   }
-  if (!isRollingStock && entityHasSettings(value)) {
+  if ((!isRollingStock && entityHasSettings(value)) || unstagedValue != nil) {
     const ghost = pasteEntity(surface, position, direction, value, unstagedValue, luaEntity)
     ghost?.destroy()
   }
@@ -557,8 +557,10 @@ export function updateEntity(
 
   const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, unstagedValue, luaEntity)
   if (ghost) ghost.destroy() // should not happen?
-  assume<BlueprintEntity>(value)
   matchModuleItems(luaEntity, value.items)
+  if (!unstagedValue?.items?.[0]) {
+    luaEntity.item_request_proxy?.destroy()
+  }
 
   return $multi(luaEntity)
 }

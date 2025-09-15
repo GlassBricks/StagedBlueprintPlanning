@@ -96,6 +96,16 @@ export function shiftNumberKeysDown(obj: PRecord<any, any>, number: number): voi
   }
 }
 
+export function crossProduct<A, B>(a: A[], b: B[]): [A, B][] {
+  const result: [A, B][] = []
+  for (const a1 of a) {
+    for (const b1 of b) {
+      result.push([a1, b1])
+    }
+  }
+  return result
+}
+
 export function visitAll(obj: object, fn: (obj: unknown) => void): void {
   const seen = new LuaSet<object>()
   seen.add(obj)

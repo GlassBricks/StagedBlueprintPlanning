@@ -45,6 +45,10 @@ export interface HighlightEntities {
 
   /** Deconstruction planner sprite when an entity is deleted in the next stage (lastStage is set). Ignored if lastStage == firstStage. */
   stageDeleteHighlight?: LuaRenderObject
+
+  /** Item is requested. */
+  itemRequestHighlight?: LuaRenderObject
+  itemRequestHighlightOverlay?: LuaRenderObject
 }
 declare module "../entity/ProjectEntity" {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -75,6 +79,7 @@ export const enum HighlightConstants {
   ConfigChangedLater = "item/blueprint",
   UpgradedLater = "item/upgrade-planner",
   DeletedNextStage = "item/deconstruction-planner",
+  ItemRequest = "entity/item-request-proxy",
 }
 const highlightConfigs: {
   [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig
@@ -112,6 +117,20 @@ const highlightConfigs: {
     scale: 0.5,
     renderLayer: "entity-info-icon-above",
   },
+  itemRequestHighlight: {
+    type: "sprite",
+    sprite: HighlightConstants.ItemRequest,
+    offset: { x: 0.5, y: 0.1 },
+    scale: 0.8,
+    renderLayer: "entity-info-icon",
+  },
+  itemRequestHighlightOverlay: {
+    type: "sprite",
+    sprite: "",
+    offset: { x: 0.5, y: 0.05 },
+    scale: 0.5,
+    renderLayer: "entity-info-icon-above",
+  },
 }
 
 let selectionBoxes: PrototypeInfo["selectionBoxes"]
@@ -124,6 +143,7 @@ function createHighlight<T extends keyof HighlightEntities>(
   stage: StageNumber,
   surface: LuaSurface,
   type: T,
+  spriteNameOverride?: string,
 ): HighlightEntities[T] {
   const config = highlightConfigs[type]
   const existing = entity.getExtraEntity(type, stage)
@@ -163,7 +183,7 @@ function createHighlight<T extends keyof HighlightEntities>(
         target,
         x_scale: scale,
         y_scale: scale,
-        sprite: config.sprite,
+        sprite: spriteNameOverride ?? config.sprite,
         tint: config.tint,
         render_layer: config.renderLayer,
       })
@@ -277,12 +297,26 @@ export function EntityHighlights(project: Project): EntityHighlights {
       createHighlight(entity, stage, surface, "stageDeleteHighlight")
     }
   }
+  function updateStageRequestIndicator(entity: ProjectEntity): void {
+    entity.destroyAllExtraEntities("itemRequestHighlight")
+    entity.destroyAllExtraEntities("itemRequestHighlightOverlay")
+    const unstagedValue = entity.getPropertyAllStages("unstagedValue")
+    if (!unstagedValue) return
+    for (const [stage, value] of pairs(unstagedValue)) {
+      if (value.items?.[0]) {
+        createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlight")
+        const sampleItem = value.items[0].id.name as unknown as string
+        createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlightOverlay", `item/${sampleItem}`)
+      }
+    }
+  }
 
   function updateAllHighlights(entity: ProjectEntity): void {
     // ignore start and end stage for now
     updateErrorOutlines(entity)
     updateStageDiffHighlights(entity)
     updateStageDeleteIndicator(entity)
+    updateStageRequestIndicator(entity)
   }
 
   function deleteAllHighlights(entity: ProjectEntity): void {

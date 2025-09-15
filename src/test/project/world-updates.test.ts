@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { EventData, LuaEntity, LuaSurface } from "factorio:runtime"
+import { BlueprintInsertPlan, EventData, LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
@@ -33,13 +33,16 @@ import { clearModuleMock, doModuleMock, moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 
 interface TestEntity extends Entity {
-  name: "inserter" | "fast-inserter"
+  name: "inserter" | "fast-inserter" | "assembling-machine-3"
   override_stack_size?: number
+  recipe?: string
+  items?: BlueprintInsertPlan[]
 }
 let project: Project
 let entity: ProjectEntity<TestEntity>
 
 import _wireHandler = require("../../entity/wires")
+import { moduleInsertPlan, simpleInsertPlan } from "../entity/entity-util"
 
 const wireUpdater = moduleMock(_wireHandler, true)
 const entityHighlights = fMock<EntityHighlights>()
@@ -267,6 +270,36 @@ describe("updateWorldEntities", () => {
     entity.setFirstStageUnchecked(2)
     worldUpdates.refreshWorldEntityAtStage(entity, 1)
     assertHasPreview(1)
+  })
+
+  test("can insert modules", () => {
+    entity.setFirstValueDirectly({
+      name: "assembling-machine-3",
+      items: [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module-3")],
+    })
+
+    worldUpdates.updateWorldEntities(entity, 2)
+    const luaEntity = expect(findMainEntity(2)).toBeAny().getValue()
+
+    expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module-3")).toBe(4)
+  })
+
+  test("can insert modules and item requests", () => {
+    entity.setFirstValueDirectly({
+      name: "assembling-machine-3",
+      recipe: "iron-gear-wheel",
+      items: [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module-3")],
+    })
+    const plateInsertPlan = simpleInsertPlan(defines.inventory.crafter_input, "iron-plate", 0)
+    entity.setUnstagedValue(2, {
+      items: [plateInsertPlan],
+    })
+
+    worldUpdates.updateWorldEntities(entity, 2)
+    const luaEntity = expect(findMainEntity(2)).toBeAny().getValue()
+
+    expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module-3")).toBe(4)
+    expect(luaEntity.item_request_proxy?.insert_plan).toEqual([plateInsertPlan])
   })
 })
 

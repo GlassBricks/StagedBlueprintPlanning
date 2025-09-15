@@ -10,12 +10,11 @@
  */
 
 import {
-  AssemblingMachineBlueprintEntity,
   BlueprintEntity,
   BlueprintEntityWrite,
   BlueprintInsertPlan,
   BlueprintInsertPlanWrite,
-  InventoryPosition,
+  LuaEntity,
   LuaSurface,
   ScriptRaisedBuiltEvent,
 } from "factorio:runtime"
@@ -35,10 +34,11 @@ import {
   saveEntity,
   updateEntity,
 } from "../../entity/save-load"
-import { assert, Events } from "../../lib"
+import { assert, crossProduct, Events } from "../../lib"
 import { UserProject } from "../../project/ProjectDef"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { createRollingStocks } from "./createRollingStock"
+import { moduleInsertPlan, simpleInsertPlan } from "./entity-util"
 
 let surface: LuaSurface
 let itemRequestProxyExpected = false
@@ -87,16 +87,6 @@ test("saving an entity with knownValue", () => {
   const [saved] = saveEntity(entity, knownValue)
   expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
 })
-
-function crossProduct<A, B>(a: A[], b: B[]): [A, B][] {
-  const result: [A, B][] = []
-  for (const a1 of a) {
-    for (const b1 of b) {
-      result.push([a1, b1])
-    }
-  }
-  return result
-}
 
 test("saving an entity with higher quality", () => {
   const entity = surface.create_entity({
@@ -927,169 +917,133 @@ test("can flip loader", () => {
   expect(updated.rotatable).toBe(false)
 })
 
-describe("modules", () => {
-  function moduleInsertPlan(
-    inventory: defines.inventory,
-    numItems: number,
-    startIndex: number,
-    item: string,
-  ): BlueprintInsertPlan {
-    return {
-      id: { name: item },
-      items: {
-        in_inventory: Array.from(
-          { length: numItems },
-          (_, i) => ({ inventory, stack: startIndex + i }) satisfies InventoryPosition,
-        ),
-      },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
-  }
-
+describe("item-requests", () => {
   const moduleInsertPlan1 = [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module")]
   const moduleInsertPlan2 = [
     moduleInsertPlan(defines.inventory.crafter_modules, 2, 0, "speed-module"),
     moduleInsertPlan(defines.inventory.crafter_modules, 2, 2, "speed-module-2"),
   ]
+  const itemInsertPlan1 = [simpleInsertPlan(defines.inventory.crafter_input, "iron-plate", 0, 2)]
+  const itemInsertPlan2 = [simpleInsertPlan(defines.inventory.crafter_input, "copper-cable", 1, 2)]
 
-  test("can create an entity with modules", () => {
-    const luaEntity = createEntity(
-      surface,
-      { x: 0.5, y: 0.5 },
-      defines.direction.north,
-      {
-        name: "assembling-machine-3",
-        items: moduleInsertPlan1,
-      } as Entity,
-      nil,
-    )!
+  const moduleInsertPlans = [moduleInsertPlan1, moduleInsertPlan2] as const
+  const itemInsertPlans = [itemInsertPlan1, itemInsertPlan2] as const
 
-    expect(luaEntity).toBeAny()
-    expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module")).toBe(4)
-    expect(luaEntity.item_request_proxy).toBeNil()
-  })
+  type TestCase = [modules: false | 0 | 1, itemRequests: false | 0 | 1]
 
-  test("can change modules", () => {
-    const entity = createEntity(
-      surface,
-      { x: 0.5, y: 0.5 },
-      defines.direction.north,
-      {
-        name: "assembling-machine-3",
-        items: moduleInsertPlan1,
-      } as Entity,
-      nil,
-    )!
-
-    const newEntity = updateEntity(
-      entity,
-      {
-        name: "assembling-machine-3",
-        items: moduleInsertPlan2,
-      } as Entity,
-      nil,
-      defines.direction.north,
-    )[0]
-
-    expect(entity).toBe(newEntity)
-
-    const moduleInv = entity.get_module_inventory()!
-    expect(moduleInv.get_item_count()).toBe(4)
-    expect(moduleInv.get_item_count("speed-module")).toBe(2)
-    expect(moduleInv.get_item_count("speed-module-2")).toBe(2)
-    expect(entity.item_request_proxy).toBeNil()
-  })
-
-  function simpleInsertPlan(
-    inventory: defines.inventory,
-    item: string,
-    slot: number,
-    count?: number,
-  ): BlueprintInsertPlan {
-    return {
-      id: { name: item },
-      items: { in_inventory: [{ inventory, stack: slot, count }] },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  function checkModuleRequests(entity: LuaEntity, selected: false | 0 | 1) {
+    const inventory = entity.get_module_inventory()!
+    if (selected == false) {
+      expect(inventory.get_contents()).toEqual({})
+    } else if (selected == 0) {
+      expect(inventory.get_item_count()).toBe(4)
+      expect(inventory.get_item_count("productivity-module")).toBe(4)
+    } else {
+      expect(inventory.get_item_count()).toBe(4)
+      expect(inventory.get_item_count("speed-module")).toBe(2)
+      expect(inventory.get_item_count("speed-module-2")).toBe(2)
+    }
   }
 
-  const itemInsertPlan1 = simpleInsertPlan(defines.inventory.crafter_input, "iron-plate", 0, 2)
-  const itemInsertPlan2 = simpleInsertPlan(defines.inventory.crafter_input, "copper-cable", 1, 2)
-  test("can create modules and item requests", () => {
+  function checkItemRequests(entity: LuaEntity, selected: false | 0 | 1) {
+    const proxy = entity.item_request_proxy
+    if (selected == false) {
+      expect(proxy).toBeNil()
+    } else {
+      const plan = itemInsertPlans[selected]
+      expect(proxy?.insert_plan).toEqual(plan)
+
+      itemRequestProxyExpected = true
+    }
+  }
+
+  test.each<TestCase>([
+    [false, 0],
+    [0, false],
+    [0, 0],
+  ])("creating entity with modules: %s, itemsRequests %s", (modules, itemRequests) => {
     const luaEntity = createEntity(
       surface,
       { x: 0.5, y: 0.5 },
-      0,
+      defines.direction.north,
       {
         name: "assembling-machine-3",
-        items: moduleInsertPlan1,
         recipe: "electronic-circuit",
-      } as AssemblingMachineBlueprintEntity,
-      { items: [itemInsertPlan1] },
+        items: modules != false ? moduleInsertPlans[modules] : nil,
+      } as Entity,
+      itemRequests != false ? { items: itemInsertPlans[itemRequests] } : nil,
     )!
+
     expect(luaEntity).toBeAny()
-    expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module")).toBe(4)
-
-    itemRequestProxyExpected = true
-    const proxy = luaEntity.item_request_proxy!
-    expect(proxy.insert_plan).toEqual([itemInsertPlan1])
+    checkItemRequests(luaEntity, itemRequests)
+    checkModuleRequests(luaEntity, modules)
   })
 
-  test("can change modules and item requests", () => {
+  test("creating entity with only item requests and no settings", () => {
     const luaEntity = createEntity(
       surface,
       { x: 0.5, y: 0.5 },
-      0,
+      defines.direction.north,
       {
-        name: "assembling-machine-3",
-        items: moduleInsertPlan1,
-        recipe: "electronic-circuit",
-      } as AssemblingMachineBlueprintEntity,
-      { items: [itemInsertPlan1] },
+        name: "iron-chest",
+      } as Entity,
+      { items: itemInsertPlans[0] },
     )!
 
-    const newEntity = updateEntity(
-      luaEntity,
-      {
-        name: "assembling-machine-3",
-        items: moduleInsertPlan2,
-        recipe: "advanced-circuit",
-      } as AssemblingMachineBlueprintEntity,
-      { items: [itemInsertPlan2] },
-      0,
-    )[0]
-
-    expect(newEntity).toBe(luaEntity)
-    const moduleInv = luaEntity.get_module_inventory()!
-    expect(moduleInv.get_item_count()).toBe(4)
-    expect(moduleInv.get_item_count("speed-module")).toBe(2)
-    expect(moduleInv.get_item_count("speed-module-2")).toBe(2)
-
-    itemRequestProxyExpected = true
-    const proxy = luaEntity.item_request_proxy!
-    expect(proxy.insert_plan).toEqual([itemInsertPlan2])
+    expect(luaEntity).toBeAny()
+    checkItemRequests(luaEntity, 0)
   })
 
-  test("can remove item requests", () => {
-    const luaEntity = createEntity(
-      surface,
-      { x: 0.5, y: 0.5 },
-      0,
-      { name: "assembling-machine-3" } as AssemblingMachineBlueprintEntity,
-      { items: [itemInsertPlan1] },
-    )!
-    const newEntity = updateEntity(
-      luaEntity,
-      {
-        name: "assembling-machine-3",
-        items: moduleInsertPlan2,
-        recipe: "advanced-circuit",
-      } as AssemblingMachineBlueprintEntity,
-      nil,
-      0,
-    )[0]
+  // lots of cases since lots of bugs...
+  test.each<[...TestCase, ...TestCase]>([
+    // creation
+    [false, false, false, 0],
+    [false, false, 0, false],
+    [false, false, 0, 0],
+    // deletion
+    [0, 0, false, false],
+    [0, false, false, false],
+    [false, 0, false, false],
+    // changing
+    [0, 0, 1, 1],
+    [0, false, 1, false],
+    [false, 0, false, 1],
+    [0, 0, 0, 1],
+    [0, 0, 1, 0],
+    // combination
+    [0, 0, false, 1],
+    [0, false, false, 1],
+    [false, 0, 1, false],
+    [false, false, 1, 1],
+  ])(
+    "changing from (modules: %s, itemRequests: %s) to (modules: %s, itemRequests: %s)",
+    (oldModules, oldItemRequests, newModules, newItemRequests) => {
+      const entity = createEntity(
+        surface,
+        { x: 0.5, y: 0.5 },
+        defines.direction.north,
+        {
+          name: "assembling-machine-3",
+          recipe: "electronic-circuit",
+          items: oldModules ? moduleInsertPlans[oldModules] : nil,
+        } as Entity,
+        oldItemRequests ? { items: itemInsertPlans[oldItemRequests] } : nil,
+      )!
+      const newEntity = updateEntity(
+        entity,
+        {
+          name: "assembling-machine-3",
+          items: newModules ? moduleInsertPlans[newModules] : nil,
+        } as Entity,
+        newItemRequests ? { items: itemInsertPlans[newItemRequests] } : nil,
+        defines.direction.north,
+      )[0]!
 
-    expect(newEntity).toBe(luaEntity)
-    expect(luaEntity.item_request_proxy).toBeNil()
-  })
+      expect(newEntity).toBeAny()
+      checkItemRequests(newEntity, newItemRequests)
+      checkModuleRequests(newEntity, newModules)
+    },
+  )
 })
 
 test("can save an entity with modules", () => {
@@ -1129,20 +1083,6 @@ test("can save an entity with modules", () => {
       quality: "normal",
     },
   ])
-})
-
-// TODO: once adding functionality to create item requests, improve this test
-test("saveEntity returns unstaged values when present", () => {
-  const entity = surface.create_entity({
-    name: "assembling-machine-1",
-    position: { x: 0.5, y: 0.5 },
-    force: "player",
-  })!
-
-  const [saved, unstagedValue] = saveEntity(entity)
-  expect(saved).toEqual({ name: "assembling-machine-1" })
-  // In normal cases without item requests, unstaged value should be nil
-  expect(unstagedValue).toBeNil()
 })
 
 test("updating rolling stock does nothing", () => {

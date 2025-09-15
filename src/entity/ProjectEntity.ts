@@ -173,6 +173,7 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
 
   setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
+  getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 }
@@ -203,7 +204,7 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
 const { raise_script_destroy } = script
 
 // kinda messy
-// 4 years ago was only so kind
+// 4 years ago me was only so kind
 @RegisterClass("AssemblyEntity")
 class ProjectEntityImpl<T extends Entity = Entity>
   extends BaseStagedValue<T, StageDiff<T>>
@@ -586,6 +587,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
   }
 
   setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean {
+    if (stage < this.firstStage || (this.lastStage && stage > this.lastStage)) return false
     return this.setProperty("unstagedValue", stage, value)
   }
 
@@ -728,14 +730,14 @@ class ProjectEntityImpl<T extends Entity = Entity>
       if (!stageProperties) return false
       const byType = stageProperties[key]
       if (!byType) return false
-      const changed = byType[stage] != value
+      const changed = byType[stage] != nil
       delete byType[stage]
       if (isEmpty(byType)) delete stageProperties[key]
       return changed
     } else {
       const stageProperties = this.stageProperties ?? (this.stageProperties = {})
       const byType: PRecord<StageNumber, StageProperties[T]> = stageProperties[key] || (stageProperties[key] = {})
-      const changed = byType[stage] != value
+      const changed = !deepCompare(byType[stage], value)
       byType[stage] = value
       return changed
     }
@@ -745,6 +747,9 @@ class ProjectEntityImpl<T extends Entity = Entity>
     if (!stageProperties) return nil
     const byType = stageProperties[key]
     return byType && byType[stage]
+  }
+  getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil {
+    return this.stageProperties?.[key]
   }
   propertySetInAnyStage(key: keyof StageProperties): boolean {
     const stageProperties = this.stageProperties

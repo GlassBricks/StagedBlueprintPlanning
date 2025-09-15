@@ -19,6 +19,7 @@ import {
   shiftNumberKeysDown,
   shiftNumberKeysUp,
 } from "../lib"
+import { UnstagedEntityProps } from "./Entity"
 import { StageNumber } from "./ProjectEntity"
 
 export interface StagedValue<T, D> {

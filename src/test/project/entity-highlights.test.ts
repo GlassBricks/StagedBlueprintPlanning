@@ -30,6 +30,7 @@ let entity: ProjectEntity<FooEntity>
 let project: Project
 
 import _highlightCreator = require("../../project/create-highlight")
+import { simpleInsertPlan } from "../entity/entity-util"
 
 const highlightCreator = moduleMock(_highlightCreator, false)
 
@@ -274,6 +275,17 @@ describe("settings remnants", () => {
     for (let i = 1; i <= 5; i++) {
       expect(entity.getExtraEntity("settingsRemnantHighlight", i)).toBeNil()
     }
+  })
+})
+describe("stage request highlights", () => {
+  test("sets highlight when stage is requested", () => {
+    entity.setUnstagedValue(3, {
+      items: [simpleInsertPlan(defines.inventory.item_main, "iron-plate", 0)],
+    })
+    entityHighlights.updateAllHighlights(entity)
+    expect(entity.getExtraEntity("itemRequestHighlight", 3)).toBeAny()
+    expect(entity.getExtraEntity("itemRequestHighlightOverlay", 3)).toBeAny()
+    expect(entity.getExtraEntity("itemRequestHighlightOverlay", 3)?.sprite == "item/iron-plate")
   })
 })
 

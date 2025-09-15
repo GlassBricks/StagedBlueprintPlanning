@@ -12,11 +12,11 @@
 import { BlueprintEntity, LuaEntity, nil } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
 import {
-  newProjectEntity as newProjectEntity,
   getNameAndQuality,
   InserterProjectEntity,
   LoaderProjectEntity,
   NameAndQuality,
+  newProjectEntity,
   ProjectEntity,
   RollingStockProjectEntity,
   StageDiffs,
@@ -28,7 +28,7 @@ import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
-import { StageInfoExport, fromExportStageDiffs } from "../import-export/entity"
+import { fromExportStageDiffs, StageInfoExport } from "../import-export/entity"
 import { Pos, Position } from "../lib/geometry"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
