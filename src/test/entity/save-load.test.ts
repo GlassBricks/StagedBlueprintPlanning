@@ -889,6 +889,33 @@ describe("item-requests", () => {
       checkModuleRequests(newEntity, newModules)
     },
   )
+
+  test("Updating an entity removes items if it matches requests exactly", () => {
+    const chest = surface.create_entity({
+      name: "iron-chest",
+      position: { x: 0.5, y: 0.5 },
+      force: "player",
+    })!
+    const slot = 2
+    const itemCount = 2
+    chest.get_inventory(defines.inventory.chest)![slot].set_stack({ name: "iron-plate", count: itemCount })
+    chest.get_inventory(defines.inventory.chest)![slot + 1].set_stack({ name: "copper-plate", count: itemCount })
+    const insertPlan = simpleInsertPlan(defines.inventory.chest, "iron-plate", slot, itemCount)
+
+    const newEntity = updateEntity(
+      chest,
+      { name: "iron-chest" } as Entity,
+      { items: [insertPlan] },
+      defines.direction.north,
+    )[0]!
+
+    expect(newEntity).toBe(chest)
+    expect(chest.get_inventory(defines.inventory.chest)!.get_item_count("iron-plate")).toBe(0)
+    expect(chest.get_inventory(defines.inventory.chest)!.get_item_count("copper-plate")).toBe(itemCount)
+    expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
+    itemRequestProxyExpected = true
+  })
 })
 
 test("can save an entity with modules", () => {

@@ -9,8 +9,10 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { EntityType } from "factorio:prototype"
 import { LocalisedString, LuaEntity, TilePosition, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
+import { UnstagedEntityProps } from "../entity/Entity"
 import {
   isWorldEntityProjectEntity,
   ProjectEntity,
@@ -27,8 +29,6 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
-import { EntityType } from "factorio:prototype"
-import { UnstagedEntityProps } from "../entity/Entity"
 
 /** @noSelf */
 export interface WorldUpdates {
@@ -250,7 +250,8 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     const hasError = updateWorldEntitiesInRange(entity, 1, project.lastStageFor(entity))
     // performance: if there are no errors, then there are no highlights to update
     // (no stage diff or last stage, either)
-    if (hasError) updateAllHighlights(entity)
+    const mayHaveHighlights = hasError || entity.getPropertyAllStages("unstagedValue") != nil
+    if (mayHaveHighlights) updateAllHighlights(entity)
   }
 
   function refreshWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {

@@ -16,11 +16,16 @@ import { Entity } from "../../entity/Entity"
 import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
 import { EntityHighlights, HighlightEntities } from "../../project/entity-highlights"
-
 import { Project } from "../../project/ProjectDef"
+import { simpleInsertPlan } from "../entity/entity-util"
 import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
-import { assertConfigChangedHighlightsCorrect, assertErrorHighlightsCorrect } from "./entity-highlight-test-util"
+import {
+  assertConfigChangedHighlightsCorrect,
+  assertErrorHighlightsCorrect,
+  assertItemRequestHighlightsCorrect,
+  assertLastStageHighlightCorrect,
+} from "./entity-highlight-test-util"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 
 interface FooEntity extends Entity {
@@ -30,7 +35,6 @@ let entity: ProjectEntity<FooEntity>
 let project: Project
 
 import _highlightCreator = require("../../project/create-highlight")
-import { simpleInsertPlan } from "../entity/entity-util"
 
 const highlightCreator = moduleMock(_highlightCreator, false)
 
@@ -233,7 +237,7 @@ describe("stage delete highlights", () => {
   test("sets highlight if lastStage is set", () => {
     entity.setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(entity)
-    expect(entity.getExtraEntity("stageDeleteHighlight", 3)).toBeAny()
+    assertLastStageHighlightCorrect(entity)
   })
 
   test("removes highlight if lastStage is cleared", () => {
@@ -241,13 +245,13 @@ describe("stage delete highlights", () => {
     entityHighlights.updateAllHighlights(entity)
     entity.setLastStageUnchecked(nil)
     entityHighlights.updateAllHighlights(entity)
-    expect(entity.getExtraEntity("stageDeleteHighlight", 3)).toBeNil()
+    assertLastStageHighlightCorrect(entity)
   })
 
   test("does not create highlight if lastStage == firstStage", () => {
     entity.setLastStageUnchecked(2)
     entityHighlights.updateAllHighlights(entity)
-    expect(entity.getExtraEntity("stageDeleteHighlight", 2)).toBeNil()
+    assertLastStageHighlightCorrect(entity)
   })
 })
 
@@ -283,9 +287,7 @@ describe("stage request highlights", () => {
       items: [simpleInsertPlan(defines.inventory.item_main, "iron-plate", 0)],
     })
     entityHighlights.updateAllHighlights(entity)
-    expect(entity.getExtraEntity("itemRequestHighlight", 3)).toBeAny()
-    expect(entity.getExtraEntity("itemRequestHighlightOverlay", 3)).toBeAny()
-    expect(entity.getExtraEntity("itemRequestHighlightOverlay", 3)?.sprite == "item/iron-plate")
+    assertItemRequestHighlightsCorrect(entity, 5)
   })
 })
 

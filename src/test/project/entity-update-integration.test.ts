@@ -15,6 +15,7 @@ import {
   LuaEntity,
   LuaPlayer,
   LuaSurface,
+  MapPositionArray,
   PlayerIndex,
   SurfaceCreateEntity,
   UndergroundBeltBlueprintEntity,
@@ -31,7 +32,7 @@ import {
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
-import { canBeAnyDirection, checkUndergroundPairFlippable, saveEntity } from "../../entity/save-load"
+import { canBeAnyDirection, checkUndergroundPairFlippable, saveEntity, updateEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
 import { assert, Events, Mutable } from "../../lib"
@@ -47,9 +48,11 @@ import { _deleteAllProjects, createUserProject } from "../../project/UserProject
 
 import { debugPrint } from "../../lib/test/misc"
 import { createRollingStock } from "../entity/createRollingStock"
+import { simpleInsertPlan } from "../entity/entity-util"
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
+  assertItemRequestHighlightsCorrect,
   assertLastStageHighlightCorrect,
   assertNoHighlightsAfterLastStage,
 } from "./entity-highlight-test-util"
@@ -132,6 +135,7 @@ function assertEntityCorrect(entity: ProjectEntity, expectError: number | false)
   assertConfigChangedHighlightsCorrect(entity, project.lastStageFor(entity))
   assertLastStageHighlightCorrect(entity)
   assertNoHighlightsAfterLastStage(entity, project.numStages())
+  assertItemRequestHighlightsCorrect(entity, project.lastStageFor(entity))
 
   // circuit wires
   const wireConnections = entity.wireConnections
@@ -1922,4 +1926,82 @@ test("paste a rotated assembler", () => {
   expect(projectAsm2?.direction).toBe(defines.direction.east)
 
   expect(asm2.direction).toBe(defines.direction.east)
+})
+
+describe("item-requests", () => {
+  const slot = 2
+  const count = 2
+  const insertPlan = simpleInsertPlan(defines.inventory.chest, "iron-plate", slot, count)
+  function buildChestWithItemRequests(): ProjectEntity {
+    const chest = buildEntity(1, {
+      position: [0.5, 0.5],
+      name: "iron-chest",
+    })
+    assert(chest)
+
+    return chest
+  }
+
+  test("can save an entity with item requests", () => {
+    const projectChest = buildChestWithItemRequests()
+    const chest = projectChest.getWorldEntity(2)! // different stage on purpose
+    updateEntity(
+      chest,
+      { name: "iron-chest" },
+      {
+        items: [insertPlan],
+      },
+      0,
+    )
+    assert(chest.item_request_proxy)
+
+    checkForEntityUpdates(chest, nil)
+
+    expect(projectChest.getPropertyAllStages("unstagedValue")).toEqual({ 2: { items: [insertPlan] } })
+    expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
+    assertEntityCorrect(projectChest, false)
+  })
+
+  test("saves a pasted chest with item request", () => {
+    const pos: MapPositionArray = [0.5, 0.5]
+    const stack = player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities([
+      {
+        entity_number: 1,
+        name: "iron-chest",
+        position: pos,
+        items: [insertPlan],
+      },
+    ])
+    player.teleport([0, 0], surfaces[0])
+    player.build_from_cursor({ position: pos })
+
+    const chest = surfaces[0].find_entity("iron-chest", pos)!
+    expect(chest).not.toBeNil()
+    expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+    const projectChest = project.content.findCompatibleWithLuaEntity(chest, nil, 1)!
+    expect(projectChest).not.toBeNil()
+    expect(projectChest.getUnstagedValue(1)).toEqual({ items: [insertPlan] })
+
+    assertEntityCorrect(projectChest, false)
+  })
+
+  test("rebuilding an entity with item requests", () => {
+    const projectChest = buildChestWithItemRequests()
+    projectChest.setUnstagedValue(2, { items: [insertPlan] })
+    project.worldUpdates.updateWorldEntities(projectChest, 2)
+
+    const chest = projectChest.getWorldEntity(2)!
+    expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
+    project.worldUpdates.rebuildStage(2)
+
+    const newChest = projectChest.getWorldEntity(2)!
+    expect(newChest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+    expect(projectChest.getUnstagedValue(2)).toEqual({ items: [insertPlan] })
+
+    assertEntityCorrect(projectChest, false)
+  })
 })

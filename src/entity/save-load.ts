@@ -12,6 +12,7 @@
 import {
   AssemblingMachineBlueprintEntity,
   BlueprintEntity,
+  BlueprintInsertPlan,
   BlueprintInsertPlanWrite,
   BoundingBox,
   CargoWagonBlueprintEntity,
@@ -333,6 +334,31 @@ function matchModuleItems(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlan
   }
 }
 
+function removeItemsMatchingItemRequests(luaEntity: LuaEntity, requests: BlueprintInsertPlan[]) {
+  for (const {
+    id: { name, quality },
+    items: { in_inventory },
+  } of requests) {
+    const actualQuality = quality ?? "normal"
+    if (!in_inventory) return
+    for (const { inventory, stack, count } of in_inventory) {
+      const luaInventory = luaEntity.get_inventory(inventory)
+      if (!luaInventory) continue
+      if (stack >= luaInventory.length) continue
+      const luaStack = luaInventory[stack]
+      if (!luaStack.valid_for_read) continue
+      const actualCount = count ?? 1
+      if (
+        luaStack.count == actualCount &&
+        luaStack.name == (name as unknown as string) &&
+        luaStack.quality.name == actualQuality
+      ) {
+        luaStack.clear()
+      }
+    }
+  }
+}
+
 export function checkUndergroundPairFlippable(
   luaEntity: LuaEntity | nil,
 ): LuaMultiReturn<[neighbor: UndergroundBeltProjectEntity | nil, neighborIsFlippable: boolean]> {
@@ -458,8 +484,11 @@ export function updateEntity(
   const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, unstagedValue, luaEntity)
   if (ghost) ghost.destroy() // should not happen?
   matchModuleItems(luaEntity, value.items)
-  if (!unstagedValue?.items?.[0]) {
+  const hasOtherItemRequests = unstagedValue?.items?.[0]
+  if (!hasOtherItemRequests) {
     luaEntity.item_request_proxy?.destroy()
+  } else {
+    removeItemsMatchingItemRequests(luaEntity, unstagedValue.items)
   }
 
   return $multi(luaEntity)

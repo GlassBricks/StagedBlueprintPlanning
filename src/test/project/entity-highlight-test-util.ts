@@ -70,7 +70,6 @@ export function assertLastStageHighlightCorrect(entity: ProjectEntity): void {
   if (entity.lastStage != nil && entity.lastStage != entity.firstStage) {
     const highlight = expect(entity.getExtraEntity("stageDeleteHighlight", entity.lastStage)).toBeAny().getValue()!
     expect(highlight).toMatchTable({
-      object_name: "LuaRenderObject",
       sprite: HighlightConstants.DeletedNextStage,
     })
   } else {
@@ -86,5 +85,20 @@ export function assertNoHighlightsAfterLastStage(entity: ProjectEntity, maxStage
     expect(entity.getExtraEntity("errorOutline", stage)).toBeNil()
     expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).toBeNil()
     expect(entity.getExtraEntity("stageDeleteHighlight", stage)).toBeNil()
+  }
+}
+
+export function assertItemRequestHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
+  for (const stage of $range(1, maxStage)) {
+    const unstagedValue = entity.getUnstagedValue(stage)
+    if (!unstagedValue?.items?.[0]) {
+      expect(entity.getExtraEntity("itemRequestHighlight", stage)).toBeNil()
+      expect(entity.getExtraEntity("itemRequestHighlightOverlay", stage)).toBeNil()
+    } else {
+      expect(entity.getExtraEntity("itemRequestHighlight", stage)).toBeAny()
+      const overlay = expect(entity.getExtraEntity("itemRequestHighlightOverlay", stage)).toBeAny().getValue()!
+      const sampleItem = unstagedValue.items[0].id.name as unknown as string
+      expect(overlay.sprite).toBe(`item/${sampleItem}`)
+    }
   }
 }
