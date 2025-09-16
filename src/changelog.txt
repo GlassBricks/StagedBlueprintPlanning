@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.5.3
 Date: ????
-  Changes:
+  Features:
+    - Added support for item requests! Bot item requests for an entity will be saved (even if it's not a ghost), and show up in blueprints.
+    - Updating item requests only affects the current stage, unlike other settings.
+    - Modules are still staged (even though they are technically item requests).
 ---------------------------------------------------------------------------------------------------
 Version: 2.5.2
 Date: 2025-09-07
