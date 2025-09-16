@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 GlassBricks
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 import { EntityType } from "factorio:prototype"
 import { BlueprintEntity, BlueprintInsertPlan, InventoryPosition, LuaEntity } from "factorio:runtime"
 import { Mutable, PRecord, deepCopy, getName, nullableConcat } from "../lib"

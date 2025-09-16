@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 GlassBricks
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 import { BlueprintSignalIcon, SignalID } from "factorio:runtime"
 import { Position } from "../lib/geometry"
 import { L_GuiProjectSettings } from "../locale"

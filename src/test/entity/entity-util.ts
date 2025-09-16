@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 GlassBricks
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 import { BlueprintInsertPlan, InventoryPosition, BlueprintInsertPlanWrite } from "factorio:runtime"
 
 export function moduleInsertPlan(

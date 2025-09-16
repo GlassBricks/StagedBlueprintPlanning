@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 GlassBricks
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 import { BaseBlueprintEntity, LuaItemStack } from "factorio:runtime"
 import { updateBasicBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Entity } from "../entity/Entity"
