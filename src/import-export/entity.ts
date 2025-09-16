@@ -10,7 +10,7 @@
  */
 
 import { BlueprintWire, MapPosition } from "factorio:runtime"
-import { Entity } from "../entity/Entity"
+import { Entity, UnstagedEntityProps } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
 import { addWireConnection, newProjectEntity, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
 import { getDirectionalInfo } from "../entity/wire-connection"
@@ -23,8 +23,7 @@ export interface StageInfoExport<E extends Entity = Entity> {
   lastStage: StageNumber | nil
   firstValue?: E
   stageDiffs?: StageDiffsExport<E>
-  // TODO: handle export
-  // unstagedValue?: Record<number, UnstagedEntityProps>
+  unstagedValue?: UnstagedValueExport
 }
 
 export interface EntityExport extends StageInfoExport {
@@ -49,6 +48,8 @@ export type StageDiffExport<E extends Entity = Entity> = {
 }
 // type might be a string of a number instead, in case of "sparse" array
 export type StageDiffsExport<E extends Entity = Entity> = PRRecord<StageNumber | `${number}`, StageDiffExport<E>>
+
+export type UnstagedValueExport = PRRecord<StageNumber | `${number}`, UnstagedEntityProps>
 
 let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
@@ -84,6 +85,7 @@ export function fromExportStageDiffs(diffs: StageDiffsExport): StageDiffs {
 // Does NOT handle wires, as those are inter-entity
 export function exportEntity(entity: ProjectEntity, entityNumber: number = 0): EntityExport {
   const stageDiffs = entity.stageDiffs && toExportStageDiffs(entity.stageDiffs)
+  const unstagedValue = exportUnstagedValues(entity)
   return {
     entityNumber,
     position: entity.position,
@@ -92,6 +94,7 @@ export function exportEntity(entity: ProjectEntity, entityNumber: number = 0): E
     lastStage: entity.lastStage,
     firstValue: entity.firstValue,
     stageDiffs,
+    unstagedValue,
   }
 }
 
@@ -102,6 +105,10 @@ export function importEntity(info: EntityExport): ProjectEntity {
   const entity = newProjectEntity(info.firstValue, info.position, info.direction ?? 0, info.firstStage)
   entity.setLastStageUnchecked(info.lastStage)
   entity.setStageDiffsDirectly(stageDiffs)
+
+  if (info.unstagedValue) {
+    importUnstagedValues(entity, info.unstagedValue)
+  }
 
   return entity
 }
@@ -141,6 +148,19 @@ export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): Enti
     }
   }
   return result
+}
+
+export function exportUnstagedValues(entity: ProjectEntity): UnstagedValueExport | nil {
+  return entity.getPropertyAllStages("unstagedValue")
+}
+
+export function importUnstagedValues(entity: ProjectEntity, unstagedValues: UnstagedValueExport): void {
+  for (const [stage, unstagedValue] of pairs(unstagedValues)) {
+    const stageNumber = tonumber(stage)
+    if (stageNumber != nil) {
+      entity.setUnstagedValue(stageNumber, unstagedValue)
+    }
+  }
 }
 
 export function importAllEntities(content: MutableProjectContent, entities: EntitiesExport): void {

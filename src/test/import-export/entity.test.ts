@@ -12,17 +12,18 @@
 import expect from "tstl-expect"
 import { addWireConnection, newProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
 import {
-  exportEntity,
   EntityExport,
+  exportAllEntities,
+  exportEntity,
   ExportNilPlaceholder,
-  StageDiffsExport,
   fromExportStageDiffs,
   importEntity,
   isExportNilPlaceholder,
+  StageDiffsExport,
   toExportStageDiffs,
-  exportAllEntities,
 } from "../../import-export/entity"
 import { getNilPlaceholder } from "../../utils/diff-value"
+import { simpleInsertPlan } from "../entity/entity-util"
 
 test("isNilPlaceholder", () => {
   expect(isExportNilPlaceholder({})).toBe(false)
@@ -101,6 +102,7 @@ describe("exportEntity and importEntity", () => {
       },
       firstStage: 1,
       lastStage: 5,
+      unstagedValue: nil,
     })
     const imported = importEntity(exportedEntity)
     expect(imported).toMatchTable({
@@ -147,4 +149,59 @@ test("exportAllEntities", () => {
 
   expect(export1.wires).toEqual([[1, fromId, 2, toId]])
   expect(export2.wires).toEqual([[2, toId, 1, fromId]])
+})
+
+describe("unstaged value export/import", () => {
+  it("should export and import unstaged values correctly", () => {
+    const entity = newProjectEntity({ name: "fast-inserter" }, { x: 1, y: 2 }, 0, 1)
+    entity.setLastStageUnchecked(3)
+
+    // Add unstaged values for different stages
+    const unstagedValue1 = { items: [simpleInsertPlan(defines.inventory.chest, "iron-ore", 0, 10)] }
+    const unstagedValue2 = { items: [simpleInsertPlan(defines.inventory.chest, "copper-ore", 1, 20)] }
+
+    entity.setUnstagedValue(1, unstagedValue1)
+    entity.setUnstagedValue(3, unstagedValue2)
+
+    const exported = exportEntity(entity, 42)
+    expect(exported.unstagedValue).toEqual({
+      1: unstagedValue1,
+      3: unstagedValue2,
+    })
+
+    const imported = importEntity(exported)
+    expect(imported.getUnstagedValue(1)).toEqual(unstagedValue1)
+    expect(imported.getUnstagedValue(2)).toBeNil()
+    expect(imported.getUnstagedValue(3)).toEqual(unstagedValue2)
+  })
+
+  it("should handle entity with no unstaged values", () => {
+    const entity = newProjectEntity({ name: "fast-inserter" }, { x: 1, y: 2 }, 0, 1)
+    const exported = exportEntity(entity)
+
+    expect(exported.unstagedValue).toBeNil()
+
+    const imported = importEntity(exported)
+    expect(imported.getUnstagedValue(1)).toBeNil()
+  })
+
+  it("should handle partial unstaged values across stages", () => {
+    const entity = newProjectEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, 0, 2)
+    entity.setLastStageUnchecked(5)
+
+    // Only set unstaged value for stage 4
+    const unstagedValue = { items: [simpleInsertPlan(defines.inventory.crafter_input, "iron-plate", 0, 50)] }
+    entity.setUnstagedValue(4, unstagedValue)
+
+    const exported = exportEntity(entity)
+    expect(exported.unstagedValue).toEqual({
+      4: unstagedValue,
+    })
+
+    const imported = importEntity(exported)
+    expect(imported.getUnstagedValue(2)).toBeNil()
+    expect(imported.getUnstagedValue(3)).toBeNil()
+    expect(imported.getUnstagedValue(4)).toEqual(unstagedValue)
+    expect(imported.getUnstagedValue(5)).toBeNil()
+  })
 })
