@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { shallowCopy } from "../_util"
 import { Func, RegisterClass } from "../references"
+import { shallowCopy } from "../_util"
 import { Subscription } from "./Subscription"
 
 type AnyObserver = Func<(...args: any) => void>

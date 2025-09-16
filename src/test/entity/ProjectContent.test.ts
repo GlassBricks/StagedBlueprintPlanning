@@ -5,7 +5,7 @@
 
 import expect, { mock } from "tstl-expect"
 import { LuaEntityInfo } from "../../entity/Entity"
-import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
+import { MutableProjectContent, newProjectContent, _assertCorrect } from "../../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { createProjectTile } from "../../entity/ProjectTile"
 import { getPrototypeRotationType, RotationType } from "../../entity/prototype-info"

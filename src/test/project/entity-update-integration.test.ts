@@ -38,7 +38,7 @@ import { EntityUpdateResult, StageMoveResult } from "../../project/project-updat
 
 import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo } from "../../project/undo"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
 
 import { debugPrint } from "../../lib/test/misc"
 import { createRollingStock } from "../entity/createRollingStock"

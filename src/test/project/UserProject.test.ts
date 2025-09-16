@@ -8,7 +8,7 @@ import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
 import { getReferencedStage } from "../../blueprints/stage-reference"
 import { getProjectById, getStageAtSurface } from "../../project/project-refs"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
-import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
+import { createUserProject, ProjectEvents, _deleteAllProjects } from "../../project/UserProject"
 import { getCurrentValues } from "../../utils/properties-obj"
 
 let eventListener: MockNoSelf<AnySelflessFun>

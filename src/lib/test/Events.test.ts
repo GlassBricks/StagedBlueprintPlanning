@@ -5,7 +5,7 @@
 
 /** @noSelfInFile */
 import expect from "tstl-expect"
-import { _setCanRegister, Events } from "../Events"
+import { Events, _setCanRegister } from "../Events"
 
 const eventId = defines.events.script_raised_teleported
 after_each(() => {

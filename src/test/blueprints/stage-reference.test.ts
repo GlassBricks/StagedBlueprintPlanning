@@ -13,7 +13,7 @@ import {
 } from "../../blueprints/stage-reference"
 import { Prototypes } from "../../constants"
 import { getPlayer } from "../../lib/test/misc"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
 import { temporaryItemStack } from "../test-util"
 
 let player: LuaPlayer

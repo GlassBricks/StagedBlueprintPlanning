@@ -4,7 +4,7 @@
 
 import { EntityType } from "factorio:prototype"
 import { BlueprintEntity, BlueprintInsertPlan, InventoryPosition, LuaEntity } from "factorio:runtime"
-import { Mutable, PRecord, deepCopy, getName, nullableConcat } from "../lib"
+import { deepCopy, getName, Mutable, nullableConcat, PRecord } from "../lib"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "./prototype-info"
 
 let nameToType: PrototypeInfo["nameToType"]

@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { MutableProperty, property } from "../../lib"
-import { DiffedProperty } from "../../utils/DiffedProperty"
 import expect from "tstl-expect"
+import { MutableProperty, property } from "../../lib"
 import { DiffValue, getNilPlaceholder, NilPlaceholder } from "../../utils/diff-value"
+import { DiffedProperty } from "../../utils/DiffedProperty"
 
 let override: MutableProperty<DiffValue<boolean | nil>>
 let defaultValue: MutableProperty<boolean>

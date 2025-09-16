@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { isEmpty, mutableShallowCopy } from "../_util"
 import { bind, Callback, Func, funcRef, ibind, RegisterClass, registerFunctions } from "../references"
+import { isEmpty, mutableShallowCopy } from "../_util"
 import { Event, Subscribable } from "./Event"
 import { Subscription } from "./Subscription"
 

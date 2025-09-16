@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { LocalisedString, LuaInventory, LuaItemStack, LuaPlayer, UnitNumber } from "factorio:runtime"
+import { UnstagedEntityProps } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { isEmpty, RegisterClass } from "../lib"
 import { BBox } from "../lib/geometry"
@@ -20,7 +21,6 @@ import {
 } from "./blueprint-settings"
 import { getReferencedStage } from "./stage-reference"
 import { BlueprintTakeResult, takeSingleBlueprint } from "./take-single-blueprint"
-import { UnstagedEntityProps } from "../entity/Entity"
 import max = math.max
 
 class Ref<T extends AnyNotNil> {

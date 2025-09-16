@@ -5,7 +5,6 @@
 
 import { LuaPlayer, OnGuiClickEvent, PlayerIndex, ScrollPaneGuiElement } from "factorio:runtime"
 import * as mod_gui from "mod-gui"
-import { showImportBlueprintWindow } from "./blueprint-string"
 import { OtherConstants, Styles } from "../constants"
 import { bind, ibind, RegisterClass } from "../lib"
 import {
@@ -30,6 +29,7 @@ import {
   moveProjectUp,
   ProjectEvents,
 } from "../project/UserProject"
+import { showImportBlueprintWindow } from "./blueprint-string"
 import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./ProjectSettings"
 import mouse_button_type = defines.mouse_button_type

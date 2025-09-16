@@ -6,7 +6,7 @@ import { LuaItemStack } from "factorio:runtime"
 import { getErrorWithStacktrace } from "../lib"
 import { UserProject } from "../project/ProjectDef"
 import { convertBookToProjectDataOnly } from "./from-blueprint-book"
-import { ProjectExport, importProjectDataOnly } from "./project"
+import { importProjectDataOnly, ProjectExport } from "./project"
 
 function doImport(fn: () => UserProject): UserProject | string {
   const [success, result] = xpcall(fn, getErrorWithStacktrace)

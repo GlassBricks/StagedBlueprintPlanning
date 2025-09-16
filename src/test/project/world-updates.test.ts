@@ -22,6 +22,7 @@ import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
 import { WorldUpdates } from "../../project/world-updates"
 import { createRollingStock } from "../entity/createRollingStock"
+import { moduleInsertPlan, simpleInsertPlan } from "../entity/entity-util"
 import { fMock } from "../f-mock"
 import { clearModuleMock, doModuleMock, moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
@@ -36,7 +37,6 @@ let project: Project
 let entity: ProjectEntity<TestEntity>
 
 import _wireHandler = require("../../entity/wires")
-import { moduleInsertPlan, simpleInsertPlan } from "../entity/entity-util"
 
 const wireUpdater = moduleMock(_wireHandler, true)
 const entityHighlights = fMock<EntityHighlights>()

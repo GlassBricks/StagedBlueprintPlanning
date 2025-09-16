@@ -4,11 +4,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { BlueprintEntity, LuaEntity, LuaItemStack, LuaSurface, MapPosition, UnitNumber } from "factorio:runtime"
+import { UnstagedEntityProps } from "../entity/Entity"
+import { addItemRequests } from "../entity/item-requests"
 import { isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeSettings, getIconsFromSettings } from "./blueprint-settings"
-import { UnstagedEntityProps } from "../entity/Entity"
-import { addItemRequests } from "../entity/item-requests"
 
 export const FirstEntityOriginalPositionTag = "bp100_FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(

@@ -12,7 +12,7 @@ import {
   OnGuiTextChangedEvent,
 } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
-import { _numObservers, property } from "../../event"
+import { property, _numObservers } from "../../event"
 import {
   ButtonElement,
   ChooseElemButtonElement,

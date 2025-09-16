@@ -14,11 +14,11 @@ declare global {
 }
 
 import { VersionString } from "factorio:common"
+import "./blueprints"
 import { Events } from "./lib"
 import { formatVersion, Migrations } from "./lib/migration"
 import "./project"
 import "./ui"
-import "./blueprints"
 
 pcall(require, "test.test-init")
 

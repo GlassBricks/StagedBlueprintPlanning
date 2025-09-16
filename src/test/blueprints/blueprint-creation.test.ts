@@ -12,12 +12,12 @@ import {
 } from "../../blueprints/blueprint-creation"
 import { createStageReference, getReferencedStage } from "../../blueprints/stage-reference"
 import { addWireConnection } from "../../entity/ProjectEntity"
-import { simpleInsertPlan } from "../entity/entity-util"
 import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
 import { Stage, UserProject } from "../../project/ProjectDef"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
+import { simpleInsertPlan } from "../entity/entity-util"
 
 let project: UserProject
 let player: LuaPlayer

@@ -8,7 +8,7 @@ import expect from "tstl-expect"
 import { CustomInputs, Prototypes } from "../../constants"
 import { Events } from "../../lib"
 import { getProjectPlayerData } from "../../project/player-project-data"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
 import { updateMoveToolInCursor } from "../../ui/stage-move-tool"
 
 let player: LuaPlayer

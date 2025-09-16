@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { EventId } from "factorio:runtime"
-import { Mutable } from "./_util"
 import {
   AnyHandler,
   EventDataOf,
@@ -16,6 +15,7 @@ import {
   ShorthandRegister,
 } from "./Events"
 import { protectedAction } from "./protected-action"
+import { Mutable } from "./_util"
 
 function wrapFunction(func: AnyHandler): AnyHandler {
   return (e) => protectedAction(func, e)

@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { OnPlayerSelectedAreaEvent } from "factorio:runtime"
-import { PRecord } from "./_util"
 import { ProtectedEvents } from "./ProtectedEvents"
+import { PRecord } from "./_util"
 
 /** @noSelf */
 export interface SelectHandlers {

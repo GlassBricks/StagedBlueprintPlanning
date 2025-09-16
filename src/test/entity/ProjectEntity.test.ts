@@ -7,7 +7,7 @@ import { LuaEntity, ScriptRaisedBuiltEvent, ScriptRaisedDestroyEvent } from "fac
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
-import { newProjectEntity, ExtraEntityType, ProjectEntity } from "../../entity/ProjectEntity"
+import { ExtraEntityType, newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { getRegisteredProjectEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
 import { deepCompare, deepCopy, Events, shallowCopy } from "../../lib"

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import expect, { mock } from "tstl-expect"
-import { _numObservers, multiMap, MutableProperty, Property, property, Props } from "../../event"
+import { multiMap, MutableProperty, Property, property, Props, _numObservers } from "../../event"
 
 describe("property", () => {
   let s: MutableProperty<string>

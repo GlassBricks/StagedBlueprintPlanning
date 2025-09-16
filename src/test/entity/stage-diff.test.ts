@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { applyDiffToEntity, getEntityDiff } from "../../entity/stage-diff"
 import expect from "tstl-expect"
+import { applyDiffToEntity, getEntityDiff } from "../../entity/stage-diff"
 import { getNilPlaceholder } from "../../utils/diff-value"
 
 const entity1 = {

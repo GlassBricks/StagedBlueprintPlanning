@@ -6,15 +6,15 @@
 import { destroy } from "../lib/factoriojsx"
 import { Migrations } from "../lib/migration"
 import "./AllProjects"
+import "./commands"
+import "./edit-blueprint-filters"
+import "./misc-controls"
+import "./mod-button"
 import "./opened-entity"
 import "./player-navigation"
 import "./ProjectSettings"
 import "./stage-move-tool"
 import "./toggle-staged-copy"
-import "./edit-blueprint-filters"
-import "./mod-button"
-import "./commands"
-import "./misc-controls"
 
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {

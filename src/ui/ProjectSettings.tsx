@@ -49,6 +49,7 @@ import {
 } from "../project/set-tiles"
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { ManualRevertButton, MaybeRevertButton } from "../utils/RevertButton"
+import { exportProjectToString } from "./blueprint-string"
 import { CheckboxTextfield } from "./components/CheckboxTextfield"
 import { createStageBlueprint } from "./create-stage-blueprint"
 import { editBlueprintFilters } from "./edit-blueprint-filters"
@@ -64,7 +65,6 @@ import {
 } from "./player-current-stage"
 import { renderStageReferencePanel } from "./StageReferencesBox"
 import { StageSelector } from "./StageSelector"
-import { exportProjectToString } from "./blueprint-string"
 
 declare global {
   interface PlayerData {

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintInsertPlan, InventoryPosition, BlueprintInsertPlanWrite } from "factorio:runtime"
+import { BlueprintInsertPlan, BlueprintInsertPlanWrite, InventoryPosition } from "factorio:runtime"
 
 export function moduleInsertPlan(
   inventory: defines.inventory,

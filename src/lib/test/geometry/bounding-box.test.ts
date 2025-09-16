@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BBox } from "../../geometry"
 import expect from "tstl-expect"
+import { BBox } from "../../geometry"
 
 test("create", () => {
   const box = BBox({ x: 1, y: 2 }, { x: 3, y: 4 })
