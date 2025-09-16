@@ -9,11 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { EntityType } from "factorio:prototype"
 import {
   AssemblingMachineBlueprintEntity,
   BlueprintEntity,
-  BlueprintInsertPlan,
   BlueprintInsertPlanWrite,
   BoundingBox,
   CargoWagonBlueprintEntity,
@@ -27,11 +25,17 @@ import {
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { Events, Mutable, mutableShallowCopy, nullableConcat, PRecord } from "../lib"
+import { Events, getName, Mutable, mutableShallowCopy, nullableConcat } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
 import { Entity, UnstagedEntityProps } from "./Entity"
+import {
+  getNonModuleRequests,
+  mergeRequestPlans,
+  partitionInventoryFromRequests,
+  partitionModulesFromRequests,
+} from "./item-requests"
 import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
   getPrototypeRotationType,
@@ -103,7 +107,8 @@ function setBlueprintEntity(
 
   const oldItems = value.items
   if (unstagedValue) {
-    value.items = nullableConcat(value.items, unstagedValue.items)
+    const plans = nullableConcat(value.items, unstagedValue.items)
+    value.items = plans && mergeRequestPlans(plans)
   }
   // reuse the same table to avoid several allocations
   value.position = position
@@ -299,27 +304,16 @@ function upgradeEntity(oldEntity: LuaEntity, value: NameAndQuality): LuaEntity {
   return newEntity
 }
 
-interface WithName {
-  name: string
-}
-function getName(id: string | WithName): string
-function getName(id: string | WithName | nil): string | nil
-function getName(id: string | WithName | nil): string | nil {
-  if (id == nil) return
-  if (typeof id == "string") return id
-  return id.name
-}
-
 function matchModuleItems(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlanWrite[] | nil): void {
   const inventory = luaEntity.get_module_inventory()
   if (!inventory) return
   inventory.clear()
   if (!moduleItems) return
-  const moduleInvINdex = inventory.index!
+  const moduleInvIndex = inventory.index!
   for (const { id, items } of moduleItems) {
     if (items.in_inventory) {
       for (const inv of items.in_inventory) {
-        if (inv.inventory == moduleInvINdex) {
+        if (inv.inventory == moduleInvIndex) {
           inventory[inv.stack].set_stack({
             name: getName(id.name),
             quality: getName(id.quality),
@@ -331,7 +325,7 @@ function matchModuleItems(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlan
   }
   const itemRequestProxy = luaEntity.item_request_proxy
   if (itemRequestProxy) {
-    const [, nonModules] = partitionInventoryFromRequests(itemRequestProxy.insert_plan, moduleInvINdex)
+    const [, nonModules] = partitionInventoryFromRequests(itemRequestProxy.insert_plan, moduleInvIndex)
     if (nonModules == nil) {
       itemRequestProxy.destroy()
     } else {
@@ -385,98 +379,6 @@ export function forceFlipUnderground(luaEntity: LuaEntity): boolean {
   luaEntity.rotatable = wasRotatable
   return rotated
 }
-
-export function partitionInventoryFromRequest(
-  request: BlueprintInsertPlan,
-  inventory: defines.inventory,
-): LuaMultiReturn<[withInv: BlueprintInsertPlan | nil, withoutInv: BlueprintInsertPlan | nil]> {
-  const { in_inventory, grid_count } = request.items
-  if (!in_inventory) {
-    const withoutInv: BlueprintInsertPlan = {
-      id: request.id,
-      items: {
-        grid_count,
-      },
-    }
-    return $multi(nil, withoutInv)
-  }
-
-  const withInv = in_inventory.filter((i) => i.inventory == inventory)
-  const withoutInv = in_inventory.filter((i) => i.inventory != inventory)
-
-  const withInvResult = withInv[0]
-    ? {
-        id: request.id,
-        items: {
-          in_inventory: withInv,
-        },
-      }
-    : nil
-
-  const withoutInvResult =
-    withoutInv[0] != nil || grid_count != nil
-      ? {
-          id: request.id,
-          items: {
-            grid_count,
-            in_inventory: withoutInv[0] && withoutInv,
-          },
-        }
-      : nil
-
-  return $multi(withInvResult, withoutInvResult)
-}
-
-export function partitionInventoryFromRequests(
-  plans: BlueprintInsertPlan[],
-  inventory: defines.inventory,
-): LuaMultiReturn<[withInv: BlueprintInsertPlan[] | nil, withoutInv: BlueprintInsertPlan[] | nil]> {
-  const withInv: BlueprintInsertPlan[] = []
-  const withoutInv: BlueprintInsertPlan[] = []
-  for (const plan of plans) {
-    const [withInvPlan, withoutInvPlan] = partitionInventoryFromRequest(plan, inventory)
-    if (withInvPlan) {
-      withInv.push(withInvPlan)
-    }
-    if (withoutInvPlan) {
-      withoutInv.push(withoutInvPlan)
-    }
-  }
-
-  return $multi(withInv[0] && withInv, withoutInv[0] && withoutInv)
-}
-
-const moduleInventoryForType: PRecord<EntityType, defines.inventory> = {
-  "assembling-machine": defines.inventory.crafter_modules,
-  furnace: defines.inventory.crafter_modules,
-  "rocket-silo": defines.inventory.crafter_modules,
-
-  beacon: defines.inventory.beacon_modules,
-  lab: defines.inventory.lab_modules,
-  "mining-drill": defines.inventory.mining_drill_modules,
-}
-
-export function partitionModulesFromRequests(
-  requests: BlueprintInsertPlan[],
-  entityName: string,
-): LuaMultiReturn<[modules: BlueprintInsertPlan[] | nil, nonModules: BlueprintInsertPlan[] | nil]> {
-  const type: EntityType | nil = nameToType.get(entityName)
-  if (!type) return $multi(nil, requests)
-  const invIndex = moduleInventoryForType[type]
-  if (invIndex) {
-    return partitionInventoryFromRequests(requests, invIndex)
-  }
-  return $multi(nil, requests)
-}
-
-export function getNonModuleRequests(entity: LuaEntity): BlueprintInsertPlan[] | nil {
-  if (!entity.valid) return
-  const inserts = entity.item_request_proxy?.insert_plan
-  if (!inserts) return nil
-  const [, nonModules] = partitionModulesFromRequests(inserts, entity.name)
-  return nonModules
-}
-
 function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<BlueprintEntity> {
   bpEntity.entity_number = nil!
   bpEntity.position = nil!
@@ -486,7 +388,6 @@ function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<Blue
   if (bpEntity.quality == "normal") bpEntity.quality = nil
   return bpEntity
 }
-
 export type EntityResult = LuaMultiReturn<[entity: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]>
 export type NullableEntityResult = LuaMultiReturn<
   [entity?: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]

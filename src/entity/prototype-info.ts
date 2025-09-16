@@ -52,6 +52,7 @@ declare const storage: {
   entityPrototypeInfo: PrototypeInfo
 }
 
+// super dumb performance optimization
 let prototypeInfo: PrototypeInfo
 export const OnPrototypeInfoLoaded = globalEvent<[info: PrototypeInfo]>()
 Events.on_configuration_changed(() => {

@@ -12,6 +12,7 @@
 /** @beforeImports */
 {
   pcall(require, "test.module-mock")
+  // require("__debugadapter__/debugadapter.lua")
   $CURRENT_VERSION = script.active_mods[script.mod_name]!
 }
 declare global {

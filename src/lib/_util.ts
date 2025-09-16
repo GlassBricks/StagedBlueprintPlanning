@@ -139,6 +139,17 @@ export function asLuaArray<T>(array: T[]): PRecord<number, T> {
   return array
 }
 
+export interface WithName {
+  name: string
+}
+export function getName(id: string | WithName): string
+export function getName(id: string | WithName | nil): string | nil
+export function getName(id: string | WithName | nil): string | nil {
+  if (id == nil) return
+  if (typeof id == "string") return id
+  return id.name
+}
+
 export type PRecord<K extends keyof any, V> = {
   [P in K]?: V
 }
