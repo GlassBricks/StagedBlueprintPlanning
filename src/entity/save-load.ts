@@ -25,7 +25,7 @@ import {
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { Events, getName, Mutable, mutableShallowCopy, nullableConcat } from "../lib"
+import { Events, getName, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
@@ -33,7 +33,6 @@ import { Entity, UnstagedEntityProps } from "./Entity"
 import {
   addItemRequests,
   getNonModuleRequests,
-  mergeRequestPlans,
   partitionInventoryFromRequests,
   partitionModulesFromRequests,
 } from "./item-requests"

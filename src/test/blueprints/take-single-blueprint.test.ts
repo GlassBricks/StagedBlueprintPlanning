@@ -13,10 +13,9 @@ import { LuaPlayer, LuaSurface, SignalID, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
 import { BlueprintTakeSettings, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
+import { UnstagedEntityProps } from "../../entity/Entity"
 import { BBox, Pos } from "../../lib/geometry"
 import { simpleInsertPlan } from "../entity/entity-util"
-import { partitionInventoryFromRequest } from "../../entity/item-requests"
-import { UnstagedEntityProps } from "../../entity/Entity"
 
 let surface: LuaSurface
 let player: LuaPlayer

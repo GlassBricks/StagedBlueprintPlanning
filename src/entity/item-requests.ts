@@ -1,8 +1,7 @@
-import { BlueprintEntity, BlueprintInsertPlan, InventoryPosition, LuaEntity } from "factorio:runtime"
 import { EntityType } from "factorio:prototype"
-import { Mutable, deepCopy, PRecord, getName, nullableConcat } from "../lib"
+import { BlueprintEntity, BlueprintInsertPlan, InventoryPosition, LuaEntity } from "factorio:runtime"
+import { Mutable, PRecord, deepCopy, getName, nullableConcat } from "../lib"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "./prototype-info"
-import { UnstagedEntityProps } from "./Entity"
 
 let nameToType: PrototypeInfo["nameToType"]
 OnPrototypeInfoLoaded.addListener((info) => {
