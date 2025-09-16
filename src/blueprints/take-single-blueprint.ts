@@ -13,6 +13,8 @@ import { BlueprintEntity, LuaEntity, LuaItemStack, LuaSurface, MapPosition, Unit
 import { isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeSettings, getIconsFromSettings } from "./blueprint-settings"
+import { UnstagedEntityProps } from "../entity/Entity"
+import { addItemRequests } from "../entity/item-requests"
 
 export const FirstEntityOriginalPositionTag = "bp100_FirstEntityOriginalPosition"
 function adjustEntitiesToMatchPositionOffset(
@@ -103,7 +105,8 @@ export interface TakeSingleBlueprintParams {
   settings: BlueprintTakeSettings
   surface: LuaSurface
   bbox: BBox
-  unitNumberFilter: ReadonlyLuaSet<UnitNumber> | nil
+  unitNumberFilter?: ReadonlyLuaSet<UnitNumber>
+  additionalSettings?: ReadonlyLuaMap<UnitNumber, UnstagedEntityProps>
   setOrigPositionTag?: boolean
   stageName?: string
 }
@@ -112,6 +115,26 @@ export interface BlueprintTakeResult {
   effectivePositionOffset: Position
   entities: PRecord<number, BlueprintEntity>
   bpMapping: Record<number, LuaEntity>
+}
+
+function addItemRequestsToBlueprint(
+  entities: PRecord<number, BlueprintEntity>,
+  bpMapping: Record<number, LuaEntity>,
+  additionalSettings: ReadonlyLuaMap<UnitNumber, UnstagedEntityProps>,
+): boolean {
+  let changed = false
+  for (const [entityNumber, luaEntity] of pairs(bpMapping)) {
+    const unitNumber = luaEntity.unit_number
+    if (!unitNumber) continue
+    const requests = additionalSettings.get(unitNumber)?.items
+    if (!requests) continue
+    const bpEntity = entities[entityNumber]
+    if (!bpEntity) continue
+    addItemRequests(bpEntity, requests)
+    changed = true
+  }
+
+  return changed
 }
 
 /**
@@ -123,6 +146,7 @@ export function takeSingleBlueprint({
   surface,
   bbox,
   unitNumberFilter,
+  additionalSettings, // todo
   setOrigPositionTag,
   stageName,
 }: TakeSingleBlueprintParams): BlueprintTakeResult | nil {
@@ -182,6 +206,11 @@ export function takeSingleBlueprint({
 
       finalFirstEntityOrigPosition = bpMapping[firstNotDeletedIndex].position
     }
+  }
+
+  if (additionalSettings) {
+    const changed = addItemRequestsToBlueprint(entities, bpMapping, additionalSettings)
+    if (changed) entitiesAdjusted = true
   }
 
   if (isEmpty(entities)) {

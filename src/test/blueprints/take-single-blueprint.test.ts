@@ -14,6 +14,9 @@ import expect from "tstl-expect"
 import { BlueprintTakeSettings, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
 import { BBox, Pos } from "../../lib/geometry"
+import { simpleInsertPlan } from "../entity/entity-util"
+import { partitionInventoryFromRequest } from "../../entity/item-requests"
+import { UnstagedEntityProps } from "../../entity/Entity"
 
 let surface: LuaSurface
 let player: LuaPlayer
@@ -195,6 +198,33 @@ test("applies unit number filter", () => {
   const entities = stack.get_blueprint_entities()!
   expect(entities.length).toBe(1)
   expect(entities[0].name).toEqual(chest.name)
+})
+
+test("applies item requests", () => {
+  const { chest } = createSampleEntities()
+  const request = simpleInsertPlan(defines.inventory.chest, "iron-plate", 1, 10)
+  const settings = getDefaultBlueprintSettings()
+
+  const itemRequests = new LuaMap<UnitNumber, UnstagedEntityProps>()
+  itemRequests.set(chest.unit_number!, { items: [request] })
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  const ret = takeSingleBlueprint({
+    stack,
+    settings,
+    surface,
+    bbox,
+    additionalSettings: itemRequests,
+    unitNumberFilter: nil,
+  })
+  expect(ret).toBeTruthy()
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities.length).toBe(2)
+  const chestEntity = entities.find((entity) => entity.name == chest.name)
+  expect(chestEntity).toBeAny()
+  expect(chestEntity!.items).toEqual([request])
 })
 
 test("applies unit number filter as well as whitelist", () => {

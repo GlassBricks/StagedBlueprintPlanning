@@ -1,7 +1,8 @@
-import { BlueprintInsertPlan, InventoryPosition, LuaEntity } from "factorio:runtime"
+import { BlueprintEntity, BlueprintInsertPlan, InventoryPosition, LuaEntity } from "factorio:runtime"
 import { EntityType } from "factorio:prototype"
-import { Mutable, deepCopy, PRecord, getName } from "../lib"
+import { Mutable, deepCopy, PRecord, getName, nullableConcat } from "../lib"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "./prototype-info"
+import { UnstagedEntityProps } from "./Entity"
 
 let nameToType: PrototypeInfo["nameToType"]
 OnPrototypeInfoLoaded.addListener((info) => {
@@ -155,4 +156,9 @@ export function getNonModuleRequests(entity: LuaEntity): BlueprintInsertPlan[] |
   if (!inserts) return nil
   const [, nonModules] = partitionModulesFromRequests(inserts, entity.name)
   return nonModules
+}
+
+export function addItemRequests(entity: Mutable<BlueprintEntity>, items: BlueprintInsertPlan[] | nil): void {
+  const concat = nullableConcat(entity.items, items)
+  entity.items = concat && mergeRequestPlans(concat)
 }

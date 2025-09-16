@@ -29,20 +29,19 @@ import { funcRef, RegisterClass, registerFunctions } from "./references"
  * A long-running task split over multiple ticks, so the game does not freeze for too long.
  */
 export interface Task {
-  /** Title to be shown to the user */
+  /** Get the title to be shown to the user */
   getTitle(): LocalisedString
-  /** Runs one tick. Does nothing if the current task is done.*/
+  /** Run one tick. Do nothing if the current task is done.*/
   step(): void
-  /** If this task is done. */
+  /** Return whether this task is done. */
   isDone(): boolean
-  /** Called if user cancels this task */
+  /** Cancel this task. Called by user */
   cancel(): void
-  /** A message for what the _next_ task will be. */
+  /** Get a message for what the _next_ task will be. */
   getNextStepTitle(): LocalisedString | nil
-  /** Gets the current progress as a number between 0 and 1, if known. If included, a progress bar will be shown */
+  /** Get the current progress as a number between 0 and 1, if known. If included, a progress bar will be shown */
   getProgress(): number | nil
 }
-
 export abstract class LoopTask implements Task {
   private nextStep: number = 0
 

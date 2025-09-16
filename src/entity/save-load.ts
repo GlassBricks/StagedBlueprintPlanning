@@ -31,6 +31,7 @@ import { getStageAtSurface } from "../project/project-refs"
 
 import { Entity, UnstagedEntityProps } from "./Entity"
 import {
+  addItemRequests,
   getNonModuleRequests,
   mergeRequestPlans,
   partitionInventoryFromRequests,
@@ -107,8 +108,7 @@ function setBlueprintEntity(
 
   const oldItems = value.items
   if (unstagedValue) {
-    const plans = nullableConcat(value.items, unstagedValue.items)
-    value.items = plans && mergeRequestPlans(plans)
+    addItemRequests(value, unstagedValue.items)
   }
   // reuse the same table to avoid several allocations
   value.position = position

@@ -18,6 +18,7 @@ import {
 } from "../../blueprints/blueprint-creation"
 import { createStageReference, getReferencedStage } from "../../blueprints/stage-reference"
 import { addWireConnection } from "../../entity/ProjectEntity"
+import { simpleInsertPlan } from "../entity/entity-util"
 import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
@@ -222,4 +223,29 @@ test("make blueprint book using template", () => {
     expect(entities[0].name).toBe("iron-chest")
   }
   expect(inventory[stageMapping.length].is_deconstruction_item).toBe(true)
+})
+
+test("blueprint with unstaged values includes item requests", () => {
+  const stage2 = project.getStage(2)!
+  const entity = createEntity(stage2, [0.5, 0.5], "fast-inserter")
+
+  // Find the project entity and add unstaged value with item requests
+  const projectEntity = project.content.findCompatibleWithLuaEntity(entity, nil, 1)!
+  const unstagedValue = {
+    items: [simpleInsertPlan(defines.inventory.crafter_input, "iron-ore", 0, 10)],
+  }
+  projectEntity.setUnstagedValue(2, unstagedValue)
+
+  const stack = player.cursor_stack!
+  const ret = takeStageBlueprint(stage2, stack)
+
+  expect(ret).toBe(true)
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities).toHaveLength(1)
+  expect(entities[0].name).toBe("fast-inserter")
+
+  // Check that item requests were added to the blueprint entity
+  expect(entities[0].items).toBeAny()
+  expect(entities[0].items![0].id.name).toBe("iron-ore")
 })
