@@ -190,8 +190,8 @@ const movableTypes: ReadonlyLuaSet<string> = newLuaSet(
   "cargo-wagon",
   "fluid-wagon",
   "locomotive",
-  "car",
-  "spider-vehicle",
+  // "car"
+  // "spider-vehicle",
 )
 
 export const allowOverlapDifferentDirection = merge([

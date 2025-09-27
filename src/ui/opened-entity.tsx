@@ -497,7 +497,7 @@ const entityTypeToGuiType: Record<
   roboport: relative_gui_type.roboport_gui,
   turret: relative_gui_type.turret_gui,
   wall: relative_gui_type.wall_gui,
-  car: relative_gui_type.car_gui,
-  "spider-vehicle": relative_gui_type.spider_vehicle_gui,
+  // car: relative_gui_type.car_gui,
+  // "spider-vehicle": relative_gui_type.spider_vehicle_gui,
   "agricultural-tower": relative_gui_type.agriculture_tower_gui,
 }
