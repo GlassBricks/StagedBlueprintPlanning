@@ -287,6 +287,9 @@ const EntityProjectInfoName = script.mod_name + ":EntityProjectInfo"
 const EntityProjectInfoName2 = script.mod_name + ":EntityProjectInfo2"
 function renderEntityStageInfo(player: LuaPlayer, entity: LuaEntity, projectEntity: ProjectEntity, stage: Stage) {
   const guiType = entityTypeToGuiType[entity.type as BuildableEntityType]
+  if (guiType == nil) {
+    error("Unknown gui type for " + entity.type)
+  }
   if (guiType == "screen") {
     destroy(player.gui.relative[EntityProjectInfoName])
     destroy(player.gui.relative[EntityProjectInfoName2])
@@ -494,4 +497,7 @@ const entityTypeToGuiType: Record<
   roboport: relative_gui_type.roboport_gui,
   turret: relative_gui_type.turret_gui,
   wall: relative_gui_type.wall_gui,
+  car: relative_gui_type.car_gui,
+  "spider-vehicle": relative_gui_type.spider_vehicle_gui,
+  "agricultural-tower": relative_gui_type.agriculture_tower_gui,
 }
