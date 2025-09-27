@@ -505,6 +505,12 @@ export function createPreviewEntity(
   apparentDirection: defines.direction,
   previewName: string,
 ): LuaEntity | nil {
+  if (!prototypes.entity[previewName]) {
+    game.print(
+      `Preview entity not found for ${previewName.substring(Prototypes.PreviewEntityPrefix.length)}! Please report this to the mod author.`,
+    )
+    return nil
+  }
   const entity = surface.create_entity({
     name: previewName,
     position,
