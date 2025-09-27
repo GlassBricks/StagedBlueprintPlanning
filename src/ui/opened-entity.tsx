@@ -86,7 +86,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     this.actions = project.actions
     this.updates = project.updates
 
-    const isRollingStock = entity.isRollingStock()
+    const isRollingStock = entity.isMovable()
 
     const firstStageNum = entity.firstStage
     const firstStage = project.getStage(firstStageNum)!

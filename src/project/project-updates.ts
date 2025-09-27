@@ -9,10 +9,10 @@ import {
   getNameAndQuality,
   InserterProjectEntity,
   LoaderProjectEntity,
+  MovableProjectEntity,
   NameAndQuality,
   newProjectEntity,
   ProjectEntity,
-  RollingStockProjectEntity,
   StageDiffs,
   StageNumber,
   UndergroundBeltProjectEntity,
@@ -80,8 +80,8 @@ export interface ProjectUpdates {
   resetAllProps(entity: ProjectEntity, stage: StageNumber): boolean
   moveAllPropsDown(entity: ProjectEntity, stage: StageNumber): boolean
 
-  resetTrain(entity: RollingStockProjectEntity): void
-  setTrainLocationToCurrent(entity: RollingStockProjectEntity): void
+  resetTrain(entity: MovableProjectEntity): void
+  setTrainLocationToCurrent(entity: MovableProjectEntity): void
 
   setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile
 
@@ -638,7 +638,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function checkCanSetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
     if (entity.isSettingsRemnant || entity.firstStage == stage) return StageMoveResult.NoChange
-    if (entity.isRollingStock()) return StageMoveResult.Updated
+    if (entity.isMovable()) return StageMoveResult.Updated
     if (entity.lastStage && stage > entity.lastStage) return StageMoveResult.CannotMovePastLastStage
 
     if (!firstStageChangeWillIntersect(entity, stage)) {
@@ -654,7 +654,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       const stageToUpdate = min(oldFirstStage, stage)
       const oldLastStage = entity.lastStage
       entity.setFirstStageUnchecked(stage)
-      if (entity.isRollingStock() && stage < oldFirstStage) {
+      if (entity.isMovable() && stage < oldFirstStage) {
         updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
       }
       updateWorldEntities(entity, stageToUpdate)
@@ -663,7 +663,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function checkCanSetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
-    if (entity.isSettingsRemnant || entity.isRollingStock()) return StageMoveResult.NoChange
+    if (entity.isSettingsRemnant || entity.isMovable()) return StageMoveResult.NoChange
     const oldLastStage = entity.lastStage
     if (oldLastStage == stage) return StageMoveResult.NoChange
     // check firstStage <= lastStage
@@ -716,7 +716,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     return false
   }
 
-  function resetTrain(entity: RollingStockProjectEntity): void {
+  function resetTrain(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
     const luaEntity = entity.getWorldEntity(stage)
     if (!luaEntity) {
@@ -734,7 +734,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     for (const entity of projectEntities) rebuildWorldEntityAtStage(entity, stage)
   }
 
-  function setTrainLocationToCurrent(entity: RollingStockProjectEntity): void {
+  function setTrainLocationToCurrent(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
     const luaEntity = entity.getWorldEntity(stage)
     if (!luaEntity) return

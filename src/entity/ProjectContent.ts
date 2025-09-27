@@ -13,11 +13,11 @@ import { LinkedMap2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import { ProjectTile } from "./ProjectTile"
 import {
+  isMovableEntity,
   isPreviewEntity,
-  isRollingStockType,
+  movableTypes,
   OnPrototypeInfoLoaded,
   PrototypeInfo,
-  rollingStockTypes,
   RotationType,
 } from "./prototype-info"
 import { getRegisteredProjectEntity } from "./registration"
@@ -135,7 +135,7 @@ class ProjectContentImpl implements MutableProjectContent {
         return found
       return nil
     }
-    if (rollingStockTypes.has(type)) {
+    if (movableTypes.has(type)) {
       if (entity.object_name == "LuaEntity") {
         const registered = getRegisteredProjectEntity(entity as LuaEntity)
         if (registered && this.entities.has(registered)) return registered
@@ -182,7 +182,7 @@ class ProjectContentImpl implements MutableProjectContent {
 
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): ProjectEntity | nil {
     const actualName = previewEntity.name.substring(Prototypes.PreviewEntityPrefix.length)
-    const direction = isRollingStockType(actualName) ? 0 : previewEntity.direction
+    const direction = isMovableEntity(actualName) ? 0 : previewEntity.direction
     return this.findCompatibleEntity(actualName, previewEntity.position, direction, stage)
   }
 

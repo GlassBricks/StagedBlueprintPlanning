@@ -185,11 +185,13 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     blueprintableTiles,
   }
 }
-const rollingStockTypes: ReadonlyLuaSet<string> = newLuaSet(
+const movableTypes: ReadonlyLuaSet<string> = newLuaSet(
   "artillery-wagon",
   "cargo-wagon",
   "fluid-wagon",
   "locomotive",
+  "car",
+  "spider-vehicle",
 )
 
 export const allowOverlapDifferentDirection = merge([
@@ -205,7 +207,7 @@ export const allowOverlapDifferentDirection = merge([
     "legacy-straight-rail",
     "legacy-curved-rail",
   ),
-  rollingStockTypes,
+  movableTypes,
 ])
 
 export function getPrototypeInfo(): PrototypeInfo {
@@ -237,11 +239,11 @@ export function getCompatibleNames(entityName: string): readonly string[] | nil 
 export function getPrototypeRotationType(entityName: string): RotationType | nil {
   return rotationTypes.get(entityName)
 }
-export function isRollingStockType(entityName: string): boolean {
+export function isMovableEntity(entityName: string): boolean {
   const type = nameToType.get(entityName)
-  return type != nil && rollingStockTypes.has(type)
+  return type != nil && movableTypes.has(type)
 }
-export { rollingStockTypes }
+export { movableTypes }
 
 export function isPreviewEntity(entity: LuaEntity): boolean {
   // performance: this returns false almost all the time,

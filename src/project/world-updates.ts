@@ -9,13 +9,13 @@ import { Prototypes } from "../constants"
 import { UnstagedEntityProps } from "../entity/Entity"
 import {
   isWorldEntityProjectEntity,
+  MovableProjectEntity,
   ProjectEntity,
-  RollingStockProjectEntity,
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
 import { ProjectTile } from "../entity/ProjectTile"
-import { isPreviewEntity, OnPrototypeInfoLoaded, PrototypeInfo, rollingStockTypes } from "../entity/prototype-info"
+import { isPreviewEntity, movableTypes, OnPrototypeInfoLoaded, PrototypeInfo } from "../entity/prototype-info"
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
 import { deepCompare, Mutable, PRecord, RegisterClass } from "../lib"
@@ -391,7 +391,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     }
     // rebuild order: everything, elevated rails, rolling stock
     const elevatedRails: ProjectEntity[] = []
-    const rollingStock: RollingStockProjectEntity[] = []
+    const movableEntities: MovableProjectEntity[] = []
     const elevatedRailTypes = newLuaSet<EntityType>(
       "elevated-straight-rail",
       "elevated-half-diagonal-rail",
@@ -401,9 +401,9 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     for (const entity of content.allEntities()) {
       const type = nameToType.get(entity.firstValue.name) ?? ""
       if (type in elevatedRailTypes) {
-        elevatedRails.push(entity as RollingStockProjectEntity)
-      } else if (type in rollingStockTypes) {
-        rollingStock.push(entity as RollingStockProjectEntity)
+        elevatedRails.push(entity as MovableProjectEntity)
+      } else if (type in movableTypes) {
+        movableEntities.push(entity as MovableProjectEntity)
       } else {
         refreshWorldEntityAtStage(entity, stage)
       }
@@ -411,7 +411,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     for (const entity of elevatedRails) {
       refreshWorldEntityAtStage(entity, stage)
     }
-    for (const entity of rollingStock) {
+    for (const entity of movableEntities) {
       refreshWorldEntityAtStage(entity, stage)
     }
     for (const [, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {

@@ -22,17 +22,11 @@ import {
   Entity,
   InserterEntity,
   LoaderEntity,
-  RollingStockEntity,
+  MovableEntity,
   UndergroundBeltEntity,
   UnstagedEntityProps,
 } from "./Entity"
-import {
-  isPreviewEntity,
-  isRollingStockType,
-  OnPrototypeInfoLoaded,
-  PrototypeInfo,
-  rollingStockTypes,
-} from "./prototype-info"
+import { isMovableEntity, isPreviewEntity, movableTypes, OnPrototypeInfoLoaded, PrototypeInfo } from "./prototype-info"
 import { registerEntity } from "./registration"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
 import { BaseStagedValue, StagedValue } from "./StagedValue"
@@ -80,10 +74,11 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   syncIngoingConnections(existingEntities: ReadonlyLuaSet<ProjectEntity>): void
   removeIngoingConnections(): void
 
-  isRollingStock(): this is RollingStockProjectEntity
   isUndergroundBelt(): this is UndergroundBeltProjectEntity
   isInserter(): this is InserterProjectEntity
   getType(): EntityType | nil
+
+  isMovable(): this is MovableProjectEntity
 
   isNewRollingStock?: true
 
@@ -183,7 +178,7 @@ export interface StageProperties {
   unstagedValue?: UnstagedEntityProps
 }
 
-export type RollingStockProjectEntity = ProjectEntity<RollingStockEntity>
+export type MovableProjectEntity = ProjectEntity<MovableEntity>
 export type UndergroundBeltProjectEntity = ProjectEntity<UndergroundBeltEntity>
 export type LoaderProjectEntity = ProjectEntity<LoaderEntity>
 export type InserterProjectEntity = ProjectEntity<InserterEntity>
@@ -228,8 +223,8 @@ class ProjectEntityImpl<T extends Entity = Entity>
   }
 
   getPreviewDirection(): defines.direction {
-    if (this.isRollingStock()) {
-      return orientationToDirection((this.firstValue as RollingStockEntity).orientation)
+    if (this.isMovable()) {
+      return orientationToDirection((this.firstValue as MovableEntity).orientation)
     }
     return this.direction
   }
@@ -238,20 +233,20 @@ class ProjectEntityImpl<T extends Entity = Entity>
     this.position = position
   }
 
-  isRollingStock(): this is RollingStockProjectEntity {
-    return isRollingStockType(this.firstValue.name)
-  }
   isUndergroundBelt(): this is UndergroundBeltProjectEntity {
     return nameToType.get(this.firstValue.name) == "underground-belt"
   }
   isInserter(): this is InserterProjectEntity {
     return nameToType.get(this.firstValue.name) == "inserter"
   }
+  isMovable(): this is MovableProjectEntity {
+    return isMovableEntity(this.firstValue.name)
+  }
   getType(): EntityType | nil {
     return nameToType.get(this.firstValue.name)
   }
   override oneStageOnly(): boolean {
-    return this.isRollingStock()
+    return this.isMovable()
   }
 
   hasErrorAt(stage: StageNumber): boolean {
@@ -444,7 +439,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
     const { firstValue } = this
     const diff = getEntityDiff(firstValue, value)
     if (!diff) return false
-    if (this.isRollingStock()) {
+    if (this.isMovable()) {
       delete (diff as { orientation?: unknown }).orientation
     }
     if (isEmpty(diff)) {
@@ -597,7 +592,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
       existing.destroy()
     }
     this[stage] = entity
-    if (entity && rollingStockTypes.has(entity.type)) {
+    if (entity && movableTypes.has(entity.type)) {
       registerEntity(entity, this)
     }
   }
@@ -782,11 +777,8 @@ export function newProjectEntity<E extends Entity>(
   return result
 }
 
-// vehicles and units
 const excludedTypes: Record<string, true> = {
   unit: true,
-  car: true,
-  "spider-vehicle": true,
   "entity-ghost": true,
 }
 

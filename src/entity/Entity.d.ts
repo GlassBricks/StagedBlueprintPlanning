@@ -41,7 +41,7 @@ export interface InserterEntity extends Entity {
   drop_position?: Position
   pickup_position?: Position
 }
-export interface RollingStockEntity extends Entity {
+export interface MovableEntity extends Entity {
   orientation?: RealOrientation
 }
 export interface AssemblingMachineEntity extends Entity {

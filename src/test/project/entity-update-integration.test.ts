@@ -20,8 +20,8 @@ import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
 import {
+  MovableProjectEntity,
   ProjectEntity,
-  RollingStockProjectEntity,
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
@@ -229,7 +229,8 @@ function buildEntity<T extends BlueprintEntity = BlueprintEntity>(
   const luaEntity = createEntity(stage, args)
   const saved = recordEntity(luaEntity)
   project.actions.onEntityCreated(luaEntity, stage, player.index)
-  const entity = project.content.findCompatibleWithLuaEntity(saved, nil, stage)! as ProjectEntity<T>
+  const queryEntity = luaEntity.valid ? luaEntity : saved
+  const entity = project.content.findCompatibleWithLuaEntity(queryEntity, nil, stage)! as ProjectEntity<T>
   assert(entity)
   expect(entity.firstStage).toBe(stage)
   return entity
@@ -1287,7 +1288,7 @@ describe("poles and wire connections", () => {
 })
 
 describe("train entities", () => {
-  function assertTrainEntityCorrect(entity: RollingStockProjectEntity, expectedHasError: number | false) {
+  function assertTrainEntityCorrect(entity: MovableProjectEntity, expectedHasError: number | false) {
     expect(entity.lastStage).toBe(entity.firstStage)
     assertEntityCorrect(entity, expectedHasError)
   }
@@ -1324,6 +1325,15 @@ describe("train entities", () => {
     expect(entity.firstStage).toBe(2)
     expect(entity.lastStage).toBe(2)
     assertTrainEntityCorrect(entity, 2) // no rails
+  })
+})
+
+describe("vehicles", () => {
+  test("can create a vehicle", () => {
+    const carEntity = buildEntity(1, { name: "car", orientation: 0.25 })
+    expect(carEntity.isMovable()).toBe(true)
+    expect(carEntity.lastStage).toBe(1)
+    assertEntityCorrect(carEntity, false)
   })
 })
 

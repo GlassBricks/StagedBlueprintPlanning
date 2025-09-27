@@ -34,9 +34,9 @@ import {
 import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
   getPrototypeRotationType,
+  movableTypes,
   OnPrototypeInfoLoaded,
   PrototypeInfo,
-  rollingStockTypes,
   RotationType,
 } from "./prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
@@ -234,8 +234,8 @@ export function createEntity(
   assume<BlueprintEntity>(value)
   if (changed) entityVersion++
   let luaEntity: LuaEntity | undefined
-  const isRollingStock = rollingStockTypes.has(value.name)
-  if (isRollingStock) {
+  const movable = movableTypes.has(value.name)
+  if (movable) {
     const ghost = pasteEntity(surface, position, direction, value, unstagedValue, nil)
     if (!ghost) return nil
     const [, newLuaEntity] = ghost.silent_revive()
@@ -252,7 +252,7 @@ export function createEntity(
     luaEntity.loader_type = value.type ?? "output"
     luaEntity.direction = direction
   }
-  if ((!isRollingStock && entityHasSettings(value)) || unstagedValue != nil) {
+  if ((!movable && entityHasSettings(value)) || unstagedValue != nil) {
     const ghost = pasteEntity(surface, position, direction, value, unstagedValue, luaEntity)
     ghost?.destroy()
   }
@@ -447,7 +447,7 @@ export function updateEntity(
 ): LuaMultiReturn<[updated: LuaEntity | nil, updatedNeighbors?: ProjectEntity]> {
   assume<BlueprintEntity>(value)
   const type = luaEntity.type
-  if (rollingStockTypes.has(type)) {
+  if (movableTypes.has(type)) {
     // since rolling stock only are present in one stage, we don't need to update anything.
     return $multi(luaEntity)
   }

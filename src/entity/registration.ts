@@ -16,7 +16,7 @@ Events.on_init(() => {
   storage.entityByUnitNumber = new LuaMap()
 })
 
-/** Currently only used for rolling stock (train) entities. */
+/** Currently only used for movalbe entities */
 export function registerEntity(luaEntity: LuaEntity, projectEntity: ProjectEntity): boolean {
   if (!luaEntity.valid) return false
   const unitNumber = luaEntity.unit_number

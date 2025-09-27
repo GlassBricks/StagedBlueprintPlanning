@@ -101,9 +101,9 @@ test("isPastLastStage", () => {
 })
 
 test("isRollingStock", () => {
-  expect(projectEntity.isRollingStock()).toBe(false)
+  expect(projectEntity.isMovable()).toBe(false)
   const projectEntity2 = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
-  expect(projectEntity2.isRollingStock()).toBe(true)
+  expect(projectEntity2.isMovable()).toBe(true)
 })
 
 test("isUndergroundBelt", () => {

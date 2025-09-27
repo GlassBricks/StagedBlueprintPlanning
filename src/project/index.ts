@@ -21,7 +21,7 @@ import { getAllProjects } from "./UserProject"
 Migrations.to("2.2.0", () => {
   for (const project of getAllProjects()) {
     for (const entity of project.content.allEntities()) {
-      if (entity.isRollingStock()) {
+      if (entity.isMovable()) {
         const oldLastStage = entity.lastStage
         if (oldLastStage != entity.firstStage) {
           entity.setLastStageUnchecked(entity.firstStage)

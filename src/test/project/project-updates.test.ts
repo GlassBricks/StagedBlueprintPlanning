@@ -20,7 +20,7 @@ import {
   addWireConnection,
   newProjectEntity,
   ProjectEntity,
-  RollingStockProjectEntity,
+  MovableProjectEntity,
   StageDiffsInternal,
   StageNumber,
 } from "../../entity/ProjectEntity"
@@ -1367,7 +1367,7 @@ describe("rolling stock", () => {
 
 describe("trains", () => {
   let entities: LuaEntity[]
-  let projectEntities: RollingStockProjectEntity[]
+  let projectEntities: MovableProjectEntity[]
   before_each(() => {
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entities = createRollingStocks(game.surfaces[1], "locomotive", "cargo-wagon", "fluid-wagon")
