@@ -38,7 +38,7 @@ import { EntityUpdateResult, StageMoveResult } from "../../project/project-updat
 
 import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo } from "../../project/undo"
-import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 
 import { debugPrint } from "../../lib/test/misc"
 import { createRollingStock } from "../entity/createRollingStock"
@@ -1306,6 +1306,24 @@ describe("train entities", () => {
 
     project.worldUpdates.refreshAllWorldEntities(entity)
     assertTrainEntityCorrect(entity, 3)
+  })
+  test("inserting a stage keeps train in same stage", () => {
+    const train = createRollingStock(surfaces[3 - 1])
+    const entity = project.updates.addNewEntity(train, 3)!
+    expect(entity).toBeAny()
+    expect(entity.lastStage).toBe(3)
+    project.insertStage(4)
+    expect(entity.firstStage).toBe(3)
+    expect(entity.lastStage).toBe(3)
+    assertTrainEntityCorrect(entity, false)
+  })
+  test("Moving a train also sets its last stage", () => {
+    const train = createRollingStock(surfaces[3 - 1])
+    const entity = project.updates.addNewEntity(train, 3)!
+    project.updates.trySetFirstStage(entity, 2)
+    expect(entity.firstStage).toBe(2)
+    expect(entity.lastStage).toBe(2)
+    assertTrainEntityCorrect(entity, 2) // no rails
   })
 })
 

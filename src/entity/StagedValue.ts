@@ -91,6 +91,11 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
 
   setFirstStageUnchecked(stage: StageNumber): void {
     const { firstStage, lastStage } = this
+    if (this.oneStageOnly()) {
+      this.lastStage = stage
+      this.firstStage = stage
+      return
+    }
     if (lastStage) assert(stage <= lastStage, "stage must be <= last stage")
     if (stage > firstStage) this.moveFirstStageUp(stage)
     this.firstStage = stage
@@ -110,6 +115,9 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
   }
 
   setLastStageUnchecked(stage: StageNumber | nil): void {
+    if (this.oneStageOnly()) {
+      return
+    }
     assert(!stage || stage >= this.firstStage, "stage must be >= first stage")
     const { lastStage } = this
     if (stage && (lastStage == nil || stage < lastStage)) this.moveLastStageDown(stage)
@@ -203,6 +211,10 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     return $multi<any>(iterNext, stageDiffs, start - 1)
   }
 
+  oneStageOnly(): boolean {
+    return false
+  }
+
   private iterateValuesNoDiffs(start: StageNumber, end: StageNumber) {
     const { firstStage, firstValue } = this
     const lastStage = this.lastStage ?? end
@@ -218,7 +230,9 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
 
   insertStage(stageNumber: StageNumber): void {
     if (this.firstStage >= stageNumber) this.firstStage++
-    if (this.lastStage && this.lastStage >= stageNumber - 1) this.lastStage++
+    if (this.oneStageOnly()) {
+      this.lastStage = this.firstStage
+    } else if (this.lastStage && this.lastStage >= stageNumber - 1) this.lastStage++
 
     shiftNumberKeysUp(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
@@ -229,7 +243,9 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     this.mergeStageDiffWithBelow(stageToMerge)
 
     if (this.firstStage >= stageToMerge) this.firstStage--
-    if (this.lastStage && this.lastStage >= stageNumber) this.lastStage--
+    if (this.oneStageOnly()) {
+      this.lastStage = this.firstStage
+    } else if (this.lastStage && this.lastStage >= stageNumber) this.lastStage--
 
     shiftNumberKeysDown(this, stageNumber)
     if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)

@@ -693,12 +693,6 @@ describe("rolling stock", () => {
     expect(adjusted).toBe(false)
     expect(projectEntity.firstValue.orientation).toBe(0.25)
   })
-  test("cannot apply upgrade to rolling stock", () => {
-    const projectEntity = newProjectEntity({ name: "cargo-wagon" }, Pos(0, 0), 0, 1)
-    const adjusted = projectEntity.applyUpgradeAtStage(1, { name: "cargo-wagon-2" })
-    expect(adjusted).toBe(false)
-    expect(projectEntity.getUpgradeAtStage(1)).toEqual({ name: "cargo-wagon" })
-  })
   test("setting a rolling stock world entity will register it in entity-registration", () => {
     const rollingStock = createRollingStock()
 

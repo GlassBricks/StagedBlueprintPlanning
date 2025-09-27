@@ -222,7 +222,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
     super(firstStage, firstValue)
     this.position = position
     this.direction = direction
-    if (this.isRollingStock()) {
+    if (this.oneStageOnly()) {
       this.lastStage = firstStage
     }
   }
@@ -249,6 +249,9 @@ class ProjectEntityImpl<T extends Entity = Entity>
   }
   getType(): EntityType | nil {
     return nameToType.get(this.firstValue.name)
+  }
+  override oneStageOnly(): boolean {
+    return this.isRollingStock()
   }
 
   hasErrorAt(stage: StageNumber): boolean {
@@ -396,17 +399,6 @@ class ProjectEntityImpl<T extends Entity = Entity>
 
   declare applyDiff: <T extends Entity>(this: void, value: T, diff: StageDiff<T>) => Mutable<T>
 
-  override setFirstStageUnchecked(stage: StageNumber): void {
-    if (this.isRollingStock()) {
-      this.lastStage = stage
-    }
-    super.setFirstStageUnchecked(stage)
-  }
-  override setLastStageUnchecked(stage: StageNumber | nil): void {
-    if (this.isRollingStock()) return
-    super.setLastStageUnchecked(stage)
-  }
-
   protected override moveFirstStageUp(newFirstStage: StageNumber): void {
     const unstagedDiff = this.stageProperties?.unstagedValue
     if (unstagedDiff) {
@@ -441,29 +433,23 @@ class ProjectEntityImpl<T extends Entity = Entity>
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
 
-    if (this.isRollingStock()) return this.adjustValueRollingStock(stage, value)
-
     if (stage == this.firstStage) return this.setValueAtFirstStage(value)
 
     const valueAtPreviousStage = assert(this.getValueAtStage(stage - 1))
     const newStageDiff = getEntityDiff(valueAtPreviousStage, value)
     return this.setDiffInternal(stage, newStageDiff, valueAtPreviousStage)
   }
-  private adjustValueRollingStock(this: ProjectEntityImpl<RollingStockEntity>, stage: StageNumber, value: T): boolean {
-    const canAdjust = stage == this.firstStage
-    if (!canAdjust) return false
-    const diff = getEntityDiff(this.firstValue, value)
-    if (!diff) return false
-    delete diff.orientation // ignore orientation
-    if (isEmpty(diff)) return false
-    applyDiffToEntity(this.firstValue, diff)
-    return true
-  }
 
   private setValueAtFirstStage(value: T): boolean {
     const { firstValue } = this
     const diff = getEntityDiff(firstValue, value)
     if (!diff) return false
+    if (this.isRollingStock()) {
+      delete (diff as { orientation?: unknown }).orientation
+    }
+    if (isEmpty(diff)) {
+      return false
+    }
 
     applyDiffToEntity(firstValue, diff)
     this.trimDiffs(this.firstStage, diff)
@@ -488,8 +474,6 @@ class ProjectEntityImpl<T extends Entity = Entity>
   setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean {
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
-    if (this.isRollingStock()) return false
-
     const [propAtPreviousStage] = this.getPropAtStage(stage - 1, prop)
     return this.setPropAtStageInternal(stage, prop, value, propAtPreviousStage)
   }
