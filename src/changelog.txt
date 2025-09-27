@@ -5,6 +5,8 @@ Date: ????
     - Fixed an issue with trains when inserting a stage before the stage a train is in.
     - Fixed partially missing support for agricultural towers.
     - Fixed several issues related to elevated rails.
+  Changes:
+    - Editor should now be more resilient to crashes due to missing previews.
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.2
 Date: 2025-09-27
