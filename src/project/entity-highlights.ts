@@ -132,6 +132,16 @@ OnPrototypeInfoLoaded.addListener((info) => {
   ;({ selectionBoxes } = info)
 })
 
+const prototypesToSkipRequestHighlight = newLuaSet(
+  "locomotive",
+  "gun-turret",
+  "laser-turret",
+  "artillery-turret",
+  "flamethrower-turret",
+  "tesla-turret",
+  "railgun-turret",
+)
+
 function createHighlight<T extends keyof HighlightEntities>(
   entity: ProjectEntity,
   stage: StageNumber,
@@ -296,6 +306,7 @@ export function EntityHighlights(project: Project): EntityHighlights {
     entity.destroyAllExtraEntities("itemRequestHighlightOverlay")
     const unstagedValue = entity.getPropertyAllStages("unstagedValue")
     if (!unstagedValue) return
+    if (entity.firstValue.name in prototypesToSkipRequestHighlight) return
     for (const [stage, value] of pairs(unstagedValue)) {
       if (value.items?.[0]) {
         createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlight")

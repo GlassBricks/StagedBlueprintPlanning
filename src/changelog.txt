@@ -7,6 +7,7 @@ Date: ????
     - Fixed several issues related to elevated rails.
   Changes:
     - Editor should now be more resilient to crashes due to missing previews.
+    - Removed redundant item request indicator from entities that already have them
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.2
 Date: 2025-09-27
