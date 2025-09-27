@@ -184,13 +184,13 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     knownValue: BlueprintEntity | nil,
   ): ProjectEntity | nil {
     const stageInfo = knownValue?.tags?.bp100 as StageInfoExport | nil
-    if (!stageInfo) {
-      const [saved, unstagedValue] = saveEntity(entity, knownValue)
-      if (!saved) return nil
-      return newProjectEntity(saved, entity.position, entity.direction, stage, unstagedValue)
+    if (stageInfo) {
+      return createProjectEntityFromStagedInfo(entity, stage, knownValue, stageInfo)
     }
 
-    return createProjectEntityFromStagedInfo(entity, stage, knownValue, stageInfo)
+    const [saved, unstagedValue] = saveEntity(entity, knownValue)
+    if (!saved) return nil
+    return newProjectEntity(saved, entity.position, entity.direction, stage, unstagedValue)
   }
   function addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil {
     const projectEntity = createNewProjectEntity(entity, stage, knownValue)

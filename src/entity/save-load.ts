@@ -24,6 +24,7 @@ import { Events, getName, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
+import { Prototypes } from "../constants"
 import { Entity, UnstagedEntityProps } from "./Entity"
 import {
   addItemRequests,
@@ -75,7 +76,7 @@ function findEntityIndex(mapping: Record<number, LuaEntity>, entity: LuaEntity):
 function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   const { surface, position } = entity
 
-  for (const radius of [0.01, 1]) {
+  for (const radius of [0.01, 2]) {
     const indexMapping = bpStack.create_blueprint({
       surface,
       force: entity.force_index,

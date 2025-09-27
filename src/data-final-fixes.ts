@@ -8,6 +8,7 @@ import {
   BoundingBox,
   Color,
   EntityPrototype,
+  PrototypeType,
   SelectionModeData,
   SelectionToolPrototype,
   SimpleEntityWithOwnerPrototype,
@@ -107,6 +108,13 @@ const types = keys<Record<BuildableEntityType, true>>()
 
 const buildableNames: string[] = []
 
+const curved_rails = newLuaSet<PrototypeType>(
+  "curved-rail-a",
+  "curved-rail-b",
+  "elevated-curved-rail-a",
+  "elevated-curved-rail-b",
+)
+
 for (const type of types.sort()) {
   const prototypes = data.raw[type]
   if (!prototypes) continue
@@ -124,7 +132,7 @@ for (const type of types.sort()) {
     const flags = prototype.flags!.filter((flag) => flagsToTransfer.has(flag))
     flags.push("not-on-map")
     // hack for curved rails
-    if (prototype.name == "curved-rail-a" || prototype.name == "curved-rail-b") {
+    if (curved_rails.has(name as never)) {
       if (!flags.includes("placeable-off-grid")) flags.push("placeable-off-grid")
     }
 
