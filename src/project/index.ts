@@ -51,13 +51,13 @@ Migrations.to("2.4.0", () => {
   }
 })
 
+interface OldBlueprintSettings {
+  1: SignalID | nil
+  2: SignalID | nil
+  3: SignalID | nil
+  4: SignalID | nil
+}
 Migrations.to("2.5.2", () => {
-  interface OldBlueprintSettings {
-    1: SignalID | nil
-    2: SignalID | nil
-    3: SignalID | nil
-    4: SignalID | nil
-  }
   for (const project of getAllProjects()) {
     const projectBpSettings = project.defaultBlueprintSettings
     function migrateIconNumbers(table: Record<keyof BlueprintTakeSettings, unknown>) {
@@ -69,6 +69,22 @@ Migrations.to("2.5.2", () => {
     migrateIconNumbers(projectBpSettings)
     for (const stage of project.getAllStages()) {
       migrateIconNumbers(stage.blueprintOverrideSettings)
+    }
+  }
+})
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of getAllProjects()) {
+    const projectBpSettings = project.defaultBlueprintSettings
+    function deleteOldNumberKeys(table: Record<string, unknown>) {
+      assume<Mutable<OldBlueprintSettings>>(table)
+      for (const number of iconNumbers) {
+        delete table[number]
+        delete table[tostring(number) as "1" | "2" | "3" | "4"]
+      }
+    }
+    deleteOldNumberKeys(projectBpSettings)
+    for (const stage of project.getAllStages()) {
+      deleteOldNumberKeys(stage.blueprintOverrideSettings)
     }
   }
 })
