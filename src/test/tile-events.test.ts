@@ -6,7 +6,7 @@
 import expect, { mock } from "tstl-expect"
 import { withTileEventsDisabled } from "../project/tile-events"
 
-test("withTileEventsDisabled", () => {
+test("calls function with tile events disabled", () => {
   const oldHandler = script.get_event_handler(defines.events.script_raised_set_tiles)
   const fn = mock.fnNoSelf()
   withTileEventsDisabled(fn, 1, 2, 3)

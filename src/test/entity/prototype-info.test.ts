@@ -6,7 +6,7 @@
 import expect from "tstl-expect"
 import { getPrototypeInfo, RotationType } from "../../entity/prototype-info"
 
-describe("getCategoryName", () => {
+describe("getCategoryName()", () => {
   function getEntityCategory(name: string): string {
     return getPrototypeInfo().nameToCategory.get(name) ?? "unknown"
   }

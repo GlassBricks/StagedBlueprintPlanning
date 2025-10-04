@@ -193,7 +193,7 @@ function assertNewUpdated(entity: ProjectEntity) {
   }
 }
 
-describe("addNewEntity", () => {
+describe("addNewEntity()", () => {
   test("simple add", () => {
     const luaEntity = createEntity(2)
     const entity = projectUpdates.addNewEntity(luaEntity, 2)!
@@ -381,7 +381,7 @@ test("cannot tryReviveSettingsRemnant if not a remnant", () => {
   assertWUNotCalled()
 })
 
-describe("deleteEntityOrCreateSettingsRemnant", () => {
+describe("deleteEntityOrCreateSettingsRemnant()", () => {
   test("deletes normal entity", () => {
     const { entity } = addEntity(1)
 
@@ -455,7 +455,7 @@ test("forceDeleteEntity always deletes", () => {
   assertDeleteWorldEntityCalled(entity)
 })
 
-describe("tryUpdateEntityFromWorld", () => {
+describe("tryUpdateEntityFromWorld()", () => {
   test('with no changes returns "no-change"', () => {
     const { entity } = addEntity(2)
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2)
@@ -575,7 +575,7 @@ describe("tryUpdateEntityFromWorld", () => {
   })
 })
 
-describe("tryRotateEntityFromWorld", () => {
+describe("tryRotateEntityFromWorld()", () => {
   test("in first stage rotates all entities", () => {
     const { luaEntity, entity } = addEntity(2)
     luaEntity.direction = direction.west
@@ -664,7 +664,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
   })
 })
 
-describe("tryUpgradeEntityFromWorld", () => {
+describe("tryUpgradeEntityFromWorld()", () => {
   test("can apply upgrade", () => {
     const { luaEntity, entity } = addEntity(1)
     luaEntity.order_upgrade({
@@ -681,7 +681,7 @@ describe("tryUpgradeEntityFromWorld", () => {
   })
 })
 
-describe("updateWiresFromWorld", () => {
+describe("updateWiresFromWorld()", () => {
   test("if saved, calls update", () => {
     const { entity } = addEntity(1)
     wireSaver.saveWireConnections.returnsOnce(true as any)
@@ -722,7 +722,7 @@ describe("updateWiresFromWorld", () => {
   })
 })
 
-describe("updateFromBpStagedInfo", () => {
+describe("updateFromBpStagedInfo()", () => {
   test("can update from bp info", () => {
     const { entity } = addEntity(1)
     const info: StageInfoExport = {
@@ -765,7 +765,7 @@ describe("updateFromBpStagedInfo", () => {
   })
 })
 
-describe("trySetFirstStage", () => {
+describe("trySetFirstStage()", () => {
   test("can move up", () => {
     const { entity } = addEntity(1)
     const result = projectUpdates.trySetFirstStage(entity, 2)
@@ -838,7 +838,7 @@ describe("trySetFirstStage", () => {
   })
 })
 
-describe("trySetLastStage", () => {
+describe("trySetLastStage()", () => {
   test("can move down", () => {
     const { entity } = addEntity(2)
     entity.setLastStageUnchecked(3)

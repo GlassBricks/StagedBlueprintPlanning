@@ -9,7 +9,7 @@ import { FactorioJsx, GuiEventHandler } from "../factoriojsx"
 import { getDescription, isRoot, makeWrapper, testRender } from "./gui"
 import { getPlayer } from "./misc"
 
-describe("makeWrapper", () => {
+describe("makeWrapper()", () => {
   let element: BaseGuiElement
   test("create", () => {
     element = makeWrapper()
@@ -21,7 +21,7 @@ describe("makeWrapper", () => {
   })
 })
 
-describe("getDescription", () => {
+describe("getDescription()", () => {
   it("with name", () => {
     const element = makeWrapper().add({
       type: "label",
@@ -43,7 +43,7 @@ test("testRender", () => {
   expect(getPlayer().gui.screen).toEqual(element.element.parent)
 })
 
-describe("findSatisfying", () => {
+describe("findSatisfying()", () => {
   it("finds element", () => {
     const element = testRender(
       <flow>

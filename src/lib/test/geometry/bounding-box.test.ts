@@ -90,7 +90,7 @@ test("center", () => {
   expect(box2).toEqual({ x: 2, y: 3 })
 })
 
-describe("rotateAboutOrigin", () => {
+describe("rotateAboutOrigin()", () => {
   test("north", () => {
     const box = BBox({ x: -1, y: -2 }, { x: 3, y: 4 })
     const box2 = box.rotateAboutOrigin(defines.direction.north)

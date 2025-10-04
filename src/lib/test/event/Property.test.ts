@@ -6,7 +6,7 @@
 import expect, { mock } from "tstl-expect"
 import { multiMap, MutableProperty, Property, property, Props, _numObservers } from "../../event"
 
-describe("property", () => {
+describe("property()", () => {
   let s: MutableProperty<string>
   before_each(() => {
     s = property("begin")
@@ -69,7 +69,7 @@ describe("State utils", () => {
   })
 })
 
-describe("map", () => {
+describe("map()", () => {
   let val: MutableProperty<number>
   let mapped: Property<number>
   before_each(() => {
@@ -108,7 +108,7 @@ describe("map", () => {
   })
 })
 
-describe("multiMap", () => {
+describe("multiMap()", () => {
   let val1: MutableProperty<number>
   let val2: MutableProperty<number>
   let mapped: Property<number>
@@ -155,7 +155,7 @@ describe("multiMap", () => {
   })
 })
 
-describe("flatMap", () => {
+describe("flatMap()", () => {
   test("maps non-state values", () => {
     const val = property(3)
     const mapped = val.flatMap({ invoke: (x) => x * 2 })
@@ -241,7 +241,7 @@ describe("flatMap", () => {
   })
 })
 
-describe("sub", () => {
+describe("sub()", () => {
   test("can get value", () => {
     const val = property({ a: 1 })
     const sub = val.sub("a")

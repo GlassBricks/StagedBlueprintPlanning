@@ -141,7 +141,7 @@ after_each(() => {
   expect(notifications.createIndicator).toHaveBeenCalledTimes(numIndicators)
 })
 
-describe("onEntityCreated", () => {
+describe("onEntityCreated()", () => {
   test.each([2, 3])("at same or higher stage %d sets entity and calls refreshEntityAtStage", (newStage) => {
     const { luaEntity, entity } = addEntity(2)
     userActions.onEntityCreated(luaEntity, newStage, playerIndex)
@@ -275,7 +275,7 @@ describe("onEntityCreated", () => {
   })
 })
 
-describe("onEntityDeleted", () => {
+describe("onEntityDeleted()", () => {
   test("if entity not in project, does nothing", () => {
     const luaEntity = createWorldEntity(2)
     userActions.onEntityDeleted(luaEntity, 2, playerIndex)
@@ -316,7 +316,7 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
   [EntityUpdateResult.CannotUpgradeChangedPair, L_Interaction.CannotUpgradeUndergroundChangedPair],
 ]
 
-describe("onEntityPossiblyUpdated", () => {
+describe("onEntityPossiblyUpdated()", () => {
   test("if not in project, adds entity", () => {
     const luaEntity = createWorldEntity(2)
     const knownValue: any = { foo: "bar" }
@@ -385,7 +385,7 @@ describe("onEntityPossiblyUpdated", () => {
   })
 })
 
-describe("onEntityRotated", () => {
+describe("onEntityRotated()", () => {
   test("if not in project, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
     userActions.onEntityRotated(luaEntity, 2, luaEntity.direction, playerIndex)
@@ -421,7 +421,7 @@ test("onUndergroundBeltDragRotated", () => {
   expect(projectUpdates.tryRotateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
 })
 
-describe("onEntityMarkedForUpgrade", () => {
+describe("onEntityMarkedForUpgrade()", () => {
   test("if not in project, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
     userActions.onEntityMarkedForUpgrade(luaEntity, 2, playerIndex)
@@ -440,7 +440,7 @@ describe("onEntityMarkedForUpgrade", () => {
   })
 })
 
-describe("onWiresPossiblyUpdated", () => {
+describe("onWiresPossiblyUpdated()", () => {
   test("if not in project, defaults to add behavior", () => {
     const luaEntity = createWorldEntity(2)
     userActions.onWiresPossiblyUpdated(luaEntity, 2, playerIndex)
@@ -470,7 +470,7 @@ function createPreview(luaEntity: LuaEntity) {
   )!
 }
 
-describe("onCleanupToolUsed", () => {
+describe("onCleanupToolUsed()", () => {
   test("if not in project, does nothing", () => {
     const luaEntity = createWorldEntity(2)
     userActions.onCleanupToolUsed(luaEntity, 2)
@@ -517,7 +517,7 @@ test("onEntityDied calls clearEntityAtStage", () => {
   expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(entity, 2)
 })
 
-describe("onMoveEntityToStageCustomInput", () => {
+describe("onMoveEntityToStageCustomInput()", () => {
   test("if not in project, does nothing", () => {
     const luaEntity = createWorldEntity(2)
     const undoAction = userActions.onMoveEntityToStageCustomInput(luaEntity, 2, playerIndex)
@@ -559,7 +559,7 @@ describe("onMoveEntityToStageCustomInput", () => {
     }
   })
 })
-describe("onSendToStageUsed", () => {
+describe("onSendToStageUsed()", () => {
   test("calls trySetFirstStage and notifies if sent down", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
@@ -626,7 +626,7 @@ describe("onSendToStageUsed", () => {
     assertNotified(entity, message, true)
   })
 })
-describe("onBringToStageUsed", () => {
+describe("onBringToStageUsed()", () => {
   test("calls trySetFirstStage when moved, and notifies if sent up", () => {
     const { luaEntity, entity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
@@ -680,7 +680,7 @@ describe("onBringToStageUsed", () => {
   })
 })
 
-describe("onBringDownToStageUsed", () => {
+describe("onBringDownToStageUsed()", () => {
   test("works for entity in higher stage", () => {
     const { luaEntity, entity } = addEntity(3)
     entity.replaceWorldEntity(3, luaEntity)
@@ -708,7 +708,7 @@ describe("onBringDownToStageUsed", () => {
   })
 })
 
-describe("onStageDeleteUsed", () => {
+describe("onStageDeleteUsed()", () => {
   test("can set last stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
@@ -763,7 +763,7 @@ describe("onStageDeleteUsed", () => {
     expect(undoAction).toBeNil()
   })
 })
-describe("onStageDeleteCancelUsed", () => {
+describe("onStageDeleteCancelUsed()", () => {
   test("can clear last stage", () => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)

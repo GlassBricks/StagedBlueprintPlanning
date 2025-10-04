@@ -71,7 +71,7 @@ test("can take single blueprint using stage settings", () => {
   expect(stack.preview_icons).toMatchTable([{ index: 1, signal: { type: "virtual", name: "signal-1" } }])
 })
 
-test("stageLimit: only entities present in last x stages or in additionalWhitelist", () => {
+test("includes only entities present in last x stages or in additionalWhitelist when stageLimit set", () => {
   const [stage1, stage2, stage3, stage4] = project.getAllStages()
 
   createEntity(stage1) // not included
@@ -124,7 +124,7 @@ test("stageLimit: only entities present in last x stages or in additionalWhiteli
   )
 })
 
-test("excludeFromFutureBlueprints: entities are not included in future blueprints", () => {
+test("excludes entities from future blueprints when excludeFromFutureBlueprints is set", () => {
   const [stage1, stage2, stage3] = project.getAllStages()
   const e1 = createEntity(stage1) // should be excluded
   stage1.blueprintOverrideSettings.excludeFromFutureBlueprints.set(true)
@@ -150,7 +150,7 @@ test("excludeFromFutureBlueprints: entities are not included in future blueprint
   expect(entities2[0].position).toEqual(e1.position)
 })
 
-test("make blueprint book", () => {
+test("creates blueprint book with all stages", () => {
   for (const i of $range(1, project.numStages())) {
     createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])
   }
@@ -176,14 +176,14 @@ test("make blueprint book", () => {
   })
 })
 
-test("export blueprint book to file", () => {
+test("exports blueprint book to file", () => {
   const result = exportBlueprintBookToFile(project, player)
   expect(result).toEqual("staged-blueprints/test")
 
   cancelCurrentTask()
 })
 
-test("make blueprint book using template", () => {
+test("creates blueprint book using template", () => {
   for (const i of $range(1, project.numStages())) {
     createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])
   }

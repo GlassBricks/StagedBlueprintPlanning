@@ -98,7 +98,7 @@ function assertEntityCorrect(i: StageNumber): LuaEntity {
   return worldEntity
 }
 
-describe("updateWorldEntities", () => {
+describe("updateWorldEntities()", () => {
   describe.each([false, true])("with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
@@ -305,7 +305,7 @@ test("rebuildWorldEntityAtStage replaces old value", () => {
   assertEntityCorrect(2)
 })
 
-describe("updateWorldEntitiesOnLastStageChanged", () => {
+describe("updateWorldEntitiesOnLastStageChanged()", () => {
   test("moving up creates entities", () => {
     entity.setFirstStageUnchecked(2)
     entity.setLastStageUnchecked(2)
@@ -348,7 +348,7 @@ describe("updateWorldEntitiesOnLastStageChanged", () => {
   })
 })
 
-describe("updateNewEntityWithoutWires", () => {
+describe("updateNewEntityWithoutWires()", () => {
   test("can update", () => {
     const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.addEntity(entity)

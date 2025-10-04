@@ -63,7 +63,7 @@ function createSampleProject() {
   return project
 }
 
-test("Basic export test", () => {
+test("exports project correctly", () => {
   const project = createSampleProject()
   const result = exportProject(project)
   expect(result).toMatchTable({
@@ -117,14 +117,14 @@ test("Basic export test", () => {
   } satisfies ProjectExport)
 })
 
-test("Round trip export test", () => {
+test("round trips export correctly", () => {
   const project = createSampleProject()
   const result = exportProject(project)
   const roundTrip = exportProject(importProjectDataOnly(result))
   expect(roundTrip).toEqual(result)
 })
 
-test("Unstaged values are preserved in round trip", () => {
+test("preserves unstaged values in round trip", () => {
   const project = createSampleProject()
 
   // Find entities and verify unstaged values were set

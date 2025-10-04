@@ -25,7 +25,7 @@ after_each(() => {
   player.clear_cursor()
 })
 
-test("createStageReference", () => {
+test("creates stage reference with correct properties", () => {
   const project = createUserProject("Test", 3)
   const stage = project.getStage(2)!
 
@@ -101,7 +101,7 @@ test("correctStageReference updates stack if stage changed", () => {
   expect(retrievedStage).toBe(stage)
 })
 
-test("correctStageReferenceRecursive", () => {
+test("corrects stage reference recursively in blueprint books", () => {
   const project = createUserProject("Test", 3)
   const stage = project.getStage(2)!
 

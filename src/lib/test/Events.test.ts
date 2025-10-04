@@ -19,14 +19,14 @@ after_each(() => {
   _setCanRegister(false)
 })
 
-test("Can register directly", () => {
+test("can register event handler directly", () => {
   const func = () => {}
   Events.on(eventId, func)
 
   expect(script.get_event_handler(eventId)).toBe(func)
 })
 
-test("Can register multiple", () => {
+test("can register multiple event handlers", () => {
   const actions: number[] = []
   Events.on(eventId, () => {
     actions.push(1)

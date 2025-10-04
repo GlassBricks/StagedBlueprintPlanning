@@ -67,13 +67,13 @@ before_each(() => {
   projectEntity.setUnstagedValue(7, { _forTest: 7 })
 })
 
-test("getters", () => {
+test("returns correct values from getters", () => {
   expect(projectEntity.firstStage).toEqual(2)
   expect(projectEntity.firstValue).toEqual(entity)
   expect(projectEntity.direction).toEqual(0) // nil <=> 0
 })
 
-test("lastStage default nil", () => {
+test("defaults lastStage to nil when not set", () => {
   expect(projectEntity.lastStage).toBeNil()
 })
 

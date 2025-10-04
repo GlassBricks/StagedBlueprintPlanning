@@ -14,7 +14,7 @@ it("can be constructed", () => {
   expect(event).toBeAny()
 })
 
-describe("subscribe", () => {
+describe("subscribe()", () => {
   it("can be subscribed to", () => {
     const fn = mock.fn()
     event._subscribeIndependently({ invoke: fn })
@@ -58,7 +58,7 @@ describe("subscribe", () => {
   })
 })
 
-describe("unsubscribe", () => {
+describe("unsubscribe()", () => {
   it("returns subscription object", () => {
     const fn = mock.fn()
     const subscription = event._subscribeIndependently({ invoke: fn })

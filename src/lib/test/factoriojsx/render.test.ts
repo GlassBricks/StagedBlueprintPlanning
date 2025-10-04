@@ -33,7 +33,7 @@ import {
 import { RegisterClass } from "../../references"
 import { testRender } from "../gui"
 
-describe("create", () => {
+describe("create()", () => {
   test("Sets spec property", () => {
     const spec: FlowElement = {
       type: "flow",
@@ -165,7 +165,7 @@ describe("create", () => {
   })
 })
 
-describe("styleMod", () => {
+describe("styleMod()", () => {
   test("sets property", () => {
     const spec: FlowElement = {
       type: "flow",
@@ -221,7 +221,7 @@ describe("styleMod", () => {
   })
 })
 
-describe("destroy", () => {
+describe("destroy()", () => {
   test("calling destroy sets invalid to false", () => {
     const spec: FlowElement = {
       type: "flow",
@@ -482,7 +482,7 @@ describe("Class component", () => {
     expect(() => testRender(spec)).toError()
   })
 
-  describe("getComponentInstance", () => {
+  describe("getComponentInstance()", () => {
     test("returns component instance", () => {
       const spec: ClassComponent<any> = {
         type: Foo,

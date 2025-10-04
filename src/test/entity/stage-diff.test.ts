@@ -20,7 +20,7 @@ const entity2 = {
   simpleUnchanged: "unchanged",
   unchanged: { x: 1, y: 2 },
 }
-test("getEntityDiff", () => {
+test("returns diff with only changed and removed properties", () => {
   const diff = getEntityDiff(entity1, entity2)
   expect(diff).toEqual({
     name: "2",
@@ -28,7 +28,7 @@ test("getEntityDiff", () => {
     setToNil: getNilPlaceholder(),
   })
 })
-test("applyDiffToEntity", () => {
+test("applies diff to entity correctly", () => {
   const diff = getEntityDiff(entity1, entity2)!
   const entity = { ...entity1 }
   applyDiffToEntity(entity, diff)

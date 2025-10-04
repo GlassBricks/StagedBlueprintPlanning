@@ -78,7 +78,7 @@ test("ceil", () => {
   expect(position2).toEqual({ x: 2, y: 3 })
 })
 
-describe("rotateAboutOrigin", () => {
+describe("rotateAboutOrigin()", () => {
   test("north", () => {
     const position = Pos(1, 2)
     const position2 = position.rotateAboutOrigin(defines.direction.north)

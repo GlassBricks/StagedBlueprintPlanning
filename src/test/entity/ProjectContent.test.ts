@@ -21,7 +21,7 @@ after_each(() => {
 })
 const surfaces = setupTestSurfaces(1)
 
-test("countNumEntities", () => {
+test("counts number of entities correctly", () => {
   const entity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   expect(content.countNumEntities()).toBe(0)
   content.addEntity(entity)
@@ -102,7 +102,7 @@ describe("findCompatible", () => {
   })
 })
 
-test("findExact", () => {
+test("finds exact entity match by lua entity and position", () => {
   const entity: ProjectEntity = newProjectEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, 0, 1)
   const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
   content.addEntity(entity)
@@ -245,7 +245,7 @@ describe("findCompatibleWithLuaEntity", () => {
   })
 })
 
-test("changePosition", () => {
+test("changes entity position and updates internal index", () => {
   const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   content.addEntity(entity)
   content.changeEntityPosition(entity, { x: 1, y: 1 })
@@ -254,13 +254,13 @@ test("changePosition", () => {
   expect(content.findCompatibleEntity("foo", { x: 1, y: 1 }, defines.direction.north, 1)).toBe(entity)
 })
 
-test("replaceTile", () => {
+test("sets tile at position", () => {
   const tile = createProjectTile("foo", { x: 1, y: 2 }, 1)
   content.setTile(tile)
   expect(content.tiles.get(1, 2)).toBe(tile)
 })
 
-test("deleteTile", () => {
+test("deletes tile and returns success status", () => {
   const tile = createProjectTile("foo", { x: 1, y: 2 }, 1)
   content.setTile(tile)
   const ret = content.deleteTile(tile)
@@ -270,7 +270,7 @@ test("deleteTile", () => {
   expect(ret2).toBe(false)
 })
 
-test("insertStage", () => {
+test("inserts stage for all entities and tiles", () => {
   const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
   content.addEntity(entity)
@@ -282,7 +282,7 @@ test("insertStage", () => {
   expect(tile.insertStage).toHaveBeenCalledWith(2)
 })
 
-test("deleteStage", () => {
+test("deletes stage for all entities and tiles", () => {
   const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
   content.addEntity(entity)

@@ -6,7 +6,7 @@
 import expect from "tstl-expect"
 import { createProjectTile } from "../../entity/ProjectTile"
 
-describe("setValueAtStage", () => {
+describe("setValueAtStage()", () => {
   test("can set value at first stage", () => {
     const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
     expect(tile.firstValue).toBe("a")
@@ -62,7 +62,7 @@ describe("setValueAtStage", () => {
     expect(tile.stageDiffs).toEqual({ [2]: "b" })
   })
 })
-test("moveDownWithValue", () => {
+test("moves tile down with new value at earlier stage", () => {
   const tile = createProjectTile("a", { x: 0, y: 0 }, 2)
   tile.moveDownWithValue(1, "b")
 

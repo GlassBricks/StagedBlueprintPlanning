@@ -1747,7 +1747,7 @@ test("rebuildStage", () => {
   }
 })
 
-test("Can update an infinity accumulator", () => {
+test("can update an infinity accumulator", () => {
   assert("EditorExtensions" in script.active_mods)
   const entity = buildEntity(1, { name: "ee-infinity-accumulator-primary-input", position: pos })
   expect(entity.getWorldOrPreviewEntity(2)?.name).toEqual("ee-infinity-accumulator-primary-input")

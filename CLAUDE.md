@@ -105,6 +105,24 @@ See mini framework in `src/lib/migration.ts`
 - Tests in `src/test/` or `src/lib/test/`
 - Test file names mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`
 - High test coverage expected
+- Framework: factorio-test (Jest-like), assertions via tstl-expect
+- Lifecycle hooks: `before_each`, `after_each`, `before_all`, `after_all`
+
+**Test Naming Standards:**
+- Test names: Lowercase descriptive sentences starting with action verbs
+  - ✅ `test("returns nil when stage is lower than first stage", ...)`
+  - ✅ `test("should throw error when moving past last stage", ...)`
+- Describe blocks: Use method names with `()` or feature names
+  - ✅ `describe("adjustValueAtStage()", ...)`
+  - ✅ `describe("wire connection lifecycle", ...)`
+- Parameterized tests: Use `test.each()` with descriptive format strings
+  - `test.each([...])("operation: %s + %s = %s", (a, b, expected) => ...)`
+
+**Test Structure:**
+- Group tests by method/feature using `describe()` blocks
+- Use specific matchers: `toBe`, `toEqual`, `toBeNil`, `toHaveLength`, `toError()`
+- Extract complex setup to helper functions or factory files
+- One logical assertion per test (multiple expects OK if testing same concept)
 
 ## Important Files
 
