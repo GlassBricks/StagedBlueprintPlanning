@@ -10,6 +10,9 @@ We use:
 - [Factorio test](https://github.com/GlassBricks/FactorioTest) for testing
 - [gb-tstl-utils](https://github.com/GlassBricks/TstlUtils) for some compiler-assisted utilities
 
+## Overview
+[[CLAUDE.md]] is meant for bots, but it's nice for humans, too! Perhaps give it a read.
+
 ## Setup
 
 Fork/clone this repo.

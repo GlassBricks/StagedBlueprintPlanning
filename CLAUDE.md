@@ -1,0 +1,117 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Staged Blueprint Planning is a Factorio mod for designing multi-stage blueprints. Written in TypeScript and compiled to Lua via TypeScriptToLua (TSTL).
+
+## Development Commands
+
+### Build & Watch
+```bash
+npm run build:test        # Build with tests
+npm run build:release     # Production build
+npm run watch             # Watch mode for development
+```
+
+### Testing
+```bash
+npm run test              # Run all tests via factorio-test
+```
+
+### Code Quality
+```bash
+npm run format:fix        # Format with Prettier
+npm run lint              # Run ESLint
+npm run check             # Full validation (format, lint, test, git tree clean)
+```
+
+### Build Scripts
+- `npm run build:locale` - Generates `locale.d.ts` from `src/locale`
+- `npm run build:gui-specs` - Generates GUI specs for factoriojsx framework
+- `npm run build:tstlPlugin` - Builds custom TSTL plugin for function storage
+
+## Code Style
+
+### Lua-Specific Conventions
+Since code compiles to Lua:
+- Use `==` instead of `===`, `!=` instead of `!==`
+- Use `nil` instead of `undefined`, avoid `null`
+
+### TypeScript Style
+- No semicolons, 120 char line width (Prettier)
+- Explicit member accessibility required (`accessibility: "no-public"`)
+- Explicit module boundary types required
+- Test files end with `.test.ts`
+
+## Architecture
+
+### Tech Stack
+- TypeScriptToLua (TSTL)
+- typed-factorio for Factorio API type definitions
+- factorio-test for testing
+- gb-tstl-utils for compiler utilities
+
+### Key Directories
+```
+src/
+├── project/            # Main backend: project state & logic
+├── entity/             # Entity handling
+│   ├── ProjectEntity.ts      # Individual entity data
+│   └── ProjectContent.ts     # Project's entities collection
+├── blueprints/         # Blueprint import/export
+├── ui/                 # Frontend UI components
+├── lib/                # Core libraries
+│   ├── event/          # Custom event system (Event, Property, GlobalEvent)
+│   ├── factoriojsx/    # Custom JSX framework for Factorio GUI
+│   ├── geometry/       # Geometry utilities
+│   ├── references.ts   # Function storage system (uses custom TSTL plugin)
+│   └── migration.ts    # Migration framework
+├── utils/              # General utilities
+├── test/               # Tests (mirrors src/ structure)
+├── prototypes/         # Factorio data stage prototypes
+└── control.ts          # Mod entry point
+```
+
+### Main Event Pipeline (project editing)
+Located in `src/project/`:
+1. `event-handlers.ts` - Parses Factorio events into custom events
+2. `user-actions.ts` - Handles player interactions, decides actions
+3. `project-updates.ts` - Updates ProjectContent
+4. `world-updates.ts`, `entity-highlights.ts` - Syncs world state with project
+
+### Custom Libraries
+
+**factoriojsx**: Custom JSX framework for Factorio GUI (see `src/lib/factoriojsx/`)
+- TSX files use: `jsxFactory: "FactorioJsx.createElement"`
+- Provides React-like GUI creation for Factorio
+
+**Event System** (`src/lib/event/`): Custom reactive event/property system
+- `Event.ts` - Event emitters
+- `Property.ts` - Reactive properties
+- `GlobalEvent.ts` - Global event bus
+
+**References** (`src/lib/references.ts`): Function storage using custom TSTL plugin
+- Enables consistent global function storage
+- See tstlPlugin for implementation
+
+### Migrations
+When editing anything in `storage`:
+See mini framework in `src/lib/migration.ts`
+- Place project-related migrations in: `src/project/index.ts`
+
+### Testing
+- Tests in `src/test/` or `src/lib/test/`
+- Test file names mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`
+- High test coverage expected
+
+## Important Files
+
+- `src/entity/ProjectEntity.ts` - Individual entity data structure
+- `src/entity/ProjectContent.ts` - Project entities collection
+- `src/project/UserProject.ts` - Full project & stage definitions
+- `src/ui/ProjectSettings.tsx` - Main UI component
+- `src/lib/references.ts` - Global function storage system
+- `node_modules/typed-factorio/runtime/index.d.ts` - Factorio API types
+- `node_modules/typed-factorio/runtime/generated/*.d.ts` - Generated API types
