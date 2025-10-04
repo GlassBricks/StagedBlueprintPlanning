@@ -72,7 +72,7 @@ Migrations.to("2.5.2", () => {
     }
   }
 })
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.6.4", () => {
   for (const project of getAllProjects()) {
     const projectBpSettings = project.defaultBlueprintSettings
     function deleteOldNumberKeys(table: Record<string, unknown>) {
