@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.5
-Date: ????
+Date: 2025-10-09
   Bugfixes:
     - Fixed crash when attempting to take a blueprint with no entities.
   Changes:
