@@ -179,8 +179,10 @@ class TakeStageBlueprintStep implements BlueprintStep {
       stageName,
     })
     this.stagePlan.result = result
-    this.actualStack.label = stageName
-    this.actualStack.blueprint_description = this.stageSettings.description
+    if (this.actualStack.is_blueprint && this.actualStack.is_blueprint_setup()) {
+      this.actualStack.label = stageName
+      this.actualStack.blueprint_description = this.stageSettings.description
+    }
 
     if (this.stagePlan.additionalBpStacks) {
       for (const stack of this.stagePlan.additionalBpStacks) {

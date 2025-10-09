@@ -16,7 +16,7 @@ import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
 import { Stage, UserProject } from "../../project/ProjectDef"
-import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { simpleInsertPlan } from "../entity/entity-util"
 
 let project: UserProject
@@ -242,4 +242,18 @@ test("blueprint with unstaged values includes item requests", () => {
   // Check that item requests were added to the blueprint entity
   expect(entities[0].items).toBeAny()
   expect(entities[0].items![0].id.name).toBe("iron-ore")
+})
+
+test("does not error when taking empty blueprint", () => {
+  const [stage1, stage2] = project.getAllStages()
+  createEntity(stage1) // create entity only in stage 1
+  stage1.blueprintOverrideSettings.excludeFromFutureBlueprints.set(true)
+
+  const stack = player.cursor_stack!
+  stage2.stageBlueprintSettings.description.set("Test description")
+
+  const ret = takeStageBlueprint(stage2, stack)
+
+  expect(stack.is_blueprint_setup()).toBe(false)
+  expect(ret).toBe(false)
 })
