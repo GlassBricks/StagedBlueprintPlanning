@@ -741,7 +741,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       passedValue = editPassedValue<InserterBlueprintEntityWrite>(passedValue, (inserter) => {
         if (inserter.pickup_position) {
           inserter.pickup_position = transform(
-            inserter.pickup_position as MapPosition,
+            Pos.normalize(inserter.pickup_position) as MapPosition,
             bpState.flipHorizontal,
             bpState.flipVertical,
             bpState.direction,
@@ -749,7 +749,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
         }
         if (inserter.drop_position) {
           inserter.drop_position = transform(
-            inserter.drop_position as MapPosition,
+            Pos.normalize(inserter.drop_position) as MapPosition,
             bpState.flipHorizontal,
             bpState.flipVertical,
             bpState.direction,
