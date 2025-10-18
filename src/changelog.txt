@@ -1,13 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.6
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed issue with inserter pickup/drop positions when blueprinted in some cases
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.5
 Date: 2025-10-09
   Bugfixes:
     - Fixed crash when attempting to take a blueprint with no entities.
-  Changes:
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.4
 Date: 2025-10-04
