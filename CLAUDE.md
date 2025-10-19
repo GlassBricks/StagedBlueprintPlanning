@@ -133,3 +133,7 @@ See mini framework in `src/lib/migration.ts`
 - `src/lib/references.ts` - Global function storage system
 - `node_modules/typed-factorio/runtime/index.d.ts` - Factorio API types
 - `node_modules/typed-factorio/runtime/generated/*.d.ts` - Generated API types
+
+## Other notes
+
+Inspect typed-factorio files in node_modules to lookup factorio API documentation

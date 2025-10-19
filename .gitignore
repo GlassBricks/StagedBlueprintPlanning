@@ -144,3 +144,4 @@ factorio-test-data-dir/mods/*
 # license files are in root; copied to src for packaging only
 src/COPYING*
 src/*.zip
+docs/research
