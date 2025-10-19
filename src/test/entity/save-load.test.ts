@@ -756,6 +756,34 @@ test("can flip loader", () => {
   expect(updated.rotatable).toBe(false)
 })
 
+test("can mirror machine", () => {
+  const entity = surface.create_entity({
+    name: "electromagnetic-plant",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.north,
+  })!
+  entity.set_recipe("electrolyte")
+  expect(entity.mirroring).toBe(false)
+
+  const updated = updateEntity(
+    entity,
+    {
+      name: "electromagnetic-plant",
+      recipe: "electrolyte",
+      mirror: true,
+    } as Entity,
+    nil,
+    defines.direction.north,
+    true, // mirrored
+  )[0]!
+
+  expect(updated).toBe(entity)
+  expect(updated.direction).toBe(defines.direction.north)
+  expect(updated.mirroring).toBe(true)
+  expect(updated.get_recipe()[0]?.name).toBe("electrolyte")
+})
+
 describe("item-requests", () => {
   const moduleInsertPlan1 = [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module")]
   const moduleInsertPlan2 = [

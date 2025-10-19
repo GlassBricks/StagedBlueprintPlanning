@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.7
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed that some entities like electromagnetic plants were not properly mirrored in project editor.
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.6
 Date: 2025-10-18

@@ -475,6 +475,9 @@ export function updateEntity(
     luaEntity.loader_type = value.type ?? "output"
   }
   luaEntity.direction = direction
+  if (luaEntity.mirroring || value.mirror) {
+    luaEntity.mirroring = value.mirror ?? false
+  }
 
   const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, unstagedValue, luaEntity)
   if (ghost) ghost.destroy() // should not happen?
