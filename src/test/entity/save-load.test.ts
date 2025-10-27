@@ -110,7 +110,7 @@ test.each(crossProduct(rails.concat(Object.keys(elevatedRailTypes)), directions8
   },
 )
 
-test.only.each(["rail-signal", "rail-chain-signal"])("can save and load elevated %s", (signalType) => {
+test.each(["rail-signal", "rail-chain-signal"])("can save and load elevated %s", (signalType) => {
   const supportRail = surface.create_entity({
     name: "elevated-straight-rail",
     position: { x: 13, y: 12 },
