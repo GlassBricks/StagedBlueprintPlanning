@@ -185,7 +185,8 @@ function computeEntityPrototypeInfo(): PrototypeInfo {
     blueprintableTiles,
   }
 }
-const movableTypes: ReadonlyLuaSet<string> = newLuaSet(
+
+export const movableTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>(
   "artillery-wagon",
   "cargo-wagon",
   "fluid-wagon",
@@ -194,7 +195,16 @@ const movableTypes: ReadonlyLuaSet<string> = newLuaSet(
   // "spider-vehicle",
 )
 
-export const allowOverlapDifferentDirection = merge([
+export const elevatedRailTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>(
+  "elevated-straight-rail",
+  "elevated-half-diagonal-rail",
+  "elevated-curved-rail-a",
+  "elevated-curved-rail-b",
+)
+
+export const tranSignalTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>("rail-signal", "rail-chain-signal")
+
+export const allowOverlapDifferentDirection: ReadonlyLuaSet<EntityType> = merge([
   newLuaSet<EntityType>(
     "straight-rail",
     "half-diagonal-rail",
@@ -243,7 +253,6 @@ export function isMovableEntity(entityName: string): boolean {
   const type = nameToType.get(entityName)
   return type != nil && movableTypes.has(type)
 }
-export { movableTypes }
 
 export function isPreviewEntity(entity: LuaEntity): boolean {
   // performance: this returns false almost all the time,

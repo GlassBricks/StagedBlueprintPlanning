@@ -127,8 +127,6 @@
       },
       "disableExtraMods": true,
       "factorioArgs": [
-        "--load-scenario",
-        "factorio-test/Test",
         "--cache-sprite-atlas",
         "true",
         "--graphics-quality",

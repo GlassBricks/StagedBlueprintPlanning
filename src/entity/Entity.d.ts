@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { BlueprintInsertPlan, LuaSurface, RealOrientation } from "factorio:runtime"
+import { EntityType } from "factorio:prototype"
 import { Position } from "../lib/geometry"
 
 export interface Entity {
@@ -21,7 +22,7 @@ export interface UnstagedEntityProps {
 
 export interface EntityIdentification {
   readonly name: string
-  readonly type: string
+  readonly type: EntityType
   readonly position: Position
   readonly direction: defines.direction
   readonly belt_to_ground_type: "input" | "output" | nil

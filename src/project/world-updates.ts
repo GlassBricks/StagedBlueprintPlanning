@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { EntityType } from "factorio:prototype"
 import { LocalisedString, LuaEntity, TilePosition, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { UnstagedEntityProps } from "../entity/Entity"
@@ -15,7 +14,14 @@ import {
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
 import { ProjectTile } from "../entity/ProjectTile"
-import { isPreviewEntity, movableTypes, OnPrototypeInfoLoaded, PrototypeInfo } from "../entity/prototype-info"
+import {
+  elevatedRailTypes,
+  isPreviewEntity,
+  movableTypes,
+  OnPrototypeInfoLoaded,
+  PrototypeInfo,
+  tranSignalTypes as trainSignalTypes,
+} from "../entity/prototype-info"
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
 import { deepCompare, Mutable, PRecord, RegisterClass } from "../lib"
@@ -389,21 +395,16 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
       if (entity.name.startsWith(Prototypes.PreviewEntityPrefix)) entity.destroy()
       // see also: isPreviewEntity
     }
-    // rebuild order: everything, elevated rails, rolling stock
+    // rebuild order: everything else, elevated rails, rolling stock & signals
     const elevatedRails: ProjectEntity[] = []
-    const movableEntities: MovableProjectEntity[] = []
-    const elevatedRailTypes = newLuaSet<EntityType>(
-      "elevated-straight-rail",
-      "elevated-half-diagonal-rail",
-      "elevated-curved-rail-a",
-      "elevated-curved-rail-b",
-    )
+    const finalEntities: MovableProjectEntity[] = []
+
     for (const entity of content.allEntities()) {
       const type = nameToType.get(entity.firstValue.name) ?? ""
       if (type in elevatedRailTypes) {
         elevatedRails.push(entity as MovableProjectEntity)
-      } else if (type in movableTypes) {
-        movableEntities.push(entity as MovableProjectEntity)
+      } else if (type in movableTypes || type in trainSignalTypes) {
+        finalEntities.push(entity as MovableProjectEntity)
       } else {
         refreshWorldEntityAtStage(entity, stage)
       }
@@ -411,7 +412,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     for (const entity of elevatedRails) {
       refreshWorldEntityAtStage(entity, stage)
     }
-    for (const entity of movableEntities) {
+    for (const entity of finalEntities) {
       refreshWorldEntityAtStage(entity, stage)
     }
     for (const [, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {

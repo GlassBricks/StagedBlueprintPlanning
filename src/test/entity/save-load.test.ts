@@ -8,7 +8,7 @@ import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
 import { newProjectEntity } from "../../entity/ProjectEntity"
-import { isPreviewEntity } from "../../entity/prototype-info"
+import { elevatedRailTypes, isPreviewEntity } from "../../entity/prototype-info"
 import {
   canBeAnyDirection,
   checkUndergroundPairFlippable,
@@ -18,6 +18,7 @@ import {
   updateEntity,
 } from "../../entity/save-load"
 import { assert, crossProduct, Events } from "../../lib"
+import { Pos } from "../../lib/geometry"
 import { UserProject } from "../../project/ProjectDef"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { createRollingStocks } from "./createRollingStock"
@@ -85,19 +86,53 @@ test("saving an entity with higher quality", () => {
 
 const directions8 = (Object.values(defines.direction) as defines.direction[]).filter((a) => a % 2 == 0)
 const rails = ["straight-rail", "curved-rail-a", "curved-rail-b", "half-diagonal-rail"]
-test.each(crossProduct(rails, directions8))("can save %s in direction %s", (name, direction) => {
-  const entity = surface.create_entity({
-    name,
-    position: { x: 12.5, y: 12.5 },
+test.each(crossProduct(rails.concat(Object.keys(elevatedRailTypes)), directions8))(
+  "can save %s in direction %s",
+  (name, direction) => {
+    const entity = surface.create_entity({
+      name,
+      position: { x: 12.5, y: 12.5 },
+      force: "player",
+      direction,
+    })!
+    const expectedDirection =
+      name == "straight-rail" ||
+      name == "elevated-straight-rail" ||
+      name == "half-diagonal-rail" ||
+      name == "elevated-half-diagonal-rail"
+        ? direction % 8
+        : direction
+
+    expect(entity.direction).toBe(expectedDirection)
+
+    const [saved] = saveEntity(entity)
+    expect(saved).toEqual({ name })
+  },
+)
+
+test.only.each(["rail-signal", "rail-chain-signal"])("can save and load elevated %s", (signalType) => {
+  const supportRail = surface.create_entity({
+    name: "elevated-straight-rail",
+    position: { x: 13, y: 12 },
+    direction: defines.direction.north,
     force: "player",
-    direction,
+  })
+  assert(supportRail)
+  const entity = surface.create_entity({
+    name: signalType,
+    position: { x: 11.5, y: 12.5 },
+    force: "player",
+    rail_layer: defines.rail_layer.elevated,
   })!
-  const expectedDirection = name == "straight-rail" || name == "half-diagonal-rail" ? direction % 8 : direction
-
-  expect(entity.direction).toBe(expectedDirection)
-
   const [saved] = saveEntity(entity)
-  expect(saved).toEqual({ name })
+  expect(saved!).toEqual({ name: signalType, rail_layer: "elevated" })
+
+  entity.destroy()
+  const loaded = createEntity(surface, Pos(11.5, 12.5), 0, saved!, nil)
+  expect(loaded).toMatchTable({
+    name: signalType,
+    rail_layer: defines.rail_layer.elevated,
+  })
 })
 
 let events: ScriptRaisedBuiltEvent[] = []

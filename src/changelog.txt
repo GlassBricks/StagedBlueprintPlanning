@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.8
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed multiple issues related to handling elevated rails and train signals.
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.7
 Date: 2025-10-19
@@ -24,7 +25,7 @@ Date: 2025-10-04
     - Actually fixed crash when creating a new stage, on a project loaded in an earlier version. Don't use 2.5.1 y'all
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.3
-Date: 2025-09-27
+sate: 2025-09-27
   Bugfixes:
     - Fixed an issue with trains when inserting a stage before the stage a train is in.
     - Fixed partially missing support for agricultural towers.
@@ -41,8 +42,7 @@ Date: 2025-09-27
 Version: 2.6.1
 Date: 2025-09-16
   Features:
-    - Added import/export support for item requests
----------------------------------------------------------------------------------------------------
+    - Added import/export support for item request---------------------------------------------------------------------------------------------------
 Version: 2.6.0
 Date: 2025-09-16
   Features:

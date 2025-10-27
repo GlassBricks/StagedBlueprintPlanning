@@ -17,6 +17,7 @@ import {
   LuaItemStack,
   LuaSurface,
   MapPosition,
+  RailSignalSurfaceCreateEntity,
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
@@ -34,11 +35,13 @@ import {
 } from "./item-requests"
 import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
+  elevatedRailTypes,
   getPrototypeRotationType,
   movableTypes,
   OnPrototypeInfoLoaded,
   PrototypeInfo,
   RotationType,
+  tranSignalTypes,
 } from "./prototype-info"
 import { getUndergroundDirection } from "./underground-belt"
 import build_check_manual_ghost = defines.build_check_type.manual_ghost
@@ -77,17 +80,23 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   const { surface, position } = entity
 
   for (const radius of [0.01, 2]) {
+    let area = BBox.around(position, radius)
+    if (
+      elevatedRailTypes.has(entity.type) ||
+      (tranSignalTypes.has(entity.type) && entity.rail_layer == defines.rail_layer.elevated)
+    ) {
+      area = area.translate(Pos(0, -4))
+    }
     const indexMapping = bpStack.create_blueprint({
       surface,
       force: entity.force_index,
-      area: BBox.around(position, radius),
+      area,
       include_station_names: true,
       include_trains: true,
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {
       return bpStack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
-      // assert(bpEntity.entity_number == matchingIndex)
     }
   }
 }
@@ -165,7 +174,10 @@ function removeIntersectingEntities(surface: LuaSurface, area: BoundingBox) {
 }
 
 const tryCreateEntityParams: Mutable<
-  UndergroundBeltSurfaceCreateEntity & Parameters<LuaSurface["can_place_entity"]>[0] & CargoWagonSurfaceCreateEntity
+  Parameters<LuaSurface["can_place_entity"]>[0] &
+    CargoWagonSurfaceCreateEntity &
+    UndergroundBeltSurfaceCreateEntity &
+    RailSignalSurfaceCreateEntity
 > = {
   name: "",
   position: nil!,
@@ -178,6 +190,11 @@ const tryCreateEntityParams: Mutable<
   forced: true,
 }
 
+interface ShouldBeRailSignalBlueprintEntity {
+  rail_layer?: "elevated" | "ground"
+}
+
+const elevated = defines.rail_layer.elevated
 let tryCreateVersion = 0
 function tryCreateUnconfiguredEntity(
   surface: LuaSurface,
@@ -185,7 +202,9 @@ function tryCreateUnconfiguredEntity(
   direction: defines.direction,
   entity: BlueprintEntity,
 ): LuaEntity | nil {
-  assume<Mutable<CargoWagonBlueprintEntity & UndergroundBeltBlueprintEntity>>(entity)
+  assume<Mutable<CargoWagonBlueprintEntity & UndergroundBeltBlueprintEntity & ShouldBeRailSignalBlueprintEntity>>(
+    entity,
+  )
   if (tryCreateVersion != entityVersion) {
     tryCreateVersion = entityVersion
     const orientation = entity.orientation
@@ -196,6 +215,7 @@ function tryCreateUnconfiguredEntity(
     tryCreateEntityParams.orientation = orientation
     tryCreateEntityParams.type = entity.type
     tryCreateEntityParams.quality = entity.quality
+    tryCreateEntityParams.rail_layer = entity.rail_layer == "elevated" ? elevated : nil
   }
   tryCreateEntityParams.build_check_type = nil
 
@@ -235,7 +255,7 @@ export function createEntity(
   assume<BlueprintEntity>(value)
   if (changed) entityVersion++
   let luaEntity: LuaEntity | undefined
-  const movable = movableTypes.has(value.name)
+  const movable = movableTypes.has(nameToType.get(value.name) ?? ("" as never))
   if (movable) {
     const ghost = pasteEntity(surface, position, direction, value, unstagedValue, nil)
     if (!ghost) return nil

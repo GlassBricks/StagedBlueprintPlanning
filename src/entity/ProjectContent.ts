@@ -170,7 +170,7 @@ class ProjectContentImpl implements MutableProjectContent {
     return this.findCompatibleWithLuaEntity(
       {
         name,
-        type: nameToType.get(name) ?? "unknown",
+        type: nameToType.get(name) ?? ("unknown" as never),
         position: entity.position,
         direction: entity.direction,
         belt_to_ground_type: entity.isUndergroundBelt() ? entity.firstValue.type : nil,

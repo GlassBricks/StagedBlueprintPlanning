@@ -20,7 +20,6 @@ import {
   MapPosition,
   OnBuiltEntityEvent,
   OnPlayerAltSelectedAreaEvent,
-  OnPlayerDisplayDensityScaleChangedEvent,
   OnPlayerMinedEntityEvent,
   OnPlayerReverseSelectedAreaEvent,
   OnPlayerSelectedAreaEvent,
@@ -438,11 +437,12 @@ interface FutureBlueprintSettingsPastedEvent {
   player_index?: PlayerIndex
 }
 
-const blueprint_settings_pasted_event_id =
-  (defines.events as any).on_blueprint_settings_pasted as EventId<FutureBlueprintSettingsPastedEvent> | undefined
+const blueprint_settings_pasted_event_id = (defines.events as any).on_blueprint_settings_pasted as
+  | EventId<FutureBlueprintSettingsPastedEvent>
+  | undefined
 
 if (blueprint_settings_pasted_event_id) {
-  script.on_event(blueprint_settings_pasted_event_id, (event) =>{
+  script.on_event(blueprint_settings_pasted_event_id, (event) => {
     luaEntityPossiblyUpdated(event.entity, event.player_index)
   })
 }
@@ -611,7 +611,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
     tryFixBlueprint(player)
     return
   }
-  if(blueprint_settings_pasted_event_id) {
+  if (blueprint_settings_pasted_event_id) {
     return // use new method
   }
   const blueprint = getInnerBlueprint(player.cursor_stack)

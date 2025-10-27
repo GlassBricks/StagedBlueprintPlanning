@@ -108,11 +108,16 @@ const types = keys<Record<BuildableEntityType, true>>()
 
 const buildableNames: string[] = []
 
-const curved_rails = newLuaSet<PrototypeType>(
+const problematic_rails = newLuaSet<PrototypeType>(
   "curved-rail-a",
   "curved-rail-b",
+  "half-diagonal-rail",
+  "straight-rail",
   "elevated-curved-rail-a",
   "elevated-curved-rail-b",
+  "elevated-half-diagonal-rail",
+  "elevated-straight-rail",
+  "rail-support",
 )
 
 for (const type of types.sort()) {
@@ -132,7 +137,7 @@ for (const type of types.sort()) {
     const flags = prototype.flags!.filter((flag) => flagsToTransfer.has(flag))
     flags.push("not-on-map")
     // hack for curved rails
-    if (curved_rails.has(name as never)) {
+    if (problematic_rails.has(name as never)) {
       if (!flags.includes("placeable-off-grid")) flags.push("placeable-off-grid")
     }
 
@@ -164,6 +169,7 @@ for (const type of types.sort()) {
       collision_box: prototype.collision_box,
       tile_height: prototype.tile_height,
       tile_width: prototype.tile_width,
+      build_grid_size: prototype.build_grid_size,
 
       collision_mask: {
         layers: {},
