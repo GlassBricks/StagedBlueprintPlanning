@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintEntity, LuaEntity, nil } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, LuaTrain, nil } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
 import {
   getNameAndQuality,
@@ -80,8 +80,8 @@ export interface ProjectUpdates {
   resetAllProps(entity: ProjectEntity, stage: StageNumber): boolean
   moveAllPropsDown(entity: ProjectEntity, stage: StageNumber): boolean
 
-  resetTrain(entity: MovableProjectEntity): void
-  setTrainLocationToCurrent(entity: MovableProjectEntity): void
+  resetVehicleLocation(entity: MovableProjectEntity): void
+  setVehicleLocationHere(entity: MovableProjectEntity): void
 
   setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile
 
@@ -141,8 +141,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     movePropDown,
     resetAllProps,
     moveAllPropsDown,
-    resetTrain,
-    setTrainLocationToCurrent,
+    resetVehicleLocation,
+    setVehicleLocationHere,
     setNewTile,
     moveTileDown,
     setTileValueAtStage,
@@ -716,7 +716,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     return false
   }
 
-  function resetTrain(entity: MovableProjectEntity): void {
+  function resetVehicleLocation(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
     const luaEntity = entity.getWorldEntity(stage)
     if (!luaEntity) {
@@ -725,23 +725,30 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     }
 
     const train = luaEntity.train
-    if (!train) return
-
-    const entities = train.carriages
-
-    const projectEntities = entities.map((e) => content.findCompatibleWithLuaEntity(e, nil, stage)!)
-    for (const entity of projectEntities) entity.destroyAllWorldOrPreviewEntities()
-    for (const entity of projectEntities) rebuildWorldEntityAtStage(entity, stage)
+    if (train) {
+      const projectEntities = train.carriages.map((e) => content.findCompatibleWithLuaEntity(e, nil, stage)!)
+      for (const entity of projectEntities) entity.destroyAllWorldOrPreviewEntities() // destroy entire train, before rebuild
+      for (const entity of projectEntities) rebuildWorldEntityAtStage(entity, stage)
+    } else {
+      rebuildWorldEntityAtStage(entity, stage)
+    }
   }
 
-  function setTrainLocationToCurrent(entity: MovableProjectEntity): void {
+  function setVehicleLocationHere(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
     const luaEntity = entity.getWorldEntity(stage)
     if (!luaEntity) return
 
     const train = luaEntity.train
-    if (!train) return
+    if (train) {
+      setTrainLocationHere(train, stage)
+    } else {
+      content.changeEntityPosition(entity, luaEntity.position)
+      rebuildWorldEntityAtStage(entity, stage)
+    }
+  }
 
+  function setTrainLocationHere(train: LuaTrain, stage: StageNumber) {
     const entities = train.carriages
 
     for (const luaEntity of entities) {

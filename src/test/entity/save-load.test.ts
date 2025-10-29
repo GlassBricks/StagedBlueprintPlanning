@@ -3,7 +3,14 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintEntity, BlueprintEntityWrite, LuaEntity, LuaSurface, ScriptRaisedBuiltEvent } from "factorio:runtime"
+import {
+  BlueprintEntity,
+  BlueprintEntityWrite,
+  CarBlueprintEntity,
+  LuaEntity,
+  LuaSurface,
+  ScriptRaisedBuiltEvent,
+} from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
@@ -1025,6 +1032,30 @@ test("updating rolling stock does nothing", () => {
   const newEntity = updateEntity(locomotive, newValue, nil, defines.direction.north)[0]!
   expect(newEntity).toBe(locomotive)
   expect(locomotive.position).toEqual(oldLocation)
+})
+
+test("can save/load a vehicle with grid", () => {
+  const vehicle = surface.create_entity({
+    name: "tank",
+    position: { x: 0.5, y: 0.5 },
+    force: "player",
+  })!
+  expect(vehicle).toBeAny()
+  vehicle.grid!.put({ name: "solar-panel-equipment" })
+
+  const [saved, unstagedValue] = saveEntity(vehicle)
+  assume<CarBlueprintEntity>(saved)
+  expect(saved?.grid).not.toBeNil()
+  expect(saved?.items).not.toBeNil()
+
+  vehicle.destroy()
+
+  const loaded = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, saved!, unstagedValue)!
+  expect(loaded).toBeAny()
+  expect(loaded.name).toBe("tank")
+  expect(loaded.grid!.equipment.length).toBe(1)
+  expect(loaded.grid!.equipment[0].ghost_name).toBe("solar-panel-equipment")
+  itemRequestProxyExpected = true
 })
 
 test("createPreviewEntity", () => {

@@ -5,6 +5,7 @@
 
 import {
   BlueprintEntity,
+  CarBlueprintEntity,
   InserterBlueprintEntity,
   LuaEntity,
   LuaPlayer,
@@ -1329,11 +1330,24 @@ describe("train entities", () => {
 })
 
 describe("vehicles", () => {
-  test.skip("can create a vehicle", () => {
+  test("can create a vehicle", () => {
     const carEntity = buildEntity(1, { name: "car", orientation: 0.25 })
     expect(carEntity.isMovable()).toBe(true)
     expect(carEntity.lastStage).toBe(1)
     assertEntityCorrect(carEntity, false)
+  })
+
+  test("can save/load a vehicle with grid", () => {
+    const carEntity = buildEntity<CarBlueprintEntity>(1, { name: "tank", orientation: 0.25 })
+    const worldEntity = carEntity.getWorldEntity(1)!
+    expect(worldEntity.name).toBe("tank")
+
+    worldEntity.grid!.put({ name: "solar-panel-equipment" })
+
+    checkForEntityUpdates(worldEntity, nil)
+
+    expect(carEntity.getValueAtStage(1)?.grid).not.toBeNil()
+    expect(carEntity.getValueAtStage(1)?.items).not.toBeNil()
   })
 })
 

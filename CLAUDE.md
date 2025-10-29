@@ -131,9 +131,8 @@ See mini framework in `src/lib/migration.ts`
 - `src/project/UserProject.ts` - Full project & stage definitions
 - `src/ui/ProjectSettings.tsx` - Main UI component
 - `src/lib/references.ts` - Global function storage system
-- `node_modules/typed-factorio/runtime/index.d.ts` - Factorio API types
-- `node_modules/typed-factorio/runtime/generated/*.d.ts` - Generated API types
+- `node_modules/typed-factorio/runtime/index.d.ts`,`node_modules/typed-factorio/runtime/generated/*.d.ts` - Factorio API types
 
 ## Other notes
 
-Inspect typed-factorio files in node_modules to lookup factorio API documentation
+To lookup Factorio API documentation, inspect or grep in typed-factorio files in node_modules, instead of using online documentation.

@@ -191,8 +191,8 @@ export const movableTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>(
   "cargo-wagon",
   "fluid-wagon",
   "locomotive",
-  // "car"
-  // "spider-vehicle",
+  "car",
+  "spider-vehicle",
 )
 
 export const elevatedRailTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>(

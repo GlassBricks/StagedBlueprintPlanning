@@ -18,9 +18,9 @@ import expect, { mock } from "tstl-expect"
 import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   addWireConnection,
+  MovableProjectEntity,
   newProjectEntity,
   ProjectEntity,
-  MovableProjectEntity,
   StageDiffsInternal,
   StageNumber,
 } from "../../entity/ProjectEntity"
@@ -1365,7 +1365,7 @@ describe("rolling stock", () => {
   })
 })
 
-describe("trains", () => {
+describe("train", () => {
   let entities: LuaEntity[]
   let projectEntities: MovableProjectEntity[]
   before_each(() => {
@@ -1387,20 +1387,20 @@ describe("trains", () => {
       return aEntity
     })
   })
-  test("resetTrainLocation", () => {
+  test("resetVehicleLocation", () => {
     const anEntity = projectEntities[1]
-    projectUpdates.resetTrain(anEntity)
+    projectUpdates.resetVehicleLocation(anEntity)
 
     assertReplaceCalled(projectEntities[0], 1)
     assertReplaceCalled(projectEntities[1], 1)
     assertReplaceCalled(projectEntities[2], 1)
     assertNEntities(3)
   })
-  test("setTrainLocationToCurrent", () => {
+  test("setVehicleLocationHere", () => {
     entities[0].train!.speed = 10
     after_ticks(10, () => {
       const anEntity = projectEntities[1]
-      projectUpdates.setTrainLocationToCurrent(anEntity)
+      projectUpdates.setVehicleLocationHere(anEntity)
 
       for (let i = 0; i < 3; i++) {
         expect(projectEntities[i].position).toEqual(entities[i].position)
@@ -1413,6 +1413,45 @@ describe("trains", () => {
   })
 })
 
+describe("car", () => {
+  let carEntity: LuaEntity
+  let carProjectEntity: MovableProjectEntity
+  before_each(() => {
+    game.surfaces[1].find_entities().forEach((e) => e.destroy())
+    carEntity = game.surfaces[1].create_entity({
+      name: "car",
+      position: pos,
+      force: "player",
+    })!
+    carProjectEntity = newProjectEntity(
+      {
+        name: carEntity.name,
+        orientation: carEntity.orientation,
+      },
+      carEntity.position,
+      0,
+      1,
+    )
+    carProjectEntity.replaceWorldEntity(1, carEntity)
+    project.content.addEntity(carProjectEntity)
+  })
+  test("resetVehicleLocation", () => {
+    projectUpdates.resetVehicleLocation(carProjectEntity)
+
+    assertReplaceCalled(carProjectEntity, 1)
+    assertNEntities(1)
+  })
+  test("setVehicleLocationHere", () => {
+    carEntity.teleport(pos.plus({ x: 5, y: 5 }))
+    after_ticks(10, () => {
+      projectUpdates.setVehicleLocationHere(carProjectEntity)
+
+      expect(carProjectEntity.position).toEqual(carEntity.position)
+      assertReplaceCalled(carProjectEntity, 1)
+      assertNEntities(1)
+    })
+  })
+})
 describe("tiles", () => {
   test("adding new tile", () => {
     const pos = { x: 1, y: 2 }

@@ -777,17 +777,14 @@ export function newProjectEntity<E extends Entity>(
   return result
 }
 
-const excludedTypes: Record<string, true> = {
-  unit: true,
-  "entity-ghost": true,
-}
+const excludedTypes = newLuaSet("unit", "entity-ghost")
 
 export function isWorldEntityProjectEntity(luaEntity: LuaEntity): boolean {
   return (
     luaEntity.valid &&
     luaEntity.is_entity_with_owner &&
     luaEntity.has_flag("player-creation") &&
-    !excludedTypes[luaEntity.type] &&
+    !excludedTypes.has(luaEntity.type) &&
     !excludedNames.has(luaEntity.name)
   )
 }

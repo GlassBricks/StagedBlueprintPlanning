@@ -428,10 +428,10 @@ export declare const enum L_GuiEntityInfo {
   MoveToThisStage = "bp100.gui.entity-info.move-to-this-stage",
   /** Cancel deconstruction */
   RemoveLastStage = "bp100.gui.entity-info.remove-last-stage",
-  /** Reset train */
-  ResetTrain = "bp100.gui.entity-info.reset-train",
-  /** Set train location here */
-  SetTrainLocationHere = "bp100.gui.entity-info.set-train-location-here",
+  /** Reset vehicle location */
+  ResetVehicleLocation = "bp100.gui.entity-info.reset-vehicle-location",
+  /** Set location here */
+  SetLocationHere = "bp100.gui.entity-info.set-location-here",
   /** Force delete entity */
   DeleteEntity = "bp100.gui.entity-info.delete-entity",
   /** Updated settings */

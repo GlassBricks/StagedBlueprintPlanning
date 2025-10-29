@@ -26,7 +26,7 @@ Migrations.to("2.2.0", () => {
         if (oldLastStage != entity.firstStage) {
           entity.setLastStageUnchecked(entity.firstStage)
           project.worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
-          project.updates.resetTrain(entity)
+          project.updates.resetVehicleLocation(entity)
         }
       }
     }

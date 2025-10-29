@@ -146,13 +146,13 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
             <line direction="horizontal" />,
             <button
               styleMod={{ horizontally_stretchable: true }}
-              caption={[L_GuiEntityInfo.ResetTrain]}
-              on_gui_click={ibind(this.resetTrain)}
+              caption={[L_GuiEntityInfo.ResetVehicleLocation]}
+              on_gui_click={ibind(this.resetVehicleLocation)}
             />,
             <button
               styleMod={{ horizontally_stretchable: true }}
-              caption={[L_GuiEntityInfo.SetTrainLocationHere]}
-              on_gui_click={ibind(this.setTrainLocationHere)}
+              caption={[L_GuiEntityInfo.SetLocationHere]}
+              on_gui_click={ibind(this.setVehicleLocationHere)}
             />,
           ]}
           {currentStageDiff && [<line direction="horizontal" />, this.renderStageDiffSettings(currentStageDiff)]}
@@ -187,11 +187,11 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     this.actions.userSetLastStageWithUndo(this.entity, nil, this.playerIndex)
     this.rerender(false)
   }
-  private resetTrain() {
-    this.updates.resetTrain(this.entity)
+  private resetVehicleLocation() {
+    this.updates.resetVehicleLocation(this.entity)
   }
-  private setTrainLocationHere() {
-    this.updates.setTrainLocationToCurrent(this.entity)
+  private setVehicleLocationHere() {
+    this.updates.setVehicleLocationHere(this.entity)
   }
 
   private deleteEntity() {
@@ -497,7 +497,7 @@ const entityTypeToGuiType: Record<
   roboport: relative_gui_type.roboport_gui,
   turret: relative_gui_type.turret_gui,
   wall: relative_gui_type.wall_gui,
-  // car: relative_gui_type.car_gui,
-  // "spider-vehicle": relative_gui_type.spider_vehicle_gui,
+  car: relative_gui_type.car_gui,
+  "spider-vehicle": relative_gui_type.spider_vehicle_gui,
   "agricultural-tower": relative_gui_type.agriculture_tower_gui,
 }
