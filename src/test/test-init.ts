@@ -116,7 +116,7 @@ if ("factorio-test" in script.active_mods) {
         status?: "passed" | "failed" | "todo"
         skipped: number
       }
-      const expectedSkipped = 2
+      const expectedSkipped = 1
       if (result.status == "passed" && result.skipped == expectedSkipped) {
         game.surfaces[1].clear()
         const player = game.players[1]
