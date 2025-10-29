@@ -143,6 +143,14 @@ export function getName(id: string | WithName | nil): string | nil {
   if (typeof id == "string") return id
   return id.name
 }
+export interface WithQuality {
+  quality?: string
+}
+export function getQuality(id: string | WithQuality): string | nil {
+  if (id == nil) return
+  if (typeof id == "string") return nil
+  return id.quality
+}
 
 export type PRecord<K extends keyof any, V> = {
   [P in K]?: V

@@ -1337,17 +1337,35 @@ describe("vehicles", () => {
     assertEntityCorrect(carEntity, false)
   })
 
-  test("can save/load a vehicle with grid", () => {
-    const carEntity = buildEntity<CarBlueprintEntity>(1, { name: "tank", orientation: 0.25 })
-    const worldEntity = carEntity.getWorldEntity(1)!
+  test("can save a vehicle with grid", () => {
+    const projectEntity = buildEntity<CarBlueprintEntity>(1, { name: "tank", orientation: 0.25 })
+    const worldEntity = projectEntity.getWorldEntity(1)!
     expect(worldEntity.name).toBe("tank")
 
     worldEntity.grid!.put({ name: "solar-panel-equipment" })
 
     checkForEntityUpdates(worldEntity, nil)
+    checkProjectEntityCorrect(projectEntity)
 
-    expect(carEntity.getValueAtStage(1)?.grid).not.toBeNil()
-    expect(carEntity.getValueAtStage(1)?.items).not.toBeNil()
+    project.worldUpdates.rebuildStage(1)
+
+    checkProjectEntityCorrect(projectEntity)
+
+    const newWorldEntity = projectEntity.getWorldEntity(1)!
+    checkForEntityUpdates(newWorldEntity, nil)
+    checkProjectEntityCorrect(projectEntity)
+
+    function checkProjectEntityCorrect(projectEntity: ProjectEntity<CarBlueprintEntity>) {
+      expect(projectEntity.getUnstagedValue(1)).toBeNil()
+      expect(projectEntity.getValueAtStage(1)?.grid).toEqual([
+        {
+          equipment: { name: "solar-panel-equipment" },
+          position: { x: 0, y: 0 },
+        },
+      ])
+      expect(projectEntity.getValueAtStage(1)?.items).toBe(nil)
+      assertEntityCorrect(projectEntity, false)
+    }
   })
 })
 

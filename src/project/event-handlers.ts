@@ -207,7 +207,6 @@ Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 Events.script_raised_destroy((e) => {
   if (e.mod_name != modName) luaEntityDeleted(e.entity, nil)
 })
-
 Events.registerEarly(defines.events.on_object_destroyed, (e) => {
   if (e.type != defines.target_type.entity) return
   const unitNumber = e.useful_id as UnitNumber
@@ -228,19 +227,14 @@ Events.on_entity_settings_pasted((e) => luaEntityPossiblyUpdated(e.destination, 
 Events.on_gui_closed((e) => {
   if (e.entity) luaEntityPossiblyUpdated(e.entity, e.player_index)
 })
-// Events.on_player_fast_transferred((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
-Events.on_player_cursor_stack_changed((e) => {
-  const player = game.get_player(e.player_index)!
-  const stage = getStageAtSurface(player.surface_index)
-  if (!stage) return
-  const selected = player.selected
-  if (selected && isWorldEntityProjectEntity(selected) && selected.get_module_inventory() != nil) {
-    luaEntityPossiblyUpdated(selected, e.player_index)
-  }
-})
+Events.on_player_fast_transferred((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
+Events.on_player_dropped_item((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
+Events.on_player_flipped_entity((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
+// Events.on_selected_entity_changed(({ last_entity, player_index }) => {
+//   if (last_entity && last_entity.valid) luaEntityPossiblyUpdated(last_entity, player_index)
+// })
 
 Events.on_player_rotated_entity((e) => luaEntityRotated(e.entity, e.previous_direction, e.player_index))
-Events.on_player_flipped_entity((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
 
 Events.on_marked_for_upgrade((e) => luaEntityMarkedForUpgrade(e.entity, e.player_index))
 
@@ -1285,6 +1279,8 @@ export const _assertInValidState = (): void => {
     assert(!v, `${k} was not cleaned up`)
   }
 }
+
+// misc
 
 Events.on_surface_cleared((e) => {
   const stage = getStageAtSurface(e.surface_index)

@@ -47,7 +47,7 @@ interface SourceMap {
 
 declare const storage: {
   printEvents?: boolean
-  rerunMode?: "rerun" | "reload" | "none"
+  rerunMode?: "test" | "reloadOnly" | "off"
 
   reloadPending?: boolean
   reloadAction?: "tests" | "migrate"
@@ -155,14 +155,14 @@ function isTestsRunning() {
 
 Events.on_udp_packet_received((event) => {
   if (event.payload != "rerun") return
-  if (storage.rerunMode == "none") {
+  if (storage.rerunMode == "off") {
     game.print("Rerun request ignored")
   }
 
-  if (storage.rerunMode == "rerun" || storage.rerunMode == nil) {
+  if (storage.rerunMode == "test" || storage.rerunMode == nil) {
     storage.reloadPending = true
     storage.reloadAction = "tests"
-  } else if (storage.rerunMode == "reload") {
+  } else if (storage.rerunMode == "reloadOnly") {
     storage.reloadPending = true
     storage.reloadAction = "migrate"
   }
@@ -198,14 +198,14 @@ Events.on_tick(() => {
 commands.add_command("rr", "", (e) => {
   const arg = e.parameter
   if (arg == "test") {
-    storage.rerunMode = "rerun"
+    storage.rerunMode = "test"
   } else if (arg == "only") {
-    storage.rerunMode = "reload"
+    storage.rerunMode = "reloadOnly"
   } else if (arg == "off") {
-    storage.rerunMode = "none"
+    storage.rerunMode = "off"
   } else if (arg == nil) {
-    game.print("reloading")
-    if (storage.rerunMode == "none") game.reload_mods()
+    game.print("Reloading now")
+    game.reload_mods()
   } else {
     game.print("Expected 'test', 'only', 'off' or nothing")
   }

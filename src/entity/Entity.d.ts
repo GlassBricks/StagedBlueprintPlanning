@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintInsertPlan, LuaSurface, RealOrientation } from "factorio:runtime"
 import { EntityType } from "factorio:prototype"
+import { BlueprintInsertPlan, LuaSurface, RealOrientation } from "factorio:runtime"
 import { Position } from "../lib/geometry"
 
 export interface Entity {
@@ -45,6 +45,7 @@ export interface InserterEntity extends Entity {
 export interface MovableEntity extends Entity {
   orientation?: RealOrientation
 }
+export type TrainEntity = MovableEntity
 export interface AssemblingMachineEntity extends Entity {
   recipe?: string
   recipe_quality?: string

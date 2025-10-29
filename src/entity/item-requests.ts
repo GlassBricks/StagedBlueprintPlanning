@@ -16,36 +16,30 @@ export function partitionInventoryFromRequest(
   request: BlueprintInsertPlan,
   inventory: defines.inventory,
 ): LuaMultiReturn<[withInv: BlueprintInsertPlan | nil, withoutInv: BlueprintInsertPlan | nil]> {
-  const { in_inventory, grid_count } = request.items
+  const { in_inventory } = request.items
   if (!in_inventory) {
-    const withoutInv: BlueprintInsertPlan = {
-      id: request.id,
-      items: {
-        grid_count,
-      },
-    }
-    return $multi(nil, withoutInv)
+    return $multi(nil, nil)
   }
 
   const withInv = in_inventory.filter((i) => i.inventory == inventory)
   const withoutInv = in_inventory.filter((i) => i.inventory != inventory)
 
-  const withInvResult = withInv[0]
-    ? {
-        id: request.id,
-        items: {
-          in_inventory: withInv,
-        },
-      }
-    : nil
-
-  const withoutInvResult =
-    withoutInv[0] != nil || grid_count != nil
+  const withInvResult: BlueprintInsertPlan | nil =
+    withInv[0] != nil
       ? {
           id: request.id,
           items: {
-            grid_count,
-            in_inventory: withoutInv[0] && withoutInv,
+            in_inventory: withInv[0] && withInv,
+          },
+        }
+      : nil
+
+  const withoutInvResult: BlueprintInsertPlan | nil =
+    withoutInv[0] != nil
+      ? {
+          id: request.id,
+          items: {
+            in_inventory: withoutInv,
           },
         }
       : nil
@@ -140,10 +134,11 @@ const moduleInventoryForType: PRecord<EntityType, defines.inventory> = {
   "mining-drill": defines.inventory.mining_drill_modules,
 }
 
-export function partitionModulesFromRequests(
+export function partitionModulesAndRemoveGridRequests(
   requests: BlueprintInsertPlan[],
   entityName: string,
 ): LuaMultiReturn<[modules: BlueprintInsertPlan[] | nil, nonModules: BlueprintInsertPlan[] | nil]> {
+  if (!requests[0]) return $multi(nil, nil)
   const type: EntityType | nil = nameToType.get(entityName)
   if (!type) return $multi(nil, requests)
   const invIndex = moduleInventoryForType[type]
@@ -157,11 +152,28 @@ export function getNonModuleRequests(entity: LuaEntity): BlueprintInsertPlan[] |
   if (!entity.valid) return
   const inserts = entity.item_request_proxy?.insert_plan
   if (!inserts) return nil
-  const [, nonModules] = partitionModulesFromRequests(inserts, entity.name)
+  const [, nonModules] = partitionModulesAndRemoveGridRequests(inserts, entity.name)
   return nonModules
 }
 
 export function addItemRequests(entity: Mutable<BlueprintEntity>, items: BlueprintInsertPlan[] | nil): void {
   const concat = nullableConcat(entity.items, items)
   entity.items = concat && mergeRequestPlans(concat)
+}
+
+export function removeGridRequests(requests: BlueprintInsertPlan[]): BlueprintInsertPlan[] | nil {
+  const result: BlueprintInsertPlan[] = []
+  for (const request of requests) {
+    if (request.items.grid_count == nil) {
+      result.push(request)
+    } else if (request.items.in_inventory) {
+      result.push({
+        id: request.id,
+        items: {
+          in_inventory: request.items.in_inventory,
+        },
+      })
+    }
+  }
+  return result[0] && result
 }

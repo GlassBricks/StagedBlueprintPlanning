@@ -8,10 +8,11 @@ import {
   mergeRequestPlans,
   partitionInventoryFromRequest,
   partitionInventoryFromRequests,
-  partitionModulesFromRequests,
+  partitionModulesAndRemoveGridRequests,
+  removeGridRequests,
 } from "../../entity/item-requests"
 
-test("partitionInventoryFromRequest with mixed items", () => {
+test("partitionInventoryFromRequest() with mixed items", () => {
   const request: BlueprintInsertPlanWrite = {
     id: {
       name: "iron-plate",
@@ -56,7 +57,6 @@ test("partitionInventoryFromRequest with mixed items", () => {
       name: "iron-plate",
     },
     items: {
-      grid_count: 1,
       in_inventory: [
         {
           inventory: defines.inventory.crafter_input,
@@ -147,7 +147,7 @@ test("partitionModulesFromRequests basic case", () => {
       },
     } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
   ]
-  const [modules, nonModules] = partitionModulesFromRequests(requests, "assembling-machine-1")
+  const [modules, nonModules] = partitionModulesAndRemoveGridRequests(requests, "assembling-machine-1")
   expect(modules!).toHaveLength(1)
   expect(modules![0].id.name).toBe("speed-module")
   expect(nonModules).toBeNil()
@@ -212,4 +212,54 @@ test("mergeRequestPlans with non-overlapping requests", () => {
 
   expect(merged).toHaveLength(2)
   expect(merged).toEqual([plan1, plan2])
+})
+
+test("removeGridRequests removes grid_count but keeps in_inventory", () => {
+  const requests: BlueprintInsertPlan[] = [
+    {
+      id: { name: "iron-plate" },
+      items: {
+        grid_count: 5,
+        in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 0 }],
+      },
+    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    {
+      id: { name: "copper-plate" },
+      items: {
+        in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 1 }],
+      },
+    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    {
+      id: { name: "steel-plate" },
+      items: {
+        grid_count: 3,
+      },
+    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+  ]
+
+  const result = removeGridRequests(requests)!
+
+  expect(result).toHaveLength(2)
+  expect(result[0]).toEqual({
+    id: { name: "iron-plate" },
+    items: {
+      in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 0 }],
+    },
+  })
+  expect(result[1]).toBe(requests[1])
+})
+
+test("removeGridRequests returns nil when all requests have only grid_count", () => {
+  const requests: BlueprintInsertPlan[] = [
+    {
+      id: { name: "iron-plate" },
+      items: {
+        grid_count: 5,
+      },
+    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+  ]
+
+  const result = removeGridRequests(requests)
+
+  expect(result).toBeNil()
 })

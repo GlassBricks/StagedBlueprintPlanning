@@ -6,9 +6,11 @@
 import {
   AssemblingMachineBlueprintEntity,
   BlueprintEntity,
+  BlueprintEquipment,
   BlueprintInsertPlan,
   BlueprintInsertPlanWrite,
   BoundingBox,
+  CarBlueprintEntity,
   CargoWagonBlueprintEntity,
   CargoWagonSurfaceCreateEntity,
   LoaderBlueprintEntity,
@@ -21,7 +23,7 @@ import {
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { Events, getName, Mutable, mutableShallowCopy } from "../lib"
+import { Events, getName, getQuality, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
@@ -31,7 +33,8 @@ import {
   addItemRequests,
   getNonModuleRequests,
   partitionInventoryFromRequests,
-  partitionModulesFromRequests,
+  partitionModulesAndRemoveGridRequests,
+  removeGridRequests,
 } from "./item-requests"
 import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
@@ -255,8 +258,8 @@ export function createEntity(
   assume<BlueprintEntity>(value)
   if (changed) entityVersion++
   let luaEntity: LuaEntity | undefined
-  const movable = movableTypes.has(nameToType.get(value.name) ?? ("" as never))
-  if (movable) {
+  const isMovable = movableTypes.has(nameToType.get(value.name) ?? ("" as never))
+  if (isMovable) {
     const ghost = pasteEntity(surface, position, direction, value, unstagedValue, nil)
     if (!ghost) return nil
     const [, newLuaEntity] = ghost.silent_revive()
@@ -273,12 +276,16 @@ export function createEntity(
     luaEntity.loader_type = value.type ?? "output"
     luaEntity.direction = direction
   }
-  if ((!movable && entityHasSettings(value)) || unstagedValue != nil) {
+  if ((!isMovable && entityHasSettings(value)) || unstagedValue != nil) {
     const ghost = pasteEntity(surface, position, direction, value, unstagedValue, luaEntity)
     ghost?.destroy()
   }
   if (value.items) {
     matchModuleItems(luaEntity, value.items)
+  }
+  if (isMovable) {
+    assume<CarBlueprintEntity>(value)
+    insertEquipment(luaEntity, value.grid)
   }
   raise_script_built({ entity: luaEntity })
   if (luaEntity.valid) return luaEntity
@@ -437,7 +444,7 @@ export function copyKnownValue(value: BlueprintEntity): EntityResult {
   const entity = removeExtraProperties(mutableShallowCopy(value))
   if (!entity.items) return $multi(entity)
 
-  const [moduleRequests, nonModules] = partitionModulesFromRequests(entity.items, entity.name)
+  const [moduleRequests, nonModules] = partitionModulesAndRemoveGridRequests(entity.items, entity.name)
   entity.items = moduleRequests
   const unstagedProps = nonModules && {
     items: nonModules,
@@ -452,11 +459,29 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Nul
   if (knownValue) return copyKnownValue(knownValue)
   const bpEntity = blueprintEntity(entity)
   if (!bpEntity) return $multi()
+  if (bpEntity.items) {
+    bpEntity.items = removeGridRequests(bpEntity.items)
+  }
+
   const itemRequests = getNonModuleRequests(entity)
   const unstagedProps = itemRequests && {
     items: itemRequests,
   }
   return $multi(removeExtraProperties(bpEntity), unstagedProps)
+}
+
+function insertEquipment(entity: LuaEntity, grid: BlueprintEquipment[] | undefined) {
+  if (!grid) return
+  const luaGrid = entity.grid
+  if (!luaGrid) return
+  for (const gridItem of grid) {
+    const equipment = gridItem.equipment as never as string | { name: string; quality?: string }
+    luaGrid.put({
+      name: getName(equipment),
+      quality: getQuality(equipment),
+      position: gridItem.position,
+    })
+  }
 }
 
 export function updateEntity(
@@ -469,7 +494,8 @@ export function updateEntity(
   assume<BlueprintEntity>(value)
   const type = luaEntity.type
   if (movableTypes.has(type)) {
-    // since rolling stock only are present in one stage, we don't need to update anything.
+    assume<CarBlueprintEntity>(value)
+    insertEquipment(luaEntity, value.grid)
     return $multi(luaEntity)
   }
   if (requiresRebuild.has(value.name)) {

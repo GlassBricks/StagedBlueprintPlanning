@@ -195,6 +195,13 @@ export const movableTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>(
   "spider-vehicle",
 )
 
+export const trainTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>(
+  "artillery-wagon",
+  "cargo-wagon",
+  "fluid-wagon",
+  "locomotive",
+)
+
 export const elevatedRailTypes: ReadonlyLuaSet<EntityType> = newLuaSet<EntityType>(
   "elevated-straight-rail",
   "elevated-half-diagonal-rail",
@@ -252,6 +259,10 @@ export function getPrototypeRotationType(entityName: string): RotationType | nil
 export function isMovableEntity(entityName: string): boolean {
   const type = nameToType.get(entityName)
   return type != nil && movableTypes.has(type)
+}
+export function isTrainEntity(entityName: string): boolean {
+  const type = nameToType.get(entityName)
+  return type != nil && trainTypes.has(type)
 }
 
 export function isPreviewEntity(entity: LuaEntity): boolean {

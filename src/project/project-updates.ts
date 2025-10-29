@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { BlueprintEntity, LuaEntity, LuaTrain, nil } from "factorio:runtime"
-import { Entity } from "../entity/Entity"
+import { Entity, TrainEntity } from "../entity/Entity"
 import {
   getNameAndQuality,
   InserterProjectEntity,
@@ -755,6 +755,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       const projectEntity = content.findCompatibleWithLuaEntity(luaEntity, nil, stage)
       if (projectEntity) {
         content.changeEntityPosition(projectEntity, luaEntity.position)
+        assume<ProjectEntity<TrainEntity>>(projectEntity)
+        projectEntity.setPropAtStage(projectEntity.firstStage, "orientation", luaEntity.orientation)
         rebuildWorldEntityAtStage(projectEntity, stage)
       } else {
         // add

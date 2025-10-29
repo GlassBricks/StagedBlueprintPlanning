@@ -23,10 +23,18 @@ import {
   InserterEntity,
   LoaderEntity,
   MovableEntity,
+  TrainEntity,
   UndergroundBeltEntity,
   UnstagedEntityProps,
 } from "./Entity"
-import { isMovableEntity, isPreviewEntity, movableTypes, OnPrototypeInfoLoaded, PrototypeInfo } from "./prototype-info"
+import {
+  isMovableEntity,
+  isPreviewEntity,
+  isTrainEntity,
+  movableTypes,
+  OnPrototypeInfoLoaded,
+  PrototypeInfo,
+} from "./prototype-info"
 import { registerEntity } from "./registration"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
 import { BaseStagedValue, StagedValue } from "./StagedValue"
@@ -178,10 +186,11 @@ export interface StageProperties {
   unstagedValue?: UnstagedEntityProps
 }
 
-export type MovableProjectEntity = ProjectEntity<MovableEntity>
 export type UndergroundBeltProjectEntity = ProjectEntity<UndergroundBeltEntity>
 export type LoaderProjectEntity = ProjectEntity<LoaderEntity>
 export type InserterProjectEntity = ProjectEntity<InserterEntity>
+export type MovableProjectEntity = ProjectEntity<MovableEntity>
+export type TrainProjectEntity = ProjectEntity<TrainEntity>
 
 type StageData = ExtraEntities & StageProperties
 
@@ -241,6 +250,9 @@ class ProjectEntityImpl<T extends Entity = Entity>
   }
   isMovable(): this is MovableProjectEntity {
     return isMovableEntity(this.firstValue.name)
+  }
+  isTrain(): this is TrainProjectEntity {
+    return isTrainEntity(this.firstValue.name)
   }
   getType(): EntityType | nil {
     return nameToType.get(this.firstValue.name)
@@ -439,7 +451,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
     const { firstValue } = this
     const diff = getEntityDiff(firstValue, value)
     if (!diff) return false
-    if (this.isMovable()) {
+    if (this.isTrain()) {
       delete (diff as { orientation?: unknown }).orientation
     }
     if (isEmpty(diff)) {

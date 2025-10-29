@@ -1046,15 +1046,15 @@ test("can save/load a vehicle with grid", () => {
   const [saved, unstagedValue] = saveEntity(vehicle)
   assume<CarBlueprintEntity>(saved)
   expect(saved?.grid).not.toBeNil()
-  expect(saved?.items).not.toBeNil()
+  expect(saved?.items).toBeNil()
 
   vehicle.destroy()
 
-  const loaded = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, saved!, unstagedValue)!
+  const loaded = createEntity(surface, { x: 0.5, y: 0.5 }, defines.direction.north, saved, unstagedValue)!
   expect(loaded).toBeAny()
   expect(loaded.name).toBe("tank")
   expect(loaded.grid!.equipment.length).toBe(1)
-  expect(loaded.grid!.equipment[0].ghost_name).toBe("solar-panel-equipment")
+  expect(loaded.grid!.equipment[0].name).toBe("solar-panel-equipment")
   itemRequestProxyExpected = true
 })
 
