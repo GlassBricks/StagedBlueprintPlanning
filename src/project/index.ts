@@ -91,7 +91,7 @@ Migrations.to("2.6.4", () => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.7.1", () => {
   for (const project of getAllProjects()) {
     const changed = new LuaSet<ProjectEntity>()
     for (const entity of project.content.allEntities()) {
