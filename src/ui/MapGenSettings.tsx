@@ -95,6 +95,9 @@ export class MapGenSettingsSelect extends Component<Props> {
     const mapGenSettings: Mutable<MapGenSettings> = asMutable(planet.map_gen_settings!)
     if (seed) mapGenSettings.seed = (seed + (planet.map_seed_offset ?? 0)) % 2 ** 32
     const surface = this.stage.surface
+    for(const [key,val] of pairs(planet.surface_properties)) {
+      surface.set_property(key, val)
+    }
     surface.map_gen_settings = mapGenSettings as MapGenSettingsWrite
     surface.generate_with_lab_tiles = false
     surface.ignore_surface_conditions = false

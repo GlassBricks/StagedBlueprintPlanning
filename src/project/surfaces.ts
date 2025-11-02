@@ -20,6 +20,9 @@ export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurfac
     if (fromSurface.has_global_electric_network) toSurface.create_global_electric_network()
     else toSurface.destroy_global_electric_network()
   }
+  for (const [propertyName] of prototypes.surface_property) {
+    toSurface.set_property(propertyName, fromSurface.get_property(propertyName))
+  }
 }
 
 function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSurface | nil): void {

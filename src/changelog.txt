@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.7.2
 Date: ????
-  Changes:
+  Bugfixes:
+    - "Surface properties" (crafting restrictions) are now respected when setting a project to use a planet's map gen .
 ---------------------------------------------------------------------------------------------------
 Version: 2.7.1
 Date: 2025-11-02
