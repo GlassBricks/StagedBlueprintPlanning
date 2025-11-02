@@ -35,7 +35,7 @@ import { assert, Events, Mutable } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import { checkForEntityUpdates } from "../../project/event-handlers"
-import { syncMapGenSettings } from "../../project/map-gen"
+import { syncMapGenSettings } from "../../project/surfaces"
 import { EntityUpdateResult, StageMoveResult } from "../../project/project-updates"
 
 import { UserProject } from "../../project/ProjectDef"
@@ -1821,12 +1821,13 @@ describe("map gen settings", () => {
       assertEntityCorrect(entity, false)
     })
   })
-  test("adding a new stage gets the same map settings as previous stage", () => {
+  test("adding a new stage gets map settings from project", () => {
     surfaces[2].map_gen_settings = {
       ...surfaces[2].map_gen_settings,
       seed: 42,
     }
     surfaces[2].generate_with_lab_tiles = false
+    syncMapGenSettings(project.getStage(3)!)
     project.insertStage(4)
     expect(project.getSurface(4)).toMatchTable({
       map_gen_settings: { seed: 42 },

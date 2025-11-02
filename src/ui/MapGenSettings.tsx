@@ -3,23 +3,23 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { MapGenSettings } from "factorio:prototype"
 import {
   DropDownGuiElement,
   FrameGuiElement,
   LocalisedString,
   LuaPlayer,
   LuaSpaceLocationPrototype,
-  MapGenSettingsWrite,
+  MapGenSettings,
   TextFieldGuiElement,
 } from "factorio:runtime"
 import { L_Game } from "../constants"
-import { asMutable, funcRef, ibind, Mutable, RegisterClass } from "../lib"
+import { funcRef, ibind, Mutable, RegisterClass } from "../lib"
 import { Component, destroy, Element, FactorioJsx, renderNamed } from "../lib/factoriojsx"
 import { closeParentParent, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiSetSeedSelect } from "../locale"
-import { syncMapGenSettings } from "../project/map-gen"
+import { applyAllSurfaceSettings, type SurfaceSettings } from "../project/surfaces"
 import { Stage } from "../project/ProjectDef"
+import { setCurrentValuesOf } from "../utils/properties-obj"
 
 interface Props {
   stage: Stage
@@ -91,18 +91,35 @@ export class MapGenSettingsSelect extends Component<Props> {
     }
     const planet = this.planets[this.planet.selected_index - 1]
     const seed = tonumber(this.seed.text)
-    this.close()
-    const mapGenSettings: Mutable<MapGenSettings> = asMutable(planet.map_gen_settings!)
-    if (seed) mapGenSettings.seed = (seed + (planet.map_seed_offset ?? 0)) % 2 ** 32
-    const surface = this.stage.surface
-    for(const [key,val] of pairs(planet.surface_properties)) {
-      surface.set_property(key, val)
+
+    const mapGenSettings = planet.map_gen_settings
+    if (!mapGenSettings) {
+      error(`Planet ${planet.name} does not have map_gen_settings`)
     }
-    surface.map_gen_settings = mapGenSettings as MapGenSettingsWrite
-    surface.generate_with_lab_tiles = false
-    surface.ignore_surface_conditions = false
-    syncMapGenSettings(this.stage)
+    assume<Mutable<MapGenSettings>>(mapGenSettings)
+
+    if (seed != nil) {
+      const offset = planet.map_seed_offset ?? 0
+      mapGenSettings.seed = (seed + offset) % 2 ** 32
+    }
+
+    const project = this.stage.project
+
+    setCurrentValuesOf(
+      project.surfaceSettings,
+      {
+        map_gen_settings: mapGenSettings,
+        generate_with_lab_tiles: false,
+        surface_properties: planet.surface_properties,
+      },
+      keys<SurfaceSettings>(),
+    )
+
+    applyAllSurfaceSettings(project)
+
+    this.close()
   }
+
   private close() {
     destroy(this.element)
   }

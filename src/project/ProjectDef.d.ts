@@ -19,6 +19,7 @@ import { BBox } from "../lib/geometry"
 import { NestedPropertiesTable, OverrideTable, PropertiesTable } from "../utils/properties-obj"
 import { ProjectUpdates } from "./project-updates"
 
+import type { SurfaceSettings, SurfaceSettingsTable } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
 
@@ -53,6 +54,7 @@ export interface ProjectSettings {
 
 export interface NestedProjectSettings {
   readonly defaultBlueprintSettings: OverrideableBlueprintSettings
+  readonly surfaceSettings: SurfaceSettings
 }
 
 export interface UserProject
@@ -64,6 +66,7 @@ export interface UserProject
   // settings
   readonly name: MutableProperty<string>
   readonly defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
+  readonly surfaceSettings: SurfaceSettingsTable
   readonly landfillTile: MutableProperty<string | nil>
   readonly stagedTilesEnabled: MutableProperty<boolean>
 

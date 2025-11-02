@@ -39,7 +39,7 @@ import {
 } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSettings, L_Interaction } from "../locale"
-import { syncMapGenSettings } from "../project/map-gen"
+import { syncMapGenSettings } from "../project/surfaces"
 import { Stage, UserProject } from "../project/ProjectDef"
 import {
   setCheckerboard,

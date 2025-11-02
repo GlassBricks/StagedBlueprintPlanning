@@ -11,6 +11,7 @@ import {
   StageSettings,
   UserProject,
 } from "../project/ProjectDef"
+import type { SurfaceSettings } from "../project/surfaces"
 import { createUserProject } from "../project/UserProject"
 import { getCurrentValues, getCurrentValuesOf, OverrideTable, setCurrentValuesOf } from "../utils/properties-obj"
 import { EntityExport, exportAllEntities, importAllEntities } from "./entity"
@@ -31,6 +32,7 @@ export interface StageExport extends Partial<StageSettings>, NestedPartial<Neste
 export function exportProject(project: UserProject): ProjectExport {
   return {
     defaultBlueprintSettings: getCurrentValues(project.defaultBlueprintSettings),
+    surfaceSettings: getCurrentValues<SurfaceSettings>(project.surfaceSettings),
     stages: project.getAllStages().map(exportStage),
     entities: exportAllEntities(project.content.allEntities()),
     ...getCurrentValuesOf<ProjectSettings>(project, keys<ProjectSettings>()),
@@ -62,6 +64,11 @@ export function importProjectDataOnly(project: ProjectExport): UserProject {
       keys<OverrideableBlueprintSettings>(),
     )
   }
+
+  if (project.surfaceSettings != nil) {
+    setCurrentValuesOf(result.surfaceSettings, project.surfaceSettings, keys<SurfaceSettings>())
+  }
+
   if (stages != nil) {
     for (const [i, stage] of ipairs(stages)) {
       setStageExport(stage, result.getStage(i)!)

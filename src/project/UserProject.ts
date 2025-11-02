@@ -34,12 +34,16 @@ import {
 import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { L_Bp100 } from "../locale"
-import { createdDiffedPropertyTableView, createEmptyPropertyOverrideTable } from "../utils/properties-obj"
+import {
+  createdDiffedPropertyTableView,
+  createEmptyPropertyOverrideTable,
+  getCurrentValues,
+} from "../utils/properties-obj"
 import { EntityHighlights } from "./entity-highlights"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
-import { createStageSurface, destroySurface, updateStageSurfaceName } from "./surfaces"
+import { createStageSurface, destroySurface, updateStageSurfaceName, createSurfaceSettingsTable, type SurfaceSettingsTable } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
 import min = math.min
@@ -76,6 +80,7 @@ class UserProjectImpl implements UserProjectInternal {
   localEvents = new SimpleEvent<LocalProjectEvent>()
 
   defaultBlueprintSettings = createBlueprintSettingsTable()
+  surfaceSettings: SurfaceSettingsTable = createSurfaceSettingsTable()
 
   landfillTile = property<string | nil>("landfill")
   // disable tiles by default in tests, since its slow
@@ -99,7 +104,7 @@ class UserProjectImpl implements UserProjectInternal {
     this.name = property(name)
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
-      const stage = StageImpl.create(this, i, `Stage ${i}`, nil)
+      const stage = StageImpl.create(this, i, `Stage ${i}`)
       this.stages[i] = stage
     }
   }
@@ -170,9 +175,7 @@ class UserProjectImpl implements UserProjectInternal {
     assert(stage >= 1 && stage <= this.numStages() + 1, "Invalid new stage number")
 
     const name = this._getNewStageName(stage)
-    const prevStage = this.stages[stage == 1 ? 1 : stage - 1]
-    const newStage = StageImpl.create(this, stage, name, prevStage.surface)
-    // copy/update icons
+    const newStage = StageImpl.create(this, stage, name)
 
     table.insert(this.stages as unknown as Stage[], stage, newStage)
     // update stages
@@ -457,14 +460,10 @@ class StageImpl implements StageInternal {
     updateStageSurfaceName(this.surface, this.project.name.get(), newName)
   }
 
-  static create(
-    project: UserProjectImpl,
-    stageNumber: StageNumber,
-    name: string,
-    copySettingsFrom: LuaSurface | nil,
-  ): StageImpl {
+  static create(project: UserProjectImpl, stageNumber: StageNumber, name: string): StageImpl {
     const area = project.content.computeBoundingBox()
-    const surface = createStageSurface(area, copySettingsFrom, project.name.get(), name)
+    const projectSettings = getCurrentValues(project.surfaceSettings)
+    const surface = createStageSurface(area, projectSettings, project.name.get(), name)
     const stage = new StageImpl(project, surface, stageNumber, name)
     stage.registerEvents()
     return stage

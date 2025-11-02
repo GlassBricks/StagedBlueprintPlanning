@@ -3,11 +3,15 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+import { MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
+import { asMutable, deepCopy, Mutable } from "../../lib"
 import { Entity } from "../../entity/Entity"
 import { addWireConnection, newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
+import type { SurfaceSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { getCurrentValues, setCurrentValuesOf } from "../../utils/properties-obj"
 import { simpleInsertPlan } from "../entity/entity-util"
 
 after_each(() => {
@@ -152,4 +156,49 @@ test("preserves unstaged values in round trip", () => {
   expect(importedEntity2.getUnstagedValue(1)).toEqual({
     items: [simpleInsertPlan(defines.inventory.chest, "copper-plate", 1, 25)],
   })
+})
+
+test("exports and imports surface settings", () => {
+  const project = createUserProject("Test", 2)
+
+  const vulcanus = prototypes.space_location["vulcanus"]
+  const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(vulcanus.map_gen_settings!))
+  mapGenSettings.seed = 54321
+
+  const settings: SurfaceSettings = {
+    map_gen_settings: mapGenSettings,
+    generate_with_lab_tiles: false,
+    ignore_surface_conditions: true,
+    surface_properties: vulcanus.surface_properties ?? {},
+    has_global_electric_network: false,
+  }
+
+  setCurrentValuesOf(project.surfaceSettings, settings, keys<SurfaceSettings>())
+
+  const exported = exportProject(project)
+
+  expect(exported.surfaceSettings != nil).toBe(true)
+  expect(exported.surfaceSettings!.generate_with_lab_tiles).toBe(false)
+  expect(exported.surfaceSettings!.map_gen_settings != nil).toBe(true)
+  expect(exported.surfaceSettings!.map_gen_settings!.seed).toBe(54321)
+
+  const imported = importProjectDataOnly(exported)
+
+  expect(getCurrentValues(imported.surfaceSettings).generate_with_lab_tiles).toBe(false)
+  expect(getCurrentValues(imported.surfaceSettings).map_gen_settings!.seed).toBe(54321)
+})
+
+test("imports project without surface settings (backward compatibility)", () => {
+  const exported: ProjectExport = {
+    name: "Test",
+    stages: [{ name: "Stage 1" }],
+    entities: [],
+  }
+
+  const imported = importProjectDataOnly(exported)
+
+  const settings = getCurrentValues(imported.surfaceSettings)
+  expect(settings.map_gen_settings).toBeNil()
+  expect(settings.generate_with_lab_tiles).toBe(true)
+  expect(settings.ignore_surface_conditions).toBe(true)
 })

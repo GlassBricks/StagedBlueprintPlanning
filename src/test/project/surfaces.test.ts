@@ -1,68 +1,91 @@
-// Copyright (c) 2022-2023 GlassBricks
+// Copyright (c) 2025 GlassBricks
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+import { double, MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
-import { BBox } from "../../lib/geometry"
-import { createUserProject } from "../../project/UserProject"
-import { createStageSurface } from "../../project/surfaces"
+import { asMutable, deepCopy, Mutable } from "../../lib"
+import { applySurfaceSettings, readSurfaceSettings, type SurfaceSettings } from "../../project/surfaces"
 
-test("generateStageSurface creates surface and generates chunks", () => {
-  const surface = createStageSurface()
-  after_test(() => game.delete_surface(surface))
-  expect(surface.index).not.toEqual(1)
-  expect(surface.always_day).toBe(true)
-  expect(surface.generate_with_lab_tiles).toBe(true)
-  expect(surface.ignore_surface_conditions).toBe(true)
+test("applySurfaceSettings applies all custom settings", () => {
+  const surface = game.create_surface("test-surface")
 
-  const area = BBox.coords(0, 0, 1, 1)
-  for (const [x, y] of area.iterateTiles()) {
-    const pos = { x, y }
-    expect(surface.is_chunk_generated(pos)).toBe(true)
+  const nauvis = prototypes.space_location["nauvis"]
+  const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(nauvis.map_gen_settings!))
+  mapGenSettings.seed = 99999
+
+  const customProps: Record<string, double> = {}
+  for (const [propertyName] of prototypes.surface_property) {
+    customProps[propertyName] = 0.5
   }
+
+  const settings: SurfaceSettings = {
+    map_gen_settings: mapGenSettings,
+    surface_properties: customProps,
+    generate_with_lab_tiles: false,
+    ignore_surface_conditions: false,
+    has_global_electric_network: true,
+  }
+
+  applySurfaceSettings(settings, surface)
+
+  expect(surface.generate_with_lab_tiles).toBe(false)
+  expect(surface.map_gen_settings.seed).toBe(99999)
+  expect(surface.ignore_surface_conditions).toBe(false)
+  expect(surface.has_global_electric_network).toBe(true)
+  for (const [propertyName] of prototypes.surface_property) {
+    expect(surface.get_property(propertyName)).toBe(0.5)
+  }
+
+  game.delete_surface(surface)
 })
 
-test("surface is named with project and stage names", () => {
-  const project = createUserProject("MyProject", 2)
-  after_test(() => project.delete())
-  const stage = project.getStage(1)!
+test("applySurfaceSettings uses defaults for nil values", () => {
+  const surface = game.create_surface("test-surface")
 
-  expect(stage.surface.name).toMatch("^bp100%-")
-  expect(stage.surface.name).toMatch("%-MyProject%-Stage%-1$")
+  const settings: SurfaceSettings = {
+    map_gen_settings: nil,
+    surface_properties: nil,
+    generate_with_lab_tiles: false,
+    ignore_surface_conditions: true,
+    has_global_electric_network: false,
+  }
+
+  applySurfaceSettings(settings, surface)
+
+  const nauvis = game.surfaces[1]
+  for (const [propertyName] of prototypes.surface_property) {
+    expect(surface.get_property(propertyName)).toBe(nauvis.get_property(propertyName))
+  }
+  expect(surface.map_gen_settings).toEqual(game.default_map_gen_settings)
+
+  game.delete_surface(surface)
 })
 
-test("surface name updates when project name changes", () => {
-  const project = createUserProject("OldName", 1)
-  after_test(() => project.delete())
-  const stage = project.getStage(1)!
-  const surface = stage.surface
+test("readSurfaceSettings reads all settings from surface", () => {
+  const surface = game.create_surface("test-surface")
+  surface.generate_with_lab_tiles = false
+  const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(game.default_map_gen_settings))
+  mapGenSettings.seed = 12345
+  surface.map_gen_settings = mapGenSettings
 
-  project.name.set("NewName")
+  const settings = readSurfaceSettings(surface)
 
-  expect(surface.name).toMatch("NewName")
-  expect(surface.name).not.toMatch("OldName")
+  expect(settings.generate_with_lab_tiles).toBe(false)
+  expect(settings.map_gen_settings!.seed).toBe(12345)
+  expect(settings.surface_properties != nil).toBe(true)
+
+  game.delete_surface(surface)
 })
 
-test("surface name updates when stage name changes", () => {
-  const project = createUserProject("Project", 1)
-  after_test(() => project.delete())
-  const stage = project.getStage(1)!
-  const surface = stage.surface
+test("readSurfaceSettings returns nil map_gen_settings for lab tiles", () => {
+  const surface = game.create_surface("test-surface")
+  surface.generate_with_lab_tiles = true
 
-  stage.name.set("CustomStage")
+  const settings = readSurfaceSettings(surface)
 
-  expect(surface.name).toMatch("CustomStage")
-})
+  expect(settings.map_gen_settings).toBeNil()
 
-test("sanitizes non-alphanumeric characters", () => {
-  const project = createUserProject("My Project!", 1)
-  after_test(() => project.delete())
-  const stage = project.getStage(1)!
-  stage.name.set("Stage #1")
-
-  const name = stage.surface.name
-  expect(name).not.toContain("!")
-  expect(name).not.toContain("#")
-  expect(name).not.toContain(" ")
+  game.delete_surface(surface)
 })

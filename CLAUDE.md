@@ -117,7 +117,7 @@ When editing anything in `storage`:
 See mini framework in `src/lib/migration.ts`
 
 - Place project-related migrations in: `src/project/index.ts`
-- use `$CURRENT_VERSION` as a placeholder for current version, will be substituted by a script during publishing
+- use `$CURRENT_VERSION` (global variable) as a placeholder for current version, will be substituted by a script during publishing
 
 Don't forget to consider if migrations in planning.
 
@@ -157,6 +157,10 @@ Don't forget to consider if migrations in planning.
 
 For Factorio API documentation, prefer to inspect or grep `typed-factorio`, instead of using online documentation (`node_modules/typed-factorio/**/*.d.ts`); if normal tools to read/search don't work, use bash commands
 
-## Notes
+## Docs, planning, and research
+
+- Omit code comments and doc comments in docs. If needed, comment outside code blocks.
+
+## Important Notes
 
 - In commit messages, do not include claude code attribution. The user is the sole author of the changes.

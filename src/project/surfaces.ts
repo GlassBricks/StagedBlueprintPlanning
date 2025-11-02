@@ -3,9 +3,94 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaSurface, MapGenSettingsWrite, SurfaceIndex } from "factorio:runtime"
+import { double, LuaSurface, MapGenSettings, MapGenSettingsWrite, nil, SurfaceIndex } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
+import { createPropertiesTable, getCurrentValues, PropertiesTable, setCurrentValuesOf } from "../utils/properties-obj"
+import { Stage, UserProject } from "./ProjectDef"
 import { withTileEventsDisabled } from "./tile-events"
+
+export interface SurfaceSettings {
+  map_gen_settings: MapGenSettings | nil
+  surface_properties: Record<string, double> | nil
+  generate_with_lab_tiles: boolean
+  ignore_surface_conditions: boolean
+  has_global_electric_network: boolean
+}
+
+export type SurfaceSettingsTable = PropertiesTable<SurfaceSettings>
+
+export function getDefaultSurfaceSettings(): SurfaceSettings {
+  return {
+    map_gen_settings: nil,
+    surface_properties: nil,
+    generate_with_lab_tiles: true,
+    ignore_surface_conditions: true,
+    has_global_electric_network: false,
+  }
+}
+
+export function createSurfaceSettingsTable(): SurfaceSettingsTable {
+  return createPropertiesTable(keys<SurfaceSettings>(), getDefaultSurfaceSettings())
+}
+
+export function applySurfaceSettings(settings: SurfaceSettings, surface: LuaSurface): void {
+  surface.generate_with_lab_tiles = settings.generate_with_lab_tiles
+
+  if (!settings.generate_with_lab_tiles) {
+    surface.map_gen_settings = settings.map_gen_settings ?? game.default_map_gen_settings
+  }
+
+  surface.ignore_surface_conditions = settings.ignore_surface_conditions
+
+  if (settings.has_global_electric_network != surface.has_global_electric_network) {
+    if (settings.has_global_electric_network) {
+      surface.create_global_electric_network()
+    } else {
+      surface.destroy_global_electric_network()
+    }
+  }
+
+  if (settings.surface_properties != nil) {
+    for (const [propertyName, value] of pairs(settings.surface_properties)) {
+      surface.set_property(propertyName, value)
+    }
+  } else {
+    const nauvis = game.surfaces[1]
+    for (const [propertyName] of prototypes.surface_property) {
+      surface.set_property(propertyName, nauvis.get_property(propertyName))
+    }
+  }
+}
+
+export function readSurfaceSettings(surface: LuaSurface): SurfaceSettings {
+  const surfaceProperties: Record<string, double> = {}
+  for (const [propertyName] of prototypes.surface_property) {
+    surfaceProperties[propertyName] = surface.get_property(propertyName)
+  }
+
+  return {
+    map_gen_settings: surface.generate_with_lab_tiles ? nil : surface.map_gen_settings,
+    surface_properties: surfaceProperties,
+    generate_with_lab_tiles: surface.generate_with_lab_tiles,
+    ignore_surface_conditions: surface.ignore_surface_conditions,
+    has_global_electric_network: surface.has_global_electric_network,
+  }
+}
+
+export function syncMapGenSettings(stage: Stage): void {
+  const project = stage.project
+  const settings = readSurfaceSettings(stage.surface)
+
+  setCurrentValuesOf(project.surfaceSettings, settings, keys<SurfaceSettings>())
+  applyAllSurfaceSettings(project)
+}
+
+export function applyAllSurfaceSettings(project: UserProject): void {
+  const currentSettings = getCurrentValues(project.surfaceSettings)
+  for (const otherStage of project.getAllStages()) {
+    applySurfaceSettings(currentSettings, otherStage.surface)
+  }
+}
 
 const inTest = script.active_mods["factorio-test"] != nil
 const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, inTest ? 32 : 5 * 32)
@@ -43,45 +128,30 @@ export function updateStageSurfaceName(surface: LuaSurface, projectName: string,
   tryRenameSurface(surface, newName)
 }
 
-export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurface): void {
-  if (fromSurface == toSurface) return
-  const generateWithLabTiles = fromSurface.generate_with_lab_tiles
-  toSurface.generate_with_lab_tiles = generateWithLabTiles
-  toSurface.ignore_surface_conditions = fromSurface.ignore_surface_conditions
-  if (!generateWithLabTiles) toSurface.map_gen_settings = fromSurface.map_gen_settings
-  if (fromSurface.has_global_electric_network != toSurface.has_global_electric_network) {
-    if (fromSurface.has_global_electric_network) toSurface.create_global_electric_network()
-    else toSurface.destroy_global_electric_network()
-  }
-  for (const [propertyName] of prototypes.surface_property) {
-    toSurface.set_property(propertyName, fromSurface.get_property(propertyName))
-  }
-}
-
 function prepareSurface(
   surface: LuaSurface,
   area: BBox,
-  copySettingsFrom: LuaSurface | nil,
+  projectSettings: SurfaceSettings | nil,
   projectName: string,
   stageName: string,
 ): void {
-  if (!copySettingsFrom) {
-    surface.generate_with_lab_tiles = true
-  } else {
-    copyMapGenSettings(copySettingsFrom, surface)
+  if (projectSettings == nil) {
+    projectSettings = getDefaultSurfaceSettings()
   }
+  applySurfaceSettings(projectSettings, surface)
+
   surface.always_day = true
   surface.show_clouds = false
-  surface.ignore_surface_conditions = true
 
   const newName = generateStageSurfaceName(surface.index, projectName, stageName)
   tryRenameSurface(surface, newName)
 
   prepareArea(surface, area)
 }
+
 function createNewStageSurface(
   area: BBox = defaultPreparedArea,
-  copySettingsFrom: LuaSurface | nil,
+  projectSettings: SurfaceSettings | nil,
   projectName: string,
   stageName: string,
 ): LuaSurface {
@@ -90,7 +160,7 @@ function createNewStageSurface(
     width: size,
     height: size,
   } as MapGenSettingsWrite)
-  prepareSurface(surface, area, copySettingsFrom, projectName, stageName)
+  prepareSurface(surface, area, projectSettings, projectName, stageName)
   return surface
 }
 
@@ -126,7 +196,7 @@ declare const storage: {
 interface SurfaceCreator {
   createSurface(
     preparedArea?: BBox,
-    copySettingsFrom?: LuaSurface,
+    projectSettings?: SurfaceSettings,
     projectName?: string,
     stageName?: string,
   ): LuaSurface
@@ -136,13 +206,13 @@ interface SurfaceCreator {
 let surfaceCreator: SurfaceCreator
 if (!inTest) {
   surfaceCreator = {
-    createSurface: (area = defaultPreparedArea, copySettingsFrom, projectName = "", stageName = "") =>
-      createNewStageSurface(area, copySettingsFrom, projectName, stageName),
+    createSurface: (area = defaultPreparedArea, projectSettings, projectName = "", stageName = "") =>
+      createNewStageSurface(area, projectSettings, projectName, stageName),
     destroySurface: (surface) => game.delete_surface(surface),
   }
 } else {
   surfaceCreator = {
-    createSurface: (area = defaultPreparedArea, copySettingsFrom, projectName = "", stageName = "") => {
+    createSurface: (area = defaultPreparedArea, projectSettings, projectName = "", stageName = "") => {
       if (!storage.freeSurfaces) {
         storage.freeSurfaces = []
       }
@@ -151,11 +221,11 @@ if (!inTest) {
         if (surface.valid) {
           surface.destroy_decoratives({})
           for (const entity of surface.find_entities()) entity.destroy()
-          prepareSurface(surface, area, copySettingsFrom, projectName, stageName)
+          prepareSurface(surface, area, projectSettings, projectName, stageName)
           return surface
         }
       }
-      return createNewStageSurface(area, copySettingsFrom, projectName, stageName)
+      return createNewStageSurface(area, projectSettings, projectName, stageName)
     },
     destroySurface: (surface) => {
       if (!surface.valid) return
