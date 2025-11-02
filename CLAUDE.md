@@ -51,6 +51,7 @@ Since code compiles to Lua:
 - Explicit member accessibility required (`accessibility: "no-public"`)
 - Explicit module boundary types required
 - Test files end with `.test.ts`
+- Avoid casting to `any` in new code. Prefer casting to an explicit type; creating one if it does not exist yet.
 
 ## Architecture
 
@@ -116,6 +117,9 @@ When editing anything in `storage`:
 See mini framework in `src/lib/migration.ts`
 
 - Place project-related migrations in: `src/project/index.ts`
+- use `$CURRENT_VERSION` as a placeholder for current version, will be substituted by a script during publishing
+
+Don't forget to consider if migrations in planning.
 
 ### Testing
 
@@ -152,3 +156,7 @@ See mini framework in `src/lib/migration.ts`
 - `src/lib/references.ts` - Global function storage system
 
 For Factorio API documentation, prefer to inspect or grep `typed-factorio`, instead of using online documentation (`node_modules/typed-factorio/**/*.d.ts`); if normal tools to read/search don't work, use bash commands
+
+## Notes
+
+- In commit messages, do not include claude code attribution. The user is the sole author of the changes.

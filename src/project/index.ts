@@ -17,8 +17,9 @@ import { Migrations } from "../lib/migration"
 import "./event-handlers"
 import "./project-event-listener"
 import { Stage } from "./ProjectDef"
+import { updateStageSurfaceName } from "./surfaces"
 import "./UserProject"
-import { getAllProjects } from "./UserProject"
+import { getAllProjects, StageInternal, UserProjectInternal } from "./UserProject"
 
 Migrations.to("2.2.0", () => {
   for (const project of getAllProjects()) {
@@ -111,6 +112,16 @@ Migrations.to("2.7.1", () => {
     }
     for (const entity of changed) {
       project.worldUpdates.refreshAllWorldEntities(entity)
+    }
+  }
+})
+
+Migrations.to("2.7.3", () => {
+  for (const project of getAllProjects()) {
+    ;(project as UserProjectInternal).registerEvents()
+    for (const stage of project.getAllStages()) {
+      ;(stage as StageInternal).registerEvents()
+      updateStageSurfaceName(stage.surface, project.name.get(), stage.name.get())
     }
   }
 })

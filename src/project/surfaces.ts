@@ -3,12 +3,45 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaSurface, MapGenSettingsWrite } from "factorio:runtime"
+import { LuaSurface, MapGenSettingsWrite, SurfaceIndex } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
 import { withTileEventsDisabled } from "./tile-events"
 
 const inTest = script.active_mods["factorio-test"] != nil
 const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, inTest ? 32 : 5 * 32)
+
+function sanitizeForSurfaceName(str: string): string {
+  let result = string.gsub(str, "[^%w]+", "-")[0]
+  result = string.gsub(result, "^-+", "")[0]
+  result = string.gsub(result, "-+$", "")[0]
+  return result
+}
+
+function generateStageSurfaceName(surfaceIndex: SurfaceIndex, projectName: string, stageName: string): string {
+  const sanitizedProject = sanitizeForSurfaceName(projectName)
+  const sanitizedStage = sanitizeForSurfaceName(stageName)
+
+  return `bp100-${surfaceIndex}-${sanitizedProject}-${sanitizedStage}`
+}
+
+function tryRenameSurface(surface: LuaSurface, newName: string): void {
+  if (surface.name == newName) return
+
+  const [success] = pcall(() => {
+    surface.name = newName
+  })
+
+  if (!success) {
+    print(
+      `[Staged Blueprint Planning] Warning: Could not rename surface ${surface.name} to ${newName} (name collision)`,
+    )
+  }
+}
+
+export function updateStageSurfaceName(surface: LuaSurface, projectName: string, stageName: string): void {
+  const newName = generateStageSurfaceName(surface.index, projectName, stageName)
+  tryRenameSurface(surface, newName)
+}
 
 export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurface): void {
   if (fromSurface == toSurface) return
@@ -25,7 +58,13 @@ export function copyMapGenSettings(fromSurface: LuaSurface, toSurface: LuaSurfac
   }
 }
 
-function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSurface | nil): void {
+function prepareSurface(
+  surface: LuaSurface,
+  area: BBox,
+  copySettingsFrom: LuaSurface | nil,
+  projectName: string,
+  stageName: string,
+): void {
   if (!copySettingsFrom) {
     surface.generate_with_lab_tiles = true
   } else {
@@ -35,18 +74,23 @@ function prepareSurface(surface: LuaSurface, area: BBox, copySettingsFrom: LuaSu
   surface.show_clouds = false
   surface.ignore_surface_conditions = true
 
-  const newName = "bp100-stage-" + surface.index
-  if (surface.name != newName) surface.name = newName
+  const newName = generateStageSurfaceName(surface.index, projectName, stageName)
+  tryRenameSurface(surface, newName)
 
   prepareArea(surface, area)
 }
-function createNewStageSurface(area: BBox = defaultPreparedArea, copySettingsFrom: LuaSurface | nil): LuaSurface {
+function createNewStageSurface(
+  area: BBox = defaultPreparedArea,
+  copySettingsFrom: LuaSurface | nil,
+  projectName: string,
+  stageName: string,
+): LuaSurface {
   const size = inTest ? 32 * 2 : 10000
   const surface = game.create_surface("bp100-stage-temp", {
     width: size,
     height: size,
   } as MapGenSettingsWrite)
-  prepareSurface(surface, area, copySettingsFrom)
+  prepareSurface(surface, area, copySettingsFrom, projectName, stageName)
   return surface
 }
 
@@ -80,19 +124,25 @@ declare const storage: {
 
 /** @noSelf */
 interface SurfaceCreator {
-  createSurface(preparedArea?: BBox, copySettingsFrom?: LuaSurface): LuaSurface
+  createSurface(
+    preparedArea?: BBox,
+    copySettingsFrom?: LuaSurface,
+    projectName?: string,
+    stageName?: string,
+  ): LuaSurface
   destroySurface(surface: LuaSurface): void
 }
 
 let surfaceCreator: SurfaceCreator
 if (!inTest) {
   surfaceCreator = {
-    createSurface: createNewStageSurface,
+    createSurface: (area = defaultPreparedArea, copySettingsFrom, projectName = "", stageName = "") =>
+      createNewStageSurface(area, copySettingsFrom, projectName, stageName),
     destroySurface: (surface) => game.delete_surface(surface),
   }
 } else {
   surfaceCreator = {
-    createSurface: (area = defaultPreparedArea, copySettingsFrom) => {
+    createSurface: (area = defaultPreparedArea, copySettingsFrom, projectName = "", stageName = "") => {
       if (!storage.freeSurfaces) {
         storage.freeSurfaces = []
       }
@@ -101,11 +151,11 @@ if (!inTest) {
         if (surface.valid) {
           surface.destroy_decoratives({})
           for (const entity of surface.find_entities()) entity.destroy()
-          prepareSurface(surface, area, copySettingsFrom)
+          prepareSurface(surface, area, copySettingsFrom, projectName, stageName)
           return surface
         }
       }
-      return createNewStageSurface(area, copySettingsFrom)
+      return createNewStageSurface(area, copySettingsFrom, projectName, stageName)
     },
     destroySurface: (surface) => {
       if (!surface.valid) return
@@ -113,6 +163,7 @@ if (!inTest) {
       if (!storage.freeSurfaces) {
         storage.freeSurfaces = []
       }
+      surface.name = `bp100-${surface.index}-free`
       storage.freeSurfaces.push(surface)
       for (const render of rendering.get_all_objects(script.mod_name)) {
         if (render.surface == surface) {

@@ -39,7 +39,7 @@ import { EntityHighlights } from "./entity-highlights"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
-import { createStageSurface, destroySurface } from "./surfaces"
+import { createStageSurface, destroySurface, updateStageSurfaceName } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
 import min = math.min
@@ -64,8 +64,12 @@ export { GlobalProjectEvents as ProjectEvents }
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
+export interface UserProjectInternal extends UserProject {
+  registerEvents(): void
+}
+
 @RegisterClass("Assembly") // named differently for legacy reasons
-class UserProjectImpl implements UserProject {
+class UserProjectImpl implements UserProjectInternal {
   name: MutableProperty<string>
 
   content = newProjectContent()
@@ -126,6 +130,10 @@ class UserProjectImpl implements UserProject {
     const template = this.getBlueprintBookTemplate()
     if (template != nil && template.label == oldValue) {
       template.label = newValue
+    }
+
+    for (const [, stage] of pairs(this.stages)) {
+      updateStageSurfaceName(stage.surface, newValue, stage.name.get())
     }
   }
 
@@ -404,8 +412,12 @@ function createEmptyBlueprintOverrideSettings(): BlueprintSettingsOverrideTable 
   return createEmptyPropertyOverrideTable<OverrideableBlueprintSettings>(keys<OverrideableBlueprintSettings>())
 }
 
+export interface StageInternal extends Stage {
+  registerEvents(): void
+}
+
 @RegisterClass("Stage")
-class StageImpl implements Stage {
+class StageImpl implements StageInternal {
   name: MutableProperty<string>
   readonly valid = true
 
@@ -420,6 +432,8 @@ class StageImpl implements Stage {
 
   id?: StageId
 
+  private subscription?: Subscription
+
   constructor(
     public project: UserProjectImpl,
     readonly surface: LuaSurface,
@@ -431,6 +445,18 @@ class StageImpl implements Stage {
     if (project.id != 0) storage.surfaceIndexToStage.set(this.surfaceIndex, this)
     this.actions = project.actions
   }
+
+  registerEvents(): void {
+    if (this.subscription) return
+    this.subscription = new Subscription()
+
+    this.name.subscribe(this.subscription, ibind(this.onNameChange))
+  }
+
+  private onNameChange(newName: string): void {
+    updateStageSurfaceName(this.surface, this.project.name.get(), newName)
+  }
+
   static create(
     project: UserProjectImpl,
     stageNumber: StageNumber,
@@ -438,8 +464,10 @@ class StageImpl implements Stage {
     copySettingsFrom: LuaSurface | nil,
   ): StageImpl {
     const area = project.content.computeBoundingBox()
-    const surface = createStageSurface(area, copySettingsFrom)
-    return new StageImpl(project, surface, stageNumber, name)
+    const surface = createStageSurface(area, copySettingsFrom, project.name.get(), name)
+    const stage = new StageImpl(project, surface, stageNumber, name)
+    stage.registerEvents()
+    return stage
   }
 
   getBlueprintSettingsView(): BlueprintSettingsTable {
@@ -472,6 +500,7 @@ class StageImpl implements Stage {
     ;(this as Mutable<Stage>).valid = false
     storage.surfaceIndexToStage.delete(this.surfaceIndex)
     if (this.surface.valid) destroySurface(this.surface)
+    this.subscription?.close()
   }
 
   __tostring() {
