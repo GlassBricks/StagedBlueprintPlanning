@@ -177,3 +177,21 @@ export function removeGridRequests(requests: BlueprintInsertPlan[]): BlueprintIn
   }
   return result[0] && result
 }
+
+export function mergeInventoryPositions(positions: readonly InventoryPosition[]): InventoryPosition[] {
+  const result: Mutable<InventoryPosition>[] = []
+  const inventoryMap = new LuaMap<defines.inventory, number>()
+
+  for (const position of positions) {
+    const existingIndex = inventoryMap.get(position.inventory)
+    if (existingIndex != nil) {
+      const existing = result[existingIndex]
+      existing.stack += position.stack
+    } else {
+      inventoryMap.set(position.inventory, result.length)
+      result.push(position)
+    }
+  }
+
+  return result
+}

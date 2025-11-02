@@ -5,7 +5,7 @@
 
 import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
-import { HighlightConstants } from "../../project/entity-highlights"
+import { getItemRequestSampleItemName, HighlightConstants } from "../../project/entity-highlights"
 
 export function assertConfigChangedHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
   let i = entity.firstStage
@@ -84,14 +84,13 @@ export function assertNoHighlightsAfterLastStage(entity: ProjectEntity, maxStage
 
 export function assertItemRequestHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
   for (const stage of $range(1, maxStage)) {
-    const unstagedValue = entity.getUnstagedValue(stage)
-    if (!unstagedValue?.items?.[0]) {
+    const sampleItem = getItemRequestSampleItemName(entity, stage)
+    if (sampleItem == nil) {
       expect(entity.getExtraEntity("itemRequestHighlight", stage)).toBeNil()
       expect(entity.getExtraEntity("itemRequestHighlightOverlay", stage)).toBeNil()
     } else {
       expect(entity.getExtraEntity("itemRequestHighlight", stage)).toBeAny()
       const overlay = expect(entity.getExtraEntity("itemRequestHighlightOverlay", stage)).toBeAny().getValue()!
-      const sampleItem = unstagedValue.items[0].id.name as unknown as string
       expect(overlay.sprite).toBe(`item/${sampleItem}`)
     }
   }

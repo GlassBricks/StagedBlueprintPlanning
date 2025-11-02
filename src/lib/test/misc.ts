@@ -46,7 +46,6 @@ export function debugPrint(...values: unknown[]): void {
       typeof value == "number" || typeof value == "string"
         ? value.toString()
         : serpent.block(value, {
-            maxlevel: 5,
             nocode: true,
           })
   }

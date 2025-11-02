@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import * as mod_gui from "mod-gui"
-import { createStageReference } from "../blueprints/stage-reference"
 import { Settings } from "../constants"
 import { Events } from "../lib"
 import { Migrations } from "../lib/migration"
@@ -14,6 +13,7 @@ import { UserProject } from "../project/ProjectDef"
 import { deleteAllFreeSurfaces } from "../project/surfaces"
 import { UndoHandler } from "../project/undo"
 import { createUserProject } from "../project/UserProject"
+import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
 import { refreshCurrentProject } from "../ui/ProjectSettings"
 import { getCurrentValues } from "../utils/properties-obj"
@@ -209,7 +209,7 @@ commands.add_command("rr", "", (e) => {
   } else {
     game.print("Expected 'test', 'only', 'off' or nothing")
   }
-  game.print("Rerun mode: " + storage.rerunMode)
+  game.print("Reload mode mode: " + storage.rerunMode)
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -255,21 +255,26 @@ commands.add_command("print-bp-settings", "", () => {
   debugPrint(settings)
 })
 
-commands.add_command("createStageRef", "", () => {
-  const player = game.player!
-  const stage = getStageAtSurface(player.surface_index)
-  if (!stage) {
-    player.print("Not in stage")
-    return
-  }
-
-  createStageReference(player.cursor_stack!, stage)
-})
-
-commands.add_command("print-bp-entities", "", () => {
+commands.add_command("print-held-bp-entities", "", () => {
   const player = game.player!
   const stack = player.cursor_stack
   if (!stack?.is_blueprint) return player.print("Not a blueprint")
   const bp = stack.get_blueprint_entities()!
   debugPrint(bp)
+})
+
+commands.add_command("print-hovered-entity", "", () => {
+  const player = game.player!
+  const entity = player.selected
+  if (!entity) {
+    player.print("No entity selected")
+    return
+  }
+
+  const [, projEntity] = getProjectEntityOfEntity(entity)
+  if (!projEntity) {
+    player.print("No project entity found")
+    return
+  }
+  debugPrint(projEntity)
 })

@@ -242,10 +242,10 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     projectEntity.replaceWorldEntity(stage, luaEntity)
     if (projectEntity.isSettingsRemnant) {
       userRevivedSettingsRemnant(projectEntity, stage, byPlayer)
-      // no undo action
+      return nil
     } else if (stage >= projectEntity.firstStage) {
       refreshWorldEntityAtStage(projectEntity, stage)
-      // no undo action
+      return nil
     } else {
       return onPreviewReplaced(projectEntity, stage, byPlayer)
     }

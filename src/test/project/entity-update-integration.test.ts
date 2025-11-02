@@ -5,6 +5,7 @@
 
 import {
   BlueprintEntity,
+  BlueprintInsertPlanWrite,
   CarBlueprintEntity,
   InserterBlueprintEntity,
   LuaEntity,
@@ -56,16 +57,19 @@ import direction = defines.direction
 let project: UserProject
 let surfaces: LuaSurface[]
 let player: LuaPlayer
+function cleanup() {
+  player?.cursor_stack?.clear()
+  surfaces?.forEach((surface) => surface.find_entities().forEach((e) => e.destroy()))
+  _deleteAllProjects()
+}
+before_each(cleanup)
+
 before_each(() => {
   project = createUserProject("test", 6)
   surfaces = project.getAllStages().map((stage) => stage.surface)
   player = game.players[1]
 })
-after_each(() => {
-  player.cursor_stack?.clear()
-  surfaces.forEach((surface) => surface.find_entities().forEach((e) => e.destroy()))
-  _deleteAllProjects()
-})
+// after_all(cleanup)
 
 const pos = Pos(10.5, 10.5)
 
@@ -1986,7 +1990,7 @@ describe("item-requests", () => {
   const slot = 2
   const count = 2
   const insertPlan = simpleInsertPlan(defines.inventory.chest, "iron-plate", slot, count)
-  function buildChestWithItemRequests(): ProjectEntity {
+  function buildChest(): ProjectEntity {
     const chest = buildEntity(1, {
       position: [0.5, 0.5],
       name: "iron-chest",
@@ -1995,9 +1999,39 @@ describe("item-requests", () => {
 
     return chest
   }
+  function buildFurnaceWithBlueprintEntity(): [ProjectEntity, BlueprintInsertPlanWrite] {
+    const projectEntity = buildEntity(1, {
+      position: [0.5, 0.5],
+      name: "steel-furnace",
+    })
+    assert(projectEntity)
+
+    const worldEntity = projectEntity.getWorldEntity(1)!
+    const insertPlan: BlueprintInsertPlanWrite = {
+      id: { name: "coal" },
+      items: {
+        in_inventory: [
+          {
+            inventory: defines.inventory.fuel,
+            stack: 0,
+            count: 2,
+          },
+        ],
+      },
+    }
+    worldEntity.surface.create_entity({
+      name: "item-request-proxy",
+      target: worldEntity,
+      force: worldEntity.force,
+      position: projectEntity.position,
+      modules: [insertPlan],
+    })
+
+    return [projectEntity, insertPlan]
+  }
 
   test("can save an entity with item requests", () => {
-    const projectChest = buildChestWithItemRequests()
+    const projectChest = buildChest()
     const chest = projectChest.getWorldEntity(2)! // different stage on purpose
     updateEntity(
       chest,
@@ -2043,7 +2077,7 @@ describe("item-requests", () => {
   })
 
   test("rebuilding an entity with item requests", () => {
-    const projectChest = buildChestWithItemRequests()
+    const projectChest = buildChest()
     projectChest.setUnstagedValue(2, { items: [insertPlan] })
     project.worldUpdates.updateWorldEntities(projectChest, 2)
 
@@ -2057,5 +2091,57 @@ describe("item-requests", () => {
     expect(projectChest.getUnstagedValue(2)).toEqual({ items: [insertPlan] })
 
     assertEntityCorrect(projectChest, false)
+  })
+
+  test("save a furnace with fuel requests", () => {
+    const [projectEntity, insertPlan] = buildFurnaceWithBlueprintEntity()
+    const worldEntity = projectEntity.getWorldEntity(1)!
+
+    checkForEntityUpdates(worldEntity, nil)
+    expect(projectEntity.getUnstagedValue(1)).toEqual({
+      items: [insertPlan],
+    })
+    expect(projectEntity.firstValue.items).toBeNil()
+
+    assertEntityCorrect(projectEntity, false)
+
+    worldEntity.item_request_proxy!.destroy()
+    checkForEntityUpdates(worldEntity, nil)
+
+    expect(projectEntity.getUnstagedValue(1)).toBeNil()
+    expect(projectEntity.firstValue.items).toBeNil()
+
+    assertEntityCorrect(projectEntity, false)
+  })
+
+  // turns out this doesn't actually test what I wanted to tests, which is building stuff in editor mode, which instantly revives entities
+  // Oh well.
+  test("pasting identical item requests onto a furnace", () => {
+    const [projectEntity, insertPlan] = buildFurnaceWithBlueprintEntity()
+
+    const worldEntity = projectEntity.getWorldEntity(1)!
+    worldEntity.item_request_proxy?.destroy()
+
+    const stack = player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities([
+      {
+        entity_number: 1,
+        name: "steel-furnace",
+        position: [0.5, 0.5],
+        items: [insertPlan],
+      },
+    ])
+
+    player.teleport([5, 5], surfaces[0])
+    player.build_from_cursor({ position: [0.5, 0.5], build_mode: defines.build_mode.forced })
+    checkForEntityUpdates(worldEntity, nil)
+
+    expect(projectEntity.getUnstagedValue(1)).toEqual({
+      items: [insertPlan],
+    })
+    expect(worldEntity.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
+    assertEntityCorrect(projectEntity, false)
   })
 })

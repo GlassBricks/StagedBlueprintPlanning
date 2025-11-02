@@ -67,6 +67,7 @@ import {
   UndoAction,
 } from "./undo"
 
+import { debugPrint } from "../lib/test/misc"
 import "./tile-events"
 import transform = Pos.applyTransformation
 

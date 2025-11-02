@@ -99,8 +99,7 @@ const message = count.map(funcRef((x) => `Count: ${x}`))
 ### Core API
 
 ```typescript
-// Register functions
-registerFunctions("myMod", {
+// Register function
   onClick: function() { /* ... */ },
   onClose: function() { /* ... */ }
 })

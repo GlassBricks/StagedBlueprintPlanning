@@ -380,6 +380,11 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       updateWorldEntities(entity, stage)
       return EntityUpdateResult.Updated
     }
+
+    // Pasting a blueprint in editor mode may remove item requests; refresh those requests
+    if (entity.getUnstagedValue(stage)?.items) {
+      updateWorldEntities(entity, stage)
+    }
     return EntityUpdateResult.NoChange
   }
 

@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import {
+  BlueprintInsertPlan,
   Color,
   ColorArray,
   CursorBoxRenderType,
@@ -15,6 +16,7 @@ import {
   ScriptRenderTargetTableWrite,
   SpritePath,
 } from "factorio:runtime"
+import { Entity } from "../entity/Entity"
 import { ExtraEntities, ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "../entity/prototype-info"
 import { assertNever } from "../lib"
@@ -133,7 +135,6 @@ OnPrototypeInfoLoaded.addListener((info) => {
 })
 
 const prototypesToSkipRequestHighlight = newLuaSet(
-  "locomotive",
   "gun-turret",
   "laser-turret",
   "artillery-turret",
@@ -301,6 +302,7 @@ export function EntityHighlights(project: Project): EntityHighlights {
       createHighlight(entity, stage, surface, "stageDeleteHighlight")
     }
   }
+
   function updateStageRequestIndicator(entity: ProjectEntity): void {
     entity.destroyAllExtraEntities("itemRequestHighlight")
     entity.destroyAllExtraEntities("itemRequestHighlightOverlay")
@@ -308,11 +310,25 @@ export function EntityHighlights(project: Project): EntityHighlights {
     if (!unstagedValue) return
     if (entity.firstValue.name in prototypesToSkipRequestHighlight) return
     for (const [stage, value] of pairs(unstagedValue)) {
-      if (value.items?.[0]) {
-        createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlight")
-        const sampleItem = value.items[0].id.name as unknown as string
-        createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlightOverlay", `item/${sampleItem}`)
-      }
+      createEntityHiglights(entity, stage, value.items)
+    }
+  }
+
+  function createEntityHiglights(
+    entity: ProjectEntity<Entity>,
+    stage: number,
+    insertPlans: BlueprintInsertPlan[] | nil,
+  ) {
+    const sampleItemName = getItemRequestSampleItemName(entity, stage, insertPlans)
+    if (sampleItemName != nil) {
+      createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlight")
+      createHighlight(
+        entity,
+        stage,
+        project.getSurface(stage)!,
+        "itemRequestHighlightOverlay",
+        `item/${sampleItemName}`,
+      )
     }
   }
 
@@ -339,4 +355,14 @@ export function EntityHighlights(project: Project): EntityHighlights {
     entity.destroyAllExtraEntities("settingsRemnantHighlight")
     updateAllHighlights(entity)
   }
+}
+export function getItemRequestSampleItemName(
+  projectEntity: ProjectEntity,
+  stage: StageNumber,
+  insertPlans: BlueprintInsertPlan[] | nil = projectEntity.getUnstagedValue(stage)?.items,
+): string | nil {
+  if (!insertPlans) return
+  const fuelInventory = projectEntity.getWorldEntity(stage)?.get_fuel_inventory()?.index
+  return insertPlans.find((p) => p.items.in_inventory?.some((i) => i.inventory != fuelInventory))?.id
+    .name as unknown as string | nil
 }

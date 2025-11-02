@@ -281,7 +281,7 @@ export function createEntity(
     ghost?.destroy()
   }
   if (value.items) {
-    matchModuleItems(luaEntity, value.items)
+    setModules(luaEntity, value.items)
   }
   if (isMovable) {
     assume<CarBlueprintEntity>(value)
@@ -326,7 +326,7 @@ function upgradeEntity(oldEntity: LuaEntity, value: NameAndQuality): LuaEntity {
   return newEntity
 }
 
-function matchModuleItems(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlanWrite[] | nil): void {
+function setModules(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlanWrite[] | nil): void {
   const inventory = luaEntity.get_module_inventory()
   if (!inventory) return
   inventory.clear()
@@ -426,22 +426,14 @@ export function forceFlipUnderground(luaEntity: LuaEntity): boolean {
   luaEntity.rotatable = wasRotatable
   return rotated
 }
-function removeExtraProperties(bpEntity: Mutable<BlueprintEntity>): Mutable<BlueprintEntity> {
-  bpEntity.entity_number = nil!
-  bpEntity.position = nil!
-  bpEntity.direction = nil
-  bpEntity.wires = nil
-  bpEntity.tags = nil
-  if (bpEntity.quality == "normal") bpEntity.quality = nil
-  return bpEntity
-}
-export type EntityResult = LuaMultiReturn<[entity: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]>
-export type NullableEntityResult = LuaMultiReturn<
-  [entity?: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]
->
 
-export function copyKnownValue(value: BlueprintEntity): EntityResult {
-  const entity = removeExtraProperties(mutableShallowCopy(value))
+function removeExtraProperties(entity: Mutable<BlueprintEntity>): Mutable<EntityResult> {
+  entity.entity_number = nil!
+  entity.position = nil!
+  entity.direction = nil
+  entity.wires = nil
+  entity.tags = nil
+  if (entity.quality == "normal") entity.quality = nil
   if (!entity.items) return $multi(entity)
 
   const [moduleRequests, nonModules] = partitionModulesAndRemoveGridRequests(entity.items, entity.name)
@@ -450,6 +442,15 @@ export function copyKnownValue(value: BlueprintEntity): EntityResult {
     items: nonModules,
   }
   return $multi(entity, unstagedProps)
+}
+
+export type EntityResult = LuaMultiReturn<[entity: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]>
+export type NullableEntityResult = LuaMultiReturn<
+  [entity?: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]
+>
+
+export function copyKnownValue(value: BlueprintEntity): EntityResult {
+  return removeExtraProperties(mutableShallowCopy(value))
 }
 
 /**
@@ -467,7 +468,9 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Nul
   const unstagedProps = itemRequests && {
     items: itemRequests,
   }
-  return $multi(removeExtraProperties(bpEntity), unstagedProps)
+  const [result] = removeExtraProperties(mutableShallowCopy(bpEntity))
+  // ignore non-module requests gotten via blueprint; use item request proxy for those instead
+  return $multi(result, unstagedProps)
 }
 
 function insertEquipment(entity: LuaEntity, grid: BlueprintEquipment[] | undefined) {
@@ -527,7 +530,7 @@ export function updateEntity(
 
   const ghost = pasteEntity(luaEntity.surface, luaEntity.position, direction, value, unstagedValue, luaEntity)
   if (ghost) ghost.destroy() // should not happen?
-  matchModuleItems(luaEntity, value.items)
+  setModules(luaEntity, value.items)
   const hasOtherItemRequests = unstagedValue?.items?.[0]
   if (!hasOtherItemRequests) {
     luaEntity.item_request_proxy?.destroy()

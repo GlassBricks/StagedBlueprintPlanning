@@ -3,13 +3,15 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { SignalID } from "factorio:runtime"
+import { ItemInventoryPositions, SignalID } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
   BlueprintTakeSettings,
   createStageBlueprintSettingsTable,
   iconNumbers,
 } from "../blueprints/blueprint-settings"
+import { mergeInventoryPositions } from "../entity/item-requests"
+import { ProjectEntity } from "../entity/ProjectEntity"
 import { Mutable } from "../lib"
 import { Migrations } from "../lib/migration"
 import "./event-handlers"
@@ -85,6 +87,30 @@ Migrations.to("2.6.4", () => {
     deleteOldNumberKeys(projectBpSettings)
     for (const stage of project.getAllStages()) {
       deleteOldNumberKeys(stage.blueprintOverrideSettings)
+    }
+  }
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of getAllProjects()) {
+    const changed = new LuaSet<ProjectEntity>()
+    for (const entity of project.content.allEntities()) {
+      const unstagedValue = entity.getPropertyAllStages("unstagedValue")
+      if (!unstagedValue) continue
+      for (const [, value] of pairs(unstagedValue)) {
+        const items = value.items
+        if (!items) continue
+        for (const item of items) {
+          const in_inventory = item.items.in_inventory
+          if (!in_inventory) continue
+          assume<Mutable<ItemInventoryPositions>>(item.items)
+          item.items.in_inventory = mergeInventoryPositions(in_inventory)
+          changed.add(entity)
+        }
+      }
+    }
+    for (const entity of changed) {
+      project.worldUpdates.refreshAllWorldEntities(entity)
     }
   }
 })
