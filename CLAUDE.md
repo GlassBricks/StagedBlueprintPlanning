@@ -9,6 +9,7 @@ Staged Blueprint Planning is a Factorio mod for designing multi-stage blueprints
 ## Development Commands
 
 ### Build & Watch
+
 ```bash
 npm run build:test        # Build with tests
 npm run build:release     # Production build
@@ -16,11 +17,13 @@ npm run watch             # Watch mode for development
 ```
 
 ### Testing
+
 ```bash
 npm run test              # Run all tests via factorio-test
 ```
 
 ### Code Quality
+
 ```bash
 npm run format:fix        # Format with Prettier
 npm run lint              # Run ESLint
@@ -28,6 +31,7 @@ npm run check             # Full validation (format, lint, test, git tree clean)
 ```
 
 ### Build Scripts
+
 - `npm run build:locale` - Generates `locale.d.ts` from `src/locale`
 - `npm run build:gui-specs` - Generates GUI specs for factoriojsx framework
 - `npm run build:tstlPlugin` - Builds custom TSTL plugin for function storage
@@ -35,11 +39,14 @@ npm run check             # Full validation (format, lint, test, git tree clean)
 ## Code Style
 
 ### Lua-Specific Conventions
+
 Since code compiles to Lua:
+
 - Use `==` instead of `===`, `!=` instead of `!==`
 - Use `nil` instead of `undefined`, avoid `null`
 
 ### TypeScript Style
+
 - No semicolons, 120 char line width (Prettier)
 - Explicit member accessibility required (`accessibility: "no-public"`)
 - Explicit module boundary types required
@@ -48,12 +55,14 @@ Since code compiles to Lua:
 ## Architecture
 
 ### Tech Stack
+
 - TypeScriptToLua (TSTL)
 - typed-factorio for Factorio API type definitions
 - factorio-test for testing
 - gb-tstl-utils for compiler utilities
 
 ### Key Directories
+
 ```
 src/
 ├── project/            # Main backend: project state & logic
@@ -75,7 +84,9 @@ src/
 ```
 
 ### Main Event Pipeline (project editing)
+
 Located in `src/project/`:
+
 1. `event-handlers.ts` - Parses Factorio events into custom events
 2. `user-actions.ts` - Handles player interactions, decides actions
 3. `project-updates.ts` - Updates ProjectContent
@@ -84,24 +95,30 @@ Located in `src/project/`:
 ### Custom Libraries
 
 **factoriojsx**: Custom JSX framework for Factorio GUI (see `src/lib/factoriojsx/`)
+
 - TSX files use: `jsxFactory: "FactorioJsx.createElement"`
 - Provides React-like GUI creation for Factorio
 
 **Event System** (`src/lib/event/`): Custom reactive event/property system
+
 - `Event.ts` - Event emitters
 - `Property.ts` - Reactive properties
 - `GlobalEvent.ts` - Global event bus
 
 **References** (`src/lib/references.ts`): Function storage using custom TSTL plugin
+
 - Enables consistent global function storage
 - See tstlPlugin for implementation
 
 ### Migrations
+
 When editing anything in `storage`:
 See mini framework in `src/lib/migration.ts`
+
 - Place project-related migrations in: `src/project/index.ts`
 
 ### Testing
+
 - Tests in `src/test/` or `src/lib/test/`
 - Test file names mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`
 - High test coverage expected
@@ -109,6 +126,7 @@ See mini framework in `src/lib/migration.ts`
 - Lifecycle hooks: `before_each`, `after_each`, `before_all`, `after_all`
 
 **Test Naming Standards:**
+
 - Test names: Lowercase descriptive sentences starting with action verbs
   - ✅ `test("returns nil when stage is lower than first stage", ...)`
   - ✅ `test("should throw error when moving past last stage", ...)`
@@ -119,6 +137,7 @@ See mini framework in `src/lib/migration.ts`
   - `test.each([...])("operation: %s + %s = %s", (a, b, expected) => ...)`
 
 **Test Structure:**
+
 - Group tests by method/feature using `describe()` blocks
 - Use specific matchers: `toBe`, `toEqual`, `toBeNil`, `toHaveLength`, `toError()`
 - Extract complex setup to helper functions or factory files
@@ -131,8 +150,5 @@ See mini framework in `src/lib/migration.ts`
 - `src/project/UserProject.ts` - Full project & stage definitions
 - `src/ui/ProjectSettings.tsx` - Main UI component
 - `src/lib/references.ts` - Global function storage system
-- `node_modules/typed-factorio/runtime/index.d.ts`,`node_modules/typed-factorio/runtime/generated/*.d.ts` - Factorio API types
 
-## Other notes
-
-To lookup Factorio API documentation, inspect or grep in typed-factorio files in node_modules, instead of using online documentation.
+For Factorio API documentation, prefer to inspect or grep `typed-factorio`, instead of using online documentation (`node_modules/typed-factorio/**/*.d.ts`); if normal tools to read/search don't work, use bash commands
