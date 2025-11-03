@@ -41,7 +41,7 @@ Date: 2025-10-09
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.4
 Date: 2025-10-04
-  Buxfixes:
+  Bugfixes:
     - Actually fixed crash when creating a new stage, on a project loaded in an earlier version. Don't use 2.5.1 y'all
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.3
