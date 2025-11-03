@@ -5,7 +5,7 @@
 
 import { LuaPlayer, OnGuiClickEvent, PlayerIndex, ScrollPaneGuiElement } from "factorio:runtime"
 import * as mod_gui from "mod-gui"
-import { OtherConstants, Styles } from "../constants"
+import { Styles } from "../constants"
 import { bind, ibind, RegisterClass } from "../lib"
 import {
   Component,
@@ -22,14 +22,9 @@ import {
 import { closeParentAtLevel, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_Gui, L_GuiProjectSelector } from "../locale"
 import { ProjectCreatedEvent, ProjectDeletedEvent, ProjectsReorderedEvent, UserProject } from "../project/ProjectDef"
-import {
-  createUserProject,
-  getAllProjects,
-  moveProjectDown,
-  moveProjectUp,
-  ProjectEvents,
-} from "../project/UserProject"
+import { getAllProjects, moveProjectDown, moveProjectUp, ProjectEvents } from "../project/UserProject"
 import { showImportBlueprintWindow } from "./blueprint-string"
+import { openNewProjectDialog } from "./NewProjectDialog"
 import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./ProjectSettings"
 import mouse_button_type = defines.mouse_button_type
@@ -169,7 +164,7 @@ class AllProjects extends Component {
   private newProject(): void {
     const player = game.get_player(this.playerIndex)!
     closeAllProjects(player)
-    createNewProject(player)
+    openNewProjectDialog(player)
   }
 
   private exitProject(): void {
@@ -219,11 +214,6 @@ class AllProjects extends Component {
   }
 }
 
-function createNewProject(player: LuaPlayer): void {
-  const project = createUserProject("", OtherConstants.DefaultNumStages)
-  storage.players[player.index].compactProjectSettings = nil
-  teleportToProject(player, project)
-}
 export function closeAllProjects(player: LuaPlayer): void {
   destroy(mod_gui.get_frame_flow(player)[AllProjectsName])
 }

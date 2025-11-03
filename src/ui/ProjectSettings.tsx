@@ -545,8 +545,7 @@ class ProjectSettings extends Component<{
 
   private BpExportTab(): Element {
     return (
-      <frame
-        style="inside_shallow_frame"
+      <flow
         direction="vertical"
         styleMod={{
           padding: [5, 10],
@@ -592,7 +591,7 @@ class ProjectSettings extends Component<{
             on_gui_click={ibind(this.beginResetBlueprintBookTemplate)}
           />
         </flow>
-      </frame>
+      </flow>
     )
   }
 
@@ -723,16 +722,16 @@ class ProjectSettings extends Component<{
             on_gui_click={ibind(this.rebuildAllStages)}
           />
           <line />
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.SyncMapGenSettings]}
-            tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
-            on_gui_click={ibind(this.syncMapGenSettings)}
-          />
+          <label caption={[L_GuiProjectSettings.MapGenSettings]} style="caption_label" />
           <button
             caption={[L_GuiProjectSettings.SetMapGenSettingsFromPlanet]}
             tooltip={[L_GuiProjectSettings.SetMapGenSettingsFromPlanetTooltip]}
             on_gui_click={ibind(this.openMapGenSettingsSelect)}
+          />
+          <button
+            caption={[L_GuiProjectSettings.SyncMapGenSettings]}
+            tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
+            on_gui_click={ibind(this.syncMapGenSettings)}
           />
         </flow>
       </>

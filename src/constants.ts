@@ -193,6 +193,10 @@ export const enum L_Game {
   Confirm = "gui.confirm",
   Cancel = "gui.cancel",
   Import = "gui-blueprint-library.import",
+  Planet = "factoriopedia.planet",
+  GenerateWithLabTiles = "gui-map-editor-surface-editor.generate-new-chunks-with-lab-tiles",
+  GlobalElectricNetwork = "gui-map-editor-surface-editor.global-electric-network",
+  IgnoreSurfaceConditions = "gui-map-editor-surface-editor.ignore-surface-conditions",
 }
 
 export namespace Colors {

@@ -3,15 +3,15 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { double, LuaSurface, MapGenSettings, MapGenSettingsWrite, nil, SurfaceIndex } from "factorio:runtime"
+import { LuaSurface, MapGenSettings, MapGenSettingsWrite, nil, SurfaceIndex } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
 import { createPropertiesTable, getCurrentValues, PropertiesTable, setCurrentValuesOf } from "../utils/properties-obj"
 import { Stage, UserProject } from "./ProjectDef"
 import { withTileEventsDisabled } from "./tile-events"
 
 export interface SurfaceSettings {
-  map_gen_settings: MapGenSettings | nil
-  surface_properties: Record<string, double> | nil
+  map_gen_settings: MapGenSettings
+  planet: string | nil
   generate_with_lab_tiles: boolean
   ignore_surface_conditions: boolean
   has_global_electric_network: boolean
@@ -21,23 +21,25 @@ export type SurfaceSettingsTable = PropertiesTable<SurfaceSettings>
 
 export function getDefaultSurfaceSettings(): SurfaceSettings {
   return {
-    map_gen_settings: nil,
-    surface_properties: nil,
+    map_gen_settings: game.default_map_gen_settings,
+    planet: nil,
     generate_with_lab_tiles: true,
     ignore_surface_conditions: true,
     has_global_electric_network: false,
   }
 }
 
-export function createSurfaceSettingsTable(): SurfaceSettingsTable {
-  return createPropertiesTable(keys<SurfaceSettings>(), getDefaultSurfaceSettings())
+export function createSurfaceSettingsTable(
+  values: SurfaceSettings = getDefaultSurfaceSettings(),
+): SurfaceSettingsTable {
+  return createPropertiesTable(keys<SurfaceSettings>(), values)
 }
 
 export function applySurfaceSettings(settings: SurfaceSettings, surface: LuaSurface): void {
   surface.generate_with_lab_tiles = settings.generate_with_lab_tiles
 
   if (!settings.generate_with_lab_tiles) {
-    surface.map_gen_settings = settings.map_gen_settings ?? game.default_map_gen_settings
+    surface.map_gen_settings = settings.map_gen_settings
   }
 
   surface.ignore_surface_conditions = settings.ignore_surface_conditions
@@ -50,8 +52,9 @@ export function applySurfaceSettings(settings: SurfaceSettings, surface: LuaSurf
     }
   }
 
-  if (settings.surface_properties != nil) {
-    for (const [propertyName, value] of pairs(settings.surface_properties)) {
+  const planetProto = settings.planet != nil ? prototypes.space_location[settings.planet] : nil
+  if (planetProto?.surface_properties != nil) {
+    for (const [propertyName, value] of pairs(planetProto.surface_properties)) {
       surface.set_property(propertyName, value)
     }
   } else {
@@ -62,15 +65,9 @@ export function applySurfaceSettings(settings: SurfaceSettings, surface: LuaSurf
   }
 }
 
-export function readSurfaceSettings(surface: LuaSurface): SurfaceSettings {
-  const surfaceProperties: Record<string, double> = {}
-  for (const [propertyName] of prototypes.surface_property) {
-    surfaceProperties[propertyName] = surface.get_property(propertyName)
-  }
-
+export function readSurfaceSettings(surface: LuaSurface): Partial<SurfaceSettings> {
   return {
     map_gen_settings: surface.generate_with_lab_tiles ? nil : surface.map_gen_settings,
-    surface_properties: surfaceProperties,
     generate_with_lab_tiles: surface.generate_with_lab_tiles,
     ignore_surface_conditions: surface.ignore_surface_conditions,
     has_global_electric_network: surface.has_global_electric_network,
@@ -82,13 +79,16 @@ export function syncMapGenSettings(stage: Stage): void {
   const settings = readSurfaceSettings(stage.surface)
 
   setCurrentValuesOf(project.surfaceSettings, settings, keys<SurfaceSettings>())
-  applyAllSurfaceSettings(project)
+  applySurfaceSettingsAndClear(project)
 }
 
-export function applyAllSurfaceSettings(project: UserProject): void {
+export function applySurfaceSettingsAndClear(project: UserProject): void {
   const currentSettings = getCurrentValues(project.surfaceSettings)
-  for (const otherStage of project.getAllStages()) {
-    applySurfaceSettings(currentSettings, otherStage.surface)
+  for (const stage of project.getAllStages()) {
+    applySurfaceSettings(currentSettings, stage.surface)
+  }
+  for (const stage of project.getAllStages()) {
+    stage.surface.clear()
   }
 }
 

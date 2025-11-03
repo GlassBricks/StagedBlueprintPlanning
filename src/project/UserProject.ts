@@ -43,7 +43,15 @@ import { EntityHighlights } from "./entity-highlights"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
-import { createStageSurface, destroySurface, updateStageSurfaceName, createSurfaceSettingsTable, type SurfaceSettingsTable } from "./surfaces"
+import {
+  createStageSurface,
+  createSurfaceSettingsTable,
+  destroySurface,
+  getDefaultSurfaceSettings,
+  SurfaceSettings,
+  updateStageSurfaceName,
+  type SurfaceSettingsTable,
+} from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
 import min = math.min
@@ -80,7 +88,7 @@ class UserProjectImpl implements UserProjectInternal {
   localEvents = new SimpleEvent<LocalProjectEvent>()
 
   defaultBlueprintSettings = createBlueprintSettingsTable()
-  surfaceSettings: SurfaceSettingsTable = createSurfaceSettingsTable()
+  surfaceSettings: SurfaceSettingsTable
 
   landfillTile = property<string | nil>("landfill")
   // disable tiles by default in tests, since its slow
@@ -100,8 +108,10 @@ class UserProjectImpl implements UserProjectInternal {
     readonly id: ProjectId,
     name: string,
     initialNumStages: number,
+    surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
   ) {
     this.name = property(name)
+    this.surfaceSettings = createSurfaceSettingsTable(surfaceSettings)
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
       const stage = StageImpl.create(this, i, `Stage ${i}`)
@@ -115,8 +125,12 @@ class UserProjectImpl implements UserProjectInternal {
     return this.name.map(bind(UserProjectImpl.getDisplayName, this.id))
   }
 
-  static create(name: string, initialNumStages: number): UserProjectImpl {
-    const project = new UserProjectImpl(storage.nextProjectId++ as ProjectId, name, initialNumStages)
+  static create(
+    name: string,
+    initialNumStages: number,
+    surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
+  ): UserProjectImpl {
+    const project = new UserProjectImpl(storage.nextProjectId++ as ProjectId, name, initialNumStages, surfaceSettings)
     UserProjectImpl.onProjectCreated(project)
     project.registerEvents()
 
@@ -368,8 +382,12 @@ const WorldUpdatesClass = LazyLoadClass<HasProject, WorldUpdates>("WorldUpdates"
   WorldUpdates(project, EntityHighlights(project)),
 )
 
-export function createUserProject(name: string, initialNumStages: number): UserProject {
-  return UserProjectImpl.create(name, initialNumStages)
+export function createUserProject(
+  name: string,
+  initialNumStages: number,
+  surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
+): UserProject {
+  return UserProjectImpl.create(name, initialNumStages, surfaceSettings)
 }
 
 export function _deleteAllProjects(): void {

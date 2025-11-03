@@ -3,26 +3,21 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { double, MapGenSettings } from "factorio:runtime"
+import { MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
 import { asMutable, deepCopy, Mutable } from "../../lib"
 import { applySurfaceSettings, readSurfaceSettings, type SurfaceSettings } from "../../project/surfaces"
 
-test("applySurfaceSettings applies all custom settings", () => {
+test("applySurfaceSettings applies settings with planet", () => {
   const surface = game.create_surface("test-surface")
 
   const nauvis = prototypes.space_location["nauvis"]
   const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(nauvis.map_gen_settings!))
   mapGenSettings.seed = 99999
 
-  const customProps: Record<string, double> = {}
-  for (const [propertyName] of prototypes.surface_property) {
-    customProps[propertyName] = 0.5
-  }
-
   const settings: SurfaceSettings = {
     map_gen_settings: mapGenSettings,
-    surface_properties: customProps,
+    planet: "nauvis",
     generate_with_lab_tiles: false,
     ignore_surface_conditions: false,
     has_global_electric_network: true,
@@ -34,36 +29,16 @@ test("applySurfaceSettings applies all custom settings", () => {
   expect(surface.map_gen_settings.seed).toBe(99999)
   expect(surface.ignore_surface_conditions).toBe(false)
   expect(surface.has_global_electric_network).toBe(true)
-  for (const [propertyName] of prototypes.surface_property) {
-    expect(surface.get_property(propertyName)).toBe(0.5)
+
+  const nauvisProps = nauvis.surface_properties!
+  for (const [propertyName, expectedValue] of pairs(nauvisProps)) {
+    expect(surface.get_property(propertyName)).toBe(expectedValue)
   }
 
   game.delete_surface(surface)
 })
 
-test("applySurfaceSettings uses defaults for nil values", () => {
-  const surface = game.create_surface("test-surface")
-
-  const settings: SurfaceSettings = {
-    map_gen_settings: nil,
-    surface_properties: nil,
-    generate_with_lab_tiles: false,
-    ignore_surface_conditions: true,
-    has_global_electric_network: false,
-  }
-
-  applySurfaceSettings(settings, surface)
-
-  const nauvis = game.surfaces[1]
-  for (const [propertyName] of prototypes.surface_property) {
-    expect(surface.get_property(propertyName)).toBe(nauvis.get_property(propertyName))
-  }
-  expect(surface.map_gen_settings).toEqual(game.default_map_gen_settings)
-
-  game.delete_surface(surface)
-})
-
-test("readSurfaceSettings reads all settings from surface", () => {
+test("readSurfaceSettings reads settings from surface without planet", () => {
   const surface = game.create_surface("test-surface")
   surface.generate_with_lab_tiles = false
   const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(game.default_map_gen_settings))
@@ -74,7 +49,7 @@ test("readSurfaceSettings reads all settings from surface", () => {
 
   expect(settings.generate_with_lab_tiles).toBe(false)
   expect(settings.map_gen_settings!.seed).toBe(12345)
-  expect(settings.surface_properties != nil).toBe(true)
+  expect(settings.planet).toBeNil()
 
   game.delete_surface(surface)
 })

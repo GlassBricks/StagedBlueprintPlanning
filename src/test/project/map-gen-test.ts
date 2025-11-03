@@ -6,8 +6,8 @@
 import { MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
 import { asMutable, deepCopy, Mutable } from "../../lib"
-import { syncMapGenSettings } from "../../project/surfaces"
 import { UserProject } from "../../project/ProjectDef"
+import { syncMapGenSettings } from "../../project/surfaces"
 import { createUserProject } from "../../project/UserProject"
 import { getCurrentValues } from "../../utils/properties-obj"
 import { setupTestSurfaces } from "./Project-mock"
@@ -71,7 +71,7 @@ test("syncMapGenSettings reads from stage and applies to all", () => {
 
   const projectSettings = getCurrentValues(project.surfaceSettings)
   expect(projectSettings.generate_with_lab_tiles).toBe(false)
-  expect(projectSettings.map_gen_settings!.seed).toBe(54321)
+  expect(projectSettings.map_gen_settings.seed).toBe(54321)
 
   expect(project.getStage(2)!.surface.map_gen_settings.seed).toBe(54321)
   expect(project.getStage(3)!.surface.map_gen_settings.seed).toBe(54321)

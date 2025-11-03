@@ -208,6 +208,14 @@ export declare const enum L_GuiProjectSelector {
   ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
   ButtonTooltip = "bp100.gui.project-selector.button-tooltip",
+  /** Project name: */
+  ProjectName = "bp100.gui.project-selector.project-name",
+  /** Initial num stages: */
+  InitialStages = "bp100.gui.project-selector.initial-stages",
+  /** Map Gen Settings */
+  MapGenSettings = "bp100.gui.project-selector.map-gen-settings",
+  /** Create */
+  Create = "bp100.gui.project-selector.create",
 }
 export declare const enum L_GuiProjectSettings {
   /** Show settings */
@@ -262,7 +270,7 @@ export declare const enum L_GuiProjectSettings {
   SetLabTiles = "bp100.gui.project-settings.set-lab-tiles",
   /** Fill with landfill tile */
   SetSelectedTile = "bp100.gui.project-settings.set-selected-tile",
-  /** Fill with landfill with lab tiles [img=info] */
+  /** Fill with landfill and lab tiles [img=info] */
   SetSelectedTileAndLab = "bp100.gui.project-settings.set-selected-tile-and-lab",
   /** Fill with landfill and water [img=info] */
   SetSelectedTileAndWater = "bp100.gui.project-settings.set-selected-tile-and-water",
@@ -366,14 +374,16 @@ export declare const enum L_GuiProjectSettings {
   ScanExistingTiles = "bp100.gui.project-settings.scan-existing-tiles",
   /** Scans already placed tiles in the project and updates stages appropriately. */
   ScanExistingTilesTooltip = "bp100.gui.project-settings.scan-existing-tiles-tooltip",
-  /** Sync map gen settings [img=info] */
-  SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
-  /** Sets map gen settings for all stages to match the current stage, then regenerates all stages.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings".\n - Possibly un-check "Generate new chunks with lab tiles".\n - Click this button to regenerate all stages. */
-  SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
-  /** Set map settings from seed/planet [img=info] */
+  /** Map gen settings */
+  MapGenSettings = "bp100.gui.project-settings.map-gen-settings",
+  /** Set seed and planet / Reset map gen settings [img=info] */
   SetMapGenSettingsFromPlanet = "bp100.gui.project-settings.set-map-gen-settings-from-planet",
-  /** Sets map gen settings to match a planet/set seed. To further change map settings, see "Sync map gen settings". */
+  /** Set settings to a specific seed/planet. To further customize map settings, see "Apply map gen settings from current stage" \n[font=default-large-bold]WARNING:[/font] This will override any previously set custom settings. */
   SetMapGenSettingsFromPlanetTooltip = "bp100.gui.project-settings.set-map-gen-settings-from-planet-tooltip",
+  /** Apply map gen settings from current stage [img=info] */
+  SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
+  /** Sets map gen settings for all stages to match the current stage, then regenerates all stages.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings"\n - Possibly un-check "Generate new chunks with lab tiles"\n - Click this button to regenerate all stages\n Additionally, the "Global electric network" and "Ignore surface conditions" settings will be applied. */
+  SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
   /** Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
   /** Are you sure you want to delete project __1__? */
@@ -440,16 +450,18 @@ export declare const enum L_GuiEntityInfo {
   ResetProp = "bp100.gui.entity-info.reset-prop",
   /** Apply to previous stage (__1__) */
   ApplyToLowerStage = "bp100.gui.entity-info.apply-to-lower-stage",
-  /** <All> */
+  /**  */
   AllProps = "bp100.gui.entity-info.all-props",
 }
-export declare const enum L_GuiSetSeedSelect {
+export declare const enum L_GuiMapGenSettings {
   /** Set map gen settings */
-  Title = "bp100.gui.set-seed-select.title",
+  Title = "bp100.gui.map-gen-settings.title",
   /** Seed [img=info] */
-  Seed = "bp100.gui.set-seed-select.seed",
-  /** Seed, on the initial save creation screen, or the Nauvis seed. (Internally, an offset is added to this seed for planets other than Nauvis). */
-  SeedTooltip = "bp100.gui.set-seed-select.seed-tooltip",
-  /** Planet */
-  Planet = "bp100.gui.set-seed-select.planet",
+  Seed = "bp100.gui.map-gen-settings.seed",
+  /** Seed of the initial save creation screen/Nauvis seed. (Internally, an offset is added to this seed for planets other than Nauvis). */
+  SeedTooltip = "bp100.gui.map-gen-settings.seed-tooltip",
+  /** Confirm[img=info] */
+  ConfirmResetMapGenSettings = "bp100.gui.map-gen-settings.confirm-reset-map-gen-settings",
+  /** [font=default-large-bold]WARNING:[/font] This will override any previously set custom settings. */
+  ConfirmResetMapGenSettingsTooltip = "bp100.gui.map-gen-settings.confirm-reset-map-gen-settings-tooltip",
 }
