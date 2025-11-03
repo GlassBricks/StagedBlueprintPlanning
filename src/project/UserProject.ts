@@ -37,7 +37,6 @@ import { L_Bp100 } from "../locale"
 import {
   createdDiffedPropertyTableView,
   createEmptyPropertyOverrideTable,
-  getCurrentValues,
 } from "../utils/properties-obj"
 import { EntityHighlights } from "./entity-highlights"
 import { getStageAtSurface } from "./project-refs"
@@ -45,12 +44,10 @@ import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
 import {
   createStageSurface,
-  createSurfaceSettingsTable,
   destroySurface,
   getDefaultSurfaceSettings,
   SurfaceSettings,
   updateStageSurfaceName,
-  type SurfaceSettingsTable,
 } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
@@ -88,7 +85,7 @@ class UserProjectImpl implements UserProjectInternal {
   localEvents = new SimpleEvent<LocalProjectEvent>()
 
   defaultBlueprintSettings = createBlueprintSettingsTable()
-  surfaceSettings: SurfaceSettingsTable
+  surfaceSettings: SurfaceSettings
 
   landfillTile = property<string | nil>("landfill")
   // disable tiles by default in tests, since its slow
@@ -111,7 +108,7 @@ class UserProjectImpl implements UserProjectInternal {
     surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
   ) {
     this.name = property(name)
-    this.surfaceSettings = createSurfaceSettingsTable(surfaceSettings)
+    this.surfaceSettings = surfaceSettings
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
       const stage = StageImpl.create(this, i, `Stage ${i}`)
@@ -480,8 +477,7 @@ class StageImpl implements StageInternal {
 
   static create(project: UserProjectImpl, stageNumber: StageNumber, name: string): StageImpl {
     const area = project.content.computeBoundingBox()
-    const projectSettings = getCurrentValues(project.surfaceSettings)
-    const surface = createStageSurface(area, projectSettings, project.name.get(), name)
+    const surface = createStageSurface(area, project.surfaceSettings, project.name.get(), name)
     const stage = new StageImpl(project, surface, stageNumber, name)
     stage.registerEvents()
     return stage

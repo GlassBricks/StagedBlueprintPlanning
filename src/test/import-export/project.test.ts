@@ -10,8 +10,8 @@ import { addWireConnection, newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { asMutable, deepCopy, Mutable } from "../../lib"
 import type { SurfaceSettings } from "../../project/surfaces"
+import { getDefaultSurfaceSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
-import { getCurrentValues, setCurrentValuesOf } from "../../utils/properties-obj"
 import { simpleInsertPlan } from "../entity/entity-util"
 
 after_each(() => {
@@ -173,13 +173,13 @@ test("exports and imports surface settings", () => {
     has_global_electric_network: false,
   }
 
-  setCurrentValuesOf(project.surfaceSettings, settings, keys<SurfaceSettings>())
+  project.surfaceSettings = settings
 
   const exported = exportProject(project)
   expect(exported.surfaceSettings).toEqual(settings)
 
   const imported = importProjectDataOnly(exported)
-  expect(getCurrentValues(imported.surfaceSettings)).toEqual(settings)
+  expect(imported.surfaceSettings).toEqual({ ...getDefaultSurfaceSettings(), ...settings })
 })
 
 test("imports project without surface settings (backward compatibility)", () => {
@@ -191,7 +191,7 @@ test("imports project without surface settings (backward compatibility)", () => 
 
   const imported = importProjectDataOnly(exported)
 
-  const settings = getCurrentValues(imported.surfaceSettings)
+  const settings = imported.surfaceSettings
   expect(settings.map_gen_settings).toEqual(game.default_map_gen_settings)
   expect(settings.generate_with_lab_tiles).toBe(true)
   expect(settings.ignore_surface_conditions).toBe(true)

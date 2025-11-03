@@ -18,9 +18,9 @@ import { closeParentParent, HorizontalPusher, SimpleTitleBar } from "../lib/fact
 import { L_GuiMapGenSettings } from "../locale"
 import { Stage } from "../project/ProjectDef"
 import { applySurfaceSettingsAndClear, type SurfaceSettings } from "../project/surfaces"
-import { createPropertiesTable, getCurrentValues, PropertiesTable, setCurrentValuesOf } from "../utils/properties-obj"
+import { createPropertiesTable, PropertiesTable } from "../utils/properties-obj"
 
-export interface MapGenSettingsForForm {
+interface MapGenSettingsForForm {
   planet: string | nil
   seed: string
   generate_with_lab_tiles: boolean
@@ -42,7 +42,7 @@ function fromSurfaceSettings(settings: SurfaceSettings): PropertiesTable<MapGenS
   })
 }
 
-export function formToSurfaceSettings(settings: PropertiesTable<MapGenSettingsForForm>): SurfaceSettings {
+function toSurfaceSettings(settings: PropertiesTable<MapGenSettingsForForm>): SurfaceSettings {
   const planet = settings.planet.get()
   const planetProto = planet ? prototypes.space_location[planet] : nil
   const mapGenSettings = asMutable(planetProto?.map_gen_settings ?? game.default_map_gen_settings)
@@ -62,7 +62,7 @@ export function formToSurfaceSettings(settings: PropertiesTable<MapGenSettingsFo
   }
 }
 
-export function defaultMapGenSettings(): PropertiesTable<MapGenSettingsForForm> {
+function defaultMapGenSettings(): PropertiesTable<MapGenSettingsForForm> {
   return createPropertiesTable(keys<MapGenSettingsForForm>(), {
     planet: nil,
     seed: tostring(game.default_map_gen_settings.seed),
@@ -73,7 +73,8 @@ export function defaultMapGenSettings(): PropertiesTable<MapGenSettingsForForm> 
 }
 
 interface MapGenSettingsFormProps {
-  settings: PropertiesTable<MapGenSettingsForForm>
+  initialSettings?: SurfaceSettings
+  onMount?: (component: MapGenSettingsForm) => void
 }
 
 @RegisterClass("gui:MapGenSettingsForm")
@@ -81,14 +82,19 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
   private planets!: LuaSpaceLocationPrototype[]
   private settings!: PropertiesTable<MapGenSettingsForForm>
 
-  override render({ settings }: MapGenSettingsFormProps): Element {
+  override render({ initialSettings, onMount }: MapGenSettingsFormProps): Element {
     this.planets = Object.values(prototypes.space_location).filter((p) => p.map_gen_settings != nil)
-    this.settings = settings
+    this.settings = initialSettings ? fromSurfaceSettings(initialSettings) : defaultMapGenSettings()
+
+    if (onMount) {
+      onMount(this)
+    }
+
     const planetNames: LocalisedString[] = this.planets
       .map((planet): LocalisedString => ["", `[planet=${planet.name}]`, planet.localised_name])
       .concat(["<None>" as LocalisedString])
 
-    let initialPlanetLuaIndex = this.planets.findIndex((p) => p.name == settings.planet.get()) + 1
+    let initialPlanetLuaIndex = this.planets.findIndex((p) => p.name == this.settings.planet.get()) + 1
     if (initialPlanetLuaIndex == 0) {
       initialPlanetLuaIndex = planetNames.length
     }
@@ -96,13 +102,13 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
     return (
       <flow direction="vertical">
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox state={settings.has_global_electric_network} caption={[L_Game.GlobalElectricNetwork]} />
+          <checkbox state={this.settings.has_global_electric_network} caption={[L_Game.GlobalElectricNetwork]} />
         </flow>
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox state={settings.ignore_surface_conditions} caption={[L_Game.IgnoreSurfaceConditions]} />
+          <checkbox state={this.settings.ignore_surface_conditions} caption={[L_Game.IgnoreSurfaceConditions]} />
         </flow>
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox state={settings.generate_with_lab_tiles} caption={[L_Game.GenerateWithLabTiles]} />
+          <checkbox state={this.settings.generate_with_lab_tiles} caption={[L_Game.GenerateWithLabTiles]} />
         </flow>
         {planetNames.length > 1 && (
           <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
@@ -124,12 +130,16 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
             allow_decimal={false}
             allow_negative={false}
             lose_focus_on_confirm={true}
-            text={settings.seed}
+            text={this.settings.seed}
             styleMod={{ width: 150 }}
           />
         </flow>
       </flow>
     )
+  }
+
+  getSettings(): SurfaceSettings {
+    return toSurfaceSettings(this.settings)
   }
 
   private onPlanetChanged(event: OnGuiSelectedTabChangedEvent) {
@@ -148,14 +158,10 @@ const name = "bp100:MapGenSettingsSelect"
 export class MapGenSettingsSelect extends Component<Props> {
   private stage!: Stage
   private element!: FrameGuiElement
-  private settings!: PropertiesTable<MapGenSettingsForForm>
+  private formComponent!: MapGenSettingsForm
 
   render({ stage }: Props): Element {
     this.stage = stage
-
-    const currentSettings = getCurrentValues(stage.project.surfaceSettings)
-
-    this.settings = fromSurfaceSettings(currentSettings)
 
     return (
       <frame
@@ -166,7 +172,10 @@ export class MapGenSettingsSelect extends Component<Props> {
       >
         <SimpleTitleBar title={[L_GuiMapGenSettings.Title]} />
         <frame style="inside_shallow_frame_with_padding">
-          <MapGenSettingsForm settings={this.settings} />
+          <MapGenSettingsForm
+            initialSettings={stage.project.surfaceSettings}
+            onMount={(component) => (this.formComponent = component)}
+          />
         </frame>
         <flow style="dialog_buttons_horizontal_flow">
           <button style="back_button" caption={[L_Game.Cancel]} on_gui_click={funcRef(closeParentParent)} />
@@ -193,8 +202,8 @@ export class MapGenSettingsSelect extends Component<Props> {
     }
 
     const project = this.stage.project
-    const values = formToSurfaceSettings(this.settings)
-    setCurrentValuesOf(project.surfaceSettings, values, keys<SurfaceSettings>())
+    const values = this.formComponent.getSettings()
+    project.surfaceSettings = values
     applySurfaceSettingsAndClear(project)
     this.close()
   }

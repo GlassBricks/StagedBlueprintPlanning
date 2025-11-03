@@ -5,19 +5,16 @@
 
 import { LuaSurface, MapGenSettings, MapGenSettingsWrite, nil, SurfaceIndex } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
-import { createPropertiesTable, getCurrentValues, PropertiesTable, setCurrentValuesOf } from "../utils/properties-obj"
 import { Stage, UserProject } from "./ProjectDef"
 import { withTileEventsDisabled } from "./tile-events"
 
 export interface SurfaceSettings {
-  map_gen_settings: MapGenSettings
-  planet: string | nil
-  generate_with_lab_tiles: boolean
-  ignore_surface_conditions: boolean
-  has_global_electric_network: boolean
+  readonly map_gen_settings: MapGenSettings
+  readonly planet: string | nil
+  readonly generate_with_lab_tiles: boolean
+  readonly ignore_surface_conditions: boolean
+  readonly has_global_electric_network: boolean
 }
-
-export type SurfaceSettingsTable = PropertiesTable<SurfaceSettings>
 
 export function getDefaultSurfaceSettings(): SurfaceSettings {
   return {
@@ -27,12 +24,6 @@ export function getDefaultSurfaceSettings(): SurfaceSettings {
     ignore_surface_conditions: true,
     has_global_electric_network: false,
   }
-}
-
-export function createSurfaceSettingsTable(
-  values: SurfaceSettings = getDefaultSurfaceSettings(),
-): SurfaceSettingsTable {
-  return createPropertiesTable(keys<SurfaceSettings>(), values)
 }
 
 export function applySurfaceSettings(settings: SurfaceSettings, surface: LuaSurface): void {
@@ -78,14 +69,13 @@ export function syncMapGenSettings(stage: Stage): void {
   const project = stage.project
   const settings = readSurfaceSettings(stage.surface)
 
-  setCurrentValuesOf(project.surfaceSettings, settings, keys<SurfaceSettings>())
+  project.surfaceSettings = { ...project.surfaceSettings, ...settings }
   applySurfaceSettingsAndClear(project)
 }
 
 export function applySurfaceSettingsAndClear(project: UserProject): void {
-  const currentSettings = getCurrentValues(project.surfaceSettings)
   for (const stage of project.getAllStages()) {
-    applySurfaceSettings(currentSettings, stage.surface)
+    applySurfaceSettings(project.surfaceSettings, stage.surface)
   }
   for (const stage of project.getAllStages()) {
     stage.surface.clear()

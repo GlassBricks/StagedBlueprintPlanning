@@ -1813,13 +1813,13 @@ describe("map gen settings", () => {
   test.skip("rebuild stage after sync map gen settings", () => {
     // skip due to hanging process for some reason
     const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
-    project.surfaceSettings.planet.set("vulcanus")
+    project.surfaceSettings = { ...project.surfaceSettings, planet: "vulcanus" }
     assertEntityCorrect(entity, false)
     surfaces[0].generate_with_lab_tiles = false
     player.teleport(pos, surfaces[0])
     syncMapGenSettings(project.getStage(1)!)
     after_ticks(60, () => {
-      expect(project.surfaceSettings.planet.get()).toBe("vulcanus")
+      expect(project.surfaceSettings.planet).toBe("vulcanus")
       assertEntityCorrect(entity, false)
     })
   })

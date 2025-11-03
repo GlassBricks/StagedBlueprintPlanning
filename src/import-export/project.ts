@@ -23,6 +23,7 @@ type NestedPartial<T> = {
 export interface ProjectExport extends Partial<ProjectSettings>, NestedPartial<NestedProjectSettings> {
   stages?: StageExport[]
   entities?: EntitiesExport
+  surfaceSettings?: SurfaceSettings
 }
 
 export type EntitiesExport = EntityExport[]
@@ -32,7 +33,7 @@ export interface StageExport extends Partial<StageSettings>, NestedPartial<Neste
 export function exportProject(project: UserProject): ProjectExport {
   return {
     defaultBlueprintSettings: getCurrentValues(project.defaultBlueprintSettings),
-    surfaceSettings: getCurrentValues<SurfaceSettings>(project.surfaceSettings),
+    surfaceSettings: project.surfaceSettings,
     stages: project.getAllStages().map(exportStage),
     entities: exportAllEntities(project.content.allEntities()),
     ...getCurrentValuesOf<ProjectSettings>(project, keys<ProjectSettings>()),
@@ -66,7 +67,7 @@ export function importProjectDataOnly(project: ProjectExport): UserProject {
   }
 
   if (project.surfaceSettings != nil) {
-    setCurrentValuesOf(result.surfaceSettings, project.surfaceSettings, keys<SurfaceSettings>())
+    result.surfaceSettings = { ...result.surfaceSettings, ...project.surfaceSettings }
   }
 
   if (stages != nil) {

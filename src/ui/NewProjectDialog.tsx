@@ -10,13 +10,7 @@ import { Component, destroy, Element, FactorioJsx, renderNamed } from "../lib/fa
 import { closeParentParent, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiProjectSelector } from "../locale"
 import { createUserProject } from "../project/UserProject"
-import { PropertiesTable } from "../utils/properties-obj"
-import {
-  defaultMapGenSettings,
-  formToSurfaceSettings,
-  MapGenSettingsForForm,
-  MapGenSettingsForm,
-} from "./MapGenSettings"
+import { MapGenSettingsForm } from "./MapGenSettings"
 import { teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./ProjectSettings"
 
@@ -34,7 +28,7 @@ export class NewProjectDialog extends Component<NewProjectDialogProps> {
   private element!: FrameGuiElement
   private projectName!: TextFieldGuiElement
   private initialStages!: TextFieldGuiElement
-  private mapGenSettings: PropertiesTable<MapGenSettingsForForm> = defaultMapGenSettings()
+  private mapGenFormComponent!: MapGenSettingsForm
 
   override render(props: NewProjectDialogProps): Element {
     this.playerIndex = props.playerIndex
@@ -75,7 +69,7 @@ export class NewProjectDialog extends Component<NewProjectDialogProps> {
             />
           </flow>
           <label style="caption_label" caption={[L_GuiProjectSelector.MapGenSettings]} />
-          <MapGenSettingsForm settings={this.mapGenSettings} />
+          <MapGenSettingsForm onMount={(component) => (this.mapGenFormComponent = component)} />
           <flow style="dialog_buttons_horizontal_flow" direction="horizontal">
             <button style="back_button" caption={[L_Game.Cancel]} on_gui_click={funcRef(closeParentParent)} />
             <empty-widget
@@ -114,7 +108,7 @@ export class NewProjectDialog extends Component<NewProjectDialogProps> {
       return
     }
 
-    const project = createUserProject(projectName, numStages, formToSurfaceSettings(this.mapGenSettings))
+    const project = createUserProject(projectName, numStages, this.mapGenFormComponent.getSettings())
     storage.players[player.index].compactProjectSettings = nil
 
     teleportToProject(player, project)

@@ -69,7 +69,7 @@ test("syncMapGenSettings reads from stage and applies to all", () => {
 
   syncMapGenSettings(stage1)
 
-  const projectSettings = getCurrentValues(project.surfaceSettings)
+  const projectSettings = project.surfaceSettings
   expect(projectSettings.generate_with_lab_tiles).toBe(false)
   expect(projectSettings.map_gen_settings.seed).toBe(54321)
 

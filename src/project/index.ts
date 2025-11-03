@@ -14,12 +14,11 @@ import { mergeInventoryPositions } from "../entity/item-requests"
 import { ProjectEntity } from "../entity/ProjectEntity"
 import { Mutable } from "../lib"
 import { Migrations } from "../lib/migration"
-import { setCurrentValuesOf } from "../utils/properties-obj"
 import "./event-handlers"
 import "./project-event-listener"
 import { Stage, UserProject } from "./ProjectDef"
 import { updateStageSurfaceName } from "./surfaces"
-import { createSurfaceSettingsTable, readSurfaceSettings, type SurfaceSettings } from "./surfaces"
+import { getDefaultSurfaceSettings, readSurfaceSettings, type SurfaceSettings } from "./surfaces"
 import "./UserProject"
 import { getAllProjects, StageInternal, UserProjectInternal } from "./UserProject"
 
@@ -126,9 +125,7 @@ Migrations.to($CURRENT_VERSION, () => {
       updateStageSurfaceName(stage.surface, project.name.get(), stage.name.get())
     }
 
-    assume<Mutable<UserProject>>(project)
-    project.surfaceSettings = createSurfaceSettingsTable()
     const settings = readSurfaceSettings(project.getStage(1)!.surface)
-    setCurrentValuesOf(project.surfaceSettings, settings, keys<SurfaceSettings>())
+    ;(project as any).surfaceSettings = { ...getDefaultSurfaceSettings(), ...settings }
   }
 })
