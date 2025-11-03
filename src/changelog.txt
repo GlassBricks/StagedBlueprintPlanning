@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.7.2
 Date: ????
+  Minor tweaks:
+    - Revised GUI
   Bugfixes:
     - "Surface properties" (crafting restrictions) are now respected when setting a project to use a planet's map gen .
     - Surface names now reflect project and stage names.

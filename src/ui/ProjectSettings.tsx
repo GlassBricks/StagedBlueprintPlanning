@@ -186,14 +186,12 @@ class ProjectSettings extends Component<{
               }}
               selected_tab_index={selectedTabIndex}
             >
-              <tab caption={[L_GuiProjectSettings.Stage]} />
+              <tab caption={[L_GuiProjectSettings.ProjectSettings]} />
               {this.StagesTab()}
-              <tab caption={[L_GuiProjectSettings.EntitiesAndTiles]} />
-              {this.EntitiesAndTiles()}
+              <tab caption={[L_GuiProjectSettings.Editor]} />
+              {this.EditorTab()}
               <tab caption={[L_GuiProjectSettings.Blueprints]} />
               {this.BlueprintSettingsTab()}
-              <tab caption={[L_GuiProjectSettings.Other]} />
-              {this.OtherTab()}
             </tabbed-pane>
           </frame>
         </flow>
@@ -201,7 +199,7 @@ class ProjectSettings extends Component<{
     )
   }
 
-  private EntitiesAndTiles() {
+  private EditorTab() {
     const selectedTile = this.project.landfillTile
     const selectedTileValue = selectedTile.get()
     const tileIsNotBlueprintable = selectedTileValue && !prototypes.tile[selectedTileValue]?.items_to_place_this
@@ -209,6 +207,19 @@ class ProjectSettings extends Component<{
 
     return (
       <frame style="inside_shallow_frame" direction="vertical" styleMod={{ padding: [5, 10] }}>
+        <label caption={[L_GuiProjectSettings.Rebuild]} style="caption_label" />
+        <button
+          styleMod={{ width: StageSettingsButtonWidth }}
+          caption={[L_GuiProjectSettings.RebuildStage]}
+          tooltip={[L_GuiProjectSettings.RebuildStageTooltip]}
+          on_gui_click={ibind(this.rebuildStage)}
+        />
+        <button
+          styleMod={{ width: StageSettingsButtonWidth }}
+          caption={[L_GuiProjectSettings.RebuildAllStages]}
+          on_gui_click={ibind(this.rebuildAllStages)}
+        />
+        <line />
         <label caption={[L_GuiProjectSettings.Entities]} style="caption_label" />
         <flow>
           <button
@@ -393,12 +404,14 @@ class ProjectSettings extends Component<{
       >
         <tabbed-pane
           style="tabbed_pane_with_no_side_padding"
-          selected_tab_index={1}
           styleMod={{
             horizontally_stretchable: true,
             bottom_margin: -10,
           }}
+          onCreate={(e) => (e.selected_tab_index = 1)}
         >
+          <tab caption={[L_GuiProjectSettings.BpExport]} />
+          {this.BpExportTab()}
           <tab caption={[L_GuiProjectSettings.BlueprintSettingsDefaults]} />
           {this.BpSettings(nil)}
           <tab
@@ -406,8 +419,6 @@ class ProjectSettings extends Component<{
             tooltip={[L_GuiProjectSettings.BlueprintSettingsCurrentStageTooltip]}
           />
           <Fn uses="flow" from={playerCurrentStage(this.playerIndex)} map={ibind(this.BpSettings)} />
-          <tab caption={[L_GuiProjectSettings.BpExport]} />
-          {this.BpExportTab()}
         </tabbed-pane>
       </flow>
     )
@@ -432,6 +443,8 @@ class ProjectSettings extends Component<{
         />
         <line />
 
+        <label caption={[L_GuiProjectSettings.BlueprintSettings]} style="caption_label" />
+
         <IconsEdit settings={settings} />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label
@@ -449,9 +462,10 @@ class ProjectSettings extends Component<{
           )}
         </flow>
 
+        <line />
         <label caption={[L_GuiProjectSettings.EntityFilters]} style="caption_label" />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <label caption={[L_GuiProjectSettings.Blacklist]} styleMod={highlightIfOverriden(settings.blacklist)} />
+          <label caption={[L_GuiProjectSettings.Denylist]} styleMod={highlightIfOverriden(settings.blacklist)} />
           <EditButton on_gui_click={bind(ibind(this.editFilter), settings, "blacklist")} />
           {MaybeRevertButton(settings.blacklist)}
         </flow>
@@ -464,7 +478,7 @@ class ProjectSettings extends Component<{
           />
           <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
             <label
-              caption={[L_GuiProjectSettings.OrInWhitelist]}
+              caption={[L_GuiProjectSettings.OrInAllowlist]}
               styleMod={{
                 left_margin: 28,
                 ...highlightIfOverriden(settings.additionalWhitelist),
@@ -551,11 +565,7 @@ class ProjectSettings extends Component<{
           padding: [5, 10],
         }}
       >
-        <button
-          caption={[L_GuiProjectSettings.GetBlueprintForCurrentStage]}
-          styleMod={{ width: BpExportButtonWidth }}
-          on_gui_click={ibind(this.getBlueprint)}
-        />
+        <button caption={[L_GuiProjectSettings.GetBlueprintForCurrentStage]} on_gui_click={ibind(this.getBlueprint)} />
         <label style="caption_label" caption={[L_GuiProjectSettings.BlueprintBook]} />
         <button
           caption={[L_GuiProjectSettings.ExportBlueprintBook]}
@@ -566,7 +576,6 @@ class ProjectSettings extends Component<{
         <flow direction="horizontal">
           <button
             caption={[L_GuiProjectSettings.ExportBlueprintBookToString]}
-            tooltip={[L_GuiProjectSettings.ExportBlueprintBookToStringTooltip]}
             styleMod={{ width: BpExportButtonWidth }}
             on_gui_click={ibind(this.exportBookToString)}
           />
@@ -591,6 +600,13 @@ class ProjectSettings extends Component<{
             on_gui_click={ibind(this.beginResetBlueprintBookTemplate)}
           />
         </flow>
+        <line />
+        <button
+          caption={[L_GuiProjectSettings.ExportProject]}
+          tooltip={[L_GuiProjectSettings.ExportProjectTooltip]}
+          styleMod={{ width: BpExportButtonWidth }}
+          on_gui_click={ibind(this.exportProject)}
+        />
       </flow>
     )
   }
@@ -709,19 +725,6 @@ class ProjectSettings extends Component<{
             on_gui_click={ibind(this.beginDelete)}
           />
           <line />
-          <label caption={[L_GuiProjectSettings.Rebuild]} style="caption_label" />
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.RebuildStage]}
-            tooltip={[L_GuiProjectSettings.RebuildStageTooltip]}
-            on_gui_click={ibind(this.rebuildStage)}
-          />
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.RebuildAllStages]}
-            on_gui_click={ibind(this.rebuildAllStages)}
-          />
-          <line />
           <label caption={[L_GuiProjectSettings.MapGenSettings]} style="caption_label" />
           <button
             caption={[L_GuiProjectSettings.SetMapGenSettingsFromPlanet]}
@@ -733,28 +736,15 @@ class ProjectSettings extends Component<{
             tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
             on_gui_click={ibind(this.syncMapGenSettings)}
           />
+          <VerticalPusher />
+          <button
+            style="red_button"
+            caption={[L_GuiProjectSettings.DeleteProject]}
+            styleMod={{ width: OtherSettingsButtonWidth }}
+            on_gui_click={ibind(this.beginDeleteProject)}
+          />
         </flow>
       </>
-    )
-  }
-
-  private OtherTab() {
-    return (
-      <frame style="inside_shallow_frame" direction="vertical" styleMod={{ padding: 10 }}>
-        <button
-          caption={[L_GuiProjectSettings.ExportProject]}
-          tooltip={[L_GuiProjectSettings.ExportProjectTooltip]}
-          styleMod={{ width: OtherSettingsButtonWidth }}
-          on_gui_click={ibind(this.exportProject)}
-        />
-        <VerticalPusher />
-        <button
-          style="red_button"
-          caption={[L_GuiProjectSettings.DeleteProject]}
-          styleMod={{ width: OtherSettingsButtonWidth }}
-          on_gui_click={ibind(this.beginDeleteProject)}
-        />
-      </frame>
     )
   }
 

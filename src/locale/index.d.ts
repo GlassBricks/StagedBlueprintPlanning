@@ -178,9 +178,9 @@ export declare const enum L_Gui {
   BlueprintFilters = "bp100.gui.blueprint-filters",
   /** Get reference */
   GetStageTemplate = "bp100.gui.get-stage-template",
-  /** Import project from string [img=info] */
+  /** [img=utility/import-slot] Import project from string [img=info] */
   ImportProjectFromString = "bp100.gui.import-project-from-string",
-  /** Import a project from:\n- An exported project string (see "Other" tab in Project Settings)\n- A blueprint book; each blueprint will become a stage. This will probably only work if all blueprints have snap-to-grid on, and have the blueprint flag all at the same position. */
+  /** Import a project from either:\n- An exported project string (see Project setting)\n- A blueprint book. Each blueprint in the book becomes a stage. This will likely only work if all blueprints have snap-to-grid on, and have the blueprint flag/center all at the same position. */
   ImportProjectFromStringTooltip = "bp100.gui.import-project-from-string-tooltip",
 }
 export declare const enum L_GuiProjectSelector {
@@ -232,8 +232,6 @@ export declare const enum L_GuiProjectSettings {
   AtFront = "bp100.gui.project-settings.at-front",
   /** Rename */
   RenameProject = "bp100.gui.project-settings.rename-project",
-  /** Entities and tiles */
-  EntitiesAndTiles = "bp100.gui.project-settings.entities-and-tiles",
   /** Entities */
   Entities = "bp100.gui.project-settings.entities",
   /** Tiles */
@@ -242,20 +240,22 @@ export declare const enum L_GuiProjectSettings {
   Rebuild = "bp100.gui.project-settings.rebuild",
   /** Current stage */
   CurrentStage = "bp100.gui.project-settings.current-stage",
-  /** Stage */
-  Stage = "bp100.gui.project-settings.stage",
+  /** Project settings */
+  ProjectSettings = "bp100.gui.project-settings.project-settings",
+  /** Editor */
+  Editor = "bp100.gui.project-settings.editor",
   /** Blueprints */
   Blueprints = "bp100.gui.project-settings.blueprints",
   /** Other */
   Other = "bp100.gui.project-settings.other",
   /** Rename stage */
   RenameStage = "bp100.gui.project-settings.rename-stage",
-  /** Rebuild all stages */
-  RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
-  /** Rebuild current stage [img=info] */
+  /** [img=utility/refresh] Rebuild current stage [img=info] */
   RebuildStage = "bp100.gui.project-settings.rebuild-stage",
-  /** Rebuilds all entities (and tiles, if staged tiles are enabled) to match the stored state.\nThis may resolve inconsistencies due to bugs. */
+  /** Rebuilds all entities (and tiles, if enabled) to match stored state.\nThis may resolve inconsistencies due to bugs. */
   RebuildStageTooltip = "bp100.gui.project-settings.rebuild-stage-tooltip",
+  /** [img=utility/refresh] Rebuild all stages [img=info] */
+  RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
   /** Disable all entities */
   DisableAllEntities = "bp100.gui.project-settings.disable-all-entities",
   /** Enable all entities */
@@ -290,11 +290,11 @@ export declare const enum L_GuiProjectSettings {
   DeleteStageConfirmation2Middle = "bp100.gui.project-settings.delete-stage-confirmation2-middle",
   /** Settings: Defaults */
   BlueprintSettingsDefaults = "bp100.gui.project-settings.blueprint-settings-defaults",
-  /** Settings: Current stage [img=info] */
+  /** Settings: Per-stage [img=info] */
   BlueprintSettingsCurrentStage = "bp100.gui.project-settings.blueprint-settings-current-stage",
-  /** These settings override the default settings for the current stage. Overridden settings are highlighted. */
+  /** Per-stage settings override default settings. Overridden settings are highlighted. */
   BlueprintSettingsCurrentStageTooltip = "bp100.gui.project-settings.blueprint-settings-current-stage-tooltip",
-  /** Defaults */
+  /** All Stage Defaults */
   EditingDefaults = "bp100.gui.project-settings.editing-defaults",
   /** Overrides for stage: __1__ */
   EditingForStage = "bp100.gui.project-settings.editing-for-stage",
@@ -308,15 +308,17 @@ export declare const enum L_GuiProjectSettings {
   IconsTooltip = "bp100.gui.project-settings.icons-tooltip",
   /** Add numbers from stage name to icons [img=info] */
   AppendNumbersFromStage = "bp100.gui.project-settings.append-numbers-from-stage",
-  /** e.g. if the stage name is "Stage 3.2", adds "3" and "2" to the blueprint icons.\nThere must be empty icon slots at the end for this to work. */
+  /** e.g. if the stage name is "Stage 3.2", adds "3" and "2" to the blueprint icons.\nThere must be empty icon slots to insert numbers. */
   AppendNumbersFromStageTooltip = "bp100.gui.project-settings.append-numbers-from-stage-tooltip",
   /** In stage __1__: not enough icon slots to add stage numbers! */
   NotEnoughIconSlots = "bp100.gui.project-settings.not-enough-icon-slots",
   /** Edit */
   Edit = "bp100.gui.project-settings.edit",
+  /** Blueprint settings */
+  BlueprintSettings = "bp100.gui.project-settings.blueprint-settings",
   /** Entity filters */
   EntityFilters = "bp100.gui.project-settings.entity-filters",
-  /** Exclude from future blueprints [img=info] */
+  /** Exclude current stage from future blueprints [img=info] */
   ExcludeFromFutureBlueprints = "bp100.gui.project-settings.exclude-from-future-blueprints",
   /** Entities in this stage will not be present in later stage blueprints. Entity _changes_ may still be present, however. */
   ExcludeFromFutureBlueprintsTooltip = "bp100.gui.project-settings.exclude-from-future-blueprints-tooltip",
@@ -324,12 +326,12 @@ export declare const enum L_GuiProjectSettings {
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */
   IncludeEntitiesInTheNextNStages2 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-2",
-  /** Only new entities or entities with setting changes in the last given stages will be included in the blueprint.\n - Consider adding entities to help align blueprints to the below whitelist, such as rails or roboports.\n - Consider adding assembling machines to the whitelist, so previously unresearched recipes can be pasted by later blueprints.\n */
+  /** Only new entities or entities with setting changes in the last given stages will be included in the blueprint.\n - Consider adding entities to help align blueprints to the below allowlist, such as rails or roboports.\n - Consider adding assembling machines to the allowlist, so previously unresearched recipes can be pasted by later blueprints.\n */
   IncludeEntitiesInTheNextNStagesTooltip = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-tooltip",
-  /** or in whitelist: */
-  OrInWhitelist = "bp100.gui.project-settings.or-in-whitelist",
-  /** Blacklist: */
-  Blacklist = "bp100.gui.project-settings.blacklist",
+  /** or in allowlist: */
+  OrInAllowlist = "bp100.gui.project-settings.or-in-allowlist",
+  /** Denylist: */
+  Denylist = "bp100.gui.project-settings.denylist",
   /** Entity edits */
   EntityEdits = "bp100.gui.project-settings.entity-edits",
   /** Use module preloading [img=info] */
@@ -342,30 +344,28 @@ export declare const enum L_GuiProjectSettings {
   UseNextStageTilesTooltip = "bp100.gui.project-settings.use-next-stage-tiles-tooltip",
   /** Export */
   BpExport = "bp100.gui.project-settings.bp-export",
-  /** Get current stage blueprint */
+  /** [item=blueprint] Get current stage blueprint */
   GetBlueprintForCurrentStage = "bp100.gui.project-settings.get-blueprint-for-current-stage",
   /** Blueprint book */
   BlueprintBook = "bp100.gui.project-settings.blueprint-book",
-  /** Get blueprint book [img=info] */
+  /** [item=blueprint-book] Get blueprint book [img=info] */
   ExportBlueprintBook = "bp100.gui.project-settings.export-blueprint-book",
   /** Creates a blueprint book containing all stages. */
   ExportBlueprintBookTooltip = "bp100.gui.project-settings.export-blueprint-book-tooltip",
   /** Edit book template [img=info] */
   EditBlueprintBookTemplate = "bp100.gui.project-settings.edit-blueprint-book-template",
-  /** Edit the layout, contents, icons, or description of the blueprint book.\nHandles nested blueprint books.\nYou can also add other blueprints, books, deconstruction planners, or upgrade planners to the template, and they will be present in the exported blueprint book. */
+  /** Edit the layout, contents, icons, or description of the blueprint book.\nNested blueprint books supported.\nYou can also add other blueprints, books, deconstruction planners, upgrade planners, etc. to the template, and they will show up in the exported blueprint book. */
   EditBlueprintBookTemplateTooltip = "bp100.gui.project-settings.edit-blueprint-book-template-tooltip",
   /** Reset book template */
   ResetBlueprintBookTemplate = "bp100.gui.project-settings.reset-blueprint-book-template",
   /** Are you sure you want to reset the blueprint book template? */
   ResetBlueprintBookTemplateConfirmation = "bp100.gui.project-settings.reset-blueprint-book-template-confirmation",
-  /** Export to file [img=info] */
+  /** Export book to string */
+  ExportBlueprintBookToString = "bp100.gui.project-settings.export-blueprint-book-to-string",
+  /** Export book to file [img=info] */
   ExportBlueprintBookToFile = "bp100.gui.project-settings.export-blueprint-book-to-file",
   /** Exports the blueprint book string to a file located in <user-data-directory>/script-output. */
   ExportBlueprintBookToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-to-file-tooltip",
-  /** Export to string [img=info] */
-  ExportBlueprintBookToString = "bp100.gui.project-settings.export-blueprint-book-to-string",
-  /** Exports the blueprint book string, which you can copy. */
-  ExportBlueprintBookToStringTooltip = "bp100.gui.project-settings.export-blueprint-book-to-string-tooltip",
   /** Enable staged tiles (beta) [img=info] */
   EnableStagedTiles = "bp100.gui.project-settings.enable-staged-tiles",
   /** Enables (basic) support for staged tiles. Placing a blueprintable tile will affect all later stages. \nIf enabling for the first time, you may want to click "Scan existing tiles". */
@@ -384,7 +384,7 @@ export declare const enum L_GuiProjectSettings {
   SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
   /** Sets map gen settings for all stages to match the current stage, then regenerates all stages.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings"\n - Possibly un-check "Generate new chunks with lab tiles"\n - Click this button to regenerate all stages\n Additionally, the "Global electric network" and "Ignore surface conditions" settings will be applied. */
   SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
-  /** Delete project */
+  /** [img=utility/trash]Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
   /** Are you sure you want to delete project __1__? */
   DeleteProjectConfirmation1 = "bp100.gui.project-settings.delete-project-confirmation1",
@@ -394,7 +394,7 @@ export declare const enum L_GuiProjectSettings {
   BlueprintStringFor = "bp100.gui.project-settings.blueprint-string-for",
   /** Project string for __1__ */
   ProjectStringFor = "bp100.gui.project-settings.project-string-for",
-  /** Export project to string [img=info] */
+  /** [img=utility/export-slot] Export project to string [img=info] */
   ExportProject = "bp100.gui.project-settings.export-project",
   /** Exports the project, including most settings, to a shareable string.\nImportable via the top left mod button menu. */
   ExportProjectTooltip = "bp100.gui.project-settings.export-project-tooltip",
