@@ -214,7 +214,7 @@ export class MapGenSettingsSelect extends Component<Props> {
 
   render({ stage, initialSettings }: Props): Element {
     this.stage = stage
-    assert(this.stage.project.surfaceSettings.type == "normal")
+    assert(!this.stage.project.isSpacePlatform())
 
     return (
       <frame

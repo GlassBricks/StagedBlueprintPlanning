@@ -87,6 +87,8 @@ export interface UserProject
   insertStage(index: StageNumber): Stage
   deleteStage(index: StageNumber): void
 
+  isSpacePlatform(): boolean
+
   readonly valid: boolean
   delete(): void
 }

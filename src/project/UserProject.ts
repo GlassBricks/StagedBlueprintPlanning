@@ -87,6 +87,7 @@ class UserProjectImpl implements UserProjectInternal {
   landfillTile = property<string | nil>("landfill")
   // disable tiles by default in tests, since its slow
   // the appropriate tests will enable it
+  // force enabled for space platforms
   stagedTilesEnabled = property(!("factorio-test" in script.active_mods))
 
   valid = true
@@ -114,12 +115,20 @@ class UserProjectImpl implements UserProjectInternal {
         this.actions.onEntityCreated(hub, i, nil)
       }
     }
+
+    if (this.isSpacePlatform()) {
+      this.stagedTilesEnabled.set(true)
+    }
   }
   private static getDisplayName(this: void, id: ProjectId, name: string): LocalisedString {
     return name != "" ? name : [L_Bp100.UnnamedProject, id]
   }
   displayName(): Property<LocalisedString> {
     return this.name.map(bind(UserProjectImpl.getDisplayName, this.id))
+  }
+
+  isSpacePlatform(): boolean {
+    return this.surfaceSettings.type == "spacePlatform"
   }
 
   static create(

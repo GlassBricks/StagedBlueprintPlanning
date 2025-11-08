@@ -277,21 +277,23 @@ class ProjectSettings extends Component<{
           on_gui_click={ibind(this.setLandfillAndWater)}
         />
         <line />
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox
-            state={this.project.stagedTilesEnabled}
-            caption={[L_GuiProjectSettings.EnableStagedTiles]}
-            tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
-          />
-          <HorizontalSpacer width={10} />
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.ScanExistingTiles]}
-            tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
-            enabled={this.project.stagedTilesEnabled}
-            on_gui_click={ibind(this.scanExistingTiles)}
-          />
-        </flow>
+        {!this.project.isSpacePlatform() && (
+          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+            <checkbox
+              state={this.project.stagedTilesEnabled}
+              caption={[L_GuiProjectSettings.EnableStagedTiles]}
+              tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
+            />
+            <HorizontalSpacer width={10} />
+            <button
+              styleMod={{ width: StageSettingsButtonWidth }}
+              caption={[L_GuiProjectSettings.ScanExistingTiles]}
+              tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
+              enabled={this.project.stagedTilesEnabled}
+              on_gui_click={ibind(this.scanExistingTiles)}
+            />
+          </flow>
+        )}
         <VerticalPusher />
         <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
       </frame>
@@ -705,7 +707,7 @@ class ProjectSettings extends Component<{
   }
 
   private StageSettings(stage: Stage) {
-    const isNormalSurface = stage.project.surfaceSettings.type == "normal"
+    const isNormalSurface = !stage.project.isSpacePlatform()
 
     return (
       <>
