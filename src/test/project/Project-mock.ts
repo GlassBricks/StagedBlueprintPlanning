@@ -7,7 +7,7 @@ import { LuaSurface } from "factorio:runtime"
 import { newProjectContent } from "../../entity/ProjectContent"
 import { getPlayer } from "../../lib/test/misc"
 import { Project } from "../../project/ProjectDef"
-import { createStageSurface, destroySurface } from "../../project/surfaces"
+import { createStageSurface, destroySurface, getDefaultSurfaceSettings } from "../../project/surfaces"
 
 export function createMockProject(stages: number | LuaSurface[]): Project {
   const surfaces: LuaSurface[] =
@@ -29,7 +29,7 @@ export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
   const surfaces: LuaSurface[] = []
   before_all(() => {
     for (let i = 0; i < numSurfaces; i++) {
-      surfaces[i] = createStageSurface()
+      surfaces[i] = createStageSurface(getDefaultSurfaceSettings(), "test", "i")[0]
       assert(surfaces[i].valid)
     }
     const player = getPlayer()

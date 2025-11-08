@@ -32,7 +32,7 @@ export interface DialogProps {
 
 @RegisterClass("gui:Confirmable")
 export abstract class Confirmable<T> extends Component<T> {
-  abstract onConfirm?(e: CustomInputEvent): void
+  abstract onConfirm(e: CustomInputEvent): void
 }
 
 @RegisterClass("gui:Dialog")

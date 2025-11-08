@@ -16,6 +16,7 @@ test("applySurfaceSettings applies settings with planet", () => {
   mapGenSettings.seed = 99999
 
   const settings: SurfaceSettings = {
+    type: "normal",
     map_gen_settings: mapGenSettings,
     planet: "nauvis",
     generate_with_lab_tiles: false,

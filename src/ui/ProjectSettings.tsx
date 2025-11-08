@@ -84,9 +84,9 @@ const StageListBoxWidth = 140
 
 const NewStageBarHeight = 100
 
-const StageSettingsButtonWidth = 180
+const StageSettingsButtonWidth = 200
 const LandfillButtonWidth = 220
-const OtherSettingsButtonWidth = 180
+const OtherSettingsButtonWidth = 200
 const BpExportButtonWidth = 200
 
 const ProjectSettingsTabWidth = 420
@@ -705,6 +705,8 @@ class ProjectSettings extends Component<{
   }
 
   private StageSettings(stage: Stage) {
+    const isNormalSurface = stage.project.surfaceSettings.type == "normal"
+
     return (
       <>
         <frame style="subheader_frame" direction="horizontal">
@@ -725,24 +727,28 @@ class ProjectSettings extends Component<{
             on_gui_click={ibind(this.beginDelete)}
           />
           <line />
-          <label caption={[L_GuiProjectSettings.MapGenSettings]} style="caption_label" />
-          <button
-            caption={[L_GuiProjectSettings.SetMapGenSettingsFromPlanet]}
-            tooltip={[L_GuiProjectSettings.SetMapGenSettingsFromPlanetTooltip]}
-            on_gui_click={ibind(this.openMapGenSettingsSelect)}
-          />
-          <button
-            caption={[L_GuiProjectSettings.SyncMapGenSettings]}
-            tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
-            on_gui_click={ibind(this.syncMapGenSettings)}
-          />
-          <VerticalPusher />
-          <button
-            style="red_button"
-            caption={[L_GuiProjectSettings.DeleteProject]}
-            styleMod={{ width: OtherSettingsButtonWidth }}
-            on_gui_click={ibind(this.beginDeleteProject)}
-          />
+          {isNormalSurface && (
+            <>
+              <label caption={[L_GuiProjectSettings.MapGenSettings]} style="caption_label" />
+              <button
+                caption={[L_GuiProjectSettings.SetMapGenSettingsFromPlanet]}
+                tooltip={[L_GuiProjectSettings.SetMapGenSettingsFromPlanetTooltip]}
+                on_gui_click={ibind(this.openMapGenSettingsSelect)}
+              />
+              <button
+                caption={[L_GuiProjectSettings.SyncMapGenSettings]}
+                tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
+                on_gui_click={ibind(this.syncMapGenSettings)}
+              />
+              <VerticalPusher />
+              <button
+                style="red_button"
+                caption={[L_GuiProjectSettings.DeleteProject]}
+                styleMod={{ width: OtherSettingsButtonWidth }}
+                on_gui_click={ibind(this.beginDeleteProject)}
+              />
+            </>
+          )}
         </flow>
       </>
     )

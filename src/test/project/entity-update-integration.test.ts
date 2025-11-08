@@ -36,7 +36,7 @@ import { BBox, Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import { checkForEntityUpdates } from "../../project/event-handlers"
 import { EntityUpdateResult, StageMoveResult } from "../../project/project-updates"
-import { syncMapGenSettings } from "../../project/surfaces"
+import { NormalSurfaceSettings, syncMapGenSettings } from "../../project/surfaces"
 
 import { UserProject } from "../../project/ProjectDef"
 import { _simulateUndo } from "../../project/undo"
@@ -1813,13 +1813,14 @@ describe("map gen settings", () => {
   test.skip("rebuild stage after sync map gen settings", () => {
     // skip due to hanging process for some reason
     const entity = buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
+    assert(project.surfaceSettings.type == "normal")
     project.surfaceSettings = { ...project.surfaceSettings, planet: "vulcanus" }
     assertEntityCorrect(entity, false)
     surfaces[0].generate_with_lab_tiles = false
     player.teleport(pos, surfaces[0])
     syncMapGenSettings(project.getStage(1)!)
     after_ticks(60, () => {
-      expect(project.surfaceSettings.planet).toBe("vulcanus")
+      expect((project.surfaceSettings as NormalSurfaceSettings).planet).toBe("vulcanus")
       assertEntityCorrect(entity, false)
     })
   })

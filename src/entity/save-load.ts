@@ -14,16 +14,18 @@ import {
   CargoWagonBlueprintEntity,
   CargoWagonSurfaceCreateEntity,
   LoaderBlueprintEntity,
+  LogisticSection,
   LuaEntity,
   LuaInventory,
   LuaItemStack,
   LuaSurface,
   MapPosition,
   RailSignalSurfaceCreateEntity,
+  SpacePlatformHubBlueprintEntity,
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { Events, getName, getQuality, Mutable, mutableShallowCopy } from "../lib"
+import { deepCompare, Events, getName, getQuality, Mutable, mutableShallowCopy } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
@@ -463,6 +465,10 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Nul
   if (bpEntity.items) {
     bpEntity.items = removeGridRequests(bpEntity.items)
   }
+  if (entity.type == "space-platform-hub") {
+    assume<SpacePlatformHubBlueprintEntity>(bpEntity)
+    fixPlatformRequests(bpEntity)
+  }
 
   const itemRequests = getNonModuleRequests(entity)
   const unstagedProps = itemRequests && {
@@ -471,6 +477,20 @@ export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): Nul
   const [result] = removeExtraProperties(mutableShallowCopy(bpEntity))
   // ignore non-module requests gotten via blueprint; use item request proxy for those instead
   return $multi(result, unstagedProps)
+}
+
+function fixPlatformRequests(bpEntity: SpacePlatformHubBlueprintEntity): void {
+  // Fix some bug that inserts an empty logistic request
+  // todo: report
+  if (!bpEntity.request_missing_construction_materials) return
+  const firstFilter = bpEntity.request_filters.sections?.[0]
+  if (firstFilter && deepCompare(firstFilter, { index: 1 })) {
+    bpEntity.request_filters.sections.shift()
+    for (const filter of bpEntity.request_filters.sections) {
+      assume<Mutable<LogisticSection>>(filter)
+      filter.index--
+    }
+  }
 }
 
 function insertEquipment(entity: LuaEntity, grid: BlueprintEquipment[] | undefined) {

@@ -3,12 +3,22 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaSurface, MapGenSettings, MapGenSettingsWrite, nil, SurfaceIndex } from "factorio:runtime"
+import {
+  ItemWithQualityID,
+  LuaEntity,
+  LuaSurface,
+  MapGenSettings,
+  MapGenSettingsWrite,
+  nil,
+  PrototypeWithQualityRead,
+  SurfaceIndex,
+} from "factorio:runtime"
 import { BBox } from "../lib/geometry"
 import { Stage, UserProject } from "./ProjectDef"
 import { withTileEventsDisabled } from "./tile-events"
 
-export interface SurfaceSettings {
+export interface NormalSurfaceSettings {
+  readonly type: "normal"
   readonly map_gen_settings: MapGenSettings
   readonly planet: string | nil
   readonly generate_with_lab_tiles: boolean
@@ -16,8 +26,17 @@ export interface SurfaceSettings {
   readonly has_global_electric_network: boolean
 }
 
-export function getDefaultSurfaceSettings(): SurfaceSettings {
+export interface SpacePlatformSettings {
+  readonly type: "spacePlatform"
+  readonly starterPack: PrototypeWithQualityRead
+  readonly initialPlanet?: string
+}
+
+export type SurfaceSettings = NormalSurfaceSettings | SpacePlatformSettings
+
+export function getDefaultSurfaceSettings(): NormalSurfaceSettings {
   return {
+    type: "normal",
     map_gen_settings: game.default_map_gen_settings,
     planet: nil,
     generate_with_lab_tiles: true,
@@ -26,7 +45,7 @@ export function getDefaultSurfaceSettings(): SurfaceSettings {
   }
 }
 
-export function applySurfaceSettings(settings: SurfaceSettings, surface: LuaSurface): void {
+export function applySurfaceSettings(settings: NormalSurfaceSettings, surface: LuaSurface): void {
   surface.generate_with_lab_tiles = settings.generate_with_lab_tiles
 
   if (!settings.generate_with_lab_tiles) {
@@ -56,7 +75,7 @@ export function applySurfaceSettings(settings: SurfaceSettings, surface: LuaSurf
   }
 }
 
-export function readSurfaceSettings(surface: LuaSurface): Partial<SurfaceSettings> {
+export function readSurfaceSettings(surface: LuaSurface): Partial<NormalSurfaceSettings> {
   return {
     map_gen_settings: surface.generate_with_lab_tiles ? nil : surface.map_gen_settings,
     generate_with_lab_tiles: surface.generate_with_lab_tiles,
@@ -67,6 +86,7 @@ export function readSurfaceSettings(surface: LuaSurface): Partial<SurfaceSetting
 
 export function syncMapGenSettings(stage: Stage): void {
   const project = stage.project
+  if (project.surfaceSettings.type != "normal") return
   const settings = readSurfaceSettings(stage.surface)
 
   project.surfaceSettings = { ...project.surfaceSettings, ...settings }
@@ -74,8 +94,10 @@ export function syncMapGenSettings(stage: Stage): void {
 }
 
 export function applySurfaceSettingsAndClear(project: UserProject): void {
+  const settings = project.surfaceSettings
+  if (settings.type != "normal") return
   for (const stage of project.getAllStages()) {
-    applySurfaceSettings(project.surfaceSettings, stage.surface)
+    applySurfaceSettings(settings, stage.surface)
   }
   for (const stage of project.getAllStages()) {
     stage.surface.clear()
@@ -121,14 +143,15 @@ export function updateStageSurfaceName(surface: LuaSurface, projectName: string,
 function prepareSurface(
   surface: LuaSurface,
   area: BBox,
-  projectSettings: SurfaceSettings | nil,
+  settings: NormalSurfaceSettings,
   projectName: string,
   stageName: string,
 ): void {
-  if (projectSettings == nil) {
-    projectSettings = getDefaultSurfaceSettings()
+  if (settings == nil) {
+    settings = getDefaultSurfaceSettings()
   }
-  applySurfaceSettings(projectSettings, surface)
+
+  applySurfaceSettings(settings, surface)
 
   surface.always_day = true
   surface.show_clouds = false
@@ -140,18 +163,53 @@ function prepareSurface(
 }
 
 function createNewStageSurface(
-  area: BBox = defaultPreparedArea,
-  projectSettings: SurfaceSettings | nil,
+  settings: NormalSurfaceSettings,
   projectName: string,
   stageName: string,
+  area: BBox,
 ): LuaSurface {
   const size = inTest ? 32 * 2 : 10000
   const surface = game.create_surface("bp100-stage-temp", {
     width: size,
     height: size,
   } as MapGenSettingsWrite)
-  prepareSurface(surface, area, projectSettings, projectName, stageName)
+  prepareSurface(surface, area, settings, projectName, stageName)
   return surface
+}
+
+function createSpacePlatform(
+  settings: SpacePlatformSettings,
+  projectName: string,
+  stageName: string,
+): [LuaSurface, hub?: LuaEntity] {
+  const platform = game.forces.player.create_space_platform({
+    name: projectName.length == 0 ? "Platform" : projectName,
+    planet: settings.initialPlanet ?? "nauvis",
+    starter_pack: settings.starterPack as unknown as ItemWithQualityID,
+  })!
+  assert(platform, "could not create platform")
+  const hub = platform.apply_starter_pack()
+  if (hub) {
+    hub.destructible = false
+    hub.minable = false
+  }
+  const surface = platform.surface
+  updateStageSurfaceName(surface, projectName, stageName)
+  assert(surface, "could not create platform surface")
+  return [surface, hub]
+}
+
+function createNewSurface(
+  settings: SurfaceSettings,
+  projectName: string,
+  stageName: string,
+  area: BBox = defaultPreparedArea,
+): [LuaSurface, hub?: LuaEntity] {
+  if (settings?.type == "spacePlatform") {
+    return createSpacePlatform(settings, projectName, stageName)
+  } else {
+    return [createNewStageSurface(settings, projectName, stageName, area)]
+  }
 }
 
 export function prepareArea(surface: LuaSurface, area: BBox): void {
@@ -185,24 +243,26 @@ declare const storage: {
 /** @noSelf */
 interface SurfaceCreator {
   createSurface(
+    projectSettings: SurfaceSettings,
+    projectName: string,
+    stageName: string,
     preparedArea?: BBox,
-    projectSettings?: SurfaceSettings,
-    projectName?: string,
-    stageName?: string,
-  ): LuaSurface
+  ): [LuaSurface, hub?: LuaEntity]
   destroySurface(surface: LuaSurface): void
 }
 
 let surfaceCreator: SurfaceCreator
 if (!inTest) {
   surfaceCreator = {
-    createSurface: (area = defaultPreparedArea, projectSettings, projectName = "", stageName = "") =>
-      createNewStageSurface(area, projectSettings, projectName, stageName),
+    createSurface: (settings, projectName, stageName, area) => createNewSurface(settings, projectName, stageName, area),
     destroySurface: (surface) => game.delete_surface(surface),
   }
 } else {
   surfaceCreator = {
-    createSurface: (area = defaultPreparedArea, projectSettings, projectName = "", stageName = "") => {
+    createSurface: (settings, projectName, stageName, area = defaultPreparedArea): [LuaSurface, hub?: LuaEntity] => {
+      if (settings?.type == "spacePlatform") {
+        return createSpacePlatform(settings, projectName, stageName)
+      }
       if (!storage.freeSurfaces) {
         storage.freeSurfaces = []
       }
@@ -211,11 +271,11 @@ if (!inTest) {
         if (surface.valid) {
           surface.destroy_decoratives({})
           for (const entity of surface.find_entities()) entity.destroy()
-          prepareSurface(surface, area, projectSettings, projectName, stageName)
-          return surface
+          prepareSurface(surface, area, settings, projectName, stageName)
+          return [surface]
         }
       }
-      return createNewStageSurface(area, projectSettings, projectName, stageName)
+      return [createNewStageSurface(settings, projectName, stageName, area)]
     },
     destroySurface: (surface) => {
       if (!surface.valid) return

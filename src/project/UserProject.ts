@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LocalisedString, LuaInventory, LuaItemStack, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
+import { LocalisedString, LuaEntity, LuaInventory, LuaItemStack, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import {
   BlueprintSettingsOverrideTable,
@@ -34,10 +34,7 @@ import {
 import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { L_Bp100 } from "../locale"
-import {
-  createdDiffedPropertyTableView,
-  createEmptyPropertyOverrideTable,
-} from "../utils/properties-obj"
+import { createdDiffedPropertyTableView, createEmptyPropertyOverrideTable } from "../utils/properties-obj"
 import { EntityHighlights } from "./entity-highlights"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
@@ -111,8 +108,11 @@ class UserProjectImpl implements UserProjectInternal {
     this.surfaceSettings = surfaceSettings
     this.stages = {}
     for (const i of $range(1, initialNumStages)) {
-      const stage = StageImpl.create(this, i, `Stage ${i}`)
+      const [stage, hub] = StageImpl.create(this, i, `Stage ${i}`)
       this.stages[i] = stage
+      if (hub) {
+        this.actions.onEntityCreated(hub, i, nil)
+      }
     }
   }
   private static getDisplayName(this: void, id: ProjectId, name: string): LocalisedString {
@@ -186,7 +186,8 @@ class UserProjectImpl implements UserProjectInternal {
     assert(stage >= 1 && stage <= this.numStages() + 1, "Invalid new stage number")
 
     const name = this._getNewStageName(stage)
-    const newStage = StageImpl.create(this, stage, name)
+    const [newStage] = StageImpl.create(this, stage, name)
+    // hub gets added later
 
     table.insert(this.stages as unknown as Stage[], stage, newStage)
     // update stages
@@ -475,12 +476,12 @@ class StageImpl implements StageInternal {
     updateStageSurfaceName(this.surface, this.project.name.get(), newName)
   }
 
-  static create(project: UserProjectImpl, stageNumber: StageNumber, name: string): StageImpl {
+  static create(project: UserProjectImpl, stageNumber: StageNumber, name: string): [StageImpl, entities?: LuaEntity] {
     const area = project.content.computeBoundingBox()
-    const surface = createStageSurface(area, project.surfaceSettings, project.name.get(), name)
+    const [surface, hub] = createStageSurface(project.surfaceSettings, project.name.get(), name, area)
     const stage = new StageImpl(project, surface, stageNumber, name)
     stage.registerEvents()
-    return stage
+    return [stage, hub]
   }
 
   getBlueprintSettingsView(): BlueprintSettingsTable {
