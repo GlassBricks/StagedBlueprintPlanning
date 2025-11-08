@@ -471,7 +471,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
   }
 
   function notifyIfMoveError(result: StageMoveResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil) {
-    if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) return
+    if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange || result == StageMoveResult.EntityIsPersistent) return
 
     if (result == StageMoveResult.CannotMovePastLastStage) {
       createNotification(entity, byPlayer, [L_Interaction.CannotMovePastLastStage], true)

@@ -264,6 +264,9 @@ export function isTrainEntity(entityName: string): boolean {
   const type = nameToType.get(entityName)
   return type != nil && trainTypes.has(type)
 }
+export function isPersistentEntity(entityName: string): boolean {
+  return nameToType.get(entityName) == "space-platform-hub"
+}
 
 export function isPreviewEntity(entity: LuaEntity): boolean {
   // performance: this returns false almost all the time,

@@ -129,19 +129,21 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
             {lastStageDisplay != nil && StageButton(project.getStage(lastStageDisplay)!)}
           </table>
 
-          {lastStageDisplay != nil && (
+          {lastStageDisplay != nil && !entity.isPersistent() && (
             <button
               styleMod={{ horizontally_stretchable: true }}
               caption={[L_GuiEntityInfo.RemoveLastStage]}
               on_gui_click={ibind(this.removeLastStage)}
             />
           )}
-          <button
-            styleMod={{ horizontally_stretchable: true }}
-            caption={[L_GuiEntityInfo.MoveToThisStage]}
-            on_gui_click={ibind(this.moveToThisStage)}
-            enabled={firstStageNum != currentStageNum}
-          />
+          {!entity.isPersistent() && (
+            <button
+              styleMod={{ horizontally_stretchable: true }}
+              caption={[L_GuiEntityInfo.MoveToThisStage]}
+              on_gui_click={ibind(this.moveToThisStage)}
+              enabled={firstStageNum != currentStageNum}
+            />
+          )}
           {isRollingStock && [
             <line direction="horizontal" />,
             <button

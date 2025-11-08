@@ -29,6 +29,7 @@ import {
 } from "./Entity"
 import {
   isMovableEntity,
+  isPersistentEntity,
   isPreviewEntity,
   isTrainEntity,
   movableTypes,
@@ -87,6 +88,7 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   getType(): EntityType | nil
 
   isMovable(): this is MovableProjectEntity
+  isPersistent(): boolean
 
   isNewRollingStock?: true
 
@@ -250,6 +252,9 @@ class ProjectEntityImpl<T extends Entity = Entity>
   }
   isMovable(): this is MovableProjectEntity {
     return isMovableEntity(this.firstValue.name)
+  }
+  isPersistent(): boolean {
+    return isPersistentEntity(this.firstValue.name)
   }
   isTrain(): this is TrainProjectEntity {
     return isTrainEntity(this.firstValue.name)
