@@ -8,6 +8,8 @@ import {
   OnPlayerMinedTileEvent,
   OnRobotBuiltTileEvent,
   OnRobotMinedTileEvent,
+  OnSpacePlatformBuiltTileEvent,
+  OnSpacePlatformMinedTileEvent,
   PlayerIndex,
 } from "factorio:runtime"
 import { ProtectedEvents } from "../lib"
@@ -31,7 +33,10 @@ export function withTileEventsDisabled<A extends any[], R>(f: (this: void, ...ar
   return result
 }
 
-function onTileBuilt(e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent, playerIndex?: PlayerIndex): void {
+function onTileBuilt(
+  e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent | OnSpacePlatformBuiltTileEvent,
+  playerIndex?: PlayerIndex,
+): void {
   const stage = getStageAtSurface(e.surface_index)
   if (!stage || !stage.project.stagedTilesEnabled.get()) return
   const { stageNumber } = stage
@@ -44,10 +49,7 @@ function onTileBuilt(e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent, playerIn
 Events.on_player_built_tile((e) => {
   onTileBuilt(e, e.player_index)
 })
-Events.on_robot_built_tile((e) => {
-  onTileBuilt(e)
-})
-
+Events.on_robot_built_tile(onTileBuilt)
 Events.script_raised_set_tiles((e) => {
   if (e.mod_name == script.mod_name) return
   const stage = getStageAtSurface(e.surface_index)
@@ -58,7 +60,12 @@ Events.script_raised_set_tiles((e) => {
     onTileBuilt(posData.position, posData.name, stageNumber, nil)
   }
 })
-function onTileMined(e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent, playerIndex?: PlayerIndex): void {
+Events.on_space_platform_built_tile(onTileBuilt)
+
+function onTileMined(
+  e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent | OnSpacePlatformMinedTileEvent,
+  playerIndex?: PlayerIndex,
+): void {
   const stage = getStageAtSurface(e.surface_index)
   if (!stage || !stage.project.stagedTilesEnabled.get()) return
   const { stageNumber } = stage
@@ -70,6 +77,5 @@ function onTileMined(e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent, playerIn
 Events.on_player_mined_tile((e) => {
   onTileMined(e, e.player_index)
 })
-Events.on_robot_mined_tile((e) => {
-  onTileMined(e)
-})
+Events.on_robot_mined_tile(onTileMined)
+Events.on_space_platform_mined_tile(onTileMined)

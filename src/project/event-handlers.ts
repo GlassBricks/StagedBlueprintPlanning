@@ -202,6 +202,7 @@ Events.script_raised_built((e) => {
   if (e.mod_name != modName) luaEntityCreated(e.entity, nil)
 })
 Events.on_robot_built_entity((e) => luaEntityCreated(e.entity, nil))
+Events.on_space_platform_built_entity((e) => luaEntityCreated(e.entity, nil))
 Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 
 Events.script_raised_destroy((e) => {
@@ -220,6 +221,7 @@ Events.registerEarly(defines.events.on_object_destroyed, (e) => {
 })
 
 Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
+Events.on_space_platform_mined_entity((e) => luaEntityDeleted(e.entity, nil))
 
 Events.on_entity_died((e) => luaEntityDied(e.entity))
 
