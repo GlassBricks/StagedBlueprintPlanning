@@ -46,6 +46,7 @@ export declare const enum StageMoveResult {
   CannotMovePastLastStage = "cannot-move-past-last-stage",
   CannotMoveBeforeFirstStage = "cannot-move-before-first-stage",
   IntersectsAnotherEntity = "intersects-another-entity",
+  EntityIsPersistent = "entity-is-persistent",
 }
 
 /** @noSelf */
@@ -264,6 +265,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function tryReviveSettingsRemnant(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
     if (!entity.isSettingsRemnant) return StageMoveResult.NoChange
+    if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
     const result = checkCanSetFirstStage(entity, stage)
     if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) {
       entity.setFirstStageUnchecked(stage)
@@ -588,6 +590,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     value: BlueprintEntity,
     info: StageInfoExport,
   ): StageMoveResult {
+    if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
     const targetStage = info.firstStage
     if (targetStage != entity.firstStage) {
       const result = checkCanSetFirstStage(entity, targetStage)
@@ -642,6 +645,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function checkCanSetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
+    if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
     if (entity.isSettingsRemnant || entity.firstStage == stage) return StageMoveResult.NoChange
     if (entity.isMovable()) return StageMoveResult.Updated
     if (entity.lastStage && stage > entity.lastStage) return StageMoveResult.CannotMovePastLastStage
@@ -668,6 +672,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function checkCanSetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
+    if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
     if (entity.isSettingsRemnant || entity.isMovable()) return StageMoveResult.NoChange
     const oldLastStage = entity.lastStage
     if (oldLastStage == stage) return StageMoveResult.NoChange

@@ -178,7 +178,7 @@ export declare const enum L_Gui {
   BlueprintFilters = "bp100.gui.blueprint-filters",
   /** Get reference */
   GetStageTemplate = "bp100.gui.get-stage-template",
-  /** [img=utility/import_slot] Import project from string [img=info] */
+  /** [img=utility/import_slot] Import project from string */
   ImportProjectFromString = "bp100.gui.import-project-from-string",
   /** Import a project from either:\n- An exported project string (see Project setting)\n- A blueprint book. Each blueprint in the book becomes a stage. This will likely only work if all blueprints have snap-to-grid on, and have the blueprint flag/center all at the same position. */
   ImportProjectFromStringTooltip = "bp100.gui.import-project-from-string-tooltip",
@@ -218,7 +218,7 @@ export declare const enum L_GuiProjectSelector {
   Create = "bp100.gui.project-selector.create",
   /** Starter Pack: */
   StarterPack = "bp100.gui.project-selector.starter-pack",
-  /** [planet=Nauvis] Normal */
+  /** [planet=nauvis] Normal */
   NormalWorld = "bp100.gui.project-selector.normal-world",
   /** [item=__1__] Space platform */
   SpacePlatformStarterPack = "bp100.gui.project-selector.space-platform-starter-pack",
@@ -374,7 +374,7 @@ export declare const enum L_GuiProjectSettings {
   ExportBlueprintBookToString = "bp100.gui.project-settings.export-blueprint-book-to-string",
   /** Export book to file [img=info] */
   ExportBlueprintBookToFile = "bp100.gui.project-settings.export-blueprint-book-to-file",
-  /** Exports the blueprint book string to a file located in <user-data-directory>/script-output. */
+  /** Exports the blueprint book string to a file located in /script-output. */
   ExportBlueprintBookToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-to-file-tooltip",
   /** Enable staged tiles (beta) [img=info] */
   EnableStagedTiles = "bp100.gui.project-settings.enable-staged-tiles",
