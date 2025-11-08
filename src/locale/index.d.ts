@@ -208,14 +208,24 @@ export declare const enum L_GuiProjectSelector {
   ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
   ButtonTooltip = "bp100.gui.project-selector.button-tooltip",
-  /** Name */
-  ProjectName = "bp100.gui.project-selector.project-name",
+  /** Name: */
+  Name = "bp100.gui.project-selector.name",
   /** Initial num stages */
   InitialStages = "bp100.gui.project-selector.initial-stages",
   /** Map Gen Settings */
   MapGenSettings = "bp100.gui.project-selector.map-gen-settings",
   /** Create */
   Create = "bp100.gui.project-selector.create",
+  /** Starter Pack: */
+  StarterPack = "bp100.gui.project-selector.starter-pack",
+  /** [planet=Nauvis] Normal */
+  NormalWorld = "bp100.gui.project-selector.normal-world",
+  /** [item=__1__] Space platform */
+  SpacePlatformStarterPack = "bp100.gui.project-selector.space-platform-starter-pack",
+  /** Stage count must be at least 1 */
+  StageCountMustBeAtLeastOne = "bp100.gui.project-selector.stage-count-must-be-at-least-one",
+  /** Starter pack not selected */
+  StarterPackNotSelected = "bp100.gui.project-selector.starter-pack-not-selected",
 }
 export declare const enum L_GuiProjectSettings {
   /** Show settings */

@@ -8,7 +8,6 @@ import { Settings } from "../constants"
 import { Events } from "../lib"
 import { Migrations } from "../lib/migration"
 import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
-import { getStageAtSurface } from "../project/project-refs"
 import { UserProject } from "../project/ProjectDef"
 import { deleteAllFreeSurfaces } from "../project/surfaces"
 import { UndoHandler } from "../project/undo"
@@ -16,7 +15,6 @@ import { createUserProject } from "../project/UserProject"
 import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
 import { refreshCurrentProject } from "../ui/ProjectSettings"
-import { getCurrentValues } from "../utils/properties-obj"
 
 // better source map traceback
 declare const ____lualib: {
@@ -246,15 +244,6 @@ commands.add_command("test-undo", "", (e) => {
   player.print(`Setup undo with: ${param}`)
 })
 
-commands.add_command("print-bp-settings", "", () => {
-  const player = game.player!
-  const stage = getStageAtSurface(player.surface_index)
-  if (!stage) return player.print("No stage at surface")
-
-  const settings = getCurrentValues(stage.getBlueprintSettingsView())
-  debugPrint(settings)
-})
-
 commands.add_command("print-held-bp-entities", "", () => {
   const player = game.player!
   const stack = player.cursor_stack
@@ -263,7 +252,7 @@ commands.add_command("print-held-bp-entities", "", () => {
   debugPrint(bp)
 })
 
-commands.add_command("print-hovered-entity", "", () => {
+commands.add_command("print-hovered-entity-project", "", () => {
   const player = game.player!
   const entity = player.selected
   if (!entity) {

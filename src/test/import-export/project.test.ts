@@ -9,8 +9,7 @@ import { Entity } from "../../entity/Entity"
 import { addWireConnection, newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { asMutable, deepCopy, Mutable } from "../../lib"
-import type { SurfaceSettings } from "../../project/surfaces"
-import { getDefaultSurfaceSettings } from "../../project/surfaces"
+import { getDefaultSurfaceSettings, NormalSurfaceSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { simpleInsertPlan } from "../entity/entity-util"
 
@@ -165,7 +164,8 @@ test("exports and imports surface settings", () => {
   const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(vulcanus.map_gen_settings!))
   mapGenSettings.seed = 54321
 
-  const settings: SurfaceSettings = {
+  const settings: NormalSurfaceSettings = {
+    type: "normal",
     map_gen_settings: mapGenSettings,
     generate_with_lab_tiles: false,
     ignore_surface_conditions: true,
@@ -191,7 +191,7 @@ test("imports project without surface settings (backward compatibility)", () => 
 
   const imported = importProjectDataOnly(exported)
 
-  const settings = imported.surfaceSettings
+  const settings = imported.surfaceSettings as NormalSurfaceSettings
   expect(settings.map_gen_settings).toEqual(game.default_map_gen_settings)
   expect(settings.generate_with_lab_tiles).toBe(true)
   expect(settings.ignore_surface_conditions).toBe(true)

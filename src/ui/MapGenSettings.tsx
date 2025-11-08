@@ -12,13 +12,80 @@ import {
   OnGuiSelectedTabChangedEvent,
 } from "factorio:runtime"
 import { L_Game } from "../constants"
-import { asMutable, funcRef, ibind, RegisterClass } from "../lib"
+import { asMutable, Func, ibind, RegisterClass } from "../lib"
 import { Component, destroy, Element, FactorioJsx, renderNamed } from "../lib/factoriojsx"
-import { closeParentParent, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
+import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiMapGenSettings } from "../locale"
 import { Stage } from "../project/ProjectDef"
-import { applySurfaceSettingsAndClear, type SurfaceSettings } from "../project/surfaces"
+import { applySurfaceSettingsAndClear, NormalSurfaceSettings, type SurfaceSettings } from "../project/surfaces"
 import { createPropertiesTable, PropertiesTable } from "../utils/properties-obj"
+
+interface PlanetSelectProps {
+  initialPlanet?: string
+  onChange?: Func<(planet: string | nil) => void>
+  onMount?: (component: PlanetSelect) => void
+  allowNone?: boolean
+}
+
+@RegisterClass("gui:PlanetSelect")
+export class PlanetSelect extends Component<PlanetSelectProps> {
+  private planets!: LuaSpaceLocationPrototype[]
+  private dropdown?: DropDownGuiElement
+  private initialPlanet?: string
+  private onChange?: Func<(planet: string | nil) => void>
+
+  override render({ initialPlanet, onChange, onMount, allowNone }: PlanetSelectProps): Element {
+    this.planets = Object.values(prototypes.space_location).filter((p) => p.map_gen_settings != nil)
+    this.initialPlanet = initialPlanet
+    this.onChange = onChange
+
+    if (onMount) {
+      onMount(this)
+    }
+
+    const basePlanetNames = this.planets.map(
+      (planet): LocalisedString => ["", `[planet=${planet.name}]`, planet.localised_name],
+    )
+    const planetNames: LocalisedString[] = allowNone
+      ? (["<None>" as LocalisedString] as LocalisedString[]).concat(basePlanetNames)
+      : basePlanetNames
+
+    let initialPlanetLuaIndex = this.planets.findIndex((p) => p.name == initialPlanet) + 1
+    if (initialPlanetLuaIndex == 0) {
+      initialPlanetLuaIndex = 1
+    }
+
+    return (
+      <>
+        {planetNames.length > 1 && (
+          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+            <label caption={[L_Game.Planet]} />
+            <HorizontalPusher />
+            <drop-down
+              items={planetNames}
+              selected_index={initialPlanetLuaIndex}
+              styleMod={{ width: 150 }}
+              on_gui_selection_state_changed={ibind(this.onPlanetChanged)}
+              onCreate={(e) => (this.dropdown = e)}
+            />
+          </flow>
+        )}
+      </>
+    )
+  }
+
+  getPlanet(): string | nil {
+    if (!this.dropdown) return this.initialPlanet
+    const index = this.dropdown.selected_index - 2
+    return index < 0 ? nil : this.planets[index]?.name
+  }
+
+  private onPlanetChanged(event: OnGuiSelectedTabChangedEvent) {
+    const index = (event.element as DropDownGuiElement).selected_index - 2
+    const planet: LuaSpaceLocationPrototype | nil = index < 0 ? nil : this.planets[index]
+    this.onChange?.invoke(planet?.name)
+  }
+}
 
 interface MapGenSettingsForForm {
   planet: string | nil
@@ -28,7 +95,7 @@ interface MapGenSettingsForForm {
   has_global_electric_network: boolean
 }
 
-function fromSurfaceSettings(settings: SurfaceSettings): PropertiesTable<MapGenSettingsForForm> {
+function fromSurfaceSettings(settings: NormalSurfaceSettings): PropertiesTable<MapGenSettingsForForm> {
   const planetPrototype = settings.planet ? prototypes.space_location[settings.planet] : nil
   const mapGenSeed = settings.map_gen_settings.seed
   const seed = planetPrototype ? (mapGenSeed - (planetPrototype.map_seed_offset ?? 0) + 2 ** 32) % 2 ** 32 : mapGenSeed
@@ -42,7 +109,7 @@ function fromSurfaceSettings(settings: SurfaceSettings): PropertiesTable<MapGenS
   })
 }
 
-function toSurfaceSettings(settings: PropertiesTable<MapGenSettingsForForm>): SurfaceSettings {
+function toSurfaceSettings(settings: PropertiesTable<MapGenSettingsForForm>): NormalSurfaceSettings {
   const planet = settings.planet.get()
   const planetProto = planet ? prototypes.space_location[planet] : nil
   const mapGenSettings = asMutable(planetProto?.map_gen_settings ?? game.default_map_gen_settings)
@@ -54,6 +121,7 @@ function toSurfaceSettings(settings: PropertiesTable<MapGenSettingsForForm>): Su
   }
 
   return {
+    type: "normal",
     planet,
     map_gen_settings: mapGenSettings,
     generate_with_lab_tiles: settings.generate_with_lab_tiles.get(),
@@ -73,31 +141,20 @@ function defaultMapGenSettings(): PropertiesTable<MapGenSettingsForForm> {
 }
 
 interface MapGenSettingsFormProps {
-  initialSettings?: SurfaceSettings
+  initialSettings?: NormalSurfaceSettings
   hideSurfaceSettings?: boolean
   onMount?: (component: MapGenSettingsForm) => void
 }
 
 @RegisterClass("gui:MapGenSettingsForm")
 export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
-  private planets!: LuaSpaceLocationPrototype[]
   private settings!: PropertiesTable<MapGenSettingsForForm>
 
   override render({ initialSettings, onMount, hideSurfaceSettings }: MapGenSettingsFormProps): Element {
-    this.planets = Object.values(prototypes.space_location).filter((p) => p.map_gen_settings != nil)
     this.settings = initialSettings ? fromSurfaceSettings(initialSettings) : defaultMapGenSettings()
 
     if (onMount) {
       onMount(this)
-    }
-
-    const planetNames: LocalisedString[] = this.planets
-      .map((planet): LocalisedString => ["", `[planet=${planet.name}]`, planet.localised_name])
-      .concat(["<None>" as LocalisedString])
-
-    let initialPlanetLuaIndex = this.planets.findIndex((p) => p.name == this.settings.planet.get()) + 1
-    if (initialPlanetLuaIndex == 0) {
-      initialPlanetLuaIndex = planetNames.length
     }
 
     return (
@@ -115,18 +172,11 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
             </flow>
           </>
         )}
-        {planetNames.length > 1 && (
-          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-            <label caption={[L_Game.Planet]} />
-            <HorizontalPusher />
-            <drop-down
-              items={planetNames}
-              selected_index={initialPlanetLuaIndex}
-              styleMod={{ width: 150 }}
-              on_gui_selection_state_changed={ibind(this.onPlanetChanged)}
-            />
-          </flow>
-        )}
+        <PlanetSelect
+          initialPlanet={this.settings.planet.get()}
+          onChange={ibind(this.settings.planet.set)}
+          allowNone={true}
+        />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label caption={[L_GuiMapGenSettings.Seed]} tooltip={[L_GuiMapGenSettings.SeedTooltip]} />
           <HorizontalPusher />
@@ -148,16 +198,11 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
   getSettings(): SurfaceSettings {
     return toSurfaceSettings(this.settings)
   }
-
-  private onPlanetChanged(event: OnGuiSelectedTabChangedEvent) {
-    const index = (event.element as DropDownGuiElement).selected_index - 1
-    const planet: LuaSpaceLocationPrototype | nil = this.planets[index]
-    this.settings.planet.set(planet?.name)
-  }
 }
 
 interface Props {
   stage: Stage
+  initialSettings: NormalSurfaceSettings
 }
 
 const name = "bp100:MapGenSettingsSelect"
@@ -167,8 +212,9 @@ export class MapGenSettingsSelect extends Component<Props> {
   private element!: FrameGuiElement
   private formComponent!: MapGenSettingsForm
 
-  render({ stage }: Props): Element {
+  render({ stage, initialSettings }: Props): Element {
     this.stage = stage
+    assert(this.stage.project.surfaceSettings.type == "normal")
 
     return (
       <frame
@@ -180,7 +226,7 @@ export class MapGenSettingsSelect extends Component<Props> {
         <SimpleTitleBar title={[L_GuiMapGenSettings.Title]} />
         <frame style="inside_shallow_frame_with_padding">
           <MapGenSettingsForm
-            initialSettings={stage.project.surfaceSettings}
+            initialSettings={initialSettings}
             onMount={(component) => (this.formComponent = component)}
           />
         </frame>
@@ -220,5 +266,8 @@ export class MapGenSettingsSelect extends Component<Props> {
 }
 
 export function openMapGenSettingsSelect(player: LuaPlayer, stage: Stage): void {
-  renderNamed(<MapGenSettingsSelect stage={stage} />, player.gui.screen, name)
+  const initialSettings = stage.project.surfaceSettings
+  if (initialSettings.type == "normal") {
+    renderNamed(<MapGenSettingsSelect stage={stage} initialSettings={initialSettings} />, player.gui.screen, name)
+  }
 }
