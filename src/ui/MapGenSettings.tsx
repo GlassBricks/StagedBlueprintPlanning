@@ -33,6 +33,7 @@ export class PlanetSelect extends Component<PlanetSelectProps> {
   private dropdown?: DropDownGuiElement
   private initialPlanet?: string
   private onChange?: Func<(planet: string | nil) => void>
+  private allowNone?: boolean
 
   override render({ initialPlanet, onChange, onMount, allowNone }: PlanetSelectProps): Element {
     this.planets = Object.values(prototypes.space_location).filter((p) => p.map_gen_settings != nil)
@@ -76,7 +77,8 @@ export class PlanetSelect extends Component<PlanetSelectProps> {
 
   getPlanet(): string | nil {
     if (!this.dropdown) return this.initialPlanet
-    const index = this.dropdown.selected_index - 2
+    let index = this.dropdown.selected_index - 1
+    if (this.allowNone) index -= 1
     return index < 0 ? nil : this.planets[index]?.name
   }
 
