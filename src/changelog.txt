@@ -1,11 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.7.2
 Date: ????
-  Minor tweaks:
-    - Revised GUI
-  Bugfixes:
-    - "Surface properties" (crafting restrictions) are now respected when setting a project to use a planet's map gen .
+  Features:
+    - Added support for staged space platforms!
+    - Added a new project creation UI.
+  Changes:
+    - Slightly revised project settings GUI.
     - Surface names now reflect project and stage names.
+    - Surface and map settings are saved and can be shared when exported/imported to string.
+  Bugfixes:
+    - "Surface properties" (crafting restrictions) are now respected when setting a project to use a planet's map gen.
 ---------------------------------------------------------------------------------------------------
 Version: 2.7.1
 Date: 2025-11-02
