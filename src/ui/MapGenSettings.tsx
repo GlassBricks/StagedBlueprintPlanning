@@ -9,7 +9,6 @@ import {
   LocalisedString,
   LuaPlayer,
   LuaSpaceLocationPrototype,
-  OnGuiSelectedTabChangedEvent,
 } from "factorio:runtime"
 import { L_Game } from "../constants"
 import { asMutable, Func, ibind, RegisterClass } from "../lib"
@@ -82,10 +81,8 @@ export class PlanetSelect extends Component<PlanetSelectProps> {
     return index < 0 ? nil : this.planets[index]?.name
   }
 
-  private onPlanetChanged(event: OnGuiSelectedTabChangedEvent) {
-    const index = (event.element as DropDownGuiElement).selected_index - 2
-    const planet: LuaSpaceLocationPrototype | nil = index < 0 ? nil : this.planets[index]
-    this.onChange?.invoke(planet?.name)
+  private onPlanetChanged() {
+    this.onChange?.invoke(this.getPlanet())
   }
 }
 
