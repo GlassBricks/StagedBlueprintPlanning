@@ -3,7 +3,14 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { FrameGuiElement, FrameGuiElementMembers, LocalisedString, LuaPlayer, PlayerIndex } from "factorio:runtime"
+import {
+  CustomInputEvent,
+  FrameGuiElement,
+  FrameGuiElementMembers,
+  LocalisedString,
+  LuaPlayer,
+  PlayerIndex,
+} from "factorio:runtime"
 import { CustomInputs } from "../../../constants"
 import { Events } from "../../Events"
 import { Func, ibind, RegisterClass } from "../../references"
@@ -22,8 +29,14 @@ export interface DialogProps {
 
   redConfirm?: boolean
 }
+
+@RegisterClass("gui:Confirmable")
+export abstract class Confirmable<T> extends Component<T> {
+  abstract onConfirm?(e: CustomInputEvent): void
+}
+
 @RegisterClass("gui:Dialog")
-export class Dialog extends Component<DialogProps> {
+export class Dialog extends Confirmable<DialogProps> {
   private element!: FrameGuiElementMembers
   private onBackFn?: Func<(player: LuaPlayer) => void>
   private onConfirmFn?: Func<(player: LuaPlayer) => void>
@@ -80,9 +93,9 @@ Events.on(CustomInputs.ConfirmGui, (e) => {
   const player = game.players[e.player_index]
   const opened = player.opened
   if (opened?.object_name != "LuaGuiElement" || opened.type != "frame") return
-  const instance = getComponentInstance(opened)
-  if (instance && instance instanceof Dialog) {
-    instance.onConfirm(e)
+  const component = getComponentInstance(opened)
+  if (component instanceof Confirmable) {
+    component.onConfirm(e)
     player.play_sound({ path: "utility/confirm" })
   }
 })

@@ -178,7 +178,7 @@ export declare const enum L_Gui {
   BlueprintFilters = "bp100.gui.blueprint-filters",
   /** Get reference */
   GetStageTemplate = "bp100.gui.get-stage-template",
-  /** [img=utility/import-slot] Import project from string [img=info] */
+  /** [img=utility/import_slot] Import project from string [img=info] */
   ImportProjectFromString = "bp100.gui.import-project-from-string",
   /** Import a project from either:\n- An exported project string (see Project setting)\n- A blueprint book. Each blueprint in the book becomes a stage. This will likely only work if all blueprints have snap-to-grid on, and have the blueprint flag/center all at the same position. */
   ImportProjectFromStringTooltip = "bp100.gui.import-project-from-string-tooltip",
@@ -208,9 +208,9 @@ export declare const enum L_GuiProjectSelector {
   ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
   ButtonTooltip = "bp100.gui.project-selector.button-tooltip",
-  /** Project name: */
+  /** Name */
   ProjectName = "bp100.gui.project-selector.project-name",
-  /** Initial num stages: */
+  /** Initial num stages */
   InitialStages = "bp100.gui.project-selector.initial-stages",
   /** Map Gen Settings */
   MapGenSettings = "bp100.gui.project-selector.map-gen-settings",
@@ -376,9 +376,9 @@ export declare const enum L_GuiProjectSettings {
   ScanExistingTilesTooltip = "bp100.gui.project-settings.scan-existing-tiles-tooltip",
   /** Map gen settings */
   MapGenSettings = "bp100.gui.project-settings.map-gen-settings",
-  /** Set seed and planet / Reset map gen settings [img=info] */
+  /** Set seed & planet / Reset map gen settings [img=info] */
   SetMapGenSettingsFromPlanet = "bp100.gui.project-settings.set-map-gen-settings-from-planet",
-  /** Set settings to a specific seed/planet. To further customize map settings, see "Apply map gen settings from current stage" \n[font=default-large-bold]WARNING:[/font] This will override any previously set custom settings. */
+  /** Set settings to a specific seed/planet. */
   SetMapGenSettingsFromPlanetTooltip = "bp100.gui.project-settings.set-map-gen-settings-from-planet-tooltip",
   /** Apply map gen settings from current stage [img=info] */
   SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
@@ -394,7 +394,7 @@ export declare const enum L_GuiProjectSettings {
   BlueprintStringFor = "bp100.gui.project-settings.blueprint-string-for",
   /** Project string for __1__ */
   ProjectStringFor = "bp100.gui.project-settings.project-string-for",
-  /** [img=utility/export-slot] Export project to string [img=info] */
+  /** [img=utility/export_slot] Export project to string [img=info] */
   ExportProject = "bp100.gui.project-settings.export-project",
   /** Exports the project, including most settings, to a shareable string.\nImportable via the top left mod button menu. */
   ExportProjectTooltip = "bp100.gui.project-settings.export-project-tooltip",
@@ -458,10 +458,12 @@ export declare const enum L_GuiMapGenSettings {
   Title = "bp100.gui.map-gen-settings.title",
   /** Seed [img=info] */
   Seed = "bp100.gui.map-gen-settings.seed",
-  /** Seed of the initial save creation screen/Nauvis seed. (Internally, an offset is added to this seed for planets other than Nauvis). */
+  /** The map or nauvis seed. (For space age planets, an offset is added to the seed for planets other than Nauvis). */
   SeedTooltip = "bp100.gui.map-gen-settings.seed-tooltip",
+  /** Uncheck "Generate new chunks with lab tiles" to enable */
+  SeedDisabledTooltip = "bp100.gui.map-gen-settings.seed-disabled-tooltip",
   /** Confirm[img=info] */
   ConfirmResetMapGenSettings = "bp100.gui.map-gen-settings.confirm-reset-map-gen-settings",
-  /** [font=default-large-bold]WARNING:[/font] This will override any previously set custom settings. */
+  /** [font=default-large-bold]WARNING:[/font] This will override any previously set custom map settings. */
   ConfirmResetMapGenSettingsTooltip = "bp100.gui.map-gen-settings.confirm-reset-map-gen-settings-tooltip",
 }

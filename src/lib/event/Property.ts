@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { bind, Callback, Func, funcRef, ibind, RegisterClass, registerFunctions } from "../references"
 import { isEmpty, mutableShallowCopy } from "../_util"
+import { bind, Callback, Func, funcRef, ibind, RegisterClass, registerFunctions } from "../references"
 import { Event, Subscribable } from "./Event"
 import { Subscription } from "./Subscription"
 
@@ -75,6 +75,13 @@ export abstract class Property<T> implements Subscribable<ChangeObserver<T>> {
   // maybe a better name is ITE?
   select<V>(ifTrue: MaybeProperty<V>, ifFalse: MaybeProperty<V>): Property<V> {
     return this.flatMap(bind(Property.selectFn<MaybeProperty<V>>, ifTrue, ifFalse))
+  }
+
+  static notFn(this: void, v: unknown): boolean {
+    return !v
+  }
+  not(): Property<boolean> {
+    return this.map(funcRef(Property.notFn))
   }
 
   sub<K extends keyof T>(this: MutableProperty<T>, key: K): MutableProperty<T[K]> {

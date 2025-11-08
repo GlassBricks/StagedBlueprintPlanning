@@ -74,6 +74,7 @@ function defaultMapGenSettings(): PropertiesTable<MapGenSettingsForForm> {
 
 interface MapGenSettingsFormProps {
   initialSettings?: SurfaceSettings
+  hideSurfaceSettings?: boolean
   onMount?: (component: MapGenSettingsForm) => void
 }
 
@@ -82,7 +83,7 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
   private planets!: LuaSpaceLocationPrototype[]
   private settings!: PropertiesTable<MapGenSettingsForForm>
 
-  override render({ initialSettings, onMount }: MapGenSettingsFormProps): Element {
+  override render({ initialSettings, onMount, hideSurfaceSettings }: MapGenSettingsFormProps): Element {
     this.planets = Object.values(prototypes.space_location).filter((p) => p.map_gen_settings != nil)
     this.settings = initialSettings ? fromSurfaceSettings(initialSettings) : defaultMapGenSettings()
 
@@ -101,15 +102,19 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
 
     return (
       <flow direction="vertical">
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox state={this.settings.has_global_electric_network} caption={[L_Game.GlobalElectricNetwork]} />
-        </flow>
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox state={this.settings.ignore_surface_conditions} caption={[L_Game.IgnoreSurfaceConditions]} />
-        </flow>
-        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-          <checkbox state={this.settings.generate_with_lab_tiles} caption={[L_Game.GenerateWithLabTiles]} />
-        </flow>
+        {!hideSurfaceSettings && (
+          <>
+            <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+              <checkbox state={this.settings.generate_with_lab_tiles} caption={[L_Game.GenerateWithLabTiles]} />
+            </flow>
+            <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+              <checkbox state={this.settings.has_global_electric_network} caption={[L_Game.GlobalElectricNetwork]} />
+            </flow>
+            <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+              <checkbox state={this.settings.ignore_surface_conditions} caption={[L_Game.IgnoreSurfaceConditions]} />
+            </flow>
+          </>
+        )}
         {planetNames.length > 1 && (
           <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
             <label caption={[L_Game.Planet]} />
@@ -132,6 +137,8 @@ export class MapGenSettingsForm extends Component<MapGenSettingsFormProps> {
             lose_focus_on_confirm={true}
             text={this.settings.seed}
             styleMod={{ width: 150 }}
+            enabled={this.settings.generate_with_lab_tiles.not()}
+            tooltip={this.settings.generate_with_lab_tiles.select([L_GuiMapGenSettings.SeedDisabledTooltip], nil)}
           />
         </flow>
       </flow>
@@ -178,7 +185,6 @@ export class MapGenSettingsSelect extends Component<Props> {
           />
         </frame>
         <flow style="dialog_buttons_horizontal_flow">
-          <button style="back_button" caption={[L_Game.Cancel]} on_gui_click={funcRef(closeParentParent)} />
           <empty-widget
             style="draggable_space"
             styleMod={{ horizontally_stretchable: true }}

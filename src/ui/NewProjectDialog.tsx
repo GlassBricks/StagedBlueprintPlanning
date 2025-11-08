@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { FrameGuiElement, LuaPlayer, PlayerIndex, TextFieldGuiElement } from "factorio:runtime"
-import { L_Game, OtherConstants } from "../constants"
-import { funcRef, ibind, RegisterClass } from "../lib"
-import { Component, destroy, Element, FactorioJsx, renderNamed } from "../lib/factoriojsx"
-import { closeParentParent, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
+import { OtherConstants } from "../constants"
+import { ibind, RegisterClass } from "../lib"
+import { destroy, Element, FactorioJsx, renderNamed, renderOpened } from "../lib/factoriojsx"
+import { Confirmable as ConfirmableComponent, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiProjectSelector } from "../locale"
 import { createUserProject } from "../project/UserProject"
 import { MapGenSettingsForm } from "./MapGenSettings"
@@ -23,7 +23,7 @@ interface NewProjectDialogProps {
 }
 
 @RegisterClass("gui:NewProjectDialog")
-export class NewProjectDialog extends Component<NewProjectDialogProps> {
+export class NewProjectDialog extends ConfirmableComponent<NewProjectDialogProps> {
   private playerIndex!: PlayerIndex
   private element!: FrameGuiElement
   private projectName!: TextFieldGuiElement
@@ -39,6 +39,7 @@ export class NewProjectDialog extends Component<NewProjectDialogProps> {
         onCreate={(element) => (this.element = element)}
         styleMod={{ width: 350 }}
         auto_center
+        on_gui_closed={ibind(this.onBack)}
       >
         <SimpleTitleBar title={[L_GuiProjectSelector.NewProject]} />
         <frame direction="vertical" style="inside_shallow_frame_with_padding">
@@ -68,27 +69,29 @@ export class NewProjectDialog extends Component<NewProjectDialogProps> {
               styleMod={{ width: 100 }}
             />
           </flow>
-          <label style="caption_label" caption={[L_GuiProjectSelector.MapGenSettings]} />
+          <line />
+          <label
+            style="caption_label"
+            caption={[L_GuiProjectSelector.MapGenSettings]}
+            styleMod={{
+              bottom_padding: 5,
+            }}
+          />
           <MapGenSettingsForm onMount={(component) => (this.mapGenFormComponent = component)} />
-          <flow style="dialog_buttons_horizontal_flow" direction="horizontal">
-            <button style="back_button" caption={[L_Game.Cancel]} on_gui_click={funcRef(closeParentParent)} />
-            <empty-widget
-              style="draggable_space"
-              styleMod={{ horizontally_stretchable: true }}
-              onCreate={(e) => (e.drag_target = e.parent!.parent!.parent as FrameGuiElement)}
-            />
-            <button
-              style="confirm_button"
-              caption={[L_GuiProjectSelector.Create]}
-              on_gui_click={ibind(this.onConfirm)}
-            />
-          </flow>
         </frame>
+        <flow style="dialog_buttons_horizontal_flow" direction="horizontal">
+          <empty-widget
+            style="draggable_space"
+            styleMod={{ horizontally_stretchable: true }}
+            onCreate={(e) => (e.drag_target = e.parent!.parent as FrameGuiElement)}
+          />
+          <button style="confirm_button" caption={[L_GuiProjectSelector.Create]} on_gui_click={ibind(this.onConfirm)} />
+        </flow>
       </frame>
     )
   }
 
-  private onConfirm(): void {
+  onConfirm(): void {
     if (!this.validateForm()) {
       this.close()
       return
@@ -121,12 +124,15 @@ export class NewProjectDialog extends Component<NewProjectDialogProps> {
     return this.element.valid && this.projectName.valid && this.initialStages.valid
   }
 
+  private onBack(): void {
+    this.close()
+  }
+
   private close(): void {
     destroy(this.element)
   }
 }
 
 export function openNewProjectDialog(player: LuaPlayer): void {
-  destroy(player.gui.screen[NewProjectDialogName])
-  renderNamed(<NewProjectDialog playerIndex={player.index} />, player.gui.screen, NewProjectDialogName)
+  renderOpened(player, <NewProjectDialog playerIndex={player.index} />)
 }
