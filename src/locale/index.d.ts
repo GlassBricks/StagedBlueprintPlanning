@@ -264,7 +264,7 @@ export declare const enum L_GuiProjectSettings {
   RebuildStage = "bp100.gui.project-settings.rebuild-stage",
   /** Rebuilds all entities (and tiles, if enabled) to match stored state.\nThis may resolve inconsistencies due to bugs. */
   RebuildStageTooltip = "bp100.gui.project-settings.rebuild-stage-tooltip",
-  /** [img=utility/refresh] Rebuild all stages [img=info] */
+  /** [img=utility/refresh] Rebuild all stages */
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
   /** Disable all entities */
   DisableAllEntities = "bp100.gui.project-settings.disable-all-entities",
@@ -330,7 +330,7 @@ export declare const enum L_GuiProjectSettings {
   EntityFilters = "bp100.gui.project-settings.entity-filters",
   /** Exclude current stage from future blueprints [img=info] */
   ExcludeFromFutureBlueprints = "bp100.gui.project-settings.exclude-from-future-blueprints",
-  /** Entities in this stage will not be present in later stage blueprints. Entity _changes_ may still be present, however. */
+  /** Entities in this stage will not be present in later stage blueprints. However, entity UPDATES will still be present. */
   ExcludeFromFutureBlueprintsTooltip = "bp100.gui.project-settings.exclude-from-future-blueprints-tooltip",
   /** Only include entities changed in the last */
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
@@ -364,7 +364,7 @@ export declare const enum L_GuiProjectSettings {
   ExportBlueprintBookTooltip = "bp100.gui.project-settings.export-blueprint-book-tooltip",
   /** Edit book template [img=info] */
   EditBlueprintBookTemplate = "bp100.gui.project-settings.edit-blueprint-book-template",
-  /** Edit the layout, contents, icons, or description of the blueprint book.\nNested blueprint books supported.\nYou can also add other blueprints, books, deconstruction planners, upgrade planners, etc. to the template, and they will show up in the exported blueprint book. */
+  /** Edit the layout, contents, icons, or description of the exported blueprint book.\nNested blueprint books are supported.\nYou can also add other blueprints, books, deconstruction planners, upgrade planners, etc. to the template. */
   EditBlueprintBookTemplateTooltip = "bp100.gui.project-settings.edit-blueprint-book-template-tooltip",
   /** Reset book template */
   ResetBlueprintBookTemplate = "bp100.gui.project-settings.reset-blueprint-book-template",
@@ -376,9 +376,9 @@ export declare const enum L_GuiProjectSettings {
   ExportBlueprintBookToFile = "bp100.gui.project-settings.export-blueprint-book-to-file",
   /** Exports the blueprint book string to a file located in /script-output. */
   ExportBlueprintBookToFileTooltip = "bp100.gui.project-settings.export-blueprint-book-to-file-tooltip",
-  /** Enable staged tiles (beta) [img=info] */
+  /** Enable staged tiles [img=info] */
   EnableStagedTiles = "bp100.gui.project-settings.enable-staged-tiles",
-  /** Enables (basic) support for staged tiles. Placing a blueprintable tile will affect all later stages. \nIf enabling for the first time, you may want to click "Scan existing tiles". */
+  /** Enables staged tiles. Placing or mining a blueprintable-tile will affect later stages. \nIf enabling for the first time, click "Scan existing tiles" to register current tiles on the map. */
   EnableStagedTilesTooltip = "bp100.gui.project-settings.enable-staged-tiles-tooltip",
   /** Scan existing tiles [img=info] */
   ScanExistingTiles = "bp100.gui.project-settings.scan-existing-tiles",

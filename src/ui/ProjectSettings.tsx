@@ -276,24 +276,6 @@ class ProjectSettings extends Component<{
           tooltip={[L_GuiProjectSettings.SetSelectedTileAndWaterTooltip]}
           on_gui_click={ibind(this.setLandfillAndWater)}
         />
-        <line />
-        {!this.project.isSpacePlatform() && (
-          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-            <checkbox
-              state={this.project.stagedTilesEnabled}
-              caption={[L_GuiProjectSettings.EnableStagedTiles]}
-              tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
-            />
-            <HorizontalSpacer width={10} />
-            <button
-              styleMod={{ width: StageSettingsButtonWidth }}
-              caption={[L_GuiProjectSettings.ScanExistingTiles]}
-              tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
-              enabled={this.project.stagedTilesEnabled}
-              on_gui_click={ibind(this.scanExistingTiles)}
-            />
-          </flow>
-        )}
         <VerticalPusher />
         <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
       </frame>
@@ -468,6 +450,7 @@ class ProjectSettings extends Component<{
         <label caption={[L_GuiProjectSettings.EntityFilters]} style="caption_label" />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label caption={[L_GuiProjectSettings.Denylist]} styleMod={highlightIfOverriden(settings.blacklist)} />
+          <label caption={settings.blacklist.map(funcRef(ProjectSettings.filterTableSizeFn))} />
           <EditButton on_gui_click={bind(ibind(this.editFilter), settings, "blacklist")} />
           {MaybeRevertButton(settings.blacklist)}
         </flow>
@@ -487,6 +470,7 @@ class ProjectSettings extends Component<{
               }}
               enabled={settings.stageLimit.truthy()}
             />
+            <label caption={settings.additionalWhitelist.map(funcRef(ProjectSettings.filterTableSizeFn))} />
             <EditButton
               on_gui_click={bind(ibind(this.editFilter), settings, "additionalWhitelist")}
               enabled={settings.stageLimit.truthy()}
@@ -535,6 +519,13 @@ class ProjectSettings extends Component<{
     editBlueprintFilters(player, settings[type])
   }
 
+  private static filterTableSizeFn(this: void, set: ReadonlyLuaSet<any> | nil): string {
+    if (set == nil) {
+      return ""
+    }
+    return `(${table_size(set)} entities)`
+  }
+
   private anyGridSettingsChanged(stage: Stage): Property<unknown> {
     const stageSettings = stage.blueprintOverrideSettings
     return multiMap(
@@ -568,6 +559,7 @@ class ProjectSettings extends Component<{
         }}
       >
         <button caption={[L_GuiProjectSettings.GetBlueprintForCurrentStage]} on_gui_click={ibind(this.getBlueprint)} />
+        <line />
         <label style="caption_label" caption={[L_GuiProjectSettings.BlueprintBook]} />
         <button
           caption={[L_GuiProjectSettings.ExportBlueprintBook]}
@@ -742,6 +734,23 @@ class ProjectSettings extends Component<{
                 tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
                 on_gui_click={ibind(this.syncMapGenSettings)}
               />
+              <line />
+              <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
+              <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+                <checkbox
+                  state={this.project.stagedTilesEnabled}
+                  caption={[L_GuiProjectSettings.EnableStagedTiles]}
+                  tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
+                />
+                <HorizontalSpacer width={10} />
+                <button
+                  styleMod={{ width: StageSettingsButtonWidth }}
+                  caption={[L_GuiProjectSettings.ScanExistingTiles]}
+                  tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
+                  enabled={this.project.stagedTilesEnabled}
+                  on_gui_click={ibind(this.scanExistingTiles)}
+                />
+              </flow>
               <VerticalPusher />
               <button
                 style="red_button"
