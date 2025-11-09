@@ -4,12 +4,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import {
+  MapPosition,
   OnPlayerBuiltTileEvent,
   OnPlayerMinedTileEvent,
   OnRobotBuiltTileEvent,
   OnRobotMinedTileEvent,
   OnSpacePlatformBuiltTileEvent,
   OnSpacePlatformMinedTileEvent,
+  SurfaceIndex,
 } from "factorio:runtime"
 import { ProtectedEvents } from "../lib"
 import { getStageAtSurface } from "./project-refs"
@@ -32,9 +34,7 @@ export function withTileEventsDisabled<A extends any[], R>(f: (this: void, ...ar
   return result
 }
 
-function onTileBuilt(
-  e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent | OnSpacePlatformBuiltTileEvent,
-): void {
+function onTileBuilt(e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent | OnSpacePlatformBuiltTileEvent): void {
   const stage = getStageAtSurface(e.surface_index)
   if (!stage || !stage.project.stagedTilesEnabled.get()) return
   const { stageNumber } = stage
@@ -58,16 +58,21 @@ Events.script_raised_set_tiles((e) => {
 })
 Events.on_space_platform_built_tile(onTileBuilt)
 
-function onTileMined(
-  e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent | OnSpacePlatformMinedTileEvent,
+export function handleTileMined(
+  surface_index: SurfaceIndex,
+  tiles: readonly { readonly position: MapPosition }[],
 ): void {
-  const stage = getStageAtSurface(e.surface_index)
+  const stage = getStageAtSurface(surface_index)
   if (!stage || !stage.project.stagedTilesEnabled.get()) return
   const { stageNumber } = stage
   const onTileMined = stage.actions.onTileMined
-  for (const posData of e.tiles) {
+  for (const posData of tiles) {
     onTileMined(posData.position, stageNumber)
   }
+}
+
+function onTileMined(e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent | OnSpacePlatformMinedTileEvent): void {
+  handleTileMined(e.surface_index, e.tiles)
 }
 Events.on_player_mined_tile(onTileMined)
 Events.on_robot_mined_tile(onTileMined)

@@ -38,6 +38,8 @@ export interface Project {
   getSurface(stage: StageNumber): LuaSurface | nil
   readonly content: MutableProjectContent
 
+  isSpacePlatform?(): boolean
+
   readonly valid: boolean
 
   // Refs to modules, handling all possible updates

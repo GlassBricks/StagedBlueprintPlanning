@@ -6,7 +6,6 @@
 import { LocalisedString, LuaEntity, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { UnstagedEntityProps } from "../entity/Entity"
-import { Position } from "../lib/geometry"
 import {
   isWorldEntityProjectEntity,
   MovableProjectEntity,
@@ -26,6 +25,7 @@ import {
 import { createEntity, createPreviewEntity, forceFlipUnderground, updateEntity } from "../entity/save-load"
 import { updateWireConnectionsAtStage } from "../entity/wires"
 import { deepCompare, Mutable, PRecord, RegisterClass } from "../lib"
+import { Position } from "../lib/geometry"
 import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
@@ -424,41 +424,23 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
 
   function updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): void {
     const tile = content.tiles.get(position.x, position.y)
-    if (!tile) {
-      const endStage = toStage ?? project.numStages()
-      const tileWrite: Mutable<TileWrite> = { position, name: nil! }
-      const tileWriteArr = [tileWrite]
-
-      for (let stage = fromStage; stage <= endStage; stage++) {
-        const surface = project.getSurface(stage)!
-        const hiddenTile = surface.get_hidden_tile(position)
-        const defaultTile = hiddenTile ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
-        tileWrite.name = defaultTile
-        surface.set_tiles(tileWriteArr, true, false)
-        raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
-      }
-      return
-    }
-
     const endStage = toStage ?? project.numStages()
-    const tileWrite: Mutable<TileWrite> = { position, name: nil! }
+
+    const tileWrite: Mutable<TileWrite> = { position, name: "" }
     const tileWriteArr = [tileWrite]
 
     for (let stage = fromStage; stage <= endStage; stage++) {
+      const value = tile?.getTileAtStage(stage)
       const surface = project.getSurface(stage)!
-      const value = tile.getTileAtStage(stage)
-
       if (value != nil) {
         tileWrite.name = value
-        surface.set_tiles(tileWriteArr, true, false)
       } else {
-        const hiddenTile = surface.get_hidden_tile(position)
-        const defaultTile = hiddenTile ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
+        const defaultTile: string = project.isSpacePlatform?.()
+          ? "empty-space"
+          : (surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2"))
         tileWrite.name = defaultTile
-        surface.set_tiles(tileWriteArr, true, false)
       }
-
-      raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
+      surface.set_tiles(tileWriteArr, true, false)
     }
   }
 }

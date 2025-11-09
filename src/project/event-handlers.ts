@@ -58,7 +58,7 @@ import { createBlueprintWithStageInfo } from "../ui/create-blueprint-with-stage-
 import { getProjectPlayerData } from "./player-project-data"
 import { getStageAtSurface } from "./project-refs"
 import { Stage } from "./ProjectDef"
-import { withTileEventsDisabled } from "./tile-events"
+import { handleTileMined, withTileEventsDisabled } from "./tile-events"
 import {
   onUndoReferenceBuilt,
   registerGroupUndoAction,
@@ -206,7 +206,20 @@ Events.on_space_platform_built_entity((e) => luaEntityCreated(e.entity, nil))
 Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 
 Events.script_raised_destroy((e) => {
-  if (e.mod_name != modName) luaEntityDeleted(e.entity)
+  if (e.mod_name != modName) {
+    const entity = e.entity
+    if (entity.type == "deconstructible-tile-proxy") {
+      const entityPos = entity.position
+      const position = {
+        x: entityPos.x - 0.5,
+        y: entityPos.y - 0.5,
+      }
+      handleTileMined(entity.surface_index, [{ position }])
+      if (entity.valid) entity.destroy()
+    } else {
+      luaEntityDeleted(entity)
+    }
+  }
 })
 Events.registerEarly(defines.events.on_object_destroyed, (e) => {
   if (e.type != defines.target_type.entity) return
