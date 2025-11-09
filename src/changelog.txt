@@ -6,6 +6,8 @@ Date: ????
     - Fixed tile ghosts being left behind when pasting blueprints on space platforms.
     - Fixed duplication of item requests in exported blueprints, with requests in fuel inventories.
     - Fixed that cryogenic plant mirroring was not saved.
+  Minor Features:
+    - Added a command to refresh the top left mod button, in case it disappears
   Gui:
     - Fixed missing label for "All" settings in updated settings entity UI.
 ---------------------------------------------------------------------------------------------------
@@ -264,7 +266,6 @@ Date: ????
       and reveals infinity items in filters/deconstruction planner.
   Bugfixes:
     - Fixed that trains would sometimes not be deleted.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.33.2
 Date: 2024-07-30

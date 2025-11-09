@@ -98,11 +98,27 @@ Events.on_player_toggled_map_editor((event) => {
 
 registerFunctions("gui:project-selector", { onModButtonClick, switchToEditorMode })
 
+function rerenderModButton(player: LuaPlayer) {
+  const flow = mod_gui.get_button_flow(player)
+  renderNamed(<ModButton />, flow, ModButtonName)
+}
+
 const ModButtonName = script.mod_name + ":all-projects"
 onPlayerInitSince("0.15.1", (playerIndex) => {
   const player = game.get_player(playerIndex)!
-  renderNamed(<ModButton />, mod_gui.get_button_flow(player), ModButtonName)
+  rerenderModButton(player)
 })
+
+commands.add_command(
+  "staged-bp-planning-refresh-mod-button",
+  "Staged Blueprint Planning: Refresh the top left button, in case it has disappeared",
+  (data) => {
+    const player_index = data.player_index
+    if (!player_index) return
+    rerenderModButton(game.get_player(player_index)!)
+  },
+)
+
 Migrations.fromAny(() => {
   for (const [, player] of game.players) {
     closeAllProjects(player)
