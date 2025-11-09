@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintInsertPlan, BlueprintInsertPlanWrite, InventoryPosition } from "factorio:runtime"
+import { BlueprintInsertPlan, InventoryPosition } from "factorio:runtime"
 
 export function moduleInsertPlan(
   inventory: defines.inventory,
@@ -18,7 +18,7 @@ export function moduleInsertPlan(
         (_, i) => ({ inventory, stack: startIndex + i }) satisfies InventoryPosition,
       ),
     },
-  } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  } satisfies BlueprintInsertPlan
 }
 
 export function simpleInsertPlan(
@@ -30,5 +30,5 @@ export function simpleInsertPlan(
   return {
     id: { name: item },
     items: { in_inventory: [{ inventory, stack: slot, count }] },
-  } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  } satisfies BlueprintInsertPlan
 }

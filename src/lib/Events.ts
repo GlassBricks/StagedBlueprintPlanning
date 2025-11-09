@@ -58,7 +58,10 @@ export interface EventsObj extends EventsRegistration {
   raiseFakeEvent<E extends EventId<any, any>>(event: E, data: Omit<E["_eventData"], keyof EventData>): void
   raiseFakeEvent(
     event: string,
-    data: Omit<CustomInputEvent, keyof EventData | "input_name" | "cursor_display_location" | "cursor_position"> & {
+    data: Omit<
+      CustomInputEvent,
+      keyof EventData | "input_name" | "cursor_display_location" | "cursor_position" | "in_gui"
+    > & {
       cursor_position?: MapPosition
     },
   ): void

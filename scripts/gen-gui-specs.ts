@@ -395,7 +395,7 @@ async function printFile(filename: string, header: string, statements: ts.Statem
   const imports = new Set<string>()
 
   function addImport(name: string) {
-    const inBrackets = name.match(/(?:<|^)([A-Za-z |]+)(?:>|$|\[)/)?.[1]
+    const inBrackets = name.match(/(?:<|^)([A-Za-z0-9 |]+)(?:>|$|\[)/)?.[1]
     const types = inBrackets?.split(" | ")
     types?.forEach((typeName) => {
       imports.add(typeName)

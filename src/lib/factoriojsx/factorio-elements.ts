@@ -68,9 +68,9 @@ import {
   TextBoxGuiElement,
   TextFieldGuiElement,
   double,
-  int,
+  int32,
   nil,
-  uint,
+  uint32,
 } from "factorio:runtime"
 export interface BaseElement {
   type: GuiElementType
@@ -166,7 +166,7 @@ export interface ProgressBarElement extends BaseElement {
 
 export interface TableElement extends BaseElement {
   type: "table"
-  column_count: uint
+  column_count: uint32
   draw_vertical_lines?: MaybeProperty<boolean>
   draw_horizontal_lines?: MaybeProperty<boolean>
   draw_horizontal_line_after_headers?: MaybeProperty<boolean>
@@ -188,7 +188,7 @@ export interface TextFieldElement extends BaseElement {
   on_gui_confirmed?: GuiEventHandler<OnGuiConfirmedEvent>
   on_gui_text_changed?: GuiEventHandler<OnGuiTextChangedEvent>
   onCreate?: OnCreateHandler<TextFieldGuiElement>
-  styleMod?: TextFieldStyleMod
+  styleMod?: BaseStyleMod
 }
 
 export interface RadioButtonElement extends BaseElement {
@@ -218,7 +218,7 @@ export interface ScrollPaneElement extends BaseElement {
 export interface DropDownElement extends BaseElement {
   type: "drop-down"
   items?: MaybeProperty<LocalisedString[]>
-  selected_index?: MaybeMutableProperty<uint>
+  selected_index?: MaybeMutableProperty<uint32>
   on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
   onCreate?: OnCreateHandler<DropDownGuiElement>
   styleMod?: BaseStyleMod
@@ -227,7 +227,7 @@ export interface DropDownElement extends BaseElement {
 export interface ListBoxElement extends BaseElement {
   type: "list-box"
   items?: MaybeProperty<LocalisedString[]>
-  selected_index?: MaybeMutableProperty<uint>
+  selected_index?: MaybeMutableProperty<uint32>
   on_gui_selection_state_changed?: GuiEventHandler<OnGuiSelectionStateChangedEvent>
   onCreate?: OnCreateHandler<ListBoxGuiElement>
   styleMod?: BaseStyleMod
@@ -300,10 +300,10 @@ export interface MinimapElement extends BaseElement {
   type: "minimap"
   position?: MaybeProperty<MapPosition | MapPositionArray>
   surface_index?: MaybeProperty<SurfaceIndex>
-  chart_player_index?: uint
+  chart_player_index?: uint32
   force?: MaybeProperty<string | nil>
   zoom?: MaybeProperty<double>
-  minimap_player_index?: MaybeProperty<uint>
+  minimap_player_index?: MaybeProperty<uint32>
   entity?: MaybeProperty<LuaEntity | nil>
   onCreate?: OnCreateHandler<MinimapGuiElement>
   styleMod?: BaseStyleMod
@@ -325,7 +325,7 @@ export interface EmptyWidgetElement extends BaseElement {
 
 export interface TabbedPaneElement extends BaseElement {
   type: "tabbed-pane"
-  selected_tab_index?: MaybeMutableProperty<uint | nil>
+  selected_tab_index?: MaybeMutableProperty<uint32 | nil>
   on_gui_selected_tab_changed?: GuiEventHandler<OnGuiSelectedTabChangedEvent>
   onCreate?: OnCreateHandler<TabbedPaneGuiElement>
   styleMod?: TabbedPaneStyleMod
@@ -379,20 +379,20 @@ export type FactorioElement =
   | SwitchElement
 
 export interface BaseStyleMod {
-  minimal_width?: MaybeProperty<int>
-  maximal_width?: MaybeProperty<int>
-  minimal_height?: MaybeProperty<int>
-  maximal_height?: MaybeProperty<int>
-  natural_width?: MaybeProperty<int>
-  natural_height?: MaybeProperty<int>
-  top_padding?: MaybeProperty<int>
-  right_padding?: MaybeProperty<int>
-  bottom_padding?: MaybeProperty<int>
-  left_padding?: MaybeProperty<int>
-  top_margin?: MaybeProperty<int>
-  right_margin?: MaybeProperty<int>
-  bottom_margin?: MaybeProperty<int>
-  left_margin?: MaybeProperty<int>
+  minimal_width?: MaybeProperty<int32>
+  maximal_width?: MaybeProperty<int32>
+  minimal_height?: MaybeProperty<int32>
+  maximal_height?: MaybeProperty<int32>
+  natural_width?: MaybeProperty<int32>
+  natural_height?: MaybeProperty<int32>
+  top_padding?: MaybeProperty<int32>
+  right_padding?: MaybeProperty<int32>
+  bottom_padding?: MaybeProperty<int32>
+  left_padding?: MaybeProperty<int32>
+  top_margin?: MaybeProperty<int32>
+  right_margin?: MaybeProperty<int32>
+  bottom_margin?: MaybeProperty<int32>
+  left_margin?: MaybeProperty<int32>
   horizontal_align?: MaybeProperty<"left" | "center" | "right">
   vertical_align?: MaybeProperty<"top" | "center" | "bottom">
   font_color?: MaybeProperty<Color | ColorArray>
@@ -401,11 +401,11 @@ export interface BaseStyleMod {
   vertically_stretchable?: MaybeProperty<boolean>
   horizontally_squashable?: MaybeProperty<boolean>
   vertically_squashable?: MaybeProperty<boolean>
-  width?: MaybeProperty<int>
-  height?: MaybeProperty<int>
-  size?: MaybeProperty<int | SizeArray>
-  padding?: MaybeProperty<int | StyleValuesArray>
-  margin?: MaybeProperty<int | StyleValuesArray>
+  width?: MaybeProperty<int32>
+  height?: MaybeProperty<int32>
+  size?: MaybeProperty<int32 | SizeArray>
+  padding?: MaybeProperty<int32 | StyleValuesArray>
+  margin?: MaybeProperty<int32 | StyleValuesArray>
 }
 
 export interface ButtonStyleMod extends BaseStyleMod {
@@ -413,7 +413,7 @@ export interface ButtonStyleMod extends BaseStyleMod {
   clicked_font_color?: MaybeProperty<Color | ColorArray>
   disabled_font_color?: MaybeProperty<Color | ColorArray>
   pie_progress_color?: MaybeProperty<Color | ColorArray>
-  clicked_vertical_offset?: MaybeProperty<int>
+  clicked_vertical_offset?: MaybeProperty<int32>
   selected_font_color?: MaybeProperty<Color | ColorArray>
   selected_hovered_font_color?: MaybeProperty<Color | ColorArray>
   selected_clicked_font_color?: MaybeProperty<Color | ColorArray>
@@ -422,8 +422,8 @@ export interface ButtonStyleMod extends BaseStyleMod {
 }
 
 export interface FlowStyleMod extends BaseStyleMod {
-  horizontal_spacing?: MaybeProperty<int>
-  vertical_spacing?: MaybeProperty<int>
+  horizontal_spacing?: MaybeProperty<int32>
+  vertical_spacing?: MaybeProperty<int32>
 }
 
 export interface FrameStyleMod extends BaseStyleMod {
@@ -432,26 +432,25 @@ export interface FrameStyleMod extends BaseStyleMod {
 
 export interface LabelStyleMod extends BaseStyleMod {
   rich_text_setting?: MaybeProperty<defines.rich_text_setting>
+  hovered_font_color?: MaybeProperty<Color | ColorArray>
+  clicked_font_color?: MaybeProperty<Color | ColorArray>
+  disabled_font_color?: MaybeProperty<Color | ColorArray>
   single_line?: MaybeProperty<boolean>
 }
 
 export interface ProgressBarStyleMod extends BaseStyleMod {
-  bar_width?: MaybeProperty<uint>
+  bar_width?: MaybeProperty<uint32>
   color?: MaybeProperty<Color | ColorArray>
 }
 
 export interface TableStyleMod extends BaseStyleMod {
-  top_cell_padding?: MaybeProperty<int>
-  right_cell_padding?: MaybeProperty<int>
-  bottom_cell_padding?: MaybeProperty<int>
-  left_cell_padding?: MaybeProperty<int>
-  horizontal_spacing?: MaybeProperty<int>
-  vertical_spacing?: MaybeProperty<int>
-  cell_padding?: MaybeProperty<int>
-}
-
-export interface TextFieldStyleMod extends BaseStyleMod {
-  rich_text_setting?: MaybeProperty<defines.rich_text_setting>
+  top_cell_padding?: MaybeProperty<int32>
+  right_cell_padding?: MaybeProperty<int32>
+  bottom_cell_padding?: MaybeProperty<int32>
+  left_cell_padding?: MaybeProperty<int32>
+  horizontal_spacing?: MaybeProperty<int32>
+  vertical_spacing?: MaybeProperty<int32>
+  cell_padding?: MaybeProperty<int32>
 }
 
 export interface SpriteStyleMod extends BaseStyleMod {
@@ -459,30 +458,31 @@ export interface SpriteStyleMod extends BaseStyleMod {
 }
 
 export interface ScrollPaneStyleMod extends BaseStyleMod {
-  extra_top_padding_when_activated?: MaybeProperty<int>
-  extra_bottom_padding_when_activated?: MaybeProperty<int>
-  extra_left_padding_when_activated?: MaybeProperty<int>
-  extra_right_padding_when_activated?: MaybeProperty<int>
-  extra_top_margin_when_activated?: MaybeProperty<int>
-  extra_bottom_margin_when_activated?: MaybeProperty<int>
-  extra_left_margin_when_activated?: MaybeProperty<int>
-  extra_right_margin_when_activated?: MaybeProperty<int>
-  extra_padding_when_activated?: MaybeProperty<int | StyleValuesArray>
-  extra_margin_when_activated?: MaybeProperty<int | StyleValuesArray>
+  extra_top_padding_when_activated?: MaybeProperty<int32>
+  extra_bottom_padding_when_activated?: MaybeProperty<int32>
+  extra_left_padding_when_activated?: MaybeProperty<int32>
+  extra_right_padding_when_activated?: MaybeProperty<int32>
+  extra_top_margin_when_activated?: MaybeProperty<int32>
+  extra_bottom_margin_when_activated?: MaybeProperty<int32>
+  extra_left_margin_when_activated?: MaybeProperty<int32>
+  extra_right_margin_when_activated?: MaybeProperty<int32>
+  extra_padding_when_activated?: MaybeProperty<int32 | StyleValuesArray>
+  extra_margin_when_activated?: MaybeProperty<int32 | StyleValuesArray>
 }
 
 export interface TextBoxStyleMod extends BaseStyleMod {
   rich_text_setting?: MaybeProperty<defines.rich_text_setting>
+  disabled_font_color?: MaybeProperty<Color | ColorArray>
 }
 
 export interface TabbedPaneStyleMod extends BaseStyleMod {
-  vertical_spacing?: MaybeProperty<int>
+  vertical_spacing?: MaybeProperty<int32>
 }
 
 export interface TabStyleMod extends BaseStyleMod {
   disabled_font_color?: MaybeProperty<Color | ColorArray>
   badge_font?: MaybeProperty<string>
-  badge_horizontal_spacing?: MaybeProperty<int>
+  badge_horizontal_spacing?: MaybeProperty<int32>
   default_badge_font_color?: MaybeProperty<Color | ColorArray>
   selected_badge_font_color?: MaybeProperty<Color | ColorArray>
   disabled_badge_font_color?: MaybeProperty<Color | ColorArray>

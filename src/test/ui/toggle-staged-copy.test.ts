@@ -18,6 +18,6 @@ test.each([
   const player = getPlayer()
   const cursorStack = player.cursor_stack!
   cursorStack.set_stack(from)
-  Events.raiseFakeEvent(CustomInputs.ToggleStagedCopy, { player_index: player.index })
+  Events.raiseFakeEvent(CustomInputs.ToggleStagedCopy as string, { player_index: player.index })
   expect(cursorStack.name).toBe(to)
 })

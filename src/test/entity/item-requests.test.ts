@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintInsertPlan, BlueprintInsertPlanWrite } from "factorio:runtime"
+import { BlueprintInsertPlan } from "factorio:runtime"
 import expect from "tstl-expect"
 import {
   mergeRequestPlans,
@@ -13,7 +13,7 @@ import {
 } from "../../entity/item-requests"
 
 test("partitionInventoryFromRequest() with mixed items", () => {
-  const request: BlueprintInsertPlanWrite = {
+  const request: BlueprintInsertPlan = {
     id: {
       name: "iron-plate",
     },
@@ -35,10 +35,7 @@ test("partitionInventoryFromRequest() with mixed items", () => {
       ],
     },
   }
-  const [withModules, withoutModules] = partitionInventoryFromRequest(
-    request as BlueprintInsertPlan,
-    defines.inventory.crafter_modules,
-  )
+  const [withModules, withoutModules] = partitionInventoryFromRequest(request, defines.inventory.crafter_modules)
   expect(withModules).toEqual({
     id: {
       name: "iron-plate",
@@ -72,7 +69,7 @@ test("partitionInventoryFromRequest() with mixed items", () => {
 })
 
 test("partitionInventoryFromRequest, matching only", () => {
-  const request: BlueprintInsertPlanWrite = {
+  const request: BlueprintInsertPlan = {
     id: {
       name: "iron-plate",
     },
@@ -85,16 +82,13 @@ test("partitionInventoryFromRequest, matching only", () => {
       ],
     },
   }
-  const [withModules, withoutModules] = partitionInventoryFromRequest(
-    request as BlueprintInsertPlan,
-    defines.inventory.crafter_modules,
-  )
+  const [withModules, withoutModules] = partitionInventoryFromRequest(request, defines.inventory.crafter_modules)
   expect(withModules).toEqual(request)
   expect(withoutModules).toEqual(nil)
 })
 
 test("partitionInventoryFromRequest, excluded only", () => {
-  const request: BlueprintInsertPlanWrite = {
+  const request: BlueprintInsertPlan = {
     id: {
       name: "iron-plate",
     },
@@ -107,10 +101,7 @@ test("partitionInventoryFromRequest, excluded only", () => {
       ],
     },
   }
-  const [withModules, withoutModules] = partitionInventoryFromRequest(
-    request as BlueprintInsertPlan,
-    defines.inventory.crafter_output,
-  )
+  const [withModules, withoutModules] = partitionInventoryFromRequest(request, defines.inventory.crafter_output)
   expect(withModules).toEqual(nil)
   expect(withoutModules).toEqual(request)
 })
@@ -124,13 +115,13 @@ test("partitionInventoryFromRequests with mixed requests", () => {
           { inventory: defines.inventory.crafter_modules, stack: 1 },
         ],
       },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    },
     {
       id: { name: "copper-plate" },
       items: {
         in_inventory: [{ inventory: defines.inventory.crafter_modules, stack: 0 }],
       },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    },
   ]
   const [withModules, withoutModules] = partitionInventoryFromRequests(requests, defines.inventory.crafter_modules)
   expect(withModules!).toHaveLength(2)
@@ -145,7 +136,7 @@ test("partitionModulesFromRequests basic case", () => {
       items: {
         in_inventory: [{ inventory: defines.inventory.crafter_modules, stack: 0 }],
       },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    } satisfies BlueprintInsertPlan,
   ]
   const [modules, nonModules] = partitionModulesAndRemoveGridRequests(requests, "assembling-machine-1")
   expect(modules!).toHaveLength(1)
@@ -162,21 +153,21 @@ test("mergeRequestPlans with overlapping requests", () => {
         { inventory: defines.inventory.crafter_output, stack: 1 },
       ],
     },
-  } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  } satisfies BlueprintInsertPlan
 
   const plan2: BlueprintInsertPlan = {
     id: { name: "productivity-module" },
     items: {
       in_inventory: [{ inventory: defines.inventory.crafter_modules, stack: 2 }],
     },
-  } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  }
 
   const plan3: BlueprintInsertPlan = {
     id: { name: "iron-plate" },
     items: {
       in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 2 }],
     },
-  } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  }
 
   const merged = mergeRequestPlans([plan1, plan2, plan3])
 
@@ -199,14 +190,14 @@ test("mergeRequestPlans with non-overlapping requests", () => {
     items: {
       in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 0 }],
     },
-  } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  }
 
   const plan2: BlueprintInsertPlan = {
     id: { name: "copper-plate" },
     items: {
       in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 1 }],
     },
-  } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan
+  }
 
   const merged = mergeRequestPlans([plan1, plan2])
 
@@ -222,19 +213,19 @@ test("removeGridRequests removes grid_count but keeps in_inventory", () => {
         grid_count: 5,
         in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 0 }],
       },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    },
     {
       id: { name: "copper-plate" },
       items: {
         in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 1 }],
       },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    },
     {
       id: { name: "steel-plate" },
       items: {
         grid_count: 3,
       },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    },
   ]
 
   const result = removeGridRequests(requests)!
@@ -256,7 +247,7 @@ test("removeGridRequests returns nil when all requests have only grid_count", ()
       items: {
         grid_count: 5,
       },
-    } satisfies BlueprintInsertPlanWrite as unknown as BlueprintInsertPlan,
+    },
   ]
 
   const result = removeGridRequests(requests)

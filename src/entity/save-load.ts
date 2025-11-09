@@ -8,7 +8,6 @@ import {
   BlueprintEntity,
   BlueprintEquipment,
   BlueprintInsertPlan,
-  BlueprintInsertPlanWrite,
   BoundingBox,
   CarBlueprintEntity,
   CargoWagonBlueprintEntity,
@@ -328,7 +327,7 @@ function upgradeEntity(oldEntity: LuaEntity, value: NameAndQuality): LuaEntity {
   return newEntity
 }
 
-function setModules(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlanWrite[] | nil): void {
+function setModules(luaEntity: LuaEntity, moduleItems: BlueprintInsertPlan[] | nil): void {
   const inventory = luaEntity.get_module_inventory()
   if (!inventory) return
   inventory.clear()

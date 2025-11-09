@@ -5,7 +5,7 @@
 
 import {
   BlueprintEntity,
-  BlueprintInsertPlanWrite,
+  BlueprintInsertPlan,
   CarBlueprintEntity,
   InserterBlueprintEntity,
   LuaEntity,
@@ -2003,7 +2003,7 @@ describe("item-requests", () => {
 
     return chest
   }
-  function buildFurnaceWithBlueprintEntity(): [ProjectEntity, BlueprintInsertPlanWrite] {
+  function buildFurnaceWithBlueprintEntity(): [ProjectEntity, BlueprintInsertPlan] {
     const projectEntity = buildEntity(1, {
       position: [0.5, 0.5],
       name: "steel-furnace",
@@ -2011,7 +2011,7 @@ describe("item-requests", () => {
     assert(projectEntity)
 
     const worldEntity = projectEntity.getWorldEntity(1)!
-    const insertPlan: BlueprintInsertPlanWrite = {
+    const insertPlan: BlueprintInsertPlan = {
       id: { name: "coal" },
       items: {
         in_inventory: [
