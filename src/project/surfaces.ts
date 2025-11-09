@@ -11,7 +11,6 @@ import {
   MapGenSettingsWrite,
   nil,
   PrototypeWithQualityRead,
-  SurfaceIndex,
 } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
 import { Stage, UserProject } from "./ProjectDef"
@@ -107,36 +106,37 @@ export function applySurfaceSettingsAndClear(project: UserProject): void {
 const inTest = script.active_mods["factorio-test"] != nil
 const defaultPreparedArea = BBox.around({ x: 0, y: 0 }, inTest ? 32 : 5 * 32)
 
-function sanitizeForSurfaceName(str: string): string {
-  let result = string.gsub(str, "[^%w]+", "-")[0]
-  result = string.gsub(result, "^-+", "")[0]
-  result = string.gsub(result, "-+$", "")[0]
-  return result
+function orUnnamed(str: string): string {
+  if (str.length == 0) return "<Unnamed>"
+  return str
 }
 
-function generateStageSurfaceName(surfaceIndex: SurfaceIndex, projectName: string, stageName: string): string {
-  const sanitizedProject = sanitizeForSurfaceName(projectName)
-  const sanitizedStage = sanitizeForSurfaceName(stageName)
-
-  return `bp100-${surfaceIndex}-${sanitizedProject}-${sanitizedStage}`
+function generateStageSurfaceName(projectName: string, stageName: string): string {
+  return `stage ${orUnnamed(projectName)}/${orUnnamed(stageName)}`
 }
 
 function tryRenameSurface(surface: LuaSurface, newName: string): void {
   if (surface.name == newName) return
-
-  const [success] = pcall(() => {
+  const surfaces = game.surfaces
+  if (!surfaces[newName]) {
     surface.name = newName
-  })
+    return
+  }
 
-  if (!success) {
-    print(
-      `[Staged Blueprint Planning] Warning: Could not rename surface ${surface.name} to ${newName} (name collision)`,
-    )
+  let attemptName = newName
+  let suffix = 1
+
+  while (true) {
+    attemptName = `${newName} (${suffix})`
+    if (!surfaces[attemptName]) {
+      surface.name = attemptName
+      return
+    }
+    suffix++
   }
 }
-
 export function updateStageSurfaceName(surface: LuaSurface, projectName: string, stageName: string): void {
-  const newName = generateStageSurfaceName(surface.index, projectName, stageName)
+  const newName = generateStageSurfaceName(projectName, stageName)
   tryRenameSurface(surface, newName)
 }
 
@@ -156,9 +156,7 @@ function prepareSurface(
   surface.always_day = true
   surface.show_clouds = false
 
-  const newName = generateStageSurfaceName(surface.index, projectName, stageName)
-  tryRenameSurface(surface, newName)
-
+  updateStageSurfaceName(surface, projectName, stageName)
   prepareArea(surface, area)
 }
 
