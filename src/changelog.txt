@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.0
-Date: ????
+Date: 2025-11-09
   Features:
     - Added support for staged space platforms!
     - Added a new project creation UI.

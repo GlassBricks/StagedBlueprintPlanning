@@ -128,7 +128,7 @@ interface OldProjectTile {
   position: Position
 }
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.8.0", () => {
   for (const project of getAllProjects()) {
     ;(project as UserProjectInternal).registerEvents()
     for (const stage of project.getAllStages()) {
