@@ -166,6 +166,9 @@ function pasteEntity(
     assume<AssemblingMachineBlueprintEntity>(value)
     pcall(target.set_recipe as any, value.recipe, value.recipe_quality)
     target.direction = direction
+    if (value.mirror) {
+      target.mirroring = true
+    }
   }
   return ghosts[0]
 }

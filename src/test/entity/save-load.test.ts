@@ -798,21 +798,25 @@ test("can flip loader", () => {
   expect(updated.rotatable).toBe(false)
 })
 
-test("can mirror machine", () => {
+test.each([
+  ["electromagnetic-plant", "electrolyte"],
+  ["oil-refinery", "advanced-oil-processing"],
+  ["cryogenic-plant", "fluoroketone"],
+])("can mirror machine %s with recipe %s", (machine, recipe) => {
   const entity = surface.create_entity({
-    name: "electromagnetic-plant",
+    name: machine,
     position: { x: 12.5, y: 12.5 },
     force: "player",
     direction: defines.direction.north,
   })!
-  entity.set_recipe("electrolyte")
+  entity.set_recipe(recipe)
   expect(entity.mirroring).toBe(false)
 
   const updated = updateEntity(
     entity,
     {
-      name: "electromagnetic-plant",
-      recipe: "electrolyte",
+      name: machine,
+      recipe: recipe,
       mirror: true,
     } as Entity,
     nil,
@@ -823,9 +827,8 @@ test("can mirror machine", () => {
   expect(updated).toBe(entity)
   expect(updated.direction).toBe(defines.direction.north)
   expect(updated.mirroring).toBe(true)
-  expect(updated.get_recipe()[0]?.name).toBe("electrolyte")
+  expect(updated.get_recipe()[0]?.name).toBe(recipe)
 })
-
 describe("item-requests", () => {
   const moduleInsertPlan1 = [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module")]
   const moduleInsertPlan2 = [

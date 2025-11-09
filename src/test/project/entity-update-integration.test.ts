@@ -1932,7 +1932,7 @@ test("mirroring an entity", () => {
   expect(luaEntity2?.mirroring).toBe(true)
 })
 
-test("mirroring an entity by pasting mirrored", () => {
+test("mirroring an entity, via blueprint paste", () => {
   const chemPlant = buildEntity(1, {
     name: "chemical-plant",
     recipe: "light-oil-cracking",
