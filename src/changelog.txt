@@ -2,7 +2,8 @@
 Version: 2.8.1
 Date: ????
   Bugfixes:
-    - Fixed dropping modules inside an crafting machine.
+    - Fixed dropping modules inside a crafting machine.
+    - Fixed tile ghosts being left behind when pasting blueprints on space platforms.
   Graphics:
     - Fixed missing label for "All" settings in updated settings entity UI.
 ---------------------------------------------------------------------------------------------------

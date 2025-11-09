@@ -384,6 +384,14 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
         entity.destroy()
       }
     }
+
+    for (const [x, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {
+      for (const [y] of pairs(row)) {
+        const position = { x, y }
+        updateTilesInRange(position, stage, stage)
+      }
+    }
+
     for (const entity of surface.find_entities_filtered({
       type: ["simple-entity-with-owner", "rail-remnants"],
     })) {
@@ -409,12 +417,6 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     }
     for (const entity of finalEntities) {
       refreshWorldEntityAtStage(entity, stage)
-    }
-    for (const [x, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {
-      for (const [y] of pairs(row)) {
-        const position = { x, y }
-        updateTilesInRange(position, stage, stage)
-      }
     }
   }
 
@@ -442,6 +444,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
           tileWrite.name = defaultTile
         }
         surface.set_tiles(tileWriteArr, true, false, true, true)
+        surface.find_entity("tile-ghost", { x: position.x + 0.5, y: position.y + 0.5 })?.destroy()
       }
     })
   }
