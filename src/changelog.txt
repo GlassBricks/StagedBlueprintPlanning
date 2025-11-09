@@ -2,9 +2,9 @@
 Version: 2.8.1
 Date: ????
   Bugfixes:
-    - Fixed dropping modules inside a crafting machine.
-    - Fixed tile ghosts being left behind when pasting blueprints on space platforms.
-    - Fixed duplication of item requests in exported blueprints, with requests in fuel inventories.
+    - Fixed module dropping into a crafting machine (using Z).
+    - Fixed tile ghosts lingering when pasting blueprints on space platforms.
+    - Fixed duplication of item requests in fuel inventories, for exported blueprints.
     - Fixed that cryogenic plant mirroring was not saved.
   Minor Features:
     - Added a command to refresh the top left mod button, in case it disappears
