@@ -244,6 +244,7 @@ Events.on_gui_closed((e) => {
 })
 Events.on_player_fast_transferred((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
 Events.on_player_dropped_item((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
+Events.on_player_dropped_item_into_entity((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
 Events.on_player_flipped_entity((e) => luaEntityPossiblyUpdated(e.entity, e.player_index))
 // Events.on_selected_entity_changed(({ last_entity, player_index }) => {
 //   if (last_entity && last_entity.valid) luaEntityPossiblyUpdated(last_entity, player_index)
