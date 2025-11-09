@@ -774,7 +774,8 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function scanProjectForExistingTiles(): void {
     const bbox = content.computeBoundingBox()
-    const tilesToUpdate = new LuaSet<[Position, ProjectTile]>()
+    const tilesToUpdateArray: Array<[Position, ProjectTile]> = []
+    const tilesToUpdateSet = new LuaSet<ProjectTile>()
 
     for (const stage of $range(1, project.numStages())) {
       const surface = project.getSurface(stage)!
@@ -793,11 +794,14 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
         }
 
         projectTile.setTileAtStage(stage, tile.name)
-        tilesToUpdate.add([position, projectTile])
+        if (!tilesToUpdateSet.has(projectTile)) {
+          tilesToUpdateArray.push([position, projectTile])
+          tilesToUpdateSet.add(projectTile)
+        }
       }
     }
 
-    for (const [position, tile] of tilesToUpdate) {
+    for (const [position, tile] of tilesToUpdateArray) {
       updateTilesInRange(position, tile.getFirstStage(), tile.getLastStage())
     }
   }
