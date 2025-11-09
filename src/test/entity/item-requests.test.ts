@@ -5,7 +5,9 @@
 import { BlueprintInsertPlan } from "factorio:runtime"
 import expect from "tstl-expect"
 import {
-  mergeRequestPlans,
+  filterOutInventories,
+  getInventoriesFromRequests,
+  mergeItemRequests,
   partitionInventoryFromRequest,
   partitionInventoryFromRequests,
   partitionModulesAndRemoveGridRequests,
@@ -169,7 +171,7 @@ test("mergeRequestPlans with overlapping requests", () => {
     },
   }
 
-  const merged = mergeRequestPlans([plan1, plan2, plan3])
+  const merged = mergeItemRequests([plan1, plan2, plan3])
 
   expect(merged).toHaveLength(2)
   expect(merged[0]).toEqual({
@@ -199,7 +201,7 @@ test("mergeRequestPlans with non-overlapping requests", () => {
     },
   }
 
-  const merged = mergeRequestPlans([plan1, plan2])
+  const merged = mergeItemRequests([plan1, plan2])
 
   expect(merged).toHaveLength(2)
   expect(merged).toEqual([plan1, plan2])
@@ -253,4 +255,83 @@ test("removeGridRequests returns nil when all requests have only grid_count", ()
   const result = removeGridRequests(requests)
 
   expect(result).toBeNil()
+})
+
+test("getInventoriesFromRequests extracts all unique inventories", () => {
+  const requests: BlueprintInsertPlan[] = [
+    {
+      id: { name: "iron-plate" },
+      items: {
+        in_inventory: [
+          { inventory: defines.inventory.crafter_input, stack: 0 },
+          { inventory: defines.inventory.crafter_output, stack: 1 },
+        ],
+      },
+    },
+    {
+      id: { name: "copper-plate" },
+      items: {
+        in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 2 }],
+      },
+    },
+    {
+      id: { name: "steel-plate" },
+      items: {
+        grid_count: 1,
+      },
+    },
+  ]
+
+  const inventories = getInventoriesFromRequests(requests)
+
+  expect(inventories.has(defines.inventory.crafter_input)).toBe(true)
+  expect(inventories.has(defines.inventory.crafter_output)).toBe(true)
+  expect(inventories.has(defines.inventory.crafter_modules)).toBe(false)
+})
+
+test("filterOutInventories removes requests targeting excluded inventories", () => {
+  const requests: BlueprintInsertPlan[] = [
+    {
+      id: { name: "iron-plate" },
+      items: {
+        in_inventory: [
+          { inventory: defines.inventory.crafter_input, stack: 0 },
+          { inventory: defines.inventory.crafter_modules, stack: 1 },
+        ],
+      },
+    },
+    {
+      id: { name: "copper-plate" },
+      items: {
+        in_inventory: [{ inventory: defines.inventory.crafter_modules, stack: 0 }],
+      },
+    },
+    {
+      id: { name: "steel-plate" },
+      items: {
+        grid_count: 2,
+        in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 0 }],
+      },
+    },
+  ]
+
+  const exclude = newLuaSet<defines.inventory>()
+  exclude.add(defines.inventory.crafter_modules)
+
+  const result = filterOutInventories(requests, exclude)!
+
+  expect(result).toHaveLength(2)
+  expect(result[0]).toEqual({
+    id: { name: "iron-plate" },
+    items: {
+      in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 0 }],
+    },
+  })
+  expect(result[1]).toEqual({
+    id: { name: "steel-plate" },
+    items: {
+      grid_count: 2,
+      in_inventory: [{ inventory: defines.inventory.crafter_input, stack: 0 }],
+    },
+  })
 })

@@ -72,7 +72,7 @@ interface MutableBlueprintInsertPlan extends BlueprintInsertPlan {
   }
 }
 
-export function mergeRequestPlans(plans: readonly BlueprintInsertPlan[]): BlueprintInsertPlan[] {
+export function mergeItemRequests(plans: readonly BlueprintInsertPlan[]): BlueprintInsertPlan[] {
   const result: BlueprintInsertPlan[] = []
   const idToIndex = new LuaMap<string, number>()
   const isOwned = new LuaSet<BlueprintInsertPlan>()
@@ -158,7 +158,7 @@ export function getNonModuleRequests(entity: LuaEntity): BlueprintInsertPlan[] |
 
 export function addItemRequests(entity: Mutable<BlueprintEntity>, items: BlueprintInsertPlan[] | nil): void {
   const concat = nullableConcat(entity.items, items)
-  entity.items = concat && mergeRequestPlans(concat)
+  entity.items = concat && mergeItemRequests(concat)
 }
 
 export function removeGridRequests(requests: BlueprintInsertPlan[]): BlueprintInsertPlan[] | nil {
@@ -194,4 +194,50 @@ export function mergeInventoryPositions(positions: readonly InventoryPosition[])
   }
 
   return result
+}
+
+export function getInventoriesFromRequests(requests: BlueprintInsertPlan[]): ReadonlyLuaSet<defines.inventory> {
+  const inventories = new LuaSet<defines.inventory>()
+  for (const request of requests) {
+    const inInventory = request.items.in_inventory
+    if (inInventory) {
+      for (const position of inInventory) {
+        inventories.add(position.inventory)
+      }
+    }
+  }
+  return inventories
+}
+
+export function filterOutInventories(
+  requests: BlueprintInsertPlan[],
+  inventoriesToExclude: ReadonlyLuaSet<defines.inventory>,
+): BlueprintInsertPlan[] | nil {
+  const result: BlueprintInsertPlan[] = []
+  for (const request of requests) {
+    const inInventory = request.items.in_inventory
+    if (!inInventory) {
+      result.push(request)
+    } else {
+      const filteredPositions = inInventory.filter((pos) => !inventoriesToExclude.has(pos.inventory))
+      if (filteredPositions[0]) {
+        result.push({
+          id: request.id,
+          items: {
+            in_inventory: filteredPositions,
+            grid_count: request.items.grid_count,
+          },
+        })
+      } else if (request.items.grid_count != nil) {
+        result.push({
+          id: request.id,
+          items: {
+            grid_count: request.items.grid_count,
+          },
+        })
+      }
+      // else, omit
+    }
+  }
+  return result[0] && result
 }

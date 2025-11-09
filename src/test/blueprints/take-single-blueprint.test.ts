@@ -8,6 +8,7 @@ import expect from "tstl-expect"
 import { BlueprintTakeSettings, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
 import { UnstagedEntityProps } from "../../entity/Entity"
+import { updateEntity } from "../../entity/save-load"
 import { BBox, Pos } from "../../lib/geometry"
 import { simpleInsertPlan } from "../entity/entity-util"
 
@@ -218,6 +219,43 @@ test("applies item requests", () => {
   const chestEntity = entities.find((entity) => entity.name == chest.name)
   expect(chestEntity).toBeAny()
   expect(chestEntity!.items).toEqual([request])
+})
+
+test.each(["steel-furnace", "burner-inserter"])("handles fuel requests in %s", (entityName) => {
+  const entity = surface.create_entity({
+    name: entityName,
+    position: [0.5, 0.5],
+    force: "player",
+  })!
+  assert(entity)
+
+  const fuelRequest = simpleInsertPlan(defines.inventory.fuel, "coal", 0, 5)
+  updateEntity(entity, { name: entityName }, { items: [fuelRequest] }, 0)
+
+  const proxy = entity.item_request_proxy
+  expect(proxy).toBeAny()
+  expect(proxy?.insert_plan).toEqual([fuelRequest])
+
+  const itemRequests = new LuaMap<UnitNumber, UnstagedEntityProps>()
+  itemRequests.set(entity.unit_number!, { items: [fuelRequest] })
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+  const ret = takeSingleBlueprint({
+    stack,
+    settings: getDefaultBlueprintSettings(),
+    surface,
+    bbox,
+    additionalSettings: itemRequests,
+    unitNumberFilter: nil,
+  })
+  expect(ret).toBeTruthy()
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities.length).toBe(1)
+  const blueprintEntity = entities.find((e) => e.name == entity.name)
+  expect(blueprintEntity).toBeAny()
+  expect(blueprintEntity!.items).toEqual([fuelRequest])
 })
 
 test("applies unit number filter as well as whitelist", () => {

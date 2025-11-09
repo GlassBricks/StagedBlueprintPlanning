@@ -18,7 +18,7 @@ export function moduleInsertPlan(
         (_, i) => ({ inventory, stack: startIndex + i }) satisfies InventoryPosition,
       ),
     },
-  } satisfies BlueprintInsertPlan
+  }
 }
 
 export function simpleInsertPlan(
@@ -30,5 +30,5 @@ export function simpleInsertPlan(
   return {
     id: { name: item },
     items: { in_inventory: [{ inventory, stack: slot, count }] },
-  } satisfies BlueprintInsertPlan
+  }
 }

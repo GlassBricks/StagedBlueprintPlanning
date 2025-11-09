@@ -5,7 +5,7 @@
 
 import { BlueprintEntity, LuaEntity, LuaItemStack, LuaSurface, MapPosition, UnitNumber } from "factorio:runtime"
 import { UnstagedEntityProps } from "../entity/Entity"
-import { addItemRequests } from "../entity/item-requests"
+import { addItemRequests, filterOutInventories, getInventoriesFromRequests } from "../entity/item-requests"
 import { isEmpty, Mutable, PRecord } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { BlueprintTakeSettings, getIconsFromSettings } from "./blueprint-settings"
@@ -124,8 +124,18 @@ function addItemRequestsToBlueprint(
     if (!requests) continue
     const bpEntity = entities[entityNumber]
     if (!bpEntity) continue
-    addItemRequests(bpEntity, requests)
-    changed = true
+
+    // exclude adding requests vanilla blueprinting already has
+    let filteredRequests: typeof requests | nil = requests
+    if (bpEntity.items) {
+      const existingInventories = getInventoriesFromRequests(bpEntity.items)
+      filteredRequests = filterOutInventories(requests, existingInventories)
+    }
+
+    if (filteredRequests != nil) {
+      addItemRequests(bpEntity, filteredRequests)
+      changed = true
+    }
   }
 
   return changed

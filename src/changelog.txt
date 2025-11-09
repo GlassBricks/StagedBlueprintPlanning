@@ -4,7 +4,8 @@ Date: ????
   Bugfixes:
     - Fixed dropping modules inside a crafting machine.
     - Fixed tile ghosts being left behind when pasting blueprints on space platforms.
-  Graphics:
+    - Fixed duplication of item requests in exported blueprints, with requests in fuel inventories.
+  Gui:
     - Fixed missing label for "All" settings in updated settings entity UI.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.0
