@@ -5,9 +5,9 @@ Date: ????
     - Added support for staged space platforms!
     - Added a new project creation UI.
   Changes:
-    - Slightly revised project settings GUI.
-    - Surface names now reflect project and stage names.
-    - Surface and map settings are saved and can be shared when exported/imported to string.
+    - Revised project settings UI.
+    - The names of surfaces in projects now match the project/stage name.
+    - Map gen settings are now saved and can be shared when exported/imported to string.
   Bugfixes:
     - "Surface properties" (crafting restrictions) are now respected when setting a project to use a planet's map gen.
 ---------------------------------------------------------------------------------------------------
