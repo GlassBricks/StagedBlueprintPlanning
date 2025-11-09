@@ -134,7 +134,9 @@ function setTilesUnderEntities(
   if (!success) return false
 
   if (freeTiles && project.stagedTilesEnabled.get()) {
-    project.updates.ensureAllTilesNotPresentAtStage(freeTiles, stage.stageNumber)
+    for (const { position } of freeTiles) {
+      project.updates.setTileAtStage(position, stage.stageNumber, nil)
+    }
   }
 
   return true

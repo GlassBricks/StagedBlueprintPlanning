@@ -123,5 +123,5 @@ test("setTilesAndWater with staged tiles enabled", () => {
   project.stagedTilesEnabled.set(true)
 
   setTilesAndWaterForStage(project.getStage(1)!)
-  expect(updates.ensureAllTilesNotPresentAtStage).toHaveBeenCalledWith(expect.anything(), 1)
+  expect(updates.setTileAtStage).toHaveBeenCalledWith(expect.anything(), 1)
 })

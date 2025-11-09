@@ -156,12 +156,12 @@ describe("delete", () => {
   })
   test("player mined entity", () => {
     player.mine_entity(entity, true)
-    expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1, 1)
+    expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1)
   })
   test("script raised destroy", () => {
     // entity.destroy({ raise_destroy: true })
     Events.raiseFakeEventNamed("script_raised_destroy", { entity })
-    expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1, nil)
+    expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1)
   })
   test("does not run delete if raised by this mod", () => {
     script.raise_script_destroy({ entity })
@@ -387,7 +387,7 @@ describe("robot actions", () => {
     assert(chest, "chest created")
     chest.order_deconstruction("player")
     after_ticks(120, () => {
-      expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1, nil)
+      expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1)
     })
   })
 })
@@ -1098,7 +1098,7 @@ describe("belt dragging", () => {
     expect(project.actions.onEntityPossiblyUpdated).not.toHaveBeenCalled()
     expect(project.actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-    expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1, 1)
+    expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1)
   })
 
   test("drag over existing followed by fast replace on same belt", () => {
@@ -1228,7 +1228,7 @@ describe("belt dragging", () => {
         direction: u1.direction,
       })
       expect(project.actions.onUndergroundBeltDragRotated).not.toHaveBeenCalled()
-      expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1, 1)
+      expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
       expect(project.actions.onEntityCreated).toHaveBeenCalledWith(newBelt, 1, 1)
       expectedNumCalls = 2
@@ -1240,7 +1240,7 @@ describe("belt dragging", () => {
         direction: belt.direction + 2,
       })
       expect(project.actions.onUndergroundBeltDragRotated).not.toHaveBeenCalled()
-      expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1, 1)
+      expect(project.actions.onEntityDeleted).toHaveBeenCalledWith(expect._, 1)
       const newBelt = surface.find_entity("transport-belt", position)!
       expect(project.actions.onEntityCreated).toHaveBeenCalledWith(newBelt, 1, 1)
       expectedNumCalls = 2
@@ -1298,7 +1298,7 @@ describe("tiles", () => {
         surface_index: surface.index,
       })
 
-      expect(project.actions.onTileBuilt).toHaveBeenCalledWith(pos, "stone-path", 1, 1)
+      expect(project.actions.onTileBuilt).toHaveBeenCalledWith(pos, "stone-path", 1)
     })
     test("robot built tile", () => {
       Events.raiseFakeEventNamed("on_robot_built_tile", {
@@ -1315,7 +1315,7 @@ describe("tiles", () => {
         ],
       })
 
-      expect(project.actions.onTileBuilt).toHaveBeenCalledWith(pos, "stone-path", 1, nil)
+      expect(project.actions.onTileBuilt).toHaveBeenCalledWith(pos, "stone-path", 1)
     })
 
     test("script built tile", () => {
@@ -1334,7 +1334,7 @@ describe("tiles", () => {
     test("player mined tile", () => {
       surface.set_tiles([{ name: "stone-path", position: pos }], false, false, false, false)
       player.mine_tile(surface.get_tile(pos.x, pos.y))
-      expect(project.actions.onTileMined).toHaveBeenCalledWith(pos, 1, 1)
+      expect(project.actions.onTileMined).toHaveBeenCalledWith(pos, 1)
     })
     test("robot mined tile", () => {
       surface.set_tiles([{ name: "stone-path", position: pos }], false, false, false, false)
@@ -1348,7 +1348,7 @@ describe("tiles", () => {
         ],
         robot: nil!,
       })
-      expect(project.actions.onTileMined).toHaveBeenCalledWith(pos, 1, nil)
+      expect(project.actions.onTileMined).toHaveBeenCalledWith(pos, 1)
     })
   })
   describe("if tiles disabled", () => {

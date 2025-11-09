@@ -3,9 +3,10 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LocalisedString, LuaEntity, TilePosition, TileWrite } from "factorio:runtime"
+import { LocalisedString, LuaEntity, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { UnstagedEntityProps } from "../entity/Entity"
+import { Position } from "../lib/geometry"
 import {
   isWorldEntityProjectEntity,
   MovableProjectEntity,
@@ -58,10 +59,7 @@ export interface WorldUpdates {
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
 
-  updateTilesInVisibleStages(tile: ProjectTile): void
-  updateTileAtStage(tile: ProjectTile, stage: StageNumber): void
-  updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void
-  resetTiles(tile: ProjectTile, ignoreFirstStage: boolean): void
+  updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): void
 
   // passed from EntityHighlights
   updateAllHighlights(entity: ProjectEntity): void
@@ -118,10 +116,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     resetUnderground,
     rebuildAllStages,
     updateAllHighlights,
-    updateTilesInVisibleStages,
-    updateTileAtStage,
-    updateTilesOnMovedUp,
-    resetTiles,
+    updateTilesInRange,
   }
 
   function makePreviewEntity(
@@ -415,9 +410,10 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     for (const entity of finalEntities) {
       refreshWorldEntityAtStage(entity, stage)
     }
-    for (const [, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {
-      for (const [, tile] of pairs(row)) {
-        updateTileAtStage(tile, stage)
+    for (const [x, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {
+      for (const [y] of pairs(row)) {
+        const position = { x, y }
+        updateTilesInRange(position, stage, stage)
       }
     }
   }
@@ -426,56 +422,42 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     submitTask(new RebuildAllStagesTask(project))
   }
 
-  function updateTilesInVisibleStages(tile: ProjectTile): void {
-    const position = tile.position
-    const tileWrite: Mutable<TileWrite> = {
-      position,
-      name: tile.firstValue,
-    }
-    const tileWriteArr = [tileWrite]
-    for (const [stage, value] of tile.iterateValues(tile.firstStage, project.lastStageFor(tile))) {
-      const surface = project.getSurface(stage)!
-      if (value) {
-        tileWrite.name = value
+  function updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): void {
+    const tile = content.tiles.get(position.x, position.y)
+    if (!tile) {
+      const endStage = toStage ?? project.numStages()
+      const tileWrite: Mutable<TileWrite> = { position, name: nil! }
+      const tileWriteArr = [tileWrite]
+
+      for (let stage = fromStage; stage <= endStage; stage++) {
+        const surface = project.getSurface(stage)!
+        const hiddenTile = surface.get_hidden_tile(position)
+        const defaultTile = hiddenTile ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
+        tileWrite.name = defaultTile
         surface.set_tiles(tileWriteArr, true, false)
         raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
       }
+      return
     }
-  }
-  function updateTileAtStage(tile: ProjectTile, stage: StageNumber): void {
-    const value = tile.getValueAtStage(stage)
-    if (!value) return
-    const surface = project.getSurface(stage)!
-    surface.set_tiles(
-      [
-        {
-          position: tile.position,
-          name: value,
-        },
-      ],
-      true,
-      false,
-    )
-  }
-  function updateTilesOnMovedUp(tile: ProjectTile, oldFirstStage: StageNumber): void {
-    resetTilesInRange(tile.position, oldFirstStage, tile.firstStage - 1)
-  }
-  function resetTiles(tile: ProjectTile, ignoreFirstStage: boolean): void {
-    const startStage = ignoreFirstStage ? tile.firstStage + 1 : tile.firstStage
-    resetTilesInRange(tile.position, startStage, project.lastStageFor(tile))
-  }
-  function resetTilesInRange(position: TilePosition, startStage: StageNumber, endStage: StageNumber): void {
-    const tileWrite: Mutable<TileWrite> = {
-      position,
-      name: nil!,
-    }
+
+    const endStage = toStage ?? project.numStages()
+    const tileWrite: Mutable<TileWrite> = { position, name: nil! }
     const tileWriteArr = [tileWrite]
-    for (const stage of $range(startStage, endStage)) {
+
+    for (let stage = fromStage; stage <= endStage; stage++) {
       const surface = project.getSurface(stage)!
-      const tile =
-        surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
-      tileWrite.name = tile
-      surface.set_tiles(tileWriteArr, true, false)
+      const value = tile.getTileAtStage(stage)
+
+      if (value != nil) {
+        tileWrite.name = value
+        surface.set_tiles(tileWriteArr, true, false)
+      } else {
+        const hiddenTile = surface.get_hidden_tile(position)
+        const defaultTile = hiddenTile ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2")
+        tileWrite.name = defaultTile
+        surface.set_tiles(tileWriteArr, true, false)
+      }
+
       raise_script_set_tiles({ tiles: tileWriteArr, surface_index: surface.index })
     }
   }

@@ -11,9 +11,12 @@ import {
   iconNumbers,
 } from "../blueprints/blueprint-settings"
 import { mergeInventoryPositions } from "../entity/item-requests"
-import { ProjectEntity } from "../entity/ProjectEntity"
-import { Mutable } from "../lib"
+import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { createProjectTile } from "../entity/ProjectTile"
+import { Mutable, PRecord } from "../lib"
+import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+import { getNilPlaceholder } from "../utils/diff-value"
 import "./event-handlers"
 import "./project-event-listener"
 import { Stage } from "./ProjectDef"
@@ -116,6 +119,14 @@ Migrations.to("2.7.1", () => {
   }
 })
 
+interface OldProjectTile {
+  firstStage: StageNumber
+  firstValue: string
+  stageDiffs?: PRecord<StageNumber, string>
+  lastStage: StageNumber | nil
+  position: Position
+}
+
 Migrations.to($CURRENT_VERSION, () => {
   for (const project of getAllProjects()) {
     ;(project as UserProjectInternal).registerEvents()
@@ -126,5 +137,36 @@ Migrations.to($CURRENT_VERSION, () => {
 
     const settings = readSurfaceSettings(project.getStage(1)!.surface)
     ;(project as any).surfaceSettings = { ...getDefaultSurfaceSettings(), ...settings }
+
+    // Migrate tiles from old format to new sparse array format
+    const tilesToMigrate: [number, number, OldProjectTile][] = []
+
+    for (const [x, row] of pairs<PRecord<number, PRecord<number, unknown>>>(project.content.tiles)) {
+      for (const [y, tile] of pairs(row)) {
+        const old = tile as unknown as OldProjectTile
+        if (old.firstStage != nil && old.firstValue != nil) {
+          tilesToMigrate.push([x, y, old])
+        }
+      }
+    }
+
+    for (const [, , old] of tilesToMigrate) {
+      const newTile = createProjectTile()
+      const position = old.position
+
+      newTile.values[old.firstStage] = old.firstValue
+
+      if (old.stageDiffs) {
+        for (const [stage, value] of pairs(old.stageDiffs)) {
+          newTile.values[stage] = value
+        }
+      }
+
+      if (old.lastStage != nil) {
+        newTile.values[old.lastStage] = getNilPlaceholder()
+      }
+
+      project.content.setTile(position, newTile)
+    }
   }
 })

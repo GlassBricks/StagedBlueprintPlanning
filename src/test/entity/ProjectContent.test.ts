@@ -255,26 +255,32 @@ test("changes entity position and updates internal index", () => {
 })
 
 test("sets tile at position", () => {
-  const tile = createProjectTile("foo", { x: 1, y: 2 }, 1)
-  content.setTile(tile)
+  const pos = { x: 1, y: 2 }
+  const tile = createProjectTile()
+  tile.setTileAtStage(1, "foo")
+  content.setTile(pos, tile)
   expect(content.tiles.get(1, 2)).toBe(tile)
 })
 
 test("deletes tile and returns success status", () => {
-  const tile = createProjectTile("foo", { x: 1, y: 2 }, 1)
-  content.setTile(tile)
-  const ret = content.deleteTile(tile)
+  const pos = { x: 1, y: 2 }
+  const tile = createProjectTile()
+  tile.setTileAtStage(1, "foo")
+  content.setTile(pos, tile)
+  const ret = content.deleteTile(pos)
   expect(content.tiles.get(1, 2)).toBeNil()
   expect(ret).toBe(true)
-  const ret2 = content.deleteTile(tile)
+  const ret2 = content.deleteTile(pos)
   expect(ret2).toBe(false)
 })
 
 test("inserts stage for all entities and tiles", () => {
   const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
-  const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
+  const pos = { x: 1, y: 2 }
+  const tile = createProjectTile()
+  tile.setTileAtStage(1, "bar")
   content.addEntity(entity)
-  content.setTile(tile)
+  content.setTile(pos, tile)
   entity.insertStage = mock.fn()
   tile.insertStage = mock.fn()
   content.insertStage(2)
@@ -284,12 +290,44 @@ test("inserts stage for all entities and tiles", () => {
 
 test("deletes stage for all entities and tiles", () => {
   const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
-  const tile = createProjectTile("bar", { x: 1, y: 2 }, 1)
+  const pos = { x: 1, y: 2 }
+  const tile = createProjectTile()
+  tile.setTileAtStage(1, "bar")
   content.addEntity(entity)
-  content.setTile(tile)
+  content.setTile(pos, tile)
   entity.deleteStage = mock.fn()
   tile.deleteStage = mock.fn()
   content.deleteStage(2)
   expect(entity.deleteStage).toHaveBeenCalledWith(2)
   expect(tile.deleteStage).toHaveBeenCalledWith(2)
+})
+
+describe("tile support", () => {
+  test("sets ProjectTile at position", () => {
+    const pos = { x: 1, y: 2 }
+    const tile = createProjectTile()
+    tile.setTileAtStage(1, "concrete")
+
+    content.setTile(pos, tile)
+
+    expect(content.tiles.get(1, 2)).toBe(tile)
+  })
+
+  test("deletes ProjectTile at position", () => {
+    const pos = { x: 1, y: 2 }
+    const tile = createProjectTile()
+    tile.setTileAtStage(1, "concrete")
+    content.setTile(pos, tile)
+
+    const result = content.deleteTile(pos)
+
+    expect(content.tiles.get(1, 2)).toBeNil()
+    expect(result).toBe(true)
+  })
+
+  test("returns false when deleting non-existent tile", () => {
+    const pos = { x: 1, y: 2 }
+    const result = content.deleteTile(pos)
+    expect(result).toBe(false)
+  })
 })

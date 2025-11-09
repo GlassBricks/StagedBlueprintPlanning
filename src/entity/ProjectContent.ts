@@ -64,8 +64,8 @@ export interface MutableProjectContent extends ProjectContent {
   /** Deleted entities should be able to be re-added, preserving connections. */
   deleteEntity(entity: ProjectEntity): void
 
-  setTile(tile: ProjectTile): void
-  deleteTile(tile: ProjectTile): boolean
+  setTile(position: Position, tile: ProjectTile): void
+  deleteTile(position: Position): boolean
 
   changeEntityPosition(entity: ProjectEntity, position: Position): boolean
   /** Modifies all entities */
@@ -253,14 +253,15 @@ class ProjectContentImpl implements MutableProjectContent {
     entity.removeIngoingConnections()
   }
 
-  setTile(tile: ProjectTile): void {
-    const { x, y } = tile.position
+  setTile(position: Position, tile: ProjectTile): void {
+    const { x, y } = position
     this.tiles.set(x, y, tile)
   }
 
-  deleteTile(tile: ProjectTile): boolean {
-    const { x, y } = tile.position
-    if (this.tiles[x]?.[y] != tile) return false
+  deleteTile(position: Position): boolean {
+    const { x, y } = position
+    const tile = this.tiles[x]?.[y]
+    if (!tile) return false
     this.tiles.delete(x, y)
     return true
   }

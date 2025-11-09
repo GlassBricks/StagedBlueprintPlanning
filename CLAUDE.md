@@ -19,7 +19,7 @@ npm run watch             # Watch mode for development
 ### Testing
 
 ```bash
-npm run test              # Run all tests via factorio-test
+npm run test              # Run all tests via factorio-test. Needs to be built first
 ```
 
 ### Code Quality
@@ -61,6 +61,9 @@ Since code compiles to Lua:
 - typed-factorio for Factorio API type definitions
 - factorio-test for testing
 - gb-tstl-utils for compiler utilities
+
+Note:
+- with `noEmitOnError`, TSTL warnings will cause no emit, possibly failing tests
 
 ### Key Directories
 

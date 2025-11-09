@@ -28,7 +28,7 @@ import { WorldUpdates } from "./world-updates"
  */
 export interface UserActions {
   onEntityCreated(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): UndoAction | nil
-  onEntityDeleted(entity: LuaEntityInfo, stage: StageNumber, byPlayer: PlayerIndex | nil): void
+  onEntityDeleted(entity: LuaEntityInfo, stage: StageNumber): void
   onEntityPossiblyUpdated(
     entity: LuaEntity,
     stage: StageNumber,
@@ -80,8 +80,8 @@ export interface UserActions {
     byPlayer: PlayerIndex,
   ): boolean
 
-  onTileBuilt(position: Position, value: string, stage: StageNumber, byPlayer: PlayerIndex | nil): void
-  onTileMined(position: Position, stage: StageNumber, byPlayer: PlayerIndex | nil): void
+  onTileBuilt(position: Position, value: string, stage: StageNumber): void
+  onTileMined(position: Position, stage: StageNumber): void
 }
 
 /** @noSelf */
@@ -171,10 +171,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     trySetLastStage,
     setValueFromStagedInfo,
     updateWiresFromWorld,
-    setNewTile,
-    moveTileDown,
-    setTileValueAtStage,
-    deleteTile,
+    setTileAtStage,
   } = projectUpdates
 
   const {
@@ -183,7 +180,6 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     refreshAllWorldEntities,
     refreshWorldEntityAtStage,
     updateAllHighlights,
-    updateTileAtStage,
   } = WorldUpdates
 
   const { blueprintableTiles } = getPrototypeInfo()
@@ -332,12 +328,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     refreshWorldEntityAtStage(existing, stage)
   }
 
-  function onEntityDeleted(
-    entity: LuaEntityInfo,
-    stage: StageNumber,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _byPlayer: PlayerIndex | nil,
-  ): void {
+  function onEntityDeleted(entity: LuaEntityInfo, stage: StageNumber): void {
     const projectEntity = content.findCompatibleWithLuaEntity(entity, nil, stage)
     if (projectEntity) maybeDeleteProjectEntity(projectEntity, stage)
   }
@@ -471,7 +462,12 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
   }
 
   function notifyIfMoveError(result: StageMoveResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil) {
-    if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange || result == StageMoveResult.EntityIsPersistent) return
+    if (
+      result == StageMoveResult.Updated ||
+      result == StageMoveResult.NoChange ||
+      result == StageMoveResult.EntityIsPersistent
+    )
+      return
 
     if (result == StageMoveResult.CannotMovePastLastStage) {
       createNotification(entity, byPlayer, [L_Interaction.CannotMovePastLastStage], true)
@@ -686,34 +682,15 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     if (area) prepareArea(project.getSurface(stage)!, area)
   }
 
-  function onTileBuilt(position: Position, name: string, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
-    const existingTile = content.tiles.get(position.x, position.y)
+  function onTileBuilt(position: Position, name: string, stage: StageNumber): void {
     if (!blueprintableTiles.has(name)) {
-      if (existingTile) {
-        onTileMined(position, stage, byPlayer)
-      }
+      setTileAtStage(position, stage, nil)
       return
     }
-    if (!existingTile) {
-      setNewTile(position, stage, name)
-      return
-    }
-    if (stage < existingTile.firstStage) {
-      moveTileDown(existingTile, stage, name)
-    } else {
-      setTileValueAtStage(existingTile, stage, name)
-    }
+    setTileAtStage(position, stage, name)
   }
 
-  function onTileMined(position: Position, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
-    const existingTile = content.tiles.get(position.x, position.y)
-    if (existingTile) {
-      if (stage == existingTile.firstStage) {
-        deleteTile(existingTile, true)
-      } else if (stage > existingTile.firstStage) {
-        updateTileAtStage(existingTile, stage)
-        createNotification(existingTile, byPlayer, [L_Game.CantBeMined], true)
-      }
-    }
+  function onTileMined(position: Position, stage: StageNumber): void {
+    setTileAtStage(position, stage, nil)
   }
 }

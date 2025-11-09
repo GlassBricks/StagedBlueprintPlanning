@@ -84,22 +84,7 @@ export interface ProjectUpdates {
   resetVehicleLocation(entity: MovableProjectEntity): void
   setVehicleLocationHere(entity: MovableProjectEntity): void
 
-  setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile
-
-  // todo: can/should the following 2 functions be merged into one?
-  moveTileDown(tile: ProjectTile, stage: StageNumber, newValue: string): void
-  setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void
-
-  moveTileUp(tile: ProjectTile, stage: StageNumber): void
-  ensureTileNotPresentAtStage(position: Position, stage: StageNumber): void
-  ensureAllTilesNotPresentAtStage(
-    positions: {
-      position: Position
-    }[],
-    stage: StageNumber,
-  ): void
-
-  deleteTile(tile: ProjectTile, ignoreFirstStage: boolean): void
+  setTileAtStage(position: Position, stage: StageNumber, value: string | nil): void
 
   scanProjectForExistingTiles(): void
 }
@@ -119,9 +104,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     updateWorldEntities,
     updateWorldEntitiesOnLastStageChanged,
     updateAllHighlights,
-    updateTilesInVisibleStages,
-    updateTilesOnMovedUp,
-    resetTiles,
+    updateTilesInRange,
   } = WorldUpdates
 
   return {
@@ -144,13 +127,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     moveAllPropsDown,
     resetVehicleLocation,
     setVehicleLocationHere,
-    setNewTile,
-    moveTileDown,
-    setTileValueAtStage,
-    moveTileUp,
-    ensureTileNotPresentAtStage,
-    ensureAllTilesNotPresentAtStage,
-    deleteTile,
+    setTileAtStage,
     scanProjectForExistingTiles,
   }
 
@@ -775,90 +752,53 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     }
   }
 
-  function setNewTile(position: Position, firstStage: StageNumber, firstValue: string): ProjectTile {
-    const newTile = createProjectTile(firstValue, position, firstStage)
-    const oldTile = content.tiles.get(position.x, position.y)
-    if (oldTile) {
-      resetTiles(oldTile, false)
-    }
-    content.setTile(newTile)
-    updateTilesInVisibleStages(newTile)
-    return newTile
-  }
-  function moveTileDown(tile: ProjectTile, stage: StageNumber, newValue: string): void {
-    assert(stage < tile.firstStage)
-    tile.moveDownWithValue(stage, newValue)
-    updateTilesInVisibleStages(tile)
-  }
-  function setTileValueAtStage(tile: ProjectTile, stage: StageNumber, value: string): void {
-    assert(stage >= tile.firstStage)
-    const updated = tile.adjustValueAtStage(stage, value)
-    if (updated) updateTilesInVisibleStages(tile)
-  }
-  function moveTileUp(tile: ProjectTile, stage: StageNumber): void {
-    const oldFirstStage = tile.firstStage
-    assert(oldFirstStage < stage)
-    tile.setFirstStageUnchecked(stage)
-    updateTilesOnMovedUp(tile, oldFirstStage)
-  }
-  function ensureTileNotPresentAtStage(position: Position, stage: StageNumber): void {
-    const tile = content.tiles.get(position.x, position.y)
-    if (!tile || tile.firstStage > stage) {
-      return
+  function setTileAtStage(position: Position, stage: StageNumber, value: string | nil): void {
+    let tile = content.tiles.get(position.x, position.y)
+
+    if (!tile && value != nil) {
+      tile = createProjectTile()
+      content.setTile(position, tile)
     }
 
-    const newStage = stage + 1
-    if (newStage <= project.numStages()) {
-      moveTileUp(tile, newStage)
+    if (!tile) return
+
+    const nextStage = tile.setTileAtStage(stage, value)
+
+    if (tile.isEmpty()) {
+      content.deleteTile(position)
+      updateTilesInRange(position, stage, nil)
     } else {
-      deleteTile(tile, false)
-    }
-  }
-  function ensureAllTilesNotPresentAtStage(
-    positions: {
-      position: Position
-    }[],
-    stage: StageNumber,
-  ): void {
-    for (const { position } of positions) {
-      ensureTileNotPresentAtStage(position, stage)
-    }
-  }
-
-  function deleteTile(tile: ProjectTile, ignoreFirstStage: boolean): void {
-    if (content.deleteTile(tile)) {
-      resetTiles(tile, ignoreFirstStage)
+      updateTilesInRange(position, stage, nextStage)
     }
   }
 
   function scanProjectForExistingTiles(): void {
     const bbox = content.computeBoundingBox()
-    const tilesToUpdate = new LuaSet<ProjectTile>()
+    const tilesToUpdate = new LuaSet<[Position, ProjectTile]>()
+
     for (const stage of $range(1, project.numStages())) {
       const surface = project.getSurface(stage)!
       const tiles = surface.find_tiles_filtered({
         area: bbox,
         name: Object.keys(getPrototypeInfo().blueprintableTiles),
       })
+
       for (const tile of tiles) {
         const position = tile.position
-        const existing = content.tiles.get(position.x, position.y)
-        if (!existing) {
-          const newTile = createProjectTile(tile.name, position, stage)
-          content.setTile(newTile)
-          tilesToUpdate.add(newTile)
-        } else if (stage < existing.firstStage) {
-          existing.setFirstStageUnchecked(stage)
-          tilesToUpdate.add(existing)
-        } else if (stage >= existing.firstStage) {
-          if (existing.adjustValueAtStage(stage, tile.name)) {
-            tilesToUpdate.add(existing)
-          }
+        let projectTile = content.tiles.get(position.x, position.y)
+
+        if (!projectTile) {
+          projectTile = createProjectTile()
+          content.setTile(position, projectTile)
         }
+
+        projectTile.setTileAtStage(stage, tile.name)
+        tilesToUpdate.add([position, projectTile])
       }
     }
-    for (const tile of tilesToUpdate) {
-      updateTilesInVisibleStages(tile)
+
+    for (const [position, tile] of tilesToUpdate) {
+      updateTilesInRange(position, tile.getFirstStage(), tile.getLastStage())
     }
   }
 }

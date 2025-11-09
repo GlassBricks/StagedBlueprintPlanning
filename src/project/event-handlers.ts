@@ -97,9 +97,9 @@ function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   }
 }
 
-function luaEntityDeleted(entity: LuaEntity, player: PlayerIndex | nil): void {
+function luaEntityDeleted(entity: LuaEntity): void {
   const stage = getStageAtEntity(entity)
-  if (stage) stage.actions.onEntityDeleted(entity, stage.stageNumber, player)
+  if (stage) stage.actions.onEntityDeleted(entity, stage.stageNumber)
 }
 
 function luaEntityPossiblyUpdated(entity: LuaEntity, player: PlayerIndex | nil): void {
@@ -206,7 +206,7 @@ Events.on_space_platform_built_entity((e) => luaEntityCreated(e.entity, nil))
 Events.script_raised_revive((e) => luaEntityCreated(e.entity, nil))
 
 Events.script_raised_destroy((e) => {
-  if (e.mod_name != modName) luaEntityDeleted(e.entity, nil)
+  if (e.mod_name != modName) luaEntityDeleted(e.entity)
 })
 Events.registerEarly(defines.events.on_object_destroyed, (e) => {
   if (e.type != defines.target_type.entity) return
@@ -220,8 +220,8 @@ Events.registerEarly(defines.events.on_object_destroyed, (e) => {
   stage.project.updates.maybeDeleteProjectEntity(entity, stage.stageNumber)
 })
 
-Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity, nil))
-Events.on_space_platform_mined_entity((e) => luaEntityDeleted(e.entity, nil))
+Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity))
+Events.on_space_platform_mined_entity((e) => luaEntityDeleted(e.entity))
 
 Events.on_entity_died((e) => luaEntityDied(e.entity))
 
@@ -290,19 +290,19 @@ Events.on_load(() => {
   state = storage.worldListenerState
 })
 
-function clearToBeFastReplaced(player: PlayerIndex | nil): void {
+function clearToBeFastReplaced(): void {
   const { toBeFastReplaced } = state
   if (toBeFastReplaced) {
     const { stage } = toBeFastReplaced
     if (stage.valid) {
       const { stageNumber } = stage
-      stage.actions.onEntityDeleted(toBeFastReplaced, stageNumber, player)
+      stage.actions.onEntityDeleted(toBeFastReplaced, stageNumber)
     }
     state.toBeFastReplaced = nil
   }
 }
 
-function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerIndex | nil): void {
+function setToBeFastReplaced(entity: LuaEntity, stage: Stage): void {
   const isUnderground = entity.type == "underground-belt"
   const newValue: ToBeFastReplacedEntity = {
     name: entity.name,
@@ -314,7 +314,7 @@ function setToBeFastReplaced(entity: LuaEntity, stage: Stage, player: PlayerInde
     stage,
   }
 
-  clearToBeFastReplaced(player)
+  clearToBeFastReplaced()
   state.toBeFastReplaced = newValue
 }
 
@@ -342,7 +342,7 @@ Events.on_pre_build((e) => {
     item: item.name,
     event: e,
   }
-  clearToBeFastReplaced(e.player_index)
+  clearToBeFastReplaced()
 
   // handle underground rotation via drag, very manually
 
@@ -421,9 +421,9 @@ Events.on_player_mined_entity((e) => {
 
   // preMinedItem not called when using instant upgrade planner
   if (preMinedItemCalled == nil || isFastReplaceMine(e)) {
-    setToBeFastReplaced(entity, stage, e.player_index)
+    setToBeFastReplaced(entity, stage)
   } else {
-    stage.actions.onEntityDeleted(entity, stage.stageNumber, e.player_index)
+    stage.actions.onEntityDeleted(entity, stage.stageNumber)
   }
 })
 
@@ -509,7 +509,7 @@ function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex) {
     return true
   }
   // not fast replaceable, call delete on the stored value
-  clearToBeFastReplaced(player)
+  clearToBeFastReplaced()
 }
 
 function isFastReplaceable(old: LuaEntityInfo, next: LuaEntityInfo): boolean {

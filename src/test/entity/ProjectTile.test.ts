@@ -5,70 +5,202 @@
 
 import expect from "tstl-expect"
 import { createProjectTile } from "../../entity/ProjectTile"
+import { getNilPlaceholder } from "../../utils/diff-value"
 
-describe("setValueAtStage()", () => {
-  test("can set value at first stage", () => {
-    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
-    expect(tile.firstValue).toBe("a")
-    expect(tile.hasStageDiff()).toBe(false)
-    expect(tile.getValueAtStage(1)).toBe("a")
-    expect(tile.getValueAtStage(2)).toBe("a")
+describe("ProjectTile", () => {
+  describe("getTileAtStage()", () => {
+    test("returns value at exact stage", () => {
+      const tile = createProjectTile()
+      tile.values[2] = "concrete"
+      expect(tile.getTileAtStage(2)).toBe("concrete")
+    })
 
-    tile.adjustValueAtStage(1, "b")
-    expect(tile.firstValue).toBe("b")
-    expect(tile.hasStageDiff()).toBe(false)
-    expect(tile.getValueAtStage(1)).toBe("b")
-    expect(tile.getValueAtStage(2)).toBe("b")
+    test("returns propagated value from earlier stage", () => {
+      const tile = createProjectTile()
+      tile.values[2] = "concrete"
+      expect(tile.getTileAtStage(3)).toBe("concrete")
+      expect(tile.getTileAtStage(10)).toBe("concrete")
+    })
+
+    test("returns nil before first stage", () => {
+      const tile = createProjectTile()
+      tile.values[2] = "concrete"
+      expect(tile.getTileAtStage(1)).toBeNil()
+    })
+
+    test("returns nil when value is nilPlaceholder", () => {
+      const tile = createProjectTile()
+      tile.values[2] = "concrete"
+      tile.values[4] = getNilPlaceholder()
+      expect(tile.getTileAtStage(4)).toBeNil()
+      expect(tile.getTileAtStage(5)).toBeNil()
+    })
+
+    test("handles value changes across stages", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[3] = "stone-path"
+      expect(tile.getTileAtStage(1)).toBe("concrete")
+      expect(tile.getTileAtStage(2)).toBe("concrete")
+      expect(tile.getTileAtStage(3)).toBe("stone-path")
+      expect(tile.getTileAtStage(4)).toBe("stone-path")
+    })
   })
 
-  test("creates stage diff when setting value at stage > first stage", () => {
-    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
-    tile.adjustValueAtStage(2, "b")
-    expect(tile.firstValue).toBe("a")
-    expect(tile.stageDiffs).toEqual({ [2]: "b" })
+  describe("setTileAtStage()", () => {
+    test("sets value and creates entry", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
 
-    expect(tile.getValueAtStage(1)).toBe("a")
-    expect(tile.getValueAtStage(2)).toBe("b")
-    expect(tile.getValueAtStage(3)).toBe("b")
+      const nextStage = tile.setTileAtStage(3, "stone-path")
+
+      expect(tile.values[3]).toBe("stone-path")
+      expect(nextStage).toBeNil()
+    })
+
+    test("returns next stage when it exists", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[5] = "landfill"
+
+      const nextStage = tile.setTileAtStage(3, "stone-path")
+
+      expect(nextStage).toBe(5)
+    })
+
+    test("removes redundant entry when value matches previous", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[3] = "stone-path"
+
+      tile.setTileAtStage(3, "concrete")
+
+      expect(tile.values[3]).toBeNil()
+    })
+
+    test("trims duplicate values after changed stage", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[3] = "stone-path"
+      tile.values[5] = "stone-path"
+
+      tile.setTileAtStage(1, "stone-path")
+
+      expect(tile.values).toMatchTable({ [1]: "stone-path" })
+    })
+
+    test("stops trimming at first different value", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[3] = "stone-path"
+      tile.values[5] = "landfill"
+
+      tile.setTileAtStage(1, "stone-path")
+
+      expect(tile.values).toMatchTable({ [1]: "stone-path", [5]: "landfill" })
+    })
+
+    test("sets nil value using nilPlaceholder", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+
+      tile.setTileAtStage(3, nil)
+
+      expect(tile.values[3]).toBe(getNilPlaceholder())
+      expect(tile.getTileAtStage(3)).toBeNil()
+    })
+
+    test("removes nil entry when previous stage was already nil", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[3] = getNilPlaceholder()
+
+      tile.setTileAtStage(5, nil)
+
+      expect(tile.values[5]).toBeNil()
+    })
   })
 
-  test("removes stage diff when setting to old value", () => {
-    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
-    tile.adjustValueAtStage(2, "b")
-    tile.adjustValueAtStage(2, "a")
-    expect(tile.firstValue).toBe("a")
-    expect(tile.hasStageDiff()).toBe(false)
+  describe("isEmpty()", () => {
+    test("returns true for empty tile", () => {
+      const tile = createProjectTile()
+      expect(tile.isEmpty()).toBe(true)
+    })
 
-    expect(tile.getValueAtStage(1)).toBe("a")
-    expect(tile.getValueAtStage(2)).toBe("a")
-    expect(tile.getValueAtStage(3)).toBe("a")
+    test("returns false when tile has values", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      expect(tile.isEmpty()).toBe(false)
+    })
   })
 
-  test("setting value at first stage may remove stage diff", () => {
-    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
-    tile.adjustValueAtStage(2, "b")
-    tile.adjustValueAtStage(1, "b")
-
-    expect(tile.getValueAtStage(1)).toBe("b")
-    expect(tile.hasStageDiff()).toBe(false)
+  describe("getFirstStage()", () => {
+    test("returns lowest stage number", () => {
+      const tile = createProjectTile()
+      tile.values[3] = "concrete"
+      tile.values[1] = "stone-path"
+      tile.values[5] = "landfill"
+      expect(tile.getFirstStage()).toBe(1)
+    })
   })
 
-  test("partially removes stage diff when setting to value different at previous stage", () => {
-    const tile = createProjectTile("a", { x: 0, y: 0 }, 1)
-    tile.adjustValueAtStage(3, "b")
-    tile.adjustValueAtStage(2, "b")
+  describe("getLastStage()", () => {
+    test("returns nil when no explicit nil entry", () => {
+      const tile = createProjectTile()
+      tile.values[2] = "concrete"
+      expect(tile.getLastStage()).toBeNil()
+    })
 
-    expect(tile.firstValue).toBe("a")
-    expect(tile.stageDiffs).toEqual({ [2]: "b" })
+    test("returns stage with nilPlaceholder", () => {
+      const tile = createProjectTile()
+      tile.values[2] = "concrete"
+      tile.values[5] = getNilPlaceholder()
+      expect(tile.getLastStage()).toBe(5)
+    })
   })
-})
-test("moves tile down with new value at earlier stage", () => {
-  const tile = createProjectTile("a", { x: 0, y: 0 }, 2)
-  tile.moveDownWithValue(1, "b")
 
-  expect(tile.firstValue).toBe("b")
-  expect(tile.hasStageDiff()).toBe(true)
-  expect(tile.getValueAtStage(1)).toBe("b")
-  expect(tile.getValueAtStage(2)).toBe("a")
-  expect(tile.getValueAtStage(3)).toBe("a")
+  describe("insertStage()", () => {
+    test("shifts all stages at or after insertion point", () => {
+      const tile = createProjectTile()
+      tile.values[2] = "concrete"
+      tile.values[4] = "stone-path"
+
+      tile.insertStage(3)
+
+      expect(tile.values).toMatchTable({ [2]: "concrete", [5]: "stone-path" })
+    })
+
+    test("does not affect stages before insertion point", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[4] = "stone-path"
+
+      tile.insertStage(3)
+
+      expect(tile.values[1]).toBe("concrete")
+    })
+  })
+
+  describe("deleteStage()", () => {
+    test("merges stage value with previous and shifts", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[2] = "stone-path"
+      tile.values[4] = "landfill"
+
+      tile.deleteStage(2)
+
+      expect(tile.values).toMatchTable({ [1]: "stone-path", [3]: "landfill" })
+    })
+
+    test("handles deleting stage 1 by merging stage 2", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[2] = "stone-path"
+
+      tile.deleteStage(1)
+
+      expect(tile.values[1]).toBe("stone-path")
+    })
+  })
 })

@@ -3,86 +3,106 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { isEmpty, RegisterClass } from "../lib"
-import { Position } from "../lib/geometry"
+import { PRecord, RegisterClass, shiftNumberKeysDown, shiftNumberKeysUp } from "../lib"
+import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 import { StageNumber } from "./ProjectEntity"
-import { BaseStagedValue, StagedValue } from "./StagedValue"
 
-export interface ProjectTile extends StagedValue<string, string> {
-  readonly position: Position
+export interface ProjectTile {
+  readonly values: PRecord<StageNumber, string | NilPlaceholder>
 
-  // this method may be moved to StagedValue in the future
-  moveDownWithValue(newFirstStage: StageNumber, newValue: string): void
+  getTileAtStage(stage: StageNumber): string | nil
+  setTileAtStage(stage: StageNumber, value: string | nil): StageNumber | nil
+  isEmpty(): boolean
+
+  getFirstStage(): StageNumber
+  getLastStage(): StageNumber | nil
+
+  insertStage(stageNumber: StageNumber): void
+  deleteStage(stageNumber: StageNumber): void
 }
+
 @RegisterClass("ProjectTile")
-class ProjectTileImpl extends BaseStagedValue<string, string> implements ProjectTile {
-  constructor(
-    firstStage: StageNumber,
-    firstValue: string,
-    readonly position: Position,
-  ) {
-    super(firstStage, firstValue)
-  }
+class ProjectTileImpl implements ProjectTile {
+  values: PRecord<StageNumber, string | NilPlaceholder> = {}
 
-  moveDownWithValue(newFirstStage: StageNumber, newValue: string): void {
-    const oldFirstStage = this.firstStage
-    const oldValue = this.firstValue
-    assert(newFirstStage < oldFirstStage, "newFirstStage must be < old first stage")
-    this.firstStage = newFirstStage
-    if (newValue == oldValue) return
-
-    this.firstValue = newValue
-    const diffs = (this.stageDiffs ??= {})
-    diffs[oldFirstStage] = oldValue
-  }
-
-  adjustValueAtStage(stage: StageNumber, value: string): boolean {
-    const { firstStage } = this
-    assert(stage >= firstStage, "stage must be >= first stage")
-
-    if (stage == firstStage) {
-      if (value == this.firstValue) return false
-      this.firstValue = value
-      this.trimDiffs(stage, value)
-      return true
+  getTileAtStage(stage: StageNumber): string | nil {
+    let result: string | NilPlaceholder | nil = nil
+    for (const [s, value] of pairs(this.values)) {
+      if (s > stage) break
+      result = value
     }
-    let stageDiffs = this.stageDiffs
-    const oldDiffValue = stageDiffs?.[stage]
-    const valueAtPreviousStage = this.getValueAtStage(stage - 1)
-    const newDiff = value != valueAtPreviousStage ? value : nil
-    if (oldDiffValue == newDiff) return false
 
-    if (newDiff) {
-      stageDiffs ??= this.stageDiffs = {}
-      stageDiffs[stage] = newDiff
-    } else if (stageDiffs) {
-      delete stageDiffs[stage]
+    return result == getNilPlaceholder() ? nil : result
+  }
+
+  setTileAtStage(stage: StageNumber, value: string | nil): StageNumber | nil {
+    const newValue = value == nil ? getNilPlaceholder() : value
+
+    const prevValueRaw = this.getTileAtStage(stage - 1)
+    const prevValue = prevValueRaw == nil ? getNilPlaceholder() : prevValueRaw
+
+    if (newValue != prevValue) {
+      this.values[stage] = newValue
+      this.trimDuplicatesAfter(stage, newValue)
+    } else {
+      delete this.values[stage]
     }
-    this.trimDiffs(stage, value)
 
-    return true
-  }
-
-  private trimDiffs(stage: StageNumber, value: string) {
-    const diffs = this.stageDiffs
-    if (!diffs) return
-    for (const [oStage, existingValue] of pairs(diffs)) {
-      if (oStage <= stage) continue
-      if (existingValue == value) delete diffs[oStage]
-      else break
+    for (const [s] of pairs(this.values)) {
+      if (s > stage) return s
     }
-    if (isEmpty(diffs)) delete this.stageDiffs
+    return nil
   }
 
-  protected override applyDiff(this: void, _value: string, diff: string): string {
-    return diff
+  private trimDuplicatesAfter(stage: StageNumber, value: string | NilPlaceholder): void {
+    for (const [s, v] of pairs(this.values)) {
+      if (s <= stage) continue
+      if (v == value) {
+        delete this.values[s]
+      } else {
+        break
+      }
+    }
   }
 
-  override setLastStageUnchecked(): void {
-    error("TODO")
+  isEmpty(): boolean {
+    return next(this.values)[0] == nil
+  }
+
+  getFirstStage(): StageNumber {
+    for (const [stage] of pairs(this.values)) {
+      return stage
+    }
+    error("Empty tile has no first stage")
+  }
+
+  getLastStage(): StageNumber | nil {
+    let highest: StageNumber | nil = nil
+    for (const [stage] of pairs(this.values)) {
+      if (highest == nil || stage > highest) {
+        highest = stage
+      }
+    }
+    if (highest != nil && this.values[highest] == getNilPlaceholder()) {
+      return highest
+    }
+    return nil
+  }
+
+  insertStage(stageNumber: StageNumber): void {
+    shiftNumberKeysUp(this.values, stageNumber)
+  }
+
+  deleteStage(stageNumber: StageNumber): void {
+    if (stageNumber > 1 && this.values[stageNumber] != nil) {
+      const valueAtMerge = this.getTileAtStage(stageNumber)
+      this.setTileAtStage(stageNumber - 1, valueAtMerge)
+    }
+
+    shiftNumberKeysDown(this.values, stageNumber)
   }
 }
 
-export function createProjectTile(firstValue: string, position: Position, firstStage: StageNumber): ProjectTile {
-  return new ProjectTileImpl(firstStage, firstValue, position)
+export function createProjectTile(): ProjectTile {
+  return new ProjectTileImpl()
 }
