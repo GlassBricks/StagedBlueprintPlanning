@@ -51,8 +51,7 @@ export interface ProjectContent {
   countNumEntities(): number
   allEntities(): ReadonlyLuaSet<ProjectEntity>
 
-  // getTile(x: number, y: number): ProjectTile | nil
-  readonly tiles: ReadonlyMap2D<ProjectTile>
+  tiles: ReadonlyMap2D<ProjectTile>
   /**
    * Will return slightly larger than actual
    */

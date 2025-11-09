@@ -11,6 +11,7 @@ import {
   iconNumbers,
 } from "../blueprints/blueprint-settings"
 import { mergeInventoryPositions } from "../entity/item-requests"
+import { newMap2d } from "../entity/map2d"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { createProjectTile } from "../entity/ProjectTile"
 import { Mutable, PRecord } from "../lib"
@@ -139,18 +140,17 @@ Migrations.to($CURRENT_VERSION, () => {
     ;(project as any).surfaceSettings = { ...getDefaultSurfaceSettings(), ...settings }
 
     // Migrate tiles from old format to new sparse array format
-    const tilesToMigrate: [number, number, OldProjectTile][] = []
+    const tilesToMigrate: OldProjectTile[] = []
 
-    for (const [x, row] of pairs<PRecord<number, PRecord<number, unknown>>>(project.content.tiles)) {
-      for (const [y, tile] of pairs(row)) {
+    for (const [, row] of pairs<PRecord<number, PRecord<number, unknown>>>(project.content.tiles)) {
+      for (const [, tile] of pairs(row)) {
         const old = tile as unknown as OldProjectTile
-        if (old.firstStage != nil && old.firstValue != nil) {
-          tilesToMigrate.push([x, y, old])
-        }
+        tilesToMigrate.push(old)
       }
     }
+    project.content.tiles = newMap2d()
 
-    for (const [, , old] of tilesToMigrate) {
+    for (const old of tilesToMigrate) {
       const newTile = createProjectTile()
       const position = old.position
 
@@ -163,7 +163,7 @@ Migrations.to($CURRENT_VERSION, () => {
       }
 
       if (old.lastStage != nil) {
-        newTile.values[old.lastStage] = getNilPlaceholder()
+        newTile.values[old.lastStage + 1] = getNilPlaceholder()
       }
 
       project.content.setTile(position, newTile)
