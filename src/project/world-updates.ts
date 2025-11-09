@@ -30,6 +30,7 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
+import { withTileEventsDisabled } from "./tile-events"
 
 /** @noSelf */
 export interface WorldUpdates {
@@ -81,7 +82,6 @@ class RebuildAllStagesTask extends LoopTask {
   }
 }
 
-const raise_script_set_tiles = script.raise_script_set_tiles
 const raise_destroy = script.raise_script_destroy
 
 let nameToType: PrototypeInfo["nameToType"]
@@ -429,18 +429,20 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     const tileWrite: Mutable<TileWrite> = { position, name: "" }
     const tileWriteArr = [tileWrite]
 
-    for (let stage = fromStage; stage <= endStage; stage++) {
-      const value = tile?.getTileAtStage(stage)
-      const surface = project.getSurface(stage)!
-      if (value != nil) {
-        tileWrite.name = value
-      } else {
-        const defaultTile: string = project.isSpacePlatform?.()
-          ? "empty-space"
-          : (surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2"))
-        tileWrite.name = defaultTile
+    withTileEventsDisabled(() => {
+      for (let stage = fromStage; stage <= endStage; stage++) {
+        const value = tile?.getTileAtStage(stage)
+        const surface = project.getSurface(stage)!
+        if (value != nil) {
+          tileWrite.name = value
+        } else {
+          const defaultTile: string = project.isSpacePlatform?.()
+            ? "empty-space"
+            : (surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2"))
+          tileWrite.name = defaultTile
+        }
+        surface.set_tiles(tileWriteArr, true, false, true, true)
       }
-      surface.set_tiles(tileWriteArr, true, false)
-    }
+    })
   }
 }
