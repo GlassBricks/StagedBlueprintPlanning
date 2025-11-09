@@ -3,6 +3,8 @@ Version: 2.8.1
 Date: ????
   Bugfixes:
     - Fixed dropping modules inside an crafting machine.
+  Graphics:
+    - Fixed missing label for "All" settings in updated settings entity UI.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.0
 Date: 2025-11-09

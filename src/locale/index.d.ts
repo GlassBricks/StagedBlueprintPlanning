@@ -460,7 +460,7 @@ export declare const enum L_GuiEntityInfo {
   ResetProp = "bp100.gui.entity-info.reset-prop",
   /** Apply to previous stage (__1__) */
   ApplyToLowerStage = "bp100.gui.entity-info.apply-to-lower-stage",
-  /**  */
+  /** <All> */
   AllProps = "bp100.gui.entity-info.all-props",
 }
 export declare const enum L_GuiMapGenSettings {
