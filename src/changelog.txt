@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.1
-Date: ????
+Date: 2025-11-09
   Bugfixes:
     - Fixed module dropping into a crafting machine (using Z).
     - Fixed tile ghosts lingering when pasting blueprints on space platforms.
