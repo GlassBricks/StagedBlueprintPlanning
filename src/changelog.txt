@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.2
-Date: ????
+Date: 2025-11-10
   Bugfixes:
     - Fixed exporting projects to string, when settings remnants are present.
     - We really need to get rid of those...
