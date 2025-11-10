@@ -111,33 +111,30 @@ export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): Enti
   const entityMap = new LuaMap<ProjectEntity, number>()
   const result: EntityExport[] = []
 
+  const entitysArr = Object.keys(entities).filter((entity) => !entity.isSettingsRemnant)
+
   let thisEntityNumber = 0
-  for (const entity of entities) {
+  for (const entity of entitysArr) {
     thisEntityNumber++
-    if (!entity.isSettingsRemnant) {
-      const newLocal = exportEntity(entity, thisEntityNumber)
-      result.push(newLocal)
-      entityMap.set(entity, thisEntityNumber)
-    }
+    const newLocal = exportEntity(entity, thisEntityNumber)
+    result.push(newLocal)
+    entityMap.set(entity, thisEntityNumber)
   }
 
   // pass 2: wires
   thisEntityNumber = 0
-  for (const thisEntity of entities) {
-    // lua set has consistent iteration order, so this is fine
+  for (const thisEntity of entitysArr) {
     thisEntityNumber++
     const thisExport = result[thisEntityNumber - 1]
     const wires = thisEntity.wireConnections
-    if (!thisEntity.isSettingsRemnant && wires) {
-      if (!wires) continue
-      const thisWires: BlueprintWire[] = (thisExport.wires = [])
-      for (const [otherEntity, connections] of wires) {
-        const otherEntityNumber = entityMap.get(otherEntity)
-        if (!otherEntityNumber) continue
-        for (const connection of connections) {
-          const [, thisId, otherId] = getDirectionalInfo(connection, thisEntity)
-          thisWires.push([thisEntityNumber, thisId, otherEntityNumber, otherId])
-        }
+    if (!wires) continue
+    const thisWires: BlueprintWire[] = (thisExport.wires = [])
+    for (const [otherEntity, connections] of wires) {
+      const otherEntityNumber = entityMap.get(otherEntity)
+      if (!otherEntityNumber) continue
+      for (const connection of connections) {
+        const [, thisId, otherId] = getDirectionalInfo(connection, thisEntity)
+        thisWires.push([thisEntityNumber, thisId, otherEntityNumber, otherId])
       }
     }
   }
