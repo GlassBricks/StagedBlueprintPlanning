@@ -85,7 +85,7 @@ export type AnyHandler = (this: void, data?: any) => void
 // number -- event id
 // string -- custom input handler
 // symbol -- script event
-const registeredHandlers: PRecord<keyof any, AnyHandler[]> = {}
+const registeredHandlers: PRecord<symbol | EventId<any>, AnyHandler[]> = {}
 
 let canRegister = true
 let ignoreRegister = false
@@ -94,18 +94,23 @@ export function _setCanRegister(value: boolean): void {
   canRegister = value
 }
 
-function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
+function toActualId(id: keyof any): EventId<any> | symbol {
+  if (typeof id == "object") return id
+  return script.get_event_id(id as any) as EventId<any>
+}
+
+function registerInternal(rawId: keyof any, handler: AnyHandler, early?: boolean) {
   if (ignoreRegister) {
-    log("Ignoring register call for " + tostring(id))
+    log("Ignoring register call for " + tostring(rawId))
     return
   }
   if (!canRegister) error("Cannot register event handlers after on_init/on_load")
-  let handlers = registeredHandlers[id]
-  if (!handlers) {
-    handlers = registeredHandlers[id] = []
-  }
+  const id = toActualId(rawId)
+
+  const handlers = (registeredHandlers[id] ??= [])
   if (early) handlers.unshift(handler)
   else handlers.push(handler)
+
   if (handlers.length > 2) return
 
   let func: AnyHandler
@@ -119,28 +124,29 @@ function registerInternal(id: keyof any, handler: AnyHandler, early?: boolean) {
       }
     }
   }
-  if (type(id) == "table") {
-    // script[(id as symbol).description as keyof ScriptEvents](func)
+
+  if (typeof id != "number") {
     const funcWrapper: AnyHandler = (data: any) => {
       func(data)
       canRegister = false
     }
-    script[(id as symbol).description as keyof ScriptEvents](funcWrapper)
+    script[id.description as keyof ScriptEvents](funcWrapper)
   } else {
-    script.on_event(id as any, func)
+    script.on_event(id, func)
   }
 }
 
-function raiseFakeEvent(id: keyof any, data: any) {
+function raiseFakeEvent(rawId: keyof any, data: any) {
   ignoreRegister = true
+  const id = toActualId(rawId)
   const handlers = registeredHandlers[id]
   if (!handlers) return
   if (data) {
     Object.assign(data, {
       tick: game.tick,
-      name: typeof id != "object" ? id : nil,
+      name: id,
     })
-    if (typeof id == "string") {
+    if (typeof rawId == "string") {
       data.input_name = id
       data.cursor_position ??= { x: 0, y: 0 }
       data.quality ??= "normal"
@@ -152,10 +158,11 @@ function raiseFakeEvent(id: keyof any, data: any) {
   ignoreRegister = false
 }
 
-function clear(id: keyof any) {
+function clear(rawId: keyof any) {
+  const id = toActualId(rawId)
   registeredHandlers[id] = nil
-  if (type(id) == "table") {
-    script[(id as symbol).description as keyof ScriptEvents](nil)
+  if (typeof id != "number") {
+    script[id.description as keyof ScriptEvents](nil)
   } else {
     script.on_event(id as any, nil)
   }
