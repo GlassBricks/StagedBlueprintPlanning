@@ -178,7 +178,7 @@ export declare const enum L_Gui {
   BlueprintFilters = "bp100.gui.blueprint-filters",
   /** Get reference */
   GetStageTemplate = "bp100.gui.get-stage-template",
-  /** [img=utility/import_slot] Import project from string */
+  /** [img=utility/import_slot] Import string */
   ImportProjectFromString = "bp100.gui.import-project-from-string",
   /** Import a project from either:\n- An exported project string (see Project setting)\n- A blueprint book. Each blueprint in the book becomes a stage. This will likely only work if all blueprints have snap-to-grid on, and have the blueprint flag/center all at the same position. */
   ImportProjectFromStringTooltip = "bp100.gui.import-project-from-string-tooltip",
@@ -202,9 +202,9 @@ export declare const enum L_GuiProjectSelector {
   ShowAllProjects = "bp100.gui.project-selector.show-all-projects",
   /** Staged BP projects */
   AllProjects = "bp100.gui.project-selector.all-projects",
-  /** New project */
+  /** ＋ New project */
   NewProject = "bp100.gui.project-selector.new-project",
-  /** Exit project */
+  /** [virtual-signal=signal-output]Exit project editor */
   ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
   ButtonTooltip = "bp100.gui.project-selector.button-tooltip",
@@ -394,7 +394,7 @@ export declare const enum L_GuiProjectSettings {
   SyncMapGenSettings = "bp100.gui.project-settings.sync-map-gen-settings",
   /** Sets map gen settings for all stages to match the current stage, then regenerates all stages.\n\nTo change map settings:\n - Go to editor mode (/editor)\n - Click the "Surfaces" tab\n - Click "Edit map gen settings"\n - Possibly un-check "Generate new chunks with lab tiles"\n - Click this button to regenerate all stages\n Additionally, the "Global electric network" and "Ignore surface conditions" settings will be applied. */
   SyncMapGenSettingsTooltip = "bp100.gui.project-settings.sync-map-gen-settings-tooltip",
-  /** [img=utility/trash]Delete project */
+  /** Delete project */
   DeleteProject = "bp100.gui.project-settings.delete-project",
   /** Are you sure you want to delete project __1__? */
   DeleteProjectConfirmation1 = "bp100.gui.project-settings.delete-project-confirmation1",

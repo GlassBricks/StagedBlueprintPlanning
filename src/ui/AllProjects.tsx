@@ -81,19 +81,24 @@ class AllProjects extends Component {
               {getAllProjects().map((project) => this.projectButtonFlow(project))}
             </scroll-pane>
           </frame>
-          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-            <button caption={[L_GuiProjectSelector.NewProject]} on_gui_click={ibind(this.newProject)} />
-            <HorizontalPusher />
+          <flow direction="horizontal">
             <button
-              caption={[L_GuiProjectSelector.ExitProject]}
-              enabled={currentStage.truthy()}
-              on_gui_click={ibind(this.exitProject)}
+              caption={[L_GuiProjectSelector.NewProject]}
+              on_gui_click={ibind(this.newProject)}
+              styleMod={{ horizontally_stretchable: true }}
+            />
+            <button
+              caption={[L_Gui.ImportProjectFromString]}
+              tooltip={[L_Gui.ImportProjectFromStringTooltip]}
+              styleMod={{ horizontally_stretchable: true }}
+              on_gui_click={ibind(this.importProject)}
             />
           </flow>
           <button
-            caption={[L_Gui.ImportProjectFromString]}
-            tooltip={[L_Gui.ImportProjectFromStringTooltip]}
-            on_gui_click={ibind(this.importProject)}
+            caption={[L_GuiProjectSelector.ExitProject]}
+            enabled={currentStage.truthy()}
+            styleMod={{ horizontally_stretchable: true }}
+            on_gui_click={ibind(this.exitProject)}
           />
         </frame>
         {storage.researchTechPromptDismissed != true && (
@@ -128,7 +133,12 @@ class AllProjects extends Component {
   private projectButton(project: UserProject) {
     const currentProject = playerCurrentStage(this.playerIndex).get()?.project
     return (
-      <flow direction="horizontal">
+      <flow
+        direction="horizontal"
+        styleMod={{
+          horizontal_spacing: 0,
+        }}
+      >
         <button
           style={project == currentProject ? Styles.FakeListBoxItemActive : Styles.FakeListBoxItem}
           caption={project.displayName()}
