@@ -4,8 +4,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { LuaPlayer, LuaSurface, PlayerIndex, SurfaceIndex } from "factorio:runtime"
+import { StageNumber } from "../entity/ProjectEntity"
 import { assertNever, Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
-import { Pos, Position } from "../lib/geometry"
+import { Position } from "../lib/geometry"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { getStageAtSurface } from "../project/project-refs"
 import { Stage, UserProject } from "../project/ProjectDef"
@@ -63,17 +64,32 @@ ProjectEvents.addListener((e) => {
   }
 })
 
+function teleportPlayer(player: LuaPlayer, surface: LuaSurface, position: Position): void {
+  if (player.controller_type == defines.controllers.remote) {
+    const zoom = player.zoom
+    player.set_controller({
+      type: defines.controllers.remote,
+      surface,
+      position,
+    })
+    player.zoom = zoom
+  } else {
+    player.teleport(position, surface)
+  }
+}
+
 export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   recordPlayerLastPosition(player)
 
   const currentStage = getStageAtSurface(player.surface_index)
-  if (currentStage && currentStage.project == stage.project) {
-    if (currentStage != stage) player.teleport(player.position, stage.surface)
-    return
+  if (currentStage?.project == stage.project) {
+    if (currentStage != stage) {
+      teleportPlayer(player, stage.surface, player.position)
+    }
+  } else {
+    const newPosition = getProjectPlayerData(player.index, stage.project)?.lastPosition ?? { x: 0, y: 0 }
+    teleportPlayer(player, stage.surface, newPosition)
   }
-
-  const newPosition = getProjectPlayerData(player.index, stage.project)?.lastPosition ?? { x: 0, y: 0 }
-  player.teleport(newPosition, stage.surface)
 }
 
 export function teleportToProject(player: LuaPlayer, project: UserProject): void {
@@ -85,13 +101,10 @@ export function teleportToProject(player: LuaPlayer, project: UserProject): void
 
   const playerData = getProjectPlayerData(player.index, project)
   if (!playerData) return
-  if (playerData.lastStage && playerData.lastStage <= project.numStages()) {
-    const stage = project.getStage(playerData.lastStage)!
-    player.teleport(playerData.lastPosition ?? { x: 0, y: 0 }, stage.surface)
-  } else {
-    const stage = project.getStage(1)!
-    player.teleport(Pos(0, 0), stage.surface)
-  }
+  const stageNum: StageNumber | nil = playerData.lastStage
+  const position = playerData.lastPosition ?? { x: 0, y: 0 }
+  const stage = (stageNum && project.getStage(stageNum)) || project.getStage(1)!
+  teleportPlayer(player, stage.surface, position)
 }
 
 export function recordPlayerLastPosition(player: LuaPlayer): void {
@@ -101,11 +114,11 @@ export function recordPlayerLastPosition(player: LuaPlayer): void {
     const playerData = getProjectPlayerData(player.index, currentStage.project)
     if (!playerData) return
     playerData.lastStage = currentStage.stageNumber
-    playerData.lastPosition = player.position
+    playerData.lastPosition = player.render_position
   } else if (globalPlayerData != nil) {
     globalPlayerData.lastNonProjectLocation = {
       surface: player.surface,
-      position: player.position,
+      position: player.render_position,
     }
   }
   if (globalPlayerData != nil) {

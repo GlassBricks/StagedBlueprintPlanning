@@ -3,6 +3,9 @@ Version: 2.8.3
 Date: ????
   Gui:
     - Moved "Delete project" button to the Project list UI.
+    - Improved button layout in Project list UI
+  Minor features:
+    - Stay in remote view, when switching stages.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.2
 Date: 2025-11-10
