@@ -22,6 +22,7 @@ import { MapGenSettingsForm, PlanetSelect } from "./MapGenSettings"
 import { teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./ProjectSettings"
 import { SpacePlatformSettings, SurfaceSettings } from "../project/surfaces"
+import { closeAllProjects } from "./AllProjectsDec"
 
 interface SpacePlatformSettingsProps {
   firstStarterPack: string
@@ -214,6 +215,7 @@ export class NewProjectDialog extends Confirmable<NewProjectDialogProps> {
 
     teleportToProject(player, project)
     bringSettingsWindowToFront(player)
+    closeAllProjects(player)
 
     this.close()
   }

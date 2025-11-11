@@ -57,7 +57,6 @@ import { IconsEdit } from "./IconEdit"
 import { ItemRename } from "./ItemRename"
 import { openMapGenSettingsSelect } from "./MapGenSettings"
 import {
-  exitProject,
   PlayerChangedStageEvent,
   playerCurrentStage,
   recordPlayerLastPosition,
@@ -751,13 +750,6 @@ class ProjectSettings extends Component<{
                   on_gui_click={ibind(this.scanExistingTiles)}
                 />
               </flow>
-              <VerticalPusher />
-              <button
-                style="red_button"
-                caption={[L_GuiProjectSettings.DeleteProject]}
-                styleMod={{ width: OtherSettingsButtonWidth }}
-                on_gui_click={ibind(this.beginDeleteProject)}
-              />
             </>
           )}
         </flow>
@@ -769,28 +761,6 @@ class ProjectSettings extends Component<{
     const player = game.get_player(this.playerIndex)
     if (!player) return
     exportProjectToString(player, this.project)
-  }
-
-  private beginDeleteProject() {
-    const player = game.get_player(this.playerIndex)
-    if (!player) return
-    const project = this.project
-    showDialog(player, {
-      title: [L_GuiProjectSettings.DeleteProject],
-      message: [
-        [L_GuiProjectSettings.DeleteProjectConfirmation1, project.displayName().get()],
-        [L_GuiProjectSettings.DeleteProjectConfirmation2],
-      ],
-      redConfirm: true,
-      backCaption: ["gui.cancel"],
-      confirmCaption: ["gui.delete"],
-      onConfirm: bind(ibind(this.deleteProject), project),
-    })
-  }
-
-  private deleteProject(project: UserProject) {
-    exitProject(game.get_player(this.playerIndex)!)
-    project.delete()
   }
 
   private beginDelete() {

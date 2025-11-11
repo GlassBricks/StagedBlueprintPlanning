@@ -11,7 +11,8 @@ import { destroy, FactorioJsx, renderNamed } from "../lib/factoriojsx"
 import { SimpleTitleBar } from "../lib/factoriojsx/components"
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSelector } from "../locale"
-import { closeAllProjects, toggleAllProjects } from "./AllProjects"
+import { toggleAllProjects } from "./AllProjects"
+import { closeAllProjects } from "./AllProjectsDec"
 
 declare const storage: StorageWithPlayer
 declare global {

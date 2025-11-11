@@ -19,8 +19,14 @@ import {
   RenderContext,
   renderNamed,
 } from "../lib/factoriojsx"
-import { closeParentAtLevel, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
-import { L_Gui, L_GuiProjectSelector } from "../locale"
+import {
+  closeParentAtLevel,
+  HorizontalPusher,
+  showDialog,
+  SimpleTitleBar,
+  TrashButton,
+} from "../lib/factoriojsx/components"
+import { L_Gui, L_GuiProjectSelector, L_GuiProjectSettings } from "../locale"
 import { ProjectCreatedEvent, ProjectDeletedEvent, ProjectsReorderedEvent, UserProject } from "../project/ProjectDef"
 import { getAllProjects, moveProjectDown, moveProjectUp, ProjectEvents } from "../project/UserProject"
 import { showImportBlueprintWindow } from "./blueprint-string"
@@ -28,12 +34,12 @@ import { openNewProjectDialog } from "./NewProjectDialog"
 import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./ProjectSettings"
 import mouse_button_type = defines.mouse_button_type
+import { AllProjectsName, closeAllProjects } from "./AllProjectsDec"
 
 declare const storage: StorageWithPlayer & {
   researchTechPromptDismissed?: true
 }
 
-const AllProjectsName = script.mod_name + ":all-projects"
 const AllProjectsWidth = 260
 const AllProjectsHeight = 28 * 10
 @RegisterClass("gui:AllProjects")
@@ -122,12 +128,18 @@ class AllProjects extends Component {
   private projectButton(project: UserProject) {
     const currentProject = playerCurrentStage(this.playerIndex).get()?.project
     return (
-      <button
-        style={project == currentProject ? Styles.FakeListBoxItemActive : Styles.FakeListBoxItem}
-        caption={project.displayName()}
-        tooltip={[L_GuiProjectSelector.ButtonTooltip]}
-        on_gui_click={bind(AllProjects.onButtonClick, project)}
-      />
+      <flow direction="horizontal">
+        <button
+          style={project == currentProject ? Styles.FakeListBoxItemActive : Styles.FakeListBoxItem}
+          caption={project.displayName()}
+          tooltip={[L_GuiProjectSelector.ButtonTooltip]}
+          on_gui_click={bind(AllProjects.onButtonClick, project)}
+        />
+        <TrashButton
+          on_gui_click={bind(ibind(this.beginDeleteProject), project)}
+          tooltip={[L_GuiProjectSettings.DeleteProject]}
+        />
+      </flow>
     )
   }
 
@@ -163,7 +175,6 @@ class AllProjects extends Component {
 
   private newProject(): void {
     const player = game.get_player(this.playerIndex)!
-    closeAllProjects(player)
     openNewProjectDialog(player)
   }
 
@@ -171,6 +182,27 @@ class AllProjects extends Component {
     const player = game.get_player(this.playerIndex)!
     closeAllProjects(player)
     exitProject(player)
+  }
+
+  private beginDeleteProject(project: UserProject) {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    showDialog(player, {
+      title: [L_GuiProjectSettings.DeleteProject],
+      message: [
+        [L_GuiProjectSettings.DeleteProjectConfirmation1, project.displayName().get()],
+        [L_GuiProjectSettings.DeleteProjectConfirmation2],
+      ],
+      redConfirm: true,
+      backCaption: ["gui.cancel"],
+      confirmCaption: ["gui.delete"],
+      onConfirm: bind(ibind(this.deleteProject), project),
+    })
+  }
+
+  private deleteProject(project: UserProject) {
+    exitProject(game.get_player(this.playerIndex)!)
+    project.delete()
   }
 
   private importProject(): void {
@@ -212,10 +244,6 @@ class AllProjects extends Component {
     if (newProject) this.rerenderProject(newProject)
     this.scrollToCurrentProject()
   }
-}
-
-export function closeAllProjects(player: LuaPlayer): void {
-  destroy(mod_gui.get_frame_flow(player)[AllProjectsName])
 }
 
 export function toggleAllProjects(player: LuaPlayer): void {
