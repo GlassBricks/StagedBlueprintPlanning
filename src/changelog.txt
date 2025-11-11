@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.3
-Date: ????
+Date: 2025-11-11
   Gui:
     - Moved "Delete project" button to the Project list UI.
     - Improved button layout in Project list UI
