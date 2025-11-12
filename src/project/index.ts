@@ -171,7 +171,7 @@ Migrations.to("2.8.0", () => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.8.4", () => {
   for (const project of getAllProjects()) {
     for (const stage of project.getAllStages()) {
       game.forces.player.set_surface_hidden(stage.surface, true)

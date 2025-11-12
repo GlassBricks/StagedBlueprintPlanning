@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.4
-Date: ????
+Date: 2025-11-12
   Gui:
     - Don't close project list when entering a project.
   Minor features:
