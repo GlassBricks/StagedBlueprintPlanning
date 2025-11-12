@@ -94,15 +94,13 @@ export function teleportToStage(player: LuaPlayer, stage: Stage): void {
 
 export function teleportToProject(player: LuaPlayer, project: UserProject): void {
   const currentStage = getStageAtSurface(player.surface_index)
-  if (currentStage && currentStage.project == project) {
+  if (currentStage?.project == project) {
     return
   }
-  recordPlayerLastPosition(player)
 
   const playerData = getProjectPlayerData(player.index, project)
-  if (!playerData) return
-  const stageNum: StageNumber | nil = playerData.lastStage
-  const position = playerData.lastPosition ?? { x: 0, y: 0 }
+  const stageNum: StageNumber | nil = playerData?.lastStage
+  const position = playerData?.lastPosition ?? { x: 0, y: 0 }
   const stage = (stageNum && project.getStage(stageNum)) || project.getStage(1)!
   teleportPlayer(player, stage.surface, position)
 }
@@ -135,6 +133,7 @@ export function exitProject(player: LuaPlayer): void {
     player.teleport([0, 0], 1 as SurfaceIndex)
   }
 }
+
 export function enterLastProject(player: LuaPlayer): void {
   const data = storage.players[player.index]
   if (data?.lastProjectSurface?.valid) {
@@ -144,5 +143,10 @@ export function enterLastProject(player: LuaPlayer): void {
       return
     }
   }
-  player.print("No known valid last project location")
+  player.print("No known last project location")
 }
+
+Events.on_player_changed_position((event) => {
+  const player = game.players[event.player_index]
+  recordPlayerLastPosition(player)
+})
