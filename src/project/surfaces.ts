@@ -155,7 +155,7 @@ function prepareSurface(
 
   surface.always_day = true
   surface.show_clouds = false
-  
+
   game.forces.player.set_surface_hidden(surface, true)
 
   updateStageSurfaceName(surface, projectName, stageName)
