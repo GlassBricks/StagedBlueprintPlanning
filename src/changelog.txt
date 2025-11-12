@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.4
 Date: ????
-  Changes:
+  Minor features:
+    - Hidden project surface names from remote view surface list.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.3
 Date: 2025-11-11
@@ -9,7 +10,7 @@ Date: 2025-11-11
     - Moved "Delete project" button to the Project list UI.
     - Improved button layout in Project list UI
   Minor features:
-    - Stay in remote view, when switching stages.
+    - Stay in remote view, when switching stages in remote view.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.2
 Date: 2025-11-10
