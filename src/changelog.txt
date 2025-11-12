@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.4
 Date: ????
+  Gui:
+    - Don't close project list when entering a project.
   Minor features:
     - Hidden project surface names from remote view surface list.
   Bugfixes:
