@@ -7,6 +7,7 @@ Date: ????
     - Hidden project surface names from remote view surface list.
   Bugfixes:
     - Fixed returning to a project/stage at the same position you left it, in more cases.
+    - Fixed that planet selection in UIs would be off by 1 in some cases.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.3
 Date: 2025-11-11

@@ -38,6 +38,7 @@ export class PlanetSelect extends Component<PlanetSelectProps> {
     this.planets = Object.values(prototypes.space_location).filter((p) => p.map_gen_settings != nil)
     this.initialPlanet = initialPlanet
     this.onChange = onChange
+    this.allowNone = allowNone
 
     if (onMount) {
       onMount(this)

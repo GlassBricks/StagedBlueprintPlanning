@@ -210,7 +210,7 @@ export declare const enum L_GuiProjectSelector {
   ButtonTooltip = "bp100.gui.project-selector.button-tooltip",
   /** Name: */
   Name = "bp100.gui.project-selector.name",
-  /** Initial num stages */
+  /** Initial num stages: */
   InitialStages = "bp100.gui.project-selector.initial-stages",
   /** Map Gen Settings */
   MapGenSettings = "bp100.gui.project-selector.map-gen-settings",
