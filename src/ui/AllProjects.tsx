@@ -40,8 +40,9 @@ declare const storage: StorageWithPlayer & {
   researchTechPromptDismissed?: true
 }
 
-const AllProjectsWidth = 260
-const AllProjectsHeight = 28 * 10
+const AllProjectsWidth = 150
+const AllProjectsMaxWidth = 300
+const AllProjectsHeight = 28 * 6
 @RegisterClass("gui:AllProjects")
 class AllProjects extends Component {
   playerIndex!: PlayerIndex
@@ -64,14 +65,19 @@ class AllProjects extends Component {
             style="inside_deep_frame"
             styleMod={{
               vertically_stretchable: true,
+              horizontally_stretchable: true,
               bottom_margin: 8,
             }}
           >
             <scroll-pane
               style={Styles.FakeListBox}
+              horizontal_scroll_policy={"never"}
+              vertical_scroll_policy={"auto-and-reserve-space"}
               styleMod={{
-                width: AllProjectsWidth,
                 height: AllProjectsHeight,
+                minimal_width: AllProjectsWidth,
+                maximal_width: AllProjectsMaxWidth,
+                horizontally_stretchable: true,
               }}
               onCreate={(e) => {
                 this.scrollPane = e
@@ -81,19 +87,17 @@ class AllProjects extends Component {
               {getAllProjects().map((project) => this.projectButtonFlow(project))}
             </scroll-pane>
           </frame>
-          <flow direction="horizontal">
-            <button
-              caption={[L_GuiProjectSelector.NewProject]}
-              on_gui_click={ibind(this.newProject)}
-              styleMod={{ horizontally_stretchable: true }}
-            />
-            <button
-              caption={[L_Gui.ImportProjectFromString]}
-              tooltip={[L_Gui.ImportProjectFromStringTooltip]}
-              styleMod={{ horizontally_stretchable: true }}
-              on_gui_click={ibind(this.importProject)}
-            />
-          </flow>
+          <button
+            caption={[L_GuiProjectSelector.NewProject]}
+            on_gui_click={ibind(this.newProject)}
+            styleMod={{ horizontally_stretchable: true }}
+          />
+          <button
+            caption={[L_Gui.ImportProjectFromString]}
+            tooltip={[L_Gui.ImportProjectFromStringTooltip]}
+            styleMod={{ horizontally_stretchable: true }}
+            on_gui_click={ibind(this.importProject)}
+          />
           <button
             caption={[L_GuiProjectSelector.ExitProject]}
             enabled={currentStage.truthy()}
@@ -137,6 +141,7 @@ class AllProjects extends Component {
         direction="horizontal"
         styleMod={{
           horizontal_spacing: 0,
+          horizontally_stretchable: true,
         }}
       >
         <button
