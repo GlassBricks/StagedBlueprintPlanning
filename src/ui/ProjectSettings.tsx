@@ -83,11 +83,11 @@ const StageListBoxWidth = 140
 
 const NewStageBarHeight = 100
 
-const StageSettingsButtonWidth = 200
+const StageSettingsButtonWidth = 190
+const BpExportButtonWidth = 180
 const LandfillButtonWidth = 220
-const BpExportButtonWidth = 200
 
-const ProjectSettingsTabWidth = 420
+const ProjectSettingsTabWidth = 380
 
 function EditButton(props: ElemProps<"button">) {
   return (
@@ -180,7 +180,7 @@ class ProjectSettings extends Component<{
               style="tabbed_pane_with_no_side_padding"
               styleMod={{
                 vertically_stretchable: true,
-                minimal_width: ProjectSettingsTabWidth,
+                width: ProjectSettingsTabWidth,
               }}
               selected_tab_index={selectedTabIndex}
             >
@@ -219,26 +219,24 @@ class ProjectSettings extends Component<{
         />
         <line />
         <label caption={[L_GuiProjectSettings.Entities]} style="caption_label" />
-        <flow>
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.DisableAllEntities]}
-            on_gui_click={ibind(this.disableAllEntities)}
-          />
-          <button
-            styleMod={{ width: StageSettingsButtonWidth }}
-            caption={[L_GuiProjectSettings.EnableAllEntities]}
-            on_gui_click={ibind(this.enableAllEntities)}
-          />
-        </flow>
+        <button
+          styleMod={{ width: StageSettingsButtonWidth }}
+          caption={[L_GuiProjectSettings.DisableAllEntities]}
+          on_gui_click={ibind(this.disableAllEntities)}
+        />
+        <button
+          styleMod={{ width: StageSettingsButtonWidth }}
+          caption={[L_GuiProjectSettings.EnableAllEntities]}
+          on_gui_click={ibind(this.enableAllEntities)}
+        />
         <line />
         <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
         <flow styleMod={{ vertical_align: "center" }}>
           <flow
             direction="horizontal"
             styleMod={{
-              width: StageSettingsButtonWidth,
               vertical_align: "center",
+              right_margin: 5,
             }}
           >
             <label caption={[L_GuiProjectSettings.SelectedTile]} />
@@ -701,12 +699,12 @@ class ProjectSettings extends Component<{
 
     return (
       <>
-        <frame style="subheader_frame" direction="horizontal">
+        <frame style="subheader_frame" direction="horizontal" styleMod={{ horizontal_align: "center" }}>
           <ItemRename
             name={stage.name}
             displayName={stage.name}
             renameTooltip={[L_GuiProjectSettings.RenameStage]}
-            maximalWidth={ProjectSettingsTabWidth}
+            maximalWidth={ProjectSettingsTabWidth - 30}
           />
           <HorizontalPusher />
         </frame>

@@ -17,6 +17,7 @@ export function TitleBar(props: { children?: ElementChildren }): Element {
       styleMod={{
         horizontal_spacing: 8,
         height: 28,
+        vertical_align: "center",
       }}
       onCreate={(element) => {
         const parent = element.parent!

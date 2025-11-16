@@ -42,7 +42,7 @@ declare const storage: StorageWithPlayer & {
 
 const AllProjectsWidth = 150
 const AllProjectsMaxWidth = 300
-const AllProjectsHeight = 28 * 6
+const AllProjectsHeight = 28 * 10
 @RegisterClass("gui:AllProjects")
 class AllProjects extends Component {
   playerIndex!: PlayerIndex
