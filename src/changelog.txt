@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.8.5
+Version: 2.9.0
 Date: ????
   Features:
     - Added "discarding" a stage, which deletes a stage without merging it's contents.
