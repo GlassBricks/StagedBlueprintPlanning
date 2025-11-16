@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.5
 Date: ????
+  Changes:
+    - The "stage deconstructed" indicator now also shown for entities created and removed in the same stage; it is only omitted on trains and vehicles.
   Gui:
     - Make the project list slightly slimmer.
   Minor features:

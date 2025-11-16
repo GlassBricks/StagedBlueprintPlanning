@@ -39,7 +39,7 @@ export interface HighlightEntities {
   /** Blueprint sprite when an entity's settings have changed in a future stage. */
   configChangedLaterHighlight?: LuaRenderObject
 
-  /** Deconstruction planner sprite when an entity is deleted in the next stage (lastStage is set). Ignored if lastStage == firstStage. */
+  /** Deconstruction planner sprite when an entity is deleted in the next stage (lastStage is set). Ignored if entity is movable. */
   stageDeleteHighlight?: LuaRenderObject
 
   /** Item is requested. */
@@ -296,7 +296,7 @@ export function EntityHighlights(project: Project): EntityHighlights {
 
   function updateStageDeleteIndicator(entity: ProjectEntity): void {
     entity.destroyAllExtraEntities("stageDeleteHighlight")
-    if (entity.lastStage != nil && entity.lastStage != entity.firstStage) {
+    if (entity.lastStage != nil && !entity.isMovable()) {
       const stage = entity.lastStage
       const surface = project.getSurface(stage)!
       createHighlight(entity, stage, surface, "stageDeleteHighlight")

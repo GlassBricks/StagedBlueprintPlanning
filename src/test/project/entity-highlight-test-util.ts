@@ -61,7 +61,7 @@ export function assertErrorHighlightsCorrect(entity: ProjectEntity, maxStage: St
 }
 
 export function assertLastStageHighlightCorrect(entity: ProjectEntity): void {
-  if (entity.lastStage != nil && entity.lastStage != entity.firstStage) {
+  if (entity.lastStage != nil && !entity.isMovable()) {
     const highlight = expect(entity.getExtraEntity("stageDeleteHighlight", entity.lastStage)).toBeAny().getValue()!
     expect(highlight).toMatchTable({
       sprite: HighlightConstants.DeletedNextStage,

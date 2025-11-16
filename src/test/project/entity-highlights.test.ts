@@ -242,10 +242,11 @@ describe("stage delete highlights", () => {
     assertLastStageHighlightCorrect(entity)
   })
 
-  test("does not create highlight if lastStage == firstStage", () => {
-    entity.setLastStageUnchecked(2)
-    entityHighlights.updateAllHighlights(entity)
-    assertLastStageHighlightCorrect(entity)
+  test("does not create highlight if entity is movable", () => {
+    const movableEntity = newProjectEntity({ name: "locomotive" }, Pos(1, 1), 0, 2)
+    movableEntity.setLastStageUnchecked(3)
+    entityHighlights.updateAllHighlights(movableEntity)
+    assertLastStageHighlightCorrect(movableEntity)
   })
 })
 
