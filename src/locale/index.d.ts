@@ -200,11 +200,11 @@ export declare const enum L_GuiProjectSelector {
   NoResearchAllTech = "bp100.gui.project-selector.no-research-all-tech",
   /** Staged BP projects */
   ShowAllProjects = "bp100.gui.project-selector.show-all-projects",
-  /** Staged BP projects */
+  /** Projects */
   AllProjects = "bp100.gui.project-selector.all-projects",
   /** ＋ New project */
   NewProject = "bp100.gui.project-selector.new-project",
-  /** [virtual-signal=signal-output]Exit project editor */
+  /** [virtual-signal=signal-output]Exit editor */
   ExitProject = "bp100.gui.project-selector.exit-project",
   /** [font=default-bold]Ctrl+left click[/font] to move up\n[font=default-bold]Ctrl+right click[/font] to move down */
   ButtonTooltip = "bp100.gui.project-selector.button-tooltip",

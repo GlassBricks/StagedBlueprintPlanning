@@ -200,7 +200,6 @@ data.extend([
 ])
 
 const deconstructionPlanner = table.deepcopy(data.raw["deconstruction-item"]["deconstruction-planner"]!)
-// staged delete tool
 const stagedDeconstructTool: SelectionToolPrototype = {
   type: "selection-tool",
   name: Prototypes.StageDeconstructTool,
@@ -223,6 +222,11 @@ const stagedDeconstructTool: SelectionToolPrototype = {
   alt_select: {
     mode: ["blueprint"],
     border_color: deconstructionPlanner.alt_select.border_color,
+    cursor_box_type: "not-allowed",
+  },
+  reverse_select: {
+    mode: ["blueprint"],
+    border_color: deconstructionPlanner.select.border_color,
     cursor_box_type: "not-allowed",
   },
 }

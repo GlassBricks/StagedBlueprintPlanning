@@ -55,6 +55,7 @@ export interface UserActions {
   onEntityDied(entity: LuaEntityInfo, stage: StageNumber): void
 
   onStageDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
+  onStageDeleteReverseUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
   onStageDeleteCancelUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
   onBringToStageUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
   onBringDownToStageUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
@@ -198,6 +199,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     onEntityForceDeleteUsed,
     onEntityDied,
     onStageDeleteUsed,
+    onStageDeleteReverseUsed,
     onStageDeleteCancelUsed,
     onBringToStageUsed,
     onBringDownToStageUsed,
@@ -626,16 +628,29 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     }
   }
 
-  function onStageDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
+  function handleStageDelete(
+    entity: LuaEntity,
+    stage: StageNumber,
+    byPlayer: PlayerIndex,
+    isReverse: boolean,
+  ): UndoAction | nil {
     const projectEntity = content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (!projectEntity || projectEntity.isSettingsRemnant) return
     const player = game.get_player(byPlayer)
-    const useNextStage = player?.mod_settings[Settings.DeleteAtNextStage]?.value as boolean | nil
+    const useNextStage = !!player?.mod_settings[Settings.DeleteAtNextStage]?.value != isReverse
     const newLastStage = useNextStage ? stage : stage - 1
     const oldLastStage = projectEntity.lastStage
     if (userTrySetLastStage(projectEntity, newLastStage, byPlayer)) {
       return lastStageChangeUndo.createAction(byPlayer, { project, entity: projectEntity, oldLastStage })
     }
+  }
+
+  function onStageDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
+    return handleStageDelete(entity, stage, byPlayer, false)
+  }
+
+  function onStageDeleteReverseUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
+    return handleStageDelete(entity, stage, byPlayer, true)
   }
 
   function userTrySetLastStageWithUndo(

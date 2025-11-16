@@ -700,13 +700,21 @@ describe("onBringDownToStageUsed()", () => {
     expectedNumCalls = 0
   })
 })
-
 describe("onStageDeleteUsed()", () => {
-  test("can set last stage", () => {
+  after_each(() => {
+    getPlayer().mod_settings[Settings.DeleteAtNextStage] = { value: false }
+  })
+
+  test.each<[boolean, number]>([
+    [false, 2],
+    [true, 3],
+  ])("sets last stage correctly (isReverseSelect=%s, deleteAtNextStage=false)", (isReverseSelect, expectedStage) => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
-    const undoAction = userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
-    expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 2)
+    const undoAction = isReverseSelect
+      ? userActions.onStageDeleteReverseUsed(luaEntity, 3, playerIndex)
+      : userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
+    expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, expectedStage)
 
     expect(undoAction).not.toBeNil()
     performUndoAction(undoAction!)
@@ -714,15 +722,18 @@ describe("onStageDeleteUsed()", () => {
 
     expectedNumCalls = 2
   })
-  after_each(() => {
-    getPlayer().mod_settings[Settings.DeleteAtNextStage] = { value: false }
-  })
-  test("sets last stage to current stage if deleteAtNextStage is true", () => {
+
+  test.each<[boolean, number]>([
+    [false, 3],
+    [true, 2],
+  ])("sets last stage correctly (isReverseSelect=%s, deleteAtNextStage=true)", (isReverseSelect, expectedStage) => {
     const { entity, luaEntity } = addEntity(2)
     entity.replaceWorldEntity(2, luaEntity)
     getPlayer().mod_settings[Settings.DeleteAtNextStage] = { value: true }
-    const undoAction = userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
-    expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, 3)
+    const undoAction = isReverseSelect
+      ? userActions.onStageDeleteReverseUsed(luaEntity, 3, playerIndex)
+      : userActions.onStageDeleteUsed(luaEntity, 3, playerIndex)
+    expect(projectUpdates.trySetLastStage).toHaveBeenCalledWith(entity, expectedStage)
 
     expect(undoAction).not.toBeNil()
     performUndoAction(undoAction!)
@@ -756,6 +767,7 @@ describe("onStageDeleteUsed()", () => {
     expect(undoAction).toBeNil()
   })
 })
+
 describe("onStageDeleteCancelUsed()", () => {
   test("can clear last stage", () => {
     const { entity, luaEntity } = addEntity(2)

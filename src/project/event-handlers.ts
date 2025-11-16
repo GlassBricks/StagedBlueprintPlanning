@@ -988,7 +988,12 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
 
 function selectionToolUsed(
   e: OnPlayerSelectedAreaEvent | OnPlayerAltSelectedAreaEvent | OnPlayerReverseSelectedAreaEvent,
-  action: "onStageDeleteUsed" | "onStageDeleteCancelUsed" | "onBringToStageUsed" | "onBringDownToStageUsed",
+  action:
+    | "onStageDeleteUsed"
+    | "onStageDeleteReverseUsed"
+    | "onStageDeleteCancelUsed"
+    | "onBringToStageUsed"
+    | "onBringDownToStageUsed",
 ): void {
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
@@ -1015,6 +1020,7 @@ addSelectionToolHandlers(Prototypes.StageMoveTool, {
 addSelectionToolHandlers(Prototypes.StageDeconstructTool, {
   onSelected: (e) => selectionToolUsed(e, "onStageDeleteUsed"),
   onAltSelected: (e) => selectionToolUsed(e, "onStageDeleteCancelUsed"),
+  onReverseSelected: (e) => selectionToolUsed(e, "onStageDeleteReverseUsed"),
 })
 
 declare global {

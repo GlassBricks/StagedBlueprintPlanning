@@ -3,6 +3,8 @@ Version: 2.8.5
 Date: ????
   Gui:
     - Make the project list slightly slimmer.
+  Minor features:
+    - Reverse-selecting with the Staged deconstruct stage, now deconstructs the entity in the NEXT stage. The "Deconstruct at next stage" setting now swaps normal and reverse select behavior.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.4
 Date: 2025-11-12
