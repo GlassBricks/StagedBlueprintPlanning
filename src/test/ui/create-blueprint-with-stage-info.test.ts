@@ -56,7 +56,7 @@ test("create blueprint of simple entity", () => {
   } satisfies BpStagedInfoTags)
 })
 
-test("create blueprint of entity with stage diff", () => {
+test("create blueprint of entity with stage diff and unstaged value", () => {
   const entity = addEntity<AssemblingMachineEntity>(2, {
     name: "assembling-machine-1",
     position: Pos(0, 0),
@@ -66,6 +66,9 @@ test("create blueprint of entity with stage diff", () => {
   entity._applyDiffAtStage(3, {
     name: "assembling-machine-2",
     recipe: getNilPlaceholder(),
+  })
+  entity.setUnstagedValue(2, {
+    _forTest: "foo",
   })
 
   const stack = createBlueprintWithStageInfo(player, project.getStage(2)!, {
@@ -90,8 +93,14 @@ test("create blueprint of entity with stage diff", () => {
         recipe: { __nil: true },
       },
     },
+    unstagedValue: {
+      "2": {
+        _forTest: "foo",
+      },
+    },
   } satisfies StageInfoExport<AssemblingMachineEntity>)
 })
+
 test("does not clear stack if no entities selected", () => {
   player.cursor_stack?.set_stack(Prototypes.StagedCopyTool)
   createBlueprintWithStageInfo(player, project.getStage(3)!, {

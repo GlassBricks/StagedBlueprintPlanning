@@ -8,7 +8,7 @@ import { Entity, UnstagedEntityProps } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
 import { addWireConnection, newProjectEntity, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
 import { getDirectionalInfo } from "../entity/wire-connection"
-import { Events, Mutable, PRRecord } from "../lib"
+import { deepCopy, Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 import { EntitiesExport } from "./project"
 
@@ -142,7 +142,8 @@ export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): Enti
 }
 
 export function exportUnstagedValues(entity: ProjectEntity): UnstagedValueExport | nil {
-  return entity.getPropertyAllStages("unstagedValue")
+  const value = entity.getPropertyAllStages("unstagedValue")
+  return value && deepCopy(value)
 }
 
 export function importUnstagedValues(entity: ProjectEntity, unstagedValues: UnstagedValueExport): void {

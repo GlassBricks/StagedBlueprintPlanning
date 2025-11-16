@@ -559,6 +559,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (diffs) {
       projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
     }
+    replaceUnstagedValue(projectEntity, stageInfo)
     return projectEntity
   }
 
@@ -567,7 +568,6 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     value: BlueprintEntity,
     info: StageInfoExport,
   ): StageMoveResult {
-    if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
     const targetStage = info.firstStage
     if (targetStage != entity.firstStage) {
       const result = checkCanSetFirstStage(entity, targetStage)
@@ -594,12 +594,26 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
     entity.setStageDiffsDirectly(stageDiffs)
 
+    replaceUnstagedValue(entity, info)
+
     updateWorldEntities(entity, 1)
 
     if (entity.isUndergroundBelt()) {
       handleUndergroundBeltValueSet(entity, oldStageDiffs, stageDiffs)
     }
     return StageMoveResult.Updated
+  }
+
+  function replaceUnstagedValue(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>) {
+    const unstagedValues = info.unstagedValue
+    if (unstagedValues != nil) {
+      entity.clearPropertyInAllStages("unstagedValue")
+      for (const [stage, value] of pairs(unstagedValues)) {
+        const stageNumber = tonumber(stage)
+        if (stageNumber == nil) continue
+        entity.setUnstagedValue(stageNumber, value)
+      }
+    }
   }
 
   function firstStageChangeWillIntersect(entity: ProjectEntity, newStage: StageNumber): boolean {

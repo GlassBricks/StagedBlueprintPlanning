@@ -302,6 +302,7 @@ describe("addNewEntity()", () => {
                   },
                 }
               : nil,
+            unstagedValue: withDiffs ? { 3: { _forTest: "foo" } } : nil,
           },
         } satisfies BpStagedInfoTags<InserterEntity>,
       })!
@@ -316,6 +317,11 @@ describe("addNewEntity()", () => {
           2: {
             name: "fast-inserter",
             override_stack_size: 2,
+          },
+        })
+        expect(entityUpgraded.getPropertyAllStages("unstagedValue")).toEqual({
+          3: {
+            _forTest: "foo",
           },
         })
         expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
@@ -722,7 +728,7 @@ describe("updateWiresFromWorld()", () => {
   })
 })
 
-describe("updateFromBpStagedInfo()", () => {
+describe("setValueFromStagedInfo()", () => {
   test("can update from bp info", () => {
     const { entity } = addEntity(1)
     const info: StageInfoExport = {
@@ -730,6 +736,7 @@ describe("updateFromBpStagedInfo()", () => {
       lastStage: 5,
       firstValue: { name: "fast-inserter" },
       stageDiffs: { "3": { name: "fast-inserter" } },
+      unstagedValue: { "2": { _forTest: "foo" } },
     }
     const ret = projectUpdates.setValueFromStagedInfo(entity, info.firstValue as any, info)
     expect(ret).toBe(StageMoveResult.Updated)
@@ -739,6 +746,9 @@ describe("updateFromBpStagedInfo()", () => {
     expect(entity.firstValue.name).toBe("fast-inserter")
     expect(entity.stageDiffs).toEqual({
       3: { name: "fast-inserter" },
+    })
+    expect(entity.getPropertyAllStages("unstagedValue")).toEqual({
+      2: { _forTest: "foo" },
     })
     assertOneEntity()
     assertUpdateOnLastStageChangedCalled(entity, nil)
