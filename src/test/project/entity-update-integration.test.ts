@@ -2202,15 +2202,16 @@ describe("stage deletion", () => {
         if (isPreviewEntity(worldEntity)) continue
         const projectEntity = project.content.findCompatibleWithLuaEntity(worldEntity, nil, stage)
         expect(projectEntity)
-          .comment(`Entity ${worldEntity.name} at ${worldEntity.position.x},${worldEntity.position.y} on stage ${stage}`)
+          .comment(
+            `Entity ${worldEntity.name} at ${worldEntity.position.x},${worldEntity.position.y} on stage ${stage}`,
+          )
           .not.toBeNil()
       }
     }
   }
 
   test("merge stage 3 and verify entity updates", () => {
-    const { entityBeforeWithDiff, entityAtStage, entityAfterStage, entityWithLastStage } =
-      createTestEntitiesForMerge()
+    const { entityBeforeWithDiff, entityAtStage, entityAfterStage, entityWithLastStage } = createTestEntitiesForMerge()
 
     project.mergeStage(3)
 
