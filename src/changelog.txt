@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.9.0
-Date: ????
+Date: 2025-11-16
   Features:
     - Added "discarding" a stage, which deletes a stage without merging it's contents.
     - Reverse-selecting with the Staged deconstruct stage, now deconstructs the entity in the NEXT stage. The "Deconstruct at next stage" setting now swaps normal and reverse select behavior.
