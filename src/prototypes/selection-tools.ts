@@ -53,7 +53,7 @@ function selectionToolToInput(
     item_to_spawn: prototype.name,
   }
 }
-// Cleanup tool
+
 const cleanupToolColor = Colors.Green
 const cleanupReverseToolColor = Colors.Red
 const cleanupTool: SelectionToolPrototype = {
@@ -78,17 +78,6 @@ const cleanupTool: SelectionToolPrototype = {
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-a[cleanup-tool]",
 
-  // selection_mode: ["any-entity"],
-  // selection_color: cleanupToolColor,
-  // selection_cursor_box_type: "entity",
-  //
-  // alt_selection_mode: ["any-entity"],
-  // alt_selection_color: cleanupToolColor,
-  // alt_selection_cursor_box_type: "entity",
-  //
-  // reverse_selection_mode: ["any-entity"],
-  // reverse_selection_color: cleanupReverseToolColor,
-  // reverse_selection_cursor_box_type: "not-allowed",
   select: {
     mode: ["any-entity"],
     border_color: cleanupToolColor,
@@ -129,22 +118,6 @@ const stageMoveTool: SelectionToolPrototype = {
 
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-b[stage-move-tool]",
-
-  // selection_color: stageMoveToolColor,
-  // selection_cursor_box_type: "copy",
-  // selection_mode: ["deconstruct"],
-  //
-  // alt_selection_color: stageMoveToolAltColor,
-  // alt_selection_cursor_box_type: "copy",
-  // alt_selection_mode: ["any-entity"],
-  //
-  // reverse_selection_color: stageMoveToolReverseColor,
-  // reverse_selection_cursor_box_type: "electricity",
-  // reverse_selection_mode: ["any-entity"],
-  //
-  // alt_reverse_selection_color: stageMoveToolReverseColor,
-  // alt_reverse_selection_cursor_box_type: "electricity",
-  // alt_reverse_selection_mode: ["any-entity"],
 
   select: {
     mode: ["deconstruct"],
@@ -202,14 +175,6 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
 
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-c[filtered-stage-move-tool]",
-
-  // selection_color: stageMoveToolColor,
-  // selection_cursor_box_type: "copy",
-  // selection_mode: ["deconstruct"],
-  //
-  // alt_selection_color: [0, 0, 0],
-  // alt_selection_cursor_box_type: "not-allowed",
-  // alt_selection_mode: ["nothing"],
 
   select: {
     mode: ["deconstruct"],
@@ -273,7 +238,6 @@ data.extend([
   selectionToolToInput(stagedDeconstructTool, nil, false),
 ])
 
-// staged copy and cut tools
 const copyTool = table.deepcopy(data.raw["copy-paste-tool"]["copy-paste-tool"]!)
 
 const stageCopyTool: SelectionToolPrototype = {
@@ -288,14 +252,6 @@ const stageCopyTool: SelectionToolPrototype = {
 
   flags: ["spawnable", "not-stackable", "only-in-cursor"],
   stack_size: 1,
-
-  // selection_mode: ["blueprint"],
-  // selection_color: copyTool.selection_color,
-  // selection_cursor_box_type: "copy",
-  //
-  // alt_selection_mode: ["blueprint"],
-  // alt_selection_color: copyTool.alt_selection_color,
-  // alt_selection_cursor_box_type: "copy",
 
   select: {
     mode: ["blueprint"],
@@ -348,14 +304,6 @@ const forceDeleteTool: SelectionToolPrototype = {
 
   subgroup: "tool",
   order: "z[bp100]-b[b-tools]-c[force-delete-tool]",
-
-  // selection_mode: ["blueprint"],
-  // selection_color: deconstructionPlanner.selection_color,
-  // selection_cursor_box_type: "not-allowed",
-  //
-  // alt_selection_mode: ["any-entity"],
-  // alt_selection_color: deconstructionPlanner.selection_color,
-  // alt_selection_cursor_box_type: "not-allowed",
 
   select: {
     mode: ["blueprint"],
