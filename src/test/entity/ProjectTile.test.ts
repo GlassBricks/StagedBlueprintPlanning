@@ -188,7 +188,7 @@ describe("ProjectTile", () => {
       tile.values[2] = "stone-path"
       tile.values[4] = "landfill"
 
-      tile.deleteStage(2)
+      tile.mergeStage(2)
 
       expect(tile.values).toMatchTable({ [1]: "stone-path", [3]: "landfill" })
     })
@@ -198,9 +198,45 @@ describe("ProjectTile", () => {
       tile.values[1] = "concrete"
       tile.values[2] = "stone-path"
 
-      tile.deleteStage(1)
+      tile.mergeStage(1)
 
       expect(tile.values[1]).toBe("stone-path")
+    })
+  })
+
+  describe("discardStage()", () => {
+    test("discards stage value without merging", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[2] = "stone-path"
+      tile.values[4] = "landfill"
+
+      tile.discardStage(2)
+
+      expect(tile.values).toMatchTable({ [1]: "concrete", [3]: "landfill" })
+    })
+
+    test("trims duplicates after discard", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[2] = "stone-path"
+      tile.values[3] = "concrete"
+
+      tile.discardStage(2)
+
+      // After discarding stage 2, stage 3 becomes stage 2 with "concrete"
+      // setTileAtStage should trim this duplicate
+      expect(tile.values).toMatchTable({ [1]: "concrete" })
+    })
+
+    test("handles discarding stage 1", () => {
+      const tile = createProjectTile()
+      tile.values[1] = "concrete"
+      tile.values[2] = "stone-path"
+
+      tile.discardStage(1)
+
+      expect(tile.values).toMatchTable({ [1]: "stone-path" })
     })
   })
 })

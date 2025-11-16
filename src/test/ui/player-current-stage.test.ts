@@ -39,7 +39,7 @@ test("playerCurrentStage", () => {
         expect(currentStage.get()).comment(`Player should be on stage ${stage.stageNumber}`).toBe(stage)
       }
     } else {
-      project.deleteStage(project.numStages())
+      project.mergeStage(project.numStages())
       after_ticks(1, () => {
         expect(currentStage.get()).toBeNil()
 

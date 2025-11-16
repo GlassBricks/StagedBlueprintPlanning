@@ -760,8 +760,12 @@ class ProjectEntityImpl<T extends Entity = Entity>
       }
   }
 
-  override deleteStage(stageNumber: StageNumber): void {
-    super.deleteStage(stageNumber)
+  /**
+   * Shifts numeric keys down after stage deletion.
+   * Extends base implementation to also shift stageProperties.
+   */
+  protected override shiftKeysDown(stageNumber: StageNumber): void {
+    super.shiftKeysDown(stageNumber)
     const { stageProperties } = this
     if (stageProperties)
       for (const [, byType] of pairs(stageProperties)) {

@@ -214,7 +214,7 @@ class UserProjectImpl implements UserProjectInternal {
     return newStage
   }
 
-  deleteStage(index: StageNumber): void {
+  private deleteStage(index: StageNumber, isMerge: boolean): void {
     this.assertValid()
     const stage = this.stages[index]
     assert(stage != nil, "invalid stage number")
@@ -227,13 +227,40 @@ class UserProjectImpl implements UserProjectInternal {
 
     stage._doDelete()
     table.remove(this.stages as unknown as Stage[], index)
-    // update stages
     for (const i of $range(index, this.numStages())) {
       this.stages[i].stageNumber = i
     }
-    this.content.deleteStage(index)
+
+    if (isMerge) {
+      this.content.mergeStage(index)
+      const stageToUpdate = index == 1 ? 1 : index - 1
+      this.worldUpdates.rebuildStage(stageToUpdate)
+    } else {
+      this.doDiscard(index)
+    }
 
     this.raiseEvent({ type: "stage-deleted", project: this, stage })
+  }
+
+  private doDiscard(stage: StageNumber): void {
+    const [deletedEntities, updatedEntities, updatedTiles] = this.content.discardStage(stage)
+    for (const entity of deletedEntities) {
+      this.updates.forceDeleteEntity(entity)
+    }
+    for (const entity of updatedEntities) {
+      this.worldUpdates.updateWorldEntities(entity, stage)
+    }
+    for (const tilePosition of updatedTiles) {
+      this.worldUpdates.updateTilesInRange(tilePosition, stage, nil)
+    }
+  }
+
+  mergeStage(index: StageNumber): void {
+    this.deleteStage(index, true)
+  }
+
+  discardStage(index: StageNumber): void {
+    this.deleteStage(index, false)
   }
 
   getBlueprintBookTemplate(): LuaItemStack | nil {
@@ -513,9 +540,14 @@ class StageImpl implements StageInternal {
     return this.id
   }
 
-  deleteInProject(): void {
+  deleteByMerging(): void {
     if (!this.valid) return
-    this.project.deleteStage(this.stageNumber)
+    this.project.mergeStage(this.stageNumber)
+  }
+
+  discardInProject(): void {
+    if (!this.valid) return
+    this.project.discardStage(this.stageNumber)
   }
 
   _doDelete(): void {
@@ -533,5 +565,5 @@ class StageImpl implements StageInternal {
 
 Events.on_pre_surface_deleted((e) => {
   const stage = getStageAtSurface(e.surface_index)
-  if (stage != nil) stage.deleteInProject()
+  if (stage != nil) stage.deleteByMerging()
 })

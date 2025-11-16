@@ -13,7 +13,7 @@ import {
 } from "../../blueprints/stage-reference"
 import { Prototypes } from "../../constants"
 import { getPlayer } from "../../lib/test/misc"
-import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { temporaryItemStack } from "../test-util"
 
 let player: LuaPlayer
@@ -62,7 +62,7 @@ test("correctStageReference deletes stack if stage not found", () => {
   const stack = temporaryItemStack()
   createStageReference(stack, stage)
 
-  stage.deleteInProject()
+  stage.deleteByMerging()
 
   const retrievedStage = getReferencedStage(stack)
   expect(retrievedStage).toBe(undefined)
@@ -125,7 +125,7 @@ describe("opening a stage reference", () => {
     const stack = player.get_main_inventory()![0]
     createStageReference(stack, stage)
 
-    stage.deleteInProject()
+    stage.deleteByMerging()
     player.opened = stack
 
     expect(stack.valid_for_read).toBe(false)

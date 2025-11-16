@@ -11,7 +11,7 @@ Staged Blueprint Planning is a Factorio mod for designing multi-stage blueprints
 ### Build & Watch
 
 ```bash
-npm run build:test        # Build with tests
+npm run build:test        # Build with tests (only for checking build)
 npm run build:release     # Production build
 npm run watch             # Watch mode for development
 ```
@@ -19,7 +19,7 @@ npm run watch             # Watch mode for development
 ### Testing
 
 ```bash
-npm run test              # Run all tests via factorio-test. Needs to be built first
+npm run test              # Run all tests via factorio-test. Runs build as part of pre-test, no need to build first
 ```
 
 ### Code Quality
@@ -32,7 +32,7 @@ npm run check             # Full validation (format, lint, test, git tree clean)
 
 ### Build Scripts
 
-- `npm run build:locale` - Generates `locale.d.ts` from `src/locale`
+- `npm run build:locale` - Generates `src/locale/index.d.ts` from `src/locale`
 - `npm run build:gui-specs` - Generates GUI specs for factoriojsx framework
 - `npm run build:tstlPlugin` - Builds custom TSTL plugin for function storage
 

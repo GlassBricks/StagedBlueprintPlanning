@@ -12,7 +12,7 @@ import {
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { editInItemBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { correctStageReferenceRecursive } from "../blueprints/stage-reference"
-import { Colors, Prototypes } from "../constants"
+import { Colors, L_Game, Prototypes } from "../constants"
 import { getStageToMerge } from "../entity/ProjectEntity"
 import {
   bind,
@@ -85,7 +85,6 @@ const NewStageBarHeight = 100
 
 const StageSettingsButtonWidth = 200
 const LandfillButtonWidth = 220
-const OtherSettingsButtonWidth = 200
 const BpExportButtonWidth = 200
 
 const ProjectSettingsTabWidth = 420
@@ -712,13 +711,20 @@ class ProjectSettings extends Component<{
           <HorizontalPusher />
         </frame>
         <flow direction="vertical" styleMod={{ padding: [5, 10] }}>
-          <button
-            style="red_button"
-            caption={[L_GuiProjectSettings.DeleteStage]}
-            styleMod={{ width: OtherSettingsButtonWidth }}
-            enabled={stage.stageNumber > 1}
-            on_gui_click={ibind(this.beginDelete)}
-          />
+          <flow>
+            <button
+              style="red_button"
+              caption={[L_GuiProjectSettings.DiscardStage]}
+              enabled={stage.project.numStages() > 1}
+              on_gui_click={ibind(this.beginDiscard)}
+            />
+            <button
+              style="red_button"
+              caption={[L_GuiProjectSettings.MergeStage]}
+              enabled={stage.stageNumber > 1}
+              on_gui_click={ibind(this.beginMerge)}
+            />
+          </flow>
           <line />
           {isNormalSurface && (
             <>
@@ -763,43 +769,61 @@ class ProjectSettings extends Component<{
     exportProjectToString(player, this.project)
   }
 
-  private beginDelete() {
+  private beginMerge() {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!stage) return
-    const { isFirst, toMerge } = this.getStageToMerge(stage)
-    if (!toMerge) return
+    const stageToMerge = this.getStageToMerge(stage)
+    if (!stageToMerge) return
     showDialog(player, {
-      title: [L_GuiProjectSettings.DeleteStage],
-      message: [
-        [L_GuiProjectSettings.DeleteStageConfirmation1, stage.name.get()],
-        [
-          isFirst
-            ? L_GuiProjectSettings.DeleteStageConfirmation2First
-            : L_GuiProjectSettings.DeleteStageConfirmation2Middle,
-          toMerge.name.get(),
-        ],
-      ],
+      title: [L_GuiProjectSettings.MergeStage],
+      message: [[L_GuiProjectSettings.MergeStageConfirmation, stage.name.get(), stageToMerge.name.get()]],
       redConfirm: true,
-      backCaption: ["gui.cancel"],
-      confirmCaption: ["gui.delete"],
-      onConfirm: bind(ibind(this.deleteStage), stage),
+      backCaption: [L_Game.Cancel],
+      confirmCaption: [L_Game.Confirm],
+      onConfirm: bind(ibind(this.mergeStage), stage),
     })
   }
   private getStageToMerge(stage: Stage) {
     const stageNumber = stage.stageNumber
-    const isFirst = stageNumber == 1
-    const toMerge = stage.project.getStage(getStageToMerge(stageNumber))
-    return { isFirst, toMerge }
+    return stage.project.getStage(getStageToMerge(stageNumber))
   }
-  private deleteStage(stage: Stage) {
-    const { toMerge } = this.getStageToMerge(stage)
+  private mergeStage(stage: Stage) {
+    const toMerge = this.getStageToMerge(stage)
     if (!toMerge) return
     const player = game.get_player(this.playerIndex)!
     recordPlayerLastPosition(player)
-    stage.deleteInProject()
+    stage.deleteByMerging()
     teleportToStage(player, toMerge)
+  }
+
+  private beginDiscard() {
+    const player = game.get_player(this.playerIndex)
+    if (!player) return
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage) return
+    showDialog(player, {
+      title: [L_GuiProjectSettings.DiscardStage],
+      message: [[L_GuiProjectSettings.DiscardStageConfirmation, stage.name.get()]],
+      redConfirm: true,
+      backCaption: [L_Game.Cancel],
+      confirmCaption: [L_Game.Delete],
+      onConfirm: bind(ibind(this.discardStage), stage),
+    })
+  }
+
+  private discardStage(stage: Stage) {
+    const player = game.get_player(this.playerIndex)!
+    recordPlayerLastPosition(player)
+    stage.discardInProject()
+    const newStage = stage.project.getStage(stage.stageNumber)
+    if (newStage) {
+      teleportToStage(player, newStage)
+    } else {
+      const lastStage = stage.project.getStage(stage.project.numStages())
+      if (lastStage) teleportToStage(player, lastStage)
+    }
   }
 
   private sssCount = 0

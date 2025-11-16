@@ -817,7 +817,7 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(4, { override_stack_size: 4 })
     entity.setLastStageUnchecked(4)
 
-    entity.deleteStage(3)
+    entity.mergeStage(3)
 
     // key 3 is deleted, all keys above it are shifted down
 
@@ -849,7 +849,7 @@ describe("insert/deleting stages", () => {
       3,
     )
 
-    entity.deleteStage(2)
+    entity.mergeStage(2)
     expect(entity.firstStage).toBe(2)
   })
 
@@ -865,7 +865,7 @@ describe("insert/deleting stages", () => {
     )
     entity.setLastStageUnchecked(4)
 
-    entity.deleteStage(5)
+    entity.mergeStage(5)
     expect(entity.lastStage).toBe(4)
   })
 
@@ -882,7 +882,7 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
     const value = entity.getValueAtStage(2)
 
-    entity.deleteStage(2)
+    entity.mergeStage(2)
     expect(entity.getValueAtStage(1)).toEqual(value)
   })
 
@@ -900,7 +900,7 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
 
     const value = entity.getValueAtStage(2)
-    entity.deleteStage(2)
+    entity.mergeStage(2)
     expect(entity.getValueAtStage(1)).toEqual(value)
   })
 
@@ -919,9 +919,50 @@ describe("insert/deleting stages", () => {
     expect(entity.setProperty("foo", 2, "bar2")).toBe(true)
     expect(entity.setProperty("foo", 3, "bar3")).toBe(true)
 
-    entity.deleteStage(1)
+    entity.mergeStage(1)
     expect(entity.getProperty("foo", 1)).toBe("bar2")
     expect(entity.getProperty("foo", 2)).toBe("bar3")
+  })
+})
+
+describe("discarding stages", () => {
+  test("discards stage without merging to previous", () => {
+    const entity = newProjectEntity<InserterEntity>({ name: "fast-inserter", override_stack_size: 1 }, Pos(0, 0), 0, 1)
+    entity._applyDiffAtStage(2, { override_stack_size: 2, filter_mode: "blacklist" })
+    entity._applyDiffAtStage(3, { override_stack_size: 3 })
+    entity._applyDiffAtStage(4, { override_stack_size: 4 })
+
+    entity.discardStage(3)
+
+    // Stage 2 should NOT have stage 3's changes merged into it
+    expect(entity.getValueAtStage(2)).toEqual({
+      name: "fast-inserter",
+      override_stack_size: 2,
+      filter_mode: "blacklist",
+    })
+    // Old stage 4 becomes stage 3
+    expect(entity.getValueAtStage(3)).toEqual({
+      name: "fast-inserter",
+      override_stack_size: 4,
+      filter_mode: "blacklist",
+    })
+    expect(entity.stageDiffs).toEqual({
+      2: { override_stack_size: 2, filter_mode: "blacklist" },
+      3: { override_stack_size: 4 },
+    })
+  })
+
+  test("updates firstStage when discarding earlier stage", () => {
+    const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), 0, 3)
+    entity.discardStage(2)
+    expect(entity.firstStage).toEqual(2)
+  })
+
+  test("updates lastStage when discarding at lastStage", () => {
+    const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), 0, 1)
+    entity.setLastStageUnchecked(3)
+    entity.discardStage(3)
+    expect(entity.lastStage).toEqual(2)
   })
 })
 

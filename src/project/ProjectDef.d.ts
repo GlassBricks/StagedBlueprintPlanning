@@ -87,7 +87,8 @@ export interface UserProject
   getStageById(stageId: StageId): Stage | nil
 
   insertStage(index: StageNumber): Stage
-  deleteStage(index: StageNumber): void
+  mergeStage(index: StageNumber): void
+  discardStage(index: StageNumber): void
 
   isSpacePlatform(): boolean
 
@@ -123,7 +124,8 @@ export interface Stage extends PropertiesTable<StageSettings>, NestedPropertiesT
 
   getBlueprintBBox(): BBox
   readonly valid: boolean
-  deleteInProject(): void
+  deleteByMerging(): void
+  discardInProject(): void
 }
 
 export interface ProjectCreatedEvent {

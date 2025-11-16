@@ -62,10 +62,24 @@ export interface StagedValue<T, D> {
   insertStage(stageNumber: StageNumber): void
 
   /**
+   * Resets the value at a stage to match the previous stage.
+   * May merge/trim diffs as part of the operation.
+   * @return true if changes were made, false otherwise.
+   */
+  resetValue(stage: StageNumber): boolean
+
+  /**
    * Modifies to be consistent with a deleted stage.
    * Stage contents will be merged with a previous stage. If stage is 1, will be merged with the next stage instead.
    */
-  deleteStage(stageNumber: StageNumber): void
+  mergeStage(stageNumber: StageNumber): void
+
+  /**
+   * Modifies to be consistent with a deleted stage.
+   * Stage contents will be discarded without merging.
+   * Return true if there were any changes in future stages.
+   */
+  discardStage(stageNumber: StageNumber): boolean
 }
 
 export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
@@ -227,6 +241,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     return $multi<any>(next, nil, start - 1)
   }
   abstract adjustValueAtStage(stage: StageNumber, value: T): boolean
+  abstract resetValue(stage: StageNumber): boolean
 
   insertStage(stageNumber: StageNumber): void {
     if (this.firstStage >= stageNumber) this.firstStage++
@@ -238,18 +253,43 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     if (this.stageDiffs) shiftNumberKeysUp(this.stageDiffs, stageNumber)
   }
 
-  deleteStage(stageNumber: StageNumber): void {
-    const stageToMerge = stageNumber == 1 ? 2 : stageNumber
-    this.mergeStageDiffWithBelow(stageToMerge)
+  /**
+   * Shifts numeric keys down after stage deletion.
+   * Subclasses override to shift their own stage-specific data.
+   */
+  protected shiftKeysDown(stageNumber: StageNumber): void {
+    shiftNumberKeysDown(this, stageNumber)
+    if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)
+  }
 
+  /**
+   * Updates firstStage and lastStage after stage deletion.
+   */
+  private updateStageRanges(stageNumber: StageNumber, stageToMerge: StageNumber): void {
     if (this.firstStage >= stageToMerge) this.firstStage--
     if (this.oneStageOnly()) {
       this.lastStage = this.firstStage
     } else if (this.lastStage && this.lastStage >= stageNumber) this.lastStage--
-
-    shiftNumberKeysDown(this, stageNumber)
-    if (this.stageDiffs) shiftNumberKeysDown(this.stageDiffs, stageNumber)
   }
+
+  mergeStage(stageNumber: StageNumber): void {
+    const stageToMerge = stageNumber == 1 ? 2 : stageNumber
+    this.mergeStageDiffWithBelow(stageToMerge)
+    this.updateStageRanges(stageNumber, stageToMerge)
+    this.shiftKeysDown(stageNumber)
+  }
+
+  /**
+   * Discards a stage without merging its contents.
+   * Preserves absolute values in later stages by recalculating their diffs.
+   */
+  discardStage(stageNumber: StageNumber): boolean {
+    const result = this.resetValue(stageNumber)
+    this.updateStageRanges(stageNumber, stageNumber)
+    this.shiftKeysDown(stageNumber)
+    return result
+  }
+
   private mergeStageDiffWithBelow(stage: StageNumber): void {
     if (stage <= this.firstStage) return
     if (!this.hasStageDiff(stage)) return

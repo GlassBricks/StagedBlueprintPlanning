@@ -2149,3 +2149,124 @@ describe("item-requests", () => {
     assertEntityCorrect(projectEntity, false)
   })
 })
+
+describe("stage deletion", () => {
+  function createBaseEntities() {
+    const entityAtStage = buildEntity(3, {
+      name: "inserter",
+      position: pos.add(1, 0),
+    })
+
+    const entityAfterStage = buildEntity(4, {
+      name: "inserter",
+      position: pos.add(2, 0),
+    })
+
+    const entityWithLastStage = buildEntity(1, {
+      name: "inserter",
+      position: pos.add(3, 0),
+    })
+    project.updates.trySetLastStage(entityWithLastStage, 3)
+
+    return { entityAtStage, entityAfterStage, entityWithLastStage }
+  }
+
+  function createTestEntitiesForMerge() {
+    const entityBeforeWithDiff = buildEntity<InserterBlueprintEntity>(2, {
+      name: "inserter",
+      position: pos.add(0, 0),
+    })
+    entityBeforeWithDiff._applyDiffAtStage(3, { override_stack_size: 3 })
+    project.worldUpdates.updateWorldEntities(entityBeforeWithDiff, 3)
+
+    return { entityBeforeWithDiff, ...createBaseEntities() }
+  }
+
+  function createTestEntitiesForDiscard() {
+    const entityBeforeWithDiff = buildEntity<InserterBlueprintEntity>(2, {
+      name: "inserter",
+      position: pos.add(0, 0),
+    })
+    entityBeforeWithDiff._applyDiffAtStage(3, { override_stack_size: 3 })
+    entityBeforeWithDiff._applyDiffAtStage(4, { override_stack_size: 4 })
+    project.worldUpdates.updateWorldEntities(entityBeforeWithDiff, 3)
+    project.worldUpdates.updateWorldEntities(entityBeforeWithDiff, 4)
+
+    return { entityBeforeWithDiff, ...createBaseEntities() }
+  }
+
+  function assertAllInsertersInProject() {
+    for (const stage of $range(1, project.numStages())) {
+      const entitiesOnSurface = surfaces[stage - 1].find_entities_filtered({ type: "inserter" })
+      for (const worldEntity of entitiesOnSurface) {
+        if (isPreviewEntity(worldEntity)) continue
+        const projectEntity = project.content.findCompatibleWithLuaEntity(worldEntity, nil, stage)
+        expect(projectEntity)
+          .comment(`Entity ${worldEntity.name} at ${worldEntity.position.x},${worldEntity.position.y} on stage ${stage}`)
+          .not.toBeNil()
+      }
+    }
+  }
+
+  test("merge stage 3 and verify entity updates", () => {
+    const { entityBeforeWithDiff, entityAtStage, entityAfterStage, entityWithLastStage } =
+      createTestEntitiesForMerge()
+
+    project.mergeStage(3)
+
+    expect(entityBeforeWithDiff.getValueAtStage(2)).toEqual({
+      name: "inserter",
+      override_stack_size: 3,
+    })
+    expect(entityBeforeWithDiff.hasStageDiff()).toBe(false)
+
+    expect(entityAtStage.firstStage).toBe(2)
+    expect(project.content.hasEntity(entityAtStage)).toBe(true)
+
+    expect(entityAfterStage.firstStage).toBe(3)
+    expect(project.content.hasEntity(entityAfterStage)).toBe(true)
+
+    expect(entityWithLastStage.lastStage).toBe(2)
+
+    assertEntityCorrect(entityBeforeWithDiff, false)
+    assertEntityCorrect(entityAtStage, false)
+    assertEntityCorrect(entityAfterStage, false)
+    assertEntityCorrect(entityWithLastStage, false)
+
+    assertAllInsertersInProject()
+  })
+
+  test("discard stage 3 and verify entity updates", () => {
+    const { entityBeforeWithDiff, entityAtStage, entityAfterStage, entityWithLastStage } =
+      createTestEntitiesForDiscard()
+
+    project.discardStage(3)
+
+    expect(entityBeforeWithDiff.getValueAtStage(2)).toEqual({
+      name: "inserter",
+      override_stack_size: 1,
+    })
+    expect(entityBeforeWithDiff.getValueAtStage(3)).toEqual({
+      name: "inserter",
+      override_stack_size: 4,
+    })
+    expect(entityBeforeWithDiff.stageDiffs).toEqual({
+      3: { override_stack_size: 4 },
+    })
+
+    expect(project.content.hasEntity(entityAtStage)).toBe(false)
+    expect(entityAtStage.getWorldEntity(1)).toBeNil()
+    expect(entityAtStage.getWorldEntity(2)).toBeNil()
+
+    expect(entityAfterStage.firstStage).toBe(3)
+    expect(project.content.hasEntity(entityAfterStage)).toBe(true)
+
+    expect(entityWithLastStage.lastStage).toBe(2)
+
+    assertEntityCorrect(entityBeforeWithDiff, false)
+    assertEntityCorrect(entityAfterStage, false)
+    assertEntityCorrect(entityWithLastStage, false)
+
+    assertAllInsertersInProject()
+  })
+})

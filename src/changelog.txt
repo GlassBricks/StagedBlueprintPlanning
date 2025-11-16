@@ -1,12 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.5
 Date: ????
+  Features:
+    - Added "discarding" a stage, which deletes a stage without merging it's contents.
+    - Reverse-selecting with the Staged deconstruct stage, now deconstructs the entity in the NEXT stage. The "Deconstruct at next stage" setting now swaps normal and reverse select behavior.
   Changes:
     - The "stage deconstructed" indicator now also shown for entities created and removed in the same stage; it is only omitted on trains and vehicles.
   Gui:
     - Make the project list slightly slimmer.
-  Minor features:
-    - Reverse-selecting with the Staged deconstruct stage, now deconstructs the entity in the NEXT stage. The "Deconstruct at next stage" setting now swaps normal and reverse select behavior.
 ---------------------------------------------------------------------------------------------------
 Version: 2.8.4
 Date: 2025-11-12

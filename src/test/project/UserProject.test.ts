@@ -8,7 +8,7 @@ import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
 import { getReferencedStage } from "../../blueprints/stage-reference"
 import { getProjectById, getStageAtSurface } from "../../project/project-refs"
 import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
-import { createUserProject, ProjectEvents, _deleteAllProjects } from "../../project/UserProject"
+import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
 import { getCurrentValues } from "../../utils/properties-obj"
 
 let eventListener: MockNoSelf<AnySelflessFun>
@@ -142,7 +142,7 @@ test("delete stage", () => {
   const stage2 = project.getStage(2)!
   const stage3 = project.getStage(3)!
 
-  project.deleteStage(2)
+  project.mergeStage(2)
 
   const stage2Surface = stage2.surface.index
   expect(stage2.valid).toBe(false)
@@ -180,8 +180,45 @@ test("delete stage by deleting surface", () => {
 test("deleting last stage deletes project", () => {
   const project = createUserProject("Test", 1)
   const stage = project.getStage(1)!
-  stage.deleteInProject()
+  stage.deleteByMerging()
   expect(project.valid).toBe(false)
+})
+
+describe("discardStage()", () => {
+  test("discards stage and raises events", () => {
+    const sp = mock.fn()
+    const project = createUserProject("Test", 3)
+    project.localEvents._subscribeIndependently({ invoke: sp })
+    eventListener.clear()
+
+    const stage1 = project.getStage(1)!
+    const stage2 = project.getStage(2)!
+    const stage3 = project.getStage(3)!
+
+    project.discardStage(2)
+
+    expect(stage2.valid).toBe(false)
+    expect(stage1.stageNumber).toEqual(1)
+    expect(stage3.stageNumber).toEqual(2)
+
+    const expected: PreStageDeletedEvent = {
+      type: "pre-stage-deleted",
+      project,
+      stage: stage2,
+    }
+    expect(eventListener).toHaveBeenCalledWith(expected)
+    expect(sp).toHaveBeenCalledWith(expected)
+  })
+
+  test("deletes entire project when discarding only stage", () => {
+    const project = createUserProject("Test", 1)
+    const stage = project.getStage(1)!
+
+    project.discardStage(1)
+
+    expect(project.valid).toBe(false)
+    expect(stage.valid).toBe(false)
+  })
 })
 
 describe("new stage name", () => {

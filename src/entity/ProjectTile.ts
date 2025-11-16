@@ -18,7 +18,8 @@ export interface ProjectTile {
   getLastStage(): StageNumber | nil
 
   insertStage(stageNumber: StageNumber): void
-  deleteStage(stageNumber: StageNumber): void
+  mergeStage(stageNumber: StageNumber): void
+  discardStage(stageNumber: StageNumber): boolean
 }
 
 @RegisterClass("ProjectTile")
@@ -93,13 +94,25 @@ class ProjectTileImpl implements ProjectTile {
     shiftNumberKeysUp(this.values, stageNumber)
   }
 
-  deleteStage(stageNumber: StageNumber): void {
+  mergeStage(stageNumber: StageNumber): void {
     if (stageNumber > 1 && this.values[stageNumber] != nil) {
       const valueAtMerge = this.getTileAtStage(stageNumber)
       this.setTileAtStage(stageNumber - 1, valueAtMerge)
     }
 
     shiftNumberKeysDown(this.values, stageNumber)
+  }
+
+  discardStage(stageNumber: StageNumber): boolean {
+    const entry = this.values[stageNumber]
+    const hasChanges = entry != nil
+    if (hasChanges) {
+      const prevValue = this.getTileAtStage(stageNumber - 1)
+      this.setTileAtStage(stageNumber, prevValue)
+    }
+
+    shiftNumberKeysDown(this.values, stageNumber)
+    return hasChanges
   }
 }
 

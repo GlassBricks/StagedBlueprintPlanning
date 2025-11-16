@@ -192,6 +192,7 @@ export const enum L_Game {
   Reset = "gui.reset",
   Confirm = "gui.confirm",
   Cancel = "gui.cancel",
+  Delete = "gui.delete",
   Import = "gui-blueprint-library.import",
   Planet = "factoriopedia.planet",
   GenerateWithLabTiles = "gui-map-editor-surface-editor.generate-new-chunks-with-lab-tiles",

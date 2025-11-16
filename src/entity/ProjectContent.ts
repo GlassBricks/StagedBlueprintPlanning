@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BoundingBox, LuaEntity } from "factorio:runtime"
+import { BoundingBox, LuaEntity, MapPosition } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
 import { isEmpty, PRecord, RegisterClass } from "../lib"
@@ -69,7 +69,10 @@ export interface MutableProjectContent extends ProjectContent {
   changeEntityPosition(entity: ProjectEntity, position: Position): boolean
   /** Modifies all entities */
   insertStage(stageNumber: StageNumber): void
-  deleteStage(stageNumber: StageNumber): void
+  mergeStage(stageNumber: StageNumber): void
+  discardStage(
+    stageNumber: StageNumber,
+  ): LuaMultiReturn<[deleted: ProjectEntity[], updated: ProjectEntity[], updatedTiles: MapPosition[]]>
 }
 
 let nameToType: PrototypeInfo["nameToType"]
@@ -287,15 +290,51 @@ class ProjectContentImpl implements MutableProjectContent {
       }
     }
   }
-  deleteStage(stageNumber: StageNumber): void {
+  mergeStage(stageNumber: StageNumber): void {
     for (const entity of this.entities) {
-      entity.deleteStage(stageNumber)
+      entity.mergeStage(stageNumber)
     }
     for (const [, r] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(this.tiles)) {
       for (const [, tile] of pairs(r)) {
-        tile.deleteStage(stageNumber)
+        tile.mergeStage(stageNumber)
       }
     }
+  }
+
+  discardStage(
+    stageNumber: StageNumber,
+  ): LuaMultiReturn<[deleted: ProjectEntity[], updated: ProjectEntity[], updatedTiles: MapPosition[]]> {
+    const deleted: ProjectEntity[] = []
+    const updated: ProjectEntity[] = []
+    const updatedTiles: MapPosition[] = []
+    for (const entity of this.entities) {
+      if (entity.firstStage == stageNumber) {
+        this.deleteEntity(entity)
+        deleted.push(entity)
+      } else {
+        if (entity.discardStage(stageNumber)) {
+          updated.push(entity)
+        }
+      }
+    }
+
+    const tilesToRemove: Array<{ x: number; y: number }> = []
+    for (const [x, r] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(this.tiles)) {
+      for (const [y, tile] of pairs(r)) {
+        const hasChanges = tile.discardStage(stageNumber)
+        if (hasChanges) {
+          const position = { x, y }
+          if (tile.isEmpty()) {
+            tilesToRemove.push(position)
+          }
+          updatedTiles.push(position)
+        }
+      }
+    }
+    for (const pos of tilesToRemove) {
+      this.deleteTile(pos)
+    }
+    return $multi(deleted, updated, updatedTiles)
   }
 
   __tostring(): string {

@@ -5,7 +5,7 @@
 
 import expect, { mock } from "tstl-expect"
 import { LuaEntityInfo } from "../../entity/Entity"
-import { MutableProjectContent, newProjectContent, _assertCorrect } from "../../entity/ProjectContent"
+import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { createProjectTile } from "../../entity/ProjectTile"
 import { getPrototypeRotationType, RotationType } from "../../entity/prototype-info"
@@ -295,11 +295,11 @@ test("deletes stage for all entities and tiles", () => {
   tile.setTileAtStage(1, "bar")
   content.addEntity(entity)
   content.setTile(pos, tile)
-  entity.deleteStage = mock.fn()
-  tile.deleteStage = mock.fn()
-  content.deleteStage(2)
-  expect(entity.deleteStage).toHaveBeenCalledWith(2)
-  expect(tile.deleteStage).toHaveBeenCalledWith(2)
+  entity.mergeStage = mock.fn()
+  tile.mergeStage = mock.fn()
+  content.mergeStage(2)
+  expect(entity.mergeStage).toHaveBeenCalledWith(2)
+  expect(tile.mergeStage).toHaveBeenCalledWith(2)
 })
 
 describe("tile support", () => {
@@ -329,5 +329,44 @@ describe("tile support", () => {
     const pos = { x: 1, y: 2 }
     const result = content.deleteTile(pos)
     expect(result).toBe(false)
+  })
+})
+
+describe("discardStage()", () => {
+  test("removes entities created at discarded stage", () => {
+    const entity1 = newProjectEntity({ name: "inserter" }, { x: 0, y: 0 }, 0, 1)
+    const entity2 = newProjectEntity({ name: "inserter" }, { x: 1, y: 1 }, 0, 3)
+    const entity3 = newProjectEntity({ name: "inserter" }, { x: 2, y: 2 }, 0, 2)
+    content.addEntity(entity1)
+    content.addEntity(entity2)
+    content.addEntity(entity3)
+
+    content.discardStage(3)
+
+    expect(content.countNumEntities()).toEqual(2)
+    expect(content.findCompatibleEntity("inserter", entity1.position, 0, 1)).toBe(entity1)
+    expect(content.findCompatibleEntity("inserter", entity3.position, 0, 2)).toBe(entity3)
+    expect(content.findCompatibleEntity("inserter", entity2.position, 0, 2)).toBeNil()
+  })
+
+  test("discards stage for remaining entities", () => {
+    const entity = newProjectEntity({ name: "inserter" }, { x: 0, y: 0 }, 0, 1)
+    content.addEntity(entity)
+    entity.discardStage = mock.fn<typeof entity.discardStage>()
+
+    content.discardStage(2)
+
+    expect(entity.discardStage).toHaveBeenCalledWith(2)
+  })
+
+  test("removes empty tiles after discard", () => {
+    const tile = createProjectTile()
+    tile.values[2] = "concrete"
+    const pos = { x: 5, y: 10 }
+    content.setTile(pos, tile)
+
+    content.discardStage(2)
+
+    expect(content.tiles.get(pos.x, pos.y)).toBeNil()
   })
 })

@@ -290,14 +290,14 @@ export declare const enum L_GuiProjectSettings {
   SetSelectedTileAndWaterTooltip = "bp100.gui.project-settings.set-selected-tile-and-water-tooltip",
   /** No tile selected */
   FailedToSetTiles = "bp100.gui.project-settings.failed-to-set-tiles",
-  /** Delete current stage */
-  DeleteStage = "bp100.gui.project-settings.delete-stage",
-  /** Are you sure you want to delete stage __1__? */
-  DeleteStageConfirmation1 = "bp100.gui.project-settings.delete-stage-confirmation1",
-  /** Contents will be merged with the next stage (__1__). */
-  DeleteStageConfirmation2First = "bp100.gui.project-settings.delete-stage-confirmation2-first",
-  /** Contents will be merged with the previous stage (__1__). */
-  DeleteStageConfirmation2Middle = "bp100.gui.project-settings.delete-stage-confirmation2-middle",
+  /**  ⋎ Merge stage with previous */
+  MergeStage = "bp100.gui.project-settings.merge-stage",
+  /** This will delete stage (__1__) by merging its contents with the previous stage (__2__). */
+  MergeStageConfirmation = "bp100.gui.project-settings.merge-stage-confirmation",
+  /** [img=utility/trash] Discard stage */
+  DiscardStage = "bp100.gui.project-settings.discard-stage",
+  /** This will DISCARD all changes made in this stage (__1__), then delete it. */
+  DiscardStageConfirmation = "bp100.gui.project-settings.discard-stage-confirmation",
   /** Settings: Defaults */
   BlueprintSettingsDefaults = "bp100.gui.project-settings.blueprint-settings-defaults",
   /** Settings: Per-stage [img=info] */
