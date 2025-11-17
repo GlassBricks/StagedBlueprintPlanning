@@ -26,6 +26,13 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     order: "d",
   },
   {
+    name: Settings.CopyItemRequests,
+    type: "bool-setting",
+    setting_type: "runtime-per-user",
+    default_value: true,
+    order: "e",
+  },
+  {
     name: Settings.UnhideInfinityItems,
     type: "bool-setting",
     setting_type: "startup",

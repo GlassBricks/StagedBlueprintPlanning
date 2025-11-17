@@ -3,7 +3,15 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintEntity, LuaEntity, LuaItemStack, LuaSurface, MapPosition, UnitNumber } from "factorio:runtime"
+import {
+  BlueprintEntity,
+  BlueprintInsertPlan,
+  LuaEntity,
+  LuaItemStack,
+  LuaSurface,
+  MapPosition,
+  UnitNumber,
+} from "factorio:runtime"
 import { UnstagedEntityProps } from "../entity/Entity"
 import { addItemRequests, filterOutInventories, getInventoriesFromRequests } from "../entity/item-requests"
 import { isEmpty, Mutable, PRecord } from "../lib"
@@ -111,6 +119,21 @@ export interface BlueprintTakeResult {
   bpMapping: Record<number, LuaEntity>
 }
 
+export function addItemRequestsToEntity(bpEntity: BlueprintEntity, requests: BlueprintInsertPlan[]): boolean {
+  // exclude adding requests vanilla blueprinting already has
+  let filteredRequests: typeof requests | nil = requests
+  if (bpEntity.items) {
+    const existingInventories = getInventoriesFromRequests(bpEntity.items)
+    filteredRequests = filterOutInventories(requests, existingInventories)
+  }
+
+  if (filteredRequests != nil) {
+    addItemRequests(bpEntity, filteredRequests)
+    return true
+  }
+  return false
+}
+
 function addItemRequestsToBlueprint(
   entities: PRecord<number, BlueprintEntity>,
   bpMapping: Record<number, LuaEntity>,
@@ -125,15 +148,7 @@ function addItemRequestsToBlueprint(
     const bpEntity = entities[entityNumber]
     if (!bpEntity) continue
 
-    // exclude adding requests vanilla blueprinting already has
-    let filteredRequests: typeof requests | nil = requests
-    if (bpEntity.items) {
-      const existingInventories = getInventoriesFromRequests(bpEntity.items)
-      filteredRequests = filterOutInventories(requests, existingInventories)
-    }
-
-    if (filteredRequests != nil) {
-      addItemRequests(bpEntity, filteredRequests)
+    if (addItemRequestsToEntity(bpEntity, requests)) {
       changed = true
     }
   }

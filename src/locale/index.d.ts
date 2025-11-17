@@ -44,12 +44,16 @@ export declare const enum L_ModSettingName {
   Bp100UnhideInfinityItems = "mod-setting-name.bp100_unhide-infinity-items",
   /** Deconstruct at next stage */
   Bp100DeleteAtNextStage = "mod-setting-name.bp100_delete-at-next-stage",
+  /** Copy item requests */
+  Bp100CopyItemRequests = "mod-setting-name.bp100_copy-item-requests",
 }
 export declare const enum L_ModSettingDescription {
   /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
   Bp100UnhideInfinityItems = "mod-setting-description.bp100_unhide-infinity-items",
   /** When stage-deconstructing an entity, it will be deconstructed at the _next_ stage instead of the current stage. */
   Bp100DeleteAtNextStage = "mod-setting-description.bp100_delete-at-next-stage",
+  /** When copying blueprints inside a project, also copy the entity's item requests. */
+  Bp100CopyItemRequests = "mod-setting-description.bp100_copy-item-requests",
 }
 export declare const enum L_StringModSetting {
   /** Top */

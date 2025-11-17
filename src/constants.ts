@@ -9,6 +9,7 @@ export const enum Settings {
   EntityInfoLocation = "bp100_entity-info-location",
   UnhideInfinityItems = "bp100_unhide-infinity-items",
   DeleteAtNextStage = "bp100_delete-at-next-stage",
+  CopyItemRequests = "bp100_copy-item-requests",
 }
 
 export const enum Prototypes {
