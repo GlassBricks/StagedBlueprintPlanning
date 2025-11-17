@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.0
 Date: ????
-  Changes:
+  Features:
+    - You can now copy an entity with item requests, in a project. This can be toggled under a new setting.
 ---------------------------------------------------------------------------------------------------
 Version: 2.9.1
 Date: 2025-11-16
