@@ -31,7 +31,6 @@ export class IconsEdit extends Component<IconsEditProps> {
               const iconValue = settings[`icon${i}`]
               return (
                 <choose-elem-button
-                  styleMod={{}}
                   style={
                     (iconValue instanceof DiffedProperty
                       ? iconValue.isOverridden().select("slot_sized_button_green", "slot_button")

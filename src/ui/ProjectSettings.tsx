@@ -199,7 +199,8 @@ class ProjectSettings extends Component<{
 
   private EditorTab() {
     const selectedTile = this.project.landfillTile
-    const selectedTileValue = selectedTile.get()
+    const valueRaw = selectedTile.get()
+    const selectedTileValue = valueRaw && valueRaw in prototypes.tile ? valueRaw : nil
     const tileIsNotBlueprintable = selectedTileValue && !prototypes.tile[selectedTileValue]?.items_to_place_this
     const allowNonBlueprintable = property<boolean>(!!tileIsNotBlueprintable)
 
