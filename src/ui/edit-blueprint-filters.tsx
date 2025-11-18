@@ -30,7 +30,9 @@ class EditBlueprintFilterGui extends Component<{
       { mode: "and", filter: "name", name: Prototypes.UndoReference, invert: true },
     ]
     const currentValues = filters.get()
-    const currentValuesAsArray: string[] = currentValues ? Object.keys(currentValues) : []
+    const currentValuesAsArray: string[] = (currentValues ? Object.keys(currentValues) : []).filter(
+      (name) => name in prototypes.entity,
+    )
     return (
       <flow
         anchor={{
