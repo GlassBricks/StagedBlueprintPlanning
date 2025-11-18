@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.1
-Date: ????
+Date: 2025-11-18
   Bugfixes:
     - Editing blueprint filters with entities no longer present in active mods no longer crashes the UI.
 ---------------------------------------------------------------------------------------------------
