@@ -42,7 +42,7 @@ export declare const enum L_ModSettingName {
   Bp100EntityInfoLocation = "mod-setting-name.bp100_entity-info-location",
   /** Unhide infinity items (allows use in upgrade planner) */
   Bp100UnhideInfinityItems = "mod-setting-name.bp100_unhide-infinity-items",
-  /** Deconstruct at next stage */
+  /** Swap staged deconstruction planner selection */
   Bp100DeleteAtNextStage = "mod-setting-name.bp100_delete-at-next-stage",
   /** Copy item requests */
   Bp100CopyItemRequests = "mod-setting-name.bp100_copy-item-requests",
@@ -50,7 +50,7 @@ export declare const enum L_ModSettingName {
 export declare const enum L_ModSettingDescription {
   /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
   Bp100UnhideInfinityItems = "mod-setting-description.bp100_unhide-infinity-items",
-  /** When stage-deconstructing an entity, it will be deconstructed at the _next_ stage instead of the current stage. */
+  /** With the Staged deconstruction planner selection, by default alt-select deconstructs the entity at the current stage, and reverse-select deconstructs at the NEXT stage. Selecting this option swaps alt-select and reverse select. */
   Bp100DeleteAtNextStage = "mod-setting-description.bp100_delete-at-next-stage",
   /** When copying blueprints inside a project, also copy the entity's item requests. */
   Bp100CopyItemRequests = "mod-setting-description.bp100_copy-item-requests",
