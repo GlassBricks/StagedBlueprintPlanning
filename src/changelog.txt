@@ -74,7 +74,7 @@ Date: 2025-11-09
 ---------------------------------------------------------------------------------------------------
 Version: 2.7.1
 Date: 2025-11-02
-  Bugfixes
+  Bugfixes:
     - Fixed handling of item requests for fuel and nutrients.
     - Fixed several issues relating to bot item requests.
     - Duplicate item requests highlights will no longer appear on some entities.
