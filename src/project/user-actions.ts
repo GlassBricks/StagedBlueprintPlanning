@@ -67,6 +67,7 @@ export interface UserActions {
     byPlayer: PlayerIndex,
   ): UndoAction | nil
   onMoveEntityToStageCustomInput(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil
+  rebuildEntity(entity: LuaEntity, stageNumber: StageNumber): void
 
   onSurfaceCleared(stage: StageNumber): void
 
@@ -205,6 +206,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     onBringDownToStageUsed,
     onSendToStageUsed,
     onMoveEntityToStageCustomInput,
+    rebuildEntity,
     onSurfaceCleared,
     userRevivedSettingsRemnant,
     userMoveEntityToStageWithUndo,
@@ -278,7 +280,6 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     // possibly more undo actions in the future
   }
 
-  /** Also asserts that stage > entity's first stage. */
   function getCompatibleAtCurrentStageOrAdd(
     worldEntity: LuaEntity,
     stage: StageNumber,
@@ -540,6 +541,14 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     const entity = content.findCompatibleFromPreviewOrLuaEntity(entityOrPreviewEntity, stage)
     if (!entity || entity.isSettingsRemnant) return
     return userTryMoveEntityToStageWithUndo(entity, stage, byPlayer)
+  }
+
+  function rebuildEntity(worldEntity: LuaEntity, stageNumber: StageNumber): void {
+    const projectEntity = getCompatibleAtCurrentStageOrAdd(worldEntity, stageNumber, nil, nil)
+    if (projectEntity) {
+      projectEntity.replaceWorldEntity(stageNumber, worldEntity)
+      rebuildWorldEntityAtStage(projectEntity, stageNumber)
+    }
   }
 
   function userTryMoveEntityToStageWithUndo(

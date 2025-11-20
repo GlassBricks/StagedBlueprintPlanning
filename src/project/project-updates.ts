@@ -85,6 +85,7 @@ export interface ProjectUpdates {
   setVehicleLocationHere(entity: MovableProjectEntity): void
 
   setTileAtStage(position: Position, stage: StageNumber, value: string | nil): void
+  deleteTile(position: Position): boolean
 
   scanProjectForExistingTiles(): void
 }
@@ -128,6 +129,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     resetVehicleLocation,
     setVehicleLocationHere,
     setTileAtStage,
+    deleteTile: removeTile,
     scanProjectForExistingTiles,
   }
 
@@ -784,6 +786,14 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     } else {
       updateTilesInRange(position, stage, nextStage)
     }
+  }
+
+  function removeTile(position: Position): boolean {
+    const result = content.deleteTile(position)
+    if (result) {
+      updateTilesInRange(position, 1, nil)
+    }
+    return result
   }
 
   function scanProjectForExistingTiles(): void {

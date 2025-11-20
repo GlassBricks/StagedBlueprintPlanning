@@ -279,6 +279,10 @@ if (!inTest) {
     },
     destroySurface: (surface) => {
       if (!surface.valid) return
+      if (surface.platform) {
+        game.delete_surface(surface)
+        return
+      }
       surface.find_entities().forEach((entity) => entity.destroy())
       if (!storage.freeSurfaces) {
         storage.freeSurfaces = []

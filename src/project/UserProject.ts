@@ -194,23 +194,22 @@ class UserProjectImpl implements UserProjectInternal {
     this.assertValid()
     assert(stage >= 1 && stage <= this.numStages() + 1, "Invalid new stage number")
 
+    this.content.insertStage(stage)
+
     const name = this._getNewStageName(stage)
-    const [newStage] = StageImpl.create(this, stage, name)
-    // hub gets added later
+    const [newStage, hub] = StageImpl.create(this, stage, name)
 
     table.insert(this.stages as unknown as Stage[], stage, newStage)
     // update stages
     for (const i of $range(stage, luaLength(this.stages))) {
       this.stages[i].stageNumber = i
     }
-    this.content.insertStage(stage)
 
     const template = this.getBlueprintBookTemplate()
     if (template) {
       this.addStageToBlueprintBookTemplate(stage, template)
     }
-
-    this.raiseEvent({ type: "stage-added", project: this, stage: newStage })
+    this.raiseEvent({ type: "stage-added", project: this, stage: newStage, spacePlatformHub: hub })
     return newStage
   }
 

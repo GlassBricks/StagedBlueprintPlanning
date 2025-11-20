@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LocalisedString, LuaItemStack, LuaSurface } from "factorio:runtime"
+import { LocalisedString, LuaEntity, LuaItemStack, LuaSurface } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,
@@ -144,6 +144,7 @@ export interface ProjectsReorderedEvent {
 }
 export interface StageAddedEvent {
   readonly type: "stage-added"
+  readonly spacePlatformHub: LuaEntity | nil
   readonly project: UserProject
   readonly stage: Stage
 }

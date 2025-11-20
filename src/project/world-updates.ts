@@ -424,9 +424,12 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     submitTask(new RebuildAllStagesTask(project))
   }
 
-  function updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): void {
+  function updateTilesInRange(
+    position: Position,
+    fromStage: StageNumber,
+    endStage: StageNumber = project.numStages(),
+  ): void {
     const tile = content.tiles.get(position.x, position.y)
-    const endStage = toStage ?? project.numStages()
 
     const tileWrite: Mutable<TileWrite> = { position, name: "" }
     const tileWriteArr = [tileWrite]

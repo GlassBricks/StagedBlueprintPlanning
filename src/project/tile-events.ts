@@ -19,6 +19,7 @@ import { getStageAtSurface } from "./project-refs"
 const Events = ProtectedEvents
 
 const script_raised_set_tiles = defines.events.script_raised_set_tiles
+
 /**
  * Temporarily disables the `script_raised_set_tiles` event;
  * This is to improve performance when setting tiles that don't affect a project.

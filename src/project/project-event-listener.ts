@@ -8,9 +8,13 @@ import { ProjectEvents } from "./UserProject"
 
 ProjectEvents.addListener((e) => {
   switch (e.type) {
-    case "stage-added":
+    case "stage-added": {
+      if (e.spacePlatformHub) {
+        e.project.actions.rebuildEntity(e.spacePlatformHub, e.stage.stageNumber)
+      }
       e.project.worldUpdates.rebuildStage(e.stage.stageNumber)
       return
+    }
     case "stage-deleted": {
       const stageNumber = e.stage.stageNumber
       const stageNumberToMerge = stageNumber == 1 ? 2 : stageNumber - 1
