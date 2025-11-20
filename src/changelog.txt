@@ -5,7 +5,8 @@ Date: ????
     - Fixed space platform hubs not being present when a stage is inserted at the front.
     - Fixed on spaceships, that extra space platform may be present when inserting a stage.
     - Fixed that tiles may sometimes not be fixed when rebuilding a stage.
-    - Fixed not being able to take a blueprint of a stage that includes tiles but not entities
+    - Fixed that importing a space platform project would use normal world surfaces instead.
+    - Fixed not being able to take a blueprint of a stage that includes tiles but not entities.
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.1
 Date: 2025-11-18

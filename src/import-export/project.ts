@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { OverrideableBlueprintSettings, StageBlueprintSettings } from "../blueprints/blueprint-settings"
+import { ProjectEntity } from "../entity/ProjectEntity"
 import {
   NestedProjectSettings,
   NestedStageSettings,
@@ -11,7 +12,7 @@ import {
   StageSettings,
   UserProject,
 } from "../project/ProjectDef"
-import type { SurfaceSettings } from "../project/surfaces"
+import { type SurfaceSettings } from "../project/surfaces"
 import { createUserProject } from "../project/UserProject"
 import { getCurrentValues, getCurrentValuesOf, OverrideTable, setCurrentValuesOf } from "../utils/properties-obj"
 import { EntityExport, exportAllEntities, importAllEntities } from "./entity"
@@ -56,7 +57,7 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
 
 export function importProjectDataOnly(project: ProjectExport): UserProject {
   const stages = project.stages
-  const result = createUserProject(project.name ?? "", stages?.length ?? 3)
+  const result = createUserProject(project.name ?? "", stages?.length ?? 3, project?.surfaceSettings)
   setCurrentValuesOf<ProjectSettings>(result, project, keys<ProjectSettings>())
   if (project.defaultBlueprintSettings != nil) {
     setCurrentValuesOf<OverrideableBlueprintSettings>(
@@ -66,34 +67,37 @@ export function importProjectDataOnly(project: ProjectExport): UserProject {
     )
   }
 
-  if (project.surfaceSettings != nil) {
-    result.surfaceSettings = { ...result.surfaceSettings, ...project.surfaceSettings }
-  }
-
   if (stages != nil) {
     for (const [i, stage] of ipairs(stages)) {
-      setStageExport(stage, result.getStage(i)!)
+      importStage(stage, result.getStage(i)!)
     }
   }
+  if (result.isSpacePlatform()) {
+    const hub = next(result.content.allEntities())[0] as ProjectEntity | nil
+    if (hub) {
+      result.updates.forceDeleteEntity(hub)
+    }
+  }
+
   importAllEntities(result.content, assert(project.entities))
 
   return result
 }
 
-export function setStageExport(stage: StageExport, stageToExport: Stage): void {
-  if (stage.blueprintOverrideSettings != nil) {
+function importStage(importedStage: StageExport, result: Stage): void {
+  if (importedStage.blueprintOverrideSettings != nil) {
     setCurrentValuesOf<OverrideTable<OverrideableBlueprintSettings>>(
-      stageToExport.blueprintOverrideSettings,
-      stage.blueprintOverrideSettings,
+      result.blueprintOverrideSettings,
+      importedStage.blueprintOverrideSettings,
       keys<OverrideableBlueprintSettings>(),
     )
   }
-  if (stage.stageBlueprintSettings != nil) {
+  if (importedStage.stageBlueprintSettings != nil) {
     setCurrentValuesOf<StageBlueprintSettings>(
-      stageToExport.stageBlueprintSettings,
-      stage.stageBlueprintSettings,
+      result.stageBlueprintSettings,
+      importedStage.stageBlueprintSettings,
       keys<StageBlueprintSettings>(),
     )
   }
-  setCurrentValuesOf<StageSettings>(stageToExport, stage, keys<StageSettings>())
+  setCurrentValuesOf<StageSettings>(result, importedStage, keys<StageSettings>())
 }

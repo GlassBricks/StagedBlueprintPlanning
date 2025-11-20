@@ -595,7 +595,6 @@ class ProjectSettings extends Component<{
         <button
           caption={[L_GuiProjectSettings.ExportProject]}
           tooltip={[L_GuiProjectSettings.ExportProjectTooltip]}
-          styleMod={{ width: BpExportButtonWidth }}
           on_gui_click={ibind(this.exportProject)}
         />
       </flow>
