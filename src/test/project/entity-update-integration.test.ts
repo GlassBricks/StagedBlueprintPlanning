@@ -15,10 +15,8 @@ import {
   PlayerIndex,
   SurfaceCreateEntity,
   UndergroundBeltBlueprintEntity,
-  UnitNumber,
 } from "factorio:runtime"
 import expect from "tstl-expect"
-import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
 import {
@@ -45,13 +43,7 @@ import { _deleteAllProjects, createUserProject } from "../../project/UserProject
 import { debugPrint } from "../../lib/test/misc"
 import { createRollingStock } from "../entity/createRollingStock"
 import { simpleInsertPlan } from "../entity/entity-util"
-import {
-  assertConfigChangedHighlightsCorrect,
-  assertErrorHighlightsCorrect,
-  assertItemRequestHighlightsCorrect,
-  assertLastStageHighlightCorrect,
-  assertNoHighlightsAfterLastStage,
-} from "./entity-highlight-test-util"
+import * as integrationUtil from "./entity-integration-test-util"
 import direction = defines.direction
 
 let project: UserProject
@@ -69,146 +61,22 @@ before_each(() => {
   surfaces = project.getAllStages().map((stage) => stage.surface)
   player = game.players[1]
 })
-// after_all(cleanup)
 
 const pos = Pos(10.5, 10.5)
-
-function assertEntityCorrect(entity: ProjectEntity, expectError: number | false) {
-  expect(entity.isSettingsRemnant).toBeFalsy()
-  const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
-  expect(found).toBe(entity)
-
-  let hasError: number | false = false
-  for (const stage of $range(1, project.lastStageFor(entity))) {
-    const worldEntity = entity.getWorldOrPreviewEntity(stage)!
-    assert(worldEntity, `entity does not exist at stage ${stage}`)
-    const isPreview = isPreviewEntity(worldEntity)
-    const value = entity.getValueAtStage(stage)
-    if (value == nil) {
-      assert(isPreview, `entity must be preview at stage ${stage}`)
-    } else if (isPreview) {
-      assert(entity.hasErrorAt(stage), `entity must have error at stage ${stage} to be preview`)
-      hasError ||= stage
-    } else if (entity.hasErrorAt(stage)) {
-      assert(
-        worldEntity.type == "underground-belt",
-        "Only underground belt currently can have error with existing entity",
-      )
-      assert(entity.isUndergroundBelt())
-      hasError ||= stage
-      const type = worldEntity.belt_to_ground_type
-      const oppositeType = type == "input" ? "output" : "input"
-      expect(entity.direction).toBe(oppositedirection(worldEntity.direction))
-      expect(entity.firstValue.type).toBe(oppositeType)
-    } else {
-      const [savedValue, savedUnstagedValue] = saveEntity(worldEntity)
-      expect(savedValue).toEqual(value)
-      expect(savedUnstagedValue).toEqual(entity.getUnstagedValue(stage))
-      if (!canBeAnyDirection(worldEntity)) {
-        expect(worldEntity.direction).toBe(entity.direction)
-      }
-    }
-    if (isPreview) {
-      expect(worldEntity.name).toBe(Prototypes.PreviewEntityPrefix + (value ?? entity.firstValue).name)
-    }
-    expect(worldEntity.position).comment(`preview at stage ${stage}`).toEqual(entity.position)
-    if (isPreview) {
-      expect(worldEntity.direction).toEqual(entity.getPreviewDirection())
-    } else if (entity.isUndergroundBelt() && entity.hasErrorAt(stage)) {
-      expect(worldEntity.direction).toEqual(oppositedirection(entity.direction))
-    } else if (!canBeAnyDirection(worldEntity)) {
-      expect(worldEntity.direction).toEqual(entity.direction)
-    }
-
-    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).toBeNil()
-  }
-
-  expect(hasError).toBe(expectError)
-
-  // nothing after the last stage
-  for (const stage of $range(project.lastStageFor(entity) + 1, project.numStages())) {
-    expect(entity.getWorldOrPreviewEntity(stage)).toBeNil()
-  }
-
-  assertErrorHighlightsCorrect(entity, project.lastStageFor(entity))
-  assertConfigChangedHighlightsCorrect(entity, project.lastStageFor(entity))
-  assertLastStageHighlightCorrect(entity)
-  assertNoHighlightsAfterLastStage(entity, project.numStages())
-  assertItemRequestHighlightsCorrect(entity, project.lastStageFor(entity))
-
-  // circuit wires
-  const wireConnections = entity.wireConnections
-  if (!wireConnections) {
-    for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const worldEntity = entity.getWorldEntity(stage)
-      if (!worldEntity) continue
-      // const wireNeighbors: CircuitOrPowerSwitchConnection[] | nil = worldEntity.circuit_connection_definitions
-      // if (!wireNeighbors) continue
-      // expect(wireNeighbors).toEqual([])
-      for (const [, connectionPoint] of pairs(worldEntity.get_wire_connectors(false))) {
-        expect(connectionPoint.connection_count).toBe(0)
-      }
-    }
-  } else {
-    for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const thisWorldEntity = entity.getWorldEntity(stage)
-      if (!thisWorldEntity) continue
-
-      const expectedConnections = Object.entries(wireConnections).flatMap(([entity, connections]) => {
-        const otherWorldEntity = entity.getWorldEntity(stage)
-        if (!otherWorldEntity) return []
-        return Object.keys(connections).map((connection) => ({
-          toId: connection.toId,
-          entities: newLuaSet(thisWorldEntity.unit_number!, otherWorldEntity.unit_number!),
-        }))
-      })
-
-      const actualConnections: {
-        toId: defines.wire_connector_id
-        entities: LuaSet<UnitNumber>
-      }[] = []
-      for (const [, connectionPoint] of pairs(thisWorldEntity.get_wire_connectors(false))) {
-        for (const connection of connectionPoint.connections) {
-          actualConnections.push({
-            toId: connection.target.wire_connector_id,
-            entities: newLuaSet(thisWorldEntity.unit_number!, connection.target.owner.unit_number!),
-          })
-        }
-      }
-      expectedConnections.sort((a, b) => a.toId - b.toId)
-      actualConnections.sort((a, b) => a.toId - b.toId)
-
-      expect(actualConnections).toEqual(expectedConnections)
-    }
-  }
-}
-
-function assertEntityNotPresent(entity: ProjectEntity) {
-  const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
-  expect(found).toBeNil()
-
-  for (const stage of $range(1, project.lastStageFor(entity))) {
-    expect(entity.getWorldOrPreviewEntity(stage)).toBeNil()
-  }
-  expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
-  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
-}
-
-function assertIsSettingsRemnant(entity: ProjectEntity) {
-  expect(entity.isSettingsRemnant).toBe(true)
-  for (const stage of $range(1, project.lastStageFor(entity))) {
-    const preview = entity.getWorldOrPreviewEntity(stage)!
-    expect(preview).toBeAny()
-    expect(isPreviewEntity(preview)).toBe(true)
-    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).toBeAny()
-  }
-  expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
-  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
-}
 let defaultName = "inserter"
 before_each(() => {
   defaultName = "inserter"
 })
+
+function assertEntityCorrect(entity: ProjectEntity, expectError: number | false) {
+  integrationUtil.assertEntityCorrect(project, entity, expectError)
+}
+function assertEntityNotPresent(entity: ProjectEntity) {
+  integrationUtil.assertEntityNotPresent(project, entity)
+}
+function assertIsSettingsRemnant(entity: ProjectEntity) {
+  integrationUtil.assertIsSettingsRemnant(project, entity)
+}
 
 function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   const params = {
@@ -227,6 +95,7 @@ function createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>) {
   }
   return entity
 }
+
 function buildEntity<T extends BlueprintEntity = BlueprintEntity>(
   stage: StageNumber,
   args?: Partial<SurfaceCreateEntity>,

@@ -16,7 +16,6 @@ export interface ProjectTile {
 
   getFirstStage(): StageNumber
   getLastStage(): StageNumber | nil
-
   insertStage(stageNumber: StageNumber): void
   mergeStage(stageNumber: StageNumber): void
   discardStage(stageNumber: StageNumber): boolean

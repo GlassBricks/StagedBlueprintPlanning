@@ -17,18 +17,18 @@ export interface LinkedMap2D<
   delete(x: number, y: number, value: T): void
 }
 
-export interface Map2D<T> {
-  [x: number]: PRecord<number, T | nil> | nil
+export interface ReadonlyMap2D<T> {
+  [x: number]: PRRecord<number, T | nil> | nil
   get(x: number, y: number): T | nil
+  asRecord(): PRRecord<number, PRRecord<number, T | nil>>
+}
+
+export interface Map2D<T> extends ReadonlyMap2D<T> {
+  [x: number]: PRecord<number, T | nil> | nil
   set(x: number, y: number, value: T): void
   delete(x: number, y: number): void
 
   asRecord(): Record<number, Record<number, T | nil>>
-}
-
-export interface ReadonlyMap2D<T> {
-  [x: number]: PRRecord<number, T | nil> | nil
-  get(x: number, y: number): T | nil
 }
 
 @RegisterClass("Map2D")
