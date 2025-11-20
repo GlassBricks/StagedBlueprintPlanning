@@ -199,7 +199,7 @@ function createSpacePlatform(
       position: hub.position,
       force: hub.force,
       fast_replace: true,
-      create_build_effect_smoke: false
+      create_build_effect_smoke: false,
     })
   }
   if (hub) {

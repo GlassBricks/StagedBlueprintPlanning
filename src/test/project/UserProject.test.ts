@@ -112,7 +112,7 @@ test("insert stage", () => {
     type: "stage-added",
     project,
     stage,
-    spacePlatformHub: nil
+    spacePlatformHub: nil,
   }
   expect(eventListener).toHaveBeenCalledWith(expected)
   expect(sp).toHaveBeenCalledWith(expected)
