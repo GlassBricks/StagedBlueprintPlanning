@@ -82,7 +82,6 @@ class UserProjectImpl implements UserProjectInternal {
   localEvents = new SimpleEvent<LocalProjectEvent>()
 
   defaultBlueprintSettings = createBlueprintSettingsTable()
-  surfaceSettings: SurfaceSettings
 
   landfillTile = property<string | nil>("landfill")
   // disable tiles by default in tests, since its slow
@@ -103,17 +102,12 @@ class UserProjectImpl implements UserProjectInternal {
     readonly id: ProjectId,
     name: string,
     initialNumStages: number,
-    surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
+    readonly surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
   ) {
     this.name = property(name)
-    this.surfaceSettings = surfaceSettings
-    this.stages = {}
     for (const i of $range(1, initialNumStages)) {
-      const [stage, hub] = StageImpl.create(this, i, `Stage ${i}`)
+      const [stage] = StageImpl.create(this, i, `Stage ${i}`)
       this.stages[i] = stage
-      if (hub) {
-        this.actions.onEntityCreated(hub, i, nil)
-      }
     }
 
     if (this.isSpacePlatform()) {

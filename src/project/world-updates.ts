@@ -98,6 +98,14 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     updateHighlightsOnReviveSettingsRemnant,
   } = highlights
 
+  const deconstructibleTiles = Object.keys(
+    prototypes.get_tile_filtered([
+      {
+        filter: "item-to-place",
+      },
+    ]),
+  )
+
   return {
     updateWorldEntities,
     updateWorldEntitiesOnLastStageChanged,
@@ -374,7 +382,6 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
       arr[i - 1].active = true
     }
   }
-
   function rebuildStage(stage: StageNumber): void {
     const surface = project.getSurface(stage)
     if (!surface) return
@@ -383,6 +390,12 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
         raise_destroy({ entity })
         entity.destroy()
       }
+    }
+
+    for (const tile of surface.find_tiles_filtered({
+      name: deconstructibleTiles,
+    })) {
+      updateTilesInRange(tile.position, stage, stage)
     }
 
     for (const [x, row] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(content.tiles)) {

@@ -63,22 +63,23 @@ describe("space platform hub", () => {
     assertEntityCorrect(project, hubEntity, false)
   })
 
-  test("hub stays at stage 1 when inserting stage at front", () => {
-    const [, hubEntity] = getHub(1)
-    project.insertStage(1)
+  test.each([1, 2])("hub correct when inserting stage at %s", (stage) => {
+    const [, projectEntity] = getHub(1)
 
-    const [stage1Entity, newHubEntity] = getHub(1)
-    expect(newHubEntity).toBe(hubEntity)
+    project.insertStage(stage)
 
-    expect(hubEntity.firstStage).toBe(1)
-    expect(hubEntity.lastStage).toBe(nil)
+    const [newWorldEntity, newProjectEntity] = getHub(stage)
+    expect(newProjectEntity).toBe(projectEntity)
 
-    expect(stage1Entity.name).toBe("space-platform-hub")
-    assertEntityCorrect(project, hubEntity, false)
+    expect(projectEntity.firstStage).toBe(1)
+    expect(projectEntity.lastStage).toBe(nil)
+
+    expect(newWorldEntity.name).toBe("space-platform-hub")
+    assertEntityCorrect(project, projectEntity, false)
   })
 })
 
-describe.only("space platform tiles", () => {
+describe("space platform tiles", () => {
   test("default tiles added when project created", () => {
     expect(project.stagedTilesEnabled.get()).toBe(true)
 
