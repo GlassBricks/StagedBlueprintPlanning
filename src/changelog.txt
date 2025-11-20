@@ -3,7 +3,9 @@ Version: 2.10.2
 Date: ????
   Changes:
   Bugfixes:
-    - Fixed space platform hubs moving to stage 2 when a stage is inserted at the front.
+    - Fixed space platform hubs not being present when a stage is inserted at the front.
+    - Fixed on spaceships, that extra space platform may be present when inserting a stage.
+    - Fixed that tiles may sometimes not be fixed when rebuilding a stage.
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.1
 Date: 2025-11-18
