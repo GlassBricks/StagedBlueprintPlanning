@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.2
-Date: ????
+Date: 2025-11-20
   Bugfixes:
     - Fixed space platform hubs not being present when a stage is inserted at the front.
     - Fixed on spaceships, that extra space platform may be present when inserting a stage.
