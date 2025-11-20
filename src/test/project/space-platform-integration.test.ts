@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaEntity, LuaPlayer, LuaSurface, TilePosition } from "factorio:runtime"
+import { LuaEntity, TilePosition } from "factorio:runtime"
 import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { assert } from "../../lib"
@@ -12,29 +12,11 @@ import { SpacePlatformSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { assertEntityCorrect } from "./entity-integration-test-util"
 
-let project: UserProject
-let surfaces: LuaSurface[]
-let player: LuaPlayer
-
-function cleanup() {
-  player?.cursor_stack?.clear()
-  surfaces?.forEach((surface) => surface.find_entities().forEach((e) => e.destroy()))
-  _deleteAllProjects()
-}
-before_each(cleanup)
-
 before_each(() => {
-  const settings: SpacePlatformSettings = {
-    type: "spacePlatform",
-    starterPack: { name: "space-platform-starter-pack", quality: "normal" },
-    initialPlanet: "nauvis",
-  }
-  project = createUserProject("test", 3, settings)
-  surfaces = project.getAllStages().map((stage) => stage.surface)
-  player = game.players[1]
+  _deleteAllProjects()
 })
 
-function getHub(stageNumber: StageNumber): [LuaEntity, ProjectEntity] {
+function getHub(project: UserProject, stageNumber: StageNumber): [LuaEntity, ProjectEntity] {
   const stage = project.getStage(stageNumber)
   assert(stage, "Invalid stage number")
   const hubEntity = stage.surface.find_entities_filtered({ name: "space-platform-hub" })[0]
@@ -44,31 +26,47 @@ function getHub(stageNumber: StageNumber): [LuaEntity, ProjectEntity] {
   return [hubEntity, hubProjectEntity]
 }
 
+function createSpacePlatformProject(quality: string = "normal"): UserProject {
+  const settings: SpacePlatformSettings = {
+    type: "spacePlatform",
+    starterPack: { name: "space-platform-starter-pack", quality },
+    initialPlanet: "nauvis",
+  }
+  return createUserProject("test", 3, settings)
+}
+
 describe("space platform hub", () => {
-  test("hub automatically added to all stages when creating space platform project", () => {
-    expect(project.isSpacePlatform()).toBe(true)
-    const [, hubEntity] = getHub(1)
+  before_each(() => {})
+  test.each(["normal", "legendary"])(
+    "hub automatically added to all stages when creating space platform project, with quality %s",
+    (quality) => {
+      const project = createSpacePlatformProject(quality)
+      expect(project.isSpacePlatform()).toBe(true)
+      const [, hubEntity] = getHub(project, 1)
 
-    expect(hubEntity.isPersistent()).toBe(true)
-    expect(hubEntity.firstStage).toBe(1)
-    expect(hubEntity.lastStage).toBeNil()
+      expect(hubEntity.isPersistent()).toBe(true)
+      expect(hubEntity.firstStage).toBe(1)
+      expect(hubEntity.lastStage).toBeNil()
 
-    for (const stage of $range(1, project.numStages())) {
-      const worldEntity = hubEntity.getWorldEntity(stage)
-      expect(worldEntity).toBeAny()
-      expect(worldEntity!.name).toBe("space-platform-hub")
-      expect(worldEntity!.position).toEqual(hubEntity.position)
-    }
+      for (const stage of $range(1, project.numStages())) {
+        const worldEntity = hubEntity.getWorldEntity(stage)
+        expect(worldEntity).toBeAny()
+        expect(worldEntity!.name).toBe("space-platform-hub")
+        expect(worldEntity!.position).toEqual(hubEntity.position)
+        expect(worldEntity!.quality.name).toEqual(quality)
+      }
 
-    assertEntityCorrect(project, hubEntity, false)
-  })
+      assertEntityCorrect(project, hubEntity, false)
+    },
+  )
 
   test.each([1, 2])("hub correct when inserting stage at %s", (stage) => {
-    const [, projectEntity] = getHub(1)
+    const project = createSpacePlatformProject()
+    const [, projectEntity] = getHub(project, 1)
 
     project.insertStage(stage)
 
-    const [newWorldEntity, newProjectEntity] = getHub(stage)
+    const [newWorldEntity, newProjectEntity] = getHub(project, stage)
     expect(newProjectEntity).toBe(projectEntity)
 
     expect(projectEntity.firstStage).toBe(1)
@@ -81,9 +79,10 @@ describe("space platform hub", () => {
 
 describe("space platform tiles", () => {
   test("default tiles added when project created", () => {
+    const project = createSpacePlatformProject()
     expect(project.stagedTilesEnabled.get()).toBe(true)
 
-    const tiles = surfaces[0].find_tiles_filtered({ name: "space-platform-foundation" })
+    const tiles = project.getStage(1)!.surface.find_tiles_filtered({ name: "space-platform-foundation" })
     expect(tiles.length).toBeGreaterThan(0)
 
     const missingPositions: TilePosition[] = []
@@ -100,7 +99,8 @@ describe("space platform tiles", () => {
   })
 
   test("default tiles removed when new stage added without them", () => {
-    const surface = surfaces[0]
+    const project = createSpacePlatformProject()
+    const surface = project.getStage(1)!.surface
     const initialTiles = surface.find_tiles_filtered({ name: "space-platform-foundation" })
     expect(initialTiles.length).toBeGreaterThan(0)
 

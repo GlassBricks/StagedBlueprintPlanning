@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import {
-  ItemWithQualityID,
   LuaEntity,
   LuaSurface,
   MapGenSettings,
@@ -182,21 +181,33 @@ function createSpacePlatform(
   projectName: string,
   stageName: string,
 ): [LuaSurface, hub?: LuaEntity] {
+  const starterPack = settings.starterPack
   const platform = game.forces.player.create_space_platform({
     name: projectName.length == 0 ? "Platform" : projectName,
     planet: settings.initialPlanet ?? "nauvis",
-    starter_pack: settings.starterPack as unknown as ItemWithQualityID,
+    starter_pack: starterPack,
   })!
   assert(platform, "could not create platform")
-  const hub = platform.apply_starter_pack()
+  let hub = platform.apply_starter_pack()
+  const surface = platform.surface
+  assert(surface, "could not create platform surface")
+
+  if (hub && hub.quality.name != starterPack.quality) {
+    hub = surface.create_entity({
+      name: hub.name,
+      quality: starterPack.quality,
+      position: hub.position,
+      force: hub.force,
+      fast_replace: true,
+      create_build_effect_smoke: false
+    })
+  }
   if (hub) {
     hub.destructible = false
     hub.minable = false
   }
-  const surface = platform.surface
   updateStageSurfaceName(surface, projectName, stageName)
-  assert(surface, "could not create platform surface")
-  return [surface, hub]
+  return [surface, nil]
 }
 
 function createNewSurface(
