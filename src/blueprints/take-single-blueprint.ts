@@ -114,7 +114,7 @@ export interface TakeSingleBlueprintParams {
 }
 
 export interface BlueprintTakeResult {
-  effectivePositionOffset: Position
+  effectivePositionOffset?: Position
   entities: PRecord<number, BlueprintEntity>
   bpMapping: Record<number, LuaEntity>
 }
@@ -180,60 +180,68 @@ export function takeSingleBlueprint({
     always_include_tiles: true,
   })
 
-  if (isEmpty(bpMapping)) return nil
+  if (!stack.is_blueprint_setup) {
+    return nil
+  }
 
   const { snapToGrid, additionalWhitelist, blacklist, absoluteSnapping } = params
-
   let { positionOffset, positionRelativeToGrid } = params
 
   const entities: BlueprintEntity[] = stack.get_blueprint_entities()!
 
+  let finalFirstEntityOrigPosition: MapPosition | nil
   let effectivePositionOffset: Position | nil
-  let entitiesAdjusted = false
-  const firstEntityOriginalPosition = bpMapping[1].position
-  let finalFirstEntityOrigPosition = firstEntityOriginalPosition
 
-  if (snapToGrid && positionOffset) {
-    if (contains2x2Grid(stack)) {
-      const isOddGrid =
-        params.absoluteSnapping != nil && positionRelativeToGrid != nil && posIsOdd(positionRelativeToGrid)
-      positionOffset = alignPosTo2x2(positionOffset, isOddGrid)
-      if (positionRelativeToGrid) positionRelativeToGrid = alignPosTo2x2(positionRelativeToGrid, isOddGrid)
-    }
+  if (!isEmpty(bpMapping)) {
+    let entitiesAdjusted = false
+    const firstEntityOriginalPosition = bpMapping[1].position
+    finalFirstEntityOrigPosition = firstEntityOriginalPosition
 
-    if (adjustEntitiesToMatchPositionOffset(stack, entities, positionOffset, firstEntityOriginalPosition))
-      entitiesAdjusted = true
-    effectivePositionOffset = positionOffset
-  } else {
-    effectivePositionOffset = getEffectivePositionOffset(entities, firstEntityOriginalPosition)
-  }
-
-  if (unitNumberFilter || blacklist) {
-    const [anyDeleted, firstNotDeletedIndex] = filterEntities(
-      entities,
-      unitNumberFilter,
-      bpMapping,
-      additionalWhitelist ?? newLuaSet(),
-      blacklist ?? newLuaSet(),
-    )
-    if (anyDeleted) {
-      entitiesAdjusted = true
-      if (firstNotDeletedIndex == nil) {
-        stack.clear_blueprint()
-        return nil
+    if (snapToGrid && positionOffset) {
+      if (contains2x2Grid(stack)) {
+        const isOddGrid =
+          params.absoluteSnapping != nil && positionRelativeToGrid != nil && posIsOdd(positionRelativeToGrid)
+        positionOffset = alignPosTo2x2(positionOffset, isOddGrid)
+        if (positionRelativeToGrid) positionRelativeToGrid = alignPosTo2x2(positionRelativeToGrid, isOddGrid)
       }
 
-      finalFirstEntityOrigPosition = bpMapping[firstNotDeletedIndex].position
+      if (adjustEntitiesToMatchPositionOffset(stack, entities, positionOffset, firstEntityOriginalPosition))
+        entitiesAdjusted = true
+      effectivePositionOffset = positionOffset
+    } else {
+      effectivePositionOffset = getEffectivePositionOffset(entities, firstEntityOriginalPosition)
+    }
+
+    if (unitNumberFilter || blacklist) {
+      const [anyDeleted, firstNotDeletedIndex] = filterEntities(
+        entities,
+        unitNumberFilter,
+        bpMapping,
+        additionalWhitelist ?? newLuaSet(),
+        blacklist ?? newLuaSet(),
+      )
+      if (anyDeleted) {
+        entitiesAdjusted = true
+        if (firstNotDeletedIndex == nil) {
+          stack.clear_blueprint()
+          return nil
+        }
+
+        finalFirstEntityOrigPosition = bpMapping[firstNotDeletedIndex].position
+      }
+    }
+
+    if (additionalSettings) {
+      const changed = addItemRequestsToBlueprint(entities, bpMapping, additionalSettings)
+      if (changed) entitiesAdjusted = true
+    }
+
+    if (entitiesAdjusted) {
+      stack.set_blueprint_entities(entities)
     }
   }
 
-  if (additionalSettings) {
-    const changed = addItemRequestsToBlueprint(entities, bpMapping, additionalSettings)
-    if (changed) entitiesAdjusted = true
-  }
-
-  if (isEmpty(entities)) {
-    stack.clear_blueprint()
+  if (!stack.is_blueprint_setup) {
     return nil
   }
 
@@ -244,14 +252,9 @@ export function takeSingleBlueprint({
       stack.blueprint_position_relative_to_grid = positionRelativeToGrid
     }
   }
-
-  if (entitiesAdjusted) {
-    stack.set_blueprint_entities(entities)
-  }
-
   stack.preview_icons = getIconsFromSettings(params, stageName) ?? stack.default_icons
 
-  if (setOrigPositionTag) {
+  if (setOrigPositionTag && finalFirstEntityOrigPosition) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }
 

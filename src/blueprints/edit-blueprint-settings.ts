@@ -61,7 +61,7 @@ export function editInItemBlueprintSettings(
   clearOpenedItem(player.index)
   const inventory = game.create_inventory(1)
   const blueprint = inventory[0]
-  const took = takeSingleBlueprint({
+  const takeSuccessful = takeSingleBlueprint({
     stack: blueprint,
     settings: getBasicBlueprintTakeParams(settings),
     surface,
@@ -71,7 +71,7 @@ export function editInItemBlueprintSettings(
     stageName: bpName,
   })
 
-  if (!took) {
+  if (!takeSuccessful) {
     inventory.destroy()
     return
   }

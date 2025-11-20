@@ -39,7 +39,7 @@ function createSampleEntities() {
   return { chest, belt }
 }
 
-test("can take blueprint with settings applied", () => {
+test("can take blueprint, and settings are applied", () => {
   const settings = {
     ...getDefaultBlueprintSettings(),
     icon3: { type: "item", name: "iron-plate" },
@@ -102,6 +102,21 @@ test("can take blueprint with settings applied", () => {
   expect(tiles).toBeAny()
   expect(tiles).toHaveLength(1)
   expect(tiles[0].position).toEqual(settings.positionOffset)
+})
+test("can take a blueprint that only contains tiles", () => {
+  surface.set_tiles([{ name: "landfill", position: [0, 0] }])
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+
+  const ret = takeSingleBlueprint({
+    stack,
+    settings: getDefaultBlueprintSettings(),
+    surface,
+    bbox,
+    unitNumberFilter: nil,
+  })
+  expect(ret).toBeTruthy()
 })
 
 test("forEdit position offset still works when first entity is blacklisted", () => {
