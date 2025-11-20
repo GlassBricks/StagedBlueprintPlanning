@@ -88,6 +88,8 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   getType(): EntityType | nil
 
   isMovable(): this is MovableProjectEntity
+
+  // Should be in all stages always
   isPersistent(): boolean
 
   isNewRollingStock?: true
@@ -754,10 +756,14 @@ class ProjectEntityImpl<T extends Entity = Entity>
   override insertStage(stageNumber: StageNumber): void {
     super.insertStage(stageNumber)
     const { stageProperties } = this
-    if (stageProperties)
+    if (stageProperties) {
       for (const [, byType] of pairs(stageProperties)) {
         shiftNumberKeysUp(byType, stageNumber)
       }
+    }
+    if (this.isPersistent()) {
+      this.firstStage = 1
+    }
   }
 
   /**

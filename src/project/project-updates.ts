@@ -636,7 +636,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function checkCanSetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
-    if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
+    if (entity.isPersistent() && stage != 1) return StageMoveResult.EntityIsPersistent
     if (entity.isSettingsRemnant || entity.firstStage == stage) return StageMoveResult.NoChange
     if (entity.isMovable()) return StageMoveResult.Updated
     if (entity.lastStage && stage > entity.lastStage) return StageMoveResult.CannotMovePastLastStage

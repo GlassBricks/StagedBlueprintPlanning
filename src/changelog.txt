@@ -2,6 +2,8 @@
 Version: 2.10.2
 Date: ????
   Changes:
+  Bugfixes:
+    - Fixed space platform hubs moving to stage 2 when a stage is inserted at the front.
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.1
 Date: 2025-11-18

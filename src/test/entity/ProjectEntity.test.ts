@@ -795,6 +795,14 @@ describe("insert/deleting stages", () => {
     expect(entity.firstStage).toBe(3)
   })
 
+  test("persistent entity stays at stage 1 when stage inserted at front", () => {
+    const entity = newProjectEntity({ name: "space-platform-hub" }, Pos(0, 0), 0, 1)
+
+    entity.insertStage(1)
+    expect(entity.firstStage).toBe(1)
+    expect(entity.lastStage).toBeNil()
+  })
+
   test("delete stage after firstStage", () => {
     const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
     const entity = newProjectEntity<InserterEntity>(
