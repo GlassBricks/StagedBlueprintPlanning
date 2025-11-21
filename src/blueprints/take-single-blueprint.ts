@@ -222,12 +222,9 @@ export function takeSingleBlueprint({
       )
       if (anyDeleted) {
         entitiesAdjusted = true
-        if (firstNotDeletedIndex == nil) {
-          stack.clear_blueprint()
-          return nil
+        if (firstNotDeletedIndex != nil) {
+          finalFirstEntityOrigPosition = bpMapping[firstNotDeletedIndex].position
         }
-
-        finalFirstEntityOrigPosition = bpMapping[firstNotDeletedIndex].position
       }
     }
 
@@ -254,7 +251,7 @@ export function takeSingleBlueprint({
   }
   stack.preview_icons = getIconsFromSettings(params, stageName) ?? stack.default_icons
 
-  if (setOrigPositionTag && finalFirstEntityOrigPosition) {
+  if (setOrigPositionTag && finalFirstEntityOrigPosition != nil) {
     stack.set_blueprint_entity_tag(1, FirstEntityOriginalPositionTag, finalFirstEntityOrigPosition)
   }
 

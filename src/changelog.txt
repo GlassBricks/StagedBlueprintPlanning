@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.3
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed not being able to take a blueprint of a stage that includes tiles but all entities are _filtered out_.
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.2
 Date: 2025-11-20

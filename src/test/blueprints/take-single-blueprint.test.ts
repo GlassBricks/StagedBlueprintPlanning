@@ -103,6 +103,7 @@ test("can take blueprint, and settings are applied", () => {
   expect(tiles).toHaveLength(1)
   expect(tiles[0].position).toEqual(settings.positionOffset)
 })
+
 test("can take a blueprint that only contains tiles", () => {
   surface.set_tiles([{ name: "landfill", position: [0, 0] }])
 
@@ -117,6 +118,34 @@ test("can take a blueprint that only contains tiles", () => {
     unitNumberFilter: nil,
   })
   expect(ret).toBeTruthy()
+  expect(stack.cost_to_build?.map((item) => item.name)).toEqual(["landfill"])
+})
+
+test("can take a blueprint that only contains tiles, when all entities are filtered out", () => {
+  surface.create_entity({
+    name: "iron-chest",
+    position: [0.5, 0.5],
+    force: "player",
+  })
+  surface.set_tiles([{ name: "landfill", position: [0, 0] }])
+
+  const stack = player.cursor_stack!
+  stack.set_stack("blueprint")
+
+  const settings = {
+    ...getDefaultBlueprintSettings(),
+    blacklist: newLuaSet("iron-chest"),
+  } satisfies BlueprintTakeSettings
+
+  const ret = takeSingleBlueprint({
+    stack,
+    settings,
+    surface,
+    bbox,
+    unitNumberFilter: nil,
+  })
+  expect(ret).toBeTruthy()
+  expect(stack.cost_to_build?.map((item) => item.name)).toEqual(["landfill"])
 })
 
 test("forEdit position offset still works when first entity is blacklisted", () => {

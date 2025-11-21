@@ -212,7 +212,7 @@ class ProjectContentImpl implements MutableProjectContent {
   }
 
   computeBoundingBox(): BoundingBox | nil {
-    if (isEmpty(this.entities)) return nil
+    if (isEmpty(this.entities) && isEmpty(this.tiles)) return nil
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
