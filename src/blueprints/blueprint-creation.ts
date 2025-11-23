@@ -196,6 +196,20 @@ class TakeStageBlueprintStep implements BlueprintStep {
   }
 }
 
+class SetSelectedIndexTask implements BlueprintStep {
+  constructor(
+    readonly stack: LuaItemStack,
+    readonly index: number,
+  ) {}
+  run(): void {
+    this.stack.active_index = this.index
+  }
+
+  title(): LocalisedString {
+    return ""
+  }
+}
+
 class ExportBlueprintBookToFileStep implements BlueprintStep {
   constructor(
     readonly stack: LuaItemStack,
@@ -483,6 +497,7 @@ function addCompileBookTemplateTasks(
   }
   visit(destStack)
   builder.addAllBpTasks()
+  builder.addTask(new SetSelectedIndexTask(destStack, 1))
 }
 
 function addBlueprintBookTasks(project: UserProject, builder: BlueprintingTaskBuilder, stack: LuaItemStack): void {
