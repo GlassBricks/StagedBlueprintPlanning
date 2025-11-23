@@ -238,7 +238,7 @@ export function takeSingleBlueprint({
     }
   }
 
-  if (!stack.is_blueprint_setup) {
+  if (!stack.is_blueprint_setup || isEmpty(stack.cost_to_build)) {
     return nil
   }
 
