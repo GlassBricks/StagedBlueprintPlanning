@@ -120,7 +120,7 @@ When editing anything in `storage`:
 See mini framework in `src/lib/migration.ts`
 
 - Place project-related migrations in: `src/project/index.ts`
-- use `$CURRENT_VERSION` (global variable) as a placeholder for current version, will be substituted by a script during publishing
+- use the global variable `$CURRENT_VERSION` as a placeholder for current version, it will be substituted by a script during publishing.
 
 Don't forget to consider if migrations in planning.
 
@@ -162,7 +162,9 @@ For Factorio API documentation, prefer to inspect or grep `typed-factorio`, inst
 
 ## Docs, planning, and research
 
-- Omit code comments and doc comments in docs. If needed, comment outside code blocks.
+- Omit code comments in code snippets that are not in the original code. Instead, make notes about the code after code snippets.
+- Prefer automated testing over manual testing. No manual testing is ok if it can be all covered by automated tests.
+- Prefer testing as you go (TDD) instead of saving all testing for the end.
 
 ## Important Notes
 

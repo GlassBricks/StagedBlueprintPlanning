@@ -145,5 +145,3 @@ factorio-test-data-dir/mods/*
 src/COPYING*
 src/*.zip
 docs/research
-.claude/
-thoughts/
