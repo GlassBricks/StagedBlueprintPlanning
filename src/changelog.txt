@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.4
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed that the "stage deconstruct" indicator would not be shown for newly created entities.
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.3
 Date: 2025-11-21

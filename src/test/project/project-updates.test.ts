@@ -209,6 +209,8 @@ describe("addNewEntity()", () => {
 
     assertOneEntity()
     assertNewUpdated(entity)
+    expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
+    expectedWuCalls++
   })
 
   describe("with known value", () => {
@@ -234,6 +236,8 @@ describe("addNewEntity()", () => {
 
       assertOneEntity()
       assertNewUpdated(entity)
+      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
+      expectedWuCalls++
     })
 
     test("with different name", () => {
@@ -255,6 +259,8 @@ describe("addNewEntity()", () => {
 
       assertOneEntity()
       assertNewUpdated(entityUpgraded)
+      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
+      expectedWuCalls++
     })
 
     test("with knownValue containing non-module requests", () => {
@@ -276,6 +282,8 @@ describe("addNewEntity()", () => {
 
       assertOneEntity()
       assertNewUpdated(entity)
+      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
+      expectedWuCalls++
     })
 
     test.each([false, true])("with stored stage info, having diffs %s", (withDiffs) => {
@@ -324,11 +332,9 @@ describe("addNewEntity()", () => {
             _forTest: "foo",
           },
         })
-        expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
-        expectedWuCalls++
-      } else {
-        expect(worldUpdates.updateAllHighlights).not.toHaveBeenCalled()
       }
+      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
+      expectedWuCalls++
     })
   })
 })
@@ -952,7 +958,8 @@ describe("undergrounds", () => {
     assertNEntities(2)
 
     assertNewUpdated(entity)
-    // assert.spy(wireSaver.saveWireConnections).toHaveBeenCalledWith(project.content, entity, 1)
+    expect(worldUpdates.updateAllHighlights).toHaveBeenCalled()
+    expectedWuCalls++
   })
 
   function createUndergroundBeltPair(
@@ -1363,6 +1370,8 @@ describe("rolling stock", () => {
     expect(foundDirectly).toBe(found)
 
     assertNewUpdated(result)
+    expect(worldUpdates.updateAllHighlights).toHaveBeenCalled()
+    expectedWuCalls++
   })
 
   test("no update on rolling stock", () => {

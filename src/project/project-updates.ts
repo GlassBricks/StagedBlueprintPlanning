@@ -189,9 +189,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (hasDiff) {
       updateWireConnections(projectEntity)
     }
-    if (projectEntity.stageDiffs) {
-      updateAllHighlights(projectEntity)
-    }
+    updateAllHighlights(projectEntity)
 
     return projectEntity
   }

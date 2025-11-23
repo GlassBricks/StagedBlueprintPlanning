@@ -333,7 +333,6 @@ export function EntityHighlights(project: Project): EntityHighlights {
   }
 
   function updateAllHighlights(entity: ProjectEntity): void {
-    // ignore start and end stage for now
     updateErrorOutlines(entity)
     updateStageDiffHighlights(entity)
     updateStageDeleteIndicator(entity)
