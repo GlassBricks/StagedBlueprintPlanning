@@ -5,7 +5,8 @@
 
 import { LuaEntity, LuaPlayer, PlayerIndex } from "factorio:runtime"
 import { Constants, Prototypes } from "../constants"
-import { Events, onPlayerInitSince } from "../lib"
+import { onPlayerInitSince } from "../lib"
+import { DelayedEvent } from "../lib/delayed-event"
 import { Migrations } from "../lib/migration"
 import floor = math.floor
 
@@ -20,20 +21,7 @@ declare global {
     nextUndoEntryIndex: number
   }
 }
-
-declare const storage: StorageWithPlayer & {
-  futureUndoData: LuaMap<number, UndoEntry>
-}
-
-function undoInit() {
-  storage.futureUndoData = new LuaMap()
-  setmetatable(storage.futureUndoData, { __mode: "v" })
-}
-Events.on_init(undoInit)
-Migrations.fromAny(undoInit)
-Events.on_load(() => {
-  if (storage.futureUndoData != nil) setmetatable(storage.futureUndoData, { __mode: "v" })
-})
+declare const storage: StorageWithPlayer
 
 onPlayerInitSince("0.18.0", (player) => {
   const playerData = storage.players[player]
@@ -120,22 +108,16 @@ export function registerGroupUndoAction(actions: UndoAction[]): void {
   })
 }
 
-const FutureUndoTranslation = "bp100_future-undo-fake-translation"
+const FutureUndoEvent = DelayedEvent<[player: LuaPlayer, name: string, data: unknown]>(
+  "undo",
+  ([player, name, data]) => {
+    registerUndo(name, player, data)
+  },
+)
 
 function registerUndoLater(handlerName: string, player: LuaPlayer, data: unknown) {
-  const id = player.request_translation(FutureUndoTranslation)
-  if (id) storage.futureUndoData.set(id, { handlerName, data })
+  FutureUndoEvent([player, handlerName, data])
 }
-Events.on_string_translated((e) => {
-  if (e.localised_string != FutureUndoTranslation) return
-
-  const entry = storage.futureUndoData.get(e.id)
-  if (!entry) return
-  storage.futureUndoData.delete(e.id)
-
-  const player = game.get_player(e.player_index)!
-  registerUndo(entry.handlerName, player, entry.data)
-})
 
 function doUndoEntry(player: LuaPlayer, entry: UndoEntry): void {
   const handler = undoHandlers[entry.handlerName]
@@ -180,3 +162,11 @@ export function _simulateUndo(player: LuaPlayer, index = _lastUndoIndex ?? error
 export function performUndoAction(action: UndoAction): void {
   doUndoEntry(game.get_player(action.playerIndex)!, action)
 }
+
+Migrations.to($CURRENT_VERSION, () => {
+  assume<{
+    futureUndoData?: LuaMap<number, UndoEntry>
+  }>(storage)
+
+  delete storage.futureUndoData
+})
